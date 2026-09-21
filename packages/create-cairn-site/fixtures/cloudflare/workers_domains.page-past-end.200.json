@@ -1,0 +1,20 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "GET /accounts/{account_id}/workers/domains?page=8",
+    "status": 200,
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes; every key set, result_info value, and count below is the live one. The page after the last returns an empty result with count 0 and the same total_count, which is the walk's belt-and-braces stop."
+  },
+  "body": {
+    "result": [],
+    "success": true,
+    "errors": null,
+    "messages": null,
+    "result_info": {
+      "page": 8,
+      "per_page": 1,
+      "count": 0,
+      "total_count": 7
+    }
+  }
+}

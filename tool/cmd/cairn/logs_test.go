@@ -78,7 +78,7 @@ func TestLogsUnderJSONWritesNothingToStderr(t *testing.T) {
 	d.transport = routeRoundTripper{
 		"/client/v4/accounts/" + testAccountID + "/workers/observability/telemetry/query": {
 			status: http.StatusOK,
-			body:   []byte(`{"success":true,"result":{"events":[]}}`),
+			body:   []byte(`{"success":true,"result":{"events":{"events":[],"count":0}}}`),
 		},
 	}
 

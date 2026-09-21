@@ -54,15 +54,17 @@ type Entry struct {
 }
 
 // ErrObservabilityOff is the sentinel Fetch and CountErrors return when a Worker's telemetry
-// query answers with an API error that carries no more specific classification: not-found, or a
-// reason this package's provider client did not recognize at all. A recognized reason
-// (unauthorized, forbidden, rate-limited, and the like) is a credential or transport problem, not
-// a sign of the dataset itself, and passes through unchanged so a caller reports it the same way
-// every sibling check does. The endpoint answers 200 with an empty events list and no error for a
-// window past the account's retention (tool/docs/credentials.md, "Workers Logs retention"), so a
-// not-found or unclassified API error from this one endpoint is the signal left over to mean the
-// dataset itself was never created, the state before a site's wrangler config ever sets
-// observability.enabled to true.
+// query answers 404. Every other classified reason passes through unchanged, so a caller reports
+// it the same way every sibling check does.
+//
+// A live check on 2026-09-21 narrowed this sharply. Two Workers on the verification account
+// whose settings carry no observability object at all answered the same query 200 with zero
+// events, as did a Worker name that does not exist, so a Worker with observability off is not
+// distinguishable from one that simply logged nothing over the window, and this sentinel does not
+// reach a caller for that case. It used to cover an unclassified reason too, which is how a 400
+// (cairn's own query body being malformed) reported for a week as a site whose observability was
+// never turned on. The 404 arm is kept for a route that does not exist at all; nothing on the
+// verification account produced one.
 var ErrObservabilityOff = errors.New("logs: worker has no observability dataset")
 
 // RetentionClamp is the Workers Logs retention window observed on the verification account: every
@@ -118,20 +120,32 @@ func clampSince(since time.Duration) time.Duration {
 	return min(since, RetentionClamp)
 }
 
+// filterType is the "type" every leaf filter in a telemetry query must declare, one of the
+// API's "string", "number", or "boolean". Every key cairn filters on ($metadata.service, event,
+// level) holds a string. A filter without it is refused: the endpoint answers HTTP 400 with a
+// ZodError naming the missing key, which is exactly what cairn sent until 2026-09-21
+// (packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.filter-rejected.400.json).
+const filterType = "string"
+
 // buildQuery constructs the Workers Logs telemetry query body Cloudflare's
 // accounts/{id}/workers/observability/telemetry/query endpoint expects, extending the confirmed
 // shape (queryId, timeframe, view, limit, parameters.datasets) with a worker-name filter on
 // "$metadata.service" and, when filterValue is set, one more equality filter on filterKey: "event"
 // for Fetch, "level" for CountErrors.
+//
+// The endpoint's filter schema is a union: an entry is either a group node carrying "kind":
+// "group" and a "filterCombination", or a leaf carrying "key", "type", "operation", and "value".
+// cairn sends leaves, which a live call on 2026-09-21 confirmed the endpoint accepts as a bare
+// array, combined with AND; wrapping them in a group would add a node with nothing to say.
 func buildQuery(worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) map[string]any {
 	if limit <= 0 {
 		limit = defaultLimit
 	}
 	filters := []map[string]any{
-		{"key": "$metadata.service", "operation": "eq", "value": worker},
+		{"key": "$metadata.service", "type": filterType, "operation": "eq", "value": worker},
 	}
 	if filterValue != "" {
-		filters = append(filters, map[string]any{"key": filterKey, "operation": "eq", "value": filterValue})
+		filters = append(filters, map[string]any{"key": filterKey, "type": filterType, "operation": "eq", "value": filterValue})
 	}
 	return map[string]any{
 		"queryId": "cairn-logs",
@@ -148,7 +162,23 @@ func buildQuery(worker string, since time.Duration, now time.Time, filterKey, fi
 	}
 }
 
-// parseEntry decodes one telemetry event's raw JSON into an Entry, pulling the envelope's own
+// parseEvent decodes one telemetry event into an Entry: the record the Worker logged, under the
+// event's "source", with the platform's own event timestamp standing in when that record carries
+// none of its own. A Worker's bare console call is recorded the same way an engine record is, and
+// only the engine writes the envelope, so without the fallback every non-engine line would sort
+// as undated.
+func parseEvent(ev providers.ObservabilityEvent) (Entry, error) {
+	entry, err := parseEntry(ev.Source)
+	if err != nil {
+		return Entry{}, err
+	}
+	if entry.At.IsZero() && ev.Timestamp != 0 {
+		entry.At = time.UnixMilli(ev.Timestamp).UTC()
+	}
+	return entry, nil
+}
+
+// parseEntry decodes one logged record's raw JSON into an Entry, pulling the envelope's own
 // level, event, and timestamp keys out and leaving every other key in Fields, in the order the
 // source object carried them. No value is stringified: each Field.Value is exactly the raw bytes
 // the source carried for that key.
@@ -209,19 +239,16 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 	result, err := cf.ObservabilityQuery(ctx, buildQuery(worker, clampSince(since), now, filterKey, filterValue, limit))
 	if err != nil {
 		if apiErr, ok := errors.AsType[*providers.APIError](err); ok {
-			// WATCH: this mapping has not been confirmed against a live Worker that never had
-			// observability enabled. Confirm it against one before a caller acts on the
-			// sentinel as more than a hint.
-			if apiErr.Reason == providers.ReasonNotFound || apiErr.Reason == providers.ReasonUnknown {
+			if apiErr.Reason == providers.ReasonNotFound {
 				return nil, ErrObservabilityOff
 			}
 			return nil, apiErr
 		}
 		return nil, fmt.Errorf("logs: query worker %s: %w", worker, err)
 	}
-	entries := make([]Entry, 0, len(result.Events))
-	for _, raw := range result.Events {
-		entry, err := parseEntry(raw)
+	entries := make([]Entry, 0, len(result.Events.Events))
+	for _, ev := range result.Events.Events {
+		entry, err := parseEvent(ev)
 		if err != nil {
 			return nil, fmt.Errorf("logs: worker %s: %w", worker, err)
 		}
@@ -247,8 +274,8 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 // Fetch returns worker's log entries over the q.Since window ending at now (clamped to
 // RetentionClamp), newest first, narrowed to q.Event when set. It drops any entry the endpoint
 // returned whose own "event" does not equal q.Event, the same posture FetchLevel takes on the
-// level: the request's own filter grammar is unverified against the live API, so a caller trusts
-// what each entry actually carries rather than the filter alone. now is a parameter, not a
+// level: the endpoint's filter is applied to a record cairn does not control the shape of, so a
+// caller trusts what each entry actually carries rather than the filter alone. now is a parameter, not a
 // system-clock read, so a caller replaying a query gets the same window every time. Every field
 // stays json.RawMessage with no rendering choice baked in.
 func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query, now time.Time) ([]Entry, error) {
@@ -264,8 +291,7 @@ func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query, now time.Time
 
 // FetchLevel returns worker's log entries at level, over the since window ending at now (clamped
 // to RetentionClamp), newest first, dropping any entry the endpoint returned whose own "level"
-// does not equal level: the request's own filter grammar is unverified against the live API, so a
-// caller trusts what each entry actually carries rather than the filter alone. It is CountErrors's
+// does not equal level, for the reason Fetch states about its own narrowing. It is CountErrors's
 // own read path and returns the matched entries themselves, so a caller that needs both the count
 // and the entries reads them without a second, re-filtered query.
 func FetchLevel(ctx context.Context, cf *providers.Cloudflare, worker, level string, since time.Duration, now time.Time) ([]Entry, error) {

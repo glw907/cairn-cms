@@ -113,7 +113,7 @@ func conditionCases() []conditionCase {
 		{
 			name:          "errors with no observability dataset",
 			check:         errorsCheck{},
-			clients:       errorsClients(errorsEventsRoundTripper{status: http.StatusBadRequest}),
+			clients:       errorsClients(errorsEventsRoundTripper{status: http.StatusNotFound}),
 			options:       Options{ErrorThreshold: 1, LogWindow: time.Hour, Now: fixedNow},
 			wantState:     spine.Unknown,
 			wantCondition: spine.ConditionConfigObservabilityOff,

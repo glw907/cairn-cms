@@ -30,12 +30,18 @@ func (rt errorsEventsRoundTripper) RoundTrip(req *http.Request) (*http.Response,
 		return &http.Response{StatusCode: rt.status, Body: io.NopCloser(bytes.NewReader(body)), Header: make(http.Header), Request: req}, nil
 	}
 
-	type rawEvent = json.RawMessage
+	// The nesting matches the live response: result.events is an object, and each event carries
+	// the record the Worker logged under "source"
+	// (packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.events.200.json).
+	type rawEvent struct {
+		Source    json.RawMessage `json:"source"`
+		Timestamp int64           `json:"timestamp"`
+	}
 	var events []rawEvent
 	for i, name := range rt.events {
-		events = append(events, json.RawMessage(fmt.Sprintf(
+		events = append(events, rawEvent{Source: json.RawMessage(fmt.Sprintf(
 			`{"level":"error","event":%q,"timestamp":"2026-09-14T09:%02d:00.000Z"}`, name, i,
-		)))
+		))})
 	}
 	envelope := struct {
 		Success bool `json:"success"`
@@ -43,10 +49,14 @@ func (rt errorsEventsRoundTripper) RoundTrip(req *http.Request) (*http.Response,
 			Code int `json:"code"`
 		} `json:"errors"`
 		Result struct {
-			Events []rawEvent `json:"events"`
+			Events struct {
+				Events []rawEvent `json:"events"`
+				Count  int        `json:"count"`
+			} `json:"events"`
 		} `json:"result"`
 	}{Success: true}
-	envelope.Result.Events = events
+	envelope.Result.Events.Events = events
+	envelope.Result.Events.Count = len(events)
 
 	data, err := json.Marshal(envelope)
 	if err != nil {
@@ -155,10 +165,11 @@ func TestErrorsCheckReportsTopThreeEventNames(t *testing.T) {
 	}
 }
 
-// TestErrorsCheckObservabilityOff asserts an unclassified API-level failure from the
-// observability endpoint reports Unknown with a Detail naming the missing dataset, and Validate
-// accepts the Reason it carries.
-func TestErrorsCheckObservabilityOff(t *testing.T) {
+// TestErrorsCheckRejectedRequestIsNotObservabilityOff pins the misreport the 2026-09-21 live run
+// found: cairn's own telemetry query body was malformed, the endpoint answered HTTP 400, and the
+// check told four operators their Workers had no observability dataset. A 400 is cairn's fault,
+// so it keeps its own reason and carries the Detail that says whose bug it is.
+func TestErrorsCheckRejectedRequestIsNotObservabilityOff(t *testing.T) {
 	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}
 	clients := errorsClients(errorsEventsRoundTripper{status: http.StatusBadRequest})
 
@@ -169,14 +180,21 @@ func TestErrorsCheckObservabilityOff(t *testing.T) {
 	if err := outcome.Validate(); err != nil {
 		t.Errorf("Validate: %v", err)
 	}
-	if outcome.Reason != spine.ReasonNotObservable {
-		t.Errorf("Reason = %v, want ReasonNotObservable", outcome.Reason)
+	if want := spine.APIReason(providers.ReasonRequestRejected); outcome.Reason != want {
+		t.Errorf("Reason = %v, want %v", outcome.Reason, want)
+	}
+	if outcome.Condition == spine.ConditionConfigObservabilityOff {
+		t.Error("a rejected request still reports the operator's observability as off")
+	}
+	if outcome.Detail != detailAPIRequestRejected() {
+		t.Errorf("Detail = %q, want the rejected-request detail", outcome.Detail)
 	}
 }
 
 // TestErrorsCheckNotFoundIsObservabilityOff asserts a not-found response from the observability
-// endpoint also settles as the missing-dataset condition, alongside the unclassified 400 case
-// TestErrorsCheckObservabilityOff covers.
+// endpoint settles as the missing-dataset condition. It is the only status that does: a live
+// check on 2026-09-21 found a Worker with observability unset answers 200 with zero events, so
+// nothing else about the response distinguishes the condition.
 func TestErrorsCheckNotFoundIsObservabilityOff(t *testing.T) {
 	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}
 	clients := errorsClients(errorsEventsRoundTripper{status: http.StatusNotFound})

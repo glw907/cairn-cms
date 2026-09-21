@@ -62,12 +62,22 @@ func verboseObservedField(key string, value any, source spine.FieldSource) spine
 // own reason.api.<Reason> code rather than Failing: only the creds check treats a rejected
 // credential as the fault under test. An error this package cannot classify at all (a dial
 // failure, a context deadline) is Unknown with reason.timeout.
+//
+// A rejected request is the one reason that carries a Detail. Every other reason names something
+// about the site or the credential, which the reason code alone already says; a 400 says cairn
+// sent a body the provider would not parse, and an operator reading a bare
+// reason.api.request-rejected has no way to know the fault is not theirs.
 func apiErrorOutcome(err error) spine.Outcome {
 	var pe providers.ProviderError
 	if !errors.As(err, &pe) {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonTimeout}
 	}
-	return spine.Outcome{State: spine.Unknown, Reason: spine.APIReason(pe.ClassifiedReason())}
+	reason := pe.ClassifiedReason()
+	outcome := spine.Outcome{State: spine.Unknown, Reason: spine.APIReason(reason)}
+	if reason == providers.ReasonRequestRejected {
+		outcome.Detail = detailAPIRequestRejected()
+	}
+	return outcome
 }
 
 // credentialErrorOutcome classifies err through spine.ReasonToOutcome, the module's one

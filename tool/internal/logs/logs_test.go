@@ -129,15 +129,17 @@ func TestFetchNarrowsToOneEvent(t *testing.T) {
 // TestFetchOrdersEntriesNewestFirst asserts Fetch sorts what the endpoint returned rather than
 // trusting its order, and that an entry carrying no timestamp lands after every dated entry in
 // the order it arrived. The response body here is built in the test, out of order, since the
-// shared corpus fixture is already newest first and so proves nothing about the sort.
+// shared corpus fixture is already newest first and so proves nothing about the sort. Each
+// event's own platform timestamp is zero, so only the record's own timestamp orders the result;
+// TestFetchDatesARecordFromTheEventWhenItCarriesNone covers the fallback.
 func TestFetchOrdersEntriesNewestFirst(t *testing.T) {
-	body := []byte(`{"success":true,"errors":[],"messages":[],"result":{"events":[
-		{"timestamp":"2026-09-14T09:12:44.000Z","level":"info","event":"middle"},
-		{"level":"info","event":"undated-first"},
-		{"timestamp":"2026-09-14T09:32:11.000Z","level":"info","event":"newest"},
-		{"level":"info","event":"undated-second"},
-		{"timestamp":"2026-09-14T08:55:02.000Z","level":"info","event":"oldest"}
-	]}}`)
+	body := []byte(`{"success":true,"errors":[],"messages":[],"result":{"events":{"count":5,"events":[
+		{"timestamp":0,"source":{"timestamp":"2026-09-14T09:12:44.000Z","level":"info","event":"middle"}},
+		{"timestamp":0,"source":{"level":"info","event":"undated-first"}},
+		{"timestamp":0,"source":{"timestamp":"2026-09-14T09:32:11.000Z","level":"info","event":"newest"}},
+		{"timestamp":0,"source":{"level":"info","event":"undated-second"}},
+		{"timestamp":0,"source":{"timestamp":"2026-09-14T08:55:02.000Z","level":"info","event":"oldest"}}
+	]}}}`)
 	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
 	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
@@ -189,6 +191,15 @@ func TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors(t *testing.T) {
 	if countFilters[1]["key"] != "level" || countFilters[1]["value"] != "error" {
 		t.Errorf("CountErrors's second filter = %v, want key level, value error", countFilters[1])
 	}
+	// The endpoint refuses a leaf filter that declares no type, which is what it did to every
+	// query cairn sent before 2026-09-21.
+	for _, filters := range [][]map[string]any{fetchFilters, countFilters} {
+		for i, f := range filters {
+			if f["type"] != filterType {
+				t.Errorf("filter %d = %v, want a %q type", i, f, filterType)
+			}
+		}
+	}
 }
 
 // TestCountErrorsCountsLevelErrorRecords asserts CountErrors returns the count of level: error
@@ -207,18 +218,90 @@ func TestCountErrorsCountsLevelErrorRecords(t *testing.T) {
 	}
 }
 
-// TestFetchMapsAnAPIErrorToErrObservabilityOff asserts an APIError from the observability
-// endpoint resolves to ErrObservabilityOff, per that sentinel's own doc comment, while a
-// transport-level failure (no HTTP status reached at all) passes through unclassified.
-func TestFetchMapsAnAPIErrorToErrObservabilityOff(t *testing.T) {
+// TestFetchMapsANotFoundToErrObservabilityOff asserts a 404 from the observability endpoint
+// resolves to ErrObservabilityOff, the one status that still does.
+func TestFetchMapsANotFoundToErrObservabilityOff(t *testing.T) {
 	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{
-		status: http.StatusBadRequest,
+		status: http.StatusNotFound,
 		body:   []byte(`{"success":false,"errors":[{"code":7003}],"result":null}`),
 	})
 
 	_, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
 	if !errors.Is(err, ErrObservabilityOff) {
 		t.Errorf("Fetch: err = %v, want ErrObservabilityOff", err)
+	}
+}
+
+// TestFetchDoesNotReadARejectedRequestAsObservabilityOff pins the misreport the 2026-09-21 live
+// run found. cairn sent a filter carrying no "type", the endpoint answered HTTP 400 with a
+// ZodError and no v4 errors array at all, and the old mapping folded that into the sentinel, so
+// four production sites read as having observability turned off.
+func TestFetchDoesNotReadARejectedRequestAsObservabilityOff(t *testing.T) {
+	status, body, err := providers.Corpus("cloudflare", "observability-telemetry-query.filter-rejected.400.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	_, err = Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
+	if errors.Is(err, ErrObservabilityOff) {
+		t.Fatal("Fetch: a rejected request still reads as a Worker with no observability dataset")
+	}
+	apiErr, ok := errors.AsType[*providers.APIError](err)
+	if !ok {
+		t.Fatalf("Fetch: err = %v, want an *APIError", err)
+	}
+	if apiErr.Reason != providers.ReasonRequestRejected {
+		t.Errorf("Reason = %v, want request-rejected", apiErr.Reason)
+	}
+}
+
+// TestFetchDecodesTheRecordedLiveResponse decodes the response a live telemetry query returned
+// on 2026-09-21, the fixture that is live all the way down. It is the test the old synthesized
+// fixture could not be: result.events is an object rather than an array, each event carries the
+// Worker's record under "source", and the decode read neither until this round.
+func TestFetchDecodesTheRecordedLiveResponse(t *testing.T) {
+	status, body, err := providers.Corpus("cloudflare", "observability-telemetry-query.events.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: 24 * time.Hour}, queryNow)
+	if err != nil {
+		t.Fatalf("Fetch: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatal("the live response decoded to no entries at all")
+	}
+	for i, e := range entries {
+		if e.Event == "" {
+			t.Errorf("entries[%d] carries no event name; the record under \"source\" was not read", i)
+		}
+		if e.At.IsZero() {
+			t.Errorf("entries[%d] carries no timestamp", i)
+		}
+	}
+}
+
+// TestFetchDatesARecordFromTheEventWhenItCarriesNone covers the half of a live response that is
+// not an engine record: a Worker's bare console call is recorded with no timestamp of its own,
+// and without the platform's event timestamp every such line would sort as undated.
+func TestFetchDatesARecordFromTheEventWhenItCarriesNone(t *testing.T) {
+	body := []byte(`{"success":true,"result":{"events":{"count":1,"events":[
+		{"timestamp":1789931462614,"source":{"level":"info","message":"GET /"}}
+	]}}}`)
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
+	if err != nil {
+		t.Fatalf("Fetch: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("len(entries) = %d, want 1", len(entries))
+	}
+	if want := time.UnixMilli(1789931462614).UTC(); !entries[0].At.Equal(want) {
+		t.Errorf("entries[0].At = %v, want the event's own %v", entries[0].At, want)
 	}
 }
 

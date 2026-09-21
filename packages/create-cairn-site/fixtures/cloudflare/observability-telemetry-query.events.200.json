@@ -3,7 +3,7 @@
     "captured": "2026-09-21",
     "source": "POST /accounts/{account_id}/workers/observability/telemetry/query",
     "status": 200,
-    "note": "the envelope is recorded live on 2026-09-21 (result.events is an object carrying events, fields, count, and series, and each event carries the Worker's own record under \"source\"); the three records under \"source\" are synthesized, so one fixture covers three engine events, two levels, and a field a live window did not happen to hold. observability-telemetry-query.events.200.json beside it is live all the way down. Before 2026-09-21 this file's envelope was synthesized too, with result.events as a flat array, and that is what hid the decode defect the live verification found. The ray id, account id, worker name, and every editor value are placeholders, and no editor value is email-shaped."
+    "note": "recorded live from the query body this round's buildQuery sends, response headers discarded except content-type and no authorization header recorded. result.events is an object, not an array, and each event carries the record the Worker logged under \"source\"; the old synthesized fixture had neither, which is how the decode stayed wrong. Identifiers are scrubbed to the corpus's placeholder shapes, the series and events arrays are trimmed to two, and each event's $workers.event (the whole inbound request, with its client address and geography) is dropped."
   },
   "body": {
     "success": true,
@@ -65,15 +65,11 @@
         "events": [
           {
             "source": {
-              "$workers.scriptName": "example-site",
-              "$metadata.accountId": "0000000000000000000000000000ex01",
-              "level": "error",
-              "event": "auth.link.send_failed",
-              "timestamp": "2026-09-14T09:32:11.000Z",
-              "email": "example-editor-placeholder",
-              "error": "send failed: upstream 500",
-              "code": "E_SEND_FAILED",
-              "conditionId": "email.send-failed"
+              "level": "warn",
+              "reason": "origin",
+              "path": "/about",
+              "event": "guard.rejected",
+              "timestamp": "2026-09-20T19:11:02.614Z"
             },
             "dataset": "cloudflare-workers",
             "timestamp": 1789931462614,
@@ -92,9 +88,9 @@
               "rayId": "26ede3e969ee1bc3",
               "traceId": "c47f4f1653bc507453602f9d4f932e95",
               "spanId": "0d8117b70bacf700",
-              "trigger": "GET /",
+              "trigger": "POST /about",
               "service": "example-site",
-              "level": "error",
+              "level": "warn",
               "account": "0000000000000000000000000000ex01",
               "type": "cf-worker",
               "origin": "fetch"
@@ -102,19 +98,14 @@
           },
           {
             "source": {
-              "$workers.scriptName": "example-site",
-              "$metadata.accountId": "0000000000000000000000000000ex01",
               "level": "warn",
-              "event": "commit.failed",
-              "timestamp": "2026-09-14T09:12:44.000Z",
-              "concept": "posts",
-              "id": "example-post-id",
-              "editor": "example-editor-placeholder",
-              "reason": "conflict",
-              "branch": "cairn/posts/example-post-id"
+              "reason": "origin",
+              "path": "/about",
+              "event": "guard.rejected",
+              "timestamp": "2026-09-20T01:25:45.497Z"
             },
             "dataset": "cloudflare-workers",
-            "timestamp": 1789931402614,
+            "timestamp": 1789867545497,
             "$workers": {
               "truncated": false,
               "scriptName": "example-site",
@@ -125,51 +116,14 @@
               "executionModel": "stateless"
             },
             "$metadata": {
-              "id": "01M303N7YP0000000000000004",
-              "requestId": "1583f1016be54b87c2ad20eef176a734",
-              "rayId": "26ede3e969ee1bc3",
-              "traceId": "c47f4f1653bc507453602f9d4f932e95",
-              "spanId": "0d8117b70bacf700",
-              "trigger": "GET /",
+              "id": "01M2Y6PMWS0000000000000004",
+              "requestId": "83d31c028347d908d89fa98a85392235",
+              "rayId": "00acccc1c8ff8e30",
+              "traceId": "5d32e3866381fa95b56d698abd7463d5",
+              "spanId": "bbfe540517b6c6ec",
+              "trigger": "POST /about",
               "service": "example-site",
               "level": "warn",
-              "account": "0000000000000000000000000000ex01",
-              "type": "cf-worker",
-              "origin": "fetch"
-            }
-          },
-          {
-            "source": {
-              "$workers.scriptName": "example-site",
-              "$metadata.accountId": "0000000000000000000000000000ex01",
-              "level": "info",
-              "event": "entry.published",
-              "timestamp": "2026-09-14T08:55:02.000Z",
-              "concept": "posts",
-              "id": "example-post-id",
-              "editor": "example-editor-placeholder",
-              "batch": false
-            },
-            "dataset": "cloudflare-workers",
-            "timestamp": 1789931342614,
-            "$workers": {
-              "truncated": false,
-              "scriptName": "example-site",
-              "scriptVersion": {
-                "id": "00000000-0000-4000-8000-232a445a61d2"
-              },
-              "eventType": "fetch",
-              "executionModel": "stateless"
-            },
-            "$metadata": {
-              "id": "01M303N7YP0000000000000004",
-              "requestId": "1583f1016be54b87c2ad20eef176a734",
-              "rayId": "26ede3e969ee1bc3",
-              "traceId": "c47f4f1653bc507453602f9d4f932e95",
-              "spanId": "0d8117b70bacf700",
-              "trigger": "GET /",
-              "service": "example-site",
-              "level": "info",
               "account": "0000000000000000000000000000ex01",
               "type": "cf-worker",
               "origin": "fetch"

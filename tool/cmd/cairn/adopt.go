@@ -78,7 +78,7 @@ func newAdoptCmd(d deps, rf *rootFlags) *cobra.Command {
 func discoverCandidates(ctx context.Context, d deps) ([]candidateLine, error) {
 	clients := buildClients(d)
 	if !clients.HaveCF {
-		return nil, fmt.Errorf("cairn: no Cloudflare credentials found.\nRun `cairn auth set CAIRN_CF_READ_TOKEN` to store one")
+		return nil, noCloudflareCredentialError()
 	}
 	resolved, _ := loadEnv(d.env, d.secretProviders()...)
 
@@ -147,7 +147,7 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 
 	clients := buildClients(d)
 	if !clients.HaveCF {
-		return fmt.Errorf("cairn: no Cloudflare credentials found.\nRun `cairn auth set CAIRN_CF_READ_TOKEN` to store one")
+		return noCloudflareCredentialError()
 	}
 	resolved, _ := loadEnv(d.env, d.secretProviders()...)
 

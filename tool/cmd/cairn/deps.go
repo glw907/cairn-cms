@@ -9,6 +9,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -28,12 +29,23 @@ type deps struct {
 	// because secrets keeps the two interfaces separate: a backend that answers reads and
 	// refuses writes has to stay expressible.
 	keyringWriter secrets.Writer
+	// keyringDeleter is the delete half, which auth unset alone uses, kept as its own field for
+	// the same reason keyringWriter is separate from keyring.
+	keyringDeleter secrets.Deleter
+	// keyringStatus reports whether name has an entry in the keyring, distinguishing an absent
+	// entry from a keyring that could not be consulted at all: the distinction keyring's own Get
+	// deliberately flattens away for credential resolution. auth set, auth list, and auth unset
+	// call this when they must report the difference to an operator.
+	keyringStatus func(name string) (present bool, err error)
 	// transport carries every HTTP request the provider clients make.
 	transport http.RoundTripper
 	// resolver answers every DNS lookup.
 	resolver providers.Resolver
 	// registryDir resolves the directory the site registry lives in.
 	registryDir func() (string, error)
+	// registrySource resolves the same directory as registryDir, alongside the store.Source
+	// that chose it, for sites list --verbose.
+	registrySource func() (string, store.Source, error)
 	// now is the clock a sweep reads. It is a field rather than a time.Now call inside a
 	// command so a replayed run settles against the same instant.
 	now func() time.Time
@@ -65,15 +77,15 @@ func buildClients(d deps) health.Clients {
 		NPM:   providers.NewNPM(d.transport),
 		Probe: providers.NewProbe(d.transport, d.resolver),
 	}
-	if !isMissing(missing, "CAIRN_CF_ACCOUNT_ID") && !isMissing(missing, "CAIRN_CF_READ_TOKEN") {
+	if !isMissing(missing, varCFAccountID) && !isMissing(missing, varCFReadToken) {
 		c.CF = providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), d.transport)
 		c.HaveCF = true
-		c.CFFrom = credentialSource(resolved, "CAIRN_CF_READ_TOKEN")
+		c.CFFrom = credentialSource(resolved, varCFReadToken)
 	}
-	if !isMissing(missing, "CAIRN_GH_READ_TOKEN") {
+	if !isMissing(missing, varGHReadToken) {
 		c.GH = providers.NewGitHub(resolved.ghToken(), d.transport)
 		c.HaveGH = true
-		c.GHFrom = credentialSource(resolved, "CAIRN_GH_READ_TOKEN")
+		c.GHFrom = credentialSource(resolved, varGHReadToken)
 	}
 	return c
 }
@@ -90,15 +102,19 @@ func credentialSource(e env, name string) string {
 
 // newDeps returns the production dependency set.
 func newDeps() deps {
+	k := secrets.NewKeyring()
 	return deps{
-		env:           osEnviron,
-		keyring:       secrets.NewKeyring(),
-		keyringWriter: secrets.NewKeyring(),
-		transport:     http.DefaultTransport,
-		resolver:      net.DefaultResolver,
-		registryDir:   defaultRegistryDir,
-		now:           time.Now,
-		readPassword:  promptPassword,
-		exit:          os.Exit,
+		env:            osEnviron,
+		keyring:        k,
+		keyringWriter:  k,
+		keyringDeleter: k,
+		keyringStatus:  k.Status,
+		transport:      http.DefaultTransport,
+		resolver:       net.DefaultResolver,
+		registryDir:    defaultRegistryDir,
+		registrySource: defaultRegistrySource,
+		now:            time.Now,
+		readPassword:   promptPassword,
+		exit:           os.Exit,
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/logs"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -29,13 +30,14 @@ type healthFlags struct {
 	since string
 }
 
-// newHealthCmd builds cairn health.
+// newHealthCmd builds cairn health. With a site named, it sweeps that one site; bare, it sweeps
+// every site the registry holds, in health_sweep.go.
 func newHealthCmd(d deps, rf *rootFlags) *cobra.Command {
 	var f healthFlags
 
 	cmd := &cobra.Command{
 		Use:     "health [<site>]",
-		Short:   "Run the read-only health checks against one site",
+		Short:   "Run the read-only health checks against one site, or every site when none is named",
 		Example: "cairn health ecxc-ski-a1b2c3 --json",
 		GroupID: groupSite,
 		Args:    cobra.MaximumNArgs(1),
@@ -51,11 +53,9 @@ func newHealthCmd(d deps, rf *rootFlags) *cobra.Command {
 	return cmd
 }
 
-// runHealth sweeps one site's checks and exits on the run's verdict.
+// runHealth resolves the registry and either sweeps every registered site (bare cairn health,
+// health_sweep.go) or a single named one, and exits on the run's verdict.
 func runHealth(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, args []string) error {
-	if len(args) == 0 {
-		return fmt.Errorf("cairn: cairn health names one site.\nRun `cairn sites list` to see the sites cairn knows")
-	}
 	window, err := parseSince(f.since)
 	if err != nil {
 		return err
@@ -65,9 +65,18 @@ func runHealth(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, args []
 	if err != nil {
 		return err
 	}
-	rec, err := st.Load(args[0])
+
+	if len(args) == 1 {
+		return runHealthSingle(cmd, d, rf, f, st, args[0], window)
+	}
+	return runHealthSweep(cmd, d, rf, f, st, window)
+}
+
+// runHealthSingle sweeps one named site's checks and exits on the run's verdict.
+func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, id string, window time.Duration) error {
+	rec, err := st.Load(id)
 	if err != nil {
-		return fmt.Errorf("cairn: no site named %q.\nRun `cairn sites list` to see the sites cairn knows", args[0])
+		return fmt.Errorf("cairn: no site named %q.\nRun `cairn sites list` to see the sites cairn knows", id)
 	}
 
 	ctx, cancel := rf.deadline(commandContext(cmd))

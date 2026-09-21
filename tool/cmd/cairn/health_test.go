@@ -142,19 +142,18 @@ func TestHealthJSONAndQuietTogetherIsNotAUsageError(t *testing.T) {
 	}
 }
 
-// TestHealthNamesSitesListWhenTheSiteIsUnknown covers both shapes an operator gets wrong: no
-// site at all, and a site the registry does not hold.
+// TestHealthNamesSitesListWhenTheSiteIsUnknown covers the shape an operator gets wrong: a site
+// the registry does not hold. Bare `cairn health` no longer errors this way: it sweeps every
+// registered site, which TestHealthSweepOverAnEmptyRegistryIsUnknown covers instead.
 func TestHealthNamesSitesListWhenTheSiteIsUnknown(t *testing.T) {
 	d, _ := testDeps(t)
 
-	for _, args := range [][]string{{"health"}, {"health", "no-such-site-a1b2c3"}} {
-		_, _, err := execTree(t, d, args...)
-		if err == nil {
-			t.Fatalf("%v succeeded; want an error", args)
-		}
-		if !strings.Contains(err.Error(), "cairn sites list") {
-			t.Errorf("%v failed with %q, which does not name `cairn sites list`", args, err)
-		}
+	_, _, err := execTree(t, d, "health", "no-such-site-a1b2c3")
+	if err == nil {
+		t.Fatal("health no-such-site-a1b2c3 succeeded; want an error")
+	}
+	if !strings.Contains(err.Error(), "cairn sites list") {
+		t.Errorf("failed with %q, which does not name `cairn sites list`", err)
 	}
 }
 

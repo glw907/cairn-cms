@@ -200,14 +200,14 @@ func runProbeToken(cmd *cobra.Command, d deps) error {
 		worst = spine.CombineState(worst, s)
 	}
 
-	if isMissing(missing, "CAIRN_CF_ACCOUNT_ID") || isMissing(missing, "CAIRN_CF_READ_TOKEN") {
+	if isMissing(missing, varCFAccountID) || isMissing(missing, varCFReadToken) {
 		_, _ = fmt.Fprintln(out, "Cloudflare: skipped, a credential is missing")
 		raise(spine.Unknown)
 	} else {
 		raise(probeCloudflare(ctx, out, providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), rec), resolved.accountID(), rec))
 	}
 
-	if isMissing(missing, "CAIRN_GH_READ_TOKEN") {
+	if isMissing(missing, varGHReadToken) {
 		_, _ = fmt.Fprintln(out, "GitHub: skipped, a credential is missing")
 		raise(spine.Unknown)
 	} else {

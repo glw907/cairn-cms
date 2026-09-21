@@ -106,8 +106,8 @@ func TestKeyringSetDeadlineMiss(t *testing.T) {
 	err := NewKeyring().Set("CAIRN_GH_READ_TOKEN", "ghp_example")
 	elapsed := time.Since(start)
 
-	if !errors.Is(err, errKeyringUnavailable) {
-		t.Errorf("Set() on a blocked backend = %v, want errKeyringUnavailable", err)
+	if !errors.Is(err, ErrKeyringUnavailable) {
+		t.Errorf("Set() on a blocked backend = %v, want ErrKeyringUnavailable", err)
 	}
 	if elapsed > time.Second {
 		t.Fatalf("Set() took %s, want it to return at the deadline", elapsed)
@@ -116,7 +116,7 @@ func TestKeyringSetDeadlineMiss(t *testing.T) {
 
 // TestKeyringSetDropsBackendText swaps keyringSet for a func that fails with a distinctive
 // string and asserts Set's returned error carries neither that string nor any other backend
-// text, matching errKeyringUnavailable's own doc comment.
+// text, matching ErrKeyringUnavailable's own doc comment.
 func TestKeyringSetDropsBackendText(t *testing.T) {
 	prevSet := keyringSet
 	keyringSet = func(string, string, string) error {
@@ -127,17 +127,119 @@ func TestKeyringSetDropsBackendText(t *testing.T) {
 	})
 
 	err := NewKeyring().Set("CAIRN_GH_READ_TOKEN", "ghp_example")
-	if !errors.Is(err, errKeyringUnavailable) {
-		t.Fatalf("Set() on a backend failure = %v, want errKeyringUnavailable", err)
+	if !errors.Is(err, ErrKeyringUnavailable) {
+		t.Fatalf("Set() on a backend failure = %v, want ErrKeyringUnavailable", err)
 	}
 	if strings.Contains(err.Error(), "XYZZY-BACKEND-REFUSED") {
 		t.Errorf("Set() error = %q, must not carry the backend's own text", err.Error())
 	}
 }
 
+// TestKeyringDeleteRemovesAStoredValue proves the round trip: a value Set writes is gone from
+// Get after Delete.
+func TestKeyringDeleteRemovesAStoredValue(t *testing.T) {
+	zkeyring.MockInit()
+
+	k := NewKeyring()
+	if err := k.Set("CAIRN_GH_READ_TOKEN", "ghp_example"); err != nil {
+		t.Fatalf("Set() = %v", err)
+	}
+	if err := k.Delete("CAIRN_GH_READ_TOKEN"); err != nil {
+		t.Fatalf("Delete() = %v, want nil", err)
+	}
+	if _, ok, err := k.Get("CAIRN_GH_READ_TOKEN"); ok || err != nil {
+		t.Errorf("Get() after Delete() = (_, %v, %v), want (_, false, nil)", ok, err)
+	}
+}
+
+// TestKeyringDeleteOnAnAbsentEntryReportsErrNotFound covers the row an unset command's success
+// message hinges on: deleting a name the keyring never held is not a generic failure.
+func TestKeyringDeleteOnAnAbsentEntryReportsErrNotFound(t *testing.T) {
+	zkeyring.MockInit()
+
+	if err := NewKeyring().Delete("CAIRN_CF_READ_TOKEN"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("Delete() on an absent entry = %v, want ErrNotFound", err)
+	}
+}
+
+// TestKeyringDeleteDeadlineMiss swaps keyringDelete for a func that never returns, the delete-side
+// twin of TestKeyringSetDeadlineMiss.
+func TestKeyringDeleteDeadlineMiss(t *testing.T) {
+	prevDelete, prevDeadline := keyringDelete, keyringDeadline
+	keyringDelete = func(string, string) error {
+		select {}
+	}
+	keyringDeadline = 20 * time.Millisecond
+	t.Cleanup(func() {
+		keyringDelete, keyringDeadline = prevDelete, prevDeadline
+	})
+
+	start := time.Now()
+	err := NewKeyring().Delete("CAIRN_GH_READ_TOKEN")
+	elapsed := time.Since(start)
+
+	if !errors.Is(err, ErrKeyringUnavailable) {
+		t.Errorf("Delete() on a blocked backend = %v, want ErrKeyringUnavailable", err)
+	}
+	if elapsed > time.Second {
+		t.Fatalf("Delete() took %s, want it to return at the deadline", elapsed)
+	}
+}
+
+// TestKeyringDeleteDropsBackendText mirrors TestKeyringSetDropsBackendText for the delete path.
+func TestKeyringDeleteDropsBackendText(t *testing.T) {
+	prevDelete := keyringDelete
+	keyringDelete = func(string, string) error {
+		return errors.New("XYZZY-BACKEND-REFUSED")
+	}
+	t.Cleanup(func() {
+		keyringDelete = prevDelete
+	})
+
+	err := NewKeyring().Delete("CAIRN_GH_READ_TOKEN")
+	if !errors.Is(err, ErrKeyringUnavailable) {
+		t.Fatalf("Delete() on a backend failure = %v, want ErrKeyringUnavailable", err)
+	}
+	if strings.Contains(err.Error(), "XYZZY-BACKEND-REFUSED") {
+		t.Errorf("Delete() error = %q, must not carry the backend's own text", err.Error())
+	}
+}
+
+// TestKeyringStatusDistinguishesPresentAbsentAndUnavailable is the direct read auth set, auth
+// list, and auth unset call for the distinction Get deliberately flattens away.
+func TestKeyringStatusDistinguishesPresentAbsentAndUnavailable(t *testing.T) {
+	t.Run("present", func(t *testing.T) {
+		zkeyring.MockInit()
+		if err := NewKeyring().Set("CAIRN_GH_READ_TOKEN", "ghp_example"); err != nil {
+			t.Fatalf("Set() = %v", err)
+		}
+		present, err := NewKeyring().Status("CAIRN_GH_READ_TOKEN")
+		if !present || err != nil {
+			t.Errorf("Status() = (%v, %v), want (true, nil)", present, err)
+		}
+	})
+
+	t.Run("absent", func(t *testing.T) {
+		zkeyring.MockInit()
+		present, err := NewKeyring().Status("CAIRN_CF_READ_TOKEN")
+		if present || err != nil {
+			t.Errorf("Status() = (%v, %v), want (false, nil)", present, err)
+		}
+	})
+
+	t.Run("unavailable", func(t *testing.T) {
+		zkeyring.MockInitWithError(errors.New("dbus: could not connect"))
+		t.Cleanup(zkeyring.MockInit)
+		present, err := NewKeyring().Status("CAIRN_CF_READ_TOKEN")
+		if present || !errors.Is(err, ErrKeyringUnavailable) {
+			t.Errorf("Status() = (%v, %v), want (false, ErrKeyringUnavailable)", present, err)
+		}
+	})
+}
+
 // TestReadClassifiesItsFailures covers the distinction Get flattens away but a writing caller
 // needs: an entry the keyring does not hold reports ErrNotFound, while a keyring that cannot be
-// consulted at all, whether it failed or ran past the deadline, reports errKeyringUnavailable.
+// consulted at all, whether it failed or ran past the deadline, reports ErrKeyringUnavailable.
 func TestReadClassifiesItsFailures(t *testing.T) {
 	t.Run("absent entry is not found", func(t *testing.T) {
 		zkeyring.MockInit()
@@ -149,8 +251,8 @@ func TestReadClassifiesItsFailures(t *testing.T) {
 	t.Run("unreachable bus is unavailable", func(t *testing.T) {
 		zkeyring.MockInitWithError(errors.New("dbus: could not connect"))
 		t.Cleanup(zkeyring.MockInit)
-		if _, err := read("CAIRN_CF_READ_TOKEN"); !errors.Is(err, errKeyringUnavailable) {
-			t.Errorf("read() on an unreachable bus = %v, want errKeyringUnavailable", err)
+		if _, err := read("CAIRN_CF_READ_TOKEN"); !errors.Is(err, ErrKeyringUnavailable) {
+			t.Errorf("read() on an unreachable bus = %v, want ErrKeyringUnavailable", err)
 		}
 	})
 
@@ -163,8 +265,8 @@ func TestReadClassifiesItsFailures(t *testing.T) {
 		t.Cleanup(func() {
 			keyringGet, keyringDeadline = prevGet, prevDeadline
 		})
-		if _, err := read("CAIRN_GH_READ_TOKEN"); !errors.Is(err, errKeyringUnavailable) {
-			t.Errorf("read() on a blocked backend = %v, want errKeyringUnavailable", err)
+		if _, err := read("CAIRN_GH_READ_TOKEN"); !errors.Is(err, ErrKeyringUnavailable) {
+			t.Errorf("read() on a blocked backend = %v, want ErrKeyringUnavailable", err)
 		}
 	})
 

@@ -204,3 +204,34 @@ func TestOSGetenvOnlyInEnvGo(t *testing.T) {
 
 var _ secrets.Provider = fakeProvider{}
 var _ secrets.Provider = fakeFailingProvider{}
+
+// TestCredentialVariableNamesAreSpelledOnlyInEnvGo asserts credentialVars is the only place a
+// CAIRN_CF_ or CAIRN_GH_ variable name is spelled. It is scoped narrowly, per the 2026-09-21
+// ratification: non-test .go files under cmd/cairn only (a bare CAIRN_ grep also matches
+// store/paths.go's CAIRN_STATE_DIR and providers/cloudflare.go's CAIRN_CLOUDFLARE_API_BASE,
+// neither a credential), the CAIRN_CF_/CAIRN_GH_ prefixes only, and env.go and messages.go
+// (created by Task 19c-ii, and exempted here by name in advance) are the two allowed files.
+func TestCredentialVariableNamesAreSpelledOnlyInEnvGo(t *testing.T) {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		if name == "env.go" || name == "messages.go" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(".", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, prefix := range []string{"CAIRN_CF_", "CAIRN_GH_"} {
+			if strings.Contains(string(data), prefix) {
+				t.Errorf("%s spells a %s variable name; read it from credentialVars, authVariables, or one of env's own accessors instead", name, prefix)
+			}
+		}
+	}
+}

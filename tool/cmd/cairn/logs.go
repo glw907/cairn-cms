@@ -67,7 +67,7 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 
 	clients := buildClients(d)
 	if !clients.HaveCF {
-		return fmt.Errorf("cairn: no Cloudflare credentials found.\nRun `cairn auth set CAIRN_CF_READ_TOKEN` to store one")
+		return noCloudflareCredentialError()
 	}
 
 	ctx, cancel := rf.deadline(commandContext(cmd))

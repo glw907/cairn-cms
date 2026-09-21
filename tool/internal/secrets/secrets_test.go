@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -114,5 +115,34 @@ func TestResolveErrorNeverPrintsTheWrappedText(t *testing.T) {
 	}
 	if !strings.Contains(resolveErr.Unwrap().Error(), sentinel) {
 		t.Error("Unwrap() did not carry the sentinel, but it is the one permitted path")
+	}
+}
+
+// TestKeyringSatisfiesProviderWriterAndDeleter asserts Keyring implements all three seams a
+// credential backend can offer, over one value rather than three separate assertions, so a
+// future seam this type stops implementing fails here rather than at a compile error a reader
+// has to trace back.
+func TestKeyringSatisfiesProviderWriterAndDeleter(t *testing.T) {
+	var k any = Keyring{}
+	if _, ok := k.(Provider); !ok {
+		t.Error("Keyring does not implement Provider")
+	}
+	if _, ok := k.(Writer); !ok {
+		t.Error("Keyring does not implement Writer")
+	}
+	if _, ok := k.(Deleter); !ok {
+		t.Error("Keyring does not implement Deleter")
+	}
+}
+
+// TestDeleterDeclaresExactlyOneMethod asserts Deleter stays a single-method seam rather than
+// growing into a second Writer: a backend that can set but not delete must stay expressible.
+func TestDeleterDeclaresExactlyOneMethod(t *testing.T) {
+	typ := reflect.TypeFor[Deleter]()
+	if got := typ.NumMethod(); got != 1 {
+		t.Errorf("Deleter declares %d methods, want exactly 1", got)
+	}
+	if typ.Method(0).Name != "Delete" {
+		t.Errorf("Deleter's one method is %q, want %q", typ.Method(0).Name, "Delete")
 	}
 }

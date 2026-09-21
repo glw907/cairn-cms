@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -32,14 +33,17 @@ func testDeps(t *testing.T) (deps, *int) {
 	}
 	code := new(int)
 	return deps{
-		env:           fakeEnv(nil),
-		keyring:       fakeProvider{name: "keyring"},
-		keyringWriter: &fakeWriter{},
-		transport:     routeRoundTripper{},
-		registryDir:   func() (string, error) { return dir, nil },
-		now:           fixedNow,
-		readPassword:  fakeReadPassword("", errors.New("no terminal")),
-		exit:          func(c int) { *code = c },
+		env:            fakeEnv(nil),
+		keyring:        fakeProvider{name: "keyring"},
+		keyringWriter:  &fakeWriter{},
+		keyringDeleter: &fakeDeleter{},
+		keyringStatus:  func(string) (bool, error) { return false, nil },
+		transport:      routeRoundTripper{},
+		registryDir:    func() (string, error) { return dir, nil },
+		registrySource: func() (string, store.Source, error) { return dir, store.SourceUserConfig, nil },
+		now:            fixedNow,
+		readPassword:   fakeReadPassword("", errors.New("no terminal")),
+		exit:           func(c int) { *code = c },
 	}, code
 }
 
@@ -403,4 +407,36 @@ func mustDeps(t *testing.T) deps {
 	t.Helper()
 	d, _ := testDeps(t)
 	return d
+}
+
+// TestOnlyRegistryGoNamesStoreOpen asserts registry.go stays the one path from cmd/cairn into
+// the store: a second call site would mean the command that added it grew its own registry walk
+// instead of sharing openRegistry.
+func TestOnlyRegistryGoNamesStoreOpen(t *testing.T) {
+	for _, rel := range toolGoFiles(t) {
+		if !strings.HasPrefix(rel, "cmd/cairn/") || rel == "cmd/cairn/registry.go" {
+			continue
+		}
+		if strings.Contains(readToolFile(t, rel), "store.Open(") {
+			t.Errorf("%s calls store.Open; open the registry through openRegistry in registry.go instead", rel)
+		}
+	}
+}
+
+// TestProviderConstructorsHaveAProductionCaller asserts providers.NewNPM and providers.NewProbe
+// are each named from at least one non-test file, so the two clients buildClients wires stay
+// wired rather than becoming dead code a later refactor silently drops.
+func TestProviderConstructorsHaveAProductionCaller(t *testing.T) {
+	for _, want := range []string{"providers.NewNPM(", "providers.NewProbe("} {
+		found := false
+		for _, rel := range toolGoFiles(t) {
+			if strings.HasPrefix(rel, "cmd/cairn/") && strings.Contains(readToolFile(t, rel), want) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("%s is named from no non-test file under cmd/cairn", want)
+		}
+	}
 }

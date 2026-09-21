@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
@@ -26,12 +27,24 @@ type credentialVar struct {
 	secret bool
 }
 
+// varCFAccountID, varCFReadToken, and varGHReadToken name, not hold, the three CAIRN_CF_/CAIRN_GH_
+// environment variables loadEnv reads; each is a bare variable name, never a credential value,
+// spelled exactly once, here. Every other file under cmd/cairn refers to one of the three through
+// these constants (or through credentialVars, authVariables, and env's own accessors, which are
+// all built from them) rather than spelling the name again, which is what
+// TestCredentialVariableNamesAreSpelledOnlyInEnvGo checks.
+const (
+	varCFAccountID = "CAIRN_CF_ACCOUNT_ID" // secret-guard-allow: a variable name, not a value
+	varCFReadToken = "CAIRN_CF_READ_TOKEN" // secret-guard-allow: a variable name, not a value
+	varGHReadToken = "CAIRN_GH_READ_TOKEN" // secret-guard-allow: a variable name, not a value
+)
+
 // credentialVars lists the three variables loadEnv resolves, in resolution
 // order. A fourth variable is a one-line addition here.
 var credentialVars = []credentialVar{
-	{name: "CAIRN_CF_ACCOUNT_ID"},
-	{name: "CAIRN_CF_READ_TOKEN", secret: true},
-	{name: "CAIRN_GH_READ_TOKEN", secret: true},
+	{name: varCFAccountID},
+	{name: varCFReadToken, secret: true},
+	{name: varGHReadToken, secret: true},
 }
 
 // authVariables lists the same three names, in the same order, for cairn
@@ -81,7 +94,7 @@ const accountIDVar nonSecretVar = iota
 func (v nonSecretVar) name() string {
 	switch v {
 	case accountIDVar:
-		return "CAIRN_CF_ACCOUNT_ID"
+		return varCFAccountID
 	default:
 		return ""
 	}
@@ -116,13 +129,13 @@ func (e env) credential(name string) providers.Credential {
 // cfToken returns the resolved CAIRN_CF_READ_TOKEN value, wrapped so it
 // never prints by accident.
 func (e env) cfToken() providers.Credential {
-	return e.credential("CAIRN_CF_READ_TOKEN")
+	return e.credential(varCFReadToken)
 }
 
 // ghToken returns the resolved CAIRN_GH_READ_TOKEN value, wrapped so it
 // never prints by accident.
 func (e env) ghToken() providers.Credential {
-	return e.credential("CAIRN_GH_READ_TOKEN")
+	return e.credential(varGHReadToken)
 }
 
 // sourceLines returns e's resolutions with every empty display turned into
@@ -137,6 +150,13 @@ func (e env) sourceLines() []resolution {
 		lines[i] = r
 	}
 	return lines
+}
+
+// noCloudflareCredentialError is the error logs and adopt both return when buildClients resolved
+// no Cloudflare credential at all. One function, so the two commands cannot drift into naming a
+// different variable from each other's copy of the same message.
+func noCloudflareCredentialError() error {
+	return fmt.Errorf("cairn: no Cloudflare credentials found.\nRun `cairn auth set %s` to store one", varCFReadToken)
 }
 
 // loadEnv resolves every variable in credentialVars by trying envFn first

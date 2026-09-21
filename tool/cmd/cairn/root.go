@@ -45,6 +45,11 @@ type rootFlags struct {
 	showVersion bool
 	// timeout is the whole run's wall-clock deadline.
 	timeout time.Duration
+	// timeoutSet reports whether the operator passed --timeout explicitly, as opposed to the
+	// flag sitting at its default value. A value equal to the default cannot be told apart from
+	// an unset default by value alone, since 120 seconds is a value an operator can also type;
+	// PersistentPreRunE sets this from the flag's own Changed bit.
+	timeoutSet bool
 	// verbose asks for the identifiers every command otherwise withholds.
 	verbose bool
 	// quiet suppresses an OK run's body entirely.
@@ -95,7 +100,10 @@ func newRootCmd(d deps) *cobra.Command {
 		// subcommand is dead weight that drifts out of step with the root.
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		PersistentPreRunE: func(*cobra.Command, []string) error {
+		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
+			if flag := c.Flags().Lookup("timeout"); flag != nil {
+				f.timeoutSet = flag.Changed
+			}
 			return f.validate()
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {

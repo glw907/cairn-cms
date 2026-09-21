@@ -8,6 +8,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/internal/store"
 )
 
 // probeRegistryGitHub discovers the registry's sites and hands them to probeGitHub, reporting
@@ -19,7 +20,7 @@ func probeRegistryGitHub(ctx context.Context, out, errOut io.Writer, gh *provide
 		_, _ = fmt.Fprintf(errOut, "auth probe: %v\n", err)
 		return spine.Unknown
 	}
-	sites, err := discoverSites(dir)
+	sites, err := store.Discover(dir)
 	if err != nil {
 		_, _ = fmt.Fprintf(errOut, "auth probe: %v\n", err)
 		return spine.Unknown
@@ -34,7 +35,7 @@ func probeRegistryGitHub(ctx context.Context, out, errOut io.Writer, gh *provide
 // public or private. It warns on errOut when every probed repository is public, since a public
 // repository proves nothing about a fine-grained token's own permissions. It returns the worst
 // state among every check.
-func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, sites []registrySite) spine.State {
+func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, sites []store.Site) spine.State {
 	_, _ = fmt.Fprintln(out, "GitHub:")
 	worst := spine.OK
 	raise := func(s spine.State) {
@@ -66,13 +67,13 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 	}
 
 	for _, s := range sites {
-		_, shaErr := gh.HeadSHA(ctx, s.owner, s.repo, "main")
-		report("commits/main", s.owner, s.repo, fmt.Sprintf("/repos/%s/%s/commits/main", s.owner, s.repo), shaErr)
+		_, shaErr := gh.HeadSHA(ctx, s.Owner, s.Repo, "main")
+		report("commits/main", s.Owner, s.Repo, fmt.Sprintf("/repos/%s/%s/commits/main", s.Owner, s.Repo), shaErr)
 
-		_, contentErr := gh.FileAtRef(ctx, s.owner, s.repo, "package.json", "main")
-		report("contents/package.json", s.owner, s.repo, fmt.Sprintf("/repos/%s/%s/contents/package.json", s.owner, s.repo), contentErr)
+		_, contentErr := gh.FileAtRef(ctx, s.Owner, s.Repo, "package.json", "main")
+		report("contents/package.json", s.Owner, s.Repo, fmt.Sprintf("/repos/%s/%s/contents/package.json", s.Owner, s.Repo), contentErr)
 
-		repos = append(repos, probeRepo(s.owner, s.repo))
+		repos = append(repos, probeRepo(s.Owner, s.Repo))
 	}
 
 	_, engineErr := gh.FileAtRef(ctx, engineOwner, engineRepo, "CHANGELOG.md", "main")

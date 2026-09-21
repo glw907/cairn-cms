@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"slices"
 	"strings"
 	"sync"
 
+	"github.com/glw907/cairn-cms/tool/internal/secrets"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -84,8 +86,24 @@ func newAuthCmd(d deps) *cobra.Command {
 		Example: "cairn auth list",
 		GroupID: groupCredentials,
 	}
-	cmd.AddCommand(newAuthSetCmd(d), newAuthListCmd(d), newAuthProbeCmd(d))
+	cmd.AddCommand(newAuthSetCmd(d), newAuthListCmd(d), newAuthUnsetCmd(d), newAuthProbeCmd(d))
 	return cmd
+}
+
+// keyringUnavailableDisplay is auth list's line for a variable the keyring holds no answer for
+// because the keyring itself could not be reached, distinct from "not set": the operator's
+// credential may well be sitting in the keyring, unreadable right now rather than absent.
+// Adapted from copy-standard.md section 3.8's "keyring unavailable" row for one status-line word
+// rather than that row's own three-line boundary error; new to this table and owed to Task
+// 22a's editorial gate.
+const keyringUnavailableDisplay = "keyring unavailable, set in the environment instead"
+
+// keyringUnavailableError is the error auth set and auth unset return when the keyring itself
+// could not be reached, naming the environment-variable fallback the way copy-standard.md
+// section 3.8's "keyring unavailable" row does; new to this table and owed to Task 22a's
+// editorial gate.
+func keyringUnavailableError(name string) error {
+	return fmt.Errorf("cairn: the OS keyring did not open.\nSet %s in the environment instead", name)
 }
 
 // newAuthSetCmd builds cairn auth set <name>. Its prompt and its keyring both come from d, so
@@ -94,7 +112,7 @@ func newAuthSetCmd(d deps) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set <name>",
 		Short:   "Prompt for a value and store it in the keyring",
-		Example: "cairn auth set CAIRN_CF_READ_TOKEN",
+		Example: "cairn auth set " + varCFReadToken,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
@@ -106,10 +124,43 @@ func newAuthSetCmd(d deps) *cobra.Command {
 				return fmt.Errorf("auth set: %w", err)
 			}
 			if err := d.keyringWriter.Set(name, value); err != nil {
+				if errors.Is(err, secrets.ErrKeyringUnavailable) {
+					return keyringUnavailableError(name)
+				}
 				return fmt.Errorf("auth set: write keyring: %w", err)
 			}
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s stored in the keyring\n", name)
 			return err
+		},
+	}
+}
+
+// newAuthUnsetCmd builds cairn auth unset <name>, the Deleter half of auth set's Writer. Deleting
+// a name the keyring does not hold is success, not an error: an operator clearing a rotated
+// token's stale entry should not have to know first whether one exists.
+func newAuthUnsetCmd(d deps) *cobra.Command {
+	return &cobra.Command{
+		Use:     "unset <name>",
+		Short:   "Delete one credential's keyring entry",
+		Example: "cairn auth unset " + varCFReadToken,
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			if !isAuthVariable(name) {
+				return fmt.Errorf("auth unset: %q is not one of %s", name, strings.Join(authVariables, ", "))
+			}
+			switch err := d.keyringDeleter.Delete(name); {
+			case err == nil:
+				_, ferr := fmt.Fprintf(cmd.OutOrStdout(), "%s deleted from the keyring\n", name)
+				return ferr
+			case errors.Is(err, secrets.ErrNotFound):
+				_, ferr := fmt.Fprintf(cmd.OutOrStdout(), "%s was not stored in the keyring\n", name)
+				return ferr
+			case errors.Is(err, secrets.ErrKeyringUnavailable):
+				return keyringUnavailableError(name)
+			default:
+				return fmt.Errorf("auth unset: %w", err)
+			}
 		},
 	}
 }
@@ -124,11 +175,25 @@ func newAuthListCmd(d deps) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			resolved, _ := loadEnv(d.env, d.secretProviders()...)
 			for _, r := range resolved.sourceLines() {
-				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", r.name, r.display); err != nil {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", r.name, keyringAwareDisplay(d, r)); err != nil {
 					return err
 				}
 			}
 			return nil
 		},
 	}
+}
+
+// keyringAwareDisplay returns r's display line, unchanged when anything resolved it, and
+// distinguishing a keyring that could not be consulted from one that simply holds no entry when
+// nothing did. loadEnv's own resolution, and so credential-resolution behavior, is untouched:
+// this only refines what auth list prints for a variable Resolve already reported as a miss.
+func keyringAwareDisplay(d deps, r resolution) string {
+	if r.display != "not set" || d.keyringStatus == nil {
+		return r.display
+	}
+	if _, err := d.keyringStatus(r.name); errors.Is(err, secrets.ErrKeyringUnavailable) {
+		return keyringUnavailableDisplay
+	}
+	return r.display
 }

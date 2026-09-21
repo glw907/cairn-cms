@@ -73,7 +73,10 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 		}
 	}
 
-	if f.expectSites > 0 && len(entries) != f.expectSites {
+	// An empty registry reuses spine.ErrExpectSites too, even with no --expect-sites: the tool
+	// cannot say whether zero is every site or none of them were ever registered, the same
+	// reason a count mismatch is UNKNOWN rather than OK.
+	if len(entries) == 0 || (f.expectSites > 0 && len(entries) != f.expectSites) {
 		listErrs = append(listErrs, spine.ErrExpectSites)
 	}
 
@@ -94,14 +97,15 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	return nil
 }
 
-// printRegistrySource writes the directory the listing read and the precedence rule that chose
-// it, which --verbose is what asks for: a path is an identifier like any other.
+// printRegistrySource writes the directory the listing read and the store.Source that chose it,
+// which --verbose is what asks for: a path is an identifier like any other, and the precedence
+// rule that picked it is the one fact --verbose adds beyond the plain listing.
 func printRegistrySource(cmd *cobra.Command, d deps) error {
-	dir, err := d.registryDir()
+	dir, source, err := d.registrySource()
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(cmd.OutOrStdout(), "registry\t%s\n", dir)
+	_, err = fmt.Fprintf(cmd.OutOrStdout(), "registry\t%s\t%s\n", dir, source)
 	return err
 }
 

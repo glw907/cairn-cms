@@ -430,7 +430,7 @@ func TestProbeTokenExitUnknownWhenRegistryDirUnresolvable(t *testing.T) {
 func TestProbeTokenExitUnknownWhenRegistryUnreadable(t *testing.T) {
 	env := testEnv()
 	rt := mergeRoutes(cloudflareOKRoutes(), githubOKRoutesForEngine())
-	// A registry directory that does not exist makes store.Open fail inside discoverSites,
+	// A registry directory that does not exist makes store.Open fail inside store.Discover,
 	// rather than the registryDir callback itself.
 	missing := t.TempDir() + "/missing"
 

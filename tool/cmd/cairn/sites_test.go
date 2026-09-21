@@ -70,6 +70,7 @@ func TestSitesListExitCodes(t *testing.T) {
 		{"a site the registry holds is OK", 1, nil, spine.VerdictOK},
 		{"an expected count that matches is OK", 2, []string{"--expect-sites", "2"}, spine.VerdictOK},
 		{"an expected count that does not match is UNKNOWN", 2, []string{"--expect-sites", "3"}, spine.VerdictUnknown},
+		{"an empty registry with no --expect-sites is UNKNOWN", 0, nil, spine.VerdictUnknown},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -112,5 +113,8 @@ func TestSitesListVerbosePrintsTheRegistryDirectory(t *testing.T) {
 	}
 	if !strings.Contains(verbose, dir) {
 		t.Errorf("the verbose listing %q does not print the registry path", verbose)
+	}
+	if !strings.Contains(verbose, store.SourceUserConfig.String()) {
+		t.Errorf("the verbose listing %q does not name the store.Source that chose the path", verbose)
 	}
 }

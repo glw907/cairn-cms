@@ -1,6 +1,7 @@
 # Draft docs pass A: the tool's contract pages
 
-**Goal:** Put the Go `cairn` tool's exit-code and JSON contracts, and their schemas, under
+**Goal:** Put the Go `cairn` tool's exit-code, JSON, and `cairn doctor` contracts, and their
+schemas, under
 `docs/reference/`, graded against a scripter-or-agent profile, with the `tool/` side moved in the
 same merge, so the `0.97.0` tarball carries them.
 
@@ -14,12 +15,12 @@ into the engine's page. Repoint the Go side and delete the originals last, on th
 one PR carries the deletion and every reader of the deleted paths.
 
 **Execution mode:** conductor-dispatched chains through the Agent tool. `pass-execute.js` runs an
-implementer, a reviewer, and a gate, and cannot run the page chain tasks 5 and 6 need. Tasks 5,
-6, and 7 are independent and are dispatched together; their files are disjoint. Every other task
+implementer, a reviewer, and a gate, and cannot run the page chain tasks 5, 6, and 6b need. Tasks
+5, 6, 6b, and 7 are independent and are dispatched together; their files are disjoint. Every other task
 is serial. The conductor stays thin: it reads agent reports, never diffs or gate logs.
 
-**Token ceiling:** 3.5M, flag at 2.8M. **Segments and checkpoints:** eleven tasks in three
-segments, 1 to 4, 5 to 7, 8 to 11, a checkpoint at each boundary. At each the conductor writes
+**Token ceiling:** 3.5M, flag at 2.8M. **Segments and checkpoints:** twelve tasks in three
+segments, 1 to 4, 5 to 7 with 6b, 8 to 11, a checkpoint at each boundary. At each the conductor writes
 the ledger at the foot of this file, never `docs/STATUS.md`.
 
 **Worktree:** `.claude/worktrees/draft-docs-a`, branch `draft-docs-a`, off `main`, `npm ci` once
@@ -31,15 +32,20 @@ frozen contracts.
 
 ## Preconditions, verified by task 1 before anything else
 
-1. `docs/STATUS.md` says the cut holds on the tool's 1.0, the doctor retirement, this pass, and
-   the `tool/v1.1.0` tag that follows it, and that only that tag's close writes "the `0.97.0`
-   cut is unblocked". The pre-cut plan's cut task carries the matching precondition. If STATUS
-   already carries the unblocked sentence, stop: the cut may be running.
-2. The doctor retirement is merged on `origin/main`: `src/lib/doctor` is gone, `package.json` has
-   no `cairn-doctor` bin, `npm run check:symbols` is green, and no `tool/v1.1.0` tag exists yet.
+1. `docs/STATUS.md` carries the five-step order (Geoff, 2026-09-21): the retirement's Go half
+   merges untagged; this pass merges; `tool/v1.1.0` is tagged and released carrying both; the
+   retirement's engine half lands; the cut. Only the engine half's close writes "the `0.97.0`
+   cut is unblocked". If STATUS already carries that sentence, stop: the cut may be running.
+2. The retirement's Go half is merged on `origin/main`: `cairn doctor` exists in the cobra tree,
+   `npm run check:symbols` is green, and no `tool/v1.1.0` tag exists yet. The engine half has
+   not started: `src/lib/doctor` still exists, and no live executor holds
+   `scripts/checks/check-symbols.mjs`.
 3. B2's harvest is on `main`: `docs/internal/facts/admin.md` carries tool bullets.
-4. `tool/docs/reference/` on `main` carries exactly six `*.schema.json` files and the three
-   markdown pages. A different inventory stops the pass for a plan amendment.
+4. `tool/docs/reference/` on `main` matches the inventory the retirement's conductor sent
+   before its plan was approved, recorded in the ledger: expected are seven `*.schema.json`
+   files (the seventh is the `cairn doctor` payload) and four markdown pages, `exit-codes.md`,
+   `json-output.md`, `log-events.md`, and `cli-cairn-doctor.md`. A different inventory stops the
+   pass for a plan amendment.
 5. `tool/` is quiet: `ListAgents`, `pgrep -f cairn-cms`, and `git status` in every worktree that
    touches `tool/` show no live executor, or the tool's conductor confirms it.
 6. No session has asked for a quiet `main`.
@@ -48,11 +54,13 @@ If any fails, stop with one combined report.
 
 ## Global constraints
 
-- A drafter never opens `tool/docs/reference/exit-codes.md`, `json-output.md`, or
-  `log-events.md`. Only the mining read (task 4) does.
+- A drafter never opens a markdown page under `tool/docs/reference/`. Only the mining read
+  (task 4) does. This holds for `cli-cairn-doctor.md` too: it is mined and drafted fresh like the
+  others, never renamed into place.
 - A drafter copies commands and JSON examples from the task 4 manifests and never composes them.
-- The two new pages are `docs/reference/cli-cairn-exit-codes.md` and
-  `docs/reference/cli-cairn-json-output.md`. No other new page.
+- The three new pages are `docs/reference/cli-cairn-exit-codes.md`,
+  `docs/reference/cli-cairn-json-output.md`, and `docs/reference/cli-cairn-doctor.md`. No other
+  new page.
 - These pages ship in every consumer's `node_modules`. No example carries the owner's site names,
   the `glw907/ecxc-ski` repository, or a real Cloudflare account id. The substitutes are
   `example.org`, `example-org/site`, and `<account-id>`, applied by the task 4 manifest.
@@ -87,7 +95,7 @@ If any fails, stop with one combined report.
 | `docs/internal/docs-register.md` | 2 | the scripter-or-agent profile; the one-profile sentence amended |
 | `docs/internal/record/2026-08-14-audience-profiles.md` | 2 | one dated note appended |
 | `docs/internal/docs-friction-log.md` | 2, 11 | the perspectives list; triage |
-| `docs/reference/schema/*.schema.json` | 3 | six files moved from `tool/docs/reference/` |
+| `docs/reference/schema/*.schema.json` | 3 | every schema moved from `tool/docs/reference/` |
 | `tool/internal/render/json_schema_test.go` | 3, 8 | `schemaDir` in 3; `docPath` in 8 |
 | `tool/testdata/flags.json`, a Go test beside the cobra root, a `flags` Makefile target | 3 | the committed flag list and its drift test |
 | `scripts/checks/check-symbols.mjs`, its tests | 3 | unions `tool/testdata/flags.json` into the known flags |
@@ -95,9 +103,10 @@ If any fails, stop with one combined report.
 | `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.mining.md` | 4 | manifests and dispositions; deleted in task 11 |
 | `docs/reference/cli-cairn-exit-codes.md` | 5 | new |
 | `docs/reference/cli-cairn-json-output.md` | 6 | new |
+| `docs/reference/cli-cairn-doctor.md` | 6b | new |
 | `docs/reference/log-events.md` | 7 | the tool's content folded in |
-| `docs/reference/README.md` | 8 | two index lines, one writer |
-| `tool/docs/reference/` | 8 | three pages deleted; one `README.md` stub left |
+| `docs/reference/README.md` | 8 | three index lines, one writer |
+| `tool/docs/reference/` | 8 | four pages deleted; one `README.md` stub left |
 | `tool/internal/render/layout.go` | 8 | the anchor prefix renamed; a real docs base added |
 | `tool/cmd/cairn/messages.go`, `help_agents.go`, `root.go`, `health_sweep.go` | 8 | help text and doc comments repointed |
 | `tool/internal/render/json.go`, `tool/internal/spine/condition_test.go` | 8 | doc comments repointed |
@@ -141,8 +150,8 @@ file map or task text is named. A disagreement stops the pass for a plan amendme
 
 **Outcome:** the register's reference section carries the profile and says the 2026-08-14 ruling
 that the reference arm has no profile is overturned for two pages (Geoff, 2026-09-21), naming
-them literally: `docs/reference/cli-cairn-exit-codes.md` and
-`docs/reference/cli-cairn-json-output.md`. The profile has the five elements every track summary
+them literally: `docs/reference/cli-cairn-exit-codes.md`,
+`docs/reference/cli-cairn-json-output.md`, and `docs/reference/cli-cairn-doctor.md`. The profile has the five elements every track summary
 has. The reader: anyone automating against `cairn`, a person writing a script or an agent. The
 vocabulary contract: fully technical, nothing banned, imprecision is the defect. The arrival:
 from `cairn help agents`, a `--json` help line, an admin page's link, or a failed run with a code
@@ -152,7 +161,7 @@ wrapper and parser from this page alone, and does any behaviour require running 
 learn? The dated record gains one appended note pointing at the register. The friction log's
 list of perspectives gains the fifth.
 
-**Acceptance:** exactly those two paths are claimed; `cli-cairn-manifest.md`,
+**Acceptance:** exactly those three paths are claimed; `cli-cairn-manifest.md`,
 `cli-cairn-media-seed.md`, and every other reference page gain no profile; the record's body is
 unchanged above the note; the docs gate is green; `diff-reviewer` accepts.
 
@@ -162,14 +171,14 @@ One implementer, `model: opus`, test-first. Both gates.
 
 **Outcome:**
 
-- the six schemas live in `docs/reference/schema/`, bytes and `$id` unchanged, and
+- every schema lives in `docs/reference/schema/`, bytes and `$id` unchanged, and
   `json_schema_test.go` reads them there through `providers.RepoRoot()`;
 - `tool/testdata/flags.json` lists every flag in the cobra tree, written by a `make -C tool
   flags` target, and a Go test fails, naming that target, when the tree and the file differ;
 - `check-symbols.mjs` unions that file into the flags it accepts in shell fences, and its
   existing behaviour for `create-cairn-site` flags and the allowlist is unchanged.
 
-**Acceptance:** `git diff -M --stat` shows the six schemas as pure renames; a fixture page with
+**Acceptance:** `git diff -M --stat` shows every schema as a pure rename; a fixture page with
 `cairn health --json --quiet` passes `check:symbols` and one with `cairn health --no-such-flag`
 fails naming the flag; removing a flag from `flags.json` fails the Go test; `check:package`
 passes with the new directory in the tarball; both gates are green; `diff-reviewer` accepts.
@@ -256,9 +265,35 @@ does not edit `docs/reference/README.md`.
 **Acceptance:** as task 5, plus every example matches its manifest entry byte for byte and no
 substituted value appears in its original form.
 
+### Task 6b: `docs/reference/cli-cairn-doctor.md`
+
+Dispatched with tasks 5, 6, and 7. The conductor dispatches this chain in order, each agent with
+zero context and the inputs named here: a Sonnet drafter; the docs gate; `cairn-register-editor`
+on `claude-opus-5`, its prompt requiring a profile section; a fresh `claude-opus-5` profile
+grader with the task 2 profile printed in its prompt, one verdict per element; a `claude-opus-5`
+fact read tracing every claim to a task 4 bullet or ratified disposition; one redraft round by
+the drafter on the combined findings. A second `fix` verdict goes to the conductor.
+
+**The drafter receives:** this brief, the task 2 profile, the register's universal contract and
+reference section, the task 4 section and manifests for this page, the bullets re-keyed to this
+page, the exemplar `docs/reference/cli-cairn-manifest.md`, the error-tier Vale rule list, and the
+task 1 ledger lines for any test that reads the original.
+
+**The brief.** The reader's job: run `cairn doctor` from a script or an agent against a site
+directory and act on the result. Anatomy: reference entry, a lede, the synopsis and flags from
+the command manifest, what the command reads (the site directory and
+`src/content/.cairn/site-facts.json`), each check id with what it observes, the exit codes by
+link to the exit-codes page with the one sentence specific to this command, and the payload by
+link to the JSON page. It says which checks need `cairn health` and an adopted site instead. It
+carries one line naming the `cairn` version it describes. It does not teach setup, does not tell
+an admin what to do about a failing check, and links to nothing in the admin arm. It does not
+edit `docs/reference/README.md`.
+
+**Acceptance:** as task 5.
+
 ### Task 7: Fold the tool's log-event content into `docs/reference/log-events.md`
 
-Dispatched with tasks 5 and 6. `cairn-implementer`; this page is maintained in place.
+Dispatched with tasks 5, 6, and 6b. `cairn-implementer`; this page is maintained in place.
 
 **Outcome:** one added section, in the page's existing register, saying what `cairn` does with
 the vocabulary: it carries a completion-list copy kept in sync by a test, what it does and does
@@ -270,7 +305,7 @@ cut; `diff-reviewer` accepts.
 
 ### Task 8: The tool-side move
 
-After tasks 5, 6, and 7 are accepted. One implementer, `model: opus`. Both gates.
+After tasks 5, 6, 6b, and 7 are accepted. One implementer, `model: opus`. Both gates.
 
 **Outcome:**
 
@@ -288,9 +323,9 @@ After tasks 5, 6, and 7 are accepted. One implementer, `model: opus`. Both gates
 - a new Go test derives every verdict's exit code and wire word from `internal/spine` and fails
   when the exit-codes page's table omits one, carries an extra, or pairs them differently, and
   fails when either page's version line disagrees with `tool/internal/version`;
-- `tool.yml`'s two `paths` lists and its header comment cover both pages and the schema
+- `tool.yml`'s two `paths` lists and its header comment cover all three pages and the schema
   directory;
-- `docs/reference/README.md` links both pages.
+- `docs/reference/README.md` links all three pages.
 
 **Acceptance:** both gates are green, the tool gate by absolute worktree path;
 `git grep -n "docs/reference" -- tool/` returns only root-relative paths under `docs/reference/`,
@@ -300,7 +335,7 @@ exit-codes table fails the new test; `diff-reviewer` accepts against this list.
 
 ### Task 9: The scripter test
 
-Two `claude-opus-5` agents. The first receives only the markdown source of the two pages, pasted
+Two `claude-opus-5` agents. The first receives only the markdown source of the three pages, pasted
 into its prompt, and has no repository access. The second reports to the conductor only.
 
 **Outcome:** from the pages alone, the first agent writes a shell wrapper that branches on every
@@ -344,9 +379,9 @@ One fold agent drafts and commits; one independent `diff-reviewer` reads the fol
   shape `https://cairn.pub/docs/<arm>/<page>` as a contract the binary prints;
 - the full gate is green, the PR is open, and the `tool` workflow is green on its head;
 - after the PR merges, and after the conductor has told every live session, `docs/STATUS.md`
-  says pass A is merged, names the merge SHA, and says the cut now waits only on `tool/v1.1.0`,
-  which the tool's conductor cuts from that SHA or later. This pass never writes the sentence
-  "the `0.97.0` cut is unblocked"; the tag's close does, since it lands last;
+  says pass A is merged, names the merge SHA, and says the next step is the `tool/v1.1.0` tag
+  from that SHA or later, then the retirement's engine half. This pass never writes the
+  sentence "the `0.97.0` cut is unblocked"; the engine half's close does, since it lands last;
 - the pass is scored: tokens against 3.5M, planning misses, execution sittings.
 
 **Acceptance:** `diff-reviewer` accepts the fold; the PR's checks are green; no file outside the

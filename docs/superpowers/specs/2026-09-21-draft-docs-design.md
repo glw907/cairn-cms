@@ -14,13 +14,13 @@ its preconditions hold. The first plan is `docs/superpowers/plans/2026-09-21-dra
 The order of work, as ruled:
 
 1. The Go tool's 1.0: the `tool/v1.0.0` tag, the release, and B2's merge.
-2. The doctor retirement, its own pass, conducted by a fresh tool session. It merges without a
-   tool tag.
-3. **Pass A**, the tool's contract pages, so the `0.97.0` tarball carries them. One
-   `tool/v1.1.0` is cut after pass A merges, carrying the retirement and the repointed links, so
-   the binary the release announces never names a deleted path. That tag's close is the only
-   writer of "the `0.97.0` cut is unblocked", since it lands last.
-4. The one engine cut, `0.97.0`, after that tag.
+2. The doctor retirement's Go half (`cairn doctor`), merged without a tool tag.
+3. **Pass A**, the tool's contract pages, so the `0.97.0` tarball carries them. Then one
+   `tool/v1.1.0`, tagged and released carrying the Go half and pass A's repointed links, so the
+   binary the release announces never names a deleted path.
+4. The retirement's engine half, which removes the `cairn-doctor` bin only once that release
+   exists. Its close is the only writer of "the `0.97.0` cut is unblocked", since it lands
+   last. Then the one engine cut, `0.97.0`.
 5. The docs chore that updates the narrative-arm freeze and the site-agent rule.
 6. The docs-infra currency pass, whole
    (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`).
@@ -41,7 +41,8 @@ announce a tool with no contract pages behind it.
 Geoff is the only reader today. A page on `main` may describe `cairn` ahead of what has shipped.
 Publication to cairn.pub is what stays bound to released versions.
 
-Every pass depends on the retirement **merged**, not on its spec. A `[verified]` fact needs the
+Pass A depends on the retirement's Go half **merged**, and passes B and C on the whole
+retirement merged, never on a spec. A `[verified]` fact needs the
 code on `main`, and a transcript needs a real run of the released behaviour.
 
 ## Rulings this design rests on
@@ -90,8 +91,9 @@ code on `main`, and a transcript needs a real run of the released behaviour.
 2. Gate readiness for these pages: `scripts/checks/check-symbols.mjs` learns the Go tool's
    flags, since it resolves a `--flag` in a shell fence only against the scaffolder's parser and
    a one-by-one allowlist, and the contract pages are made of `cairn ... --json` fences.
-3. Two new pages, `docs/reference/cli-cairn-exit-codes.md` and
-   `docs/reference/cli-cairn-json-output.md`, named like the arm's existing `cli-<binary>` pages
+3. Three new pages, `docs/reference/cli-cairn-exit-codes.md`,
+   `docs/reference/cli-cairn-json-output.md`, and `docs/reference/cli-cairn-doctor.md` (the
+   command page the Go half writes at `tool/docs/reference/cli-cairn-doctor.md`), named like the arm's existing `cli-<binary>` pages
    and linked from `docs/reference/README.md`. `check:reference` visits only export subpaths and
    does not cover them. They document the contracts as `main` has them after the retirement,
    including the local action's payload and any reason code it added. Their facts get new `##`
@@ -106,9 +108,9 @@ code on `main`, and a transcript needs a real run of the released behaviour.
 4. The tool's log-event content folded into `docs/reference/log-events.md`, which stays the one
    log vocabulary page.
 5. The tool-side move, **in the same merge**: `tool/docs/reference/exit-codes.md`,
-   `json-output.md`, and `log-events.md` deleted, with a short README left in that directory
-   saying where the pages and schemas went; every `*.schema.json` beside them (six after B2's
-   segment 5) moved to `docs/reference/schema/`; a real docs base URL constant beside the
+   `json-output.md`, `log-events.md`, and `cli-cairn-doctor.md` deleted, with a short README left in that directory
+   saying where the pages and schemas went; every `*.schema.json` beside them (seven with the
+   `cairn doctor` payload) moved to `docs/reference/schema/`; a real docs base URL constant beside the
    anchor prefix `tool/internal/render/layout.go` calls `docsBase` today, following the URL
    shape the 1.0 fix lines froze, `https://cairn.pub/docs/<arm>/<page>`; the two new pages added
    to `.github/workflows/tool.yml`'s path filters; the `--json` help text and `cairn help agents` repointed;

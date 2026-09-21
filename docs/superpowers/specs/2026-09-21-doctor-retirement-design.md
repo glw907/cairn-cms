@@ -81,15 +81,18 @@ import it; the script reads it through the repo's existing TS-capable path (the 
 the loader the other `scripts/` use), named in the plan after a look at what `scripts/` already
 does, never a regex over source. A second small artifact, `tool/internal/doctor/site-config-path.json`,
 carries the scaffolder's site-config path; a path is not a condition and does not ride in the
-conditions file. `check:tool-conditions` fails when regeneration is not a no-op and joins
-`npm run check`. Because `test.yml` ignores `tool/**` and `tool.yml` has no Node, a third small
-workflow triggers on `src/lib/diagnostics/conditions.ts`, the scaffolder's path file, and the two
-generated files, and runs that one check. Acceptance includes proving the gate red on a
+conditions file. `check:tool-conditions` fails when regeneration is not a no-op. `npm run check`
+is only `svelte-check`; the gates are individual `test.yml` steps, so the new script joins as one.
+`test.yml`'s `paths-ignore: ['tool/**']` suppresses it only for a commit touching nothing but
+`tool/`, and `tool.yml` has no Node, so a hand edit to a generated file alone would run no gate:
+a third small workflow triggers on the two generated files and runs that one check. Acceptance includes proving the gate red on a
 hand-edited mirror.
 
-**`site-facts.json`.** Written by the Vite plugin through the same chokepoint that writes and
-**verifies** `index.json` (`src/lib/vite/internal.ts`, `virtualSource`'s verify mode): a stale
-file fails the build exactly as a stale manifest does. Shape: `"version": 1`,
+**`site-facts.json`.** It follows the split `index.json` already has: the `cairn-manifest` bin
+**writes** it (`writeManifest`, `src/lib/vite/internal.ts:195-218`) and the Vite plugin
+**verifies** it at `buildStart` (`:171-177`), so a stale file fails the build exactly as a stale
+manifest does. `virtualSource` is manifest-shaped and is not reused; `evalVirtual`,
+`findCairnOptions`, and `resolveViteRoot` are. Shape: `"version": 1`,
 `mediaBucketBinding`, `roles` (the custom role vocabulary), `aiPosture`. All three values already
 sit in committed adapter source, so the file leaks nothing. It is a cross-language contract, so it
 gets a reference page, a facts bullet, a `check-symbols-allowlist` path entry beside the other
@@ -97,7 +100,13 @@ gets a reference page, a facts bullet, a `check-symbols-allowlist` path entry be
 `0.97.0`). `readAdapterFacts` keeps this caller and is not dead code after the removal; its
 doctor-only fields (`from`, `owner`, `repo`) are trimmed in retire-2.
 
-**The two `conditions.ts` rewordings** of ruling 3a.
+**The `conditions.ts` rewordings** of ruling 3a, three in fact: `:2`, `:131`, and `:235`'s
+remediation ("run the full doctor"). No test pins the text.
+
+**A new condition id, `config.media-bucket-missing`** (warning), so the media check stops
+borrowing `config.bindings-missing`'s remediation. `check:readiness` fails closed on a condition
+with no heading and its allowlist is deliberately empty, so the id brings one new section in
+`docs/admin/is-it-working.md`, following the `config.tidy-key-missing` precedent in the ledger.
 
 ## retire-1: the Go pass, `tool/v1.1.0`
 
@@ -330,8 +339,27 @@ registry entries, the cairn-pub link); then the STATUS line, in the commit that 
 0. This spec and the two plans land on `main` by PR from `doctor-retirement`.
 1. B2 closes: `tool/v1.0.0` tagged, merged, released. B2's worktree is never touched.
 2. Pre-task, branch `doctor-pretask`, merges.
-3. retire-1, branch `doctor-go`: verified, merged, tagged, released.
-4. retire-2, branch `doctor-engine`.
+3. retire-1, branch `doctor-go`: verified, then merged to `main` **without a tool tag**. It has
+   no tag task and no release task.
+4. Draft docs pass A (the docs conductor's pass,
+   `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`) runs against that `main`. It moves
+   the tool's contract pages and schemas under `docs/reference/`, including the
+   `cairn doctor` page and the seventh schema, and repoints the binary's help and tests. Its
+   pre-flight requires that retire-2 has not started and that no `tool/v1.1.0` tag exists.
+   retire-1's conductor sends the docs conductor an inventory before pass A runs: the command
+   page, the seventh schema's file name, every test naming either, and anything else new under
+   `tool/docs/reference/`.
+5. One `tool/v1.1.0`, tagged and released from a commit carrying retire-1 and pass A. A tag's
+   help text is permanent, so the binary `0.97.0` announces never names a deleted path. Who
+   conducts this tag is Geoff's to rule; it is no task of retire-1 or retire-2.
+6. retire-2, branch `doctor-engine`, only once that release exists. It lands last, so its close
+   writes "the `0.97.0` cut is unblocked".
+
+(Geoff, 2026-09-21, the five-step order, relayed by the docs conductor and matching his opening
+constraints to this pass.) Consequences elsewhere in this spec: the `cairn doctor` command page
+is written at `tool/docs/reference/cli-cairn-doctor.md` as interim operator copy, since pass A
+drafts the public page fresh; the docs-URL fallback in "Condition ids and text" is moot when
+pass A's pages are live at tag time, and stays as the rule if they are not.
 
 One executor per worktree; none shared with a docs pass.
 

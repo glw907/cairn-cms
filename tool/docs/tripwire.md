@@ -44,19 +44,21 @@ chmod 600 ~/.config/cairn/tripwire.env
 ```ini
 [Unit]
 Description=cairn health sweep
+# A non-zero exit marks this unit failed, which is what fires the alert template below.
+OnFailure=cairn-health-alert@%n.service
 
 [Service]
 Type=oneshot
 EnvironmentFile=%h/.config/cairn/tripwire.env
 ExecStart=%h/.local/bin/cairn health --quiet
 # 900s sits above the default sweep's own 600s cap (exit-codes.md, "Timeouts, and sizing a
-# scheduler's cap"), with headroom. A run systemd kills at RuntimeMaxSec exits however SIGKILL
-# leaves it, never one of cairn's own four codes, so the cap has to sit above --timeout: a
-# routine that reads an uninterpretable kill instead of cairn's own UNKNOWN is worse than the
-# slow run it was meant to catch.
-RuntimeMaxSec=900
-# A non-zero exit marks this unit failed, which is what fires OnFailure below.
-OnFailure=cairn-health-alert@%n.service
+# scheduler's cap"), with headroom. TimeoutStartSec, not RuntimeMaxSec, is the cap that actually
+# applies to a Type=oneshot service (systemd.service(5): RuntimeMaxSec has no effect on oneshot
+# units). A run systemd kills at TimeoutStartSec exits however SIGKILL leaves it, never one of
+# cairn's own four codes, so the cap has to sit above --timeout: a routine that reads an
+# uninterpretable kill instead of cairn's own UNKNOWN is worse than the slow run it was meant to
+# catch.
+TimeoutStartSec=900
 ```
 
 `~/.config/systemd/user/cairn-health.timer`:
@@ -86,7 +88,7 @@ Description=Alert on a failed cairn health sweep (%i)
 [Service]
 Type=oneshot
 # ExecMainStatus is the failed unit's own exit code: 1 WARNING, 2 CRITICAL, 3 UNKNOWN, or a
-# scheduler-level failure (a kill past RuntimeMaxSec) that is none of the three. journalctl -u
+# scheduler-level failure (a kill past TimeoutStartSec) that is none of the three. journalctl -u
 # %i carries the quiet body itself: the verdict word, each failing check id, and its fix, with
 # no credential in it (cairn health --quiet never prints one).
 ExecStart=/bin/sh -c 'notify-operator "$(systemctl --user show %i -p ExecMainStatus --value)" "$(journalctl --user -u %i -n 50 --no-pager)"'
@@ -112,15 +114,18 @@ command the wrapper runs.
 #!/bin/sh
 # launchd runs one program per job with no exit-code routing of its own, so this wrapper reads
 # the exit code cairn health leaves and routes it. Wire notify-operator into your own paging or
-# mail tool; the case arms are the run's own vocabulary, not this script's.
-cairn health --quiet
+# mail tool; the case arms are the run's own vocabulary, not this script's. Capturing the output
+# and printing it back keeps StandardOutPath's trace intact while also handing the alert
+# something to page with: the failing site, each failing check's id, and its fix.
+out=$(cairn health --quiet 2>&1)
 code=$?
+printf '%s\n' "$out"
 case "$code" in
   0) ;;                                        # OK, nothing to report
-  1) notify-operator warning ;;
-  2) notify-operator critical ;;
-  3) notify-operator unknown ;;
-  *) notify-operator unknown ;;                 # the process itself was killed or crashed
+  1) notify-operator warning "$out" ;;
+  2) notify-operator critical "$out" ;;
+  3) notify-operator unknown "$out" ;;
+  *) notify-operator unknown "$out" ;;          # the process itself was killed or crashed
 esac
 exit "$code"
 ```
@@ -165,7 +170,7 @@ tooling treats as ordinary, world-readable configuration, which the keyring does
 </plist>
 ```
 
-launchd has no execution cap of its own comparable to systemd's `RuntimeMaxSec`, so a run that
+launchd has no execution cap of its own comparable to systemd's `TimeoutStartSec`, so a run that
 hangs past `--timeout` is the only cap in force; the wrapper never adds a second one. Pass
 `--timeout` explicitly here only if your registry needs the divided form described below.
 
@@ -203,37 +208,41 @@ result through its own History pane, but not by cairn's own exit code, so this w
 `$LASTEXITCODE` and routes it; wire `Send-Alert` into your own paging or mail tool.
 
 ```powershell
-& cairn.exe health --quiet
+$out = & cairn.exe health --quiet 2>&1 | Out-String
+Write-Output $out
 switch ($LASTEXITCODE) {
     0 { }                                    # OK, nothing to report
-    1 { Send-Alert -Level Warning }
-    2 { Send-Alert -Level Critical }
-    3 { Send-Alert -Level Unknown }
-    default { Send-Alert -Level Unknown }    # the process itself was killed or crashed
+    1 { Send-Alert -Level Warning -Body $out }
+    2 { Send-Alert -Level Critical -Body $out }
+    3 { Send-Alert -Level Unknown -Body $out }
+    default { Send-Alert -Level Unknown -Body $out }    # the process itself was killed or crashed
 }
 exit $LASTEXITCODE
 ```
 
+A stock Windows client ships PowerShell's execution policy at `Restricted`, which refuses to run
+a `.ps1` at all (`-File` errors with "running scripts is disabled on this system"). Bypass the
+policy for this one invocation, scoped to the process `schtasks` launches, not a system-wide
+policy change:
+
 ```powershell
-schtasks /create /tn "cairn health" /tr "powershell.exe -File C:\Users\operator\bin\cairn-health-run.ps1" /sc daily /st 08:00 /ru "%USERNAME%"
+schtasks /create /tn "cairn health" /tr "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File C:\Users\operator\bin\cairn-health-run.ps1" /sc daily /st 08:00 /ru "%USERNAME%"
 ```
 
 `schtasks /create` has no flag that caps a single run's execution time; its own `/et` sets the
 end time of a *repeating* schedule window (used with `/ri`), not a per-run cap. The mechanism
-that actually caps one run is the task definition's `<ExecutionTimeLimit>` element, settable only
-by importing XML:
-
-```xml
-<Task xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <Settings>
-    <!-- 15 minutes, matching the systemd example's 900s RuntimeMaxSec. -->
-    <ExecutionTimeLimit>PT15M</ExecutionTimeLimit>
-  </Settings>
-</Task>
-```
+that actually caps one run is the task definition's `ExecutionTimeLimit` setting, reachable from
+PowerShell's `ScheduledTasks` module without hand-authoring a full task-definition XML. Run this
+against the task the `schtasks` call above just created; it replaces that task's settings with
+the same trigger and action plus the 15-minute cap, matching the systemd example's 900s
+`TimeoutStartSec`:
 
 ```powershell
-schtasks /create /tn "cairn health" /xml C:\Users\operator\bin\cairn-health-task.xml
+$action = New-ScheduledTaskAction -Execute "powershell.exe" `
+    -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File C:\Users\operator\bin\cairn-health-run.ps1"
+$trigger = New-ScheduledTaskTrigger -Daily -At 08:00
+$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 15)
+Set-ScheduledTask -TaskName "cairn health" -Action $action -Trigger $trigger -Settings $settings
 ```
 
 ## Prefer the bare sweep; the per-site loop is for a per-site exit code

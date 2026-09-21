@@ -85,7 +85,7 @@ container, then beta.
   four sites graded clean by a fresh-context verifier. Any failure or taste call stops the tag
   and goes to him. Ceiling 20M, spend about 16.3M. Task 25 carries the release handshake for
   `0.97.0` (the `CHANGELOG.md` entry, the site upgrade brief's tools text, the `tool` workflow
-  green on the merge SHA, the unblock line here, the tool's facts harvested into
+  green on the merge SHA, the released line here (never an unblocked line), the tool's facts harvested into
   `docs/internal/facts/admin.md`). Geoff's rulings of the day, the handshake, and the ledgers:
   `~/.cache/cairn-tool-b2/owner-rulings-2026-09-21.md`. What follows the tag:
   `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`. **The cairn CLI is an

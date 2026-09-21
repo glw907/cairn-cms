@@ -11,17 +11,30 @@
 // stdout gets a shell-safe empty string rather than a bogus gate command; the runner's own prompt
 // falls back to the plan's gate string in that case.
 //
-// Five tiers. classifyPath checks a path against them in DESCENDING severity, full first, then
+// Five npm tiers plus one standalone `tool` tier for `tool/**`, the Go `cairn` CLI module.
+// classifyPath checks a path against the five npm tiers in DESCENDING severity, full first, then
 // admin-visual, engine, scripts, and docs last, returning the first match: full's triggers name
 // specific, narrow paths (the render seam, theme/chassis CSS, a public route, a snapshot file)
 // that a broader src/lib/** or docs/** rule would otherwise swallow, so they have to be tried
-// before the broader tiers get a chance. TIER_ORDER, by contrast, lists the five tiers ASCENDING
-// (docs first, full last) and is used only for ranking: resolveTier takes the highest-ranked tier
-// any path in a diff classifies to, and the paint floor compares against it the same way. A path
-// this classifier does not recognize (a repo-root config file, a workflow file, anything outside
-// the five named trees) is conservative-defaulted to full: an unclassified path is exactly the
-// case the table does not cover, and a missed full-tier path costs a broken release while an
-// unnecessary full run only costs time.
+// before the broader tiers get a chance. TIER_ORDER, by contrast, lists the five npm tiers
+// ASCENDING (docs first, full last) and is used only for ranking: resolveTier takes the
+// highest-ranked tier any path in a diff classifies to, and the paint floor compares against it
+// the same way. A path this classifier does not recognize (a repo-root config file, a workflow
+// file, anything outside the five named trees) is conservative-defaulted to full: an unclassified
+// path is exactly the case the table does not cover, and a missed full-tier path costs a broken
+// release while an unnecessary full run only costs time.
+//
+// `tool/**` (including a `tool/**/*.md`) never reaches classifyPath: `decideGate` splits a diff's
+// paths into `tool/` and everything else before ranking, because the Go module has its own gate
+// (`make -C tool check`) that proves nothing an npm script proves and vice versa. `tool` is not
+// part of the five-npm-tier superset chain (it does not run `npm test` or any Vale/docs check),
+// so it is not in TIER_ORDER; a diff with paths on both sides runs the computed npm gate AND the
+// tool gate, reported as `<npm tier>+tool`.
+//
+// This classifier chooses a tier, never a gate lane. A plan that pins the light lane for a
+// Go-only pass must not carry that pin onto a mixed diff whose npm half launches a browser
+// suite; the lane decision stays with the caller, checked against the tier this script reports
+// for the actual diff in hand.
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,17 +42,22 @@ import { repoRoot } from '../repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 
-// The five gate strings are cumulative, each a strict superset of every tier below it, built by
-// concatenation rather than five independent literals so the superset relationship cannot drift.
+// The five npm gate strings are cumulative, each a strict superset of every tier below it, built
+// by concatenation rather than five independent literals so the superset relationship cannot
+// drift. TOOL_GATE stands alone: `make -C tool check` proves the Go module's own three legs and
+// is never folded into or out of the npm chain.
 const DOCS_GATE =
   'npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts';
 const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm test`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
 const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
+const TOOL_GATE = 'make -C tool check';
 
 /**
  * The gate string for every tier. `scripts` and `engine` run the identical string (both are
- * "prove the code and its tests"); each tier's string is a superset of the one below it.
+ * "prove the code and its tests"); each of the five npm tiers' strings is a superset of the one
+ * below it. `tool` is the one exception: it is not part of that superset chain, so its string
+ * shares nothing with the other five (see the header comment).
  * @type {Record<string, string>}
  */
 export const TIER_GATES = {
@@ -48,6 +66,7 @@ export const TIER_GATES = {
   engine: SCRIPTS_GATE,
   'admin-visual': ADMIN_VISUAL_GATE,
   full: FULL_GATE,
+  tool: TOOL_GATE,
 };
 
 /** Tier names, ascending severity; `resolveTier` and the paint floor both rank against this. */
@@ -102,7 +121,14 @@ export function resolveTier(paths) {
 /**
  * Resolve a diff's changed paths, a paint flag, and an optional tier pin into the final gate
  * decision: the tier, why it was chosen (`computed`, `paint floor`, or `pin`), the paths that
- * decided a computed tier, and the gate string to run.
+ * decided it, and the gate string to run.
+ *
+ * `tool/**` paths are split off before the npm five-tier ranking runs, since the Go module's own
+ * gate is not part of that chain. A diff with only `tool/` paths resolves to `tool` outright,
+ * skipping the paint floor: paint names an npm-admin concept (a task touching visible admin
+ * surface), which a tool-only diff by definition does not. A diff with paths on both sides ranks
+ * the non-tool paths as usual, applies the paint floor to that half same as always, then reports
+ * `<npm tier>+tool` and runs both gate strings in sequence so each half is proven.
  * @param {string[]} paths
  * @param {{ paint?: 'yes' | 'no', pin?: string | null }} [opts]
  * @returns {{ tier: string, reason: string, decidingPaths: string[], gate: string }}
@@ -110,19 +136,37 @@ export function resolveTier(paths) {
 export function decideGate(paths, opts = {}) {
   const { paint = 'no', pin = null } = opts;
   if (pin) {
-    if (!TIER_ORDER.includes(pin)) {
-      throw new Error(`gate-tier: unknown --pin tier "${pin}" (want one of ${TIER_ORDER.join(', ')})`);
+    if (!Object.hasOwn(TIER_GATES, pin)) {
+      const known = [...TIER_ORDER, 'tool'].join(', ');
+      throw new Error(`gate-tier: unknown --pin tier "${pin}" (want one of ${known})`);
     }
     return { tier: pin, reason: 'pin', decidingPaths: [], gate: TIER_GATES[pin] };
   }
-  const { tier: computed, decidingPaths } = resolveTier(paths);
+
+  const toolPaths = paths.filter((path) => path.startsWith('tool/'));
+  const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
+
+  if (npmPaths.length === 0 && toolPaths.length > 0) {
+    return { tier: 'tool', reason: 'computed', decidingPaths: toolPaths, gate: TIER_GATES.tool };
+  }
+
+  const { tier: computed, decidingPaths } = resolveTier(npmPaths);
   let tier = computed;
   let reason = 'computed';
   if (paint === 'yes' && TIER_ORDER.indexOf(tier) < TIER_ORDER.indexOf('admin-visual')) {
     tier = 'admin-visual';
     reason = 'paint floor';
   }
-  return { tier, reason, decidingPaths, gate: TIER_GATES[tier] };
+
+  if (toolPaths.length === 0) {
+    return { tier, reason, decidingPaths, gate: TIER_GATES[tier] };
+  }
+  return {
+    tier: `${tier}+tool`,
+    reason,
+    decidingPaths: [...decidingPaths, ...toolPaths],
+    gate: `${TIER_GATES[tier]} && ${TIER_GATES.tool}`,
+  };
 }
 
 /**

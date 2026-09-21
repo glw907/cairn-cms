@@ -11,7 +11,7 @@ the chosen gate string on stdout (and nothing else on success), and the chosen t
 that decided it on stderr. It exits non-zero with empty stdout when the range carries no diff or
 git itself fails, so the caller falls back to a fixed gate string.
 
-## The five tiers
+## The tiers
 
 The classifier's own `classifyPath` checks a path against these five triggers HIGHEST TIER FIRST
 (`full`, then `admin-visual`, `engine`, `scripts`, `docs` last) and returns the first one it
@@ -21,10 +21,10 @@ rule would otherwise swallow, so they have to be tried before the broader tiers 
 `admin-visual`, `full`), and is used only to rank a diff with paths in more than one tier: the
 diff resolves to the highest tier present.
 
-Each tier's gate string is a strict superset of every tier below it: `scripts`/`engine` add
+Each npm tier's gate string is a strict superset of the npm tier below it: `scripts`/`engine` add
 `check && test` on top of the `docs` string, `admin-visual` adds the admin-visual spec run on top
 of that, and `full` adds the remaining CI-only checks plus the whole showcase e2e suite on top of
-`admin-visual`.
+`admin-visual`. A sixth tier, `tool`, stands outside that chain (see below).
 
 | Tier | Trigger (glob, matched per changed path) | Gate string |
 | --- | --- | --- |
@@ -33,6 +33,7 @@ of that, and `full` adds the remaining CI-only checks plus the whole showcase e2
 | `engine` | `src/lib/**/*.ts`, excluding `src/lib/components/**` and `src/lib/admin-toolkit/**` | same string as `scripts` |
 | `admin-visual` | `src/lib/components/**` (Svelte components and `cairn-admin.css`) or `src/lib/admin-toolkit/**` (the shared admin-table components) | scripts/engine string + `&& npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts` |
 | `full` | `src/lib/render/**` (the render seam), `examples/showcase/src/chassis/**` and `examples/showcase/src/theme/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | admin-visual string + `&& npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e` |
+| `tool` | `tool/**`, the Go `cairn` CLI module, including its own `tool/**/*.md` | `make -C tool check` |
 
 A public-page component that is not under one of `full`'s own named directories (for example a
 theme component under `examples/showcase/src/theme/**`, or a route file under
@@ -40,26 +41,39 @@ theme component under `examples/showcase/src/theme/**`, or a route file under
 there is no separate "component a public page imports" rule, since `examples/showcase` carries no
 `src/lib/**` directory today.
 
-A path outside all five globs (a repo-root config file, a GitHub Actions workflow, a
-`templates/waymark/**` file, anything not named above) resolves to `full`: it is exactly the case
-the table does not cover, and an unnecessary full run costs time, while a missed full-tier path
-costs a broken release.
+A path outside all five npm globs (a repo-root config file, a GitHub Actions workflow, a
+`templates/waymark/**` file, anything not named above and not under `tool/`) resolves to `full`:
+it is exactly the case the table does not cover, and an unnecessary full run costs time, while a
+missed full-tier path costs a broken release.
+
+## The `tool` tier and mixed diffs
+
+`tool/**` (the Go module) is not part of the five-npm-tier superset chain above: its gate proves
+three Go legs, not any npm script, and an npm gate proves nothing about Go code. `decideGate`
+splits a diff's changed paths into `tool/` and everything else before ranking. A diff whose paths
+are ALL under `tool/` resolves to `tool` outright and runs only `make -C tool check`. A mixed diff
+(some `tool/` paths, some not) ranks the non-`tool/` paths through the five npm tiers as usual,
+then reports `<npm tier>+tool` and runs the npm tier's gate string followed by
+`&& make -C tool check`, so both halves are proven. `--paint yes` never floors a `tool`-only diff
+(see below); it still floors the npm half of a mixed diff.
 
 ## The paint floor and the pin
 
-`--paint yes` floors the computed tier at `admin-visual`: a task that touches paint (visible
+`--paint yes` floors the computed npm tier at `admin-visual`: a task that touches paint (visible
 admin surface) never runs below the admin-visual gate, even if its diff alone would classify
 lower. It never lowers an already-higher tier (`engine` under `--paint yes` never demotes a
-`full`-classified diff).
+`full`-classified diff). Paint names an npm-admin concept, so it never touches the `tool` half of
+a decision: a `tool`-only diff stays `tool` under `--paint yes`, and a mixed diff floors only its
+npm half before the `+tool` suffix and gate are appended.
 
 `--pin <tier>` overrides the computed tier entirely, in either direction, and reports as `pin`
-rather than `computed`. A plan task pins a tier when its diff cannot size the change itself (for
-example, a token value a later pass will wire into a component that does not exist yet). `--pin`
-beats the paint floor: `--pin docs --paint yes` still runs the `docs` gate, since a pin is a
-deliberate override, not another input the floor ranks against. `--pin docs` is the standing
-escape hatch for a comment-only workflow edit (a `.github/workflows/**` file, which otherwise
-defaults to `full` as an unrecognized path) that a task's own review has confirmed changes no
-behavior.
+rather than `computed`; `tool` is a valid pin alongside the five npm tiers. A plan task pins a
+tier when its diff cannot size the change itself (for example, a token value a later pass will
+wire into a component that does not exist yet). `--pin` beats the paint floor: `--pin docs
+--paint yes` still runs the `docs` gate, since a pin is a deliberate override, not another input
+the floor ranks against. `--pin docs` is the standing escape hatch for a comment-only workflow
+edit (a `.github/workflows/**` file, which otherwise defaults to `full` as an unrecognized path)
+that a task's own review has confirmed changes no behavior.
 
 ## Verified against the showcase Playwright config (2026-09-15)
 

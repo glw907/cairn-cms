@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -11,6 +13,12 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/secrets"
 	"github.com/spf13/cobra"
 )
+
+// erroringReader always fails, standing in for a stdin whose read itself breaks rather than
+// simply carrying no data.
+type erroringReader struct{ err error }
+
+func (r erroringReader) Read([]byte) (int, error) { return 0, r.err }
 
 // fakeWriter records the last Set call, standing in for a keyring so a
 // test can assert what auth set writes without touching one.
@@ -289,6 +297,113 @@ func TestRestoreOnCancelRestoresWhenTheContextCancels(t *testing.T) {
 	case <-restored:
 	case <-time.After(2 * time.Second):
 		t.Fatal("the terminal was never restored after the context cancelled mid-prompt")
+	}
+}
+
+// TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails covers the ratified 2026-09-21
+// path: under `go test`, stdin is not a terminal, so term.ReadPassword fails and the fallback
+// below reads the injected stream instead of hanging or erroring.
+func TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails(t *testing.T) {
+	tests := []struct {
+		name  string
+		piped string
+		want  string
+	}{
+		{name: "a bare LF is stripped", piped: "s3cr3t\n", want: "s3cr3t"},
+		{name: "a trailing CRLF is stripped", piped: "s3cr3t\r\n", want: "s3cr3t"},
+		{name: "no trailing newline at all still reads the value", piped: "s3cr3t", want: "s3cr3t"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := &cobra.Command{}
+			cmd.SetErr(&bytes.Buffer{})
+
+			got, err := promptPassword(cmd, "CAIRN_GH_READ_TOKEN", strings.NewReader(tt.piped))
+			if err != nil {
+				t.Fatalf("promptPassword() = %v, want nil", err)
+			}
+			if got != tt.want {
+				t.Errorf("promptPassword() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestPromptPasswordRefusesAnEmptyPipedValue covers the last sentence of criterion 6: an empty
+// value is an error, and it never appears in the error text.
+func TestPromptPasswordRefusesAnEmptyPipedValue(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetErr(&bytes.Buffer{})
+
+	_, err := promptPassword(cmd, "CAIRN_GH_READ_TOKEN", strings.NewReader("\n"))
+	if err == nil {
+		t.Fatal("promptPassword() = nil, want an error for an empty piped value")
+	}
+	if !strings.Contains(err.Error(), "CAIRN_GH_READ_TOKEN") {
+		t.Errorf("error %q does not name the variable", err)
+	}
+}
+
+// TestPromptPasswordPropagatesAStdinReadError covers a stdin that fails outright, distinct from
+// one that simply carries no data.
+func TestPromptPasswordPropagatesAStdinReadError(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetErr(&bytes.Buffer{})
+
+	_, err := promptPassword(cmd, "CAIRN_GH_READ_TOKEN", erroringReader{err: errors.New("pipe closed")})
+	if err == nil {
+		t.Fatal("promptPassword() = nil, want an error when stdin itself fails")
+	}
+}
+
+// TestNewDepsWiresTheProcessOwnStdin asserts the production wiring reads os.Stdin, per
+// criterion 7's own requirement that a test cover the default.
+func TestNewDepsWiresTheProcessOwnStdin(t *testing.T) {
+	d := newDeps()
+	if d.stdin != io.Reader(os.Stdin) {
+		t.Error("newDeps() does not wire stdin to the process's own os.Stdin")
+	}
+}
+
+// TestNoCommandBlocksOnClosedStdin drives every command with an empty, already-exhausted stdin
+// and asserts each returns well within a generous bound: a blocked unattended run produces no
+// output and no exit code, and there is no recovery.
+func TestNoCommandBlocksOnClosedStdin(t *testing.T) {
+	d, _ := testDeps(t)
+	d.stdin = strings.NewReader("")
+	d.readPassword = func(cmd *cobra.Command, name string) (string, error) {
+		return promptPassword(cmd, name, d.stdin)
+	}
+	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+
+	commands := [][]string{
+		{"sites", "list"},
+		{"health"},
+		{"health", "ecxc-ski-a1b2c3"},
+		{"logs", "ecxc-ski-a1b2c3"},
+		{"adopt", "list"},
+		{"auth", "list"},
+		{"auth", "set", "CAIRN_CF_READ_TOKEN"},
+		{"auth", "unset", "CAIRN_CF_READ_TOKEN"},
+		{"auth", "probe"},
+	}
+	for _, args := range commands {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			done := make(chan struct{})
+			go func() {
+				cmd := newRootCmd(d)
+				cmd.SetOut(&bytes.Buffer{})
+				cmd.SetErr(&bytes.Buffer{})
+				cmd.SetArgs(args)
+				_ = cmd.Execute()
+				close(done)
+			}()
+			select {
+			case <-done:
+			case <-time.After(5 * time.Second):
+				t.Fatalf("cairn %s did not return; it is waiting on stdin", strings.Join(args, " "))
+			}
+		})
 	}
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/version"
@@ -56,6 +57,9 @@ type rootFlags struct {
 	quiet bool
 	// color is one of colorAuto, colorAlways, or colorNever.
 	color string
+	// ackFile names the acknowledgement file health reads and sites list skips. Empty means the
+	// default, ackFilePath's own <registry directory>/acknowledgements.json.
+	ackFile string
 }
 
 // validate reports an error when --color names a value outside the three.
@@ -122,6 +126,7 @@ func newRootCmd(d deps) *cobra.Command {
 	p.BoolVarP(&f.verbose, "verbose", "v", false, "print the identifiers a run otherwise withholds")
 	p.BoolVarP(&f.quiet, "quiet", "q", false, "print nothing when the run is OK")
 	p.StringVar(&f.color, "color", colorAuto, "when to colour the output: auto, always, or never")
+	p.StringVar(&f.ackFile, "ack-file", "", "path to a JSON file of acknowledgement entries (default: acknowledgements.json in the registry directory)")
 	cmd.MarkFlagsMutuallyExclusive("quiet", "verbose")
 
 	cmd.AddGroup(
@@ -141,4 +146,28 @@ func newRootCmd(d deps) *cobra.Command {
 	)
 
 	return cmd
+}
+
+// completeSiteIDs is the ValidArgsFunction cairn health and cairn logs share for their
+// positional site argument. It reads the registry only, never the network: an error opening or
+// listing it answers no candidates rather than a printed error, since a completion script has
+// nowhere useful to show one.
+func completeSiteIDs(d deps) func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return func(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) > 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		st, err := openRegistry(d)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		entries, _ := st.List()
+		var ids []string
+		for _, e := range entries {
+			if strings.HasPrefix(e.ID, toComplete) {
+				ids = append(ids, e.ID)
+			}
+		}
+		return ids, cobra.ShellCompDirectiveNoFileComp
+	}
 }

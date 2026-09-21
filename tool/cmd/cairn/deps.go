@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -51,6 +52,10 @@ type deps struct {
 	now func() time.Time
 	// readPassword prompts for one credential value with echo off.
 	readPassword func(*cobra.Command, string) (string, error)
+	// stdin is the stream readPassword's non-terminal fallback reads one piped line from. It is
+	// a field here, not a package-level variable, so a test can supply a fixture stream without
+	// touching the process's real stdin.
+	stdin io.Reader
 	// exit ends the process with a monitoring-plugin verdict code. It is os.Exit in production,
 	// carried here so a test can observe the code and so os.Exit itself is named in main.go
 	// alone.
@@ -103,7 +108,7 @@ func credentialSource(e env, name string) string {
 // newDeps returns the production dependency set.
 func newDeps() deps {
 	k := secrets.NewKeyring()
-	return deps{
+	d := deps{
 		env:            osEnviron,
 		keyring:        k,
 		keyringWriter:  k,
@@ -114,7 +119,11 @@ func newDeps() deps {
 		registryDir:    defaultRegistryDir,
 		registrySource: defaultRegistrySource,
 		now:            time.Now,
-		readPassword:   promptPassword,
+		stdin:          os.Stdin,
 		exit:           os.Exit,
 	}
+	d.readPassword = func(cmd *cobra.Command, name string) (string, error) {
+		return promptPassword(cmd, name, d.stdin)
+	}
+	return d
 }

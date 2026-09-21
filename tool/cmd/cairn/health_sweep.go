@@ -28,7 +28,7 @@ const maxSweepTimeout = 600 * time.Second
 // it is omitted from the emitted stream rather than named, since a plain-text UNKNOWN line and a
 // blank-line separator would corrupt the newline-delimited JSON; Task 20c owns --json's final,
 // documented contract for a site the sweep never reached.
-func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, window time.Duration) error {
+func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, window time.Duration, acks health.Acks) error {
 	entries, listErrs := st.List()
 
 	// An empty registry reuses spine.ErrExpectSites, sites list's own sentinel for the same
@@ -76,7 +76,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			ErrorThreshold: f.errorThreshold,
 			LogWindow:      window,
 			Now:            d.now,
-		}, nil)
+		}, acks)
 		siteCancel()
 		if err != nil {
 			return err

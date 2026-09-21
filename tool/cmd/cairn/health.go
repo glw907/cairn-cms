@@ -28,6 +28,9 @@ type healthFlags struct {
 	errorThreshold int
 	// since is the lookback window, in the grammar logs.ParseSince accepts.
 	since string
+	// acks is every --ack flag's raw value, "<check-id>=<YYYY-MM-DD>", merged with the resolved
+	// --ack-file's own entries in resolveAcks.
+	acks []string
 }
 
 // newHealthCmd builds cairn health. With a site named, it sweeps that one site; bare, it sweeps
@@ -36,11 +39,12 @@ func newHealthCmd(d deps, rf *rootFlags) *cobra.Command {
 	var f healthFlags
 
 	cmd := &cobra.Command{
-		Use:     "health [<site>]",
-		Short:   "Run the read-only health checks against one site, or every site when none is named",
-		Example: "cairn health ecxc-ski-a1b2c3 --json",
-		GroupID: groupSite,
-		Args:    cobra.MaximumNArgs(1),
+		Use:               "health [<site>]",
+		Short:             "Run the read-only health checks against one site, or every site when none is named",
+		Example:           "cairn health ecxc-ski-a1b2c3 --json",
+		GroupID:           groupSite,
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeSiteIDs(d),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runHealth(cmd, d, rf, f, args)
 		},
@@ -49,6 +53,7 @@ func newHealthCmd(d deps, rf *rootFlags) *cobra.Command {
 	cmd.Flags().BoolVar(&f.asJSON, "json", false, "print the report as JSON")
 	cmd.Flags().IntVar(&f.errorThreshold, "error-threshold", defaultErrorThreshold, "error records in the window that still report OK")
 	cmd.Flags().StringVar(&f.since, "since", defaultSince, "lookback window for the error count: a whole number of m, h, or d")
+	cmd.Flags().StringArrayVar(&f.acks, "ack", nil, "acknowledge one check until an expiry date: <check-id>=<YYYY-MM-DD>, repeatable")
 
 	return cmd
 }
@@ -61,19 +66,24 @@ func runHealth(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, args []
 		return err
 	}
 
+	acks, err := resolveAcks(d, rf, f)
+	if err != nil {
+		return err
+	}
+
 	st, err := openRegistry(d)
 	if err != nil {
 		return err
 	}
 
 	if len(args) == 1 {
-		return runHealthSingle(cmd, d, rf, f, st, args[0], window)
+		return runHealthSingle(cmd, d, rf, f, st, args[0], window, acks)
 	}
-	return runHealthSweep(cmd, d, rf, f, st, window)
+	return runHealthSweep(cmd, d, rf, f, st, window, acks)
 }
 
 // runHealthSingle sweeps one named site's checks and exits on the run's verdict.
-func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, id string, window time.Duration) error {
+func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, id string, window time.Duration, acks health.Acks) error {
 	rec, err := st.Load(id)
 	if err != nil {
 		return fmt.Errorf("cairn: no site named %q.\nRun `cairn sites list` to see the sites cairn knows", id)
@@ -86,7 +96,7 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 		ErrorThreshold: f.errorThreshold,
 		LogWindow:      window,
 		Now:            d.now,
-	}, nil)
+	}, acks)
 	if err != nil {
 		return err
 	}

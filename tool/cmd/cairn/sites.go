@@ -61,11 +61,16 @@ func newSitesCmd(d deps, rf *rootFlags) *cobra.Command {
 // from the read itself: an empty registry, an unreadable record, or a count the operator's
 // --expect-sites disagrees with all leave the tool unable to say whether the sites are healthy.
 func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error {
+	dir, err := d.registryDir()
+	if err != nil {
+		return err
+	}
 	st, err := openRegistry(d)
 	if err != nil {
 		return err
 	}
 	entries, listErrs := st.List()
+	entries, listErrs = excludeAckFile(entries, listErrs, dir, rf)
 
 	if rf.verbose {
 		if err := printRegistrySource(cmd, d); err != nil {

@@ -28,11 +28,12 @@ func newLogsCmd(d deps, rf *rootFlags) *cobra.Command {
 	var f logsFlags
 
 	cmd := &cobra.Command{
-		Use:     "logs <site>",
-		Short:   "Read one site's engine log records",
-		Example: "cairn logs ecxc-ski-a1b2c3 --since 24h",
-		GroupID: groupSite,
-		Args:    cobra.ExactArgs(1),
+		Use:               "logs <site>",
+		Short:             "Read one site's engine log records",
+		Example:           "cairn logs ecxc-ski-a1b2c3 --since 24h",
+		GroupID:           groupSite,
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: completeSiteIDs(d),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLogs(cmd, d, rf, f, args[0])
 		},
@@ -41,8 +42,22 @@ func newLogsCmd(d deps, rf *rootFlags) *cobra.Command {
 	cmd.Flags().StringVar(&f.event, "event", "", "narrow the query to one engine event name")
 	cmd.Flags().StringVar(&f.since, "since", defaultSince, "lookback window: a whole number of m, h, or d")
 	cmd.Flags().BoolVar(&f.asJSON, "json", false, "print the entries as JSON")
+	_ = cmd.RegisterFlagCompletionFunc("event", completeLogEvents)
 
 	return cmd
+}
+
+// completeLogEvents is the flag completion for cairn logs --event, over the engine's own log
+// event vocabulary. It reads no network and no registry: the vocabulary is a Go literal, so an
+// error is not possible here, and every candidate answers with no directive but plain text.
+func completeLogEvents(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	var matches []string
+	for _, event := range logs.Events() {
+		if strings.HasPrefix(event, toComplete) {
+			matches = append(matches, event)
+		}
+	}
+	return matches, cobra.ShellCompDirectiveNoFileComp
 }
 
 // runLogs fetches one site's log entries and prints them newest first.

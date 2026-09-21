@@ -67,6 +67,23 @@ cairn auth set CAIRN_GH_READ_TOKEN
 `cairn auth list` reports which provider answers each of the three
 variables, environment, keyring, or neither, and never prints a value.
 
+### Piping a value with no terminal at all
+
+`cairn auth set <name>` also reads from stdin when the echo-off prompt has
+no terminal to read from, which is what a script or a scheduled setup step
+needs:
+
+```sh
+printf %s "$v" | cairn auth set CAIRN_GH_READ_TOKEN
+```
+
+A trailing `\r\n` is stripped the same as a bare `\n`, so a value piped
+from a Windows shell or a PowerShell pipeline arrives clean. A value typed
+at an interactive prompt can still reach shell history; a value in a
+pipeline can still reach a process listing on some platforms. Neither
+risk is eliminated by either form; a file the shell reads on login, as
+the earlier sections describe, keeps a credential out of both.
+
 ## Where the keyring stores it
 
 - macOS: Keychain.

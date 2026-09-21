@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"slices"
 	"strings"
@@ -53,10 +55,15 @@ func restoreOnCancel(ctx context.Context, restore func()) (stop func()) {
 	}
 }
 
-// promptPassword prompts on cmd's error stream for name's value with echo
-// off, through golang.org/x/term, and returns it. It never reads from
-// argv or a flag.
-func promptPassword(cmd *cobra.Command, name string) (string, error) {
+// promptPassword prompts on cmd's error stream for name's value with echo off, through
+// golang.org/x/term, and returns it. It never reads from argv or a flag.
+//
+// The echo-off read is attempted unconditionally; there is no separate TTY query. When
+// term.ReadPassword returns any error at all, which is the shape the read takes on a
+// non-terminal stdin, the fallback below reads one line from stdin instead, so `printf %s "$v"
+// | cairn auth set NAME` works with no separate flag and no errno inspection, which is not
+// portable across the tool's three target platforms.
+func promptPassword(cmd *cobra.Command, name string, stdin io.Reader) (string, error) {
 	fd := int(os.Stdin.Fd())
 	// A stdin that carries no terminal state has no echo to restore, and reading its state is
 	// how that is learned: this is not a terminal test the run branches on, so the read path
@@ -69,13 +76,36 @@ func promptPassword(cmd *cobra.Command, name string) (string, error) {
 		return "", err
 	}
 	b, err := term.ReadPassword(fd)
+	if err != nil {
+		return readPipedValue(stdin, name)
+	}
 	if _, ferr := fmt.Fprintln(cmd.ErrOrStderr()); ferr != nil {
 		return "", ferr
 	}
-	if err != nil {
+	return string(b), nil
+}
+
+// readPipedValue reads one line from stdin, promptPassword's fallback when the echo-off
+// terminal read fails. A trailing `\r\n` is stripped the same as a bare `\n`, so a value piped
+// from a Windows shell or a PowerShell pipeline is stored without a stray carriage return that
+// would otherwise fail every request with no visible cause. An empty value is refused.
+func readPipedValue(stdin io.Reader, name string) (string, error) {
+	line, err := bufio.NewReader(stdin).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
 		return "", fmt.Errorf("read %s: %w", name, err)
 	}
-	return string(b), nil
+	line = strings.TrimSuffix(line, "\n")
+	line = strings.TrimSuffix(line, "\r")
+	if line == "" {
+		return "", emptyPipedValueError(name)
+	}
+	return line, nil
+}
+
+// emptyPipedValueError is auth set's refusal of an empty piped value, new to this table and
+// owed to Task 22a's editorial gate.
+func emptyPipedValueError(name string) error {
+	return fmt.Errorf("cairn: %s is empty.\nPipe a non-empty value: printf %%s \"$v\" | cairn auth set %s", name, name)
 }
 
 // newAuthCmd builds the cairn auth command tree.

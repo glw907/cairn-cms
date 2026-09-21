@@ -53,12 +53,16 @@ type Entry struct {
 }
 
 // ErrObservabilityOff is the sentinel Fetch and CountErrors return when a Worker's telemetry
-// query answers with an API error rather than a result. Task 10's probe found the endpoint
-// answers 200 with an empty events list and no error for a window past the account's retention
-// (tool/docs/credentials.md, "Workers Logs retention"), so an API-level error from this one
-// endpoint is the signal left over to mean the dataset itself was never created, the state before
-// a site's wrangler config ever sets observability.enabled to true. This mapping has not been
-// confirmed against a live "never enabled" Worker.
+// query answers with an API error that carries no more specific classification: not-found, or a
+// reason this package's provider client did not recognize at all. A recognized reason
+// (unauthorized, forbidden, rate-limited, and the like) is a credential or transport problem, not
+// a sign of the dataset itself, and passes through unchanged so a caller reports it the same way
+// every sibling check does. Task 10's probe found the endpoint answers 200 with an empty events
+// list and no error for a window past the account's retention
+// (tool/docs/credentials.md, "Workers Logs retention"), so a not-found or unclassified API error
+// from this one endpoint is the signal left over to mean the dataset itself was never created,
+// the state before a site's wrangler config ever sets observability.enabled to true. This mapping
+// has not been confirmed against a live "never enabled" Worker.
 var ErrObservabilityOff = errors.New("logs: worker has no observability dataset")
 
 // RetentionClamp is the Workers Logs retention window Task 10's probe observed on the
@@ -200,14 +204,17 @@ func parseEntry(raw json.RawMessage) (Entry, error) {
 	return entry, nil
 }
 
-// fetch runs one telemetry query against cf, mapping an API-level error to ErrObservabilityOff
-// (see that sentinel's own doc comment for why), and decoding the returned events in the order
-// the API carried them.
+// fetch runs one telemetry query against cf, classifying an API-level error before deciding how
+// to report it (see ErrObservabilityOff's own doc comment for the split), and decoding the
+// returned events in the order the API carried them.
 func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) ([]Entry, error) {
 	result, err := cf.ObservabilityQuery(ctx, buildQuery(worker, clampSince(since), now, filterKey, filterValue, limit))
 	if err != nil {
-		if _, ok := errors.AsType[*providers.APIError](err); ok {
-			return nil, ErrObservabilityOff
+		if apiErr, ok := errors.AsType[*providers.APIError](err); ok {
+			if apiErr.Reason == providers.ReasonNotFound || apiErr.Reason == providers.ReasonUnknown {
+				return nil, ErrObservabilityOff
+			}
+			return nil, apiErr
 		}
 		return nil, fmt.Errorf("logs: query worker %s: %w", worker, err)
 	}
@@ -232,11 +239,23 @@ func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query, now time.Time
 }
 
 // FetchLevel returns worker's log entries at level, over the since window ending at now (clamped
-// to RetentionClamp). It is CountErrors's own read path, exported so a caller that also needs the
-// matched entries themselves, the health errors check's top-event-name tally, reads them without
-// a second, re-filtered query.
+// to RetentionClamp), dropping any entry the endpoint returned whose own "level" does not equal
+// level: the request's own filter grammar is unverified against the live API, so a caller trusts
+// what each entry actually carries rather than the filter alone. It is CountErrors's own read
+// path, exported so a caller that also needs the matched entries themselves, the health errors
+// check's top-event-name tally, reads them without a second, re-filtered query.
 func FetchLevel(ctx context.Context, cf *providers.Cloudflare, worker, level string, since time.Duration, now time.Time) ([]Entry, error) {
-	return fetch(ctx, cf, worker, since, now, "level", level, errorCountLimit)
+	entries, err := fetch(ctx, cf, worker, since, now, "level", level, errorCountLimit)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]Entry, 0, len(entries))
+	for _, e := range entries {
+		if e.Level == level {
+			filtered = append(filtered, e)
+		}
+	}
+	return filtered, nil
 }
 
 // CountErrors returns the count of level: error records worker logged over the since window ending

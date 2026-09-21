@@ -9,7 +9,8 @@ import (
 // literal buried inside a check's own file.
 type Options struct {
 	// ErrorThreshold is the error-rate check's pass/fail cutoff: a count of matching log events
-	// over LogWindow at or above which the check reports Failing.
+	// over LogWindow up to and including this value reports OK, and only a count above it reports
+	// Failing.
 	ErrorThreshold int
 	// LogWindow is the lookback window ErrorThreshold is measured over.
 	LogWindow time.Duration

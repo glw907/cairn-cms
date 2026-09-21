@@ -42,6 +42,11 @@ extraction (a scratch domain, a synthetic hex id), never a value that identifies
 production account. `test/fixtures-hygiene.test.mjs` gates this: it walks every file here and
 fails on an email-shaped string or the estate account id.
 
+One file is the exception to "a real captured API response":
+`cloudflare/observability-telemetry-query.ok.json` is synthesized from a live response's key set
+with no body captured, as its own `provenance.note` says; its `captured` date marks when that key
+set was recorded, not when the body itself came back from a live call.
+
 ## When this corpus moves
 
 The day the Go tool leaves this repository (its own top-level module, its own history), this

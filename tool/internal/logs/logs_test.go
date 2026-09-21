@@ -160,7 +160,9 @@ func TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors(t *testing.T) {
 }
 
 // TestCountErrorsCountsLevelErrorRecords asserts CountErrors returns the count of level: error
-// records the fixture carries, one of the three fixture events.
+// records the fixture carries: one of the three fixture events is level: error, the other two are
+// warn and info, and the fixture's transport returns every event regardless of the request's own
+// level filter, so the true count comes from FetchLevel's own Entry.Level check.
 func TestCountErrorsCountsLevelErrorRecords(t *testing.T) {
 	cf := newFixtureClient(t)
 
@@ -168,8 +170,8 @@ func TestCountErrorsCountsLevelErrorRecords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CountErrors: %v", err)
 	}
-	if count != 3 {
-		t.Errorf("count = %d, want 3 (the fixture's transport returns every event regardless of the level filter)", count)
+	if count != 1 {
+		t.Errorf("count = %d, want 1", count)
 	}
 }
 

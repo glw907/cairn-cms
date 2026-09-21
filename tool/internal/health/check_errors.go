@@ -1,9 +1,10 @@
 package health
 
 import (
+	"cmp"
 	"context"
 	"errors"
-	"sort"
+	"slices"
 
 	"github.com/glw907/cairn-cms/tool/internal/logs"
 	"github.com/glw907/cairn-cms/tool/internal/record"
@@ -33,8 +34,8 @@ func topEventNames(entries []logs.Entry, n int) []string {
 		}
 		counts[e.Event]++
 	}
-	sort.SliceStable(order, func(i, j int) bool {
-		return counts[order[i]] > counts[order[j]]
+	slices.SortStableFunc(order, func(a, b string) int {
+		return cmp.Compare(counts[b], counts[a])
 	})
 	if len(order) > n {
 		order = order[:n]

@@ -153,9 +153,9 @@ func TestErrorsCheckReportsTopThreeEventNames(t *testing.T) {
 	}
 }
 
-// TestErrorsCheckObservabilityOff asserts an API-level failure from the observability endpoint
-// reports Unknown with a Detail naming the missing dataset, and Validate accepts the Reason it
-// carries.
+// TestErrorsCheckObservabilityOff asserts an unclassified API-level failure from the
+// observability endpoint reports Unknown with a Detail naming the missing dataset, and Validate
+// accepts the Reason it carries.
 func TestErrorsCheckObservabilityOff(t *testing.T) {
 	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}
 	clients := errorsClients(errorsEventsRoundTripper{status: http.StatusBadRequest})
@@ -169,5 +169,53 @@ func TestErrorsCheckObservabilityOff(t *testing.T) {
 	}
 	if outcome.Reason != spine.ReasonNotObservable {
 		t.Errorf("Reason = %v, want ReasonNotObservable", outcome.Reason)
+	}
+}
+
+// TestErrorsCheckNotFoundIsObservabilityOff asserts a not-found response from the observability
+// endpoint also settles as the missing-dataset condition, alongside the unclassified 400 case
+// TestErrorsCheckObservabilityOff covers.
+func TestErrorsCheckNotFoundIsObservabilityOff(t *testing.T) {
+	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}
+	clients := errorsClients(errorsEventsRoundTripper{status: http.StatusNotFound})
+
+	outcome := errorsCheck{}.Run(context.Background(), record.Record{}, clients, opts)
+	if outcome.State != spine.Unknown {
+		t.Errorf("State = %v, want Unknown", outcome.State)
+	}
+	if outcome.Condition != spine.ConditionConfigObservabilityOff {
+		t.Errorf("Condition = %v, want ConditionConfigObservabilityOff", outcome.Condition)
+	}
+}
+
+// TestErrorsCheckRecognizedReasonsPassThrough asserts an unauthorized, forbidden, or
+// rate-limited response from the observability endpoint keeps its own classified reason, routed
+// through apiErrorOutcome like every sibling check, rather than being folded into the
+// missing-dataset condition.
+func TestErrorsCheckRecognizedReasonsPassThrough(t *testing.T) {
+	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}
+	tests := []struct {
+		name   string
+		status int
+		want   providers.Reason
+	}{
+		{"401 stays unauthorized", http.StatusUnauthorized, providers.ReasonUnauthorized},
+		{"403 stays forbidden", http.StatusForbidden, providers.ReasonForbidden},
+		{"429 stays rate limited", http.StatusTooManyRequests, providers.ReasonRateLimited},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clients := errorsClients(errorsEventsRoundTripper{status: tt.status})
+			outcome := errorsCheck{}.Run(context.Background(), record.Record{}, clients, opts)
+			if outcome.State != spine.Unknown {
+				t.Errorf("State = %v, want Unknown", outcome.State)
+			}
+			if outcome.Condition == spine.ConditionConfigObservabilityOff {
+				t.Errorf("Condition = %v, want anything but ConditionConfigObservabilityOff", outcome.Condition)
+			}
+			if want := spine.APIReason(tt.want); outcome.Reason != want {
+				t.Errorf("Reason = %v, want %v", outcome.Reason, want)
+			}
+		})
 	}
 }

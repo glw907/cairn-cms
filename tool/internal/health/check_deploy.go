@@ -70,6 +70,9 @@ type DeployDetail struct {
 	PushToDeploy bool
 	// LastBuild is the most recent build's settled state.
 	LastBuild BuildState
+	// BuildID is the most recent build's own id, verbose-only: an operator needs it to fetch that
+	// build's logs, but it identifies no more than the short SHAs already do not.
+	BuildID string
 	// LastBuildSHA is the most recent build's commit hash, verbose-only.
 	LastBuildSHA string
 	// MainSHA is the site repository's default branch head commit, verbose-only.
@@ -97,10 +100,10 @@ func field(key string, value any) spine.OutcomeField {
 	return spine.OutcomeField{Key: key, Value: data}
 }
 
-// fields flattens d into the ten ordered spine.OutcomeField entries every deployCheck outcome
+// fields flattens d into the eleven ordered spine.OutcomeField entries every deployCheck outcome
 // carries, in the fixed order the check's own goldens and nonVerboseFieldKeys allowlist key off:
 // workerExists, buildsConnected, pushToDeploy, lastBuild, lastBuildSHA, mainSHA, lastBuildAt,
-// behind, lastBuildShortSHA, mainShortSHA.
+// behind, lastBuildShortSHA, mainShortSHA, buildId.
 func (d DeployDetail) fields() []spine.OutcomeField {
 	return []spine.OutcomeField{
 		field("workerExists", d.WorkerExists),
@@ -113,6 +116,7 @@ func (d DeployDetail) fields() []spine.OutcomeField {
 		field("behind", d.Behind),
 		field("lastBuildShortSHA", shortSHA(d.LastBuildSHA)),
 		field("mainShortSHA", shortSHA(d.MainSHA)),
+		field("buildId", d.BuildID),
 	}
 }
 
@@ -198,10 +202,19 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	}
 	detail.LastBuildSHA = build.TriggerMetadata.CommitHash
 	detail.LastBuildAt = build.CreatedOn
+	detail.BuildID = build.UUID
 
 	if build.Status != buildStoppedStatus || build.Outcome == "" {
 		detail.LastBuild = BuildRunning
 		return detail.outcome(spine.Unknown, spine.ParkReason(spine.ParkBuildRunning), "")
+	}
+
+	// A failed build is settled: it does not become more or less broken depending on whether
+	// GitHub answers, so this verdict comes before the HeadSHA read. Behind is only meaningful
+	// against a build that succeeded, so a failed build never measures MainSHA or Behind.
+	if build.Outcome != buildOutcomeSuccess {
+		detail.LastBuild = BuildFailed
+		return detail.outcome(spine.Failing, "", "last build did not succeed")
 	}
 
 	mainSHA, err := c.GH.HeadSHA(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, defaultBranch(r))
@@ -210,11 +223,6 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	}
 	detail.MainSHA = mainSHA
 	detail.Behind = detail.LastBuildSHA != "" && mainSHA != "" && detail.LastBuildSHA != mainSHA
-
-	if build.Outcome != buildOutcomeSuccess {
-		detail.LastBuild = BuildFailed
-		return detail.outcome(spine.Failing, "", "last build did not succeed")
-	}
 
 	detail.LastBuild = BuildOK
 	return detail.outcome(spine.OK, "", "")

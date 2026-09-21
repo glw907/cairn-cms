@@ -25,6 +25,39 @@ func (rt fixtureRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	}, nil
 }
 
+// TestBuildsLatestDecodesBuildShape asserts BuildsLatest decodes a Workers Builds discovery
+// response into the id, status, outcome, commit SHA, and timestamp fields deployCheck reads,
+// matching the live shape docs/internal/record/2026-08-13-t5-task8-live-e2e.md captured.
+func TestBuildsLatestDecodesBuildShape(t *testing.T) {
+	body := []byte(`{"success":true,"result":[{"build_uuid":"e266a910","status":"stopped","build_outcome":"success","created_on":"2026-08-13T12:48:26Z","build_trigger_metadata":{"commit_hash":"6d670d5b"}}]}`)
+	rt := fixtureRoundTripper{status: http.StatusOK, body: body}
+	cf := NewCloudflare("account-id", NewCredential("token"), rt)
+
+	build, err := cf.BuildsLatest(context.Background(), "worker-tag")
+	if err != nil {
+		t.Fatalf("BuildsLatest: %v", err)
+	}
+	if build == nil {
+		t.Fatal("BuildsLatest returned a nil Build, want the one decoded result")
+	}
+	if build.UUID != "e266a910" {
+		t.Errorf("UUID = %q, want %q", build.UUID, "e266a910")
+	}
+	if build.Status != "stopped" {
+		t.Errorf("Status = %q, want %q", build.Status, "stopped")
+	}
+	if build.Outcome != "success" {
+		t.Errorf("Outcome = %q, want %q", build.Outcome, "success")
+	}
+	if build.TriggerMetadata.CommitHash != "6d670d5b" {
+		t.Errorf("TriggerMetadata.CommitHash = %q, want %q", build.TriggerMetadata.CommitHash, "6d670d5b")
+	}
+	wantCreated := "2026-08-13 12:48:26 +0000 UTC"
+	if got := build.CreatedOn.UTC().String(); got != wantCreated {
+		t.Errorf("CreatedOn = %q, want %q", got, wantCreated)
+	}
+}
+
 // TestClassifyReason covers every Reason value's mapping rule this package can produce (all but
 // ReasonBuildsNotConnected, which classifyReason never produces per its own doc comment), including
 // the cases the task names explicitly: a 403 with code 10000 classifies as ReasonForbidden, and a

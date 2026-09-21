@@ -96,6 +96,10 @@ func deployHeadSHARoute(sha string) deployRoute {
 	return deployRoute{path: "/commits/main", status: http.StatusOK, body: `{"sha":"` + sha + `"}`}
 }
 
+// deployHeadSHAErrorRoute answers GitHub's commit lookup with a server error, standing in for a
+// GitHub outage.
+var deployHeadSHAErrorRoute = deployRoute{path: "/commits/main", status: http.StatusInternalServerError, body: `{"message":"boom"}`}
+
 // deployRecord returns the record every deployCheck test runs against: a Worker named
 // "my-worker" and a repository whose default branch is "main".
 func deployRecord() record.Record {
@@ -205,6 +209,25 @@ func TestDeployCheckFailedBuildIsFailing(t *testing.T) {
 	if got := fieldString(t, got.Fields, "lastBuild"); got != "failed" {
 		t.Errorf("lastBuild field = %q, want %q", got, "failed")
 	}
+	if got := fieldString(t, got.Fields, "buildId"); got != "build-uuid" {
+		t.Errorf("buildId field = %q, want %q", got, "build-uuid")
+	}
+}
+
+// TestDeployCheckFailedBuildIsFailingDespiteGitHubOutage asserts a settled failed build reports
+// Failing even when the following GitHub read errors: a failed build does not become Unknown
+// because GitHub is unreachable, since GitHub tells this check nothing about whether the build
+// itself succeeded.
+func TestDeployCheckFailedBuildIsFailingDespiteGitHubOutage(t *testing.T) {
+	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+		deployBuildRoute(buildStoppedStatus, "fail", "abc1234def5678"), deployHeadSHAErrorRoute)
+	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
+	if got.State != spine.Failing {
+		t.Errorf("State = %v, want Failing even when GitHub errors", got.State)
+	}
+	if got := fieldString(t, got.Fields, "lastBuild"); got != "failed" {
+		t.Errorf("lastBuild field = %q, want %q", got, "failed")
+	}
 }
 
 func TestDeployCheckOKEqualSHAsIsOKNotBehind(t *testing.T) {
@@ -232,8 +255,8 @@ func TestDeployCheckOKDifferingSHAsIsOKAndBehind(t *testing.T) {
 	}
 }
 
-// TestDeployCheckFieldOrderMatchesProduces asserts the ten Fields keys the Produces block lists
-// appear, in that order, on a fully-populated outcome.
+// TestDeployCheckFieldOrderMatchesProduces asserts the eleven Fields keys the Produces block
+// lists appear, in that order, on a fully-populated outcome.
 func TestDeployCheckFieldOrderMatchesProduces(t *testing.T) {
 	sha := "abc1234def5678"
 	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
@@ -242,7 +265,7 @@ func TestDeployCheckFieldOrderMatchesProduces(t *testing.T) {
 
 	want := []string{
 		"workerExists", "buildsConnected", "pushToDeploy", "lastBuild", "lastBuildSHA",
-		"mainSHA", "lastBuildAt", "behind", "lastBuildShortSHA", "mainShortSHA",
+		"mainSHA", "lastBuildAt", "behind", "lastBuildShortSHA", "mainShortSHA", "buildId",
 	}
 	if len(got.Fields) != len(want) {
 		t.Fatalf("len(Fields) = %d, want %d", len(got.Fields), len(want))
@@ -279,6 +302,17 @@ func TestDeployCheckNonVerboseRenderDropsVerboseOnlyValues(t *testing.T) {
 		if strings.Contains(rendered, leaked) {
 			t.Errorf("non-verbose render leaked verbose-only value %q: %s", leaked, rendered)
 		}
+	}
+	if strings.Contains(rendered, `"buildId"`) {
+		t.Errorf("non-verbose render carries the buildId key: %s", rendered)
+	}
+
+	verbose, err := report.JSON(true)
+	if err != nil {
+		t.Fatalf("JSON(true): %v", err)
+	}
+	if !strings.Contains(string(verbose), `"Key":"buildId","Value":"build-uuid"`) {
+		t.Errorf("verbose render dropped buildId: %s", verbose)
 	}
 }
 

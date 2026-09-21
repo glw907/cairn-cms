@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { IMPORT_LINE } from '../../lib/guidance/check.js';
 import { resolveSourceRoot } from '../../lib/guidance/install.js';
 import { DOCS_ALLOWED_ARM_PREFIXES, DOCS_ROOT_FILES, parsePackFilePaths } from '../../../scripts/checks/check-package-files.mjs';
@@ -123,19 +123,20 @@ describe('claude/CLAUDE.md word budget and links', () => {
     expect(words.length).toBeLessThan(1500);
   });
 
-  it('resolves every relative link inside the packed docs allowlist', () => {
-    const links = [...fragment.matchAll(/]\((\.\.?\/[^)]+)\)/g)].map((m) => m[1]);
-    expect(links.length).toBeGreaterThan(0);
+  it('every node_modules path it names is inside the packed docs allowlist and exists', () => {
+    const paths = [...fragment.matchAll(/node_modules\/@glw907\/cairn-cms\/([^\s`)]+)/g)].map(
+      (m) => m[1]
+    );
+    expect(paths.length).toBeGreaterThan(0);
 
-    for (const link of links) {
-      const resolved = resolve(dirname(join(CLAUDE_ROOT, 'CLAUDE.md')), link);
-      expect(existsSync(resolved)).toBe(true);
-
-      const relFromRoot = resolved.slice(ROOT.length + 1).split('\\').join('/');
+    for (const path of paths) {
       const allowed =
-        DOCS_ROOT_FILES.includes(relFromRoot) ||
-        DOCS_ALLOWED_ARM_PREFIXES.some((prefix: string) => relFromRoot.startsWith(prefix));
+        DOCS_ROOT_FILES.includes(path) ||
+        DOCS_ALLOWED_ARM_PREFIXES.some((prefix: string) => path.startsWith(prefix));
       expect(allowed).toBe(true);
+
+      const resolved = resolve(ROOT, path);
+      expect(existsSync(resolved)).toBe(true);
     }
   });
 });

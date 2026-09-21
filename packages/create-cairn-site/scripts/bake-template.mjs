@@ -152,8 +152,8 @@ Add your own project-specific guidance here; \`cairn-guidance install\` only eve
 `;
 
 /**
- * Read the guidance source straight from the monorepo's own \`skills/\` and \`claude/\` trees at
- * \`repoRoot\`, never through the installed-package resolution install.ts's own readers use at
+ * Read the guidance source straight from the monorepo's own `skills/` and `claude/` trees at
+ * `repoRoot`, never through the installed-package resolution install.ts's own readers use at
  * runtime: this package carries no dependency on @glw907/cairn-cms, so nothing here can resolve
  * "installed". The version stamped is parsed out of the resolved engine spec (the caret
  * stripped), not the repo's own package.json version, since an overridden engineSpec should

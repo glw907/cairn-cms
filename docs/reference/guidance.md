@@ -105,12 +105,11 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
   whether a stock DaisyUI component already covers it, then names the atom, the seam, the
   showcase exemplar file, and the fact bullet that records the pattern for each case, and closes
   with a pre-flight checklist reference.
-- **`cairn-consult`** is the site-side half of `engine-consult`: it triggers when a developer has
-  worked around the engine twice, or wants something the seams do not reach, and writes a
-  consultation brief in the four-field format (what the pass builds, the engine edge it presses,
-  evidence for the any-site case, the site's fallback if declined) filed at the installed
-  package's `bugs.url` when it is reachable, or handed to the developer to send by whatever
-  channel they have when it is not.
+- **`cairn-consult`** triggers when a developer has worked around the engine twice, or wants
+  something the seams do not reach, and writes a consultation brief in the four-field format
+  (what the pass builds, the engine edge it presses, evidence for the any-site case, the site's
+  fallback if declined) filed at the installed package's `bugs.url` when it is reachable, or
+  handed to the developer to send by whatever channel they have when it is not.
 
 ## The `.claude/` exclusion from the Tailwind build
 

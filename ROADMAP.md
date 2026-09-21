@@ -987,19 +987,6 @@ the named human gates only):**
   through writing-plans start when the revised research records land; both get an adversarial
   review, and the pass runs UNREAD on the reviewed plan as soon as C merges (Geoff, 2026-09-13).
 
-- **CLOSED (extend-1 merged 2026-09-20; extend-2 merged the same window): the Extend track.**
-  Architecture approved in the 2026-09-12 brainstorm as "qualities, not features," three layers:
-  gates a consumer runs on its own code (`cairn-audit`'s log-event-grammar and log-secret-field
-  rules, `stock-default-hazards`'s retired-class arm), a closed list of composable atoms (the
-  outcome family and the structured logger exported, the admin toolkit, a site-owned admin
-  stylesheet seam), and Claude guidance shipped in the package and installed by its own bin (the
-  `CLAUDE.md` fragment, the `cairn-extend` and `cairn-consult` skills, the
-  `cairn-extension-reviewer` agent, a save hook). Every ruling is recorded in
-  `docs/internal/engine-rulings.md`; every consumer action is in `CHANGELOG.md` and
-  `docs/extend/migration-notes.md`. Site migration is no longer tracked here: each of the four
-  production sites (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org) carries its own
-  migration follow-up on its own roadmap.
-
 - **Four follow-ups for extend-1's gates layer, filed from the admin motion language pass
   (2026-09-15), still open.** (1) the rendered half of `motion-hover-gate`, triggered by a
   consumer's hand-authored `:hover` rule the static half cannot see because the motion sits on a
@@ -1505,23 +1492,16 @@ the named human gates only):**
   the role whose size the reported class resolves to, step 2 of that recipe becomes automatic, and a
   codemod that rewrites the class in place becomes buildable on top. **Flag for Geoff:** decide
   whether the codemod ships before the release that makes the rename recipe live, or after.
-- **CLOSED (extend-2, 2026-09-20): DX decisions for Geoff, pre-release** (design infrastructure
-  Pass 3, 2026-07-29). Two open calls on the packaged skill's delivery mechanism, both answered by
-  the guidance layer's own mechanics: (1) silent overwrite is no longer the default. `cairn-guidance
-  install` writes `<dest>.orig` beside anything a local edit diverged from before overwriting it,
-  and never rewrites an existing `.orig`, so a first divergence is always recoverable. (2) the
-  overloaded flag is gone. The skill install no longer rides on the doctor's `--fix`; it is its own
-  bin, `cairn-guidance install`, with its own `check --strict` gate for a site that wants one.
 - **Small durability notes on the packaged skill, from the Task 6/7 review gates** (design
   infrastructure Pass 3, 2026-07-29), the first now closed by `cairn-guidance`'s `MANIFEST`
   (extend-2, 2026-09-20): a later install names any path the previous `MANIFEST` listed that the
   current package no longer ships as removable, so a retired file no longer sits undetected in a
   consumer's `.claude/`. The remaining two stay open, cheap to carry forward: `skills/**/*.md`
-  prose sits outside both `.vale.ini`'s scope (`docs/**/*.md` and
-  `README.md` only) and `check:docs`'s dead-link and arm-index gates, so its prose and its links are
-  unchecked by any repo gate; and `SKILL.md`'s cross-references into the reference docs resolve
-  through `node_modules/@glw907/cairn-cms/`, which is correct once installed but means the links are
-  necessarily relative to an install, not to this repo's own tree.
+  prose sits outside `.vale.ini`'s scope (`docs/**/*.md` and `README.md` only), so its prose is
+  unchecked by any repo gate, though `check:docs` now resolves its links; and `SKILL.md`'s
+  cross-references into the reference docs resolve through `node_modules/@glw907/cairn-cms/`,
+  which is correct once installed but means the links are necessarily relative to an install, not
+  to this repo's own tree.
 
 - **From the ASC Assets-trial harvest (2026-07-29, ten findings across two batches, folded at
   the 0.91.1 hotfix pass; full detail in the ASC repo's trial log).** Finding 1, the 0.91.0

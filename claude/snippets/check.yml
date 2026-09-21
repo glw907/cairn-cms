@@ -20,7 +20,7 @@ jobs:
       # svelte-check's precheck compiles the admin stylesheet before type-checking.
       - run: npm run check
       - run: npm run check:cairn
-      # continue-on-error so a stale or missing guidance tree never fails this job; it is a
-      # signal for a developer to read, not a gate to block on.
+      # cairn-guidance check exits 0 on a stale or missing tree without --strict, so
+      # continue-on-error here only covers a crash or a resolution failure.
       - run: npx cairn-guidance check
         continue-on-error: true

@@ -20,18 +20,20 @@ gets you there at all.
 
 ## The atoms
 
-The named primitives a site builds on, each documented with its full contract:
+The named primitives a site builds on, each documented with its full contract. The engine's docs
+ship inside the installed package, so every page below is a path from your site's root, not a
+link this file can follow.
 
 - `requireAccess`, `createSectionAction`, `locals.cairnEditor`: the auth guard and the per-route
-  factories. See [SvelteKit](../docs/reference/sveltekit.md).
+  factories. See `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md`.
 - `CairnAdminShell`, `navLayout`: the shared admin frame and its declared navigation. See
-  [Components](../docs/reference/components.md).
+  `node_modules/@glw907/cairn-cms/docs/reference/components.md`.
 - The field, screen-scaffold, and formatter primitives a custom `/admin/` screen composes. See
-  [The admin toolkit](../docs/reference/admin-toolkit.md).
+  `node_modules/@glw907/cairn-cms/docs/reference/admin-toolkit.md`.
 - `createAuthChannel`: a site's own second-audience login channel (request, confirm, logout) over
-  a site-owned database. See [Auth channel](../docs/reference/auth-channel.md).
+  a site-owned database. See `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md`.
 - `createLogger`: structured logs in the engine's own record shape, with the same redaction
-  rules. See [Log](../docs/reference/log.md).
+  rules. See `node_modules/@glw907/cairn-cms/docs/reference/log.md`.
 
 ## The gates
 
@@ -83,5 +85,4 @@ quality inspector.
 ## Where the docs are
 
 If the Go `cairn` tool is installed, `cairn docs <query>` searches the installed engine version's
-docs directly. Otherwise, read [the reference index](../docs/reference/README.md), shipped in
-this package next to this file.
+docs directly. Otherwise, read `node_modules/@glw907/cairn-cms/docs/reference/README.md`.

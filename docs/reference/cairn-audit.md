@@ -22,8 +22,8 @@ without `--rendered`, scopes the static run the same way.
 
 A build agent points at these mechanical checks rather than holding their formulas in working
 memory. The packaged `cairn-admin-screens` skill names them by rule id and defers to the audit for
-the details. [`cairn-doctor --fix`](./doctor.md#the---fix-skill-install) installs and
-freshness-checks the skill in a consumer repo.
+the details. [`cairn-guidance install`](./guidance.md#install) installs and freshness-checks the
+skill in a consumer repo.
 
 ## What ships
 
@@ -183,6 +183,14 @@ typo that quietly narrows the audit to nothing is the silent green this engine e
 `sheet` behaves the same way from the other side: leave it unset and the run resolves it to a
 candidate on its own (your tree's own build, then the installed package), while naming a path
 yourself and getting it wrong fails the run, naming that path, rather than falling back silently.
+
+A site's `src/admin.css` used to scan the engine's `dist` directory with its own `@source` line.
+It now imports `@glw907/cairn-cms/admin-sources.css`, the engine's own Tailwind `@source`
+manifest, after the site's own admin-routes `@source` line. That ordering places the engine's
+utilities later in Tailwind's own generation order and makes the compiled sheet a superset of the
+engine's utility set, so the engine's own responsive variants still beat the site's later-loading
+base utilities inside the shared `utilities` cascade layer. The `sheet` entry described above is a
+different artifact, the precompiled admin stylesheet. This import does not replace it.
 
 ## Rendered mode
 

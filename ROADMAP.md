@@ -842,6 +842,24 @@ the named human gates only):**
 
 ## Next
 
+- **`cairn-guidance install` write-hardening candidates, from the security re-read (extend-2,
+  2026-09-20).** The blocking read that found the symlink-containment defect (fixed in `9aa7765a`)
+  also named six smaller items, verified against the code as it stands after that fix and left
+  open: (1) each directory level should be created with a non-recursive `mkdir` that refuses on
+  `EEXIST` when the existing entry is a symlink, closing a race between the `lstat` walk and the
+  `mkdir` call where a planted symlink lands between the two; this needs a concurrent local writer
+  in the same working tree, out of the threat model for a developer's own checkout, which is why
+  it is filed rather than fixed now; (2) a destination whose `nlink > 1` (a hard link) should be
+  refused the same way a symlink is, since a hard link bypasses the symlink check entirely; (3)
+  `err.code` should carry out of the write's `catch` so an `ENOSPC` or `EACCES` failure is
+  reported as an error rather than silently naming a truncated destination as written; (4)
+  `readIfExists` and `mkdir` should move inside the same `try` as the write, so an `EACCES` on
+  either refuses the destination rather than aborting the whole install; (5) `cairn-guidance
+  check`'s read side should reuse the same `lstat` walk `install` uses, rather than a separate,
+  looser read path; (6) a refused destination should itself appear in the report's lists, not
+  only its `.orig` sibling. Trigger: the next pass that touches `src/lib/guidance/install.ts`'s
+  write path, or a second independent report of any of the six.
+
 - **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
   until a site pass has filed about twenty facts by hand and the shape has stopped moving
   (`docs/internal/record/2026-09-15-facts-container-review/`, charter report finding 9).
@@ -987,42 +1005,24 @@ the named human gates only):**
   through writing-plans start when the revised research records land; both get an adversarial
   review, and the pass runs UNREAD on the reviewed plan as soon as C merges (Geoff, 2026-09-13).
 
-- **Extend (Geoff, 2026-09-12): the pass after polish-C and the cut, so a
-  developer extending cairn borrows the refined patterns instead of reinventing them.**
-  Architecture approved in the 2026-09-12 brainstorm as "qualities, not features," three
-  layers: gates a consumer runs on its own code (`cairn-audit` wired by the scaffold plus a new
-  `cairn-check` carrying the comment standard, the hygiene idioms, a log-event grammar rule,
-  and a form-outcome shape rule); a closed list of six composable atoms (the outcome family
-  and the structured logger exported, `createSectionAction`, the admin identity, the admin
-  toolkit, and a site-owned admin stylesheet seam); and Claude guidance shipped in the package
-  and installed by `cairn-doctor --fix` (a `CLAUDE.md` fragment, `cairn-extend` and
-  `cairn-consult` skills, a `cairn-extension-reviewer` agent, a save hook). Exemplars stay
-  read-only in the showcase, one per archetype; the scaffold copies wiring, never code. The
-  evidence is the aksailingclub-org and ecxc-ski surveys (working examples, not exemplars).
-  The pass opens in a FRESH session: (1) update the draft spec against post-C export names
-  (C renames outcomes, verbs, and the log vocabulary), (2) an adversarial review of the
-  design, (3) `writing-plans` for extend-1 (gates and atoms, a minor release) and extend-2
-  (guidance, with the docs rewrite it routes to). Draft spec:
-  `~/.cache/cairn-overnight-2026-09-12/extend-design-DRAFT.md`; it lands at
-  `docs/superpowers/specs/2026-09-12-extend-design.md` after step 2.
-  **extend-1 is done**: the gates layer (`log-event-grammar`, `log-secret-field`,
-  `stock-default-hazards`'s retired-class arm) and the atoms it ships (the public `/log`
-  subpath, `Tooltip` and `AdminTable`'s batch actions in `/admin-toolkit`, the site-owned
-  stylesheet seam), each recorded in `docs/internal/engine-rulings.md`, land at the next
-  merge to `main`. What remains open is extend-2's guidance layer alone.
-  Site migration waits until ALL the extend work has landed (extend-1, the docs rewrite,
-  extend-2), so a site migrates once onto the finished set (Geoff, 2026-09-13). **Trigger:** the
-  docs rewrite waits on extend-1 merged; extend-2 follows the rewrite.
-  **Filed from the admin motion language pass (2026-09-15), four follow-ups for extend-1's gates
-  layer:** (1) the rendered half of `motion-hover-gate`, triggered by a consumer's hand-authored
-  `:hover` rule the static half cannot see because the motion sits on a descendant selector or a
-  base rule the class join does not resolve; (2) the DaisyUI `.tooltip` touch defect (long-press
-  opens and sticks), whose fix the review found is gating the tooltip's **visibility**, not its
-  transition, a behavioral override of a vendor component extend-1 decides on its own terms; (3)
-  the same follow-up for DaisyUI `.menu`; (4) the `.modal-box` scale override's reopen trigger,
-  carried as a `WATCH:` comment beside the recipe in `docs/internal/admin-design-system.md`'s
-  Motion section rather than filed here, since the trigger (the admin adopting `modal-bottom` at
-  narrow widths) is a markup change a future pass makes rather than an external event.
+- **Four follow-ups for extend-1's gates layer, filed from the admin motion language pass
+  (2026-09-15), still open.** (1) the rendered half of `motion-hover-gate`, triggered by a
+  consumer's hand-authored `:hover` rule the static half cannot see because the motion sits on a
+  descendant selector or a base rule the class join does not resolve; (2) the DaisyUI `.tooltip`
+  touch defect (long-press opens and sticks), whose fix the review found is gating the tooltip's
+  **visibility**, not its transition, a behavioral override of a vendor component extend-1 decides
+  on its own terms; (3) the same follow-up for DaisyUI `.menu`; (4) the `.modal-box` scale
+  override's reopen trigger, carried as a `WATCH:` comment beside the recipe in
+  `docs/internal/admin-design-system.md`'s Motion section rather than filed here, since the
+  trigger (the admin adopting `modal-bottom` at narrow widths) is a markup change a future pass
+  makes rather than an external event.
+
+- **Follow-up from the 3c escalate ruling (extend-2, 2026-09-20): `cairn-audit.config.json`'s
+  `sheet` entry still names the engine's `dist/components/cairn-admin.css` layout.** The
+  engine-owned Tailwind sources file closed the `@source` line's own "no site names dist" gap, but
+  each site's audit config still points `sheet` at the precompiled path under `dist/components/`,
+  a different artifact the amendment did not grant scope to relocate. Resolve the audit's `sheet`
+  entry by package subpath so no site config names the dist layout either.
 
 - **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after extend-1
   lands.** The cairn-case front-door initiative is dead; its frozen record under
@@ -1510,23 +1510,16 @@ the named human gates only):**
   the role whose size the reported class resolves to, step 2 of that recipe becomes automatic, and a
   codemod that rewrites the class in place becomes buildable on top. **Flag for Geoff:** decide
   whether the codemod ships before the release that makes the rename recipe live, or after.
-- **DX decisions for Geoff, pre-release** (design infrastructure Pass 3, 2026-07-29). Two open calls
-  on the packaged skill's delivery mechanism, neither a defect: (1) `cairn-doctor --fix` overwrites a
-  consumer's local edits to the installed skill silently (`installSkill` always copies the packaged
-  tree over `.claude/skills/cairn-admin-screens/` with no diff or confirmation); decide whether that
-  is the right default before the mechanism has real consumers. (2) `--fix` is a generic flag name
-  now carrying a second, unrelated responsibility (installing/refreshing the skill, alongside its
-  original doctor-check auto-fix meaning); consider a rename while the surface is still unpublished.
 - **Small durability notes on the packaged skill, from the Task 6/7 review gates** (design
-  infrastructure Pass 3, 2026-07-29), each cheap to carry forward rather than fix now: skill
-  freshness (`src/lib/doctor/check-skill.ts`) compares the consumer's installed tree only at the
-  packaged tree's own current relative paths, so a future engine version that drops a reference file
-  cannot see (and cannot prune) a stale file still sitting in a consumer's `.claude/skills/`
-  directory; `skills/**/*.md` prose sits outside both `.vale.ini`'s scope (`docs/**/*.md` and
-  `README.md` only) and `check:docs`'s dead-link and arm-index gates, so its prose and its links are
-  unchecked by any repo gate; and `SKILL.md`'s cross-references into the reference docs resolve
-  through `node_modules/@glw907/cairn-cms/`, which is correct once installed but means the links are
-  necessarily relative to an install, not to this repo's own tree.
+  infrastructure Pass 3, 2026-07-29), the first now closed by `cairn-guidance`'s `MANIFEST`
+  (extend-2, 2026-09-20): a later install names any path the previous `MANIFEST` listed that the
+  current package no longer ships as removable, so a retired file no longer sits undetected in a
+  consumer's `.claude/`. The remaining two stay open, cheap to carry forward: `skills/**/*.md`
+  prose sits outside `.vale.ini`'s scope (`docs/**/*.md` and `README.md` only), so its prose is
+  unchecked by any repo gate, though `check:docs` now resolves its links; and `SKILL.md`'s
+  cross-references into the reference docs resolve through `node_modules/@glw907/cairn-cms/`,
+  which is correct once installed but means the links are necessarily relative to an install, not
+  to this repo's own tree.
 
 - **From the ASC Assets-trial harvest (2026-07-29, ten findings across two batches, folded at
   the 0.91.1 hotfix pass; full detail in the ASC repo's trial log).** Finding 1, the 0.91.0
@@ -2176,6 +2169,14 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **`docs/reference` has no dedicated page for the `./admin-sources.css` subpath export; it gets
+  one section inside `docs/reference/cairn-audit.md` instead (extend-2 friction, 2026-09-20).**
+  `check:reference`'s coverage gate reads only `.d.ts`-typed exports, so a CSS-only subpath is not
+  gated either way; grouping the admin-sources documentation with the audit config it feeds is a
+  legitimate reading of the reference arm's page structure, not a known bug, but the docs rebuild
+  is the point where the arm's page-per-subpath convention gets a deliberate read. Trigger: the
+  docs rebuild's reference-arm pass.
 
 - **The showcase's own public route map is written nowhere a plan author reads (extend-1,
   2026-09-20).** extend-1's stylesheet-seam proof was planned against a `/posts` archive route the

@@ -50,6 +50,67 @@ Two research audits on 2026-09-20 (CLI practice; bubbletea v2 readiness) reshape
 splits into B1 and B2, `context.Context` goes through `providers`, and severity ordering moves
 into `spine`, all before the command tree is built.
 
+## extend-2 pass, ten tasks, 2026-09-19 to 2026-09-20
+
+Branch `extend-2` with `extend-2-skills` (chain B: tasks 5, 6, 7) merged into it; plan at
+`docs/superpowers/plans/2026-09-14-extend-2-pass.md`; record at
+`docs/internal/record/2026-09-14-extend-2-record.md`. The pass ships the guidance layer: a
+developer using Claude Code on a cairn site now gets the engine's guidance from the package it
+already has, installed or refreshed by one bin.
+
+**What landed.** The `cairn-guidance` bin (`install`, `check`, `--strict`), with `.orig`
+preserved on an edited destination, a `MANIFEST` naming what an install wrote, a `VERSION`
+stamp, and `src/lib/guidance/` holding the relocated tree-hash install. The doctor's skill
+install retired: `--fix` gone, the `skill.admin-screens-stale` condition removed. A packaged
+`claude/` tree in the tarball: the `CLAUDE.md` fragment, the read-only `cairn-extension-reviewer`
+agent (`tools: Read, Grep, Glob`, no `Bash`, no model pin), and `claude/snippets/`, each asserted
+byte-identical to its in-repo source by an identity test. The bake writes the guidance into every
+new site at scaffold time, and `create-site.yml` asserts the baked tree. `@glw907/cairn-cms/admin-sources.css`,
+an engine-owned CSS file of `@source` lines, so a site's `src/admin.css` no longer names the
+engine's `dist` layout. `check-skill-budget.mjs` now runs over every packaged skill, and
+`check:docs` reaches `skills/**` and `claude/**`. The `cairn-extend` and `cairn-consult` skills.
+Ten tasks (1a, 1b, 2, 3a, 3b, 3c, 4, 5, 6, 7) in two chains, all accepted; 1a and 3c each needed a
+conductor ruling. Merged as PR #67.
+
+**What the gate caught.** The blocking security read found `cairn-guidance install`'s containment
+was lexical only: a symlinked `.claude` or `.claude/skills` directory redirected the install
+outside the intended tree, and a dangling `X.orig` symlink took attacker-chosen bytes to an
+arbitrary path. Fixed (`9aa7765a`): the working directory resolves through `realpath`, every path
+component from `.claude` down is `lstat`-ed component by component, writes use `O_NOFOLLOW` and
+`O_EXCL`, and a refused destination is refused by name rather than repaired; re-read, pass. The
+prose read found the shipped guidance told a consumer's agent things untrue from a site checkout:
+exemplar paths under `examples/` and `docs/internal/` that never ship in the tarball, a claim
+that install wires the site's own gates, an instruction to edit a file the install overwrites, a
+`cairn docs <query>` command that has not shipped, and relative doc links that break once
+installed.
+
+**What a later pass would be wrong to rediscover.** Shipped guidance names engine docs as
+`node_modules/@glw907/cairn-cms/docs/...` paths from the site root, never relative links, since
+the same file is read at two locations, the tarball and the installed `.claude/`. The template's
+gitignore is derived from `examples/showcase/.gitignore` by the bake's rename, so a template-only
+ignore line cannot be added without a bake change. `cairn-guidance check` decides staleness by
+tree hash, never by `VERSION`, so a caret-resolved newer patch does not read as stale.
+`check-surface.mjs` snapshots only exports carrying a `types` field, so the new CSS subpath
+export is not surface drift. `gate-tier.mjs` computes `full` for any `package.json` touch, and a
+local full e2e run is green when its only failures are the 20 site-visual baseline files from
+`4de378ec`. `pass-execute-chains.js` hands the reviewer the plan's gate string for a pinned task,
+so a pin reads as a gate MISMATCH that is a harness artifact, not a real one. Both transcript
+re-captures this pass would have needed took the dated staleness-note fallback instead of a live
+recapture. The fragment's `cairn docs` line returns once the Go tool ships that subcommand;
+Blueprint stays the ruled paid recommendation.
+
+**Budget score.** About 5.8M subagent tokens against a 6.5M ceiling, raised from 5.4M by Geoff
+mid-run on 2026-09-20 (workflow run 1: 1.87M over four tasks; run 2: 2.18M over six; direct
+dispatches and the close: about 1.75M; the conductor's own turns uncounted). The forecast of 500K
+per task held, about 405K per task in the workflow runs; the overrun sat in the close, sized at
+0.4M and costing about four times that, since the two pass-end reviewers each returned a fold's
+worth of real findings. Planning misses 4: the 2026-09-19 amendment was never written as a task
+section, so Task 3c was authored at dispatch; the plan predated `gate-tier.mjs` and carried a
+fixed gate string the classifier superseded; the plan specified fragment content, relative links
+and a `cairn docs` line, that was untrue from a consumer checkout; 3c's "no site names `dist`"
+criterion read broader than the amendment's actual deliverable. Execution sittings 1: the ceiling
+raise, Geoff's own initiative, not a question put to him.
+
 ## extend-1 pass, nine tasks, 2026-09-16 to 2026-09-20
 
 Branch `extend-1` with `extend-1-site` (chain B: tasks 7, 8a, 8b) merged into it; plan at

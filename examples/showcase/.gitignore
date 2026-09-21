@@ -9,3 +9,4 @@ build
 *.b64
 test-results
 playwright-report
+.claude/agent-memory/

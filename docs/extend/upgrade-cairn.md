@@ -35,7 +35,16 @@ minor can break a documented seam, so an upgrade is never a blind bump.
    migrations apply`: a Cloudflare Workers Builds deploy on push has no equivalent step for a
    database schema change, so nothing runs a new migration for you.
 
-4. **Run the doctor:**
+4. **Refresh the engine's guidance:**
+
+   ```bash
+   npx cairn-guidance install
+   ```
+
+   Writes `.orig` beside any local edit the new version's guidance tree diverges from, so you keep
+   what you changed. See [The `cairn-guidance` CLI](../reference/guidance.md).
+
+5. **Run the doctor:**
 
    ```bash
    npx cairn-doctor --from editor@your-site.com --repo you/your-site
@@ -45,7 +54,7 @@ minor can break a documented seam, so an upgrade is never a blind bump.
    the new version expects. See [`cairn-doctor`](../reference/doctor.md) for what each check
    verifies.
 
-5. **Typecheck and test your own site** before deploying. The doctor checks configuration and
+6. **Typecheck and test your own site** before deploying. The doctor checks configuration and
    credentials; it does not typecheck your adapter or your custom routes against the new version's
    types.
 

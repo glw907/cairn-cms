@@ -379,6 +379,11 @@ The release step sets the version number at the cut and renames this section to 
   markup; no production site has. `cairn-audit`'s `stock-default-hazards` rule now names that
   class retired, reported at advisory tier until `0.98.0` promotes the finding to error; the class
   itself stays compiled until a later release removes it.
+- **`cairn-doctor` loses `--fix`, the `skill.admin-screens` check, and the
+  `skill.admin-screens-stale` condition.** The packaged skill install moves to `cairn-guidance`,
+  which installs every packaged skill directory, the read-only review agent, and the `CLAUDE.md`
+  fragment, and checks their freshness the same way. Run `npx cairn-guidance install` after the
+  bump; `cairn-doctor --fix` is gone.
 
 ### The four sites' upgrade order
 

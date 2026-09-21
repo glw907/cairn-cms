@@ -9,7 +9,6 @@ import { readFile } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
 import { liveProbeCheck } from './check-probe.js';
 import { liveSendCheck } from './check-send.js';
-import { installSkill, SKILL_INSTALL_DIR } from './check-skill.js';
 import { readWranglerConfig } from './wrangler-config.js';
 import {
   contextFromEnv,
@@ -38,22 +37,6 @@ async function main(): Promise<void> {
   }
 
   const cwd = process.cwd();
-
-  // --fix installs before the checks run, so the skill.admin-screens check reads fresh in the
-  // same report rather than needing a second invocation. A filesystem error here (a read-only
-  // tree, a permissions problem) must not abort the whole run with a stack trace; report it and
-  // fall through to the checks, which still produce a useful report (skill.admin-screens simply
-  // reads whatever was there before).
-  if (args.fix) {
-    try {
-      const count = await installSkill(resolve(cwd, SKILL_INSTALL_DIR));
-      console.log(`cairn-doctor: installed ${count} admin-screens skill file(s) into ${SKILL_INSTALL_DIR}`);
-    } catch (err) {
-      console.error(
-        `cairn-doctor: --fix failed to install the admin-screens skill (${err instanceof Error ? err.message : String(err)})`
-      );
-    }
-  }
 
   const readFileUnderCwd = async (relPath: string): Promise<string | null> => {
     // resolve() does not contain: a relPath carrying enough ".." segments walks the result

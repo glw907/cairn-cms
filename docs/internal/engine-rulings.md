@@ -4958,6 +4958,53 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: a process/tooling proposal, not an exported symbol; closing declines the proposed doctor check. No code shape to record. shape-needs-rederivation.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Note (extend-2, Task 4):** the 2026-08-30 close named this ruling a process/tooling proposal
+  with no code shape, but `skill.admin-screens`, `skill.admin-screens-stale`, and
+  `cairn-doctor --fix` stayed live in the doctor until this pass, whose Task 1b deletes them, so the
+  "executed" claim above predates the code by three weeks; this Note reconciles the gap now that
+  the deletion is real. The retirement carried each of the three named grounds to its actual
+  disposition rather than a bare removal. The deploy-blocker ground is answered by moving the
+  install out of the doctor entirely: `cairn-guidance` is its own bin, `check` never fails by
+  default, and `check --strict` is the gate for a site that wants one, so a skill install no longer
+  rides inside a check a consumer reads as a deploy probe. The one-harness ground stands unchanged:
+  the guidance layer still assumes Claude Code's `.claude/skills/` and `.claude/agents/`
+  convention, since that assumption is the premise of shipping agent-facing guidance at all, not a
+  doctor defect to fix. The leaked-utility-class ground is now a documented, checked item rather
+  than an undocumented risk: `cairn-guidance check`'s sixth line reports whether `.claude/` is
+  excluded from the site's own Tailwind build, naming the `@source not "./.claude";` line a site
+  still adds by hand.
+
+## guidance-layer: the `cairn-guidance` bin, the packaged `claude/` tree, and the trust boundary that gates it  (accept, 2026-09-20, extend-2)
+
+- **Verdict:** accept. The relocated skill install (`audit-cli-skill-admin-screens-check-and-cairn-doctor-fix`,
+  retired above) reappears as its own bin rather than a doctor check, per the spec's Layer 3: "the
+  doctor's `check-skill.ts` and `--fix` relocated, since the doctor is retiring in favor of the Go
+  `cairn` tool and a skill install was never a deployment probe." `install` copies every packaged
+  skill directory, the read-only `cairn-extension-reviewer` agent, and the `CLAUDE.md` fragment
+  into `.claude/`, writing `<dest>.orig` beside a diverged destination (never clobbering an
+  existing one) and a `MANIFEST` naming every path it wrote; a later install names a path the
+  package stopped shipping as removable rather than deleting it. `check` reports seven lines and
+  exits 0 by default; `--strict` exits 1 when the guidance tree itself is stale or missing. A
+  scaffolded site is born with the tree baked in; an existing site adopts through `install`. The
+  trust boundary is stated, not claimed, per the spec: "shipping agent markdown adds no capability
+  a compromised release does not already have," and two rules hold the line, `cairn-guidance` never
+  writes `.claude/settings.json`, and the shipped agent carries `tools: Read, Grep, Glob` with no
+  `Bash` and no model pin, so installing the guidance is the one act of consent and deleting
+  `.claude/skills/cairn-*`, `.claude/agents/cairn-extension-reviewer.md`, and `.claude/cairn/` is
+  the one act that revokes it.
+- **Reopens on:** the `@`-import syntax `CLAUDE.md` uses to pull in the fragment is another
+  vendor's grammar; a change to Claude Code's own import documentation reopens the fragment's
+  install shape, watched by a scheduled routine per this repo's watch-item rule.
+- **Shape:** `src/lib/guidance/bin.ts`, `check.ts`, `install.ts`; the packaged `claude/` directory
+  (`CLAUDE.md`, `agents/cairn-extension-reviewer.md`, `snippets/*`); the scaffold's bake writing
+  the tree, `VERSION`, and `MANIFEST` at prepack.
+- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, "Layer 3: guidance" and "Trust
+  boundary."
+- **Verified:** `src/tests/unit/guidance/bin.test.ts`, `check.test.ts`, `install.test.ts`;
+  `src/tests/unit/packaging-guidance.test.ts` (the tarball ships the packaged tree byte-identical
+  to its in-repo source); `packages/create-cairn-site/scripts/bake-template.test.mjs` and
+  `src/scaffold.test.mjs` (a scaffolded site is born with the tree, `VERSION`, and `MANIFEST`
+  already written).
 
 ## audit-cli-edge-https-forced-and-edge-hsts: `edge.https-forced and edge.hsts`  (reshape, 2026-08-26, any-site audit)
 

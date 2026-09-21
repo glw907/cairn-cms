@@ -755,5 +755,52 @@ and 3b), `design.yml`, `norms.yml`, `tsgo.yml`, `publish.yml`.
 
 ## Post-mortem
 
-Written at the close: tokens against 5.4M, the two attended-time counts, what the gate caught, and
-what a later pass would be wrong to rediscover.
+**Tokens.** The authoring ceiling was 5.4M; Geoff raised it to 6.5M mid-execution on 2026-09-20,
+after the first workflow run measured 1.87M over four tasks. Total subagent spend came to about
+5.8M: workflow run 1, 1.87M over four tasks; workflow run 2, 2.18M over six tasks; direct
+dispatches and the close, about 1.75M (the conductor's own turns are uncounted in all three
+figures). The forecast of 500K per task held inside the two workflow runs, about 405K per task
+measured. The overrun sat entirely in the close: the plan sized it at 0.4M, and it cost about
+four times that, because the two pass-end reviewers (the blocking security read and the prose
+read) each returned a fold's worth of real findings rather than a clean pass.
+
+**Attended time.** Planning misses, four: the 2026-09-19 amendment added Task 3c's scope but was
+never written as its own task section, so 3c was authored at dispatch rather than at plan time;
+the plan predated `gate-tier.mjs` and carried a fixed CHECK-PLUS-UNIT string the classifier later
+superseded; the plan specified fragment content (exemplar paths, relative doc links, a `cairn
+docs <query>` line) that turned out untrue from a consumer checkout, caught only at the prose
+read; and 3c's "no site file names the engine's `dist` layout" acceptance criterion read broader
+than the amendment's actual deliverable, resolved by the conductor's escalate ruling. Execution
+sittings, one: the ceiling raise from 5.4M to 6.5M, which was Geoff's own initiative mid-run, not
+a question put to him.
+
+**What the gate caught.** The blocking security read found `cairn-guidance install`'s
+containment was lexical only, so a symlinked `.claude` or `.claude/skills` directory redirected
+the install outside its intended boundary, and a dangling `X.orig` symlink took attacker-chosen
+bytes to an arbitrary path; fixed in `9aa7765a` (realpath of the working directory, a
+component-by-component `lstat` walk, `O_NOFOLLOW` and `O_EXCL` opens, refuse rather than repair),
+re-read, pass. The prose read found the shipped guidance told a consumer's agent things untrue
+from a site checkout: exemplar paths under `examples/` and `docs/internal/` that do not ship, a
+claim that install wires a site's own gates, an instruction to edit a file the install
+overwrites, a `cairn docs <query>` command that has not shipped, and relative doc links that
+break once installed.
+
+**What a later pass would be wrong to rediscover.** Shipped guidance names engine docs as
+`node_modules/@glw907/cairn-cms/docs/...` paths from the site root, never relative links, because
+the same file is read at two locations, the tarball and the installed `.claude/`. The template's
+gitignore is derived from `examples/showcase/.gitignore` by the bake's rename, so a template-only
+ignore line is impossible without a bake change. `cairn-guidance check` decides staleness by tree
+hash, never by `VERSION`, so a caret-resolved newer patch does not read as stale. `check-surface.mjs`
+snapshots only exports carrying a `types` field, so a CSS subpath export is not surface drift.
+`gate-tier.mjs` computes `full` for any `package.json` touch, and the local full e2e run is green
+when its only failures are the 20 site-visual baseline files from `4de378ec`. The
+`pass-execute-chains.js` runner hands the reviewer the plan's gate string for a pinned task, so a
+pin reads as a gate MISMATCH that is a harness artifact, not a real one. Both transcript
+re-captures this pass would have needed took the dated staleness-note fallback. The fragment's
+`cairn docs` line returns when the Go tool ships that subcommand, and Blueprint stays as the
+ruled paid option.
+
+**Process note.** The workflow halts a chain on any non-accept verdict, and both halts this pass
+(1a, 3c) were comment-only or criterion rulings rather than real defects, so a conductor-ruled
+direct dispatch plus a relaunch was the right cost each time; a third workflow run for the last
+remaining task was not worth its own probe overhead.

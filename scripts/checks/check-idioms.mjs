@@ -315,6 +315,7 @@ const HOSTNAME_ALLOWED_HOSTS = new Set([
   'google.com',
   'openai.com',
   'facebook.com',
+  'gitmcp.io',
 ]);
 
 // Not hostnames: dotted identifiers or ids that happen to collide with the HOSTNAME_SHAPE_PATTERN

@@ -140,7 +140,7 @@ describe('checkDocsPacked', () => {
   });
 });
 
-// The packaged cairn-admin-screens skill must reach the tarball, or cairn-doctor --fix has
+// The packaged cairn-admin-screens skill must reach the tarball, or cairn-guidance install has
 // nothing to install into a consumer's .claude/skills/.
 describe('checkSkillPacked', () => {
   it('passes when the skill core is packed', () => {

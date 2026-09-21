@@ -468,17 +468,17 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 ## docs/reference/doctor.md
 
-- 19 checks run by default; `--send-test` and `--probe` add two more. Source: 21 total `id: '...'`
-  check definitions across `src/lib/doctor/*.ts`; `src/lib/doctor/bin.ts:89-93`
+- 18 checks run by default; `--send-test` and `--probe` add two more. Source: 20 total `id: '...'`
+  check definitions across `src/lib/doctor/*.ts`; `src/lib/doctor/bin.ts:72,75`
   (`liveSendCheck` pushed only `if (args.sendTest)`, `liveProbeCheck` pushed only
-  `if (args.probe !== undefined)`), leaving 19 always-on. [verified]
+  `if (args.probe !== undefined)`), leaving 18 always-on. [verified]
 - `config.bindings` and `config.media-bucket` share the condition id `config.bindings-missing` so
   the readiness checklist gains a distinct line without a second condition to maintain. Source:
   `src/lib/doctor/checks-local.ts:22-24,40-42` (both `DoctorCheck`s declare `conditionId:
   'config.bindings-missing'`; comment: "It reuses the config.bindings-missing condition rather
   than registering a new one, so the readiness count holds"). [verified]
 - The doctor's exit codes go through `process.exitCode`, never `process.exit`, so a piped stdout
-  flushes the whole report before the process ends. Source: `src/lib/doctor/bin.ts:6-7,31,98`.
+  flushes the whole report before the process ends. Source: `src/lib/doctor/bin.ts:6-7,31,81`.
   [verified]
 - `exitCodeFor({failed, unchecked})` returns `0 | 1 | 3`: a failure always wins over an unchecked
   result. Source: `src/lib/doctor/run.ts:38-43`. [verified]
@@ -549,13 +549,6 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   not close every preview URL. The Wrangler default-inheritance detail itself is external
   platform behavior, not independently checked against Cloudflare's own docs this pass.
   [verified]
-- `--fix` installs the packaged `cairn-admin-screens` skill into `.claude/skills/cairn-admin-screens/`
-  before checks run, so `skill.admin-screens` reads fresh in the same report; it never fails the
-  run since it is a development aid. Source: `src/lib/doctor/bin.ts:42-55` (`--fix installs before
-  the checks run, so the skill.admin-screens check reads fresh in the same report`; a thrown
-  install error is caught and logged, then falls through to the checks) and
-  `src/lib/doctor/check-skill.ts:15,18` (`SKILL_INSTALL_DIR = '.claude/skills/cairn-admin-screens'`).
-  [verified]
 - The installed skill's reference files quote utility class names verbatim, and Tailwind v4's
   automatic source detection scans any non-ignored file including `.claude/`, so a site must
   exclude `.claude/` from its own Tailwind build or the worked examples compile into shipped CSS.
@@ -572,6 +565,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   not a cairn-specific code fact; no cairn workflow in this repo runs the doctor itself to
   cross-check against, so this rests on documented platform behavior rather than a repo grep.
   [candidate: sourced to the page only, not traced to code]
+
+## docs/reference/guidance.md
+
+- `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`). [verified]
 
 ## docs/reference/islands.md
 

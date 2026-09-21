@@ -472,7 +472,7 @@ type AuthCheckPermission struct {
 func MarshalAuthCheck(site string, permissions []AuthCheckPermission, verdict spine.Verdict) ([]byte, error) {
 	rows := make([]authCheckPermission, 0, len(permissions))
 	for _, p := range permissions {
-		rows = append(rows, authCheckPermission{Label: p.Label, Credential: p.Credential, State: p.State, Reason: p.Reason})
+		rows = append(rows, authCheckPermission(p))
 	}
 	return json.Marshal(authCheckPayload{
 		SchemaVersion: AuthCheckSchemaVersion,

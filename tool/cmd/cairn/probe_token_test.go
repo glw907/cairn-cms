@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"os"
 	"strings"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/secrets"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
@@ -90,9 +90,7 @@ func githubOKRoutes(owner, repo string) routeRoundTripper {
 func mergeRoutes(routes ...routeRoundTripper) routeRoundTripper {
 	merged := routeRoundTripper{}
 	for _, r := range routes {
-		for k, v := range r {
-			merged[k] = v
-		}
+		maps.Copy(merged, r)
 	}
 	return merged
 }
@@ -402,13 +400,15 @@ func TestProviderVerdictAgreesAcrossErrorTypes(t *testing.T) {
 	}
 }
 
-// TestCheckDepsRefusesUnusedKeyring documents that a *deps built for auth check tests never
-// touches the keyring writer, deleter, or status fields, which secrets.Provider's own fakes
-// leave nil-safe.
+// TestCheckDepsRefusesUnusedKeyring documents that checkDeps sets a read-only keyring (auth
+// check never writes) and never the writer, deleter, or status fields those other auth
+// subcommands use.
 func TestCheckDepsRefusesUnusedKeyring(t *testing.T) {
 	d := checkDeps(fakeEnv(nil), routeRoundTripper{}, func() (string, error) { return t.TempDir(), nil }, func(int) {})
 	if d.keyringWriter != nil {
 		t.Error("checkDeps set a keyringWriter; auth check never writes")
 	}
-	var _ secrets.Provider = d.keyring
+	if d.keyring == nil {
+		t.Error("checkDeps set no keyring; loadEnv's provider chain needs one, even an unused fake")
+	}
 }

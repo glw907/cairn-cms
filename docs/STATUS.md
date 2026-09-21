@@ -8,9 +8,14 @@ pass-end. Durable orientation is `CLAUDE.md`; everything past tense is [`docs/HI
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries eleven
 engine passes plus chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, the admin motion pass,
-docs-to-facts, extend-1 (PR #66), and extend-2 (PR #67, the guidance layer), both merged
-2026-09-20, unpublished under `## Unreleased`. The window holds for one cut. CI on `main` is
-green.
+docs-to-facts, extend-1 (PR #66), extend-2 (PR #67, the guidance layer, merged 2026-09-20), and
+the pre-cut pass (PR #69, MERGED: the dependency sweep, two `cairn-guidance` hardening fixes,
+the site upgrade brief's tools section, the Blueprint admin audit, and the daisyUI breadcrumb
+fix), unpublished under `## Unreleased`. The window holds for one cut. Held majors now include
+`devalue` 6 (new this sweep, no direct call site to migrate), alongside TypeScript 7 and Vitest
+5. Two `npm audit` findings (the `cookie` transitive under `@sveltejs/kit` and a
+`@cloudflare/vitest-pool-workers` transitive) are held, needing `--force` or a downgrade to
+clear. CI on `main` is green.
 
 ## Immediate next action
 
@@ -33,10 +38,22 @@ version is `0.97.0`, verified free against the registry with `npm view @glw907/c
 versions --json` at the cut. extend-1's two advisory audit rules (`log-event-grammar`,
 `log-secret-field`) promote to error tier at `0.98.0`.
 
-Then, in order: **the docs-infra currency pass**
+The cut itself is Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`
+(`cairn-release`), with the lockstep bump of `package.json` and
+`packages/cairn-cms-dev/package.json`, the SHA-pinned tag, and the `tool` workflow in the green
+CI set; its precondition is the Go tool session's own close line on `origin/main` naming the
+`tool/v1.0.0` tag and the merge SHA, not the tag alone, and a `CHANGELOG.md` entry for the tool's
+1.0.
+
+Then, in order: a small docs chore updates the execution-path homes of two overturned rules (the
+repo `CLAUDE.md`'s narrative-arm freeze and its "a site-pass agent never edits the cairn-cms
+checkout" rule), touching the `site-pass` and `engine-consult` skills and giving `site-pass` a
+new "Tool friction" section; then **the docs-infra currency pass**
 (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`, APPROVED
-2026-09-19), after the cut and before the site round; **the site round**, aksailingclub-org,
-ecxc-ski, and 907-life upgraded as model cairn sites, each filing container bullets via
+2026-09-19), after the cut and before the site round; then **the draft docs** (order against the
+docs-infra pass is unruled); then **the site round**, aksailingclub-org, ecxc-ski, and 907-life
+upgraded as model cairn sites, which tests and edits the draft docs, site-upgrade agents allowed
+to change the docs when they find an issue, each filing container bullets via
 `site-docs/<site>-<pass>`, then one improvement release; then **the docs rebuild** from the facts
 container, then beta.
 
@@ -137,7 +154,9 @@ container, then beta.
 
 Two tracks, one session each.
 
-**One cut:** Cut the one release (`cairn-release` skill), starting with the dependency sweep.
+**One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once
+the Go tool's 1.0 close line names the `tool/v1.0.0` tag and the merge SHA on `origin/main` and
+says the cut is unblocked; verify that first.
 
 **Go tool Pass B2, segment 4** (launch inside `cairn-cms`): Continue Go tool Pass B2 per
 `docs/STATUS.md`'s Go tool entry: ask Geoff for the ceiling raise, then pre-flights, rulings

@@ -186,6 +186,39 @@ func TestNewProbeNilResolverDefaultsToNetDefaultResolver(t *testing.T) {
 	}
 }
 
+// TestLookupAuthoritativeReturnsOnContextDeadline proves LookupAuthoritative's own timeout
+// wrapping returns rather than blocking when a slow AuthorityLookup outlives the caller's
+// context, the same failure mode TestSharedTimeoutPolicy proves for the package's other clients.
+func TestLookupAuthoritativeReturnsOnContextDeadline(t *testing.T) {
+	slow := func(ctx context.Context, nameserver, host string) ([]net.IP, error) {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(2 * time.Second):
+			return nil, nil
+		}
+	}
+	p := NewProbeWithAuthority(http.DefaultTransport, &fakeResolver{}, slow)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := p.LookupAuthoritative(ctx, "ns1.example.test", "example.test")
+		done <- err
+	}()
+
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("LookupAuthoritative: want an error when the lookup outlives the context deadline")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("did not return within 2s of a 50ms deadline; the lookup is hanging")
+	}
+}
+
 // rewriteHostTransport dials the real network through base, but replaces req's host with target
 // first, so a test can point a fixed-host client (GitHub, NPM) at a local httptest server while
 // still exercising client.Do's real host-pin check against the client's original, unmodified

@@ -111,17 +111,32 @@ func matchesMarker(origin string, root, admin *http.Response) bool {
 }
 
 // diagnoseUnreachable is confirmHostname's propagation split (hostname.mjs's diagnoseUnreachable)
-// for the case where neither scheme connects at all. The Node source reads the apex record
-// against the zone's own authoritative nameservers, which this tool has no mechanism to dial
-// directly (no check under tool/ queries a specific nameserver's own IP); this port asks the
-// same question the tool's Resolver seam can actually answer, whether the domain's own NS
-// records resolve at all, and keeps the two outcomes hostname-resolver-lagging and
-// hostname-records-absent otherwise unchanged: present means only the caller's resolver has not
-// caught up, absent means the records have not propagated yet.
+// for the case where neither scheme connects at all: it reads the apex AAAA record, the same
+// record a Custom Domain attach itself writes, against the zone's own authoritative
+// nameservers, which no recursive resolver's negative cache sits in front of. Present there
+// means only the caller's own resolver has not caught up; absent, or no authoritative read
+// possible at all, means the record has not propagated. domain's own nameservers are
+// discovered through the ordinary recursive lookup first, since a stale delegation is not the
+// case under diagnosis here.
 func diagnoseUnreachable(ctx context.Context, probe *providers.Probe, domain string) spine.Outcome {
-	ns, err := probe.LookupNS(ctx, domain)
-	if err != nil || len(ns) == 0 {
+	nameservers, err := probe.LookupNS(ctx, domain)
+	if err != nil || len(nameservers) == 0 {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkHostnameRecordsAbsent)}
 	}
-	return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkHostnameResolverLagging)}
+
+	for _, ns := range nameservers {
+		addrs, err := probe.LookupAuthoritative(ctx, ns.Host, domain)
+		if err != nil {
+			// This nameserver could not be reached at all; try the next one before giving up.
+			continue
+		}
+		if len(addrs) > 0 {
+			return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkHostnameResolverLagging)}
+		}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkHostnameRecordsAbsent)}
+	}
+
+	// Every nameserver's authoritative query failed outright: the conservative default, the same
+	// one used when no nameservers could be discovered at all.
+	return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkHostnameRecordsAbsent)}
 }

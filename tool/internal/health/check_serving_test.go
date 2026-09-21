@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -109,13 +110,78 @@ func TestProbeServingHostnameRecordsAbsent(t *testing.T) {
 }
 
 func TestProbeServingHostnameResolverLagging(t *testing.T) {
-	probe := providers.NewProbe(http.DefaultTransport, servingResolver{
-		ns: []*net.NS{{Host: "ada.ns.cloudflare.com."}},
-	})
+	probe := providers.NewProbeWithAuthority(
+		http.DefaultTransport,
+		servingResolver{ns: []*net.NS{{Host: "ada.ns.cloudflare.com."}}},
+		fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
+	)
 	got := probeServing(context.Background(), probe, "127.0.0.1:1")
 
 	want := spine.ParkReason(spine.ParkHostnameResolverLagging)
 	if got.State != spine.Unknown || got.Reason != want {
 		t.Errorf("Outcome = %+v, want Unknown %s", got, want)
+	}
+}
+
+// fakeAuthority returns a canned providers.AuthorityLookup, for a test that must drive
+// diagnoseUnreachable's propagation split with no real DNS dial: ips is the answer an
+// authoritative nameserver would give, err stands in for that nameserver being unreachable
+// outright.
+func fakeAuthority(ips []net.IP, err error) providers.AuthorityLookup {
+	return func(context.Context, string, string) ([]net.IP, error) {
+		return ips, err
+	}
+}
+
+// TestDiagnoseUnreachablePropagationSplit is the table over diagnoseUnreachable's four cases,
+// all driven through the fake nameserver and authority lookups: an authoritative nameserver
+// holding the record means resolver-lagging, and every other case (the record absent
+// at the authority, every authoritative nameserver unreachable, or no nameservers known at all)
+// means records-absent, the conservative default.
+func TestDiagnoseUnreachablePropagationSplit(t *testing.T) {
+	oneNS := []*net.NS{{Host: "ns1.example.test."}}
+
+	tests := []struct {
+		name      string
+		ns        []*net.NS
+		authority providers.AuthorityLookup
+		want      spine.ReasonCode
+	}{
+		{
+			name:      "authority has record",
+			ns:        oneNS,
+			authority: fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
+			want:      spine.ParkReason(spine.ParkHostnameResolverLagging),
+		},
+		{
+			name:      "authority lacks record",
+			ns:        oneNS,
+			authority: fakeAuthority(nil, nil),
+			want:      spine.ParkReason(spine.ParkHostnameRecordsAbsent),
+		},
+		{
+			name:      "authority unreachable",
+			ns:        oneNS,
+			authority: fakeAuthority(nil, errors.New("dial failed")),
+			want:      spine.ParkReason(spine.ParkHostnameRecordsAbsent),
+		},
+		{
+			name: "no nameservers known",
+			ns:   nil,
+			// A record present would flip the outcome if diagnoseUnreachable ever queried it;
+			// it must not be reached at all when no nameservers are known.
+			authority: fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
+			want:      spine.ParkReason(spine.ParkHostnameRecordsAbsent),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			probe := providers.NewProbeWithAuthority(http.DefaultTransport, servingResolver{ns: tt.ns}, tt.authority)
+			got := diagnoseUnreachable(context.Background(), probe, "example.test")
+			if got.State != spine.Unknown || got.Reason != tt.want {
+				t.Errorf("Outcome = %+v, want Unknown %s", got, tt.want)
+			}
+		})
 	}
 }

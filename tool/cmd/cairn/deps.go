@@ -65,10 +65,24 @@ type deps struct {
 	// carried here so a test can observe the code and so os.Exit itself is named in main.go
 	// alone.
 	exit func(int)
+	// checks is the set of health checks a run sweeps, health.All in production. It is a field
+	// so a test can supply checks that settle without a network: the alternative, proving the
+	// --quiet rule end to end against the real set, needs every check's provider to answer.
+	checks []health.Check
 	// scrubSkipped is how many stored credential values the output scrubber refused to match
 	// because they fall under logx.MinLength. main fills it; the root command discloses it once
 	// under --verbose, so a run whose redaction is weaker than it looks says so.
 	scrubSkipped int
+}
+
+// healthChecks returns the checks a run sweeps: the caller's own set when one was injected, and
+// health.All otherwise. A deps built by a test that never sets the field gets the production set,
+// so injecting is opt-in rather than something every test has to remember.
+func (d deps) healthChecks() []health.Check {
+	if d.checks == nil {
+		return health.All
+	}
+	return d.checks
 }
 
 // secretProviders returns the providers loadEnv chains after the environment. A deps built by a

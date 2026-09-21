@@ -102,7 +102,7 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 
 	clients := buildClients(d)
 	started := d.now()
-	report, err := health.Run(ctx, rec, clients, health.All, health.Options{
+	report, err := health.Run(ctx, rec, clients, d.healthChecks(), health.Options{
 		ErrorThreshold: f.errorThreshold,
 		LogWindow:      window,
 		Now:            d.now,

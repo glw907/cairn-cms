@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -45,7 +46,19 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 	envelope, cancel := sweepDeadline(commandContext(cmd), rf, len(entries))
 	defer cancel()
 
+	// A sweep's verdict is only known once every site has settled, and --quiet turns on that
+	// verdict, so the plain path cannot decide per site whether to print. It writes into a buffer
+	// instead and flushes it at the end, which is what makes `cairn health --quiet` silent on a
+	// green run under cron, systemd, launchd, and Task Scheduler, none of which is a terminal.
+	// Buffering the fleet path too would cost nothing but say less: that path renders one frame at
+	// the end anyway, and holding its decision in the same place as the plain path's is what keeps
+	// the rule one rule.
 	out := cmd.OutOrStdout()
+	var held bytes.Buffer
+	quiet := rf.quiet && !f.asJSON
+	if quiet {
+		out = &held
+	}
 	sites := make([]spine.SiteVerdicts, 0, len(entries))
 	reports := make([]health.Report, 0, len(entries))
 	verdicts := make([]spine.Verdict, 0, len(entries))
@@ -88,7 +101,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 
 		siteCtx, siteCancel := siteBudget(envelope, rf, len(entries)-i)
 		siteStarted := d.now()
-		report, err := health.Run(siteCtx, e.Record, clients, health.All, health.Options{
+		report, err := health.Run(siteCtx, e.Record, clients, d.healthChecks(), health.Options{
 			ErrorThreshold: f.errorThreshold,
 			LogWindow:      window,
 			Now:            d.now,
@@ -140,10 +153,6 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 		if err := writeSweepSummaryJSON(out, d, reports, verdicts, verdict, len(entries), d.now().Sub(started)); err != nil {
 			return err
 		}
-	// --quiet on an OK sweep writes nothing at all, the rule that makes a cron-driven green run
-	// silent and mail-free. On any other verdict the sweep prints the frame it would have printed
-	// without the flag.
-	case fleet && quietSuppressesFrame(rf.quiet, verdict):
 	case fleet:
 		status := runStatus(clients, d.now().Sub(started), anyDegraded(reports), reports)
 		if err := writeHealthBody(out, d, rf, reports, verdict, status); err != nil {
@@ -161,6 +170,15 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			return err
 		}
 		if _, err := fmt.Fprintln(out, verdict); err != nil {
+			return err
+		}
+	}
+	// --quiet on an OK sweep writes nothing at all, the rule that makes a cron-driven green run
+	// silent and mail-free. On any other verdict the sweep writes what it would have written
+	// without the flag, in one copy rather than per site, so the body an operator reads is
+	// byte-identical either way.
+	if quiet && !quietSuppressesFrame(rf.quiet, verdict) {
+		if _, err := held.WriteTo(cmd.OutOrStdout()); err != nil {
 			return err
 		}
 	}

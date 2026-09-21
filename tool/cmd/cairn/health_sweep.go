@@ -24,8 +24,10 @@ const maxSweepTimeout = 600 * time.Second
 // settled report through writeHealthBody, separated by a blank line, and ending with one final
 // verdict line for the whole run. A budget miss or a signal, the one cancellation path both share,
 // stops the sweep after whichever site is already in flight settles; every site still to come is
-// named by id as UNKNOWN with reason.timeout rather than dropped from the output, and counted
-// toward the run's exit code the same as a settled site would be.
+// still counted toward the run's exit code the same as a settled site would be, but under --json
+// it is omitted from the emitted stream rather than named, since a plain-text UNKNOWN line and a
+// blank-line separator would corrupt the newline-delimited JSON; Task 20c owns --json's final,
+// documented contract for a site the sweep never reached.
 func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, window time.Duration) error {
 	entries, listErrs := st.List()
 
@@ -63,8 +65,10 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			break
 		}
 
-		if err := writeSeparator(); err != nil {
-			return err
+		if !f.asJSON {
+			if err := writeSeparator(); err != nil {
+				return err
+			}
 		}
 
 		siteCtx, siteCancel := siteBudget(envelope, rf, len(entries)-i)
@@ -97,11 +101,13 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 	}
 
 	for _, rest := range entries[cut:] {
-		if err := writeSeparator(); err != nil {
-			return err
-		}
-		if err := writeSweepTimeout(out, rest.ID); err != nil {
-			return err
+		if !f.asJSON {
+			if err := writeSeparator(); err != nil {
+				return err
+			}
+			if err := writeSweepTimeout(out, rest.ID); err != nil {
+				return err
+			}
 		}
 		sites = append(sites, spine.SiteVerdicts{})
 	}

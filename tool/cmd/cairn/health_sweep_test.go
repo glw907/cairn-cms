@@ -10,8 +10,44 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
+
+// independentSweepVerdict recomputes the sweep's own exit-code arithmetic from scratch: it lists
+// the registry and runs health.Run over every entry exactly as runHealthSweep does, then feeds
+// the resulting verdicts and list errors to spine.ExitCode. A test calls this after execTree has
+// already run the sweep once, so the comparison is against a value computed independently of
+// health_sweep.go's own bookkeeping rather than a copy of it; the fixtures in this file are all
+// deterministic (a fixed clock, a fake transport with no state), so re-running produces the same
+// per-site verdicts.
+func independentSweepVerdict(t *testing.T, d deps) spine.Verdict {
+	t.Helper()
+	st, err := openRegistry(d)
+	if err != nil {
+		t.Fatalf("openRegistry: %v", err)
+	}
+	entries, listErrs := st.List()
+
+	window, err := parseSince(defaultSince)
+	if err != nil {
+		t.Fatalf("parseSince(%q): %v", defaultSince, err)
+	}
+
+	sites := make([]spine.SiteVerdicts, 0, len(entries))
+	for _, e := range entries {
+		report, err := health.Run(context.Background(), e.Record, buildClients(d), health.All, health.Options{
+			ErrorThreshold: defaultErrorThreshold,
+			LogWindow:      window,
+			Now:            d.now,
+		}, nil)
+		if err != nil {
+			t.Fatalf("health.Run(%s): %v", e.ID, err)
+		}
+		sites = append(sites, siteVerdicts(report))
+	}
+	return spine.ExitCode(sites, listErrs, 0)
+}
 
 // TestSweepDeadlineDefaultSizing covers the arithmetic the 2026-09-20 amendment corrected: the
 // default whole-run budget is the single-site budget times the site count, capped at
@@ -203,11 +239,42 @@ func TestHealthSweepReportsAMalformedRecordAndCountsIt(t *testing.T) {
 		t.Errorf("stderr %q does not name the malformed record", errOut)
 	}
 	// A registry the sweep could not list in full contributes UNKNOWN, the same rule sites list
-	// follows; the two valid sites' own checks can still raise the combined verdict past it
-	// (worseVerdict never lets an unrelated list error mask a genuine failure), so this only
-	// asserts the run is not falsely OK.
-	if *code == int(spine.VerdictOK) {
-		t.Errorf("exit code = %d (OK), want a non-OK verdict for a registry with a malformed record", *code)
+	// follows, but the two valid sites' own checks can still raise the combined verdict past it
+	// (worseVerdict never lets an unrelated list error mask a genuine failure); comparing against
+	// spine.ExitCode computed independently over the same entries and list errors pins the exact
+	// combination, not merely "not OK".
+	want := independentSweepVerdict(t, d)
+	if *code != int(want) {
+		t.Errorf("exit code = %d, want %d (%s) from spine.ExitCode computed independently", *code, int(want), want)
+	}
+}
+
+// TestHealthSweepMixedRegistryExitCodeMatchesSpineExitCode covers criterion 10: over a registry
+// mixing a settled site, a site the fixture transport cannot answer (so its checks land Unknown
+// rather than OK), and a record the store cannot parse, the sweep's own process exit code equals
+// spine.ExitCode run independently over the same []spine.SiteVerdicts and []error the sweep
+// itself would have built, never a value health_sweep.go's own bookkeeping merely asserts of
+// itself.
+func TestHealthSweepMixedRegistryExitCodeMatchesSpineExitCode(t *testing.T) {
+	d, code := testDeps(t)
+	writeTestRecord(t, d, "site-alpha-aaaaaa", "alpha.example", "alpha")
+	writeTestRecord(t, d, "site-bravo-bbbbbb", "bravo.example", "bravo")
+
+	dir, err := d.registryDir()
+	if err != nil {
+		t.Fatalf("registryDir: %v", err)
+	}
+	if err := os.WriteFile(dir+"/site-broken-cccccc.json", []byte("not json"), 0o600); err != nil {
+		t.Fatalf("write malformed record: %v", err)
+	}
+
+	if _, _, err := execTree(t, d, "health"); err != nil {
+		t.Fatalf("cairn health: %v", err)
+	}
+
+	want := independentSweepVerdict(t, d)
+	if *code != int(want) {
+		t.Errorf("exit code = %d, want %d (%s) from spine.ExitCode(sites, listErrs, 0) computed independently", *code, int(want), want)
 	}
 }
 

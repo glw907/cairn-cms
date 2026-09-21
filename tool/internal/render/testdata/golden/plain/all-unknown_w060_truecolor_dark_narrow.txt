@@ -29,7 +29,7 @@ engine: skip
 reason: the installed or latest version is not in the published version list
 
 fix for: delegation, deploy, publish-path, email, errors, https-forced, creds
-fix: Run `cairn auth set` naming the missing token, then run the command again.
+fix: Run `cairn auth set` naming each missing token, then run the command again.
 fix actor: operator
 
 verdict: [1;38;2;247;172;77mUNKNOWN[m - topo.907.life, 9 could not run, 0 passing

@@ -20,7 +20,7 @@
       [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json,[m
       [38;2;193;189;184mthen deploy again.[m
   [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m  [38;2;168;164;158mCAIRN_CF_READ_TOKEN[m[38;2;168;164;158m[m
-      [38;2;193;189;184mRun `cairn auth set` naming the missing token, then[m
+      [38;2;193;189;184mRun `cairn auth set` naming each missing token, then[m
       [38;2;193;189;184mrun the command again.[m
       [38;2;168;164;158mfix for: email, errors[m
 

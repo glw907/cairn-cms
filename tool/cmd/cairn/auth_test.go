@@ -143,7 +143,9 @@ func TestAuthListPrintsProviderAndNoValue(t *testing.T) {
 // TestAuthListNamesTheEnvironmentFallbackWhenTheKeyringIsUnavailable covers the row Get's own
 // flattening hides: a variable neither the environment nor loadEnv's chain resolved, because the
 // keyring itself could not be consulted, prints a line distinct from a plain "not set", so an
-// operator with a locked keyring is not told their credential is simply gone.
+// operator with a locked keyring is not told their credential is simply gone. The cell itself
+// ends at "the OS keyring did not open" (criterion 6): it is a list cell, not a second
+// instruction line the row's own layout has no room for.
 func TestAuthListNamesTheEnvironmentFallbackWhenTheKeyringIsUnavailable(t *testing.T) {
 	d := deps{
 		env:           fakeEnv(nil),
@@ -161,8 +163,8 @@ func TestAuthListNamesTheEnvironmentFallbackWhenTheKeyringIsUnavailable(t *testi
 	if strings.Contains(got, "not set") {
 		t.Errorf("output %q says \"not set\"; want it to name the keyring as unreachable", got)
 	}
-	if !strings.Contains(got, "environment") {
-		t.Errorf("output %q does not name the environment fallback", got)
+	if !strings.Contains(got, keyringUnavailableDisplay) {
+		t.Errorf("output %q does not carry messages.go's keyringUnavailableDisplay", got)
 	}
 }
 

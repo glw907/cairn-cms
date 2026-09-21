@@ -13,7 +13,7 @@ import (
 func statusInput() RenderInput {
 	return RenderInput{
 		View: ViewStatus, Width: Width100, Dark: true, Profile: ProfileNoColor,
-		Status: goldenStatus(), Now: fixtures.Now(),
+		Status: sampleStatus(), Now: fixtures.Now(),
 	}
 }
 
@@ -98,7 +98,7 @@ func TestDegradedIsStatedWhereNoMissingTokenIs(t *testing.T) {
 		t.Errorf("the degraded run says nothing about itself:\n%s", text)
 	}
 
-	in.Status = goldenStatus()
+	in.Status = sampleStatus()
 	in.Status.Degraded = true
 	text := strings.Join(plainLines(in), "\n")
 	if strings.Contains(text, statusDegraded) {
@@ -110,7 +110,7 @@ func TestDegradedIsStatedWhereNoMissingTokenIs(t *testing.T) {
 // brief's ruling 8: the credential and keyring detail leave the header block.
 func TestCredentialDetailSitsOnTheCredsRow(t *testing.T) {
 	in := input(fixtures.OneSick(), BodySingle, 100, ProfileNoColor, true, spine.VerdictCritical)
-	in.Status = goldenStatus()
+	in.Status = sampleStatus()
 	frame := Render(in)
 	for _, l := range frame.Header {
 		if strings.Contains(stripANSI(l), "CAIRN_") {
@@ -161,7 +161,7 @@ func TestElapsedRidesTheCheckedLine(t *testing.T) {
 func TestNoDoThisNextDevice(t *testing.T) {
 	for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 		in := input(fixtures.OneSick(), body, 100, ProfileNoColor, true, spine.VerdictCritical)
-		in.Status = goldenStatus()
+		in.Status = sampleStatus()
 		if text := strings.Join(plainLines(in), "\n"); strings.Contains(text, "do this next") {
 			t.Errorf("body %v still carries a do-this-next device:\n%s", body, text)
 		}
@@ -178,7 +178,7 @@ func TestJoinWordsReadsAsProse(t *testing.T) {
 		{nil, ""},
 		{[]string{"deploy"}, "deploy"},
 		{[]string{"deploy", "engine"}, "deploy and engine"},
-		{[]string{"deploy", "engine", "errors"}, "deploy, engine and errors"},
+		{[]string{"deploy", "engine", "errors"}, "deploy, engine, and errors"},
 	} {
 		if got := joinWords(c.in); got != c.want {
 			t.Errorf("joinWords(%v) = %q, want %q", c.in, got, c.want)

@@ -34,6 +34,10 @@ func TestVersionReportsFourParts(t *testing.T) {
 					t.Errorf("cairn %s output %q missing %q", flag, out, part)
 				}
 			}
+
+			if want := versionLine() + "\n"; out != want {
+				t.Errorf("cairn %s stdout = %q, want tmplVersion rendered plus one newline and nothing else: %q", flag, out, want)
+			}
 		})
 	}
 }

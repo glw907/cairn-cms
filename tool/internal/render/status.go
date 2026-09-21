@@ -147,7 +147,7 @@ func sanitizeAll(ss []string) []string {
 }
 
 // joinWords joins a list the way a sentence does, so a reader takes it as prose rather than as a
-// field: commas between, "and" before the last.
+// field: commas between, and a serial comma before the trailing "and".
 func joinWords(ss []string) string {
 	switch len(ss) {
 	case 0:
@@ -157,6 +157,6 @@ func joinWords(ss []string) string {
 	case 2:
 		return ss[0] + " and " + ss[1]
 	default:
-		return strings.Join(ss[:len(ss)-1], ", ") + " and " + ss[len(ss)-1]
+		return strings.Join(ss[:len(ss)-1], ", ") + ", and " + ss[len(ss)-1]
 	}
 }

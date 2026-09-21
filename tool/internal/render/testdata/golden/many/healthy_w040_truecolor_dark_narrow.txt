@@ -5,9 +5,9 @@
 [38;2;168;164;158msite[m      [38;2;168;164;158mverdict[m   [38;2;168;164;158mfailing[m  [38;2;168;164;158mcould not r[m[38;2;168;164;158m[m[38;2;168;164;158m[m[38;2;168;164;158m[m
 [1;38;2;234;231;227mecxc.ski[m  [1;38;2;124;205;142mOK[m        [38;2;168;164;158m[m         [38;2;168;164;158m[m           [38;2;168;164;158m[m[38;2;168;164;158m[m[38;2;168;164;158m[m
 
-[38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email[m
-[38;2;247;172;77mand errors could not run[m
+[38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the[m
+[38;2;168;164;158mkeyring[m
 [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the[m
-[38;2;168;164;158mkeyring, expires 2026-09-26, in 6 days[m
+[38;2;168;164;158mkeyring[m
 
 [1;38;2;124;205;142mOK[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 OK[m

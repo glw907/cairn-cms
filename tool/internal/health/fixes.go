@@ -184,7 +184,7 @@ var fixesByCode = map[spine.Code]Fix{
 // beside the entry. Not in the catalogue; reported to the editorial gate.
 var fixesByReason = map[spine.ReasonCode]Fix{
 	spine.ReasonCredMissing: {
-		Text:  "Run `cairn auth set` naming the missing token, then run the command again.",
+		Text:  "Run `cairn auth set` naming each missing token, then run the command again.",
 		Actor: ActorOperator,
 	},
 }

@@ -3,10 +3,8 @@
 
 [38;2;74;68;59m──[m [38;2;234;231;227mpassing[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────────[m
   [38;2;124;205;142m●[m [1;38;2;234;231;227mcreds[m         [38;2;193;189;184mCloudflare and GitHub tokens read from the keyring[m[38;2;168;164;158m[m
-                  [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email and errors could not[m
-                  [38;2;247;172;77mrun[m
-                  [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26,[m
-                  [38;2;168;164;158min 6 days[m
+                  [38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the keyring[m
+                  [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring[m
   [38;2;124;205;142m●[m [1;38;2;234;231;227mserving[m       [38;2;193;189;184m200 in 84ms[m[38;2;168;164;158m[m
   [38;2;124;205;142m●[m [1;38;2;234;231;227mdelegation[m    [38;2;193;189;184mnameservers match the zone[m[38;2;168;164;158m[m
   [38;2;124;205;142m●[m [1;38;2;234;231;227mhttps-forced[m  [38;2;193;189;184mforced at the edge, HSTS 1 year[m[38;2;168;164;158m[m

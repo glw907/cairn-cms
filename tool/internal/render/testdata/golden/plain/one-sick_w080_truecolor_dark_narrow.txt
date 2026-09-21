@@ -26,7 +26,7 @@ errors: skip
 reason: reason.cred-missing
 
 fix for: email, errors
-fix: Run `cairn auth set` naming the missing token, then run the command again.
+fix: Run `cairn auth set` naming each missing token, then run the command again.
 fix actor: operator
 
 serving: pass - 200 in 132ms

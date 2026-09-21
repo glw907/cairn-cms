@@ -151,6 +151,12 @@ value you name; the division works the same way inside it.
 A site the budget never reaches is counted `UNKNOWN` toward the run's exit code. Under `--json`
 it is omitted from the stream rather than emitted as an empty report.
 
+A site the budget cuts short partway reports each of its unfinished checks `Unknown` with reason
+`reason.not-run`, and that site's own verdict is `UNKNOWN`; the run's own exit code is 3. The
+remedy is an explicit `--timeout` raising the whole-run budget, or fewer sites in the run: past
+four sites the per-site share divides, so a twelve-site registry gives each site 160 seconds
+rather than the full 480.
+
 ### The scheduler's own cap
 
 Set a scheduler's cap **above** `--timeout`, with headroom. A scheduler that kills the process

@@ -4,17 +4,15 @@
 [38;2;168;164;158msite[m      [38;2;168;164;158mverdict[m   [38;2;168;164;158mfailing[m  [38;2;168;164;158mcould not run[m  [38;2;168;164;158mheld[m  [38;2;168;164;158mengine[m   [38;2;168;164;158mc[m
 [1;38;2;234;231;227mecxc.ski[m  [1;38;2;255;142;134mCRITICAL[m  [38;2;255;142;134m1[m        [38;2;247;172;77m3[m              [38;2;168;164;158m[m      [38;2;168;164;158m0.78.0[m   [38;2;168;164;158m4[m
 
-[38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email and errors could[m
-[38;2;247;172;77mnot run[m
-[38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires[m
-[38;2;168;164;158m2026-09-26, in 6 days[m
+[38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the keyring[m
+[38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring[m
 
 [38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────────────────────────[m
   [38;2;157;132;236m→[m [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158mcreds[m[38;2;168;164;158m[m
       [38;2;193;189;184mCreate a new token, then run `cairn auth set` naming[m
       [38;2;193;189;184mthe credential.[m
-  [38;2;157;132;236m→[m [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158mCAIRN_CF_READ_TOKEN[m[38;2;168;164;158m[m
-      [38;2;193;189;184mRun `cairn auth set` naming the missing token, then[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158memail[m[38;2;168;164;158m[m
+      [38;2;193;189;184mRun `cairn auth set` naming each missing token, then[m
       [38;2;193;189;184mrun the command again.[m
       [38;2;168;164;158mfix for: email, errors, https-forced[m
 

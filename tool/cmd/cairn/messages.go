@@ -50,7 +50,7 @@ const (
 	flagVerboseHelp = "print the identifiers a run otherwise withholds"
 	flagQuietHelp   = "print nothing when the run is OK"
 	flagColorHelp   = "when to colour the output: auto, always, or never"
-	flagAckFileHelp = "path to a JSON file of acknowledgement entries (default: acknowledgements.json in the registry directory)"
+	flagAckFileHelp = "path to a JSON file of holds (default: acknowledgements.json in the registry directory)"
 	// flagWidthHelp is new to this table, reviewed at the 1.0 editorial gate: copy-standard.md
 	// carries no row for a --width flag, so this is drafted to section 2.4's grammar (what the
 	// flag does, in the operator's terms) rather than copied.
@@ -123,7 +123,7 @@ func checkProgressLine(id, word string) string {
 // to match. Redacting a very short value would replace ordinary words throughout the report, so
 // the scrubber leaves it and says so rather than silently dropping the protection. New to this
 // table, reviewed at the 1.0 editorial gate.
-const tmplScrubSkipped = "cairn: %d stored credential values are under %d characters and are left as written in this output"
+const tmplScrubSkipped = "cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them"
 
 // scrubSkippedNotice renders tmplScrubSkipped for the count of skipped values and the minimum
 // length the scrubber matches at.
@@ -148,7 +148,7 @@ func colorInvalidError(color string) error {
 // tmplWidthInvalid is root.go's refusal of a --width value outside widthMin to widthMax. New to
 // this table, reviewed at the 1.0 editorial gate: copy-standard.md carries no row for a --width
 // value error, so this is drafted to sections 2.4 through 2.7 rather than copied.
-const tmplWidthInvalid = "cairn: --width %d is not a usable column count.\nName a whole number from %d to %d"
+const tmplWidthInvalid = "cairn: --width %d is not a width cairn can render.\nUse a whole number from %d to %d"
 
 // widthInvalidError renders tmplWidthInvalid for the value the operator gave.
 func widthInvalidError(width int) error {
@@ -220,7 +220,7 @@ const (
 	flagHealthJSONHelp     = "print the report as JSON"
 	flagErrorThresholdHelp = "error records in the window that still report OK"
 	flagHealthSinceHelp    = "lookback window for the error count: a whole number of m, h, or d"
-	flagAckHelp            = "acknowledge one check until an expiry date: <check-id>=<YYYY-MM-DD>, repeatable; applies to that check on every site in a sweep"
+	flagAckHelp            = "hold one check until an expiry date: <check-id>=<YYYY-MM-DD>. Repeatable, and applies to that check on every site in a sweep."
 )
 
 // tmplUnknownSite is health.go's and logs.go's shared refusal of a site id the registry does not
@@ -350,7 +350,7 @@ func authNotStoredMessage(name string) string {
 // Adapted from copy-standard.md section 3.8's "keyring unavailable" row for one status-line word
 // rather than that row's own three-line boundary error. New to this table, reviewed at the 1.0
 // editorial gate.
-const keyringUnavailableDisplay = "the OS keyring did not open, set in the environment instead"
+const keyringUnavailableDisplay = "the OS keyring did not open"
 
 // tmplKeyringUnavailable is the error auth set and auth unset return when the keyring itself
 // could not be reached, naming the environment-variable fallback the way copy-standard.md
@@ -392,8 +392,8 @@ const (
 	// identifiers for whoever is minting the three credentials, not a listing an operator pastes
 	// elsewhere. New to this table, reviewed at the 1.0 editorial gate.
 	authProbeVerboseNotice = "auth probe: output is identifiers only; it is implicitly verbose"
-	authProbeCFSkipped     = "Cloudflare: skipped, a credential is missing"
-	authProbeGHSkipped     = "GitHub: skipped, a credential is missing"
+	authProbeCFSkipped     = "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not set"
+	authProbeGHSkipped     = "GitHub: skip, CAIRN_GH_READ_TOKEN is not set"
 
 	// authProbeAllReposPublic is printRepoLines's own warning when every probed repository came
 	// back confirmed-public, the condition that leaves a fine-grained token's own scope
@@ -405,13 +405,13 @@ const (
 // acknowledgements are new to 1.0's grammar; every one is new to this table, reviewed at the 1.0
 // editorial gate.
 const (
-	tmplAckFlagInvalid        = "cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.\nName the check and an expiry date, for example deploy=2026-10-01"
-	tmplAckFileNotFound       = "cairn: --ack-file %s not found.\nName a file that exists, or drop the flag to use the registry's default"
-	tmplAckFileMalformed      = "cairn: %s is not a valid acknowledgement file: %v.\nIt holds a JSON array of entries, each carrying checkId and expires"
-	tmplAckFileMissingCheckID = "cairn: %s carries an entry with no checkId.\nName the check each entry acknowledges"
-	tmplAckFileMissingExpiry  = "cairn: %s's %q entry has no expires date.\nAdd an expires date so the acknowledgement does not outlive it"
-	tmplAckFileMalformedDate  = "cairn: %s's %q entry has a malformed expires date %q.\nUse YYYY-MM-DD"
-	tmplAckFileUnreadable     = "cairn: could not read %s: %v.\nCheck the file's permissions, or drop --ack-file to use the registry's default"
+	tmplAckFlagInvalid        = "cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.\nUse the check and an expiry date, for example deploy=2026-10-01"
+	tmplAckFileNotFound       = "cairn: --ack-file %s not found.\nUse a file that exists, or drop --ack-file to use the registry's default"
+	tmplAckFileMalformed      = "cairn: %s is not a valid hold file.\n%v\nWrite the file as a JSON array of entries, each carrying checkId and expires"
+	tmplAckFileMissingCheckID = "cairn: the entry at position %d in %s carries no checkId.\nName the check that entry holds"
+	tmplAckFileMissingExpiry  = "cairn: the %q entry in %s has no expires date.\nAdd an expires date to the entry"
+	tmplAckFileMalformedDate  = "cairn: the %q entry in %s has an expires date cairn cannot read: %q.\nUse YYYY-MM-DD, for example 2026-10-01"
+	tmplAckFileUnreadable     = "cairn: could not read %s.\n%v\nGive the file read permission, or drop --ack-file to use the registry's default"
 )
 
 // ackFlagError is --ack's refusal of a value that is not <check-id>=<YYYY-MM-DD>.
@@ -431,21 +431,22 @@ func ackFileMalformedError(path string, cause error) error {
 	return translated(fmt.Errorf(tmplAckFileMalformed, path, cause))
 }
 
-// ackFileMissingCheckIDError is the refusal of an acknowledgement file entry with no check id.
-func ackFileMissingCheckIDError(path string) error {
-	return translated(fmt.Errorf(tmplAckFileMissingCheckID, path))
+// ackFileMissingCheckIDError is the refusal of an acknowledgement file entry with no check id,
+// naming the entry by its position (1-based) among the file's own entries.
+func ackFileMissingCheckIDError(path string, position int) error {
+	return translated(fmt.Errorf(tmplAckFileMissingCheckID, position, path))
 }
 
 // ackFileMissingExpiryError is the refusal of an acknowledgement file entry with no expiry
-// date, so no acknowledgement outlives its author's attention.
+// date, so no hold outlives its author's attention.
 func ackFileMissingExpiryError(path, checkID string) error {
-	return translated(fmt.Errorf(tmplAckFileMissingExpiry, path, checkID))
+	return translated(fmt.Errorf(tmplAckFileMissingExpiry, checkID, path))
 }
 
 // ackFileMalformedDateError is the refusal of an acknowledgement file entry whose expires value
 // does not parse as a calendar date.
 func ackFileMalformedDateError(path, checkID, value string) error {
-	return translated(fmt.Errorf(tmplAckFileMalformedDate, path, checkID, value))
+	return translated(fmt.Errorf(tmplAckFileMalformedDate, checkID, path, value))
 }
 
 // ackFileUnreadableError is the refusal of an acknowledgement file that exists but could not be

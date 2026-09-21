@@ -84,9 +84,9 @@ func loadAckFile(path string, explicit bool) (health.Acks, error) {
 	}
 
 	acks := make(health.Acks, 0, len(raw))
-	for _, entry := range raw {
+	for i, entry := range raw {
 		if entry.CheckID == "" {
-			return nil, ackFileMissingCheckIDError(path)
+			return nil, ackFileMissingCheckIDError(path, i+1)
 		}
 		if entry.Expires == "" {
 			return nil, ackFileMissingExpiryError(path, entry.CheckID)

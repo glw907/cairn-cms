@@ -34,7 +34,7 @@ and commit the diff.
 - Raise the @glw907/cairn-cms range in package.json, then deploy again.
 - Read the build log in the Cloudflare dashboard, then push a fix.
 - Read the events named above in Workers Logs, then push a fix.
-- Run `cairn auth set` naming the missing token, then run the command again.
+- Run `cairn auth set` naming each missing token, then run the command again.
 - Run `wrangler email sending enable <domain>` for the apex domain, then deploy again.
 - Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
 - Turn on HSTS for the zone under SSL/TLS, Edge Certificates.
@@ -87,9 +87,9 @@ Run the command again in %s
 - %s was not stored in the keyring
 
 - Add a Cloudflare Worker to the registry as a site
-- Cloudflare: skipped, a credential is missing
+- Cloudflare: skip, CAIRN_CF_READ_TOKEN is not set
 - Delete one credential's keyring entry
-- GitHub: skipped, a credential is missing
+- GitHub: skip, CAIRN_GH_READ_TOKEN is not set
 - List the Workers on the account that cairn could adopt
 - List the sites cairn knows
 - Manage credentials in the OS keyring
@@ -103,7 +103,6 @@ Run the command again in %s
 - Verify the three credential values against Cloudflare and GitHub.
 
 auth probe's whole output is identifiers (endpoints, statuses, and repository names), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
-- acknowledge one check until an expiry date: <check-id>=<YYYY-MM-DD>, repeatable; applies to that check on every site in a sweep
 - auth probe: every probed repository is public; the GitHub token's scope is unconfirmed
 - auth probe: output is identifiers only; it is implicitly verbose
 - cairn adopt --worker ecxc-ski
@@ -152,33 +151,28 @@ To check every site cairn knows, run: cairn health --json
 - cairn logs ecxc-ski-a1b2c3 --since 24h
 - cairn sites
 - cairn sites list --json
-- cairn: %d stored credential values are under %d characters and are left as written in this output
+- cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them
 - cairn: %q is not a credential cairn stores.
 The names are %s
-- cairn: %s carries an entry with no checkId.
-Name the check each entry acknowledges
 - cairn: %s crashed with a %s.
 This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: %s is empty.
 Pipe a non-empty value: printf %%s "$v" | cairn auth set %s
-- cairn: %s is not a valid acknowledgement file: %v.
-It holds a JSON array of entries, each carrying checkId and expires
-- cairn: %s's %q entry has a malformed expires date %q.
-Use YYYY-MM-DD
-- cairn: %s's %q entry has no expires date.
-Add an expires date so the acknowledgement does not outlive it
+- cairn: %s is not a valid hold file.
+%v
+Write the file as a JSON array of entries, each carrying checkId and expires
 - cairn: %v
 - cairn: %v.
 Run `%s --help` for usage
 - cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.
-Name the check and an expiry date, for example deploy=2026-10-01
+Use the check and an expiry date, for example deploy=2026-10-01
 - cairn: --ack-file %s not found.
-Name a file that exists, or drop the flag to use the registry's default
+Use a file that exists, or drop --ack-file to use the registry's default
 - cairn: --color %q is not %s, %s, or %s
 - cairn: --since %q is not a duration.
 Use a whole number of minutes, hours, or days: 90m, 24h, 7d
-- cairn: --width %d is not a usable column count.
-Name a whole number from %d to %d
+- cairn: --width %d is not a width cairn can render.
+Use a whole number from %d to %d
 - cairn: Cloudflare rate-limited this run.
 The checks that need Cloudflare could not run; the others are reported above
 - cairn: cairn adopt names one Worker.
@@ -190,8 +184,9 @@ Run `cairn health --help` for usage
 - cairn: could not reach the network.
 No check ran, so this run says nothing about the site.
 Check your connection, then run the command again
-- cairn: could not read %s: %v.
-Check the file's permissions, or drop --ack-file to use the registry's default
+- cairn: could not read %s.
+%v
+Give the file read permission, or drop --ack-file to use the registry's default
 - cairn: no Cloudflare credentials found.
 Run `cairn auth set %s` to store one
 - cairn: no Worker named %q on this account.
@@ -201,17 +196,24 @@ The health checks read your Cloudflare and GitHub tokens from the OS keyring or 
 Run `cairn auth set %s` to store one
 - cairn: no site named %q.
 Run `cairn sites list` to see the sites cairn knows
+- cairn: the %q entry in %s has an expires date cairn cannot read: %q.
+Use YYYY-MM-DD, for example 2026-10-01
+- cairn: the %q entry in %s has no expires date.
+Add an expires date to the entry
 - cairn: the %s check crashed.
 This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: the OS keyring did not open.
 Set %s in the environment instead
+- cairn: the entry at position %d in %s carries no checkId.
+Name the check that entry holds
 - cairn: this output carries identifiers and is not safe to paste in public.
 - columns to render at, instead of the terminal's own width
 - error records in the window that still report OK
+- hold one check until an expiry date: <check-id>=<YYYY-MM-DD>. Repeatable, and applies to that check on every site in a sweep.
 - lookback window for the error count: a whole number of m, h, or d
 - lookback window: a whole number of m, h, or d
 - narrow the query to one engine event name
-- path to a JSON file of acknowledgement entries (default: acknowledgements.json in the registry directory)
+- path to a JSON file of holds (default: acknowledgements.json in the registry directory)
 - print nothing when the run is OK
 - print the candidates as JSON
 - print the entries as JSON
@@ -219,7 +221,7 @@ Set %s in the environment instead
 - print the listing as JSON
 - print the report as JSON
 - print the version and exit
-- the OS keyring did not open, set in the environment instead
+- the OS keyring did not open
 - the Workers script to adopt
 - the number of sites the registry is expected to hold
 - the repository the Worker deploys from, as owner/name

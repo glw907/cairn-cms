@@ -30,6 +30,19 @@ func TestEveryFixtureCredsRowAgreesWithItsOwnCredentialStory(t *testing.T) {
 				if credsBlocked && !othersBlocked {
 					t.Errorf("%s: creds skipped for a missing credential while no other check did", r.Site)
 				}
+				// A failing (rejected or expiring) creds row carries a Code rather than a
+				// Reason: credsCheck.Run only sets Reason on the Unknown state a missing token
+				// produces, and only sets Code on the Failing state a present, bad token
+				// produces, so a row combining the two shapes is not one the check can settle
+				// into.
+				if creds.Outcome.State == spine.Failing {
+					if creds.Outcome.Code == spine.CodeNone {
+						t.Errorf("%s: creds failed with no Code", r.Site)
+					}
+					if creds.Outcome.Reason != "" {
+						t.Errorf("%s: creds failed while also carrying Reason %q", r.Site, creds.Outcome.Reason)
+					}
+				}
 			}
 		})
 	}

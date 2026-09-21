@@ -11,7 +11,7 @@ creds: skip
 reason: Cloudflare token not found; GitHub token read from the keyring
 
 fix for: email, errors, creds
-fix: Run `cairn auth set` naming the missing token, then run the command again.
+fix: Run `cairn auth set` naming each missing token, then run the command again.
 fix actor: operator
 
 serving: pass - 200 in 84ms

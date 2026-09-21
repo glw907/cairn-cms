@@ -3,8 +3,8 @@
 
 [38;2;74;68;59m──[m [38;2;234;231;227mfailing[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────────────────────────────────────────────────[m
   [38;2;247;172;77m□[m [1;38;2;234;231;227mcreds[m         [38;2;193;189;184mthe token was rejected[m
-                  [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email and errors could not run[m
-                  [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days[m
+                  [38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the keyring[m
+                  [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring[m
     [38;2;157;132;236m→[m [38;2;193;189;184mCreate a new token, then run `cairn auth set` naming the credential.[m[38;2;168;164;158m[m
 
 [38;2;74;68;59m──[m [38;2;234;231;227mcould not run[m [38;2;74;68;59m───────────────────────────────────────────────────────────────────────────────────────────────────────[m

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/spf13/cobra"
 )
 
@@ -337,3 +338,96 @@ func TestTranslateErrorPrefixesARawError(t *testing.T) {
 type errRaw struct{ s string }
 
 func (e errRaw) Error() string { return e.s }
+
+// TestNoAcknowledgementOutsideAFlagOrFileName covers criterion 8: this table's prose says
+// "hold", never "acknowledgement", while the --ack/--ack-file flag names and the
+// acknowledgements.json file name stay as they are.
+func TestNoAcknowledgementOutsideAFlagOrFileName(t *testing.T) {
+	for _, s := range messageConstants(t) {
+		stripped := strings.ReplaceAll(s, "acknowledgements.json", "")
+		if strings.Contains(stripped, "acknowledgement") {
+			t.Errorf("messages.go entry %q says \"acknowledgement\" outside a flag or file name", s)
+		}
+	}
+}
+
+// TestNoBadFlagValueMessageOpensWithName covers criterion 17: each of this table's
+// bad-flag-value errors (a --width, a --ack, or a --ack-file value the operator gave) opens its
+// instruction line with "Use", never "Name a" or "Name the". The auth fix line's "naming the
+// missing token" (criterion 11) lives in internal/health/fixes.go, not this table, and is not a
+// bad-flag-value error in the first place, so it is untouched by this sweep.
+func TestNoBadFlagValueMessageOpensWithName(t *testing.T) {
+	for _, s := range []string{tmplWidthInvalid, tmplAckFlagInvalid, tmplAckFileNotFound} {
+		_, tail, ok := strings.Cut(s, "\n")
+		if !ok {
+			t.Fatalf("message %q carries no second line", s)
+		}
+		if strings.HasPrefix(tail, "Name") {
+			t.Errorf("bad-flag-value message's second line %q opens with \"Name\"", tail)
+		}
+	}
+}
+
+// TestNoMalformedInOperatorCopy covers criterion 18: "malformed" left operator-facing copy.
+func TestNoMalformedInOperatorCopy(t *testing.T) {
+	for _, s := range messageConstants(t) {
+		if strings.Contains(s, "malformed") {
+			t.Errorf("messages.go entry %q still says \"malformed\"", s)
+		}
+	}
+}
+
+// TestBudgetDocsNameTheCutShortSiteAndTheCap covers criterion 25: both exit-codes.md and
+// tripwire.md state the reason a cut-short site's unfinished checks carry
+// (spine.ReasonNotRun's own wire value) and the cap the per-site share divides against, so the
+// prose cannot drift from the arithmetic.
+func TestBudgetDocsNameTheCutShortSiteAndTheCap(t *testing.T) {
+	capSeconds := strconv.Itoa(int(maxSweepTimeout.Seconds()))
+	for _, rel := range []string{"docs/reference/exit-codes.md", "docs/tripwire.md"} {
+		body := readToolFile(t, rel)
+		if !strings.Contains(body, string(spine.ReasonNotRun)) {
+			t.Errorf("%s does not name %q", rel, spine.ReasonNotRun)
+		}
+		if !strings.Contains(body, capSeconds) {
+			t.Errorf("%s does not name the %s-second cap", rel, capSeconds)
+		}
+	}
+}
+
+// readmeLinkLabelPattern matches a Markdown link's own label text, the part between [ and ].
+var readmeLinkLabelPattern = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
+
+// TestReadmeLinksCarryDescriptiveText covers criterion 14: every README link carries
+// descriptive text, never a bare tool/docs path, so a reader learns what a link leads to before
+// following it.
+func TestReadmeLinksCarryDescriptiveText(t *testing.T) {
+	body := readToolFile(t, "README.md")
+	for _, m := range readmeLinkLabelPattern.FindAllStringSubmatch(body, -1) {
+		label, target := m[1], m[2]
+		if !strings.HasPrefix(target, "docs/") {
+			continue
+		}
+		if strings.Trim(label, "`") == target {
+			t.Errorf("README link to %q carries its own path as the label %q, not descriptive text", target, label)
+		}
+	}
+}
+
+// TestReadmeCarriesTheRuledSentences pins the README's update sentence, its two-paths sentence,
+// and its 2.0 sentence to their exact edited text, so a later rewrap or rewrite cannot drift
+// from the wording an editorial pass over the README chose.
+func TestReadmeCarriesTheRuledSentences(t *testing.T) {
+	body := strings.Join(strings.Fields(readToolFile(t, "README.md")), " ")
+	for _, want := range []string{
+		"Check the releases page when you want a newer version.",
+		"Both paths put a `cairn` binary on your `PATH`.",
+		"A terminal HUD is planned for a later 1.x release, and `cairn health` already checks every site it knows.",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("README.md does not carry %q", want)
+		}
+	}
+	if strings.Contains(body, "Version 2.0 adds a terminal HUD") {
+		t.Error("README.md still carries the wrong 2.0 sentence")
+	}
+}

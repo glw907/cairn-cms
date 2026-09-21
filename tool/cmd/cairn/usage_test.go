@@ -330,7 +330,7 @@ func TestTheScrubSkipNoticeIsDisclosedOnceUnderVerbose(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sites list --verbose: %v", err)
 	}
-	if strings.Count(verbose, "are left as written") != 1 {
+	if strings.Count(verbose, "does not scrub them") != 1 {
 		t.Errorf("stderr = %q, want the notice exactly once", verbose)
 	}
 
@@ -338,7 +338,7 @@ func TestTheScrubSkipNoticeIsDisclosedOnceUnderVerbose(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sites list: %v", err)
 	}
-	if strings.Contains(quiet, "are left as written") {
+	if strings.Contains(quiet, "does not scrub them") {
 		t.Errorf("stderr = %q, want no notice without --verbose", quiet)
 	}
 }

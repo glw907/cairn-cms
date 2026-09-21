@@ -270,7 +270,7 @@ func TestProbeTokenSkipsCloudflareAndGitHubWhenCredentialsMissing(t *testing.T) 
 	cmd.SetErr(&bytes.Buffer{})
 
 	code = runProbe(t, cmd)
-	if !strings.Contains(out.String(), "Cloudflare: skipped") || !strings.Contains(out.String(), "GitHub: skipped") {
+	if !strings.Contains(out.String(), authProbeCFSkipped) || !strings.Contains(out.String(), authProbeGHSkipped) {
 		t.Errorf("output = %s, want both providers reported as skipped", out.String())
 	}
 	if code != int(spine.VerdictUnknown) {

@@ -15,7 +15,7 @@ https-forced: skip
 reason: reason.cred-missing
 
 fix for: email, errors, https-forced
-fix: Run `cairn auth set` naming the missing token, then run the command again.
+fix: Run `cairn auth set` naming each missing token, then run the command again.
 fix actor: operator
 
 serving: pass - 200 in 84ms

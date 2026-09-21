@@ -112,15 +112,12 @@ func verdictFor(reports []health.Report) Verdict {
 	return spine.ExitCode(sites, listErrs, 0)
 }
 
-// goldenStatus is the run state every golden is cut against: one token the run could not find,
-// and one read from the keyring with an expiry, so the status line's three shapes are all pinned
-// rather than described.
-//
-// The two agree with the one-sick fixture's own creds row, which says the Cloudflare token was
-// not found and the GitHub one came from the keyring, and with the email and errors checks it
-// could not run: a golden whose status line contradicted the row beside it would be pinning a
-// frame no run can produce.
-func goldenStatus() StatusState {
+// sampleStatus is a plausible run state for the general render tests that exercise layout
+// (width, marks, fix printing) rather than a fixture's own credential story: one token the run
+// could not find, and one read from the keyring with an expiry, so the status line's three
+// shapes are all pinned. It is not read by TestGolden, which cuts every frame against
+// fixtureStatus's own per-fixture entry instead (criterion 22).
+func sampleStatus() StatusState {
 	return StatusState{
 		Elapsed: 16300 * time.Millisecond,
 		Credentials: []Credential{
@@ -132,6 +129,97 @@ func goldenStatus() StatusState {
 			},
 		},
 	}
+}
+
+// fixtureStatus is each named fixture's own run state, matched to its own creds row rather than
+// the one shared story every golden was cut against before this task (criterion 22). A
+// many-sites fixture ("twelve-site") carries one Status for the whole run, since the process
+// holds one set of provider tokens for every site it sweeps, and every site's own creds row
+// (fillNine's default) agrees with it. "empty" and "hostile" carry no creds row at all, so
+// their Credentials list stays empty rather than asserting a story neither report can prove.
+// TestFixtureStatusAgreesWithItsOwnCredsRow checks every other entry against its fixture's own
+// creds row.
+var fixtureStatus = map[string]StatusState{
+	"empty":   {Elapsed: 16300 * time.Millisecond},
+	"hostile": {Elapsed: 16300 * time.Millisecond},
+	"all-unknown": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Disables: []string{"delegation", "https-forced", "email", "errors"}},
+			{Variable: "CAIRN_GH_READ_TOKEN", Disables: []string{"deploy", "publish-path"}},
+		},
+	},
+	// Offline's own creds row skipped for spine.ReasonOffline, not a missing credential: the
+	// network was unreachable, which says nothing about whether either token is present, so
+	// this Status shows both resolved rather than claiming one is unset with nothing to prove it.
+	"offline": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Provider: providerKeyring},
+			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
+		},
+	},
+	"one-sick": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Disables: []string{"email", "errors"}},
+			{
+				Variable: "CAIRN_GH_READ_TOKEN",
+				Provider: providerKeyring,
+				Expires:  fixtures.Now().Add(6 * 24 * time.Hour),
+			},
+		},
+	},
+	// Healthy's own creds row passes, "Cloudflare and GitHub tokens read from the keyring".
+	"healthy": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Provider: providerKeyring},
+			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
+		},
+	},
+	// WarningOnly's own creds row passes the same way Healthy's does.
+	"warning-only": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Provider: providerKeyring},
+			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
+		},
+	},
+	// Degraded's own creds row rejects the Cloudflare token rather than reporting it missing, so
+	// both tokens resolved; the rejection itself is the creds row's own failure, not a Status
+	// concern.
+	"degraded": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Provider: providerKeyring},
+			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
+		},
+	},
+	// TwelveSites leans on fillNine's own default, which skips creds, email, and errors for a
+	// missing Cloudflare token on every site the scenario does not override, and every site
+	// shares the one run's provider tokens.
+	"twelve-site": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Disables: []string{"email", "errors"}},
+			{
+				Variable: "CAIRN_GH_READ_TOKEN",
+				Provider: providerKeyring,
+				Expires:  fixtures.Now().Add(6 * 24 * time.Hour),
+			},
+		},
+	},
+}
+
+// statusFor returns fixture's own run state, or sampleStatus for a pseudo-fixture goldenCases
+// builds outside the named corpus (the log view's "excerpt"), which draws no status line at all
+// (render.go never calls statusLines for ViewLogs).
+func statusFor(fixture string) StatusState {
+	if s, ok := fixtureStatus[fixture]; ok {
+		return s
+	}
+	return sampleStatus()
 }
 
 // goldenLogEntries is the log excerpt the log view's goldens are cut from. It lives here rather
@@ -231,7 +319,7 @@ func (c goldenCase) render() string {
 		Reports: c.reports,
 		Entries: c.entries,
 		Site:    "ecxc.ski",
-		Status:  goldenStatus(),
+		Status:  statusFor(c.fixture),
 		Verdict: verdictFor(c.reports),
 		Now:     fixtures.Now(),
 	}).Lines(), "\n") + "\n"
@@ -374,5 +462,52 @@ func TestGoldenCorpusHasNoOrphan(t *testing.T) {
 func TestGoldenCorpusIsSized(t *testing.T) {
 	if n := len(goldenCases()); n < 120 || n > 200 {
 		t.Errorf("corpus is %d frames, outside the 120 to 200 the matrix targets", n)
+	}
+}
+
+// credsRowOf returns r's own creds check, the row statusLines' credential story has to agree
+// with.
+func credsRowOf(r health.Report) (health.CheckResult, bool) {
+	for _, c := range r.Checks {
+		if c.ID == credsRowID {
+			return c, true
+		}
+	}
+	return health.CheckResult{}, false
+}
+
+// TestFixtureStatusAgreesWithItsOwnCredsRow covers criterion 23's second assertion: a fixture's
+// own run state agrees with its creds row. A Status naming a token unset requires a creds row
+// that skipped for a missing credential; a Status naming both tokens read from the keyring
+// requires a creds row that did not skip for one. "empty" and "hostile" carry no creds row and
+// are skipped, since neither report can prove or disprove a credential story.
+func TestFixtureStatusAgreesWithItsOwnCredsRow(t *testing.T) {
+	for _, f := range fixtures.All() {
+		status, ok := fixtureStatus[f.Name]
+		if !ok {
+			t.Fatalf("fixtureStatus carries no entry for %q", f.Name)
+		}
+		anyUnset := false
+		for _, c := range status.Credentials {
+			if c.Provider == "" {
+				anyUnset = true
+			}
+		}
+		bothRead := len(status.Credentials) == 2 && !anyUnset
+
+		for _, r := range f.Reports {
+			creds, found := credsRowOf(r)
+			if !found {
+				continue
+			}
+			skippedOrFailed := creds.Outcome.State != spine.OK
+			skippedForMissing := creds.Outcome.Reason == spine.ReasonCredMissing
+			if anyUnset && !skippedOrFailed {
+				t.Errorf("%s/%s: status names a token unset but the creds row neither skipped nor failed", f.Name, r.Site)
+			}
+			if bothRead && skippedForMissing {
+				t.Errorf("%s/%s: status names both tokens read from the keyring but the creds row skipped for a missing credential", f.Name, r.Site)
+			}
+		}
 	}
 }

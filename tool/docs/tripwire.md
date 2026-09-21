@@ -327,6 +327,12 @@ the same division applies inside it. Size it by the same arithmetic
 [`docs/reference/exit-codes.md`](reference/exit-codes.md) states for your own registry's size, not
 by guessing; a value sized for four sites left running against forty will starve most of them.
 
+Past four sites the per-site share divides, so a large sweep can cut a site's budget well below
+the single-site default (a twelve-site registry gives each site 160 seconds, not 480). A site the
+budget cuts short reports its unfinished checks `Unknown` with reason `reason.not-run`, that
+site's own verdict is `UNKNOWN`, and the run exits 3. The remedy is the same as above: an explicit
+`--timeout` raising the whole-run budget, or fewer sites per run.
+
 ## Alerting: choose the threshold, alert once, never a credential
 
 Where the alert threshold sits is the operator's choice, and there are two settings worth making:

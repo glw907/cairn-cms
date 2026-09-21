@@ -10,10 +10,10 @@
   [38;2;247;172;77m?[m [1;38;2;234;231;227merrors[m        [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mhttps-forced[m  [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mcreds[m         [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
-                  [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email and errors could not[m
-                  [38;2;247;172;77mrun[m
-                  [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26,[m
-                  [38;2;168;164;158min 6 days[m
+                  [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so delegation, https-forced,[m
+                  [38;2;247;172;77memail, and errors could not run[m
+                  [38;2;247;172;77mCAIRN_GH_READ_TOKEN is not set, so deploy and publish-path[m
+                  [38;2;247;172;77mcould not run[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mengine[m        [38;2;193;189;184mthe installed or latest version is not in the published[m
                   [38;2;193;189;184mversion list[m[38;2;168;164;158m[m
 

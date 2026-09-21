@@ -572,7 +572,7 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 				budget := min(width, WidthCap)
 				for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 					in := input(f.Reports, body, width, ProfileTrueColor, ascii, spine.VerdictCritical)
-					in.Status = goldenStatus()
+					in.Status = sampleStatus()
 					for _, l := range Render(in).Lines() {
 						// The plain body is line-oriented by contract and depends on no width at
 						// all, so it is swept for the other two tables' sake and exempted here.
@@ -682,7 +682,7 @@ func endsWithSuffixOf(line, text string) bool {
 // manyInput builds one RenderInput over a fleet, with the run state the strip's own tests read.
 func manyInput(reports []health.Report, width int, ascii bool) RenderInput {
 	in := input(reports, BodyMany, width, ProfileNoColor, ascii, verdictFor(reports))
-	in.Status = goldenStatus()
+	in.Status = sampleStatus()
 	return in
 }
 
@@ -1154,7 +1154,7 @@ func TestFleetOnePassRule(t *testing.T) {
 	ok := inkOf(theme, RoleOK)
 	for _, width := range []int{Width80, Width100, WidthCap} {
 		in := input(fixtures.TwelveSites(), BodyMany, width, ProfileTrueColor, false, spine.VerdictCritical)
-		in.Status = goldenStatus()
+		in.Status = sampleStatus()
 		for _, sp := range frameSpans(Render(in)) {
 			// Containment, not equality: a bold cell carries the weight parameter ahead of the
 			// colour, so an exact match would miss the verdict word, which is the one span this

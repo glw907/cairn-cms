@@ -4,12 +4,14 @@
 [38;2;168;164;158msite[m           [38;2;168;164;158mverdict[m   [38;2;168;164;158mfailing[m  [38;2;168;164;158mcould not run[m  [38;2;168;164;158mheld[m  [38;2;168;164;158mengine[m   [38;2;168;164;158mchecked[m
 [1;38;2;234;231;227mtopo.907.life[m  [1;38;2;247;172;77mUNKNOWN[m   [38;2;168;164;158m[m         [38;2;247;172;77m9[m              [38;2;168;164;158m[m      [38;2;168;164;158m[m         [38;2;168;164;158m4m ago[m
 
-[38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email and errors could not run[m
-[38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days[m
+[38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so delegation, https-forced, email, and errors[m
+[38;2;247;172;77mcould not run[m
+[38;2;247;172;77mCAIRN_GH_READ_TOKEN is not set, so deploy and publish-path could not run[m
 
 [38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────[m
-  [38;2;157;132;236m→[m [1;38;2;234;231;227mtopo.907.life[m  [38;2;168;164;158mCAIRN_CF_READ_TOKEN[m[38;2;168;164;158m[m
-      [38;2;193;189;184mRun `cairn auth set` naming the missing token, then run the command again.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mtopo.907.life[m  [38;2;168;164;158mtokens[m[38;2;168;164;158m[m
+      [38;2;193;189;184mRun `cairn auth set` naming each missing token, then run the[m
+      [38;2;193;189;184mcommand again.[m
       [38;2;168;164;158mfix for: delegation, deploy, publish-path, email, errors,[m
       [38;2;168;164;158mhttps-forced, creds[m
 

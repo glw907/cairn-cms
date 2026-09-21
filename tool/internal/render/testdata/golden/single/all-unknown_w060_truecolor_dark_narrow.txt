@@ -10,10 +10,11 @@
   [38;2;247;172;77m?[m [1;38;2;234;231;227merrors[m        [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mhttps-forced[m  [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mcreds[m         [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
-                  [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email[m
-                  [38;2;247;172;77mand errors could not run[m
-                  [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring,[m
-                  [38;2;168;164;158mexpires 2026-09-26, in 6 days[m
+                  [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so[m
+                  [38;2;247;172;77mdelegation, https-forced, email, and[m
+                  [38;2;247;172;77merrors could not run[m
+                  [38;2;247;172;77mCAIRN_GH_READ_TOKEN is not set, so deploy[m
+                  [38;2;247;172;77mand publish-path could not run[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mengine[m        [38;2;193;189;184mthe installed or latest version is not in[m
                   [38;2;193;189;184mthe published version list[m[38;2;168;164;158m[m
 

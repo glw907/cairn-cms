@@ -61,7 +61,7 @@ func TestSweepDeadlineDefaultSizing(t *testing.T) {
 		want      time.Duration
 	}{
 		{"one site at the default gets its whole budget", defaultTimeout, 1, defaultTimeout},
-		{"four sites at the default is capped", defaultTimeout, 4, maxSweepTimeout},
+		{"four sites at the default reach the cap exactly", defaultTimeout, 4, maxSweepTimeout},
 		{"ten sites at the default is capped", defaultTimeout, 10, maxSweepTimeout},
 		{"a small per-site budget multiplies without reaching the cap", 30 * time.Second, 4, 2 * time.Minute},
 		{"an empty registry still gets one site's worth of budget", defaultTimeout, 0, defaultTimeout},
@@ -104,26 +104,64 @@ func TestSweepDeadlineExplicitTimeoutIsTheWholeRunBudget(t *testing.T) {
 	}
 }
 
-// TestSiteBudgetDividesOnlyWhenExplicit is the divide-only-when-explicit rule at the unit level:
-// the default sizing gives every site the full single-site budget regardless of how many sites
-// remain, and an explicit --timeout divides the envelope's remaining time by the sites still to
-// run.
-func TestSiteBudgetDividesOnlyWhenExplicit(t *testing.T) {
-	t.Run("default sizing gives the full budget however many sites remain", func(t *testing.T) {
-		rf := &rootFlags{timeout: defaultTimeout}
-		envelope, cancel := context.WithTimeout(context.Background(), defaultTimeout*5)
-		defer cancel()
+// TestSiteBudgetNeverStarvesTheSitesBehindIt is the fair-share rule at the unit level: a site
+// takes at most the envelope's remaining time divided by the sites still to run, so the sweep's
+// budget cannot be spent by the sites at the top of the list. The two default rows are the
+// registry sizes the numbers were chosen against: four sites, where the cap is reached exactly
+// and every site still gets the full single-site budget, and twelve, where the cap binds and the
+// share divides.
+func TestSiteBudgetNeverStarvesTheSitesBehindIt(t *testing.T) {
+	defaults := []struct {
+		name  string
+		sites int
+		want  time.Duration
+	}{
+		{"a four-site default sweep gives every site the full single-site budget", 4, defaultTimeout},
+		{"a twelve-site default sweep divides the cap evenly", 12, maxSweepTimeout / 12},
+	}
 
-		for _, remaining := range []int{1, 5} {
-			ctx, siteCancel := siteBudget(envelope, rf, remaining)
+	for _, tt := range defaults {
+		t.Run(tt.name, func(t *testing.T) {
+			rf := &rootFlags{timeout: defaultTimeout}
+			envelope, cancel := sweepDeadline(context.Background(), rf, tt.sites)
+			defer cancel()
+
+			ctx, siteCancel := siteBudget(envelope, rf, tt.sites)
 			deadline, ok := ctx.Deadline()
 			siteCancel()
 			if !ok {
 				t.Fatal("siteBudget returned a context with no deadline")
 			}
-			if got := time.Until(deadline); got > defaultTimeout || got < defaultTimeout-time.Second {
-				t.Errorf("remaining=%d: site budget = %s, want close to the full %s", remaining, got, defaultTimeout)
+			got := time.Until(deadline)
+			if diff := tt.want - got; diff < -time.Second || diff > time.Second {
+				t.Errorf("first site's budget = %s, want close to %s", got, tt.want)
 			}
+			// The first site's share, taken by every site in turn, has to fit the envelope:
+			// that is what "no site is starved by an earlier one" means arithmetically.
+			whole, ok := envelope.Deadline()
+			if !ok {
+				t.Fatal("sweepDeadline returned a context with no deadline")
+			}
+			if total := got * time.Duration(tt.sites); total > time.Until(whole)+time.Second {
+				t.Errorf("%d sites at %s is %s, over the whole-run budget %s",
+					tt.sites, got, total, time.Until(whole))
+			}
+		})
+	}
+
+	t.Run("a site never gets more than the single-site budget", func(t *testing.T) {
+		rf := &rootFlags{timeout: defaultTimeout}
+		envelope, cancel := context.WithTimeout(context.Background(), maxSweepTimeout)
+		defer cancel()
+
+		ctx, siteCancel := siteBudget(envelope, rf, 1)
+		deadline, ok := ctx.Deadline()
+		siteCancel()
+		if !ok {
+			t.Fatal("siteBudget returned a context with no deadline")
+		}
+		if got := time.Until(deadline); got > defaultTimeout || got < defaultTimeout-time.Second {
+			t.Errorf("last site's budget = %s, want it held to the single-site %s", got, defaultTimeout)
 		}
 	})
 

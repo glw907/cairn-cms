@@ -17,9 +17,12 @@ import (
 )
 
 // maxSweepTimeout bounds a multi-site sweep's default whole-run budget, so a large registry
-// cannot make bare `cairn health` run for hours: ten minutes, the cap
-// tool/docs/reference/exit-codes.md publishes.
-const maxSweepTimeout = 600 * time.Second
+// cannot make bare `cairn health` run for hours. It is four times the single-site default, which
+// is the relationship that keeps the two numbers coherent: a registry of up to four sites, the
+// size the tool is built for, never reaches the cap at all, and a larger one shares this budget
+// by siteBudget's fair share rather than letting the sites at the top of the list spend it.
+// tool/docs/reference/exit-codes.md publishes both numbers.
+const maxSweepTimeout = 4 * defaultTimeout
 
 // runHealthSweep runs health.Run over every registered site, in store.List order, printing each
 // settled report through writeHealthBody, separated by a blank line, and ending with one final
@@ -210,22 +213,21 @@ func sweepDeadline(ctx context.Context, rf *rootFlags, siteCount int) (context.C
 }
 
 // siteBudget returns the deadline one site's health.Run gets, derived from envelope so it can
-// never outlive the sweep's own budget. Under the default sizing every site gets the full
-// single-site budget, since the envelope alone caps the whole run; under an explicit --timeout,
-// the whole-run budget is divided by the sites still to run and recomputed after each one
-// settles, so one slow site cannot eat the rest and a fast sweep gives its slack back.
+// never outlive the sweep's own budget. A site gets its fair share of what is left, the envelope's
+// remaining time divided by the sites still to run, and never more than the per-site budget,
+// whether that budget is the default or an explicit --timeout. The share is recomputed after each
+// site settles, so one slow site cannot eat the rest and a fast sweep gives its slack back to the
+// sites behind it. Sites run one after another, which is what makes the division the whole
+// protection: without it the first site could spend an envelope eleven others are waiting on.
 func siteBudget(envelope context.Context, rf *rootFlags, remaining int) (context.Context, context.CancelFunc) {
-	if !rf.timeoutSet {
-		perSite := rf.timeout
-		if perSite <= 0 {
-			perSite = defaultTimeout
-		}
-		return context.WithTimeout(envelope, perSite)
+	perSite := rf.timeout
+	if perSite <= 0 {
+		perSite = defaultTimeout
 	}
 	deadline, ok := envelope.Deadline()
 	if !ok {
 		return context.WithCancel(envelope)
 	}
 	share := time.Until(deadline) / time.Duration(max(remaining, 1))
-	return context.WithTimeout(envelope, share)
+	return context.WithTimeout(envelope, min(share, perSite))
 }

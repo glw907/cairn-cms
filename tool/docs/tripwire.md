@@ -51,14 +51,14 @@ OnFailure=cairn-health-alert@%n.service
 Type=oneshot
 EnvironmentFile=%h/.config/cairn/tripwire.env
 ExecStart=%h/.local/bin/cairn health --quiet
-# 900s sits above the default sweep's own 600s cap (exit-codes.md, "Timeouts, and sizing a
+# 2400s sits above the default sweep's own 1920s cap (exit-codes.md, "Timeouts, and sizing a
 # scheduler's cap"), with headroom. TimeoutStartSec, not RuntimeMaxSec, is the cap that actually
 # applies to a Type=oneshot service (systemd.service(5): RuntimeMaxSec has no effect on oneshot
 # units). A run systemd kills at TimeoutStartSec exits however SIGKILL leaves it, never one of
 # cairn's own four codes, so the cap has to sit above --timeout: a routine that reads an
 # uninterpretable kill instead of cairn's own UNKNOWN is worse than the slow run it was meant to
 # catch.
-TimeoutStartSec=900
+TimeoutStartSec=2400
 ```
 
 `~/.config/systemd/user/cairn-health.timer`:
@@ -116,10 +116,14 @@ command the wrapper runs.
 # the exit code cairn health leaves and routes it. Wire notify-operator into your own paging or
 # mail tool; the case arms are the run's own vocabulary, not this script's. Capturing the output
 # and printing it back keeps StandardOutPath's trace intact while also handing the alert
-# something to page with: the failing site, each failing check's id, and its fix.
+# something to page with: the failing site, each failing check's id, and its fix. The capture
+# folds stderr in, so the whole trace lands in StandardOutPath and StandardErrorPath stays empty;
+# split the capture if you would rather read the two streams apart.
 out=$(cairn health --quiet 2>&1)
 code=$?
-printf '%s\n' "$out"
+# An OK run captures nothing, and the guard keeps it that way: an unconditional printf would
+# write one newline per green run and StandardOutPath would never be empty again.
+[ -n "$out" ] && printf '%s\n' "$out"
 case "$code" in
   0) ;;                                        # OK, nothing to report
   1) notify-operator warning "$out" ;;
@@ -172,7 +176,7 @@ tooling treats as ordinary, world-readable configuration, which the keyring does
 
 launchd has no execution cap of its own comparable to systemd's `TimeoutStartSec`, so a run that
 hangs past `--timeout` is the only cap in force; the wrapper never adds a second one. Pass
-`--timeout` explicitly here only if your registry needs the divided form described below.
+`--timeout` explicitly here only to replace the default whole-run budget described below.
 
 ```sh
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/pub.cairn.health.plist
@@ -209,15 +213,18 @@ result through its own History pane, but not by cairn's own exit code, so this w
 
 ```powershell
 $out = & cairn.exe health --quiet 2>&1 | Out-String
-Write-Output $out
-switch ($LASTEXITCODE) {
+$code = $LASTEXITCODE
+# An OK run captures nothing, and the guard keeps the task's own log empty until something is
+# wrong; $code is read before anything else can overwrite $LASTEXITCODE.
+if ($out.Trim()) { Write-Output $out.TrimEnd() }
+switch ($code) {
     0 { }                                    # OK, nothing to report
     1 { Send-Alert -Level Warning -Body $out }
     2 { Send-Alert -Level Critical -Body $out }
     3 { Send-Alert -Level Unknown -Body $out }
     default { Send-Alert -Level Unknown -Body $out }    # the process itself was killed or crashed
 }
-exit $LASTEXITCODE
+exit $code
 ```
 
 A stock Windows client ships PowerShell's execution policy at `Restricted`, which refuses to run
@@ -226,7 +233,7 @@ policy for this one invocation, scoped to the process `schtasks` launches, not a
 policy change:
 
 ```powershell
-schtasks /create /tn "cairn health" /tr "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File C:\Users\operator\bin\cairn-health-run.ps1" /sc daily /st 08:00 /ru "%USERNAME%"
+schtasks /create /tn "cairn health" /tr "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File C:\Users\operator\bin\cairn-health-run.ps1" /sc daily /st 08:00 /ru "$env:USERNAME"
 ```
 
 `schtasks /create` has no flag that caps a single run's execution time; its own `/et` sets the
@@ -234,14 +241,14 @@ end time of a *repeating* schedule window (used with `/ri`), not a per-run cap. 
 that actually caps one run is the task definition's `ExecutionTimeLimit` setting, reachable from
 PowerShell's `ScheduledTasks` module without hand-authoring a full task-definition XML. Run this
 against the task the `schtasks` call above just created; it replaces that task's settings with
-the same trigger and action plus the 15-minute cap, matching the systemd example's 900s
+the same trigger and action plus the 40-minute cap, matching the systemd example's 2400s
 `TimeoutStartSec`:
 
 ```powershell
 $action = New-ScheduledTaskAction -Execute "powershell.exe" `
     -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File C:\Users\operator\bin\cairn-health-run.ps1"
-$trigger = New-ScheduledTaskTrigger -Daily -At 08:00
-$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 15)
+$trigger = New-ScheduledTaskTrigger -Daily -At "08:00"
+$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 40)
 Set-ScheduledTask -TaskName "cairn health" -Action $action -Trigger $trigger -Settings $settings
 ```
 
@@ -310,29 +317,40 @@ worth doing before you rely on the silence.
 ## `--timeout`: most operators pass none
 
 `--timeout` bounds the whole run's wall clock, and its default already scales with your registry
-up to a cap, so most scheduled routines pass no `--timeout` at all: `min(480s x sites, 600s)`.
-One site gets 480 seconds; two or more share the 600-second cap rather than multiplying it.
+up to a cap, so most scheduled routines pass no `--timeout` at all: `min(480s x sites, 1920s)`.
+Up to four sites each get the full 480 seconds; a larger registry shares the 1920-second cap,
+divided among the sites still to run and recomputed after each one settles, so a single slow site
+cannot eat the rest.
 
-An operator who passes `--timeout` explicitly is choosing something different: the whole-run
-budget divided among the sites still to run, recomputed after each one settles so a single slow
-site cannot eat the rest. Size that value by the same arithmetic
+An operator who passes `--timeout` explicitly replaces the whole-run budget with that value, and
+the same division applies inside it. Size it by the same arithmetic
 [`docs/reference/exit-codes.md`](reference/exit-codes.md) states for your own registry's size, not
 by guessing; a value sized for four sites left running against forty will starve most of them.
 
-## Alerting: every non-zero exit, once, never a credential
+## Alerting: choose the threshold, alert once, never a credential
 
-Alert on any non-zero exit, on a single run. `cairn`'s four codes exist so the alert can route
-differently by code, not just fire or not:
+Where the alert threshold sits is the operator's choice, and there are two settings worth making:
+**exit 2 and above pages someone**, and **any non-zero exit notifies**. Start with the first. A
+held failing check exits 1 by design, so a routine that pages on any non-zero wakes someone every
+day for a check you already acknowledged, which makes the acknowledgement worth nothing. The
+notify tier is where exit 1 belongs: visible in a mailbox or a channel, waking nobody.
+
+The choice is the same under all three schedulers above. Each one hands cairn's own exit code to
+the alert tool rather than firing one undifferentiated alert, so the threshold is a line in
+`notify-operator` or `Send-Alert`, not a change to the unit, the plist, or the task.
+
+`cairn`'s four codes exist to make that routing possible:
 
 | Code | Word | Route it as |
 | --- | --- | --- |
 | 0 | `OK` | Nothing. `--quiet` already suppressed it. |
-| 1 | `WARNING` | Reported, nobody paged. |
+| 1 | `WARNING` | Notified, nobody paged. A held check and a drifting engine version both land here. |
 | 2 | `CRITICAL` | Paged. |
 | 3 | `UNKNOWN` | Paged; the run could not observe the site at all. |
 
-Alert on the first non-zero run, not after two consecutive ones. A debounced routine trades a
-day's delay on a real failure for one fewer false alarm, and the delay costs more.
+Act on the first run that crosses your threshold, not after two consecutive ones. A debounced
+routine trades a day's delay on a real failure for one fewer false alarm, and the delay costs
+more.
 
 An alert body is exactly what the quiet output above already is: the failing site, each failing
 check's id, and its fix, nothing else. `cairn health --quiet` never prints a credential or a

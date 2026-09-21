@@ -134,24 +134,29 @@ and not a wait: a healthy site still answers in a few seconds.
 Bare `cairn health` sweeps every site the registry holds.
 
 ```
-whole-run budget = min(480 seconds x sites, 600 seconds)
+whole-run budget = min(480 seconds x sites, 1920 seconds)
+per-site budget  = min(480 seconds, remaining budget / sites still to run)
 ```
 
-Each site gets the full single-site budget, and the 600-second cap bounds the run. A registry of
-one site gets 480 seconds. A registry of four gets 1920 seconds by the formula and 600 by the cap;
-a registry of ten the same. **The cap binds at two sites or more**, so a large registry shares 600
-seconds rather than multiplying it.
+The cap is four times the single-site budget, so a registry of up to four sites never reaches it
+and every site in it gets the full 480 seconds. A registry of one site gets 480 seconds. A
+registry of four gets 1920 seconds by the formula, which is the cap exactly. A registry of twelve
+gets 1920 seconds too, and each site gets 160 of them.
 
-An explicit `--timeout` means something different: it is the whole-run budget, and it is divided
-among the sites still to run, recomputed after each one settles so one slow site cannot eat the
-rest. **An operator who sets `--timeout` by hand is choosing that divided form.**
+Sites run one after another, and the per-site budget is recomputed after each one settles, so a
+slow site spends its own share and never the share of a site behind it, and a fast sweep hands its
+slack to the sites still to come. An explicit `--timeout` replaces the whole-run budget with the
+value you name; the division works the same way inside it.
+
+A site the budget never reaches is counted `UNKNOWN` toward the run's exit code. Under `--json`
+it is omitted from the stream rather than emitted as an empty report.
 
 ### The scheduler's own cap
 
 Set a scheduler's cap **above** `--timeout`, with headroom. A scheduler that kills the process
 first produces no exit code at all, so the routine reads a failure it cannot classify instead of
-the `UNKNOWN` cairn would have reported. For the default sweep, 600 seconds of budget wants a
-scheduler cap of 900 or more.
+the `UNKNOWN` cairn would have reported. For the default sweep, 1920 seconds of budget wants a
+scheduler cap of 2400 or more.
 
 ## Credentials under a scheduler
 

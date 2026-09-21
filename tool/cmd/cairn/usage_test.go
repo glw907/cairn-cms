@@ -343,6 +343,44 @@ func TestTheScrubSkipNoticeIsDisclosedOnceUnderVerbose(t *testing.T) {
 	}
 }
 
+// TestTheAccountIDIsNotScrubbed holds the deliberate gap in the scrub's needle set. The account
+// id is an identifier the tool prints on purpose, in `adopt list` and in `auth probe`'s own
+// output, so registering it would blank diagnostic text without protecting a secret. The line
+// below carries all three values through the chokepoint the process streams run on.
+func TestTheAccountIDIsNotScrubbed(t *testing.T) {
+	const (
+		accountID = "sentinel-account-ccccccccdddddddd"
+		cfToken   = "sentinel-cf-value-aaaaaaaabbbbbbbb" // secret-guard-allow: a test sentinel
+		ghToken   = "sentinel-gh-value-eeeeeeeeffffffff" // secret-guard-allow: a test sentinel
+	)
+
+	d, _ := testDeps(t)
+	d.env = fakeEnv(map[string]string{
+		varCFAccountID: accountID,
+		varCFReadToken: cfToken,
+		varGHReadToken: ghToken,
+	})
+
+	var buf bytes.Buffer
+	w := logx.New(&buf, scrubTargets(d))
+	if _, err := w.Write([]byte("cairn: account " + accountID + " token " + cfToken + " " + ghToken + "\n")); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+
+	got := buf.String()
+	if !strings.Contains(got, accountID) {
+		t.Errorf("the account id was redacted: %q", got)
+	}
+	for _, token := range []string{cfToken, ghToken} {
+		if strings.Contains(got, token) {
+			t.Errorf("output carries a token: %q", got)
+		}
+	}
+}
+
 // TestASentinelCredentialReachesNoStream is the byte-level end of the scrub. It drives the two
 // JSON payloads, a log line through the chokepoint, and an error wrapping a Credential, all with
 // sentinel values in the environment, and then reads the registry file the same run wrote.
@@ -357,8 +395,10 @@ func TestASentinelCredentialReachesNoStream(t *testing.T) {
 	)
 
 	d, _ := testDeps(t)
+	// The account id carries no part of the credential sentinel. An id built from it would
+	// satisfy every assertion below whether or not the scrub ran on the tokens at all.
 	d.env = fakeEnv(map[string]string{
-		varCFAccountID: "acct-" + credSentinel,
+		varCFAccountID: "sentinel-account-ccccccccdddddddd",
 		varCFReadToken: credSentinel,
 		varGHReadToken: credSentinel,
 	})

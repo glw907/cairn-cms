@@ -47,8 +47,7 @@ func notifyContext(parent context.Context) (context.Context, context.CancelFunc)
 // The flush emits whatever partial line is still buffered, since a scrubber that holds output to
 // a line boundary has to be told when the last line will never arrive.
 func scrubbedWriters(d deps) (out, errOut io.Writer, skipped int, flush func()) {
-	resolved, _ := loadEnv(d.env, d.secretProviders()...)
-	creds := []providers.Credential{resolved.cfToken(), resolved.ghToken()}
+	creds := scrubTargets(d)
 
 	o := logx.New(os.Stdout, creds)
 	e := logx.New(os.Stderr, creds)
@@ -56,6 +55,13 @@ func scrubbedWriters(d deps) (out, errOut io.Writer, skipped int, flush func()) 
 		_ = o.Close()
 		_ = e.Close()
 	}
+}
+
+// scrubTargets returns the values the process streams are scrubbed of, the two bearer tokens and
+// nothing else, for the reasons scrubbedWriters states.
+func scrubTargets(d deps) []providers.Credential {
+	resolved, _ := loadEnv(d.env, d.secretProviders()...)
+	return []providers.Credential{resolved.cfToken(), resolved.ghToken()}
 }
 
 func main() {

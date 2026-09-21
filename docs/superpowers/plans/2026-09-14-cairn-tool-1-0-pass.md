@@ -3851,8 +3851,13 @@ show the corrected fixtures.
 
 **Acceptance, the scrubbing chokepoint:**
 20. `main` wraps `os.Stdout` and `os.Stderr` in the scrubbing writer before any command runs, and
-    registers all three credentials including the absent ones. `logx` is imported by `cmd/cairn`
-    alone, per the architecture's downward order.
+    registers the two secrets, `CAIRN_CF_READ_TOKEN` and `CAIRN_GH_READ_TOKEN`, including when
+    they are absent. **Amended by the conductor, 2026-09-21, from "all three credentials":**
+    `CAIRN_CF_ACCOUNT_ID` is an identifier, not a secret. It is stored in cleartext in every site
+    record, and `sites list --verbose` and `auth probe` print it on purpose, so registering it
+    would blank diagnostic output without protecting anything. A test asserts the account id
+    survives `sites list --verbose` unredacted. `logx` is imported by `cmd/cairn` alone, per the
+    architecture's downward order.
 21. **The scrub runs over line boundaries, not over whatever one `Write` call happens to carry.**
     A credential split across two writes escapes a per-call scan, and a renderer that emits a row
     in cells does exactly that. `logx` buffers until a newline, scrubs the completed line, and

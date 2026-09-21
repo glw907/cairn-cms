@@ -29,10 +29,16 @@ const (
 // by.
 var changelogHeading = regexp.MustCompile(`(?m)^##\s+([0-9][^\s]*)\s*$`)
 
-// consumersMustLine matches a "Consumers must:" line's own lead-in, optionally wrapped in Markdown
-// bold, capturing the text up to the end of its sentence so a caller can tell an actionable
-// requirement from a plain "nothing" the way engineRepo's own changelog writes one.
-var consumersMustLine = regexp.MustCompile(`(?i)\*{0,2}Consumers must:\*{0,2}\s*([^.\n]*)`)
+// consumersMustLine matches a "Consumers must:" clause's own lead-in, optionally wrapped in
+// Markdown bold, capturing the rest of its paragraph or list item (never stopping at the clause's
+// own first literal period, which a version number or an abbreviation inside the clause would
+// truncate early).
+var consumersMustLine = regexp.MustCompile(`(?i)\*{0,2}Consumers must:\*{0,2}\s*(.*)`)
+
+// blankLine splits a changelog section into its paragraphs and list items: engineRepo's own
+// CHANGELOG.md separates each bullet by a blank line and wraps a bullet's own text across
+// multiple indented lines, so a clause's true end is the next blank line, not the next newline.
+var blankLine = regexp.MustCompile(`\n\s*\n`)
 
 // EngineDetail is engineCheck's own internal measurement, flattened into Fields as a
 // "releasesBehind" entry and a "consumersMust" entry.
@@ -129,22 +135,43 @@ func changelogSections(changelog []byte) map[string]string {
 	return sections
 }
 
-// sectionHasActionableConsumersMust reports whether section carries a "Consumers must:" line
-// whose own text, trimmed of whitespace and a trailing period and compared case-insensitively,
-// is not exactly "nothing": any other text, including "nothing" qualified by more prose, asks
-// something of a consumer and counts.
+// sectionHasActionableConsumersMust reports whether section carries a "Consumers must:" clause
+// that is non-actionable: its own text, trimmed of whitespace and compared case-insensitively,
+// begins with the whole word "nothing" (followed by end of text or any non-letter character, so
+// "nothing." and "nothing; a site already on the old name keeps working." both count, while a
+// clause that merely starts elsewhere, "rename X to Y." or "run the migration, nothing else
+// changes.", does not). A section may carry more than one "Consumers must:" line, one per bullet;
+// any single actionable one is enough.
 func sectionHasActionableConsumersMust(section string) bool {
-	normalized := strings.Join(strings.Fields(section), " ")
-	for _, m := range consumersMustLine.FindAllStringSubmatch(normalized, -1) {
-		remainder := strings.TrimSuffix(strings.TrimSpace(m[1]), ".")
-		if remainder == "" {
-			continue
-		}
-		if !strings.EqualFold(remainder, "nothing") {
-			return true
+	for _, para := range blankLine.Split(section, -1) {
+		normalized := strings.Join(strings.Fields(para), " ")
+		for _, m := range consumersMustLine.FindAllStringSubmatch(normalized, -1) {
+			remainder := strings.TrimSpace(m[1])
+			if remainder == "" {
+				continue
+			}
+			if !clauseIsNonActionableNothing(remainder) {
+				return true
+			}
 		}
 	}
 	return false
+}
+
+// clauseIsNonActionableNothing reports whether remainder, a "Consumers must:" clause's own text,
+// begins with the whole word "nothing": case-insensitively, and followed by end of text or a
+// non-letter character (a period, semicolon, comma, space, or parenthesis), never a word like
+// "nothingness" that merely starts the same letters.
+func clauseIsNonActionableNothing(remainder string) bool {
+	lower := strings.ToLower(remainder)
+	if !strings.HasPrefix(lower, "nothing") {
+		return false
+	}
+	if len(lower) == len("nothing") {
+		return true
+	}
+	next := lower[len("nothing")]
+	return next < 'a' || next > 'z'
 }
 
 // skippedVersions returns the versions strictly after siteVersion up to and including latest, in

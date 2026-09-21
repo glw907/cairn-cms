@@ -98,7 +98,7 @@ func TestEngineCheckCurrentVersionIsOK(t *testing.T) {
 		t.Errorf("State = %v, want OK", got.State)
 	}
 	if behind := fieldInt(t, got.Fields, "releasesBehind"); behind != 0 {
-		t.Errorf("count field = %d, want 0", behind)
+		t.Errorf("releasesBehind field = %d, want 0", behind)
 	}
 }
 
@@ -113,10 +113,10 @@ func TestEngineCheckBehindWithNoConsumersMustIsOK(t *testing.T) {
 		t.Errorf("State = %v, want OK", got.State)
 	}
 	if behind := fieldInt(t, got.Fields, "releasesBehind"); behind != 2 {
-		t.Errorf("count field = %d, want 2", behind)
+		t.Errorf("releasesBehind field = %d, want 2", behind)
 	}
 	if state := fieldBool(t, got.Fields, "consumersMust"); state {
-		t.Error("state field is true, want false: no skipped release carries an actionable Consumers must: line")
+		t.Error("consumersMust field is true, want false: no skipped release carries an actionable Consumers must: line")
 	}
 }
 
@@ -131,10 +131,10 @@ func TestEngineCheckBehindWithConsumersMustIsFailing(t *testing.T) {
 		t.Errorf("State = %v, want Failing", got.State)
 	}
 	if behind := fieldInt(t, got.Fields, "releasesBehind"); behind != 2 {
-		t.Errorf("count field = %d, want 2", behind)
+		t.Errorf("releasesBehind field = %d, want 2", behind)
 	}
 	if state := fieldBool(t, got.Fields, "consumersMust"); !state {
-		t.Error("state field is false, want true: a skipped release carries an actionable Consumers must: line")
+		t.Error("consumersMust field is false, want true: a skipped release carries an actionable Consumers must: line")
 	}
 }
 
@@ -181,20 +181,28 @@ func TestEngineCheckAPIForbiddenIsUnknownNotOK(t *testing.T) {
 	}
 }
 
-// TestSectionHasActionableConsumersMust covers the exact-match rule: only a "Consumers must:"
-// line whose text, trimmed of whitespace and a trailing period and compared case-insensitively,
-// reads exactly "nothing" is non-actionable. Any other text, and a section with no such line at
-// all, is handled at the two ends of this table.
+// TestSectionHasActionableConsumersMust covers the word-boundary rule: a "Consumers must:" clause
+// is non-actionable only when its own text, trimmed and compared case-insensitively, begins with
+// the whole word "nothing" (end of text, or a period, semicolon, comma, space, or parenthesis
+// right after it). A qualified "nothing" clause ("nothing; a site already on the old name keeps
+// working.") is still non-actionable, while a clause that merely contains the word later, or
+// whose own text does not lead with it, is actionable.
 func TestSectionHasActionableConsumersMust(t *testing.T) {
 	cases := []struct {
 		name    string
 		section string
 		want    bool
 	}{
-		{"lowercase nothing with a trailing period", "Consumers must: nothing.", false},
+		{"bare nothing with a trailing period", "Consumers must: nothing.", false},
 		{"capitalized nothing with no trailing period", "Consumers must: Nothing", false},
+		{"nothing qualified by a semicolon clause", "Consumers must: nothing; a site already on the old name keeps working.", false},
+		{"nothing qualified by a following sentence", "Consumers must: nothing at runtime.", false},
 		{"an actionable instruction", "Consumers must: rename X to Y.", true},
+		{"nothing appears mid-clause, not as the lead word", "Consumers must: run the migration, nothing else changes.", true},
 		{"no such line", "no such line", false},
+		{"a clause containing a version number", "Consumers must: bump to 0.97.0 and rename X.", true},
+		{"a clause wrapped across lines", "Consumers must: replace any\nhand-authored helper with the new one.", true},
+		{"two Consumers must lines in one section, one actionable", "- first bullet.\n\n  Consumers must: nothing.\n\n- second bullet.\n\n  Consumers must: rename X to Y.\n", true},
 	}
 	for _, tt := range cases {
 		if got := sectionHasActionableConsumersMust(tt.section); got != tt.want {

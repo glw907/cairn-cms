@@ -32,6 +32,7 @@ func conditionCases() []conditionCase {
 			name:      "creds with both credentials valid",
 			check:     credsCheck{},
 			clients:   okCredsClients(),
+			options:   validOptions,
 			wantState: spine.OK,
 		},
 		{
@@ -91,8 +92,17 @@ func conditionCases() []conditionCase {
 			check:     publishPathCheck{},
 			record:    publishRecord(),
 			clients:   publishClients(publishGHRoundTripper{}),
-			options:   publishOptions(),
+			options:   validOptions,
 			wantState: spine.Unknown,
+		},
+		{
+			name:          "publish-path with a stale branch and no later bot commit",
+			check:         publishPathCheck{},
+			record:        publishRecord(),
+			clients:       publishClients(publishGHRoundTripper{branches: []publishBranch{{name: "cairn/posts/abc", sha: "sha1", date: fixedNow().Add(-20 * 24 * time.Hour)}}}),
+			options:       validOptions,
+			wantState:     spine.Failing,
+			wantCondition: spine.ConditionGitHubAppUnreachable,
 		},
 		{
 			name:      "engine with no package.json to read",

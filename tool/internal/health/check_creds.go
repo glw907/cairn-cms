@@ -32,9 +32,9 @@ func (credsCheck) Needs() Tier { return TierNone }
 // Run implements Check, verifying Cloudflare and GitHub independently and combining them into
 // the check's one Outcome: whichever side is more severe wins the State and Reason, and Detail
 // names both sides' verdict together with the provider each credential resolved through.
-func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, _ Options) spine.Outcome {
+func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, o Options) spine.Outcome {
 	cf := checkCloudflareCredential(ctx, c)
-	gh := checkGitHubCredential(ctx, c)
+	gh := checkGitHubCredential(ctx, c, o.Now())
 
 	combined := worseCredentialOutcome(cf.outcome, gh.outcome)
 	combined.Detail = credentialLine("cloudflare", cf) + "; " + credentialLine("github", gh)
@@ -69,7 +69,7 @@ func checkCloudflareCredential(ctx context.Context, c Clients) credentialSide {
 // fine-grained PAT), so the expiring-soon warning cannot apply; that is OK, with Detail saying so
 // plainly, never Unknown, since an Unknown here would turn every scheduled run holding such a
 // token into exit UNKNOWN.
-func checkGitHubCredential(ctx context.Context, c Clients) credentialSide {
+func checkGitHubCredential(ctx context.Context, c Clients, now time.Time) credentialSide {
 	if !c.HaveGH {
 		return credentialSide{outcome: spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}}
 	}
@@ -81,7 +81,7 @@ func checkGitHubCredential(ctx context.Context, c Clients) credentialSide {
 	if expiry.IsZero() {
 		return credentialSide{outcome: spine.Outcome{State: spine.OK, Detail: "github reports no expiry for this token"}, from: c.GHFrom}
 	}
-	if time.Until(expiry) < credExpiryWindow {
+	if expiry.Sub(now) < credExpiryWindow {
 		detail := fmt.Sprintf("%s: expires %s", spine.ReasonCredExpiring, expiry.Format(time.RFC3339))
 		return credentialSide{outcome: spine.Outcome{State: spine.Failing, Detail: detail}, from: c.GHFrom}
 	}

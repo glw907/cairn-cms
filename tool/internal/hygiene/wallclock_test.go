@@ -39,7 +39,12 @@ func TestNoWallClockReadsInClockFreePackages(t *testing.T) {
 			}
 			ast.Inspect(file, func(n ast.Node) bool {
 				sel, ok := n.(*ast.SelectorExpr)
-				if !ok || sel.Sel.Name != "Now" {
+				if !ok {
+					return true
+				}
+				switch sel.Sel.Name {
+				case "Now", "Since", "Until":
+				default:
 					return true
 				}
 				if provider, ok := sel.X.(*ast.Ident); ok && provider.Name == "time" {

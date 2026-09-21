@@ -103,13 +103,6 @@ func publishClients(rt publishGHRoundTripper) Clients {
 	return Clients{GH: ghClient(rt), HaveGH: true}
 }
 
-// publishOptions returns the Options a publishPathCheck test sweeps with: the package's fixed
-// clock, which every branch date in this file is dated relative to, so no age depends on when the
-// test runs.
-func publishOptions() Options {
-	return Options{ErrorThreshold: 1, LogWindow: time.Minute, Now: fixedNow}
-}
-
 func TestPublishPathCheckDeclaresIDAndTierGH(t *testing.T) {
 	c := publishPathCheck{}
 	if got := c.ID(); got != "publish-path" {
@@ -122,7 +115,7 @@ func TestPublishPathCheckDeclaresIDAndTierGH(t *testing.T) {
 
 func TestPublishPathCheckNoDataIsUnknownNotObservable(t *testing.T) {
 	c := publishClients(publishGHRoundTripper{})
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 	if got.State != spine.Unknown || got.Reason != spine.ReasonNotObservable {
 		t.Errorf("Outcome = %+v, want Unknown/reason.not-observable", got)
 	}
@@ -132,7 +125,7 @@ func TestPublishPathCheckStaleBranchNoBotCommitIsFailing(t *testing.T) {
 	old := fixedNow().Add(-20 * 24 * time.Hour)
 	rt := publishGHRoundTripper{branches: []publishBranch{{name: "cairn/posts/abc", sha: "sha1", date: old}}}
 	c := publishClients(rt)
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 	if got.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", got.State)
 	}
@@ -146,7 +139,7 @@ func TestPublishPathCheckStaleBranchWithEarlierBotCommitIsFailing(t *testing.T) 
 		botCommitAt: earlierBot,
 	}
 	c := publishClients(rt)
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 	if got.State != spine.Failing {
 		t.Errorf("State = %v, want Failing (bot commit predates the stale branch)", got.State)
 	}
@@ -160,7 +153,7 @@ func TestPublishPathCheckStaleBranchWithLaterBotCommitIsOK(t *testing.T) {
 		botCommitAt: laterBot,
 	}
 	c := publishClients(rt)
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK (a later bot commit supersedes the stale branch)", got.State)
 	}
@@ -170,7 +163,7 @@ func TestPublishPathCheckFreshBranchIsOK(t *testing.T) {
 	recent := fixedNow().Add(-2 * 24 * time.Hour)
 	rt := publishGHRoundTripper{branches: []publishBranch{{name: "cairn/posts/abc", sha: "sha1", date: recent}}}
 	c := publishClients(rt)
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK", got.State)
 	}
@@ -182,7 +175,7 @@ func TestPublishPathCheckFreshBranchIsOK(t *testing.T) {
 func TestPublishPathCheckAPIForbiddenIsUnknownNotOK(t *testing.T) {
 	rt := publishGHRoundTripper{status: http.StatusForbidden}
 	c := publishClients(rt)
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 	if got.State != spine.Unknown {
 		t.Errorf("State = %v, want Unknown", got.State)
 	}
@@ -195,7 +188,7 @@ func TestPublishPathCheckAPIForbiddenIsUnknownNotOK(t *testing.T) {
 func TestPublishPathCheckAPIRateLimitedIsUnknownNeverFailing(t *testing.T) {
 	rt := rateLimitedRoundTripper{}
 	c := Clients{GH: ghClient(rt), HaveGH: true}
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 	if got.State != spine.Unknown {
 		t.Errorf("State = %v, want Unknown", got.State)
 	}
@@ -213,7 +206,7 @@ func TestPublishPathCheckFieldsCarryBranchCountAndAges(t *testing.T) {
 		botCommitAt: laterBot,
 	}
 	c := publishClients(rt)
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 
 	if count := fieldInt(t, got.Fields, "openBranchCount"); count != 1 {
 		t.Errorf("openBranchCount field = %d, want 1", count)
@@ -239,7 +232,7 @@ func TestPublishPathCheckBranchAgeDaysIsOneOldestFirstField(t *testing.T) {
 		botCommitAt: laterBot,
 	}
 	c := publishClients(rt)
-	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
 
 	var count int
 	for _, f := range got.Fields {

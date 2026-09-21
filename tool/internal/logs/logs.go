@@ -57,17 +57,17 @@ type Entry struct {
 // reason this package's provider client did not recognize at all. A recognized reason
 // (unauthorized, forbidden, rate-limited, and the like) is a credential or transport problem, not
 // a sign of the dataset itself, and passes through unchanged so a caller reports it the same way
-// every sibling check does. Task 10's probe found the endpoint answers 200 with an empty events
-// list and no error for a window past the account's retention
-// (tool/docs/credentials.md, "Workers Logs retention"), so a not-found or unclassified API error
-// from this one endpoint is the signal left over to mean the dataset itself was never created,
-// the state before a site's wrangler config ever sets observability.enabled to true. This mapping
-// has not been confirmed against a live "never enabled" Worker.
+// every sibling check does. The endpoint answers 200 with an empty events list and no error for a
+// window past the account's retention (tool/docs/credentials.md, "Workers Logs retention"), so a
+// not-found or unclassified API error from this one endpoint is the signal left over to mean the
+// dataset itself was never created, the state before a site's wrangler config ever sets
+// observability.enabled to true. This mapping has not been confirmed against a live "never
+// enabled" Worker.
 var ErrObservabilityOff = errors.New("logs: worker has no observability dataset")
 
-// RetentionClamp is the Workers Logs retention window Task 10's probe observed on the
-// verification account: every window fully inside 7 days returned events, and every window 8 or
-// more days back returned none, measured by narrowing the boundary directly. This is the account
+// RetentionClamp is the Workers Logs retention window observed on the verification account: every
+// window fully inside 7 days returned events, and every window 8 or more days back returned none,
+// measured by narrowing the boundary directly. This is the account
 // plan's own retention window, not a fixed cairn constant; an operator on a plan with a longer
 // retention window reads their own boundary the same way, since the API returns no retention
 // value directly.
@@ -122,10 +122,10 @@ func clampSince(since time.Duration) time.Duration {
 }
 
 // buildQuery constructs the Workers Logs telemetry query body Cloudflare's
-// accounts/{id}/workers/observability/telemetry/query endpoint expects, extending the shape
-// Task 10's probe confirmed (queryId, timeframe, view, limit, parameters.datasets) with a
-// worker-name filter on "$metadata.service" and, when filterValue is set, one more equality
-// filter on filterKey: "event" for Fetch, "level" for CountErrors.
+// accounts/{id}/workers/observability/telemetry/query endpoint expects, extending the confirmed
+// shape (queryId, timeframe, view, limit, parameters.datasets) with a worker-name filter on
+// "$metadata.service" and, when filterValue is set, one more equality filter on filterKey: "event"
+// for Fetch, "level" for CountErrors.
 func buildQuery(worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) map[string]any {
 	if limit <= 0 {
 		limit = DefaultLimit

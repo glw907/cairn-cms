@@ -135,7 +135,7 @@ func TestCredsCheckRevokedCredentialIsFailing(t *testing.T) {
 
 func TestCredsCheckExpiringGitHubTokenIsFailing(t *testing.T) {
 	c := credsCheck{}
-	expiry := time.Now().Add(3 * 24 * time.Hour).UTC()
+	expiry := fixedNow().Add(3 * 24 * time.Hour)
 	header := make(http.Header)
 	header.Set("Github-Authentication-Token-Expiration", expiry.Format("2006-01-02 15:04:05 MST"))
 	clients := Clients{
@@ -154,6 +154,40 @@ func TestCredsCheckExpiringGitHubTokenIsFailing(t *testing.T) {
 	}
 	if err := outcome.Validate(); err != nil {
 		t.Errorf("Validate: %v", err)
+	}
+}
+
+// TestCredsCheckExpiryVerdictFollowsOptionsNow holds the GitHub token's expiry fixed and runs the
+// check twice with two different, still-fixed Options.Now values straddling credExpiryWindow: the
+// verdict flips between the two runs even though nothing but Options.Now changed, proving the
+// check reads its clock from Options rather than the system clock (which this test never calls).
+func TestCredsCheckExpiryVerdictFollowsOptionsNow(t *testing.T) {
+	c := credsCheck{}
+	expiry := fixedNow().Add(20 * 24 * time.Hour)
+	header := make(http.Header)
+	header.Set("Github-Authentication-Token-Expiration", expiry.Format("2006-01-02 15:04:05 MST"))
+	clients := Clients{
+		CF:     cfClient(credRoundTripper{status: http.StatusOK, body: []byte(cfVerifyOKBody)}),
+		GH:     ghClient(credRoundTripper{status: http.StatusOK, body: []byte("{}"), header: header}),
+		HaveCF: true, HaveGH: true,
+		CFFrom: "environment", GHFrom: "keyring",
+	}
+
+	beforeWindow := validOptions
+	beforeWindow.Now = fixedNow
+	outcome := c.Run(context.Background(), record.Record{}, clients, beforeWindow)
+	if outcome.State != spine.OK {
+		t.Errorf("with Now 20 days before expiry: State = %v, want OK", outcome.State)
+	}
+
+	insideWindow := validOptions
+	insideWindow.Now = func() time.Time { return fixedNow().Add(10 * 24 * time.Hour) }
+	outcome = c.Run(context.Background(), record.Record{}, clients, insideWindow)
+	if outcome.State != spine.Failing {
+		t.Errorf("with Now 10 days before expiry: State = %v, want Failing", outcome.State)
+	}
+	if !strings.Contains(outcome.Detail, string(spine.ReasonCredExpiring)) {
+		t.Errorf("Detail = %q, want it to name %s", outcome.Detail, spine.ReasonCredExpiring)
 	}
 }
 

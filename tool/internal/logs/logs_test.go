@@ -123,12 +123,12 @@ func TestFetchNarrowsToOneEvent(t *testing.T) {
 	}
 }
 
-// TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors asserts Fetch filters on the JSON
-// "event" key and CountErrors's own path filters on "level", the one distinction between them.
 // queryNow is the fixed query clock every test in this file reads, so a timeframe a test asserts
 // on does not move between runs.
 var queryNow = time.Date(2026, 9, 14, 12, 0, 0, 0, time.UTC)
 
+// TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors asserts Fetch filters on the JSON
+// "event" key and CountErrors's own path filters on "level", the one distinction between them.
 func TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors(t *testing.T) {
 	fetchQuery := buildQuery("site", time.Hour, queryNow, "event", "auth.link.send_failed", 0)
 	countQuery := buildQuery("site", time.Hour, queryNow, "level", "error", errorCountLimit)

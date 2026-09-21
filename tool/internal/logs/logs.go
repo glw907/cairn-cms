@@ -17,7 +17,7 @@ import (
 )
 
 // Query is one Workers Logs telemetry read: worker's own events over the trailing Since window,
-// optionally narrowed to one event name, capped at Limit entries (0 means DefaultLimit).
+// optionally narrowed to one event name, capped at Limit entries (0 means a default cap).
 type Query struct {
 	// Worker names the Workers script the query reads.
 	Worker string
@@ -26,7 +26,7 @@ type Query struct {
 	// Event narrows the query to one event name, matched against the JSON "event" key every
 	// engine log record carries. Empty means every event.
 	Event string
-	// Limit caps the number of entries Fetch returns, newest first. 0 means DefaultLimit.
+	// Limit caps the number of entries Fetch returns. 0 means a default cap.
 	Limit int
 }
 
@@ -62,8 +62,7 @@ type Entry struct {
 // window past the account's retention (tool/docs/credentials.md, "Workers Logs retention"), so a
 // not-found or unclassified API error from this one endpoint is the signal left over to mean the
 // dataset itself was never created, the state before a site's wrangler config ever sets
-// observability.enabled to true. This mapping has not been confirmed against a live "never
-// enabled" Worker.
+// observability.enabled to true.
 var ErrObservabilityOff = errors.New("logs: worker has no observability dataset")
 
 // RetentionClamp is the Workers Logs retention window observed on the verification account: every
@@ -74,8 +73,8 @@ var ErrObservabilityOff = errors.New("logs: worker has no observability dataset"
 // value directly.
 const RetentionClamp = 7 * 24 * time.Hour
 
-// DefaultLimit is Fetch's own entry cap when Query.Limit is 0.
-const DefaultLimit = 200
+// defaultLimit is fetch's own entry cap when Query.Limit is 0.
+const defaultLimit = 200
 
 // errorCountLimit bounds CountErrors's own query: high enough that a real site's error volume
 // over a LogWindow never silently truncates the count, since CountErrors's whole job is the count
@@ -126,7 +125,7 @@ func clampSince(since time.Duration) time.Duration {
 // for Fetch, "level" for CountErrors.
 func buildQuery(worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) map[string]any {
 	if limit <= 0 {
-		limit = DefaultLimit
+		limit = defaultLimit
 	}
 	filters := []map[string]any{
 		{"key": "$metadata.service", "operation": "eq", "value": worker},
@@ -209,6 +208,9 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 	result, err := cf.ObservabilityQuery(ctx, buildQuery(worker, clampSince(since), now, filterKey, filterValue, limit))
 	if err != nil {
 		if apiErr, ok := errors.AsType[*providers.APIError](err); ok {
+			// WATCH: this mapping has not been confirmed against a live Worker that never had
+			// observability enabled. Confirm it against one before a caller acts on the
+			// sentinel as more than a hint.
 			if apiErr.Reason == providers.ReasonNotFound || apiErr.Reason == providers.ReasonUnknown {
 				return nil, ErrObservabilityOff
 			}
@@ -224,24 +226,45 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 		}
 		entries = append(entries, entry)
 	}
+	// Newest first is the order every caller's doc promises, and the endpoint guarantees no
+	// order of its own. An entry carrying no parseable timestamp cannot be placed in the
+	// sequence at all, so it sorts after every dated entry, keeping its arrival order.
+	slices.SortStableFunc(entries, func(a, b Entry) int {
+		if a.At.IsZero() != b.At.IsZero() {
+			if a.At.IsZero() {
+				return 1
+			}
+			return -1
+		}
+		return b.At.Compare(a.At)
+	})
 	return entries, nil
 }
 
 // Fetch returns worker's log entries over the q.Since window ending at now (clamped to
-// RetentionClamp), in the order the API returned them, narrowed to q.Event when set. now is a
-// parameter, not a system-clock read, so a caller replaying a query gets the same window every
-// time. 2.0 seam kept on purpose: Fetch leaves every field as json.RawMessage with no rendering
-// choice baked in, so 2.0's scrolling view consumes the same function 1.0's printed list does.
+// RetentionClamp), newest first, narrowed to q.Event when set. It drops any entry the endpoint
+// returned whose own "event" does not equal q.Event, the same posture FetchLevel takes on the
+// level: the request's own filter grammar is unverified against the live API, so a caller trusts
+// what each entry actually carries rather than the filter alone. now is a parameter, not a
+// system-clock read, so a caller replaying a query gets the same window every time. Every field
+// stays json.RawMessage with no rendering choice baked in.
 func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query, now time.Time) ([]Entry, error) {
-	return fetch(ctx, cf, q.Worker, q.Since, now, "event", q.Event, q.Limit)
+	entries, err := fetch(ctx, cf, q.Worker, q.Since, now, "event", q.Event, q.Limit)
+	if err != nil {
+		return nil, err
+	}
+	if q.Event == "" {
+		return entries, nil
+	}
+	return slices.DeleteFunc(entries, func(e Entry) bool { return e.Event != q.Event }), nil
 }
 
 // FetchLevel returns worker's log entries at level, over the since window ending at now (clamped
-// to RetentionClamp), dropping any entry the endpoint returned whose own "level" does not equal
-// level: the request's own filter grammar is unverified against the live API, so a caller trusts
-// what each entry actually carries rather than the filter alone. It is CountErrors's own read
-// path, exported so a caller that also needs the matched entries themselves, the health errors
-// check's top-event-name tally, reads them without a second, re-filtered query.
+// to RetentionClamp), newest first, dropping any entry the endpoint returned whose own "level"
+// does not equal level: the request's own filter grammar is unverified against the live API, so a
+// caller trusts what each entry actually carries rather than the filter alone. It is CountErrors's
+// own read path and returns the matched entries themselves, so a caller that needs both the count
+// and the entries reads them without a second, re-filtered query.
 func FetchLevel(ctx context.Context, cf *providers.Cloudflare, worker, level string, since time.Duration, now time.Time) ([]Entry, error) {
 	entries, err := fetch(ctx, cf, worker, since, now, "level", level, errorCountLimit)
 	if err != nil {

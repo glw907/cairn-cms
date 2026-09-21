@@ -121,7 +121,9 @@ func TestErrorsCheckAdvisoryBand(t *testing.T) {
 }
 
 // TestErrorsCheckReportsTopThreeEventNames asserts the Fields carry the up-to-three most frequent
-// event names, most frequent first.
+// event names, most frequent first. The last two events tie at one occurrence each, so the third
+// slot proves the documented tie break: FetchLevel returns entries newest first, and a tie
+// favors the more recent event, which is the later timestamp the fake assigns.
 func TestErrorsCheckReportsTopThreeEventNames(t *testing.T) {
 	opts := Options{ErrorThreshold: 100, LogWindow: time.Hour, Now: fixedNow}
 	events := []string{
@@ -142,7 +144,7 @@ func TestErrorsCheckReportsTopThreeEventNames(t *testing.T) {
 			}
 		}
 	}
-	want := []string{"auth.link.send_failed", "commit.failed", "publish.failed"}
+	want := []string{"auth.link.send_failed", "commit.failed", "github.unreachable"}
 	if len(topEvents) != len(want) {
 		t.Fatalf("topEvents = %v, want %v", topEvents, want)
 	}

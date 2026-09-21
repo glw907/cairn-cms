@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -48,10 +49,10 @@ func newFixtureClient(t *testing.T) *providers.Cloudflare {
 	return providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: status, body: body})
 }
 
-// TestFetchOrdersEntriesAsTheResponseCarriedThem asserts Fetch returns the corpus fixture's three
-// events in the order the fixture's "events" array carries them, newest first as the fixture
-// itself is ordered, and each entry's own Fields in the source object's key order.
-func TestFetchOrdersEntriesAsTheResponseCarriedThem(t *testing.T) {
+// TestFetchKeepsEachEntrysFieldKeyOrder asserts Fetch returns the corpus fixture's three events
+// newest first, which is the order the fixture itself carries, and each entry's own Fields in
+// the source object's key order.
+func TestFetchKeepsEachEntrysFieldKeyOrder(t *testing.T) {
 	cf := newFixtureClient(t)
 
 	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
@@ -106,8 +107,10 @@ func TestFetchNeverStringifiesAField(t *testing.T) {
 	}
 }
 
-// TestFetchNarrowsToOneEvent asserts Query.Event resolves through the same query-building path
-// CountErrors's level filter does, narrowing to the single named event.
+// TestFetchNarrowsToOneEvent asserts Fetch proves the event narrowing from what each entry
+// carries, not from the request's filter alone. The fixture's transport ignores the request body
+// and returns all three events, so only the Go-side recheck can reduce the result to the one
+// named event.
 func TestFetchNarrowsToOneEvent(t *testing.T) {
 	cf := newFixtureClient(t)
 
@@ -115,11 +118,40 @@ func TestFetchNarrowsToOneEvent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Fetch: %v", err)
 	}
-	// The fixture's transport ignores the request body, so this proves only that a filtered
-	// Query still decodes the full fixture without error; the filter itself is asserted by
-	// TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors below.
-	if len(entries) != 3 {
-		t.Fatalf("len(entries) = %d, want 3", len(entries))
+	if len(entries) != 1 {
+		t.Fatalf("len(entries) = %d, want 1", len(entries))
+	}
+	if entries[0].Event != "commit.failed" {
+		t.Errorf("entries[0].Event = %q, want %q", entries[0].Event, "commit.failed")
+	}
+}
+
+// TestFetchOrdersEntriesNewestFirst asserts Fetch sorts what the endpoint returned rather than
+// trusting its order, and that an entry carrying no timestamp lands after every dated entry in
+// the order it arrived. The response body here is built in the test, out of order, since the
+// shared corpus fixture is already newest first and so proves nothing about the sort.
+func TestFetchOrdersEntriesNewestFirst(t *testing.T) {
+	body := []byte(`{"success":true,"errors":[],"messages":[],"result":{"events":[
+		{"timestamp":"2026-09-14T09:12:44.000Z","level":"info","event":"middle"},
+		{"level":"info","event":"undated-first"},
+		{"timestamp":"2026-09-14T09:32:11.000Z","level":"info","event":"newest"},
+		{"level":"info","event":"undated-second"},
+		{"timestamp":"2026-09-14T08:55:02.000Z","level":"info","event":"oldest"}
+	]}}`)
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
+	if err != nil {
+		t.Fatalf("Fetch: %v", err)
+	}
+
+	want := []string{"newest", "middle", "oldest", "undated-first", "undated-second"}
+	got := make([]string, len(entries))
+	for i, e := range entries {
+		got[i] = e.Event
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("entry order = %v, want %v", got, want)
 	}
 }
 

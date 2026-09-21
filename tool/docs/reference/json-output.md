@@ -4,7 +4,7 @@
 contract for that output: the payload each command writes, the vocabulary each field can hold,
 what freezes at 1.0, and what stays free to move. The schemas beside this page are normative:
 `cairn-health.schema.json`, `cairn-health-summary.schema.json`, `cairn-sites-list.schema.json`,
-`cairn-logs.schema.json`, and `cairn-adopt-list.schema.json`.
+`cairn-logs.schema.json`, `cairn-adopt-list.schema.json`, and `cairn-auth-check.schema.json`.
 
 Two rules hold for every command:
 
@@ -13,7 +13,7 @@ Two rules hold for every command:
   stdout and exits 3, so an empty stdout means the invocation was wrong, never that the site is
   healthy.
 
-## The five payloads
+## The six payloads
 
 | Command | Payload | Schema |
 | --- | --- | --- |
@@ -22,9 +22,10 @@ Two rules hold for every command:
 | `cairn sites list --json` | One listing object | `cairn-sites-list.schema.json` |
 | `cairn logs <site> --json` | One logs object | `cairn-logs.schema.json` |
 | `cairn adopt list` | One candidate-list object | `cairn-adopt-list.schema.json` |
+| `cairn auth check --json` | One permission-report object | `cairn-auth-check.schema.json` |
 
 Every payload carries `schemaVersion` and `verdict` at its top level, and declares its own shape
-in `kind`. The five schema versions are independent integers, one per payload type, so a field
+in `kind`. The six schema versions are independent integers, one per payload type, so a field
 added to the logs payload never makes a health consumer re-read a schema.
 
 ## The site payload

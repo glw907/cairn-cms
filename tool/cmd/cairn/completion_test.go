@@ -22,6 +22,9 @@ func TestCompletionCommandIsPresentAndNotHidden(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Find(completion) = %v", err)
 	}
+	if found == root || found.Name() != "completion" {
+		t.Fatalf("the completion command is not registered; Find returned %q", found.Name())
+	}
 	if found.Hidden {
 		t.Error("the completion command is hidden; cobra's default must stay visible")
 	}

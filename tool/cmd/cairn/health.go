@@ -53,7 +53,7 @@ func newHealthCmd(d deps, rf *rootFlags) *cobra.Command {
 	cmd.Flags().BoolVar(&f.asJSON, "json", false, "print the report as JSON")
 	cmd.Flags().IntVar(&f.errorThreshold, "error-threshold", defaultErrorThreshold, "error records in the window that still report OK")
 	cmd.Flags().StringVar(&f.since, "since", defaultSince, "lookback window for the error count: a whole number of m, h, or d")
-	cmd.Flags().StringArrayVar(&f.acks, "ack", nil, "acknowledge one check until an expiry date: <check-id>=<YYYY-MM-DD>, repeatable")
+	cmd.Flags().StringArrayVar(&f.acks, "ack", nil, "acknowledge one check until an expiry date: <check-id>=<YYYY-MM-DD>, repeatable; applies to that check on every site in a sweep")
 
 	return cmd
 }

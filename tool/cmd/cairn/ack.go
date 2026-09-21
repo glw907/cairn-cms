@@ -172,7 +172,7 @@ func excludeAckFile(entries []store.Entry, errs []error, dir string, rf *rootFla
 	return outEntries, outErrs
 }
 
-// The four errors below are new to the messages table and owed to Task 22a's editorial gate:
+// The six errors below are new to the messages table and owed to Task 22a's editorial gate:
 // the catalogue carries no row for a malformed or missing acknowledgement entry.
 
 // ackFlagError is --ack's refusal of a value that is not <check-id>=<YYYY-MM-DD>.

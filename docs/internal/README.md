@@ -59,7 +59,8 @@ subdirectories, each of which keeps its own filing rule and its own index.
 - [`extending-developer-lens.md`](extending-developer-lens.md): the persona, diagnostic
   questions, and baseline for the lean extensibility redesign; subordinate to the charter.
 - [`pass-gate-tiers.md`](pass-gate-tiers.md): the per-task gate tiers `scripts/checks/gate-tier.mjs`
-  chooses from a diff, the trigger globs per tier, and the cumulative gate strings.
+  chooses from a diff, the trigger globs per tier, the five npm tiers' cumulative gate strings,
+  and the standalone `tool` tier for the Go module.
 - [`pre-beta-harvest.md`](pre-beta-harvest.md): the pre-beta harvest ledger, every engine and
   Waymark improvement surfaced by the rebuild and port efforts, with the status each entry
   carries toward the harvest pass.

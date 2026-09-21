@@ -185,6 +185,19 @@ func TestDeployCheckRunningBuildIsUnknown(t *testing.T) {
 	}
 }
 
+func TestDeployCheckStoppedWithNoOutcomeYetIsUnknown(t *testing.T) {
+	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+		deployBuildRoute(buildStoppedStatus, "", "abc1234def5678"))
+	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
+	want := spine.ParkReason(spine.ParkBuildRunning)
+	if got.State != spine.Unknown || got.Reason != want {
+		t.Errorf("Outcome = %+v, want Unknown/%s", got, want)
+	}
+	if got := fieldString(t, got.Fields, "lastBuild"); got != "running" {
+		t.Errorf("lastBuild field = %q, want %q", got, "running")
+	}
+}
+
 func TestDeployCheckFailedBuildIsFailing(t *testing.T) {
 	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
 		deployBuildRoute(buildStoppedStatus, "fail", "abc1234def5678"), deployHeadSHARoute("abc1234def5678"))

@@ -11,7 +11,10 @@ import (
 )
 
 // buildStoppedStatus is the Workers Builds "status" value a build reaches once it is no longer
-// queued or running, ported from chapter3.mjs's own isBuildSettled.
+// queued or running. A build is settled only once its status is buildStoppedStatus AND its
+// build_outcome is non-empty: Cloudflare writes the two fields in separate, non-atomic steps, so
+// a status already at buildStoppedStatus with an empty outcome is one tick from finishing, not
+// yet failed or succeeded.
 const buildStoppedStatus = "stopped"
 
 // buildOutcomeSuccess is the only Workers Builds "build_outcome" value a stopped build settles
@@ -33,7 +36,8 @@ const (
 	BuildOK
 	// BuildFailed means the last build stopped with any other settled outcome.
 	BuildFailed
-	// BuildRunning means the last build has not reached "stopped" yet.
+	// BuildRunning means the last build has not settled: its status has not reached "stopped",
+	// or its status is "stopped" but its build_outcome has not been written yet.
 	BuildRunning
 )
 
@@ -199,7 +203,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	detail.LastBuildSHA = build.TriggerMetadata.CommitHash
 	detail.LastBuildAt = build.CreatedOn
 
-	if build.Status != buildStoppedStatus {
+	if build.Status != buildStoppedStatus || build.Outcome == "" {
 		detail.LastBuild = BuildRunning
 		return detail.outcome(spine.Unknown, spine.ParkReason(spine.ParkBuildRunning), "")
 	}

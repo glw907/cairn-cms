@@ -362,10 +362,11 @@ func (cf *Cloudflare) EmailSendingSubdomains(ctx context.Context, zoneID string)
 	return getPaginated[SendingSubdomain](ctx, cf, path)
 }
 
-// ObservabilityResult is the count an error-rate query reads: how many log events matched
-// query, over the window query specified.
+// ObservabilityResult is a Workers Logs telemetry query's "result" object: the matching log
+// events, each kept as raw JSON so a caller decodes only the keys it recognizes.
 type ObservabilityResult struct {
-	Count int `json:"count"`
+	// Events is every matching event, in the order the API returned them.
+	Events []json.RawMessage `json:"events"`
 }
 
 // ObservabilityQuery runs a Workers Logs telemetry query against this client's account and

@@ -58,6 +58,7 @@ var All = []Check{
 	deployCheck{},
 	publishPathCheck{},
 	engineCheck{},
+	errorsCheck{},
 }
 
 // reportSchemaVersion is Report's own JSON schema version.

@@ -86,9 +86,7 @@ test('at mobile width, the open drawer panel is not left compositor-promoted', a
   await expect(page.getByRole('dialog', { name: 'Site content' })).toBeVisible();
 
   const panel = page.locator('.drawer-side > :not(.drawer-overlay)').first();
-  await expect
-    .poll(() => panel.evaluate((el) => getComputedStyle(el).willChange))
-    .toBe('auto');
+  await expect.poll(() => panel.evaluate((el) => getComputedStyle(el).willChange)).toBe('auto');
 });
 
 test('at 1440, the persistent sidebar panel is not left compositor-promoted', async ({ page }) => {
@@ -97,9 +95,7 @@ test('at 1440, the persistent sidebar panel is not left compositor-promoted', as
   await expect(page.locator('.drawer-side')).toBeVisible();
 
   const panel = page.locator('.drawer-side > :not(.drawer-overlay)').first();
-  await expect
-    .poll(() => panel.evaluate((el) => getComputedStyle(el).willChange))
-    .toBe('auto');
+  await expect.poll(() => panel.evaluate((el) => getComputedStyle(el).willChange)).toBe('auto');
 });
 
 // 3. The desk rider (spec §5): a desk route (the edit page) persists its sidebar one breakpoint

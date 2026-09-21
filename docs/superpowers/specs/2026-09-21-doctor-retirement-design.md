@@ -1,223 +1,370 @@
 # Doctor retirement: `cairn-doctor` moves into `cairn doctor`
 
-Status: design approved by Geoff in brainstorm, 2026-09-21. Agent-facing; not register-graded.
+Status: design approved by Geoff in brainstorm, 2026-09-21; revised the same day after three
+adversarial lenses (charter, mechanics, contract) and one architecture read of the three forks
+Geoff then ruled. Agent-facing; not register-graded.
 
 ## Brief
 
 `cairn-doctor`, the npm package's site-setup checker, retires. Its local checks move into the Go
 `cairn` CLI as `cairn doctor [<dir>]`, released as `tool/v1.1.0`. The engine then removes the bin
 and `src/lib/doctor` inside the `0.97.0` window. Geoff ruled the retirement on 2026-09-21; this
-spec settles how, not whether. The pass's close is the only writer of STATUS's "the `0.97.0` cut
-is unblocked" line. This pass does not cut `0.97.0`.
+spec settles how, not whether. The work is one spec, one engine pre-task, and two numbered passes:
+**retire-1** (Go, ends at the `tool/v1.1.0` release) and **retire-2** (engine removal, ends at the
+STATUS line). retire-2's close is the only writer of "the `0.97.0` cut is unblocked". Nothing here
+cuts `0.97.0`.
 
 Inputs: `docs/internal/record/2026-09-21-doctor-retirement-inventory.md` (engine side) and
-`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md` (tool side, which predates
-B2's segment 5). One sizing claim is already corrected here: the scaffolder never runs the
-doctor, it only prints two commands (`scaffold.mjs:249`, `cloudflare/chapter2.mjs:805`).
+`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md` (tool side). Corrections to
+both, verified against the tree, are recorded where they bite below.
 
-## Rulings from the brainstorm (Geoff, 2026-09-21)
+## Charter placement
 
-1. **The send test is dropped.** `cairn health`'s email check reads sender onboarding and DNS;
-   the first magic-link sign-in is the real send through the real binding; `log-events`
-   diagnoses a failure. The tool holds and borrows no write credential. Known loss: no
-   pre-deploy inbox signal. Precondition to verify once B2 merges: `cairn health`'s email check
-   can run for a site before first deploy. If it cannot, return to Geoff with the fallback
-   (the scaffolder, which already holds a write-capable token in chapter 2, sends the one
-   message itself).
+`what-cairn-is-and-is-not.md` locates the Go tool as an owner-side cockpit over every site a
+machine knows. `cairn doctor` is that cockpit's pre-adoption mode: same operator, same job, no
+registry, which is what lets it serve a site before adoption and before first deploy. Every check
+it carries measures the developer's use of a cairn contract (the `/admin` mount, `createAuthGuard`,
+the CSRF handoff, the engine's peer floors), so none belongs to the developer's domain.
+
+## Rulings (Geoff, 2026-09-21)
+
+1. **The first-run send test already lives in the scaffolder and stays there.**
+   `create-cairn-site`'s chapter 2 sends a real message to the owner's inbox inside its token
+   window (`chapter2.mjs:740`, `cloudflare/email.mjs:143`). The doctor's `--send-test` was the
+   re-run-any-time path. That re-run path **defers to 1.x** beside the D1 checks and the
+   agent-permission credential design, where the write-credential question is ruled; ROADMAP
+   files it. Known gap, named in the ledger: a hand-built (non-scaffolded) site has no send test
+   until then, and `cairn health`'s email check is a configuration check that needs an adopted
+   record and a Cloudflare read credential, so it does not substitute.
 2. **The Go tool parses the files itself, shallowly.** `wrangler.jsonc` through an in-module
-   JSONC stripper and `encoding/json`; `wrangler.toml` through one TOML library (three of the
-   four production sites use TOML); `site.config.yaml` through YAML, already an indirect
-   dependency. `config.site-config` narrows to: the file exists, parses, and the fields other
-   checks read are present. No Go port of `parseSiteConfig`'s Contract v2 schema; the engine
-   hard-errors on a bad schema at build and load.
-3. **`conditions.ts` stays the source.** It is the engine's runtime diagnostics registry, read
-   by about ten engine modules, and ships unchanged. An engine script generates a JSON mirror
-   committed under `tool/`, the Go tool embeds it, and an engine gate fails when regeneration
-   is not a no-op.
-4. **A rulings-ledger entry, no consultation.** `engine-triage` reads this spec as the
-   adversarial charter lens. A dropped check the lens finds to be a real loss reopens that
-   check, never the retirement.
-5. **Exit codes take the tool's frozen convention:** 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
-6. **`wrangler-config.ts` moves to `src/lib/media-seed/`,** trimmed to what `media-seed` calls.
-   The engine's copy of `site-config-path.json` leaves; the scaffolder's copy is the one source
-   and the generator carries its value to the Go side.
-7. **Check scope for `v1.1.0`:** the ten local-file checks plus `ai.posture-effective`. The
-   three D1 checks (`auth.store`, `auth.role-vocabulary`, `auth.email-normalization`) defer to
-   1.x beside the agent-permission check, the same credential design. `github.app`,
-   `config.tidy-key`, and `admin.login-probe` are dropped. `edge.https-forced` and
-   `email.sender-onboarded` are already `cairn health` checks.
-8. **The command is `cairn doctor [<dir>]`:** no registry record, no credential, its own JSON
+   JSONC stripper and `encoding/json`. `wrangler.toml` through a port of the doctor's own
+   line-anchored shallow read (`wrangler-config.ts:213-282`, "not a TOML parser"), never a TOML
+   library: a real parser gives different verdicts on real sites and adds a direct require.
+   `site.config.yaml` through YAML, promoted from indirect to direct. jsonc wins when both
+   wrangler files exist, silently, as the doctor does.
+3. **`conditions.ts` stays the source** and ships unchanged except the two lines ruling 3a names.
+   An engine script emits a neutral JSON mirror committed under `tool/`; Go embeds it.
+   3a. `conditions.ts:131`'s `why` and `:2`'s header comment name "the doctor"; both are reworded
+   in the pre-task, since the generator copies `why` verbatim into the tool's output.
+4. **Ledger entries, no consultation.** One entry per ruled item (see Ledger below).
+5. **Exit codes take the tool's frozen convention:** 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN. A
+   usage error exits 1 as the tool's cobra layer already does; the collision with a WARNING
+   failure is accepted and stated on the command's docs page.
+6. **`wrangler-config.ts` moves to `src/lib/media-seed/`,** trimmed to `readR2Buckets` and
+   `R2BucketEntry`, with the `DoctorContext['readFile']` type inlined. The engine's copy of
+   `site-config-path.json` leaves; the scaffolder's copy is the one source.
+7. **Adapter facts reach Go through a committed, verified file.** `config.media-bucket`,
+   `auth.role-wiring`, and `ai.posture-effective` take their deciding input from the site's
+   TypeScript adapter, which no Go process can evaluate. The engine's Vite plugin writes
+   `src/content/.cairn/site-facts.json` beside `index.json` and `media.json`.
+8. **Check scope for `v1.1.0`:** eight file-only checks plus the three facts checks. Deferred to
+   1.x: the three D1 reads, the send-test re-run, and the workers.dev exposure arm of `--probe`
+   (a Cloudflare read nothing else performs). Dropped: `github.app`, `config.tidy-key`, and the
+   login-envelope arm of `--probe`. `edge.https-forced` and `email.sender-onboarded` are
+   `cairn health` checks and are reachable only after adoption; the ledger says so.
+9. **The command is `cairn doctor [<dir>]`:** no registry record, no credential, its own JSON
    payload kind.
-9. **The scaffolder prints `cairn doctor` with a one-line install pointer** and never detects
-   the binary.
+10. **The scaffolder prints `cairn doctor` with an install pointer and never detects the
+    binary.** Its closing text also names adoption and `cairn health` as the step that reaches
+    the https and email checks.
+11. **Two passes, not one.** The pre-task merges alone; retire-1 and retire-2 each carry their own
+    plan, token ceiling, segments, and close.
 
-## Go half: `tool/v1.1.0`
+## Pre-task (engine, one PR, merges before retire-1 branches)
 
-### Command
+Branch `doctor-pretask` off `main`, heavy gate. Three deliverables.
 
-`cairn doctor [<dir>]`; the directory defaults to the working directory. It reads no registry
-and no credential, so it runs before adoption and before first deploy. It follows the tool's
-existing flag grammar (`--json`, `--theme`, quiet) and the single TTY predicate for color.
+**The conditions mirror.** `scripts/build/emit-tool-conditions.mjs` writes
+`tool/internal/spine/conditions.json` from `REGISTRY` (`id`, `severity`, `title`, `why`,
+`remediation`, `docsAnchor`, `logEvent`). `conditions.ts` is TypeScript and a plain `.mjs` cannot
+import it; the script reads it through the repo's existing TS-capable path (the built `dist` or
+the loader the other `scripts/` use), named in the plan after a look at what `scripts/` already
+does, never a regex over source. A second small artifact, `tool/internal/doctor/site-config-path.json`,
+carries the scaffolder's site-config path; a path is not a condition and does not ride in the
+conditions file. `check:tool-conditions` fails when regeneration is not a no-op and joins
+`npm run check`. Because `test.yml` ignores `tool/**` and `tool.yml` has no Node, a third small
+workflow triggers on `src/lib/diagnostics/conditions.ts`, the scaffolder's path file, and the two
+generated files, and runs that one check. Acceptance includes proving the gate red on a
+hand-edited mirror.
 
-### Package
+**`site-facts.json`.** Written by the Vite plugin through the same chokepoint that writes and
+**verifies** `index.json` (`src/lib/vite/internal.ts`, `virtualSource`'s verify mode): a stale
+file fails the build exactly as a stale manifest does. Shape: `"version": 1`,
+`mediaBucketBinding`, `roles` (the custom role vocabulary), `aiPosture`. All three values already
+sit in committed adapter source, so the file leaks nothing. It is a cross-language contract, so it
+gets a reference page, a facts bullet, a `check-symbols-allowlist` path entry beside the other
+`.cairn` files, and a CHANGELOG line (additive; a site gains the file at its next build on
+`0.97.0`). `readAdapterFacts` keeps this caller and is not dead code after the removal; its
+doctor-only fields (`from`, `owner`, `repo`) are trimmed in retire-2.
 
-`tool/internal/doctor`, beside `health`. It reuses `spine`'s outcome shape, the five result
-words, `Condition`, and `ExitCode`. One snapshot per run reads the wrangler config, the site
-config, `svelte.config`, the package manifests, and the source files the heuristics scan. Each
-check is a pure function over the snapshot. A file the snapshot cannot read is a per-check
-`fail` or `unknown` as the ported check defines, never a process error.
+**The two `conditions.ts` rewordings** of ruling 3a.
+
+## retire-1: the Go pass, `tool/v1.1.0`
+
+Worktree `doctor-go` off the pre-task's merge. Gate: `make -C <abs worktree>/tool check` through
+`cairn-run-gate` with `CAIRN_GATE_LANE=light`. `go-conventions` on every file;
+`golang-spf13-cobra` for `tool/cmd/cairn`. About nine tasks in three segments.
+
+### Command and package
+
+`cairn doctor [<dir>]`; the directory defaults to the working directory. It follows the tool's
+flag grammar (`--json`, `--theme`, quiet) and the single TTY predicate. Package
+`tool/internal/doctor` sits beside `health` with **its own check contract**: `health.Check.Run`
+takes a `record.Record`, which a directory run does not have. `spine.ExitCode`, `CheckVerdict`,
+`Condition`, and the severity types carry no record and are reused as they are. One snapshot per
+run reads the wrangler config, `site.config.yaml`, `site-facts.json`, `svelte.config`, the
+package manifests and lockfiles, and the source files the heuristics scan; each check is a pure
+function over it.
+
+**Outside a cairn site** (no wrangler file and no `@glw907/cairn-cms` dependency in
+`package.json`), the command prints one line and exits 3, never a wall of failures.
+
+**Containment.** Every read stays under the resolved `<dir>`, symlinks included, in the stronger
+form `media-seed/bin.ts:102-113` uses; the site-config path gets the shape verification
+`substitute.mjs:27-40` applies (relative, no leading `/`, no `..`, no NUL). This carries forward
+the 2026-09-02 ledger amendment.
 
 ### Checks
 
-Ported from `src/lib/doctor`, behavior-equal except where a ruling above narrows it:
-`config.bindings`, `config.media-bucket`, `config.observability`, `config.csrf-disable`,
-`config.public-origin` (file half), `config.site-config` (shallow, ruling 2),
-`config.no-referrer-blanket`, `config.dependency-floors` (reads
-`node_modules/@glw907/cairn-cms/package.json` as a plain file), `admin.mount-shape`,
-`auth.role-wiring`, and `ai.posture-effective` (a GET of `/robots.txt` on the origin the site
-config names). Posture reports `unknown` with a new reason code, `ReasonNotDeployed`, when the
-site config names no origin or the origin does not answer. "Unchecked" anywhere maps to
-`unknown`; there is no sixth result word.
+File-only, eight: `config.bindings`, `config.observability`, `config.csrf-disable`,
+`config.public-origin` (file half), `config.site-config`, `config.no-referrer-blanket`,
+`config.dependency-floors`, `admin.mount-shape`.
 
-The `wrangler.jsonc`-over-`wrangler.toml` precedence matches the doctor's.
+Facts-dependent, three: `config.media-bucket`, `auth.role-wiring`, `ai.posture-effective`. When
+`site-facts.json` is absent they report `unknown` with `ReasonNotObservable` and the message
+"needs engine 0.97.0 or later, and one build".
 
-### Generated condition text
+Details the port must honor:
 
-`tool/internal/spine/conditions.json`, embedded with `go:embed`, carries every `REGISTRY`
-record (`id`, `severity`, `title`, `why`, `remediation`, `docsAnchor`, `logEvent`) plus the
-site-config path. A failed check prints the title, the why, the remediation, and a cairn.pub
-URL built from `docsAnchor`. The hand-ported id list in `spine/condition.go` and the regex drift
-test in `condition_test.go` are replaced by the embedded file; exported names other packages
-already use keep their signatures.
+- `config.site-config` asserts exactly this: the file is found at one of the known paths, parses
+  as YAML, and its root is a mapping with a non-empty `siteName`. No ported check reads any other
+  site-config field. It will pass files the doctor failed (a stale Contract v2 block). The
+  scaffolded template parses the config at module load, so a template-shaped site fails its
+  build; a legacy site surfaces a bad config in the admin Settings screen. The ledger records
+  the narrowing.
+- `ai.posture-effective` takes its origin from the wrangler config's `vars.PUBLIC_ORIGIN`, then
+  the environment, the precedence `config.public-origin` uses (`check-posture.ts:52`). No origin,
+  or an origin that does not answer, is `unknown` with `ReasonNotObservable`.
+- `config.dependency-floors` hand-rolls the doctor's three functions (`parseVersion` plain
+  `x.y.z`, `caretFloor`, `compareVersions`, `check-floors.ts:20-37`); no semver library, which
+  would accept more and diverge. It reads the three lockfile formats in the doctor's npm, pnpm,
+  yarn order, and reads the engine's peers from
+  `node_modules/@glw907/cairn-cms/package.json` as a plain file; a hoisted monorepo that path
+  misses reports `unknown`.
+- `config.media-bucket` gets its own remediation text rather than borrowing
+  `config.bindings-missing`'s, the defect `checks-local.ts:288-291` records. If that needs a new
+  condition id, the pre-task adds it to `conditions.ts`.
+- **Status mapping**, all five doctor statuses: `pass` to pass; `fail` to fail at the condition's
+  severity; `skip` to skip; `info` to pass with its note printed (never `unknown`, so today's
+  exit-0 runs stay exit 0); `unchecked` to `unknown`.
+- Each check's printed label equals its condition's registry `title`, which
+  `is-it-working.md`'s label-to-section table relies on.
 
-### Exit codes
+### Frozen surfaces
 
-Through `spine.ExitCode`: a failed `blocker` condition is CRITICAL (2); a failed condition of
-lesser severity is WARNING (1); any `unknown` with no failure is UNKNOWN (3). A usage error
-exits as the tool's cobra layer already exits.
+`tool/docs/reference/json-output.md` freezes the reason vocabulary and the check-id list at 1.0.
+No reason code is added (`ReasonNotObservable` is reused). The eleven new check ids extend the
+published list under a heading scoped to `cairn doctor`, the freeze sentence is amended to say
+additions are minor-version events and renames or removals major, and the schema tests that pin
+those lists (`render/json_schema_test.go`) move with the page. The new JSON payload kind has its
+own schema file under the Task 20c contract.
 
-### JSON
+### Condition ids and text
 
-A new payload kind under the Task 20c contract with its own schema file, additive to the 1.0
-frozen surfaces. Never a synthetic registry record.
+The 24 typed `Condition` constants in `spine/condition.go` stay hand-written: they are the frozen
+ids, and compile-time checking is worth keeping. The embedded `conditions.json` supplies text.
+A Go test asserts the constant set equals the embedded id set, replacing the regex read of
+`conditions.ts`; the test keeps the existing ruling in its comment, that an engine id rename is a
+human decision and a major-version event, never an automatic follow.
+
+A failure prints the title, the why, the remediation, and a docs URL of the form
+`https://cairn.pub/docs/admin/<basename>#<fragment>` from `docsAnchor`. Before the tag, the
+conductor confirms each distinct page resolves on the deployed cairn.pub; if the page does not
+resolve at tag time, the tool prints the anchor text without a URL and a `v1.1.x` patch adds the
+link after the pin bump.
 
 ### Dependencies
 
-The TOML library and the YAML promotion land in one task that also amends
-`tool/docs/adr/0002-render-dependencies.md` and the pinned direct-require count.
+YAML promoted to a direct require, in one task that also amends
+`tool/docs/adr/0002-render-dependencies.md` and `internal/render/purity_test.go`'s
+`otherDirectRequires`. No other new module.
 
-### Heuristic corpus
+### Corpus
 
-The four regex-tuned checks (SvelteKit source shapes in `checks-local.ts`) are tested against
-fixtures lifted from the doctor's unit tests into a shared corpus directory under `tool/`, the
-pattern Pass A used for the Node fakes. The corpus is extracted in the Go half, before the
-engine half deletes those tests.
+The four regex heuristics, `requireOrigin`'s cases, and the wrangler-config reader's cases are
+lifted from the doctor's unit tests into a shared corpus under `tool/`, before retire-2 deletes
+those tests. The heuristics key on engine symbols (`CairnAdminShell`, `.shellLoad`,
+`createAuthGuard`'s argument shape, `checkOrigin: false`); retire-2 adds the engine-side
+tripwire.
 
-### Docs, help, and evidence
+### Docs, help, evidence
 
-The `cairn agents` help topic, the man page (`mangen`), a `tool/docs` page for the command,
-and text-report goldens. Release evidence is the conductor's work (Geoff's RC ruling): a
-real-terminal run of `cairn doctor` against the four production sites, graded by a
-fresh-context verifier, before the tag. If the draft-docs pass has moved the four public tool
-pages under `docs/` by then, `v1.1.0` also carries the cairn.pub link repointing sized as
-`v1.0.1`; otherwise that stays its own patch.
+The `cairn agents` help topic, the man page, a `tool/docs` page for the command (exit codes,
+the usage-error collision, the engine-version note), text-report goldens, and the tool's
+CHANGELOG entry. Release evidence is the conductor's work: a real-terminal run graded by a
+fresh-context verifier, then merge, then the tag and the release with the `tool` workflow green.
 
-### Gate
+## retire-2: the engine pass
 
-`make -C <abs worktree>/tool check` through `cairn-run-gate` with `CAIRN_GATE_LANE=light`.
-`go-conventions` for every file; `golang-spf13-cobra` for `tool/cmd/cairn`.
-
-## Engine half: removal inside the `0.97.0` window
-
-### Task A, first and alone: the generator and its gate
-
-`scripts/build/emit-tool-conditions.mjs` writes `tool/internal/spine/conditions.json` from
-`REGISTRY` and the scaffolder's `site-config-path.json`. `check:tool-conditions` fails when
-regeneration is not a no-op, and joins `npm run check`. This merges to `main` before the Go
-half branches, since the Go half embeds its output.
+Worktree `doctor-engine` off the `v1.1.0` merge SHA. Heavy gate through `cairn-run-gate`. About
+seven tasks in two segments. Its first task commits `scripts/checks/check-tool-release.mjs`,
+which asserts the `tool/v1.1.0` tag **and its GitHub release** exist on origin; the plan runs it
+before any removal commit, and a red result stops the pass.
 
 ### Removal
 
-- `package.json`: the `cairn-doctor` bin entry and its `chmod` in the `package` script.
-- `src/lib/doctor/**` and the ten dedicated doctor test files.
-- `wrangler-config.ts` moves to `src/lib/media-seed/wrangler-config.ts`, trimmed to
-  `readR2Buckets` and `R2BucketEntry`; its tests follow; `media-seed.test.ts`'s mock path and
-  the `emit-template-tree.test.ts` comment update.
-- `conditions.test.ts` loses its doctor imports; `conditions.ts` and `check:readiness` do not
-  change. Conditions whose only surfacing check was dropped keep their registry entries when an
-  engine module still raises them; an entry nothing raises or checks is listed in the
-  implementer's report for a conductor decision, never deleted silently.
-- The five `scripts/checks/` files and the ten incidental test files the inventory names are
-  swept for a stale doctor mention (bin lists, allowlists, comments).
+- `package.json`: the `cairn-doctor` bin entry and its `chmod`.
+- `src/lib/doctor/**` and the ten dedicated doctor tests; `doctor-derive.test.ts`'s coverage of
+  `readAdapterFacts` moves to the facts writer's tests.
+- The `wrangler-config.ts` move of ruling 6; `media-seed/assemble.ts:6`, `bin.ts:12`, and the
+  `media-seed.test.ts` mock repoint. Acceptance spawns the built `cairn-media-seed` bin (the
+  `delivery-data-dist-spawn` precedent).
+- `CairnTidySettings.svelte:629`: the sentence telling an editor to run `cairn-doctor` is
+  rewritten to stop at "reload this page"; `config.tidy-key` no longer exists to confirm
+  anything. `check:prose` gates it.
+- A sweep by predicate, not by file count: after the pass,
+  `grep -rn 'cairn-doctor\|lib/doctor' src packages scripts templates examples` returns nothing
+  outside generated lockfiles. Comments in `src/lib/vite`, `sveltekit/csrf.ts`, `guard.ts`,
+  `condition-response.ts`, `dev-flag.ts`, `delivery/robots.ts`, and the incidental tests are
+  reworded to name `cairn doctor` or the condition, whichever is true.
+- **No `REGISTRY` entry is deleted in this pass.** `config.tidy-key-missing` and
+  `admin.login-probe-failed` become unraised; they stay, since `check:readiness` pins each to a
+  frozen-page heading. ROADMAP files their removal for the docs rebuild.
+  `github.app-unreachable` keeps its runtime raiser (`github/credentials.ts:20`).
+
+### Gates that break
+
+`scripts/checks/check-symbols.mjs:361-374` reads `src/lib/doctor` with `readdirSync` and would
+crash. The check-id vocabulary it builds moves to a committed list the script reads (the eleven
+surviving ids plus the deferred and dropped ids docs history still cites), and the
+`check-symbols-allowlist.mjs` entries excused by `docs/reference/doctor.md` (`:36`, `:69`, `:83`,
+`:106-107`) are re-grounded or removed. `check:transcripts`' floor of one block for
+`is-it-working.md` is met by a new `cairn doctor` transcript captured from the released binary
+against the scaffolder's fixture site, with the capture procedure in the transcripts README; the
+floor is not lowered. `check:tool-heuristics` is added: it fails when any of the four symbols the
+Go heuristics key on disappears from `src/lib`, with a `// WATCH:` comment at each symbol.
 
 ### Scaffolder
 
-`scaffold.mjs:249` becomes the `cairn doctor` reminder with a one-line install pointer.
-`chapter2.mjs:805` loses `--from` and `--send-test` and becomes: run `cairn doctor`, deploy,
-then sign in. The three string-assertion test files update. Transcripts `02-doctor-bare.txt`
-and `03-doctor-credentialed.txt` and their README rows leave. `substitute.test.mjs`'s twin
-assertion leaves with the engine copy.
+Three print sites, not two: `scaffold.mjs:249`, `chapter2.mjs:805`, and `bin.mjs:88`'s
+`doctorLine` (printed from five closing blocks). The reminder becomes: run `cairn doctor` any
+time; install with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the
+release page, whose URL is written literally. The chapter 2 line drops `--from` and
+`--send-test`, keeps the fact that the installer just sent a test message, and names
+`cairn adopt` then `cairn health` for the https and email checks. Transcripts `02` and `03`
+leave; `01-create-cairn-site.txt` and `01d-resume.txt` are regenerated; the README's doctor prose
+is rewritten. The string-assertion tests and `substitute.test.mjs`'s twin assertion follow.
 
 ### Docs
 
-`docs/reference/doctor.md` is removed and the seven reference pages that mention the doctor are
-corrected. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` record the
-change. Facts bullets land in `docs/internal/facts/admin.md`, `extend.md`, and `reference.md`.
-The frozen admin and extend pages get only the stale-command fix the freeze rule allows:
-`npx cairn-doctor` becomes `cairn doctor`, dropped flags removed, no prose rewrite.
-`docs/admin/is-it-working.md` keeps every heading `check:readiness` pins. The site upgrade
-brief's four mentions are corrected. Anything past command repointing belongs to the docs
-conductor (session `cairn-cms-3c`), who is briefed from this spec.
+In scope: the 21 files in the published arms. `docs/internal` and `docs/superpowers` are history
+and are not swept; nor are past-version entries in `migration-notes.md`.
 
-### Ledger, changelog, roadmap
+- `docs/reference/doctor.md` leaves; a reference page for `site-facts.json` arrives (pre-task).
+  The seven cross-arm links to the removed page are retargeted to the tool's command page or
+  unlinked.
+- Procedures whose verification step was a dropped or deferred check get a truthful replacement
+  step, under the freeze rule's stale-step allowance, no other prose touched:
+  `rotate-the-github-app-key.md` (publish an edit, then look for `github.unreachable` in the
+  logs), `enable-tidy.md` (run one tidy; a bad key fails there with its log event),
+  `sign-in-through-your-organization.md` (sign in once; read the guard events),
+  `add-cairn-to-a-sveltekit-app.md` and `build-a-site-by-hand.md` (`cairn doctor`, then the first
+  publish).
+- `is-it-working.md` keeps every heading. The sections for the tidy key, the App, the admin
+  probe, and the auth store each gain one line saying which command checks it now or that none
+  does until 1.x, and the label-to-section table marks those rows.
+- Facts bullets in `admin.md`, `extend.md`, `reference.md`. `upgrade-cairn.md`'s live procedure
+  and a new `migration-notes.md` entry record the change. The site upgrade brief's four mentions
+  are corrected.
+- The docs conductor (`cairn-cms-3c`) is briefed from this spec: install precedes scaffold, and
+  the admin arm's rebuild inherits the dropped-check sections.
 
-One `docs/internal/engine-rulings.md` entry in the ledger's own format: the retirement verdict,
-the three dropped checks, the D1 deferral, the shallow site-config read, and the evidence that
-would reopen each (for the send test: an onboarding or deliverability failure the first sign-in
-did not surface legibly). One `## Unreleased` CHANGELOG entry for the removal carrying
-`Consumers must:` install `cairn`; replace `npx cairn-doctor` with `cairn doctor`; test for a
-nonzero exit rather than `== 1`; expect no send test, App probe, tidy-key check, login probe,
-or D1 checks. The four production sites are grepped for a scripted doctor call and any hit is
-named in that line. ROADMAP files the D1 checks beside the 1.1 agent-permission check.
+### The `## Unreleased` window
 
-### Gate
+One task reconciles the window so the `0.97.0` notes do not say the doctor both gains features
+and leaves. Per entry: `:2251` (migration 0004's `Consumers must:` telling operators to run the
+`auth.store` check before deploy) is rewritten to `wrangler d1 migrations list`, since that check
+runs nowhere at `0.97.0`; `:1401-1432` (status vocabulary and exit code 3), `:2169`, and `:2326`
+(probe changes) fold into the removal entry as superseded; `:185` and `:251` reword the actor to
+`cairn doctor`; `:332-337` repoints to the scaffolder's path file; `:509-517`'s claim that
+transcript `03` stays is corrected. Line numbers are as surveyed on 2026-09-21 and are re-found
+by content. The removal entry carries `Consumers must:` install `cairn`; replace
+`npx cairn-doctor` with `cairn doctor`; test for a nonzero exit; build once on `0.97.0` so
+`site-facts.json` exists; expect no App probe, tidy-key check, login probe, D1 checks, or send
+re-run. It states what the survey found: no site scripts the doctor; four wrangler configs and
+three config comments cite it; one installed guidance copy in aksailingclub-org refreshes on the
+next `cairn-guidance install`; site plan history is left alone. cairn-pub's hardcoded
+`/docs/reference/doctor` link (`src/routes/(site)/docs/+page.svelte:67`) is filed to cairn-pub.
 
-The full heavy gate through `cairn-run-gate`, plus every gate in the inventory's section (k):
-`check:package`, `check:surface --update`, `check:reference`, `check:reference:signatures`,
-`check:snippets`, `check:docs`, `check:facts`, `check:readiness`, `check:symbols`,
-`check:transcripts`, the scaffolder suite, `test:emit`, `check:template`, and the showcase's
-`format:check`.
+### Ledger
+
+One entry per ruled item in `engine-rulings.md`'s format, each with `Reopens on:` and, for retire
+and reshape verdicts, a `Shape:` line: the retirement; `github.app` dropped (substitute: the
+`github.unreachable` runtime event; gap and reopening evidence: a never-published site);
+`config.tidy-key` dropped (ground: it false-fails a correctly deployed site, whose key is a Worker
+secret the CLI cannot see, `checks-local.ts:310-318`); the login-envelope probe dropped; the
+workers.dev exposure arm deferred; the send re-run deferred; the three D1 reads deferred; the
+`config.site-config` narrowing; `site-facts.json` as new engine surface. Each overturned or
+affected `audit-cli-*` entry is closed, amended, or given a progress note by name, including the
+open tidy-key reshape and the media-seed entry whose evidence cites the old import path.
+`check:rulings-format` joins the gate list.
+
+### Gate list
+
+The heavy gate plus: `check:package`, `check:surface --update`, `check:reference`,
+`check:reference:signatures`, `check:snippets`, `check:docs`, `check:facts`, `check:readiness`,
+`check:symbols`, `check:transcripts`, `check:rulings-format`, `check:tool-conditions`,
+`check:tool-heuristics`, `check:prose`, the scaffolder suite, `test:emit`, `check:template`, and
+the showcase's `format:check`. `tool.yml` path-triggers on `conditions.ts` and
+`is-it-working.md`, so an engine PR touching either also runs the Go gate; that is expected.
+
+### Close
+
+HISTORY entry; ROADMAP (the deferred checks beside the agent-permission check, the two unraised
+registry entries, the cairn-pub link); then the STATUS line, in the commit that names the
+`v1.1.0` tag and the removal's merge SHA. Before that write, message whichever session holds
+`main` (the B2 conductor was `cairn-cms-2f` on 2026-09-21).
 
 ## Choreography
 
-1. Wait for B2: `tool/v1.0.0` tagged and merged to `main`. Re-verify the sizing doc's facts
-   and ruling 1's precondition against the merged tree. B2's worktree is never touched.
-2. Task A merges to `main`.
-3. Go half: worktree `doctor-go` off `main`; merged; `tool/v1.1.0` tagged and released with
-   the `tool` workflow green.
-4. Engine half: worktree `doctor-engine` off that merge SHA. Its first task asserts the
-   `tool/v1.1.0` tag and release exist on origin and stops the half if they do not.
-5. Close: HISTORY entry; ROADMAP; coordinate with whoever holds `main`; then the one STATUS
-   line, "the `0.97.0` cut is unblocked", naming the `v1.1.0` tag and the removal's merge SHA.
+0. This spec and the two plans land on `main` by PR from `doctor-retirement`.
+1. B2 closes: `tool/v1.0.0` tagged, merged, released. B2's worktree is never touched.
+2. Pre-task, branch `doctor-pretask`, merges.
+3. retire-1, branch `doctor-go`: verified, merged, tagged, released.
+4. retire-2, branch `doctor-engine`.
 
-Two executors, two worktrees, never shared with a docs pass. The Go half and the engine half
-are sequential by ruling; inside each half the plan marks independent tasks.
+One executor per worktree; none shared with a docs pass.
 
 ## Out of scope
 
-The `0.97.0` cut. The D1 checks and any credentialed check. A Go port of the site-config
-schema. Scaffolder detection of the binary. Any narrative-arm rewrite. `cairn health` changes,
-unless ruling 1's precondition fails and Geoff rules a change.
+The `0.97.0` cut. Any credentialed check. A Go port of the site-config schema or a TOML parser.
+Scaffolder detection of the binary. Narrative-arm rewrites past the named stale-step fixes.
+`cairn health` changes. Deleting registry entries.
 
 ## Acceptance
 
-- `cairn doctor` run in each of the four production site directories produces a report whose
-  verdict per ported check matches `npx cairn-doctor`'s on the same tree, save the narrowed
-  `config.site-config`.
-- `tool/v1.1.0` exists as a tag and a release before any engine-half commit removes or
-  repoints a doctor command.
-- After the engine half: no `cairn-doctor` string in `package.json`, `src/`, `packages/`,
-  the published doc arms, or the scaffolder's printed output, outside the changelog, migration
-  records, the ledger, and `docs/internal/` history; `cairn-media-seed` still reads R2 buckets;
-  every gate above is green.
-- STATUS carries the unblock line, written once, by this pass's close.
+retire-1:
+
+- For each of the eight file-only checks, on each of the four production site trees as they
+  stand, `cairn doctor --json` and the doctor built from `main` agree under a status mapping
+  table committed in `tool/testdata/`; disagreements are recorded per check as expected or
+  defect, and zero are unexplained. `config.site-config` compares on found-and-parses only.
+- The three facts checks are compared the same way on the showcase and on one production site
+  linked to `main` with `link:consumer` (restored after), a site that declares media, custom
+  roles, and an AI posture. Against a site with no `site-facts.json` they report `unknown`.
+- Exit codes proven by test: a blocker failure exits 2, a warning failure 1, unknown with no
+  failure 3, clean 0; outside a cairn site, one line and 3.
+- A golden JSON payload validates against the committed schema; `json-output.md` publishes the
+  eleven ids; the constant-set test fails on a mirror with a renamed id.
+- A read through a symlink leaving `<dir>` is refused.
+- The release exists with the `tool` workflow green on its SHA.
+
+Pre-task and retire-2:
+
+- `check:tool-conditions` goes red on a hand-edited mirror, and the third workflow runs it.
+- A build with a changed adapter and a stale `site-facts.json` fails.
+- The removal predicate grep is empty; the built `cairn-media-seed` bin reads R2 buckets.
+- Every gate in the list is green; the ledger entries pass `check:rulings-format`; the facts
+  bullets, the `Consumers must:` line, and the ROADMAP entries exist.
+- No published-arm page instructs a reader to run a command or flag that does not exist.
+- STATUS carries the unblock line, written once, by retire-2's close.

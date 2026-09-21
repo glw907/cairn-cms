@@ -14,6 +14,7 @@ LDFLAGS := -X '$(MODULE)/internal/version.Version=$(VERSION)' -X '$(MODULE)/inte
 
 .PHONY: all build test vet install check clean \
 	tidy-check fmt-check lint vulncheck vale-comments \
+	copy-list check-copy copy-review \
 	build-golangci-lint build-govulncheck
 
 all: check
@@ -33,7 +34,7 @@ vet:
 install: build
 	install -m 0755 $(BINARY) "$(HOME)/.local/bin/$(BINARY)"
 
-check: tidy-check fmt-check vet lint vulncheck vale-comments test
+check: tidy-check fmt-check vet lint vulncheck vale-comments check-copy test
 
 tidy-check:
 	go mod tidy
@@ -50,6 +51,26 @@ vulncheck: build-govulncheck
 
 vale-comments:
 	./scripts/vale-comments.sh
+
+# copy-list writes testdata/copy.golden.md from internal/health's own messages and fix tables
+# (tool/docs/design/copy-standard.md section 4.3). Run this and commit the diff whenever a task
+# adds an operator-facing string.
+copy-list:
+	go run ./cmd/copylist > testdata/copy.golden.md
+
+# check-copy is the light-lane half of `make check`: it runs no browser and reads no Go source,
+# only the committed golden. It never runs `make copy-list` itself, so a new string that never
+# made it into the golden fails TestRenderMatchesCommittedGolden (in `make test`) rather than
+# silently passing here. On failure, read tool/docs/design/copy-standard.md.
+check-copy:
+	./scripts/check-copy.sh
+
+# copy-review is local-only, never part of `check`: tellgrader is a Linux-only binary at
+# ~/.local/bin, and .github/workflows/tool.yml runs `make -C tool check` on macOS and Windows
+# runners too, where this step would hard-fail rather than skip. It is the editorial gate Task
+# 22a runs once before the 1.0 tag (copy-standard.md section 4.5).
+copy-review:
+	tellgrader --register editor testdata/copy.golden.md
 
 build-golangci-lint:
 	go build -C tools -o ../$(GOLANGCI) github.com/golangci/golangci-lint/v2/cmd/golangci-lint

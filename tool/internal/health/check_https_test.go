@@ -67,11 +67,12 @@ func TestHTTPSForcedCheckBothHalves(t *testing.T) {
 		wantState      spine.State
 		wantDetail     string
 		wantCondition  spine.Condition
+		wantCode       spine.Code
 	}{
-		{"both on is OK", "on", true, spine.OK, "", spine.ConditionNone},
-		{"hsts off alone fails with no condition", "on", false, spine.Failing, "hsts-off", spine.ConditionNone},
-		{"https not forced fails with the https condition", "off", true, spine.Failing, "always-use-https-off", spine.ConditionEdgeHTTPSNotForced},
-		{"both off reports https first and names both", "off", false, spine.Failing, "always-use-https-off; hsts-off", spine.ConditionEdgeHTTPSNotForced},
+		{"both on is OK", "on", true, spine.OK, "", spine.ConditionNone, spine.CodeNone},
+		{"hsts off alone fails with no condition", "on", false, spine.Failing, detailHTTPSHSTSOff(), spine.ConditionNone, spine.CodeHTTPSHSTSOff},
+		{"https not forced fails with the https condition", "off", true, spine.Failing, detailHTTPSAlwaysUseHTTPSOff(), spine.ConditionEdgeHTTPSNotForced, spine.CodeNone},
+		{"both off reports https first and names both", "off", false, spine.Failing, detailHTTPSBothOff(), spine.ConditionEdgeHTTPSNotForced, spine.CodeNone},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -85,6 +86,9 @@ func TestHTTPSForcedCheckBothHalves(t *testing.T) {
 			}
 			if got.Condition != tt.wantCondition {
 				t.Errorf("Condition = %q, want %q", got.Condition, tt.wantCondition)
+			}
+			if got.Code != tt.wantCode {
+				t.Errorf("Code = %q, want %q", got.Code, tt.wantCode)
 			}
 		})
 	}
@@ -109,8 +113,8 @@ func TestHTTPSForcedCheckAbsentSecurityHeaderIsHSTSOff(t *testing.T) {
 	body := []byte(`{"success":true,"result":[{"id":"always_use_https","value":"on"}]}`)
 	c := Clients{CF: cfClient(settingsRoundTripper{status: http.StatusOK, body: body}), HaveCF: true}
 	got := (httpsForcedCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "hsts-off" {
-		t.Errorf("Outcome = %+v, want Failing hsts-off", got)
+	if got.State != spine.Failing || got.Detail != detailHTTPSHSTSOff() {
+		t.Errorf("Outcome = %+v, want Failing %q", got, detailHTTPSHSTSOff())
 	}
 }
 

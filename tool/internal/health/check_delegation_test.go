@@ -119,7 +119,7 @@ func TestDelegationCheckWrongNameserversIsFailing(t *testing.T) {
 	}
 
 	got := (delegationCheck{}).Run(context.Background(), r, c, Options{})
-	if got.State != spine.Failing || got.Detail != "wrong-nameservers" {
+	if got.State != spine.Failing || got.Detail != detailDelegationWrongNameservers() {
 		t.Errorf("Outcome = %+v, want Failing wrong-nameservers", got)
 	}
 }

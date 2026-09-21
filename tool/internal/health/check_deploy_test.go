@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
@@ -150,7 +149,10 @@ func TestDeployCheckBuildsNotConnectedIsFailing(t *testing.T) {
 	if got.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", got.State)
 	}
-	want := string(spine.APIReason(providers.ReasonBuildsNotConnected))
+	if got.Code != spine.CodeDeployBuildsNotConnected {
+		t.Errorf("Code = %v, want %v", got.Code, spine.CodeDeployBuildsNotConnected)
+	}
+	want := "Workers Builds is not connected to this Worker"
 	if got.Detail != want {
 		t.Errorf("Detail = %q, want %q", got.Detail, want)
 	}

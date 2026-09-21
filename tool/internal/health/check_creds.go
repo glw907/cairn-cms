@@ -2,7 +2,6 @@ package health
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -77,11 +76,11 @@ func checkGitHubCredential(ctx context.Context, c Clients, now time.Time) creden
 		return credentialSide{outcome: credentialErrorOutcome(err), from: c.GHFrom}
 	}
 	if expiry.IsZero() {
-		return credentialSide{outcome: spine.Outcome{State: spine.OK, Detail: "github reports no expiry for this token"}, from: c.GHFrom}
+		return credentialSide{outcome: spine.Outcome{State: spine.OK, Detail: detailCredsGitHubNoExpiry()}, from: c.GHFrom}
 	}
 	if expiry.Sub(now) < credExpiryWindow {
-		detail := fmt.Sprintf("%s: expires %s", spine.ReasonCredExpiring, expiry.Format(time.RFC3339))
-		return credentialSide{outcome: spine.Outcome{State: spine.Failing, Detail: detail}, from: c.GHFrom}
+		outcome := spine.Outcome{State: spine.Failing, Code: spine.CodeCredsExpiringSoon, Detail: detailCredsGitHubExpiring(expiry, now)}
+		return credentialSide{outcome: outcome, from: c.GHFrom}
 	}
 	return credentialSide{outcome: spine.Outcome{State: spine.OK}, from: c.GHFrom}
 }
@@ -112,17 +111,35 @@ func worseCredentialOutcome(a, b spine.Outcome) spine.Outcome {
 }
 
 // credentialLine renders one side's verdict for the combined check's Detail: the provider name,
-// which secret store it resolved through (never the value), and its own Detail or Reason text.
+// which secret store it resolved through (never the value), and its own prose. A side whose
+// Detail is empty because ReasonToOutcome (via credentialErrorOutcome) set Code instead renders
+// through detailForCredCode, so the joined line never falls back to a bare Reason token for a
+// rejected credential.
 func credentialLine(name string, side credentialSide) string {
 	parts := []string{name}
 	if side.from != "" {
 		parts = append(parts, "via "+side.from)
 	}
-	if side.outcome.Detail != "" {
+	switch {
+	case side.outcome.Detail != "":
 		parts = append(parts, side.outcome.Detail)
-	}
-	if side.outcome.Reason != "" {
+	case side.outcome.Code != spine.CodeNone:
+		parts = append(parts, detailForCredCode(side.outcome.Code))
+	case side.outcome.Reason != "":
 		parts = append(parts, string(side.outcome.Reason))
 	}
 	return strings.Join(parts, ", ")
+}
+
+// detailForCredCode renders the two credential-rejection codes ReasonToOutcome can set, in the
+// generic form catalogue section 3.4 calls for: ReasonToOutcome carries no provider name of its
+// own, so this stays provider-neutral and credentialLine supplies the provider as the line's own
+// leading word.
+func detailForCredCode(code spine.Code) string {
+	switch code {
+	case spine.CodeCredsForbidden:
+		return detailCredsForbidden()
+	default:
+		return detailCredsUnauthorized()
+	}
 }

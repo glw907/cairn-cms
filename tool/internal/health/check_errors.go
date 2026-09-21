@@ -76,7 +76,7 @@ func (errorsCheck) Run(ctx context.Context, r record.Record, c Clients, o Option
 				State:     spine.Unknown,
 				Reason:    spine.ReasonNotObservable,
 				Condition: spine.ConditionConfigObservabilityOff,
-				Detail:    "worker has no observability dataset",
+				Detail:    detailErrorsObservabilityOff(),
 			}
 		}
 		return apiErrorOutcome(err)
@@ -85,11 +85,8 @@ func (errorsCheck) Run(ctx context.Context, r record.Record, c Clients, o Option
 	count := len(entries)
 	fields := errorsDetail{Count: count, TopEvents: topEventNames(entries, 3)}.fields()
 
-	if count == 0 {
-		return spine.Outcome{State: spine.OK, Fields: fields}
-	}
 	if count > o.ErrorThreshold {
-		return spine.Outcome{State: spine.Failing, Detail: "error count exceeds the threshold", Fields: fields}
+		return spine.Outcome{State: spine.Failing, Code: spine.CodeErrorsAboveThreshold, Detail: detailErrorsAboveThreshold(count, o.LogWindow, o.ErrorThreshold), Fields: fields}
 	}
-	return spine.Outcome{State: spine.OK, Detail: "error count is within the advisory band", Fields: fields}
+	return spine.Outcome{State: spine.OK, Detail: detailErrorsCount(count, o.LogWindow), Fields: fields}
 }

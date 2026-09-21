@@ -2,7 +2,6 @@ package health
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -46,8 +45,8 @@ func (d publishDetail) fields() []spine.OutcomeField {
 
 // outcome builds the spine.Outcome publishPathCheck.Run returns for state and detail, always
 // flattening d into its Fields entries regardless of which branch of Run reached it.
-func (d publishDetail) outcome(state spine.State, reason spine.ReasonCode, detail string) spine.Outcome {
-	return spine.Outcome{State: state, Reason: reason, Detail: detail, Fields: d.fields()}
+func (d publishDetail) outcome(state spine.State, reason spine.ReasonCode, code spine.Code, detail string) spine.Outcome {
+	return spine.Outcome{State: state, Reason: reason, Code: code, Detail: detail, Fields: d.fields()}
 }
 
 // publishPathCheck ports the engine's publish path: every open "cairn/*" edit branch a site's
@@ -109,7 +108,7 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 	}
 
 	if len(open) == 0 && botCommitAt.IsZero() {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no cairn branches or publish commits observed"}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailPublishNoActivity()}
 	}
 
 	now := o.Now()
@@ -122,7 +121,7 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 	}
 
 	if stale := staleBranchCount(open, botCommitAt, now); stale > 0 {
-		return detail.outcome(spine.Failing, "", fmt.Sprintf("%d cairn branch(es) older than 14 days with no later publish", stale))
+		return detail.outcome(spine.Failing, "", spine.CodePublishStaleBranch, detailPublishStaleBranches(stale))
 	}
-	return detail.outcome(spine.OK, "", "")
+	return detail.outcome(spine.OK, "", "", "")
 }

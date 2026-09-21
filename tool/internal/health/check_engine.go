@@ -3,7 +3,6 @@ package health
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"slices"
 	"strings"
@@ -60,10 +59,10 @@ func (d engineDetail) fields() []spine.OutcomeField {
 	}
 }
 
-// outcome builds the spine.Outcome engineCheck.Run returns for state and detail, always
+// outcome builds the spine.Outcome engineCheck.Run returns for state, code, and detail, always
 // flattening d into its two Fields entries regardless of which branch of Run reached it.
-func (d engineDetail) outcome(state spine.State, detail string) spine.Outcome {
-	return spine.Outcome{State: state, Detail: detail, Fields: d.fields()}
+func (d engineDetail) outcome(state spine.State, code spine.Code, detail string) spine.Outcome {
+	return spine.Outcome{State: state, Code: code, Detail: detail, Fields: d.fields()}
 }
 
 // engineCheck compares a site's own `@glw907/cairn-cms` dependency range against the latest
@@ -193,7 +192,7 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	}
 	rng, ok := manifestDependencyRange(manifest)
 	if !ok {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "site package.json carries no " + cairnPackageName + " dependency"}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailEngineNoCairnDependency()}
 	}
 	siteVersion := baseVersion(rng)
 
@@ -209,12 +208,12 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	siteIndex := slices.Index(versions, siteVersion)
 	latestIndex := slices.Index(versions, latest)
 	if siteIndex < 0 || latestIndex < 0 {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "site or latest version not found in the published version list"}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailEngineVersionNotFound()}
 	}
 
 	skipped := skippedVersions(versions, siteIndex, latestIndex)
 	if len(skipped) == 0 {
-		return engineDetail{}.outcome(spine.OK, "")
+		return engineDetail{}.outcome(spine.OK, "", detailEngineCurrent(siteVersion))
 	}
 
 	changelog, err := c.GH.FileAtRef(ctx, engineOwner, engineRepo, "CHANGELOG.md", "main")
@@ -233,7 +232,7 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 
 	detail := engineDetail{ReleasesBehind: len(skipped), ConsumersMust: actionable}
 	if actionable {
-		return detail.outcome(spine.Failing, fmt.Sprintf("%d release(s) behind with a consumers-must change", len(skipped)))
+		return detail.outcome(spine.Failing, spine.CodeEngineBehind, detailEngineBehindActionable(siteVersion, latest, len(skipped)))
 	}
-	return detail.outcome(spine.OK, fmt.Sprintf("%d release(s) behind", len(skipped)))
+	return detail.outcome(spine.OK, "", detailEngineBehind(siteVersion, latest, len(skipped)))
 }

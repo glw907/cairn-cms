@@ -30,13 +30,13 @@ func (delegationCheck) Needs() Tier { return TierCF }
 func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	assigned := assignedNameServers(r)
 	if len(assigned) == 0 {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no assigned nameservers recorded for this site"}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoAssignedNS()}
 	}
 
 	actual, _ := c.Probe.LookupNS(ctx, r.Domain)
 	if !nameServersMatch(assigned, actual) {
 		if looksLikeCloudflareNS(actual) {
-			return spine.Outcome{State: spine.Failing, Detail: "wrong-nameservers"}
+			return spine.Outcome{State: spine.Failing, Code: spine.CodeDelegationWrongNS, Detail: detailDelegationWrongNameservers()}
 		}
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkDelegationPending)}
 	}
@@ -46,7 +46,7 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 		return apiErrorOutcome(err)
 	}
 	if zone == nil {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "cloudflare reports no zone for this domain"}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone()}
 	}
 	if zone.Status != "active" {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkDelegationPropagating)}

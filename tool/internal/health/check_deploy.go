@@ -114,12 +114,12 @@ func (d deployDetail) fields() []spine.OutcomeField {
 	}
 }
 
-// outcome builds the spine.Outcome deployCheck.Run returns for state and detail, always
-// flattening d into the eleven Fields entries above regardless of which branch of Run reached it: a
-// partial deployDetail (an absent worker's zero value, for instance) flattens the same way, with
-// each not-yet-measured field at its zero value.
-func (d deployDetail) outcome(state spine.State, reason spine.ReasonCode, detail string) spine.Outcome {
-	return spine.Outcome{State: state, Reason: reason, Detail: detail, Fields: d.fields()}
+// outcome builds the spine.Outcome deployCheck.Run returns for state, reason, code, and detail,
+// always flattening d into the eleven Fields entries above regardless of which branch of Run
+// reached it: a partial deployDetail (an absent worker's zero value, for instance) flattens the
+// same way, with each not-yet-measured field at its zero value.
+func (d deployDetail) outcome(state spine.State, reason spine.ReasonCode, code spine.Code, detail string) spine.Outcome {
+	return spine.Outcome{State: state, Reason: reason, Code: code, Detail: detail, Fields: d.fields()}
 }
 
 // deployCheck ports the site's Workers Builds deploy pipeline: the Worker exists, Builds is
@@ -169,12 +169,12 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 	if worker == nil {
-		return deployDetail{}.outcome(spine.Failing, "", "worker not found")
+		return deployDetail{}.outcome(spine.Failing, "", spine.CodeDeployWorkerNotFound, detailDeployWorkerNotFound())
 	}
 	detail := deployDetail{WorkerExists: true}
 
 	if !c.HaveBuilds {
-		return detail.outcome(spine.Unknown, spine.ReasonCredMissing, "")
+		return detail.outcome(spine.Unknown, spine.ReasonCredMissing, "", "")
 	}
 
 	triggers, err := c.CF.BuildsConnections(ctx, worker.Tag)
@@ -182,7 +182,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 	if len(triggers) == 0 {
-		return detail.outcome(spine.Failing, "", string(spine.APIReason(providers.ReasonBuildsNotConnected)))
+		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildsNotConnected, detailDeployBuildsNotConnected())
 	}
 	detail.BuildsConnected = true
 	detail.PushToDeploy = true
@@ -192,7 +192,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 	if build == nil {
-		return detail.outcome(spine.Unknown, spine.ParkReason(spine.ParkBuildNotStarted), "")
+		return detail.outcome(spine.Unknown, spine.ParkReason(spine.ParkBuildNotStarted), "", "")
 	}
 	detail.LastBuildSHA = build.TriggerMetadata.CommitHash
 	detail.LastBuildAt = build.CreatedOn
@@ -200,7 +200,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 
 	if build.Status != buildStoppedStatus || build.Outcome == "" {
 		detail.LastBuild = buildRunning
-		return detail.outcome(spine.Unknown, spine.ParkReason(spine.ParkBuildRunning), "")
+		return detail.outcome(spine.Unknown, spine.ParkReason(spine.ParkBuildRunning), "", "")
 	}
 
 	// A failed build is settled: it does not become more or less broken depending on whether
@@ -208,7 +208,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	// against a build that succeeded, so a failed build never measures MainSHA or Behind.
 	if build.Outcome != buildOutcomeSuccess {
 		detail.LastBuild = buildFailed
-		return detail.outcome(spine.Failing, "", "last build did not succeed")
+		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployBuildFailed())
 	}
 
 	mainSHA, err := c.GH.HeadSHA(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, defaultBranch(r))
@@ -219,5 +219,5 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	detail.Behind = detail.LastBuildSHA != "" && mainSHA != "" && detail.LastBuildSHA != mainSHA
 
 	detail.LastBuild = buildOK
-	return detail.outcome(spine.OK, "", "")
+	return detail.outcome(spine.OK, "", "", "")
 }

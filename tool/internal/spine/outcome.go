@@ -83,10 +83,16 @@ func APIReason(r providers.Reason) ReasonCode {
 // a verdict on the credential. A rate limit in particular must never answer Failing: the tool
 // being throttled is not the site being broken, and reporting it as Failing would page an
 // operator for a fault they cannot fix.
+//
+// A Failing outcome here sets Code, never Detail: spine cannot import health, so the prose that
+// renders CodeCredsUnauthorized and CodeCredsForbidden lives in health's own messages table,
+// keyed on the Code this function sets.
 func ReasonToOutcome(r providers.Reason) Outcome {
 	switch r {
-	case providers.ReasonUnauthorized, providers.ReasonForbidden:
-		return Outcome{State: Failing, Detail: r.String()}
+	case providers.ReasonUnauthorized:
+		return Outcome{State: Failing, Code: CodeCredsUnauthorized}
+	case providers.ReasonForbidden:
+		return Outcome{State: Failing, Code: CodeCredsForbidden}
 	default:
 		return Outcome{State: Unknown, Reason: APIReason(r)}
 	}
@@ -116,22 +122,34 @@ type OutcomeField struct {
 // can have two different remedies, and a check with a catalogued remedy for one failure mode
 // usually has none for the rest. A verdict no condition id names leaves it ConditionNone, which
 // is what a renderer reads to omit the remedy line.
+//
+// Code is the tool-owned analogue of Condition for a Failing verdict the engine's own registry
+// names no id for. It is set only alongside Failing, and never alongside a Condition: the two
+// name the same failure at most once, through whichever vocabulary actually owns it.
 type Outcome struct {
 	State     State
 	Reason    ReasonCode
 	Condition Condition
+	Code      Code
 	Detail    string
 	Fields    []OutcomeField
 }
 
-// Validate reports an error if Outcome does not match the one Reason rule every check obeys: a
-// non-Unknown State must carry no Reason, and an Unknown State must carry one.
+// Validate reports an error if Outcome does not match the rules every check obeys: a non-Unknown
+// State must carry no Reason and an Unknown State must carry one; a Code is set only alongside
+// Failing; and Condition and Code never both name the same failure.
 func (o Outcome) Validate() error {
 	if o.State == Unknown && o.Reason == "" {
 		return errors.New("spine: an Unknown outcome must carry a Reason")
 	}
 	if o.State != Unknown && o.Reason != "" {
 		return errors.New("spine: a non-Unknown outcome must carry no Reason")
+	}
+	if o.Code != CodeNone && o.State != Failing {
+		return errors.New("spine: a Code must be carried only by a Failing outcome")
+	}
+	if o.Code != CodeNone && o.Condition != ConditionNone {
+		return errors.New("spine: an outcome must not carry both a Condition and a Code")
 	}
 	return nil
 }

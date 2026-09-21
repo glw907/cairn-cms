@@ -92,6 +92,10 @@ func TestOutcomeValidate(t *testing.T) {
 		{name: "ok carrying a reason", outcome: Outcome{State: OK, Reason: ReasonTimeout}, wantErr: true},
 		{name: "failing carrying a reason", outcome: Outcome{State: Failing, Reason: ReasonTimeout}, wantErr: true},
 		{name: "unknown with no reason", outcome: Outcome{State: Unknown}, wantErr: true},
+		{name: "failing with a code", outcome: Outcome{State: Failing, Code: CodeHTTPSHSTSOff}, wantErr: false},
+		{name: "ok carrying a code", outcome: Outcome{State: OK, Code: CodeHTTPSHSTSOff}, wantErr: true},
+		{name: "unknown carrying a code", outcome: Outcome{State: Unknown, Reason: ReasonTimeout, Code: CodeHTTPSHSTSOff}, wantErr: true},
+		{name: "failing carrying both a condition and a code", outcome: Outcome{State: Failing, Condition: ConditionEdgeHTTPSNotForced, Code: CodeHTTPSHSTSOff}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -212,22 +216,26 @@ func TestReasonToOutcome(t *testing.T) {
 	tests := []struct {
 		reason    providers.Reason
 		wantState State
+		wantCode  Code
 	}{
-		{providers.ReasonUnauthorized, Failing},
-		{providers.ReasonForbidden, Failing},
-		{providers.ReasonNotFound, Unknown},
-		{providers.ReasonBuildsNotConnected, Unknown},
-		{providers.ReasonBuildsRepoNotSelected, Unknown},
-		{providers.ReasonBuildsAppNotAuthorized, Unknown},
-		{providers.ReasonSenderNotConfigured, Unknown},
-		{providers.ReasonRateLimited, Unknown},
-		{providers.ReasonUnknown, Unknown},
+		{providers.ReasonUnauthorized, Failing, CodeCredsUnauthorized},
+		{providers.ReasonForbidden, Failing, CodeCredsForbidden},
+		{providers.ReasonNotFound, Unknown, CodeNone},
+		{providers.ReasonBuildsNotConnected, Unknown, CodeNone},
+		{providers.ReasonBuildsRepoNotSelected, Unknown, CodeNone},
+		{providers.ReasonBuildsAppNotAuthorized, Unknown, CodeNone},
+		{providers.ReasonSenderNotConfigured, Unknown, CodeNone},
+		{providers.ReasonRateLimited, Unknown, CodeNone},
+		{providers.ReasonUnknown, Unknown, CodeNone},
 	}
 	for _, tt := range tests {
 		t.Run(tt.reason.String(), func(t *testing.T) {
 			got := ReasonToOutcome(tt.reason)
 			if got.State != tt.wantState {
 				t.Errorf("ReasonToOutcome(%v).State = %v, want %v", tt.reason, got.State, tt.wantState)
+			}
+			if got.Code != tt.wantCode {
+				t.Errorf("ReasonToOutcome(%v).Code = %v, want %v", tt.reason, got.Code, tt.wantCode)
 			}
 			if err := got.Validate(); err != nil {
 				t.Errorf("ReasonToOutcome(%v) produced an invalid Outcome: %v", tt.reason, err)

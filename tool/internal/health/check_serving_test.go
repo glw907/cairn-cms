@@ -77,7 +77,7 @@ func TestProbeServingBareAdmin200IsFailing(t *testing.T) {
 	probe := providers.NewProbe(srv.Client().Transport, servingResolver{})
 	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
 
-	if got.State != spine.Failing || got.Detail != "hostname-not-serving" {
+	if got.State != spine.Failing || got.Detail != detailServingHostnameMismatch() {
 		t.Errorf("Outcome = %+v, want Failing hostname-not-serving", got)
 	}
 }

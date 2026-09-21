@@ -48,20 +48,17 @@ func apiErrorOutcome(err error) spine.Outcome {
 }
 
 // credentialErrorOutcome classifies err through spine.ReasonToOutcome, the module's one
-// translation from a classified provider Reason to a verdict, then relabels a Failing verdict's
-// Detail as reason.cred-revoked: a bad credential is exactly what the creds check measures, the
-// one place a 401 or 403 answers Failing rather than the Unknown every other check reports for
-// the same pair. An error this package cannot classify at all, a dial failure or a context
-// deadline, is Unknown with reason.timeout: the endpoint itself could not be reached, not merely
-// rejected.
+// translation from a classified provider Reason to a verdict: a bad credential is exactly what
+// the creds check measures, the one place a 401 or 403 answers Failing rather than the Unknown
+// every other check reports for the same pair. ReasonToOutcome already sets a typed Code for
+// that Failing case (CodeCredsUnauthorized or CodeCredsForbidden), which credentialLine renders
+// through health's own messages table, so no relabeling happens here. An error this package
+// cannot classify at all, a dial failure or a context deadline, is Unknown with reason.timeout:
+// the endpoint itself could not be reached, not merely rejected.
 func credentialErrorOutcome(err error) spine.Outcome {
 	var pe providers.ProviderError
 	if !errors.As(err, &pe) {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonTimeout}
 	}
-	outcome := spine.ReasonToOutcome(pe.ClassifiedReason())
-	if outcome.State == spine.Failing {
-		outcome.Detail = string(spine.ReasonCredRevoked)
-	}
-	return outcome
+	return spine.ReasonToOutcome(pe.ClassifiedReason())
 }

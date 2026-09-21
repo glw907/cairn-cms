@@ -125,8 +125,8 @@ func TestCredsCheckRevokedCredentialIsFailing(t *testing.T) {
 	if outcome.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", outcome.State)
 	}
-	if !strings.Contains(outcome.Detail, string(spine.ReasonCredRevoked)) {
-		t.Errorf("Detail = %q, want it to name %s", outcome.Detail, spine.ReasonCredRevoked)
+	if outcome.Code != spine.CodeCredsUnauthorized {
+		t.Errorf("Code = %v, want %v", outcome.Code, spine.CodeCredsUnauthorized)
 	}
 	if err := outcome.Validate(); err != nil {
 		t.Errorf("Validate: %v", err)
@@ -149,8 +149,8 @@ func TestCredsCheckExpiringGitHubTokenIsFailing(t *testing.T) {
 	if outcome.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", outcome.State)
 	}
-	if !strings.Contains(outcome.Detail, string(spine.ReasonCredExpiring)) {
-		t.Errorf("Detail = %q, want it to name %s", outcome.Detail, spine.ReasonCredExpiring)
+	if outcome.Code != spine.CodeCredsExpiringSoon {
+		t.Errorf("Code = %v, want %v", outcome.Code, spine.CodeCredsExpiringSoon)
 	}
 	if err := outcome.Validate(); err != nil {
 		t.Errorf("Validate: %v", err)
@@ -186,8 +186,8 @@ func TestCredsCheckExpiryVerdictFollowsOptionsNow(t *testing.T) {
 	if outcome.State != spine.Failing {
 		t.Errorf("with Now 10 days before expiry: State = %v, want Failing", outcome.State)
 	}
-	if !strings.Contains(outcome.Detail, string(spine.ReasonCredExpiring)) {
-		t.Errorf("Detail = %q, want it to name %s", outcome.Detail, spine.ReasonCredExpiring)
+	if outcome.Code != spine.CodeCredsExpiringSoon {
+		t.Errorf("Code = %v, want %v", outcome.Code, spine.CodeCredsExpiringSoon)
 	}
 }
 

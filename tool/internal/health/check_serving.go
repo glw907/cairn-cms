@@ -42,14 +42,14 @@ func probeServing(ctx context.Context, probe *providers.Probe, r record.Record, 
 		if primary.matches {
 			return spine.Outcome{State: spine.OK}
 		}
-		return spine.Outcome{State: spine.Failing, Detail: "hostname-not-serving"}
+		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingMismatch, Detail: detailServingHostnameMismatch()}
 	}
 
 	if fallback := probeOrigin(ctx, probe, "http://"+domain); fallback.reachable {
 		if fallback.matches {
 			return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkCertificatePending)}
 		}
-		return spine.Outcome{State: spine.Failing, Detail: "hostname-not-serving"}
+		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingMismatch, Detail: detailServingHostnameMismatch()}
 	}
 
 	return diagnoseUnreachable(ctx, probe, r, domain, providers.RequestTimeout)

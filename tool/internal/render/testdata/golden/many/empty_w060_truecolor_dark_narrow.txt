@@ -1,0 +1,8 @@
+[1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227m0 sites[m
+
+[38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email and errors could[m
+[38;2;247;172;77mnot run[m
+[38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires[m
+[38;2;168;164;158m2026-09-26, in 6 days[m
+
+[1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227m0 sites[m

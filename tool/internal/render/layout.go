@@ -102,14 +102,29 @@ func checkedAt(r health.Report, fallback time.Time) time.Time {
 	return fallback
 }
 
-// checkedPhrase renders when a report was gathered. Recency is relative with the absolute in
-// parentheses, except for a run settled within the last minute, where a relative reading adds
-// nothing to the stamp beside it.
-func checkedPhrase(at, now time.Time) string {
+// checkedPhrase renders when a report was gathered and, where the caller measured one, how long
+// the run itself took. Recency is relative with the absolute in parentheses, except for a run
+// settled within the last minute, where a relative reading adds nothing to the stamp beside it.
+// The three facts are separated by commas, so a reader does not take the elapsed time for part
+// of the stamp.
+func checkedPhrase(at, now time.Time, elapsed time.Duration) string {
+	out := "checked " + stamp(at)
 	if d := now.Sub(at); d >= time.Minute {
-		return "checked " + relative(d) + " ago (" + stamp(at) + ")"
+		out = "checked " + relative(d) + " ago (" + stamp(at) + ")"
 	}
-	return "checked " + stamp(at)
+	if elapsed > 0 {
+		out += ", in " + latency(elapsed)
+	}
+	return out
+}
+
+// latency spells a measured duration the way the copy standard's units rule asks: whole
+// milliseconds under a second, and seconds to one decimal above it.
+func latency(d time.Duration) string {
+	if d < time.Second {
+		return strconv.Itoa(int(d.Milliseconds())) + "ms"
+	}
+	return strconv.FormatFloat(d.Seconds(), 'f', 1, 64) + "s"
 }
 
 // stamp writes an instant in ISO order carrying its own real zone offset. The value's own
@@ -242,6 +257,11 @@ func (t Theme) verdictLines(v Verdict, subject, tally string, width int) []strin
 	if subject != "" {
 		head += "  " + t.Strong(RoleText).Render(subject)
 	}
+	// A run with nothing to count says nothing rather than trailing two spaces after its
+	// subject: the empty registry is the one frame that reaches here with no tally at all.
+	if tally == "" {
+		return []string{head}
+	}
 	if t.Width(word)+2+t.Width(subject)+2+t.Width(tally) <= width {
 		return []string{head + "  " + t.Style(RoleMuted).Render(tally)}
 	}
@@ -308,6 +328,32 @@ func wrap(text string, width int) []string {
 		out = append(out, strings.TrimRight(cur, " "))
 	}
 	return out
+}
+
+// wrapNoOrphan wraps text to width and then pulls one word down from the line above whenever the
+// last line is a single word, so a sentence never ends on a stray verb sitting alone. It gives
+// up where the line above has nothing to spare, which is the only shape where an orphan is the
+// honest result: a single token wider than the width has nowhere else to go.
+func wrapNoOrphan(text string, width int) []string {
+	lines := wrap(text, width)
+	if len(lines) < 2 {
+		return lines
+	}
+	last := len(lines) - 1
+	if len(strings.Fields(lines[last])) != 1 {
+		return lines
+	}
+	words := strings.Fields(lines[last-1])
+	if len(words) < 2 {
+		return lines
+	}
+	moved := words[len(words)-1]
+	if textWidth(moved)+1+textWidth(lines[last]) > width {
+		return lines
+	}
+	lines[last-1] = strings.Join(words[:len(words)-1], " ")
+	lines[last] = moved + " " + lines[last]
+	return lines
 }
 
 // cutAt splits s after width cells, returning the head and the remainder. It walks runes rather

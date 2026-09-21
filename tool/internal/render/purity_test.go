@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -159,4 +160,116 @@ func TestNoLipglossSetterOutsidePaletteGo(t *testing.T) {
 			return true
 		})
 	}
+}
+
+// exportedSurface is the whole of what this package exports, listed by name so every later
+// addition is a deliberate one a reviewer reads rather than a widening nobody noticed.
+//
+// The list is longer than Task 20b-ii's criterion 16 enumerates, and the difference is recorded
+// rather than hidden: View and its constants, SelectBody, Env, Terminal, Glyphs, and Credential all
+// landed with the foundations and the first bodies, and the criterion's own prose names only the
+// types it was adding to. Everything here is reachable from Render's input or its output.
+var exportedSurface = []string{
+	"Body", "BodyMany", "BodyPlain", "BodySingle",
+	"Credential",
+	"DetectProfile",
+	"Env",
+	"Frame",
+	"GlyphSet", "Glyphs",
+	"NewTheme",
+	"Profile", "ProfileANSI16", "ProfileANSI256", "ProfileNoColor", "ProfileTrueColor",
+	"Render", "RenderInput",
+	"Role", "RoleAccent", "RoleFailing", "RoleMuted", "RoleOK", "RoleRule", "RoleSubtle",
+	"RoleText", "RoleUnknown",
+	"Sanitize", "SelectBody", "StatusState",
+	"Terminal", "Theme",
+	"Verdict",
+	"View", "ViewHealth", "ViewLogs", "ViewStatus",
+	"Width100", "Width80", "WidthCap", "WidthFloor", "WidthNarrow",
+}
+
+// exportedThemeMethods is Theme's own exported method set, the seam the 2.0 HUD imports
+// unchanged. Style and Sized are the only two ways out of palette.go, and every other entry is
+// one of them constrained.
+var exportedThemeMethods = []string{
+	"Clamp", "Link", "Rule", "Sized", "SizedLink", "SizedStrong", "Strong", "Style", "Width",
+}
+
+// TestExportedSurfaceIsPinned falsifies criterion 16: the package's exported surface is exactly
+// the list above, so an addition or a removal fails here and is named in the diff. A later task
+// widening the surface updates this list in the same change.
+func TestExportedSurfaceIsPinned(t *testing.T) {
+	var got []string
+	for _, sf := range packageSourceFiles(t, false) {
+		for _, decl := range sf.file.Decls {
+			got = append(got, exportedNames(decl)...)
+		}
+	}
+	slices.Sort(got)
+	want := slices.Clone(exportedSurface)
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("exported surface is\n%v\nwant\n%v", got, want)
+	}
+}
+
+// exportedNames returns the exported top-level names one declaration introduces, skipping a
+// method, which belongs to its receiver's own surface rather than to the package's.
+func exportedNames(decl ast.Decl) []string {
+	var out []string
+	switch d := decl.(type) {
+	case *ast.FuncDecl:
+		if d.Recv == nil && d.Name.IsExported() {
+			out = append(out, d.Name.Name)
+		}
+	case *ast.GenDecl:
+		for _, spec := range d.Specs {
+			switch s := spec.(type) {
+			case *ast.TypeSpec:
+				if s.Name.IsExported() {
+					out = append(out, s.Name.Name)
+				}
+			case *ast.ValueSpec:
+				for _, name := range s.Names {
+					if name.IsExported() {
+						out = append(out, name.Name)
+					}
+				}
+			}
+		}
+	}
+	return out
+}
+
+// TestThemeMethodSetIsPinned holds the other half of the surface: a Theme method is as public as
+// a package function, since Theme is what the HUD will hold.
+func TestThemeMethodSetIsPinned(t *testing.T) {
+	var got []string
+	for _, sf := range packageSourceFiles(t, false) {
+		for _, decl := range sf.file.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv == nil || !fn.Name.IsExported() || receiverName(fn) != "Theme" {
+				continue
+			}
+			got = append(got, fn.Name.Name)
+		}
+	}
+	slices.Sort(got)
+	want := slices.Clone(exportedThemeMethods)
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("Theme's exported methods are %v, want %v", got, want)
+	}
+}
+
+// receiverName returns the type name fn is a method on, following one pointer.
+func receiverName(fn *ast.FuncDecl) string {
+	expr := fn.Recv.List[0].Type
+	if star, ok := expr.(*ast.StarExpr); ok {
+		expr = star.X
+	}
+	if ident, ok := expr.(*ast.Ident); ok {
+		return ident.Name
+	}
+	return ""
 }

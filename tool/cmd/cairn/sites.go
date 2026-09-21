@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
@@ -92,6 +93,9 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	if err := writeSites(cmd, entries, f, rf, verdict); err != nil {
 		return err
 	}
+	if err := writeSitesStatus(cmd, d, rf, f, verdict); err != nil {
+		return err
+	}
 	for _, e := range listErrs {
 		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "cairn:", e); err != nil {
 			return err
@@ -99,6 +103,27 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	}
 
 	d.exit(int(verdict))
+	return nil
+}
+
+// writeSitesStatus prints the run's own credential state under the listing. A listing has no
+// creds row for that detail to sit on, which is the one place it stands alone: an operator
+// looking at a registry of sites the tool cannot fully check should learn why here rather than
+// from the first health run that skips half its checks.
+//
+// It is silent under --json, where the payload is the output, and silent on a quiet OK run for
+// the same reason the listing is.
+func writeSitesStatus(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags, verdict spine.Verdict) error {
+	if f.asJSON || (rf.quiet && verdict == spine.VerdictOK) {
+		return nil
+	}
+	in := renderInput(d, rf, nil, verdict, runStatus(buildClients(d), 0, false))
+	in.View = render.ViewStatus
+	for _, line := range render.Render(in).Lines() {
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

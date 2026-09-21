@@ -618,6 +618,23 @@ failure message (which names this document), the B2 plan's per-task acceptance c
 `cairn-implementer` agent definition. A copy standard that lives only in a review file reaches
 nobody.
 
+### 4.7 Strings owed to the editorial gate (Task 20b-ii, 2026-09-21)
+
+The render's fleet body, its log body, and its status line each needed a fragment this catalogue
+does not carry. Each is the plainest form satisfying 2.4 through 2.8, written to the fixed
+vocabulary of 2.9, and each is **owed to the Task 22a editorial gate** rather than adopted here.
+
+| where | string | why it was needed |
+|---|---|---|
+| status line, a token the run could not find | `CAIRN_GH_READ_TOKEN is not set, so deploy, engine and publish-path could not run` | 3.3 deletes the old degraded notice and says "the rows name the checks", which a site listing has no rows to do |
+| status line, a token the run found | `CAIRN_CF_READ_TOKEN read from the keyring` | brief ruling 8 moved the keyring detail off the header and onto the `creds` row, and 3.1 deletes the `cf:`/`gh:` form without writing its replacement |
+| status line, a token's expiry | `CAIRN_CF_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days` | the date and countdown are 3.4's own approved `creds` row form, here as a clause on the token's line |
+| status line, a degraded run naming no token | `some checks could not run for want of a token` | 3.3 deletes `degraded: some checks could not run`; this keeps the section's own words and drops the label |
+| fix table, a check blocked by a missing token | `Run \`cairn auth set\` naming the missing token, then run the command again.` | 3.3's row names one variable, and one table entry covers both tokens; the renderer names the variable beside the entry |
+| fleet fix list, a fix covering several checks | `fix for: creds, delegation, deploy` | the plain body's own key (Task 20b-i), reused so a grouped entry says what it covers once |
+| log body, a query that matched nothing | `no records` | 3.1 keeps the log rule and the record count and writes no empty state |
+| fallback table headings | `site`, `verdict`, `failing`, `could not run`, `held`, `checked` | the section vocabulary as column headings; `engine` is absent because `health.Report` names no installed version |
+
 ---
 
 ## 5. Limits of this pass

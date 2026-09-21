@@ -143,6 +143,17 @@ func (t Theme) Link(role Role, url string) lipgloss.Style {
 	return t.Style(role).Hyperlink(url)
 }
 
+// SizedLink returns role's style constrained to a fixed-width cell and carrying url as an OSC 8
+// hyperlink, the pairing a linked column field needs. It lives here rather than at a call site
+// because Style and Sized are the only two ways out of this file, and a column that links has to
+// take its width from the same place every other column does.
+func (t Theme) SizedLink(role Role, url string, w int) lipgloss.Style {
+	if w < 0 {
+		w = 0
+	}
+	return t.Link(role, url).Width(w).MaxWidth(w)
+}
+
 // Sized returns role's style constrained to a fixed-width cell: Width(w).MaxWidth(w), the
 // construction go-conventions names for this package and Task 20b's bodies (padding inside the
 // styled block, cut at the same width, so a selected row can later take a full-width ground).

@@ -1,0 +1,36 @@
+verdict: [1;38;2;247;172;77mUNKNOWN[m - topo.907.life, 9 could not run, 0 passing
+checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
+
+delegation: skip
+reason: reason.cred-missing
+
+serving: skip
+reason: the site did not answer
+
+deploy: skip
+reason: reason.cred-missing
+
+publish-path: skip
+reason: reason.cred-missing
+
+email: skip
+reason: reason.cred-missing
+
+errors: skip
+reason: reason.cred-missing
+
+https-forced: skip
+reason: reason.cred-missing
+
+creds: skip
+reason: reason.cred-missing
+
+engine: skip
+reason: the installed or latest version is not in the published version list
+
+fix for: delegation, deploy, publish-path, email, errors, https-forced, creds
+fix: Run `cairn auth set` naming the missing token, then run the command again.
+fix actor: operator
+
+verdict: [1;38;2;247;172;77mUNKNOWN[m - topo.907.life, 9 could not run, 0 passing
+exit: 3

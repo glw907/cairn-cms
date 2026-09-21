@@ -1,0 +1,21 @@
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 CRITICAL[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 14:28-08:00), in 16.3s[m
+
+[38;2;168;164;158msite[m      [38;2;168;164;158mverdict[m   [38;2;168;164;158mfailing[m  [38;2;168;164;158mcould not run[m  [38;2;168;164;158mheld[m  [38;2;168;164;158mchecked[m
+[1;38;2;234;231;227m907.life[m  [1;38;2;255;142;134mCRITICAL[m  [38;2;255;142;134m3[m        [38;2;247;172;77m2[m              [38;2;168;164;158m1[m     [38;2;168;164;158m4m ago[m
+
+[38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email and errors could not run[m
+[38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m  [38;2;168;164;158mdeploy[m[38;2;168;164;158m[m
+      [38;2;193;189;184mRead the build log in the Cloudflare dashboard, then push a fix.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m  [38;2;168;164;158mcreds[m[38;2;168;164;158m[m
+      [38;2;193;189;184mCreate a new token, then run `cairn auth set` naming the credential.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m  [38;2;168;164;158mengine[m[38;2;168;164;158m[m
+      [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m  [38;2;168;164;158memail[m         [38;2;168;164;158mCAIRN_CF_READ_TOKEN[m
+      [38;2;193;189;184mRun `cairn auth set` naming the missing token, then run the command again.[m
+      [38;2;168;164;158mfix for: email, errors[m
+
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 CRITICAL[m

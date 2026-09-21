@@ -39,7 +39,7 @@ func renderPlain(t Theme, in RenderInput) Frame {
 
 	f := Frame{Header: []string{
 		verdict,
-		keyChecked + checkedPhraseValue(checkedAt(report, in.Now), in.Now),
+		keyChecked + checkedPhraseValue(checkedAt(report, in.Now), in.Now, in.Status.Elapsed),
 	}}
 
 	var body []string
@@ -90,8 +90,8 @@ func (t Theme) verdictKeyLine(v Verdict, site, tally string) string {
 
 // checkedPhraseValue is checkedPhrase's value half, with the leading "checked " dropped: this
 // body's own key already carries the word.
-func checkedPhraseValue(at, now time.Time) string {
-	return strings.TrimPrefix(checkedPhrase(at, now), "checked ")
+func checkedPhraseValue(at, now time.Time, elapsed time.Duration) string {
+	return strings.TrimPrefix(checkedPhrase(at, now, elapsed), "checked ")
 }
 
 // plainCheck renders one check's own lines: its state, the condition id where its verdict
@@ -168,6 +168,9 @@ func groupFixes(skipped []health.CheckResult) []fixGroup {
 	var out []fixGroup
 	for _, c := range skipped {
 		fix, ok := health.FixFor(c.Outcome)
+		if !ok {
+			fix, ok = health.FixForReason(c.Outcome.Reason)
+		}
 		if !ok || fix.Text == "" {
 			continue
 		}

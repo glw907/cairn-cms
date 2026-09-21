@@ -33,6 +33,9 @@ const (
 	ViewHealth View = iota
 	// ViewLogs renders a site's log entries.
 	ViewLogs
+	// ViewStatus renders the run's own state alone, the frame a site listing ends on: it has no
+	// creds row for the credential detail to sit on, and the detail is not header material.
+	ViewStatus
 )
 
 // Body names the layout a frame composes into. SelectBody picks one from the run's scope and
@@ -92,6 +95,12 @@ type RenderInput struct {
 	Reports []health.Report
 	// Entries holds a log query's records, newest first, for ViewLogs.
 	Entries []logs.Entry
+	// Site names the subject a view that carries no report still has to name, which is the log
+	// excerpt's own section rule. A health view reads the name off its report instead.
+	Site string
+	// Status carries the run's own state beside its checks: the wall time, the provider tokens,
+	// and whether a missing one degraded the run.
+	Status StatusState
 	// Verdict is the run's aggregate verdict, computed by spine.ExitCode at the call site, so an
 	// operator reading the word and a routine reading the exit code cannot disagree.
 	Verdict Verdict
@@ -112,15 +121,29 @@ func (in RenderInput) width() int {
 
 // Render composes in into a Frame. It is pure: no I/O, no clock, no environment, no terminal.
 //
-// BodyMany draws the first report through the single-site body and nothing else. The status
-// strip that body is for is Task 20b-ii's, and until it lands cmd/cairn sweeps many sites by
-// calling Render once per site rather than handing the whole set to one frame.
+// The view decides first and the body second. ViewLogs and ViewStatus each have one form, since
+// neither carries the per-check grammar the three health bodies differ over; a caller writing to
+// a pipe prints its own line-oriented form for those two rather than asking for a column layout
+// nothing will read.
 func Render(in RenderInput) Frame {
 	t := NewTheme(in.Dark, in.Profile)
-	if in.Body == BodyPlain {
+	switch {
+	case in.View == ViewStatus:
+		return renderStatus(t, in)
+	case in.View == ViewLogs:
+		return renderLogs(t, in)
+	case in.Body == BodyPlain:
 		return renderPlain(t, in)
+	case in.Body == BodyMany:
+		return renderMany(t, in)
+	default:
+		return renderSingle(t, in)
 	}
-	return renderSingle(t, in)
+}
+
+// renderStatus draws the run's own state and nothing else.
+func renderStatus(t Theme, in RenderInput) Frame {
+	return t.clampFrame(Frame{Body: t.statusLines(in, 0, in.width())}, in.width())
 }
 
 // Frame is render.Render's result, sectioned the way the 2.0 HUD pins it: a header that never

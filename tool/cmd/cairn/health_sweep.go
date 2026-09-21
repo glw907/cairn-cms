@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
+	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
@@ -43,8 +44,18 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 
 	out := cmd.OutOrStdout()
 	sites := make([]spine.SiteVerdicts, 0, len(entries))
+	reports := make([]health.Report, 0, len(entries))
 	cut := len(entries)
 	wroteAny := false
+
+	// More than one site on a terminal is one fleet frame, so the sweep holds its reports and
+	// renders them together at the end rather than printing a single-site body per site. A pipe
+	// still gets one plain block per site as it settles, which is what a cron mail and a CI log
+	// read, and what lets a long sweep show progress where a frame cannot.
+	clients := buildClients(d)
+	started := d.now()
+	fleet := !f.asJSON &&
+		render.SelectBody(len(entries), detectTerminal(d, rf).TTY) == render.BodyMany
 
 	writeSeparator := func() error {
 		if !wroteAny {
@@ -65,14 +76,14 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			break
 		}
 
-		if !f.asJSON {
+		if !f.asJSON && !fleet {
 			if err := writeSeparator(); err != nil {
 				return err
 			}
 		}
 
 		siteCtx, siteCancel := siteBudget(envelope, rf, len(entries)-i)
-		report, err := health.Run(siteCtx, e.Record, buildClients(d), health.All, health.Options{
+		report, err := health.Run(siteCtx, e.Record, clients, health.All, health.Options{
 			ErrorThreshold: f.errorThreshold,
 			LogWindow:      window,
 			Now:            d.now,
@@ -84,24 +95,28 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 
 		checks := siteVerdicts(report)
 		sites = append(sites, checks)
-		if f.asJSON {
-			data, err := report.JSON(rf.verbose)
-			if err != nil {
-				return err
-			}
-			if _, err := fmt.Fprintf(out, "%s\n", data); err != nil {
-				return err
+		reports = append(reports, report)
+		if f.asJSON || fleet {
+			if f.asJSON {
+				data, err := report.JSON(rf.verbose)
+				if err != nil {
+					return err
+				}
+				if _, err := fmt.Fprintf(out, "%s\n", data); err != nil {
+					return err
+				}
 			}
 			continue
 		}
 		verdict := spine.ExitCode([]spine.SiteVerdicts{checks}, nil, 0)
-		if err := writeHealthBody(out, d, rf, report, verdict, rf.quiet); err != nil {
+		if err := writeHealthBody(out, d, rf, []health.Report{report}, verdict,
+			runStatus(clients, 0, report.Degraded), rf.quiet); err != nil {
 			return err
 		}
 	}
 
 	for _, rest := range entries[cut:] {
-		if !f.asJSON {
+		if !f.asJSON && !fleet {
 			if err := writeSeparator(); err != nil {
 				return err
 			}
@@ -113,9 +128,23 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 	}
 
 	verdict := spine.ExitCode(sites, listErrs, 0)
+	switch {
+	// --quiet on an OK sweep writes nothing at all, the rule that makes a cron-driven green run
+	// silent and mail-free, and on any other verdict hands the frame its failing checks alone.
+	case fleet && rf.quiet && verdict == spine.VerdictOK:
+	case fleet:
+		status := runStatus(clients, d.now().Sub(started), anyDegraded(reports))
+		if err := writeHealthBody(out, d, rf, reports, verdict, status, rf.quiet); err != nil {
+			return err
+		}
+		for _, rest := range entries[cut:] {
+			if err := writeSweepTimeout(out, rest.ID); err != nil {
+				return err
+			}
+		}
 	// The bare aggregate verdict word is not itself JSON, so it is omitted under --json rather
 	// than corrupting the newline-delimited JSON this sweep otherwise emits, one object per site.
-	if !f.asJSON {
+	case !f.asJSON:
 		if err := writeSeparator(); err != nil {
 			return err
 		}
@@ -131,6 +160,16 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 
 	d.exit(int(verdict))
 	return nil
+}
+
+// anyDegraded reports whether a missing token cost any site in the sweep some of its checks.
+func anyDegraded(rs []health.Report) bool {
+	for _, r := range rs {
+		if r.Degraded {
+			return true
+		}
+	}
+	return false
 }
 
 // writeSweepTimeout writes the line naming a site the sweep never reached, because the run's

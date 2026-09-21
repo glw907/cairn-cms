@@ -1,14 +1,19 @@
 package render
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
+	"github.com/glw907/cairn-cms/tool/internal/logs"
 	"github.com/glw907/cairn-cms/tool/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
@@ -17,36 +22,48 @@ import (
 // it; a reviewer reads the resulting diff as the frame's own change.
 var updateGolden = flag.Bool("update", false, "rewrite the golden frames from this renderer")
 
-// goldenCase is one frame cut and committed: a fixture, a body, a width, and a tier.
+// goldenDir is the committed corpus's own root.
+const goldenDir = "testdata/golden"
+
+// goldenRungs are the widths every golden is cut at: the named rung constants, so a frame is
+// pinned at the floor, at the single-column threshold, and at each of the three rungs above it.
+var goldenRungs = []int{WidthFloor, WidthNarrow, Width80, Width100, WidthCap}
+
+// goldenCase is one frame cut and committed. The fields are the whole of what changes its bytes,
+// which is what lets goldenName carry every one of them in the file name.
 type goldenCase struct {
-	name    string
+	// view names the surface, and is the corpus subdirectory.
+	view string
+	// fixture names the input, and is the file's own stem.
+	fixture string
+	// reports is the health sweep the frame draws, empty for the log view.
 	reports []health.Report
-	body    Body
+	// entries is the log excerpt the frame draws, empty for a health view.
+	entries []logs.Entry
+	// body is the layout a health view composes into.
+	body Body
+	// width, profile, dark, and ascii are the four presentation axes.
 	width   int
 	profile Profile
+	dark    bool
 	ascii   bool
-	verdict Verdict
+	// height is the row budget, 0 for the unbounded frame every CLI run asks for.
+	height int
 }
 
-// file returns the golden's own file name, which carries every input that changes its bytes.
-func (c goldenCase) file() string {
-	parts := []string{c.name, bodyName(c.body), "w" + strconv.Itoa(c.width), profileName(c.profile)}
-	if c.ascii {
-		parts = append(parts, "ascii")
+// goldenName is the sole source of a golden's path, for writing one and for recognising an
+// orphan, so the corpus cannot drift into two naming schemes.
+func goldenName(view, fixture string, width int, profile Profile, dark, ascii bool, height int) string {
+	parts := []string{fixture, fmt.Sprintf("w%03d", width), profileName(profile), groundName(dark), tableName(ascii)}
+	if height > 0 {
+		parts = append(parts, fmt.Sprintf("h%03d", height))
 	}
-	return strings.Join(parts, "-") + ".txt"
+	return filepath.Join(goldenDir, view, strings.Join(parts, "_")+".txt")
 }
 
-// bodyName names a body for a golden's file name.
-func bodyName(b Body) string {
-	switch b {
-	case BodyMany:
-		return "many"
-	case BodyPlain:
-		return "plain"
-	default:
-		return "single"
-	}
+// path returns c's own golden path.
+func (c goldenCase) path() string {
+	return goldenName(c.view, c.fixture, c.width, c.profile, c.dark, c.ascii, c.height)
 }
 
 // profileName names a colour profile for a golden's file name.
@@ -61,6 +78,24 @@ func profileName(p Profile) string {
 	default:
 		return "nocolor"
 	}
+}
+
+// groundName names the background branch.
+func groundName(dark bool) string {
+	if dark {
+		return "dark"
+	}
+	return "light"
+}
+
+// tableName names the width table a frame is measured under, which is the glyph tier: the
+// Unicode tier assumes East Asian Ambiguous reads narrow, and a terminal set the other way takes
+// the ASCII tier, which is exact on both tables (width.go).
+func tableName(ascii bool) string {
+	if ascii {
+		return "ascii"
+	}
+	return "narrow"
 }
 
 // verdictFor returns the verdict spine's own arithmetic settles for a fixture, so a golden's
@@ -83,65 +118,201 @@ func verdictFor(reports []health.Report) Verdict {
 	return spine.ExitCode(sites, listErrs, 0)
 }
 
-// goldenCases is the committed corpus: every fixture through the single-site and plain bodies,
-// plus the four widths that pin where the condition id sits and the two tiers that have to carry
-// the frame with no hue at all.
+// goldenStatus is the run state every golden is cut against: one token the run could not find,
+// and one read from the keyring with an expiry, so the status line's three shapes are all pinned
+// rather than described.
+//
+// The two agree with the one-sick fixture's own creds row, which says the Cloudflare token was
+// not found and the GitHub one came from the keyring, and with the email and errors checks it
+// could not run: a golden whose status line contradicted the row beside it would be pinning a
+// frame no run can produce.
+func goldenStatus() StatusState {
+	return StatusState{
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Disables: []string{"email", "errors"}},
+			{
+				Variable: "CAIRN_GH_READ_TOKEN",
+				Provider: providerKeyring,
+				Expires:  fixtures.Now().Add(6 * 24 * time.Hour),
+			},
+		},
+	}
+}
+
+// goldenLogEntries is the log excerpt the log view's goldens are cut from. It lives here rather
+// than in the fixtures package because that package's corpus is health reports and Task 20b-i
+// owns its shape: this half adds no fixture to it.
+func goldenLogEntries() []logs.Entry {
+	// The zone is built rather than parsed. time.Parse resolves an offset that matches the
+	// machine's own location to that location, so a parsed stamp formats its zone differently on
+	// a workstation set to it than on a runner set to UTC, and the golden moves with the machine.
+	at := func(minute int) time.Time {
+		return time.Date(2026, 9, 20, 14, minute, 0, 0, time.FixedZone("AKDT", -8*3600))
+	}
+	field := func(key, value string) logs.Field {
+		raw, err := json.Marshal(value)
+		if err != nil {
+			panic(err)
+		}
+		return logs.Field{Key: key, Value: raw}
+	}
+	return []logs.Entry{
+		{At: at(28), Level: "info", Event: "entry.published", Fields: []logs.Field{
+			field("editor", "dana@ecxc.ski"), field("sha", "c02e17f")}},
+		{At: at(21), Level: "error", Event: "commit.failed", Fields: []logs.Field{
+			field("editor", "kari@ecxc.ski"), field("status", "422"),
+			field("reason", "the branch is behind main by 2 commits")}},
+		{At: at(20), Level: "warn", Event: "publish.failed", Fields: []logs.Field{
+			field("editor", "kari@ecxc.ski"), field("branch", "cairn/post/spring-relay")}},
+		{At: at(14), Level: "info", Event: "auth.link.requested", Fields: []logs.Field{
+			field("editor", "kari@ecxc.ski"), field("ttl", "15m")}},
+	}
+}
+
+// goldenCases is the committed corpus, and the matrix is this table rather than a full cross
+// product: four rungs of profile, ground, width table, fixture and view multiply to roughly four
+// thousand six hundred files, which is a corpus nobody reads.
+//
+// One base axis sweeps everything: TrueColor, the dark ground, the narrow width table, every
+// fixture through every view at every rung. Each other axis is pinned by one targeted frame on
+// the one-sick fixture alone, which is the scenario carrying a failure, a hold, a skip and a
+// pass at once, so a change to any of them shows up in it.
 func goldenCases() []goldenCase {
 	var out []goldenCase
+	bodies := []struct {
+		view string
+		body Body
+	}{{"single", BodySingle}, {"many", BodyMany}, {"plain", BodyPlain}}
+
 	for _, f := range fixtures.All() {
-		v := verdictFor(f.Reports)
-		out = append(out,
-			goldenCase{f.Name, f.Reports, BodySingle, 100, ProfileTrueColor, false, v},
-			goldenCase{f.Name, f.Reports, BodyPlain, 80, ProfileNoColor, true, v},
-		)
+		for _, b := range bodies {
+			for _, width := range goldenRungs {
+				out = append(out, goldenCase{
+					view: b.view, fixture: f.Name, reports: f.Reports, body: b.body,
+					width: width, profile: ProfileTrueColor, dark: true,
+				})
+			}
+		}
 	}
-	sick := fixtures.OneSick()
-	sickVerdict := verdictFor(sick)
-	for _, width := range []int{60, 80, 120} {
-		out = append(out, goldenCase{"one-sick", sick, BodySingle, width, ProfileTrueColor, false, sickVerdict})
+	for _, width := range goldenRungs {
+		out = append(out, goldenCase{
+			view: "logs", fixture: "excerpt", entries: goldenLogEntries(),
+			width: width, profile: ProfileTrueColor, dark: true,
+		})
 	}
-	out = append(out,
-		goldenCase{"one-sick", sick, BodySingle, 100, ProfileANSI16, false, sickVerdict},
-		goldenCase{"one-sick", sick, BodySingle, 100, ProfileNoColor, true, sickVerdict},
-	)
-	return out
+
+	base := goldenCase{
+		view: "single", fixture: "one-sick", reports: fixtures.OneSick(), body: BodySingle,
+		width: Width100, profile: ProfileTrueColor, dark: true,
+	}
+	for _, p := range []Profile{ProfileNoColor, ProfileANSI16, ProfileANSI256} {
+		targeted := base
+		targeted.profile = p
+		out = append(out, targeted)
+	}
+	light := base
+	light.dark = false
+	ascii := base
+	ascii.ascii = true
+	tall := base
+	tall.height = 24
+	return append(out, light, ascii, tall)
+}
+
+// render cuts c's frame from the real renderer.
+func (c goldenCase) render() string {
+	view := ViewHealth
+	if c.view == "logs" {
+		view = ViewLogs
+	}
+	return strings.Join(Render(RenderInput{
+		View:    view,
+		Body:    c.body,
+		Width:   c.width,
+		Height:  c.height,
+		Dark:    c.dark,
+		Profile: c.profile,
+		ASCII:   c.ascii,
+		Reports: c.reports,
+		Entries: c.entries,
+		Site:    "ecxc.ski",
+		Status:  goldenStatus(),
+		Verdict: verdictFor(c.reports),
+		Now:     fixtures.Now(),
+	}).Lines(), "\n") + "\n"
+}
+
+// pinEnvironment fixes every environment variable a frame could otherwise be moved by, so an
+// inherited environment can never rewrite a golden. render reads none of them itself, which is
+// what this makes provable rather than asserted.
+func pinEnvironment(t *testing.T) {
+	t.Helper()
+	for name, value := range map[string]string{
+		"TZ": "UTC", "LANG": "C", "LC_CTYPE": "C", "TERM": "dumb", "NO_COLOR": "",
+	} {
+		t.Setenv(name, value)
+	}
 }
 
 // TestGolden cuts every committed frame from the real renderer and compares it to the file. The
 // frames are the acceptance surface for this package, where the literal bytes are the value, so
 // a change to any of them is a change a reviewer reads rather than one a summary hides.
 func TestGolden(t *testing.T) {
+	pinEnvironment(t)
 	for _, c := range goldenCases() {
-		t.Run(c.file(), func(t *testing.T) {
-			got := strings.Join(Render(RenderInput{
-				View:    ViewHealth,
-				Body:    c.body,
-				Width:   c.width,
-				Dark:    true,
-				Profile: c.profile,
-				ASCII:   c.ascii,
-				Reports: c.reports,
-				Verdict: c.verdict,
-				Now:     fixtures.Now(),
-			}).Lines(), "\n") + "\n"
-
-			path := filepath.Join("testdata", "golden", c.file())
+		t.Run(c.path(), func(t *testing.T) {
+			got := c.render()
 			if *updateGolden {
-				if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+				if err := os.MkdirAll(filepath.Dir(c.path()), 0o755); err != nil {
 					t.Fatal(err)
 				}
-				if err := os.WriteFile(path, []byte(got), 0o644); err != nil {
+				if err := os.WriteFile(c.path(), []byte(got), 0o644); err != nil {
 					t.Fatal(err)
 				}
 				return
 			}
-			want, err := os.ReadFile(path)
+			want, err := os.ReadFile(c.path())
 			if err != nil {
 				t.Fatalf("%v; run `make -C tool golden` to cut it", err)
 			}
-			if got != string(want) {
-				t.Errorf("frame differs from %s\n--- got ---\n%s\n--- want ---\n%s", path, got, want)
+			// Line endings normalize before comparison, so a checkout that translated them
+			// fails on the frame rather than on every line of it.
+			if got != strings.ReplaceAll(string(want), "\r\n", "\n") {
+				t.Errorf("frame differs from %s\n--- got ---\n%s\n--- want ---\n%s", c.path(), got, want)
 			}
 		})
+	}
+}
+
+// TestGoldenCorpusHasNoOrphan walks the committed corpus against the same matrix table TestGolden
+// cuts from, so a golden left behind by a renamed fixture or a dropped rung fails here rather
+// than sitting in the tree forever looking like acceptance.
+func TestGoldenCorpusHasNoOrphan(t *testing.T) {
+	want := make([]string, 0, len(goldenCases()))
+	for _, c := range goldenCases() {
+		want = append(want, filepath.ToSlash(c.path()))
+	}
+	err := filepath.WalkDir(goldenDir, func(path string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case d.IsDir():
+			return nil
+		case !slices.Contains(want, filepath.ToSlash(path)):
+			t.Errorf("%s is in the corpus and not in the matrix; delete it or add its case", path)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestGoldenCorpusIsSized holds the corpus to the size the matrix was chosen for. A sweep that
+// grows past this is a sweep nobody reads, and one that shrinks under it has lost an axis.
+func TestGoldenCorpusIsSized(t *testing.T) {
+	if n := len(goldenCases()); n < 120 || n > 200 {
+		t.Errorf("corpus is %d frames, outside the 120 to 200 the matrix targets", n)
 	}
 }

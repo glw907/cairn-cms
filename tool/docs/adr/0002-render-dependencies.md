@@ -94,6 +94,26 @@ Task 20b-ii owns the golden sweep across real frames and real site content; it
 is the task in a position to weigh the fourth dependency against a hand-rolled
 alternative, not this one.
 
+### The deferral is resolved: the narrow table stays, and no fourth require lands (2026-09-21)
+
+Task 20b-ii ran the sweep the deferral above waits on: 146 committed frames over
+nine fixtures, four views, and five width rungs, plus a 20-to-400 width sweep at
+both glyph tiers over the same fixtures, the hostile corpus included. The
+decision is to keep the single narrow table and add no dependency.
+
+Two facts carry it. The fleet strip, the one surface this task added that spends
+a fixed column on a glyph, draws only marks from render's own glyph set, and
+every one of them is exactly one cell under the narrow table; arbitrary site
+content reaches a fixed column in one place, the site name, and it is cut to the
+column with `fitted` before the cell is rendered rather than measured and
+trusted. And the combination the wide table would protect, the Unicode tier on
+an Ambiguous=Wide terminal, is the one `measurements.txt` already records as
+unsupported: such a terminal takes the ASCII tier, whose glyphs are plain ASCII
+and exact under both tables.
+
+What would reopen it is a surface that budgets a fixed column for arbitrary text
+and cannot cut it, which is a shape none of the four views has.
+
 ## Consequences
 
 - Every downstream task in this plan (20b-i, 20b-ii, 20c, and 2.0's HUD) reaches

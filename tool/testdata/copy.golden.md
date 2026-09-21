@@ -34,6 +34,7 @@ and commit the diff.
 - Raise the @glw907/cairn-cms range in package.json, then deploy again.
 - Read the build log in the Cloudflare dashboard, then push a fix.
 - Read the events named above in Workers Logs, then push a fix.
+- Run `cairn auth set` naming the missing token, then run the command again.
 - Run `wrangler email sending enable <domain>` for the apex domain, then deploy again.
 - Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
 - Turn on HSTS for the zone under SSL/TLS, Edge Certificates.

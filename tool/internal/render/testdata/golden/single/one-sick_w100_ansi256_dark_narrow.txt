@@ -1,0 +1,26 @@
+[1;38;5;210mCRITICAL[m  [1;38;5;255m907.life[m  [38;5;246m3 failing · 2 could not run · 1 held · 3 passing[m
+[38;5;246mchecked 4m ago (2026-09-20 14:28-08:00), in 16.3s[m
+
+[38;5;238m──[m [38;5;255mfailing[m [38;5;238m─────────────────────────────────────────────────────────────────────────────────────────[m
+  [38;5;210m■[m [1;38;5;255mdeploy[m        [38;5;250mbuild failed 26m ago (3f0ba18), main is 2 commits ahead[m
+    [38;5;141m→[m [38;5;250mRead the build log in the Cloudflare dashboard, then push a fix.[m[38;5;246m[m
+  [38;5;215m□[m [1;38;5;255mcreds[m         [38;5;250mCloudflare token not found; GitHub token read from the keyring[m
+                  [38;5;215mCAIRN_CF_READ_TOKEN is not set, so email and errors could not run[m
+                  [38;5;246mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days[m
+    [38;5;141m→[m [38;5;250mCreate a new token, then run `cairn auth set` naming the credential.[m[38;5;246m[m
+  [38;5;215m□[m [1;38;5;255mengine[m        [38;5;250m0.71.0 installed, 0.78.0 latest, 7 releases behind[m
+    [38;5;141m→[m [38;5;250mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m[38;5;246m[m
+
+[38;5;238m──[m [38;5;255mcould not run[m [38;5;238m───────────────────────────────────────────────────────────────────────────────────[m
+  [38;5;215m?[m [1;38;5;255memail[m         [38;5;250mreason.cred-missing[m[38;5;246m[m
+  [38;5;215m?[m [1;38;5;255merrors[m        [38;5;250mreason.cred-missing[m[38;5;246m[m
+
+[38;5;238m──[m [38;5;255mheld[m [38;5;238m────────────────────────────────────────────────────────────────────────────────────────────[m
+  [38;5;215m○[m [1;38;5;255mhttps-forced[m  [38;5;250mAlways Use HTTPS is off for the zone[m
+                  [38;5;246mheld until 2026-09-25, 5 days left[m
+    [38;5;141m→[m [38;5;250mTurn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.[m
+      ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;5;246mhttps://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[m]8;;[38;5;246m  edge.https-not-forced[m
+
+[38;5;246m●[m [38;5;246m3 passing[m  [38;5;246mserving · delegation · publish-path[m
+
+[1;38;5;210mCRITICAL[m  [1;38;5;255m907.life[m  [38;5;246m3 failing · 2 could not run · 1 held · 3 passing[m

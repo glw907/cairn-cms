@@ -98,7 +98,9 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 	ctx, cancel := rf.deadline(commandContext(cmd))
 	defer cancel()
 
-	report, err := health.Run(ctx, rec, buildClients(d), health.All, health.Options{
+	clients := buildClients(d)
+	started := d.now()
+	report, err := health.Run(ctx, rec, clients, health.All, health.Options{
 		ErrorThreshold: f.errorThreshold,
 		LogWindow:      window,
 		Now:            d.now,
@@ -108,7 +110,8 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 	}
 
 	verdict := spine.ExitCode([]spine.SiteVerdicts{siteVerdicts(report)}, nil, 0)
-	if err := writeHealth(cmd, d, report, verdict, f, rf); err != nil {
+	status := runStatus(clients, d.now().Sub(started), report.Degraded)
+	if err := writeHealth(cmd, d, report, verdict, status, f, rf); err != nil {
 		return err
 	}
 
@@ -137,7 +140,7 @@ func siteVerdicts(r health.Report) spine.SiteVerdicts {
 // invocation looks like. --quiet writes nothing at all on an OK run, which is what makes a
 // cron-driven green run silent and mail-free, and on any other verdict writes the verdict word
 // and the failing checks only.
-func writeHealth(cmd *cobra.Command, d deps, r health.Report, verdict spine.Verdict, f healthFlags, rf *rootFlags) error {
+func writeHealth(cmd *cobra.Command, d deps, r health.Report, verdict spine.Verdict, status render.StatusState, f healthFlags, rf *rootFlags) error {
 	if f.asJSON {
 		data, err := r.JSON(rf.verbose)
 		if err != nil {
@@ -149,17 +152,19 @@ func writeHealth(cmd *cobra.Command, d deps, r health.Report, verdict spine.Verd
 	if rf.quiet && verdict == spine.VerdictOK {
 		return nil
 	}
-	return writeHealthBody(cmd.OutOrStdout(), d, rf, r, verdict, rf.quiet)
+	return writeHealthBody(cmd.OutOrStdout(), d, rf, []health.Report{r}, verdict, status, rf.quiet)
 }
 
 // writeHealthBody writes one report through the render seam, which owns every layout decision:
 // the body for the scope and the stream, the ranking, the section grammar, and the fix format.
 // failingOnly hands the seam a report cut down to its failures, which is the --quiet body.
-func writeHealthBody(w io.Writer, d deps, rf *rootFlags, r health.Report, verdict spine.Verdict, failingOnly bool) error {
+func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, verdict spine.Verdict, status render.StatusState, failingOnly bool) error {
 	if failingOnly {
-		r = onlyFailures(r)
+		for i, r := range rs {
+			rs[i] = onlyFailures(r)
+		}
 	}
-	frame := render.Render(renderInput(d, rf, []health.Report{r}, verdict))
+	frame := render.Render(renderInput(d, rf, rs, verdict, status))
 	for _, line := range frame.Lines() {
 		if _, err := fmt.Fprintln(w, line); err != nil {
 			return err
@@ -189,14 +194,8 @@ func onlyFailures(r health.Report) health.Report {
 // count when stdout is a terminal, and otherwise the seam's own default. The body follows the
 // run's scope and whether stdout is a terminal, never the colour choice: an operator who forces
 // colour into a pipe still gets the plain body, in colour.
-func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict) render.RenderInput {
-	resolved, _ := loadEnv(d.env)
-	term := render.DetectProfile(d.stdout, render.Env{
-		NoColor: resolved.noColorValue(),
-		Term:    resolved.termValue(),
-		Color:   rf.color,
-	})
-
+func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict, status render.StatusState) render.RenderInput {
+	term := detectTerminal(d, rf)
 	width := rf.width
 	if width <= 0 {
 		width = term.Columns
@@ -209,9 +208,54 @@ func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.V
 		Profile: term.Profile,
 		ASCII:   term.ASCII,
 		Reports: reports,
+		Status:  status,
 		Verdict: verdict,
 		Now:     d.now(),
 	}
+}
+
+// detectTerminal reads the one TTY-and-colour answer every command's render input is built from.
+func detectTerminal(d deps, rf *rootFlags) render.Terminal {
+	resolved, _ := loadEnv(d.env)
+	return render.DetectProfile(d.stdout, render.Env{
+		NoColor: resolved.noColorValue(),
+		Term:    resolved.termValue(),
+		Color:   rf.color,
+	})
+}
+
+// runStatus builds the run's own state beside its checks: how long the sweep took, which
+// provider tokens it resolved and through what, and which it could not find, with the checks
+// each absence stopped named from the checks' own declared tiers rather than from a second list.
+//
+// A token's expiry is not carried here. The creds check measures the GitHub token's expiry on
+// its own request and prints it on its own row; reading it a second time would be a second
+// network call, and carrying it out of the sweep is a field health.Report does not have yet.
+func runStatus(c health.Clients, elapsed time.Duration, degraded bool) render.StatusState {
+	s := render.StatusState{Elapsed: elapsed, Degraded: degraded}
+	for _, cred := range []struct {
+		variable string
+		present  bool
+		from     string
+		needed   func(health.Tier) bool
+	}{
+		{varCFReadToken, c.HaveCF, c.CFFrom, func(t health.Tier) bool { return t == health.TierCF || t == health.TierBoth }},
+		{varGHReadToken, c.HaveGH, c.GHFrom, func(t health.Tier) bool { return t == health.TierGH || t == health.TierBoth }},
+	} {
+		entry := render.Credential{Variable: cred.variable}
+		if cred.present {
+			entry.Provider = cred.from
+			s.Credentials = append(s.Credentials, entry)
+			continue
+		}
+		for _, check := range health.All {
+			if cred.needed(check.Needs()) {
+				entry.Disables = append(entry.Disables, check.ID())
+			}
+		}
+		s.Credentials = append(s.Credentials, entry)
+	}
+	return s
 }
 
 // parseSince resolves a --since value through logs.ParseSince, the one grammar health and logs

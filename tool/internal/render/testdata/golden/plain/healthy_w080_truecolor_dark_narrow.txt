@@ -1,0 +1,15 @@
+verdict: [1;38;2;124;205;142mOK[m - ecxc.ski, 9 passing
+checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
+
+creds: pass - Cloudflare and GitHub tokens read from the keyring
+serving: pass - 200 in 84ms
+delegation: pass - nameservers match the zone
+https-forced: pass - forced at the edge, HSTS 1 year
+email: pass - sending domain onboarded 41 days ago
+deploy: pass - built 4h ago (a91f2c7), main is level
+publish-path: pass - App installed, branch writable
+engine: pass - 0.78.0 is current
+errors: pass - 0 errors in 24h
+
+verdict: [1;38;2;124;205;142mOK[m - ecxc.ski, 9 passing
+exit: 0

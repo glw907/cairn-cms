@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
+	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/spf13/cobra"
 )
@@ -66,7 +67,7 @@ func writeHealthTo(t *testing.T, r health.Report, verdict spine.Verdict, f healt
 	cmd := &cobra.Command{}
 	cmd.SetOut(&out)
 	cmd.SetErr(&errOut)
-	if err := writeHealth(cmd, d, r, verdict, f, rf); err != nil {
+	if err := writeHealth(cmd, d, r, verdict, render.StatusState{}, f, rf); err != nil {
 		t.Fatalf("writeHealth: %v", err)
 	}
 	return out.String(), errOut.String()

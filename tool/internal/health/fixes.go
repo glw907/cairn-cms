@@ -173,6 +173,31 @@ var fixesByCode = map[spine.Code]Fix{
 	},
 }
 
+// fixesByReason is the fix table's third key, for a check that could not run at all. A skipped
+// check declares no Condition and no Code, so without this key a site whose whole sweep was
+// blocked by a missing token carries no fix anywhere, which is the one state an operator can
+// always clear. Only reason.cred-missing is carried: a timeout, an offline run, and an
+// unobservable subject are conditions of the world rather than something to repair.
+//
+// The line names no variable, because one entry covers both tokens and this table does not know
+// which one the run could not find. The renderer names it from the run's own credential state,
+// beside the entry. Not in the catalogue; reported to the editorial gate.
+var fixesByReason = map[spine.ReasonCode]Fix{
+	spine.ReasonCredMissing: {
+		Text:  "Run `cairn auth set` naming the missing token, then run the command again.",
+		Actor: ActorOperator,
+	},
+}
+
+// FixForReason returns the fix line for a check that could not run under reason, when the fix
+// table carries one. It is separate from FixFor because a reason is shared by every check one
+// missing input blocked: a caller resolving it groups the checks it covers and prints the line
+// once, rather than repeating one sentence down a whole screen.
+func FixForReason(r spine.ReasonCode) (Fix, bool) {
+	fix, ok := fixesByReason[r]
+	return fix, ok
+}
+
 // FixForCondition returns the fix line declared Condition, when the fix table carries one.
 func FixForCondition(c spine.Condition) (Fix, bool) {
 	fix, ok := fixesByCondition[c]
@@ -210,6 +235,12 @@ func FixLines() []string {
 		}
 	}
 	for _, fix := range fixesByCode {
+		lines = append(lines, fix.Text)
+		if fix.Command != "" {
+			lines = append(lines, fix.Command)
+		}
+	}
+	for _, fix := range fixesByReason {
 		lines = append(lines, fix.Text)
 		if fix.Command != "" {
 			lines = append(lines, fix.Command)

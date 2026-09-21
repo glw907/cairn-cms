@@ -1,0 +1,8 @@
+verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 2 passing
+checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
+
+serving: pass - 200 in 84ms
+engine: pass - 0.78.0 is current
+
+verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 2 passing
+exit: 2

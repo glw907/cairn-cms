@@ -30,8 +30,8 @@ func renderSingle(t Theme, in RenderInput) Frame {
 	tally := s.tally(" " + t.glyphs(in.ASCII).Sep + " ")
 
 	f := Frame{Header: t.verdictLines(in.Verdict, subject, tally, width)}
-	f.Header = append(f.Header,
-		indented(t.Style(RoleMuted), 0, checkedPhrase(checkedAt(report, in.Now), in.Now), width)...)
+	f.Header = append(f.Header, indented(t.Style(RoleMuted), 0,
+		checkedPhrase(checkedAt(report, in.Now), in.Now, in.Status.Elapsed), width)...)
 
 	var body []string
 	section := func(label string, cs []health.CheckResult) {
@@ -193,6 +193,11 @@ func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 	}
 
 	out := append(head, indented(t.Style(holdRole), col, hold, width)...)
+	// The credential and keyring detail sit on the creds row, in its own detail column, rather
+	// than in the header block: it is detail about the check the operator is already reading.
+	if c.ID == credsRowID {
+		out = append(out, t.statusLines(in, col, width)...)
+	}
 	return append(out, block...)
 }
 

@@ -3,6 +3,7 @@ package health
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -21,24 +22,26 @@ const publishStaleWindow = 14 * 24 * time.Hour
 const cairnBranchPrefix = "cairn/"
 
 // PublishDetail is publishPathCheck's own internal measurement, flattened into Fields as an
-// "openBranchCount" entry followed by one "branchAgeDays" entry per branch, in the order Branches
-// returned them.
+// "openBranchCount" entry and one "branchAgeDays" entry carrying every branch's age.
 type PublishDetail struct {
 	// BranchCount is how many "cairn/*" branches the repository currently carries.
 	BranchCount int
-	// AgeDays is each "cairn/*" branch's age in whole days, in the same order the branches were
-	// read.
+	// AgeDays is each "cairn/*" branch's age in whole days, oldest first.
 	AgeDays []int
 }
 
-// fields flattens d into its ordered spine.OutcomeField entries.
+// fields flattens d into its two ordered spine.OutcomeField entries: openBranchCount, and
+// branchAgeDays carrying every branch's age as one JSON array rather than one field per branch,
+// so a report with several open branches does not repeat the branchAgeDays key.
 func (d PublishDetail) fields() []spine.OutcomeField {
-	fields := make([]spine.OutcomeField, 0, len(d.AgeDays)+1)
-	fields = append(fields, field("openBranchCount", d.BranchCount))
-	for _, age := range d.AgeDays {
-		fields = append(fields, field("branchAgeDays", age))
+	ageDays := d.AgeDays
+	if ageDays == nil {
+		ageDays = []int{}
 	}
-	return fields
+	return []spine.OutcomeField{
+		field("openBranchCount", d.BranchCount),
+		field("branchAgeDays", ageDays),
+	}
 }
 
 // outcome builds the spine.Outcome publishPathCheck.Run returns for state and detail, always
@@ -107,8 +110,11 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 	}
 
 	now := o.Now()
+	oldestFirst := slices.Clone(open)
+	slices.SortFunc(oldestFirst, func(a, b providers.Branch) int { return a.CommitDate.Compare(b.CommitDate) })
+
 	detail := PublishDetail{BranchCount: len(open)}
-	for _, b := range open {
+	for _, b := range oldestFirst {
 		detail.AgeDays = append(detail.AgeDays, int(now.Sub(b.CommitDate).Hours()/24))
 	}
 

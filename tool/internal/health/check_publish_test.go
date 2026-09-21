@@ -218,14 +218,45 @@ func TestPublishPathCheckFieldsCarryBranchCountAndAges(t *testing.T) {
 	if count := fieldInt(t, got.Fields, "openBranchCount"); count != 1 {
 		t.Errorf("openBranchCount field = %d, want 1", count)
 	}
-	var ages int
+	ages := fieldIntSlice(t, got.Fields, "branchAgeDays")
+	if len(ages) != 1 {
+		t.Fatalf("branchAgeDays = %v, want 1 entry", ages)
+	}
+}
+
+// TestPublishPathCheckBranchAgeDaysIsOneOldestFirstField asserts several open branches produce a
+// single "branchAgeDays" field carrying every branch's age, oldest branch first, rather than one
+// field per branch.
+func TestPublishPathCheckBranchAgeDaysIsOneOldestFirstField(t *testing.T) {
+	oldest := fixedNow().Add(-30 * 24 * time.Hour)
+	newest := fixedNow().Add(-2 * 24 * time.Hour)
+	laterBot := oldest.Add(24 * time.Hour)
+	rt := publishGHRoundTripper{
+		branches: []publishBranch{
+			{name: "cairn/posts/new", sha: "sha2", date: newest},
+			{name: "cairn/posts/old", sha: "sha1", date: oldest},
+		},
+		botCommitAt: laterBot,
+	}
+	c := publishClients(rt)
+	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
+
+	var count int
 	for _, f := range got.Fields {
 		if f.Key == "branchAgeDays" {
-			ages++
+			count++
 		}
 	}
-	if ages != 1 {
-		t.Errorf("got %d branchAgeDays fields, want 1", ages)
+	if count != 1 {
+		t.Fatalf("got %d branchAgeDays fields, want 1", count)
+	}
+
+	ages := fieldIntSlice(t, got.Fields, "branchAgeDays")
+	if len(ages) != 2 {
+		t.Fatalf("branchAgeDays = %v, want 2 entries", ages)
+	}
+	if ages[0] <= ages[1] {
+		t.Errorf("branchAgeDays = %v, want the oldest branch (largest age) first", ages)
 	}
 }
 
@@ -254,4 +285,21 @@ func fieldInt(t *testing.T, fields []spine.OutcomeField, key string) int {
 	}
 	t.Fatalf("no field named %q", key)
 	return 0
+}
+
+// fieldIntSlice decodes fields' entry named key as a []int, failing the test if none exists.
+func fieldIntSlice(t *testing.T, fields []spine.OutcomeField, key string) []int {
+	t.Helper()
+	for _, f := range fields {
+		if f.Key != key {
+			continue
+		}
+		var v []int
+		if err := json.Unmarshal(f.Value, &v); err != nil {
+			t.Fatalf("unmarshal field %q: %v", key, err)
+		}
+		return v
+	}
+	t.Fatalf("no field named %q", key)
+	return nil
 }

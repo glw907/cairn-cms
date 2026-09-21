@@ -130,16 +130,17 @@ func changelogSections(changelog []byte) map[string]string {
 }
 
 // sectionHasActionableConsumersMust reports whether section carries a "Consumers must:" line
-// whose own text does not read "nothing": a bullet that reads "Consumers must: nothing" (with any
-// trailing clause) is additive and asks nothing of a consumer, so it does not count.
+// whose own text, trimmed of whitespace and a trailing period and compared case-insensitively,
+// is not exactly "nothing": any other text, including "nothing" qualified by more prose, asks
+// something of a consumer and counts.
 func sectionHasActionableConsumersMust(section string) bool {
 	normalized := strings.Join(strings.Fields(section), " ")
 	for _, m := range consumersMustLine.FindAllStringSubmatch(normalized, -1) {
-		remainder := strings.TrimSpace(m[1])
+		remainder := strings.TrimSuffix(strings.TrimSpace(m[1]), ".")
 		if remainder == "" {
 			continue
 		}
-		if !strings.HasPrefix(strings.ToLower(remainder), "nothing") {
+		if !strings.EqualFold(remainder, "nothing") {
 			return true
 		}
 	}

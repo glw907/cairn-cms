@@ -181,15 +181,25 @@ func TestEngineCheckAPIForbiddenIsUnknownNotOK(t *testing.T) {
 	}
 }
 
-func TestSectionHasActionableConsumersMustIgnoresNothing(t *testing.T) {
-	if sectionHasActionableConsumersMust("Consumers must: nothing.") {
-		t.Error("got true, want false for a plain \"nothing\" clause")
+// TestSectionHasActionableConsumersMust covers the exact-match rule: only a "Consumers must:"
+// line whose text, trimmed of whitespace and a trailing period and compared case-insensitively,
+// reads exactly "nothing" is non-actionable. Any other text, and a section with no such line at
+// all, is handled at the two ends of this table.
+func TestSectionHasActionableConsumersMust(t *testing.T) {
+	cases := []struct {
+		name    string
+		section string
+		want    bool
+	}{
+		{"lowercase nothing with a trailing period", "Consumers must: nothing.", false},
+		{"capitalized nothing with no trailing period", "Consumers must: Nothing", false},
+		{"an actionable instruction", "Consumers must: rename X to Y.", true},
+		{"no such line", "no such line", false},
 	}
-	if sectionHasActionableConsumersMust("Consumers must: nothing; a site already on this works.") {
-		t.Error("got true, want false for a \"nothing\" clause with trailing prose")
-	}
-	if !sectionHasActionableConsumersMust("**Consumers must:** rename `Foo` to `Bar`.") {
-		t.Error("got false, want true for a bold, actionable clause")
+	for _, tt := range cases {
+		if got := sectionHasActionableConsumersMust(tt.section); got != tt.want {
+			t.Errorf("%s: sectionHasActionableConsumersMust(%q) = %v, want %v", tt.name, tt.section, got, tt.want)
+		}
 	}
 }
 

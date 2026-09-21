@@ -771,7 +771,7 @@ The three-lens plan review closed every item below. None is open at dispatch.
 **Built.** Task 1's dependency sweep (both lockfiles regenerated from scratch, held majors
 recorded, the survey record extended in place). Task 2's two `cairn-guidance` write-hardening
 fixes, test-first, code-simplified. Task 3's site upgrade brief tools section. Task 4's Blueprint
-pre-cut admin audit over all 49 admin components, five findings filed, none taken. Task 5's close:
+pre-cut admin audit over all 48 components (49 files), five findings filed, none taken. Task 5's close:
 `ROADMAP.md` lines for every filed finding (the guidance hardening entry's two new items, the five
 Blueprint findings, the `publish.yml` install-command chore, and the `cairn-release` lockstep
 version-bump gap), a friction-log triage that found the log already fully clear (nothing to move),
@@ -797,12 +797,24 @@ owner's approval; no finding from it gated the cut, and all five are filed rathe
 
 **Token spend.** Recorded by the conductor at pass end.
 
-**Planning misses: two.** (1) The plan's gate list did not name `norms:check`'s prerequisite that
+**Planning misses: three.** (1) The plan's gate list did not name `norms:check`'s prerequisite that
 the showcase admin be built and served on port 4173; a task following the gate list alone would
 have hit a fault the plan itself did not anticipate. (2) Task 1's acceptance criteria said "the
 full gate is green" without naming the visual spec files by name, so an implementer satisfied the
 letter of the criterion by running only the `styleguide` e2e spec; the full 139-baseline visual
-suite had to be run by a second dispatch before the result was trusted.
+suite had to be run by a second dispatch before the result was trusted. (3) The visual-baseline
+procedure let a bounding-box classification stand in for a visual read before the regen: the first
+investigation of the 33 failing `admin-visual` snapshots classified every diff as renderer noise
+from diff bounding boxes alone, and called a 40 px breadcrumb shift "the top strip only." Only a
+second, fresh-context `visual-verifier` read against the actual crops caught the daisyUI
+regressions, after a CI regen had already committed the wrong baselines. The procedure needs to
+require a direct crop read before accepting a regen, not a bounding-box classification.
+
+## Halt
+
+The pass HALTED before Task 6, with PR #69 open and not merged. Facts, the four regressions, and
+the open decision for the owner are recorded in `docs/STATUS.md`'s HALTED section; see that entry
+for the full detail rather than duplicating it here.
 
 **Execution sittings: none.** No pull-in after plan approval; the pass ran to completion under the
-rulings already settled in the header.
+rulings already settled in the header, up to the halt described above.

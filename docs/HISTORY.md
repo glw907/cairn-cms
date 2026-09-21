@@ -9,7 +9,7 @@ detail this file only summarizes.
 
 ## The pre-cut pass, five tasks, 2026-09-21
 
-Branch `pre-cut`, PR pending. Plan and post-mortem: `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`.
+Branch `pre-cut`, PR #69. Plan and post-mortem: `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`.
 
 **What landed.** Task 1, the dependency sweep, regenerated both lockfiles from scratch
 (`494d151d`) and recorded the visual gate result (`cab9c670`). Task 2, the two `cairn-guidance`
@@ -17,8 +17,23 @@ write-hardening fixes (item 3, carrying `err.code` out of the write's `catch` in
 `InstallReport.writeErrors`; item 6, listing a refused destination itself alongside its `.orig`
 sibling), landed with `f2a13a83` and was code-simplified in `4035cb8c`. Task 3, the site upgrade
 brief's tools section, landed in `f6af8133` and `41e04390`. Task 4, the Blueprint pre-cut admin
-audit over all 49 admin components, ran in the conductor's own turns and landed in `49e21caa`,
-filing five findings and none taken (owner's ruling 3).
+audit over all 48 components (49 files), ran in the conductor's own turns and landed in
+`49e21caa`, filing five findings and none taken (owner's ruling 3).
+
+**Halted before merge.** PR #69's CI is green on test, create-site, scaffold, design, and norms,
+but e2e failed on 33 `admin-visual` snapshots. A CI regen (`b4bd3a5f`) rewrote those baselines, and
+a fresh-context `visual-verifier` read then FAILED the regen: the daisyUI 5.7.20 to 5.7.42 bump
+from Task 1's dependency sweep shifts the edit-page and delete-dialog top-strip breadcrumb about
+40 px left with a truncated "Posts" label and a clipped entry id (ten files), narrows the `⌘K`
+hint box and shrinks its glyph to a smudge, gives the active nav item a bottom shadow against the
+design system's flat nav, and gives the media view-toggle's active button a ring or shadow. The
+pass is HALTED for an owner ruling on the fix; full detail in `docs/STATUS.md`'s HALTED section.
+
+**Lessons.** The investigator classified all 33 diffs as explained by the renderer from diff
+bounding boxes and called the breadcrumb shift "the top strip only"; only the fresh-context visual
+gate and a direct read of the crops caught it. The earlier local full e2e that "passed" all admin
+snapshots ran against a stale preview server. `e2e.yml` uploads no Playwright report artifact, so
+CI diffs cannot be viewed without a local reproduction.
 
 **What the gate caught, and what it did not.** The first full gate died at `norms:check`
 because that check needs the showcase preview running on port 4173; it is not a standalone

@@ -953,9 +953,10 @@ the named human gates only):**
   are out.
 
 - **Five admin defaults from the Carbon survey, accepted (Geoff, 2026-09-13; record
-  `docs/internal/record/2026-09-13-carbon-patterns-survey.md`, Part 5b).** Three land as one
-  bounded task in the pre-cut window on `main`, after the motion pass merges and beside the
-  dependency sweep, since each is a few lines with no new surface: `Pagination`'s selected
+  `docs/internal/record/2026-09-13-carbon-patterns-survey.md`, Part 5b).** Three were slated to
+  land as one bounded task in the pre-cut window; they did not land there (the pre-cut pass's five
+  tasks did not include this one) and remain filed here, unstarted, since each is a few lines with
+  no new surface: `Pagination`'s selected
   page gains a non-color cue (the design-system gap below, sweep finding 23); `DeleteDialog`
   drops its `method="dialog"` backdrop form so a stray click no longer dismisses a destructive
   confirm (Carbon forbids outside-click dismissal on a danger modal; cairn's safe-delete recipe
@@ -1012,7 +1013,11 @@ the named human gates only):**
 - **The Go-tool CI gate-tier gap found closing Pass A (2026-09-20).** `scripts/checks/gate-tier.mjs`
   had no rule for `tool/` paths, so a Go-only diff resolved to the full Node gate instead of the
   light Go-only lane. PR #68 implements the fix (a sixth `tool` gate tier, plus a `<npm
-  tier>+tool` shape for a mixed diff) and is open, awaiting merge.
+  tier>+tool` shape for a mixed diff) and merged as `122f241d`.
+
+- **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
+  2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact
+  upload on failure so a CI-only visual diff is viewable without one.
 
 - **Items filed at Pass B1's close (2026-09-20), for Pass B2 or a later pass.**
   - The engine's condition registry (`tool/internal/spine/condition.go`, ported from

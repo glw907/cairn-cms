@@ -38,7 +38,6 @@ const (
 	ConditionAuthEmailNotNormalized      Condition = "auth.email-not-normalized"
 	ConditionGitHubAppUnreachable        Condition = "github.app-unreachable"
 	ConditionAdminMountIncomplete        Condition = "admin.mount-incomplete"
-	ConditionSkillAdminScreensStale      Condition = "skill.admin-screens-stale"
 	ConditionAuthIdentityUnresolved      Condition = "auth.identity-unresolved"
 	ConditionAuthIdentityUnknown         Condition = "auth.identity-unknown"
 	ConditionAdminLoginProbeFailed       Condition = "admin.login-probe-failed"
@@ -67,7 +66,6 @@ var conditions = []Condition{
 	ConditionAuthEmailNotNormalized,
 	ConditionGitHubAppUnreachable,
 	ConditionAdminMountIncomplete,
-	ConditionSkillAdminScreensStale,
 	ConditionAuthIdentityUnresolved,
 	ConditionAuthIdentityUnknown,
 	ConditionAdminLoginProbeFailed,

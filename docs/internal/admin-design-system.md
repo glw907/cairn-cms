@@ -81,6 +81,9 @@ Calibration (Geoff, 2026-07-15):
   `cairn-admin.css`. One deliberate exception: the `.menu` focus override is unlayered on purpose,
   because DaisyUI's own utilities-layer rule quiets `:focus-visible` on menu items and only an
   unlayered rule outranks it. Do not add another unlayered rule without the same forcing reason.
+  The set has grown to fourteen pinned rules on that reason; the newest re-asserts `will-change:
+  auto` on a showing drawer panel, which daisyUI's own `:where()`-wrapped reset cannot win
+  (`daisyui-drawer-will-change-where-wrapper` in the rulings ledger).
 - **The build flattens CSS nesting before scoping.** `build-admin-css.mjs` runs lightningcss with
   `Features.Nesting` between the Tailwind compile and `postcss-prefix-selector`, because the prefixer
   prepends the scope to the front of every rule and would sever a nested combinator selector
@@ -136,7 +139,11 @@ Three rules carry the model:
   `CairnAdminShell` holds a `$state` holder, `EditPage` registers a `desk` snippet into it in an `$effect`
   and clears it on teardown). The band reads as three clusters, not a uniform row: the way back (drawer
   toggle, breadcrumb), the document status behind a hairline, and the actions split by a second
-  hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save).
+  hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save). The way
+  back starts at the band's own left padding, the same edge an office route's site name starts at, so
+  the two bands share one left edge; the breadcrumb's first crumb sits 4px inside that edge, the
+  list's own inline padding, which the crumb's keyboard focus ring needs. The breadcrumb carries
+  `ms-0` on its `nav` to cancel daisyUI's `.breadcrumbs` inset margin without touching that padding.
 - **The chrome recedes through a band, not outright; it persists again at `xl`.** The persistent
   sidebar sits at a route-kind-specific breakpoint: `lg` (1024px) for office routes, `xl` (1280px)
   for desk routes (the desk rider, spec §5, 2026-07-14). A desk route no longer drops the sidebar
@@ -224,7 +231,7 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   20%-mix fallback (`color-mix(..., var(--color-base-content) 20%, transparent)`) when no color
   variant supplies `--input-color`, which no admin call site does: measured 1.492:1 light / 1.773:1
   dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor. A pinned unlayered rule in
-  `cairn-admin.css` (rule 12 of 13) raises the unchecked edge to a 55% mix, the same one already
+  `cairn-admin.css` (rule 13 of 14) raises the unchecked edge to a 55% mix, the same one already
   locked for the scrollbar thumb and the outline chip border: 3.586:1 light / 4.959:1 dark. `.toggle`
   needed no change; its own construction already mixes 50% and clears the floor unaided.
 - **Unfocused `.input`/`.select`/`.textarea` edge (2026-08-27, extends the checkbox/radio fix
@@ -232,7 +239,7 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   through the same `--input-color` 20%-mix fallback (`border: var(--border) solid var(--input-color,
   transparent)`), and no admin call site supplies a color variant. Measured against the compiled
   sheet: 1.492:1 light / 1.773:1 dark against `base-100`, both under the same 3:1 floor. A pinned
-  unlayered rule in `cairn-admin.css` (rule 13 of 13) raises the edge to the same 55% mix already
+  unlayered rule in `cairn-admin.css` (rule 14 of 14) raises the edge to the same 55% mix already
   locked above: 3.586:1 light / 4.959:1 dark, unchanged from the checkbox/radio numbers since the
   underlying `base-content`/`base-100` pair is the same. Scoped to `:not(:focus, :focus-within)`,
   since a focused field already sets `--input-color` to full `base-content` (a much stronger edge)
@@ -360,7 +367,15 @@ alongside the component recipes above and below it.
   them. Do not use a flat `base-300` border, and do not write the bracketed `var()` form the roles
   replace (`docs/reference/admin-grammar-tokens.md` has the full contract).
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
-  `font-medium text-subtle`.
+  `font-medium text-subtle`. From daisyUI 5.7.38 the `.menu` recipe styles an `[aria-current]` item
+  natively, which adds its own depth shadow under the active item
+  (`box-shadow: 0 2px calc(var(--depth) * 3px) -2px var(--menu-active-bg)`). That shadow is the stock
+  active treatment and the admin takes it; the utilities above still carry the fill and the ink.
+  Flatness under an active nav item is not a rule, so do not write a cancel rule for it. The same
+  holds for an active toggle button: daisyUI 5.7.38 gives a `.btn` carrying `aria-pressed="true"`,
+  `aria-checked="true"`, or `aria-current` the `.btn-active` treatment, and the admin takes that too.
+  `--depth` (set to `1` on both theme roots) is the stock lever if a flatter active item is ever
+  wanted; it scales the menu item's shadow blur, not the shadow's existence.
 - **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
   own screens and a site's flat entries alike, as loose top-level nodes with no section wrapper. A
   category header costs a reader a decision on every visit, a cost the sizes a zero-config sidebar

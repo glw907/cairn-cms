@@ -1869,6 +1869,31 @@
 
 ### Fixed
 
+- The admin's nav panel no longer stays compositor-promoted while it is showing. daisyUI's drawer
+  recipe promotes the off-canvas panel with `will-change: transform` so it is ready to slide, then
+  releases it with a rule whose prelude is wrapped in `:where()`; that wrapper zeroes the prelude's
+  specificity, so the release measures (0,1,0) against the base rule's (0,2,0) in the same layer
+  and never applies, and the `drawer-open` persistent forms have no release at all. A promoted
+  layer is where Chromium picks its text raster, and it re-picks per run, so the same admin screen
+  rendered two discrete images across repeated captures. `cairn-admin.css` now re-asserts daisyUI's
+  own intended `will-change: auto` on every showing panel, the overlay drawer and both persistent
+  breakpoints alike. Only `will-change` is touched, so the drawer's open slide still animates.
+  Admin-internal only; no consumer action.
+
+- The admin topbar's breadcrumb no longer ellipsizes a crumb that fits. daisyUI 5.7.28 took 4px
+  out of `.breadcrumbs > ul`'s content box (a `padding-inline-start: .25rem` against a matching
+  negative margin on the wrapper), and the breadcrumb's own wrapper sizes to its crumbs, so the
+  flex line overflowed by exactly those 4px and every crumb shrank behind a `truncate`: on the
+  edit page and the delete dialog, "Posts" read "Pos..." beside free space and the entry id lost
+  its last character. `CairnAdminShell` now writes `ms-0` on the breadcrumb `nav` to cancel the
+  negative margin, and keeps the `ul`'s own 4px padding: it is the room the first crumb's
+  keyboard focus ring needs inside the breadcrumb's scroll clip. The crumb trail
+  also picks up 40px of left inset that the UA's default list gutter had been supplying: it now
+  starts at the topbar's own left padding, the same edge an office route's site name starts at,
+  so the desk band and the office band share one left edge. An e2e regression guard reads the
+  crumbs' `scrollWidth` against their `clientWidth` on the real preview build. Admin-internal
+  only; no consumer action.
+
 - `cairn-guidance install` now resolves every destination against the real `.claude` directory
   instead of trusting a lexical path: a destination reached through a symlink, a destination that
   is itself a symlink, a `.claude` that is a symlink, and a destination that already exists as a
@@ -1879,6 +1904,16 @@
   `.claude/` is dropped rather than printed as removable, and a packaged entry the source walk
   refused is now reported instead of discarded. A project directory reached through a symlinked
   parent still installs. No consumer action.
+
+- `cairn-guidance install` no longer folds a failed write (an `ENOSPC`, an `EACCES`, ...) into the
+  containment refusals: it now carries the write's `err.code` in a new `InstallReport.writeErrors`
+  list, and the bin prints a distinct `write error <path>: <code>` line instead of the misleading
+  `refused ... outside .claude/, a symlink, or not a regular file` sentence. Separately, a
+  destination skipped because its `.orig` recovery copy could not be made now appears in
+  `report.refused` alongside the `.orig` path itself, not only the `.orig` sibling, so an operator
+  can see which destination was left stale. `cairn-guidance` is a bin, not a typed export
+  subpath, and no parser of the report's printed shape exists anywhere in `tool/` or `packages/`.
+  No consumer action.
 
 - The showcase's Signups admin screen, and the Waymark template that mirrors it, give the create
   form's Name and Email fields a visible label in place of the `sr-only` pair: each control now
@@ -2420,6 +2455,51 @@
   number, the bump size derived against the release skill's own rule, and every
   `Consumers must:` line in the window gathered in one place. Internal documentation only; no
   code changed. No consumer action.
+
+### Dependencies
+
+- The pre-cut dependency sweep takes every minor and patch across both manifests
+  (`docs/internal/record/2026-09-13-minor-bump-features.md` carries the per-package survey).
+  Runtime `dependencies` floors of the published package move: `@codemirror/commands` to
+  `^6.11.1`, `@codemirror/state` to `^6.7.5`, `@codemirror/view` to `^6.43.12`, and
+  `@lucide/svelte` to `^1.47.0`. `packages/create-cairn-site`'s own runtime floor moves too:
+  `@clack/prompts` to `^1.8.1`. Every other moved package (`@anthropic-ai/sdk`, `eslint`,
+  `eslint-plugin-jsdoc`, `eslint-plugin-tsdoc`, `esbuild`, `playwright`, `postcss`,
+  `postcss-prefix-selector`, `svelte`, `tsx`, `typescript-eslint`, `vite`, `vitest-browser-svelte`,
+  `wrangler`, `@types/node`, `@cloudflare/workers-types`, `devalue`) is a devDependency or a
+  showcase-only devDependency, not shipped in the tarball; `daisyui` is a devDependency too, but
+  it recompiles the shipped `dist/components/cairn-admin.css` at build time, so it is covered
+  below rather than in this not-shipped list. No peer range moved:
+  `@sveltejs/kit` stays `^2.70` and the `svelte` peer stays `^5.56.10`. TypeScript 7, Vitest 5
+  (and its `@vitest/browser`/`@vitest/browser-playwright` pair), and `@types/node` 26 stay held;
+  `devalue` 6.0.0 joins the held list. Two `npm audit` findings stay open on the same "needs
+  `--force`, breaking" basis: `cookie` under `@sveltejs/kit@2.70.3` (the suggested fix downgrades
+  to `@sveltejs/kit@0.0.30`) and `sharp` under the root's own `@cloudflare/vitest-pool-workers`
+  (the suggested fix downgrades to `@cloudflare/vitest-pool-workers@0.8.30`); both are held with
+  the survey record carrying their triggers. The other moved devDependencies need no action from a
+  consumer: they build or test this package, and none of them ships in the tarball or moves a
+  peer range. **Consumers must: the daisyUI bump (`5.7.20` to `5.7.42`) recompiles the
+  shipped `dist/components/cairn-admin.css`**, the packaged stylesheet `/admin-sources.css`
+  imports; 5.7.35 through 5.7.42's checkbox tick/dash alignment and badge-in-flex shrinking
+  fixes change the precompiled sheet's pixel output on those two elements. Three more of the
+  bump's rules reach the admin's own paint, all taken as daisyUI's stock treatment rather than
+  overridden. 5.7.28 gives `.breadcrumbs` a `margin-inline-start: -.25rem` and `.breadcrumbs > ul`
+  a `padding-inline-start: .25rem`, which resets the UA's default list gutter under a breadcrumb;
+  see the breadcrumb fix under Fixed for the admin's own response. 5.7.38 styles an
+  `[aria-current]` `.menu` item as active, so the admin sidebar's active nav item now carries
+  daisyUI's depth shadow under it. 5.7.38 gives a `.btn` carrying `aria-pressed="true"`,
+  `aria-checked="true"`, or `aria-current` the `.btn-active` treatment; the admin's own
+  `.btn`-based pickers (`ListToolbar`'s segmented facet, `Pagination`) already set `btn-active`
+  explicitly on the same state, so daisyUI's rule is redundant there rather than additive. No
+  code change is required; a site that snapshot-tests the admin visually should refresh those
+  baselines.
+  `devalue`'s move to `5.9.4` (a devDependency, not shipped) is worth naming despite carrying no
+  consumer action: `5.9.2` through `5.9.4` close a prototype-pollution-bypass in `parse`/
+  `unflatten` and a shared-buffer disclosure in `stringify`/`uneval`, on the same serialization
+  path SvelteKit's own `load` boundary uses. The shipped `src/lib/audit/norms-manifest.json`
+  also moves: daisyUI 5.7.38's `[aria-current]`-as-`menu-active` fix adds `var(--menu-active-fg)`
+  to the admin sidebar's active nav item, which `npm run norms:generate` now observes and
+  `cairn-audit norms` reads. No consumer action; the manifest is descriptive, not enforced.
 
 ## 0.96.0
 

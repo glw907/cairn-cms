@@ -20,7 +20,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - The three hand-composed chip classes (`cairn-chip-quiet`, `cairn-chip-warning`,
   `cairn-chip-outline`) each pin `font-weight: 400` unlayered, so they outrank a
   `font-semibold`/`font-medium` Tailwind utility on the same element. Source:
-  `src/lib/components/cairn-admin.css:823-864` (rules "PINNED unlayered rule 5/6/7 of 13").
+  `src/lib/components/cairn-admin.css:920-997` (rules "PINNED unlayered rule 6/7/8 of 14").
   [verified]
 - Exactly five call sites carry a ratified `type-scale` exemption directive: the wordmark at three
   sites (ConfirmPage, CairnAdminShell, LoginPage) plus two in EditPage (document title, prose
@@ -568,7 +568,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 ## docs/reference/guidance.md
 
-- `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`). [verified]
+- `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is also refused and not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Both the `.orig` path and the destination beside it land in `report.refused`, so an operator reading the report sees which destination was left stale, not only its `.orig` sibling. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`, `installGuidance`). [verified]
+- A write failure during `cairn-guidance install` (an `ENOSPC`, an `EACCES`, ...) is reported through `InstallReport.writeErrors`, a list of `{ path, code }` entries, separate from `report.refused`: a disk or permissions error is not folded into the containment refusals, so the bin's printed line names the errno code rather than misattributing the failure to a symlink or an out-of-bounds path. Source: `src/lib/guidance/install.ts` (`installGuidance`'s write `catch`), `src/lib/guidance/bin.ts` (`write error` print line). [verified]
 
 ## docs/reference/islands.md
 

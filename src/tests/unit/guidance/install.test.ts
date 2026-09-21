@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync, readFileSync, existsSync, lstatSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -20,6 +20,29 @@ import {
   walkPackagedTree,
   type GuidanceSource,
 } from '../../../lib/guidance/install.js';
+
+// A mocked `open` failure for one write test below, so a disk-error assertion runs
+// deterministically on every CI runner rather than depending on an environment-specific
+// permission trick. `vi.hoisted` is required because the mock factory below runs before this
+// module's own top-level statements, so it cannot close over a plain `let`.
+const writeFailures = vi.hoisted(() => new Map<string, string>());
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
+  return {
+    ...actual,
+    open: async (path: string, flags: number) => {
+      const code = writeFailures.get(path);
+      if (code !== undefined) {
+        writeFailures.delete(path);
+        const err = new Error(`mocked ${code}`) as NodeJS.ErrnoException;
+        err.code = code;
+        throw err;
+      }
+      return actual.open(path, flags);
+    },
+  };
+});
 
 function tmpDir(prefix: string): string {
   return mkdtempSync(join(tmpdir(), prefix));
@@ -329,6 +352,25 @@ describe('installGuidance', () => {
     }
   });
 
+  it('reports a failed write as an error carrying its errno code, not a containment refusal', async () => {
+    const dir = tmpDir('cairn-guidance-write-error-');
+    try {
+      const destAbs = join(dir, '.claude/skills/foo/SKILL.md');
+      writeFailures.set(destAbs, 'ENOSPC');
+
+      const report = await installGuidance(dir, source());
+
+      expect(report.refused).not.toContain('.claude/skills/foo/SKILL.md');
+      expect(report.writeErrors).toContainEqual({
+        path: '.claude/skills/foo/SKILL.md',
+        code: 'ENOSPC',
+      });
+    } finally {
+      writeFailures.clear();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it.skipIf(!SYMLINKS)('installs normally when the project directory is reached through a symlinked parent', async () => {
     const parent = tmpDir('cairn-guidance-linked-parent-');
     try {
@@ -420,6 +462,10 @@ describe('installGuidance', () => {
       const report = await installGuidance(dir, source());
 
       expect(report.refused).toContain('.claude/skills/foo/SKILL.md.orig');
+      // The destination itself is also refused, not just its .orig sibling: without a recovery
+      // copy the destination must not be overwritten, and an operator reading the report needs
+      // to see which destination was left stale.
+      expect(report.refused).toContain('.claude/skills/foo/SKILL.md');
       expect(existsSync(victim)).toBe(false);
       expect(readFileSync(dest, 'utf8')).toBe('the site edit');
       expect(lstatSync(`${dest}.orig`).isSymbolicLink()).toBe(true);

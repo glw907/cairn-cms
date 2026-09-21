@@ -14,6 +14,7 @@
           "[data-theme='cairn-admin'], [data-theme='cairn-admin-dark'], [data-theme='cairn-admin'] *, [data-theme='cairn-admin-dark'] *",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\\:drawer-open > .drawer-toggle ~ .drawer-side",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\\:drawer-open > .drawer-toggle ~ .drawer-side",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is( .drawer-toggle:checked ~ .drawer-side, .lg\\:drawer-open > .drawer-toggle ~ .drawer-side, .xl\\:drawer-open > .drawer-toggle ~ .drawer-side ) > :not(.drawer-overlay)",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-outline",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-warning",

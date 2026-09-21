@@ -872,7 +872,8 @@
         "expressions": [
           "inherit",
           "var(--color-primary)",
-          "var(--color-subtle)"
+          "var(--color-subtle)",
+          "var(--menu-active-fg)"
         ]
       },
       "observations": 50,

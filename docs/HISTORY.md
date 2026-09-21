@@ -7,6 +7,72 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## The pre-cut pass, five tasks, 2026-09-21
+
+Branch `pre-cut`, PR #69. Plan and post-mortem: `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`.
+
+**What landed.** Task 1, the dependency sweep, regenerated both lockfiles from scratch
+(`494d151d`) and recorded the visual gate result (`cab9c670`). Task 2, the two `cairn-guidance`
+write-hardening fixes (item 3, carrying `err.code` out of the write's `catch` into
+`InstallReport.writeErrors`; item 6, listing a refused destination itself alongside its `.orig`
+sibling), landed with `f2a13a83` and was code-simplified in `4035cb8c`. Task 3, the site upgrade
+brief's tools section, landed in `f6af8133` and `41e04390`. Task 4, the Blueprint pre-cut admin
+audit over all 48 components (49 files), ran in the conductor's own turns and landed in
+`49e21caa`, filing five findings and none taken (owner's ruling 3).
+
+**A fix round, resolved.** PR #69's CI is green on test, create-site, scaffold, design, and norms.
+The post-bump CI regen (`b4bd3a5f`) rewrote 33 `admin-visual` baselines, and a fresh-context
+`visual-verifier` read reported four apparent regressions; a bounded fix round measured each
+against the two committed baseline sets and found exactly one real regression. The daisyUI 5.7.28
+bump (Task 1's dependency sweep) pairs `.breadcrumbs { margin-inline-start: -.25rem }` with
+`.breadcrumbs > ul { padding-inline-start: .25rem }`, which nets to no visible shift but took 4px
+out of the crumb list's content box inside a wrapper that sizes to its crumbs, so the flex line
+overflowed by exactly those 4px and every crumb shrank behind `truncate`. Fixed with `ms-0` on the
+breadcrumb `nav`, cancelling only the negative margin; the `ul`'s own padding stays, since it is
+the room the first crumb's keyboard focus ring needs against `.breadcrumbs`'s own scroll clip. The
+other three reported items were not regressions from this bump: the 40px of left inset the same
+change also removed was the UA's default `<ul>` marker gutter, never authored, gone by design; the
+`⌘K` hint narrowing is not in the regen at all, the two baseline sets are pixel-identical there,
+and the difference is this workstation's font resolving `U+2318` differently from CI's, a local
+render compared against a CI baseline; the media view-toggle's ring is commit `2ca47771`'s WCAG
+1.4.11 contrast raise, first captured now because no regen had run since `3a5e2f3b`; and the nav
+depth shadow is daisyUI 5.7.38's stock `[aria-current]` `.menu` treatment, accepted by the owner
+as its native styling rather than an override target.
+
+The fix round is closed: the final `visual-verifier` read matched all four intended moves against
+the CI regen at `c9a58d21` (ten breadcrumb-bearing baselines), and PR #69 merged. The `0.97.0`
+cut it unblocks now HOLDS on a separate owner ruling (2026-09-21): the release must carry the Go
+tool's 1.0, so the cut waits for that tool's Pass B2 to land on `main`.
+
+**Lessons.** The investigator classified all 33 diffs as explained by the renderer from diff
+bounding boxes and called the breadcrumb shift "the top strip only"; only the fresh-context visual
+gate and a direct read of the crops caught the real regression, and only a second, more careful
+fresh-context read (measured against the two committed baseline sets rather than a bounding-box
+classification) separated it from the three non-regressions. The earlier local full e2e that
+"passed" all admin snapshots ran against a stale preview server. `e2e.yml` uploads no Playwright
+report artifact, so CI diffs cannot be viewed without a local reproduction. The prior baseline set
+spanned about 1,033 commits and three weeks, so "the old baseline" was never a clean reference to
+diff against; a regen after a long gap always carries every intended change since the last one,
+not only the change under test.
+
+**What the gate caught, and what it did not.** The first full gate died at `norms:check`
+because that check needs the showcase preview running on port 4173; it is not a standalone
+static check. The implementer initially ran only the `styleguide` e2e spec named in the task and
+had to be re-dispatched to run the full visual suite, 139 baselines, before the gate was trusted.
+The three-lens plan review caught both of these before execution started, so neither cost a fix
+round; they are recorded here because a later pass's own gate list should carry the preview
+prerequisite and the full baseline count explicitly rather than rediscovering them from a red run.
+
+**What a later pass would be wrong to rediscover.** `templates/waymark` is generated wholesale by
+`packages/create-cairn-site/scripts/emit-template-dir.mjs` from `examples/showcase` plus the bake;
+it is never hand-edited, and a hand edit survives at most one emit. `packages/cairn-cms-dev`
+carries its own `version` field, separate from the root manifest, and `publish.yml`'s
+`publish-dev` job's already-published guard exits 0 green when that version is stale, so a root
+version bump alone can produce a silently incomplete publish; no gate enforces the two manifests
+staying in lockstep today (filed to `ROADMAP.md`). A worktree's `examples/showcase/node_modules`
+symlinks back to the main checkout, so a from-scratch `npm install` there is required before any
+showcase build or e2e run in a worktree is trusted.
+
 ## Go tool pass B1 (`cairn-tool-B1`), nine tasks, 2026-09-20
 
 Branch `cairn-tool-a`, PR #60, MERGED with Pass A as `efc75093`. Plan and full post-mortem:

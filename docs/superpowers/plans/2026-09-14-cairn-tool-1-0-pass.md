@@ -1999,7 +1999,8 @@ working `go install`, and a documented scheduled run that alerts on a non-zero e
 verification is Geoff's four production sites, his installed binary, and his systemd timer's first
 unattended firing.
 
-**Ceiling 14M**, accepted by Geoff on 2026-09-20 (evening) with the design amendment. **The
+**Ceiling 14M**, accepted by Geoff on 2026-09-20 (evening) with the design amendment, since raised
+to 18M (see below). **The
 2026-09-20 night three-lens review grew the task count from thirteen to seventeen through four
 sizing splits and one move, and added no scope**; the header states each split and its reason. The
 2026-09-21 overnight fix round then added Task 20b-iii as an eighteenth, itself a sizing split of
@@ -2036,6 +2037,8 @@ requires, naming the module.
 3. **Task 22a's editorial gate** owes the strings its own criterion 8 note lists.
 4. **Task 22a's try-it note** owes the owner both the real terminal and, if still present, three
    offscreen frames from the overnight run.
+
+**Ceiling raised to 18M** by Geoff on 2026-09-21; the 80 percent flag is 14.4M.
 
 **The task table.**
 
@@ -3459,10 +3462,22 @@ before touching `root.go`. Suggested model: `sonnet`.
 
 **Files:**
 - Modify: `tool/internal/render/body_many.go`, `body_many_test.go`
-- Modify: `tool/testdata/golden/` (the twelve-site and all-unknown fixtures and their strip
-  goldens)
+- Modify: `tool/internal/render/fixtures/fixtures.go` (the `TwelveSites` and `AllUnknown`
+  fixtures) and `tool/internal/render/testdata/golden/` (their strip goldens)
 - Modify: `tool/internal/health/check_creds.go`, `check_creds_test.go`
 - Modify: `tool/cmd/cairn/root.go`, `root_test.go`
+
+**Segment 4 rulings (conductor, 2026-09-21).**
+1. Fixtures are Go source at `tool/internal/render/fixtures/fixtures.go` (`AllUnknown`,
+   `TwelveSites`); goldens live under `tool/internal/render/testdata/golden/`, not
+   `tool/testdata/golden/`. Correct the Files list above accordingly.
+2. For criterion 1's blocked-group head: set `f.check` to the blocking variable, and keep
+   `severityClass(g.ids[0])` as the class key. The multi-variable collective word comes from the
+   messages table; if no row fits, add a key, and report it under "New operator-facing strings"
+   for Task 22a's editorial gate. No prose at the call site.
+3. For criterion 2's merged covered-ids: take the intersection, and return nil below two ids,
+   which is the existing no-covered-line shape. Rewrite `mergeCoveredIDs`'s doc comment in the
+   same diff, since it currently calls the union deliberate.
 
 **Acceptance:**
 1. **The many-sites fix list's head for a group blocked by a missing credential names the blocking
@@ -3510,6 +3525,23 @@ because this is the surface that freezes.
   `logs/logs.go` (struct tags)
 - Modify: `tool/cmd/cairn/health.go`, `sites.go`, `logs.go`, `adopt.go`
 
+**Segment 4 rulings (conductor, 2026-09-21).**
+1. No JSON Schema library and no new module for criterion 15's schema validation. A hand-rolled
+   structural test: every `required` key present, each value's JSON type matches the schema's
+   `type`, and no golden key is absent from the schema. Global constraints ban third-party
+   assertion libraries and ADR-0002 changes the dependency graph only by amendment. Do not `go
+   get` a schema library.
+2. For criterion 11's provider-sourced fields: add an explicit `Source` on `spine.OutcomeField`,
+   set by each producing check; the marshal boundary reads it and never infers. A test proves the
+   rule.
+3. For criterion 6's `schemaVersion`: one integer per payload type, each starting at
+   `health.Report.SchemaVersion`'s current value, documented per schema; never one global number
+   across the five schemas.
+4. `spine.StateWord(s, ack)` already exists in `tool/internal/spine/exit.go` and yields the four
+   wire words; criterion 1 reuses it rather than re-deriving the mapping.
+5. `TestReportDeclaresNoMarshalJSON` is at `internal/health/report_test.go:16`, not line 15;
+   correct the file:line if this task's diff touches that comment.
+
 **Acceptance, the shape:**
 1. **No enum reaches JSON as an integer, and the wire word is computed at the report boundary, not
    on `spine.State`** (conductor, 2026-09-20). Verified at HEAD: `spine.State` is `type State int`
@@ -3540,7 +3572,7 @@ because this is the surface that freezes.
    test walks `health.Report`, `health.CheckResult`, `spine.Outcome`, `spine.OutcomeField`, and
    `logs.Entry` and fails on any exported field without one. Falsify by removing one tag.
 4. **`report_test.go`'s no-marshaller assertion is narrowed rather than deleted.** Verified at
-   HEAD: `TestReportDeclaresNoMarshalJSON` (`internal/health/report_test.go:15`) asserts `Report`,
+   HEAD: `TestReportDeclaresNoMarshalJSON` (`internal/health/report_test.go:16`) asserts `Report`,
    `CheckResult`, and `spine.Outcome` implement no `json.Marshaler`, and its stated intent is that
    `Report.JSON` stays the only path bytes leave through so no bare `json.Marshal` silently
    re-implements the redaction filter. That intent is preserved: all three still declare none, the
@@ -3645,6 +3677,31 @@ file. Suggested model: `sonnet`.
 - Modify: `tool/internal/spine/exit.go`, `exit_test.go` (the severity input Task 18 left open)
 - Modify: `tool/cmd/cairn/main.go`, `root.go`, `auth.go`, `probe_token.go`, `health.go`
 
+**Segment 4 rulings (conductor, 2026-09-21).**
+1. For criterion 7's severity plumbing: add a `Severity` field on `spine.CheckVerdict`, populated
+   by health's report-to-verdict conversion. `spine` never imports `health` and never learns a
+   check id.
+2. For criterion 2's `Degraded` handling: the cred-missing exclusion from the UNKNOWN trigger is
+   per check, on `Reason == cred-missing`. `Report.Degraded` is only the reported discriminator
+   and suppresses nothing wholesale; a site with both a cred-missing skip and a transport Unknown
+   is UNKNOWN.
+3. For criterion 5's byte-empty-stdout requirement: usage and help text for an error go to
+   stderr; stdout stays for payloads (`SilenceUsage` plus an explicit stderr print, or the cobra
+   equivalent). Pin it with the falsification table run against the built binary.
+4. Add to the Files list above: `tool/internal/render/testdata/golden/` (the recut) and
+   `tool/internal/render/golden_test.go`, which the carried golden recut requires.
+5. Criterion 6's "measured at HEAD" line is stale. At HEAD `76364ca2` `cairn --nope`, `cairn
+   frobnicate`, `cairn auth set` with no argument, and `cairn health` with no registry all exit 3,
+   since `tool/cmd/cairn/main.go:55` exits `int(spine.VerdictUnknown)`; Task 18 shipped that. The
+   exit-3 requirement already holds for these cases, so this task owes the falsification-table
+   test and whatever rows still fail, not a behavior change here. The criterion text below is
+   corrected to match.
+6. Criterion 11's premise is stale. `os.Exit` appears at `main.go:55` and as the field default
+   `exit: os.Exit` at `tool/cmd/cairn/deps.go:128`. `probe_token.go` calls `d.exit(...)` (line
+   214), as do `health.go:119`, `sites.go:105`, `health_sweep.go:161`. The writer-grep allows
+   exactly those two `os.Exit` occurrences (`main.go` and `deps.go`'s field default). The
+   criterion text below is corrected to match.
+
 **Produces:** `logx.New(w io.Writer, scrub []providers.Credential)` whose every write runs the
 scrub last, over line boundaries.
 
@@ -3703,10 +3760,12 @@ show the corrected fixtures.
    `cairn auth set NOT_A_VAR`, and `cairn auth` alone. Each must exit 3 with byte-empty stdout,
    **run against the built binary**, not against a `cobra.Command` in memory. The same six rows are
    run against the pre-task binary and the report records that result. **Bare `cairn health` is not
-   a row**: after Task 19a-ii it is a valid sweep. **Measured at HEAD on 2026-09-20 against a fresh
-   `go build`**: `cairn --nope` exits 1, `cairn frobnicate` exits 1, `cairn auth set` with no
-   argument exits 1, and `cairn health` exits 1, because `cmd/cairn/main.go:14` exits 1 on every
-   error; `cairn auth` alone exits 0, because a command group with no `RunE` prints help.
+   a row**: after Task 19a-ii it is a valid sweep. **Measured at HEAD `76364ca2` against a fresh
+   `go build`**: `cairn --nope`, `cairn frobnicate`, `cairn auth set` with no argument, and `cairn
+   health` with no registry all already exit 3, since `tool/cmd/cairn/main.go:55` exits
+   `int(spine.VerdictUnknown)` (Task 18 shipped this); `cairn auth` alone still exits 0, because a
+   command group with no `RunE` prints help. This task owes the falsification-table test itself
+   and a fix for whatever rows still fail, not a behavior change to the already-passing cases.
 7. **`--help` and `--version` exit 0,** recorded in `exit-codes.md` as a deliberate deviation from
    the monitoring guidelines, which would have them exit 3. A human running `cairn --help` should
    not see a failure, and no scheduled routine invokes either.
@@ -3729,11 +3788,14 @@ show the corrected fixtures.
     test asserts each of the four reaches its code through `main` without `ExitCode` being called,
     and `exit-codes.md` states the split.
 11. **`cmd/cairn` returns a typed exit error from `RunE` and `main` is the only `os.Exit` caller.**
-    Verified 2026-09-20 at HEAD: `os.Exit` appears in two places, `main.go:14` and
-    `probe_token.go:41`, where the probe command takes an `exit func(int)` and calls it itself,
-    which is a third path. After this task the writer grep extends to `os.Exit`: the test that
-    allows `os.Stdout` and `os.Stderr` only in `main.go` also allows `os.Exit` only there. Falsify
-    by adding one elsewhere, confirm the failure names it, remove it.
+    Verified 2026-09-21 at HEAD `76364ca2`: `os.Exit` appears at `main.go:55` and as the field
+    default `exit: os.Exit` at `tool/cmd/cairn/deps.go:128`; `probe_token.go` calls `d.exit(...)`
+    (line 214), as do `health.go:119`, `sites.go:105`, and `health_sweep.go:161`, so the probe
+    command and the health/sites/sweep paths already call through the injected field rather than
+    `os.Exit` directly. After this task the writer grep extends to `os.Exit`, allowing exactly the
+    two occurrences in `main.go` and `deps.go`'s field default: the test that allows `os.Stdout`
+    and `os.Stderr` only in `main.go` also allows `os.Exit` only there (plus that one field
+    default). Falsify by adding one elsewhere, confirm the failure names it, remove it.
 12. **`main` recovers a panic, prints one scrubbed line through the same chokepoint, and exits 3.**
     A Go panic's default output goes straight to the real `os.Stderr`, bypassing the scrubbing
     writer, so a panic in a credential-carrying frame could print a token into a scheduler's log.
@@ -3831,9 +3893,20 @@ writing any Go file and `golang-spf13-cobra` before any `cmd/cairn` file. Sugges
 - Create: `tool/CHANGELOG.md`, `tool/README.md`
 - Create: `tool/cmd/mangen/main.go`, `main_test.go` (the man-page generator, in its own command)
 - Create: `tool/docs/release-candidate-notes.md` (the owner's "try it" note)
-- Modify: `docs/STATUS.md` (the tool's installed version line)
 - Modify: `tool/cmd/cairn/root_test.go` (the every-action coverage assertion), `root.go` (cobra's
   `Version` field), `tool/Makefile` (a `man` target)
+
+**Segment 4 rulings (conductor, 2026-09-21).**
+1. This task does not touch `docs/STATUS.md`; it is removed from the Files list above. The
+   conductor writes STATUS at the segment boundary, and Task 25 carries the version line. This
+   keeps this task's diff tool-only and its gate on the light lane.
+2. For criterion 3's man pages: proceed with `cmd/mangen` on `cobra/doc`. `go-md2man` and
+   `blackfriday` arrive as indirect requires; record both in `tool/docs/adr/0002-render-dependencies.md`
+   in the same commit. The direct-require count stays four.
+3. Criterion 8's carry-forward list is short one item: seven ack refusals, not six, since the
+   list omits `ackFileUnreadableError`. The "owed to Task 22a's editorial gate" comment is one
+   block comment above all seven `tmplAck*` constants at `tool/cmd/cairn/messages.go:276`, not one
+   per function. The criterion text below is corrected to match.
 
 **Acceptance:**
 1. **Every action coverage assertion, under the renamed grammar.** A test over the cobra tree
@@ -3905,10 +3978,11 @@ writing any Go file and `golang-spf13-cobra` before any `cmd/cairn` file. Sugges
    heading, all four of the last group already carried in `copy-standard.md` section 4.7 (checked
    2026-09-21: it holds ten rows, all from Task 20b-i and 20b-ii's render strings). **Section 4.7
    does not carry the segment 2 strings**, against an earlier report's claim that it did: `auth
-   unset`'s six ack-file errors (`ackFlagError`, `ackFileNotFoundError`, `ackFileMalformedError`,
-   `ackFileMissingCheckIDError`, `ackFileMissingExpiryError`, `ackFileMalformedDateError`, all in
-   `tool/cmd/cairn/messages.go`, each commented "owed to Task 22a's editorial gate" at its
-   definition) and the sweep's partial-result line (`writeSweepTimeout` in
+   unset`'s seven ack refusals (`ackFlagError`, `ackFileNotFoundError`, `ackFileMalformedError`,
+   `ackFileMissingCheckIDError`, `ackFileMissingExpiryError`, `ackFileMalformedDateError`,
+   `ackFileUnreadableError`, all in `tool/cmd/cairn/messages.go`, covered by one block comment
+   reading "owed to Task 22a's editorial gate" above all seven, at `messages.go:276`) and the
+   sweep's partial-result line (`writeSweepTimeout` in
    `tool/cmd/cairn/health_sweep.go`, its three columns "new to `cmd/cairn`'s operator-facing
    strings" by the function's own comment) are owed but uncaptured in the catalogue. This task's
    editorial gate reads them from the code comments marking them, not from section 4.7 alone, and
@@ -3937,6 +4011,8 @@ writing any Go file and `golang-spf13-cobra` before any `cmd/cairn` file. Sugges
   Commit.
 
 ### Task 24a: The scheduled run, documented for three schedulers
+
+Segment 4 decision pre-flight, 2026-09-21: fully specified; no rulings.
 
 **Not owner-gated, and it is the last task of the overnight launch list.** It verifies against Task
 22a's release-candidate binary, not against the tag, which is why it runs before the gate rather
@@ -4279,10 +4355,10 @@ Owner-gated because it merges the branch Task 22b's published tag lives on. Sugg
 
 ### Outside the amendment, for the owner
 
-Eleven items the pass surfaced that sit outside the bounds Geoff pre-approved (eight from the
-design amendment, three from the 2026-09-21 overnight run). None is a task, none is executed by
-this pass, and each names what would settle it. Task 25 carries them forward to the ROADMAP,
-STATUS, or the facts container.
+Twelve items the pass surfaced that sit outside the bounds Geoff pre-approved (eight from the
+design amendment, three from the 2026-09-21 overnight run, one from the segment 4 pre-flight).
+None is a task, none is executed by this pass, and each names what would settle it. Task 25
+carries them forward to the ROADMAP, STATUS, or the facts container.
 
 1. **A version of the engine's condition registry carrying `actor` and `outward`.** 1.0 holds both
    fields in the Go tool's own messages table, because `src/lib/diagnostics/conditions.ts` is read
@@ -4342,6 +4418,11 @@ STATUS, or the facts container.
     accepted tasks during the overnight run. The fix compares the command line alone, never the
     classifier's preamble, and belongs in the dotfiles runner rather than in this repo; it is
     recorded here because this pass is what surfaced it.
+12. **The collective-word copy for a multi-variable blocked group is new operator prose.** Task
+    20b-iii's fix-list head needs a word covering more than one missing-credential variable at
+    once, and the messages table may gain a key for it. Whether that word reads right wants
+    Geoff's own read at Task 22a's editorial gate, the same gate that carries the segment 2 and
+    segment 3 carry-forward strings.
 
 ---
 

@@ -1,15 +1,8 @@
-This is cairn's own agent guidance, imported by your site's root `CLAUDE.md`. Everything under
-`.claude/cairn/` is engine-owned and refreshed by `npx cairn-guidance install` on every upgrade;
-put site-specific guidance in your own `CLAUDE.md`, never in this file, since an install
-overwrites it.
+Put site-specific guidance in your own `CLAUDE.md`, never in this file: `npx cairn-guidance
+install` overwrites everything under `.claude/cairn/` on every upgrade. This file is cairn's own
+agent guidance, imported by your site's root `CLAUDE.md`.
 
 ## The boundary
-
-cairn is a lean, opinionated CMS that makes a non-technical author productive editing raw
-markdown on a SvelteKit + Cloudflare site, and publishes through a GitHub App. It serves a
-developer who wants a content-managed site fast, then appends their own functionality to it.
-cairn is a starting framework and an admin skeleton, not a platform: it does one job well and
-gets out of the way.
 
 cairn owns its core job, managing markdown content and the editor/admin frame, and little else.
 Everything a site needs beyond that, its own functionality, actors, auth, data, and domain
@@ -47,7 +40,8 @@ up, the `CLAUDE.md` import line intact, and the guidance tree itself up to date;
 
 Before building a new admin component by hand, ask whether a stock DaisyUI component or template
 already covers it. The `cairn-extend` skill opens with this question and names the seam and the
-showcase example for common patterns; reach for it before writing new markup under `/admin`.
+recipe for the two patterns it covers today; reach for it before writing new markup under
+`/admin`.
 
 ## The Stop hook
 
@@ -79,10 +73,9 @@ settles on a result, not after every single tool call inside it.
 
 Install the published DaisyUI skill (`npx skills add saadeghi/daisyui --agent claude-code`) for
 the component reference. A free documentation MCP server is available at
-`https://gitmcp.io/saadeghi/daisyui`; Blueprint is the paid option, with a rules enforcer and a
-quality inspector.
+`https://gitmcp.io/saadeghi/daisyui`. Blueprint is the paid option, a rules enforcer and quality
+inspector for DaisyUI markup: https://daisyui.com/blueprint/.
 
 ## Where the docs are
 
-If the Go `cairn` tool is installed, `cairn docs <query>` searches the installed engine version's
-docs directly. Otherwise, read `node_modules/@glw907/cairn-cms/docs/reference/README.md`.
+Read `node_modules/@glw907/cairn-cms/docs/reference/README.md`.

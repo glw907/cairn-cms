@@ -68,8 +68,8 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
 `install` copies beyond the packaged skills:
 
 - **`claude/CLAUDE.md`** is the fragment `install` writes to `.claude/cairn/CLAUDE.md`. It opens
-  by naming itself and the tree it lives under as engine-owned, then carries the boundary in two
-  quoted paragraphs, the named atoms with their reference pages, the gates and how to run them,
+  with the imperative to keep site-specific guidance out of this file, then carries the boundary
+  in one paragraph, the named atoms with their reference pages, the gates and how to run them,
   the DaisyUI-first rule, the `Stop` hook snippet with its one-line why, the DaisyUI tooling
   recommendation, and where the docs are. It stays under 1,500 words.
 - **`claude/agents/cairn-extension-reviewer.md`** is the read-only review agent `install` writes
@@ -102,9 +102,8 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
   before touching anything under `/admin`, admin-toolkit components, or `cairn-admin.css`,
   pointing at `cairn-audit`'s mechanical checks rather than restating their formulas.
 - **`cairn-extend`** is the recipe router: given what a developer is building, it opens with
-  whether a stock DaisyUI component already covers it, then names the atom, the seam, the
-  showcase exemplar file, and the fact bullet that records the pattern for each case, and closes
-  with a pre-flight checklist reference.
+  whether a stock DaisyUI component already covers it, then names the atom, the seam, and the
+  shipped recipe doc for each case, and closes with a pre-flight checklist reference.
 - **`cairn-consult`** triggers when a developer has worked around the engine twice, or wants
   something the seams do not reach, and writes a consultation brief in the four-field format
   (what the pass builds, the engine edge it presses, evidence for the any-site case, the site's

@@ -17,7 +17,7 @@ Constraints on top of that gate:
    even when that leaves the requesting site doing some hand-rolling. Worked example: the
    StatusChip absorption takes ASC's ratified grammar but re-tunes every measured value
    against the engine's own themes.
-4. **The standard applies retroactively** (the audit, below).
+4. **The standard applies retroactively.**
 
 An item fails the gate when the hand-roll is small, domain-shaped, or a discoverability
 problem an export would not fix.
@@ -25,5 +25,5 @@ problem an export would not fix.
 The gate serves a standing goal Geoff named at the sitting: the engine stays clean,
 even, beautiful, and broadly useful. Membership and shape are per-item tests; evenness
 and coherence are properties of the whole surface, and the audit judges them at that
-altitude (section 4).
+altitude.
 

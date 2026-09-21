@@ -19,10 +19,8 @@ component usually measure" as data instead of inference from a screenshot.
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
 running dev server, both themes) runs thirty-four rules across two modes: seventeen static,
 fifteen error tier and two advisory, and seventeen rendered, seven error and ten advisory. Full
-descriptions live in
-[`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
-(the installed package's copy, reached from where this skill lives once `cairn-guidance install`
-installs it at `.claude/skills/cairn-admin-screens/`).
+descriptions live at `node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`, a path from
+your site's root (the installed package's copy).
 
 **Static, error tier:** `no-uncompiled-class`, `type-scale`, `gap-scale`,
 `stock-default-hazards`, `token-colors`, `grammar-boundary`, `focus-parity`, `motion-band`,
@@ -45,8 +43,8 @@ differently on purpose; reported, never gating): `chip-ground-collision`, `borde
 
 `screen-anatomy` checks the negative half mechanically: one `PageHeader`, one `h1`, and no
 accent- or ink-filled action stray outside the header slot or the card region (desk routes are
-exempt; see `docs/reference/cairn-audit.md`, at `../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`,
-the installed package's copy).
+exempt; see `node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`, a path from your
+site's root).
 
 The affirmative half is guidance, not a lint: **the primary action sits in the header slot.** The
 rule cannot enforce this because it cannot know whether a given screen has a primary action to
@@ -63,10 +61,9 @@ reads for it.
 A component's measured shape (control height, padding, border treatment, radius) is data, not
 prose to recall: `npx cairn-audit norms <role>` returns the measured band with its provenance,
 ratified against a written decision or observed-only. Query by role id (`button-primary`,
-`status-chip`, `card`, `table-cell`, `page-title`, and the rest; the full role table is in
-`docs/reference/cairn-audit.md`, at `../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`
-(again, the installed package's copy)) before inventing a height or a padding value from
-scratch.
+`status-chip`, `card`, `table-cell`, `page-title`, and the rest; the full role table is at
+`node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`, again a path from your site's
+root) before inventing a height or a padding value from scratch.
 
 ## Register rules
 

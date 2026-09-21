@@ -38,10 +38,14 @@ against your own.
 - Every operationally meaningful event logs through `createLogger` (`/log`), never a bare
   `console` call.
 
-## 6. Run the gates a site's own install wires up
+## 6. Run the gates the site has wired up
 
-A site installed through `cairn-guidance install` carries a `Stop` hook that runs
-`npm run check:cairn --if-present`; let it run rather than skipping past a failure. If the change
+`cairn-guidance install` writes only under `.claude/skills`, `.claude/agents`, and
+`.claude/cairn`; it wires no hook or script by itself. Run `npx cairn-guidance check` to see
+whether this site's own `check:cairn` script and `Stop` hook are wired; it prints the snippet to
+add when one is missing. If the `Stop` hook is wired (a developer pasted the printed snippet into
+`.claude/settings.json`), it runs `npm run check:cairn --if-present` at the end of every session;
+let it run rather than skipping past a failure. If the change
 touched anything under `/admin`, load the `cairn-admin-screens` skill and run its own done-gate
 (the static and rendered `cairn-audit` passes) before calling the screen finished. If
 `.claude/agents/cairn-extension-reviewer.md` is installed, run it over the diff: it is read-only,

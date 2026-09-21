@@ -62,15 +62,17 @@ func newDiscoveryClient() *providers.Cloudflare {
 }
 
 // TestDiscoverFillsEveryCandidateField asserts Discover lists every Worker on the account, fills
-// the domain from the Worker domains route, the zone from the zone's own name rather than the
-// domain, and Connected and Repo from the Builds triggers.
+// the domain and zone id from the Worker domains route, the zone name from the zone's own name
+// rather than the domain, and Connected and Repo from the Builds triggers. The zone id is what
+// the HTTPS-forced and email checks read a site's zone through; a record adopted without one
+// reports both of them unobservable.
 func TestDiscoverFillsEveryCandidateField(t *testing.T) {
 	got, err := Discover(context.Background(), newDiscoveryClient(), "account-1")
 	if err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 	want := []Candidate{
-		{Worker: "ecxc-ski", Repo: "glw907/ecxc-ski", Zone: "ecxc.ski", Domain: "www.ecxc.ski", AccountID: "account-1", Connected: true},
+		{Worker: "ecxc-ski", Repo: "glw907/ecxc-ski", Zone: "ecxc.ski", ZoneID: "zone-1", Domain: "www.ecxc.ski", AccountID: "account-1", Connected: true},
 		{Worker: "spare", AccountID: "account-1"},
 	}
 	if len(got) != len(want) {

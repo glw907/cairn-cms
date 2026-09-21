@@ -173,7 +173,11 @@ type adoptListPayload struct {
 	Candidates           []AdoptCandidate `json:"candidates"`
 }
 
-// AdoptCandidate is one discovered Worker in the adopt candidate list payload.
+// AdoptCandidate is one discovered Worker in the adopt candidate list payload. Adoptable splits
+// the list into its two groups: cairn provisions Workers Custom Domains and never Workers Routes,
+// so a Worker serving a site through a route carries no domain here and discovery cannot build a
+// record for it. It is an added optional field rather than a second array, so a reader written
+// against schemaVersion 1 before 2026-09-21 still reads every candidate it used to.
 type AdoptCandidate struct {
 	Worker    string `json:"worker"`
 	Repo      string `json:"repo"`
@@ -182,6 +186,7 @@ type AdoptCandidate struct {
 	AccountID string `json:"accountId"`
 	Connected bool   `json:"connected"`
 	Adopted   bool   `json:"adopted"`
+	Adoptable bool   `json:"adoptable"`
 }
 
 // SiteJSON carries what one site's payload is built from. The caller supplies the report, the

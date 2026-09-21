@@ -26,7 +26,13 @@ type Candidate struct {
 	Repo string
 	// Zone is the name of the DNS zone holding Domain, not Domain itself.
 	Zone string
-	// Domain is the custom domain attached to this Worker, and is empty when none is.
+	// ZoneID is that zone's Cloudflare id, the value the HTTPS-forced and email checks read a
+	// site's zone settings and sending subdomains through.
+	ZoneID string
+	// Domain is the Custom Domain attached to this Worker, and is empty when none is. cairn
+	// provisions Workers Custom Domains and never Workers Routes
+	// (packages/create-cairn-site/src/cloudflare/hostname.mjs), so discovery reads only the
+	// Custom Domains route, and a Worker serving a site through a route leaves this empty.
 	Domain string
 	// AccountID is the Cloudflare account the Worker lives in.
 	AccountID string
@@ -71,6 +77,7 @@ func Discover(ctx context.Context, cf *providers.Cloudflare, accountID string) (
 		if d, ok := byService[w.Name]; ok {
 			c.Domain = d.Hostname
 			c.Zone = zoneNames[d.ZoneID]
+			c.ZoneID = d.ZoneID
 		}
 		triggers, err := cf.BuildsConnections(ctx, w.Tag)
 		if err != nil {
@@ -86,6 +93,29 @@ func Discover(ctx context.Context, cf *providers.Cloudflare, accountID string) (
 		candidates = append(candidates, c)
 	}
 	return candidates, nil
+}
+
+// ZoneFor returns the account's zone covering domain, or a nil Zone with no error when none
+// does. A domain matches the longest zone name it equals or sits beneath, so a zone for a
+// subdomain wins over the apex zone that also contains it. It exists for adoption from explicit
+// values, where the operator names a domain discovery never saw and the record still needs the
+// zone id the HTTPS-forced and email checks read through. One listing answers it, the same call
+// Discover already makes, rather than a lookup per candidate zone name.
+func ZoneFor(ctx context.Context, cf *providers.Cloudflare, domain string) (*providers.Zone, error) {
+	zones, err := cf.ListZones(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("adopt: list zones: %w", err)
+	}
+	var best *providers.Zone
+	for i, z := range zones {
+		if domain != z.Name && !strings.HasSuffix(domain, "."+z.Name) {
+			continue
+		}
+		if best == nil || len(z.Name) > len(best.Name) {
+			best = &zones[i]
+		}
+	}
+	return best, nil
 }
 
 // AlreadyAdopted reports whether st already holds a record for c's Worker. A Candidate with no
@@ -144,6 +174,7 @@ func Adopt(ctx context.Context, st *store.Store, c Candidate, name string, resol
 		Adopted: true,
 		Cloudflare: record.Cloudflare{
 			AccountID:  c.AccountID,
+			ZoneID:     c.ZoneID,
 			WorkerName: c.Worker,
 		},
 	}

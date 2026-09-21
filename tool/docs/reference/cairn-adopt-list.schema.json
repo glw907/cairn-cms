@@ -25,7 +25,8 @@
           "domain": { "type": "string" },
           "accountId": { "type": "string" },
           "connected": { "type": "boolean" },
-          "adopted": { "type": "boolean" }
+          "adopted": { "type": "boolean" },
+          "adoptable": { "type": "boolean" }
         }
       }
     }

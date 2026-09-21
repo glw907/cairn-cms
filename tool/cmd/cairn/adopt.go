@@ -17,6 +17,10 @@ type adoptFlags struct {
 	worker string
 	// repo overrides the repository Workers Builds reports, as "owner/name".
 	repo string
+	// domain is the domain the Worker serves, for a Worker discovery found no Custom Domain
+	// for. It overrides a discovered Custom Domain when both are present, so an operator can
+	// correct one without editing a record by hand.
+	domain string
 }
 
 // adoptListFlags holds cairn adopt list's own flags.
@@ -45,6 +49,7 @@ func newAdoptCmd(d deps, rf *rootFlags) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&f.worker, "worker", "", flagWorkerHelp)
 	cmd.Flags().StringVar(&f.repo, "repo", "", flagRepoHelp)
+	cmd.Flags().StringVar(&f.domain, "domain", "", flagAdoptDomainHelp)
 
 	var lf adoptListFlags
 	list := &cobra.Command{
@@ -90,6 +95,7 @@ func discoverCandidates(ctx context.Context, d deps) ([]render.AdoptCandidate, e
 			AccountID: c.AccountID,
 			Connected: c.Connected,
 			Adopted:   adopt.AlreadyAdopted(st, c),
+			Adoptable: c.Domain != "",
 		})
 	}
 	return lines, nil
@@ -114,12 +120,7 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 		return err
 	}
 	if !lf.asJSON {
-		for _, c := range lines {
-			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%s\n", c.Worker, c.Domain, c.Repo); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeAdoptListPlain(cmd, lines)
 	}
 	data, err := render.MarshalAdoptList(lines)
 	if err != nil {
@@ -127,6 +128,42 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 	}
 	_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", data)
 	return err
+}
+
+// writeAdoptListPlain writes the plain listing in its two groups: the Workers discovery can
+// adopt, then a blank line, then the Workers with no Custom Domain. stdout stays records only,
+// one tab-separated line each, so a shell reading it keeps working; the blank line is the group
+// boundary and the notice explaining it goes to stderr, beside the paste notice already there.
+func writeAdoptListPlain(cmd *cobra.Command, lines []render.AdoptCandidate) error {
+	write := func(c render.AdoptCandidate) error {
+		_, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%s\n", c.Worker, c.Domain, c.Repo)
+		return err
+	}
+	var routeOnly []render.AdoptCandidate
+	for _, c := range lines {
+		if !c.Adoptable {
+			routeOnly = append(routeOnly, c)
+			continue
+		}
+		if err := write(c); err != nil {
+			return err
+		}
+	}
+	if len(routeOnly) == 0 {
+		return nil
+	}
+	if _, err := fmt.Fprintln(cmd.ErrOrStderr(), adoptListRouteOnlyNotice()); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {
+		return err
+	}
+	for _, c := range routeOnly {
+		if err := write(c); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // runAdopt writes the registry record for one named Worker.
@@ -161,6 +198,23 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 	}
 	if f.repo != "" {
 		chosen.Repo = f.repo
+	}
+	if f.domain != "" {
+		chosen.Domain = f.domain
+		zone, err := adopt.ZoneFor(ctx, clients.CF, f.domain)
+		if err != nil {
+			return err
+		}
+		// A domain outside every zone on the account leaves the zone fields empty rather than
+		// refusing the adoption: the zone-scoped checks report their own unobservable verdict
+		// for a record that carries no zone id, and a site served from a zone elsewhere is
+		// still a site worth registering.
+		if zone != nil {
+			chosen.Zone, chosen.ZoneID = zone.Name, zone.ID
+		}
+	}
+	if chosen.Domain == "" {
+		return adoptNoDomainError(f.worker)
 	}
 
 	st, err := openRegistry(d)

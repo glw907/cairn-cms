@@ -94,7 +94,7 @@ func TestEveryActionCoverage(t *testing.T) {
 	assertOwnFlags(t, byPath["cairn sites list"], "help")
 	assertOwnFlags(t, byPath["cairn health"], "json", "error-threshold", "since", "ack", "help")
 	assertOwnFlags(t, byPath["cairn logs"], "event", "since", "json", "help")
-	assertOwnFlags(t, byPath["cairn adopt"], "worker", "repo", "help")
+	assertOwnFlags(t, byPath["cairn adopt"], "worker", "repo", "domain", "help")
 	// adopt list's --json is declared on the list subcommand itself, unlike sites list's.
 	assertOwnFlags(t, byPath["cairn adopt list"], "json", "help")
 	assertOwnFlags(t, byPath["cairn auth check"], "json", "help")

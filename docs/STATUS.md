@@ -13,35 +13,28 @@ window holds for one cut, after extend-2. CI on `main` is green.
 
 ## Immediate next action
 
-**extend-2 is IN FLIGHT (launched 2026-09-20)**, one `pass-execute-chains` workflow over two
-worktrees: chain A (`.claude/worktrees/extend-2`, tasks 1a, 1b, 2, 3a, 3b, 3c, 4) and chain B
-(`.claude/worktrees/extend-2-skills`, tasks 5, 6, 7). **Checkpoint (2026-09-20 15:40):** ACCEPTED: 1a (after a conductor-ruled
-comment-only third round, `dc419c43`), 1b, 2, 3a, 3b, 5, 6, 7. **3c ESCALATED** and ruled: its
-grep criterion binds the `@source` line in `src/admin.css` only (the plan carries the ruling); a
-direct `cairn-implementer` dispatch is squashing its three commits to one and fixing two
-comment-only findings, then a `diff-reviewer` read. **Task 4 is next**, dispatched directly (no
-third workflow run), then the ritual. Spend: 1.87M (run 1) plus 2.18M (run 2, `wf_c9530051-ac2`)
-plus about 0.1M direct, 4.15M of the 6.5M ceiling Geoff set 2026-09-20 (flag at 5.2M). Rulings taken: the
-gate per task is `gate-tier.mjs`'s computed string plus the checks the task's criteria name; a
-`package.json` touch computes the `full` tier, whose local e2e is green when its only failures
-are the 20 CI-canonical baseline files from `4de378ec`; the unknown-exclusion case prints the
-`@source not` line from a constant, with no sixth packaged snippet. **Owed at the ritual, chain A:** the fragment's `../docs/reference/*.md` links resolve in the
-tarball but break once installed to `.claude/cairn/CLAUDE.md` (rewrite at install or link by
-package path); `claude/snippets/check.yml` ships the `cairn-guidance check` step per the showcase
-workflow, verify it is enabled after 3b; `examples/showcase/.gitignore` now ignores
-`.claude/agent-memory/` beside seven tracked memory files; `VERSION` stamped from the caret-stripped
-spec reads stale on day one when npm resolves a newer patch; no facts bullet for the scaffold's
-third CI step; stray backslash escapes in `bake-template.mjs`'s JSDoc. **Follow-up to file at the
-close:** `cairn-audit.config.json`'s `sheet` entry still names `dist/components/cairn-admin.css`.
-**Owed at the ritual, one
-chain-B fold task:** `skills/cairn-consult/references/the-standard.md` carries a dated spec
-citation inside shipped markdown (the byte-identical copy criterion conflicts with the
-no-process-citations constraint; strip the HTML comment and relax the diff to the body);
-`cairn-consult` names workstation-only `engine-consult` and `engine-triage`; `cairn-extend` cites
-`docs/internal/` paths that do not ship in the tarball, and `preflight.md` names siblings that
-exist only after chain A merges; `daisyui-first.md` misses the `polish-busy-idiom` slug and
-rounds 1.14:1 to "under 1.5:1". A cold session checks both worktrees for a live executor before
-touching either.
+**extend-2 is IN ITS CLOSE (2026-09-20 17:30), PR #67** (`extend-2`, head `703b411d`; worktree
+`.claude/worktrees/extend-2`; `extend-2-skills` is merged into it). All ten tasks ACCEPTED (1a,
+1b, 2, 3a, 3b, 3c, 4, 5, 6, 7). Close commits on top: the skills merge `da3d24e5`, fold 1
+`c0980e59`, fold 2 `722ee35c`, the prose fold `d176a95d`, the security fix `9aa7765a`,
+`code-simplifier` `703b411d`. The blocking security read found write containment was lexical only
+(a symlinked `.claude`, a dangling `.orig` link); fixed on Opus, re-read, PASS. **In flight:** a
+gate-runner agent on the from-scratch consumer build, the plan's FULL string, and the local e2e;
+CI on PR #67. **Left, in order:** read both gate results; the monthly Claude Code schema routine
+(`schedule` skill, id into Active watches); one close fold on the branch (HISTORY entry, the
+plan's post-mortem, ROADMAP entry for the six security-hardening items M1 to M6 from the re-read:
+non-recursive `mkdir` against a planted symlink, refuse `nlink > 1`, carry `err.code` out of the
+write catch, `EACCES` outside the try, the lstat walk on `check`'s read side, a refused
+destination missing from the report lists; facts bullet home for the symlink rule); merge on green
+CI; STATUS pruned to 60 lines on `main`; memory refreshed; inhibitors released. Spend about 5.6M of
+the 6.5M ceiling Geoff set 2026-09-20, past the 5.2M flag with only the close left, so no question
+was raised. Rulings taken: the per-task gate is `gate-tier.mjs`'s computed string plus the checks
+the criteria name; 3c's `dist` criterion binds the `@source` line only (plan carries it), the
+`sheet` entry filed to ROADMAP; shipped guidance names engine docs as
+`node_modules/@glw907/cairn-cms/docs/...` paths from the site root, never relative links; the
+fragment's `cairn docs <query>` line was cut because the subcommand has not shipped (the docs
+rebuild restores it); Blueprint stays as the ruled paid option, with its URL. A cold session
+checks the worktree for a live executor before touching it.
 
 The pass: plan `docs/superpowers/plans/2026-09-14-extend-2-pass.md`, in a
 worktree off `main`, workflow mode through `pass-execute-chains.js`. Its 2026-09-19 amendment adds

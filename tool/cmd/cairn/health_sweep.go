@@ -110,7 +110,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 		}
 		verdict := spine.ExitCode([]spine.SiteVerdicts{checks}, nil, 0)
 		if err := writeHealthBody(out, d, rf, []health.Report{report}, verdict,
-			runStatus(clients, 0, report.Degraded), rf.quiet); err != nil {
+			runStatus(clients, 0, report.Degraded, []health.Report{report}), rf.quiet); err != nil {
 			return err
 		}
 	}
@@ -133,7 +133,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 	// silent and mail-free, and on any other verdict hands the frame its failing checks alone.
 	case fleet && rf.quiet && verdict == spine.VerdictOK:
 	case fleet:
-		status := runStatus(clients, d.now().Sub(started), anyDegraded(reports))
+		status := runStatus(clients, d.now().Sub(started), anyDegraded(reports), reports)
 		if err := writeHealthBody(out, d, rf, reports, verdict, status, rf.quiet); err != nil {
 			return err
 		}

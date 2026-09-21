@@ -117,7 +117,7 @@ func writeSitesStatus(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags, v
 	if f.asJSON || (rf.quiet && verdict == spine.VerdictOK) {
 		return nil
 	}
-	in := renderInput(d, rf, nil, verdict, runStatus(buildClients(d), 0, false))
+	in := renderInput(d, rf, nil, verdict, runStatus(buildClients(d), 0, false, nil))
 	in.View = render.ViewStatus
 	for _, line := range render.Render(in).Lines() {
 		if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {

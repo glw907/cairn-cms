@@ -618,7 +618,7 @@ failure message (which names this document), the B2 plan's per-task acceptance c
 `cairn-implementer` agent definition. A copy standard that lives only in a review file reaches
 nobody.
 
-### 4.7 Strings owed to the editorial gate (Task 20b-ii, 2026-09-21)
+### 4.7 Strings owed to the editorial gate (Task 20b-ii, 2026-09-21; three added at the segment 3 review the same day)
 
 The render's fleet body, its log body, and its status line each needed a fragment this catalogue
 does not carry. Each is the plainest form satisfying 2.4 through 2.8, written to the fixed
@@ -633,7 +633,9 @@ vocabulary of 2.9, and each is **owed to the Task 22a editorial gate** rather th
 | fix table, a check blocked by a missing token | `Run \`cairn auth set\` naming the missing token, then run the command again.` | 3.3's row names one variable, and one table entry covers both tokens; the renderer names the variable beside the entry |
 | fleet fix list, a fix covering several checks | `fix for: creds, delegation, deploy` | the plain body's own key (Task 20b-i), reused so a grouped entry says what it covers once |
 | log body, a query that matched nothing | `no records` | 3.1 keeps the log rule and the record count and writes no empty state |
-| fallback table headings | `site`, `verdict`, `failing`, `could not run`, `held`, `checked` | the section vocabulary as column headings; `engine` is absent because `health.Report` names no installed version |
+| fallback table headings | `site`, `verdict`, `failing`, `could not run`, `held`, `engine`, `checked` | the section vocabulary as column headings, plus the engine version the check now reports as a structured field |
+| status line under a site listing, a token the run could not find | `CAIRN_CF_READ_TOKEN is not set, so creds, email and errors cannot run` | a listing attempts no check, so the past tense above would report a failure that did not happen; this says what the absence will cost |
+| fleet fix list, one remedy covering several sites | `also on: xcathletes.org, cairn.pub` | one remedy is printed once per frame, and the sites it applies to are named in that one entry, ranked, never truncated |
 
 ---
 

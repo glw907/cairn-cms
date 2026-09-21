@@ -108,6 +108,67 @@ func TestQuietOnANonOKRunPrintsTheVerdictAndTheFailingChecks(t *testing.T) {
 	}
 }
 
+// TestQuietTallyCountsTheWholeRun is the conductor's 2026-09-21 ruling on the quiet body: the
+// tally and the verdict describe the run that happened, and --quiet filters the rows after. The
+// failing fixture carries one failure, one pass and one skip, so a body counting its own cut
+// slice would say "1 failing, 0 passing" and say nothing of the skip.
+func TestQuietTallyCountsTheWholeRun(t *testing.T) {
+	stdout, _ := writeHealthTo(t, failingReport(), spine.VerdictCritical, healthFlags{}, &rootFlags{quiet: true})
+
+	for _, want := range []string{"1 failing", "1 could not run", "1 passing"} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("the quiet body's tally does not carry %q:\n%s", want, stdout)
+		}
+	}
+	if strings.Contains(stdout, "0 passing") {
+		t.Errorf("the quiet body counts its own cut slice rather than the run:\n%s", stdout)
+	}
+}
+
+// TestStatusLineCarriesTheTokenExpiry is the conductor's 2026-09-21 ruling on criterion 11: the
+// expiry reaches the status line from the creds check's own structured field whenever the run
+// measured one, inside or outside the fourteen-day warning window. It runs over the production
+// wiring, runStatus and render.Render, rather than over a hand-built Credential.
+func TestStatusLineCarriesTheTokenExpiry(t *testing.T) {
+	now := time.Date(2026, 9, 20, 14, 32, 0, 0, time.UTC)
+	expiry := now.Add(90 * 24 * time.Hour)
+	raw, err := json.Marshal(expiry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := health.Report{
+		SchemaVersion: 1,
+		Site:          "907.life",
+		Checks: []health.CheckResult{{
+			ID: "creds",
+			Outcome: spine.Outcome{
+				State:  spine.OK,
+				Detail: "cloudflare, via keyring; github, via keyring",
+				Fields: []spine.OutcomeField{{Key: health.FieldGitHubTokenExpiry, Value: raw}},
+			},
+			CheckedAt: now,
+		}},
+	}
+
+	status := runStatus(health.Clients{HaveCF: true, CFFrom: "keyring", HaveGH: true, GHFrom: "keyring"},
+		0, false, []health.Report{report})
+	frame := render.Render(render.RenderInput{
+		View:    render.ViewHealth,
+		Body:    render.BodySingle,
+		Width:   100,
+		Dark:    true,
+		Reports: []health.Report{report},
+		Status:  status,
+		Verdict: spine.VerdictOK,
+		Now:     now,
+	})
+
+	text := strings.Join(frame.Lines(), "\n")
+	if !strings.Contains(text, "expires 2026-12-19") {
+		t.Errorf("the status line does not carry the token's expiry:\n%s", text)
+	}
+}
+
 // TestJSONWinsOverQuiet asserts the combination is not silent: under --json the payload is the
 // output, so suppressing it would hand an agent an empty stdout, which the exit contract
 // reserves for a wrong invocation.

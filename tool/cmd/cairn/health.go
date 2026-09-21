@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -110,7 +111,7 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 	}
 
 	verdict := spine.ExitCode([]spine.SiteVerdicts{siteVerdicts(report)}, nil, 0)
-	status := runStatus(clients, d.now().Sub(started), report.Degraded)
+	status := runStatus(clients, d.now().Sub(started), report.Degraded, []health.Report{report})
 	if err := writeHealth(cmd, d, report, verdict, status, f, rf); err != nil {
 		return err
 	}
@@ -157,33 +158,21 @@ func writeHealth(cmd *cobra.Command, d deps, r health.Report, verdict spine.Verd
 
 // writeHealthBody writes one report through the render seam, which owns every layout decision:
 // the body for the scope and the stream, the ranking, the section grammar, and the fix format.
-// failingOnly hands the seam a report cut down to its failures, which is the --quiet body.
+//
+// failingOnly reaches the seam as a field rather than as a cut report. Cutting here left the
+// frame's own header and footer counting the slice, so `cairn health --quiet` on a run with one
+// failure, one pass and one skip printed "1 failing, 0 passing", a false statement about the run
+// in the one body a cron mail carries.
 func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, verdict spine.Verdict, status render.StatusState, failingOnly bool) error {
-	if failingOnly {
-		for i, r := range rs {
-			rs[i] = onlyFailures(r)
-		}
-	}
-	frame := render.Render(renderInput(d, rf, rs, verdict, status))
+	in := renderInput(d, rf, rs, verdict, status)
+	in.FailingOnly = failingOnly
+	frame := render.Render(in)
 	for _, line := range frame.Lines() {
 		if _, err := fmt.Fprintln(w, line); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-// onlyFailures returns r carrying its failing checks alone, so --quiet on a non-OK run prints
-// what the operator has to act on and nothing else.
-func onlyFailures(r health.Report) health.Report {
-	kept := make([]health.CheckResult, 0, len(r.Checks))
-	for _, c := range r.Checks {
-		if c.Outcome.State == spine.Failing {
-			kept = append(kept, c)
-		}
-	}
-	r.Checks = kept
-	return r
 }
 
 // renderInput builds the one input the render seam reads. This function and the detector it
@@ -228,11 +217,13 @@ func detectTerminal(d deps, rf *rootFlags) render.Terminal {
 // provider tokens it resolved and through what, and which it could not find, with the checks
 // each absence stopped named from the checks' own declared tiers rather than from a second list.
 //
-// A token's expiry is not carried here. The creds check measures the GitHub token's expiry on
-// its own request and prints it on its own row; reading it a second time would be a second
-// network call, and carrying it out of the sweep is a field health.Report does not have yet.
-func runStatus(c health.Clients, elapsed time.Duration, degraded bool) render.StatusState {
+// The GitHub token's expiry comes off the creds check's own structured field in reports, so the
+// status line prints the date whenever the run measured one, inside or outside the fourteen-day
+// warning window, and costs no second request. A run with no report to read, which is what a
+// bare site listing is, leaves it unset.
+func runStatus(c health.Clients, elapsed time.Duration, degraded bool, reports []health.Report) render.StatusState {
 	s := render.StatusState{Elapsed: elapsed, Degraded: degraded}
+	expiry := githubTokenExpiry(reports)
 	for _, cred := range []struct {
 		variable string
 		present  bool
@@ -243,6 +234,9 @@ func runStatus(c health.Clients, elapsed time.Duration, degraded bool) render.St
 		{varGHReadToken, c.HaveGH, c.GHFrom, func(t health.Tier) bool { return t == health.TierGH || t == health.TierBoth }},
 	} {
 		entry := render.Credential{Variable: cred.variable}
+		if cred.variable == varGHReadToken {
+			entry.Expires = expiry
+		}
 		if cred.present {
 			entry.Provider = cred.from
 			s.Credentials = append(s.Credentials, entry)
@@ -257,6 +251,33 @@ func runStatus(c health.Clients, elapsed time.Duration, degraded bool) render.St
 	}
 	return s
 }
+
+// githubTokenExpiry returns the GitHub token expiry the creds check measured, reading the first
+// report that carries one, and the zero time where no run measured one. Every report in a sweep
+// describes the same token, so the first is as good as any.
+func githubTokenExpiry(reports []health.Report) time.Time {
+	for _, r := range reports {
+		for _, c := range r.Checks {
+			if c.ID != credsCheckID {
+				continue
+			}
+			for _, f := range c.Outcome.Fields {
+				if f.Key != health.FieldGitHubTokenExpiry {
+					continue
+				}
+				var at time.Time
+				if err := json.Unmarshal(f.Value, &at); err != nil {
+					return time.Time{}
+				}
+				return at
+			}
+		}
+	}
+	return time.Time{}
+}
+
+// credsCheckID is the check whose outcome carries the GitHub token's expiry.
+const credsCheckID = "creds"
 
 // parseSince resolves a --since value through logs.ParseSince, the one grammar health and logs
 // share, and turns its refusal into the operator's line. Both flags call this, so neither can

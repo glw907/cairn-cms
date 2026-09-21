@@ -50,6 +50,8 @@ type Check interface {
 // populated by init(), so adding a check always means modifying this file directly.
 var All = []Check{
 	credsCheck{},
+	servingCheck{},
+	delegationCheck{},
 }
 
 // reportSchemaVersion is Report's own JSON schema version.

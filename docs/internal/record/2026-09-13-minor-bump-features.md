@@ -594,6 +594,31 @@ for each, in the tier where it bites.
    `Pagination.svelte`'s manual `btn-active` class redundant, filed above); separately, the nav
    `<details>` groups toward `collapse`/`accordion` are the one DaisyUI component-adoption
    opportunity worth a future small pass, unrelated to this version range.
+
+   **Checked, 2026-09-21, full showcase e2e run (`CI=1 npm --prefix examples/showcase run
+   test:e2e`, 262 tests, 242 passed, 20 failed, 0 flaky):**
+   - Checkbox: `src/tests/component/field-input.test.ts` (orphan-flag and plain vocabulary
+     checkboxes), `src/tests/component/CairnMediaLibrary.test.ts` (orphaned-files select-all and
+     row checkboxes), `src/tests/component/AdminTable.test.ts` (row-selection checkboxes). All
+     passed.
+   - Badge: `src/tests/component/StatusChip.test.ts`,
+     `src/tests/unit/badge-tier-legibility.test.ts`,
+     `src/tests/unit/status-chip-register-parity.test.ts`,
+     `src/tests/unit/status-chip-register-tuning.test.ts`. All passed.
+   - `loading-sm`: `src/tests/component/EditPage.test.ts` (Save/Publish loading state),
+     `src/tests/component/MediaUploadDialog.test.ts`, `src/tests/component/MediaReplaceDialog.test.ts`.
+     All passed.
+   - Disabled input: `src/tests/component/field-input.test.ts`,
+     `src/tests/component/ComponentForm.test.ts` (disabled field states). All passed.
+   - Pagination `aria-current`: `src/tests/component/Pagination.test.ts` (asserts
+     `[aria-current="page"]`), `src/tests/component/ConceptList.test.ts` (pagination
+     integration). All passed.
+   - Visual/e2e baselines covering these surfaces (`admin-visual.spec.ts`, `site-visual.spec.ts`
+     archive pages): every failure in this run was confined to the 20
+     `site-home-*`/`archive2-*` files the CI regen commit `4de378ec` last rewrote (this
+     workstation's known Chromium anti-aliasing divergence), none of them a checkbox, badge,
+     `loading-sm`, disabled-input, or Pagination surface specifically; no new baseline move
+     attributable to the DaisyUI bump was observed.
 6. **New, 2026-09-20:** `devalue` 5.9.2-5.9.4 carries two genuine security fixes (a
    prototype-pollution-bypass close in `parse`/`unflatten`, a shared-buffer disclosure close in
    `stringify`/`uneval`) on the exact serialization path SvelteKit's own `load` boundary uses;

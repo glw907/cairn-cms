@@ -2427,19 +2427,23 @@
   (`docs/internal/record/2026-09-13-minor-bump-features.md` carries the per-package survey).
   Runtime `dependencies` floors of the published package move: `@codemirror/commands` to
   `^6.11.1`, `@codemirror/state` to `^6.7.5`, `@codemirror/view` to `^6.43.12`, and
-  `@lucide/svelte` to `^1.47.0`. Every other moved package (`@anthropic-ai/sdk`, `daisyui`,
-  `eslint`, `eslint-plugin-jsdoc`, `eslint-plugin-tsdoc`, `esbuild`, `playwright`, `postcss`,
+  `@lucide/svelte` to `^1.47.0`. `packages/create-cairn-site`'s own runtime floor moves too:
+  `@clack/prompts` to `^1.8.1`. Every other moved package (`@anthropic-ai/sdk`, `eslint`,
+  `eslint-plugin-jsdoc`, `eslint-plugin-tsdoc`, `esbuild`, `playwright`, `postcss`,
   `postcss-prefix-selector`, `svelte`, `tsx`, `typescript-eslint`, `vite`, `vitest-browser-svelte`,
   `wrangler`, `@types/node`, `@cloudflare/workers-types`, `devalue`) is a devDependency or a
-  showcase-only devDependency, not shipped in the tarball. No peer range moved:
+  showcase-only devDependency, not shipped in the tarball; `daisyui` is a devDependency too, but
+  it recompiles the shipped `dist/components/cairn-admin.css` at build time, so it is covered
+  below rather than in this not-shipped list. No peer range moved:
   `@sveltejs/kit` stays `^2.70` and the `svelte` peer stays `^5.56.10`. TypeScript 7, Vitest 5
   (and its `@vitest/browser`/`@vitest/browser-playwright` pair), and `@types/node` 26 stay held;
   `devalue` 6.0.0 joins the held list. Two `npm audit` findings stay open on the same "needs
   `--force`, breaking" basis: `cookie` under `@sveltejs/kit@2.70.3` (the suggested fix downgrades
   to `@sveltejs/kit@0.0.30`) and `sharp` under the root's own `@cloudflare/vitest-pool-workers`
   (the suggested fix downgrades to `@cloudflare/vitest-pool-workers@0.8.30`); both are held with
-  the survey record carrying their triggers. Consumers must: nothing for the moved peer-free
-  devDependencies. **Consumers must: the daisyUI bump (`5.7.20` to `5.7.42`) recompiles the
+  the survey record carrying their triggers. The other moved devDependencies need no action from a
+  consumer: they build or test this package, and none of them ships in the tarball or moves a
+  peer range. **Consumers must: the daisyUI bump (`5.7.20` to `5.7.42`) recompiles the
   shipped `dist/components/cairn-admin.css`**, the packaged stylesheet `/admin-sources.css`
   imports; 5.7.35 through 5.7.42's checkbox tick/dash alignment and badge-in-flex shrinking
   fixes change the precompiled sheet's pixel output on those two elements. No code change is

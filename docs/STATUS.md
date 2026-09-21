@@ -31,7 +31,13 @@ container, then beta.
 
 - **Go `cairn` tool, 1.0: Pass A and B1 are MERGED (PR #60, `efc75093`, 2026-09-20); `main`
   carries `tool/`. Pass B2 is next and runs OVERNIGHT 2026-09-20 to 21 in a fresh session.**
-  **Ledger (conductor, 2026-09-21 07:00): the overnight run STOPPED CLEAN at the named cut after
+  **Ledger (conductor, 2026-09-21 08:45): SEGMENT 4 IS IN FLIGHT. Geoff raised the ceiling to
+  18M (80 percent flag 14.4M). Both pre-flights ran; the rulings commit is `29f5ff1f` (fourteen
+  rulings and six fact corrections, in each task's "Segment 4 rulings" block). Run
+  `wf_af96445e-ea1` (20b-iii, 20c, 21, 22a, 24a; `opus` on 20c and 21), script in session
+  `aa9eb162`'s scratchpad. A cold resume checks `git log` on the worktree for which tasks
+  committed, then relaunches the rest with the same args shape. Spend at launch about 11M.**
+  **Earlier ledger (2026-09-21 07:00): the overnight run STOPPED CLEAN at the named cut after
   20b-ii, about 10.5M of the 14M ceiling.** Segments 1 to 3 are DONE and accepted on
   `cairn-tool-b2` (pushed, HEAD `76364ca2`, gate green): 19c-i, 18, 19a-i | 19a-ii, 19b, 19c-ii |
   20a, 20b-i, 20b-ii, plus the segment 3 fix round (`280e61f6`, `5ee0966a`, `c373a3fe`) accepted

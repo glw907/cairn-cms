@@ -192,6 +192,24 @@ func detailErrorsObservabilityOff() string {
 	return "the Worker has no observability dataset"
 }
 
+// detailAPIRequestRejected renders the Detail every check carries when a provider answered a
+// request with HTTP 400. The catalogue carries no row for it: the condition did not exist before
+// 2026-09-21, when a live run found cairn's own Workers Logs query body rejected and reported to
+// the operator as a site setting they had never turned off. It names cairn as the faulty party
+// and points at the one place a report belongs, the shape tmplCommandCrashed already uses for the
+// other fault that is never the operator's.
+func detailAPIRequestRejected() string {
+	return "the provider refused the request cairn sent; this is a bug in cairn, reportable at https://github.com/glw907/cairn-cms/issues"
+}
+
+// detailDeployCredMissing renders the deploy check's own skipped verdict when no Workers Builds
+// credential answered. Its siblings report the same reason with no Detail, which leaves the plain
+// body printing the bare reason code; the catalogue carries no row, so this is the plainest
+// fragment satisfying 2.4.
+func detailDeployCredMissing() string {
+	return "no Workers Builds credential to read the deployment with"
+}
+
 // The format templates detailErrorsCount and detailErrorsAboveThreshold render from.
 const (
 	tmplErrorsCount          = "%d errors in %s"
@@ -273,6 +291,8 @@ func Catalogue() []string {
 		tmplEngineBehind,
 		tmplEngineBehind + tmplEngineBehindActionableSuffix,
 		detailErrorsObservabilityOff(),
+		detailAPIRequestRejected(),
+		detailDeployCredMissing(),
 		tmplErrorsCount,
 		tmplErrorsAboveThreshold,
 		detailCredsGitHubNoExpiry(),

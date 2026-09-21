@@ -42,6 +42,7 @@ and commit the diff.
 - Workers Builds is not connected to this Worker
 - no DKIM record found for the sending subdomain
 - no DMARC record published for the domain
+- no Workers Builds credential to read the deployment with
 - no assigned nameservers recorded for this site
 - no cairn branches or publish commits observed
 - the DMARC record allows every sender (p=none)
@@ -53,6 +54,7 @@ and commit the diff.
 - the hostname does not answer
 - the installed or latest version is not in the published version list
 - the last build did not succeed
+- the provider refused the request cairn sent; this is a bug in cairn, reportable at https://github.com/glw907/cairn-cms/issues
 - the sending subdomain is not onboarded
 - the sending subdomain's SPF record omits %s
 - the site's package.json carries no @glw907/cairn-cms dependency
@@ -167,6 +169,8 @@ To check every site cairn knows, run: cairn health --json
 - cairn sites
 - cairn sites list --json
 - cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them
+- cairn: %q is not a cairn command.
+Run `cairn --help` for the commands
 - cairn: %q is not a credential cairn stores.
 The names are %s
 - cairn: %s crashed with a %s.
@@ -206,6 +210,8 @@ Check your connection, then run the command again
 Give the file read permission, or drop --ack-file to use the registry's default
 - cairn: no Cloudflare credentials found.
 Run `cairn auth set %s` to store one
+- cairn: no Custom Domain attached to Worker %q.
+Run `cairn adopt --worker %s --domain <domain>` naming the domain it serves
 - cairn: no Worker named %q on this account.
 Run `cairn adopt list` to see the Workers on the account
 - cairn: no credentials found.
@@ -221,6 +227,8 @@ Add an expires date to the entry
 This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: the OS keyring did not open.
 Set %s in the environment instead
+- cairn: the Workers after the blank line serve no Custom Domain, so cairn cannot adopt them from what it discovered.
+Run `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the domain it serves
 - cairn: the entry at position %d in %s carries no checkId.
 Name the check that entry holds
 - cairn: this output carries identifiers and is not safe to paste in public.
@@ -242,6 +250,7 @@ Name the check that entry holds
 - run `cairn auth check <site>` to confirm this permission
 - the OS keyring did not open
 - the Workers script to adopt
+- the domain the Worker serves, for a Worker with no Custom Domain
 - the ground to render for: dark or light
 - the number of sites the registry is expected to hold
 - the repository the Worker deploys from, as owner/name

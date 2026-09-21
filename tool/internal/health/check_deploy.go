@@ -174,7 +174,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	detail := deployDetail{WorkerExists: true}
 
 	if !c.HaveBuilds {
-		return detail.outcome(spine.Unknown, spine.ReasonCredMissing, "", "")
+		return detail.outcome(spine.Unknown, spine.ReasonCredMissing, "", detailDeployCredMissing())
 	}
 
 	triggers, err := c.CF.BuildsConnections(ctx, worker.Tag)

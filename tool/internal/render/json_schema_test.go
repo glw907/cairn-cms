@@ -269,15 +269,15 @@ func validateObject(value map[string]any, schema, root map[string]any, path stri
 	var problems []string
 	properties, _ := schema["properties"].(map[string]any)
 
-	if required, ok := schema["required"].([]any); ok {
-		for _, raw := range required {
-			key, ok := raw.(string)
-			if !ok {
-				continue
-			}
-			if _, present := value[key]; !present {
-				problems = append(problems, fmt.Sprintf("%s is missing the required key %q", path, key))
-			}
+	problems = append(problems, missingRequired(value, schema, path)...)
+	// The one 2020-12 applicator this contract needs: a skip or an unknown check has to carry a
+	// reason, which "required" alone cannot say because it applies to every state. Only the
+	// "then" branch is read; no published schema carries an "else", and a validator that silently
+	// ignored one would be worse than one that never claimed to handle it.
+	if cond, ok := schema["if"].(map[string]any); ok {
+		then, hasThen := schema["then"].(map[string]any)
+		if hasThen && matchesCondition(value, cond, root) {
+			problems = append(problems, missingRequired(value, then, path)...)
 		}
 	}
 
@@ -299,6 +299,51 @@ func validateObject(value map[string]any, schema, root map[string]any, path stri
 		}
 	}
 	return problems
+}
+
+// missingRequired reports one problem per key schema's "required" names that value does not
+// carry. It is separate from validateObject because an "if" subschema states required keys that
+// decide whether a branch applies rather than keys whose absence is a fault.
+func missingRequired(value map[string]any, schema map[string]any, path string) []string {
+	required, ok := schema["required"].([]any)
+	if !ok {
+		return nil
+	}
+	var problems []string
+	for _, raw := range required {
+		key, ok := raw.(string)
+		if !ok {
+			continue
+		}
+		if _, present := value[key]; !present {
+			problems = append(problems, fmt.Sprintf("%s is missing the required key %q", path, key))
+		}
+	}
+	return problems
+}
+
+// matchesCondition reports whether value satisfies an "if" subschema: every key it names as
+// required is present, and every declared property's own constraints hold. A key the condition
+// does not mention is ignored, which is what separates a condition from a full validation.
+func matchesCondition(value map[string]any, cond, root map[string]any) bool {
+	if len(missingRequired(value, cond, "$")) > 0 {
+		return false
+	}
+	properties, _ := cond["properties"].(map[string]any)
+	for key, raw := range properties {
+		sub, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		child, present := value[key]
+		if !present {
+			continue
+		}
+		if len(validate(child, sub, root, "$."+key)) > 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // TestAuthCheckPayloadValidatesAgainstSchema covers cairn auth check's own published schema
@@ -520,4 +565,45 @@ func readDoc(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return string(data)
+}
+
+// TestSkipAndUnknownRequireAReason covers the conditional the health schema gained on
+// 2026-09-21: json-output.md promises every skip and every unknown carries a reason, and
+// "required" alone cannot say so, because it applies to every state. Both halves are asserted,
+// since a validator that ignored the conditional would pass the whole golden corpus silently.
+func TestSkipAndUnknownRequireAReason(t *testing.T) {
+	schema := loadSchema(t, "cairn-health.schema.json")
+	check := resolveRef(schema, "#/$defs/check")
+
+	tests := []struct {
+		name  string
+		state string
+		with  bool
+		want  bool
+	}{
+		{"a skip with no reason", "skip", false, true},
+		{"a skip with a reason", "skip", true, false},
+		{"an unknown with no reason", "unknown", false, true},
+		{"an unknown with a reason", "unknown", true, false},
+		{"a pass with no reason", "pass", false, false},
+		{"a fail with no reason", "fail", false, false},
+		{"a held check with no reason", "held", false, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			value := map[string]any{
+				"checkId":   "errors",
+				"state":     tt.state,
+				"tier":      "cloudflare",
+				"checkedAt": "2026-09-20T12:00:00Z",
+			}
+			if tt.with {
+				value["reason"] = "reason.cred-missing"
+			}
+			problems := validate(value, check, schema, "$")
+			if got := len(problems) > 0; got != tt.want {
+				t.Errorf("problems = %v, want a complaint: %v", problems, tt.want)
+			}
+		})
+	}
 }

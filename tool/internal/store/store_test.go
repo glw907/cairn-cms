@@ -334,3 +334,31 @@ func rawField(t *testing.T, data []byte, path []string) json.RawMessage {
 	}
 	return cur
 }
+
+// TestAnAbsentRegistryIsAnEmptyRegistry covers an operator's first run, before anything has been
+// adopted. Refusing the directory made `cairn sites list` and `cairn adopt list` fail with a raw
+// "no such file or directory", which names a filesystem fault where the true state is simply
+// that no site is registered yet. Save still creates the directory when the first record lands.
+func TestAnAbsentRegistryIsAnEmptyRegistry(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "never-created")
+
+	s, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open on an absent directory: %v", err)
+	}
+	entries, errs := s.List()
+	if len(entries) != 0 {
+		t.Errorf("List returned %d entries, want none", len(entries))
+	}
+	if len(errs) != 0 {
+		t.Errorf("List reported %v, want no error", errs)
+	}
+
+	if err := s.Save("ecxc-ski-a1b2c3", record.Record{Name: "ecxc.ski", Domain: "ecxc.ski"}); err != nil {
+		t.Fatalf("Save into an absent directory: %v", err)
+	}
+	entries, errs = s.List()
+	if len(errs) != 0 || len(entries) != 1 {
+		t.Errorf("after Save, List = %d entries, %v; want the one saved record", len(entries), errs)
+	}
+}

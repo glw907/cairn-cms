@@ -33,7 +33,10 @@
   "$defs": {
     "check": {
       "type": "object",
+      "description": "One settled check. A skip or an unknown always carries a reason: those two states say the check did not settle on a verdict, and the reason is the only thing that says why.",
       "required": ["checkId", "state", "tier", "checkedAt"],
+      "if": { "properties": { "state": { "enum": ["skip", "unknown"] } }, "required": ["state"] },
+      "then": { "required": ["reason"] },
       "additionalProperties": false,
       "properties": {
         "checkId": { "type": "string" },

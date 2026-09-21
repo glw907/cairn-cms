@@ -148,7 +148,15 @@ func newRootCmd(d deps) *cobra.Command {
 		Short:   shortRoot,
 		Long:    longRoot,
 		Example: exampleRoot,
-		Args:    cobra.NoArgs,
+		// Cobra routes an unrecognized first word to the root's own Args validator, so this is
+		// where an unknown command is refused. cobra.NoArgs would do it in one line; the usage
+		// contract wants two.
+		Args: func(_ *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				return unknownCommandError(args[0])
+			}
+			return nil
+		},
 		// SilenceUsage and SilenceErrors are set here and nowhere else in this package. Cobra
 		// inherits both from the nearest ancestor whose field is true, so repeating them on a
 		// subcommand is dead weight that drifts out of step with the root.

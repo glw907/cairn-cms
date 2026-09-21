@@ -24,7 +24,8 @@ func reportJSON(r Report, verbose bool) ([]byte, error) {
 // Tier is the one type in this package that does carry a marshaller, and it is not an exception
 // to that rule: a Tier is a four-value enum with no redaction to reproduce, and its marshaller
 // writes the same word its String does. spine.State deliberately has none, because its three
-// values answer four wire words and the fourth, "held", is not a state at all.
+// values answer five wire words, and two of them, "held" and "skip", are not states at all:
+// spine.StateWord reads an acknowledgement and a reason code to reach them.
 func TestReportDeclaresNoMarshalJSON(t *testing.T) {
 	if _, ok := any(Report{}).(json.Marshaler); ok {
 		t.Error("Report implements json.Marshaler")

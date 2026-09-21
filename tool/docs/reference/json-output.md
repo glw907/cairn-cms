@@ -200,8 +200,20 @@ on stderr.
 ## The adopt candidate listing
 
 `cairn adopt list` writes `containsPersonalData` and `candidates`. Each candidate carries
-`worker`, `repo`, `zone`, `domain`, `accountId`, `connected`, and `adopted`. The command writes
-nothing to the registry.
+`worker`, `repo`, `zone`, `domain`, `accountId`, `connected`, `adopted`, and `adoptable`. The
+command writes nothing to the registry.
+
+`adoptable` reports whether cairn can build a record for the Worker from what it discovered.
+cairn provisions Workers Custom Domains and never Workers Routes, so discovery reads the Custom
+Domains route alone, and a Worker serving a site through a route carries an empty `domain` and
+`adoptable: false`. To adopt one, name the domain yourself:
+
+```console
+$ cairn adopt --worker <name> --domain <domain>
+```
+
+`adoptable` was added within schemaVersion 1, so a reader written before it still reads every
+candidate it used to.
 
 ## The reason vocabulary
 
@@ -224,12 +236,15 @@ Thirteen park codes, each `reason.park.<code>`:
 `reason.park.build-not-started`, `reason.park.build-running`,
 `reason.park.builds-reconcile-parked`.
 
-Nine provider codes, each `reason.api.<reason>`:
+Ten provider codes, each `reason.api.<reason>`:
 
 `reason.api.unauthorized`, `reason.api.forbidden`, `reason.api.not-found`,
 `reason.api.builds-not-connected`, `reason.api.builds-repo-not-selected`,
 `reason.api.builds-app-not-authorized`, `reason.api.sender-not-configured`,
-`reason.api.rate-limited`, `reason.api.unknown`.
+`reason.api.rate-limited`, `reason.api.request-rejected`, `reason.api.unknown`.
+
+`reason.api.request-rejected` means the provider read cairn's request and refused its shape. It
+is a bug in cairn, not a fault in the site or the credential, and the check's `detail` says so.
 
 ## Condition ids
 

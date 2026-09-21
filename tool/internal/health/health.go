@@ -46,7 +46,7 @@ func (t Tier) String() string {
 
 // MarshalJSON writes the tier as its word. Tier's four values and its four words are one to one,
 // which is what makes a marshaller the right home for the mapping here and the wrong home for
-// spine.State, whose three values answer four wire words.
+// spine.State, whose three values answer five wire words.
 func (t Tier) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.String())
 }

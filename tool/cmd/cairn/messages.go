@@ -91,6 +91,16 @@ func flagError(path string, cause error) error {
 	return translated(fmt.Errorf(tmplFlagError, cause, path))
 }
 
+// tmplUnknownCommand is the root command's refusal of a word that names no command. Cobra's own
+// NoArgs message is one line, and the usage-error row of catalogue section 3.8 is two: the
+// refusal, then where to read what the tool does accept.
+const tmplUnknownCommand = "cairn: %q is not a cairn command.\nRun `cairn --help` for the commands"
+
+// unknownCommandError renders tmplUnknownCommand for the word the operator gave.
+func unknownCommandError(word string) error {
+	return translated(fmt.Errorf(tmplUnknownCommand, word))
+}
+
 // tmplAuthNoSubcommand is cairn auth's refusal of a run naming no subcommand. A command group
 // with nothing to run is a usage error rather than a help request, so it exits 3 and writes its
 // help to stderr. New to this table, reviewed at the 1.0 editorial gate.
@@ -293,7 +303,35 @@ const (
 	shortAdoptList        = "List the Workers on the account that cairn could adopt"
 	exampleAdoptList      = "cairn adopt list"
 	flagAdoptListJSONHelp = "print the candidates as JSON"
+	// flagAdoptDomainHelp is new to this table, owed to the 2026-09-21 live verification: a
+	// Worker serving a site through a Workers Route carries no Custom Domain for discovery to
+	// read, and this is how an operator supplies the one value that is missing.
+	flagAdoptDomainHelp = "the domain the Worker serves, for a Worker with no Custom Domain"
 )
+
+// tmplAdoptListRouteOnly is the stderr notice cairn adopt list prints when the account holds a
+// Worker with no Custom Domain. cairn provisions Workers Custom Domains and never Workers
+// Routes, so discovery reads the Custom Domains route alone and those Workers cannot be adopted
+// from it; naming them and saying how to adopt one anyway is what keeps a route-served site from
+// disappearing out of the listing in silence. New to this table, owed to the 2026-09-21 live
+// verification.
+const tmplAdoptListRouteOnly = "cairn: the Workers after the blank line serve no Custom Domain, so cairn cannot adopt them from what it discovered.\nRun `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the domain it serves"
+
+// adoptListRouteOnlyNotice renders tmplAdoptListRouteOnly.
+func adoptListRouteOnlyNotice() string {
+	return tmplAdoptListRouteOnly
+}
+
+// tmplAdoptNoDomain is cairn adopt's refusal of a Worker discovery found no Custom Domain for,
+// with no --domain given. It replaces a raw "record: domain is empty" from the validator, which
+// named neither the Worker nor the flag that resolves it. New to this table, owed to the
+// 2026-09-21 live verification.
+const tmplAdoptNoDomain = "cairn: no Custom Domain attached to Worker %q.\nRun `cairn adopt --worker %s --domain <domain>` naming the domain it serves"
+
+// adoptNoDomainError renders tmplAdoptNoDomain for the Worker the operator named.
+func adoptNoDomainError(worker string) error {
+	return translated(fmt.Errorf(tmplAdoptNoDomain, worker, worker))
+}
 
 // tmplAdoptNoWorker is cairn adopt's refusal of a run with no --worker named. New to this table,
 // reviewed at the 1.0 editorial gate.

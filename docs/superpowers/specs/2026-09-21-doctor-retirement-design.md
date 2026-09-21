@@ -357,8 +357,13 @@ registry entries, the cairn-pub link); then the STATUS line, in the commit that 
    page, the seventh schema's file name, every test naming either, and anything else new under
    `tool/docs/reference/`.
 5. One `tool/v1.1.0`, tagged and released from a commit carrying retire-1 and pass A. A tag's
-   help text is permanent, so the binary `0.97.0` announces never names a deleted path. Who
-   conducts this tag is Geoff's to rule; it is no task of retire-1 or retire-2.
+   help text is permanent, so the binary `0.97.0` announces never names a deleted path. The
+   retirement track conducts this tag (Geoff, 2026-09-21) in a short session of its own, outside
+   retire-1's and retire-2's plans: it follows Tasks 22b and 23 of the Go tool's 1.0 plan as its
+   runbook, checks that retire-1 and pass A are both ancestors of the commit, that
+   `tool/docs/reference` holds only a README, and that the binary's help names no deleted path,
+   re-verifies the final binary in a real terminal, and stops for Geoff's go before the tag. Its
+   close writes only that `v1.1.0` is released.
 6. retire-2, only once that release exists, as two plans in order: **retire-2a**, the removal
    (branch `doctor-engine`, heavy gate), then **retire-2b**, the records (branch
    `doctor-records`, light lane: facts additions, the changelog window, the ledger, the close).

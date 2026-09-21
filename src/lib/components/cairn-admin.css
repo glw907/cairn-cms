@@ -902,8 +902,9 @@
    `translate`, `transform`, and the transition stay daisyUI's, so the open slide still animates.
    Present unchanged in daisyUI 5.7.20 and 5.7.42, so this is a latent upstream defect, not a bump
    regression; it retires when upstream drops the `:where()` wrapper or raises the reset's
-   specificity. Deliberately UNLAYERED, the same mechanism as the four rules above: daisyUI's drawer
-   recipe compiles into the utilities layer, which no layered rule can outrank.
+   specificity. Deliberately UNLAYERED, the same mechanism as pinned rules 3 and 4: daisyUI's drawer
+   recipe compiles into a sublayer of `@layer utilities`, while the admin's scoped overrides live in
+   `@layer components`, which sorts before utilities, so a components-layer rule loses.
    PINNED unlayered rule 5 of 14 (gate match: `.drawer-toggle:checked ~ .drawer-side`); bug it
    prevents: the nav panel's text raster changing between renders of the same screen. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])

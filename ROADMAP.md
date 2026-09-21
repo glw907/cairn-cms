@@ -859,6 +859,11 @@ the named human gates only):**
   Trigger: the next regen that a pass has to hand-force, or a third stale baseline found in a
   loose-threshold spec.
 
+- **Add a computed-style guard for the `xl:drawer-open` arm of pinned unlayered rule 5 of 14
+  (pre-cut, 2026-09-21).** The e2e suite covers the overlay and `lg:drawer-open` forms of the
+  `will-change` release; the third selector arm, `xl:drawer-open`, has no guard on the desk
+  route. Trigger: the next pass that touches the desk route's viewport coverage.
+
 - **`cairn-guidance install` write-hardening candidates, from the security re-read (extend-2,
   2026-09-20).** The blocking read that found the symlink-containment defect (fixed in `9aa7765a`)
   also named six smaller items, verified against the code as it stands after that fix. Two of the

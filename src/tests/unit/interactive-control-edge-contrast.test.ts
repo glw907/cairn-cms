@@ -151,7 +151,7 @@ describe('unfocused field-family edge contrast', () => {
   });
 
   // Same falsifiability discipline as the checkbox/radio suite above, for the sibling rule
-  // (pinned unlayered rule 13 of 13) this task adds: reverting the field family's mix back to the
+  // (pinned unlayered rule 14 of 14) this task adds: reverting the field family's mix back to the
   // daisyUI 20% fallback reproduces the pre-fix measurement (1.492:1 light / 1.773:1 dark, both
   // under the 3:1 floor), proving the field-family assertions above are load-bearing too. Covers
   // both themes, not only light, mirroring the checkbox/radio suite's own light/dark coverage.

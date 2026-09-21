@@ -20,7 +20,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - The three hand-composed chip classes (`cairn-chip-quiet`, `cairn-chip-warning`,
   `cairn-chip-outline`) each pin `font-weight: 400` unlayered, so they outrank a
   `font-semibold`/`font-medium` Tailwind utility on the same element. Source:
-  `src/lib/components/cairn-admin.css:823-864` (rules "PINNED unlayered rule 5/6/7 of 13").
+  `src/lib/components/cairn-admin.css:920-997` (rules "PINNED unlayered rule 6/7/8 of 14").
   [verified]
 - Exactly five call sites carry a ratified `type-scale` exemption directive: the wordmark at three
   sites (ConfirmPage, CairnAdminShell, LoginPage) plus two in EditPage (document title, prose

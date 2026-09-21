@@ -384,7 +384,8 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
     try {
       await writeWithoutFollowing(destAbs, content, OVERWRITE_FLAGS);
     } catch (err) {
-      report.writeErrors.push({ path: destRelPath, code: (err as NodeJS.ErrnoException).code ?? 'UNKNOWN' });
+      const code = (err as NodeJS.ErrnoException).code ?? 'UNKNOWN';
+      report.writeErrors.push({ path: destRelPath, code });
       continue;
     }
     writtenPaths.add(destRelPath);

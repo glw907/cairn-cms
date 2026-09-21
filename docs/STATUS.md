@@ -14,7 +14,11 @@ green.
 
 ## Immediate next action
 
-The one cut is next (`cairn-release`), with the dependency sweep (the `dependency-upgrade`
+**The `0.97.0` cut HOLDS until the Go tool's 1.0 is complete (Geoff, 2026-09-21).** No publish,
+no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff also
+granted the B2 conductor leave to proceed without check-ins up to, never including, the tag push;
+the tag, the release artifacts, and B2's merge stay his. After that, the one cut
+(`cairn-release`), with the dependency sweep (the `dependency-upgrade`
 skill) and the site upgrade brief's tools section landing in the pre-cut pass. The pending
 version is `0.97.0`, verified free against the registry with `npm view @glw907/cairn-cms
 versions --json` at the cut. extend-1's two advisory audit rules (`log-event-grammar`,

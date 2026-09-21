@@ -15,7 +15,7 @@ fix: Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
 fix actor: operator (changes the live site)
 docs: https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge
 
-email: skip
+email: unknown
 reason: long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long 
 
 engine: pass - 0.78.0 is current

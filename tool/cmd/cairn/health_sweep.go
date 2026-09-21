@@ -114,7 +114,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			continue
 		}
 		if err := writeHealthBody(out, d, rf, []health.Report{report}, siteVerdict,
-			runStatus(clients, 0, report.Degraded, []health.Report{report}), rf.quiet); err != nil {
+			runStatus(clients, 0, report.Degraded, []health.Report{report})); err != nil {
 			return err
 		}
 	}
@@ -141,11 +141,12 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			return err
 		}
 	// --quiet on an OK sweep writes nothing at all, the rule that makes a cron-driven green run
-	// silent and mail-free, and on any other verdict hands the frame its failing checks alone.
-	case fleet && rf.quiet && verdict == spine.VerdictOK:
+	// silent and mail-free. On any other verdict the sweep prints the frame it would have printed
+	// without the flag.
+	case fleet && quietSuppressesFrame(rf.quiet, verdict):
 	case fleet:
 		status := runStatus(clients, d.now().Sub(started), anyDegraded(reports), reports)
-		if err := writeHealthBody(out, d, rf, reports, verdict, status, rf.quiet); err != nil {
+		if err := writeHealthBody(out, d, rf, reports, verdict, status); err != nil {
 			return err
 		}
 		for _, rest := range entries[cut:] {

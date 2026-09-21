@@ -37,7 +37,7 @@
       "additionalProperties": false,
       "properties": {
         "checkId": { "type": "string" },
-        "state": { "type": "string", "enum": ["pass", "fail", "skip", "held"] },
+        "state": { "type": "string", "enum": ["pass", "fail", "held", "skip", "unknown"] },
         "reason": { "type": "string" },
         "condition": { "type": "string" },
         "code": { "type": "string" },

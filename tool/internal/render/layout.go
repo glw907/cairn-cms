@@ -19,8 +19,11 @@ import (
 // a documentation address of its own.
 const docsBase = "https://cairn.pub/docs/admin/is-it-working#"
 
-// The section labels, the four words a run's checks are grouped under. They are the copy
-// standard's fixed vocabulary and no body invents a fifth.
+// The section labels, the four labels a run's checks are grouped under. They are their own fixed
+// vocabulary and no body invents a fifth: the check-result words are five, and the two that mean
+// a check did not settle, "skip" and "unknown", share the one "could not run" section, since the
+// operator's next move is the same for both and a section per word would split a group of two
+// rows into two groups of one.
 const (
 	labelFailing     = "failing"
 	labelCouldNotRun = "could not run"

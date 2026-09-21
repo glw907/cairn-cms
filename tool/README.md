@@ -49,6 +49,12 @@ two diverge (macOS, or Linux with `XDG_CONFIG_HOME` set), it's where the Node CL
 choose to move. Removing the legacy directory is how you migrate to the platform config path;
 `cairn` never migrates it for you.
 
+## Output
+
+`cairn` renders for a dark terminal. Pass `--theme light` to render for a light one. The flag
+detects nothing and reads no environment variable, and it is independent of colour: `--color` and
+`NO_COLOR` decide whether `cairn` paints at all, `--theme` decides which palette it paints from.
+
 ## Exit codes
 
 Every command ends in one of four codes, the Monitoring Plugins convention (the Nagios lineage

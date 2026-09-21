@@ -28,6 +28,10 @@ Every payload carries `schemaVersion` and `verdict` at its top level, and declar
 in `kind`. The six schema versions are independent integers, one per payload type, so a field
 added to the logs payload never makes a health consumer re-read a schema.
 
+Every one of the six is `1`, and stays `1` until `tool/v1.0.0` is tagged. A schema version counts
+a change a consumer has to re-read its schema for, and no consumer exists before the tag, so the
+whole pre-tag window is one schema and each payload's first published version is `1`.
+
 ## The site payload
 
 ```json
@@ -85,8 +89,8 @@ added to the logs payload never makes a health consumer re-read a schema.
 | Key | Type | Meaning |
 | --- | --- | --- |
 | `checkId` | string | The check's stable id. |
-| `state` | string | `pass`, `fail`, `skip`, or `held`. |
-| `reason` | string | Why a `skip` could not run. Mandatory on every `skip`, absent otherwise. |
+| `state` | string | `pass`, `fail`, `held`, `skip`, or `unknown`. |
+| `reason` | string | What stopped the check. Mandatory on every `skip` and every `unknown`, absent otherwise. |
 | `condition` | string | The engine's own condition id, when the verdict declared one. |
 | `code` | string | The tool's own failure id, when no engine condition names the failure. |
 | `tier` | string | The credential the check needs: `none`, `cloudflare`, `github`, or `both`. |
@@ -97,8 +101,14 @@ added to the logs payload never makes a health consumer re-read a schema.
 | `fix` | object | What clears the failure. |
 | `hold` | object | The acknowledgement covering this check. |
 
-`state` is a closed set of four words, and `held` is not a state of its own: it is a failing
-check an unexpired hold covers. A hold silences notification, never status.
+`state` is a closed set of five words. `held` is not a state of its own: it is a failing check an
+unexpired hold covers, and a hold silences notification, never status.
+
+The two unrun words divide on what the run did, not on how bad the result is. `skip` is a check
+that was **not attempted**, by configuration: a credential the operator has not set. `unknown` is
+a check that **was attempted and observed nothing**: a timeout, a transport failure, a rate
+limit, or a site the sweep never reached. Only `skip` softens a site's verdict to `WARNING`;
+every `unknown` carries `UNKNOWN`.
 
 ### `fix`
 
@@ -195,9 +205,9 @@ nothing to the registry.
 
 ## The reason vocabulary
 
-Every `skip` carries a `reason`. The four state words alone cannot tell a missing credential from
-a timeout, and reading `skip` as benign when cairn could not reach Cloudflare is the failure this
-closes. The set is closed and frozen at 1.0.
+Every `skip` and every `unknown` carries a `reason`. The state words say whether a check was
+attempted; the reason says what stopped it, which is what tells a timeout from an unreachable
+network. The set is closed and frozen at 1.0.
 
 Eight fixed codes:
 
@@ -255,7 +265,7 @@ Changing any of these is a major-version event with a `Consumers must:` line.
 - Every check id: `creds`, `serving`, `delegation`, `https-forced`, `email`, `deploy`,
   `publish-path`, `engine`, `errors`.
 - Every condition id, the reason vocabulary above, and the four `actor` values.
-- The state vocabulary: `pass`, `fail`, `skip`, `held`.
+- The state vocabulary: `pass`, `fail`, `held`, `skip`, `unknown`.
 - The `--json` key names and their types, under the schema-version promise: a key is added within
   a version, and never removed or retyped within one.
 - stdout is the payload and stderr is diagnostics.

@@ -55,6 +55,10 @@ const (
 	// carries no row for a --width flag, so this is drafted to section 2.4's grammar (what the
 	// flag does, in the operator's terms) rather than copied.
 	flagWidthHelp = "columns to render at, instead of the terminal's own width"
+	// flagThemeHelp is new to this table: the catalogue carries no row for a --theme flag, so it
+	// is drafted to section 2.4's grammar and shaped after flagColorHelp, the sibling flag an
+	// operator reads it beside.
+	flagThemeHelp = "the ground to render for: dark or light"
 )
 
 // tmplVersion is cairn --version's own line, cobra's Version field composed by root.go's
@@ -155,6 +159,16 @@ func widthInvalidError(width int) error {
 	return translated(fmt.Errorf(tmplWidthInvalid, width, widthMin, widthMax))
 }
 
+// tmplThemeInvalid is root.go's refusal of a --theme value outside the two. New to this table:
+// the catalogue carries no row for it, so it follows tmplWidthInvalid's own two-line shape, the
+// refusal and then an instruction opening with "Use".
+const tmplThemeInvalid = "cairn: --theme %q is not a theme cairn renders.\nUse %s or %s"
+
+// themeInvalidError renders tmplThemeInvalid for the value the operator gave.
+func themeInvalidError(theme string) error {
+	return translated(fmt.Errorf(tmplThemeInvalid, theme, themeDark, themeLight))
+}
+
 // sites.go's own Short, Example, and flag help.
 const (
 	shortSites          = "List the sites cairn knows"
@@ -185,6 +199,11 @@ unknown.
 
 A usage error exits 3 and writes nothing to stdout, so an empty stdout means the
 invocation was wrong, never that the site is healthy.
+
+A check result is pass, fail, held, skip, or unknown. skip is a check that was
+not attempted, by configuration: a credential you have not set. unknown is a
+check that was attempted and observed nothing: a timeout, a transport failure,
+or a rate limit. Every skip and every unknown carries a reason.
 
 stdout is the payload and stderr is diagnostics. Merging the two is unsupported.
 --json beats --quiet, and the payload always prints.

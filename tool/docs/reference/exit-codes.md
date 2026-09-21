@@ -53,6 +53,10 @@ the credential, and paging them for it every morning is what makes a routine ign
 other unknown, a rate-limited run included, stays `UNKNOWN`, because the run did not observe the
 site and cannot say the site is merely imperfect.
 
+The two read the same way in the output. A check that was not attempted, by configuration, reads
+`skip`; a check that was attempted and observed nothing reads `unknown`. The word beside a row
+and the code the run exits on are decided by the same fact, so they cannot disagree.
+
 An acknowledgement never softens an unknown. An acknowledgement is an operator saying they know
 something is broken and accept it, which they cannot say about a check that never ran.
 
@@ -89,6 +93,11 @@ the invocation was wrong, not that the site is healthy.** This is exactly why `-
 prints, and `--quiet` suppresses only a plain-text `OK` body.
 
 Usage text and help printed because of an error go to stderr. stdout carries payloads alone.
+
+A flag whose value is outside its own set is one of these. `--color` takes `auto`, `always`, or
+`never`, and `--theme` takes `dark` or `light`; anything else exits 3 with empty stdout. Nothing
+about `--theme` is detected: `--color` and `NO_COLOR` decide whether cairn paints at all, and
+`--theme` decides which palette it paints from, defaulting to `dark`.
 
 **`--help` and `--version` exit 0.** This is a deliberate deviation from the monitoring
 guidelines, which would have both exit 3. A person running `cairn --help` should not see a

@@ -12,6 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/internal/health"
+	"github.com/glw907/cairn-cms/tool/internal/render"
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -432,6 +435,58 @@ func TestColorTakesOnlyItsThreeValues(t *testing.T) {
 	}
 	if _, _, err := execTree(t, d, "sites", "list", "--color", "maybe"); err == nil {
 		t.Error("--color maybe was accepted; only auto, always, and never are values")
+	}
+}
+
+// TestThemeTakesOnlyItsTwoValues asserts an unrecognised ground is refused at the root rather
+// than falling through to the default. `auto` is a row of its own: it is the value an operator
+// who knows other tools would reach for, and 1.0 does not detect a terminal's background.
+func TestThemeTakesOnlyItsTwoValues(t *testing.T) {
+	d, _ := testDeps(t)
+
+	for _, value := range []string{themeDark, themeLight} {
+		if _, _, err := execTree(t, d, "sites", "list", "--theme", value); err != nil {
+			t.Errorf("--theme %s = %v, want nil", value, err)
+		}
+	}
+	for _, value := range []string{"auto", "purple"} {
+		_, _, err := execTree(t, d, "sites", "list", "--theme", value)
+		if err == nil {
+			t.Errorf("--theme %s was accepted; only dark and light are values", value)
+			continue
+		}
+		for _, want := range []string{"--theme", themeDark, themeLight} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("--theme %s: error %q does not name %q", value, err, want)
+			}
+		}
+	}
+}
+
+// TestThemeSelectsThePaletteGround covers the flag's whole effect: it chooses which ground the
+// palette is read against and nothing else. The frames are compared as well as the field, so a
+// later change that carried the value without painting from it fails here.
+func TestThemeSelectsThePaletteGround(t *testing.T) {
+	d, _ := testDeps(t)
+	reports := []health.Report{failingReport()}
+
+	frameFor := func(theme string) (render.RenderInput, string) {
+		in := renderInput(d, &rootFlags{theme: theme, color: colorAlways, width: 80}, reports,
+			spine.VerdictCritical, render.StatusState{})
+		return in, strings.Join(render.Render(in).Lines(), "\n")
+	}
+
+	dark, darkFrame := frameFor(themeDark)
+	light, lightFrame := frameFor(themeLight)
+
+	if !dark.Dark {
+		t.Error("--theme dark did not reach the dark ground")
+	}
+	if light.Dark {
+		t.Error("--theme light did not reach the light ground")
+	}
+	if darkFrame == lightFrame {
+		t.Error("the two grounds render the same bytes, so the ground reaches no palette")
 	}
 }
 

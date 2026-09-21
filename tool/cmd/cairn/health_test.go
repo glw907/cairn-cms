@@ -86,42 +86,59 @@ func TestQuietWritesNothingOnAnOKRun(t *testing.T) {
 	}
 }
 
-// TestQuietOnANonOKRunPrintsTheVerdictAndTheFailingChecks asserts the quiet body carries the
-// verdict word and each failing check's own measured line, and nothing that passed or could not
-// run.
-func TestQuietOnANonOKRunPrintsTheVerdictAndTheFailingChecks(t *testing.T) {
-	stdout, stderr := writeHealthTo(t, failingReport(), spine.VerdictCritical, healthFlags{}, &rootFlags{quiet: true})
+// TestQuietOnANonOKRunPrintsTheNormalBody asserts --quiet's only effect is the OK run it
+// suppresses: on any other verdict it writes the same bytes the same run writes without the
+// flag. A reduced body left the one output a cron mail carries unable to say what else the run
+// measured, which is what an operator reads the mail for.
+func TestQuietOnANonOKRunPrintsTheNormalBody(t *testing.T) {
+	quiet, quietErr := writeHealthTo(t, failingReport(), spine.VerdictCritical, healthFlags{}, &rootFlags{quiet: true})
+	loud, _ := writeHealthTo(t, failingReport(), spine.VerdictCritical, healthFlags{}, &rootFlags{})
 
-	if !strings.Contains(stdout, spine.VerdictCritical.String()) {
-		t.Errorf("stdout %q does not carry the verdict word", stdout)
+	if quiet != loud {
+		t.Errorf("the quiet body differs from the same run's own body\n--- quiet ---\n%s\n--- without --quiet ---\n%s", quiet, loud)
 	}
-	if !strings.Contains(stdout, fixtureDetail) {
-		t.Errorf("stdout %q does not carry the failing check's own line", stdout)
+	if !strings.Contains(quiet, fixtureDetail) {
+		t.Errorf("stdout %q does not carry the failing check's own line", quiet)
 	}
-	for _, unwanted := range []string{"creds", "errors"} {
-		if strings.Contains(stdout, unwanted) {
-			t.Errorf("stdout %q carries %q, which did not fail", stdout, unwanted)
-		}
-	}
-	if stderr != "" {
-		t.Errorf("stderr = %q, want empty", stderr)
+	if quietErr != "" {
+		t.Errorf("stderr = %q, want empty", quietErr)
 	}
 }
 
-// TestQuietTallyCountsTheWholeRun is the conductor's 2026-09-21 ruling on the quiet body: the
-// tally and the verdict describe the run that happened, and --quiet filters the rows after. The
-// failing fixture carries one failure, one pass and one skip, so a body counting its own cut
-// slice would say "1 failing, 0 passing" and say nothing of the skip.
-func TestQuietTallyCountsTheWholeRun(t *testing.T) {
+// TestQuietBodyNamesEveryStateTheRunProduced holds the body an operator reads on a non-OK quiet
+// run to the whole run: the fixture carries one failure, one pass and one check that could not
+// run, and all three reach both the tally and the rows.
+func TestQuietBodyNamesEveryStateTheRunProduced(t *testing.T) {
 	stdout, _ := writeHealthTo(t, failingReport(), spine.VerdictCritical, healthFlags{}, &rootFlags{quiet: true})
 
-	for _, want := range []string{"1 failing", "1 could not run", "1 passing"} {
+	for _, want := range []string{
+		spine.VerdictCritical.String(),
+		"1 failing", "1 could not run", "1 passing",
+		"https", "creds", "errors",
+	} {
 		if !strings.Contains(stdout, want) {
-			t.Errorf("the quiet body's tally does not carry %q:\n%s", want, stdout)
+			t.Errorf("the quiet body does not carry %q:\n%s", want, stdout)
 		}
 	}
-	if strings.Contains(stdout, "0 passing") {
-		t.Errorf("the quiet body counts its own cut slice rather than the run:\n%s", stdout)
+}
+
+// TestQuietSuppressesTheFrameOnOKAlone pins the one gate both the single-site path and the sweep
+// read. OK is the whole of it: a WARNING run is not OK, and a held failure and a drifting engine
+// version both land there, so a routine that suppressed WARNING would hide what an operator
+// acknowledged rather than reporting it.
+func TestQuietSuppressesTheFrameOnOKAlone(t *testing.T) {
+	for _, verdict := range []spine.Verdict{
+		spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown,
+	} {
+		t.Run(verdict.String(), func(t *testing.T) {
+			if got := quietSuppressesFrame(false, verdict); got {
+				t.Errorf("a run without --quiet suppressed its %v frame", verdict)
+			}
+			want := verdict == spine.VerdictOK
+			if got := quietSuppressesFrame(true, verdict); got != want {
+				t.Errorf("quietSuppressesFrame(true, %v) = %v, want %v", verdict, got, want)
+			}
+		})
 	}
 }
 

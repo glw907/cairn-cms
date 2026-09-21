@@ -5,7 +5,7 @@ engine: fail - 0.76.0 installed, 0.78.0 latest, 2 releases behind
 fix: Raise the @glw907/cairn-cms range in package.json, then deploy again.
 fix actor: developer (changes the live site)
 
-errors: skip
+errors: unknown
 reason: the Worker has no observability dataset
 condition: config.observability-off
 

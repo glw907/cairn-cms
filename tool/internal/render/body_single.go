@@ -12,8 +12,10 @@ import (
 const (
 	colIndent = 2
 	colGlyph  = 2
-	colWord   = 6
-	colName   = 14
+	// colWord fits the longest state word, "unknown", and one space. A cell is Width(n).MaxWidth(n),
+	// so a budget under the word's own width would cut the word rather than overflow the column.
+	colWord = 8
+	colName = 14
 )
 
 // renderSingle draws one site's health: the rows grouped by what the operator must do, in the
@@ -154,7 +156,7 @@ func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 
 	cells := []string{strings.Repeat(" ", colIndent), t.cell(glyphRole, glyph, colGlyph)}
 	if keepsWord(in) {
-		word := spine.StateWord(c.Outcome.State, c.Acknowledged)
+		word := spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)
 		cells = append(cells, t.cell(t.wordRole(c, escalating), word, colWord))
 	}
 	cells = append(cells, t.SizedStrong(RoleText, colName).Render(Sanitize(c.ID)))

@@ -106,19 +106,20 @@ func checkedPhraseValue(at, now time.Time, elapsed time.Duration) string {
 // A held row is the one line that carries two facts: the plain body has no key for a hold, so
 // the hold rides the state line rather than inventing a fifth key an agent would have to learn.
 func plainCheck(c health.CheckResult, now time.Time) []string {
-	skipped := c.Outcome.State == spine.Unknown
-	line := Sanitize(c.ID) + ": " + spine.StateWord(c.Outcome.State, c.Acknowledged)
+	unrun := c.Outcome.State == spine.Unknown
+	line := Sanitize(c.ID) + ": " + spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)
 	detail := Sanitize(checkDetail(c))
-	if !skipped && detail != "" {
+	if !unrun && detail != "" {
 		line += " - " + detail
 	}
 	if hold, _ := holdField(c, now); hold != "" {
 		line += ", " + hold
 	}
 	out := []string{line}
-	// The reason follows the skip line directly, before any other key: it is what carries the
-	// difference between a missing credential and a timeout that the word "skip" alone does not.
-	if skipped {
+	// The reason follows a skip or an unknown line directly, before any other key: the word says
+	// whether the check was attempted, and the reason says what stopped it, which is what tells a
+	// timeout from an unreachable network.
+	if unrun {
 		out = append(out, keyReason+plainValue(detail))
 	}
 	if cond := conditionID(c.Outcome); cond != "" {

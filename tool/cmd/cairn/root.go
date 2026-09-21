@@ -41,6 +41,16 @@ const (
 	colorNever  = "never"
 )
 
+// The two --theme values, the ground a frame's palette is resolved against.
+//
+// There is no auto: querying a terminal for its background (OSC 11) is a write-then-read against
+// the operator's own terminal, and a terminal that does not answer leaves the run waiting on one.
+// 1.0 takes the value the operator states, and dark when they state none.
+const (
+	themeDark  = "dark"
+	themeLight = "light"
+)
+
 // rootFlags holds the persistent flags every command below the root reads. The root owns the
 // values and hands the struct to each newXCmd, so a subcommand reads --quiet without looking
 // its own parent up.
@@ -58,6 +68,10 @@ type rootFlags struct {
 	quiet bool
 	// color is one of colorAuto, colorAlways, or colorNever.
 	color string
+	// theme is themeDark or themeLight, and decides which ground the palette is read against. It
+	// is independent of color: NO_COLOR and --color decide whether a frame is painted at all, and
+	// this decides which palette it is painted from.
+	theme string
 	// width overrides the terminal column count render/profile.go's DetectProfile would
 	// otherwise read. Zero means unset: the operator's own terminal width applies. Task 20a
 	// reads the chosen value and carries it; the seam that composes a frame to it is Task 20b-i.
@@ -80,13 +94,18 @@ const (
 	widthMax = 1000
 )
 
-// validate reports an error when --color names a value outside the three, or when an explicit
-// --width falls outside widthMin to widthMax.
+// validate reports an error when --color names a value outside the three, when --theme names a
+// value outside the two, or when an explicit --width falls outside widthMin to widthMax.
 func (f rootFlags) validate() error {
 	switch f.color {
 	case colorAuto, colorAlways, colorNever:
 	default:
 		return colorInvalidError(f.color)
+	}
+	switch f.theme {
+	case themeDark, themeLight:
+	default:
+		return themeInvalidError(f.theme)
 	}
 	if f.widthSet && (f.width < widthMin || f.width > widthMax) {
 		return widthInvalidError(f.width)
@@ -175,9 +194,15 @@ func newRootCmd(d deps) *cobra.Command {
 	p.BoolVarP(&f.verbose, "verbose", "v", false, flagVerboseHelp)
 	p.BoolVarP(&f.quiet, "quiet", "q", false, flagQuietHelp)
 	p.StringVar(&f.color, "color", colorAuto, flagColorHelp)
+	p.StringVar(&f.theme, "theme", themeDark, flagThemeHelp)
 	p.IntVar(&f.width, "width", 0, flagWidthHelp)
 	p.StringVar(&f.ackFile, "ack-file", "", flagAckFileHelp)
 	cmd.MarkFlagsMutuallyExclusive("quiet", "verbose")
+	// The completion offers the two accepted values, so an operator learns them at the prompt
+	// rather than from the usage error a third value earns.
+	_ = cmd.RegisterFlagCompletionFunc("theme", func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+		return []string{themeDark, themeLight}, cobra.ShellCompDirectiveNoFileComp
+	})
 
 	cmd.AddGroup(
 		&cobra.Group{ID: groupSite, Title: "Site commands:"},

@@ -93,11 +93,15 @@ type RenderInput struct {
 	// Reports holds the health sweep's settled reports, in the order the sweep ran them. The
 	// render owns the ranking; nothing upstream re-orders.
 	Reports []health.Report
-	// FailingOnly draws the failing rows alone, which is --quiet's own body. It filters rows and
-	// nothing else: the verdict and the tally still describe the whole run, so a body that says
-	// "1 failing, 0 passing" for a report carrying a pass and a skip is not reachable from here.
-	// The caller hands over the uncut reports and this field decides what is drawn, rather than
-	// cutting them upstream where the counts can no longer see what was removed.
+	// FailingOnly draws the failing rows alone. It filters rows and nothing else: the verdict and
+	// the tally still describe the whole run, so a body that says "1 failing, 0 passing" for a
+	// report carrying a pass and a skip is not reachable from here. The caller hands over the
+	// uncut reports and this field decides what is drawn, rather than cutting them upstream where
+	// the counts can no longer see what was removed.
+	//
+	// No 1.0 command sets it. --quiet suppresses an OK run's body outright and prints the whole
+	// body on every other verdict, so nothing in cmd/cairn asks for a reduced one; the field is
+	// kept for the 2.0 HUD's filtered view the way Height is kept for that HUD's viewport.
 	//
 	// The fleet body ignores it. That body is already one line per site rather than a list of
 	// check rows, and filtering its checks left most of the strip drawn as the separator glyph,

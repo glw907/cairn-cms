@@ -12,6 +12,14 @@ Editorial review, 2026-09-20. Read-only on every repo.
 > a throttled run did not observe the site. Task 19c-i carries tests that stop an implementer from
 > copying a superseded row, and the last two of the three are open questions for the owner under
 > "Outside the amendment, for the owner" in that plan.
+>
+> **A fourth row, overridden 2026-09-21.** The check-result row in section 2.9 reads `pass` `fail`
+> `skip` `held` and bans `unknown`. The owner reversed that on 2026-09-21: a check result is
+> `pass`, `fail`, `skip`, `unknown`, or `held`, five words. `skip` means a check was not
+> attempted, by configuration, and `unknown` means a check was attempted and observed nothing, so
+> one word for both left a reader unable to tell a disclosed gap from a blind run. The ban on
+> `unknown` as a synonym for the `could not run` section label stands; the section labels are
+> still `failing`, `could not run`, and `held`.
 
 **Status: binding.** Adopted by the Pass B2 amendment of 2026-09-20 as the standard every
 operator-facing string in `tool/` is written to. Section 2 is the standard, section 3 is the

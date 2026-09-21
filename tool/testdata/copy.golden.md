@@ -70,6 +70,7 @@ and commit the diff.
 - held
 - pass
 - skip
+- unknown
 
 ## cmd/cairn
 
@@ -130,6 +131,11 @@ unknown.
 A usage error exits 3 and writes nothing to stdout, so an empty stdout means the
 invocation was wrong, never that the site is healthy.
 
+A check result is pass, fail, held, skip, or unknown. skip is a check that was
+not attempted, by configuration: a credential you have not set. unknown is a
+check that was attempted and observed nothing: a timeout, a transport failure,
+or a rate limit. Every skip and every unknown carries a reason.
+
 stdout is the payload and stderr is diagnostics. Merging the two is unsupported.
 --json beats --quiet, and the payload always prints.
 
@@ -176,6 +182,8 @@ Use a file that exists, or drop --ack-file to use the registry's default
 - cairn: --color %q is not %s, %s, or %s
 - cairn: --since %q is not a duration.
 Use a whole number of minutes, hours, or days: 90m, 24h, 7d
+- cairn: --theme %q is not a theme cairn renders.
+Use %s or %s
 - cairn: --width %d is not a width cairn can render.
 Use a whole number from %d to %d
 - cairn: Cloudflare rate-limited this run.
@@ -230,6 +238,7 @@ Name the check that entry holds
 - run `cairn auth check <site>` to confirm this permission
 - the OS keyring did not open
 - the Workers script to adopt
+- the ground to render for: dark or light
 - the number of sites the registry is expected to hold
 - the repository the Worker deploys from, as owner/name
 - wall-clock budget for the whole run

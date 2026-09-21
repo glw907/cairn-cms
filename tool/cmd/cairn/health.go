@@ -136,36 +136,39 @@ func checkProgress(cmd *cobra.Command, rf *rootFlags, f healthFlags) func(health
 	}
 	errOut := cmd.ErrOrStderr()
 	return func(c health.CheckResult) {
-		_, _ = fmt.Fprint(errOut, checkProgressLine(c.ID, spine.StateWord(c.Outcome.State, c.Acknowledged)))
+		_, _ = fmt.Fprint(errOut, checkProgressLine(c.ID, spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)))
 	}
 }
 
 // writeHealth writes the report, under two rules the agent contract freezes. --json wins over
 // --quiet, because under --json the payload is the output and an empty stdout is what a wrong
 // invocation looks like. --quiet writes nothing at all on an OK run, which is what makes a
-// cron-driven green run silent and mail-free, and on any other verdict writes the verdict word
-// and the failing checks only.
+// cron-driven green run silent and mail-free, and writes the whole body on every other verdict.
 func writeHealth(cmd *cobra.Command, d deps, r health.Report, verdict spine.Verdict, status render.StatusState, f healthFlags, rf *rootFlags, elapsed time.Duration) error {
 	if f.asJSON {
 		return writeSiteJSON(cmd.OutOrStdout(), d, rf, r, verdict, elapsed)
 	}
-	if rf.quiet && verdict == spine.VerdictOK {
+	if quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
-	return writeHealthBody(cmd.OutOrStdout(), d, rf, []health.Report{r}, verdict, status, rf.quiet)
+	return writeHealthBody(cmd.OutOrStdout(), d, rf, []health.Report{r}, verdict, status)
+}
+
+// quietSuppressesFrame reports whether --quiet writes no frame at all for a run that settled on
+// verdict. It is the single-site path's rule and the sweep's, stated once so the two cannot
+// disagree about what a quiet run prints.
+//
+// The gate is OK and nothing softer. A WARNING run is not OK: a held failure and a drifting
+// engine version both land there, and a routine whose operator asked only for silence on a green
+// run would otherwise never see either.
+func quietSuppressesFrame(quiet bool, verdict spine.Verdict) bool {
+	return quiet && verdict == spine.VerdictOK
 }
 
 // writeHealthBody writes one report through the render seam, which owns every layout decision:
 // the body for the scope and the stream, the ranking, the section grammar, and the fix format.
-//
-// failingOnly reaches the seam as a field rather than as a cut report. Cutting here left the
-// frame's own header and footer counting the slice, so `cairn health --quiet` on a run with one
-// failure, one pass and one skip printed "1 failing, 0 passing", a false statement about the run
-// in the one body a cron mail carries.
-func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, verdict spine.Verdict, status render.StatusState, failingOnly bool) error {
-	in := renderInput(d, rf, rs, verdict, status)
-	in.FailingOnly = failingOnly
-	frame := render.Render(in)
+func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, verdict spine.Verdict, status render.StatusState) error {
+	frame := render.Render(renderInput(d, rf, rs, verdict, status))
 	for _, line := range frame.Lines() {
 		if _, err := fmt.Fprintln(w, line); err != nil {
 			return err
@@ -182,6 +185,9 @@ func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, ver
 // count when stdout is a terminal, and otherwise the seam's own default. The body follows the
 // run's scope and whether stdout is a terminal, never the colour choice: an operator who forces
 // colour into a pipe still gets the plain body, in colour.
+//
+// The ground is --theme alone, which nothing detects: --color and NO_COLOR choose whether to
+// paint, and --theme chooses which palette to paint from.
 func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict, status render.StatusState) render.RenderInput {
 	term := detectTerminal(d, rf)
 	width := rf.width
@@ -192,7 +198,7 @@ func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.V
 		View:    render.ViewHealth,
 		Body:    render.SelectBody(len(reports), term.TTY),
 		Width:   width,
-		Dark:    true,
+		Dark:    rf.theme != themeLight,
 		Profile: term.Profile,
 		ASCII:   term.ASCII,
 		Reports: reports,

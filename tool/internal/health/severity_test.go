@@ -114,3 +114,38 @@ func TestVerdictsCarryTheSeverityTable(t *testing.T) {
 		})
 	}
 }
+
+// TestAHeldFailureWarnsAndALapsedHoldTakesItsOwnSeverity runs the hold rule over every check in
+// All rather than over one representative id, so the two halves cannot drift apart per check: a
+// held failure contributes WARNING whatever the check is, and the same failure under a hold that
+// has already passed its expiry contributes that check's own entry in failSeverity, which is
+// WARNING for engine and CRITICAL for the other eight. A lapsed hold reaching the arithmetic as
+// a flat CRITICAL would page an operator for version drift they had already weighed.
+func TestAHeldFailureWarnsAndALapsedHoldTakesItsOwnSeverity(t *testing.T) {
+	for _, check := range All {
+		id := check.ID()
+		t.Run(id, func(t *testing.T) {
+			held := failing(id, spine.CodeNone)
+			held.Acknowledged = true
+			held.AckExpires = severityNow().Add(24 * time.Hour)
+
+			lapsed := failing(id, spine.CodeNone)
+			lapsed.AckExpires = severityNow().Add(-24 * time.Hour)
+
+			verdictOf := func(c CheckResult) spine.Verdict {
+				return spine.ExitCode([]spine.SiteVerdicts{Verdicts(Report{Checks: []CheckResult{c}})}, nil, 0)
+			}
+
+			if got := verdictOf(held); got != spine.VerdictWarning {
+				t.Errorf("a held failing %s check = %v, want %v", id, got, spine.VerdictWarning)
+			}
+			want := spine.VerdictCritical
+			if FailSeverityOf(id) == spine.WarningFailure {
+				want = spine.VerdictWarning
+			}
+			if got := verdictOf(lapsed); got != want {
+				t.Errorf("a failing %s check under a lapsed hold = %v, want %v", id, got, want)
+			}
+		})
+	}
+}

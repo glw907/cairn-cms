@@ -252,12 +252,13 @@ func siteObject(in SiteJSON) sitePayload {
 }
 
 // checkObject builds one check's wire shape. The state word is computed here rather than
-// marshalled off spine.State: the type has three values and the wire vocabulary has four, and
-// "held" is not a state at all but a failing check an unexpired hold covers.
+// marshalled off spine.State: the type has three values and the wire vocabulary has five, "held"
+// is not a state at all but a failing check an unexpired hold covers, and the division between
+// "skip" and "unknown" is carried by the outcome's reason rather than by its state.
 func checkObject(c health.CheckResult) checkPayload {
 	out := checkPayload{
 		CheckID:   c.ID,
-		State:     spine.StateWord(c.Outcome.State, c.Acknowledged),
+		State:     spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged),
 		Reason:    string(c.Outcome.Reason),
 		Condition: string(c.Outcome.Condition),
 		Tier:      c.Tier.String(),
@@ -461,7 +462,9 @@ type authCheckPermission struct {
 type AuthCheckPermission struct {
 	Label      string
 	Credential string
-	// State is the row's own wire word: "pass", "fail", "skip", or "unknown".
+	// State is the row's own wire word, from spine.StateWord: "pass", "fail", "skip", or
+	// "unknown". A permission row never reads "held", the fifth word, since a hold covers a
+	// site's own failing check and not a token's permissions.
 	State string
 	// Reason is the row's own display text, empty for a pass.
 	Reason string

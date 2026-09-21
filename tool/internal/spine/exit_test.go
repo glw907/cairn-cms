@@ -177,10 +177,21 @@ func TestCheckVerdict(t *testing.T) {
 // by the disclosed one. The rate-limit row is listed separately because the copy catalogue's own
 // rate-limited row asserts WARNING and this arithmetic overrules it: a throttled run did not
 // observe the site.
+//
+// Each row also asserts the word every check in it carries, so the word an operator reads and
+// the code a routine reads cannot drift apart: the same reason that keeps a cred-missing check
+// out of UNKNOWN is the one that writes "skip" rather than "unknown" beside it.
 func TestTheTwoKindsOfUnknownAreDisambiguated(t *testing.T) {
 	credMissing := CheckVerdict{ID: "email", State: Unknown, Reason: ReasonCredMissing}
 	transport := CheckVerdict{ID: "serving", State: Unknown, Reason: ReasonOffline}
 	rateLimited := CheckVerdict{ID: "deploy", State: Unknown, Reason: APIReason(providers.ReasonRateLimited)}
+
+	words := map[string]string{
+		"creds":   "pass",
+		"email":   "skip",
+		"serving": "unknown",
+		"deploy":  "unknown",
+	}
 
 	tests := []struct {
 		name string
@@ -194,6 +205,11 @@ func TestTheTwoKindsOfUnknownAreDisambiguated(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			for _, c := range tt.site {
+				if got := StateWord(c.State, c.Reason, c.Acknowledged); got != words[c.ID] {
+					t.Errorf("the %s check's word = %q, want %q", c.ID, got, words[c.ID])
+				}
+			}
 			if got := ExitCode([]SiteVerdicts{tt.site}, nil, 0); got != tt.want {
 				t.Errorf("ExitCode = %v (%d), want %v (%d)", got, int(got), tt.want, int(tt.want))
 			}
@@ -217,25 +233,33 @@ func TestSiteWithNoChecksIsUnknown(t *testing.T) {
 	}
 }
 
-// TestStateWord asserts the four wire words and the one input that changes them.
+// TestStateWord asserts the five wire words and the two inputs that change them: an unexpired
+// hold, and the reason an unrun check carries, which is what divides a check nobody attempted
+// from one that was attempted and observed nothing.
 func TestStateWord(t *testing.T) {
 	tests := []struct {
-		name  string
-		state State
-		ack   bool
-		want  string
+		name   string
+		state  State
+		reason ReasonCode
+		ack    bool
+		want   string
 	}{
-		{"passing", OK, false, "pass"},
-		{"passing under a hold", OK, true, "pass"},
-		{"failing", Failing, false, "fail"},
-		{"failing under a hold", Failing, true, "held"},
-		{"unrun", Unknown, false, "skip"},
-		{"unrun under a hold", Unknown, true, "skip"},
+		{"passing", OK, "", false, "pass"},
+		{"passing under a hold", OK, "", true, "pass"},
+		{"failing", Failing, "", false, "fail"},
+		{"failing under a hold", Failing, "", true, "held"},
+		{"unrun for a credential the operator never set", Unknown, ReasonCredMissing, false, "skip"},
+		{"unrun for a credential, under a hold", Unknown, ReasonCredMissing, true, "skip"},
+		{"unrun on a timeout", Unknown, ReasonTimeout, false, "unknown"},
+		{"unrun on an unreachable network", Unknown, ReasonOffline, false, "unknown"},
+		{"unrun on a rate limit", Unknown, APIReason(providers.ReasonRateLimited), false, "unknown"},
+		{"unrun because the sweep never reached it", Unknown, ReasonNotRun, false, "unknown"},
+		{"unrun on a timeout, under a hold", Unknown, ReasonTimeout, true, "unknown"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := StateWord(tt.state, tt.ack); got != tt.want {
-				t.Errorf("StateWord(%v, %v) = %q, want %q", tt.state, tt.ack, got, tt.want)
+			if got := StateWord(tt.state, tt.reason, tt.ack); got != tt.want {
+				t.Errorf("StateWord(%v, %q, %v) = %q, want %q", tt.state, tt.reason, tt.ack, got, tt.want)
 			}
 		})
 	}

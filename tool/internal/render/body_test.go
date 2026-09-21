@@ -1101,7 +1101,7 @@ func lineCarryingIn(t *testing.T, lines []string, want string) string {
 // TestNeverColourAlone is criterion 14: every state word a colour render shows at a width also
 // reaches the no-colour render at that width, so nothing on the screen is carried by hue alone.
 func TestNeverColourAlone(t *testing.T) {
-	words := []string{"pass", "fail", "skip", "held", "OK", "WARNING", "CRITICAL", "UNKNOWN"}
+	words := []string{"pass", "fail", "held", "skip", "unknown", "OK", "WARNING", "CRITICAL", "UNKNOWN"}
 	for _, f := range fixtures.All() {
 		for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 			for _, width := range []int{60, 80, 100, 120} {

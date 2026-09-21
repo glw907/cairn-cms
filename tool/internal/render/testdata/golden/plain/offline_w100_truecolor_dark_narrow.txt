@@ -1,31 +1,31 @@
 verdict: [1;38;2;247;172;77mUNKNOWN[m - 907.life, 9 could not run, 0 passing
 checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
 
-delegation: skip
+delegation: unknown
 reason: reason.offline
 
-serving: skip
+serving: unknown
 reason: reason.offline
 
-deploy: skip
+deploy: unknown
 reason: reason.offline
 
-publish-path: skip
+publish-path: unknown
 reason: reason.offline
 
-email: skip
+email: unknown
 reason: reason.offline
 
-errors: skip
+errors: unknown
 reason: reason.offline
 
-https-forced: skip
+https-forced: unknown
 reason: reason.offline
 
-creds: skip
+creds: unknown
 reason: reason.offline
 
-engine: skip
+engine: unknown
 reason: reason.offline
 
 verdict: [1;38;2;247;172;77mUNKNOWN[m - 907.life, 9 could not run, 0 passing

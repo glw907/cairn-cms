@@ -4,7 +4,7 @@ checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
 delegation: skip
 reason: reason.cred-missing
 
-serving: skip
+serving: unknown
 reason: the site did not answer
 
 deploy: skip
@@ -25,7 +25,7 @@ reason: reason.cred-missing
 creds: skip
 reason: reason.cred-missing
 
-engine: skip
+engine: unknown
 reason: the installed or latest version is not in the published version list
 
 fix for: delegation, deploy, publish-path, email, errors, https-forced, creds

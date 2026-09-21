@@ -107,6 +107,28 @@ func TestAnOutOfBoundsWidthExitsUnknown(t *testing.T) {
 	}
 }
 
+// TestAThemeOutsideItsTwoValuesExitsUnknown takes --theme to the real process, where the exit
+// code exists. `auto` is the row that matters most: it is the value an operator who knows other
+// tools would reach for, and cairn 1.0 detects no terminal background, so it has to be refused
+// rather than quietly treated as the default.
+func TestAThemeOutsideItsTwoValuesExitsUnknown(t *testing.T) {
+	for _, value := range []string{"auto", "purple"} {
+		t.Run(value, func(t *testing.T) {
+			stdout, stderr, code := runBinary(t, "health", "--theme", value)
+
+			if code != int(spine.VerdictUnknown) {
+				t.Errorf("exit code = %d, want %d", code, int(spine.VerdictUnknown))
+			}
+			if len(stdout) != 0 {
+				t.Errorf("stdout = %q, want no bytes at all", stdout)
+			}
+			if !strings.Contains(stderr, "--theme") {
+				t.Errorf("stderr = %q, want the line to name --theme", stderr)
+			}
+		})
+	}
+}
+
 // TestAUsageErrorExitsUnknownWithEmptyStdout runs the falsification table against the built
 // binary. Byte-empty stdout is the assertion that matters as much as the code: under --json an
 // empty stdout has to mean the invocation was wrong, never that the site is healthy.
@@ -311,7 +333,7 @@ func progressLines(s string) []string {
 			continue
 		}
 		switch fields[1] {
-		case "pass", "fail", "skip", "held":
+		case "pass", "fail", "held", "skip", "unknown":
 			found = append(found, line)
 		}
 	}

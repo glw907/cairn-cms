@@ -1,7 +1,7 @@
 package spine
 
-// Catalogue returns the eight fixed wire words this package's own vocabulary contributes: the
-// four Verdict.String() words and the four StateWord results. Task 19c-ii's `cmd/copylist`
+// Catalogue returns the nine fixed wire words this package's own vocabulary contributes: the
+// four Verdict.String() words and the five StateWord results. Task 19c-ii's `cmd/copylist`
 // lists it alongside `internal/health` and `cmd/cairn` so the fixed vocabulary that section 2.9
 // of tool/docs/design/copy-standard.md names is reviewable in the same golden as every other
 // operator-facing string, rather than trusted to stay correct by inspection.
@@ -15,9 +15,10 @@ func Catalogue() []string {
 		VerdictWarning.String(),
 		VerdictCritical.String(),
 		VerdictUnknown.String(),
-		StateWord(OK, false),
-		StateWord(Failing, false),
-		StateWord(Unknown, false),
-		StateWord(Failing, true),
+		StateWord(OK, "", false),
+		StateWord(Failing, "", false),
+		StateWord(Unknown, ReasonCredMissing, false),
+		StateWord(Unknown, ReasonTimeout, false),
+		StateWord(Failing, "", true),
 	}
 }

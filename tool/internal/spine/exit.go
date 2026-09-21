@@ -198,11 +198,19 @@ func ExitCodeFor(s State) Verdict {
 	}
 }
 
-// StateWord returns the wire word one check's result carries: "pass", "fail", "skip", or
-// "held". ack means an unexpired hold and softens "fail" to "held". It has no effect on a
-// passing or an unrun check, since a hold is an operator accepting a known failure, which they
-// cannot say about a check that did not run.
-func StateWord(s State, ack bool) string {
+// StateWord returns the wire word one check's result carries: "pass", "fail", "held", "skip", or
+// "unknown".
+//
+// A check that did not settle divides on reason. "skip" is a check that was not attempted, by
+// configuration: ReasonCredMissing, a credential the operator has not set. "unknown" is a check
+// that was attempted and observed nothing: a timeout, a transport failure, or a rate limit. One
+// is a gap the operator disclosed and the other is a measurement that failed, and one word for
+// both leaves a reader unable to tell a deliberate omission from a blind run.
+//
+// ack means an unexpired hold and softens "fail" to "held". It has no effect on a passing check
+// or on one that did not run, since a hold is an operator accepting a known failure, which they
+// cannot say about a check that never produced one.
+func StateWord(s State, reason ReasonCode, ack bool) string {
 	switch s {
 	case OK:
 		return "pass"
@@ -212,6 +220,9 @@ func StateWord(s State, ack bool) string {
 		}
 		return "fail"
 	default:
-		return "skip"
+		if reason == ReasonCredMissing {
+			return "skip"
+		}
+		return "unknown"
 	}
 }

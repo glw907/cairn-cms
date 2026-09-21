@@ -81,7 +81,7 @@ func TestEveryActionCoverage(t *testing.T) {
 
 	// The root's own persistent flags. --ack-file is declared here even though only health
 	// reads it, since an operator can type it before any subcommand.
-	assertOwnFlags(t, root, "timeout", "verbose", "quiet", "color", "width", "ack-file", "version", "help")
+	assertOwnFlags(t, root, "timeout", "verbose", "quiet", "color", "theme", "width", "ack-file", "version", "help")
 
 	byPath := map[string]*cobra.Command{}
 	for _, c := range []*cobra.Command{root} {

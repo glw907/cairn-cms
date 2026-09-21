@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -500,5 +501,95 @@ func TestHealthSweepExplicitTimeoutCutReportsSettledAndNamesTheRest(t *testing.T
 	}
 	if *code != int(spine.VerdictUnknown) {
 		t.Errorf("exit code = %d, want %d (%s)", *code, int(spine.VerdictUnknown), spine.VerdictUnknown)
+	}
+}
+
+// TestQuietSweepPrintsTheSameBodyAsALoudOne is the sweep half of --quiet's own rule: on any
+// verdict but OK the flag changes nothing, so the run writes the same bytes to both streams that
+// the same run writes without it. A reduced strip left an operator reading a cron mail unable to
+// see what else the sweep measured.
+func TestQuietSweepPrintsTheSameBodyAsALoudOne(t *testing.T) {
+	sweep := func(t *testing.T, args ...string) (stdout, stderr string, code int) {
+		t.Helper()
+		d, exitCode := testDeps(t)
+		writeTestRecord(t, d, "site-alpha-aaaaaa", "alpha.example", "alpha")
+		writeTestRecord(t, d, "site-bravo-bbbbbb", "bravo.example", "bravo")
+		out, errOut, err := execTree(t, d, args...)
+		if err != nil {
+			t.Fatalf("cairn %v: %v", args, err)
+		}
+		return out, errOut, *exitCode
+	}
+
+	loudOut, loudErr, loudCode := sweep(t, "health")
+	quietOut, quietErr, quietCode := sweep(t, "health", "--quiet")
+
+	if loudOut == "" {
+		t.Fatal("the sweep wrote nothing without --quiet, so this comparison could not fail")
+	}
+	if loudCode == int(spine.VerdictOK) {
+		t.Fatalf("the fixture sweep settled OK (%d); this test's subject is a sweep that did not", loudCode)
+	}
+	if quietOut != loudOut {
+		t.Errorf("the quiet sweep's stdout differs\n--- quiet ---\n%s\n--- without --quiet ---\n%s", quietOut, loudOut)
+	}
+	if quietErr != loudErr {
+		t.Errorf("the quiet sweep's stderr differs\n--- quiet ---\n%s\n--- without --quiet ---\n%s", quietErr, loudErr)
+	}
+	if quietCode != loudCode {
+		t.Errorf("exit code under --quiet = %d, want %d", quietCode, loudCode)
+	}
+}
+
+// TestQuietNeverChangesTheExitCode covers the rule a scheduled routine depends on: --quiet
+// decides what is printed and never what the run reports. Each shape below is run twice, once
+// with the flag and once without, and the test refuses to pass on a fixture set that collapsed
+// into one verdict, since a single shape could not tell a code that follows --quiet from one
+// that ignores it.
+func TestQuietNeverChangesTheExitCode(t *testing.T) {
+	shapes := []struct {
+		name  string
+		setup func(t *testing.T, d deps)
+		args  []string
+	}{
+		{"an empty registry", func(*testing.T, deps) {}, []string{"health"}},
+		{
+			"a sweep over two sites",
+			func(t *testing.T, d deps) {
+				writeTestRecord(t, d, "site-alpha-aaaaaa", "alpha.example", "alpha")
+				writeTestRecord(t, d, "site-bravo-bbbbbb", "bravo.example", "bravo")
+			},
+			[]string{"health"},
+		},
+		{
+			"one named site",
+			func(t *testing.T, d deps) {
+				writeTestRecord(t, d, "site-alpha-aaaaaa", "alpha.example", "alpha")
+			},
+			[]string{"health", "site-alpha-aaaaaa"},
+		},
+	}
+
+	seen := map[int]bool{}
+	for _, shape := range shapes {
+		t.Run(shape.name, func(t *testing.T) {
+			run := func(args ...string) int {
+				d, code := testDeps(t)
+				shape.setup(t, d)
+				if _, _, err := execTree(t, d, args...); err != nil {
+					t.Fatalf("cairn %v: %v", args, err)
+				}
+				return *code
+			}
+			loud := run(shape.args...)
+			quiet := run(append(slices.Clone(shape.args), "--quiet")...)
+			seen[loud] = true
+			if quiet != loud {
+				t.Errorf("exit code = %d under --quiet and %d without it", quiet, loud)
+			}
+		})
+	}
+	if len(seen) < 2 {
+		t.Errorf("every shape exited %v; the fixtures no longer cover more than one verdict", seen)
 	}
 }

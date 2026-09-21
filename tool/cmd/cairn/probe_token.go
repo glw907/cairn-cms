@@ -201,23 +201,12 @@ func probeRow(p permission, err error) checkRow {
 	return checkRow{permission: p, verdict: spine.CheckVerdict{ID: p.Label, State: spine.Unknown, Reason: spine.ReasonNotObservable}, display: "unreachable"}
 }
 
-// checkRowWord names row's own wire word: "pass", "fail", "skip" for a credential the operator
-// never set or a site-scoped permission run with no site to confirm it against, or "unknown" for
-// a probe that ran but could not observe a verdict (a rate limit, a transport failure). This
-// mirrors spine.StateWord's own division between a disclosed gap and a failed measurement, kept
-// local here since this command settles CheckVerdicts directly rather than health.CheckResults.
+// checkRowWord names row's own wire word, through the same function a health check's row goes
+// through, so a permission the run did not attempt and a check the run did not attempt read the
+// same to an operator reading both. A permission row is never held: a hold is a decision about a
+// site's own failing check, which is not a thing to say about a token's permissions.
 func checkRowWord(row checkRow) string {
-	switch row.verdict.State {
-	case spine.OK:
-		return "pass"
-	case spine.Failing:
-		return "fail"
-	default:
-		if row.verdict.Reason == spine.ReasonCredMissing {
-			return "skip"
-		}
-		return "unknown"
-	}
+	return spine.StateWord(row.verdict.State, row.verdict.Reason, row.verdict.Acknowledged)
 }
 
 // printCheckRow writes row's own line: the permission label, the credential it belongs to, the

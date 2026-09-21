@@ -100,12 +100,15 @@ func checkByID(t *testing.T, payload map[string]any, id string) map[string]any {
 	return nil
 }
 
-// TestStateMarshalsAsOneOfFourWords pins the whole wire vocabulary: a passing check is "pass", a
-// failing one "fail", a failing one an unexpired hold covers "held", and one that could not run
-// "skip". The mapping is computed at this boundary because spine.State has three values and the
-// vocabulary has four, so no marshaller on the type could express "held" at all.
-func TestStateMarshalsAsOneOfFourWords(t *testing.T) {
-	payload := siteJSON(t, fixtures.OneSick()[0], spine.VerdictCritical)
+// TestStateMarshalsAsOneOfFiveWords pins the whole wire vocabulary: a passing check is "pass", a
+// failing one "fail", a failing one an unexpired hold covers "held", one that was never
+// attempted because its credential is unset "skip", and one that was attempted and observed
+// nothing "unknown". The mapping is computed at this boundary because spine.State has three
+// values and the vocabulary has five, so no marshaller on the type could express "held" at all
+// or tell the two unrun words apart.
+func TestStateMarshalsAsOneOfFiveWords(t *testing.T) {
+	sick := siteJSON(t, fixtures.OneSick()[0], spine.VerdictCritical)
+	offline := siteJSON(t, fixtures.Offline()[0], spine.VerdictUnknown)
 
 	for id, want := range map[string]string{
 		"serving":      "pass",
@@ -113,9 +116,14 @@ func TestStateMarshalsAsOneOfFourWords(t *testing.T) {
 		"https-forced": "held",
 		"email":        "skip",
 	} {
-		if got := checkByID(t, payload, id)["state"]; got != want {
+		if got := checkByID(t, sick, id)["state"]; got != want {
 			t.Errorf("check %q state = %v, want %q", id, got, want)
 		}
+	}
+	// The offline fixture is the fifth word's own case: every check was attempted and none could
+	// reach the network, which is not a credential the operator declined to set.
+	if got := checkByID(t, offline, "serving")["state"]; got != "unknown" {
+		t.Errorf("an offline check's state = %v, want %q", got, "unknown")
 	}
 }
 
@@ -147,19 +155,20 @@ func TestTierMarshalsAsItsWord(t *testing.T) {
 	}
 }
 
-// TestEverySkipCarriesAReason asserts the one rule that keeps "skip" readable: four words alone
-// cannot tell a missing credential from a timeout, and a consumer reading a bare "skip" as
-// benign when the tool could not reach a provider is what a mandatory reason closes.
-func TestEverySkipCarriesAReason(t *testing.T) {
+// TestEveryUnrunCheckCarriesAReason asserts the one rule that keeps the two unrun words
+// readable: the word says whether the check was attempted and the reason says what stopped it,
+// so a consumer reading a bare "unknown" cannot tell a timeout from an unreachable network
+// without one.
+func TestEveryUnrunCheckCarriesAReason(t *testing.T) {
 	for _, named := range fixtures.All() {
 		for _, report := range named.Reports {
 			payload := siteJSON(t, report, spine.VerdictUnknown)
 			for _, c := range checksIn(t, payload) {
-				if c["state"] != "skip" {
+				if c["state"] != "skip" && c["state"] != "unknown" {
 					continue
 				}
 				if reason, _ := c["reason"].(string); reason == "" {
-					t.Errorf("%s: check %v marshals state skip with no reason", named.Name, c["checkId"])
+					t.Errorf("%s: check %v marshals state %v with no reason", named.Name, c["checkId"], c["state"])
 				}
 			}
 		}

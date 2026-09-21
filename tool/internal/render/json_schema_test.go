@@ -344,6 +344,41 @@ func TestAuthCheckPayloadValidatesAgainstSchema(t *testing.T) {
 	}
 }
 
+// TestEverySchemaVersionIsOneBeforeTheTag asserts every published payload's own version constant
+// is 1 and that each schema file's own schemaVersion const says the same number.
+//
+// A schema version counts a change a consumer has to re-read a schema for. No consumer exists
+// before tool/v1.0.0 is pushed, so the whole pre-tag window is one schema and the first
+// published version of each payload is 1: an increment inside the window would publish a
+// revision nobody could have read the previous form of.
+func TestEverySchemaVersionIsOneBeforeTheTag(t *testing.T) {
+	for _, tt := range []struct {
+		schema   string
+		constant int
+	}{
+		{"cairn-health.schema.json", SiteSchemaVersion},
+		{"cairn-health-summary.schema.json", SummarySchemaVersion},
+		{"cairn-sites-list.schema.json", SitesListSchemaVersion},
+		{"cairn-logs.schema.json", LogsSchemaVersion},
+		{"cairn-adopt-list.schema.json", AdoptListSchemaVersion},
+		{"cairn-auth-check.schema.json", AuthCheckSchemaVersion},
+	} {
+		t.Run(tt.schema, func(t *testing.T) {
+			if tt.constant != 1 {
+				t.Errorf("the payload constant is %d, want 1 for the whole pre-tag window", tt.constant)
+			}
+			properties, _ := loadSchema(t, tt.schema)["properties"].(map[string]any)
+			version, _ := properties["schemaVersion"].(map[string]any)
+			if version == nil {
+				t.Fatal("the schema declares no schemaVersion property")
+			}
+			if !sameScalar(version["const"], tt.constant) {
+				t.Errorf("the schema pins schemaVersion at %v, want the constant %d", version["const"], tt.constant)
+			}
+		})
+	}
+}
+
 // resolveRef follows a local "#/$defs/name" pointer, the one reference form these schemas use.
 func resolveRef(root map[string]any, ref string) map[string]any {
 	name := strings.TrimPrefix(ref, "#/$defs/")
@@ -452,7 +487,7 @@ func TestDocCarriesBothFreezeLists(t *testing.T) {
 			t.Errorf("the frozen list does not name the verdict word %q", verdict)
 		}
 	}
-	for _, word := range []string{"pass", "fail", "skip", "held"} {
+	for _, word := range []string{"pass", "fail", "held", "skip", "unknown"} {
 		if !strings.Contains(frozenSection, "`"+word+"`") {
 			t.Errorf("the frozen list does not name the state word %q", word)
 		}

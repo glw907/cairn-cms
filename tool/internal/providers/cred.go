@@ -45,6 +45,14 @@ func (c Credential) MarshalText() ([]byte, error) {
 	return []byte("<redacted>"), nil
 }
 
+// Reveal returns the wrapped value in plaintext. It exists for one caller, internal/logx, which
+// cannot redact a token from an output stream without knowing the bytes to look for, and
+// TestOnlyLogxRevealsACredential holds it to that caller. Everything else reads a Credential
+// through the redacting methods above or hands it to a client.
+func (c Credential) Reveal() string {
+	return c.v
+}
+
 // apply sets req's Authorization header to a bearer token built from c, or does nothing for a
 // zero Credential.
 func (c Credential) apply(req *http.Request) {

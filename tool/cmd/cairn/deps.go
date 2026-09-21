@@ -65,6 +65,10 @@ type deps struct {
 	// carried here so a test can observe the code and so os.Exit itself is named in main.go
 	// alone.
 	exit func(int)
+	// scrubSkipped is how many stored credential values the output scrubber refused to match
+	// because they fall under logx.MinLength. main fills it; the root command discloses it once
+	// under --verbose, so a run whose redaction is weaker than it looks says so.
+	scrubSkipped int
 }
 
 // secretProviders returns the providers loadEnv chains after the environment. A deps built by a

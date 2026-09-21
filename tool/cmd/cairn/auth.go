@@ -109,6 +109,14 @@ func newAuthCmd(d deps) *cobra.Command {
 		Short:   shortAuth,
 		Example: exampleAuth,
 		GroupID: groupCredentials,
+		// A command group with no subcommand named is a usage error, not a help request, so it
+		// exits 3 with nothing on stdout. Without this, cobra prints help to stdout and exits 0,
+		// which tells a script the invocation succeeded. The help goes to stderr, where the
+		// error already is, because stdout carries payloads alone.
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			_, _ = fmt.Fprint(cmd.ErrOrStderr(), cmd.UsageString())
+			return authNoSubcommandError()
+		},
 	}
 	cmd.AddCommand(newAuthSetCmd(d), newAuthListCmd(d), newAuthUnsetCmd(d), newAuthProbeCmd(d))
 	return cmd

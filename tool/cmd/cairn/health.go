@@ -43,6 +43,7 @@ func newHealthCmd(d deps, rf *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "health [<site>]",
 		Short:   shortHealth,
+		Long:    longHealth,
 		Example: exampleHealth,
 		GroupID: groupSite,
 		Args: func(_ *cobra.Command, args []string) error {
@@ -105,12 +106,13 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 		ErrorThreshold: f.errorThreshold,
 		LogWindow:      window,
 		Now:            d.now,
+		OnCheck:        checkProgress(cmd, rf, f),
 	}, acks)
 	if err != nil {
 		return err
 	}
 
-	verdict := spine.ExitCode([]spine.SiteVerdicts{siteVerdicts(report)}, nil, 0)
+	verdict := spine.ExitCode([]spine.SiteVerdicts{health.Verdicts(report)}, nil, 0)
 	elapsed := d.now().Sub(started)
 	status := runStatus(clients, elapsed, report.Degraded, []health.Report{report})
 	if err := writeHealth(cmd, d, report, verdict, status, f, rf, elapsed); err != nil {
@@ -121,20 +123,21 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 	return nil
 }
 
-// siteVerdicts reduces a report to the per-check subset the exit arithmetic reads. spine holds
-// the arithmetic and health imports spine, so the conversion lives at the command layer rather
-// than as a method on either side.
-func siteVerdicts(r health.Report) spine.SiteVerdicts {
-	vs := make(spine.SiteVerdicts, 0, len(r.Checks))
-	for _, c := range r.Checks {
-		vs = append(vs, spine.CheckVerdict{
-			ID:           c.ID,
-			State:        c.Outcome.State,
-			Reason:       c.Outcome.Reason,
-			Acknowledged: c.Acknowledged,
-		})
+// checkProgress returns the callback health.Run calls as each check settles, or nil when this
+// run prints none. It writes one line per check to stderr, so a sweep that takes a while is
+// visibly progressing rather than apparently hung.
+//
+// --json suppresses it whatever --verbose says: under --json the run's own progress is the
+// newline-delimited stream on stdout, and a second stream in a different shape on stderr is
+// noise an agent cannot parse.
+func checkProgress(cmd *cobra.Command, rf *rootFlags, f healthFlags) func(health.CheckResult) {
+	if !rf.verbose || f.asJSON {
+		return nil
 	}
-	return vs
+	errOut := cmd.ErrOrStderr()
+	return func(c health.CheckResult) {
+		_, _ = fmt.Fprint(errOut, checkProgressLine(c.ID, spine.StateWord(c.Outcome.State, c.Acknowledged)))
+	}
 }
 
 // writeHealth writes the report, under two rules the agent contract freezes. --json wins over

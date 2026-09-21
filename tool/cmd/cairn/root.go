@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/internal/logx"
 	"github.com/glw907/cairn-cms/tool/internal/version"
 	"github.com/spf13/cobra"
 )
@@ -18,10 +19,18 @@ const (
 	groupOther       = "other"
 )
 
-// defaultTimeout is one run's wall-clock budget when the operator names none. A single site's
-// sweep makes a few dozen requests, each with its own 15-second transport timeout, so the
-// budget is sized to let a slow provider answer rather than to cut it off.
-const defaultTimeout = 120 * time.Second
+// defaultTimeout is one site's wall-clock budget when the operator names none.
+//
+// It is sized so a single site can always finish inside it: the nine checks make at most
+// thirty-one requests between them, each bounded at 15 seconds, which is 465 seconds in the worst
+// case where every one runs to its own timeout. The per-check counts are published in
+// tool/docs/reference/exit-codes.md, and TestTheSingleSiteBudgetFitsTheRequestArithmetic reads
+// them from that page so the doc and this constant cannot drift.
+//
+// A timeout is a ceiling and not a wait: a healthy site still answers in a few seconds. The
+// earlier 120-second default was a budget one site could not finish inside, so a run against a
+// site whose provider had stalled reported UNKNOWN rather than the fault it was measuring.
+const defaultTimeout = 480 * time.Second
 
 // The three --color values. Task 20a reads the chosen value to pick a colour profile; until it
 // lands the value is validated and carried, never acted on.
@@ -41,7 +50,7 @@ type rootFlags struct {
 	timeout time.Duration
 	// timeoutSet reports whether the operator passed --timeout explicitly, as opposed to the
 	// flag sitting at its default value. A value equal to the default cannot be told apart from
-	// an unset default by value alone, since 120 seconds is a value an operator can also type;
+	// an unset default by value alone, since the default is a value an operator can also type;
 	// PersistentPreRunE sets this from the flag's own Changed bit.
 	timeoutSet bool
 	// verbose asks for the identifiers every command otherwise withholds.
@@ -107,6 +116,7 @@ func newRootCmd(d deps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "cairn",
 		Short:   shortRoot,
+		Long:    longRoot,
 		Example: exampleRoot,
 		Args:    cobra.NoArgs,
 		// SilenceUsage and SilenceErrors are set here and nowhere else in this package. Cobra
@@ -121,7 +131,13 @@ func newRootCmd(d deps) *cobra.Command {
 			if flag := c.Flags().Lookup("width"); flag != nil {
 				f.widthSet = flag.Changed
 			}
-			return f.validate()
+			if err := f.validate(); err != nil {
+				return err
+			}
+			if f.verbose && d.scrubSkipped > 0 {
+				_, _ = fmt.Fprintln(c.ErrOrStderr(), scrubSkippedNotice(d.scrubSkipped, logx.MinLength))
+			}
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if f.showVersion {
@@ -157,7 +173,16 @@ func newRootCmd(d deps) *cobra.Command {
 		newLogsCmd(d, f),
 		newAdoptCmd(d, f),
 		newAuthCmd(d),
+		newAgentsCmd(),
 	)
+
+	// A flag error names the command the flag was given to, not the root: an agent told to run
+	// `cairn --help` after `cairn health --erro-threshold 5` reads the wrong page. Cobra
+	// inherits this function down the tree the way it inherits SilenceUsage, so setting it here
+	// covers every subcommand.
+	cmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		return flagError(c.CommandPath(), err)
+	})
 
 	return cmd
 }

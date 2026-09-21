@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -242,17 +243,44 @@ func TestSilenceUsageAndSilenceErrorsAreSetInOneFile(t *testing.T) {
 }
 
 // TestOnlyMainNamesTheProcessStreams asserts every command writes through the writer main
-// obtains, which is what lets the credential scrubber wrap the streams in one place.
+// obtains, which is what lets the credential scrubber wrap the streams in one place, and ends
+// the process through the injected exit rather than reaching os.Exit itself.
+//
+// os.Exit is allowed in deps.go as well, where it is the exit field's own production default.
+// Nothing else in the tree may call it: a command that does skips main's flush, which loses the
+// last unterminated line the scrubber is holding.
 func TestOnlyMainNamesTheProcessStreams(t *testing.T) {
+	names := map[string][]string{
+		"os.Stdout": {"cmd/cairn/main.go"},
+		"os.Stderr": {"cmd/cairn/main.go"},
+		"os.Exit":   {"cmd/cairn/main.go", "cmd/cairn/deps.go"},
+	}
 	for _, rel := range toolGoFiles(t) {
-		if !strings.HasPrefix(rel, "cmd/cairn/") || rel == "cmd/cairn/main.go" {
+		if !strings.HasPrefix(rel, "cmd/cairn/") {
 			continue
 		}
 		body := readToolFile(t, rel)
-		for _, stream := range []string{"os.Stdout", "os.Stderr"} {
-			if strings.Contains(body, stream) {
-				t.Errorf("%s names %s; write through cmd.OutOrStdout or cmd.ErrOrStderr instead", rel, stream)
+		for name, allowed := range names {
+			if slices.Contains(allowed, rel) || !strings.Contains(body, name) {
+				continue
 			}
+			t.Errorf("%s names %s; reach it through cmd.OutOrStdout, cmd.ErrOrStderr, or deps.exit instead", rel, name)
+		}
+	}
+}
+
+// TestOnlyCmdCairnImportsLogx asserts the scrubbing writer stays a property of the process's own
+// streams. A package under internal that wrapped its own output in it would scrub twice and buffer
+// a second time, and the architecture's downward order puts logx at the top.
+func TestOnlyCmdCairnImportsLogx(t *testing.T) {
+	const path = "github.com/glw907/cairn-cms/tool/internal/logx"
+
+	for _, rel := range toolGoFiles(t) {
+		if strings.HasPrefix(rel, "cmd/cairn/") || strings.HasPrefix(rel, "internal/logx/") {
+			continue
+		}
+		if strings.Contains(readToolFile(t, rel), path) {
+			t.Errorf("%s imports logx; the scrub belongs to the process streams cmd/cairn owns", rel)
 		}
 	}
 }

@@ -45,7 +45,7 @@ func independentSweepVerdict(t *testing.T, d deps) spine.Verdict {
 		if err != nil {
 			t.Fatalf("health.Run(%s): %v", e.ID, err)
 		}
-		sites = append(sites, siteVerdicts(report))
+		sites = append(sites, health.Verdicts(report))
 	}
 	return spine.ExitCode(sites, listErrs, 0)
 }
@@ -60,8 +60,10 @@ func TestSweepDeadlineDefaultSizing(t *testing.T) {
 		siteCount int
 		want      time.Duration
 	}{
-		{"four sites at the default stays under the cap", defaultTimeout, 4, defaultTimeout * 4},
+		{"one site at the default gets its whole budget", defaultTimeout, 1, defaultTimeout},
+		{"four sites at the default is capped", defaultTimeout, 4, maxSweepTimeout},
 		{"ten sites at the default is capped", defaultTimeout, 10, maxSweepTimeout},
+		{"a small per-site budget multiplies without reaching the cap", 30 * time.Second, 4, 2 * time.Minute},
 		{"an empty registry still gets one site's worth of budget", defaultTimeout, 0, defaultTimeout},
 	}
 

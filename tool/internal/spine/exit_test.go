@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
 
 // TestVerdictCodesAndWords asserts the four verdicts carry the monitoring-plugin exit codes and
@@ -125,11 +127,11 @@ func TestCombineState(t *testing.T) {
 	}
 }
 
-// TestCheckVerdict pins the per-check mapping in force while no per-check severity table exists:
-// every unheld failing check is CRITICAL, an unexpired hold softens a failure to WARNING, and an
-// expired hold (which reaches this type as Acknowledged false) stays CRITICAL. A later change
-// that ranks some failure WARNING has to edit these rows, which is what keeps that change a
-// visible diff rather than a silent reinterpretation.
+// TestCheckVerdict pins the per-check mapping row by row: an unheld failing check is CRITICAL
+// unless its own declared severity ranks it WARNING, an unexpired hold softens a failure to
+// WARNING, an expired hold (which reaches this type as Acknowledged false) stays CRITICAL, and
+// neither a hold nor a WARNING severity softens a check that could not run. The credential-missing
+// row is the one Unknown that reports WARNING.
 func TestCheckVerdict(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -140,15 +142,60 @@ func TestCheckVerdict(t *testing.T) {
 		{"failing check", CheckVerdict{ID: "deploy", State: Failing}, VerdictCritical},
 		{"held failing check", CheckVerdict{ID: "deploy", State: Failing, Acknowledged: true}, VerdictWarning},
 		{"failing check whose hold expired", CheckVerdict{ID: "deploy", State: Failing}, VerdictCritical},
+		{
+			"failing check its own severity ranks WARNING",
+			CheckVerdict{ID: "engine", State: Failing, Severity: WarningFailure},
+			VerdictWarning,
+		},
+		{
+			"failing check its own severity ranks CRITICAL",
+			CheckVerdict{ID: "creds", State: Failing, Severity: CriticalFailure},
+			VerdictCritical,
+		},
 		{"unrun check", CheckVerdict{ID: "email", State: Unknown, Reason: ReasonTimeout}, VerdictUnknown},
 		{"held unrun check", CheckVerdict{ID: "email", State: Unknown, Reason: ReasonTimeout, Acknowledged: true}, VerdictUnknown},
-		{"unrun check missing a credential", CheckVerdict{ID: "creds", State: Unknown, Reason: ReasonCredMissing}, VerdictUnknown},
+		{"unrun check missing a credential", CheckVerdict{ID: "creds", State: Unknown, Reason: ReasonCredMissing}, VerdictWarning},
+		{
+			"a WARNING severity does not soften an unrun check",
+			CheckVerdict{ID: "engine", State: Unknown, Reason: ReasonTimeout, Severity: WarningFailure},
+			VerdictUnknown,
+		},
 		{"passing check carrying a hold", CheckVerdict{ID: "creds", State: OK, Acknowledged: true}, VerdictOK},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.check.Verdict(); got != tt.want {
 				t.Errorf("Verdict() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestTheTwoKindsOfUnknownAreDisambiguated covers the four combinations a site can carry: a
+// credential the operator never configured is a disclosed gap and reports WARNING, every other
+// Unknown reports UNKNOWN, and one of each together reports UNKNOWN rather than being softened
+// by the disclosed one. The rate-limit row is listed separately because the copy catalogue's own
+// rate-limited row asserts WARNING and this arithmetic overrules it: a throttled run did not
+// observe the site.
+func TestTheTwoKindsOfUnknownAreDisambiguated(t *testing.T) {
+	credMissing := CheckVerdict{ID: "email", State: Unknown, Reason: ReasonCredMissing}
+	transport := CheckVerdict{ID: "serving", State: Unknown, Reason: ReasonOffline}
+	rateLimited := CheckVerdict{ID: "deploy", State: Unknown, Reason: APIReason(providers.ReasonRateLimited)}
+
+	tests := []struct {
+		name string
+		site SiteVerdicts
+		want Verdict
+	}{
+		{"a cred-missing skip alone", SiteVerdicts{pass(), credMissing}, VerdictWarning},
+		{"a transport unknown alone", SiteVerdicts{pass(), transport}, VerdictUnknown},
+		{"both together", SiteVerdicts{credMissing, transport}, VerdictUnknown},
+		{"a rate-limit unknown alone", SiteVerdicts{pass(), rateLimited}, VerdictUnknown},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExitCode([]SiteVerdicts{tt.site}, nil, 0); got != tt.want {
+				t.Errorf("ExitCode = %v (%d), want %v (%d)", got, int(got), tt.want, int(tt.want))
 			}
 		})
 	}

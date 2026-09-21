@@ -235,6 +235,11 @@ func Healthy() []health.Report {
 
 // WarningOnly is a site whose only failures are version drift and a Worker that logs nowhere:
 // real, and neither a reason to page anyone, so both take the outlined fail mark.
+//
+// Its own verdict is UNKNOWN rather than WARNING, which is what the outlined marks alone do not
+// say: the observability skip is an unknown the run cannot attribute to a missing credential, so
+// nothing measured the error rate at all. The frame is here precisely because the marks and the
+// verdict differ.
 func WarningOnly() []health.Report {
 	return []health.Report{report("cairn.pub", "cairn.pub",
 		pass("creds", "Cloudflare and GitHub tokens read from the keyring"),

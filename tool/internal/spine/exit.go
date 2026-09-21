@@ -58,6 +58,22 @@ func (v Verdict) Severity() int {
 // the registry does not hold. ExitCode is the only place it is turned into a verdict.
 var ErrExpectSites = errors.New("spine: registry site count does not match the expected count")
 
+// FailSeverity is the verdict one check's own Failing outcome warrants, decided by a per-check
+// table the health package owns. It is a value on CheckVerdict rather than a lookup here because
+// this package never learns a check id: the arithmetic stays independent of the check set.
+//
+// The zero value is CriticalFailure, so a converter that leaves the field unset reports a
+// failure at full weight rather than silently softening one.
+type FailSeverity int
+
+// The two fail severities a check can declare.
+const (
+	// CriticalFailure is a failure the operator is paged for.
+	CriticalFailure FailSeverity = iota
+	// WarningFailure is a failure worth reporting that no operator should be woken for.
+	WarningFailure
+)
+
 // CheckVerdict is one settled check's contribution to a run's exit code.
 //
 // It carries the subset of a health report's per-check result the exit arithmetic reads, rather
@@ -74,23 +90,38 @@ type CheckVerdict struct {
 	// expired arrives false, which is how an expired hold contributes the same code an unheld
 	// failure does.
 	Acknowledged bool
+	// Severity is the weight this check's own Failing outcome carries, from the converting
+	// package's per-check table. It is read only when State is Failing.
+	Severity FailSeverity
 }
 
-// Verdict reports the code this check contributes on its own. A passing check is OK and a check
-// that could not run is UNKNOWN. A failing check is CRITICAL unless an unexpired hold covers it,
-// which softens it to WARNING: a hold silences notification, never status, so a held failure is
-// never reported OK. No per-check table yet ranks any failure below CRITICAL, so the hold is the
-// only softening this function applies.
+// Verdict reports the code this check contributes on its own.
+//
+// A passing check is OK. A failing check is CRITICAL, softened to WARNING either by its own
+// declared Severity or by an unexpired hold: a hold silences notification, never status, so a
+// held failure is never reported OK.
+//
+// A check that could not run is UNKNOWN, with one exclusion. An Unknown whose Reason is
+// ReasonCredMissing is WARNING: the operator has not configured that credential, which is a gap
+// they disclosed rather than a measurement that failed, and paging them for it every morning is
+// what turns a routine into noise. Every other Unknown, a rate limit included, stays UNKNOWN,
+// because the run did not observe the site and cannot say it is merely imperfect.
+//
+// Acknowledged has no effect on an Unknown. A hold is an operator saying they accept a known
+// failure, which they cannot say about a check that never ran.
 func (c CheckVerdict) Verdict() Verdict {
 	switch c.State {
 	case OK:
 		return VerdictOK
 	case Failing:
-		if c.Acknowledged {
+		if c.Acknowledged || c.Severity == WarningFailure {
 			return VerdictWarning
 		}
 		return VerdictCritical
 	default:
+		if c.Reason == ReasonCredMissing {
+			return VerdictWarning
+		}
 		return VerdictUnknown
 	}
 }

@@ -94,17 +94,11 @@ func (t Theme) siteColWidth(rs []health.Report) int {
 	return min(n, siteColCap)
 }
 
-// siteVerdict folds one site's checks into the verdict its own row carries, through spine's
-// arithmetic alone: the render paints a verdict and never computes one, so an operator reading a
-// row and a routine reading the exit code cannot disagree.
+// siteVerdict folds one site's checks into the verdict its own row carries, through health's
+// conversion and spine's arithmetic alone: the render paints a verdict and never computes one,
+// so an operator reading a row and a routine reading the exit code cannot disagree.
 func siteVerdict(r health.Report) Verdict {
-	vs := make(spine.SiteVerdicts, 0, len(r.Checks))
-	for _, c := range r.Checks {
-		vs = append(vs, spine.CheckVerdict{
-			ID: c.ID, State: c.Outcome.State, Reason: c.Outcome.Reason, Acknowledged: c.Acknowledged,
-		})
-	}
-	return vs.Verdict()
+	return health.Verdicts(r).Verdict()
 }
 
 // fleetTally counts the sites by the verdict each reports, worst first, omitting a verdict no

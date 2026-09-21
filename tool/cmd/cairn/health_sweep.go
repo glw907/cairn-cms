@@ -18,7 +18,7 @@ import (
 
 // maxSweepTimeout bounds a multi-site sweep's default whole-run budget, so a large registry
 // cannot make bare `cairn health` run for hours: ten minutes, the cap
-// tool/docs/reference/exit-codes.md publishes once Task 21 creates that page.
+// tool/docs/reference/exit-codes.md publishes.
 const maxSweepTimeout = 600 * time.Second
 
 // runHealthSweep runs health.Run over every registered site, in store.List order, printing each
@@ -89,13 +89,14 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			ErrorThreshold: f.errorThreshold,
 			LogWindow:      window,
 			Now:            d.now,
+			OnCheck:        checkProgress(cmd, rf, f),
 		}, acks)
 		siteCancel()
 		if err != nil {
 			return err
 		}
 
-		checks := siteVerdicts(report)
+		checks := health.Verdicts(report)
 		sites = append(sites, checks)
 		reports = append(reports, report)
 		siteVerdict := spine.ExitCode([]spine.SiteVerdicts{checks}, nil, 0)

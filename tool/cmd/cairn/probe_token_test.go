@@ -19,6 +19,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/secrets"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
+	"github.com/spf13/cobra"
 )
 
 // routedResponse is one fixed status and body a routeRoundTripper serves for one path.
@@ -135,6 +136,19 @@ func probeDeps(envFn func(string) string, p secrets.Provider, rt http.RoundTripp
 	return deps{env: envFn, keyring: p, transport: rt, registryDir: registryDir, exit: exit}
 }
 
+// runProbe runs auth probe and returns the exit code its coded error carries. The command hands
+// main its verdict as a typed error rather than through the injected exit, since it settles
+// provider states and produces no health report for spine.ExitCode to read.
+func runProbe(t *testing.T, cmd *cobra.Command) int {
+	t.Helper()
+	err := cmd.RunE(cmd, nil)
+	coded, ok := errors.AsType[codedError](err)
+	if !ok {
+		t.Fatalf("RunE returned %v, want a codedError", err)
+	}
+	return int(coded.verdict)
+}
+
 func TestProbeTokenHiddenAndTakesNoArgs(t *testing.T) {
 	cmd := newAuthProbeCmd(probeDeps(fakeEnv(nil), fakeProvider{name: "keyring"}, routeRoundTripper{}, func() (string, error) { return t.TempDir(), nil }, func(int) {}))
 
@@ -157,9 +171,7 @@ func TestProbeTokenPrintsCredentialSourcesNeverValues(t *testing.T) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&bytes.Buffer{})
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	code = runProbe(t, cmd)
 	got := out.String()
 	if !strings.Contains(got, "CAIRN_CF_ACCOUNT_ID") || !strings.Contains(got, "environment") {
 		t.Errorf("output missing credential source line: %s", got)
@@ -225,9 +237,7 @@ func TestProbeTokenExitCriticalOnRejectedCloudflareToken(t *testing.T) {
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	code = runProbe(t, cmd)
 	if code != int(spine.VerdictCritical) {
 		t.Errorf("exit code = %d, want CRITICAL (%d)", code, int(spine.VerdictCritical))
 	}
@@ -245,9 +255,7 @@ func TestProbeTokenExitUnknownOnUnreachableEndpoint(t *testing.T) {
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	code = runProbe(t, cmd)
 	if code != int(spine.VerdictUnknown) {
 		t.Errorf("exit code = %d, want UNKNOWN (%d)", code, int(spine.VerdictUnknown))
 	}
@@ -261,9 +269,7 @@ func TestProbeTokenSkipsCloudflareAndGitHubWhenCredentialsMissing(t *testing.T) 
 	cmd.SetOut(&out)
 	cmd.SetErr(&bytes.Buffer{})
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	code = runProbe(t, cmd)
 	if !strings.Contains(out.String(), "Cloudflare: skipped") || !strings.Contains(out.String(), "GitHub: skipped") {
 		t.Errorf("output = %s, want both providers reported as skipped", out.String())
 	}
@@ -292,9 +298,7 @@ func TestProbeTokenDiscoversRepositoriesFromRegistryNoHardcodedList(t *testing.T
 	cmd.SetOut(&out)
 	cmd.SetErr(&errOut)
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	code = runProbe(t, cmd)
 	if code != int(spine.VerdictOK) {
 		t.Fatalf("exit code = %d, want OK; output:\n%s", code, out.String())
 	}
@@ -339,9 +343,7 @@ func TestProbeTokenWarnsWhenEveryRepositoryIsPublic(t *testing.T) {
 	var errOut bytes.Buffer
 	cmd.SetErr(&errOut)
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	runProbe(t, cmd)
 	if !strings.Contains(errOut.String(), "unconfirmed") {
 		t.Errorf("stderr = %q, want the GitHub-scope-unconfirmed warning when every repository is public", errOut.String())
 	}
@@ -363,9 +365,7 @@ func TestProbeTokenNoWarningWhenARepositoryIsPrivate(t *testing.T) {
 	var errOut bytes.Buffer
 	cmd.SetErr(&errOut)
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	runProbe(t, cmd)
 	if strings.Contains(errOut.String(), "unconfirmed") {
 		t.Errorf("stderr = %q, want no warning since one repository is confirmed private", errOut.String())
 	}
@@ -396,9 +396,7 @@ func TestProbeTokenExitCriticalOnMixedRepositoryResult(t *testing.T) {
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	code = runProbe(t, cmd)
 	if code != int(spine.VerdictCritical) {
 		t.Errorf("exit code = %d, want CRITICAL (%d)", code, int(spine.VerdictCritical))
 	}
@@ -416,9 +414,7 @@ func TestProbeTokenExitUnknownWhenRegistryDirUnresolvable(t *testing.T) {
 	var errOut bytes.Buffer
 	cmd.SetErr(&errOut)
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	code = runProbe(t, cmd)
 	if code != int(spine.VerdictUnknown) {
 		t.Errorf("exit code = %d, want UNKNOWN (%d) when the registry directory cannot be resolved", code, int(spine.VerdictUnknown))
 	}
@@ -442,9 +438,7 @@ func TestProbeTokenExitUnknownWhenRegistryUnreadable(t *testing.T) {
 	var errOut bytes.Buffer
 	cmd.SetErr(&errOut)
 
-	if err := cmd.RunE(cmd, nil); err != nil {
-		t.Fatalf("RunE: %v", err)
-	}
+	code = runProbe(t, cmd)
 	if code != int(spine.VerdictUnknown) {
 		t.Errorf("exit code = %d, want UNKNOWN (%d) when the registry cannot be opened", code, int(spine.VerdictUnknown))
 	}

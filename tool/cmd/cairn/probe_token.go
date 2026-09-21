@@ -211,8 +211,9 @@ func runProbeToken(cmd *cobra.Command, d deps) error {
 		raise(probeRegistryGitHub(ctx, out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, d.registryDir))
 	}
 
-	d.exit(int(spine.ExitCodeFor(worst)))
-	return nil
+	// auth probe settles provider States rather than site reports, so its code reaches main as a
+	// typed coded error rather than through spine.ExitCode, whose inputs it has none of.
+	return codedExit(spine.ExitCodeFor(worst))
 }
 
 // isMissing reports whether missing names the variable name.

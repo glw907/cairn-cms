@@ -2888,7 +2888,14 @@ Invoke `go-conventions` before writing any Go file. Suggested model: `sonnet`.
 one terminal window per frame. Iterate with offscreen renders (ANSI to HTML to headless Chromium);
 real-terminal evidence is ONE reused kitty window per session, each frame verified to show its own
 content before it is saved. See `tool/docs/design/render-reference/src/offscreen.py` and
-`real-frames.sh`."
+`real-frames.sh`." Plus, on `go-conventions`: criterion 15's mandated construction (`Style.Width(n).MaxWidth(n)`
+cells, `lipgloss/v2/table` with `StyleFunc`, carried into 20b-i and 20b-ii) and the grep and purity
+meta-tests (criterion 3, and Task 20b-i and 20b-ii's own grep tests) are deliberate plan overrides
+of "simplest thing that works" and are never a reviewer finding.
+
+**Conductor rulings (pre-flight, 2026-09-21):** see the amended criteria below (5, 7, 9, 12, 13,
+14, 18, 19, 24); each states its own ruling inline rather than as a separate list, because each
+changes what the criterion proves.
 
 **Files:**
 - Create: `tool/internal/render/render.go`, `profile.go`, `profile_test.go`, `palette.go`,
@@ -2947,27 +2954,41 @@ with a `Lines()` join for the CLI. `func Sanitize(string) string`. Named width-r
    "outside the amendment, for the owner"; this task writes it in the Go palette only.
 5. **Named ANSI-16 slots per role, in a dark AND a light branch.** A nearest-match downsample
    collapses distinct roles onto one slot, which is why the slot is named per role. The slots are
-   `family.md`'s: ok 2, failing 1, unknown 3, accent 5, subtle 7, rule 8. **Muted text is the
-   terminal's own default foreground with no attribute: never slot 8, never SGR 2 (faint).** Slot
-   8 is the background on Solarized Dark, so meaning placed there vanishes, and faint is unreadable
-   on several common themes. **Only the rule may use slot 8, and it is exempt from the test.** The
-   test asserts every role's slot other than the rule's differs from slot 0 in both branches, and
-   that no role emits SGR 2. The rule's own risk on a Solarized Dark terminal is recorded in the
-   ADR: a rule that vanishes costs a separator, not a state.
+   `family.md`'s: ok 2, failing 1, unknown 3, accent 5, subtle 7, rule 8. **Named deviation from
+   `family.md`'s token table (`reviews/family.md` lines 124-135), in the same way criterion 4 names
+   its own deviations: the table gives both `muted` and `acknowledged` (which folds into muted per
+   criterion 4) the ANSI-16 value `default + SGR 2`. The owner's bound overrides it. Muted text,
+   and by inheritance the folded acknowledged role, is the terminal's own default foreground with
+   no attribute: never slot 8, never SGR 2 (faint).** Slot 8 is the background on Solarized Dark,
+   so meaning placed there vanishes, and faint is unreadable on several common themes. **Only the
+   rule may use slot 8, and it is exempt from the test.** The test asserts every role's slot other
+   than the rule's differs from slot 0 in both branches, and that no role, including the folded
+   acknowledged role, emits SGR 2. The rule's own risk on a Solarized Dark terminal is recorded in
+   the ADR: a rule that vanishes costs a separator, not a state.
 6. **An ANSI-256 rung is named, not left to a downsample.** `Profile` is a four-value enum and
    `lipgloss.Complete(p)(ansiColor, ansi256Color, trueColor)` selects per profile at the palette.
    Without it a 256-colour terminal receives 24-bit SGR and the writer converts nothing. A golden
    covers the rung.
 7. **Contrast is measured, not asserted.** A test computes each role's contrast ratio against its
    own branch's reference ground and requires at least 4.5:1. `family.md` measured all eight roles
-   clear on both grounds; this test is what keeps a later edit from breaking one.
+   clear on both grounds; this test is what keeps a later edit from breaking one. **The WCAG
+   relative-luminance formula is computed by hand in `palette_test.go`, not sourced from
+   `go-colorful`**: `go-colorful` is an indirect dependency here (criterion 1), and promoting it to
+   a direct require to borrow its luminance function would falsify criterion 1's "three new direct
+   requires."
 8. **Colour is reached through `lipgloss.LightDark(dark)` and per-profile values,** never a
    hand-rolled map plus a switch, and no caller chains a raw lipgloss setter off a style the theme
    returned. `Style(role)` and `Sized(role, w)` are the only two ways to get one. A test asserts
    no file outside `palette.go` names a lipgloss setter.
-9. **`NewTheme(dark bool, p Profile) Theme` is the constructor the 2.0 HUD imports unchanged.**
-   This is a seam kept on purpose: the HUD's theme is this file widened, not a second palette
-   beside it. A test asserts `NewTheme` takes exactly those two inputs and reads nothing else.
+9. **`NewTheme(dark bool, p Profile) Theme` is the constructor the 2.0 HUD imports unchanged, and
+   stays at exactly two inputs.** This is a seam kept on purpose: the HUD's theme is this file
+   widened, not a second palette beside it. **`Profile` alone does not encode the glyph tier**
+   (`ProfileNoColor` is not the same axis as ASCII, per criterion 13), so the tier is never a third
+   `NewTheme` parameter; any dispatch that adds one is a reviewer escalation. Instead `Theme` carries
+   both glyph tiers on its `GlyphSet`, and the caller, `render.Render` reading `RenderInput.ASCII`
+   (criterion 13, filled by `profile.go`'s detector), selects which tier a body draws from. A test
+   asserts `NewTheme` takes exactly those two inputs and reads nothing else, and a second asserts
+   `Theme.GlyphSet` exposes both tiers.
 
 **Acceptance, the glyphs:**
 10. **The glyph set is the owner's pick of 2026-09-20:** pass `●` U+25CF, fail `■` U+25A0, fail at
@@ -2979,16 +3000,24 @@ with a `Lines()` join for the CLI. `func Sanitize(string) string`. Named width-r
     arithmetic is correct at one tier only.
 12. **The East Asian Ambiguous rule is stated and tested.** Every Unicode glyph in the set except
     `?` is EAW=Ambiguous (measured in
-    `tool/docs/design/render-reference/measurements.txt`). The package pins an explicit
-    Ambiguous=narrow width table for the Unicode tier and measures with it. The sweep in 20b-ii
-    runs both tables. A terminal configured the other way takes the ASCII tier, which is exact on
-    both, and the rule is that no column position ever depends on a glyph's width: a field is
-    padded after the glyph, measured.
+    `tool/docs/design/render-reference/measurements.txt`). **The width table is a field on `Theme`,
+    chosen by tier (narrow for Unicode, wide for ASCII) at construction, never a package-level
+    variable**: the reference program's package-global `ambiguousWide` breaks determinism under
+    parallel tests, which this package's own determinism criterion (24) forbids. The sweep in
+    20b-ii runs both tables. A terminal configured the other way takes the ASCII tier, which is
+    exact on both, and the rule is that no column position ever depends on a glyph's width: a field
+    is padded after the glyph, measured. **The Unicode-tier-on-an-Ambiguous=wide-terminal
+    combination is documented as unsupported in ADR-0002**, recording the reference program's own
+    measurement of 2980 over-width lines under that combination.
 13. **The glyph tier is Unicode by default and ASCII when output is not a TTY, when `TERM` is
     `dumb`, or when the Windows console refuses virtual-terminal mode** (Geoff, 2026-09-20). A
-    table covers the selection. **Unicode is kept at ANSI-16**, against poplar's own choice,
-    because cairn's glyph count is four rather than seventeen and the parity test makes either
-    choice safe. No task in this plan widens the glyph set; the full poplar `theme` port is 2.0.
+    table covers the selection. **This is carried as `ASCII bool` on `RenderInput`, filled by
+    `profile.go`'s detector alone** (criterion 14): purity forbids OS access outside that file, so
+    `render.Render` itself never re-derives the tier, it reads the field. `Theme.GlyphSet` exposes
+    both tiers (criterion 9) and the body selects by this field, never by re-testing the terminal.
+    **Unicode is kept at ANSI-16**, against poplar's own choice, because cairn's glyph count is four
+    rather than seventeen and the parity test makes either choice safe. No task in this plan widens
+    the glyph set; the full poplar `theme` port is 2.0.
 
 **Acceptance, the profile and the one TTY check:**
 14. **`profile.go` holds the module's one TTY check** (Geoff, 2026-09-20, ruling 1) and nowhere
@@ -2996,7 +3025,12 @@ with a `Lines()` join for the CLI. `func Sanitize(string) string`. Named width-r
     `--color=never` means no colour and `--color=always` means colour regardless of the terminal;
     `--color=auto`, the default, falls through; `TERM=dumb` means no colour; a non-TTY stdout means
     no colour. A table covers every combination. Task 19a-i's grep test allows `term.IsTerminal` in
-    this file alone.
+    this file alone. **The same detector also reports the terminal's column count when stdout is a
+    terminal** (conductor, 2026-09-21), read beside the one TTY predicate so no second TTY predicate
+    exists anywhere in the package; the grep test still names `profile.go` as its sole match.
+    `cmd/cairn` is the one impure caller: it builds `RenderInput` and calls `render.DetectProfile(stdout,
+    env)`; `render` itself reads nothing. This column count is what Task 20b-i's criterion 18 uses
+    for `Width` when the operator passes no `--width`.
 15. **The same predicate selects the body, not only the colour** (2026-09-20 amendment). `--color`
     and `NO_COLOR` affect colour alone and never the body: an operator who forces colour into a
     pipe still gets the plain body. A test asserts `--color=always` into a non-TTY renders the
@@ -3020,7 +3054,10 @@ with a `Lines()` join for the CLI. `func Sanitize(string) string`. Named width-r
     and the remainder of a wider terminal is left empty rather than stretched. The cap is a number
     rather than a word because Task 20b-ii cuts goldens at it. Left alignment at every width, never
     centred: a centred block floats away from the prompt on a maximized terminal and bakes its
-    padding into a piped file.
+    padding into a piped file. **The requested width is honoured exactly; the rungs are behavioural
+    thresholds only, never a snap** (conductor, 2026-09-21): a single-column fallback below 60, the
+    condition id trailing the fix URL line at 100 and above (Task 20b-i criterion 11), and no growth
+    above 120. A test asserts a render at width 90 is not byte-identical to one at width 80.
 19. **No line exceeds the requested width, from 20 to 400, on both width tables.** The sweep runs
     the widths 20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400 under Ambiguous=narrow for the
     Unicode tier and Ambiguous=wide for the ASCII tier, and asserts zero lines over width. Rules
@@ -3049,7 +3086,11 @@ with a `Lines()` join for the CLI. `func Sanitize(string) string`. Named width-r
     byte-identical, and the output is byte-identical across `TZ`, `LANG`, `LC_CTYPE`, `TERM`, and
     `NO_COLOR`, with `NO_COLOR` alone forcing the no-colour profile. Timestamps carry a real zone
     offset, asserted with a non-UTC location: the reference program's `Format("2006-01-02 15:04Z")`
-    printed a literal `Z` on a local-time value and claimed UTC, which `Z07:00` fixes.
+    printed a literal `Z` on a local-time value and claimed UTC, which `Z07:00` fixes. **This
+    resolves the conflict between "byte-identical across `TZ`" and "a real zone offset" (conductor,
+    2026-09-21): render never calls `time.Now`, `.Local()`, or `time.LoadLocation`. It formats
+    `in.Now` in the location that value already carries, with `Z07:00`.** A test passes a non-UTC
+    `Now` and asserts identical output bytes under three different `TZ` values.
 25. **`Frame` is sectioned, and it carries no bubbletea type.** `Frame` returns `Header`, `Body`,
     and `Footer`, joined by `Lines()` for the CLI, because the HUD pins a header, scrolls the body
     in a `viewport`, and pins a `bubbles/help` footer; a flat frame would make the HUD re-layer
@@ -3077,14 +3118,20 @@ the reference program, suffixed so no gate compiles them. **The goldens are cut 
 not acceptance. Invoke `go-conventions` before writing any Go file. Suggested model: `opus`.
 
 **Notes (verbatim in the dispatch):** the standing B2 note above, plus the capture rule from
-Task 20a's notes.
+Task 20a's notes. Plus, on `go-conventions`: criterion 15's mandated construction (Task 20b-ii,
+carried into this task's own cells and rows) and the grep and purity meta-tests are deliberate plan
+overrides of "simplest thing that works" and are never a reviewer finding.
 
-**Conductor rulings (pre-flight, 2026-09-20):**
+**Conductor rulings (pre-flight, 2026-09-20; amendments 2026-09-21 folded into the numbered
+criteria below, at 5, 11, and 12):**
 - `Verdict` is `spine.Verdict` (Task 18), re-exported here (`type Verdict = spine.Verdict` or the
   package's own re-export idiom), never a second, independently declared type. The spine computes
   the verdict; this package must not own the vocabulary (ADR).
 - The plain body's `pass`/`fail`/`skip`/`held` words (criterion 13 below) come from `spine`'s
   `State`/`Reason`/`Acknowledged` mapping (Task 18), not from logic reimplemented in this package.
+- A styled-span assertion (criterion 4's one-pass rule, and Task 20b-ii's never-colour-alone and
+  row-padding tests) reads spans through one shared, test-only ANSI span parser
+  (`ansi_spans_test.go`), not a second sanitizer and not three independent parsers.
 
 **Files:**
 - Create: `tool/internal/render/body_single.go`, `body_plain.go`, `rank.go`, `rank_test.go`,
@@ -3118,8 +3165,9 @@ themselves (`VerdictOK` 0, `VerdictWarning` 1, `VerdictCritical` 2, `VerdictUnkn
 4. **One pass rule: green means this run is OK.** In a frame whose verdict is anything else, every
    passing mark is muted, including the folded passing line's dot, the strip's pass dots, and an
    individual site's `OK` word inside a failing sweep. The only saturated ink on a failing screen
-   belongs to what failed. A test strips the render to its styled spans and asserts no span carries
-   the ok role's saturated colour in a non-OK run.
+   belongs to what failed. A test strips the render to its styled spans, through the one shared
+   test-only ANSI span parser (`ansi_spans_test.go`, conductor ruling above), and asserts no span
+   carries the ok role's saturated colour in a non-OK run.
 5. **Severity ranking is real, and it ranks rows, sites, and the fix list by one key**
    (`iteration-2-brief.md` ruling 2): site unreachable or not serving, then publish path or deploy
    broken, then email or errors, then credentials expiring, then version drift. It agrees with
@@ -3128,7 +3176,11 @@ themselves (`VerdictOK` 0, `VerdictWarning` 1, `VerdictCritical` 2, `VerdictUnkn
    alone**: the sweep in Task 19a-ii runs and returns in `store.List` order, and nothing upstream
    of `Render` re-orders. **No label ever states its own ordering**: a ranked list reads as ranked,
    and the moment the ranking is stated it becomes a promise. The many-sites list is labelled `what
-   to fix` and nothing more.
+   to fix` and nothing more. **Tie-breaks are stated, not left to sort stability** (conductor,
+   2026-09-21): rows and fixes tie-break on (severity class 1 through 5, then `spine.State.Severity()`
+   descending, then check id lexical); sites tie-break on (worst severity class, then `store.List`
+   index). The sort is stable, and a test asserts the exact order on a fixture built with a
+   deliberate tie.
 
 **Acceptance, the single-site body (owner's picks 1 and 2, and one correction):**
 6. **No rail.** The failing group is always first and always under its own inset rule, so its edge
@@ -3160,19 +3212,24 @@ themselves (`VerdictOK` 0, `VerdictWarning` 1, `VerdictCritical` 2, `VerdictUnkn
     sequence is emitted for any of them. `no remedy page yet` is never printed: a fix line with no
     URL is a fix line with no URL, and the tool's own bookkeeping does not go in the operator's
     column.
-11. **The condition id never occupies a line of its own.** At 100 columns and above it trails the
-    fix block's URL line, muted, so the greppable handle and the page that documents it share a
-    line. **Below 100 columns it trails the check row's own detail line instead**, wrapping with
-    the detail. This corrects iteration 3's 80-column frame, where the id fell to a bare line under
-    the URL. A test asserts that at every width from 40 to 400 no rendered line consists of leading
-    whitespace plus a condition id and nothing else, and goldens at 60, 80, 100, and 120 pin the
-    placement.
+11. **The condition id never occupies a line of its own.** The rule is by width band, not by rung
+    name (conductor, 2026-09-21, resolving the below-60 gap): **at 100 columns and above** it
+    trails the fix block's URL line, muted, so the greppable handle and the page that documents it
+    share a line; **from 60 to 99 columns** it trails the check row's own detail line instead,
+    wrapping with the detail; **below 60 columns** it trails the detail line in that band's
+    single-column form. This corrects iteration 3's 80-column frame, where the id fell to a bare
+    line under the URL. **The "never alone on a line" test runs the full 40-to-400 sweep
+    regardless of band**, and goldens at 60, 80, 100, and 120 pin the placement.
 12. **Held failures are visible, expiring, and escalating.** A held row carries the `○` glyph, the
     word `held`, and a trailing field reading `held until <ISO date>, <n> days left`; the hold is
     never comma-spliced into the detail. **Inside 48 hours of expiry it renders in the attention
     ink.** **An expired hold holds nothing**: the check renders as failing and says when the hold
     expired, and the verdict is unchanged by it. A test asserts each of the three on the verdict,
-    not only on the row.
+    not only on the row. **`○` wins everywhere over the two-severity fill, including in Task
+    20b-ii's strip cell** (conductor, 2026-09-21, resolving the conflict between this criterion and
+    Task 20b-ii criterion 3): a held failure is always `○`, never the filled or outlined mark, and
+    the filled/outlined distinction applies to unheld failures only. An expired hold is unheld and
+    takes the filled/outlined rule like any other failure.
 
 **Acceptance, the plain body:**
 13. **One fact per line behind a stable lowercase `key: ` prefix, with no continuations.** The
@@ -3194,8 +3251,15 @@ themselves (`VerdictOK` 0, `VerdictWarning` 1, `VerdictCritical` 2, `VerdictUnkn
     because they make a block one greppable unit for both readers.
 
 **Acceptance, the width default and the verdict:**
-18. **The default render width is 80 when none is passed**, and `--width` on the root overrides it.
-    A test asserts `Render` with a zero `Width` renders identically to `Width: 80`.
+18. **`Width` is `--width` when the operator set it, else the detected terminal column count when
+    stdout is a terminal, else 80** (conductor, 2026-09-21, superseding the 2026-09-20 pre-flight's
+    "never from `term.GetSize`"; the owner ranks render-quality first, and a fixed 80 on a
+    140-column or a 60-column terminal is a visible defect). The column count comes from Task 20a
+    criterion 14's detector alone, never a second predicate in this package. `Height` is 0 from the
+    CLI, meaning unbounded, and exists for the 2.0 HUD's viewport. A test asserts `Render` with a
+    zero `Width` and a non-terminal stdout renders identically to `Width: 80`, and a second asserts
+    a `RenderInput.Width` sourced from a detected column count is honoured exactly (criterion 18 of
+    Task 20a).
 19. **The verdict word comes from `Verdict.String()`,** and `Verdict` is `spine.ExitCode`'s own
     return value widened to a type, so an operator reading the line and a routine reading the code
     cannot disagree. A test in `cmd/cairn` renders a report and asserts the printed first word
@@ -3211,14 +3275,27 @@ themselves (`VerdictOK` 0, `VerdictWarning` 1, `VerdictCritical` 2, `VerdictUnkn
 ### Task 20b-ii: The status strip, the log body, the status line, and the golden corpus
 
 **The second half of the split Task 20b.** It owns the many-sites body and its fallback, the log
-body, the status line, the construction standard, the full golden sweep, and the one real-terminal
-capture. It extends `golden_test.go` and `testdata/golden/`, which Task 20b-i created; that is the
-named contention and the reason the two are sequential rather than parallel. The acceptance
-reference is the same `render-reference/` directory, on the same terms. Invoke `go-conventions`
-before writing any Go file. Suggested model: `opus`.
+body, the status line, the construction standard, and the full golden sweep. **Its real-terminal
+capture is deferred to the owner's morning** (conductor, 2026-09-21; see the note below). It
+extends `golden_test.go` and `testdata/golden/`, which Task 20b-i created; that is the named
+contention and the reason the two are sequential rather than parallel. The acceptance reference is
+the same `render-reference/` directory, on the same terms. Invoke `go-conventions` before writing
+any Go file. Suggested model: `opus`.
 
 **Notes (verbatim in the dispatch):** the standing B2 note above, plus the capture rule from
-Task 20a's notes.
+Task 20a's notes, restated for this task's own scope: **this task ships offscreen ANSI-to-HTML-to-
+headless-Chromium evidence only, rendered with no window on the desktop.** No real-terminal kitty
+capture runs unattended (conductor, 2026-09-21; see the removal note after criterion 15, and the
+carry-forward at Task 22b criterion 1 and Task 22a criterion 9). Plus, on `go-conventions`:
+criterion 15's mandated
+construction (`Style.Width(n).MaxWidth(n)` cells, `lipgloss/v2/table` with `StyleFunc`) is a
+deliberate plan override of "simplest thing that works," and the grep and purity meta-tests are
+deliberate meta-tests; neither is a reviewer finding.
+
+**Conductor ruling on dispatch sizing (pre-flight, 2026-09-21):** with the real-terminal criterion
+deferred (below), this task's remaining deliverables are five, not six, and still dispatch as one.
+**If the task's first report shows the golden corpus incomplete, the conductor splits a 20b-iii for
+the corpus rather than spending a fix round on it.**
 
 **Files:**
 - Create: `tool/internal/render/body_many.go`, `body_logs.go`, `status.go`, `status_test.go`
@@ -3231,13 +3308,15 @@ Task 20a's notes.
    as well as "how many", with no legend and no two-letter cipher. **The fallback rule is a
    computed threshold, not a magic number**: the strip renders when the sum of the ten headings,
    their separators, and the site and verdict columns fits the requested width, and falls back to
-   the plain table when it does not. The formula is stated in the code's doc comment and **a test
-   pins the exact threshold width for the nine-check fixture**, so a heading change moves the
-   threshold visibly rather than silently. The fallback is counts by state, the engine version, and
-   the data age in worded columns, with a state a site does not have left blank rather than zero.
-   The table is not a rival direction, it is the strip's own fallback, which is why choosing the
-   strip ships both. A test asserts the fallback fires one column below the threshold and that
-   neither form prints a legend.
+   the plain table when it does not. **The formula is exact** (conductor, 2026-09-21): `StripWidth(
+   headings, siteCol, verdictCol)` is an exported-in-package function computing `siteCol + 1 +
+   sum(len(heading)) + (n-1)*sepWidth + 1 + verdictCol`, where `siteCol` is the widest sanitized
+   site name capped at 28. **A test pins the exact integer this formula produces for the nine-check
+   fixture**, so a heading change moves the threshold visibly rather than silently, and a second
+   asserts the fallback fires at that value minus one. The fallback is counts by state, the engine
+   version, and the data age in worded columns, with a state a site does not have left blank rather
+   than zero. The table is not a rival direction, it is the strip's own fallback, which is why
+   choosing the strip ships both. Neither form prints a legend.
 2. **The strip abbreviates `https-forced` to `https` in its heading and nowhere else**, because
    twelve cells of heading over a one-cell mark does not fit beside the other eight columns plus
    the site and verdict columns, and that truncation is one a reader can undo. The check id is
@@ -3245,9 +3324,11 @@ Task 20a's notes.
 3. **Two fail severities** (Geoff, 2026-09-20): a filled mark for a failure that warrants
    CRITICAL, an outlined mark in the attention ink for one that warrants only WARNING, from the
    same predicate the verdict uses. Colour never carries it alone: filled against outlined in
-   Unicode, `!` against `*` in the ASCII tier. A test asserts the mark and the row's own verdict
-   word agree on every row of a mixed fixture, and a no-colour golden asserts the two marks are
-   distinguishable with every escape stripped.
+   Unicode, `!` against `*` in the ASCII tier. **A held failure is always `○`, never filled or
+   outlined, including in the strip cell** (conductor, 2026-09-21; the governing statement is Task
+   20b-i criterion 12, which this criterion's mark applies to unheld failures only). A test asserts
+   the mark and the row's own verdict word agree on every row of a mixed fixture, and a no-colour
+   golden asserts the two marks are distinguishable with every escape stripped.
 4. **The strip's marks are centred in their columns**, so they form a grid under their headings
    rather than hugging each column's left edge.
 5. **Every fix is printed, and no count of hidden repairs is.** A count of repairs the screen
@@ -3284,27 +3365,48 @@ Task 20a's notes.
     next` block is not implemented. Its content is Task 20b-i's criterion 10 fix line.
 
 **Acceptance, the corpus and the construction:**
-13. **The golden sweep covers the named rungs (60, 80, 100, and the wide cap of 120), all four
-    profiles, both grounds, both width tables, and every fixture Task 20b-i created,** for the
-    single-site, many-sites, plain, and log views. `go test` fails on drift and on an orphan file.
-    `make -C tool golden` regenerates. Line endings normalize to `\n` before comparison. A golden
-    covers one non-default `Height` and both `Dark` values.
+13. **The golden sweep is sized, not exhaustive** (conductor, 2026-09-21: the full cross product of
+    4 rungs x 4 profiles x 2 grounds x 2 width tables x 9 fixtures x 4 views is roughly 4600 files).
+    **One base axis, TrueColor / dark / narrow table, sweeps every fixture x view x rung, plus one
+    targeted golden per non-default value of each other axis (profile, ground, width table) on the
+    `one-sick` fixture alone.** The matrix itself is a table in `golden_test.go`, and target 120 to
+    200 files total. `go test` fails on drift and on an orphan file; the orphan check walks the same
+    matrix table. `make -C tool golden` regenerates. **Golden naming and the sweep's determinism are
+    one mechanism**: a single `goldenName(view, fixture, width, profile, ground, table)` helper is
+    the sole source for both writing a golden and scanning for an orphan, producing paths like
+    `testdata/golden/<view>/<fixture>_w080_truecolor_dark_narrow.txt`. Line endings normalize to
+    `\n` before comparison, and the test sets `TZ`, `LANG`, `LC_CTYPE`, `TERM`, and `NO_COLOR`
+    explicitly via `t.Setenv` so an inherited environment can never move a golden. A golden covers
+    one non-default `Height` and both `Dark` values.
 14. **Never-colour-alone gate**: a test strips ANSI from each no-colour render and asserts every
-    state word appearing in the colour render at the same width also appears here. Falsify by
-    rendering one state as colour-only and confirming the failure.
+    state word appearing in the colour render at the same width also appears here, read through the
+    one shared test-only ANSI span parser (`ansi_spans_test.go`, Task 20b-i's conductor ruling).
+    Falsify by rendering one state as colour-only and confirming the failure.
 15. **Construction follows `reviews/charm-stack.md`:** a cell is
     `Style.Width(n).MaxWidth(n).Render(text)`, so the padding carries the style and a 2.0 selected
     row can paint a full-width background rather than striped gaps; a row is
     `lipgloss.JoinHorizontal(lipgloss.Top, cells...)` wrapped in one row style; the site tables use
     `lipgloss/v2/table` with `StyleFunc(row, col)`, fixed `Width`, `Wrap(false)`, and
     `BorderRow(false)` rather than a hand-rolled wrap loop. A test asserts a styled row's padding
-    carries the row style.
-16. **Real-terminal evidence, once, at the end of the task**, under the capture rule in this task's
-    notes: one reused kitty window, the single-site body, the strip, the ASCII tier, and the hostile
-    fixture, each frame verified to carry its own first line before it is saved. The report names
-    the four frames and what it read in each. The builder's own "matches" is not the gate; the
-    conductor's `diff-reviewer` reads the goldens against the `.ansi` files in
-    `tool/docs/design/render-reference/`.
+    carries the row style, through the same shared span parser.
+**Real-terminal evidence is removed from this task's scope** (conductor, 2026-09-21). `real-frames.sh`
+opens a visible kitty window, steals focus, and captures via X11, which an unattended overnight run
+cannot do safely against a locked or idle desktop session. This task ships the offscreen
+ANSI-to-HTML-to-headless-Chromium evidence only (this task's notes, above). The named carry-forward,
+**"real-terminal evidence, owner's morning,"** is a precondition of Task 22b (its criterion 1) and is
+called out in Task 22a's own "try it" note (criterion 9), not a criterion of this task. The
+diff-reviewer's stated gate for this task is the goldens against the `.ansi` files in
+`tool/docs/design/render-reference/`, which needs no terminal.
+
+**Acceptance, the exported surface (conductor, 2026-09-21, item 15 of the pre-flight):**
+16. **The package's whole exported surface is pinned, so 20c's later additions are deliberate.**
+    `Theme`, `NewTheme`, `Profile` plus its four constants, `DetectProfile`, `Role` plus its role
+    constants, `GlyphSet`, the rung constants, `Frame`, `Sanitize`, `Render`, `RenderInput`,
+    `Verdict` (the `spine.Verdict` alias), `StatusState`, and `Body` plus its constants are
+    exported; everything else in the package is unexported. A surface test lists the set by name and
+    fails on any addition or removal the list does not carry, so this task's own exports, and
+    20a's, are pinned together at the point the render segment closes; Task 20c may not widen this
+    list without updating the test.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
 
 ### Task 20c: The `--json` contract and the published schema
@@ -3713,8 +3815,11 @@ writing any Go file and `golang-spf13-cobra` before any `cmd/cairn` file. Sugges
    non-interactive shell, `cairn adopt list`, adopt the four production sites, `cairn sites list
    --json`), the six things to look at (the single-site body at his own terminal width, the sweep's
    strip, the ASCII tier through a pipe, `cairn health --json | jq`, an error message, and `cairn
-   help agents`), and what a "no" would mean for each. **It is a note, not a runbook**: one page.
-   The report pastes the note.
+   help agents`), and what a "no" would mean for each. **The note also tells him to look at the
+   single-site body and the strip in his own real terminal**, not only the offscreen renders Task
+   20b-i and 20b-ii shipped (conductor, 2026-09-21): the carry-forward "real-terminal evidence,
+   owner's morning" is settled here, by his own eyes, rather than by a captured frame. **It is a
+   note, not a runbook**: one page. The report pastes the note.
 10. **No tag is pushed by this task, and no npm publish happens.** `package.json` is untouched. The
     tag is Task 22b's and is owner-gated. **This task is the last one an unattended run may execute
     before Task 24a**, and the pass report says so in the words the conductor will read at the
@@ -3817,7 +3922,11 @@ commit.
    carries the date, what he ran, and his word. **Without it, the task halts and reports that it
    halted.** It does not ask, it does not assume, and it does not proceed on a conductor's
    instruction alone. `pass-execute.js` has no owner-gate concept, so this criterion is where the
-   gate actually executes.
+   gate actually executes. **The recorded go carries the named carry-forward "real-terminal
+   evidence, owner's morning"** (conductor, 2026-09-21): Task 20b-i and 20b-ii shipped only offscreen
+   ANSI-to-HTML-to-headless-Chromium evidence, so the owner's own look at the single-site body and
+   the strip in his real terminal, per Task 22a criterion 9's note, is part of what "his word"
+   covers here, not a separate step.
 2. The tag is `tool/v1.0.0` on Task 22a's commit, pushed after CI is green on all three legs. The
    tag prefix is the spec's.
 3. **The tag push makes B2's merge mode a hard constraint.** A published tag is what `go install
@@ -4063,7 +4172,7 @@ Owner-gated because it merges the branch Task 22b's published tag lives on. Sugg
 
 ### Outside the amendment, for the owner
 
-Seven items the pass surfaced that sit outside the bounds Geoff pre-approved. None is a task, none
+Eight items the pass surfaced that sit outside the bounds Geoff pre-approved. None is a task, none
 is executed by this pass, and each names what would settle it. Task 25 carries them forward to the
 ROADMAP, STATUS, or the facts container.
 
@@ -4101,6 +4210,12 @@ ROADMAP, STATUS, or the facts container.
    Task 18 ships this as the conductor's ruling, Nagios-style: an acknowledgement silences
    notification, never the underlying status. Confirm before the 1.0 freeze, because the exit-code
    table is one of the surfaces this pass freezes.
+8. **Background detection for `RenderInput.Dark`.** Nothing in this pass detects a terminal's
+   background: `Dark` defaults true, and the light branch (Task 20a) is proven by goldens only,
+   never by a live query. An OSC 11 query in `profile.go` is impure and stray bytes-prone;
+   `COLORFGBG` is a third environment variable outside Task 20a's own list; 1.0 performs neither. A
+   `--theme` flag or an OSC 11 query, and whether either lands before or after 1.0, is the owner's
+   call.
 
 ---
 

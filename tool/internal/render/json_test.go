@@ -42,16 +42,57 @@ func siteJSON(t *testing.T, r health.Report, verdict spine.Verdict) map[string]a
 	return decodeSite(t, data)
 }
 
-// checkByID returns the named check out of a decoded payload.
-func checkByID(t *testing.T, payload map[string]any, id string) map[string]any {
+// checksIn returns a decoded payload's checks as objects.
+func checksIn(t *testing.T, payload map[string]any) []map[string]any {
 	t.Helper()
-	checks, ok := payload["checks"].([]any)
+	raw, ok := payload["checks"].([]any)
 	if !ok {
 		t.Fatalf("payload carries no checks array: %v", payload)
 	}
-	for _, raw := range checks {
-		c, ok := raw.(map[string]any)
-		if ok && c["checkId"] == id {
+	out := make([]map[string]any, 0, len(raw))
+	for i, item := range raw {
+		c, ok := item.(map[string]any)
+		if !ok {
+			t.Fatalf("checks[%d] is %T, want an object", i, item)
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
+// objectAt returns the object sitting under key, failing when it is absent or another shape.
+func objectAt(t *testing.T, node map[string]any, key string) map[string]any {
+	t.Helper()
+	out, ok := node[key].(map[string]any)
+	if !ok {
+		t.Fatalf("%q is %T, want an object", key, node[key])
+	}
+	return out
+}
+
+// stringsAt returns the string array sitting under key.
+func stringsAt(t *testing.T, node map[string]any, key string) []string {
+	t.Helper()
+	raw, ok := node[key].([]any)
+	if !ok {
+		t.Fatalf("%q is %T, want an array", key, node[key])
+	}
+	out := make([]string, 0, len(raw))
+	for i, item := range raw {
+		value, ok := item.(string)
+		if !ok {
+			t.Fatalf("%s[%d] is %T, want a string", key, i, item)
+		}
+		out = append(out, value)
+	}
+	return out
+}
+
+// checkByID returns the named check out of a decoded payload.
+func checkByID(t *testing.T, payload map[string]any, id string) map[string]any {
+	t.Helper()
+	for _, c := range checksIn(t, payload) {
+		if c["checkId"] == id {
 			return c
 		}
 	}
@@ -113,8 +154,7 @@ func TestEverySkipCarriesAReason(t *testing.T) {
 	for _, named := range fixtures.All() {
 		for _, report := range named.Reports {
 			payload := siteJSON(t, report, spine.VerdictUnknown)
-			for _, raw := range payload["checks"].([]any) {
-				c := raw.(map[string]any)
+			for _, c := range checksIn(t, payload) {
 				if c["state"] != "skip" {
 					continue
 				}
@@ -134,8 +174,7 @@ func TestEveryReasonIsInTheClosedVocabulary(t *testing.T) {
 	for _, named := range fixtures.All() {
 		for _, report := range named.Reports {
 			payload := siteJSON(t, report, spine.VerdictUnknown)
-			for _, raw := range payload["checks"].([]any) {
-				c := raw.(map[string]any)
+			for _, c := range checksIn(t, payload) {
 				reason, ok := c["reason"].(string)
 				if !ok || reason == "" {
 					continue
@@ -155,14 +194,13 @@ func TestEveryReasonIsInTheClosedVocabulary(t *testing.T) {
 func TestPayloadSourceTypesTagEveryExportedField(t *testing.T) {
 	camel := regexp.MustCompile(`^[a-z][A-Za-z0-9]*$`)
 	for _, typ := range []reflect.Type{
-		reflect.TypeOf(health.Report{}),
-		reflect.TypeOf(health.CheckResult{}),
-		reflect.TypeOf(spine.Outcome{}),
-		reflect.TypeOf(spine.OutcomeField{}),
-		reflect.TypeOf(logs.Entry{}),
+		reflect.TypeFor[health.Report](),
+		reflect.TypeFor[health.CheckResult](),
+		reflect.TypeFor[spine.Outcome](),
+		reflect.TypeFor[spine.OutcomeField](),
+		reflect.TypeFor[logs.Entry](),
 	} {
-		for i := range typ.NumField() {
-			f := typ.Field(i)
+		for f := range typ.Fields() {
 			if !f.IsExported() {
 				continue
 			}
@@ -206,7 +244,7 @@ func TestFieldsMarshalAsAnObject(t *testing.T) {
 	// The round trip: every field the check reported is reachable by its own key, with the value
 	// it was given, and nothing else is.
 	source := report.Checks[0].Outcome.Fields
-	observed := check["observed"].(map[string]any)
+	observed := objectAt(t, check, "observed")
 	if len(fields)+len(observed) != len(source) {
 		t.Fatalf("fields %v and observed %v do not account for the %d reported fields", fields, observed, len(source))
 	}
@@ -216,7 +254,7 @@ func TestFieldsMarshalAsAnObject(t *testing.T) {
 		if f.Source == "" {
 			got = fields[f.Key]
 		} else {
-			got = observed[f.Key].(map[string]any)["value"]
+			got = objectAt(t, observed, f.Key)["value"]
 		}
 		encoded, err := json.Marshal(got)
 		if err != nil {
@@ -242,14 +280,8 @@ func TestObservedIsReadFromTheDeclaredSource(t *testing.T) {
 	}}}
 
 	check := checkByID(t, siteJSON(t, report, spine.VerdictOK), "deploy")
-	observed, ok := check["observed"].(map[string]any)
-	if !ok {
-		t.Fatalf("observed is %T, want an object", check["observed"])
-	}
-	entry, ok := observed["mainShortSHA"].(map[string]any)
-	if !ok {
-		t.Fatalf("observed[mainShortSHA] is %T, want an object", observed["mainShortSHA"])
-	}
+	observed := objectAt(t, check, "observed")
+	entry := objectAt(t, observed, "mainShortSHA")
 	if entry["source"] != string(spine.SourceGitHub) || entry["value"] != "a91f2c7" {
 		t.Errorf("observed[mainShortSHA] = %v, want the value beside its declared source", entry)
 	}
@@ -355,8 +387,7 @@ func TestEveryFailingAndHeldCheckCarriesAStructuredFix(t *testing.T) {
 	for _, named := range fixtures.All() {
 		for _, report := range named.Reports {
 			payload := siteJSON(t, report, spine.VerdictCritical)
-			for _, raw := range payload["checks"].([]any) {
-				c := raw.(map[string]any)
+			for _, c := range checksIn(t, payload) {
 				if c["state"] != "fail" && c["state"] != "held" {
 					continue
 				}
@@ -503,17 +534,18 @@ func TestDeterminismIsPinned(t *testing.T) {
 	payload := siteJSON(t, report, spine.VerdictOK)
 
 	var ids []string
-	for _, raw := range payload["checks"].([]any) {
-		ids = append(ids, raw.(map[string]any)["checkId"].(string))
+	for _, c := range checksIn(t, payload) {
+		id, ok := c["checkId"].(string)
+		if !ok {
+			t.Fatalf("checkId is %T, want a string", c["checkId"])
+		}
+		ids = append(ids, id)
 	}
 	if want := []string{"creds", "engine", "serving"}; !slices.Equal(ids, want) {
 		t.Errorf("checks are ordered %v, want %v", ids, want)
 	}
 
-	var acked []string
-	for _, raw := range payload["acknowledged"].([]any) {
-		acked = append(acked, raw.(string))
-	}
+	acked := stringsAt(t, payload, "acknowledged")
 	if want := []string{"deploy", "email", "serving"}; !slices.Equal(acked, want) {
 		t.Errorf("acknowledged is ordered %v, want %v", acked, want)
 	}
@@ -565,10 +597,7 @@ func TestNDJSONStreamIsLineByLineAndEndsWithItsSummary(t *testing.T) {
 	if last["exitCode"] != float64(spine.VerdictCritical) {
 		t.Errorf("summary exitCode = %v, want %d", last["exitCode"], int(spine.VerdictCritical))
 	}
-	counts, ok := last["counts"].(map[string]any)
-	if !ok {
-		t.Fatalf("summary carries no counts object")
-	}
+	counts := objectAt(t, last, "counts")
 	if counts[spine.VerdictCritical.String()] != float64(len(reports)) {
 		t.Errorf("summary counts CRITICAL = %v, want %d", counts[spine.VerdictCritical.String()], len(reports))
 	}
@@ -593,7 +622,7 @@ func TestSummaryCountsSitesTheSweepNeverReached(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalSummary: %v", err)
 	}
-	counts := decodeSite(t, data)["counts"].(map[string]any)
+	counts := objectAt(t, decodeSite(t, data), "counts")
 	if counts[spine.VerdictUnknown.String()] != float64(2) {
 		t.Errorf("counts UNKNOWN = %v, want 2 for the sites the sweep never reached", counts[spine.VerdictUnknown.String()])
 	}
@@ -609,8 +638,14 @@ func TestSitesListCarriesEnoughToSkipASecondCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalSitesList: %v", err)
 	}
-	sites := decodeSite(t, data)["sites"].([]any)
-	entry := sites[0].(map[string]any)
+	sites, ok := decodeSite(t, data)["sites"].([]any)
+	if !ok || len(sites) == 0 {
+		t.Fatalf("the listing carries no sites array")
+	}
+	entry, ok := sites[0].(map[string]any)
+	if !ok {
+		t.Fatalf("sites[0] is %T, want an object", sites[0])
+	}
 	for _, key := range []string{"id", "name", "domain", "step"} {
 		if value, _ := entry[key].(string); value == "" {
 			t.Errorf("listed site carries no %q", key)
@@ -639,9 +674,20 @@ func TestLogsAndAdoptPayloadsCarryTheSensitiveDataFlag(t *testing.T) {
 		}
 	}
 
-	entry := decodeSite(t, logsData)["entries"].([]any)[0].(map[string]any)
-	if _, err := time.Parse(time.RFC3339, entry["at"].(string)); err != nil {
-		t.Errorf("log entry at = %v, want RFC 3339", entry["at"])
+	entries, ok := decodeSite(t, logsData)["entries"].([]any)
+	if !ok || len(entries) == 0 {
+		t.Fatalf("the logs payload carries no entries")
+	}
+	entry, ok := entries[0].(map[string]any)
+	if !ok {
+		t.Fatalf("entries[0] is %T, want an object", entries[0])
+	}
+	at, ok := entry["at"].(string)
+	if !ok {
+		t.Fatalf("log entry at is %T, want a string", entry["at"])
+	}
+	if _, err := time.Parse(time.RFC3339, at); err != nil {
+		t.Errorf("log entry at = %v, want RFC 3339", at)
 	}
 	if fields, ok := entry["fields"].(map[string]any); !ok || fields["editor"] != "someone@example.com" {
 		t.Errorf("log entry fields = %v, want an object keyed by field name", entry["fields"])

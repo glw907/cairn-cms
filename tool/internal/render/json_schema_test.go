@@ -200,7 +200,7 @@ func TestGoldenJSONPayloads(t *testing.T) {
 func TestEveryGoldenValidatesAgainstItsSchema(t *testing.T) {
 	for _, c := range jsonGoldens(t) {
 		t.Run(c.name, func(t *testing.T) {
-			for i, line := range strings.Split(strings.TrimRight(string(c.data), "\n"), "\n") {
+			for i, line := range slices.All(strings.Split(strings.TrimRight(string(c.data), "\n"), "\n")) {
 				var value any
 				if err := json.Unmarshal([]byte(line), &value); err != nil {
 					t.Fatalf("line %d does not parse: %v", i, err)
@@ -241,7 +241,7 @@ func validate(value any, schema, root map[string]any, path string) []string {
 	var problems []string
 
 	if want, ok := schema["type"].(string); ok {
-		if got := jsonType(value); got != want && !(want == "integer" && isInteger(value)) {
+		if got := jsonType(value); got != want && (want != "integer" || !isInteger(value)) {
 			return []string{fmt.Sprintf("%s is a %s, want a %s", path, got, want)}
 		}
 	}
@@ -274,8 +274,12 @@ func validateObject(value map[string]any, schema, root map[string]any, path stri
 	properties, _ := schema["properties"].(map[string]any)
 
 	if required, ok := schema["required"].([]any); ok {
-		for _, key := range required {
-			if _, present := value[key.(string)]; !present {
+		for _, raw := range required {
+			key, ok := raw.(string)
+			if !ok {
+				continue
+			}
+			if _, present := value[key]; !present {
 				problems = append(problems, fmt.Sprintf("%s is missing the required key %q", path, key))
 			}
 		}
@@ -350,7 +354,7 @@ func TestDocNamesEveryFieldTheGoldensCarry(t *testing.T) {
 	doc := readDoc(t)
 	seen := make(map[string]bool)
 	for _, c := range jsonGoldens(t) {
-		for _, line := range strings.Split(strings.TrimRight(string(c.data), "\n"), "\n") {
+		for line := range strings.SplitSeq(strings.TrimRight(string(c.data), "\n"), "\n") {
 			var value any
 			if err := json.Unmarshal([]byte(line), &value); err != nil {
 				t.Fatalf("%s does not parse: %v", c.name, err)

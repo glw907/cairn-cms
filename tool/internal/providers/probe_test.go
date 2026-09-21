@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-// TestProbeHasNoCredentialField is the reflection test the task names explicitly: Probe must
-// carry no field of type Credential at any nesting depth a caller could reach directly, since a
-// probe reaches an arbitrary third-party domain, not one of this operator's own provider APIs.
+// TestProbeHasNoCredentialField asserts Probe carries no field of type Credential at any
+// nesting depth a caller could reach directly, since a probe reaches an arbitrary third-party
+// domain, not one of this operator's own provider APIs.
 func TestProbeHasNoCredentialField(t *testing.T) {
 	credType := reflect.TypeFor[Credential]()
 	for field := range reflect.TypeFor[Probe]().Fields() {

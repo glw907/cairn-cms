@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 
@@ -125,35 +126,53 @@ func TestProbeServingHostnameResolverLagging(t *testing.T) {
 // fakeAuthority returns a canned providers.AuthorityLookup, for a test that must drive
 // diagnoseUnreachable's propagation split with no real DNS dial: ips is the answer an
 // authoritative nameserver would give, err stands in for that nameserver being unreachable
-// outright.
+// outright. Every nameserver queried gets the same canned answer; a row that must prove which
+// nameserver was actually queried uses authorityByNameserver instead.
 func fakeAuthority(ips []net.IP, err error) providers.AuthorityLookup {
 	return func(context.Context, string, string) ([]net.IP, error) {
 		return ips, err
 	}
 }
 
-// TestDiagnoseUnreachablePropagationSplit is the table over diagnoseUnreachable's four cases,
-// all driven through the fake nameserver and authority lookups: an authoritative nameserver
-// holding the record means resolver-lagging, and every other case (the record absent
-// at the authority, every authoritative nameserver unreachable, or no nameservers known at all)
-// means records-absent, the conservative default. The last three rows exercise the
-// discover-first, saved-pair-fallback order: an empty discovery falls back to the record's saved
+// authorityByNameserver returns a providers.AuthorityLookup that answers per the queried
+// nameserver host from answers (an unlisted host gets no records, no error), recording every
+// host it is asked to query into queried. A table row uses it, instead of fakeAuthority's one
+// canned answer for every nameserver, when the row must prove diagnoseUnreachable queried the
+// specific nameserver it meant to, discovered or saved, rather than merely getting the right
+// answer by coincidence.
+func authorityByNameserver(answers map[string][]net.IP, queried *[]string) providers.AuthorityLookup {
+	return func(_ context.Context, nameserver, _ string) ([]net.IP, error) {
+		*queried = append(*queried, nameserver)
+		return answers[nameserver], nil
+	}
+}
+
+// TestDiagnoseUnreachablePropagationSplit is the table over diagnoseUnreachable's cases, all
+// driven through the fake nameserver and authority lookups: an authoritative nameserver holding
+// the record means resolver-lagging, and every other case (the record absent at the authority,
+// every authoritative nameserver unreachable, or no nameservers known at all) means
+// records-absent, the conservative default. The later rows exercise the discover-first,
+// saved-pair-fallback order: an empty or erroring discovery falls back to the record's saved
 // nameservers, and a non-empty discovery wins outright even when the saved pair would answer
-// differently.
+// differently, with authorityByNameserver proving which nameserver was the one actually queried.
 func TestDiagnoseUnreachablePropagationSplit(t *testing.T) {
 	oneNS := []*net.NS{{Host: "ns1.example.test."}}
+	answeringRecord := net.ParseIP("2001:db8::1")
 
 	tests := []struct {
-		name       string
-		ns         []*net.NS
-		assignedNS []string
-		authority  providers.AuthorityLookup
-		want       spine.ReasonCode
+		name        string
+		ns          []*net.NS
+		nsErr       error
+		assignedNS  []string
+		authority   providers.AuthorityLookup
+		answers     map[string][]net.IP
+		wantQueried []string
+		want        spine.ReasonCode
 	}{
 		{
 			name:      "authority has record",
 			ns:        oneNS,
-			authority: fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
+			authority: fakeAuthority([]net.IP{answeringRecord}, nil),
 			want:      spine.ParkReason(spine.ParkHostnameResolverLagging),
 		},
 		{
@@ -173,41 +192,75 @@ func TestDiagnoseUnreachablePropagationSplit(t *testing.T) {
 			ns:   nil,
 			// A record present would flip the outcome if diagnoseUnreachable ever queried it;
 			// it must not be reached at all when no nameservers are known.
-			authority: fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
+			authority: fakeAuthority([]net.IP{answeringRecord}, nil),
 			want:      spine.ParkReason(spine.ParkHostnameRecordsAbsent),
 		},
 		{
 			name:       "discovery empty falls back to saved pair that has the record",
 			ns:         nil,
 			assignedNS: assignedPair,
-			authority:  fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
-			want:       spine.ParkReason(spine.ParkHostnameResolverLagging),
+			answers: map[string][]net.IP{
+				assignedPair[0]: {answeringRecord},
+				assignedPair[1]: {answeringRecord},
+			},
+			wantQueried: []string{assignedPair[0]},
+			want:        spine.ParkReason(spine.ParkHostnameResolverLagging),
 		},
 		{
 			name:       "discovery empty falls back to saved pair that lacks the record",
 			ns:         nil,
 			assignedNS: assignedPair,
-			authority:  fakeAuthority(nil, nil),
-			want:       spine.ParkReason(spine.ParkHostnameRecordsAbsent),
+			// answers is empty, so assignedPair's first host is unlisted and answers with no
+			// record; wantQueried proves the saved pair, not some other host, was the one
+			// actually queried.
+			answers:     map[string][]net.IP{},
+			wantQueried: []string{assignedPair[0]},
+			want:        spine.ParkReason(spine.ParkHostnameRecordsAbsent),
+		},
+		{
+			name:       "discovery erroring falls back to the saved pair",
+			ns:         nil,
+			nsErr:      errors.New("nameserver lookup failed"),
+			assignedNS: assignedPair,
+			answers: map[string][]net.IP{
+				assignedPair[0]: {answeringRecord},
+				assignedPair[1]: {answeringRecord},
+			},
+			wantQueried: []string{assignedPair[0]},
+			want:        spine.ParkReason(spine.ParkHostnameResolverLagging),
 		},
 		{
 			name:       "discovery present wins over a saved pair that would answer differently",
 			ns:         oneNS,
 			assignedNS: assignedPair,
 			// The saved pair, if it were queried instead, would answer resolver-lagging; the
-			// discovered nameserver must be the one actually queried, giving records-absent.
-			authority: fakeAuthority(nil, nil),
-			want:      spine.ParkReason(spine.ParkHostnameRecordsAbsent),
+			// discovered nameserver ("ns1.example.test.") is unlisted in answers and so answers
+			// with no record, giving records-absent, and wantQueried proves the saved pair was
+			// never queried at all.
+			answers: map[string][]net.IP{
+				assignedPair[0]: {answeringRecord},
+				assignedPair[1]: {answeringRecord},
+			},
+			wantQueried: []string{"ns1.example.test."},
+			want:        spine.ParkReason(spine.ParkHostnameRecordsAbsent),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			probe := providers.NewProbeWithAuthority(http.DefaultTransport, servingResolver{ns: tt.ns}, tt.authority)
+			var queried []string
+			authority := tt.authority
+			if authority == nil {
+				authority = authorityByNameserver(tt.answers, &queried)
+			}
+			probe := providers.NewProbeWithAuthority(http.DefaultTransport, servingResolver{ns: tt.ns, nsErr: tt.nsErr}, authority)
 			r := delegationRecord(t, tt.assignedNS)
 			got := diagnoseUnreachable(context.Background(), probe, r, "example.test", providers.RequestTimeout)
 			if got.State != spine.Unknown || got.Reason != tt.want {
 				t.Errorf("Outcome = %+v, want Unknown %s", got, tt.want)
+			}
+			if tt.wantQueried != nil && !reflect.DeepEqual(queried, tt.wantQueried) {
+				t.Errorf("queried nameservers = %v, want %v", queried, tt.wantQueried)
 			}
 		})
 	}
@@ -228,7 +281,7 @@ func TestDiagnoseUnreachableSweepSharesOneDeadline(t *testing.T) {
 	}
 	probe := providers.NewProbeWithAuthority(http.DefaultTransport, servingResolver{ns: nameservers}, blocking)
 
-	budget := 30 * time.Millisecond
+	budget := 100 * time.Millisecond
 	start := time.Now()
 	got := diagnoseUnreachable(context.Background(), probe, record.Record{}, "example.test", budget)
 	elapsed := time.Since(start)

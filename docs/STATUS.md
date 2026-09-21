@@ -37,11 +37,16 @@ container, then beta.
   segments: 19c-i, 18, 19a-i | 19a-ii, 19b, 19c-ii | 20a, 20b-i, 20b-ii | 20c, 21, 22a, 24a.
   Tasks 22b, 23, 24b, 25 are OWNER-GATED. Segment 1 is DONE (19c-i `5a04ae69`, 18 `b536d4bf`,
   19a-i `de94c682`; Task 18's three plan deviations ratified in `d54c3b04` with segment 2's
-  rulings). Segment 2 is IN FLIGHT as workflow run `wf_b1a29993-73f` (01:40, 2026-09-21). Each
-  later segment gets both pre-flights and a rulings commit before launch. Spend at segment 2
-  launch: about 4.4M of 14M; the 80 percent flag is 11.2M and the named pass-split cut is after
-  20b-ii. Owner questions collect in the plan's "Outside the amendment, for the owner" list
-  (seven items). A resuming session
+  rulings). Segment 2 is DONE (19a-ii `d3877903`, 19b `8e89353a`, 19c-ii `718dad50`, residual
+  tests `fb2c164c`). Segment 3, the render package (20a, 20b-i, 20b-ii), is IN FLIGHT as
+  workflow run `wf_e0e27428-8d3` (04:00, 2026-09-21) on rulings commit `29a91f70`. The
+  scratchpad runner copy carries a fix the dotfiles source still owes: its gate-string check
+  compared the classifier's whole preamble and escalated three accepted tasks (compare the
+  command line alone). Real-terminal kitty evidence is deferred to the owner's morning. Spend
+  at segment 3 launch: about 7.6M of 14M; the 80 percent flag is 11.2M, and the run is expected
+  to stop at the named cut after 20b-ii with segment 4 (20c, 21, 22a, 24a) left for a fresh
+  session. Owner questions collect in the plan's "Outside the amendment, for the owner" list
+  (eight items). A resuming session
   checks `git log main..cairn-tool-b2` for landed task commits before relaunching anything.
   Worktree `.claude/worktrees/cairn-tool-b2`, branch `cairn-tool-b2` off `main`. Check it for a
   live executor first (`pgrep -f cairn-tool-b2`, `git status`, `git log`). Order of work:

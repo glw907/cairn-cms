@@ -1,0 +1,248 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+	"time"
+	"unicode/utf8"
+
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/mattn/go-runewidth"
+)
+
+// The named width rungs. Content stops growing at WideCap: past it the terminal keeps its empty
+// margin rather than receiving a stretched rule. Below Narrow the bodies drop to one column.
+const (
+	WidthFloor  = 40
+	WidthNarrow = 60
+	Width80     = 80
+	Width100    = 100
+	Width120    = 120
+	WideCap     = 120
+)
+
+// content returns the width a body composes into: never wider than the wide cap, never wider than
+// the terminal, and never negative.
+func content(w int) int {
+	if w > WideCap {
+		return WideCap
+	}
+	if w < 1 {
+		return 1
+	}
+	return w
+}
+
+// san sanitizes one dynamic string at the render seam. Details, remedies, site names, and log
+// field values arrive from HTTP bodies, build logs, and GitHub errors, so every C0 and C1 control
+// is dropped, a tab becomes spaces, and nothing in the data can start a line or reach the
+// terminal as an escape.
+func san(s string) string {
+	// An escape is consumed whole, parameters and all. Dropping only the ESC byte would leave
+	// `[2J[H[42;30m` sitting in the operator's detail column as debris.
+	s = ansi.Strip(s)
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := 0; i < len(s); {
+		r, size := utf8.DecodeRuneInString(s[i:])
+		i += size
+		switch {
+		case r == utf8.RuneError && size == 1:
+			b.WriteRune('�')
+		case r == '\t' || r == '\n' || r == '\r':
+			// A control that separated words becomes a space: the data keeps its word breaks and
+			// never gets to start a line of its own.
+			b.WriteRune(' ')
+		case r < 0x20 || r == 0x7f || (r >= 0x80 && r <= 0x9f):
+			// Every other C0 and C1 control is dropped, so no escape reaches the terminal.
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// w measures a string in the cells the layout budgets: East Asian Ambiguous narrow, and one width
+// per codepoint rather than per grapheme cluster. The pessimistic reading is deliberate. A ZWJ
+// emoji family is one cluster two cells wide to a terminal that clusters and six cells wide to one
+// that does not, and a budget that assumes the generous terminal overflows the other.
+func w(s string) int {
+	n := 0
+	for _, r := range ansi.Strip(s) {
+		n += narrowAmbiguous.RuneWidth(r)
+	}
+	return n
+}
+
+// narrowAmbiguous pins the width table explicitly. The library's default condition reads LANG and
+// LC_CTYPE, so a CJK locale would silently change every column in the render; a layout has to mean
+// the same thing in every locale.
+var narrowAmbiguous = &runewidth.Condition{EastAsianWidth: false, StrictEmojiNeutral: false}
+
+// ambiguousWide widens the clamp's measure for terminals that render East Asian Ambiguous
+// characters in two cells. The ASCII tier sets it, because that tier's own glyphs are all
+// unambiguous, so widening the measure constrains only the data a site handed us. The Unicode
+// tier leaves it off: its rules and dots are Ambiguous themselves, and measuring them wide would
+// halve every rule on the terminals that render them narrow, which is nearly all of them.
+var ambiguousWide bool
+
+// clampWidth measures a line for the clamp, at whichever Ambiguous table the tier declared.
+func clampWidth(s string) int {
+	if !ambiguousWide {
+		return w(s)
+	}
+	n := 0
+	for _, r := range ansi.Strip(s) {
+		n += wideAmbiguous.RuneWidth(r)
+	}
+	return n
+}
+
+var wideAmbiguous = &runewidth.Condition{EastAsianWidth: true}
+
+// clamp is the last thing every line passes through: cut to the requested width on a pessimistic
+// measure, so no terminal receives a wrapped line. It never fires on a line the layout composed,
+// only on one that data made too long.
+func clamp(s string, width int) string {
+	if clampWidth(s) <= width {
+		return s
+	}
+	for n := width; n > 0; n-- {
+		if cut := ansi.Truncate(s, n, ""); clampWidth(cut) <= width {
+			return cut
+		}
+	}
+	return ""
+}
+
+// cell renders one fixed-width field. Width pads inside the styled block and MaxWidth cuts there,
+// so the padding carries the row's style and a selected row can later take a full-width ground.
+func cell(st lipgloss.Style, text string, n int) string {
+	if n < 1 {
+		return ""
+	}
+	return st.Width(n).MaxWidth(n).Render(text)
+}
+
+// joinRow joins fixed cells under one row style.
+func joinRow(base lipgloss.Style, cells ...string) string {
+	return base.Render(lipgloss.JoinHorizontal(lipgloss.Top, cells...))
+}
+
+// rule returns a horizontal rule of n cells in the tier's rule glyph.
+func rule(g GlyphSet, n int) string {
+	if n <= 0 {
+		return ""
+	}
+	return strings.Repeat(g.Rule, n)
+}
+
+// insetRule is the one section device the whole design uses: a lowercase label inset two cells
+// into a rule, no box, no capitals, no coloured rail of its own.
+func insetRule(t Theme, label string, width int) string {
+	g := t.Glyphs
+	lead := g.Rule + g.Rule
+	head := lead + " " + label + " "
+	tail := width - w(head)
+	if tail < 0 {
+		tail = 0
+	}
+	return t.Style(RoleRule).Render(lead) + " " + t.Style(RoleFg).Render(label) + " " +
+		t.Style(RoleRule).Render(rule(g, tail))
+}
+
+// wrapLines word-wraps text to width and returns the lines, never cutting a word that carries
+// meaning. A single token longer than the width is hard-wrapped rather than truncated.
+func wrapLines(text string, width int) []string {
+	if width < 1 {
+		width = 1
+	}
+	if text == "" {
+		return nil
+	}
+	// The break is the space and nothing else. The library's word wrap also breaks after a
+	// hyphen, which turns 2026-09-25 into two dates and a stray dash, so the wrap is written out
+	// here instead.
+	var out []string
+	cur := ""
+	for i, tok := range strings.Split(text, " ") {
+		sep := ""
+		if i > 0 && cur != "" {
+			sep = " "
+		}
+		if cur != "" && w(cur)+w(sep)+w(tok) > width {
+			out = append(out, strings.TrimRight(cur, " "))
+			cur, sep = "", ""
+		}
+		for w(tok) > width {
+			out = append(out, ansi.Truncate(tok, width, ""))
+			tok = ansi.TruncateLeft(tok, width, "")
+		}
+		cur += sep + tok
+	}
+	if cur != "" {
+		out = append(out, strings.TrimRight(cur, " "))
+	}
+	return out
+}
+
+// hanging renders text under a leading marker with every continuation line indented to the text
+// column, so a remedy is wrapped and never truncated.
+func hanging(st lipgloss.Style, lead, text string, width int) []string {
+	indent := strings.Repeat(" ", w(lead))
+	body := wrapLines(text, width-w(lead))
+	out := make([]string, 0, len(body))
+	for i, l := range body {
+		if i == 0 {
+			out = append(out, lead+st.Render(l))
+			continue
+		}
+		out = append(out, indent+st.Render(l))
+	}
+	return out
+}
+
+// docURL is the remedy's full address. The printed text is the URL itself, so a terminal without
+// OSC 8, a pipe, and a cron mail all keep the whole pointer.
+func docURL(anchor string) string {
+	if anchor == "" {
+		return ""
+	}
+	return "https://cairn.pub/docs/admin/is-it-working#" + anchor
+}
+
+// age formats a duration the way an operator reads one: a single unit, no decimals.
+func age(d time.Duration) string {
+	switch {
+	case d < time.Minute:
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	case d < time.Hour:
+		return fmt.Sprintf("%dm", int(d.Minutes()))
+	case d < 48*time.Hour:
+		return fmt.Sprintf("%dh", int(d.Hours()))
+	default:
+		return fmt.Sprintf("%dd", int(d.Hours()/24))
+	}
+}
+
+// stamp writes an instant in ISO order with a real zone, never a bare Z over a local clock.
+func stamp(t time.Time) string {
+	return t.Format("2006-01-02 15:04 MST")
+}
+
+// isoDate writes a civil date. Recency is relative everywhere else; an instant is always ISO.
+func isoDate(t time.Time) string {
+	return t.Format("2006-01-02")
+}
+
+// elapsed formats a sweep duration.
+func elapsed(d time.Duration) string {
+	return fmt.Sprintf("%.1fs", d.Seconds())
+}
+
+// plural returns the count and its noun, with the noun unchanged: every state word in this design
+// is already its own plural.
+func plural(n int, word string) string {
+	return fmt.Sprintf("%d %s", n, word)
+}

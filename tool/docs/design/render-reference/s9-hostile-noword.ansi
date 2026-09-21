@@ -1,0 +1,30 @@
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227ma-very-long-subdomain-name-for-a-client.example-corp.co.uk[m
+[38;2;168;164;158m4 failing · 2 could not run · 3 passing[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 14:32 UTC), in 3.2s[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mfailing[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────────────────────────────[m
+  [38;2;255;142;134m■[m [1;38;2;234;231;227mdeploy[m        [38;2;193;189;184mbuild failed CRITICAL 907.life  0 failing · 9 passing OK: everything is fine  all[m
+                  [38;2;193;189;184mclear now[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mRead the build log and push a fix. Read the build log and push a fix. Read the build log and[m
+      [38;2;193;189;184mpush a fix. Read the build log and push a fix. Read the build log and push a fix. Read the[m
+      [38;2;193;189;184mbuild log and push a fix. Read the build log and push a fix. Read the build log and push a[m
+      [38;2;193;189;184mfix. Read the build log and push a fix.[m
+      ]8;;https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings[38;2;168;164;158mhttps://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings[m]8;;
+  [38;2;255;142;134m■[m [1;38;2;234;231;227mhttps-forced[m  [38;2;193;189;184mAlways Use HTTPS is off for the zone[m
+                  [38;2;168;164;158mhold expired 2026-08-11[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mTurn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.[m
+      ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;168;164;158mhttps://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[m]8;;[38;2;168;164;158m  edge.https-not-forced[m
+  [38;2;255;142;134m■[m [1;38;2;234;231;227mcreds[m         [38;2;193;189;184mCloudflare token not found; GitHub token read from the keyring[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mRun `cairn auth set CAIRN_CF_READ_TOKEN`, then run the command again.[m
+  [38;2;255;142;134m■[m [1;38;2;234;231;227mengine[m        [38;2;193;189;184m0.71.0 installed, 0.78.0 latest, 7 releases behind[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m
+      ]8;;https://cairn.pub/docs/admin/is-it-working#meet-the-dependency-floors[38;2;168;164;158mhttps://cairn.pub/docs/admin/is-it-working#meet-the-dependency-floors[m]8;;
+
+[38;2;74;68;59m──[m [38;2;234;231;227mcould not run[m [38;2;74;68;59m───────────────────────────────────────────────────────────────────────────────────[m
+  [38;2;247;172;77m?[m [1;38;2;234;231;227memail[m         [38;2;193;189;184mbücher-über-älpler.münchen.example did not answer 🧑‍🧑‍🧒[m
+  [38;2;247;172;77m?[m [1;38;2;234;231;227merrors[m        [38;2;193;189;184mビルド失敗 26分前 (3f0ba18)、mainは2コミット先行しています[m
+
+[38;2;168;164;158m●[m [38;2;168;164;158m3 passing[m  [38;2;168;164;158mserving · delegation · publish-path[m
+
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227ma-very-long-subdomain-name-for-a-client.example-corp.co.uk[m
+[38;2;168;164;158m4 failing · 2 could not run · 3 passing[m

@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# real-frames.sh opens ONE kitty window, reuses it for six frames, and closes it. Everything else
+# on the index page is rendered offscreen; this exists for the handful of things an offscreen
+# render cannot prove: how the glyphs sit and measure in the real font, and what ANSI-16 and the
+# no-colour ASCII tier look like on the terminal's own palette.
+#
+# Each frame runs `clear; <command>; printf <marker>` and is captured ONLY after that marker has
+# appeared in kitty's own screen dump, then verified to carry the expected scenario's first line
+# before it is saved. Iteration 2 captured each frame before its command ran, so every file showed
+# the previous command's output with the next command typed at the bottom; the marker closes that.
+# The erase is part of the SAME command line rather than a second one, because bash's readline
+# re-enables echo for a command sent through remote control, so a second command would paint
+# itself into the frame. The marker survives in the saved text dump, which is where the
+# verification reads it, and is gone from the photograph.
+set -euo pipefail
+cd "$(dirname "$0")"
+out="$PWD"
+go build -o cairnmock ./...
+
+title="cairn-real-$$"
+sock="unix:@cairn-real-$$"
+GROUND='#221f1a'
+
+kitty --title "$title" --listen-on "$sock" \
+  -o allow_remote_control=yes -o remember_window_size=no \
+  -o initial_window_width=100c -o initial_window_height=34c \
+  -o enable_audio_bell=no -o window_padding_width=0 -o font_size=11.0 \
+  -o background="$GROUND" -o foreground='#eae7e3' \
+  bash --noprofile --norc >/dev/null 2>&1 &
+kpid=$!
+trap 'kill "$kpid" 2>/dev/null || true' EXIT
+
+wid=""
+for _ in $(seq 60); do
+  wid="$(xdotool search --name "^$title\$" 2>/dev/null | head -1 || true)"
+  [ -n "$wid" ] && break
+  sleep 0.2
+done
+[ -n "$wid" ] || { echo "real-frames: window never appeared" >&2; exit 1; }
+xdotool windowactivate --sync "$wid"
+kitten @ --to "$sock" send-text $'PS1=""\r'
+# Nothing in a sent string may carry a backslash escape: kitten interprets those itself, which is
+# why the marker is an `echo` and the erase is `tput`.
+sleep 1.0
+
+n=0
+# shot NAME "EXPECTED FIRST LINE" ARGS...
+shot() {
+  local name=$1 expect=$2; shift 2
+  n=$((n + 1))
+  local marker="__DONE_${n}__"
+  kitten @ --to "$sock" send-text \
+    "clear; ./cairnmock $* -width 100; echo $marker; sleep 3; tput cuu1; tput ed"$'\r'
+  local ok=0
+  for _ in $(seq 100); do
+    if kitten @ --to "$sock" get-text --extent screen 2>/dev/null | grep -qF "$marker"; then
+      ok=1; break
+    fi
+    sleep 0.2
+  done
+  [ "$ok" = 1 ] || { echo "real-frames: $name never finished" >&2; return 1; }
+  sleep 0.3
+  kitten @ --to "$sock" get-text --extent screen --ansi >"$out/.pending.ansi"
+  # The marker has been seen and saved. Wait for the command's own erase to take it off screen,
+  # so the photograph carries the frame alone.
+  local gone=0
+  for _ in $(seq 60); do
+    if ! kitten @ --to "$sock" get-text --extent screen 2>/dev/null | grep -qF "$marker"; then
+      gone=1; break
+    fi
+    sleep 0.2
+  done
+  [ "$gone" = 1 ] || echo "real-frames: $name kept its marker on screen" >&2
+  sleep 0.3
+  if ! grep -qF "$expect" <(sed 's/\x1b\[[0-9;:]*m//g; s/\x1b\][^\x07]*\x07//g' "$out/.pending.ansi"); then
+    echo "real-frames: $name shows the wrong scenario; expected \"$expect\"" >&2
+    sed 's/\x1b\[[0-9;:]*m//g' "$out/.pending.ansi" | head -3 >&2
+    return 1
+  fi
+  /usr/bin/import -window "$wid" "$out/real-$name.png"
+  mv "$out/.pending.ansi" "$out/real-$name.ansi"
+  echo "  real-$name.png  verified"
+}
+
+S2='CRITICAL  907.life  3 failing'
+S3='CRITICAL  6 sites  3 CRITICAL'
+S9='CRITICAL  a-very-long-subdomain-name-for-a-client.example-corp.co.uk'
+
+shot s2-noword  "$S2" -scenario 2 -word=false
+shot s2-word    "$S2" -scenario 2
+shot s3-sev-two "$S3" -scenario 3 -variant a -sev two
+shot s2-ansi16  "$S2" -scenario 2 -word=false -profile ansi16
+shot s2-ascii   "$S2" -scenario 2 -profile none -glyphs ascii
+shot s9-hostile "$S9" -scenario 9 -word=false
+
+kitten @ --to "$sock" send-text $'clear\r'
+sleep 0.8
+kitten @ --to "$sock" close-window >/dev/null 2>&1 || true
+wait "$kpid" 2>/dev/null || true

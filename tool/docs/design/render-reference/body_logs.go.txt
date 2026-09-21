@@ -1,0 +1,63 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+
+	"charm.land/lipgloss/v2"
+)
+
+// The log columns. The date and the zone are stated once, on the section rule, so a record line
+// spends its width on the record.
+const (
+	logIndent = 2
+	logTime   = 10
+	logLevel  = 7
+	logEvent  = 23
+	logFields = logIndent + logTime + logLevel + logEvent
+)
+
+// renderLogs draws a log excerpt. A level is a word, never a glyph: the question mark means one
+// thing in this design, a check that could not run, and a log line is not a check.
+func renderLogs(t Theme, site string, es []Entry, termWidth int) Frame {
+	width := content(termWidth)
+	f := Frame{}
+	if len(es) == 0 {
+		f.Header = []string{t.Style(RoleMuted).Render("no records")}
+		return f
+	}
+	day := es[0].At.Format("2006-01-02 MST")
+	f.Header = []string{insetRule(t, "logs  "+san(site)+"  "+day, width)}
+
+	base := lipgloss.NewStyle()
+	var body []string
+	for _, e := range es {
+		role := RoleMuted
+		switch e.Level {
+		case "error":
+			role = RoleFail
+		case "warn":
+			role = RoleSkip
+		}
+		lead := joinRow(base,
+			strings.Repeat(" ", logIndent),
+			cell(t.Style(RoleMuted), e.At.Format("15:04:05"), logTime),
+			cell(t.Style(role), san(e.Level), logLevel),
+			cell(t.Bold(RoleFg), san(e.Event), logEvent),
+		)
+		var fields []string
+		for _, fl := range e.Fields {
+			fields = append(fields, san(fl.Key)+"="+san(fl.Value))
+		}
+		lines := hangingAt(t.Style(RoleSubtle), lead, logFields,
+			strings.Join(fields, "  "), width)
+		for _, l := range lines {
+			body = append(body, clamp(l, width))
+		}
+	}
+	f.Body = body
+	span := es[0].At.Format("15:04") + " to " + es[len(es)-1].At.Format("15:04 MST")
+	f.Footer = []string{"", t.Style(RoleMuted).Render(
+		fmt.Sprintf("%d records %s %s", len(es), t.Glyphs.Sep, span))}
+	return f
+}

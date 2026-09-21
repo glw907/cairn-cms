@@ -55,6 +55,16 @@ func restoreOnCancel(ctx context.Context, restore func()) (stop func()) {
 	}
 }
 
+// flushWriter pushes w's held partial line to the real stream when w buffers one. A test's
+// bytes.Buffer does not, so the assertion is on the interface rather than on *logx.Writer.
+func flushWriter(w io.Writer) error {
+	f, ok := w.(interface{ Flush() error })
+	if !ok {
+		return nil
+	}
+	return f.Flush()
+}
+
 // promptPassword prompts on cmd's error stream for name's value with echo off, through
 // golang.org/x/term, and returns it. It never reads from argv or a flag.
 //
@@ -73,6 +83,12 @@ func promptPassword(cmd *cobra.Command, name string, stdin io.Reader) (string, e
 	}
 
 	if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "%s: ", name); err != nil {
+		return "", err
+	}
+	// The prompt ends without a newline, and main wraps both process streams in a logx.Writer
+	// that holds a partial line so a credential split across two writes cannot escape the
+	// scrub. Unflushed, the prompt would reach the terminal only after the read it asks for.
+	if err := flushWriter(cmd.ErrOrStderr()); err != nil {
 		return "", err
 	}
 	b, err := term.ReadPassword(fd)

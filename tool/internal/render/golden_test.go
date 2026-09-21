@@ -103,13 +103,7 @@ func tableName(ascii bool) string {
 func verdictFor(reports []health.Report) Verdict {
 	sites := make([]spine.SiteVerdicts, 0, len(reports))
 	for _, r := range reports {
-		vs := make(spine.SiteVerdicts, 0, len(r.Checks))
-		for _, c := range r.Checks {
-			vs = append(vs, spine.CheckVerdict{
-				ID: c.ID, State: c.Outcome.State, Reason: c.Outcome.Reason, Acknowledged: c.Acknowledged,
-			})
-		}
-		sites = append(sites, vs)
+		sites = append(sites, health.Verdicts(r))
 	}
 	var listErrs []error
 	if len(sites) == 0 {

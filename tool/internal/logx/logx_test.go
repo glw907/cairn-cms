@@ -158,3 +158,50 @@ func TestOnlyLogxRevealsACredential(t *testing.T) {
 		t.Fatalf("walk %s: %v", root, err)
 	}
 }
+
+// TestFlushEmitsAPartialLine covers the interactive prompt's need: a write carrying no newline
+// is held by the buffered scrub, and Flush is what puts it on the stream before the read the
+// prompt asks for.
+func TestFlushEmitsAPartialLine(t *testing.T) {
+	var out bytes.Buffer
+	w := New(&out, []providers.Credential{providers.NewCredential(token)})
+
+	if _, err := w.Write([]byte("CAIRN_GH_READ_TOKEN: ")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if got := out.String(); got != "" {
+		t.Fatalf("underlying writer holds %q before Flush, want nothing", got)
+	}
+
+	if err := w.Flush(); err != nil {
+		t.Fatalf("Flush: %v", err)
+	}
+	if got := out.String(); got != "CAIRN_GH_READ_TOKEN: " {
+		t.Errorf("after Flush the writer holds %q, want the prompt", got)
+	}
+
+	// A flushed prompt must not leave the tail behind for Close to emit a second time.
+	if err := w.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	if got := out.String(); got != "CAIRN_GH_READ_TOKEN: " {
+		t.Errorf("after Close the writer holds %q, want the prompt once", got)
+	}
+}
+
+// TestFlushStillScrubsTheTail asserts Flush is not an escape hatch around the redaction: a
+// partial line carrying a credential is scrubbed on its way out, the same as a whole line.
+func TestFlushStillScrubsTheTail(t *testing.T) {
+	var out bytes.Buffer
+	w := New(&out, []providers.Credential{providers.NewCredential(token)})
+
+	if _, err := w.Write([]byte("value " + token)); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := w.Flush(); err != nil {
+		t.Fatalf("Flush: %v", err)
+	}
+	if strings.Contains(out.String(), token) {
+		t.Errorf("flushed tail %q still carries the credential", out.String())
+	}
+}

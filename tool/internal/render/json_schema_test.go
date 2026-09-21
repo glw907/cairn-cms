@@ -124,16 +124,12 @@ func jsonGoldens(t *testing.T) []jsonGoldenCase {
 	return out
 }
 
-// reportVerdict folds one fixture report into the verdict its own checks produce, through the
-// same arithmetic the command layer runs.
+// reportVerdict folds one fixture report into the verdict its own checks produce, through
+// health.Verdicts and spine.ExitCode, the same pair the command layer runs. Any other
+// conversion here would publish a payload whose verdict disagrees with the exit code a routine
+// reads from the same run.
 func reportVerdict(r health.Report) spine.Verdict {
-	checks := make(spine.SiteVerdicts, 0, len(r.Checks))
-	for _, c := range r.Checks {
-		checks = append(checks, spine.CheckVerdict{
-			ID: c.ID, State: c.Outcome.State, Reason: c.Outcome.Reason, Acknowledged: c.Acknowledged,
-		})
-	}
-	return spine.ExitCode([]spine.SiteVerdicts{checks}, nil, 0)
+	return spine.ExitCode([]spine.SiteVerdicts{health.Verdicts(r)}, nil, 0)
 }
 
 // worstOf folds several site verdicts into the run's own.

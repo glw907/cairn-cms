@@ -1,4 +1,4 @@
-verdict: [1;38;2;255;142;134mCRITICAL[m - cairn.pub, 1 failing, 1 could not run, 7 passing
+verdict: [1;38;2;247;172;77mUNKNOWN[m - cairn.pub, 1 failing, 1 could not run, 7 passing
 checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
 
 engine: fail - 0.76.0 installed, 0.78.0 latest, 2 releases behind
@@ -22,5 +22,5 @@ email: pass - sending domain onboarded 41 days ago
 deploy: pass - built 9h ago (5c1d0b2), main is level
 publish-path: pass - App installed, branch writable
 
-verdict: [1;38;2;255;142;134mCRITICAL[m - cairn.pub, 1 failing, 1 could not run, 7 passing
-exit: 2
+verdict: [1;38;2;247;172;77mUNKNOWN[m - cairn.pub, 1 failing, 1 could not run, 7 passing
+exit: 3

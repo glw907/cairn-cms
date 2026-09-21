@@ -79,15 +79,23 @@ func (w *Writer) Write(p []byte) (int, error) {
 	}
 }
 
-// Close flushes the unterminated tail, scrubbed. It does not close the underlying writer, which
-// is a process stream its owner keeps.
-func (w *Writer) Close() error {
+// Flush emits the unterminated tail, scrubbed, and clears it. An interactive prompt needs this:
+// a prompt carries no newline by contract, since the operator types on the same line, so
+// without a Flush the buffer holds it until after the read it was asking for and the operator
+// types blind. Ordinary output never calls it, which is what keeps the cross-line scrub whole.
+func (w *Writer) Flush() error {
 	if len(w.buf) == 0 {
 		return nil
 	}
 	_, err := w.w.Write(w.clean(w.buf))
 	w.buf = w.buf[:0]
 	return err
+}
+
+// Close flushes the unterminated tail, scrubbed. It does not close the underlying writer, which
+// is a process stream its owner keeps.
+func (w *Writer) Close() error {
+	return w.Flush()
 }
 
 // clean returns line with every registered credential replaced.

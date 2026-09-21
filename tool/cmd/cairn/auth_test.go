@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/internal/logx"
 	"github.com/glw907/cairn-cms/tool/internal/secrets"
 	"github.com/spf13/cobra"
 )
@@ -424,5 +425,42 @@ func TestRestoreOnCancelDoesNotRestoreOnANormalReturn(t *testing.T) {
 	case <-calls:
 		t.Error("restore ran after the prompt had already returned")
 	case <-time.After(100 * time.Millisecond):
+	}
+}
+
+// watchingReader records what an observed writer held at the moment stdin was first read, which
+// is how a test sees ordering rather than only the final output.
+type watchingReader struct {
+	io.Reader
+	watched  *bytes.Buffer
+	atRead   string
+	readOnce bool
+}
+
+func (r *watchingReader) Read(p []byte) (int, error) {
+	if !r.readOnce {
+		r.readOnce = true
+		r.atRead = r.watched.String()
+	}
+	return r.Reader.Read(p)
+}
+
+// TestPromptPasswordFlushesThePromptBeforeReading covers the ordering the operator sees: main
+// wraps stderr in a logx.Writer, which holds a line until its newline, and the prompt carries
+// none. Without the flush the operator types blind and the prompt lands after the value.
+func TestPromptPasswordFlushesThePromptBeforeReading(t *testing.T) {
+	var out bytes.Buffer
+	cmd := &cobra.Command{}
+	cmd.SetErr(logx.New(&out, nil))
+	stdin := &watchingReader{Reader: strings.NewReader("s3cr3t\n"), watched: &out}
+
+	if _, err := promptPassword(cmd, "CAIRN_GH_READ_TOKEN", stdin); err != nil {
+		t.Fatalf("promptPassword() = %v, want nil", err)
+	}
+	if !stdin.readOnce {
+		t.Fatal("stdin was never read, so the test proves no ordering")
+	}
+	if !strings.Contains(stdin.atRead, "CAIRN_GH_READ_TOKEN: ") {
+		t.Errorf("stderr held %q when stdin was read, want the prompt already visible", stdin.atRead)
 	}
 }

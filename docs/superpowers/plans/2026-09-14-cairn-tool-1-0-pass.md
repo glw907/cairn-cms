@@ -2084,7 +2084,7 @@ implementer died on a network failure, and the runner then ran Task 21c out of o
 `4e0bd5cd`, `fccd0562`, and `48212894`; 21c's implementer found that dead run's uncommitted,
 non-compiling partial 21b work in the worktree and reverted it to HEAD rather than finish work
 outside its own task. Task 21b was then re-run alone, from HEAD, as `a7f6cba3`. One consolidated
-fix round followed, as `bb4773b0` and `0867ec8f`, carrying the reviewer findings on 22a-ii and
+fix round followed, as `bb4773b0`, `0867ec8f`, and `08114b81`, carrying the reviewer findings on 22a-ii and
 21c plus the three fragments 21c could not write before 21b existed (the CHANGELOG's `--theme`
 and quiet-sweep lines, the regenerated man pages, and the verification checklist's `--theme
 light` item). All three tasks are done.

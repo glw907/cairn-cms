@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -105,7 +106,8 @@ func writeAckFile(t *testing.T, path string, entries ...ackFileEntry) {
 
 // TestLoadAckFile covers the file half: a missing default file is not an error, a missing
 // explicit file is, and a malformed entry (no check id, no expiry, or an unparseable date) is
-// refused.
+// refused. The no-check-id refusal names the offending entry by its 1-based position, since an
+// entry with no check id has no other name to call it by.
 func TestLoadAckFile(t *testing.T) {
 	t.Run("a missing default path is not an error", func(t *testing.T) {
 		dir := t.TempDir()
@@ -147,6 +149,25 @@ func TestLoadAckFile(t *testing.T) {
 
 		if _, err := loadAckFile(path, false); err == nil {
 			t.Fatal("loadAckFile() = nil, want an error for an entry with no check id")
+		}
+	})
+
+	t.Run("the refusal names the position of the entry with no check id", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, defaultAckFileName)
+		writeAckFile(t,
+			path,
+			ackFileEntry{CheckID: "deploy", Expires: "2026-10-01"},
+			ackFileEntry{Expires: "2026-10-01"},
+		)
+
+		_, err := loadAckFile(path, false)
+		if err == nil {
+			t.Fatal("loadAckFile() = nil, want an error for the second entry")
+		}
+		want := fmt.Sprintf(tmplAckFileMissingCheckID, 2, path)
+		if err.Error() != want {
+			t.Errorf("loadAckFile() = %q, want %q", err, want)
 		}
 	})
 

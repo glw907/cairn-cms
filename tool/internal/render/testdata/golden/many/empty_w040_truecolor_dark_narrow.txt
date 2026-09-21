@@ -1,3 +1,8 @@
 [1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227m0 sites[m
 
+[38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the[m
+[38;2;168;164;158mkeyring[m
+[38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the[m
+[38;2;168;164;158mkeyring[m
+
 [1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227m0 sites[m

@@ -70,7 +70,7 @@ func TestHelpAgentsStatesEveryPartOfTheContract(t *testing.T) {
 		{"--json beats --quiet", []string{"--json beats --quiet", "payload always prints"}},
 		{"the stdout and stderr split", []string{"stdout is the payload and stderr is diagnostics", "Merging the two is unsupported"}},
 		{"the NDJSON contract", []string{"site object per line", "newline-delimited JSON"}},
-		{"where the schemas live", []string{"tool/docs/reference/"}},
+		{"where the schemas are published", []string{"https://cairn.pub/schema/", "ships in the cairn-cms\nrepository"}},
 		{"a stream with no summary line is UNKNOWN", []string{"no summary line is UNKNOWN"}},
 		{"the schema-version promise", []string{"schemaVersion"}},
 		{"the fix-actor rule", []string{"actor is operator", "outward is false", "carries a\ncommand"}},
@@ -95,6 +95,21 @@ func TestHelpAgentsStatesEveryPartOfTheContract(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestHelpAgentsCitesNoRepositoryDirectory keeps the page's schema citation durable. Every
+// released binary carries this text for the life of its tag, and a directory inside the
+// cairn-cms repository can be moved by any later docs pass, so the page names each schema's own
+// published $id URL and never a path in the repository.
+func TestHelpAgentsCitesNoRepositoryDirectory(t *testing.T) {
+	d, _ := testDeps(t)
+	out, _, err := execTree(t, d, "help", "agents")
+	if err != nil {
+		t.Fatalf("cairn help agents: %v", err)
+	}
+	if strings.Contains(out, "docs/reference") {
+		t.Errorf("the page cites a repository directory for the schemas:\n%s", out)
 	}
 }
 

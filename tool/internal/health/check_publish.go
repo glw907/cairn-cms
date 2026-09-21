@@ -102,7 +102,7 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 	}
 	open := cairnBranches(branches)
 
-	botCommitAt, err := c.GH.LatestBotCommit(ctx, owner, repo, defaultBranch(r))
+	botCommitAt, err := c.GH.LatestBotCommit(ctx, owner, repo, DefaultBranch(r))
 	if err != nil {
 		return apiErrorOutcome(err)
 	}

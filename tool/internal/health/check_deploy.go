@@ -149,10 +149,10 @@ func findWorker(ctx context.Context, cf *providers.Cloudflare, name string) (*pr
 	return nil, nil
 }
 
-// defaultBranch returns r's repository's own default branch, falling back to "main" when a
+// DefaultBranch returns r's repository's own default branch, falling back to "main" when a
 // record carries none: an unadopted or freshly created repository's record can predate the
 // default-branch read, and "main" is what every site this tool provisions is created with.
-func defaultBranch(r record.Record) string {
+func DefaultBranch(r record.Record) string {
 	if r.GitHub.Repo.DefaultBranch != "" {
 		return r.GitHub.Repo.DefaultBranch
 	}
@@ -211,7 +211,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployBuildFailed())
 	}
 
-	mainSHA, err := c.GH.HeadSHA(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, defaultBranch(r))
+	mainSHA, err := c.GH.HeadSHA(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, DefaultBranch(r))
 	if err != nil {
 		return apiErrorOutcome(err)
 	}

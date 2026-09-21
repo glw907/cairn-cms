@@ -196,7 +196,7 @@ func skippedVersions(versions []string, siteIndex, latestIndex int) []string {
 
 // Run implements Check.
 func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
-	manifest, err := c.GH.FileAtRef(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, "package.json", defaultBranch(r))
+	manifest, err := c.GH.FileAtRef(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, "package.json", DefaultBranch(r))
 	if err != nil {
 		return apiErrorOutcome(err)
 	}

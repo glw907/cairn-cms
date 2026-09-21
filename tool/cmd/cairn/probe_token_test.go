@@ -86,6 +86,27 @@ func githubOKRoutes(owner, repo string) routeRoundTripper {
 	return routes
 }
 
+// refRoundTripper serves base, except that it answers the GitHub Contents path only when the
+// request carries wantRef, the way GitHub answers 404 for a ref a repository does not have. It
+// is the one fake that can tell a probe reading the site's own default branch from a probe
+// reading a hardcoded one, since routeRoundTripper ignores the query string the ref travels in.
+type refRoundTripper struct {
+	base         routeRoundTripper
+	contentsPath string
+	wantRef      string
+}
+
+func (rt refRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.URL.Path == rt.contentsPath && req.URL.Query().Get("ref") != rt.wantRef {
+		return &http.Response{
+			StatusCode: http.StatusNotFound,
+			Body:       io.NopCloser(strings.NewReader(`{"message":"No commit found for the ref"}`)),
+			Header:     make(http.Header),
+		}, nil
+	}
+	return rt.base.RoundTrip(req)
+}
+
 // mergeRoutes combines several routeRoundTrippers into one.
 func mergeRoutes(routes ...routeRoundTripper) routeRoundTripper {
 	merged := routeRoundTripper{}
@@ -95,10 +116,17 @@ func mergeRoutes(routes ...routeRoundTripper) routeRoundTripper {
 	return merged
 }
 
+// testSite is one record openTestRegistry saves. An empty branch leaves the record's own
+// default branch unset, which is what an adoption predating the default-branch read looks like.
+type testSite struct {
+	owner, repo, branch string
+}
+
 // openTestRegistry opens a fresh store at t.TempDir() and saves one record per id, each carrying
-// testZoneID and the owner/repo pair ownerRepo names, through record and store's own real shapes
-// rather than hand-built JSON, and returns the directory for auth check's registryDir dependency.
-func openTestRegistry(t *testing.T, sites map[string][2]string) string {
+// testZoneID and its own owner, repository, and default branch, through record and store's own
+// real shapes rather than hand-built JSON, and returns the directory for auth check's
+// registryDir dependency.
+func openTestRegistry(t *testing.T, sites map[string]testSite) string {
 	t.Helper()
 	dir := t.TempDir()
 	if err := os.Chmod(dir, 0o700); err != nil {
@@ -108,11 +136,11 @@ func openTestRegistry(t *testing.T, sites map[string][2]string) string {
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
-	for id, ownerRepo := range sites {
+	for id, site := range sites {
 		r := record.Record{
 			Name: id,
 			GitHub: record.GitHub{
-				Repo: record.GitHubRepo{Owner: ownerRepo[0], Repo: ownerRepo[1]},
+				Repo: record.GitHubRepo{Owner: site.owner, Repo: site.repo, DefaultBranch: site.branch},
 			},
 			Cloudflare: record.Cloudflare{ZoneID: testZoneID},
 		}
@@ -212,7 +240,7 @@ func TestAuthCheckPrintsCredentialSourcesNeverValues(t *testing.T) {
 // the run exits 0.
 func TestAuthCheckAllConfirmedWithSiteExitsOK(t *testing.T) {
 	env := testEnv()
-	dir := openTestRegistry(t, map[string][2]string{"ecxc-ski-abc123": {"glw907", "ecxc-ski"}})
+	dir := openTestRegistry(t, map[string]testSite{"ecxc-ski-abc123": {owner: "glw907", repo: "ecxc-ski"}})
 	rt := mergeRoutes(cloudflareOKRoutes(), cloudflareZoneRoutes(), githubOKRoutes("glw907", "ecxc-ski"))
 
 	var code int
@@ -232,6 +260,33 @@ func TestAuthCheckAllConfirmedWithSiteExitsOK(t *testing.T) {
 	}
 	if strings.Count(out.String(), " pass\n") != len(permissionTable) {
 		t.Errorf("output = %s, want all %d rows to read pass", out.String(), len(permissionTable))
+	}
+}
+
+// TestAuthCheckContentsReadsTheSitesOwnDefaultBranch covers a registered site whose default
+// branch is not main: the Contents probe reads the branch the record carries, so a token that
+// holds the permission reads pass rather than the not-found a hardcoded main would produce.
+func TestAuthCheckContentsReadsTheSitesOwnDefaultBranch(t *testing.T) {
+	const branch = "trunk"
+	dir := openTestRegistry(t, map[string]testSite{"ecxc-ski-abc123": {owner: "glw907", repo: "ecxc-ski", branch: branch}})
+	rt := refRoundTripper{
+		base:         mergeRoutes(cloudflareOKRoutes(), cloudflareZoneRoutes(), githubOKRoutes("glw907", "ecxc-ski")),
+		contentsPath: "/repos/glw907/ecxc-ski/contents/package.json",
+		wantRef:      branch,
+	}
+
+	var code int
+	cmd := newAuthCheckCmd(checkDeps(testEnv(), rt, func() (string, error) { return dir, nil }, func(c int) { code = c }))
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&bytes.Buffer{})
+
+	code = runCheck(t, cmd, "ecxc-ski-abc123")
+	if code != int(spine.VerdictOK) {
+		t.Fatalf("exit code = %d, want OK; output:\n%s", code, out.String())
+	}
+	if !strings.Contains(out.String(), "Contents") || strings.Contains(out.String(), "not-found") {
+		t.Errorf("the Contents row did not confirm against %q; output:\n%s", branch, out.String())
 	}
 }
 
@@ -258,25 +313,76 @@ func TestAuthCheckSkipsZoneAndRepoScopedRowsWithNoSite(t *testing.T) {
 	}
 }
 
+// TestAuthCheckSkipsWholeCredentialWhenMissing covers every shape of a Cloudflare credential
+// this run could not find. Cloudflare reads two variables, so the group notice and each skipped
+// row must name whichever of them is actually unset: an operator who set the token but not the
+// account id was previously told the token was not set, which points at the wrong fix.
 func TestAuthCheckSkipsWholeCredentialWhenMissing(t *testing.T) {
-	dir := openTestRegistry(t, nil)
-	var code int
-	cmd := newAuthCheckCmd(checkDeps(fakeEnv(nil), routeRoundTripper{}, func() (string, error) { return dir, nil }, func(c int) { code = c }))
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&bytes.Buffer{})
+	tests := []struct {
+		name   string
+		env    map[string]string
+		wantCF string
+	}{
+		{
+			name:   "neither Cloudflare variable is set",
+			env:    map[string]string{"CAIRN_GH_READ_TOKEN": "gh-token"},
+			wantCF: "Cloudflare: skip, CAIRN_CF_ACCOUNT_ID and CAIRN_CF_READ_TOKEN are not set",
+		},
+		{
+			name:   "only the account id is set",
+			env:    map[string]string{"CAIRN_CF_ACCOUNT_ID": testAccountID, "CAIRN_GH_READ_TOKEN": "gh-token"},
+			wantCF: "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not set",
+		},
+		{
+			name:   "only the read token is set",
+			env:    map[string]string{"CAIRN_CF_READ_TOKEN": "cf-token", "CAIRN_GH_READ_TOKEN": "gh-token"},
+			wantCF: "Cloudflare: skip, CAIRN_CF_ACCOUNT_ID is not set",
+		},
+	}
 
-	code = runCheck(t, cmd)
-	got := out.String()
-	if !strings.Contains(got, authCheckCFSkipped) || !strings.Contains(got, authCheckGHSkipped) {
-		t.Errorf("output = %s, want both credential-group skip notices", got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := openTestRegistry(t, nil)
+			var code int
+			cmd := newAuthCheckCmd(checkDeps(fakeEnv(tt.env), githubOKRoutes("", ""), func() (string, error) { return dir, nil }, func(c int) { code = c }))
+			var out bytes.Buffer
+			cmd.SetOut(&out)
+			cmd.SetErr(&bytes.Buffer{})
+
+			code = runCheck(t, cmd)
+			got := out.String()
+			if !strings.Contains(got, tt.wantCF) {
+				t.Errorf("output = %s, want the group notice %q", got, tt.wantCF)
+			}
+			// Every Cloudflare row's own reason names the same variables the notice does.
+			rowReason := strings.TrimPrefix(tt.wantCF, "Cloudflare: skip, ")
+			if strings.Count(got, rowReason) < 2 {
+				t.Errorf("output = %s, want each skipped Cloudflare row naming %q too", got, rowReason)
+			}
+			if code != int(spine.VerdictWarning) {
+				t.Errorf("exit code = %d, want WARNING (%d) for a missing credential", code, int(spine.VerdictWarning))
+			}
+		})
 	}
-	if !strings.Contains(got, "CAIRN_CF_READ_TOKEN is not set") || !strings.Contains(got, "CAIRN_GH_READ_TOKEN is not set") {
-		t.Errorf("output = %s, want every row naming its own missing variable", got)
-	}
-	if code != int(spine.VerdictWarning) {
-		t.Errorf("exit code = %d, want WARNING (%d) for a missing credential", code, int(spine.VerdictWarning))
-	}
+
+	t.Run("the GitHub token is not set", func(t *testing.T) {
+		dir := openTestRegistry(t, nil)
+		var code int
+		env := fakeEnv(map[string]string{"CAIRN_CF_ACCOUNT_ID": testAccountID, "CAIRN_CF_READ_TOKEN": "cf-token"})
+		cmd := newAuthCheckCmd(checkDeps(env, cloudflareOKRoutes(), func() (string, error) { return dir, nil }, func(c int) { code = c }))
+		var out bytes.Buffer
+		cmd.SetOut(&out)
+		cmd.SetErr(&bytes.Buffer{})
+
+		code = runCheck(t, cmd)
+		got := out.String()
+		if !strings.Contains(got, "GitHub: skip, CAIRN_GH_READ_TOKEN is not set") {
+			t.Errorf("output = %s, want the GitHub group notice", got)
+		}
+		if code != int(spine.VerdictWarning) {
+			t.Errorf("exit code = %d, want WARNING (%d) for a missing credential", code, int(spine.VerdictWarning))
+		}
+	})
 }
 
 func TestAuthCheckExitCriticalOnRejectedCloudflareToken(t *testing.T) {

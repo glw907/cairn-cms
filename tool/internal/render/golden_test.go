@@ -135,13 +135,27 @@ func sampleStatus() StatusState {
 // the one shared story every golden was cut against before this task (criterion 22). A
 // many-sites fixture ("twelve-site") carries one Status for the whole run, since the process
 // holds one set of provider tokens for every site it sweeps, and every site's own creds row
-// (fillNine's default) agrees with it. "empty" and "hostile" carry no creds row at all, so
-// their Credentials list stays empty rather than asserting a story neither report can prove.
-// TestFixtureStatusAgreesWithItsOwnCredsRow checks every other entry against its fixture's own
-// creds row.
+// (fillNine's default) agrees with it. Every entry carries one Credential per credential
+// variable, present or not, because cmd/cairn's runStatus always appends both: a frame with
+// fewer is one no run can produce. "empty" and "hostile" carry no creds row to agree with, so
+// both tokens read from the keyring, the story their reports cannot contradict.
+// TestFixtureStatusAgreesWithItsOwnCredsRow checks every entry against its fixture's own creds
+// row and against that two-entry shape.
 var fixtureStatus = map[string]StatusState{
-	"empty":   {Elapsed: 16300 * time.Millisecond},
-	"hostile": {Elapsed: 16300 * time.Millisecond},
+	"empty": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Provider: providerKeyring},
+			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
+		},
+	},
+	"hostile": {
+		Elapsed: 16300 * time.Millisecond,
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Provider: providerKeyring},
+			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
+		},
+	},
 	"all-unknown": {
 		Elapsed: 16300 * time.Millisecond,
 		Credentials: []Credential{
@@ -479,13 +493,26 @@ func credsRowOf(r health.Report) (health.CheckResult, bool) {
 // TestFixtureStatusAgreesWithItsOwnCredsRow covers criterion 23's second assertion: a fixture's
 // own run state agrees with its creds row. A Status naming a token unset requires a creds row
 // that skipped for a missing credential; a Status naming both tokens read from the keyring
-// requires a creds row that did not skip for one. "empty" and "hostile" carry no creds row and
-// are skipped, since neither report can prove or disprove a credential story.
+// requires a creds row that did not skip for one. It also holds every entry to the shape
+// cmd/cairn's runStatus builds, one Credential per credential variable in that order, so a
+// frame cut from a status no run can produce fails here rather than shipping as a golden.
+// Fixtures carrying no creds row prove nothing about the credentials themselves, so only the
+// shape rule reaches them.
 func TestFixtureStatusAgreesWithItsOwnCredsRow(t *testing.T) {
+	// The order runStatus appends them in: the Cloudflare read token, then the GitHub one.
+	wantVariables := []string{"CAIRN_CF_READ_TOKEN", "CAIRN_GH_READ_TOKEN"}
+
 	for _, f := range fixtures.All() {
 		status, ok := fixtureStatus[f.Name]
 		if !ok {
 			t.Fatalf("fixtureStatus carries no entry for %q", f.Name)
+		}
+		got := make([]string, 0, len(status.Credentials))
+		for _, c := range status.Credentials {
+			got = append(got, c.Variable)
+		}
+		if !slices.Equal(got, wantVariables) {
+			t.Errorf("%s: status credentials = %v, want %v, the entries runStatus always appends", f.Name, got, wantVariables)
 		}
 		anyUnset := false
 		for _, c := range status.Credentials {

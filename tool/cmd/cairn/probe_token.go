@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
 	"github.com/glw907/cairn-cms/tool/internal/render"
@@ -52,6 +53,10 @@ type checkSite struct {
 	id          string
 	zoneID      string
 	owner, repo string
+	// branch is the repository's own default branch, the ref the Contents row reads a file at.
+	// A repository whose default branch is not main answers 404 for any other ref, which reads
+	// as a missing permission rather than as the wrong ref.
+	branch string
 }
 
 // checkRow is one permissionTable row's settled outcome: the CheckVerdict spine.ExitCode folds,
@@ -88,23 +93,23 @@ func runAuthCheck(cmd *cobra.Command, d deps, args []string, asJSON bool) error 
 		printCredentialSources(out, resolved)
 	}
 
-	cfMissing := isMissing(missing, varCFAccountID) || isMissing(missing, varCFReadToken)
-	ghMissing := isMissing(missing, varGHReadToken)
+	cfUnset := unsetAmong(missing, varCFAccountID, varCFReadToken)
+	ghUnset := unsetAmong(missing, varGHReadToken)
 	if !asJSON {
-		if cfMissing {
-			_, _ = fmt.Fprintln(out, authCheckCFSkipped)
+		if len(cfUnset) > 0 {
+			_, _ = fmt.Fprintln(out, authCheckCFSkippedNotice(cfUnset))
 		}
-		if ghMissing {
-			_, _ = fmt.Fprintln(out, authCheckGHSkipped)
+		if len(ghUnset) > 0 {
+			_, _ = fmt.Fprintln(out, authCheckGHSkippedNotice(ghUnset))
 		}
 	}
 
 	var cf *providers.Cloudflare
-	if !cfMissing {
+	if len(cfUnset) == 0 {
 		cf = providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), d.transport)
 	}
 	var gh *providers.GitHub
-	if !ghMissing {
+	if len(ghUnset) == 0 {
 		gh = providers.NewGitHub(resolved.ghToken(), d.transport)
 	}
 
@@ -114,7 +119,7 @@ func runAuthCheck(cmd *cobra.Command, d deps, args []string, asJSON bool) error 
 	verdicts := make(spine.SiteVerdicts, 0, len(permissionTable))
 	rows := make([]render.AuthCheckPermission, 0, len(permissionTable))
 	for _, p := range permissionTable {
-		row := checkPermission(ctx, p, cf, gh, cfMissing, ghMissing, site)
+		row := checkPermission(ctx, p, cf, gh, cfUnset, ghUnset, site)
 		if asJSON {
 			rows = append(rows, render.AuthCheckPermission{Label: row.Label, Credential: row.Credential, State: checkRowWord(row), Reason: row.display})
 		} else {
@@ -148,15 +153,21 @@ func siteFromRecord(id string, rec record.Record) *checkSite {
 		zoneID: rec.Cloudflare.ZoneID,
 		owner:  rec.GitHub.Repo.Owner,
 		repo:   rec.GitHub.Repo.Repo,
+		branch: health.DefaultBranch(rec),
 	}
 }
 
 // checkPermission settles one permissionTable row: skipped for a missing credential or an
-// unnamed site on a site-scoped row, and probed otherwise.
-func checkPermission(ctx context.Context, p permission, cf *providers.Cloudflare, gh *providers.GitHub, cfMissing, ghMissing bool, site *checkSite) checkRow {
-	credMissing := (p.Credential == varCFReadToken && cfMissing) || (p.Credential == varGHReadToken && ghMissing)
-	if credMissing {
-		return skipRow(p, authCheckCredMissingReason(p.Credential))
+// unnamed site on a site-scoped row, and probed otherwise. cfUnset and ghUnset carry the
+// variables of each provider the run could not find, so a skipped row names what is actually
+// missing rather than its provider's headline variable.
+func checkPermission(ctx context.Context, p permission, cf *providers.Cloudflare, gh *providers.GitHub, cfUnset, ghUnset []string, site *checkSite) checkRow {
+	unset := ghUnset
+	if p.Credential == varCFReadToken {
+		unset = cfUnset
+	}
+	if len(unset) > 0 {
+		return skipRow(p, authCheckCredMissingReason(unset))
 	}
 	if p.Scope == scopeSite && site == nil {
 		return skipRow(p, authCheckSiteRequiredReason)
@@ -170,11 +181,11 @@ func checkPermission(ctx context.Context, p permission, cf *providers.Cloudflare
 		}
 		call = cloudflareProbe(p.Label, cf, zoneID)
 	} else {
-		owner, repo := "", ""
+		owner, repo, branch := "", "", ""
 		if site != nil {
-			owner, repo = site.owner, site.repo
+			owner, repo, branch = site.owner, site.repo, site.branch
 		}
-		call = githubProbe(p.Label, gh, owner, repo)
+		call = githubProbe(p.Label, gh, owner, repo, branch)
 	}
 	return probeRow(p, call(ctx))
 }
@@ -218,6 +229,18 @@ func printCheckRow(out io.Writer, row checkRow) {
 		return
 	}
 	_, _ = fmt.Fprintf(out, "  %-32s %-20s %s, %s\n", row.Label, row.Credential, word, row.display)
+}
+
+// unsetAmong returns the names missing carries, in the order the caller asked for them, so a
+// notice naming two unset variables reads in the order the credential table declares them.
+func unsetAmong(missing []providers.Missing, names ...string) []string {
+	var unset []string
+	for _, name := range names {
+		if isMissing(missing, name) {
+			unset = append(unset, name)
+		}
+	}
+	return unset
 }
 
 // isMissing reports whether missing names the variable name.

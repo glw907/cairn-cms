@@ -81,6 +81,7 @@ Run the command again in %s
 - %s (%s), go%s, %s/%s
 - %s added as %s
 
+- %s and %s are not set
 - %s deleted from the keyring
 
 - %s is not set
@@ -89,7 +90,7 @@ Run the command again in %s
 - %s was not stored in the keyring
 
 - Add a Cloudflare Worker to the registry as a site
-- Cloudflare: skip, CAIRN_CF_READ_TOKEN is not set
+- Cloudflare: skip, %s
 - Confirm the credential permissions this tool itself needs
 - Confirm the credential permissions this tool itself needs, against Cloudflare and GitHub.
 
@@ -97,7 +98,7 @@ With no site named, every zone-scoped and repository-scoped permission reports s
 
 auth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
 - Delete one credential's keyring entry
-- GitHub: skip, CAIRN_GH_READ_TOKEN is not set
+- GitHub: skip, %s
 - List the Workers on the account that cairn could adopt
 - List the sites cairn knows
 - Manage credentials in the OS keyring
@@ -141,9 +142,10 @@ stdout is the payload and stderr is diagnostics. Merging the two is unsupported.
 
 cairn health <site> --json writes one site object. cairn health --json writes one
 site object per line and then one summary line, as newline-delimited JSON. A
-stream that carries no summary line is UNKNOWN. The schemas are under
-tool/docs/reference/ in the cairn-cms repository, and every payload carries a
-schemaVersion that is incremented whenever a consumer has to re-read its schema.
+stream that carries no summary line is UNKNOWN. Each schema is published at the
+$id it carries, under https://cairn.pub/schema/, and ships in the cairn-cms
+repository; every payload carries a schemaVersion that is incremented whenever a
+consumer has to re-read its schema.
 
 Run a fix only when its actor is operator, its outward is false, and it carries a
 command. Every other fix is for a person to read.

@@ -210,9 +210,10 @@ stdout is the payload and stderr is diagnostics. Merging the two is unsupported.
 
 cairn health <site> --json writes one site object. cairn health --json writes one
 site object per line and then one summary line, as newline-delimited JSON. A
-stream that carries no summary line is UNKNOWN. The schemas are under
-tool/docs/reference/ in the cairn-cms repository, and every payload carries a
-schemaVersion that is incremented whenever a consumer has to re-read its schema.
+stream that carries no summary line is UNKNOWN. Each schema is published at the
+$id it carries, under https://cairn.pub/schema/, and ships in the cairn-cms
+repository; every payload carries a schemaVersion that is incremented whenever a
+consumer has to re-read its schema.
 
 Run a fix only when its actor is operator, its outward is false, and it carries a
 command. Every other fix is for a person to read.
@@ -407,17 +408,18 @@ func notACredentialError(name string) error {
 // probe_token.go's own Short, Long, and Example for cairn auth check (and its Hidden alias
 // cairn auth probe), plus its own skip wording: "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not
 // set" and its GitHub sibling name the word and the missing variable, the same shape every
-// site-scoped row's own skip reason follows below.
+// site-scoped row's own skip reason follows below. Cloudflare reads two variables, so its
+// notice names whichever of them the run could not find rather than the token every time.
 const (
 	shortAuthCheck   = "Confirm the credential permissions this tool itself needs"
 	longAuthCheck    = "Confirm the credential permissions this tool itself needs, against Cloudflare and GitHub.\n\nWith no site named, every zone-scoped and repository-scoped permission reports skip: run cairn auth check <site> to confirm those against one registered site's own zone and repository, read-only.\n\nauth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag."
 	exampleAuthCheck = "cairn auth check ecxc-ski-a1b2c3"
 
-	// authCheckCFSkipped and authCheckGHSkipped are auth check's own credential-group notices,
-	// printed once per credential the run found unset, ahead of the Permissions section. New to
-	// this table, reviewed at the 1.0 editorial gate.
-	authCheckCFSkipped = "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not set"
-	authCheckGHSkipped = "GitHub: skip, CAIRN_GH_READ_TOKEN is not set"
+	// tmplAuthCheckCFSkipped and tmplAuthCheckGHSkipped are auth check's own credential-group
+	// notices, printed once per provider whose credentials the run found unset, ahead of the
+	// Permissions section. New to this table, reviewed at the 1.0 editorial gate.
+	tmplAuthCheckCFSkipped = "Cloudflare: skip, %s"
+	tmplAuthCheckGHSkipped = "GitHub: skip, %s"
 
 	// authCheckSiteRequiredReason is a site-scoped row's own skip reason when the run was given
 	// no positional site id to confirm it against. New to this table, reviewed at the 1.0
@@ -429,14 +431,34 @@ const (
 	flagAuthCheckJSONHelp = "print the permission report as JSON"
 )
 
-// tmplAuthCheckCredMissing is one account-scoped or site-scoped row's own skip reason when its
-// credential is unset, naming the variable the same way authCheckCFSkipped and authCheckGHSkipped
-// do. New to this table, reviewed at the 1.0 editorial gate.
-const tmplAuthCheckCredMissing = "%s is not set"
+// tmplAuthCheckCredMissing and tmplAuthCheckCredsMissing name the variables a run could not
+// find, one clause both the group notice and each affected row's own skip reason are built
+// from, so the two can never name different variables. New to this table, reviewed at the 1.0
+// editorial gate.
+const (
+	tmplAuthCheckCredMissing  = "%s is not set"
+	tmplAuthCheckCredsMissing = "%s and %s are not set"
+)
 
-// authCheckCredMissingReason renders tmplAuthCheckCredMissing for the variable name.
-func authCheckCredMissingReason(name string) string {
-	return fmt.Sprintf(tmplAuthCheckCredMissing, name)
+// authCheckCredMissingReason names the unset variables in names, which the caller passes in the
+// order the credential table declares them.
+func authCheckCredMissingReason(names []string) string {
+	if len(names) == 2 {
+		return fmt.Sprintf(tmplAuthCheckCredsMissing, names[0], names[1])
+	}
+	return fmt.Sprintf(tmplAuthCheckCredMissing, strings.Join(names, ", "))
+}
+
+// authCheckCFSkippedNotice is the Cloudflare group notice, naming whichever of that provider's
+// two variables the run could not find.
+func authCheckCFSkippedNotice(names []string) string {
+	return fmt.Sprintf(tmplAuthCheckCFSkipped, authCheckCredMissingReason(names))
+}
+
+// authCheckGHSkippedNotice is the GitHub group notice, naming the variable the run could not
+// find.
+func authCheckGHSkippedNotice(names []string) string {
+	return fmt.Sprintf(tmplAuthCheckGHSkipped, authCheckCredMissingReason(names))
 }
 
 // ack.go's seven refusals. The catalogue carries no row for an acknowledgement file or flag, since

@@ -171,40 +171,28 @@ func nonZeroValue(v any) bool {
 	return !reflect.ValueOf(v).IsZero()
 }
 
+// scalarField describes a key whose value is one plain JSON scalar, decoded straight into and
+// encoded straight out of the struct field ptr names. Every key in the tables below except the
+// three nested objects has exactly this shape, so spelling out the parse, marshal, and nonZero
+// closures per key would only give three places for one of them to drift from the other two.
+func scalarField[T, V any](key string, ptr func(*T) *V) field[T] {
+	return field[T]{
+		key:     key,
+		parse:   func(t *T, raw json.RawMessage) error { return json.Unmarshal(raw, ptr(t)) },
+		marshal: func(t T) (json.RawMessage, error) { return rawOf(*ptr(&t)) },
+		nonZero: func(t T) bool { return nonZeroValue(*ptr(&t)) },
+	}
+}
+
 // recordFields is Record's single-source table: name, step, domain, schemaVersion, and adopted
 // decode and encode directly, while github and cloudflare delegate to the nested objects' own
 // tables.
 var recordFields = []field[Record]{
-	{
-		key:     "name",
-		parse:   func(r *Record, raw json.RawMessage) error { return json.Unmarshal(raw, &r.Name) },
-		marshal: func(r Record) (json.RawMessage, error) { return rawOf(r.Name) },
-		nonZero: func(r Record) bool { return nonZeroValue(r.Name) },
-	},
-	{
-		key:     "step",
-		parse:   func(r *Record, raw json.RawMessage) error { return json.Unmarshal(raw, &r.Step) },
-		marshal: func(r Record) (json.RawMessage, error) { return rawOf(r.Step) },
-		nonZero: func(r Record) bool { return nonZeroValue(r.Step) },
-	},
-	{
-		key:     "domain",
-		parse:   func(r *Record, raw json.RawMessage) error { return json.Unmarshal(raw, &r.Domain) },
-		marshal: func(r Record) (json.RawMessage, error) { return rawOf(r.Domain) },
-		nonZero: func(r Record) bool { return nonZeroValue(r.Domain) },
-	},
-	{
-		key:     "schemaVersion",
-		parse:   func(r *Record, raw json.RawMessage) error { return json.Unmarshal(raw, &r.SchemaVersion) },
-		marshal: func(r Record) (json.RawMessage, error) { return rawOf(r.SchemaVersion) },
-		nonZero: func(r Record) bool { return nonZeroValue(r.SchemaVersion) },
-	},
-	{
-		key:     "adopted",
-		parse:   func(r *Record, raw json.RawMessage) error { return json.Unmarshal(raw, &r.Adopted) },
-		marshal: func(r Record) (json.RawMessage, error) { return rawOf(r.Adopted) },
-		nonZero: func(r Record) bool { return nonZeroValue(r.Adopted) },
-	},
+	scalarField("name", func(r *Record) *string { return &r.Name }),
+	scalarField("step", func(r *Record) *string { return &r.Step }),
+	scalarField("domain", func(r *Record) *string { return &r.Domain }),
+	scalarField("schemaVersion", func(r *Record) *int { return &r.SchemaVersion }),
+	scalarField("adopted", func(r *Record) *bool { return &r.Adopted }),
 	{
 		key: "github",
 		parse: func(r *Record, raw json.RawMessage) error {
@@ -254,60 +242,20 @@ var githubFields = []field[GitHub]{
 		},
 		nonZero: func(g GitHub) bool { return nonZeroValue(g.Repo) },
 	},
-	{
-		key:     "installationId",
-		parse:   func(g *GitHub, raw json.RawMessage) error { return json.Unmarshal(raw, &g.InstallationID) },
-		marshal: func(g GitHub) (json.RawMessage, error) { return rawOf(g.InstallationID) },
-		nonZero: func(g GitHub) bool { return nonZeroValue(g.InstallationID) },
-	},
+	scalarField("installationId", func(g *GitHub) *int64 { return &g.InstallationID }),
 }
 
 // githubRepoFields is recordFields's counterpart for GitHubRepo.
 var githubRepoFields = []field[GitHubRepo]{
-	{
-		key:     "id",
-		parse:   func(r *GitHubRepo, raw json.RawMessage) error { return json.Unmarshal(raw, &r.ID) },
-		marshal: func(r GitHubRepo) (json.RawMessage, error) { return rawOf(r.ID) },
-		nonZero: func(r GitHubRepo) bool { return nonZeroValue(r.ID) },
-	},
-	{
-		key:     "owner",
-		parse:   func(r *GitHubRepo, raw json.RawMessage) error { return json.Unmarshal(raw, &r.Owner) },
-		marshal: func(r GitHubRepo) (json.RawMessage, error) { return rawOf(r.Owner) },
-		nonZero: func(r GitHubRepo) bool { return nonZeroValue(r.Owner) },
-	},
-	{
-		key:     "repo",
-		parse:   func(r *GitHubRepo, raw json.RawMessage) error { return json.Unmarshal(raw, &r.Repo) },
-		marshal: func(r GitHubRepo) (json.RawMessage, error) { return rawOf(r.Repo) },
-		nonZero: func(r GitHubRepo) bool { return nonZeroValue(r.Repo) },
-	},
-	{
-		key:     "defaultBranch",
-		parse:   func(r *GitHubRepo, raw json.RawMessage) error { return json.Unmarshal(raw, &r.DefaultBranch) },
-		marshal: func(r GitHubRepo) (json.RawMessage, error) { return rawOf(r.DefaultBranch) },
-		nonZero: func(r GitHubRepo) bool { return nonZeroValue(r.DefaultBranch) },
-	},
+	scalarField("id", func(r *GitHubRepo) *int64 { return &r.ID }),
+	scalarField("owner", func(r *GitHubRepo) *string { return &r.Owner }),
+	scalarField("repo", func(r *GitHubRepo) *string { return &r.Repo }),
+	scalarField("defaultBranch", func(r *GitHubRepo) *string { return &r.DefaultBranch }),
 }
 
 // cloudflareFields is recordFields's counterpart for Cloudflare.
 var cloudflareFields = []field[Cloudflare]{
-	{
-		key:     "accountId",
-		parse:   func(c *Cloudflare, raw json.RawMessage) error { return json.Unmarshal(raw, &c.AccountID) },
-		marshal: func(c Cloudflare) (json.RawMessage, error) { return rawOf(c.AccountID) },
-		nonZero: func(c Cloudflare) bool { return nonZeroValue(c.AccountID) },
-	},
-	{
-		key:     "zoneId",
-		parse:   func(c *Cloudflare, raw json.RawMessage) error { return json.Unmarshal(raw, &c.ZoneID) },
-		marshal: func(c Cloudflare) (json.RawMessage, error) { return rawOf(c.ZoneID) },
-		nonZero: func(c Cloudflare) bool { return nonZeroValue(c.ZoneID) },
-	},
-	{
-		key:     "workerName",
-		parse:   func(c *Cloudflare, raw json.RawMessage) error { return json.Unmarshal(raw, &c.WorkerName) },
-		marshal: func(c Cloudflare) (json.RawMessage, error) { return rawOf(c.WorkerName) },
-		nonZero: func(c Cloudflare) bool { return nonZeroValue(c.WorkerName) },
-	},
+	scalarField("accountId", func(c *Cloudflare) *string { return &c.AccountID }),
+	scalarField("zoneId", func(c *Cloudflare) *string { return &c.ZoneID }),
+	scalarField("workerName", func(c *Cloudflare) *string { return &c.WorkerName }),
 }

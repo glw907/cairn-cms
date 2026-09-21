@@ -14,14 +14,22 @@ import (
 )
 
 // declaredConditions is the whole domain of engine condition ids health's checks can ever
-// declare, verified 2026-09-20 against src/lib/diagnostics/conditions.ts (only three of the
-// registry's 24 ids are ever printed by a check in health.All). This is the key domain criterion
-// 2 of this task names: "the conditions the checks actually declare, not the engine's full
-// registry."
-var declaredConditions = []spine.Condition{
-	spine.ConditionEdgeHTTPSNotForced,
-	spine.ConditionEmailSenderNotOnboarded,
-	spine.ConditionConfigObservabilityOff,
+// declare, derived from conditionCases() (condition_test.go), which already walks every check in
+// health.All and fails when one carries no representative row. Deriving the domain here, rather
+// than hand-listing it, is criterion 2's own enumeration mechanism: a later check that declares a
+// fourth condition adds a row to conditionCases() and this domain grows with it, so the fix table
+// cannot drift silently behind the engine's checks.
+func declaredConditions() []spine.Condition {
+	seen := make(map[spine.Condition]bool)
+	var conditions []spine.Condition
+	for _, tt := range conditionCases() {
+		if tt.wantCondition == spine.ConditionNone || seen[tt.wantCondition] {
+			continue
+		}
+		seen[tt.wantCondition] = true
+		conditions = append(conditions, tt.wantCondition)
+	}
+	return conditions
 }
 
 // TestFixTableCoversDeclaredConditions asserts fixesByCondition carries exactly one entry per
@@ -33,7 +41,7 @@ func TestFixTableCoversDeclaredConditions(t *testing.T) {
 		got = append(got, c)
 	}
 	slices.Sort(got)
-	want := slices.Clone(declaredConditions)
+	want := slices.Clone(declaredConditions())
 	slices.Sort(want)
 	if !slices.Equal(got, want) {
 		t.Fatalf("fixesByCondition keys = %v, want exactly %v", got, want)
@@ -71,7 +79,7 @@ func TestFixTableCoversDeclaredCodes(t *testing.T) {
 // domain of every Failing outcome the tool can ever produce, since a check names no failure
 // identity outside these two sets.
 func TestFixLinesResolveForEveryDeclaredIdentity(t *testing.T) {
-	for _, c := range declaredConditions {
+	for _, c := range declaredConditions() {
 		t.Run("condition/"+string(c), func(t *testing.T) {
 			fix, ok := FixFor(spine.Outcome{State: spine.Failing, Condition: c})
 			if !ok {
@@ -199,7 +207,7 @@ func TestDeclaredConditionsExistInTheEngineRegistry(t *testing.T) {
 	for _, c := range spine.Conditions() {
 		registry[c] = true
 	}
-	for _, c := range declaredConditions {
+	for _, c := range declaredConditions() {
 		if !registry[c] {
 			t.Errorf("declaredConditions carries %q, which is not in spine.Conditions()", c)
 		}

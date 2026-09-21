@@ -48,8 +48,11 @@ type Fix struct {
 
 // fixesByCondition is the fix table's engine-Condition half: the three condition ids this tool
 // can ever print (spine.Conditions() carries the engine's whole registry, but this tool's checks
-// declare only these three; see health's TestFixTableCoversDeclaredIdentities). Every fix line's
-// Text and Command here is copied from tool/docs/design/copy-standard.md section 3.5.
+// declare only these three; see health's TestFixTableCoversDeclaredIdentities). Two of the three
+// entries' Text and Command are copied from tool/docs/design/copy-standard.md section 3.5;
+// ConditionConfigObservabilityOff's is not in the catalogue (grep for "observability" and
+// "wrangler.jsonc" in section 3.5 finds no fix row for it), so its line is this task's own
+// addition, reported to the editorial gate the same as fixesByCode's uncatalogued rows below.
 var fixesByCondition = map[spine.Condition]Fix{
 	spine.ConditionEdgeHTTPSNotForced: {
 		Text:    "Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.",
@@ -64,6 +67,7 @@ var fixesByCondition = map[spine.Condition]Fix{
 		Outward: true,
 		Command: "wrangler email sending enable <domain>",
 	},
+	// Not in the catalogue; the plainest fragment satisfying 2.5, reported to the editorial gate.
 	spine.ConditionConfigObservabilityOff: {
 		Text:    "Turn on observability for the Worker in wrangler.jsonc, then deploy again.",
 		Anchor:  "turn-on-observability",

@@ -145,6 +145,10 @@ func TestCheckConditionsPerVerdict(t *testing.T) {
 			if got.Condition != tt.wantCondition {
 				t.Errorf("Condition = %q, want %q", got.Condition, tt.wantCondition)
 			}
+			if got.State == spine.Failing && got.Condition == spine.ConditionNone && got.Code == spine.CodeNone {
+				t.Error("a Failing outcome carries neither a Condition nor a Code")
+			}
+			assertDetailIsProseOrEmpty(t, tt.name, got.Detail)
 		})
 	}
 

@@ -38,9 +38,9 @@ conditions in the Go tool entry below. **The engine cut includes the tool's
 docs that name the tool, and the site upgrade brief's tools section all present `cairn` 1.0 and
 its install line. The binary still ships by `go install` and the tag's release artifacts, never
 inside the npm tarball (the Pass A tarball guard); confirm that reading with Geoff at the cut if
-he meant bundling (confirmed 2026-09-21: not bundled). **When B2's merge to `main` completes,
-whoever conducts Task 25 writes the unblock line here (the pre-cut session has closed; the cut
-runs in a fresh session from this file) and tells any live session.** After that, the one cut
+he meant bundling (confirmed 2026-09-21: not bundled). **When B2's merge to `main` completes, whoever conducts Task 25 writes here that the tool's 1.0 is
+merged, tagged, and released, naming the tag and the merge SHA, and tells any live session. That
+line never says the cut is unblocked; the doctor-retirement pass's close writes that.** After that, the one cut
 (`cairn-release`), with the dependency sweep (the `dependency-upgrade`
 skill) and the site upgrade brief's tools section landing in the pre-cut pass. The pending
 version is `0.97.0`, verified free against the registry with `npm view @glw907/cairn-cms

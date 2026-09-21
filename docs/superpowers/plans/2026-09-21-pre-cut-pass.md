@@ -131,8 +131,13 @@ staged and the notes written. No publish, no tag.
    `e2615a08`: **`test`, `e2e`, `create-site`, `scaffold`, `design`**. `norms` is not on that list
    as a workflow of its own; it carries only `workflow_call` and `workflow_dispatch`, and it runs
    as a called job inside `e2e` (and inside `publish`), so its result is read through the `e2e`
-   run. `tool` runs only on `tool/**` paths and `tsgo` only on a weekly schedule; neither is
-   required here, and neither counts as absent.
+   run. `tsgo` runs only on a weekly schedule and is not required here. **`tool` is different: once
+   the Go tool's Pass B2 precondition above is satisfied, the cut SHA carries `tool/` changes, so
+   `tool` must also read `success` on that exact SHA**, alongside `test`, `e2e`, `create-site`,
+   `scaffold`, and `design`; it does not count as absent only before Pass B2 lands. **A workflow
+   run held at `action_required`** (a bot-pushed commit can trigger this) **is approved through
+   `gh api -X POST repos/glw907/cairn-cms/actions/runs/<id>/approve`, never skipped and never
+   counted green.**
    **If `origin/main` moved after the gates ran, re-verify on the new SHA before tagging.** Another
    session pushes STATUS tonight and may merge PR #68, so treat a moved `main` as expected.
 2. **The from-scratch consumer build**, as an outcome rather than a symlink check: in the tree
@@ -671,6 +676,12 @@ The `cairn-pass` consolidation ritual, in its own order:
 
 ## Task 6: the cut
 
+**Precondition, checked first: the Go tool's Pass B2 must be on `main`.** The owner ruled
+(2026-09-21) that `0.97.0` must include the 1.0 of the Go `cairn` tool, so the cut HOLDS until
+Pass B2 is merged. Verify with `git log origin/main -- tool/` (Pass B2's task commits must appear)
+and `docs/STATUS.md`'s Go tool entry (it must say Pass B2 is merged, not "in flight" or
+"overnight"). If Pass B2 is not yet on `main`, **stop and say so**; do not proceed with the cut.
+
 **Runs through the `cairn-release` skill**, which re-derives the release size and the number from
 the window's contents. `check:version` enforces the `release-size` marker against the CHANGELOG,
 and the `## Unreleased` block currently carries `<!-- release-size: minor -->` (`CHANGELOG.md:3`).
@@ -809,6 +820,22 @@ from diff bounding boxes alone, and called a 40 px breadcrumb shift "the top str
 second, fresh-context `visual-verifier` read against the actual crops caught the daisyUI
 regressions, after a CI regen had already committed the wrong baselines. The procedure needs to
 require a direct crop read before accepting a regen, not a bounding-box classification.
+
+### Fix round
+
+The owner authorized one bounded fix round. The fix is `ms-0` on the breadcrumb `nav`
+(`17a9bb8e`, `8847f64a`). The CI regen at `c9a58d21` rewrote exactly the ten breadcrumb-bearing
+baselines (`admin-delete-dialog-*` and `admin-edit-page-*`, six and four files). The final visual
+read matched all four intended moves: the breadcrumb sits 36 px further left and runs
+full-length with no collision at 768 px, the nav depth shadow, the darker view-toggle ring, and
+text anti-aliasing. Three regions the conductor attributed to the CI runner rather than to this
+pass's changes: the dialog's close button is a bare `✕` text character
+(`src/lib/components/DeleteDialog.svelte:75`) and the `⌘K` hint a bare `&#8984;` inside a
+`<kbd>` (`src/lib/components/CairnAdminShell.svelte:851`); neither pins a font; neither the
+component nor `cairn-admin.css` changed on this branch at the cited lines (the branch's only
+`CairnAdminShell.svelte` edits are the breadcrumb `nav` block); both `⌘` sizes already occur
+inside the 2026-08-29 baseline set; and the textarea resize grip is browser-drawn. The CI
+runner's image versions could not be retrieved to confirm a font-fallback change directly.
 
 ## Halt
 

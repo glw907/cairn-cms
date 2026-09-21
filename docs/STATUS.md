@@ -9,30 +9,32 @@ Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries eleven
 engine passes plus chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, the admin motion pass,
 docs-to-facts, extend-1 (PR #66), extend-2 (PR #67, the guidance layer), and the pre-cut pass
-(PR #69, the dependency sweep, two `cairn-guidance` hardening fixes, the site upgrade
+(PR #69, MERGED, the dependency sweep, two `cairn-guidance` hardening fixes, the site upgrade
 brief's tools section, and the Blueprint admin audit), unpublished under `## Unreleased`. The
 window holds for one cut. Held majors: TypeScript 7, Vitest 5, `@types/node` 26, and now
 `devalue` 6 (new this sweep, no direct call site to migrate). Two `npm audit` findings (the
 `cookie` transitive under `@sveltejs/kit` and a `@cloudflare/vitest-pool-workers` transitive)
-are held, needing `--force` or a downgrade to clear. CI on `main` is green. PR #69 (the pre-cut
-pass) is open, its one real fix-round finding (the daisyUI 5.7.28 breadcrumb inset truncating
-the crumb trail by 4px) resolved with `ms-0`, and it is awaiting a CI baseline regen, a fresh
-`visual-verifier` read, and merge.
+are held, needing `--force` or a downgrade to clear. CI on `main` is green.
 
 ## Immediate next action
 
-Regenerate PR #69's CI admin baselines, get a fresh `visual-verifier` read, and merge it. Then
-run the one cut (`cairn-release`, Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`).
-The pending version is `0.97.0`, verified free against the registry with `npm view
-@glw907/cairn-cms versions --json` at the cut. extend-1's two advisory audit rules
-(`log-event-grammar`, `log-secret-field`) promote to error tier at `0.98.0`.
+The `0.97.0` cut is staged and HOLDS: the owner ruled (2026-09-21) that `0.97.0` must include the
+Go tool's 1.0, so the cut waits for the Go tool's Pass B2 to land on `main`. Once it lands, a
+fresh session runs Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`
+(`cairn-release`), with the lockstep root/dev-package version bump, the SHA-pinned tag, and the
+`tool` workflow included in the green CI set. The pending version is `0.97.0`, verified free
+against the registry with `npm view @glw907/cairn-cms versions --json` at the cut. extend-1's two
+advisory audit rules (`log-event-grammar`, `log-secret-field`) promote to error tier at `0.98.0`.
 
-Then, in order: **the docs-infra currency pass**
+Then, in the owner's order (2026-09-21): a small docs chore updating the execution-path homes of
+two overturned rules (the repo `CLAUDE.md`'s narrative-arm freeze and its "a site-pass agent
+never edits the cairn-cms checkout" rule, plus the `site-pass` and `engine-consult` skills); then
+**the docs-infra currency pass**
 (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`, APPROVED
-2026-09-19), after the cut and before the site round; **the site round**, aksailingclub-org,
-ecxc-ski, and 907-life upgraded as model cairn sites, each filing container bullets via
-`site-docs/<site>-<pass>`, then one improvement release; then **the docs rebuild** from the facts
-container, then beta.
+2026-09-19); then **the draft docs**; then **the site round**, aksailingclub-org, ecxc-ski, and
+907-life upgraded as model cairn sites, which tests and edits the draft docs, each filing
+container bullets via `site-docs/<site>-<pass>`; then one improvement release; cairn 1.0 only
+after that.
 
 ## Parallel tracks
 
@@ -115,10 +117,8 @@ container, then beta.
 
 Two tracks, one session each.
 
-**One cut:** the pre-cut pass is on PR #69, awaiting a CI baseline regen, a fresh
-visual-verifier read, and merge. Regenerate CI baselines, get a fresh visual-verifier read, and
-merge PR #69, then run Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md` (the
-`cairn-release` skill) to cut `0.97.0`.
+**One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once
+the Go tool's 1.0 is on `main`; verify that first.
 
 **Go tool Pass B2** (launch inside `cairn-cms`): Conduct Go tool Pass B2 overnight per
 `docs/STATUS.md`'s Go tool entry: amendment, three-lens review, fold, pre-flights, execute,

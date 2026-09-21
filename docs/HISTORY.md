@@ -39,6 +39,11 @@ render compared against a CI baseline; the media view-toggle's ring is commit `2
 depth shadow is daisyUI 5.7.38's stock `[aria-current]` `.menu` treatment, accepted by the owner
 as its native styling rather than an override target.
 
+The fix round is closed: the final `visual-verifier` read matched all four intended moves against
+the CI regen at `c9a58d21` (ten breadcrumb-bearing baselines), and PR #69 merged. The `0.97.0`
+cut it unblocks now HOLDS on a separate owner ruling (2026-09-21): the release must carry the Go
+tool's 1.0, so the cut waits for that tool's Pass B2 to land on `main`.
+
 **Lessons.** The investigator classified all 33 diffs as explained by the renderer from diff
 bounding boxes and called the breadcrumb shift "the top strip only"; only the fresh-context visual
 gate and a direct read of the crops caught the real regression, and only a second, more careful

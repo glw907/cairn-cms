@@ -886,6 +886,15 @@ the named human gates only):**
   utilities `hover:text-primary` and `text-accent` already cover the same token; a plain swap.
   Trigger: the next pass that touches `src/lib/components/`.
 
+- **Two admin glyphs are drawn as bare text characters, not icons (pre-cut pass fix round,
+  2026-09-21).** `DeleteDialog.svelte`'s dialog close button is a bare `✕` character
+  (`src/lib/components/DeleteDialog.svelte:75`), and the command palette's keyboard hint is a bare
+  `&#8984;` inside a `<kbd>` (`src/lib/components/CairnAdminShell.svelte:851`). Neither pins a
+  font, so both resolve through whatever fallback font the rendering environment supplies, which
+  made the visual baselines depend on the CI runner's font fallback for `U+2318` rather than on
+  cairn's own markup. Draw both from the icon library (`@lucide/svelte`) or a pinned symbol font
+  instead. Trigger: the next pass that touches either component.
+
 - **`publish.yml` uses `npm install --no-audit --no-fund`, not `npm ci`, for the published build
   (pre-cut pass, 2026-09-21).** A reviewer proposed the switch during the pass; declined for the
   cut because `npm install` with a committed lockfile already honors it, and changing the release

@@ -82,8 +82,8 @@ func dmarcPolicy(lowerTXT string) string {
 
 // checkDMARC reads domain's "_dmarc" TXT record and reports Failing when none exists, its policy
 // tag is absent, or its policy is "none": a DMARC record published at p=none asks receivers to
-// take no action on a spoofed message, which reconciliation row 28 (records.mjs's own
-// DMARC-is-TXT expectation) treats as no real policy at all. Every tag is read from a lowercased
+// take no action on a spoofed message, which records.mjs's own DMARC-is-TXT expectation treats as
+// no real policy at all. Every tag is read from a lowercased
 // copy of the record, since DNS TXT values carry no case convention and "p=None" is exactly the
 // live misconfiguration this check exists to catch.
 func checkDMARC(ctx context.Context, probe *providers.Probe, domain string) (spine.Outcome, bool) {

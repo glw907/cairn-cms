@@ -203,6 +203,9 @@ func TestSectionHasActionableConsumersMust(t *testing.T) {
 		{"a clause containing a version number", "Consumers must: bump to 0.97.0 and rename X.", true},
 		{"a clause wrapped across lines", "Consumers must: replace any\nhand-authored helper with the new one.", true},
 		{"two Consumers must lines in one section, one actionable", "- first bullet.\n\n  Consumers must: nothing.\n\n- second bullet.\n\n  Consumers must: rename X to Y.\n", true},
+		{"two clauses sharing one paragraph, the second actionable", "A change landed in two halves. Consumers must: nothing.\n  The second half renamed a symbol. Consumers must: rename `Foo` to `Bar`.\n", true},
+		{"nothingness starts with nothing but is a different word", "Consumers must: nothingness is not a word we use, so rename `Foo`.", true},
+		{"a backtick-wrapped mention of the convention, not a clause", "This section carries every `Consumers must:` line from the release notes for reference.", false},
 	}
 	for _, tt := range cases {
 		if got := sectionHasActionableConsumersMust(tt.section); got != tt.want {

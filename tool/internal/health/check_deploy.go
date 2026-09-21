@@ -55,7 +55,7 @@ func (s BuildState) String() string {
 	}
 }
 
-// DeployDetail is deployCheck's own internal measurement, flattened into deployCheck's ten
+// DeployDetail is deployCheck's own internal measurement, flattened into deployCheck's eleven
 // ordered Fields entries rather than carried as one struct: Outcome.Fields holds a key and a
 // json.RawMessage per value, so a struct placed in one entry would render as one opaque blob a
 // per-field non-verbose filter could not reach inside.
@@ -121,7 +121,7 @@ func (d DeployDetail) fields() []spine.OutcomeField {
 }
 
 // outcome builds the spine.Outcome deployCheck.Run returns for state and detail, always
-// flattening d into the ten Fields entries above regardless of which branch of Run reached it: a
+// flattening d into the eleven Fields entries above regardless of which branch of Run reached it: a
 // partial DeployDetail (an absent worker's zero value, for instance) flattens the same way, with
 // each not-yet-measured field at its zero value.
 func (d DeployDetail) outcome(state spine.State, reason spine.ReasonCode, detail string) spine.Outcome {
@@ -168,7 +168,7 @@ func defaultBranch(r record.Record) string {
 // Run implements Check. Worker absence and an unreachable or misclassified API call return
 // immediately; every other branch flattens whatever of DeployDetail the run measured before
 // settling, so a partial measurement (a worker that exists but has never built, say) still
-// renders through the same ten Fields.
+// renders through the same eleven Fields.
 func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	worker, err := findWorker(ctx, c.CF, r.Cloudflare.WorkerName)
 	if err != nil {

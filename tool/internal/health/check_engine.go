@@ -23,17 +23,17 @@ const (
 	engineRepo  = "cairn-cms"
 )
 
-// changelogHeading matches one of engineRepo's own CHANGELOG.md release headings, the post-cut
-// shape reconciliation row 21 describes: "## " followed by a bare semantic version, with nothing
-// else on the line. It does not match "## Unreleased", which carries no version to key a section
-// by.
+// changelogHeading matches one of engineRepo's own CHANGELOG.md release headings: "## " followed
+// by a bare semantic version, with nothing else on the line. It does not match "## Unreleased",
+// which carries no version to key a section by.
 var changelogHeading = regexp.MustCompile(`(?m)^##\s+([0-9][^\s]*)\s*$`)
 
-// consumersMustLine matches a "Consumers must:" clause's own lead-in, optionally wrapped in
-// Markdown bold, capturing the rest of its paragraph or list item (never stopping at the clause's
-// own first literal period, which a version number or an abbreviation inside the clause would
-// truncate early).
-var consumersMustLine = regexp.MustCompile(`(?i)\*{0,2}Consumers must:\*{0,2}\s*(.*)`)
+// consumersMustLead matches one "Consumers must:" clause's own lead-in, optionally wrapped in
+// Markdown bold, with two optional single-backtick groups: one immediately before "Consumers" and
+// one immediately after the colon. Both groups matching means the lead-in itself sits inside a
+// code span, a prose MENTION of the convention ("carries every `Consumers must:` line from here
+// on") rather than an actual clause, so sectionHasActionableConsumersMust skips it.
+var consumersMustLead = regexp.MustCompile("(`)?\\*{0,2}Consumers must:\\*{0,2}(`)?")
 
 // blankLine splits a changelog section into its paragraphs and list items: engineRepo's own
 // CHANGELOG.md separates each bullet by a blank line and wraps a bullet's own text across
@@ -135,18 +135,30 @@ func changelogSections(changelog []byte) map[string]string {
 	return sections
 }
 
-// sectionHasActionableConsumersMust reports whether section carries a "Consumers must:" clause
-// that is non-actionable: its own text, trimmed of whitespace and compared case-insensitively,
-// begins with the whole word "nothing" (followed by end of text or any non-letter character, so
-// "nothing." and "nothing; a site already on the old name keeps working." both count, while a
-// clause that merely starts elsewhere, "rename X to Y." or "run the migration, nothing else
-// changes.", does not). A section may carry more than one "Consumers must:" line, one per bullet;
-// any single actionable one is enough.
+// sectionHasActionableConsumersMust reports whether section carries an actionable "Consumers
+// must:" clause: one whose own text, trimmed of whitespace and compared case-insensitively, does
+// not begin with the whole word "nothing" (the sole non-actionable case; "nothing." and "nothing;
+// a site already on the old name keeps working." both count as non-actionable, while a clause
+// that merely starts elsewhere, "rename X to Y." or "run the migration, nothing else changes.",
+// is actionable). A section may carry more than one "Consumers must:" clause, one per bullet or
+// paragraph; each clause is bounded at the next lead-in (or the paragraph's end), so two clauses
+// sharing one paragraph are judged separately, and any single actionable one is enough. A lead-in
+// itself wrapped in a code span (`Consumers must:` quoted in running prose) is a mention of the
+// convention, not a clause, and is skipped.
 func sectionHasActionableConsumersMust(section string) bool {
 	for _, para := range blankLine.Split(section, -1) {
 		normalized := strings.Join(strings.Fields(para), " ")
-		for _, m := range consumersMustLine.FindAllStringSubmatch(normalized, -1) {
-			remainder := strings.TrimSpace(m[1])
+		leads := consumersMustLead.FindAllStringSubmatchIndex(normalized, -1)
+		for i, m := range leads {
+			if m[2] != -1 && m[4] != -1 {
+				// Both backtick groups matched: the lead-in is quoted in prose, not a clause.
+				continue
+			}
+			end := len(normalized)
+			if i+1 < len(leads) {
+				end = leads[i+1][0]
+			}
+			remainder := strings.TrimSpace(normalized[m[1]:end])
 			if remainder == "" {
 				continue
 			}

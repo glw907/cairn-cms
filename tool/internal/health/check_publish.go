@@ -90,9 +90,10 @@ func staleBranchCount(branches []providers.Branch, botCommitAt, now time.Time) i
 // Run implements Check. A repository with neither an open "cairn/*" branch nor any bot commit at
 // all has never been observed publishing anything, so it is Unknown rather than a vacuous OK.
 // Every branch age is measured against o.Now, the sweep's clock, so the same branch list replays
-// to the same ages. A stale branch with no later bot commit declares
-// spine.ConditionGitHubAppUnreachable: it is the observable proxy for the App having failed to
-// reach or write the repository, since the check itself has no App key to test that directly.
+// to the same ages. A stale branch declares spine.ConditionNone rather than an App-unreachable
+// remedy: a stale edit branch most often means an editor simply never opened Publish, and the
+// same verdict also fires when the repository already carries a bot commit, which proves the App
+// did reach and write it, so blaming the App would mislead.
 func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
 	owner, repo := r.GitHub.Repo.Owner, r.GitHub.Repo.Repo
 
@@ -121,9 +122,7 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 	}
 
 	if stale := staleBranchCount(open, botCommitAt, now); stale > 0 {
-		outcome := detail.outcome(spine.Failing, "", fmt.Sprintf("%d cairn branch(es) older than 14 days with no later publish", stale))
-		outcome.Condition = spine.ConditionGitHubAppUnreachable
-		return outcome
+		return detail.outcome(spine.Failing, "", fmt.Sprintf("%d cairn branch(es) older than 14 days with no later publish", stale))
 	}
 	return detail.outcome(spine.OK, "", "")
 }

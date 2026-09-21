@@ -31,6 +31,16 @@ container, then beta.
 
 - **Go `cairn` tool, 1.0: Pass A and B1 are MERGED (PR #60, `efc75093`, 2026-09-20); `main`
   carries `tool/`. Pass B2 is next and runs OVERNIGHT 2026-09-20 to 21 in a fresh session.**
+  **Ledger (conductor, 2026-09-20 23:45):** steps (1) and (2) are DONE on the branch: amendment
+  `84b919ee`, three-lens fold `f7b8e051`, PR #68 MERGED and the gate tier unpinned `4577d558`,
+  segment 1 pre-flight rulings `ee40a93c`. The overnight list is thirteen tasks in four
+  segments: 19c-i, 18, 19a-i | 19a-ii, 19b, 19c-ii | 20a, 20b-i, 20b-ii | 20c, 21, 22a, 24a.
+  Tasks 22b, 23, 24b, 25 are OWNER-GATED. Segment 1 is IN FLIGHT as workflow run
+  `wf_33344290-5c0` (resume with `resumeFromRunId`; the runner copy and its args pattern are in
+  the plan's B2 header and the task notes). Each later segment gets both pre-flights and a
+  rulings commit before launch. Spend at launch: about 1.9M of 14M. Owner questions collect in
+  the plan's "Outside the amendment, for the owner" list (seven items). A resuming session
+  checks `git log main..cairn-tool-b2` for landed task commits before relaunching anything.
   Worktree `.claude/worktrees/cairn-tool-b2`, branch `cairn-tool-b2` off `main`. Check it for a
   live executor first (`pgrep -f cairn-tool-b2`, `git status`, `git log`). Order of work:
   (1) the B2 plan amendment, pre-approved by Geoff within the bounds in

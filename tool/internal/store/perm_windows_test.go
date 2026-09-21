@@ -130,16 +130,16 @@ func createJunction(link, target string) error {
 	if err != nil {
 		return err
 	}
-	print, err := syscall.UTF16FromString(target)
+	printName, err := syscall.UTF16FromString(target)
 	if err != nil {
 		return err
 	}
 
-	pathBuf := append(append([]uint16{}, substitute...), print...)
+	pathBuf := append(append([]uint16{}, substitute...), printName...)
 	substituteOffset := uint16(0)
 	substituteLen := uint16(len(substitute)-1) * 2
-	printOffset := uint16(len(substitute)) * 2
-	printLen := uint16(len(print)-1) * 2
+	printNameOffset := uint16(len(substitute)) * 2
+	printNameLen := uint16(len(printName)-1) * 2
 
 	bufHeaderLen := uint16(unsafe.Offsetof(mountPointReparseBuffer{}.PathBuffer))
 	bufLen := bufHeaderLen + uint16(len(pathBuf))*2
@@ -147,9 +147,9 @@ func createJunction(link, target string) error {
 	mrb := (*mountPointReparseBuffer)(unsafe.Pointer(&buf[0]))
 	mrb.SubstituteNameOffset = substituteOffset
 	mrb.SubstituteNameLength = substituteLen
-	mrb.PrintNameOffset = printOffset
-	mrb.PrintNameLength = printLen
-	copy((*[1 << 15]uint16)(unsafe.Pointer(&mrb.PathBuffer[0]))[:len(pathBuf):len(pathBuf)], pathBuf)
+	mrb.PrintNameOffset = printNameOffset
+	mrb.PrintNameLength = printNameLen
+	copy(unsafe.Slice((*uint16)(unsafe.Pointer(&mrb.PathBuffer[0])), len(pathBuf)), pathBuf)
 
 	headerLen := uint32(unsafe.Sizeof(reparseDataBufferHeader{}))
 	data := make([]byte, headerLen+uint32(bufLen))
@@ -191,12 +191,12 @@ func createJunction(link, target string) error {
 // fired; this isolates the reparse-point path.
 func TestCheckNotReparsePointRejectsJunction(t *testing.T) {
 	base := t.TempDir()
-	real := filepath.Join(base, "real")
-	if err := os.Mkdir(real, 0o700); err != nil {
+	target := filepath.Join(base, "real")
+	if err := os.Mkdir(target, 0o700); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
 	link := filepath.Join(base, "link")
-	if err := createJunction(link, real); err != nil {
+	if err := createJunction(link, target); err != nil {
 		t.Fatalf("create junction: %v", err)
 	}
 
@@ -227,12 +227,12 @@ func TestCheckNotReparsePointRejectsJunction(t *testing.T) {
 // to end through the Store rather than against checkPath directly.
 func TestLoadRejectsJunctionRegistryDir(t *testing.T) {
 	base := t.TempDir()
-	real := filepath.Join(base, "real")
-	if err := os.Mkdir(real, 0o700); err != nil {
+	target := filepath.Join(base, "real")
+	if err := os.Mkdir(target, 0o700); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
 	link := filepath.Join(base, "link")
-	if err := createJunction(link, real); err != nil {
+	if err := createJunction(link, target); err != nil {
 		t.Fatalf("create junction: %v", err)
 	}
 

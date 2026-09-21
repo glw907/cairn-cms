@@ -35,23 +35,21 @@ type Store struct {
 	dir string
 }
 
-// Open returns a Store rooted at dir, refusing a dir that is a symlink or
-// not owned by the current user. It performs no permission-bit check: a
-// loosely permissioned directory is caught per-operation by List and Load,
-// since a directory's mode can loosen after Open returns.
+// Open returns a Store rooted at dir, refusing a dir that is a symlink, a
+// Windows reparse point, or not owned by the current user. It performs no
+// permission-bit check: a loosely permissioned directory is caught
+// per-operation by List and Load, since a directory's mode can loosen
+// after Open returns.
 func Open(dir string) (*Store, error) {
 	info, err := os.Lstat(dir)
 	if err != nil {
 		return nil, fmt.Errorf("store: open %s: %w", dir, err)
 	}
-	if info.Mode()&os.ModeSymlink != 0 {
-		return nil, fmt.Errorf("store: open %s: %w", dir, ErrUnsafePerms)
+	if err := checkNotReparsePoint(dir, info); err != nil {
+		return nil, fmt.Errorf("store: open %s: %w", dir, err)
 	}
 	if !info.IsDir() {
 		return nil, fmt.Errorf("store: open %s: not a directory", dir)
-	}
-	if err := checkNotReparsePoint(dir, info); err != nil {
-		return nil, fmt.Errorf("store: open %s: %w", dir, err)
 	}
 	if err := checkOwner(dir, info); err != nil {
 		return nil, fmt.Errorf("store: open %s: %w", dir, err)

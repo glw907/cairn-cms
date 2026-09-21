@@ -18,6 +18,21 @@ const (
 	Failing
 )
 
+// Severity returns s's rank for combining several checks into one worst verdict: Failing
+// outranks Unknown outranks OK. State's own iota values are not in that order (OK is 1, Failing
+// is 2, so a raw int comparison would rank a failing check beneath an unknown one), so Severity
+// is the one rank a caller combines by.
+func (s State) Severity() int {
+	switch s {
+	case Failing:
+		return 2
+	case Unknown:
+		return 1
+	default:
+		return 0
+	}
+}
+
 // String names the State for a log line or a rendered status line.
 func (s State) String() string {
 	switch s {
@@ -64,6 +79,23 @@ func ParkReason(code ParkCode) ReasonCode {
 // carries.
 func APIReason(r providers.Reason) ReasonCode {
 	return ReasonCode("reason.api." + r.String())
+}
+
+// ReasonToOutcome is the one translation from a classified provider Reason to a check's Outcome.
+// An unauthorized or forbidden credential is the only pair that answers Failing: the endpoint
+// rejected the credential itself, not merely the request. Every other reason, rate-limited
+// included, answers Unknown with a reason.api.<Reason> code: the endpoint could not be observed
+// for a condition on this side of the wire (a rate limit, a 404, an unclassified failure), never
+// a verdict on the credential. A rate limit in particular must never answer Failing: the tool
+// being throttled is not the site being broken, and reporting it as Failing would page an
+// operator for a fault they cannot fix.
+func ReasonToOutcome(r providers.Reason) Outcome {
+	switch r {
+	case providers.ReasonUnauthorized, providers.ReasonForbidden:
+		return Outcome{State: Failing, Detail: r.String()}
+	default:
+		return Outcome{State: Unknown, Reason: APIReason(r)}
+	}
 }
 
 // Outcome is the read-side result a Check returns. Reason is set only when State is Unknown;

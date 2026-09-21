@@ -367,55 +367,46 @@ func TestDecodeObjectRejectsTrailingData(t *testing.T) {
 	}
 }
 
-// TestTypedKeySetsAgree is the drift guard: for each typed object, the key
-// set Parse recognizes, the key set the marshal path can emit, and the
-// typed key-order slice must name the same keys. These are three separately
-// authored lists, so a key added to one switch, map, or order slice without
-// the matching edit to the other two is exactly the drift this test catches.
-func TestTypedKeySetsAgree(t *testing.T) {
-	keysOf := func(typed map[string]typedField) []string {
-		keys := make([]string, 0, len(typed))
-		for k := range typed {
-			keys = append(keys, k)
-		}
-		return keys
-	}
+// TestFieldTablesHaveNoDuplicateKeys is the drift guard's structural half: each typed object's
+// field table names every key once. Parse's and Marshal's key sets can no longer disagree, since
+// both now read the same table (keysOf and fieldMap below), so the only way this table could
+// still misbehave is a duplicate entry shadowing another in fieldMap.
+func TestFieldTablesHaveNoDuplicateKeys(t *testing.T) {
+	assertNoDuplicateKeys(t, "Record", keysOf(recordFields))
+	assertNoDuplicateKeys(t, "GitHub", keysOf(githubFields))
+	assertNoDuplicateKeys(t, "GitHubRepo", keysOf(githubRepoFields))
+	assertNoDuplicateKeys(t, "Cloudflare", keysOf(cloudflareFields))
+}
 
-	cases := []struct {
-		name       string
-		parsed     []string
-		typedOrder []string
-		marshaled  []string
-	}{
-		{"Record", parsedTopLevelKeys, typedTopLevelKeys, keysOf(topLevelTypedFields(Record{}))},
-		{"GitHub", parsedGitHubKeys, typedGitHubKeys, keysOf(githubTypedFields(GitHub{}))},
-		{"GitHubRepo", parsedGitHubRepoKeys, typedGitHubRepoKeys, keysOf(githubRepoTypedFields(GitHubRepo{}))},
-		{"Cloudflare", parsedCloudflareKeys, typedCloudflareKeys, keysOf(cloudflareTypedFields(Cloudflare{}))},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			assertSameKeySet(t, c.name, "parsed", c.parsed, "typed order", c.typedOrder)
-			assertSameKeySet(t, c.name, "typed order", c.typedOrder, "marshaled", c.marshaled)
-		})
+// assertNoDuplicateKeys fails if keys names the same key twice.
+func assertNoDuplicateKeys(t *testing.T, typeName string, keys []string) {
+	t.Helper()
+	seen := make(map[string]bool, len(keys))
+	for _, k := range keys {
+		if seen[k] {
+			t.Errorf("%s: field table lists %q more than once", typeName, k)
+		}
+		seen[k] = true
 	}
 }
 
-// assertSameKeySet fails if aKeys and bKeys, named aName and bName, do not
-// name the same set of keys, or if either carries a duplicate.
-func assertSameKeySet(t *testing.T, typeName, aName string, aKeys []string, bName string, bKeys []string) {
-	t.Helper()
-	toSet := func(keys []string) map[string]bool {
-		set := make(map[string]bool, len(keys))
-		for _, k := range keys {
-			if set[k] {
-				t.Fatalf("%s: %s lists %q more than once", typeName, aName, k)
-			}
-			set[k] = true
-		}
-		return set
+// TestNoKeySwitchInParse is the closure test: Parse's key recognition runs entirely off the
+// field tables in record.go, never a switch on key-name literals. A switch case can be added
+// independently of any key-order slice a reviewer keeps in sync by hand, which is exactly how a
+// key recognized by Parse could once diverge, undetected, from the keys Marshal could emit. This
+// check fails the moment parse.go switches on a key string again, and passes only while Parse's
+// sole recognition mechanism is a field-table lookup.
+//
+// Run against the pre-rewrite record.go, a single file whose Parse, parseGitHub,
+// parseGitHubRepo, and parseCloudflare each held their own switch keyed by string literals (16
+// case arms in all), this check fails. Splitting Parse into parse.go closes it: parse.go has no
+// switch over a key name at all.
+func TestNoKeySwitchInParse(t *testing.T) {
+	data, err := os.ReadFile("parse.go")
+	if err != nil {
+		t.Fatalf("read parse.go: %v", err)
 	}
-	a, b := toSet(aKeys), toSet(bKeys)
-	if !reflect.DeepEqual(a, b) {
-		t.Errorf("%s: %s keys %v and %s keys %v disagree", typeName, aName, aKeys, bName, bKeys)
+	if strings.Contains(string(data), `case "`) {
+		t.Errorf("parse.go switches over a key-name literal; Parse must recognize a key only by looking it up in a field table:\n%s", data)
 	}
 }

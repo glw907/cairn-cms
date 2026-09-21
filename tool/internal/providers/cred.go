@@ -1,7 +1,7 @@
-// Package providers wraps the third-party HTTP APIs the tool's health checks call: Cloudflare
-// today, GitHub, npm, and DNS/HTTP probing as later tasks add them. Every client shares one
-// transport policy (transport.go): a bounded timeout, no automatic redirect-following, and a
-// single retry on a rate-limited GET, so a health check run never hangs and never silently loops.
+// Package providers wraps the third-party HTTP APIs the tool's health checks call: Cloudflare,
+// GitHub, npm, and DNS/HTTP probing. Every client shares one transport policy (transport.go): a
+// bounded timeout, no automatic redirect-following, and a single retry on a rate-limited GET, so
+// a health check run never hangs and never silently loops.
 package providers
 
 import "net/http"

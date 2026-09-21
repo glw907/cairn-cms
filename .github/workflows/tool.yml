@@ -87,6 +87,15 @@ jobs:
         if: runner.os == 'Windows'
         run: make --version
       - run: make -C tool check
+      - name: Verbose store package tests (Windows)
+        # make test runs go test ./... with no -v, so a skipped test (the symlink tests above
+        # skip on Windows CI, which typically lacks the privilege to create one) is invisible in
+        # the log and the junction test's own proof of the reparse-point defense rests on an
+        # unreferenced job log. Scoped to the store package and to this platform, since that is
+        # the one leg where the distinction between "ran and passed" and "skipped" matters.
+        if: runner.os == 'Windows'
+        working-directory: tool
+        run: go test -v ./internal/store/...
 
   release:
     # Runs on a real `tool/v*` tag (the publish) and on workflow_dispatch (Task 1's dry run,

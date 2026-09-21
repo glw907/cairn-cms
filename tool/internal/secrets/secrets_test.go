@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -89,5 +90,29 @@ func TestResolvePropagatesProviderError(t *testing.T) {
 	_, _, err := Resolve("CAIRN_CF_READ_TOKEN", sentinel)
 	if err == nil {
 		t.Fatal("want an error when a provider itself fails")
+	}
+}
+
+// TestResolveErrorNeverPrintsTheWrappedText asserts a provider whose own error text carries
+// sensitive-shaped content never reaches a caller that prints the *ResolveError directly: the
+// sentinel is reachable only through errors.As and Unwrap, never through Error()'s string.
+func TestResolveErrorNeverPrintsTheWrappedText(t *testing.T) {
+	const sentinel = "SENTINEL-9c4e"
+	taintedProvider := fakeProvider{name: "tainted", err: errors.New("backend leaked value " + sentinel)}
+
+	_, _, err := Resolve("CAIRN_CF_READ_TOKEN", taintedProvider)
+	if err == nil {
+		t.Fatal("want an error when a provider itself fails")
+	}
+	if got := err.Error(); strings.Contains(got, sentinel) {
+		t.Errorf("Error() = %q, leaked the sentinel", got)
+	}
+
+	var resolveErr *ResolveError
+	if !errors.As(err, &resolveErr) {
+		t.Fatalf("errors.As(%v, *ResolveError) = false, want true", err)
+	}
+	if !strings.Contains(resolveErr.Unwrap().Error(), sentinel) {
+		t.Error("Unwrap() did not carry the sentinel, but it is the one permitted path")
 	}
 }

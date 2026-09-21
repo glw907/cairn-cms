@@ -16,6 +16,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 )
 
@@ -198,8 +199,8 @@ func TestProviderVerdictAgreesAcrossErrorTypes(t *testing.T) {
 	}
 
 	unclassifiable := errors.New("boom")
-	if got := providerVerdict(unclassifiable); got.reason != "unreachable" || got.level != exitUnknown {
-		t.Errorf("providerVerdict(unclassifiable) = %+v, want reason \"unreachable\" and level exitUnknown", got)
+	if got := providerVerdict(unclassifiable); got.reason != "unreachable" || got.state != spine.Unknown {
+		t.Errorf("providerVerdict(unclassifiable) = %+v, want reason \"unreachable\" and state spine.Unknown", got)
 	}
 }
 

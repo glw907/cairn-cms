@@ -107,3 +107,84 @@ func TestAPIReason(t *testing.T) {
 		t.Errorf("APIReason(ReasonForbidden) = %q, want %q", got, want)
 	}
 }
+
+// TestStateSeverity covers every state and every pairing, since a caller combining two
+// verdicts always compares Severity's rank, never the raw iota order.
+func TestStateSeverity(t *testing.T) {
+	tests := []struct {
+		name string
+		s    State
+		want int
+	}{
+		{name: "ok", s: OK, want: 0},
+		{name: "unknown", s: Unknown, want: 1},
+		{name: "failing", s: Failing, want: 2},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.s.Severity(); got != tt.want {
+				t.Errorf("%v.Severity() = %d, want %d", tt.s, got, tt.want)
+			}
+		})
+	}
+
+	pairs := []struct {
+		a, b State
+		want State
+	}{
+		{OK, OK, OK},
+		{OK, Unknown, Unknown},
+		{OK, Failing, Failing},
+		{Unknown, OK, Unknown},
+		{Unknown, Unknown, Unknown},
+		{Unknown, Failing, Failing},
+		{Failing, OK, Failing},
+		{Failing, Unknown, Failing},
+		{Failing, Failing, Failing},
+	}
+	for _, p := range pairs {
+		worse := p.a
+		if p.b.Severity() > p.a.Severity() {
+			worse = p.b
+		}
+		if worse != p.want {
+			t.Errorf("worse(%v, %v) = %v, want %v", p.a, p.b, worse, p.want)
+		}
+	}
+}
+
+// TestReasonToOutcome is the exhaustive table over every providers.Reason value: the one
+// translation this task consolidates from probe-token's own reasonLevel switch. A rate-limited
+// reason is asserted separately from the table, since criterion 16 singles it out: it must never
+// answer Failing.
+func TestReasonToOutcome(t *testing.T) {
+	tests := []struct {
+		reason    providers.Reason
+		wantState State
+	}{
+		{providers.ReasonUnauthorized, Failing},
+		{providers.ReasonForbidden, Failing},
+		{providers.ReasonNotFound, Unknown},
+		{providers.ReasonBuildsNotConnected, Unknown},
+		{providers.ReasonBuildsRepoNotSelected, Unknown},
+		{providers.ReasonBuildsAppNotAuthorized, Unknown},
+		{providers.ReasonSenderNotConfigured, Unknown},
+		{providers.ReasonRateLimited, Unknown},
+		{providers.ReasonUnknown, Unknown},
+	}
+	for _, tt := range tests {
+		t.Run(tt.reason.String(), func(t *testing.T) {
+			got := ReasonToOutcome(tt.reason)
+			if got.State != tt.wantState {
+				t.Errorf("ReasonToOutcome(%v).State = %v, want %v", tt.reason, got.State, tt.wantState)
+			}
+			if err := got.Validate(); err != nil {
+				t.Errorf("ReasonToOutcome(%v) produced an invalid Outcome: %v", tt.reason, err)
+			}
+		})
+	}
+
+	if got := ReasonToOutcome(providers.ReasonRateLimited); got.State == Failing {
+		t.Error("ReasonToOutcome(ReasonRateLimited).State = Failing, want never Failing")
+	}
+}

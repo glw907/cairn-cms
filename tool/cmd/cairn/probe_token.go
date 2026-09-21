@@ -15,6 +15,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -74,59 +75,58 @@ func buildProbeTokenCmd(envFn func(string) string, p secrets.Provider, rt http.R
 	}
 }
 
-// verdict pairs one probed endpoint's outcome with the exit level it contributes: 200 is
-// exitOK, an unauthorized or forbidden credential is exitCritical, and anything else (a 404, a
-// rate limit, a transport failure) is exitUnknown, since the endpoint simply could not be
-// observed rather than proving the credential wrong.
+// verdict pairs one probed endpoint's outcome with the spine.State it contributes: 200 is OK, an
+// unauthorized or forbidden credential is Failing, and anything else (a 404, a rate limit, a
+// transport failure) is Unknown, since the endpoint simply could not be observed rather than
+// proving the credential wrong. spine.ReasonToOutcome is the one place that classification lives;
+// this command only carries its State through to an exit code.
 type verdict struct {
 	status int
 	reason string
-	level  int
+	state  spine.State
 }
 
 // okVerdict returns the verdict a 200 response reports; every endpoint this command probes
 // treats 200 as the only success status.
 func okVerdict() verdict {
-	return verdict{status: http.StatusOK, reason: "ok", level: exitOK}
+	return verdict{status: http.StatusOK, reason: "ok", state: spine.OK}
 }
 
 // providerVerdict reports the verdict a Cloudflare or GitHub call's error carries, or okVerdict
 // for a nil err, through the one providers.ProviderError contract both APIError and GitHubError
-// implement. An error this package cannot classify reports "unreachable" at exitUnknown.
+// implement. An error this package cannot classify reports "unreachable" at spine.Unknown.
 func providerVerdict(err error) verdict {
 	if err == nil {
 		return okVerdict()
 	}
 	if pe, ok := errors.AsType[providers.ProviderError](err); ok {
-		return verdict{status: pe.HTTPStatus(), reason: pe.ClassifiedReason().String(), level: reasonLevel(pe.ClassifiedReason())}
+		reason := pe.ClassifiedReason()
+		return verdict{status: pe.HTTPStatus(), reason: reason.String(), state: spine.ReasonToOutcome(reason).State}
 	}
-	return verdict{reason: "unreachable", level: exitUnknown}
+	return verdict{reason: "unreachable", state: spine.Unknown}
 }
 
-// precedenceRank orders the three exit levels this command reports by severity: CRITICAL outranks
-// UNKNOWN outranks OK. exitUnknown's numeric value (3) is larger than exitCritical's (2), so
-// combineLevel ranks by this table rather than by the raw exit code, or a later endpoint that
-// merely could not be reached would silently downgrade an earlier rejected credential.
-var precedenceRank = map[int]int{exitOK: 0, exitUnknown: 1, exitCritical: 2}
-
-// combineLevel returns whichever of a and b outranks the other by precedenceRank.
-func combineLevel(a, b int) int {
-	if precedenceRank[b] > precedenceRank[a] {
+// combineState returns whichever of a and b outranks the other by spine.State.Severity, so a
+// later endpoint that merely could not be reached never silently downgrades an earlier rejected
+// credential.
+func combineState(a, b spine.State) spine.State {
+	if b.Severity() > a.Severity() {
 		return b
 	}
 	return a
 }
 
-// reasonLevel maps a classified provider Reason to the exit level a rejected credential
-// (unauthorized or forbidden) reports at CRITICAL, versus every other reason (not found,
-// rate limited, an unclassified failure), which reports at UNKNOWN: the endpoint answered, but
-// not with a verdict on the credential itself.
-func reasonLevel(r providers.Reason) int {
-	switch r {
-	case providers.ReasonUnauthorized, providers.ReasonForbidden:
+// exitCodeFor maps the worst spine.State this run observed to one of the three exit codes:
+// acknowledgements and a Degraded flag enter at report level, which this command has none of, so
+// the mapping is the plain State order.
+func exitCodeFor(s spine.State) int {
+	switch s {
+	case spine.Failing:
 		return exitCritical
-	default:
+	case spine.Unknown:
 		return exitUnknown
+	default:
+		return exitOK
 	}
 }
 
@@ -215,7 +215,7 @@ func (rt *recordingRoundTripper) lookup(method, path string) recordedBody {
 // printEndpoint writes one probed endpoint's line, and its recorded body shape on a 200, to out.
 func printEndpoint(out io.Writer, endpoint string, v verdict, rb recordedBody) {
 	_, _ = fmt.Fprintf(out, "  %-32s %3d  %s\n", endpoint, v.status, v.reason)
-	if v.level != exitOK {
+	if v.state != spine.OK {
 		return
 	}
 	switch rb.marker {
@@ -280,42 +280,42 @@ func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Prov
 
 	rec := newRecordingRoundTripper(rt)
 
-	worst := exitOK
-	raise := func(level int) {
-		worst = combineLevel(worst, level)
+	worst := spine.OK
+	raise := func(s spine.State) {
+		worst = combineState(worst, s)
 	}
 
 	if isMissing(missing, "CAIRN_CF_ACCOUNT_ID") || isMissing(missing, "CAIRN_CF_READ_TOKEN") {
 		_, _ = fmt.Fprintln(out, "Cloudflare: skipped, a credential is missing")
-		raise(exitUnknown)
+		raise(spine.Unknown)
 	} else {
 		raise(probeCloudflare(ctx, out, providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), rec), resolved.accountID(), rec))
 	}
 
 	if isMissing(missing, "CAIRN_GH_READ_TOKEN") {
 		_, _ = fmt.Fprintln(out, "GitHub: skipped, a credential is missing")
-		raise(exitUnknown)
+		raise(spine.Unknown)
 	} else {
 		raise(probeRegistryGitHub(ctx, out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, registryDir))
 	}
 
-	exit(worst)
+	exit(exitCodeFor(worst))
 	return nil
 }
 
 // probeRegistryGitHub discovers the registry's sites and hands them to probeGitHub, reporting
-// exitUnknown when the registry cannot be located or read at all: the credential is unjudged
+// spine.Unknown when the registry cannot be located or read at all: the credential is unjudged
 // either way, so the run reports that it could not observe rather than that the token is wrong.
-func probeRegistryGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, registryDir func() (string, error)) int {
+func probeRegistryGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, registryDir func() (string, error)) spine.State {
 	dir, err := registryDir()
 	if err != nil {
 		_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
-		return exitUnknown
+		return spine.Unknown
 	}
 	sites, err := discoverSites(dir)
 	if err != nil {
 		_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
-		return exitUnknown
+		return spine.Unknown
 	}
 	return probeGitHub(ctx, out, errOut, gh, rec, sites)
 }
@@ -335,16 +335,16 @@ func printCredentialSources(out io.Writer, e env) {
 }
 
 // probeCloudflare hits the account-scoped Cloudflare endpoints a health check uses with no
-// per-site zone or worker to target, and returns the worst exit level among them. Zone-scoped
+// per-site zone or worker to target, and returns the worst state among them. Zone-scoped
 // endpoints (settings, DNS, Email Sending) need a zone id no registry record carries before the
 // adopt command exists; tool/docs/credentials.md records those as verified separately.
-func probeCloudflare(ctx context.Context, out io.Writer, cf *providers.Cloudflare, accountID string, rec *recordingRoundTripper) int {
+func probeCloudflare(ctx context.Context, out io.Writer, cf *providers.Cloudflare, accountID string, rec *recordingRoundTripper) spine.State {
 	_, _ = fmt.Fprintln(out, "Cloudflare:")
-	worst := exitOK
+	worst := spine.OK
 
 	run := func(endpoint, method, path string, call func() error) {
 		v := providerVerdict(call())
-		worst = combineLevel(worst, v.level)
+		worst = combineState(worst, v.state)
 		printEndpoint(out, endpoint, v, rec.lookup(method, path))
 	}
 
@@ -384,12 +384,12 @@ func probeCloudflare(ctx context.Context, out io.Writer, cf *providers.Cloudflar
 // repository) contributes: whether the token can read it at all, and whether the repository is
 // public or private. It warns on errOut when every probed repository is public, since a public
 // repository proves nothing about a fine-grained token's own permissions. It returns the worst
-// exit level among every check.
-func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, sites []registrySite) int {
+// state among every check.
+func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, sites []registrySite) spine.State {
 	_, _ = fmt.Fprintln(out, "GitHub:")
-	worst := exitOK
-	raise := func(level int) {
-		worst = combineLevel(worst, level)
+	worst := spine.OK
+	raise := func(s spine.State) {
+		worst = combineState(worst, s)
 	}
 
 	type repoLine struct {
@@ -401,10 +401,10 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 	var repos []repoLine
 
 	// report prints one probed GET's line, labelled "<endpoint> (owner/repo)" and carrying
-	// whatever shape the recorder captured for path, and folds its level into worst.
+	// whatever shape the recorder captured for path, and folds its state into worst.
 	report := func(endpoint, owner, repo, path string, err error) verdict {
 		v := providerVerdict(err)
-		raise(v.level)
+		raise(v.state)
 		printEndpoint(out, fmt.Sprintf("%s (%s/%s)", endpoint, owner, repo), v, rec.lookup(http.MethodGet, path))
 		return v
 	}
@@ -450,7 +450,7 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 			allPublic = false
 		}
 		_, _ = fmt.Fprintf(out, "  %-28s %3d  %-9s %s\n", r.label, r.v.status, r.v.reason, visibility)
-		raise(r.v.level)
+		raise(r.v.state)
 	}
 	if allPublic {
 		_, _ = fmt.Fprintln(errOut, "probe-token: every probed repository is public; the GitHub token's scope is unconfirmed")

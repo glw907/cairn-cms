@@ -19,8 +19,10 @@ type Provider interface {
 	// Get reports name's value and whether the backend holds one. A miss
 	// is (false, nil), not an error; only an unexpected failure returns a
 	// non-nil err. An implementation's err must never carry the value
-	// itself, since Resolve wraps it with %w and a caller may print that
-	// wrapped error.
+	// itself: Resolve returns it wrapped in a *ResolveError, whose Error()
+	// never prints it but whose Unwrap exposes it to errors.Is and
+	// errors.As, so an untrusted backend's own error text still cannot
+	// reach a caller that prints the error string directly.
 	Get(name string) (value string, ok bool, err error)
 }
 
@@ -42,9 +44,11 @@ func (e *ResolveError) Provider() string {
 	return e.provider
 }
 
-// Error implements the error interface.
+// Error implements the error interface, naming only the provider that failed: a backend that
+// tainted its own error text would otherwise reach any caller that prints this string. The
+// wrapped error itself is reachable only through Unwrap.
 func (e *ResolveError) Error() string {
-	return fmt.Sprintf("secrets: resolve from %s: %v", e.provider, e.err)
+	return fmt.Sprintf("secrets: resolve from %s failed", e.provider)
 }
 
 // Unwrap exposes the underlying error to errors.Is and errors.As.

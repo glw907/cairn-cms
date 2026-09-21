@@ -314,6 +314,53 @@ describe('motion-property: the frame-offset exception', () => {
   });
 });
 
+describe('motion-property: display and overlay under allow-discrete', () => {
+  it('passes a display/overlay pair carrying allow-discrete beside an allowlisted paint property', () => {
+    const findings = check([
+      component(
+        '<div class="mover"></div>',
+        '.mover { transition: opacity 120ms, display 120ms allow-discrete, overlay 120ms allow-discrete; }'
+      ),
+    ]);
+    expect(findings).toEqual([]);
+  });
+
+  it('reads a comma inside var() and cubic-bezier() as an argument, never another transitioned property', () => {
+    // The shape every admin-toolkit component authors: a token read with a literal fallback, and a
+    // named curve token whose own fallback is a four-argument cubic-bezier. A naive comma split
+    // reads each fragment as another property and reports both an over-cap count and a list of
+    // nonsense property names.
+    const findings = check([
+      component(
+        '<div class="mover"></div>',
+        '.mover { transition: opacity var(--cairn-dur-base, 150ms) var(--cairn-ease-entrance, cubic-bezier(0, 0, 0.38, 0.9)),' +
+          ' display var(--cairn-dur-base, 150ms) allow-discrete, overlay var(--cairn-dur-base, 150ms) allow-discrete; }'
+      ),
+    ]);
+    expect(findings).toEqual([]);
+  });
+
+  it('still errors a display transition with no allow-discrete', () => {
+    const findings = check([component('<div class="mover"></div>', '.mover { transition: display 120ms; }')]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('display');
+  });
+
+  it('still errors an overlay transition with no allow-discrete', () => {
+    const findings = check([component('<div class="mover"></div>', '.mover { transition: overlay 120ms; }')]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('overlay');
+  });
+
+  it('still errors an unrelated layout property carrying allow-discrete, since the arm covers only display and overlay', () => {
+    const findings = check([
+      component('<div class="mover"></div>', '.mover { transition: height 120ms allow-discrete; }'),
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('height');
+  });
+});
+
 describe('motion-property: admin scoping', () => {
   it('declares adminOnly, so it never reads a site\'s own public components', () => {
     expect(motionProperty.adminOnly).toBe(true);

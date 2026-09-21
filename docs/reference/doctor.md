@@ -42,7 +42,6 @@ check needed an input the run genuinely couldn't find, which drives its own exit
 | `--repo <owner/name>` | `GITHUB_REPO` | The site repository the GitHub App check reads. |
 | `--send-test <address>` | none | Opt in to one real test email to this address. |
 | `--probe [url]` | none | Opt in to the live admin sign-in probe. Bare `--probe` probes the `PUBLIC_ORIGIN` input. |
-| `--fix` | none | Install or refresh the packaged `cairn-admin-screens` skill into `.claude/skills/cairn-admin-screens/`, before the checks run. |
 | `--help` | none | Print usage and exit 0, without running any check. |
 
 The credential variables are the same values `wrangler` and the Worker use:
@@ -75,7 +74,7 @@ environment. They are never derived from the repo and never printed.
 
 ## The checks
 
-Nineteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
+Eighteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
 `--probe` the live admin probe. The condition id is the identity the report, the runtime errors,
 and the readiness checklist share. One pair shares a condition id (`config.bindings` and
 `config.media-bucket` both use `config.bindings-missing`), so the readiness checklist gains a
@@ -92,7 +91,6 @@ distinct line without a second condition to maintain; every other check carries 
 | `config.tidy-key` | `config.tidy-key-missing` | When `tidy.enabled` is `true` in the site config, and a literal `ANTHROPIC_API_KEY` value is readable locally (typically `.dev.vars`), the doctor actively probes it with a zero-token Anthropic call and reports valid or invalid distinctly. When only the key's name is referenced (a real deployed Worker secret, invisible to any CLI) it passes on presence alone and says so; a network failure during the probe fails soft to an unverified pass rather than claiming the key is invalid. | Skip: no `site.config.yaml` exists, or tidy is not enabled in it. |
 | `config.no-referrer-blanket` | `config.no-referrer-blanket` | `src/hooks.server.ts` (or `.js`) and `static/_headers` for a site-wide `Referrer-Policy: no-referrer` (a heuristic, single-line text read of both; it does not follow an import into another module, does not join a Prettier-wrapped multi-line header write across lines, and its comment strip cuts at the first `//` on a line even when that `//` is inside a URL literal, such as `'https://example.com'`, so the rest of that line is lost). A blanket policy strips the `Origin` header from a plain same-origin form POST, which cairn's strict `originMatches` guard rejects outside `/admin`. A path scoped to specific routes (`/admin/*` in `_headers`, a route-guarded write in the hooks file) never fails this check; the remedy for a route guarded by `originMatches` is `same-origin`, never `no-referrer`, since only a double-submit-token route like `/admin` can afford to strip `Origin` too. | Skip: neither `src/hooks.server.ts`/`.js` nor `static/_headers` is readable; the detail names both sources it looked for, plus the remedy, never a silent pass. |
 | `admin.mount-shape` | `admin.mount-incomplete` | The four-file `/admin` mount is wired: a `shellLoad` call on any identifier and a `CairnAdminShell` render across the `/admin` route files (a heuristic text read that tolerates a renamed composer). This check never fails; it reports info with guidance when it cannot see the mount, so an unconventionally wired site never goes red. | Info: none of the candidate `/admin` mount files exist, or the two signals are not both found (the info line carries the one-line fix). |
-| `skill.admin-screens` | `skill.admin-screens-stale` | The consumer's `.claude/skills/cairn-admin-screens/` matches the packaged skill, by a content hash of both trees. This check never fails; it skips with guidance (missing or stale) rather than gating a deploy on a development aid. | Skip: never; it always reports fresh, missing, or stale. |
 | `config.dependency-floors` | `config.dependency-floors-unmet` | The lockfile's resolved `svelte` and `@sveltejs/kit` versions satisfy the engine's declared peer ranges, read from the installed `@glw907/cairn-cms/package.json` so the floors are declared once. Reads `package-lock.json`, then `pnpm-lock.yaml`, then `yarn.lock`, judging whichever it finds first. | Unchecked: none of the three lockfiles exists. Skip: the recognized lockfile carries no entry for a dependency. |
 | `email.sender-onboarded` | `email.sender-not-onboarded` | The from-domain has an enabled Email Sending subdomain on its zone. | Skip: no API token, or no from-address. |
 | `edge.https-forced` | `edge.https-not-forced` | Always Use HTTPS is on for the zone. cairn's own JS-free admin sign-in posts a form, and the framework CSRF guard rejects a form POST whose origin scheme doesn't match, so an admin reached over http hits an opaque 403; this stays a gating check for that reason. | Skip: no API token, or no from-address. |
@@ -242,29 +240,6 @@ page instead of the magic-link form, marked with a `data-cairn-identity` attribu
 paragraph; the probe reads that attribute to tell the two pages apart. Seed the site's first
 owner out of band before turning `identity` on, never after: `auth.store` keeps requiring an
 owner-capability row in the roster and names this ordering in its own remedy.
-
-## The `--fix` skill install
-
-The package ships an agent-facing skill, `cairn-admin-screens`, that teaches a build agent the
-register rules and the done-gate for a cairn admin screen. `--fix` installs it, copying the
-packaged `skills/cairn-admin-screens/` tree into `.claude/skills/cairn-admin-screens/` in the
-working directory:
-
-```bash
-npx cairn-doctor --fix
-```
-
-It runs before the checks, so `skill.admin-screens` reads fresh in the same report. Run it again
-after upgrading `@glw907/cairn-cms`, whenever the skill's content changes upstream. The
-`skill.admin-screens` check compares a hash of the installed copy against the packaged one and
-reports missing or stale. It never fails the run, since the skill is a development aid, not a
-deploy blocker.
-
-The installed skill's own reference files quote utility class names verbatim as worked examples,
-and Tailwind v4's automatic source detection scans any non-ignored file under the project,
-`.claude/` included. Exclude `.claude/` from the site's own Tailwind build (an `@source not`
-directive, or the equivalent of a `.gitignore` exclusion for the toolchain in use) so those
-examples never compile into the site's own shipped CSS.
 
 ## CI wiring
 

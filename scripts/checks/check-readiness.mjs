@@ -16,11 +16,9 @@ const CONDITIONS_JS = 'dist/diagnostics/conditions.js';
 // Conditions deliberately absent from the checklist. An addition needs a comment naming why the
 // doc cannot carry the condition.
 //
-// Empty since the Pass D docs rebuild, and the mechanism stays for the next real exception.
-// Its one entry excused `skill.admin-screens-stale` on the reasoning that a tooling nudge is not
-// a Cloudflare deploy-readiness condition, which the old checklist's Cloudflare framing made
-// true. The rebuilt page asks "is it working?" instead, a question that condition answers, so it
-// earned a section and the exception died with the framing that justified it.
+// Empty: the checklist covers every condition directly, and the mechanism stays for the next
+// real exception. The one entry it once carried, for the packaged skill's freshness condition,
+// died along with that condition when its install moved to cairn-guidance.
 const ALLOWLIST = /** @type {Set<string>} */ (new Set([]));
 
 /**

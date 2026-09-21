@@ -1,13 +1,37 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadConfig } from '../../../lib/audit/config.js';
+import { fileURLToPath } from 'node:url';
+import { DEFAULT_SHEET_CANDIDATES, loadConfig } from '../../../lib/audit/config.js';
 import { runStatic, selectRules } from '../../../lib/audit/run.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import { staticRules } from '../../../lib/audit/rules/static/index.js';
+import { renderedRules } from '../../../lib/audit/rules/rendered/index.js';
 import { noUncompiledClass } from '../../../lib/audit/rules/static/no-uncompiled-class.js';
 import type { AuditReport, Finding, StaticRule, StaticRuleContext } from '../../../lib/audit/types.js';
+
+const CAIRN_AUDIT_REFERENCE = fileURLToPath(
+  new URL('../../../../docs/reference/cairn-audit.md', import.meta.url)
+);
+
+/** The small set of number words `docs/reference/cairn-audit.md` spells out in its rule-count sentences. */
+const NUMBER_WORDS: Record<string, number> = {
+  two: 2,
+  fifteen: 15,
+  seventeen: 17,
+  'thirty-four': 34,
+};
+
+/** A rule count as the reference page writes it, digits or one of `NUMBER_WORDS`. */
+function parseRuleCount(text: string): number {
+  const digits = /^\d+$/.exec(text);
+  if (digits) return Number(digits[0]);
+  const word = text.toLowerCase();
+  const known = NUMBER_WORDS[word];
+  if (known === undefined) throw new Error(`unrecognized rule count "${text}" in the reference page`);
+  return known;
+}
 
 let root: string;
 
@@ -57,10 +81,11 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 
 describe('the static rule registry', () => {
   // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules,
-  // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, and the motion
-  // pass's motion-property, motion-hover-gate, and motion-vocabulary are the modules that have
-  // registered since, without touching run.ts.
-  it('carries the fifteen static rules registered since Task 7', () => {
+  // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, the motion
+  // pass's motion-property, motion-hover-gate, and motion-vocabulary, and the extend pass's
+  // log-event-grammar and log-secret-field are the modules that have registered since, without
+  // touching run.ts.
+  it('carries the seventeen static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -81,12 +106,38 @@ describe('the static rule registry', () => {
         'stripe-trim-parity',
         'unlayered-font-clobber',
         'list-role',
+        'log-event-grammar',
+        'log-secret-field',
       ].sort(),
     );
   });
 
   it('hands back a fresh array each call', () => {
     expect(staticRules()).not.toBe(staticRules());
+  });
+
+  // New consumer-facing findings enter at advisory tier for one minor, and never scoped to the
+  // admin frame: a log call is not confined to an admin surface.
+  it('registers log-event-grammar and log-secret-field at advisory tier, not adminOnly', () => {
+    const byId = new Map(staticRules().map((rule) => [rule.id, rule]));
+    for (const id of ['log-event-grammar', 'log-secret-field']) {
+      expect(byId.get(id)?.tier).toBe('advisory');
+      expect(byId.get(id)?.adminOnly).toBeUndefined();
+    }
+  });
+
+  // Locks the reference page's two rule-count sentences to the registries they describe, so a
+  // future rule addition or removal fails this test until docs/reference/cairn-audit.md's own
+  // numbers are updated to match.
+  it('states the same total and static rule counts docs/reference/cairn-audit.md carries', () => {
+    const doc = readFileSync(CAIRN_AUDIT_REFERENCE, 'utf8');
+    const totalMatch = /All\s+([A-Za-z0-9-]+)\s+registered rules/.exec(doc);
+    const staticRunMatch = /^([A-Za-z]+) rules run:/m.exec(doc);
+    if (!totalMatch || !staticRunMatch) {
+      throw new Error('could not find both rule-count sentences in docs/reference/cairn-audit.md');
+    }
+    expect(parseRuleCount(totalMatch[1])).toBe(staticRules().length + renderedRules().length);
+    expect(parseRuleCount(staticRunMatch[1])).toBe(staticRules().length);
   });
 });
 
@@ -114,8 +165,10 @@ describe('runStatic', () => {
     const report = runStatic(loadConfig(root), [probeRule(seen)]);
     // Task 3's own `src/lib/components` fixture (a `src/lib/components` root, no `adminOnly`
     // declaration on this probe) joins the two roots already here, since the probe resolves
-    // over `static.scope`, not `static.adminScope`.
-    expect(report.filesScanned).toBe(3);
+    // over `static.scope`, not `static.adminScope`. Task 2's `sources` walk (default scope
+    // `src`) finds the same three `.svelte` fixtures again as plain text, which is why the total
+    // is six rather than three: `filesScanned` sums both walks, never deduplicating them.
+    expect(report.filesScanned).toBe(6);
     expect(seen).toHaveLength(1);
     expect(seen[0].files.map((f) => f.file).sort()).toEqual([
       'src/lib/admin-toolkit/FieldLabel.svelte',
@@ -143,10 +196,12 @@ describe('runStatic', () => {
     // proven by each rule's own fixtures, not by this generic wiring test.
     const report = runStatic(loadConfig(root));
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
-    // default (no rules override) run wires up the full fifteen-rule registry. The new
+    // default (no rules override) run wires up the full seventeen-rule registry. The new
     // `src/lib/components/PublicWidget.svelte` fixture carries no class and no CSS, so it trips
-    // nothing beyond the two no-uncompiled-class findings the tree already carried.
-    expect(report.ruleIds).toHaveLength(15);
+    // nothing beyond the two no-uncompiled-class findings the tree already carried; none of the
+    // fixture components carries a log call, so log-event-grammar and log-secret-field raise
+    // nothing here either.
+    expect(report.ruleIds).toHaveLength(17);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });
@@ -175,6 +230,24 @@ describe('runStatic', () => {
     const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-bare-'));
     try {
       expect(() => runStatic(loadConfig(bare))).toThrow(/cairn-admin\.css/);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+    }
+  });
+
+  // Locks the existing sheet-error contract this task's Files section names, no code moved: a
+  // config naming a missing sheet throws with that path in the message, and a config that
+  // names no sheet at all still resolves to a candidate, only failing later, at read time.
+  it('locks the named-sheet hard error: a named missing sheet throws with its own path, a silent config resolves a candidate first', () => {
+    const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-locking-'));
+    try {
+      const configPath = join(bare, 'named-missing-sheet.json');
+      writeFileSync(configPath, JSON.stringify({ sheet: 'build/does-not-exist.css' }));
+      expect(() => runStatic(loadConfig(bare, configPath))).toThrow(/build\/does-not-exist\.css/);
+
+      const silentConfig = loadConfig(bare);
+      expect(silentConfig.sheetPaths).toEqual([DEFAULT_SHEET_CANDIDATES[0]]);
+      expect(() => runStatic(silentConfig)).toThrow(/cairn-admin\.css/);
     } finally {
       rmSync(bare, { recursive: true, force: true });
     }
@@ -258,6 +331,51 @@ describe('runStatic', () => {
     it('raises no dead-suppression finding for a directive naming a rule the scope excluded', () => {
       const report = runStatic(loadConfig(scopedRoot), selectRules(staticRules(), ['gap-scale']));
       expect(report.findings.filter((f) => f.ruleId === 'suppression')).toEqual([]);
+    });
+  });
+
+  // The source-text walk reads raw text, not parsed syntax, so a `//` sequence sitting inside a
+  // backtick fixture string, and the marker text named in a doc comment describing the feature,
+  // both read as comment spans containing the directive marker. Neither is a real directive: a
+  // source-text carrier entry silences a matching finding when a real directive precedes one, but
+  // never raises a `suppression` finding of its own, which is what keeps a tree that tests or
+  // documents its own suppressions from reading as an error-tier false positive.
+  describe('a source-text carrier that merely mentions the directive marker', () => {
+    let mentionRoot: string;
+
+    beforeAll(() => {
+      mentionRoot = mkdtempSync(join(tmpdir(), 'cairn-audit-mentions-'));
+      mkdirSync(join(mentionRoot, 'dist/components'), { recursive: true });
+      mkdirSync(join(mentionRoot, 'src/lib/components'), { recursive: true });
+      mkdirSync(join(mentionRoot, 'src/lib'), { recursive: true });
+      writeFileSync(join(mentionRoot, 'dist/components/cairn-admin.css'), '.card { border: 1px solid black }');
+      writeFileSync(join(mentionRoot, 'src/lib/components/Fixture.svelte'), '<div class="card"></div>\n');
+      writeFileSync(
+        join(mentionRoot, 'src/lib/mentions.ts'),
+        [
+          "// a fixture string a test builds for a rule under test, containing what reads as a comment once this file is itself scanned as plain text",
+          "const FIXTURE = `// cairn-audit-disable-next-line log-event-grammar -- inside a fixture string, never a real directive\\nlog.info('x')`;",
+          '',
+          '/**',
+          ' * A caller silences a finding by writing cairn-audit-disable-next-line above the call.',
+          ' */',
+          'export const NOTE = true;',
+          '',
+          "// cairn-audit-disable-next-line log-event-grammar -- a real directive, one line above the offender it silences",
+          "log.info('Signup failed');",
+          '',
+        ].join('\n')
+      );
+    });
+
+    afterAll(() => {
+      rmSync(mentionRoot, { recursive: true, force: true });
+    });
+
+    it('raises no suppression finding for either mention, while the real directive still silences its offender', () => {
+      const report = runStatic(loadConfig(mentionRoot));
+      expect(report.findings.filter((f) => f.ruleId === 'suppression')).toEqual([]);
+      expect(report.suppressed.map((f) => f.ruleId)).toContain('log-event-grammar');
     });
   });
 });
@@ -347,9 +465,11 @@ describe('static.adminScope', () => {
       mkdirSync(join(bare, 'src/lib/admin-toolkit'), { recursive: true });
       writeFileSync(join(bare, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
       writeFileSync(join(bare, 'src/lib/admin-toolkit/Field.svelte'), '<div></div>\n');
-      // No src/routes/admin: the default admin root this tree does not have.
+      // No src/routes/admin: the default admin root this tree does not have. The `sources`
+      // walk (default scope `src`) finds the same fixture again as plain text, so the total is
+      // two rather than one.
       const report = runStatic(loadConfig(bare));
-      expect(report.filesScanned).toBe(1);
+      expect(report.filesScanned).toBe(2);
     } finally {
       rmSync(bare, { recursive: true, force: true });
     }

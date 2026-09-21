@@ -11,7 +11,9 @@
 // two duplicated disclosure mechanics (`audit-admin-listtoolbar`'s reshape), rather than out of a
 // site. `TextInput`/`SelectInput`/`FieldRow` retired from this subpath: zero consumers anywhere in
 // the engine, and their underlying markup composes directly out of
-// `FieldLabel` plus a bare control, which stays the documented recipe.
+// `FieldLabel` plus a bare control, which stays the documented recipe. `Tooltip` is a third,
+// smaller tier: a hover/focus description wrapper for an icon-only action control, the replacement
+// for a native `title` attribute (no keyboard or touch reach of its own).
 export {
   formatCivilDate,
   formatTimestamp,
@@ -53,3 +55,4 @@ export {
   type MediaSelection,
 } from '../components/MediaPicker.svelte';
 export { default as FieldLabel } from './FieldLabel.svelte';
+export { default as Tooltip } from './Tooltip.svelte';

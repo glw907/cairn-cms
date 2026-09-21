@@ -1,11 +1,43 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from 'vitest/browser';
 import AdminTable from '../../lib/admin-toolkit/AdminTable.svelte';
+import AdminTableSelectionHarness from './_AdminTableSelectionHarness.svelte';
+import baselineHtml from './fixtures/admin-table-baseline.html?raw';
 
 /** A snippet with no render-time params, e.g. a header row or a fixed body. */
 function staticSnippet(html: string) {
   return createRawSnippet(() => ({ render: () => html }));
+}
+
+/** A `batchBar` snippet exposing its received `count` and a clickable `clear` trigger, so a test
+ *  can read the count from the DOM and fire `clear` through a real click rather than calling the
+ *  callback directly. */
+function batchBarSnippet() {
+  return createRawSnippet<[{ count: number; clear: () => void }]>((getParams) => ({
+    render: () =>
+      '<div><span data-testid="batch-count"></span><button type="button" data-testid="batch-clear">Clear</button></div>',
+    setup: (element) => {
+      const params = getParams();
+      element.querySelector('[data-testid="batch-count"]')!.textContent = String(params.count);
+      element
+        .querySelector('[data-testid="batch-clear"]')!
+        .addEventListener('click', () => params.clear());
+    },
+  }));
+}
+
+/** Strips the Svelte compiler's own scoped-style hash classes and empty block-anchor comments,
+ *  both compiled implementation detail rather than part of the rendered contract, so a fixture
+ *  comparison survives an unrelated change to this component's `<style>` block or its count of
+ *  conditional blocks. */
+function normalizeRenderedHtml(html: string) {
+  return html
+    .replace(/<!---->/g, '')
+    .replace(/\s*svelte-[a-z0-9]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 describe('AdminTable', () => {
@@ -102,5 +134,165 @@ describe('AdminTable', () => {
     });
     const cell = screen.container.querySelector('td')!;
     expect(getComputedStyle(cell).whiteSpace).toBe('nowrap');
+  });
+
+  it('renders exactly the branch-point markup when selection is omitted', async () => {
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet('<tr><td>Alvarez</td></tr>'),
+      rowCount: 1,
+    });
+    expect(normalizeRenderedHtml(screen.container.innerHTML)).toBe(normalizeRenderedHtml(baselineHtml));
+  });
+
+  it('renders the batch region with an empty-count status while the selection set is empty', async () => {
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet('<tr><td>Alvarez</td></tr>'),
+      rowCount: 1,
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+      batchBar: batchBarSnippet(),
+    });
+    // The region and its live status exist before the count ever changes; only the caller's own
+    // batch actions wait for a non-empty set.
+    const region = screen.container.querySelector('[role="group"]');
+    expect(region?.getAttribute('aria-label')).toBe('Batch actions');
+    expect(region?.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+    expect(screen.container.querySelector('[data-testid="batch-clear"]')).toBeNull();
+  });
+
+  it('renders the batch actions with the selected count while the set is non-empty, and clear empties it through onchange', async () => {
+    const onchange = vi.fn();
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet('<tr><td>Alvarez</td><td>Diallo</td></tr>'),
+      rowCount: 2,
+      selection: { ids: new Set(['alvarez', 'diallo']), onchange, label: 'Select households' },
+      batchBar: batchBarSnippet(),
+    });
+    const region = screen.container.querySelector('[role="group"]');
+    expect(region).not.toBeNull();
+    expect(region!.querySelector('[role="status"]')?.textContent).toBe('2 selected');
+    expect(region!.querySelector('[data-testid="batch-count"]')?.textContent).toBe('2');
+    (region!.querySelector('[data-testid="batch-clear"]') as HTMLButtonElement).click();
+    expect(onchange).toHaveBeenCalledTimes(1);
+    expect(onchange).toHaveBeenCalledWith(new Set());
+  });
+
+  it('flips the header checkbox through empty, partial, and full as a caller stores each new set', async () => {
+    const screen = await render(AdminTableSelectionHarness, {
+      rows: [
+        { id: 'alvarez', household: 'Alvarez' },
+        { id: 'diallo', household: 'Diallo' },
+      ],
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    const rowBoxes = screen.container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]');
+
+    // Empty: nothing to clear, so the checkbox is inert and names the selection it would make. It
+    // stays focusable, which is what lets `clear` hand focus back to it.
+    expect(header.checked).toBe(false);
+    expect(header.indeterminate).toBe(false);
+    expect(header.getAttribute('aria-disabled')).toBe('true');
+    expect(header.disabled).toBe(false);
+    expect(header.getAttribute('aria-label')).toBe('Select households');
+
+    await screen.getByLabelText('Select Alvarez').click();
+    expect(header.indeterminate).toBe(true);
+    expect(header.checked).toBe(false);
+    expect(header.getAttribute('aria-disabled')).toBeNull();
+    expect(header.getAttribute('aria-label')).toBe('Clear selection');
+
+    await screen.getByLabelText('Select Diallo').click();
+    expect(header.indeterminate).toBe(false);
+    expect(header.checked).toBe(true);
+    expect(rowBoxes.length).toBe(2);
+  });
+
+  it('empties the selection from the batch bar clear and lands focus on the header checkbox', async () => {
+    const screen = await render(AdminTableSelectionHarness, {
+      rows: [
+        { id: 'alvarez', household: 'Alvarez' },
+        { id: 'diallo', household: 'Diallo' },
+      ],
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    await screen.getByLabelText('Select Alvarez').click();
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('1 selected');
+
+    await screen.getByTestId('batch-clear').click();
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+    expect(screen.container.querySelector('[data-testid="batch-clear"]')).toBeNull();
+    expect(document.activeElement).toBe(header);
+  });
+
+  it('clears the selection from the header checkbox itself', async () => {
+    const screen = await render(AdminTableSelectionHarness, {
+      rows: [{ id: 'alvarez', household: 'Alvarez' }],
+    });
+    await screen.getByLabelText('Select Alvarez').click();
+    await screen.getByLabelText('Clear selection').click();
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+    // Ticking the inert checkbox again does nothing, since there is no id set here to select from.
+    // Dispatched rather than driven through the locator, which refuses to click an element it reads
+    // as not enabled, while a real pointer on an aria-disabled input does fire change.
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    header.click();
+    expect(header.checked).toBe(false);
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+  });
+
+  it('keeps the header checkbox unchecked and non-indeterminate after clicking it clears a partial selection', async () => {
+    // Regression for the DOM-memo defect: the checkbox's own pre-click activation toggles
+    // `checked` before any handler runs, and Svelte's declarative `checked`/`indeterminate`
+    // bindings skip rewriting a property back to a value it already holds, so whenever that
+    // native toggle happened to already match the post-clear derived value, the browser's own
+    // toggle stood unreverted. `onclick` writes both properties directly rather than trusting the
+    // declarative bindings to catch up, so the DOM never diverges from "a click can only clear."
+    const screen = await render(AdminTableSelectionHarness, {
+      rows: [
+        { id: 'alvarez', household: 'Alvarez' },
+        { id: 'diallo', household: 'Diallo' },
+      ],
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    await screen.getByLabelText('Select Alvarez').click();
+    expect(header.indeterminate).toBe(true);
+
+    await header.click();
+    expect(header.checked).toBe(false);
+    expect(header.indeterminate).toBe(false);
+    expect(screen.container.querySelector('[role="status"]')?.textContent).toBe('0 selected');
+  });
+
+  it('keeps the inert header checkbox\'s focus ring visible rather than dimmed to 0.2 opacity', async () => {
+    // `clear()` focuses this checkbox while it lands back in the inert state, and daisyUI's only
+    // checkbox focus affordance is an outline, which the inert dimming below would otherwise fade
+    // to near-invisible at the exact moment focus needs it. A real keyboard Tab, not a
+    // programmatic `.focus()`: Chromium's `:focus-visible` heuristic tracks the page's last input
+    // modality, not a per-element state, so a `.focus()` call after an earlier test's real pointer
+    // click can read as not focus-visible even on a freshly rendered element; Tab is itself a
+    // keyboard interaction, which is what the CSS rule keys off.
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet(''),
+      rowCount: 0,
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    await userEvent.tab();
+    expect(document.activeElement).toBe(header);
+    expect(getComputedStyle(header).opacity).toBe('1');
+  });
+
+  it('marks the header checkbox inert with no rows and no selection to clear', async () => {
+    const screen = await render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet(''),
+      rowCount: 0,
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+    });
+    const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+    expect(header.getAttribute('aria-disabled')).toBe('true');
   });
 });

@@ -37,7 +37,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
   import type { VocabularyData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { VocabularyEntry } from '../index.js';
-  import { PageHeader } from '../admin-toolkit/index.js';
+  import { PageHeader, Tooltip } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The committed vocabulary, the per-value cross-branch usage count, and the unlisted seed set. */
@@ -290,31 +290,33 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
             {/if}
             {#if count > 0}
               <!-- GUARDED delete: aria-disabled, never native disabled, with a stateful name and
-                   title naming the count, so a keyboard/AT editor learns the tag is in use. -->
-              <button
-                type="button"
-                data-value={entry.value}
-                aria-disabled="true"
-                aria-label="Cannot remove {entry.label}. Used on {count} {count === 1
-                  ? 'entry'
-                  : 'entries'}. Remove it from those entries first."
-                title="Used on {count} {count === 1 ? 'entry' : 'entries'}. Remove it from those entries first."
-                onclick={() => remove(entry.value)}
-                class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-subtle opacity-50 sm:col-start-4 sm:row-span-1"
-              >
-                <Trash2Icon class="h-4 w-4" aria-hidden="true" />
-              </button>
+                   a Tooltip naming the count, so a keyboard/AT editor learns the tag is in use. -->
+              <Tooltip text="Used on {count} {count === 1 ? 'entry' : 'entries'}. Remove it from those entries first.">
+                <button
+                  type="button"
+                  data-value={entry.value}
+                  aria-disabled="true"
+                  aria-label="Cannot remove {entry.label}. Used on {count} {count === 1
+                    ? 'entry'
+                    : 'entries'}. Remove it from those entries first."
+                  onclick={() => remove(entry.value)}
+                  class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-subtle opacity-50 sm:col-start-4 sm:row-span-1"
+                >
+                  <Trash2Icon class="h-4 w-4" aria-hidden="true" />
+                </button>
+              </Tooltip>
             {:else}
-              <button
-                type="button"
-                data-value={entry.value}
-                aria-label="Remove {entry.label}"
-                title="Remove {entry.label}"
-                onclick={() => remove(entry.value)}
-                class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-error hover:bg-error/10 sm:col-start-4 sm:row-span-1"
-              >
-                <Trash2Icon class="h-4 w-4" aria-hidden="true" />
-              </button>
+              <Tooltip text="Remove {entry.label}">
+                <button
+                  type="button"
+                  data-value={entry.value}
+                  aria-label="Remove {entry.label}"
+                  onclick={() => remove(entry.value)}
+                  class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-error hover:bg-error/10 sm:col-start-4 sm:row-span-1"
+                >
+                  <Trash2Icon class="h-4 w-4" aria-hidden="true" />
+                </button>
+              </Tooltip>
             {/if}
           </div>
         {/each}

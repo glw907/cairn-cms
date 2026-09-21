@@ -1,28 +1,33 @@
-// cairn-cms: the packaged skill's always-loaded core (SKILL.md) carries a hard prose budget, not
+// cairn-cms: every packaged skill's always-loaded core (SKILL.md) carries a hard prose budget, not
 // an aspiration (spec section 7: "within a hard token budget in the low thousands," ratified at
 // 3,500 for Pass 3). Instruction-following decays well below the size of a full standard, so a
-// section that quietly grows the core past this ceiling defeats the tiered-loading design the
+// section that quietly grows a core past this ceiling defeats the tiered-loading design the
 // exemplars, craft chapter, and grader prompt exist to relieve. This estimates token count from
 // character length (~4 chars/token, the common rough approximation for English prose) rather than
 // pulling a tokenizer dependency into the packaged CLI for one counting check, and fails loud, by
 // how much and where the detail belongs (references/), above the ceiling.
 //
-// This also gates the SKILL.md "Tier map" section against the real rule registries
-// (src/lib/audit/rules/static/index.ts and rendered/index.ts): a retiered or renamed rule that
-// forgets the doc's own table is exactly the kind of drift no reader catches, since the table
-// reads as plausible prose either way.
-import { readFileSync } from 'node:fs';
+// This also gates `cairn-admin-screens`' SKILL.md "Tier map" section against the real rule
+// registries (src/lib/audit/rules/static/index.ts and rendered/index.ts): a retiered or renamed
+// rule that forgets the doc's own table is exactly the kind of drift no reader catches, since the
+// table reads as plausible prose either way. The tier map is that skill's own artifact, bound to
+// its registries, so no other packaged skill carries one.
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 
-/** The ratified ceiling for the skill's always-loaded core (spec section 7, Pass 3). */
+/** The ratified ceiling for each skill's always-loaded core (spec section 7, Pass 3). */
 export const SKILL_BUDGET_TOKENS = 3500;
 
 /** Characters per token, the rough estimator common tokenizer-size guidance uses for English prose. */
 const CHARS_PER_TOKEN = 4;
 
-const SKILL_PATH = 'skills/cairn-admin-screens/SKILL.md';
+/** The one packaged skill whose SKILL.md carries a "Tier map" section bound to the rule registries. */
+const ADMIN_SCREENS_PATH = 'skills/cairn-admin-screens/SKILL.md';
+
+/** Where the packaged dist build's static rule registry lands after `npm run package`. */
+const DIST_STATIC_RULES = 'dist/audit/rules/static/index.js';
 
 /**
  * Estimate a text's token count from its character length.
@@ -52,6 +57,56 @@ export function checkSkillBudget(text, budget = SKILL_BUDGET_TOKENS) {
   return { ok: true, tokens, budget };
 }
 
+/**
+ * Every packaged skill's `SKILL.md` path under a root, repo-relative and sorted, discovered from
+ * whatever directories `skills/` actually holds rather than a hard-coded list, so a new skill is
+ * budgeted the moment its directory lands.
+ * @param {string} root
+ * @returns {string[]}
+ */
+export function discoverSkillFiles(root) {
+  const skillsDir = resolve(root, 'skills');
+  if (!existsSync(skillsDir)) return [];
+  return readdirSync(skillsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `skills/${entry.name}/SKILL.md`)
+    .filter((path) => existsSync(resolve(root, path)))
+    .sort();
+}
+
+/**
+ * Run the budget check over every packaged skill's `SKILL.md` under a root.
+ * @param {string} root
+ * @returns {{ ok: boolean, results: Array<{ path: string } & ReturnType<typeof checkSkillBudget>> }}
+ */
+export function checkAllSkillBudgets(root) {
+  const results = discoverSkillFiles(root).map((path) => ({
+    path,
+    ...checkSkillBudget(readFileSync(resolve(root, path), 'utf8')),
+  }));
+  return { ok: results.every((r) => r.ok), results };
+}
+
+/**
+ * Whether a discovered skill path is the one skill whose tier map is checked against the rule
+ * registries.
+ * @param {string} skillPath
+ * @returns {boolean}
+ */
+export function shouldCheckTierMap(skillPath) {
+  return skillPath === ADMIN_SCREENS_PATH;
+}
+
+/**
+ * Whether the packaged dist build the tier map reads exists under a root, so the check can skip
+ * with a notice instead of failing when `npm run package` has not run yet.
+ * @param {string} root
+ * @returns {boolean}
+ */
+export function distRulesAvailable(root) {
+  return existsSync(resolve(root, DIST_STATIC_RULES));
+}
+
 /** @typedef {{ id: string, mode: 'static' | 'rendered', tier: 'error' | 'advisory' }} TierMapEntry */
 
 /**
@@ -60,6 +115,7 @@ export function checkSkillBudget(text, budget = SKILL_BUDGET_TOKENS) {
  */
 const TIER_MAP_SECTIONS = [
   { label: 'Static, error tier', mode: 'static', tier: 'error' },
+  { label: 'Static, advisory tier', mode: 'static', tier: 'advisory' },
   { label: 'Rendered, error tier', mode: 'rendered', tier: 'error' },
   { label: 'Rendered, advisory tier', mode: 'rendered', tier: 'advisory' },
 ];
@@ -162,15 +218,29 @@ async function actualTierMap(root) {
 
 async function main() {
   const root = repoRoot(import.meta.url);
-  const text = readFileSync(resolve(root, SKILL_PATH), 'utf8');
-  const result = checkSkillBudget(text);
-  if (!result.ok) {
-    console.error(`check-skill-budget: ${result.error}`);
+  const { ok, results } = checkAllSkillBudgets(root);
+  for (const result of results) {
+    if (result.ok) {
+      console.log(`check-skill-budget: ${result.path} OK (${result.tokens}/${result.budget} estimated tokens)`);
+    } else {
+      console.error(`check-skill-budget: ${result.path}: ${result.error}`);
+    }
+  }
+  if (!ok) {
     process.exitCode = 1;
     return;
   }
-  console.log(`check-skill-budget: OK (${result.tokens}/${result.budget} estimated tokens)`);
 
+  if (!results.some((r) => shouldCheckTierMap(r.path))) {
+    console.log('check-skill-budget: tier map skipped (cairn-admin-screens not packaged)');
+    return;
+  }
+  if (!distRulesAvailable(root)) {
+    console.log('check-skill-budget: tier map skipped (dist/ absent; run npm run package first)');
+    return;
+  }
+
+  const text = readFileSync(resolve(root, ADMIN_SCREENS_PATH), 'utf8');
   const tierMapResult = checkTierMap(parseTierMap(text), await actualTierMap(root));
   if (!tierMapResult.ok) {
     console.error(`check-skill-budget: ${tierMapResult.error}`);

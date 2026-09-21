@@ -104,9 +104,65 @@ jobs:
             const scaffoldFileNames = fs.readdirSync("/tmp/ci-site", { recursive: true }).map((entry) => path.basename(entry));
             assert.ok(!scaffoldFileNames.includes(stateFileName), "state record " + stateFileName + " landed inside the scaffold");
 
-            for (const leftover of ["e2e", "playwright.config.ts", ".claude", "src/routes/probe-craft"]) {
+            for (const leftover of ["e2e", "playwright.config.ts", "src/routes/probe-craft"]) {
               assert.ok(!fs.existsSync("/tmp/ci-site/" + leftover), leftover + " shipped into the scaffold");
             }
+
+            // The scaffold is born with the guidance tree baked in, so .claude is no longer a
+            // leftover to rule out; instead prove it holds exactly the installed guidance paths
+            // (every packaged skill directory, the review agent, and the CLAUDE.md fragment)
+            // plus the VERSION and MANIFEST stamps, and nothing an agent session would have left
+            // behind under agent-memory or worktrees.
+            const walkFiles = (root) => {
+              if (!fs.existsSync(root)) return [];
+              return fs
+                .readdirSync(root, { recursive: true, withFileTypes: true })
+                .filter((entry) => entry.isFile())
+                .map((entry) => {
+                  const parentPath = entry.parentPath ?? entry.path;
+                  return path.relative(root, path.join(parentPath, entry.name)).split(path.sep).join("/");
+                });
+            };
+
+            const guidanceRoot = "/tmp/ci-site/.claude";
+            const actualGuidanceFiles = new Set(walkFiles(guidanceRoot));
+
+            const expectedGuidanceFiles = new Set();
+            for (const skillDir of fs.readdirSync("skills", { withFileTypes: true })) {
+              if (!skillDir.isDirectory()) continue;
+              for (const relPath of walkFiles(path.join("skills", skillDir.name))) {
+                expectedGuidanceFiles.add("skills/" + skillDir.name + "/" + relPath);
+              }
+            }
+            for (const agentFile of fs.readdirSync("claude/agents")) {
+              expectedGuidanceFiles.add("agents/" + agentFile);
+            }
+            expectedGuidanceFiles.add("cairn/CLAUDE.md");
+            expectedGuidanceFiles.add("cairn/VERSION");
+            expectedGuidanceFiles.add("cairn/MANIFEST");
+
+            assert.deepEqual(
+              [...actualGuidanceFiles].sort(),
+              [...expectedGuidanceFiles].sort(),
+              ".claude does not hold exactly the installed guidance paths plus VERSION and MANIFEST",
+            );
+
+            assert.ok(
+              !fs.existsSync(guidanceRoot + "/agent-memory"),
+              ".claude/agent-memory must be absent from a scaffolded site",
+            );
+            assert.ok(
+              !fs.existsSync(guidanceRoot + "/worktrees"),
+              ".claude/worktrees must be absent from a scaffolded site",
+            );
+
+            const installedVersion = fs.readFileSync(guidanceRoot + "/cairn/VERSION", "utf8").trim();
+            const enginePkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            assert.equal(
+              installedVersion,
+              enginePkg.version,
+              "the installed guidance VERSION does not match the installed package version",
+            );
 
             // A path-based leftover check cannot catch a fixture whose file survives the exclude list
             // but leaks marker-stripped content, so walk every file the scaffold ships and fail on the
@@ -132,12 +188,18 @@ jobs:
 
             const scriptsEntries = fs.readdirSync("/tmp/ci-site/scripts");
             assert.deepEqual(scriptsEntries, ["dev.mjs"], "scripts/ must hold exactly the baked dev shim");
+
+            assert.ok(
+              fs.existsSync("/tmp/ci-site/.github/workflows/check.yml"),
+              "the scaffold must carry its own CI workflow at .github/workflows/check.yml",
+            );
           '
       - name: Install, typecheck, and build the scaffolded site
         working-directory: /tmp/ci-site
         run: |
           npm install
           npm run check
+          npm run check:cairn
           npm run build
           npm run format:check
           npm run test:unit

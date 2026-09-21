@@ -35,6 +35,7 @@ must never make, so no such count exists.
   } from './tidy-categorize.js';
   import type { TidyConventions } from '../nav/site-config.js';
   import { segmentTintClass } from './segmented-control.js';
+  import { Tooltip } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The validated change set, the unit the surface accepts and rejects. */
@@ -367,14 +368,15 @@ must never make, so no such count exists.
                 <EyeIcon class="size-3" aria-hidden="true" />Review this
               </span>
             {/if}
-            <button
-              type="button"
-              class="inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-1.5 font-mono type-label text-muted underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
-              title="Show this line in the editor"
-              onclick={() => showInText(h)}
-            >
-              <EyeIcon class="size-3" aria-hidden="true" />line {h.line}
-            </button>
+            <Tooltip text="Show this line in the editor">
+              <button
+                type="button"
+                class="inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-1.5 font-mono type-label text-muted underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
+                onclick={() => showInText(h)}
+              >
+                <EyeIcon class="size-3" aria-hidden="true" />line {h.line}
+              </button>
+            </Tooltip>
             <span class="flex-1"></span>
             <span class="inline-flex flex-none items-center overflow-hidden rounded-md border border-[var(--cairn-card-border)]" role="group" aria-label={actsLabel(h)}>
               <button

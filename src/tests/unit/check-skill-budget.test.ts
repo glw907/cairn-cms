@@ -1,12 +1,17 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { describe, it, expect, afterEach } from 'vitest';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import {
+  checkAllSkillBudgets,
   checkSkillBudget,
   checkTierMap,
+  discoverSkillFiles,
+  distRulesAvailable,
   estimateTokens,
   parseTierMap,
+  shouldCheckTierMap,
   SKILL_BUDGET_TOKENS
 } from '../../../scripts/checks/check-skill-budget.mjs';
 import { staticRules } from '../../lib/audit/rules/static/index.js';
@@ -52,6 +57,81 @@ describe('checkSkillBudget', () => {
     );
     const result = checkSkillBudget(text, SKILL_BUDGET_TOKENS);
     expect(result.ok).toBe(true);
+  });
+});
+
+// checkAllSkillBudgets glob-discovers every skills/*/SKILL.md under a root and budgets each one
+// whole; these fixtures prove the discovery and the per-skill failure both name the right file.
+describe('discoverSkillFiles and checkAllSkillBudgets', () => {
+  const tmpDirs: string[] = [];
+  afterEach(() => {
+    for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function fixtureRoot() {
+    const dir = mkdtempSync(join(tmpdir(), 'check-skill-budget-'));
+    tmpDirs.push(dir);
+    return dir;
+  }
+
+  function writeSkill(root: string, name: string, text: string) {
+    const skillDir = join(root, 'skills', name);
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(join(skillDir, 'SKILL.md'), text);
+  }
+
+  it('discovers one SKILL.md path per skill directory, sorted', () => {
+    const root = fixtureRoot();
+    writeSkill(root, 'zebra-skill', 'short');
+    writeSkill(root, 'alpha-skill', 'short');
+    expect(discoverSkillFiles(root)).toEqual([
+      'skills/alpha-skill/SKILL.md',
+      'skills/zebra-skill/SKILL.md'
+    ]);
+  });
+
+  it('fails naming a fixture skill whose SKILL.md is over budget', () => {
+    const root = fixtureRoot();
+    writeSkill(root, 'over-budget', 'x'.repeat((SKILL_BUDGET_TOKENS + 100) * 4));
+    writeSkill(root, 'under-budget', 'a short skill core');
+    const { ok, results } = checkAllSkillBudgets(root);
+    expect(ok).toBe(false);
+    const over = results.find((r) => r.path === 'skills/over-budget/SKILL.md');
+    expect(over?.ok).toBe(false);
+    const under = results.find((r) => r.path === 'skills/under-budget/SKILL.md');
+    expect(under?.ok).toBe(true);
+  });
+
+  it('a fixture skill with no tier map passes budget when it is not cairn-admin-screens', () => {
+    const root = fixtureRoot();
+    writeSkill(root, 'plain-skill', 'a short skill core with no tier map section at all');
+    const { ok } = checkAllSkillBudgets(root);
+    expect(ok).toBe(true);
+    expect(shouldCheckTierMap('skills/plain-skill/SKILL.md')).toBe(false);
+    expect(shouldCheckTierMap('skills/cairn-admin-screens/SKILL.md')).toBe(true);
+  });
+});
+
+// The tier map only runs after `npm run package`, since it imports the compiled dist rule
+// registries; distRulesAvailable is the pure predicate main() uses to print a notice and exit 0
+// instead, rather than failing a fresh checkout that has not packaged yet.
+describe('distRulesAvailable', () => {
+  const tmpDirs: string[] = [];
+  afterEach(() => {
+    for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('is false for a root with no dist/ build', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'check-skill-budget-dist-'));
+    tmpDirs.push(dir);
+    expect(distRulesAvailable(dir)).toBe(false);
+  });
+
+  // The unit suite must pass without a prior `npm run package`, following the same
+  // skip-until-built pattern as doctor-bin.test.ts's "packaged bin" suite, so this only runs
+  // (via skipIf) when a build has already produced the dist file.
+  it.skipIf(!distRulesAvailable(ROOT))('is true for the real repo root after npm run package', () => {
+    expect(distRulesAvailable(ROOT)).toBe(true);
   });
 });
 

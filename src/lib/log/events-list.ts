@@ -1,0 +1,101 @@
+// The runtime enumeration of every CairnLogEvent member, in the same order as the union's own
+// declaration. A consumer or an audit rule that must validate an event string against the
+// vocabulary reads this array rather than re-deriving it from the type, which has no runtime
+// form of its own.
+import type { CairnLogEvent } from './events.js';
+
+/**
+ * Every CairnLogEvent member. Frozen, since the array is public and a push would corrupt the
+ * vocabulary two gates parse by shape.
+ */
+export const CAIRN_LOG_EVENTS = Object.freeze([
+  'auth.link.requested',
+  'auth.link.refused',
+  'auth.link.send_failed',
+  'auth.token.minted',
+  'auth.token.rebound',
+  'auth.token.confirmed',
+  'auth.session.created',
+  'auth.session.destroyed',
+  'auth.session.destroy_failed',
+  'commit.succeeded',
+  'commit.failed',
+  'commit.reverted',
+  'config.invalid',
+  'config.access_unmapped',
+  'content.field_behavior_failed',
+  'content.field_unmarked',
+  'entry.published',
+  'entry.discarded',
+  'preview.token.minted',
+  'preview.token.revoked',
+  'preview.cleanup_failed',
+  'preview.refused',
+  'publish.failed',
+  'publish.address_collided',
+  'github.unreachable',
+  'guard.refused',
+  'media.uploaded',
+  'media.upload_failed',
+  'media.delivery_failed',
+  'media.orphans_reconciled',
+  'media.resolve_missing',
+  'media.resolver_absent',
+  'include.missing',
+  'include.read_failed',
+  'media.deleted',
+  'media.delete_refused',
+  'media.bulk_deleted',
+  'media.orphans_purged',
+  'media.replaced',
+  'media.replace_refused',
+  'media.alt_propagated',
+  'editor.added',
+  'editor.removed',
+  'editor.role_changed',
+  'editor.bootstrapped',
+  'auth.role.unknown',
+  'auth.identity.unknown',
+  'auth.access.refused',
+  'dictionary.added',
+  'dictionary.add_conflict',
+  'tidy.succeeded',
+  'tidy.failed',
+  'tidy.refused',
+  'tidy.empty',
+  'admin.action.audited',
+  'admin.action.unaudited',
+  'admin.action.session_absent',
+  'admin.action.csrf_refused',
+  'admin.action.failed',
+  'admin.action.rate_limit_absent',
+  'admin.action.rate_limit_failed',
+  'admin.action.rate_limited',
+  'admin.action.misconfigured',
+  'audit.sink.call_failed',
+  'turnstile.verify_failed',
+  'audit.sink.write_failed',
+  'auth.channel.requested',
+  'auth.channel.send_failed',
+  'auth.channel.delivery_inline',
+  'auth.channel.confirmed',
+  'auth.channel.locked',
+  'auth.channel.escalated',
+  'auth.channel.ceiling_exceeded',
+  'auth.channel.session.created',
+  'auth.channel.session.destroyed',
+  'auth.channel.salt_unavailable',
+  'auth.channel.rate_limited',
+  'auth.channel.rate_limit_absent',
+  'auth.channel.rate_limit_failed',
+] as const satisfies readonly CairnLogEvent[]);
+
+// A member on the union with no counterpart in the array fails here: CairnLogEvent would not
+// extend the array's own element type, so npm run check catches a union addition the array
+// missed, and the array's own `satisfies` clause above catches the opposite drift. The assertion
+// has to stay written out on the union itself, never routed through a generic helper: a
+// conditional type over a naked type parameter distributes across the union, so each member would
+// be tested on its own, every test would pass, and a missing member would go unnoticed.
+type AssertUnionCoveredByArray = CairnLogEvent extends (typeof CAIRN_LOG_EVENTS)[number] ? true : never;
+const assertUnionCoveredByArray: AssertUnionCoveredByArray = true;
+void assertUnionCoveredByArray;

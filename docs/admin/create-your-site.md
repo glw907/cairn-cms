@@ -66,7 +66,10 @@ The App will be able to write this site's content and manage the repository's se
 Saying yes creates a private GitHub repository for your content, and a GitHub App that exists
 only for this site. That App is what lets the tool, and your writers, publish to your repository
 without anyone needing a GitHub account of their own. That access, once granted, stays for as
-long as the App exists, since GitHub gives no way to walk it back later. The two browser trips are
+long as the App exists, since GitHub gives no way to walk it back later. Among the permissions the
+App holds is the ability to write GitHub Actions workflow files: your site carries a workflow that
+checks its own code on every push, and GitHub requires that permission for the tool to push it
+along with the rest of the scaffold. The two browser trips are
 separate: the first creates the App, the second installs it on your new repository and signs you
 in to GitHub. The tool opens each page for you and waits.
 

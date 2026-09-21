@@ -1,0 +1,9 @@
+{
+  "build:admin-css": "npx --no-install @tailwindcss/cli -i src/admin.css -o .cairn/admin.css",
+  "precheck": "npm run build:admin-css",
+  "prebuild": "npm run build:admin-css",
+  "predev": "npm run build:admin-css",
+  "dev:admin-css": "npx --no-install @tailwindcss/cli -i src/admin.css -o .cairn/admin.css --watch",
+  "check:cairn": "npm run build:admin-css && cairn-audit",
+  "check:cairn:rendered": "cairn-audit --rendered"
+}

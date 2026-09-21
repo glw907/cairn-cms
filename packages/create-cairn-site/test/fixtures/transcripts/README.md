@@ -149,6 +149,37 @@ No documentation block quotes these; `check:transcripts` treats this list as the
 - `02-doctor-bare.txt`, kept as the counterpart environment to the credentialed report the
   admin page does quote.
 
+## Staleness note (2026-09-19)
+
+The scaffold gained `.github/workflows/check.yml` and a baked `npm run check:cairn` script
+after this capture ran, so a fresh run today would show a step these transcripts do not: the
+tool's own printed hand-over now names the workflow and the `check:cairn` script. Re-capturing
+needs a live GitHub App and repository creation, a harness outside this repo, so these fixtures
+stay as recorded rather than being hand-edited to add a step never captured. `check:transcripts`
+compares the docs pages' quoted blocks against these fixtures, not against the current
+scaffold's behavior, so it stays green either way.
+
+## Staleness note (2026-09-20)
+
+The doctor retired the `skill.admin-screens` check and its `--fix` flag; the skill install now
+lives in `cairn-guidance`. `03-doctor-credentialed.txt` still carries the retired check's `SKIP`
+line and folds it into the run's total, since this fixture predates the retirement and a fixture
+is never edited. `docs/admin/is-it-working.md` elides that one line from its quoted block with a
+`[...]` marker and says so in its own prose; the total after the block stays the fixture's own
+number. `check:transcripts` compares the quoted block against this fixture, not against the
+current doctor's check count, so it stays green either way.
+
+## Staleness note (2026-09-20, guidance bake)
+
+The scaffold now ships `.claude/` guidance baked in at create time (every packaged skill, the
+review agent, and `.claude/cairn/CLAUDE.md`/`VERSION`/`MANIFEST`), and its own
+`.github/workflows/check.yml` gained a third step, `npx cairn-guidance check` under
+`continue-on-error`. `01-create-cairn-site.txt`'s hand-over text predates both and shows
+neither the guidance sentence nor the workflow's third step. Re-capturing needs a live GitHub
+App and repository creation, a harness outside this repo, so this fixture stays as recorded.
+`check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against
+the current scaffold's behavior, so it stays green either way.
+
 ## Identifiers
 
 Kept verbatim by ruling. The worker, both databases, the bucket, the App, and the repository

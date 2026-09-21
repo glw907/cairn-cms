@@ -51,9 +51,15 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [Vite (`/vite`)](./vite.md): the `cairnManifest()` build plugin.
 - [Ambient types (`/ambient`)](./ambient.md): the `App.Locals` augmentation for a site's `app.d.ts`, naming `cairnEditor`, `cairnBackend`, `cairnAuditSink`, `cairnAccess`, and `cairnIdentity`.
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.
+- [The `cairn-guidance` CLI](./guidance.md): installs and checks the package's shipped skills, review agent, and `CLAUDE.md` fragment in a consumer repo.
 - [The `cairn-doctor` CLI](./doctor.md): the setup preflight that checks a site's local config, Cloudflare account, and GitHub App.
 - [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.
 - [The `cairn-audit` CLI](./cairn-audit.md): the design-language audit, and the norms query that answers a measured norm from the shipped manifest.
+- [Log (`/log`)](./log.md): `createLogger`, `CAIRN_LOG_EVENTS`, and `REDACTED_LOG_KEYS`, for a
+  site that wants its own structured logs in the engine's own record shape.
+- [Admin sources (`/admin-sources.css`)](./cairn-audit.md#configuration): the engine-owned
+  Tailwind `@source` manifest a site's `src/admin.css` imports instead of naming the engine's
+  `dist` layout directly.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.
 - [Supported toolchain](./supported-toolchain.md): a gated target-stack table naming the
   SvelteKit, Svelte, TypeScript, and Node versions the package promises against and the
@@ -83,8 +89,9 @@ pages back to the underlying contract rather than a page that repeats it.
 
 ## Pages that document no subpath
 
-Eight of the preceding pages are not export-keyed, since they document a CLI command or an
-internal contract rather than a package subpath: the four CLI pages (`cairn-manifest`,
-`cairn-doctor`, `cairn-media-seed`, `cairn-audit`), [the canonical admin mount](./admin-routes.md),
-[log events](./log-events.md), [admin grammar tokens](./admin-grammar-tokens.md), and
+Nine of the preceding pages are not export-keyed, since they document a CLI command or an
+internal contract rather than a package subpath: the five CLI pages (`cairn-manifest`,
+`cairn-guidance`, `cairn-doctor`, `cairn-media-seed`, `cairn-audit`),
+[the canonical admin mount](./admin-routes.md), [log events](./log-events.md),
+[admin grammar tokens](./admin-grammar-tokens.md), and
 [supported toolchain](./supported-toolchain.md).

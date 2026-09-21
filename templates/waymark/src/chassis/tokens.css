@@ -47,6 +47,7 @@
 @import "tailwindcss";
 @import "./prose.css";
 @import "./composition.css";
+@source not "./.claude";
 
 @plugin "daisyui" {
   themes: false;

@@ -7,6 +7,8 @@ that selection either way. Built on a native <dialog>, following the LinkPicker 
 and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
 -->
 <script lang="ts">
+  import { Tooltip } from '../admin-toolkit/index.js';
+
   interface Props {
     /** Insert an inline link at the editor cursor; the editor's EditorApi.insertLink seam. */
     insert: (href: string, title: string) => void;
@@ -49,17 +51,18 @@ and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
 </script>
 
 {#if trigger}
-  <button
-    type="button"
-    class="btn btn-sm btn-ghost"
-    aria-haspopup="dialog"
-    aria-label="Web link (Ctrl+K)"
-    title="Web link (Ctrl+K)"
-    {disabled}
-    onclick={open}
-  >
-    Web link
-  </button>
+  <Tooltip text="Web link (Ctrl+K)">
+    <button
+      type="button"
+      class="btn btn-sm btn-ghost"
+      aria-haspopup="dialog"
+      aria-label="Web link (Ctrl+K)"
+      {disabled}
+      onclick={open}
+    >
+      Web link
+    </button>
+  </Tooltip>
 {/if}
 
 <dialog class="modal" aria-labelledby="cairn-web-link-dialog-title" bind:this={dialog}>

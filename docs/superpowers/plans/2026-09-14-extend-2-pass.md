@@ -97,7 +97,9 @@ write; site adoption.
 
 ## Token ceiling
 
-**5.4M.**
+**6.5M** (raised from 5.4M by Geoff, 2026-09-20, mid-execution, after the first run measured
+1.87M over four tasks; the raise buys the same ten tasks and the ritual, no added scope. The 80
+percent flag moves to 5.2M. The table below is the authoring forecast, kept as the record.)
 
 | Line item | Basis | Tokens |
 |---|---|---|
@@ -113,7 +115,7 @@ combined question. **Checkpoint interval:** every four tasks; written when the r
 
 | Chain | Tasks, in order | Worktree | Branch |
 |---|---|---|---|
-| A | 1a, 1b, 2, 3a, 3b, 4 | `.claude/worktrees/extend-2` | `extend-2` |
+| A | 1a, 1b, 2, 3a, 3b, 3c, 4 | `.claude/worktrees/extend-2` | `extend-2` |
 | B | 5, 6, 7 | `.claude/worktrees/extend-2-skills` | `extend-2-skills` |
 
 `extend-2` merges; `extend-2-skills` merges into it at the ritual. Chain B touches
@@ -482,9 +484,66 @@ scaffold transcript re-capture as a stretch item.
 
 ---
 
+## Task 3c: The engine-owned Tailwind sources file
+
+**Chain:** A, sixth. **Depends on:** task 3b. Written at dispatch (2026-09-20) from the 2026-09-19
+amendment above, which is the authority; this section adds no scope to it.
+
+**Deliverables: three.** The shipped CSS file on a public subpath; the showcase, the template, and
+the bake switched to the import; the reference sentence, the facts bullet, and the changelog line.
+
+**Files:** located at dispatch by text, since extend-1 wrote them.
+- Create: the sources file under `src/lib/` (name and subpath per the amendment's example,
+  `@glw907/cairn-cms/admin-sources.css`, unless the package's existing CSS exports set a different
+  naming precedent; the report states which), its packaging or unit test.
+- Modify: `package.json` (`exports`, and `files` if the build does not already carry it),
+  every `src/admin.css` that carries `@source "../node_modules/@glw907/cairn-cms/dist";` (the
+  showcase, the template, the bake's written form, `claude/snippets/*` if task 2 copied the line),
+  `templates/waymark/**` (regenerated), the reference page that documents the admin stylesheet
+  seam (one sentence for the file, carrying the seam's ordering fact from extend-1's task 7
+  record), `docs/internal/facts/extend.md` (one bullet), `CHANGELOG.md`.
+
+**Interfaces:**
+- Produces: a CSS file whose body is only the `@source` lines for the engine's shipped admin
+  markup, resolved relative to the file itself, importable by a site as one line. The five-line
+  seam form stays five lines.
+- No site file names the engine's `dist` layout after this task.
+
+**Decisions the plan makes:**
+- Global constraint 4 yields here alone: when `check:surface` reports the new subpath as drift,
+  run `npm run check:surface -- --update` and commit the regenerated snapshot in this task.
+- The extend-1 seam is unpublished, so the changelog line reads "No consumer action."
+- **Conductor ruling at the 3c escalate (2026-09-20):** the acceptance grep and the "no site file
+  names the engine's `dist` layout" line bind the `@source` line in each `src/admin.css` only.
+  The `sheet` entry in `cairn-audit.config.json` names the precompiled admin sheet under
+  `dist/components/`, a different artifact; relocating it is packaging scope the amendment did
+  not grant, and it is filed as a follow-up at the close. The `admin-visual` pin's gate is
+  accepted for the task; the ritual's FULL gate covers the remainder.
+
+**Steps:**
+- [ ] **Step 1: the failing test first.** The packed tarball carries the file at the exported
+  subpath; its `@source` paths resolve to existing directories from the file's own location; no
+  tracked `admin.css` names `cairn-cms/dist`.
+- [ ] **Step 2:** the file, the export, the three switches; `npm run emit:template`.
+- [ ] **Step 3:** the reference sentence, the facts bullet, the changelog. The gate. Commit.
+
+**Acceptance criteria:**
+- `grep -rn 'cairn-cms/dist' examples/showcase/src packages/create-cairn-site/template templates/waymark claude`
+  returns nothing.
+- `check:package`, `check:surface`, `check:template`, `check:facts`, and the showcase's
+  `check:cairn` green; the admin-visual suite unchanged
+  (`npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`), since the compiled
+  admin sheet must be byte-equivalent in effect.
+- The gate string exits 0.
+
+**Gate:** ADMIN-VISUAL (the one task in this pass whose failure mode is paint). **Commit:** one,
+`feat(admin): ship the engine-owned Tailwind sources file`.
+
+---
+
 ## Task 4: Docs, the ledger, the roadmap (chain A, last)
 
-**Chain:** A, sixth.
+**Chain:** A, seventh.
 
 **Deliverables: four.** The upgrade page's new step; the ledger Note and row; the ROADMAP closes;
 the migration note, the changelog window, and the record.
@@ -696,5 +755,52 @@ and 3b), `design.yml`, `norms.yml`, `tsgo.yml`, `publish.yml`.
 
 ## Post-mortem
 
-Written at the close: tokens against 5.4M, the two attended-time counts, what the gate caught, and
-what a later pass would be wrong to rediscover.
+**Tokens.** The authoring ceiling was 5.4M; Geoff raised it to 6.5M mid-execution on 2026-09-20,
+after the first workflow run measured 1.87M over four tasks. Total subagent spend came to about
+5.8M: workflow run 1, 1.87M over four tasks; workflow run 2, 2.18M over six tasks; direct
+dispatches and the close, about 1.75M (the conductor's own turns are uncounted in all three
+figures). The forecast of 500K per task held inside the two workflow runs, about 405K per task
+measured. The overrun sat entirely in the close: the plan sized it at 0.4M, and it cost about
+four times that, because the two pass-end reviewers (the blocking security read and the prose
+read) each returned a fold's worth of real findings rather than a clean pass.
+
+**Attended time.** Planning misses, four: the 2026-09-19 amendment added Task 3c's scope but was
+never written as its own task section, so 3c was authored at dispatch rather than at plan time;
+the plan predated `gate-tier.mjs` and carried a fixed CHECK-PLUS-UNIT string the classifier later
+superseded; the plan specified fragment content (exemplar paths, relative doc links, a `cairn
+docs <query>` line) that turned out untrue from a consumer checkout, caught only at the prose
+read; and 3c's "no site file names the engine's `dist` layout" acceptance criterion read broader
+than the amendment's actual deliverable, resolved by the conductor's escalate ruling. Execution
+sittings, one: the ceiling raise from 5.4M to 6.5M, which was Geoff's own initiative mid-run, not
+a question put to him.
+
+**What the gate caught.** The blocking security read found `cairn-guidance install`'s
+containment was lexical only, so a symlinked `.claude` or `.claude/skills` directory redirected
+the install outside its intended boundary, and a dangling `X.orig` symlink took attacker-chosen
+bytes to an arbitrary path; fixed in `9aa7765a` (realpath of the working directory, a
+component-by-component `lstat` walk, `O_NOFOLLOW` and `O_EXCL` opens, refuse rather than repair),
+re-read, pass. The prose read found the shipped guidance told a consumer's agent things untrue
+from a site checkout: exemplar paths under `examples/` and `docs/internal/` that do not ship, a
+claim that install wires a site's own gates, an instruction to edit a file the install
+overwrites, a `cairn docs <query>` command that has not shipped, and relative doc links that
+break once installed.
+
+**What a later pass would be wrong to rediscover.** Shipped guidance names engine docs as
+`node_modules/@glw907/cairn-cms/docs/...` paths from the site root, never relative links, because
+the same file is read at two locations, the tarball and the installed `.claude/`. The template's
+gitignore is derived from `examples/showcase/.gitignore` by the bake's rename, so a template-only
+ignore line is impossible without a bake change. `cairn-guidance check` decides staleness by tree
+hash, never by `VERSION`, so a caret-resolved newer patch does not read as stale. `check-surface.mjs`
+snapshots only exports carrying a `types` field, so a CSS subpath export is not surface drift.
+`gate-tier.mjs` computes `full` for any `package.json` touch, and the local full e2e run is green
+when its only failures are the 20 site-visual baseline files from `4de378ec`. The
+`pass-execute-chains.js` runner hands the reviewer the plan's gate string for a pinned task, so a
+pin reads as a gate MISMATCH that is a harness artifact, not a real one. Both transcript
+re-captures this pass would have needed took the dated staleness-note fallback. The fragment's
+`cairn docs` line returns when the Go tool ships that subcommand, and Blueprint stays as the
+ruled paid option.
+
+**Process note.** The workflow halts a chain on any non-accept verdict, and both halts this pass
+(1a, 3c) were comment-only or criterion rulings rather than real defects, so a conductor-ruled
+direct dispatch plus a relaunch was the right cost each time; a third workflow run for the last
+remaining task was not worth its own probe overhead.

@@ -39,7 +39,8 @@ that changed the design's shape, with the lens that forced each:
    Revision 1's entry activated the DaisyUI plugin, which re-emits complete component definitions
    into a higher layer than the engine's own overrides, so one `.btn` on a custom screen would
    restyle every engine screen. And a Vite-compiled entry has no stable path for the audit to
-   name. The shape below is the engine's own proven four-line entry plus a standalone compile.
+   name. The shape below is the engine's own proven five-line entry plus a standalone compile
+   (the *Amended 2026-09-16* note below this section names the fifth line and why).
 6. **The package writes only files it created and stamped** (charter 5, mechanics 15, risk 4).
    The install refreshes the guidance tree, keeping a `.orig` beside anything it overwrites that
    differs. The `check:cairn` script, the audit config, the CI workflow, and the `CLAUDE.md`
@@ -282,6 +283,20 @@ engine's own proven form (`scripts/build/admin-css.input.css`):
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @source "./routes/admin";
+```
+
+*Amended 2026-09-16:* the four-line form above is incomplete. Both sheets place their utilities
+in the same `utilities` cascade layer at the same zero-added specificity, so within one layer only
+source order decides a collision, and Tailwind always emits a base utility before its own
+responsive variant. The site sheet loads after the engine sheet, so any base utility the site
+sheet also compiles (`.hidden`, `.flex-col`, and the rest of the classes the admin routes' own
+markup writes) lands after every engine `sm:` variant and defeats it. The fix is a fifth line, a
+`@source` scan of the engine's own dist markup, so the site sheet becomes a superset of the
+engine's utility set in Tailwind's own emission order and every shared base utility again
+precedes its own variant:
+
+```css
+@source "../node_modules/@glw907/cairn-cms/dist";
 ```
 
 It emits only the utilities the site's admin routes use, with no preflight, no base, no theme

@@ -2,10 +2,12 @@ node_modules
 .svelte-kit
 build
 .wrangler
+/.cairn/
 .dev.vars
 .dev.vars.*
 *.pem
 *.b64
 test-results
 playwright-report
+.claude/agent-memory/
 !.dev.vars.example

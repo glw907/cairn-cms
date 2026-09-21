@@ -161,7 +161,7 @@ describe('EditorToolbar', () => {
 
     it('stays enabled in Preview, unlike the formatting controls beside it', async () => {
       const screen = await render(EditorToolbar, baseProps({ mode: 'preview' }));
-      const help = screen.container.querySelector<HTMLButtonElement>('button[title="Markdown help"]')!;
+      const help = screen.getByRole('button', { name: 'Markdown help', exact: true }).element() as HTMLButtonElement;
       expect(help.disabled).toBe(false);
     });
 
@@ -308,10 +308,12 @@ describe('EditorToolbar', () => {
     const trigger = inPreview.container.querySelector('[popovertarget="cairn-preview-device-menu"]')!;
     // ARIA required children: the tablist holds only the two tabs, and the trigger reads as the
     // capsule's third segment from the flex row right after the tablist wrapper, never inside it.
+    // The Tooltip primitive wraps the trigger in its own span, so the sibling check lands on that
+    // wrapper rather than the button directly.
     const tablist = inPreview.container.querySelector('[role="tablist"]')!;
     expect(Array.from(tablist.children).every((el) => el.getAttribute('role') === 'tab')).toBe(true);
     expect(tablist.contains(trigger)).toBe(false);
-    expect(tablist.nextElementSibling).toBe(trigger);
+    expect(tablist.nextElementSibling?.contains(trigger)).toBe(true);
     expect(trigger.textContent ?? '').toContain('Desktop');
   });
 

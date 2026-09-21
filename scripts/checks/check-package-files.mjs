@@ -77,7 +77,7 @@ const DOCS_INDEX_PATHS = [
 // The published docs allowlist. A registry consumer's site build reads the published arms only,
 // so any other docs/ path (the write-only planning trees, the rolling status file, or a future
 // tree nobody has named yet) fails by construction instead of by an ever-growing denylist.
-const DOCS_ALLOWED_ARM_PREFIXES = [
+export const DOCS_ALLOWED_ARM_PREFIXES = [
   'docs/reference/',
   'docs/admin/',
   'docs/editors/',
@@ -86,7 +86,7 @@ const DOCS_ALLOWED_ARM_PREFIXES = [
 
 // The docs/ paths that ship as bare files rather than inside an allowed arm. Both are front doors:
 // the index every track routes from, and the evaluator's page it links first.
-const DOCS_ROOT_FILES = ['docs/README.md', 'docs/why-cairn.md'];
+export const DOCS_ROOT_FILES = ['docs/README.md', 'docs/why-cairn.md'];
 
 /**
  * Check a packed file list for the published docs arms, present, and every other docs/ path,
@@ -119,7 +119,7 @@ export function checkDocsPacked(filePaths) {
 }
 
 // The packaged skill's always-loaded core. Its presence in the tarball is the floor: without it,
-// `cairn-doctor --fix` would install nothing into a consumer's `.claude/skills/`.
+// `cairn-guidance install` would install nothing into a consumer's `.claude/skills/`.
 const SKILL_ENTRY_PATH = 'skills/cairn-admin-screens/SKILL.md';
 
 /**
@@ -131,7 +131,32 @@ export function checkSkillPacked(filePaths) {
   if (!filePaths.includes(SKILL_ENTRY_PATH)) {
     return {
       ok: false,
-      error: `the packed tarball is missing ${SKILL_ENTRY_PATH}; add "skills" to package.json "files" so cairn-doctor can install the packaged skill`
+      error: `the packed tarball is missing ${SKILL_ENTRY_PATH}; add "skills" to package.json "files" so cairn-guidance can install the packaged skill`
+    };
+  }
+  return { ok: true };
+}
+
+// The claude/ tree cairn-guidance installs into a consumer's .claude/: the CLAUDE.md fragment,
+// the read-only review agent, and at least one gate-wiring snippet. Without these in the
+// tarball, `cairn-guidance install` would write an empty fragment and no agent.
+const CLAUDE_TREE_ENTRY_PATHS = [
+  'claude/CLAUDE.md',
+  'claude/agents/cairn-extension-reviewer.md',
+  'claude/snippets/check-cairn.json'
+];
+
+/**
+ * Check a packed file list for the packaged `claude/` tree's floor entries.
+ * @param {string[]} filePaths the paths npm would include in the tarball
+ * @returns {{ ok: true } | { ok: false, error: string }}
+ */
+export function checkClaudeTreePacked(filePaths) {
+  const missing = CLAUDE_TREE_ENTRY_PATHS.filter((path) => !filePaths.includes(path));
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      error: `the packed tarball is missing ${missing.join(', ')}; add "claude" to package.json "files" so cairn-guidance can install the fragment, the review agent, and its snippets`
     };
   }
   return { ok: true };
@@ -407,6 +432,13 @@ function main() {
   const skillResult = checkSkillPacked(files);
   if (!skillResult.ok) {
     console.error(`check-package-files: ${skillResult.error}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const claudeTreeResult = checkClaudeTreePacked(files);
+  if (!claudeTreeResult.ok) {
+    console.error(`check-package-files: ${claudeTreeResult.error}`);
     process.exitCode = 1;
     return;
   }

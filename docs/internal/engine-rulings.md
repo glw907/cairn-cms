@@ -4958,6 +4958,53 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: a process/tooling proposal, not an exported symbol; closing declines the proposed doctor check. No code shape to record. shape-needs-rederivation.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Note (extend-2, Task 4):** the 2026-08-30 close named this ruling a process/tooling proposal
+  with no code shape, but `skill.admin-screens`, `skill.admin-screens-stale`, and
+  `cairn-doctor --fix` stayed live in the doctor until this pass, whose Task 1b deletes them, so the
+  "executed" claim above predates the code by three weeks; this Note reconciles the gap now that
+  the deletion is real. The retirement carried each of the three named grounds to its actual
+  disposition rather than a bare removal. The deploy-blocker ground is answered by moving the
+  install out of the doctor entirely: `cairn-guidance` is its own bin, `check` never fails by
+  default, and `check --strict` is the gate for a site that wants one, so a skill install no longer
+  rides inside a check a consumer reads as a deploy probe. The one-harness ground stands unchanged:
+  the guidance layer still assumes Claude Code's `.claude/skills/` and `.claude/agents/`
+  convention, since that assumption is the premise of shipping agent-facing guidance at all, not a
+  doctor defect to fix. The leaked-utility-class ground is now a documented, checked item rather
+  than an undocumented risk: `cairn-guidance check`'s sixth line reports whether `.claude/` is
+  excluded from the site's own Tailwind build, naming the `@source not "./.claude";` line a site
+  still adds by hand.
+
+## guidance-layer: the `cairn-guidance` bin, the packaged `claude/` tree, and the trust boundary that gates it  (accept, 2026-09-20, extend-2)
+
+- **Verdict:** accept. The relocated skill install (`audit-cli-skill-admin-screens-check-and-cairn-doctor-fix`,
+  retired above) reappears as its own bin rather than a doctor check, per the spec's Layer 3: "the
+  doctor's `check-skill.ts` and `--fix` relocated, since the doctor is retiring in favor of the Go
+  `cairn` tool and a skill install was never a deployment probe." `install` copies every packaged
+  skill directory, the read-only `cairn-extension-reviewer` agent, and the `CLAUDE.md` fragment
+  into `.claude/`, writing `<dest>.orig` beside a diverged destination (never clobbering an
+  existing one) and a `MANIFEST` naming every path it wrote; a later install names a path the
+  package stopped shipping as removable rather than deleting it. `check` reports seven lines and
+  exits 0 by default; `--strict` exits 1 when the guidance tree itself is stale or missing. A
+  scaffolded site is born with the tree baked in; an existing site adopts through `install`. The
+  trust boundary is stated, not claimed, per the spec: "shipping agent markdown adds no capability
+  a compromised release does not already have," and two rules hold the line, `cairn-guidance` never
+  writes `.claude/settings.json`, and the shipped agent carries `tools: Read, Grep, Glob` with no
+  `Bash` and no model pin, so installing the guidance is the one act of consent and deleting
+  `.claude/skills/cairn-*`, `.claude/agents/cairn-extension-reviewer.md`, and `.claude/cairn/` is
+  the one act that revokes it.
+- **Reopens on:** the `@`-import syntax `CLAUDE.md` uses to pull in the fragment is another
+  vendor's grammar; a change to Claude Code's own import documentation reopens the fragment's
+  install shape, watched by a scheduled routine per this repo's watch-item rule.
+- **Shape:** `src/lib/guidance/bin.ts`, `check.ts`, `install.ts`; the packaged `claude/` directory
+  (`CLAUDE.md`, `agents/cairn-extension-reviewer.md`, `snippets/*`); the scaffold's bake writing
+  the tree, `VERSION`, and `MANIFEST` at prepack.
+- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, "Layer 3: guidance" and "Trust
+  boundary."
+- **Verified:** `src/tests/unit/guidance/bin.test.ts`, `check.test.ts`, `install.test.ts`;
+  `src/tests/unit/packaging-guidance.test.ts` (the tarball ships the packaged tree byte-identical
+  to its in-repo source); `packages/create-cairn-site/scripts/bake-template.test.mjs` and
+  `src/scaffold.test.mjs` (a scaffolded site is born with the tree, `VERSION`, and `MANIFEST`
+  already written).
 
 ## audit-cli-edge-https-forced-and-edge-hsts: `edge.https-forced and edge.hsts`  (reshape, 2026-08-26, any-site audit)
 
@@ -5326,6 +5373,25 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** Two evenness defects on the item every consumer touches. (a) `vite/bin.ts:10` used `process.exit(1)` where its three siblings deliberately do not (`doctor/bin.ts:5-7`: "The codes go through `process.exitCode`, never `process.exit`, so a piped stdout flushes the whole report before the process ends", the same note verbatim in `audit/bin.ts` and `media-seed/bin.ts`); a truncated stderr message in a piping CI job left a consumer with a red build and no reason. (b) It read no argv at all, so `--help`, `--verbose`, and `--typo` were all silently accepted and ignored, where the siblings reject unknown flags with a usage line; rides with rank 11's `--help` shape.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 50.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+
+## audit-rule-advisory-first-tier: a new consumer-facing audit rule and finding enters at advisory tier for one minor  (accept, 2026-09-19, extend-1)
+
+- **Verdict:** accept. Ratified as the standing rule for every new `cairn-audit` static or
+  rendered rule reaching a consumer's own tree: it registers at `advisory` tier for one minor and
+  its message names the promotion version, so a consumer upgrading across that minor sees the
+  finding printed before it can fail their build, and gets one release to act on it. The class
+  it retires (`stock-default-hazards`'s `cairn-btn-guarded` arm) is the same shape read backward:
+  advisory until the promotion, error after, the class itself compiled until a later release
+  removes it. `log-event-grammar`, `log-secret-field`, and `stock-default-hazards`'s new arm each
+  carry this window's promotion version, `0.98.0`, in their own message text.
+- **Reopens on:** a consumer-facing rule shipping straight at error tier with no advisory window,
+  or a promotion version landing without every advisory message it promotes being updated in the
+  same release.
+- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, the ruled inputs this plan's
+  "Ruled inputs" section carries forward; `src/lib/audit/rules/static/log-event-grammar.ts`,
+  `log-secret-field.ts`, and `stock-default-hazards.ts`.
+- **Verified:** each rule's own test fixture asserts the `advisory` tier and the literal
+  `0.98.0` string in the finding message.
 
 ## check-self-use: `check:self-use`, the standing self-use gate for R-0's second direction  (accept, 2026-09-02, internals pass)
 
@@ -5935,3 +6001,161 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verified:** the two `.drawer-side` entries in `custom-surface-budget.json` are the
   pre-existing `.lg\:drawer-open` and `.xl\:drawer-open` persistent-sidebar rules; neither
   suppresses the vendor drawer transition, so no breakpoint-flip scoping rule ships.
+
+## log-export: a public `/log` subpath, `createLogger`, `CAIRN_LOG_EVENTS`, `REDACTED_LOG_KEYS`  (accept, 2026-09-19, extend-1)
+
+- **Verdict:** accept. `createLogger` is the engine's own logger's generic factory, so a
+  consumer builds a structured logger over its own event union in the same shape cairn's is
+  built in, rather than a bespoke console wrapper: three methods, an envelope carrying `level`,
+  `event`, and `timestamp` last, and whole-key redaction against `REDACTED_LOG_KEYS`. `emit.ts`
+  now imports `createLogger` from the new module, so `check:self-use` counts a real in-engine
+  caller rather than an allowlist entry standing in for one, which is the `read-from-the-source-rule`
+  applied to the engine's own internal logger.
+- **Reopens on:** closed. `events.ts`'s union stays the one source of truth two gates parse by
+  shape; a member added to the union or the runtime array without the other fails `npm run
+  check`, so this row does not reopen on drift between them.
+- **Shape:** `src/lib/log/create.ts` (`createLogger`, the redaction, `REDACTED_LOG_KEYS`),
+  `src/lib/log/events-list.ts` (`CAIRN_LOG_EVENTS`), `src/lib/log/public.ts` (the subpath
+  barrel); `log` itself, the sink, and every documented event field stay internal.
+- **Record:** `docs/reference/log.md`; `src/tests/unit/log/create.test.ts`.
+- **Verified:** the redaction test asserts a whole-key, case-insensitive match against every
+  `REDACTED_LOG_KEYS` member and that `tokens`, `tokenLength`, and `hasSession` survive unchanged;
+  the type-level assertion that `CairnLogEvent` extends the runtime array's element type.
+
+## tooltip-primitive: `Tooltip` in `/admin-toolkit`, replacing native `title` on an action control  (accept, 2026-09-19, extend-1)
+
+- **Verdict:** accept, on ASC's evidence: native `title` on action controls across ten admin
+  route files in a production site's own admin, never shown on keyboard focus or a touch tap. Those
+  two are the real failures; `title` itself is exempt from WCAG 1.4.13 (Content on Hover or Focus),
+  which excludes user-agent presentation an author does not control. Authoring the bubble is what
+  brings all three of 1.4.13's bullets into scope, and all three are now the component's own:
+  dismissible (a `document`-level Escape listener, non-capturing and propagating, so an enclosing
+  dialog still closes on the same press), hoverable (the bubble takes pointer events and a
+  `::before` hit area bridges the gap to the trigger), and persistent (nothing hides it on a
+  timer). `Tooltip` wraps the given trigger unchanged, shows on hover
+  and `:focus-visible`, hides on Escape without moving focus off the trigger, and shows on a
+  coarse-pointer tap and hides on the next tap outside; its styles are scoped in the component
+  with literal fallbacks, per `StatusChip.svelte`'s own precedent. Every native `title` on an
+  engine action control now routes through it. `cairn-btn-guarded` stays compiled and stays on
+  its four sites; its rule restores `pointer-events` on an `aria-disabled` control and supplies
+  the ghost button's resting fill, which `Tooltip` does not replace, so `stock-default-hazards`
+  names the class retired at advisory tier rather than removing it.
+- **Why not DaisyUI's own `.tooltip`:** two reasons, verified against
+  `node_modules/daisyui/components/tooltip.css`, each independent. Its content, whether painted
+  through the `data-tip` pseudo-element or rendered in the real `.tooltip-content` child element,
+  carries `pointer-events: none`, so a pointer travelling from the trigger into the bubble to read
+  it dismisses it instead, failing WCAG 1.4.13's hoverable bullet. And its visibility is driven
+  only by `:hover` and `:has(:focus-visible)` (plus the manual `.tooltip-open` class), with no key
+  or timeout that dismisses an open bubble, failing the dismissible bullet outright. Its own touch
+  defect is already filed: a long press opens the bubble and strands it (row
+  `motion-tooltip-menu-hover-guards-dropped`).
+- **Reopens on:** a later pass removing `cairn-btn-guarded` from the sheet (its own budget edit),
+  or the placement mechanism (a popover anchored by CSS anchor positioning, with the trigger's
+  own anchor name appended rather than replaced when a trigger already anchors its own popover
+  menu) failing to hold across a DaisyUI major.
+- **Shape:** `src/lib/admin-toolkit/Tooltip.svelte`; the sweep across
+  `src/lib/components/*.svelte`, re-grepped and swept at dispatch rather than trusting the
+  authoring-time count; `stock-default-hazards`'s new advisory arm naming the retired class.
+- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, "Batch actions on `AdminTable`
+  is engine work riding along, not an atom" (the paragraph carrying ASC's evidence);
+  `docs/internal/admin-design-system.md`, the tooltip recipe.
+- **Verified:** `src/tests/component/Tooltip.test.ts` (hover, `:focus-visible`, Escape, coarse
+  pointer, `aria-describedby`); `stock-default-hazards`'s own fixture for the new arm.
+
+## status-chip-title-legend: keeping `title={legend}` on `StatusChip`  (accept, 2026-09-20, extend-1)
+
+- **Verdict:** accept, as the one sanctioned native `title` left on an engine component after the
+  `Tooltip` sweep. `StatusChip` is not an action control: the `title` carries the register's own
+  legend, and the chip already pairs it with an `sr-only` legend in its own markup, so assistive
+  technology reads the legend whether or not the `title` ever shows. The residual is a mouse-only
+  sighted user on a touch device, who sees the chip and its visible label but never the legend,
+  which is a smaller loss than wrapping every chip in a popover the chip's own label already
+  explains.
+- **Reopens on:** the chip's `sr-only` legend leaving the markup, which would make the `title` the
+  only path to the legend, or a screen pairing the chip with a reason a reader must act on.
+- **Shape:** `title={legend}` stays on `StatusChip.svelte`'s own root span beside its `sr-only`
+  legend; no `Tooltip` wraps a chip.
+- **Record:** `docs/reference/admin-toolkit.md`, the `StatusChip` section;
+  `src/lib/admin-toolkit/StatusChip.svelte`.
+- **Verified:** `src/tests/component/StatusChip.test.ts` asserts the `sr-only` legend text beside
+  the visible label, which is the assertion this row's reasoning rests on.
+
+## batch-actions-additive: an optional `selection` prop and `batchBar` snippet on `AdminTable`  (accept, 2026-09-19, extend-1)
+
+- **Verdict:** accept, recorded as engine work rather than an atom: neither production site
+  reinvented multi-select over `AdminTable`, so the pattern fails the atom list's own test (a
+  shape at least two sites independently built), and `AdminTable` has no row model of its own, so
+  the addition is an optional `selection` prop plus a `batchBar` snippet with every row still
+  caller-rendered. No existing prop changes; a caller passing neither prop sees no behavior
+  change, which the committed branch-point fixture
+  (`src/tests/component/fixtures/admin-table-baseline.html`) proves rather than asserts.
+- **The header checkbox's own shape (extend-1 review round, 2026-09-20):** because it can only
+  empty a selection, it carries `aria-disabled="true"` while rows exist and nothing is selected, and
+  its `aria-label` reads "Clear selection" once something is. `aria-disabled` rather than the native
+  attribute is load-bearing and measured, not a preference: with `disabled`, focus returned to the
+  checkbox after `clear` lands on `document.body` instead, since the clear is exactly what makes the
+  control disabled. The component restates daisyUI's own `:disabled` dimming for the
+  `[aria-disabled]` state, which daisyUI does not style. The batch region is a `role="group"` named
+  "Batch actions" (never the selection label) carrying a visually hidden `role="status"` count, and
+  it renders whenever `selection` is set rather than only while the set is non-empty, so the live
+  region exists before the count it announces changes. Select-all over caller-rendered rows stays
+  open until a second screen adopts the pattern.
+- **Reopens on:** a second engine screen or a production site adopting the props in a shape this
+  row's fixture does not already cover.
+- **Shape:** `selection?: { ids: ReadonlySet<string>; onchange: (ids: ReadonlySet<string>) => void;
+  label: string }` and `batchBar?: Snippet<[{ count: number; clear: () => void }]>`; the header
+  checkbox, its indeterminate state, and the batch region are `AdminTable`'s own; each row's
+  checkbox `<td>` stays the caller's.
+- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, "Batch actions on
+  `AdminTable` is engine work riding along, not an atom."
+- **Verified:** `src/tests/component/AdminTable.test.ts`'s extended cases (the no-`selection`
+  render against the committed fixture, an empty set rendering no bar, a partial set rendering an
+  indeterminate header checkbox, a non-empty set rendering the bar with a working `clear`).
+
+## stylesheet-seam: a site-owned admin stylesheet, utilities-only, composed beside the engine's own sheet  (accept, 2026-09-19, extend-1)
+
+- **Verdict:** accept, in the five-line form. The seam's first form (four lines: the layer order,
+  the theme import, the utilities import with `source(none)`, and one `@source` line naming the
+  site's own admin routes) defeated the engine's own responsive variants: both sheets place
+  utilities in the shared `utilities` cascade layer at specificity `(0,1,0)`, Tailwind orders
+  base utilities before their variants, and the later-loading site sheet's base utilities
+  (`hidden`, `flex-col`, `gap-2`, and so on) beat the engine's `sm:` variants on every admin
+  screen at 640px and wider, moving 58 of 90 admin-visual baselines. The five-line form adds
+  `@source "../node_modules/@glw907/cairn-cms/dist";`, which makes the site sheet a superset of
+  the engine's own utility set in Tailwind's own generation order, so the engine's variants win
+  again. The compiled site sheet grows from roughly 1.5 KB to roughly 55 KB, the cost of that
+  ordering guarantee. No `@plugin "daisyui"` line ships; the proving utility on the seam's own
+  test page is a plain utility class, never a bracketed arbitrary value and never an inline
+  `var(--…)`.
+- **Reopens on:** an engine-owned sources file the site imports instead of naming the dist path
+  itself, and a static gate proving the superset invariant, both open questions for a later pass;
+  or Tailwind changing its utility-before-variant generation order, which is the fact this row's
+  five-line form depends on.
+- **Shape:** `examples/showcase/src/admin.css`, the five-line entry; `.cairn/admin.css`, the
+  compiled fixed-path output; `cairn-audit.config.json` naming both sheets under `sheet`.
+- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`; `examples/showcase/e2e/admin-sheet.spec.ts`.
+- **Verified:** the e2e proof's content-keyed assertion (the concatenated stylesheet bodies per
+  admin page contain the chosen utility's declaration; the public pages' do not), run at the
+  post-merge ritual against the branch-point fixture; the static half (`cairn-audit` fails on the
+  utility with the packaged sheet alone, passes with both sheets), proved before the merge.
+
+## motion-discrete-popover: `display` and `overlay` pass the motion allowlist under `allow-discrete`  (accept, 2026-09-19, extend-1)
+
+- **Verdict:** accept. `motion-property` convicted Tooltip.svelte's own manual-popover exit
+  fade, `transition: opacity 120ms ease, display 120ms allow-discrete, overlay 120ms
+  allow-discrete`, as two outside-the-allowlist findings on `display` and `overlay`. With
+  `allow-discrete` on the same transition entry, a `display` or `overlay` change does not
+  animate layout; it defers the discrete top-layer flip to the end of the transition so the
+  paint property beside it finishes first, the documented CSS idiom for a popover or dialog
+  leaving the top layer. The arm is conditional on the keyword, not a blanket allowance for the
+  two properties.
+- **Reopens on:** a transition of `display` or `overlay` reaching the sheet without
+  `allow-discrete` on that same entry, which stays convicted; that case is the fixture proof this
+  entry rests on, not a trigger to revisit it.
+- **Record:** Tooltip's popover exit fade.
+- **Any-site case:** a consumer's own manual popover or `<dialog>` leaving the top layer with a
+  paired opacity fade, the same shape as Tooltip.svelte's own bubble.
+- **Verified:** `src/tests/unit/audit/rules/motion-property.test.ts`'s discrete-popover cases (a
+  `display`/`overlay` pair carrying `allow-discrete` beside an allowlisted paint property passes;
+  either property without `allow-discrete` still errors; an unrelated layout property carrying
+  `allow-discrete` still errors, since the arm covers only `display` and `overlay`).

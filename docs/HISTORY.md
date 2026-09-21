@@ -7,6 +7,166 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Go tool pass A (`cairn-tool-A`), eleven tasks, 2026-09-14 to 2026-09-20
+
+Branch `cairn-tool-a`, draft PR #60, UNMERGED at close by Geoff's ruling (the merge rides Pass
+B1's close, because extend-2 was mid-flight on the same three ledger files). Plan and full
+post-mortem: `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md` on that branch. Decision
+record for what follows: `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`.
+
+**What landed.** The `tool/` Go module (`github.com/glw907/cairn-cms/tool`), foundation only:
+`record`, `store`, `providers`, `spine`, `secrets`, `version`, and a `cmd/cairn` with `auth set`,
+`auth list`, and a hidden `probe-token`. No command an operator would run yet. A three-platform
+CI matrix from the first commit. `packages/create-cairn-site`'s test fakes now load bodies from
+a JSON fixture corpus the Go tests also read. Geoff minted the tool's two read-only tokens.
+
+**What the gate caught.** Every task from 4 to 8, and Task 10, took one fix round, five of the
+six on a reviewer escalation the conductor ruled. Six were errors or contradictions in the plan
+itself, not in the code: an unreachable directory-precedence branch, error 12000 misread as
+"builds not connected", a fixture criterion nothing could satisfy, eighteen steps that were
+nineteen, six Cloudflare permission groups where seven are needed, and a `term.IsTerminal` ban
+written for a TUI launch gate that also banned color detection. At the close, seven
+`go-architecture-reader` reads found a Windows hole (`store.Load` checked the record file for a
+symlink but not the directory, and the first test for the fix could silently skip on the only
+platform it guards) and a credential-resolution defect (`secrets.Env` and a private copy in
+`cmd/cairn` disagreed on an empty variable). The fold's own single-table rewrite then put a
+secret into a plain string field, which review caught before any caller existed.
+
+**What a later pass would be wrong to rediscover.** A fine-grained GitHub token reads any PUBLIC
+repository with no permissions at all; verify a mint against private `xcathletes-org`.
+`accounts/{id}/tokens/verify` answers error 1000 for a user-owned token; use `user/tokens/verify`.
+`os.Symlink` needs a privilege Windows CI runners lack; build a junction with
+`FSCTL_SET_REPARSE_POINT`. `order := []string{}` in `record`'s `decodeObject` is load-bearing.
+The key-set drift guard's parse side is hand-maintained mirror slices, a known residual the B1
+rewrite closes. `vcs.revision` is absent from a `go install module@version` build.
+`cairn-run-gate` has a light lane; this pass queued a one-minute Go gate behind other sessions'
+browser gates for two to three hours before using it, which produced the workstation rule "a
+rule lives where it executes".
+
+**Budgets.** About 6.8M of 8M subagent tokens (the conductor's turns uncounted). About 15.5 clock
+hours, five of them lost to a network drop that left the conductor unwoken. Six planning misses;
+two execution sittings (the planned token mint, and one combined question of three decisions).
+Two research audits on 2026-09-20 (CLI practice; bubbletea v2 readiness) reshaped Pass B: it
+splits into B1 and B2, `context.Context` goes through `providers`, and severity ordering moves
+into `spine`, all before the command tree is built.
+
+## extend-2 pass, ten tasks, 2026-09-19 to 2026-09-20
+
+Branch `extend-2` with `extend-2-skills` (chain B: tasks 5, 6, 7) merged into it; plan at
+`docs/superpowers/plans/2026-09-14-extend-2-pass.md`; record at
+`docs/internal/record/2026-09-14-extend-2-record.md`. The pass ships the guidance layer: a
+developer using Claude Code on a cairn site now gets the engine's guidance from the package it
+already has, installed or refreshed by one bin.
+
+**What landed.** The `cairn-guidance` bin (`install`, `check`, `--strict`), with `.orig`
+preserved on an edited destination, a `MANIFEST` naming what an install wrote, a `VERSION`
+stamp, and `src/lib/guidance/` holding the relocated tree-hash install. The doctor's skill
+install retired: `--fix` gone, the `skill.admin-screens-stale` condition removed. A packaged
+`claude/` tree in the tarball: the `CLAUDE.md` fragment, the read-only `cairn-extension-reviewer`
+agent (`tools: Read, Grep, Glob`, no `Bash`, no model pin), and `claude/snippets/`, each asserted
+byte-identical to its in-repo source by an identity test. The bake writes the guidance into every
+new site at scaffold time, and `create-site.yml` asserts the baked tree. `@glw907/cairn-cms/admin-sources.css`,
+an engine-owned CSS file of `@source` lines, so a site's `src/admin.css` no longer names the
+engine's `dist` layout. `check-skill-budget.mjs` now runs over every packaged skill, and
+`check:docs` reaches `skills/**` and `claude/**`. The `cairn-extend` and `cairn-consult` skills.
+Ten tasks (1a, 1b, 2, 3a, 3b, 3c, 4, 5, 6, 7) in two chains, all accepted; 1a and 3c each needed a
+conductor ruling. Merged as PR #67.
+
+**What the gate caught.** The blocking security read found `cairn-guidance install`'s containment
+was lexical only: a symlinked `.claude` or `.claude/skills` directory redirected the install
+outside the intended tree, and a dangling `X.orig` symlink took attacker-chosen bytes to an
+arbitrary path. Fixed (`9aa7765a`): the working directory resolves through `realpath`, every path
+component from `.claude` down is `lstat`-ed component by component, writes use `O_NOFOLLOW` and
+`O_EXCL`, and a refused destination is refused by name rather than repaired; re-read, pass. The
+prose read found the shipped guidance told a consumer's agent things untrue from a site checkout:
+exemplar paths under `examples/` and `docs/internal/` that never ship in the tarball, a claim
+that install wires the site's own gates, an instruction to edit a file the install overwrites, a
+`cairn docs <query>` command that has not shipped, and relative doc links that break once
+installed.
+
+**What a later pass would be wrong to rediscover.** Shipped guidance names engine docs as
+`node_modules/@glw907/cairn-cms/docs/...` paths from the site root, never relative links, since
+the same file is read at two locations, the tarball and the installed `.claude/`. The template's
+gitignore is derived from `examples/showcase/.gitignore` by the bake's rename, so a template-only
+ignore line cannot be added without a bake change. `cairn-guidance check` decides staleness by
+tree hash, never by `VERSION`, so a caret-resolved newer patch does not read as stale.
+`check-surface.mjs` snapshots only exports carrying a `types` field, so the new CSS subpath
+export is not surface drift. `gate-tier.mjs` computes `full` for any `package.json` touch, and a
+local full e2e run is green when its only failures are the 20 site-visual baseline files from
+`4de378ec`. `pass-execute-chains.js` hands the reviewer the plan's gate string for a pinned task,
+so a pin reads as a gate MISMATCH that is a harness artifact, not a real one. Both transcript
+re-captures this pass would have needed took the dated staleness-note fallback instead of a live
+recapture. The fragment's `cairn docs` line returns once the Go tool ships that subcommand;
+Blueprint stays the ruled paid recommendation.
+
+**Budget score.** About 5.8M subagent tokens against a 6.5M ceiling, raised from 5.4M by Geoff
+mid-run on 2026-09-20 (workflow run 1: 1.87M over four tasks; run 2: 2.18M over six; direct
+dispatches and the close: about 1.75M; the conductor's own turns uncounted). The forecast of 500K
+per task held, about 405K per task in the workflow runs; the overrun sat in the close, sized at
+0.4M and costing about four times that, since the two pass-end reviewers each returned a fold's
+worth of real findings. Planning misses 4: the 2026-09-19 amendment was never written as a task
+section, so Task 3c was authored at dispatch; the plan predated `gate-tier.mjs` and carried a
+fixed gate string the classifier superseded; the plan specified fragment content, relative links
+and a `cairn docs` line, that was untrue from a consumer checkout; 3c's "no site names `dist`"
+criterion read broader than the amendment's actual deliverable. Execution sittings 1: the ceiling
+raise, Geoff's own initiative, not a question put to him.
+
+## extend-1 pass, nine tasks, 2026-09-16 to 2026-09-20
+
+Branch `extend-1` with `extend-1-site` (chain B: tasks 7, 8a, 8b) merged into it; plan at
+`docs/superpowers/plans/2026-09-14-extend-1-pass.md`; spec at
+`docs/superpowers/specs/2026-09-12-extend-design.md` (revision 2); record at
+`docs/internal/record/2026-09-14-extend-1-record.md`. The pass gives a consumer site cairn's own
+gates over its own code and cairn's atoms to compose instead of reinventing. No new package, and no
+change to `cairn-doctor`.
+
+**What landed.** A public `/log` subpath exporting `createLogger`, `CAIRN_LOG_EVENTS`, and
+`REDACTED_LOG_KEYS`, with the engine's own logger as one instance and three-level key-normalized
+redaction. Two advisory `cairn-audit` static rules over source text, `log-event-grammar` and
+`log-secret-field`, resolved over a new `static.sourceScope`, both promoting to error tier at
+`0.98.0`. `Tooltip` in `/admin-toolkit`, replacing every native `title` on an admin action control
+and reporting `cairn-btn-guarded` as retired through `stock-default-hazards`. Additive batch
+actions on `AdminTable` (`selection` and `batchBar`), with no existing prop changed. The two
+showcase exemplar routes rewritten onto one site-owned `createLogger`. The site admin stylesheet
+seam on the showcase: a five-line Tailwind entry compiled to `.cairn/admin.css`, a
+`cairn-audit.config.json` naming both sheets, and a `check:cairn` step in CI. The scaffold wiring
+baked from it: a `.github/workflows/check.yml` in every new site, `workflows: write` on the App
+manifest, and a watch compile in the dev shim. Five rows in `docs/internal/engine-rulings.md`
+(`log-export`, `stylesheet-seam`, `tooltip-primitive`, `audit-rule-advisory-first-tier`,
+`batch-actions-additive`).
+
+**What the gate caught.** The seam's first four-line form defeated the engine's own `sm:` variants
+on every admin screen and moved 58 of 90 admin-visual baselines, fixed by a fifth `@source` line
+that makes the site sheet a superset of the engine's utility set in Tailwind's own emission order.
+The source-text walk judged the engine's own test fixtures and doc comments as dead suppression
+directives (41 false findings), fixed by `suppressionsOnly`. `log-event-grammar`'s collision arm
+fires on 152 of the engine's own 154 legitimate call sites when the audit runs over the engine
+itself, recorded as a precondition on the `0.98.0` promotion. The Tooltip's `allow-discrete` exit
+fade tripped `motion-property` and exposed a comma-splitting defect in that rule. The pass-end
+accessibility read found six real defects across `Tooltip` and `AdminTable`, and its re-read two
+more; the security read found redaction one level deep and matching on exact spelling. Detail for
+every one of these is in the record file.
+
+**What a later pass would be wrong to rediscover.** The Tooltip's placement took three mechanisms
+to land, and the shipped one is a native popover plus CSS anchor positioning with the trigger's
+`anchor-name` appended rather than replaced, so a trigger that already anchors a menu keeps both
+contracts. The stylesheet seam's superset requirement is a load-order fact about Tailwind's shared
+`utilities` layer, not a cairn quirk; the two follow-ups it leaves (an engine-owned sources file, a
+static gate for the superset invariant) are on the `stylesheet-seam` ledger row, and extend-2's
+2026-09-19 amendment takes the sources file. Advisory tier and compiled-until-removed are
+independent facts about `cairn-btn-guarded`: `0.98.0` promotes the finding, and a later release
+removes the class.
+
+**Budget score.** About 8.7M subagent tokens against a 9.0M ceiling, raised from 6.7M at the 84
+percent checkpoint; roughly 1.0M of that was interruption waste (three network drops, one
+usage-limit stop, one relayed-question misfire, one redundant re-dispatch by a workflow resume).
+Planning misses 2: the seam proof assumed a `/posts` public route the showcase does not serve (it
+serves `/` and `/archive/[page]`), and the proof utility first chosen had a real visual effect and
+shipped into the scaffold template, where a no-effect utility (`scroll-mt-14`) was right. Execution
+sittings 1: the combined checkpoint question (the ceiling, the docs-infra plan, the seam's
+sources-file form). Review rounds: three on task 3, two each on tasks 2 and 7, two a11y reads and
+two security reads at the fold. Merged as PR #66.
+
 ## Docs-to-facts pass, five tasks, 2026-09-15
 
 Branch `docs-to-facts`; plan at `docs/superpowers/plans/2026-09-15-docs-to-facts-pass.md`;

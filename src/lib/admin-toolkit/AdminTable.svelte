@@ -17,10 +17,27 @@ ellipsis truncation of a specific long value is the calling cell's own responsib
 scoped-truncation model `StatusChip`'s `.status-chip-label` already carries; this component cannot
 see inside a snippet's own markup to add truncation there itself.
 
-Headroom for a future selection column is a reserved convention, not a built feature: because
-`header` and `children` are snippets rather than a column schema, adding a leading checkbox column
-later is a caller-side edit to those two snippets, never a structural change to this component or
-a breaking prop-shape change.
+The optional `selection` prop is the one column this component owns outright: with it set,
+`AdminTable` renders the reserved header `<th>` and its own select-all checkbox (indeterminate
+against `rowCount` on a partial `selection.ids`), while every row's own checkbox `<td>` stays the
+caller's, written inside `children` and reading the same id set. This is the same split
+`header`/`children` already draw for the rest of the row: this component owns the table's chrome, a
+caller owns a row's own markup. `AdminTable` never sees the full set of selectable ids (rows are
+caller-rendered), so the header checkbox can only clear a selection, never build one. That is why
+it reads `aria-disabled` while rows exist and nothing is selected, and why its `aria-label` reads
+"Clear selection" once something is: a control that cannot select all should not present itself as
+one. `aria-disabled` rather than the native attribute, because this is the element `clear` returns
+focus to, and a natively disabled input cannot hold focus. A
+caller wanting a select-all affordance supplies it itself, for example from `batchBar`. Selection is
+additive: a caller passing neither `selection` nor `batchBar` gets the same table as before.
+
+The batch region renders above the table whenever `selection` is set, as a `role="group"` labelled
+"Batch actions", carrying a `role="status"` element with the selected count. The region is present
+before the count ever changes, which is what makes the announcement land: a live region mounted at
+the same moment its text appears announces nothing. The optional `batchBar` snippet renders inside
+that region while `ids` is non-empty, receiving the selected count and a `clear` callback that
+empties the selection through `selection.onchange` and returns focus to the header checkbox, so a
+caller's own batch-action buttons never reach into the id set directly.
 -->
 <script module lang="ts">
   /** The table's two named density tiers, matching `StatusChip`'s own `xs`/`sm` size vocabulary. */
@@ -47,24 +64,120 @@ a breaking prop-shape change.
      *  render an empty `<tbody>` instead. */
     empty?: Snippet;
     /** How many columns the empty-state cell should span. Defaults to `100`, which HTML's own
-     *  `colspan` clamps down to the table's real column count. */
+     *  `colspan` clamps down to the table's real column count. This component adds one to it
+     *  itself when `selection` is set, so a caller states its own column count without
+     *  re-deriving the reserved selection column. */
     emptyColspan?: number;
+    /** Reserves the leading selection column and renders its header checkbox. Omit to render no
+     *  selection column at all; a caller renders each row's own checkbox `<td>` inside `children`,
+     *  reading the same `ids` set. `onchange` receives a new set on every change: this component
+     *  never mutates the one it is given, and a caller storing the new set in `$state` is what
+     *  makes the table react. A `SvelteSet` from `svelte/reactivity` works too, for a caller that
+     *  prefers a mutable reactive set of its own. `label` names the checkbox while nothing is
+     *  selected; once something is, it reads "Clear selection", which is the only thing the
+     *  checkbox can do. */
+    selection?: {
+      ids: ReadonlySet<string>;
+      onchange: (ids: ReadonlySet<string>) => void;
+      label: string;
+    };
+    /** The batch-action content shown inside the batch region while `selection` is set and its
+     *  `ids` is non-empty. */
+    batchBar?: Snippet<[{ count: number; clear: () => void }]>;
   }
 
-  let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyColspan = 100 }: Props = $props();
+  let {
+    density = 'sm',
+    zebra = false,
+    header,
+    children,
+    rowCount,
+    empty,
+    emptyColspan = 100,
+    selection,
+    batchBar,
+  }: Props = $props();
 
   const densityClass = $derived(density === 'xs' ? 'table-xs' : 'table-sm');
+  const effectiveEmptyColspan = $derived(selection ? emptyColspan + 1 : emptyColspan);
+  const selectedCount = $derived(selection?.ids.size ?? 0);
+  // The header checkbox can only empty a selection, so with nothing selected (including an empty
+  // table) it has nothing to do. Marked with `aria-disabled` rather than the native attribute,
+  // since a natively disabled input cannot take focus and this is exactly the element `clear`
+  // returns focus to: the state it lands in IS the empty one. The dimming and the not-allowed
+  // cursor are restated in this component's own scoped CSS, which daisyUI supplies for
+  // `:disabled` alone.
+  const headerInert = $derived(selectedCount === 0);
+
+  let headerCheckbox = $state<HTMLInputElement | null>(null);
+
+  /** Empties the selection through `selection.onchange` and returns focus to the header checkbox,
+   *  so a keyboard reader who cleared from a batch-action button that just unmounted lands on the
+   *  selection column rather than at the top of the document. */
+  function clear() {
+    if (!selection) return;
+    headerCheckbox?.focus();
+    selection.onchange(new Set());
+  }
+
+  /** The header checkbox's own click handler, for both a pointer click and a Space-key
+   *  activation: both fire the same `click` event. A click here can only ever clear a selection,
+   *  never build one, so the control's own `checked`/`indeterminate` are always `false` once this
+   *  handler returns; they are written here directly rather than left to the declarative
+   *  `checked`/`indeterminate` bindings above. The checkbox's own pre-click activation toggles
+   *  `checked` before this handler ever runs, and calling `preventDefault` to undo that toggle
+   *  reverts it to whatever it held BEFORE the click, which is `true` for a fully selected header,
+   *  the wrong answer for a click that just cleared the selection; leaving the toggle alone and
+   *  overwriting both properties here afterward is what stays correct in every starting state,
+   *  full, partial, or inert. */
+  function onHeaderClick(event: MouseEvent) {
+    const input = event.currentTarget as HTMLInputElement;
+    if (!headerInert) clear();
+    input.checked = false;
+    input.indeterminate = false;
+  }
 </script>
 
+{#if selection}
+  <div class="toolkit-admin-table-batch-bar" role="group" aria-label="Batch actions">
+    <!-- The count lives in its own status region, visually hidden, rather than in whatever text
+         `batchBar` renders: the region has to be mounted before the count changes for the
+         announcement to land, and a caller's own visible count stays the caller's to word. -->
+    <p class="toolkit-admin-table-batch-status" role="status">{selectedCount} selected</p>
+    {#if selectedCount > 0 && batchBar}
+      {@render batchBar({ count: selectedCount, clear })}
+    {/if}
+  </div>
+{/if}
 <div class="toolkit-admin-table-wrap">
   <table class="table {densityClass} {zebra ? 'table-zebra' : ''}">
     <thead>
-      <tr>{@render header()}</tr>
+      <tr>
+        {#if selection}
+          <th>
+            <!-- `indeterminate` is a DOM property with no HTML attribute; Svelte 5 sets it as a
+                 property from this attribute position, so no imperative effect is needed. The
+                 full-size `checkbox` (1.5rem), never `checkbox-sm`, keeps the target at the
+                 engine's 24px floor. -->
+            <input
+              bind:this={headerCheckbox}
+              type="checkbox"
+              class="checkbox toolkit-admin-table-select-all"
+              aria-label={selectedCount > 0 ? 'Clear selection' : selection.label}
+              aria-disabled={headerInert ? 'true' : undefined}
+              checked={rowCount > 0 && selectedCount === rowCount}
+              indeterminate={selectedCount > 0 && selectedCount < rowCount}
+              onclick={onHeaderClick}
+            />
+          </th>
+        {/if}
+        {@render header()}
+      </tr>
     </thead>
     <tbody>
       {#if rowCount === 0 && empty}
         <tr class="toolkit-admin-table-empty-row">
-          <td colspan={emptyColspan}>{@render empty()}</td>
+          <td colspan={effectiveEmptyColspan}>{@render empty()}</td>
         </tr>
       {:else if rowCount !== 0}
         {@render children()}
@@ -92,5 +205,44 @@ a breaking prop-shape change.
     text-align: center;
     color: var(--color-muted);
     white-space: normal;
+  }
+
+  /* The inert header checkbox's own treatment, matching what daisyUI gives a natively disabled
+     checkbox (`cursor: not-allowed`, `opacity: .2`). It is restated here because this control uses
+     `aria-disabled`, so it stays focusable for the focus `clear` returns to it. */
+  .toolkit-admin-table-select-all[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.2;
+  }
+
+  /* `clear()` focuses this checkbox while it is inert (the state it lands in IS the empty one), and
+     daisyUI's only checkbox focus affordance is an outline, which the dimming above fades to
+     near-invisible. Restoring full opacity on focus keeps the outline visible without touching the
+     unfocused dimmed treatment. */
+  .toolkit-admin-table-select-all[aria-disabled='true']:focus-visible {
+    opacity: 1;
+  }
+
+  /* Only this margin is reserved, not the bar's own height: the `batchBar` snippet it wraps
+     renders only once `selectedCount` is non-empty, so the table still moves down by the bar's
+     height on the first tick (before that, the bar is this margin and its out-of-flow status
+     region alone). */
+  .toolkit-admin-table-batch-bar {
+    margin-bottom: 0.75rem;
+  }
+
+  /* The count's own status region is for assistive technology alone, so it is clipped rather than
+     hidden: a `display: none` or `hidden` region is not announced at all. The rule is written here
+     rather than borrowed from `sr-only`, since `admin-toolkit` promises no compiled admin sheet. */
+  .toolkit-admin-table-batch-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 </style>

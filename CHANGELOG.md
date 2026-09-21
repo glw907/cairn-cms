@@ -25,6 +25,79 @@
   yet; they run only under their own package tests. Consumers must: nothing, since the `tool/`
   module is not part of the npm package a site installs.
 
+- A new `cairn-guidance` bin installs and checks the package's shipped skills, review agent, and
+  `CLAUDE.md` fragment in a consumer repo. `cairn-guidance install` copies every directory under
+  `skills/`, the review agent, and the fragment into `.claude/`, writing `<dest>.orig` beside
+  anything an edit diverged from (never clobbering an existing `.orig`) and a `MANIFEST` of what
+  it wrote; every write is contained under `.claude/`, and a path the package stops shipping is
+  reported removable rather than deleted. `cairn-guidance check` reports the guidance tree's
+  freshness, the `CLAUDE.md` import line, the `check:cairn` script, `cairn-audit.config.json`,
+  the CI workflow, the `.claude/` Tailwind-source exclusion, and any leftover `.orig`; it exits 0
+  by default, and `--strict` exits 1 when the guidance tree is stale or missing. See
+  [The `cairn-guidance` CLI](docs/reference/guidance.md). No consumer action.
+
+- The package now ships a `claude/` directory: the `CLAUDE.md` fragment, the read-only
+  `cairn-extension-reviewer` agent (`tools: Read, Grep, Glob` only), and the gate-wiring
+  snippets `cairn-guidance check` prints when a site is missing them (`check-cairn.json`,
+  `cairn-audit.config.json`, `check.yml`, `settings-hook.json`, `claude-md-import.txt`). See
+  [The `cairn-guidance` CLI](docs/reference/guidance.md). No consumer action.
+
+- A site scaffolded with `create-cairn-site` is now born with cairn's agent-facing guidance
+  already installed: `.claude/skills/`, `.claude/agents/cairn-extension-reviewer.md`,
+  `.claude/cairn/CLAUDE.md`, `.claude/cairn/VERSION`, `.claude/cairn/MANIFEST`, and a root
+  `CLAUDE.md` importing the fragment. The scaffold's own Tailwind entry excludes `.claude/` from
+  its source scan, and `.claude/agent-memory/` is gitignored. No consumer action.
+
+- The scaffold's own `.github/workflows/check.yml` now runs `npx cairn-guidance check` under
+  `continue-on-error`, on top of `npm run check` and `npm run check:cairn`, so a stale or missing
+  guidance tree surfaces in CI without ever failing the job. `create-site.yml` now asserts a
+  freshly scaffolded site's `.claude/` holds exactly the installed guidance paths plus `VERSION`
+  and `MANIFEST`, that `VERSION` matches the installed package version, and that
+  `.claude/agent-memory` and `.claude/worktrees` are absent. No consumer action.
+
+- A new `/admin-sources.css` subpath ships the engine's own Tailwind `@source` manifest for its
+  shipped admin markup, importable as one line so a site's `src/admin.css` never has to name the
+  engine's `dist` layout directly. The showcase, the scaffold template, and the scaffold's own bake
+  all replace their fifth `@source "../node_modules/@glw907/cairn-cms/dist";` line with
+  `@import "@glw907/cairn-cms/admin-sources.css";`, importing after the site's own admin-routes
+  line so the ordering fact from the original five-line form still holds: the compiled sheet stays
+  a superset of the engine's utility set in Tailwind's own generation order, keeping the engine's
+  responsive variants ahead of the site's own later-loading base utilities inside the shared
+  `utilities` cascade layer. The compiled output is unchanged, byte for byte. No consumer action.
+
+- A new `/log` subpath exports `createLogger`, the generic factory the engine's own logger is
+  built from; `CAIRN_LOG_EVENTS`, every member of the engine's event union as a runtime array;
+  and `REDACTED_LOG_KEYS`, the field names `createLogger`'s redaction matches on the whole key. A
+  site that wants structured logs in the same shape as cairn's own writes
+  `createLogger<MySiteEvent>()` instead of a bespoke `console` wrapper. Redaction recurses three
+  levels into plain objects and arrays, so a secret inside a headers bag or a row array is caught
+  too, with a repeated reference marked `'<repeated>'` rather than walked twice and a key at level
+  four or deeper left as written. Both sides of the comparison normalize, lowercased with `-` and
+  `_` removed, so one spelling covers every separator form (`api_key` matches `apiKey` and
+  `API-KEY`), which is why the list now spells each name once and covers the `api_key`,
+  `private_key`, `set-cookie`, `session_token`, `access_token`, `refresh_token`, `auth_token`,
+  `client_secret`, `webhook_secret`, `bearer`, `jwt`, `csrf`, and `csrf_token` families.
+  `createLogger` takes an optional `{ redactKeys }` naming a site's own field names, which union
+  with `REDACTED_LOG_KEYS` and never replace it. Both exported arrays are frozen. A throwing getter
+  anywhere in a call's own fields can no longer throw out of `log.info()`/`.warn()`/`.error()`: the
+  record build is caught, and a failure emits a minimal `{ level, event, timestamp, fields:
+  '<unserializable>' }` envelope instead. A site that wants structured logs imports `createLogger`
+  from `@glw907/cairn-cms/log`; the engine's own records are unchanged. No consumer action.
+
+- `cairn-audit`'s static mode gains `log-event-grammar` and `log-secret-field`, two advisory
+  rules over `.ts`/`.svelte` source text (`static.sourceScope`, default `src`): a name heuristic
+  over `<ident>.info/.warn/.error(<string>)` calls that flags a first-argument literal colliding
+  with a `CairnLogEvent` name or not reading as `area[.subject].verb_phrase`, and a second rule
+  over the same calls' fields argument that flags a key whole-matching `REDACTED_LOG_KEYS` (the same
+  normalization the runtime uses, so `apiKey` and `api_key` resolve alike). That second rule is a
+  name-awareness notice and says so: it can't tell your logger from `console.info` or another
+  library's, so the value is already redacted at runtime only when the call goes through a cairn
+  `createLogger` instance, and the finding is there because the same value often lands in the
+  message string too, where redaction never runs, and because a secret-shaped field usually wants a
+  count or a boolean. Only the fields object's own
+  top-level keys are read, unlike the runtime's three-level walk. Both are registered at advisory
+  tier for one minor and promote to error tier in `0.98.0`. No consumer action.
+
 - `cairn-audit`'s rendered mode gains `motion-reduced-delay`, an advisory rule that opens its own
   `reducedMotion: 'reduce'` browser context and flags any element (or `::before`/`::after`) whose
   computed `transition-delay` or `animation-delay` stays nonzero there, since a delay alone still
@@ -339,7 +412,109 @@
   crosses them. The paint rides the button's existing `transition-colors`, so it resolves to the
   theme's `base` default like the same element's hover paint; no new CSS rule is added.
 
+- `Tooltip` (`/admin-toolkit`), the replacement for a native `title` attribute on an icon-only
+  action control: a native `title` never shows on `:focus-visible` and never shows on a touch
+  tap. Wraps the given trigger unchanged (`aria-describedby` on the trigger's own rendered root
+  element, a wrapper that renders no box of its own), shows on hover and on `:focus-visible`,
+  hides on Escape without moving focus off the trigger, and shows on a tap from any pointer that
+  reports no hover (read from the triggering event's own `pointerType`) and hides on the next tap
+  outside. An empty `text` opts out entirely, for a caller whose reason is conditional. The bubble
+  is hoverable, as WCAG 1.4.13 requires: it takes pointer events and bridges the gap to its trigger,
+  so a pointer can travel in and read it. Escape is listened for on the `document`, so the key works
+  wherever focus sits, and it neither calls `preventDefault()` nor stops propagation, so an enclosing dialog
+  still closes on the same press. `aria-describedby` is set only when the bubble text says more than
+  the trigger's own accessible name, since a description repeating the name is read twice; the
+  bubble renders either way. Activating an enabled trigger hides the bubble, while a trigger marked
+  `aria-disabled="true"` keeps it. The bubble's fade runs on the motion tokens, entering on
+  `--cairn-dur-base`/`--cairn-ease-entrance` and leaving one band down on
+  `--cairn-dur-quick`/`--cairn-ease-exit`, with a 75ms open delay for a hover-shown bubble inside a
+  `prefers-reduced-motion: no-preference` guard, and its text sits on the `--cairn-type-label`
+  scale. Every native `title` on an
+  admin action control across the engine's own components now routes through it. `cairn-audit`'s
+  `stock-default-hazards` rule gains a matching arm: a `cairn-btn-guarded` class now produces a
+  finding naming the class retired, reported at advisory tier until `0.98.0` promotes the finding
+  to error; the class itself stays compiled until a later release removes it, since its own
+  pointer-events restore still has a real consumer. Consumers must: nothing, unless your admin
+  copied the `cairn-btn-guarded` marker class from the engine's markup; no production site has. `motion-property`'s allowlist gains a conditional arm for Tooltip's own
+  popover exit fade: `display` and `overlay` pass when the same transition entry carries
+  `allow-discrete`, the CSS idiom that defers the discrete top-layer flip until the paired paint
+  transition finishes. The same rule now splits a transition list at the top level only, so a comma
+  inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned
+  property; a token read with a literal fallback no longer reports as a list of nonsense properties
+  over the three-property cap.
+
+- `AdminTable` (`/admin-toolkit`) gains two optional, additive props for batch selection:
+  `selection?: { ids: ReadonlySet<string>; onchange: (ids: ReadonlySet<string>) => void; label:
+  string }` and `batchBar?: Snippet<[{ count: number; clear: () => void }]>`. With `selection` set,
+  `AdminTable` renders the reserved header `<th>` and its own checkbox, indeterminate against
+  `rowCount` on a partial `selection.ids`; a caller renders each row's own checkbox `<td>` inside
+  `children`, reading the same id set. Because the header checkbox can only empty a selection, it
+  carries `aria-disabled="true"` while rows exist and nothing is selected, and its `aria-label`
+  reads "Clear selection" once something is. The batch region renders whenever `selection` is set,
+  as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` element with
+  the count, so the live region exists before the count it announces changes; `batchBar` renders
+  inside it while the set is non-empty, receiving the selected count and a `clear` callback that
+  empties the selection through `selection.onchange` and returns focus to the header checkbox.
+  `emptyColspan` counts the reserved selection column itself while `selection` is set. No consumer
+  action.
+
+- The showcase's two exemplar routes, the custom admin screen (`admin/signups`) and the public
+  form with a domain action (`members/login`), rewrite their diagnostic output onto `createLogger`
+  through one site-owned logger (`examples/showcase/src/lib/log.ts`). The signups load emits
+  `admin.signups.misconfigured` with `reason: 'db_not_bound'` in place of a bare `console.error`
+  call, and the login request action emits `members.login.requested` with `{ outcome }` from the
+  engine's own `ChannelRequestOutcome`, never the posted contact. Each route's header names its
+  archetype, the atoms it composes, and the recipe page it illustrates. No consumer action.
+
+- The showcase compiles its own site admin stylesheet and audits against it, alongside the
+  packaged one: `src/admin.css` is a five-line Tailwind v4 entry (no DaisyUI plugin, utilities
+  only) scoped to `src/routes/admin` with `@tailwindcss/cli`, compiled to `.cairn/admin.css`.
+  `cairn-audit.config.json` names both sheets, so `no-uncompiled-class` and the rest of the static
+  registry see every class a site route actually writes, not only the ones the packaged toolkit
+  compiles. New scripts: `build:admin-css`, `check:cairn` (compiles then audits), and
+  `check:cairn:rendered`; `precheck`/`prebuild`/`predev` compile the sheet ahead of `check`,
+  `build`, and `dev` so a stale `.cairn/` never ships. CI runs `check:cairn` after the showcase's
+  own `check`. The admin layout imports the compiled file so `@tailwindcss/vite` passes it through
+  as a hashed, route-split asset; `e2e/admin-sheet.spec.ts` proves that at the ritual against a
+  branch-point baseline, once the ritual writes the fixture (the spec stays inert until then). The
+  fifth line, `@source "../node_modules/@glw907/cairn-cms/dist"`, scans the engine's own dist
+  markup, because both sheets share one utilities cascade layer and the site sheet loading after
+  the engine sheet would otherwise re-emit the engine's shared base utilities ahead of their own
+  `sm:` variants and defeat them on every admin screen; the fix makes the site sheet a superset of
+  the engine's utility set in Tailwind's own emission order, so every shared base utility again
+  precedes its own variant. The new `@tailwindcss/cli` devDependency was surveyed against the
+  pinned `tailwindcss`/`@tailwindcss/vite` major and matches at `4.3.3`. No consumer action.
+
+- The `create-cairn-site` scaffold now bakes a GitHub Actions workflow
+  (`.github/workflows/check.yml`) into every new site: it installs, then runs `npm run check` and
+  `npm run check:cairn` on `ubuntu-latest` with Node 22, with a commented step for
+  `npx cairn-guidance check` marked for a later cairn version. The manifest's default permissions
+  gain `workflows: write` so the App's first push can carry that file. The scaffold's own
+  `scripts/dev.mjs` shim now also spawns `@tailwindcss/cli` in `--watch` mode beside the vite dev
+  server, killing it when the dev server exits, so the admin sheet stays compiled during local
+  development. No consumer action.
+
+- `create-site.yml`, the CI proof of a real `create-cairn-site` run, now asserts the scaffolded
+  site carries `.github/workflows/check.yml` and runs `npm run check:cairn` in the same job as its
+  own `check` and build steps.
+  The tool's own printed hand-over text names both, so a reader who never opens the workflow file
+  still learns what checks their site on every push. The transcripts fixtures predate this change
+  and are not re-captured this pass (the capture harness needs a live GitHub App and repository
+  creation outside this repo); `packages/create-cairn-site/test/fixtures/transcripts/README.md`
+  carries a dated staleness note, and `check:transcripts` stays green either way since it checks
+  the docs pages' quoted blocks against the fixtures, not against the current scaffold. No
+  consumer action.
+
 ### Removed
+
+- `cairn-doctor` loses `--fix`, the `skill.admin-screens` check, and the
+  `skill.admin-screens-stale` condition. The packaged skill install now lives in
+  `cairn-guidance`, which installs every packaged skill directory (not just this one), the
+  read-only review agent, and the `CLAUDE.md` fragment, and checks their freshness the same
+  way. See [The `cairn-guidance` CLI](docs/reference/guidance.md). Consumers must: run `npx
+  cairn-guidance install` after the bump; `cairn-doctor --fix` is gone. The recorded doctor
+  transcript `03-doctor-credentialed.txt` predates this retirement and stays as captured; `Is it
+  working?` elides its one retired line rather than hand-editing the fixture.
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one
   horizontal scroll container, and nesting it inside `OfficeList`'s card frame duplicated that
@@ -1553,6 +1728,32 @@
 
 - The facts container (`docs/internal/facts/`) is gated by `check:facts`. No consumer action.
 
+- `check-skill-budget.mjs` now globs every `skills/*/SKILL.md` and applies the 3,500-token budget
+  to each, instead of the one hard-coded `cairn-admin-screens` path; the tier-map comparison
+  against the rule registries still runs for that skill alone, and skips with a notice, exiting 0,
+  when the packaged dist build the registries read is absent. `check:docs` now also resolves every
+  relative link and anchor under `skills/**/*.md` and `claude/**/*.md`, the two trees that ship
+  in the tarball. No consumer action.
+
+- A new packaged skill, `cairn-extend`, routes an extending developer to the matching seam
+  before they invent a pattern from scratch. Its core opens with the DaisyUI question, then a
+  router table (what you are building, the atom, the seam, the showcase exemplar, the source
+  fact, and the ruling that is the why) and points at two references:
+  `references/daisyui-first.md`, the current state of every place a home-grown admin component
+  stands in for a stock DaisyUI one, with the ruling that names the defect; and
+  `references/preflight.md`, the checklist to run before calling extension work done. No
+  consumer action.
+
+- A new packaged skill, `cairn-consult`, fires on the same trigger `cairn-extend`'s pre-flight
+  names: a second workaround, or wanting something the documented seams do not reach at all. It
+  writes a consultation brief in the four-field format (what the pass builds, the engine edge it
+  presses, evidence for the any-site case, the site's fallback if declined) under
+  `references/brief-template.md`, tests each item against `references/the-standard.md` (a
+  verbatim copy of the engine's own consultation standard), and files it against the installed
+  package's `bugs.url` when that URL is reachable; when it is not, the skill says so plainly and
+  hands over the brief as the deliverable instead, never claiming a filing that did not happen.
+  No consumer action.
+
 ### Documentation
 
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated
@@ -1667,6 +1868,17 @@
   documentation only; no code changed.
 
 ### Fixed
+
+- `cairn-guidance install` now resolves every destination against the real `.claude` directory
+  instead of trusting a lexical path: a destination reached through a symlink, a destination that
+  is itself a symlink, a `.claude` that is a symlink, and a destination that already exists as a
+  directory are each refused by name, with the run continuing on the remaining files. A symlink at
+  a `<dest>.orig` path is refused too, and the destination beside it keeps the site's edit, since
+  the recovery copy could not be made; the `.orig` itself is created exclusively, so a dangling
+  link can no longer be written through. A previous `MANIFEST` line naming anything outside
+  `.claude/` is dropped rather than printed as removable, and a packaged entry the source walk
+  refused is now reported instead of discarded. A project directory reached through a symlinked
+  parent still installs. No consumer action.
 
 - The showcase's Signups admin screen, and the Waymark template that mirrors it, give the create
   form's Name and Email fields a visible label in place of the `sr-only` pair: each control now
@@ -4206,7 +4418,9 @@ removal, nothing this list needs to carry.
   stale (by a content hash of both trees) reports advisory and never fails the run, and
   `cairn-doctor --fix` installs or refreshes the packaged skill into a consumer's own
   `.claude/skills/cairn-admin-screens/` before the checks run. See [the `cairn-audit`
-  CLI](./docs/reference/cairn-audit.md) and [`cairn-doctor`](./docs/reference/doctor.md#the---fix-skill-install).
+  CLI](./docs/reference/cairn-audit.md) and [`cairn-doctor`](./docs/reference/doctor.md). Both
+  the check and `--fix` later retired; see the `cairn-guidance` entry in this changelog's
+  Unreleased section.
 
 No consumer action is required for the entries above beyond the `badge-ghost` migration named
 above. No exported type, prop, or route contract changed otherwise.

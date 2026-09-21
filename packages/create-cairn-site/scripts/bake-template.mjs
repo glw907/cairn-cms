@@ -3,7 +3,7 @@
 // reference into the monorepo. Resolving the engine and dev-backend dependency specs from the
 // repo's own package.json versions keeps the baked template honest: it fails loud rather than
 // emit a dependency spec no registry can install, an unpublished 0.0.0 most of all.
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -56,15 +56,30 @@ This produces the deployable Worker output.
 // not copied, it is written by the bake itself, the same way SITE_README is. CAIRN_DEV_BACKEND=1
 // is deliberately a runtime variable, not a build define: no production build can fold the dev
 // backend into a deployed Worker, so plain `npm run dev` needs this shim to set it on any platform
-// without the reader setting it by hand.
+// without the reader setting it by hand. The shim also keeps the admin stylesheet compiled in
+// watch mode, since a scaffolded site has no build step running alongside `vite dev`.
 const DEV_SHIM = `// scripts/dev.mjs: start the dev server with the local admin's backend enabled.
 // CAIRN_DEV_BACKEND=1 is the runtime half of the dev-backend gate. It is deliberately a
 // runtime variable, not a build define, so no production build can fold the dev backend
 // into a deployed Worker; this shim exists so plain \`npm run dev\` works on any platform
-// without setting the variable by hand.
+// without setting the variable by hand. It also runs the admin stylesheet compile in watch
+// mode beside the dev server, so an edit under src/routes/admin recompiles .cairn/admin.css
+// without a manual rebuild.
 import { spawn } from 'node:child_process';
 
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const tailwind = spawn(
+  npx,
+  ['--no-install', '@tailwindcss/cli', '-i', 'src/admin.css', '-o', '.cairn/admin.css', '--watch'],
+  {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  },
+);
+tailwind.on('error', (cause) => {
+  console.error(\`could not start the admin stylesheet watch compile: \${cause.message}\`);
+});
+
 const child = spawn(npx, ['--no-install', 'vite', 'dev', ...process.argv.slice(2)], {
   stdio: 'inherit',
   shell: process.platform === 'win32',
@@ -73,9 +88,13 @@ const child = spawn(npx, ['--no-install', 'vite', 'dev', ...process.argv.slice(2
 child.on('error', (cause) => {
   console.error(\`could not start the dev server: \${cause.message}\`);
   console.error('Next step: run "npm install" in this directory, then "npm run dev" again.');
+  tailwind.kill();
   process.exit(1);
 });
-child.on('exit', (code) => process.exit(code ?? 1));
+child.on('exit', (code) => {
+  tailwind.kill();
+  process.exit(code ?? 1);
+});
 `;
 
 const SHOWCASE_DEV_SCRIPT = 'vite dev';
@@ -120,6 +139,78 @@ export function pruneShowcaseOnlyPackageFields(pkg) {
     }
     delete pkg.devDependencies[dep];
   }
+}
+
+// The scaffolded site's own root CLAUDE.md: the import line every cairn-guidance-installed site
+// carries, plus a short section a developer's own project guidance goes in. install.ts never
+// touches this file (it only writes under .claude/), so this is the one place the bake writes it.
+const TEMPLATE_CLAUDE_MD = `@.claude/cairn/CLAUDE.md
+
+# Your site
+
+Add your own project-specific guidance here; \`cairn-guidance install\` only ever refreshes the imported fragment above, never this file.
+`;
+
+/**
+ * Read the guidance source straight from the monorepo's own `skills/` and `claude/` trees at
+ * `repoRoot`, never through the installed-package resolution install.ts's own readers use at
+ * runtime: this package carries no dependency on @glw907/cairn-cms, so nothing here can resolve
+ * "installed". The version stamped is parsed out of the resolved engine spec (the caret
+ * stripped), not the repo's own package.json version, since an overridden engineSpec should
+ * stamp what the template will actually depend on.
+ * @param {string} engineSpec the resolved engine dependency spec, `^x.y.z`
+ * @returns {Promise<import('../../../src/lib/guidance/install.js').GuidanceSource>} the guidance
+ *  source, ready for installGuidance
+ */
+async function readMonorepoGuidanceSource(engineSpec) {
+  const { walkPackagedTree } = await loadGuidanceInstall();
+  const skillsRoot = path.join(repoRoot, 'skills');
+  const skills = {};
+  const refused = [];
+  for (const entry of await readdir(skillsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const walked = await walkPackagedTree(path.join(skillsRoot, entry.name));
+    skills[entry.name] = walked.files;
+    refused.push(...walked.refused.map((rel) => `skills/${entry.name}/${rel}`));
+  }
+  const agentsWalk = await walkPackagedTree(path.join(repoRoot, 'claude', 'agents'));
+  refused.push(...agentsWalk.refused.map((rel) => `claude/agents/${rel}`));
+  // The source here is the monorepo itself, so an entry the walk refuses is a repo bug (a stray
+  // symlink or device node under a tree meant to be plain markdown), not a hostile package.
+  if (refused.length > 0) {
+    throw new Error(`bake: refused non-regular guidance entries: ${refused.join(', ')}`);
+  }
+  const fragment = await readFile(path.join(repoRoot, 'claude', 'CLAUDE.md'), 'utf8');
+  const version = engineSpec.replace(/^[\^~>=<\s]+/, '');
+  return { skills, agents: agentsWalk.files, fragment, version, snippets: {}, refused };
+}
+
+/**
+ * Load the compiled guidance install module, thrown with a clear instruction when `npm run
+ * package` has not run yet, so a missing `dist/` fails loud rather than with a bare
+ * ERR_MODULE_NOT_FOUND.
+ * @returns {Promise<typeof import('../../../src/lib/guidance/install.js')>} the compiled module
+ */
+async function loadGuidanceInstall() {
+  try {
+    return await import('../../../dist/guidance/install.js');
+  } catch (cause) {
+    throw new Error('bake: dist/guidance/install.js is missing. Run "npm run package" first.', { cause });
+  }
+}
+
+/**
+ * Write the guidance tree, the version stamp, and the manifest into the emitted template under
+ * `.claude/`, then write the template's own root `CLAUDE.md` importing the fragment.
+ * @param {string} emitted the emitted template's root
+ * @param {string} engineSpec the resolved engine dependency spec, used to stamp VERSION
+ * @returns {Promise<void>}
+ */
+async function writeGuidance(emitted, engineSpec) {
+  const { installGuidance } = await loadGuidanceInstall();
+  const source = await readMonorepoGuidanceSource(engineSpec);
+  await installGuidance(emitted, source);
+  await writeFile(path.join(emitted, 'CLAUDE.md'), TEMPLATE_CLAUDE_MD);
 }
 
 const ENGINE_PACKAGE_JSON = path.join(repoRoot, 'package.json');
@@ -195,6 +286,7 @@ export async function bake({ to, engineSpec, devSpec }) {
   const emittedScriptsDir = path.join(emitted, 'scripts');
   await mkdir(emittedScriptsDir, { recursive: true });
   await writeFile(path.join(emittedScriptsDir, 'dev.mjs'), DEV_SHIM);
+  await writeGuidance(emitted, resolvedEngineSpec);
   return emitted;
 }
 

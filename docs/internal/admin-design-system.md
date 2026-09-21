@@ -391,6 +391,51 @@ alongside the component recipes above and below it.
   ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
   release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
   screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
+- **Tooltip on an icon-only action control (`admin-toolkit`'s `Tooltip`).** The replacement for a
+  native `title` attribute, which never reaches a keyboard user (no `:focus-visible` trigger, no
+  Escape dismissal) and never reaches a touch user (no hover at all). Wrap the trigger: `<Tooltip
+  text="Insert block"><button aria-label="Insert block">...</button></Tooltip>`. Shows on hover and
+  on `:focus-visible`, hides on Escape without moving focus off the trigger, and shows on a
+  coarse-pointer tap (read from the triggering event's own `pointerType`, never `matchMedia`,
+  since a hybrid device can carry both a mouse and a touchscreen). The bubble is a manual popover
+  placed by CSS anchor positioning, the same recipe the editor toolbar's own menus use, so it
+  renders in the top layer and no transformed, scaled, or `overflow: hidden` ancestor (an open
+  modal's box is all three) can displace or clip it; never position a tooltip bubble by writing
+  coordinates onto a fixed box. A guarded control (the
+  `cairn-btn-guarded` pattern below) passes its guard reason as `text`, empty when unguarded:
+  `Tooltip` treats an empty string as opt-out, never an empty bubble. Every engine screen sweeps its
+  own icon-only `title` onto this component; a new one does the same rather than reaching for
+  `title` again.
+  - **Name versus description.** When the bubble text is already the trigger's own accessible name
+    (its `aria-label`, or its rendered text when it has no label), `Tooltip` sets no
+    `aria-describedby`: the name carries the words, and a description repeating them has a screen
+    reader read the same sentence twice. When the text says more than the name, as a guard reason
+    on a control labelled with its action does, the description is set. Both branches still render
+    the bubble, which is what a sighted mouse user reads. So a screen's own assertion about a
+    reason reads the bubble, never the description.
+  - **Motion.** Enter on `--cairn-dur-base` and `--cairn-ease-entrance`, exit one band down on
+    `--cairn-dur-quick` and `--cairn-ease-exit`, the Motion section's own enter/exit asymmetry for
+    a surface that leaves and does not stay nearby. A hover-shown bubble additionally carries a
+    75ms `transition-delay`, inside `@media (prefers-reduced-motion: no-preference)`, so a pointer
+    crossing a dense toolbar row does not flash a bubble on every trigger it passes. The delay is a
+    paint delay on the fade, never a delay on the open state, and a reduced-motion reader waits for
+    nothing.
+  - **All three WCAG 1.4.13 bullets are the component's own**, because it authors the bubble
+    rather than leaving it to the user agent's `title` presentation. Dismissible: a
+    `document`-level Escape listener, non-capturing and propagating, so an enclosing dialog still
+    closes on the same press. Hoverable: the bubble takes pointer events, and a hover-leave from
+    the trigger holds the bubble open for a 150ms grace (`HOVER_HIDE_GRACE_MS`, matching
+    `--cairn-dur-base`) before clearing it, since Chromium's hit-testing for a top-layer popover
+    does not extend into the gap between trigger and bubble, so a pointer that merely pauses there
+    would otherwise dismiss the bubble with nowhere to land. Persistent: the bubble stays open
+    until the input mode that opened it says otherwise; the grace only defers a hover-leave's own
+    dismissal, never dismisses on its own initiative.
+  - **Where the wrapper can sit.** The wrapper is a `<span>`, which HTML's content model bars
+    directly inside `<tr>` (only `<td>`/`<th>` are valid children there) or `<ul>`/`<ol>` (only
+    `<li>`), regardless of the wrapper's own `display: contents`, a CSS property with no bearing on
+    HTML content-model validity. Wrap the control inside the cell or the list item, never the row
+    or the list itself. A natively `disabled` control receives no pointer events in some browsers,
+    so a reason that must reach a mouse user takes the `aria-disabled` guarded shape.
 - **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
   Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`).** `StatusChip`
   and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/
@@ -565,7 +610,7 @@ alongside the component recipes above and below it.
   `disabled` is honest here, since the control truly cannot be activated again until the round trip
   resolves. A control refused with a reason instead (Publish with nothing new to publish, the Figure
   button off the caret below) keeps `aria-disabled` plus the `cairn-btn-guarded` marker: the control
-  stays perceivable and its title tooltip keeps naming the reason, which native `disabled` would strip
+  stays perceivable and its Tooltip keeps naming the reason, which native `disabled` would strip
   from the accessibility tree and which DaisyUI 5.6's `[aria-disabled="true"]` `pointer-events: none`
   rule would also silence without the marker's unlayered restore. The two shapes are not
   interchangeable: a wait resolves on its own and needs no reason attached, while a refusal needs its
@@ -865,8 +910,8 @@ alongside the component recipes above and below it.
   button uses `aria-disabled` (not the native `disabled`) with a stateful `aria-label`, dimmed by the
   same guarded-button pattern as Publish above (`cairn-btn-guarded`, the `not-allowed` cursor, no
   `opacity` utility layered on top): DaisyUI 5.6 added `[aria-disabled="true"]` to the `.btn` disabled
-  selector with `pointer-events: none`, which would kill the title tooltip naming why the control is
-  off, so a guarded button that must keep its tooltip carries the `cairn-btn-guarded` marker; an
+  selector with `pointer-events: none`, which would kill the Tooltip naming why the control is
+  off, so a guarded button that must keep its Tooltip carries the `cairn-btn-guarded` marker; an
   unlayered rule in `cairn-admin.css` restores `pointer-events` for it (the click handler already
   guards inertness). The form carries a caption field (with the hint that the caption is shown to
   everyone and is not the alt text), an alt-status row that names the image's alt state distinct from
@@ -1356,6 +1401,12 @@ may transition `margin-left` and nothing else, one such element per screen. Ther
 and no selector key: the exception is keyed on the attribute plus the property. A second layout
 property on the carrying element is a finding, and a second carrying element on the same screen is
 a finding on that second element.
+
+**The discrete-popover arm.** `display` and `overlay` also pass when the same transition entry
+carries `allow-discrete`: with it, the discrete flip defers to the end of the transition so the
+paint property beside it (typically `opacity`) finishes first, the documented CSS idiom for a
+popover or dialog leaving the top layer. Without `allow-discrete` on that entry, `display` and
+`overlay` remain outside the vocabulary.
 
 ### Enter and exit, with the floor
 

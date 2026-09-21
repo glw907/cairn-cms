@@ -80,24 +80,38 @@ code on `main`, and a transcript needs a real run of the released behaviour.
    is anyone automating against `cairn`. They arrive from `cairn help agents`, a `--json` help
    line, or an admin page's link. Vocabulary is fully technical. Success is branching on every
    exit code and parsing every payload without running the tool to find out.
-2. Two new pages, `docs/reference/cli-exit-codes.md` and `docs/reference/cli-json-output.md`,
-   linked from `docs/reference/README.md`. `check:reference` visits only export subpaths and does
-   not cover them.
-3. The tool's log-event content folded into `docs/reference/log-events.md`, which stays the one
+2. Gate readiness for these pages: `scripts/checks/check-symbols.mjs` learns the Go tool's
+   flags, since it resolves a `--flag` in a shell fence only against the scaffolder's parser and
+   a one-by-one allowlist, and the contract pages are made of `cairn ... --json` fences.
+3. Two new pages, `docs/reference/cli-cairn-exit-codes.md` and
+   `docs/reference/cli-cairn-json-output.md`, named like the arm's existing `cli-<binary>` pages
+   and linked from `docs/reference/README.md`. `check:reference` visits only export subpaths and
+   does not cover them. They document the contracts as `main` has them after the retirement,
+   including the local action's payload and any reason code it added. Their facts get new `##`
+   sections in `docs/internal/facts/reference.md`. They carry no transcripts; each JSON example
+   is copied from a golden under `tool/internal/render/testdata/`, named in the brief's manifest.
+   Their exemplar is `docs/reference/cli-cairn-manifest.md`.
+4. The tool's log-event content folded into `docs/reference/log-events.md`, which stays the one
    log vocabulary page.
-4. The tool-side move, **in the same merge**: `tool/docs/reference/exit-codes.md`,
-   `json-output.md`, and `log-events.md` deleted; the schemas moved to `tool/schema/`; a docs base
-   URL constant; the `--json` help text and `cairn help agents` repointed; the drift tests'
-   paths moved (`usage_test.go`, `json_schema_test.go`, `help_agents_test.go`); the help goldens
-   recut. Four Go tests read these files at test time, so a deletion merged apart from the Go
+5. The tool-side move, **in the same merge**: `tool/docs/reference/exit-codes.md`,
+   `json-output.md`, and `log-events.md` deleted; every `*.schema.json` beside them (six after
+   B2's segment 5) moved to `tool/schema/`; one docs base URL constant, reusing `docsBase` in
+   `tool/internal/render/layout.go`; the `--json` help text and `cairn help agents` repointed;
+   the drift tests' paths moved (`usage_test.go`, `json_schema_test.go`, `help_agents_test.go`);
+   `messages_test.go`'s budget-docs test, which reads `exit-codes.md` and `tripwire.md` in one
+   loop, split so the half that stays still passes; `tool/README.md`'s exit-codes link
+   repointed; the help goldens recut. Four Go tests read these files at test time, so a deletion merged apart from the Go
    edits turns `main` red. The pass's gate includes `make -C tool check`, and `go-conventions`
    governs every Go edit. The tool's conductor confirms `tool/` is quiet before the pass starts.
-5. The moved pages change graders, from `tool/.vale.ini`'s own styles to the repo's Google and
-   Cairn set. `tool/.vale.ini` keeps governing what stays under `tool/docs/`.
+6. The moved pages change graders, from `tool/.vale.ini`'s own styles to the repo's Google and
+   Cairn set. `tool/.vale.ini` keeps governing what stays under `tool/docs/`. A Vale finding is
+   fixed on the page; a wrong one gets the scoped suppression the register's "When a Vale finding
+   is wrong" section prescribes.
 
 `tool/docs/credentials.md` and `tool/docs/tripwire.md` stay as the interim copy until pass B,
 because their destinations are admin pages. `tool/docs/release-candidate-notes.md`,
-`tool/docs/friction.md`, `tool/docs/adr/`, and `tool/docs/design/` stay for good.
+`tool/docs/adr/`, and `tool/docs/design/` stay for good, and so does `tool/docs/friction.md` once
+the after-1.0 framing's site round creates it, since it is a working record and no public page.
 
 The link repoint reaches operators in the next tool tag after pass A merges, cut by the tool's
 conductor. This supersedes the line in
@@ -117,8 +131,7 @@ conductor. This supersedes the line in
    page always names the exact file per platform, and that the fallback past the ceiling is the
    profile's existing "ask a developer".
 2. **Gate readiness**, before any drafter runs. `scripts/checks/transcript-blocks.mjs` gains a
-   fixture root for tool captures and updated `PAGE_FLOORS`. `scripts/checks/check-symbols.mjs`
-   learns the Go tool's flags. `scripts/checks/check-facts.mjs` accepts the vendor-figure tag,
+   fixture root for tool captures and updated `PAGE_FLOORS`. `scripts/checks/check-facts.mjs` accepts the vendor-figure tag,
    and `docs/internal/facts/README.md` documents it. A retired scaffolder fixture is declared
    under the fixtures README's "Deliberately unconsumed" heading.
 3. **Twelve pages, drafted fresh.** Rebuilt: `README.md`, `before-you-start.md`,
@@ -128,8 +141,9 @@ conductor. This supersedes the line in
    scaffold in the arm's order, because `create-cairn-site` calls `cairn` once the doctor is gone
    and a prerequisite buried in another page fails the profile's grading question.
 4. **The second tool-side move, in the same merge as its pages:** `tool/docs/credentials.md` and
-   `tool/docs/tripwire.md` deleted, with `messages_test.go`'s existence assertion, the
-   credentials drift test, and `tool/README.md`'s links repointed. Same gate and same quiet-`tool/`
+   `tool/docs/tripwire.md` deleted, with the rest of `messages_test.go`'s budget-docs test, the
+   credentials drift test in `permissions_test.go`, and `tool/README.md`'s remaining links
+   repointed. Same gate and same quiet-`tool/`
    rule as pass A.
 5. **Facts.** New `##` sections in `docs/internal/facts/admin.md` for the three new pages.
 
@@ -149,7 +163,8 @@ alone, and no admin draft is linked from it.
 
 ## How a page gets made
 
-**Mining, per page.** A Sonnet read of the old page produces three things: an ordered step
+**Mining, per page.** A Sonnet read of the old page (for a tool page, the `tool/docs/` original)
+produces three things: an ordered step
 skeleton, a command manifest with a fixture manifest, and a dispositions diff. The skeleton gives
 each step its precondition, the cost or irreversible consequence disclosed before it, the move
 between browser and terminal, the prompt text, and the step's own success signal. The manifests
@@ -172,8 +187,8 @@ headings.
 **The drafter** receives the brief, the track's profile, the register's universal contract and
 track section, an exemplar, and the error-tier Vale rule list. The exemplar for a pass's first
 page is a calibration specimen the register names; after the owner sitting, the accepted page is
-the exemplar. The drafter never opens the old page and never sources a claim from `tool/docs/`
-prose. It copies commands and transcripts from the manifests and never composes them. A hole it
+the exemplar. The drafter never opens the old page, a `tool/docs/` original included; only the mining
+read does. It copies commands and transcripts from the manifests and never composes them. A hole it
 finds is filed as a bullet against code on `main`; something it needed that no source records
 goes to the friction log.
 

@@ -4,7 +4,10 @@
 > a per-task chain (`cairn-implementer`, then `diff-reviewer`, then the gate), dispatched one task
 > at a time with the Agent tool. Below six implementer-driven tasks, so no workflow runner. Task 4
 > runs in the conductor's own turns, and Task 6 is the release skill, not an implementer dispatch.
-> Every `file:line` below was verified against the tree at `e2615a08`; re-verify at dispatch.
+> **Tasks run strictly serially, 1 through 6, in the one `pre-cut` worktree.** Nothing shares that
+> worktree with a live task: Task 1 deletes `node_modules` and both lockfiles, so any concurrent
+> task would build against a half-installed tree. Every `file:line` below was verified against the
+> tree at `e2615a08`; re-verify at dispatch.
 
 **Date:** 2026-09-21.
 
@@ -22,10 +25,36 @@ three is not this pass's job.
 | --- | --- |
 | **Token ceiling** | **2.5M**. The 80 percent decision point is **2.0M**. |
 | **Checkpoint interval** | Four tasks. One scheduled checkpoint after Task 4, one STATUS write after Task 1 (the lockfile reinstall is the pass's only irreversible step). |
-| **Execution mode** | Per-task chain via the Agent tool (`cairn-implementer`, then `diff-reviewer`), below six tasks. No `pass-execute.js`. |
+| **Execution mode** | Per-task chain via the Agent tool (`cairn-implementer`, then `diff-reviewer`), below six tasks. No `pass-execute.js`. **Serial, one task at a time.** |
 | **Worktree** | `pre-cut`, branch `pre-cut`, off `origin/main`, at `.claude/worktrees/pre-cut`. No task touches the main checkout or any other worktree. |
-| **Merge** | By PR. Before the PR, `git merge origin/main` into `pre-cut`: another session pushes a STATUS update to `main` overnight, so `main` will have moved. Resolve, re-gate, then open the PR and merge on green CI. |
+| **Merge** | By PR. Before the PR, `git merge origin/main` into `pre-cut`: another session pushes a STATUS update to `main` overnight and may merge PR #68, so `main` will have moved. Resolve, re-gate, then open the PR and merge on green CI. |
 | **Segment boundaries** | After Task 1 (irreversible), after Task 3 (Files seam: Tasks 4 through 6 touch no source), and at Task 5's merge. |
+
+## Before each dispatch: the live-executor sweep
+
+Carried forward from the superseded plan. Run before every dispatch, not once at pass start:
+
+1. `git -C <path> status --porcelain` is empty for every entry `git worktree list` reports, except
+   `pre-cut` itself and the Go tool's `cairn-tool-b2`, which is a separate module with no npm
+   lockfile and cannot collide with this pass's installs.
+2. `pgrep -f .claude/worktrees/pre-cut` returns nothing. A live executor in this worktree stops the
+   pass (workstation rule, one executor per worktree).
+3. Warm uncommitted code in `pre-cut` that this pass did not author is stop-and-investigate, never
+   free progress.
+
+## Unattended-work guards (armed by the conductor before Task 1)
+
+Per `~/.claude/docs/unattended-work-guards.md`, read before arming either. This pass runs several
+full gates carrying the showcase e2e, so all three are armed and recorded here as a fact of the
+run:
+
+- **Sleep inhibitors** under the tag `cairn-pre-cut` (`systemd-inhibit --what=sleep`), armed
+  unconditionally rather than only on battery: the kernel can report the charger offline while it
+  charges, and GNOME then suspends on the battery rule.
+- **A battery watchdog**, per the same doc.
+- **A `/loop` heartbeat**, so a stalled dispatch surfaces rather than burning the window silently.
+
+Release the inhibitors at pass close, or at a battery stand-down.
 
 ## The owner's rulings (Geoff, 2026-09-20)
 
@@ -43,46 +72,97 @@ These four are settled. No task re-opens any of them, and no agent asks about th
    out of the write's `catch` so a disk error is not reported as a refusal; and item (6), list a
    refused destination itself in the install report. The other four items in that entry stay filed.
 
+**The scope of rulings 3 and 4.** Ruling 3 governs survey and audit findings, which is Tasks 1 and
+4. Ruling 4 is its only exception, and it is bounded to `ROADMAP.md` items (3) and (6) of the
+`cairn-guidance install` write-hardening entry. No other behavior-changing work enters this pass
+under either ruling.
+
 ## Halts
 
-Stop and write STATUS, then ask one combined question, on any of:
+Stop and write STATUS, then ask one combined question, on any of the pass-wide halts below. Each
+task that can trip a halt also carries its own halt line, in the task.
 
 - The sweep needing more than one fix round.
 - Any red gate.
-- A reviewer hedge on the release notes.
+- A reviewer hedge on the release notes. **A hedge is a halt, and no publish fires.**
+- A visual baseline move not explained by a bumped renderer.
+- The `cairn-release` skill deriving any number other than `0.97.0` (see Task 6).
+- A partial publish (see below).
+- Battery at 11 percent or below outside the unsafe window (see below).
 
 Everything else runs to completion with no check-in.
 
+### The partial-publish playbook
+
+`publish.yml` publishes `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` in two separate jobs that
+can fail apart; `0.95.0` is the cut that proved it, publishing the engine while the dev backend
+failed provenance validation. If one job lands and the other does not:
+
+- **Never bump the version to retry.** The `cairn-release` skill states this directly: "Do not bump
+  the version again to retry; fix the config and re-run the same release's workflow"
+  (`~/.claude/skills/cairn-release/SKILL.md`, section 6, "Verify the publish").
+- **Never retry blindly.** Both jobs carry an already-published guard that exits 0 green, so a
+  blind re-run can print success while changing nothing.
+- Stop. Record which package published and at which version, and report. The fix is a decision, not
+  an overnight action.
+
+### The unsafe window and the battery stand-down
+
+**The unsafe window runs from the version-bump push through both publish jobs reporting green.**
+Nothing else in this pass is unsafe: every other task boundary is a safe stop.
+
+Entering the unsafe window requires **either** a Mains-type power supply online **or** the battery
+at 40 percent or more, **and** the sleep inhibitors still held. If neither holds, do not enter it;
+leave the release staged and report.
+
+**Battery stand-down at 11 percent, anywhere outside the unsafe window:** WIP-commit on `pre-cut`,
+write the STATUS resume prompt, release the inhibitors, and stop.
+
 ## Cut gates (Task 6)
 
-All five must be green before the publish fires:
+All five must be green before the publish fires. Ruling 1: if any is red, stop with the release
+staged and the notes written. No publish, no tag.
 
-1. CI on `main` fully green after this pass's PR merges.
-2. The from-scratch consumer build: `examples/showcase` reinstalled from scratch and built against
-   the packed engine, not a symlinked `node_modules`.
+1. **CI on `main` fully green at the exact SHA the release will tag.** After the cut gates, pin it:
+   `SHA=$(git rev-parse origin/main)`. "Fully green" means every workflow that runs on a push to
+   `main` has conclusion `success` on that SHA, checked with
+   `gh run list --commit "$SHA" --json workflowName,conclusion,status`. **An absent run counts as
+   red**, not as a pass. The workflows, enumerated from `.github/workflows/` and verified at
+   `e2615a08`: **`test`, `e2e`, `create-site`, `scaffold`, `design`**. `norms` is not on that list
+   as a workflow of its own; it carries only `workflow_call` and `workflow_dispatch`, and it runs
+   as a called job inside `e2e` (and inside `publish`), so its result is read through the `e2e`
+   run. `tool` runs only on `tool/**` paths and `tsgo` only on a weekly schedule; neither is
+   required here, and neither counts as absent.
+   **If `origin/main` moved after the gates ran, re-verify on the new SHA before tagging.** Another
+   session pushes STATUS tonight and may merge PR #68, so treat a moved `main` as expected.
+2. **The from-scratch consumer build**, as an outcome rather than a symlink check: in the tree
+   being proved, delete `examples/showcase/node_modules` and `examples/showcase/package-lock.json`,
+   install fresh, and build. `rm -rf examples/showcase/node_modules examples/showcase/package-lock.json`,
+   then `npm install --prefix examples/showcase`, then `npm --prefix examples/showcase run build`.
+   Local Playwright reuses a stale preview off CI, so a local "all green" alone is not this gate.
 3. `npm run check:version`.
 4. `npm view @glw907/cairn-cms versions --json` showing `0.97.0` free.
 5. One independent reviewer (`claude-opus-5`, fresh context, not the conductor and not the agent
    that wrote them) reading the rolled release notes against the whole `## Unreleased` window,
    confirming every `Consumers must:` line survived into the notes and that none contradicts
    another. The window is large: about 2,420 lines of `CHANGELOG.md` between `## Unreleased` and
-   the `0.96.0` heading. Size the dispatch for that.
+   the `0.96.0` heading. Size the dispatch for that. **A hedge is a halt, no publish.**
 
-## Task ordering and independence
+## Task ordering
 
-| Task | Runs as | Files | Independent of |
-| --- | --- | --- | --- |
-| 1, dependency sweep | `cairn-implementer` chain | every `package.json` and lockfile, `docs/internal/record/2026-09-13-minor-bump-features.md`, `CHANGELOG.md`, `ROADMAP.md` | — |
-| 2, guidance hardening | `cairn-implementer` chain | `src/lib/guidance/install.ts`, `src/lib/guidance/bin.ts`, `src/tests/unit/guidance/install.test.ts`, `docs/reference/guidance.md`, `docs/internal/facts/reference.md`, `CHANGELOG.md`, `ROADMAP.md` | — |
-| 3, upgrade brief tools section | `cairn-implementer` chain | one new file under `docs/internal/record/` | **Tasks 1 and 2.** Disjoint. |
-| 4, Blueprint audit | conductor's own turns | one new record under `docs/internal/record/`, `ROADMAP.md` | Tasks 1 through 3 for reading; shares `ROADMAP.md` for writing |
-| 5, close | ritual | STATUS, HISTORY, post-mortem, friction log | — |
-| 6, the cut | `cairn-release` skill | `package.json`, `CHANGELOG.md`, the tag | — |
+**Strictly serial: 1, 2, 3, 4, 5, 6, in the one `pre-cut` worktree.** No task in this pass runs
+concurrently with another. Task 1 deletes `node_modules` and both lockfiles, so for the length of
+that task the worktree has no installed tree for any other task to gate against; and Tasks 1, 2,
+and 4 all write `ROADMAP.md`, while Tasks 1 and 2 both write `CHANGELOG.md` under `## Unreleased`.
 
-**Disjointness, stated precisely.** Task 3's Files are disjoint from Tasks 1 and 2, so Task 3 is
-genuinely independent and may be dispatched concurrently with Task 1. Tasks 1 and 2 are **not**
-disjoint: both write `CHANGELOG.md` under `## Unreleased` and both write `ROADMAP.md`. They run
-sequentially for that reason, not because of a logical dependency.
+| Task | Runs as | Files |
+| --- | --- | --- |
+| 1, dependency sweep | `cairn-implementer` chain | every `package.json` and lockfile in scope, `docs/reference/supported-toolchain.md`, `docs/internal/record/2026-09-13-minor-bump-features.md`, `docs/extend/migration-notes.md`, `CHANGELOG.md`, `ROADMAP.md` |
+| 2, guidance hardening | `cairn-implementer` chain | `src/lib/guidance/install.ts`, `src/lib/guidance/bin.ts`, `src/tests/unit/guidance/install.test.ts`, `docs/reference/guidance.md`, `docs/internal/facts/reference.md`, `docs/extend/migration-notes.md`, `CHANGELOG.md`, `ROADMAP.md` |
+| 3, upgrade brief tools section | `cairn-implementer` chain | one new file under `docs/internal/record/` |
+| 4, Blueprint audit | conductor's own turns | one new record under `docs/internal/record/`, `ROADMAP.md` |
+| 5, close | ritual | STATUS, HISTORY, post-mortem, friction log, `ROADMAP.md` |
+| 6, the cut | `cairn-release` skill | `package.json`, `packages/cairn-cms-dev/package.json`, `templates/waymark/` (re-emitted), `docs/reference/supported-toolchain.md`, `CHANGELOG.md`, the tag |
 
 **Why the sweep runs first here, against the 2026-09-14 plan's sweep-last rule.** That rule existed
 so newly created visual baselines would not be born on a toolchain the sweep then moved. Task 2
@@ -92,19 +172,51 @@ runs on the toolchain the cut will read.
 
 **Gate contention.** Task 3 is a docs-only task whose gate is light-lane
 (`CAIRN_GATE_LANE=light`); Task 1's gate is browser-bearing. Run at most one browser-bearing gate
-at a time. If Task 3 is dispatched concurrently with Task 1, its gate must be light-lane or it
-queues.
+at a time, this pass's own and any other session's.
 
 ## Standing gate procedure (every task)
 
 - Gates run through `cairn-run-gate '<command>'`. **On exit 75, re-issue the same command
-  unchanged until it prints `gate exit:`.** Never poll a log.
+  unchanged until it prints `gate exit:`.** Never poll a log. Act on any NOTE the tool prints
+  before the next dispatch.
 - A gate that launches no browser sets `CAIRN_GATE_LANE=light`.
-- The full gate for this pass is: `npm run check` (svelte-check, 0 errors and 0 warnings),
-  `npm test`, and the CI-only checks the `cairn-pass` skill names: `check:comments`,
-  `check:reference`, `check:reference:signatures`, `check:surface`, `check:snippets`,
-  `check:transcripts`, `check:symbols`, `check:arm-indexes`, `check:package`, `check:docs`,
-  `check:facts`, `check:version`.
+
+### The full gate, named from CI
+
+The earlier draft's twelve-check list was incomplete. The full gate is the CI list, read from
+`.github/workflows/test.yml`, `design.yml`, and `norms.yml` at `e2615a08`. Every name below was
+verified to exist as a script in the root `package.json` unless noted:
+
+- **The two roots:** `npm run check` (svelte-check, 0 errors and 0 warnings) and `npm test`
+  (exit 0, not just a passing count).
+- **Package and surface:** `check:package`, `check:surface`, `check:self-use`,
+  `check:custom-surface`, `check:dev-package`, `check:chassis-boundary`, `check:cm-internals`.
+- **Docs and reference:** `check:reference`, `check:reference:signatures`, `check:docs`,
+  `check:target-stack`, `check:arm-indexes`, `check:facts`, `check:transcripts`, `check:symbols`,
+  `check:snippets`, `check:prose`, `check:vale`, `check:comments`, `check:rulings-format`,
+  `check:editor-quotes`, `check:visuals`, `check:readiness`.
+- **Craft and admin:** `check:idioms`, `check:invisible-craft`, `check:admin-css-classes`.
+- **Version and template:** `check:version`, `check:template`, `test:emit`, and
+  `npm --prefix packages/create-cairn-site test` (which needs the `template/` bake first, as
+  `test.yml` does it).
+- **Consumer-facing:** `check:consumers`, then the showcase's own
+  `npm --prefix examples/showcase run check`, `check:cairn`, `test:unit`, and `format:check`.
+- **From `design.yml`:** `check:public-tokens`, `test:reskin`, and the styleguide e2e
+  (`npm --prefix examples/showcase run test:e2e -- styleguide`).
+- **From `norms.yml`:** `norms:check`, which needs a built and served showcase admin.
+- **`check:surface-leaks` does not exist as a script.** The reviewer named it, but
+  `check-surface-leaks.mjs` runs inside `check:surface`
+  (`package.json:40`). Running `check:surface` covers it; do not invent a script name.
+
+**Sequencing, mandatory.** `npm test`, `check:custom-surface`, and `check:consumers` all repackage
+`dist`, so they run **strictly sequentially**, never concurrently with each other.
+
+**Scope.** A per-task gate may be scoped to that task's blast radius, and each task below names its
+scope. The **full list runs at the end of Task 1**, again at **Task 5** after the merge from
+`main`, and on **CI**.
+
+### Two standing gotchas
+
 - **Worktree gotcha, mandatory for Task 1.** `examples/showcase/node_modules` symlinks back to the
   main checkout, so the showcase resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` to
   **main's** build and silently proves the wrong engine. A from-scratch `npm install` in this
@@ -112,6 +224,20 @@ queues.
 - **Baseline gotcha.** Visual baselines are CI-canonical. A local `CI=1 test:e2e` is green when its
   only visual failures are exactly the files the latest baseline regen commit rewrote. Anything
   else is a real red. Committing a locally biased baseline is forbidden.
+
+### The baseline procedure (replaces "declare intended moves before the run")
+
+A dependency sweep cannot know in advance which surfaces a bumped renderer repaints, so this pass
+does not ask for a declared list. It asks for a classification after the fact:
+
+1. Run the showcase e2e.
+2. Classify every visual failure against the files the latest CI baseline regen commit rewrote.
+   Those are not red locally; they are this workstation's known Chromium divergence.
+3. A move **attributable to a bumped renderer** is regenerated on CI, never locally:
+   `gh workflow run e2e.yml --ref pre-cut -f update_snapshots=true` (the input name
+   `update_snapshots` is verified in `.github/workflows/e2e.yml`). Read the committed diff.
+4. **Any move not explained by a bumped renderer is a halt.**
+5. Never commit a locally generated baseline.
 
 ---
 
@@ -133,7 +259,20 @@ loaded, but the skill is the procedure of record.
 | `packages/cairn-cms-dev/package.json` | no | workspace member; shares the root lockfile. Its only dependency is `@glw907/cairn-cms: file:../..` |
 | `packages/create-cairn-site/package.json` | no | workspace member; shares the root lockfile. One dependency, `@clack/prompts: ^1.7.0` |
 | `examples/showcase/package.json` | `examples/showcase/package-lock.json` | not a workspace; consumes the root by `file:`. 28 declared dependencies |
-| `templates/waymark/package.json` | **no lockfile** | the emitted starter template, `private: true`, not a workspace. Its ranges are still rewritten; it pins `@glw907/cairn-cms: ^0.96.0` and `@glw907/cairn-cms-dev: ^0.96.0`, which Task 6 bumps, not this task |
+
+`packages/cairn-cms-dev` declares `peerDependencies` (`@glw907/cairn-cms: *` and
+`@sveltejs/kit: ^2.61.0`) as well as its `file:../..` devDependency, and the sweep considers that
+Kit peer range like any other peer range.
+
+**`templates/waymark` is excluded from the before table, because it is generated.**
+`packages/create-cairn-site/scripts/emit-template-dir.mjs` emits the whole tree from
+`examples/showcase` plus the bake, wholesale on every run, so a hand edit survives at most one
+emit. Its two cairn pins derive from the root and dev package versions at bake time, and every
+other range in it derives from `examples/showcase`. **`examples/showcase` is the source of its
+ranges**, so moving the showcase is what moves the template. This task does not hand-edit it. If a
+sweep-moved range should reach the template within this pass, re-emit it with
+`npm run emit:template` (the script name is verified in `package.json`) and prove it with
+`npm run check:template`, which is the same emitter under `--check`.
 
 **Out of scope:** the Go module at `tool/` and its `go.mod`. It has its own gate and is not part of
 the npm package a site installs.
@@ -165,42 +304,59 @@ the pass that would have taken them never ran.
       with its own trigger, never taken. TypeScript 7's existing trigger (`svelte-check --tsgo` runs
       green, checked weekly by `tsgo.yml`) is carried forward as it stands in `docs/STATUS.md`.
 - [ ] **Ranges rewritten** to `^<newest non-major>` for every dependency and devDependency in every
-      manifest above, including `templates/waymark`. Peer ranges do not move unless the survey found
-      a reason and named it.
+      manifest above. `templates/waymark` is not hand-edited; it is re-emitted, per the note above.
+      Peer ranges do not move unless the survey found a reason and named it.
+- [ ] **`docs/reference/supported-toolchain.md` reconciled.** The page's `Target today` column is
+      derived-checked by `scripts/checks/check-target-stack.mjs` from the root `package.json`'s own
+      version, `engines`, and peer ranges, and from `examples/showcase`'s `package.json`
+      (wrangler, adapter, typescript) and its `wrangler.jsonc` `compatibility_date`. Every one of
+      those sources is in this task's blast radius, so the page moves with them. **The criterion is
+      `npm run check:target-stack` green**; the gate, not a hand reading, decides the cells.
+- [ ] **`npm run check:template` green**, and the template re-emitted with `npm run emit:template`
+      first if any range it derives from `examples/showcase` moved.
+- [ ] **A `docs/extend/migration-notes.md` bullet** under its `## Unreleased` section for anything
+      a consumer must do. That file is a per-version record outside the docs freeze and is
+      maintained every pass, same as the reference arm. If the entry carries no `Consumers must:`
+      line, it needs no bullet, and the task says so.
 - [ ] **Lockfiles regenerated from scratch, in dependency order.** Delete `node_modules` and the
       lockfile in the root and in `examples/showcase`, then `npm install` at the root first (its
       `prepare` builds the package) and in `examples/showcase` second. Never `npm ci` after deleting
       a lockfile. Workspace members need no separate install.
 - [ ] **The lockfile delta recorded** in the survey record: every resolved-version change in both
       lockfiles, since caret-satisfied packages moved silently.
-- [ ] **A `CHANGELOG.md` entry under `## Unreleased`.** It carries a `Consumers must:` line only if
-      something the consumer compiles or renders moved: a packaged stylesheet, a bundled icon set, a
-      peer range, or the DaisyUI/Tailwind/Svelte/Kit versions the showcase and template declare. If
-      nothing consumer-facing moved, the entry says "No consumer action."
+- [ ] **A `CHANGELOG.md` entry under `## Unreleased`** that **lists every moved runtime
+      `dependencies` floor of the published package**, since those are what a consumer's own
+      install resolves against. A **`Consumers must:` line appears only when a peer range or a
+      packaged asset moves** (a stylesheet, a bundled icon set, a font), not merely because a
+      runtime floor moved. If nothing in either category moved, the entry says "No consumer
+      action."
 - [ ] **`ROADMAP.md` lines** for every filed item and for any proposed refactoring pass, each in the
       tier where it bites, naming the code, the capability, and the pass that first leans on it.
 
 ### Acceptance criteria
 
-- The before table names every one of the five manifests, and the two `npm audit` runs are both
-  reported.
+- The before table names every one of the four manifests in scope, and the two `npm audit` runs are
+  both reported. `templates/waymark` is absent, by design, with the reason stated.
 - Every package that moved has a survey section covering exactly its `current..target` range.
 - Every feature-to-leverage and practice-to-change item carries a ruling, and every "file" ruling
   has a matching `ROADMAP.md` line.
 - Both lockfiles are regenerated wholesale, not patched; the diff shows a full regeneration.
 - Every gate-risk verification named in the survey is run by name and its result reported.
-- The full gate is green: `npm run check` at 0 errors and 0 warnings, `npm test` exit 0, and all
-  twelve CI-only checks.
+- **The full gate is green**, the whole CI list named under "Standing gate procedure", with
+  `npm test`, `check:custom-surface`, and `check:consumers` run sequentially. This task is where
+  the full list runs; its blast radius is every manifest, so nothing is scoped out.
+- `check:target-stack` and `check:template` are both green.
 - The from-scratch showcase build and e2e run green, after a from-scratch `npm install` in this
-  worktree's `examples/showcase`. Any visual failure outside the files the latest baseline regen
-  commit rewrote is a red and a halt.
+  worktree's `examples/showcase`. Every visual failure is classified per the baseline procedure.
 - No major is taken. No behavior-changing refactor is taken.
 
-### Constraints
+### Constraints and halts
 
-- One fix round. A second is a halt.
-- Baseline moves a bump causes are declared before the run as intended moves, regenerated by file
-  path on CI, and read. An undeclared move is a stop.
+- One fix round. **A second fix round is a halt.**
+- **A visual baseline move not explained by a bumped renderer is a halt.** Follow the baseline
+  procedure above: classify, regenerate on CI for renderer-attributable moves, read the committed
+  diff, and never commit a local baseline.
+- **A red gate is a halt.**
 
 ---
 
@@ -219,7 +375,8 @@ items (3) and (6). Items (1), (2), (4), and (5) stay filed, with the entry's tri
 **Current behavior at HEAD**, verified by reading the code:
 
 - `installGuidance` writes each destination at `install.ts:373-382`. The write is wrapped in a bare
-  `catch` at `install.ts:376-379`:
+  `catch` at `install.ts:376-379`. **Current-state evidence, quoted so the task recognizes the
+  block, not a prescription of the fix:**
 
   ```
   } catch {
@@ -245,15 +402,19 @@ plan does not prescribe it.
 **Test-first acceptance criteria** (`src/tests/unit/guidance/install.test.ts`, inside the
 `installGuidance` describe block that starts at `install.test.ts:174`):
 
-- A new test makes the write fail with a non-`ENOENT` errno (for example a read-only destination
-  directory yielding `EACCES`), asserts the destination is **not** in `report.refused`, and asserts
-  the report names it as an error carrying the errno code. It fails before the change and passes
-  after.
-- Every existing refusal test still passes unchanged, in particular `install.test.ts:322`, `:341`,
-  `:358-361`, `:379-380`, and `:400`, which assert containment and symlink refusals land in
-  `report.refused`.
-- The test skips on a platform where the errno cannot be provoked, using the existing `skipIf`
-  idiom already in the file.
+- A new test makes the write fail with a non-`ENOENT` errno, asserts the destination is **not** in
+  `report.refused`, and asserts the report names it as an error carrying the errno code. It fails
+  before the change and passes after.
+- **The mechanism is the task's choice; the criterion is that the disk-error assertion always runs
+  on CI.** A mocked filesystem rejection carrying a `code` satisfies it. An environment-dependent
+  `skipIf` does not, because a test that skips on the runner proves nothing at the cut. The plan
+  does not prescribe a read-only destination directory, and the task should not reach for one if a
+  mock is simpler.
+- Every existing refusal test still passes unchanged. Line anchors, corrected against the tree:
+  `install.test.ts:322` is the **EISDIR** case (the destination that already exists as a
+  directory, in the `it` that opens at `:315`); `install.test.ts:341` is the **symlinked-parent
+  happy path**, which asserts `report.refused` is empty rather than asserting a refusal. The
+  containment and symlink refusal assertions are at `:358-361`, `:379-380`, and `:400`.
 
 ### Fix B, item (6): list a refused destination itself, not only its `.orig` sibling
 
@@ -271,6 +432,14 @@ plan does not prescribe it.
 - The existing test proves exactly this gap: `install.test.ts:410-431` asserts
   `report.refused` contains `.claude/skills/foo/SKILL.md.orig` and asserts nothing about
   `.claude/skills/foo/SKILL.md`.
+
+**The code is what is wrong here, not the doc.** `install.ts`'s own TSDoc already documents the
+intended behavior: the `refused` field's comment at `install.ts:317-321` enumerates "a `.orig` path
+whose recovery copy could not be made" among the refusal reasons, and `installGuidance`'s doc block
+at `install.ts:328-336` states outright that it "refuses the destination too when the `.orig`
+beside it cannot be made, so an edit is never overwritten without its recovery copy." **Fix B
+reconciles the code to the doc**, so the doc block needs no rewrite; the implementation catches up
+to it.
 
 **Required outcome:** when a destination is skipped because its `.orig` could not be made, the
 destination path appears in the report's refusal list alongside the `.orig` path.
@@ -296,15 +465,20 @@ destination path appears in the report's refusal list alongside the `.orig` path
 - [ ] **`docs/reference/guidance.md`**, whose described output changes. Two passages are affected:
       the containment and refusal paragraph at `guidance.md:35-40` ("A refusal names the path,
       repairs nothing, and the run continues"), which must now distinguish a refusal from a write
-      error; and the `.orig` paragraph at `guidance.md:42-47`, which currently says "A symlink at
-      the `.orig` path is refused by name, and the destination beside it is left alone in that run"
-      and must now say the destination is named too. The fix is agent-facing, not register-graded,
-      but it is still gated by the page's own gates (`check:docs`, `check:vale`).
-- [ ] **A `CHANGELOG.md` entry under `## Unreleased`** describing both fixes. `cairn-guidance` is a
-      bin, not a typed export subpath (`package.json`'s `exports` has no `./guidance` key), so
-      `InstallReport` is not part of the consumer-importable surface. The entry carries a
-      `Consumers must:` line only if the printed CLI output changes in a way a site's CI could be
-      parsing; otherwise "No consumer action."
+      error; and the `.orig` paragraph at **`guidance.md:42-49`**, which currently says "A symlink
+      at the `.orig` path is refused by name, and the destination beside it is left alone in that
+      run" and must now say the destination is named too. The fix is agent-facing, not
+      register-graded, but it is still gated by the page's own gates. Because that page carries a
+      fenced output block, its gates include **`check:symbols` and `check:transcripts`** as well as
+      `check:docs` and `check:vale`: a changed printed line must move in the block too, or the
+      transcript gate catches it.
+- [ ] **A `CHANGELOG.md` entry under `## Unreleased`** describing both fixes, stating plainly
+      **"no consumer action"**. **Ruled, not left open:** the entry carries no `Consumers must:`
+      line. `cairn-guidance` is a bin, not a typed export subpath (`package.json`'s `exports` has
+      no `./guidance` key), so `InstallReport` is not consumer-importable; no consumer action
+      exists, and no parser of the report's printed shape exists anywhere in `tool/` or
+      `packages/`. No `docs/extend/migration-notes.md` bullet follows either, since that file
+      records what a consumer must do.
 - [ ] **`ROADMAP.md:845-861` edited** so items (3) and (6) are removed and the four remaining items
       are renumbered or renamed coherently. The entry's trigger line stays. Per `CLAUDE.md`, the
       roadmap is a pass dimension: a shipped item is not done until the roadmap stops listing it.
@@ -312,11 +486,19 @@ destination path appears in the report's refusal list alongside the `.orig` path
 ### Acceptance criteria
 
 - Each fix has a test that fails at `HEAD` and passes after.
-- The full gate is green, including `check:facts`, `check:docs`, `check:reference`, and
-  `check:comments`.
+- **Fix A's disk-error assertion runs on CI unconditionally.** A test that skips on the runner does
+  not satisfy this criterion.
+- The gate is scoped to this task's blast radius: `npm run check`, `npm test`, `check:comments`,
+  `check:facts`, `check:docs`, `check:vale`, `check:reference`, `check:reference:signatures`,
+  `check:symbols`, `check:transcripts`, and `check:version`. No source outside
+  `src/lib/guidance/` moves, so the surface, template, design, and norms gates are out of scope
+  here and run at Task 5 and on CI.
 - No item other than (3) and (6) is touched. Item (4) in particular (moving `readIfExists` and
   `mkdir` inside the write's `try`) sits adjacent to Fix A in the same block at `install.ts:364-379`
   and must **not** be taken; accretion by adjacency is the named failure mode here.
+
+**Halt:** a second fix round, a red gate, or a `diff-reviewer` verdict that Fix B changed the
+documented contract rather than reconciling the code to it.
 
 ---
 
@@ -375,7 +557,9 @@ The task says so in one line rather than listing it.
   under `docs/internal/`, which `.vale.ini` excludes from the Google package, so Vale's role here is
   spelling and link hygiene only.
 - If Task 2 changes what `cairn-guidance install` prints, this section reflects the post-Task-2
-  behavior. Dispatch Task 3 after Task 2, or re-verify it at Task 5.
+  behavior. Task 3 runs after Task 2 by the serial order, so read the post-Task-2 code.
+
+**Halt:** a red gate, or a bin whose usage string contradicts what this section would claim.
 
 ---
 
@@ -392,11 +576,25 @@ implementer chain.
 - Total: **49 files**. (`src/lib/components/` has two subdirectories, `fonts/` and
   `spellcheck-assets/`, neither of which contains a `.svelte` file.)
 
-**Procedure.** Follow the Blueprint server's own sequential workflow: `daisyui_setup_expert` with a
-lowercase `workflowId` first, then `daisyui_rules_enforcer`, then `daisyui_quality_inspector` with
-`auditIntent: "report_only"`. Every `files[].path` is relative to the project root the setup expert
-stored; never an absolute path. `report_only` is correct here and is what the owner's ruling 3
-requires: this is a read-only audit, not a fix round.
+**This task stays in the pass because the owner approved it in scope.** It gates nothing: no
+finding blocks the cut, and every finding is filed.
+
+**Mechanics.** It runs in the conductor's own turns, so the conductor's context is the constrained
+resource and the procedure is built around spending it thinly:
+
+- **One lowercase `workflowId`** for the whole audit, reused across every call.
+- **`daisyui_setup_expert` first**, which stores the project root, then `daisyui_rules_enforcer`.
+- **`daisyui_quality_inspector` with `auditIntent: "report_only"`**, never `fix_changes`. This is a
+  read-only audit, which is also what ruling 3 requires.
+- **Batch the inspector at eight to ten files per call**, each `files[].path` relative to the
+  project root the setup expert stored, never an absolute path. Forty-nine files is five or six
+  calls.
+- **The conductor writes counts and findings to the record file as it goes** and keeps nothing else
+  in context. A finding that reaches the record does not need to stay in the conversation.
+
+**The deferral clause.** If the conductor's remaining context or the battery makes the audit
+unaffordable, **Task 4 defers to a follow-up session**, and Task 5's close says so plainly rather
+than implying it ran. The deferral is not a halt and does not block the cut.
 
 ### Outcomes
 
@@ -419,6 +617,9 @@ requires: this is a read-only audit, not a fix round.
   twice.
 - No visual baseline moves in this task. If a would-be zero-behavior fix moves a baseline, it was
   not zero-behavior; file it.
+
+**Halt:** none of its own. A tool failure or an exhausted context triggers the deferral clause
+above, not a stop-and-ask.
 
 ---
 
@@ -444,71 +645,120 @@ The `cairn-pass` consolidation ritual, in its own order:
 - [ ] **`docs/HISTORY.md`** gains this pass's entry, newest first: what landed, what the gate caught,
       and what a later pass would be wrong to rediscover from scratch.
 - [ ] **A post-mortem** appended to this plan file, with both budget scores: tokens against the 2.5M
-      ceiling (`/cost`), and attended time as two counts (planning misses, execution sittings).
-- [ ] **`git merge origin/main`** into `pre-cut`, resolving whatever the overnight STATUS push
-      changed. `docs/STATUS.md` is the expected conflict.
-- [ ] **Re-gate after the merge**, then open the PR and merge it on green CI.
+      ceiling (`/cost`), and attended time as two counts (planning misses, execution sittings). If
+      Task 4 deferred, the post-mortem says so plainly.
+- [ ] **One `ROADMAP.md` line filing the `publish.yml` install-command question.** A reviewer
+      proposed switching `publish.yml`'s `npm install --no-audit --no-fund` to `npm ci`. **Declined
+      for tonight:** `npm install` with a committed lockfile honors that lockfile, and changing the
+      release pipeline is outside the owner's four rulings. File it as a chore, do not take it.
+- [ ] **`git merge origin/main`** into `pre-cut`, resolving whatever the overnight STATUS push and
+      any merge of PR #68 changed. `docs/STATUS.md` is the expected conflict.
+- [ ] **Re-gate after the merge with the FULL gate list**, the whole CI list named under "Standing
+      gate procedure", sequentially where the sequencing rule applies. Then open the PR and merge
+      it on green CI.
 
 ### Acceptance criteria
 
-- The PR is merged and CI on `main` is fully green afterward.
-- `ROADMAP.md` lists no item this pass shipped, and lists every item this pass filed.
+- The PR is merged and CI on `main` is fully green afterward, on the exact merge SHA.
+- `ROADMAP.md` lists no item this pass shipped, and lists every item this pass filed, including the
+  `publish.yml` chore.
 - `docs/STATUS.md` is at or under 60 lines and carries no past tense.
+
+**Halt:** a red gate after the merge, or a merge conflict in anything other than `docs/STATUS.md`,
+`docs/HISTORY.md`, or `ROADMAP.md`.
 
 ---
 
 ## Task 6: the cut
 
-**Runs through the `cairn-release` skill**, which re-derives the release size from the window's
-contents. The plan does not pre-derive it: the skill owns that judgment, and `check:version`
-enforces the `release-size` marker against the CHANGELOG. The `## Unreleased` block currently
-carries `<!-- release-size: minor -->` (`CHANGELOG.md:3`); the skill confirms or corrects it.
+**Runs through the `cairn-release` skill**, which re-derives the release size and the number from
+the window's contents. `check:version` enforces the `release-size` marker against the CHANGELOG,
+and the `## Unreleased` block currently carries `<!-- release-size: minor -->` (`CHANGELOG.md:3`).
+
+**`0.97.0` is the EXPECTED number, and the owner approved it.** The skill still re-derives at the
+cut, and the two can disagree. **If the skill derives anything other than `0.97.0`, that is a
+halt**, with the release staged and nothing tagged: the owner approved a specific number, so a
+different one is a decision to bring him, not a correction to apply. A merely confirmatory
+re-derivation is not a halt.
+
+**Two of the skill's own requirements, already satisfied by this plan.** Its section 2 requires
+the release window to be on `main` with the dependency sweep as the last merge before the cut and
+no worktree live: **Task 5's merge to `main` satisfies both**, since the sweep is Task 1 of the
+same PR. The only other live worktree tonight is the Go tool's `cairn-tool-b2`, whose Go module
+carries no npm lockfile and so cannot collide with the sweep's installs.
+
+### The two-manifest version, which a root bump does not reach
+
+**`packages/cairn-cms-dev/package.json` carries its own `version` field**, `0.96.0` at `e2615a08`.
+`publish.yml`'s `publish-dev` job reads that file's version, not the root's, and its
+already-published guard **exits 0 green** when that version is already on the registry. So a root
+bump alone produces a green publish run that ships nothing new for the dev backend, and the
+failure is silent. The steps below exist for that.
 
 - [ ] All five cut gates above are green. Ruling 1: if any is red, **stop** with the release staged
       and the notes written. No publish, no tag.
 - [ ] `0.97.0` is confirmed free with `npm view @glw907/cairn-cms versions --json`. Published
       numbers are immutable and every sub-`0.68` number is taken, so the check runs at the cut, not
       from memory.
-- [ ] The version is set at the cut, not before: `package.json` and the CHANGELOG heading move
-      together, per `check:version`'s rule.
-- [ ] `templates/waymark/package.json`'s `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` ranges move
-      from `^0.96.0` to the cut version, and `npm run check:template` passes.
+- [ ] **Both manifests are bumped to the same number in one commit:** the root `package.json` and
+      `packages/cairn-cms-dev/package.json`. The version is set at the cut, not before, and the
+      CHANGELOG heading moves with it, per `check:version`'s rule.
+- [ ] **Assert the two versions are equal before tagging.** A mismatch stops the cut:
+      `test "$(node -p "require('./package.json').version")" = "$(node -p "require('./packages/cairn-cms-dev/package.json').version")"`.
+      `npm run check:dev-package` runs alongside it.
+- [ ] **Re-emit the template only once both manifests carry the cut number**, since the emitter
+      derives `templates/waymark`'s `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` specs from
+      them: `npm run emit:template`, then `npm run check:template` green. Do not hand-edit
+      `templates/waymark/package.json`; the next emit would discard the edit.
+- [ ] `npm run check:target-stack` green, since `docs/reference/supported-toolchain.md`'s "The
+      cairn package" row derives from the root version and moves with the bump.
+- [ ] **Pin the tag to a SHA.** `SHA=$(git rev-parse origin/main)`, verify CI fully green on that
+      exact SHA per cut gate 1, then `gh release create v<x.y.z> --target $SHA`. Never
+      `--target main`: `main` can move between the gate check and the tag. If `origin/main` moved
+      after the gates ran, re-verify on the new SHA first.
 - [ ] The release body is the changelog window since the last published tag, carrying every
-      `Consumers must:` line. Cut with `gh release create v0.97.0 --target main`, which fires the
-      OIDC publish workflow.
-- [ ] **Post-cut verify:** the registry shows `0.97.0` on `latest` for both `@glw907/cairn-cms` and
-      `@glw907/cairn-cms-dev`; provenance is attested; a clean install of the published tarball into
-      a scratch directory resolves and builds.
+      `Consumers must:` line.
+- [ ] **Post-cut verify, both packages:** `npm view @glw907/cairn-cms@<v> version` **and**
+      `npm view @glw907/cairn-cms-dev@<v> version` both resolve to `<v>`. Only then, a clean
+      install of the published artifacts into a scratch directory (a `create-cairn-site` scaffold,
+      or the `templates/waymark` tree) resolves and builds. Provenance is attested for both.
+- [ ] **On a partial publish, follow the playbook in Halts:** never bump the number to retry, never
+      retry blindly, stop and record which package published, and report.
 - [ ] **No site's pin is bumped.** Not ecxc-ski, not 907-life, not aksailingclub-org, not
       xcathletes-org, not cairn-pub. The site round does that, and it is a later initiative.
 
+**Halts in this task:** a skill-derived number other than `0.97.0`; a version mismatch between the
+two manifests; any red cut gate; a reviewer hedge on the release notes; a partial publish; and
+entering the unsafe window without mains power or 40 percent battery with the inhibitors held.
+
 ---
 
-## Open readings
+## Readings, all ruled
 
-Resolved before dispatch, or named for the conductor to rule:
+The three-lens plan review closed every item below. None is open at dispatch.
 
-1. **Whether the 2026-09-14 plan's three accepted admin defaults are still open.** That plan's
+1. **RULED, out of scope. Whether the 2026-09-14 plan's three accepted admin defaults are still open.** That plan's
    Tasks 2 and 3 named the pagination current-page cue, the two destructive dialogs' backdrops, and
    the `AdminTable` accessible name, sourced to `ROADMAP.md:912-929` (verified at
    `e2615a08`; the superseded plan cited `896-914`, which the file has since moved past). The plan
    never ran, but the
    admin motion pass, extend-1, and extend-2 all landed after it, and any of them may have taken
    one. This pass does not carry them either way; Task 4's audit and Task 5's roadmap sweep are
-   where a still-open item would surface. **Unresolved, and deliberately out of scope.**
-2. **The shape of Fix A's report field.** Whether a failed write gets a new `InstallReport` field or
-   an entry type carrying the code is left to Task 2, which states its choice. The plan specifies
-   the outcome, not the structure. **Deliberately open.**
-3. **Whether Fix A's errno can be provoked deterministically on every platform this repo's CI
-   runs.** The existing test file already uses a `SYMLINKS` capability flag with `skipIf`, so the
-   idiom exists, but whether a read-only directory yields `EACCES` reliably on the CI runner was not
-   verified while drafting. Task 2 verifies it and falls back to the `skipIf` idiom if not.
-4. **Whether Task 2's printed-output change warrants a `Consumers must:` line.** It depends on
-   whether any consumer site's CI parses `cairn-guidance install`'s stdout or stderr. Not verified
-   across the four consumer repos while drafting, and those repos are out of this worktree's reach.
-   Task 2 rules it, defaulting to including the line, since a `Consumers must:` line that turns out
-   unnecessary costs a reader one sentence and a missing one costs a site a broken pipeline.
-5. **The exact set of gate-risk re-tests Task 1 must run.** It is derived from the extended survey,
+   where a still-open item would surface. **Out of scope, deliberately.**
+2. **RULED, left to the task. The shape of Fix A's report field.** Whether a failed write gets a
+   new `InstallReport` field or an entry type carrying the code is Task 2's choice, stated in its
+   report. The plan specifies the outcome, not the structure.
+3. **RULED. Fix A's disk-error test does not depend on provoking a real errno.** The criterion is
+   that the assertion always runs on CI, which a mocked filesystem rejection carrying a `code`
+   satisfies. An environment-dependent `skipIf` does not, because a test that skips on the runner
+   proves nothing at the cut. The prescribed read-only-directory mechanism is withdrawn.
+4. **RULED. Task 2's entry carries no `Consumers must:` line.** No consumer action exists
+   (`cairn-guidance` is a bin, not an export subpath), and no parser of the report's printed shape
+   exists in `tool/` or `packages/`. The entry says "no consumer action". Task 1's rule is
+   separate and stated in Task 1: it lists every moved runtime `dependencies` floor, and carries a
+   `Consumers must:` line only when a peer range or a packaged asset moves.
+5. **RULED as a procedure, which stands. The exact set of gate-risk re-tests Task 1 must run.** It
+   is derived from the extended survey,
    which does not exist yet. The 2026-09-13 record names three `<select>` call sites
    (`src/lib/admin-toolkit/ListToolbar.svelte:364` and `:393`,
    `src/lib/admin-toolkit/Pagination.svelte:74`) for the Svelte 5.57 bump; those carry forward, and

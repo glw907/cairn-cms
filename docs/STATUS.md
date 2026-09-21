@@ -20,18 +20,17 @@ clear. CI on `main` is green.
 ## Immediate next action
 
 **The `0.97.0` cut HOLDS until the Go tool's 1.0 is complete (Geoff, 2026-09-21).** No publish,
-no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff also
-granted the B2 conductor leave to proceed without check-ins up to, never including, the tag push;
-the tag, the release artifacts, and B2's merge stay his. **The engine cut includes the tool's
+no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff gave the B2
+conductor the go for the tag, the release, his timer, and B2's close and merge, on the
+conditions in the Go tool entry below. **The engine cut includes the tool's
 1.0 (Geoff, 2026-09-21):** B2 merges to `main` before the cut, so `0.97.0`'s window carries
 `tool/`, and the release announces the CLI. Read as: the changelog window, the release body, the
 docs that name the tool, and the site upgrade brief's tools section all present `cairn` 1.0 and
 its install line. The binary still ships by `go install` and the tag's release artifacts, never
 inside the npm tarball (the Pass A tarball guard); confirm that reading with Geoff at the cut if
 he meant bundling (confirmed 2026-09-21: not bundled). **When B2's merge to `main` completes,
-whoever conducts Task 25 messages the engine development orchestrator session (peer
-`cairn-cms-f5` on 2026-09-21; re-check `ListAgents`, and fall back to this line if it has closed)
-that `main` now carries the tool's 1.0 and the cut is unblocked.** After that, the one cut
+whoever conducts Task 25 writes the unblock line here (the pre-cut session has closed; the cut
+runs in a fresh session from this file) and tells any live session.** After that, the one cut
 (`cairn-release`), with the dependency sweep (the `dependency-upgrade`
 skill) and the site upgrade brief's tools section landing in the pre-cut pass. The pending
 version is `0.97.0`, verified free against the registry with `npm view @glw907/cairn-cms
@@ -59,69 +58,32 @@ container, then beta.
 
 ## Parallel tracks
 
-- **Go `cairn` tool, 1.0: Pass A and B1 are MERGED (PR #60, `efc75093`, 2026-09-20); `main`
-  carries `tool/`. Pass B2 is next and runs OVERNIGHT 2026-09-20 to 21 in a fresh session.**
-  **Ledger (conductor, 2026-09-21 08:45): SEGMENT 4 IS IN FLIGHT. Geoff raised the ceiling to
-  18M (80 percent flag 14.4M). Both pre-flights ran; the rulings commit is `29f5ff1f` (fourteen
-  rulings and six fact corrections, in each task's "Segment 4 rulings" block). Run
-  `wf_af96445e-ea1` (20b-iii, 20c, 21, 22a, 24a; `opus` on 20c and 21), script in session
-  `aa9eb162`'s scratchpad. A cold resume checks `git log` on the worktree for which tasks
-  committed, then relaunches the rest with the same args shape. Spend at launch about 11M.
-  Geoff ruled the whole owner list on 2026-09-21: `~/.cache/cairn-tool-b2/owner-rulings-2026-09-21.md`
-  (a fifth wire word `unknown`, holds restore own severity, quiet sweep silent when all OK,
-  `--theme dark|light`; rate-limited stays UNKNOWN; Windows CI suffices). At the segment 4
-  boundary, fold that file into the plan and cut Tasks 21b and 21c from it (21c promotes the
-  hidden `auth probe` to a visible `cairn auth check`), both to run before the RC is handed
-  over; together they put B2 near 17M of 18M. What follows the tag is framed in
-  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`: use through the site
-  round, 1.1 headed by the agent-permission check, then the HUD as a 1.x minor. The dotfiles runner fix landed (`75caf88`).**
-  **Earlier ledger (2026-09-21 07:00): the overnight run STOPPED CLEAN at the named cut after
-  20b-ii, about 10.5M of the 14M ceiling.** Segments 1 to 3 are DONE and accepted on
-  `cairn-tool-b2` (pushed, HEAD `76364ca2`, gate green): 19c-i, 18, 19a-i | 19a-ii, 19b, 19c-ii |
-  20a, 20b-i, 20b-ii, plus the segment 3 fix round (`280e61f6`, `5ee0966a`, `c373a3fe`) accepted
-  by an independent diff review. PR #68 is MERGED. NEXT, in a fresh session: segment 4 (20b-iii
-  the carried render fixes, then 20c, 21, 22a, 24a), with a factual and a decision pre-flight
-  and a rulings commit before launch, as the plan's B2 header records; a three-task segment
-  costs about 2M to 2.4M, so segment 4 needs a ceiling raise from Geoff first (about 3.5M left;
-  five tasks want about 4M). Tasks 22b, 23, 24b, 25 stay OWNER-GATED. For Geoff's morning:
-  the plan's "Outside the amendment, for the owner" list (eleven items, four of which freeze at
-  1.0: a fifth wire word `unknown`, rate-limited as UNKNOWN or WARNING, held as WARNING and
-  expired as CRITICAL, the quiet fleet form); the real-terminal kitty evidence, deferred to him;
-  and the dotfiles `pass-execute.js` gate-string fix the scratchpad copy carried. Steps (1) to
-  (3) below are history for segments 1 to 3 and the method for segment 4.
-  Worktree `.claude/worktrees/cairn-tool-b2`, branch `cairn-tool-b2` off `main`. Check it for a
-  live executor first (`pgrep -f cairn-tool-b2`, `git status`, `git log`). Order of work:
-  (1) the B2 plan amendment, pre-approved by Geoff within the bounds in
-  `~/.cache/cairn-tool-b2/b2-amendment-prompt.md` (the verbatim dispatch prompt). If
-  `git log main..cairn-tool-b2` already shows a `docs(plans)` amendment commit, an earlier
-  session's agent finished it: skip to (2). Otherwise dispatch one `general-purpose` agent,
-  `model: opus`, with that file's text as the prompt. (2) The three-lens plan review in
-  parallel (`model: opus`), one fold. (3) Per segment: a factual pre-flight AND a
-  decision pre-flight (one `opus` read listing every decision the segment's tasks leave open;
-  the conductor rules before dispatch, which is what B1's escalations cost 0.5M each to learn).
-  (4) Execute through `pass-execute.js` (copy to the scratchpad), `gate: "make -C tool check"`,
-  `gateLane: "light"`, per-task `model: "opus"` on the cobra tree, the render bodies, the JSON
-  contract, and the exit codes; Sonnet elsewhere. Arm `claude-wf-guard` (its idle alarm after
-  a clean finish is a false positive), hour-long `/loop` heartbeats, no note per notification.
-  **Hard stops: never push the `tool/v1.0.0` tag, never cut release artifacts, never merge
-  B2's PR. Those are OWNER-GATED: Geoff runs the release candidate in his own terminal first.**
-  Stop at the 80 percent flag of the 14M ceiling (11.2M) with one combined question. Machine:
-  on AC, inhibitors `cairn-tool-b2` held to 09:00, battery watchdog armed by the closing
-  session (re-arm in the new one; stand down at 10 percent). Captures never open one kitty
-  window per frame (memory `terminal-captures-no-popover`). Geoff's rulings for B2 (2026-09-20):
-  best-quality CLI UI is a top priority, with agent usability and production-grade language
-  part of it; mockup picks are no rail, glyph-only rows in the colour tier, the labelled strip
-  with the table as narrow fallback, two fail severities; multi-site `health` enters 1.0; the
-  fix's `actor` lives in the Go tool's own messages table, never `conditions.ts`; `cairn help
-  agents` yes, a shipped skill later, MCP never, `fang` declined; the check id stays `engine`,
-  the command stays `adopt`, the plain body's key is `fix:`. Inputs, all under
-  `~/.cache/cairn-tool-b2/`: `reviews/` (seven), `mockups-3/` (the chosen design),
-  `iteration-2-brief.md`, `arch/` (eight reads); the amendment lands them under
-  `tool/docs/design/`. PR #68 (`gate-tier` tool tier) is approved by Geoff to merge once its
-  re-run is green (`gh pr checks 68`, then `gh pr merge 68 --merge`); after it merges, B2 tasks
-  run unpinned and ROADMAP's gate-tier entry is removed. Credentials are stored
-  (`CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; the GitHub token
-  expires 2026-10-19). Pass B1's record: [`docs/HISTORY.md`](HISTORY.md).
+- **Go `cairn` tool, 1.0: Pass B2 is in its last segment (conductor ledger, 2026-09-21 12:45).**
+  Worktree `.claude/worktrees/cairn-tool-b2`, branch `cairn-tool-b2`; check it for a live
+  executor first (`pgrep -f cairn-tool-b2`, `git status`, `git log`). The plan
+  (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md` ON THAT BRANCH, B2 header) holds
+  the run records, every ruling, and the task table. Segments 1 to 4 are done and independently
+  reviewed. Segment 5 is running as `wf_80aca97c-86b` (22a-ii the editorial fixes and fixture
+  truth, 21b the fifth result word `unknown` with `--theme` and the quiet sweep, 21c a visible
+  `cairn auth check` and the rebuilt release candidate); the runner script is in session
+  `aa9eb162`'s scratchpad, the gate is `make -C <abs worktree>/tool check` on the light lane. A
+  cold resume reads the worktree's `git log` for which of the three committed and relaunches
+  the rest. **Geoff gave the go (2026-09-21) for Tasks 22b the tag, 23 the release, 24b his
+  timer, and 25 the close and merge, and ruled that release candidate verification is the
+  conductor's work.** The conductor's conditions before the tag: segment 5 accepted with the
+  gate green; the `tool` workflow green on the pushed head; a real-terminal run against his
+  four sites graded clean by a fresh-context verifier. Any failure or taste call stops the tag
+  and goes to him. Ceiling 20M, spend about 16.3M. Task 25 carries the release handshake for
+  `0.97.0` (the `CHANGELOG.md` entry, the site upgrade brief's tools text, the `tool` workflow
+  green on the merge SHA, the unblock line here, the tool's facts harvested into
+  `docs/internal/facts/admin.md`). Geoff's rulings of the day, the handshake, and the ledgers:
+  `~/.cache/cairn-tool-b2/owner-rulings-2026-09-21.md`. What follows the tag:
+  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`. **The cairn CLI is an
+  assumed part of the system, and all docs are single-source on cairn.pub (Geoff,
+  2026-09-21):** `tool/docs/` is the interim copy for 1.0; the draft-docs pass moves its four
+  public pages under `docs/` and a `tool/v1.0.1` repoints the links. A docs conductor session
+  plans that pass in parallel. Credentials are stored (`CAIRN_CF_READ_TOKEN`,
+  `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; the GitHub token expires 2026-10-19).
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only,
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
 - **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since `0.95.0`.

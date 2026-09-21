@@ -161,6 +161,10 @@ func newRootCmd(d deps) *cobra.Command {
 	// --version invocation. The four parts (tool version, commit, Go toolchain, GOOS/GOARCH) are
 	// composed once, here, not read from any literal.
 	cmd.Version = versionLine()
+	// Cobra's default template prefixes "cairn version ", a string the copy table does not
+	// carry. The template is reduced to the composed line alone so --version prints what
+	// tmplVersion says and nothing else.
+	cmd.SetVersionTemplate("{{.Version}}\n")
 	// The bool flag is registered explicitly, with cairn's own -V shorthand and help text,
 	// before InitDefaultVersionFlag would otherwise add an unshorthanded one: cobra skips adding
 	// a "version" flag that already exists, so this is what makes -V (not just --version) work.

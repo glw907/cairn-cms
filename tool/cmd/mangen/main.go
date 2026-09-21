@@ -39,7 +39,9 @@ var skipRecursion = map[string]bool{"completion": true, "help": true}
 // "-x, " shorthand, "--name", an optional type placeholder pflag prints for a non-bool flag
 // (one word, a single space before it and two or more before the description that follows), and
 // the usage text itself, which sometimes carries a trailing "(default ...)" pflag appended.
-var flagLinePattern = regexp.MustCompile(`^\s+(?:-(\w), )?--([a-zA-Z][a-zA-Z0-9-]*)(?: [a-zA-Z]+)?\s{2,}(.*)$`)
+// The placeholder is captured rather than discarded: it is the only statement of a flag's type
+// the harvest gets, and a page that documents --quiet as taking a string misstates the CLI.
+var flagLinePattern = regexp.MustCompile(`^\s+(?:-(\w), )?--([a-zA-Z][a-zA-Z0-9-]*)(?: ([a-zA-Z]+))?\s{2,}(.*)$`)
 
 // angleEscaper escapes "<" and ">" before a harvested string reaches cobra/doc: its man renderer
 // pipes every field through a Markdown parser, which reads an unescaped "<site>" as an HTML tag
@@ -70,7 +72,29 @@ func listedName(column string) string {
 type flagDef struct {
 	shorthand string
 	name      string
+	// valueType is pflag's own type placeholder, empty for a bool, which prints none.
+	valueType string
 	usage     string
+}
+
+// register declares f on cmd's persistent flags in the type pflag's own placeholder names, so a
+// generated page prints a switch as a switch and a duration as a duration. An unrecognised
+// placeholder falls to a string flag, which is how pflag prints any type it has no short name
+// for and the shape that misstates the least.
+func (f flagDef) register(cmd *cobra.Command, usage string) {
+	flags := cmd.PersistentFlags()
+	switch f.valueType {
+	case "":
+		flags.BoolP(f.name, f.shorthand, false, usage)
+	case "duration":
+		flags.DurationP(f.name, f.shorthand, 0, usage)
+	case "int":
+		flags.IntP(f.name, f.shorthand, 0, usage)
+	case "stringArray":
+		flags.StringArrayP(f.name, f.shorthand, nil, usage)
+	default:
+		flags.StringP(f.name, f.shorthand, "", usage)
+	}
 }
 
 // child is one entry from a command-listing block: a subcommand's own name and Short, harvested
@@ -140,7 +164,9 @@ func discover(bin string, path []string, short string) (node, error) {
 		case header == "Flags:":
 			for _, line := range body {
 				if m := flagLinePattern.FindStringSubmatch(line); m != nil {
-					n.flags = append(n.flags, flagDef{shorthand: m[1], name: m[2], usage: strings.TrimSpace(m[3])})
+					n.flags = append(n.flags, flagDef{
+						shorthand: m[1], name: m[2], valueType: m[3], usage: strings.TrimSpace(m[4]),
+					})
 				}
 			}
 		case header == "Global Flags:":
@@ -249,10 +275,10 @@ func buildTree(nodes map[string]node, order []string) *cobra.Command {
 			cmd.RunE = func(*cobra.Command, []string) error { return nil }
 		}
 		for _, f := range n.flags {
-			if f.name == "help" || f.name == "version" {
+			if f.name == "help" {
 				continue
 			}
-			cmd.PersistentFlags().StringP(f.name, f.shorthand, "", angleEscaper.Replace(f.usage))
+			f.register(cmd, angleEscaper.Replace(f.usage))
 		}
 		commands[key] = cmd
 

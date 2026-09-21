@@ -70,6 +70,43 @@ func TestGeneratedPageNamesEveryNonHiddenCommand(t *testing.T) {
 	}
 }
 
+// TestGeneratedPageCarriesEachFlagsOwnType renders cairn-health.1 and reads the flag block back:
+// every harvested flag is reconstructed in the type the real binary declares, so a switch prints
+// as a switch and a duration as a duration. Registering them all as strings printed
+// `--quiet=""` for a boolean, in the artefact the release archive ships.
+func TestGeneratedPageCarriesEachFlagsOwnType(t *testing.T) {
+	bin, cleanup, err := buildCairn()
+	if err != nil {
+		t.Fatalf("buildCairn: %v", err)
+	}
+	t.Cleanup(cleanup)
+
+	dir := t.TempDir()
+	if err := run(bin, dir); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "cairn-health.1"))
+	if err != nil {
+		t.Fatalf("read cairn-health.1: %v", err)
+	}
+	page := string(data)
+
+	// The rendered form is pflag's own: a bool prints "[=false]", a valued flag "=<zero>".
+	for flag, want := range map[string]string{
+		`--quiet`:   `[=false]`,
+		`--json`:    `[=false]`,
+		`--verbose`: `[=false]`,
+		`--version`: `[=false]`,
+		`--timeout`: `=0s`,
+		`--width`:   `=0`,
+		`--color`:   `=""`,
+	} {
+		if got := `\fB` + flag + `\fP` + want; !strings.Contains(page, got) {
+			t.Errorf("cairn-health.1 does not render %s as %s", flag, got)
+		}
+	}
+}
+
 // TestCmdCairnImportsNoCobraDoc asserts cmd/cairn never imports cobra/doc: it pulls go-md2man
 // and blackfriday, and a generator living in cmd/cairn would link both into every operator's
 // binary for a file it never reads. This is why mangen is a second command.
@@ -110,14 +147,17 @@ func TestRootShortMatchesMessagesSource(t *testing.T) {
 // committed one.
 func TestGeneratedFileIsGitIgnored(t *testing.T) {
 	moduleDir := moduleRoot()
-	probe := filepath.Join(moduleDir, "man", "cairn.1")
-	if err := os.MkdirAll(filepath.Dir(probe), 0o755); err != nil {
+	// The probe sits in its own subdirectory and only that subdirectory is removed: man/ itself
+	// holds an operator's generated pages after `make man`, and a test run must not delete them.
+	probeDir := filepath.Join(moduleDir, "man", "ignore-probe")
+	probe := filepath.Join(probeDir, "cairn.1")
+	if err := os.MkdirAll(probeDir, 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
 	if err := os.WriteFile(probe, []byte("probe"), 0o644); err != nil {
 		t.Fatalf("write probe file: %v", err)
 	}
-	t.Cleanup(func() { _ = os.RemoveAll(filepath.Dir(probe)) })
+	t.Cleanup(func() { _ = os.RemoveAll(probeDir) })
 
 	cmd := exec.Command("git", "check-ignore", "-q", probe)
 	cmd.Dir = moduleDir

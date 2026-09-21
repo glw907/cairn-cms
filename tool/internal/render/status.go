@@ -113,8 +113,8 @@ const (
 	// The past tense would report a failure that did not happen: the listing ran nothing, and
 	// what the missing token costs is the next health run, not this one.
 	//
-	// The wording is drafted to the copy standard's grammar and is owed to Task 22a's editorial
-	// gate, alongside the eight strings section 4.7 already lists.
+	// Drafted to the copy standard's grammar rather than copied, and reviewed at the 1.0
+	// editorial gate alongside the other strings its section 4.7 lists.
 	statusUnsetTailListing = " cannot run"
 	// statusReadJoin opens a present token's line, which then names the store it came from.
 	statusReadJoin = " read from the "

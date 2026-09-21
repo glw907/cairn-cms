@@ -618,11 +618,12 @@ failure message (which names this document), the B2 plan's per-task acceptance c
 `cairn-implementer` agent definition. A copy standard that lives only in a review file reaches
 nobody.
 
-### 4.7 Strings owed to the editorial gate (Task 20b-ii, 2026-09-21; three added at the segment 3 review the same day)
+### 4.7 Strings read at the 1.0 editorial gate (2026-09-21)
 
 The render's fleet body, its log body, and its status line each needed a fragment this catalogue
 does not carry. Each is the plainest form satisfying 2.4 through 2.8, written to the fixed
-vocabulary of 2.9, and each is **owed to the Task 22a editorial gate** rather than adopted here.
+vocabulary of 2.9, and each was **read at the 1.0 editorial gate** rather than adopted into the
+catalogue above.
 
 **Correction (Task 22a, 2026-09-21):** this table does not carry the segment 2 strings, against
 an earlier report's claim that it did. `auth unset`'s seven ack refusals

@@ -33,13 +33,20 @@ container, then beta.
   `.claude/worktrees/cairn-tool-a`; check it is idle before touching it.** The re-cut is done
   (`7d06e29c`), the three-lens review folded (`2bb2cb3f`), segment 1's pre-flight applied
   (`35b6f97d`), all on the branch, unpushed. B1 is nine tasks: segment 1 (11b-i, 11b-ii, 12, 13)
-  runs as `pass-execute` run `wf_9deb92f1-2d5`; segment 2 is 14 to 17; segment 3 is 17b, the
-  close and the PR #60 merge. Each segment gets a factual pre-flight first. Runner args: `gate:
-  "make -C tool check"`, `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an
-  unpinned task makes the runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings
-  accepted by Geoff 2026-09-20: B1 8M, B2 10M; the mechanics review prices B1 at 9 to 9.5M, so
-  the 6.4M flag is the expected question. Spend so far: about 1.1M (authorship, reviews, fold,
-  pre-flight). Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
+  ran as `pass-execute` run `wf_9deb92f1-2d5`; segment 2 is 14 to 17; segment 3 is 17b, the
+  close and the PR #60 merge. **Checkpoint (2026-09-20 17:30):** 11b-i and 11b-ii ACCEPTED (one
+  fix round each). **12 and 13 ESCALATED and ruled**, fixed by direct `cairn-implementer`
+  dispatches, 12 first, then 13, each with a `diff-reviewer` read. Rulings on 12: an expired
+  matching ack leaves `Acknowledged` false and sets `CheckResult.AckExpires`; a zero GitHub
+  `TokenExpiry` is OK with a Detail line, never Unknown, and the provider doc comment is
+  corrected; the non-verbose render is a key allowlist over `Fields`, never a regex over
+  `Detail`. Ruling on 13: `providers` gains an authoritative per-nameserver address lookup and
+  the unreachable diagnosis ports `hostname.mjs`'s apex read, defaulting to records-absent.
+  Then segment 2's pre-flight and launch. Runner args: `gate: "make -C tool check"`,
+  `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an unpinned task makes the
+  runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings accepted by Geoff
+  2026-09-20: B1 8M, B2 10M. Spend: about 3.1M of 8M after four of nine tasks (1.1M plan work,
+  2.03M segment 1), so the 6.4M flag will likely trip inside segment 2. Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
   `cairn-tool-a`, worktree `.claude/worktrees/cairn-tool-a`, draft PR #60, green on all three
   `make check` legs. `main` carries NO `tool/` tree until the merge, and the merge rides B1's
   close (Geoff, 2026-09-20), so **B1 runs in that existing worktree on that branch, never on a

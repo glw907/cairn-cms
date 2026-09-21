@@ -31,23 +31,20 @@ container, then beta.
 
 - **Go `cairn` tool, 1.0: Pass A and B1 are MERGED (PR #60, `efc75093`, 2026-09-20); `main`
   carries `tool/`. Pass B2 is next and runs OVERNIGHT 2026-09-20 to 21 in a fresh session.**
-  **Ledger (conductor, 2026-09-20 23:45):** steps (1) and (2) are DONE on the branch: amendment
-  `84b919ee`, three-lens fold `f7b8e051`, PR #68 MERGED and the gate tier unpinned `4577d558`,
-  segment 1 pre-flight rulings `ee40a93c`. The overnight list is thirteen tasks in four
-  segments: 19c-i, 18, 19a-i | 19a-ii, 19b, 19c-ii | 20a, 20b-i, 20b-ii | 20c, 21, 22a, 24a.
-  Tasks 22b, 23, 24b, 25 are OWNER-GATED. Segment 1 is DONE (19c-i `5a04ae69`, 18 `b536d4bf`,
-  19a-i `de94c682`; Task 18's three plan deviations ratified in `d54c3b04` with segment 2's
-  rulings). Segment 2 is DONE (19a-ii `d3877903`, 19b `8e89353a`, 19c-ii `718dad50`, residual
-  tests `fb2c164c`). Segment 3, the render package (20a, 20b-i, 20b-ii), is IN FLIGHT as
-  workflow run `wf_e0e27428-8d3` (04:00, 2026-09-21) on rulings commit `29a91f70`. The
-  scratchpad runner copy carries a fix the dotfiles source still owes: its gate-string check
-  compared the classifier's whole preamble and escalated three accepted tasks (compare the
-  command line alone). Real-terminal kitty evidence is deferred to the owner's morning. Spend
-  at segment 3 launch: about 7.6M of 14M; the 80 percent flag is 11.2M, and the run is expected
-  to stop at the named cut after 20b-ii with segment 4 (20c, 21, 22a, 24a) left for a fresh
-  session. Owner questions collect in the plan's "Outside the amendment, for the owner" list
-  (eight items). A resuming session
-  checks `git log main..cairn-tool-b2` for landed task commits before relaunching anything.
+  **Ledger (conductor, 2026-09-21 07:00): the overnight run STOPPED CLEAN at the named cut after
+  20b-ii, about 10.5M of the 14M ceiling.** Segments 1 to 3 are DONE and accepted on
+  `cairn-tool-b2` (pushed, HEAD `76364ca2`, gate green): 19c-i, 18, 19a-i | 19a-ii, 19b, 19c-ii |
+  20a, 20b-i, 20b-ii, plus the segment 3 fix round (`280e61f6`, `5ee0966a`, `c373a3fe`) accepted
+  by an independent diff review. PR #68 is MERGED. NEXT, in a fresh session: segment 4 (20b-iii
+  the carried render fixes, then 20c, 21, 22a, 24a), with a factual and a decision pre-flight
+  and a rulings commit before launch, as the plan's B2 header records; a three-task segment
+  costs about 2M to 2.4M, so segment 4 needs a ceiling raise from Geoff first (about 3.5M left;
+  five tasks want about 4M). Tasks 22b, 23, 24b, 25 stay OWNER-GATED. For Geoff's morning:
+  the plan's "Outside the amendment, for the owner" list (eleven items, four of which freeze at
+  1.0: a fifth wire word `unknown`, rate-limited as UNKNOWN or WARNING, held as WARNING and
+  expired as CRITICAL, the quiet fleet form); the real-terminal kitty evidence, deferred to him;
+  and the dotfiles `pass-execute.js` gate-string fix the scratchpad copy carried. Steps (1) to
+  (3) below are history for segments 1 to 3 and the method for segment 4.
   Worktree `.claude/worktrees/cairn-tool-b2`, branch `cairn-tool-b2` off `main`. Check it for a
   live executor first (`pgrep -f cairn-tool-b2`, `git status`, `git log`). Order of work:
   (1) the B2 plan amendment, pre-approved by Geoff within the bounds in
@@ -115,6 +112,6 @@ Two tracks, one session each.
 
 **One cut:** Cut the one release (`cairn-release` skill), starting with the dependency sweep.
 
-**Go tool Pass B2** (launch inside `cairn-cms`): Conduct Go tool Pass B2 overnight per
-`docs/STATUS.md`'s Go tool entry: amendment, three-lens review, fold, pre-flights, execute,
-stop before the tag.
+**Go tool Pass B2, segment 4** (launch inside `cairn-cms`): Continue Go tool Pass B2 per
+`docs/STATUS.md`'s Go tool entry: ask Geoff for the ceiling raise, then pre-flights, rulings
+commit, and segment 4 through `pass-execute.js`; stop before the tag.

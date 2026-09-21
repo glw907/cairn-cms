@@ -109,7 +109,7 @@ section, so Task 3c was authored at dispatch; the plan predated `gate-tier.mjs` 
 fixed gate string the classifier superseded; the plan specified fragment content, relative links
 and a `cairn docs` line, that was untrue from a consumer checkout; 3c's "no site names `dist`"
 criterion read broader than the amendment's actual deliverable. Execution sittings 1: the ceiling
-raise, Geoff's own initiative, not a question put to him. Merged as PR #67.
+raise, Geoff's own initiative, not a question put to him.
 
 ## extend-1 pass, nine tasks, 2026-09-16 to 2026-09-20
 

@@ -8,9 +8,9 @@ pass-end. Durable orientation is `CLAUDE.md`; everything past tense is [`docs/HI
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries eleven
 engine passes plus chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, the admin motion pass,
-docs-to-facts, and extend-1 (PR #66, merged 2026-09-20) unpublished under `## Unreleased`.
-extend-2 (PR #67, branch `extend-2`), the guidance layer, is in its close on top of that same
-unpublished window. The window holds for one cut, once extend-2 lands. CI on `main` is green.
+docs-to-facts, extend-1 (PR #66), and extend-2 (PR #67, the guidance layer), both merged
+2026-09-20, unpublished under `## Unreleased`. The window holds for one cut. CI on `main` is
+green.
 
 ## Immediate next action
 

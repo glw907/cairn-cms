@@ -2205,6 +2205,22 @@ the named human gates only):**
 
 ## Later
 
+- **Five small simplifications the pre-cut dependency sweep found and filed, none taken (Task 1,
+  2026-09-20).** Ruling 3 defaults every survey finding to "file" unless it is zero-behavior-change
+  with an existing test; none of these five qualified. (1) `ManageEditors.svelte:169-174`'s
+  per-option `selected={entry.role === 'editor'}` boolean can become Svelte 5.57's `defaultValue`
+  on `<select>`. (2) `MediaOrphanTools.svelte:55-79`'s imperative DOM-property indeterminate
+  checkbox has no ARIA mirror; DaisyUI 5.7.25 added native `aria-checked="mixed"` styling it could
+  adopt. (3) `packages/create-cairn-site/src/cloudflare/prefill.mjs:265-289`'s manual two-try
+  Cloudflare token prompt could use `@clack/prompts` 1.8.0's async `validate` callback, keeping
+  the deliberate one-retry ceiling via an explicit attempt counter. (4) `Pagination.svelte:97-101`'s
+  manual `btn-active` class alongside `aria-current="page"` is now redundant with DaisyUI 5.7.38's
+  native `[aria-current]` styling; dropping it needs a visual-baseline read first. (5) The nav
+  `<details>`/`.cairn-caret` groups in `CairnAdminShell.svelte` (documented at
+  `admin-design-system.md:369-374`) could become DaisyUI's `collapse`/`collapse-arrow`; cosmetic
+  value only. Full detail: `docs/internal/record/2026-09-13-minor-bump-features.md`, "Refactor-
+  decision table." **Trigger:** the next pass that touches any of the five named files.
+
 - **`docs/reference` has no dedicated page for the `./admin-sources.css` subpath export; it gets
   one section inside `docs/reference/cairn-audit.md` instead (extend-2 friction, 2026-09-20).**
   `check:reference`'s coverage gate reads only `.d.ts`-typed exports, so a CSS-only subpath is not

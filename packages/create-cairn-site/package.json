@@ -11,5 +11,5 @@
     "test": "node --test --import ./test/no-desktop.mjs \"src/*.test.mjs\" \"src/github/*.test.mjs\" \"src/cloudflare/*.test.mjs\" \"src/console/*.test.mjs\" \"scripts/*.test.mjs\" \"test/*.test.mjs\"",
     "prepack": "node scripts/bake-template.mjs --to template"
   },
-  "dependencies": { "@clack/prompts": "^1.7.0" }
+  "dependencies": { "@clack/prompts": "^1.8.1" }
 }

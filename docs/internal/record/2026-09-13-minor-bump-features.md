@@ -5,7 +5,26 @@ actual usage in this repo (not hypothetical usage). Per-package sections carry f
 leverage, practices to change, and risks in the bump. A separate section covers the DaisyUI
 component inventory Geoff asked for directly. A ranked top five closes the document.
 
-## svelte 5.56.10 -> 5.57.0
+## Update, 2026-09-20 (pre-cut sweep, Task 1)
+
+This record is extended in place, not restarted: the `## Unreleased` window this file covers
+has not closed since 2026-09-13 (nothing in it landed; the pass that would have taken it never
+ran, per the pre-cut plan). Every package below moved further in the same direction the
+2026-09-13 survey already found; none reversed or introduced a new practice this update did not
+already cover. New sections follow for packages this update newly surveys: `devalue`,
+`eslint-plugin-tsdoc`, `postcss`, `@types/node`, `@codemirror/commands`, and the audit-fix
+findings (`fast-uri`, `js-yaml`, `cookie`, `sharp`). The per-package "still accurate" notes are
+inline in each existing section below.
+
+## svelte 5.56.10 -> 5.57.1
+
+**Update, 2026-09-20.** Moved one further patch, 5.57.0 to 5.57.1: four bug fixes (cancel
+deferred event listeners on cleanup, preserve global CSS in a component with no scopable
+element, reduce SSR render-result garbage, resolve an `each` block's fallback in the enclosing
+scope) plus a parser perf change. None touches a shape `MarkdownEditor` or the admin components
+depend on; the "preserve global CSS" fix is a correctness fix for `:global()` usage, not a
+behavior change for code that already worked. The 2026-09-13 findings below (the `<select>` and
+`<textarea>` codegen risk items) are unaffected and still the right gate-risk targets.
 
 **Features to leverage.** `defaultValue` on `<select>` (PR #18591) fits
 `src/lib/components/ManageEditors.svelte:169-174`, which builds an uncontrolled `<select
@@ -37,6 +56,8 @@ Otherwise a routine patch/perf release: no removed API, no changed default.
 
 ## vite 8.2.2 -> 8.3.0
 
+**Update, 2026-09-20.** Still the target; nothing newer in range. Findings below still accurate.
+
 **Features to leverage.** Nothing for cairn. The one feature (skip re-settling already-seen
 preload dependencies during build) is an internal Rollup-preload perf change with no config
 surface `examples/showcase/vite.config.ts` touches.
@@ -56,12 +77,20 @@ an e2e smoke after the bump. No other exposure (no CRLF files, no Vite proxy con
 
 ## vitest-browser-svelte 3.0.0 -> 3.1.0
 
+**Update, 2026-09-20.** Still the target; nothing newer in range. Findings below still accurate.
+
 Nothing for cairn in this range: 3.0.0...3.1.0. The entire changelog is "add license and
 support vitest 5" (widens the `vitest` peer range to include `^5`). Cairn pins `vitest:
 "^4.1"` in both `package.json:276` and `examples/showcase/package.json:46`, so this bump only
 unblocks a future vitest-5 migration; it has no effect today.
 
-## wrangler 4.125.0 -> 4.131.1
+## wrangler 4.125.0 -> 4.135.0
+
+**Update, 2026-09-20.** Moved four further releases, 4.131.1 to 4.135.0: Containers Build
+Output support, a private-beta `--secrets-file`/`--var` flag pair on `wrangler preview`, and a
+`miniflare`/`sharp` dependency bump (the same bump that resolves this sweep's `sharp` advisory
+in the showcase's own `npm audit`, see the audit-fix section below). No entry across the added
+range mentions D1, email sending, or R2. Findings below still accurate.
 
 **Features to leverage.** `wrangler@4.128.0` adds `observability.redact_query_string`. The
 showcase turns on `observability.enabled: true` in `examples/showcase/wrangler.jsonc`, and
@@ -81,21 +110,41 @@ Pages-delegation changes don't apply; cairn ships no `containers` config and doe
 (confirmed: no `wrangler` string anywhere in `examples/showcase/playwright.config.ts` or
 `e2e/`), none of these CLI-behavior changes can turn a local gate red.
 
-## @cloudflare/workers-types 5.20260821.1 -> 5.20260911.1
+## @cloudflare/workers-types 5.20260821.1 -> 5.20260921.1
 
-Nothing for cairn in this range. Diffed `index.d.ts` directly (17,240 to 17,556 lines): zero
+**Update, 2026-09-20.** Moved ten further daily builds, 5.20260911.1 to 5.20260921.1; types-only
+package, no runtime behavior. Not separately diffed beyond the 2026-09-13 range below; the
+binding types cairn uses (`D1`, `EmailMessage`, `R2Bucket`) are stable surface that has not
+moved across a `@cloudflare/workers-types` release in this repo's history.
+
+Nothing for cairn in the originally surveyed range. Diffed `index.d.ts` directly (17,240 to
+17,556 lines): zero
 hits for `D1`, `EmailMessage`, or `R2Bucket` in either direction, so the binding types cairn
 actually uses are unchanged. The diff is almost entirely new Workers AI model type
 declarations, small DOM-lib polyfill widenings, and Containers/tracing additions: none of
 which any code under `src/lib` touches (no Workers AI binding, no Container binding, no
 tracing API calls).
 
-## daisyui 5.7.20 -> 5.7.37
+## daisyui 5.7.20 -> 5.7.42
 
-All 17 releases in this exact range are single-bug-fix patches (checkbox, badge, loading
-spinner, OTP, dropdown/toast RTL, tooltip font-weight, breadcrumbs, join, skeleton, menu,
-floating-label, FAB, text-rotate). None touch card, btn, input, modal, tab, select, or drawer,
-the classes cairn leans on most.
+All 17 releases in the originally surveyed 5.7.20-5.7.37 range are single-bug-fix patches
+(checkbox, badge, loading spinner, OTP, dropdown/toast RTL, tooltip font-weight, breadcrumbs,
+join, skeleton, menu, floating-label, FAB, text-rotate). None touch card, btn, input, modal,
+tab, select, or drawer, the classes cairn leans on most.
+
+**Update, 2026-09-20.** Moved five further patches, 5.7.37 to 5.7.42, and one of them is a real
+feature-to-leverage hit, not cosmetic. 5.7.38 styles `[aria-pressed]` and `[aria-current]` as
+`btn-active` natively inside `.btn`. `src/lib/admin-toolkit/Pagination.svelte:97-101` already
+sets both `class="... {item === page ? 'btn-active' : ''}"` and `aria-current={item === page ?
+'page' : undefined}` on the same button, hand-rolling exactly what daisyui's CSS now does from
+the `aria-current` attribute alone. The manual `btn-active` class is now redundant, not
+conflicting (both target the same state), so this is a genuine simplification candidate, ruled
+in the refactor-decision table below. `ListToolbar.svelte`'s facet buttons are unaffected: its
+own doc comment states it deliberately uses `aria-checked`, never `aria-pressed`
+(`ListToolbar.svelte:52`), so daisyui's new selector does not reach it. 5.7.39-5.7.41 (Firefox
+Android drag-resize, validator-color specificity, `dock`/`menu` `aria-current` styling) touch no
+surface cairn uses. 5.7.42 fixes disabled styling for `input`/`select`/`textarea`/`file-input`,
+a pixel-only fix to already-shipped markup, same class as the checkbox/badge fixes below.
 
 **Features to leverage.** 5.7.25 adds native `checkbox` support for `aria-checked="mixed"`
 styling (parallel to `:indeterminate`). `src/lib/components/MediaOrphanTools.svelte:55-79`
@@ -110,14 +159,37 @@ shrinking inside a flex container. Cairn uses `checkbox` (51 call sites) and `ba
 pixel nudges to already-shipped markup, no code change needed, but expect exact-pixel snapshot
 diffs on those elements specifically.
 
-**Risks in the bump.** Check the checkbox, badge, and `loading-sm` visual/e2e baselines
-specifically after bumping; the other 14 patches (OTP, RTL dropdown/toast, breadcrumbs, join,
-skeleton, menu, floating-label, FAB, text-rotate) touch surfaces cairn doesn't use.
+**Risks in the bump.** Check the checkbox, badge, `loading-sm`, disabled-input, and
+Pagination's `aria-current` button visual/e2e baselines specifically after bumping; the other
+patches (OTP, RTL dropdown/toast, breadcrumbs, join, skeleton, menu, floating-label, FAB,
+text-rotate, Firefox Android drag-resize, validator colors, `dock`) touch surfaces cairn
+doesn't use.
+
+**Confirmed, 2026-09-20: `npm run norms:check` caught a real, attributable move.**
+`CairnAdminShell.svelte:1055` sets `aria-current="page"` on the active nav item inside its
+`menu`-classed sidebar; 5.7.38's "style aria-current as menu-active in menu" fix adds
+`var(--menu-active-fg)` to that nav item's computed color set, which `src/lib/audit/norms.ts`'s
+`nav-item` color role now observes. `npm run norms:generate` regenerated
+`src/lib/audit/norms-manifest.json` (one role's `expressions` array gains the one entry; no
+other change), and `npm run norms:check` is green against the regenerated file. This is exactly
+the class of move the plan's baseline procedure asks for: attributable to the bumped renderer,
+regenerated by the documented command, read before committing.
 
 See the DaisyUI component-inventory section below for the separate, non-version-gated
 question of whether cairn's home-grown components should be DaisyUI components at all.
 
-## @lucide/svelte 1.33.0 -> 1.45.0
+## @lucide/svelte 1.33.0 -> 1.47.0
+
+**Update, 2026-09-20.** Moved further, 1.45.0 to 1.47.0: two more point releases of new icon
+additions only, same pattern as the range below. `npm test`'s own run of
+`src/tests/unit/reproductions-icon-drift.test.ts` caught something the changelog read alone
+would have missed: somewhere in 1.45.0 to 1.47.0, `@lucide/svelte` changed its generated
+component shape from `const iconNode = [...]` (a bare array) to `const iconData = { name, size,
+node: [...] }` (an object wrapping the same array). The test's own scraping regex hard-failed
+on the new shape, its intended tripwire for exactly this kind of layout change; the fix is a
+one-line regex and destructure update in the test itself, no icon path changed (verified: every
+`d` value the new shape carries for the six transcribed icons is byte-identical to before).
+Filed nowhere further since the test now covers the new shape going forward.
 
 **Features to leverage.** Only new icon additions in range (mail-clock, ship-cargo, a
 playing-card family, germ, virus, user-group, trash-off, calendar-chevrons-right, and more).
@@ -142,19 +214,31 @@ cairn's six transcribed toolbar icons (`blocks`, `square-pen`, `link`, `file-sym
 `album`/`book-marked`/`folder-bookmark`, `cookie`, `lectern`, and a `swiss-franc`
 deprecation). Low risk; run the drift test, which is the correct tripwire for this range.
 
-## @codemirror/view 6.43.9 -> 6.43.11, @codemirror/state 6.7.1 -> 6.7.4
+## @codemirror/view 6.43.9 -> 6.43.12, @codemirror/state 6.7.1 -> 6.7.5, @codemirror/commands 6.11.0 -> 6.11.1
 
-Not fully verifiable from primary sources this pass: the installed
-`node_modules/@codemirror/view/CHANGELOG.md` and `.../state/CHANGELOG.md` reflect only the
-currently installed versions (6.43.9, 6.7.1), and fetching GitHub's rendered CHANGELOG.md for
-the newer entries did not return raw content. Every prior point release in this changelog is a
-narrow browser-specific bug fix (scroll position, `posAtCoords`, IME composition, tile-tree
-corruction), so the pattern suggests more of the same, but this is not confirmed. Nothing in
-cairn's `MarkdownEditor` usage (`EditorView`, `EditorState`, the specific extensions loaded)
-depends on any patch behavior found so far. Re-check the changelog directly after bumping
-rather than treating this as cleared.
+**Update, 2026-09-20.** Now verifiable directly: this sweep's own `npm install` populated
+`node_modules/@codemirror/{view,state,commands}/CHANGELOG.md` with every entry through the new
+target versions, closing the gap the 2026-09-13 entry below flagged.
+
+- `@codemirror/view` 6.43.10 through 6.43.12: highlighted-space rendering during composition,
+  scroll-position stability under CSS scaling, `visualLineSide` bidi handling, a duplicate-DOM-
+  node fix for marks around an active composition, a Firefox composition-outside-line-container
+  workaround, and a VoiceOver repeated-announcement fix. All browser-specific edge cases; none
+  touches `EditorView`'s public API or an extension cairn loads.
+- `@codemirror/state` 6.7.2 through 6.7.5: four range-set/range-mapping bug fixes (ordering
+  violations, point-range sort order, a range-set comparison causing spurious redraws). Internal
+  to `EditorState`'s change-mapping machinery; no public API change.
+- `@codemirror/commands` 6.11.0 to 6.11.1: makes `cursorLineEnd`/`cursorLineStart` bidi-aware via
+  `moveToLineBoundary`. `MarkdownEditor` uses the default keymap without overriding either
+  command; low risk, and this is a correctness fix, not a behavior cairn depends on differently.
+
+Nothing in cairn's `MarkdownEditor` usage (`EditorView`, `EditorState`, the specific extensions
+loaded) depends on any patch behavior found. The original 2026-09-13 finding below (not fully
+verifiable from primary sources) is superseded by the direct read above.
 
 ## playwright / @playwright/test 1.62.1 -> 1.63.0
+
+**Update, 2026-09-20.** Still the target; nothing newer in range. Findings below still accurate.
 
 **Features to leverage.** Nothing directly usable. Test locks (`test('...', {lock: 'x'})`)
 would be a narrower version of what `examples/showcase/playwright.config.ts:14` already does
@@ -172,15 +256,22 @@ problem (`playwright.config.ts:1-12`, `maxDiffPixels: 120`) is untouched. The ex
 `@playwright/experimental-ct-react*` packages are frozen upstream, but cairn doesn't use
 component testing. Safe bump.
 
-## eslint 10.9.0 -> 10.10.0
+## eslint 10.9.0 -> 10.11.0
 
-Nothing for cairn. The three feature items (`new-cap` Object.prototype check, `no-extra-bind`
-class-fields case, `d`/`v` regex flags in `no-unexpected-multiline`) are all targeted
-fixes/extensions to built-in rules `eslint.config.js` never enables. No default-severity or
-flat-config-shape change. The `file-entry-cache` dependency bump is internal caching with no
-observable effect. Safe bump.
+Nothing for cairn in the originally surveyed range. The three feature items (`new-cap`
+Object.prototype check, `no-extra-bind` class-fields case, `d`/`v` regex flags in
+`no-unexpected-multiline`) are all targeted fixes/extensions to built-in rules
+`eslint.config.js` never enables. No default-severity or flat-config-shape change. The
+`file-entry-cache` dependency bump is internal caching with no observable effect. Safe bump.
+
+**Update, 2026-09-20.** Moved one further minor, 10.10.0 to 10.11.0. Not separately verified
+this pass beyond `npm run lint` and `npm run check:comments` staying green in the full gate,
+which is the correct tripwire for an unreviewed ESLint core bump on a flat config with no custom
+rule additions in range.
 
 ## typescript-eslint 8.67.0 -> 8.70.0
+
+**Update, 2026-09-20.** Still the target; nothing newer in range. Findings below still accurate.
 
 Nothing for cairn. `eslint.config.js` uses `tseslint.parser` only
 (`eslint.config.js:3,46,85`), never any `typescript-eslint` rule set: confirmed no
@@ -189,18 +280,51 @@ Nothing for cairn. `eslint.config.js` uses `tseslint.parser` only
 all unused rules. The `no-deprecated` fix (8.70.0), the `no-unnecessary-condition` fix, and the
 `project-service` tsserver-log fix affect rules or diagnostics cairn doesn't enable. Safe bump.
 
-## eslint-plugin-jsdoc 64.2.1 -> 64.3.10
+## eslint-plugin-jsdoc 64.2.1 -> 64.5.4
 
-Nothing for cairn, despite the wide-looking range. 64.3.0 adds an opt-in rule
-`no-unnecessary-type-assertion` for `@type` casts, but it defaults to `'off'` in the plugin's
-own source and is not part of `jsdoc.configs['flat/recommended-typescript-error']`, the preset
-`eslint.config.js:43` imports wholesale: so it doesn't land in cairn's gate even though
-cairn's own `jsdoc/no-types: 'error'` rule (`eslint.config.js:52`) already forbids `@type`
-casts by a different route. No release in the range touches `informative-docs`,
+Nothing for cairn in the originally surveyed range, despite the wide-looking span. 64.3.0 adds
+an opt-in rule `no-unnecessary-type-assertion` for `@type` casts, but it defaults to `'off'` in
+the plugin's own source and is not part of `jsdoc.configs['flat/recommended-typescript-error']`,
+the preset `eslint.config.js:43` imports wholesale: so it doesn't land in cairn's gate even
+though cairn's own `jsdoc/no-types: 'error'` rule (`eslint.config.js:52`) already forbids
+`@type` casts by a different route. No release in the range touches `informative-docs`,
 `require-jsdoc`, `no-types`, `check-tag-names`, or `check-param-names`: the five rules cairn
 actually configures (`eslint.config.js:51-57`). Safe bump.
 
-## @anthropic-ai/sdk 0.120.0 -> 0.125.0
+**Update, 2026-09-20.** Moved further, 64.3.10 to 64.5.4. Same five configured rules stay
+untouched across the added range; `npm run check:comments` in the full gate is this bump's
+correct tripwire and it stays green.
+
+## eslint-plugin-tsdoc 0.5.2 -> 0.5.3 (new this update, 2026-09-20)
+
+Single patch: declares `eslint` as an optional peer dependency so its published typings resolve
+against the consumer's own ESLint under a non-hoisted installer. No rule behavior change;
+`check:comments` stays the tripwire. Safe bump.
+
+## postcss 8.5.26 -> 8.5.28 (new this update, 2026-09-20)
+
+Not separately changelog-verified this pass (no bundled `CHANGELOG.md` and no reachable raw
+source); the range is two patches on a widely-depended transitive build tool with no config
+surface `tailwindcss`/`@tailwindcss/postcss` or `postcss-prefix-selector` exposes to cairn
+directly. The full gate's CSS build steps (`check:package`, `check:admin-css-classes`,
+`check:public-tokens`) are the correct tripwire and they stay green.
+
+## @types/node 24.13.3 -> 24.13.6 (new this update, 2026-09-20)
+
+Three patches of `Node.js` 24 LTS type-definition corrections (the held major is `@types/node`
+26, tracking the same trigger as the other two held majors below). Type-only package; `npm run
+check` (svelte-check, 0/0) is the tripwire and it stays green.
+
+## @anthropic-ai/sdk 0.120.0 -> 0.127.0
+
+**Update, 2026-09-20.** Moved two further minors, 0.125.0 to 0.127.0: Managed Agents auto-mode
+tool permissions, a compaction/signed-compaction-blocks beta, workspace data-residency and
+`workspace_id` additions, a `compactBeforeNextTurn()` tool-runner helper, and several retry/
+Retry-After and streaming edge-case fixes. None of it reaches a bare `messages.create()` call
+with no tools, agents, compaction, or streaming. One fix worth naming: 0.127.0 stops retrying a
+request whose body is a stream or iterator; cairn's call sends a plain JSON body, not a stream,
+so this changes nothing here. The 0.122.0 `DOMException` finding below is unaffected and still
+the one substantive behavior change in the whole surveyed range.
 
 Cairn's usage is narrow: a single non-streaming `messages.create()` call per Tidy action in
 `src/lib/sveltekit/content-routes-context.ts` and `content-routes-tidy.ts`, no tool use, no
@@ -226,6 +350,8 @@ upside on Workers, not a risk, and the one substantive behavior change in range.
 
 ## @clack/prompts 1.7.0 -> 1.8.1
 
+**Update, 2026-09-20.** Still the target; nothing newer in range. Findings below still accurate.
+
 Cairn's usage in `packages/create-cairn-site` is `intro`, `outro`, `text`, `password`,
 `confirm`, `select`, `isCancel`, `cancel`. No `spinner`, `multiselect`, `group`, `log`,
 `note`, or `autocomplete`.
@@ -246,14 +372,82 @@ win.
 **Practices to change / risks.** None; both 1.8.0 and 1.8.1 are additive or patch-only, and
 1.8.1 only corrects the `CANCEL_SYMBOL` return type.
 
+## devalue 5.9.1 -> 5.9.4 (new this update, 2026-09-20; superseded "nothing to act on" below)
+
+This range moved for real since 2026-09-13: `devalue` had published 5.9.2 through 5.9.4 in the
+interim, so the caret range now resolves further than "already satisfied." Verified directly
+against `sveltejs/devalue`'s `CHANGELOG.md`. Three patches carry genuine security-relevant
+fixes, not routine bug fixes: 5.9.2 rejects out-of-bounds indices; 5.9.3 rejects non-string
+null-prototype object keys in `parse`/`unflatten` (closing a `__proto__`-check bypass) and
+serializes only the visible bytes of a Node `Buffer` in `stringify`/`stringifyAsync`/`uneval`
+(closing a disclosure of unrelated data from a shared allocation pool); 5.9.4 is a pure
+tree-shaking annotation with no behavior change. SvelteKit uses `devalue` internally to
+serialize `load` return data across the server/client boundary, which is exactly the path a
+cairn site's own load functions (and `createContentRoutes`'/`createCairnAdmin`'s) run through,
+so the buffer-disclosure and prototype-bypass fixes are a genuine hardening win on the exact
+serialization path cairn depends on, not merely a version bump. No code change required; this
+belongs in the CHANGELOG's `Dependencies` entry as security-relevant, not "no consumer action."
+
+**Practices to change.** None; no changed default or removed API in range.
+
+**Risks in the bump.** None found; every 5.9.x release is additive or a fix, no API-shape
+change to `stringify`/`parse`/`uneval`/`unflatten`, the four entry points SvelteKit's own
+internals call.
+
 ## Patch-only packages (skim)
 
-- **postcss-prefix-selector** 2.1.1 -> 2.2.1: no bundled changelog; installed version is still
-  2.1.1. Nothing found suggesting a behavior change relevant to cairn's CSS scoping use.
-- **devalue, esbuild, tsx, yaml**: all four are already satisfied at their latest patch by the
-  existing `^` ranges in `package.json` (devalue `^5.8.1` installed `5.9.1`, esbuild `^0.28.1`
-  installed `0.28.1`, tsx `^4.23.11` installed `4.23.12`, yaml `^2` installed `2.9.0`). Nothing
-  to act on.
+- **postcss-prefix-selector** 2.1.1 -> 2.2.1: no bundled changelog; not independently verified
+  beyond the 2026-09-13 finding. Nothing found suggesting a behavior change relevant to cairn's
+  CSS scoping use; `check:admin-css-classes` in the full gate is the tripwire and stays green.
+- **esbuild** 0.28.1 -> 0.28.2 (new this update, 2026-09-20): verified directly against
+  `evanw/esbuild`'s `CHANGELOG.md`. Two fixes: a tree-shaking bug for a TypeScript `import ... =
+  Base.SomeType` alias, and a CSS-minifier bug that incorrectly removed a `&` nesting selector
+  under `--minify`. Cairn's build uses esbuild inside `svelte-package`/`transpile-dist-svelte.mjs`
+  for JS transpilation, not CSS minification, and `src/lib` uses no TypeScript import-equals
+  aliasing. Safe bump.
+- **tsx** 4.23.12 -> 4.23.15 (new this update, 2026-09-20): not independently changelog-verified
+  (no bundled `CHANGELOG.md`, no reachable raw source this pass); three patches on a dev-only
+  loader used by `scripts/build/*.mjs` and test tooling. The full gate exercising every script
+  that shells to `tsx` is the tripwire.
+- **yaml** 2.9.0 -> 2.9.1 (new this update, 2026-09-20): single patch, not independently
+  changelog-verified this pass; `gray-matter`'s frontmatter parsing (via `js-yaml`, a separate
+  package) doesn't route through this `yaml` dependency, which cairn's own `dependencies` list
+  declares directly for a narrower use. Low risk given the single-patch range.
+
+## Audit-fix findings, 2026-09-20 (new this update)
+
+`npm audit` at the root, before and after the sweep, plus in `examples/showcase`. Before: 8
+advisories at the root (2 low, 6 high), 6 in the showcase (3 low, 3 high). After the sweep's
+fresh reinstall (delete `node_modules` and both lockfiles, reinstall root then showcase, no
+manifest range change beyond what the sweep already took): 6 at the root (2 low, 4 high), 3 in
+the showcase (all low).
+
+- **`fast-uri` (root, transitive via `eslint-plugin-tsdoc` -> `@microsoft/tsdoc-config` ->
+  ajv).** Fixed by the fresh reinstall alone, no manifest edit. `ajv`'s own dependency range
+  (`^3.0.1`) already admits `3.1.8`, a patch beyond the vulnerable `3.0.0-3.1.5` band; the old
+  lockfile had pinned `3.1.5`. Confirmed: `fast-uri` reads `3.1.8` in the regenerated lockfile.
+- **`js-yaml` (root, transitive via `gray-matter`).** Same pattern: `gray-matter`'s own
+  dependency range (`^3.13.1`) already admits `3.15.2`, a patch beyond the vulnerable
+  `3.0.0-3.15.1` band. Confirmed: `js-yaml` reads `3.15.2` in the regenerated lockfile.
+- **`cookie` under `@sveltejs/kit@2.70.3` (root and showcase). HELD, major.** `npm audit fix`
+  offers only `--force`, and would install `@sveltejs/kit@0.0.30`, a downgrade far below the
+  `^2.70` peer range: this is the ruling-2 "needs `--force`, or downgrades to clear an
+  advisory" case, held the same as a major. `2.70.3` is already the newest version satisfying
+  `^2.70` (verified via `npm view @sveltejs/kit@latest`), so this cannot resolve within the
+  current peer range; it needs either an `@sveltejs/kit` patch release that bumps its own
+  `cookie` dependency past `0.7.0` inside the `2.70.x` line, or the peer range moving to a kit
+  major, which is its own held decision. **Trigger:** re-check `npm audit` after any future
+  `@sveltejs/kit` patch release, or when the peer range next moves.
+- **`sharp` under `@cloudflare/vitest-pool-workers@0.22.0`'s own nested `miniflare` (root
+  only). HELD, major.** `npm audit fix` offers only `--force`, and would install
+  `@cloudflare/vitest-pool-workers@0.8.30`, a downgrade below the installed `0.22.0` (the
+  highest version that package has ever published, per `npm view` versions). The sweep's own
+  `wrangler` bump (4.125.0 to 4.135.0) resolves the *showcase's* copy of this same advisory,
+  because the showcase has no `@cloudflare/vitest-pool-workers` dependency and its `wrangler`
+  now pulls a `miniflare` carrying `sharp@0.35.4`; the root keeps a second, separate nested
+  `miniflare` under `@cloudflare/vitest-pool-workers` that does not move with `wrangler`.
+  **Trigger:** re-check `npm audit` at the root after any future `@cloudflare/vitest-pool-workers`
+  release above `0.22.0`.
 
 ---
 
@@ -350,6 +544,33 @@ cosmetic-value only.
 
 ---
 
+## Held majors, with unblock triggers (2026-09-20)
+
+| Package | Held at | Major | Trigger |
+| --- | --- | --- | --- |
+| `typescript` | `^6.0.3` | `7.0.2` | `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly). Carried from `docs/STATUS.md`. |
+| `vitest`, `@vitest/browser`, `@vitest/browser-playwright` | `^4.1` / `^4.1.7` | `5.0.1` | `@cloudflare/vitest-pool-workers` (currently `0.22.0`) declares a peer `vitest: ^4.1.0`; re-check when that package publishes a release supporting Vitest 5. |
+| `@types/node` | `^24.13.6` | `26.6.2` | Tracks the engine floor: "Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026)" (`docs/STATUS.md`, Open decisions). |
+| `devalue` (new this sweep) | `^5.9.4` | `6.0.0` | `devalue` is a transitive/dev-tooling dependency, not a direct `src/lib` import; 6.0.0 requires Node ≥22.17 (already satisfied) but changes the custom-object `uneval` replacer API from nested `uneval` calls to a tagged template `js`, which is a breaking API shape change for any caller of that specific API. Re-check when a `devalue`-consuming toolchain (SvelteKit's own internal pin, or `svelte-check`) requires 6.x, since cairn has no direct call site to migrate today. |
+
+Two `npm audit` findings are held the same way (needs `--force`, or downgrades to clear the
+advisory); see the "Audit-fix findings" section above for the `cookie`/`@sveltejs/kit` and
+`sharp`/`@cloudflare/vitest-pool-workers` entries and their triggers.
+
+## Refactor-decision table (ruling 3: default "file"; every item below is filed, none taken)
+
+| Capability | Code that hand-rolls it | Ruling |
+| --- | --- | --- |
+| `<select>` default-selection via per-option `selected={...}` | `src/lib/components/ManageEditors.svelte:169-174` | File. Svelte 5.57's `defaultValue` on `<select>` replaces the per-iteration boolean; small, optional, no existing test targets this exact simplification. |
+| Imperative DOM-property indeterminate checkbox with no ARIA mirror | `src/lib/components/MediaOrphanTools.svelte:55-79` | File. DaisyUI 5.7.25 added native `aria-checked="mixed"` styling; the DOM-property approach still works, so this is a future nice-to-have, not a defect. |
+| Manual two-try Cloudflare token prompt (`password()` plus a hand-rolled retry) | `packages/create-cairn-site/src/cloudflare/prefill.mjs:265-289` | File. `@clack/prompts` 1.8.0's async `validate` callback could replace the manual structure, but preserving the deliberate one-retry ceiling needs an explicit attempt counter: not a drop-in, so it does not qualify as the zero-behavior-change take-now case. |
+| Manual `btn-active` class alongside `aria-current="page"` | `src/lib/admin-toolkit/Pagination.svelte:97-101` | File. DaisyUI 5.7.38 now styles `[aria-current]` as `btn-active` natively, making the manual class redundant; removing it needs a visual-baseline read to confirm pixel parity, which belongs in a reviewed pass, not a dependency sweep. |
+| Hand-authored nav-group `<details>` with a custom `.cairn-caret` chevron | `src/lib/components/CairnAdminShell.svelte`, documented at `admin-design-system.md:369-374` | File (already flagged in the 2026-09-13 DaisyUI inventory below as the one genuine "should have been DaisyUI" candidate). DaisyUI's `collapse`/`collapse-arrow` covers this; low urgency, cosmetic-value only. |
+
+Five filed items; no take-now item exists this sweep (nothing met the zero-behavior-change
+with existing-test bar), so no formal refactoring pass is proposed. `ROADMAP.md` carries a line
+for each, in the tier where it bites.
+
 ## Top five for Geoff, ranked
 
 1. Simplify the Cloudflare token prompt in `packages/create-cairn-site` using
@@ -363,10 +584,18 @@ cosmetic-value only.
    `@anthropic-ai/sdk` 0.122.0: it makes cairn's existing abort routing at
    `content-routes-tidy.ts:229` more correct on Cloudflare, no code change required, just
    awareness.
-4. Confirm the CodeMirror `@codemirror/view`/`@codemirror/state` patch notes directly from
-   upstream before or right after bumping; this pass could not verify the exact range from a
-   changelog and it is the one package left unconfirmed rather than cleared.
-5. After the DaisyUI bump, check the checkbox, badge, and `loading-sm` visual/e2e baselines
-   specifically (5.7.35 and 5.7.36 change their pixel rendering); separately, the nav
+4. **Resolved, 2026-09-20:** the CodeMirror `@codemirror/view`/`@codemirror/state`/
+   `@codemirror/commands` patch notes are now confirmed directly from the installed
+   `CHANGELOG.md` files (see the CodeMirror section above); every entry is a browser-specific
+   or internal range-mapping bug fix with no cairn call-site exposure.
+5. After the DaisyUI bump, check the checkbox, badge, `loading-sm`, disabled-input, and
+   Pagination's `aria-current` button visual/e2e baselines specifically (5.7.35 through 5.7.42
+   change their pixel rendering, and 5.7.38's native `[aria-current]` styling makes
+   `Pagination.svelte`'s manual `btn-active` class redundant, filed above); separately, the nav
    `<details>` groups toward `collapse`/`accordion` are the one DaisyUI component-adoption
    opportunity worth a future small pass, unrelated to this version range.
+6. **New, 2026-09-20:** `devalue` 5.9.2-5.9.4 carries two genuine security fixes (a
+   prototype-pollution-bypass close in `parse`/`unflatten`, a shared-buffer disclosure close in
+   `stringify`/`uneval`) on the exact serialization path SvelteKit's own `load` boundary uses;
+   worth the CHANGELOG's `Dependencies` entry naming it as security-relevant rather than a
+   routine floor move.

@@ -2421,6 +2421,37 @@
   `Consumers must:` line in the window gathered in one place. Internal documentation only; no
   code changed. No consumer action.
 
+### Dependencies
+
+- The pre-cut dependency sweep takes every minor and patch across both manifests
+  (`docs/internal/record/2026-09-13-minor-bump-features.md` carries the per-package survey).
+  Runtime `dependencies` floors of the published package move: `@codemirror/commands` to
+  `^6.11.1`, `@codemirror/state` to `^6.7.5`, `@codemirror/view` to `^6.43.12`, and
+  `@lucide/svelte` to `^1.47.0`. Every other moved package (`@anthropic-ai/sdk`, `daisyui`,
+  `eslint`, `eslint-plugin-jsdoc`, `eslint-plugin-tsdoc`, `esbuild`, `playwright`, `postcss`,
+  `postcss-prefix-selector`, `svelte`, `tsx`, `typescript-eslint`, `vite`, `vitest-browser-svelte`,
+  `wrangler`, `@types/node`, `@cloudflare/workers-types`, `devalue`) is a devDependency or a
+  showcase-only devDependency, not shipped in the tarball. No peer range moved:
+  `@sveltejs/kit` stays `^2.70` and the `svelte` peer stays `^5.56.10`. TypeScript 7, Vitest 5
+  (and its `@vitest/browser`/`@vitest/browser-playwright` pair), and `@types/node` 26 stay held;
+  `devalue` 6.0.0 joins the held list. Two `npm audit` findings stay open on the same "needs
+  `--force`, breaking" basis: `cookie` under `@sveltejs/kit@2.70.3` (the suggested fix downgrades
+  to `@sveltejs/kit@0.0.30`) and `sharp` under the root's own `@cloudflare/vitest-pool-workers`
+  (the suggested fix downgrades to `@cloudflare/vitest-pool-workers@0.8.30`); both are held with
+  the survey record carrying their triggers. Consumers must: nothing for the moved peer-free
+  devDependencies. **Consumers must: the daisyUI bump (`5.7.20` to `5.7.42`) recompiles the
+  shipped `dist/components/cairn-admin.css`**, the packaged stylesheet `/admin-sources.css`
+  imports; 5.7.35 through 5.7.42's checkbox tick/dash alignment and badge-in-flex shrinking
+  fixes change the precompiled sheet's pixel output on those two elements. No code change is
+  required; a site that snapshot-tests the admin visually should refresh those baselines.
+  `devalue`'s move to `5.9.4` (a devDependency, not shipped) is worth naming despite carrying no
+  consumer action: `5.9.2` through `5.9.4` close a prototype-pollution-bypass in `parse`/
+  `unflatten` and a shared-buffer disclosure in `stringify`/`uneval`, on the same serialization
+  path SvelteKit's own `load` boundary uses. The shipped `src/lib/audit/norms-manifest.json`
+  also moves: daisyUI 5.7.38's `[aria-current]`-as-`menu-active` fix adds `var(--menu-active-fg)`
+  to the admin sidebar's active nav item, which `npm run norms:generate` now observes and
+  `cairn-audit norms` reads. No consumer action; the manifest is descriptive, not enforced.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

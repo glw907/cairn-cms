@@ -8,8 +8,8 @@
 // exactly the drift a live reproduction exists to prevent.
 //
 // @lucide/svelte ships Svelte components rather than importable data, so the artwork is read off
-// disk: each icon file carries its `iconNode` as a JSON array literal, and every path in it must
-// appear verbatim in the story source.
+// disk: each icon file carries an `iconData` object literal with a `node` array, and every path
+// in it must appear verbatim in the story source.
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -20,12 +20,12 @@ const LUCIDE_ICONS = resolve(process.cwd(), 'node_modules/@lucide/svelte/dist/ic
 /** The lucide icons `editor/toolbar` transcribes, in the order the Insert group renders them. */
 const TRANSCRIBED = ['blocks', 'square-pen', 'link', 'file-symlink', 'image', 'sparkles'];
 
-/** Every `d` attribute in one icon's `iconNode`, the part a redraw actually changes. */
+/** Every `d` attribute in one icon's `iconData.node`, the part a redraw actually changes. */
 function iconPaths(name: string): string[] {
   const file = resolve(LUCIDE_ICONS, `${name}.svelte`);
-  const found = readFileSync(file, 'utf8').match(/const iconNode = (\[[\s\S]*?\]);/);
-  if (!found) throw new Error(`no iconNode in ${name}.svelte; lucide changed its component shape`);
-  const node = JSON.parse(found[1]) as [string, Record<string, string>][];
+  const found = readFileSync(file, 'utf8').match(/const iconData = (\{[\s\S]*?\});/);
+  if (!found) throw new Error(`no iconData in ${name}.svelte; lucide changed its component shape`);
+  const { node } = JSON.parse(found[1]) as { node: [string, Record<string, string>][] };
   return node.filter(([, attrs]) => 'd' in attrs).map(([, attrs]) => attrs.d);
 }
 

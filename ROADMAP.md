@@ -966,11 +966,6 @@ the named human gates only):**
   `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, pre-approved by Geoff
   within that brief's bounds.
 
-- **The Go-tool CI gate-tier gap found closing Pass A (2026-09-20).** `scripts/checks/gate-tier.mjs`
-  had no rule for `tool/` paths, so a Go-only diff resolved to the full Node gate instead of the
-  light Go-only lane. PR #68 implements the fix (a sixth `tool` gate tier, plus a `<npm
-  tier>+tool` shape for a mixed diff) and is open, awaiting merge.
-
 - **Items filed at Pass B1's close (2026-09-20), for Pass B2 or a later pass.**
   - The engine's condition registry (`tool/internal/spine/condition.go`, ported from
     `src/lib/diagnostics/conditions.ts`) has no condition id for an HSTS-off finding (the

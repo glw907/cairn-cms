@@ -2065,26 +2065,21 @@ grammar (19a-i), the render bodies (20b-i, 20b-ii), the JSON contract (20c), and
 arithmetic (18); `sonnet` for every other task. A dispatch that names no model falls to the
 settings default, which is why each is named.
 
-**Gate tier, and the one thing to re-check before launching.** `CAIRN_GATE_LANE=light
-cairn-run-gate 'make -C tool check'` is every task's gate. **Measured 2026-09-20: PR #68
-(`chore/gate-tier-tool-rule`, "give gate-tier a tool tier for the Go module") is OPEN, not
-merged**, and `scripts/checks/gate-tier.mjs` still carries no `tool/**` rule. So every B2 task is
-dispatched with `gateTier: "docs"` and the classifier-skip `notes` line, per the header's
-blockquote. **Re-check with `gh pr view 68 --json state -q .state` before the first dispatch.** If
-it reads MERGED, drop the pin and the notes line: the classifier then prints `make -C tool check`
-for a tool-only diff, and for a mixed diff the npm tier's own string plus ` && make -C tool
-check`. A mixed diff whose npm half includes the root `npm test` must NOT take the light lane,
-because that suite launches a browser; run it unlaned. Tasks 23, 24b, and 25 are the three whose
-diffs reach outside `tool/`; each states its own lane.
+**Gate tier.** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'` is every task's gate.
+**PR #68 (`chore/gate-tier-tool-rule`, "give gate-tier a tool tier for the Go module") merged
+2026-09-20**, so `scripts/checks/gate-tier.mjs` now carries a `tool` tier and no B2 task pins
+`gateTier`. The classifier prints `make -C tool check` for a tool-only diff, and for a mixed diff
+the npm tier's own string plus ` && make -C tool check`. A mixed diff whose npm half includes the
+root `npm test` must NOT take the light lane, because that suite launches a browser; run it
+unlaned. Tasks 23, 24b, and 25 are the three whose diffs reach outside `tool/`; each states its own
+lane.
 
-**Notes every B2 dispatch carries, verbatim.** Two lines, both load-bearing, both restated in
-each task below because a subagent starts with zero context:
+**The note every B2 dispatch carries, verbatim.** One line, restated in each task below because a
+subagent starts with zero context:
 
-1. "This repo's gate-tier classifier carries no `tool/**` rule; do not run it; run the Gate
-   command unchanged and report gateTier: pin."
-2. "Never invent operator-facing copy. Every operator-facing string comes from the messages table
-   and `tool/docs/design/copy-standard.md`. A string the catalogue lacks goes in your report under
-   'New operator-facing strings' for an editor; do not write prose at a call site."
+"Never invent operator-facing copy. Every operator-facing string comes from the messages table and
+`tool/docs/design/copy-standard.md`. A string the catalogue lacks goes in your report under 'New
+operator-facing strings' for an editor; do not write prose at a call site."
 
 **A factual pre-flight runs before each segment launches**, as in B1: one cheap agent lists every
 checkable claim the segment's tasks make about existing code, checks each at HEAD, and reports the
@@ -2142,7 +2137,7 @@ builds, which is why it runs before the cobra tree rather than after it.
 `tool/docs/design/copy-standard.md` is the contract; read it in full before writing anything.
 Invoke `go-conventions` before writing any Go file. Suggested model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above. This is one of the two tasks
+**Notes (verbatim in the dispatch):** the standing B2 note above. This is one of the two tasks
 that MAY add operator-facing strings, because its whole deliverable is the table; every string it
 adds comes from the catalogue in `copy-standard.md` section 3, and any string the catalogue does
 not cover is listed in the report for the editorial gate at Task 22a.
@@ -2264,7 +2259,7 @@ functions in `tool/cmd/cairn/probe_token.go` at `:110` and `:120`. Invoke `go-co
 writing any Go file. Suggested model: `opus`, for the precedence arithmetic, which is frozen at
 1.0 and which an agent reads wrong by default.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `tool/internal/spine/adopt.go`, `adopt_test.go`
@@ -2339,7 +2334,7 @@ secrets work: this task owns `root.go`, `main.go`, and the shape of the tree, an
 `go-conventions` before writing any Go file and `golang-spf13-cobra` before any `cmd/cairn` file.
 Suggested model: `opus`, the largest command surface in the plan.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `tool/cmd/cairn/sites.go`, `health.go`, `logs.go`, `adopt.go`, `deps.go`,
@@ -2451,7 +2446,7 @@ which is the one contended edit and is named here so the implementer expects it.
 count: four groups.** Invoke `go-conventions` before writing any Go file and `golang-spf13-cobra`
 before any `cmd/cairn` file. Suggested model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `tool/internal/store/discover.go`, `discover_test.go`
@@ -2512,7 +2507,7 @@ defined once, in `ExitCode`.
    names it** (conductor, 2026-09-20, correcting the amendment's divide-always rule). Three
    sentences, all tested: each site gets the full single-site budget by default; the default
    whole-run budget is that single-site budget times the number of sites in the registry, under a
-   stated cap the task names and `exit-codes.md` publishes; and an **explicit** `--timeout` is the
+   600-second cap, which `exit-codes.md` publishes; and an **explicit** `--timeout` is the
    whole-run budget, divided by the sites still to run and recomputed after each site, so one slow
    site cannot eat the rest and a fast sweep gives its slack back. The old divide-always rule made
    the headline invocation broken by default: at the 120-second single-site default a four-site
@@ -2565,7 +2560,7 @@ defined once, in `ExitCode`.
 **Deliverable count: three groups**, eight items. Invoke `go-conventions` before writing any Go
 file and `golang-spf13-cobra` before any `cmd/cairn` file. Suggested model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `tool/cmd/cairn/ack.go`, `ack_test.go`, `tool/cmd/cairn/completion_test.go`
@@ -2651,7 +2646,7 @@ this half is the command-layer table and the error boundary, and it runs after t
 it can edit the real command files rather than inventing them. `tool/docs/design/copy-standard.md`
 is the contract. Invoke `go-conventions` before writing any Go file. Suggested model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above. This is the second of the
+**Notes (verbatim in the dispatch):** the standing B2 note above. This is the second of the
 two tasks that MAY add operator-facing strings, on the same terms as 19c-i.
 
 **Files:**
@@ -2711,7 +2706,7 @@ marshals the same inputs without touching either.
 
 Invoke `go-conventions` before writing any Go file. Suggested model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above, plus: "Captures never open
+**Notes (verbatim in the dispatch):** the standing B2 note above, plus: "Captures never open
 one terminal window per frame. Iterate with offscreen renders (ANSI to HTML to headless Chromium);
 real-terminal evidence is ONE reused kitty window per session, each frame verified to show its own
 content before it is saved. See `tool/docs/design/render-reference/src/offscreen.py` and
@@ -2903,7 +2898,7 @@ the reference program, suffixed so no gate compiles them. **The goldens are cut 
 `render` package and reviewed against those frames.** A golden copied from the reference program is
 not acceptance. Invoke `go-conventions` before writing any Go file. Suggested model: `opus`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above, plus the capture rule from
+**Notes (verbatim in the dispatch):** the standing B2 note above, plus the capture rule from
 Task 20a's notes.
 
 **Files:**
@@ -3037,7 +3032,7 @@ named contention and the reason the two are sequential rather than parallel. The
 reference is the same `render-reference/` directory, on the same terms. Invoke `go-conventions`
 before writing any Go file. Suggested model: `opus`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above, plus the capture rule from
+**Notes (verbatim in the dispatch):** the standing B2 note above, plus the capture rule from
 Task 20a's notes.
 
 **Files:**
@@ -3134,7 +3129,7 @@ without touching a body, and because what it ships freezes at 1.0 while the bodi
 explicitly does not. Invoke `go-conventions` before writing any Go file. Suggested model: `opus`,
 because this is the surface that freezes.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `tool/internal/render/json.go`, `json_test.go`, `testdata/json/`
@@ -3271,7 +3266,7 @@ this task widens `spine.ExitCode` with the per-check severity table rather than 
 Invoke `go-conventions` before writing any Go file and `golang-spf13-cobra` before any `cmd/cairn`
 file. Suggested model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `tool/internal/logx/logx.go`, `logx_test.go`
@@ -3385,8 +3380,8 @@ scrub last, over line boundaries.
     maximum request count, times the per-request timeout, fits within the single-site budget. The
     per-check counts the test reads are the ones the doc publishes, so the two cannot drift.
 15. **The multi-site arithmetic is stated as Task 19a-ii implements it**: by default each site gets
-    the full single-site budget and the whole-run budget is that times the registry's size under
-    the stated cap, so bare `cairn health` finishes at the default for a registry up to the cap; an
+    the full single-site budget and the whole-run budget is that times the registry's size under a
+    600-second cap, so bare `cairn health` finishes at the default for a registry up to the cap; an
     explicit `--timeout` is the whole-run budget and is divided. The doc carries the formula, the
     cap, a worked number for a four-site and a ten-site registry, and the sentence that an operator
     who sets `--timeout` by hand is choosing the divided form.
@@ -3452,7 +3447,7 @@ note telling him how, which is the owner gate this pass stops at. Invoke `go-con
 writing any Go file and `golang-spf13-cobra` before any `cmd/cairn` file. Suggested model:
 `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `tool/CHANGELOG.md`, `tool/README.md`
@@ -3556,7 +3551,7 @@ no `tripwire` verb. So 1.0 adds no command here: it documents the scheduled run 
 and every capability the run needs is already a flag by Tasks 19a-i, 19a-ii, 19b, and 21. Suggested
 model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `tool/docs/tripwire.md`
@@ -3625,7 +3620,7 @@ terminal against his own sites, and said go.** An unattended run stops before it
 published and permanent, which is why it opens a segment and why it is the gate. Suggested model:
 `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:** none but `tool/README.md`, for criterion 5's retraction sentence. This task tags a
 commit.
@@ -3660,7 +3655,7 @@ commit.
 Task 22b's tag is the trigger, so this task inherits the owner gate. It is split out of the cut
 because a release nobody can install is not a release. Suggested model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Modify: `.github/workflows/tool.yml` (the release job Task 1 wired, corrected against its first
@@ -3749,7 +3744,7 @@ Invoke `vps-conventions` for the systemd unit, which is Geoff's own installation
 scheduler examples are prose in `tool/docs/tripwire.md` and are not governed by it. Suggested
 model: `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Create: `~/.dotfiles/systemd/.config/systemd/user/cairn-tripwire.service`,
@@ -3795,7 +3790,7 @@ model: `sonnet`.
 Owner-gated because it merges the branch Task 22b's published tag lives on. Suggested model:
 `sonnet`.
 
-**Notes (verbatim in the dispatch):** the two standing B2 notes above.
+**Notes (verbatim in the dispatch):** the standing B2 note above.
 
 **Files:**
 - Modify: `docs/STATUS.md`, `CHANGELOG.md`, `ROADMAP.md`,
@@ -3881,7 +3876,7 @@ Owner-gated because it merges the branch Task 22b's published tag lives on. Sugg
 
 ### Outside the amendment, for the owner
 
-Seven items the pass surfaced that sit outside the bounds Geoff pre-approved. None is a task, none
+Six items the pass surfaced that sit outside the bounds Geoff pre-approved. None is a task, none
 is executed by this pass, and each names what would settle it. Task 25 carries them forward to the
 ROADMAP, STATUS, or the facts container.
 
@@ -3895,25 +3890,22 @@ ROADMAP, STATUS, or the facts container.
    test between them, and the binary's own page is the surface a `go install` operator actually
    reaches. The trigger that would settle it: an agent harness that reads the npm package but
    cannot run the binary.
-3. **PR #68, the `tool/**` gate tier rule.** Open, not merged, measured 2026-09-20. Until it
-   merges every B2 task carries a `gateTier: "docs"` pin and a notes line that describe nothing
-   about the diff. Merging it removes a per-dispatch workaround from seventeen tasks.
-4. **`--cairn-cli-rule` in `cairn-admin.css`.** Task 20a's palette introduces one new Warm Stone
+3. **`--cairn-cli-rule` in `cairn-admin.css`.** Task 20a's palette introduces one new Warm Stone
    role, the rule colour, which exists only in the Go palette today. Whether the admin's own
    stylesheet should carry the same token is a design-system question for the admin, not a tool
    question, and the tool does not wait on it.
-5. **The local e2e Chromium pin.** Unrelated to the tool and recorded because this pass's own gate
+4. **The local e2e Chromium pin.** Unrelated to the tool and recorded because this pass's own gate
    work surfaced it again: the visual baselines are CI-canonical and this workstation cannot
    reproduce a few of them, so a local run is green only by inspection. The lasting fix is to pin
    the local e2e to the runner's Chromium build and fonts, or run it in a matching container.
-6. **A fifth wire word, `unknown`, for a non-credential skip.** The pass ships the owner's four
+5. **A fifth wire word, `unknown`, for a non-credential skip.** The pass ships the owner's four
    per-check words, `pass fail skip held`, with a mandatory `reason` code separating a missing
    credential from a timeout, a transport failure, and a rate limit. The domain-risk review argued
    that an agent reads `skip` as benign whatever the reason beside it says, and that a transport
    failure deserves its own word. The four words plus the reason enum are what 1.0 freezes unless
    the owner rules otherwise, **and the decision has to be made before the 1.0 freeze**, because
    adding a fifth state word afterwards is a major-version event.
-7. **Whether a rate-limited run is UNKNOWN or WARNING.** The plan rules UNKNOWN and overrules the
+6. **Whether a rate-limited run is UNKNOWN or WARNING.** The plan rules UNKNOWN and overrules the
    copy catalogue's `WARNING, never CRITICAL` line, on the reading that a throttled run did not
    observe the site. The catalogue's reading is that an operator who sees UNKNOWN goes looking for
    a fault that is not there. Both are defensible; the plan's is what ships unless the owner rules

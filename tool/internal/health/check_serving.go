@@ -117,7 +117,7 @@ func matchesMarker(origin string, root, admin *http.Response) bool {
 // same question the tool's Resolver seam can actually answer, whether the domain's own NS
 // records resolve at all, and keeps the two outcomes hostname-resolver-lagging and
 // hostname-records-absent otherwise unchanged: present means only the caller's resolver has not
-// caught up, absent means the records genuinely have not propagated yet.
+// caught up, absent means the records have not propagated yet.
 func diagnoseUnreachable(ctx context.Context, probe *providers.Probe, domain string) spine.Outcome {
 	ns, err := probe.LookupNS(ctx, domain)
 	if err != nil || len(ns) == 0 {

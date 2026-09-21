@@ -23,7 +23,10 @@ the tag, the release artifacts, and B2's merge stay his. **The engine cut includ
 docs that name the tool, and the site upgrade brief's tools section all present `cairn` 1.0 and
 its install line. The binary still ships by `go install` and the tag's release artifacts, never
 inside the npm tarball (the Pass A tarball guard); confirm that reading with Geoff at the cut if
-he meant bundling. After that, the one cut
+he meant bundling (confirmed 2026-09-21: not bundled). **When B2's merge to `main` completes,
+whoever conducts Task 25 messages the engine development orchestrator session (peer
+`cairn-cms-f5` on 2026-09-21; re-check `ListAgents`, and fall back to this line if it has closed)
+that `main` now carries the tool's 1.0 and the cut is unblocked.** After that, the one cut
 (`cairn-release`), with the dependency sweep (the `dependency-upgrade`
 skill) and the site upgrade brief's tools section landing in the pre-cut pass. The pending
 version is `0.97.0`, verified free against the registry with `npm view @glw907/cairn-cms

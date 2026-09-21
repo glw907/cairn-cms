@@ -41,20 +41,27 @@ type Store struct {
 // per-operation by List and Load, since a directory's mode can loosen
 // after Open returns.
 func Open(dir string) (*Store, error) {
-	info, err := os.Lstat(dir)
-	if err != nil {
-		return nil, fmt.Errorf("store: open %s: %w", dir, err)
-	}
-	if err := checkNotReparsePoint(dir, info); err != nil {
-		return nil, fmt.Errorf("store: open %s: %w", dir, err)
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("store: open %s: not a directory", dir)
-	}
-	if err := checkOwner(dir, info); err != nil {
+	if err := openChecks(dir); err != nil {
 		return nil, fmt.Errorf("store: open %s: %w", dir, err)
 	}
 	return &Store{dir: dir}, nil
+}
+
+// openChecks reports the first reason dir cannot be a registry root: it is
+// unreadable, it is a symlink or a Windows reparse point, it is not a
+// directory at all, or another user owns it.
+func openChecks(dir string) error {
+	info, err := os.Lstat(dir)
+	if err != nil {
+		return err
+	}
+	if err := checkNotReparsePoint(dir, info); err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return errors.New("not a directory")
+	}
+	return checkOwner(dir, info)
 }
 
 // List returns every listable record in the registry directory as an
@@ -149,7 +156,7 @@ func (s *Store) Load(id string) (record.Record, error) {
 // a missing registry directory at 0700, and writes through a temp file in
 // the same directory, fsynced and renamed into place, so a crash mid-write
 // never leaves a partial record.
-func (s *Store) Save(id string, r record.Record) error {
+func (s *Store) Save(id string, r record.Record) (err error) {
 	if err := record.ValidateSiteID(id); err != nil {
 		return err
 	}
@@ -172,27 +179,31 @@ func (s *Store) Save(id string, r record.Record) error {
 	if err != nil {
 		return fmt.Errorf("store: create temp file for %s: %w", id, err)
 	}
-	if _, err := f.Write(data); err != nil {
-		_ = f.Close()
-		_ = os.Remove(tmpPath)
+	// One unwind for every failure from here on, so no half-written temp file
+	// survives a failed save. A close after the explicit one returns an error
+	// nobody reads, which is why this closes unconditionally on the error path.
+	defer func() {
+		if err != nil {
+			_ = f.Close()
+			_ = os.Remove(tmpPath)
+		}
+	}()
+
+	if _, err = f.Write(data); err != nil {
 		return fmt.Errorf("store: write %s: %w", id, err)
 	}
-	if err := f.Sync(); err != nil {
-		_ = f.Close()
-		_ = os.Remove(tmpPath)
+	if err = f.Sync(); err != nil {
 		return fmt.Errorf("store: sync %s: %w", id, err)
 	}
-	if err := f.Close(); err != nil {
-		_ = os.Remove(tmpPath)
+	if err = f.Close(); err != nil {
 		return fmt.Errorf("store: close %s: %w", id, err)
 	}
 
 	finalPath := filepath.Join(s.dir, id+".json")
-	if err := os.Rename(tmpPath, finalPath); err != nil {
-		_ = os.Remove(tmpPath)
+	if err = os.Rename(tmpPath, finalPath); err != nil {
 		return fmt.Errorf("store: save %s: %w", id, err)
 	}
-	if err := fsyncDir(s.dir); err != nil {
+	if err = fsyncDir(s.dir); err != nil {
 		return fmt.Errorf("store: sync directory: %w", err)
 	}
 	return nil

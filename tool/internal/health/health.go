@@ -56,6 +56,8 @@ var All = []Check{
 	hstsCheck{},
 	emailCheck{},
 	deployCheck{},
+	publishPathCheck{},
+	engineCheck{},
 }
 
 // reportSchemaVersion is Report's own JSON schema version.

@@ -23,8 +23,11 @@ source ~/.local/secrets
 cairn adopt list
 ```
 
-Adopt the four production sites (`cairn adopt --worker <name>` for each one `adopt list` shows),
-then confirm the registry holds them:
+`adopt list` prints two groups. The Workers above the blank line carry a Custom Domain and
+`cairn adopt --worker <name>` adopts each one. The Workers below it serve their site through a
+Workers Route, which cairn does not provision and discovery therefore cannot read a domain from;
+adopt one of those by naming its domain, `cairn adopt --worker <name> --domain <domain>`. Adopt
+the four production sites, then confirm the registry holds them:
 
 ```sh
 cairn sites list --json
@@ -47,19 +50,19 @@ cairn sites list --json
    (`cairn health <site> --ack <check-id>=<a future date>`) and run it again. Does the held row
    read distinctly from a plain pass or fail, and does the run exit 1 (WARNING) rather than
    carrying the failure's own severity?
-5. **`--quiet`, on an OK sweep and on a sweep that is not OK.** Run `cairn health --quiet` against
-   a registry whose sites are all green: it writes nothing at all, and `echo $?` reports 0. Run it
-   again after a real or induced failure: it writes the same strip it writes without the flag.
-   Does silence on green read as confidence rather than as a hang?
+5. **`--quiet`, on an OK sweep and on a sweep that is not OK, at the terminal and through a
+   pipe.** Run `cairn health --quiet` against a registry whose sites are all green: it writes
+   nothing at all, and `echo $?` reports 0. Run it again piped (`cairn health --quiet | cat`),
+   which is the shape a scheduler gives the process, and again after a real or induced failure,
+   where it writes the same body it writes without the flag. Does silence on green read as
+   confidence rather than as a hang?
 6. **`cairn auth check`, with and without a site.** Run it bare: every zone-scoped and
    repository-scoped row reads `skip` and names `cairn auth check <site>` as the way to confirm
    it, and the run exits 1 (WARNING) because of those skips, even with all three credentials set
    and correct. Run it again naming one registered site: do those same rows read `pass` against
-   the live token, and does the run exit 0? One known exception: the Workers Observability row
-   reads `unknown, unreachable` against live credentials, because
-   `internal/providers/cloudflare.go` decodes the telemetry route's `result.events` as an array
-   and the live route answers an object. That defect predates this candidate and is filed, not
-   fixed here; read that one row as unknown rather than as a token fault.
+   the live token, and does the run exit 0? The Workers Observability row is no longer an
+   exception: the telemetry query and its decoder were both wrong until 2026-09-21, and the row
+   now settles on what the live route answers.
 7. **`--json`, validated against the published schemas.** Run `cairn health <site> --json`, `cairn
    health --json`, and `cairn auth check --json`, and validate each payload against its schema in
    `docs/reference/` (`cairn-health.schema.json`, `cairn-health-summary.schema.json`,
@@ -89,3 +92,14 @@ cairn sites list --json
   the tag.
 
 A "yes" on all nine is what "go" for `tool/v1.0.0` means.
+
+## What the first live run found
+
+The 2026-09-21 run of this checklist against the owner's account found two defects no
+fake-backed test could have caught, both now fixed and both recorded in `CHANGELOG.md`: the page
+walk read a `result_info` field three of six live list routes do not send, and the Workers Logs
+query body no longer matched the API's filter schema. The lasting change is a rule rather than
+two patches. Every provider route the tool reads has a response recorded from a live call in
+`packages/create-cairn-site/fixtures/cloudflare/`, with a test that decodes it, and a pass
+touching a route records its response there in the same pass. A hand-written fixture proves only
+that the code agrees with whoever wrote the fixture.

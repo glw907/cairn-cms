@@ -51,7 +51,49 @@ The complete single-site operator CLI.
   carries the word, with no `schemaVersion` increment: no consumer exists before the tag.
 - **`--quiet` prints the whole body on a non-OK run**, rather than the failing rows alone. It
   still writes nothing at all when the run is OK, which is what keeps a cron-driven green run
-  silent, and it never changes an exit code.
+  silent, and it never changes an exit code. The rule keys on the run's own verdict on every
+  path, a terminal or a pipe and one site or many, so a bare `cairn health --quiet` under cron,
+  systemd, launchd, or Task Scheduler is silent on a green run.
+- **`cairn adopt --domain <domain>`**: adopts a Worker that serves a site through a Workers
+  Route. cairn provisions Workers Custom Domains and never Workers Routes, so discovery reads the
+  Custom Domains route alone and cannot build a record for a route-served Worker. `cairn adopt
+  list` names those Workers in their own group and says how to adopt one; the JSON payload
+  carries the split as a new optional `adoptable` field, added within `schemaVersion` 1.
+
+### Fixed before the tag
+
+A live run against a real Cloudflare account on 2026-09-21 found two defects every fake-backed
+test had missed. Both are fixed, and every provider route the tool reads now has a response
+recorded from a live call in the fixture corpus with a test that decodes it.
+
+- **Pagination read one field Cloudflare does not always send.** The page walk stopped when
+  `result_info.total_pages` was absent, which it is on three of the six list routes the tool
+  reads. `GET /accounts/{id}/workers/domains` reports `per_page` and `total_count` instead, at one
+  domain per page, so Worker discovery saw one of an account's seven custom domains and
+  `cairn adopt` refused every site but that one with `record: domain is empty`. The walk now reads
+  whichever fields arrived and stops on the first empty page regardless.
+- **The Workers Logs query body no longer matched the live API.** Each filter must declare a
+  `type`; without it the endpoint answers HTTP 400. `cairn logs` failed on every site and the
+  `errors` check reported every site's observability as turned off, because a 400 classified as
+  `unknown` and the log path read `unknown` as a missing dataset. The query now carries the
+  `type`, the decoder reads the response's real shape (`result.events` is an object, and each
+  event carries the Worker's record under `source`), an HTTP 400 carries its own
+  `reason.api.request-rejected` with a detail naming cairn as the faulty party, and the
+  missing-dataset reading is narrowed to a 404. Live evidence: a Worker with observability unset
+  answers 200 with zero events, so no status distinguishes that condition.
+- **An adopted record now carries its zone id**, which discovery read off the Custom Domains
+  route and then dropped. Without it the `https-forced` and `email` checks report unobservable on
+  every adopted site.
+- **A first run with no registry directory** lists nothing instead of failing with a raw
+  "no such file or directory". An absent registry is an empty registry; `cairn adopt` creates the
+  directory when it writes.
+- **`cairn <unknown-command>`** now prints the two-line usage error the contract states, naming
+  where to read the commands.
+- **The `deploy` check's cred-missing skip** carries a detail, so the plain body no longer prints
+  the bare code `reason.cred-missing`.
+- **`cairn-health.schema.json`** requires `reason` on a `skip` or an `unknown`, which
+  `json-output.md` already promised, through a JSON Schema 2020-12 `if`/`then`. No
+  `schemaVersion` increment.
 
 ### Not in 1.0
 

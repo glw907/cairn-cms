@@ -2089,6 +2089,37 @@ fix round followed, as `bb4773b0`, `0867ec8f`, and `08114b81`, carrying the revi
 and quiet-sweep lines, the regenerated man pages, and the verification checklist's `--theme
 light` item). All three tasks are done.
 
+**The live verification, and the fix round it forced (2026-09-21).** Running the release
+candidate against the owner's real Cloudflare account found two critical defects every
+fake-backed test in the suite had passed, plus a red Windows CI leg.
+
+- **Pagination.** `getPaginated` stopped when `result_info.total_pages` was absent. Three of the
+  six live list routes never send it, and `GET /accounts/{id}/workers/domains` sends `per_page: 1`
+  with a `total_count` instead, so discovery saw one of the account's seven custom domains and
+  `cairn adopt` refused four production sites with `record: domain is empty`. Live proof after the
+  fix: `cairn adopt list` returns all 14 Workers, 7 of them adoptable.
+- **The Workers Logs query.** Every leaf filter must declare a `type`; without it the endpoint
+  answers HTTP 400. `cairn logs` failed on every site, and because a 400 classified as `unknown`
+  and the log path read `unknown` as a missing dataset, the `errors` check reported four live
+  sites' observability as turned off. The decode was wrong too: `result.events` is an object and
+  each event carries the Worker's record under `source`.
+
+Both defects sat behind one cause: every fixture the tests read was hand-written or synthesized,
+so each proved only that the code agreed with whoever wrote the fixture. The rule this round
+establishes, recorded in `packages/create-cairn-site/fixtures/README.md`: **every provider route
+the tool reads has a response recorded from a live call in the corpus, with a test that decodes
+it, and a pass touching a route records its response in the same pass.** Nine bodies were
+recorded, identifiers scrubbed to the corpus's placeholder shapes and every key set, count, and
+`result_info` value left as the API sent it.
+
+The same round fixed the Custom-Domains-only ruling's operator surface (`cairn adopt list` groups
+the Workers with no Custom Domain and `cairn adopt --domain` adopts one), `--quiet` on every path
+rather than the fleet frame alone, the schema's `reason` requirement on a skip or unknown, an
+absent registry, the unknown-command usage line, the `deploy` skip's empty detail, and the eight
+Windows CI failures (a built binary needs an `.exe` suffix, `cmd/cairn`'s testDeps left its
+Resolver nil and so queried live DNS, and one colour-detection row's right answer differs by
+platform).
+
 **Task 19c-i runs first although its number sorts last among the 19s.** Every other task's
 operator-facing strings come from the tables it builds, and a task that ships a string before the
 table exists writes prose at a call site, which is the one thing the copy standard forbids.

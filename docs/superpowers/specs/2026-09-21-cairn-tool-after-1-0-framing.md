@@ -17,6 +17,7 @@ the spine's API is the product, every front end is a view over it, and a view ho
    fixes only.
 3. 1.1 follows the round.
 4. The HUD follows 1.1, as a 1.x minor.
+5. 2.0 is provisioning: `cairn` provisions a new site itself. Its own initiative, unscheduled.
 
 ## Use comes first
 
@@ -85,11 +86,36 @@ HUD caller and stays the reference.
 
 ## 2.0
 
-2.0 is reserved for a break of a surface 1.0 freezes: the exit codes, the JSON schemas, the wire
-words. A Go major also means a `/v2` module path and a new `go install` path, so it is spent only
-on a real break. The named candidate is executable fixes, where the tool performs a fix itself.
-That brings write-scoped credentials held by the tool, dry-runs, and rollback, and it is its own
-initiative with its own consultation. Nothing schedules it.
+**2.0's goal is provisioning (Geoff, 2026-09-21, afternoon): `cairn` itself provisions a new
+site, replacing the Node scaffolder's Cloudflare chapters.** One command, one credential story,
+and no Node at provisioning time. It follows from two rulings of the same day: the CLI is an
+assumed part of the system, and `cairn-doctor` retires into `cairn`. This supersedes the morning's
+narrower reading, which reserved 2.0 for "executable fixes"; performing a fix and provisioning a
+site are the same class of work, a read-only tool beginning to write, and provisioning is the
+larger and better-defined member of it.
+
+It is its own initiative with its own brainstorm, spec, and engine consultation, and nothing
+schedules it yet. Sized from the tool side at several passes of Pass B1's size. What it must
+answer first:
+
+- **The credential posture.** 1.0 holds three read-only values. A provisioner needs write scopes
+  (D1, Workers Scripts, Custom Domains, DNS, Email Sending) and the GitHub side. The 1.1
+  agent-permission check sets the posture to build on: the operator's own `CLOUDFLARE_API_TOKEN`,
+  read from the environment for one run and never stored. 2.0 decides whether that holds for a
+  multi-step, resumable provisioning run.
+- **The permission manifest.** Built in 1.1 for the check; 2.0 consumes it on day one. That is
+  the reason 1.1 comes first.
+- **Dry-run, resume, and rollback.** The scaffolder's chapters already park, hold, and resume;
+  the spine mirrors that vocabulary (`spine.FromKind`, the terminal and resumable step sets) for
+  display only. 2.0 makes it executable, and every write needs a dry-run form and a stated undo.
+- **What is ported and what is redesigned.** The site round exercises the scaffolder's chapters on
+  real sites before this is planned; its friction decides which chapters port as they are.
+- **The scaffold itself.** Whether `cairn` also writes the site's files, or `create-cairn-site`
+  keeps the template and hands provisioning to `cairn`.
+- **The version number.** A Go major means a `/v2` module path and a new `go install` path.
+  Provisioning is pure addition to 1.0's frozen surfaces (exit codes, the JSON schemas, the result
+  words), so by SemVer it could ship as a 1.x minor. Geoff names it 2.0 as the milestone; whether
+  the module path moves is decided at its spec, with that cost stated.
 
 ## Standing declines
 

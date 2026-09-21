@@ -129,6 +129,18 @@ answer first:
   So the open question is narrower: where the site template lives and how `cairn` obtains it (the
   npm package, a release asset, a Git template), and what becomes of `create-cairn-site`: retired
   like the doctor, or kept as a thin `npm create` entry that calls `cairn`.
+  Geoff's criterion (2026-09-21): wherever is easiest, most idiomatic, and architecturally
+  correct. The conductor's reading, for the spec to confirm or overturn: the template is a
+  consumer of the ENGINE, so it belongs to an engine release, not a tool release. `go:embed` is
+  the Go idiom, but it needs the files committed inside the `tool/` module (`go install` builds
+  from the module proxy, so a generated copy cannot work), which either moves the template away
+  from the scaffold CI that tests it or duplicates it, and it ties a template to a TOOL version,
+  so an older binary would scaffold a stale site against a newer engine. The candidate that keeps
+  one source and the right coupling: the template stays where it is, ships in the engine's npm
+  release, and `cairn` fetches that tarball for the engine version it is installing (a plain
+  HTTPS download of a `.tgz`, no Node needed), verifies it against the registry's published
+  integrity hash, and unpacks it. The cost is a network fetch at scaffold time, which
+  provisioning needs anyway.
 - **The version number.** A Go major means a `/v2` module path and a new `go install` path.
   Provisioning is pure addition to 1.0's frozen surfaces (exit codes, the JSON schemas, the result
   words), so by SemVer it could ship as a 1.x minor. Geoff names it 2.0 as the milestone; whether

@@ -7,6 +7,49 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Go tool pass A (`cairn-tool-A`), eleven tasks, 2026-09-14 to 2026-09-20
+
+Branch `cairn-tool-a`, draft PR #60, UNMERGED at close by Geoff's ruling (the merge rides Pass
+B1's close, because extend-2 was mid-flight on the same three ledger files). Plan and full
+post-mortem: `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md` on that branch. Decision
+record for what follows: `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`.
+
+**What landed.** The `tool/` Go module (`github.com/glw907/cairn-cms/tool`), foundation only:
+`record`, `store`, `providers`, `spine`, `secrets`, `version`, and a `cmd/cairn` with `auth set`,
+`auth list`, and a hidden `probe-token`. No command an operator would run yet. A three-platform
+CI matrix from the first commit. `packages/create-cairn-site`'s test fakes now load bodies from
+a JSON fixture corpus the Go tests also read. Geoff minted the tool's two read-only tokens.
+
+**What the gate caught.** Every task from 4 to 8, and Task 10, took one fix round, five of the
+six on a reviewer escalation the conductor ruled. Six were errors or contradictions in the plan
+itself, not in the code: an unreachable directory-precedence branch, error 12000 misread as
+"builds not connected", a fixture criterion nothing could satisfy, eighteen steps that were
+nineteen, six Cloudflare permission groups where seven are needed, and a `term.IsTerminal` ban
+written for a TUI launch gate that also banned color detection. At the close, seven
+`go-architecture-reader` reads found a Windows hole (`store.Load` checked the record file for a
+symlink but not the directory, and the first test for the fix could silently skip on the only
+platform it guards) and a credential-resolution defect (`secrets.Env` and a private copy in
+`cmd/cairn` disagreed on an empty variable). The fold's own single-table rewrite then put a
+secret into a plain string field, which review caught before any caller existed.
+
+**What a later pass would be wrong to rediscover.** A fine-grained GitHub token reads any PUBLIC
+repository with no permissions at all; verify a mint against private `xcathletes-org`.
+`accounts/{id}/tokens/verify` answers error 1000 for a user-owned token; use `user/tokens/verify`.
+`os.Symlink` needs a privilege Windows CI runners lack; build a junction with
+`FSCTL_SET_REPARSE_POINT`. `order := []string{}` in `record`'s `decodeObject` is load-bearing.
+The key-set drift guard's parse side is hand-maintained mirror slices, a known residual the B1
+rewrite closes. `vcs.revision` is absent from a `go install module@version` build.
+`cairn-run-gate` has a light lane; this pass queued a one-minute Go gate behind other sessions'
+browser gates for two to three hours before using it, which produced the workstation rule "a
+rule lives where it executes".
+
+**Budgets.** About 6.8M of 8M subagent tokens (the conductor's turns uncounted). About 15.5 clock
+hours, five of them lost to a network drop that left the conductor unwoken. Six planning misses;
+two execution sittings (the planned token mint, and one combined question of three decisions).
+Two research audits on 2026-09-20 (CLI practice; bubbletea v2 readiness) reshaped Pass B: it
+splits into B1 and B2, `context.Context` goes through `providers`, and severity ordering moves
+into `spine`, all before the command tree is built.
+
 ## extend-1 pass, nine tasks, 2026-09-16 to 2026-09-20
 
 Branch `extend-1` with `extend-1-site` (chain B: tasks 7, 8a, 8b) merged into it; plan at

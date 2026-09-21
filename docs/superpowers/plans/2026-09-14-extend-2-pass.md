@@ -97,7 +97,9 @@ write; site adoption.
 
 ## Token ceiling
 
-**5.4M.**
+**6.5M** (raised from 5.4M by Geoff, 2026-09-20, mid-execution, after the first run measured
+1.87M over four tasks; the raise buys the same ten tasks and the ritual, no added scope. The 80
+percent flag moves to 5.2M. The table below is the authoring forecast, kept as the record.)
 
 | Line item | Basis | Tokens |
 |---|---|---|
@@ -511,6 +513,12 @@ the bake switched to the import; the reference sentence, the facts bullet, and t
 - Global constraint 4 yields here alone: when `check:surface` reports the new subpath as drift,
   run `npm run check:surface -- --update` and commit the regenerated snapshot in this task.
 - The extend-1 seam is unpublished, so the changelog line reads "No consumer action."
+- **Conductor ruling at the 3c escalate (2026-09-20):** the acceptance grep and the "no site file
+  names the engine's `dist` layout" line bind the `@source` line in each `src/admin.css` only.
+  The `sheet` entry in `cairn-audit.config.json` names the precompiled admin sheet under
+  `dist/components/`, a different artifact; relocating it is packaging scope the amendment did
+  not grant, and it is filed as a follow-up at the close. The `admin-visual` pin's gate is
+  accepted for the task; the ritual's FULL gate covers the remainder.
 
 **Steps:**
 - [ ] **Step 1: the failing test first.** The packed tarball carries the file at the exported

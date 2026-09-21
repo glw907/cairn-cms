@@ -13,7 +13,30 @@ window holds for one cut, after extend-2. CI on `main` is green.
 
 ## Immediate next action
 
-**Execute the extend-2 pass**, plan `docs/superpowers/plans/2026-09-14-extend-2-pass.md`, in a
+**extend-2 is IN ITS CLOSE (2026-09-20 17:30), PR #67** (`extend-2`, head `703b411d`; worktree
+`.claude/worktrees/extend-2`; `extend-2-skills` is merged into it). All ten tasks ACCEPTED (1a,
+1b, 2, 3a, 3b, 3c, 4, 5, 6, 7). Close commits on top: the skills merge `da3d24e5`, fold 1
+`c0980e59`, fold 2 `722ee35c`, the prose fold `d176a95d`, the security fix `9aa7765a`,
+`code-simplifier` `703b411d`. The blocking security read found write containment was lexical only
+(a symlinked `.claude`, a dangling `.orig` link); fixed on Opus, re-read, PASS. **In flight:** a
+gate-runner agent on the from-scratch consumer build, the plan's FULL string, and the local e2e;
+CI on PR #67. **Left, in order:** read both gate results; the monthly Claude Code schema routine
+(`schedule` skill, id into Active watches); one close fold on the branch (HISTORY entry, the
+plan's post-mortem, ROADMAP entry for the six security-hardening items M1 to M6 from the re-read:
+non-recursive `mkdir` against a planted symlink, refuse `nlink > 1`, carry `err.code` out of the
+write catch, `EACCES` outside the try, the lstat walk on `check`'s read side, a refused
+destination missing from the report lists; facts bullet home for the symlink rule); merge on green
+CI; STATUS pruned to 60 lines on `main`; memory refreshed; inhibitors released. Spend about 5.6M of
+the 6.5M ceiling Geoff set 2026-09-20, past the 5.2M flag with only the close left, so no question
+was raised. Rulings taken: the per-task gate is `gate-tier.mjs`'s computed string plus the checks
+the criteria name; 3c's `dist` criterion binds the `@source` line only (plan carries it), the
+`sheet` entry filed to ROADMAP; shipped guidance names engine docs as
+`node_modules/@glw907/cairn-cms/docs/...` paths from the site root, never relative links; the
+fragment's `cairn docs <query>` line was cut because the subcommand has not shipped (the docs
+rebuild restores it); Blueprint stays as the ruled paid option, with its URL. A cold session
+checks the worktree for a live executor before touching it.
+
+The pass: plan `docs/superpowers/plans/2026-09-14-extend-2-pass.md`, in a
 worktree off `main`, workflow mode through `pass-execute-chains.js`. Its 2026-09-19 amendment adds
 one task, an engine-owned Tailwind sources file, so a site's own `admin.css` never names the
 engine's `dist` path to hold the utilities-layer superset extend-1's seam needs. Its docs
@@ -30,46 +53,33 @@ improvement release; then **the docs rebuild** from the facts container, then be
 
 ## Parallel tracks
 
-- **Go `cairn` tool, 1.0, pass A is in flight** (its own session keeps the ledger below; plan
-  `-cairn-tool-1-0-pass.md`; gate `make -C tool check`; `gate-tier.mjs` needs a `tool/**` rule at
-  that pass's close).
-
-**Go tool pass A is IN FLIGHT beside extend-1 (Geoff, 2026-09-19 21:00)** on `cairn-tool-a` (draft PR
-#60, `main` merged in at `60541de3`), a separate session. Ledger (2026-09-20 03:12): **1 to 10
-ACCEPTED** (4 to 8 and 10 each after one fix round; 9 clean); PR #60 green on all three `make check`
-legs at `25548463`. Task 10's attended half was Geoff's 2026-09-19 mint of both read tokens
-(`CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; dotfiles registry and estate
-inventory carry them). **Task 11 close IN PROGRESS (2026-09-20 03:34):** `code-simplifier` landed (`85c2acac`, CI green);
-all seven `go-architecture-reader` reports are in (six sound with nits, `cmd/cairn` workmanlike, no
-credential leak found anywhere). The adjudicated fold's first run (`wf_d3f65134-680`) died at about 04:00 on a network drop
-(`EAI_AGAIN`) and the session sat unwoken until Geoff's 09:16 message, about five hours lost. Its
-record task had already committed and pushed `7beb2014` (renames to
-`record.GitHub`/`GitHubRepo`/`Cloudflare`, key-set drift guard; CI green on all three legs) but
-never reported, so a direct `diff-reviewer` dispatch is reading that commit. The remaining two fold
-tasks relaunched 2026-09-20 09:17 as `wf_8a02451b-4bf` (`tool-a-fold2.js`): store, spine, version
-(a Windows junction hole in `Load`, exported mutable slices to functions); then secrets and
-cmd/cairn (`secrets.Env` disagreed with the live env provider on an empty variable; dropped
-`Resolve` errors) plus a module-wide sweep of process citations out of Go comments. Then the
-ritual; PR #60 goes ready for review; the MERGE waits for Geoff.
-**Left the pass, to be filed as a Pass B opening task:** the `providers` deduplication, `record`'s
-table-driven rewrite and file split, and the `cmd/cairn` logic moves (verdict algebra onto
-`spine.State`, `discoverSites` into `store`, the typed exit error), the last three into Tasks 19
-and 21's notes. **Open decision for Geoff:** Pass B goes 14 to 15 tasks, and the plan already names
-it the pass to watch. Spend about 5.0M of 8M in subagent tokens (the conductor's own turns uncounted).
-Scripts live in that session's scratchpad, built from
-`~/.cache/cairn-overnight-2026-09-14/tool-a-args.json` with args embedded in a copy of
-`~/.claude/workflows/pass-execute-chains.js` patched with a `noClassifier` flag. Rulings taken:
-`make -C tool check` is the gate and `gate-tier.mjs` is skipped, because it has no `tool/` rule and
-routes a Go-only diff to the full Node gate (file a `tool/**` rule at the close); `record.Marshal`
-appends a non-zero typed key absent at parse time; `store.Dir` resolves env, then the legacy
-`~/.config/cairn/sites` when it exists, then `os.UserConfigDir`, since the Node CLI still writes
-the legacy path; the Cloudflare read token needs SEVEN groups (Zone Settings: Read added); a
-public repository proves nothing about a GitHub token's scope, so `probe-token` marks
-visibility; an unconnected worker is an EMPTY Builds trigger list, never error 12000, so the Deploy
-check assigns builds-not-connected; a direct `classifyReason` table stands in for corpus bodies the
-corpus does not carry (no invented fixtures); the `Step` enum is NINETEEN strings, since the Node
-GitHub chapter writes `installed` through a computed local the plan's row 9 missed.
-
+- **Go `cairn` tool, 1.0: Pass B1 is IN FLIGHT (launched 2026-09-20 15:30), one executor in
+  `.claude/worktrees/cairn-tool-a`; check it is idle before touching it.** The re-cut is done
+  (`7d06e29c`), the three-lens review folded (`2bb2cb3f`), segment 1's pre-flight applied
+  (`35b6f97d`), all on the branch, unpushed. B1 is nine tasks: segment 1 (11b-i, 11b-ii, 12, 13)
+  runs as `pass-execute` run `wf_9deb92f1-2d5`; segment 2 is 14 to 17; segment 3 is 17b, the
+  close and the PR #60 merge. Each segment gets a factual pre-flight first. Runner args: `gate:
+  "make -C tool check"`, `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an
+  unpinned task makes the runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings
+  accepted by Geoff 2026-09-20: B1 8M, B2 10M; the mechanics review prices B1 at 9 to 9.5M, so
+  the 6.4M flag is the expected question. Spend so far: about 1.1M (authorship, reviews, fold,
+  pre-flight). Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
+  `cairn-tool-a`, worktree `.claude/worktrees/cairn-tool-a`, draft PR #60, green on all three
+  `make check` legs. `main` carries NO `tool/` tree until the merge, and the merge rides B1's
+  close (Geoff, 2026-09-20), so **B1 runs in that existing worktree on that branch, never on a
+  new worktree off `main`**. B1's first step is plan authorship: re-cut Pass B into B1 and B2
+  from `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md` (on `main`;
+  pre-approved by Geoff within the brief's bounds), then the three-lens plan review, one fold, a
+  factual pre-flight per segment, then execute. The brief carries Geoff's three rulings (one TTY
+  predicate for color only; the B1/B2 split; the full grammar cleanup), the B1 opening refactor
+  task, every task amendment, what was declined, and the 2.0 spec addendum. Gate:
+  `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'` (`gateLane: "light"` in the
+  runner's args); skip `gate-tier.mjs` for `tool/`-only diffs until it gains a `tool/**` rule
+  (filed in ROADMAP on the branch). Arm `/loop` at launch. Credentials are minted and stored
+  (`CAIRN_CF_READ_TOKEN`, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; the GitHub token expires
+  2026-10-19). Plan, with pass A's post-mortem: `-cairn-tool-1-0-pass.md` ON THE BRANCH (the copy
+  on `main` predates the pass). Pass A's record: [`docs/HISTORY.md`](HISTORY.md).
+  **Open decision for Geoff:** none blocking; the re-cut is pre-approved.
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only,
   `docs/internal/record/2026-09-04-cairn-case/`; nothing from it lands.
 - **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since `0.95.0`.
@@ -94,4 +104,10 @@ GitHub chapter writes `installed` through a computed local the plan's row 9 miss
 
 ## Resume prompt
 
-Execute the extend-2 plan (`docs/superpowers/plans/2026-09-14-extend-2-pass.md`).
+Two tracks, one session each.
+
+**extend-2:** Execute the extend-2 plan (`docs/superpowers/plans/2026-09-14-extend-2-pass.md`).
+
+**Go tool Pass B1** (launch inside `cairn-cms`; work in `.claude/worktrees/cairn-tool-a`): Start Go tool
+Pass B1: re-cut Pass B from `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`,
+review it, then execute B1 on branch `cairn-tool-a`.

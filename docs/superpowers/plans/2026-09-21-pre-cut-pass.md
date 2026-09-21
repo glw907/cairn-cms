@@ -676,11 +676,18 @@ The `cairn-pass` consolidation ritual, in its own order:
 
 ## Task 6: the cut
 
-**Precondition, checked first: the Go tool's Pass B2 must be on `main`.** The owner ruled
-(2026-09-21) that `0.97.0` must include the 1.0 of the Go `cairn` tool, so the cut HOLDS until
-Pass B2 is merged. Verify with `git log origin/main -- tool/` (Pass B2's task commits must appear)
-and `docs/STATUS.md`'s Go tool entry (it must say Pass B2 is merged, not "in flight" or
-"overnight"). If Pass B2 is not yet on `main`, **stop and say so**; do not proceed with the cut.
+**Precondition, checked first: the Go tool's close line, not the tag alone, must be on
+`origin/main`.** The owner ruled (2026-09-21) that `0.97.0` must include the 1.0 of the Go
+`cairn` tool, so the cut HOLDS until Pass B2 is merged. The tool's tag can exist on its own
+branch before the merge to `main`, so a tag check alone can pass too early: the gate is the Go
+tool session's own close line, written last of all under `docs/STATUS.md`'s "Immediate next
+action" naming the `tool/v1.0.0` tag and the merge SHA and saying "the 0.97.0 cut is unblocked."
+The cut starts only when that line is present on `origin/main`, confirmed by
+`git log origin/main -- tool/` (Pass B2's task commits must appear) and `git tag -l 'tool/v1*'`
+(the tag must exist). If that STATUS line is absent, **stop and say so**; do not proceed with the
+cut. The cut also expects a `CHANGELOG.md` `## Unreleased` entry on `main` for the Go tool's 1.0
+carrying its install line and the statement that the binary is not in the npm tarball; if that
+entry is missing, **stop**, because the release body is rolled from that window.
 
 **Runs through the `cairn-release` skill**, which re-derives the release size and the number from
 the window's contents. `check:version` enforces the `release-size` marker against the CHANGELOG,

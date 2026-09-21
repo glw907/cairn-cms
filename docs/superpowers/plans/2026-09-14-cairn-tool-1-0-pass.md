@@ -1408,12 +1408,26 @@ first member is the `creds` check and which Tasks 13 through 17 append to.
   `cmd/cairn`'s alone and the architecture's downward order holds.
 - `Report.JSON(verbose bool)` is the only marshal path, and `Report` and every type it contains
   declare no `MarshalJSON`, asserted by a test, so a bare `json.Marshal(r)` cannot leak. The
-  filter runs over the whole `Report`, `Outcome.Detail` and every `Outcome.Fields` entry included,
-  against an enumerated
-  non-verbose allowlist: check id, condition, reason, counts, ages, states, and 7-character SHAs.
-  Account ids, zone ids, worker names, repository slugs, build UUIDs, and full SHAs are
-  verbose-only. A test marshals a fixture report whose detail carries a build UUID and a
-  repository slug and asserts a non-verbose render contains neither.
+  non-verbose filter is a key allowlist over every `Outcome.Fields` entry (`nonVerboseFieldKeys`
+  in `report.go`): an entry whose key is outside the set is dropped, key and value. The
+  non-verbose-safe categories are check id, condition, reason (typed fields, never filtered),
+  counts, ages, states, and 7-character SHAs. Account ids, zone ids, worker names, repository
+  slugs, build UUIDs, and full SHAs are verbose-only. `Outcome.Detail` is free text, passes
+  through both renders unchanged, and must never carry a verbose-only value; a check puts such
+  a value in `Fields` under a named key (conductor ruling 2026-09-20, replacing a regex filter
+  over `Detail`). As landed the set is `count`, `age`, `state`. A check that emits a new
+  non-verbose-safe field adds its key to the set in the same commit, with a test, and a key
+  filter cannot shorten a value, so a check that wants a short SHA non-verbose emits it as its
+  own field beside the full one.
+- Conductor rulings of 2026-09-20 on this task, which govern over any earlier wording. A zero
+  `TokenExpiry` means GitHub reported no expiry for the token (a classic PAT, an OAuth token, a
+  non-expiring fine-grained PAT): the `creds` check is OK and its Detail says so, never Unknown,
+  since Unknown would turn every scheduled run with such a token into exit UNKNOWN. Pass A's
+  Task 7 line that says the check "reads that as unknown" is superseded, and the provider doc
+  comment now agrees. An acknowledgement that matches a check in the sweep but has expired
+  leaves `Acknowledged` false and records its expiry in `CheckResult.AckExpires`, which is how
+  the report names it as expired; an expired acknowledgement for an id absent from the sweep
+  follows the absent-id path and appears nowhere. `Report`'s shape is unchanged.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
 
 ### Task 13: Serving and Delegation checks, the two ports
@@ -1491,7 +1505,12 @@ than carried as one struct**: `Fields` holds a key and a `json.RawMessage` per v
 placed in one entry would render as one opaque blob and Task 12's per-field non-verbose filter could
 not reach inside it. The keys are enumerated here so the filter and the goldens have a fixed set:
 `workerExists`, `buildsConnected`, `pushToDeploy`, `lastBuild`, `lastBuildSHA`, `mainSHA`,
-`lastBuildAt`, and `behind`, in that order. `BuildState` is one of `BuildOK`, `BuildFailed`,
+`lastBuildAt`, and `behind`, in that order, followed by two short-SHA entries,
+`lastBuildShortSHA` and `mainShortSHA` (the first seven characters), because Task 12's filter
+selects by key and cannot shorten a full SHA. This task adds `workerExists`, `buildsConnected`,
+`pushToDeploy`, `lastBuild`, `lastBuildAt`, `behind`, `lastBuildShortSHA`, and `mainShortSHA`
+to `nonVerboseFieldKeys`; `lastBuildSHA` and `mainSHA` stay verbose-only, as does the build id
+(conductor amendment 2026-09-20, from the Task 12 fix review). `BuildState` is one of `BuildOK`, `BuildFailed`,
 `BuildRunning`, `BuildNone`.
 
 **Acceptance:**
@@ -1507,8 +1526,9 @@ not reach inside it. The keys are enumerated here so the filter and the goldens 
 - The check declares `spine.ConditionNone`, per the spec's table marking it new.
 - The build id, the repository slug, and the full SHAs are verbose-only, which
   Task 12's filter enforces per field. A test asserts a non-verbose render of a Failing deploy
-  carries the build state and the 7-character SHAs and none of the eight entries' verbose-only
-  values, and a second test asserts the eight keys appear in the order the Produces block lists.
+  carries the build state and the two short-SHA entries and none of the verbose-only values
+  (the full SHAs, the build id, the repository slug), and a second test asserts the ten keys
+  appear in the order the Produces block lists.
 - If Task 10 found no read-level Builds permission group, the Builds half is gated at runtime on
   `Clients.HaveBuilds`, which is false in that case, and the check degrades to worker-exists plus
   Behind with an Unknown carrying `reason.cred-missing` for the Builds half. No build tag is

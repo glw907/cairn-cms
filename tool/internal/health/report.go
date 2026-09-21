@@ -53,11 +53,11 @@ type CheckResult struct {
 // keeps; every other key is dropped from the render entirely, not merely its value. A shape-based
 // filter (a regex over "looks like a UUID" or "looks like owner/repo") both over- and
 // under-matches an arbitrary value, so the filter instead trusts a check's own field name: an
-// account id, a zone id, a worker name, a repository slug, a build UUID, and a full commit SHA
-// are each verbose-only by the plan's own rule, so a check that carries one names its field
-// something outside this set. The set here implements the plan's own value categories, a count,
-// an age, and a state, as literal keys; a check that introduces a new non-verbose category adds
-// its key here in the same commit.
+// account id, a zone id, a worker name, a repository slug, a build UUID, and a full commit SHA are
+// each verbose-only, so a check that carries one names its field outside this set. The set here
+// literally enumerates the categories a non-verbose render is safe to carry, a count, an age, and
+// a state; a check that introduces a new non-verbose category adds its key here in the same
+// commit.
 var nonVerboseFieldKeys = map[string]bool{
 	"count": true,
 	"age":   true,
@@ -65,12 +65,10 @@ var nonVerboseFieldKeys = map[string]bool{
 }
 
 // nonVerboseFields returns the subset of fields whose Key is in nonVerboseFieldKeys, in their
-// original order, or nil when fields is empty.
+// original order, or nil when fields is empty or every field is filtered out, so a fields-empty
+// render is indistinguishable from a fields-fully-redacted one.
 func nonVerboseFields(fields []spine.OutcomeField) []spine.OutcomeField {
-	if len(fields) == 0 {
-		return nil
-	}
-	kept := make([]spine.OutcomeField, 0, len(fields))
+	var kept []spine.OutcomeField
 	for _, f := range fields {
 		if nonVerboseFieldKeys[f.Key] {
 			kept = append(kept, f)
@@ -79,11 +77,11 @@ func nonVerboseFields(fields []spine.OutcomeField) []spine.OutcomeField {
 	return kept
 }
 
-// redactOutcome returns a copy of o for a non-verbose render. Detail passes through unchanged:
-// Detail is free text, and a check that puts a verbose-only value there instead of a named
-// Fields entry is that check's own bug, not something a rendering-time filter can safely repair
-// by mangling arbitrary text. Fields is cut down to the allowlisted keys.
-func redactOutcome(o spine.Outcome) spine.Outcome {
+// nonVerboseOutcome returns a copy of o for a non-verbose render. Detail passes through
+// unchanged: Detail is free text, and a check that puts a verbose-only value there instead of a
+// named Fields entry is that check's own bug, not something a rendering-time filter can safely
+// repair by mangling arbitrary text. Fields is cut down to the allowlisted keys.
+func nonVerboseOutcome(o spine.Outcome) spine.Outcome {
 	o.Fields = nonVerboseFields(o.Fields)
 	return o
 }
@@ -101,7 +99,7 @@ func (r Report) JSON(verbose bool) ([]byte, error) {
 	redacted := r
 	redacted.Checks = make([]CheckResult, len(r.Checks))
 	for i, c := range r.Checks {
-		c.Outcome = redactOutcome(c.Outcome)
+		c.Outcome = nonVerboseOutcome(c.Outcome)
 		redacted.Checks[i] = c
 	}
 	return json.Marshal(redacted)

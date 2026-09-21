@@ -118,9 +118,9 @@ func normalizeNS(host string) string {
 
 // delegationErrorOutcome classifies a Cloudflare API failure. Unlike credsCheck, this check is
 // not measuring the credential itself, so a 401 or 403 here is Unknown with its own
-// reason.api.<Reason> code rather than Failing, matching the plan's own rule that only the creds
-// check treats a rejected credential as the fault under test. An error this package cannot
-// classify at all (a dial failure, a context deadline) is Unknown with reason.timeout.
+// reason.api.<Reason> code rather than Failing: only the creds check treats a rejected
+// credential as the fault under test. An error this package cannot classify at all (a dial
+// failure, a context deadline) is Unknown with reason.timeout.
 func delegationErrorOutcome(err error) spine.Outcome {
 	var pe providers.ProviderError
 	if !errors.As(err, &pe) {

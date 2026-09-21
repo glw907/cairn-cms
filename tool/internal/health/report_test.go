@@ -24,10 +24,10 @@ func TestReportDeclaresNoMarshalJSON(t *testing.T) {
 	}
 }
 
-// TestReportJSONDetailPassesThroughUnredacted covers the ruling that Detail is never mangled by
-// the non-verbose render: a Detail carrying a slash (an "owner/repo"-shaped slug) survives byte
-// for byte in both renders, since a check keeps a verbose-only value out of Detail by contract
-// rather than relying on a rendering-time filter to catch it.
+// TestReportJSONDetailPassesThroughUnredacted asserts the non-verbose render never mangles
+// Detail: a Detail carrying a slash (an "owner/repo"-shaped slug) survives byte for byte in both
+// renders, since a check keeps a verbose-only value out of Detail by contract rather than
+// relying on a rendering-time filter to catch it.
 func TestReportJSONDetailPassesThroughUnredacted(t *testing.T) {
 	detail := "build for glw907/ecxc-ski"
 	report := Report{
@@ -140,5 +140,35 @@ func TestReportJSONFiltersFieldsByKey(t *testing.T) {
 		if strings.Contains(string(nonVerbose), leaked) {
 			t.Errorf("non-verbose render kept the non-allowlisted field's %q: %s", leaked, nonVerbose)
 		}
+	}
+}
+
+// TestReportJSONEmptyFieldsRendersLikeFullyFiltered asserts a check with no fields at all and a
+// check whose every field is filtered out render an identical "Fields" shape in the non-verbose
+// render, so a reader cannot tell the two cases apart from an empty array versus null.
+func TestReportJSONEmptyFieldsRendersLikeFullyFiltered(t *testing.T) {
+	noFields := Report{
+		Checks: []CheckResult{{ID: "deploy", Outcome: spine.Outcome{State: spine.OK}}},
+	}
+	allFiltered := Report{
+		Checks: []CheckResult{{
+			ID: "deploy",
+			Outcome: spine.Outcome{
+				State:  spine.OK,
+				Fields: []spine.OutcomeField{{Key: "lastBuildSHA", Value: json.RawMessage(`"abc123"`)}},
+			},
+		}},
+	}
+
+	noFieldsJSON, err := noFields.JSON(false)
+	if err != nil {
+		t.Fatalf("JSON(false) with no fields: %v", err)
+	}
+	allFilteredJSON, err := allFiltered.JSON(false)
+	if err != nil {
+		t.Fatalf("JSON(false) with all fields filtered: %v", err)
+	}
+	if string(noFieldsJSON) != string(allFilteredJSON) {
+		t.Errorf("no-fields render %s does not match fully-filtered render %s", noFieldsJSON, allFilteredJSON)
 	}
 }

@@ -11,7 +11,7 @@ the chosen gate string on stdout (and nothing else on success), and the chosen t
 that decided it on stderr. It exits non-zero with empty stdout when the range carries no diff or
 git itself fails, so the caller falls back to a fixed gate string.
 
-## The five tiers
+## The tiers
 
 The classifier's own `classifyPath` checks a path against these five triggers HIGHEST TIER FIRST
 (`full`, then `admin-visual`, `engine`, `scripts`, `docs` last) and returns the first one it
@@ -35,6 +35,17 @@ of that, and `full` adds the remaining CI-only checks plus the whole showcase e2
 | `full` | `src/lib/render/**` (the render seam), `examples/showcase/src/chassis/**` and `examples/showcase/src/theme/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | admin-visual string + `&& npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e` |
 | `tool` | `tool/**`, the Go `cairn` CLI module, including its own `tool/**/*.md` | `make -C tool check` |
 
+A public-page component that is not under one of `full`'s own named directories (for example a
+theme component under `examples/showcase/src/theme/**`, or a route file under
+`examples/showcase/src/routes/(site)/**`) is already caught by those existing `full` triggers;
+there is no separate "component a public page imports" rule, since `examples/showcase` carries no
+`src/lib/**` directory today.
+
+A path outside all five npm globs (a repo-root config file, a GitHub Actions workflow, a
+`templates/waymark/**` file, anything not named above and not under `tool/`) resolves to `full`:
+it is exactly the case the table does not cover, and an unnecessary full run costs time, while a
+missed full-tier path costs a broken release.
+
 ## The `tool` tier and mixed diffs
 
 `tool/**` (the Go module) is not part of the five-npm-tier superset chain above: its gate proves
@@ -45,17 +56,6 @@ are ALL under `tool/` resolves to `tool` outright and runs only `make -C tool ch
 then reports `<npm tier>+tool` and runs the npm tier's gate string followed by
 `&& make -C tool check`, so both halves are proven. `--paint yes` never floors a `tool`-only diff
 (see below); it still floors the npm half of a mixed diff.
-
-A public-page component that is not under one of `full`'s own named directories (for example a
-theme component under `examples/showcase/src/theme/**`, or a route file under
-`examples/showcase/src/routes/(site)/**`) is already caught by those existing `full` triggers;
-there is no separate "component a public page imports" rule, since `examples/showcase` carries no
-`src/lib/**` directory today.
-
-A path outside all five globs (a repo-root config file, a GitHub Actions workflow, a
-`templates/waymark/**` file, anything not named above) resolves to `full`: it is exactly the case
-the table does not cover, and an unnecessary full run costs time, while a missed full-tier path
-costs a broken release.
 
 ## The paint floor and the pin
 

@@ -38,6 +38,16 @@ describe('classifyPath', () => {
     expect(classifyPath('src/lib/admin-toolkit/OfficeList.svelte')).toBe('admin-visual');
   });
 
+  it('matches each rule by path prefix only, not by a substring anywhere in the path', () => {
+    // "admin-toolkit" contains "tool" but classifies on its own admin-visual prefix; "docs/tool/"
+    // sits under docs/ so stays docs, never the standalone tool tier; "tooling/" is not "tool/"
+    // so classifyPath finds no match and the caller-side unclassified default (full) applies.
+    expect(classifyPath('src/lib/admin-toolkit/x.ts')).toBe('admin-visual');
+    expect(classifyPath('docs/tool/x.md')).toBe('docs');
+    expect(classifyPath('tooling/x.go')).toBeNull();
+    expect(decideGate(['tooling/x.go']).tier).toBe('full');
+  });
+
   it('classifies the render seam, theme/chassis CSS, a public route, and a snapshot as full', () => {
     expect(classifyPath('src/lib/render/markdown.ts')).toBe('full');
     expect(classifyPath('examples/showcase/src/chassis/tokens.css')).toBe('full');
@@ -156,6 +166,21 @@ describe('decideGate', () => {
 
   it('throws on an unknown --pin tier', () => {
     expect(() => decideGate(['docs/admin/README.md'], { pin: 'nope' })).toThrow(/unknown --pin tier/);
+  });
+
+  it('throws on a prototype-chain pin like "toString", never returning it as a gate', () => {
+    expect(() => decideGate(['docs/admin/README.md'], { pin: 'toString' })).toThrow(/unknown --pin tier/);
+  });
+
+  it('throws on a prototype-chain pin like "constructor"', () => {
+    expect(() => decideGate(['docs/admin/README.md'], { pin: 'constructor' })).toThrow(/unknown --pin tier/);
+  });
+
+  it('does not resolve to the tool tier when both npmPaths and toolPaths are empty', () => {
+    // Pins the prior (pre-fix) behavior for an empty path list: resolveTier([]) has no path to
+    // rank, so TIER_ORDER[Math.max(...[])] is undefined and TIER_GATES[undefined] is undefined.
+    const decision = decideGate([]);
+    expect(decision).toEqual({ tier: undefined, reason: 'computed', decidingPaths: [], gate: undefined });
   });
 
   it('resolves a tool-only diff to the tool tier and its standalone gate string', () => {

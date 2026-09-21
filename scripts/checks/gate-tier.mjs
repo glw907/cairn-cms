@@ -30,6 +30,11 @@
 // part of the five-npm-tier superset chain (it does not run `npm test` or any Vale/docs check),
 // so it is not in TIER_ORDER; a diff with paths on both sides runs the computed npm gate AND the
 // tool gate, reported as `<npm tier>+tool`.
+//
+// This classifier chooses a tier, never a gate lane. A plan that pins the light lane for a
+// Go-only pass must not carry that pin onto a mixed diff whose npm half launches a browser
+// suite; the lane decision stays with the caller, checked against the tier this script reports
+// for the actual diff in hand.
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -131,7 +136,7 @@ export function resolveTier(paths) {
 export function decideGate(paths, opts = {}) {
   const { paint = 'no', pin = null } = opts;
   if (pin) {
-    if (!(pin in TIER_GATES)) {
+    if (!Object.hasOwn(TIER_GATES, pin)) {
       const known = [...TIER_ORDER, 'tool'].join(', ');
       throw new Error(`gate-tier: unknown --pin tier "${pin}" (want one of ${known})`);
     }
@@ -141,7 +146,7 @@ export function decideGate(paths, opts = {}) {
   const toolPaths = paths.filter((path) => path.startsWith('tool/'));
   const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
 
-  if (npmPaths.length === 0) {
+  if (npmPaths.length === 0 && toolPaths.length > 0) {
     return { tier: 'tool', reason: 'computed', decidingPaths: toolPaths, gate: TIER_GATES.tool };
   }
 

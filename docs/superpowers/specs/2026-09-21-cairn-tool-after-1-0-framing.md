@@ -94,6 +94,21 @@ narrower reading, which reserved 2.0 for "executable fixes"; performing a fix an
 site are the same class of work, a read-only tool beginning to write, and provisioning is the
 larger and better-defined member of it.
 
+**The journey 2.0 is judged against, in the owner's words (2026-09-21):** "A site implementor
+installs the Go tool locally, creates the correct permissions on Cloudflare and GitHub (with the
+CLI's guidance), answers some questions about the site, and then the tool does the work to create
+a blank site." Four steps, and the tool owns three of them:
+
+1. Install `cairn`. It is the first thing a new implementor touches, ahead of Node and ahead of
+   any scaffold, so the install line and the first-run experience carry the front door.
+2. Credentials, guided. The tool says which permissions to create, by the labels the providers'
+   own token pages use, and verifies them before anything is written. This is 1.1's
+   agent-permission check grown into an onboarding step; it is why that check comes first.
+3. Questions about the site. A short interview: the domain, the repository, the sender address,
+   whatever a blank site needs and cannot be discovered.
+4. The tool does the work: the site's files, the repository, the D1 store, the Worker, the Custom
+   Domain, DNS, email sending, and a first deploy, ending in a site that `cairn health` reports OK.
+
 It is its own initiative with its own brainstorm, spec, and engine consultation, and nothing
 schedules it yet. Sized from the tool side at several passes of Pass B1's size. What it must
 answer first:
@@ -110,8 +125,10 @@ answer first:
   display only. 2.0 makes it executable, and every write needs a dry-run form and a stated undo.
 - **What is ported and what is redesigned.** The site round exercises the scaffolder's chapters on
   real sites before this is planned; its friction decides which chapters port as they are.
-- **The scaffold itself.** Whether `cairn` also writes the site's files, or `create-cairn-site`
-  keeps the template and hands provisioning to `cairn`.
+- **The scaffold itself.** The journey above has the tool create the blank site, files included.
+  So the open question is narrower: where the site template lives and how `cairn` obtains it (the
+  npm package, a release asset, a Git template), and what becomes of `create-cairn-site`: retired
+  like the doctor, or kept as a thin `npm create` entry that calls `cairn`.
 - **The version number.** A Go major means a `/v2` module path and a new `go install` path.
   Provisioning is pure addition to 1.0's frozen surfaces (exit codes, the JSON schemas, the result
   words), so by SemVer it could ship as a 1.x minor. Geoff names it 2.0 as the milestone; whether

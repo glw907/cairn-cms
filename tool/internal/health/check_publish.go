@@ -21,9 +21,9 @@ const publishStaleWindow = 14 * 24 * time.Hour
 // (`cairn/<concept>/<id>`), the prefix this check filters a repository's branch list by.
 const cairnBranchPrefix = "cairn/"
 
-// PublishDetail is publishPathCheck's own internal measurement, flattened into Fields as an
+// publishDetail is publishPathCheck's own internal measurement, flattened into Fields as an
 // "openBranchCount" entry and one "branchAgeDays" entry carrying every branch's age.
-type PublishDetail struct {
+type publishDetail struct {
 	// BranchCount is how many "cairn/*" branches the repository currently carries.
 	BranchCount int
 	// AgeDays is each "cairn/*" branch's age in whole days, oldest first.
@@ -33,7 +33,7 @@ type PublishDetail struct {
 // fields flattens d into its two ordered spine.OutcomeField entries: openBranchCount, and
 // branchAgeDays carrying every branch's age as one JSON array rather than one field per branch,
 // so a report with several open branches does not repeat the branchAgeDays key.
-func (d PublishDetail) fields() []spine.OutcomeField {
+func (d publishDetail) fields() []spine.OutcomeField {
 	ageDays := d.AgeDays
 	if ageDays == nil {
 		ageDays = []int{}
@@ -46,7 +46,7 @@ func (d PublishDetail) fields() []spine.OutcomeField {
 
 // outcome builds the spine.Outcome publishPathCheck.Run returns for state and detail, always
 // flattening d into its Fields entries regardless of which branch of Run reached it.
-func (d PublishDetail) outcome(state spine.State, reason spine.ReasonCode, detail string) spine.Outcome {
+func (d publishDetail) outcome(state spine.State, reason spine.ReasonCode, detail string) spine.Outcome {
 	return spine.Outcome{State: state, Reason: reason, Detail: detail, Fields: d.fields()}
 }
 
@@ -116,7 +116,7 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 	oldestFirst := slices.Clone(open)
 	slices.SortFunc(oldestFirst, func(a, b providers.Branch) int { return a.CommitDate.Compare(b.CommitDate) })
 
-	detail := PublishDetail{BranchCount: len(open)}
+	detail := publishDetail{BranchCount: len(open)}
 	for _, b := range oldestFirst {
 		detail.AgeDays = append(detail.AgeDays, int(now.Sub(b.CommitDate).Hours()/24))
 	}

@@ -41,9 +41,9 @@ var consumersMustLead = regexp.MustCompile("(`)?\\*{0,2}Consumers must:\\*{0,2}(
 // multiple indented lines, so a clause's true end is the next blank line, not the next newline.
 var blankLine = regexp.MustCompile(`\n\s*\n`)
 
-// EngineDetail is engineCheck's own internal measurement, flattened into Fields as a
+// engineDetail is engineCheck's own internal measurement, flattened into Fields as a
 // "releasesBehind" entry and a "consumersMust" entry.
-type EngineDetail struct {
+type engineDetail struct {
 	// ReleasesBehind is how many published versions of cairnPackageName the site's own dependency
 	// range has not yet taken, up to and including the latest.
 	ReleasesBehind int
@@ -53,7 +53,7 @@ type EngineDetail struct {
 }
 
 // fields flattens d into its two ordered spine.OutcomeField entries.
-func (d EngineDetail) fields() []spine.OutcomeField {
+func (d engineDetail) fields() []spine.OutcomeField {
 	return []spine.OutcomeField{
 		field("releasesBehind", d.ReleasesBehind),
 		field("consumersMust", d.ConsumersMust),
@@ -62,7 +62,7 @@ func (d EngineDetail) fields() []spine.OutcomeField {
 
 // outcome builds the spine.Outcome engineCheck.Run returns for state and detail, always
 // flattening d into its two Fields entries regardless of which branch of Run reached it.
-func (d EngineDetail) outcome(state spine.State, detail string) spine.Outcome {
+func (d engineDetail) outcome(state spine.State, detail string) spine.Outcome {
 	return spine.Outcome{State: state, Detail: detail, Fields: d.fields()}
 }
 
@@ -214,7 +214,7 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 
 	skipped := skippedVersions(versions, siteIndex, latestIndex)
 	if len(skipped) == 0 {
-		return EngineDetail{}.outcome(spine.OK, "")
+		return engineDetail{}.outcome(spine.OK, "")
 	}
 
 	changelog, err := c.GH.FileAtRef(ctx, engineOwner, engineRepo, "CHANGELOG.md", "main")
@@ -231,7 +231,7 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		}
 	}
 
-	detail := EngineDetail{ReleasesBehind: len(skipped), ConsumersMust: actionable}
+	detail := engineDetail{ReleasesBehind: len(skipped), ConsumersMust: actionable}
 	if actionable {
 		return detail.outcome(spine.Failing, fmt.Sprintf("%d release(s) behind with a consumers-must change", len(skipped)))
 	}

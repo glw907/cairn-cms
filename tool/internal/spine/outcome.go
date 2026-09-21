@@ -102,6 +102,10 @@ type OutcomeField struct {
 	// Value is the field's value, carried as raw JSON so a caller decodes it as whatever shape
 	// it actually is (a string, a number, a bool) without OutcomeField itself guessing.
 	Value json.RawMessage
+	// Verbose marks a value only a verbose render carries, so a non-verbose render drops the
+	// whole field rather than the value alone. It is render metadata about the field and never
+	// part of the rendered field, which is what the json tag holds it out of.
+	Verbose bool `json:"-"`
 }
 
 // Outcome is the read-side result a Check returns. Reason is set only when State is Unknown;

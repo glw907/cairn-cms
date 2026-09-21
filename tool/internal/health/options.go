@@ -18,8 +18,9 @@ type Options struct {
 	// time.Now itself: a replay through the same Now must produce a byte-identical Report, which
 	// a second, uninjected clock inside a check would break silently.
 	Now func() time.Time
-	// OnCheck, when non-nil, is called once per check as it settles, in completion order, with
-	// its settled CheckResult. nil is the default every non-interactive caller passes.
+	// OnCheck, when non-nil, is called once per check as it settles, with its settled
+	// CheckResult. Run sweeps sequentially, so the calls arrive in report order, the same order
+	// Report.Checks carries. nil is the default every non-interactive caller passes.
 	OnCheck func(CheckResult)
 }
 

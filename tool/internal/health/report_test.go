@@ -2,6 +2,7 @@ package health
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 
@@ -101,19 +102,19 @@ func TestReportJSONFieldOrderRoundTrips(t *testing.T) {
 	}
 }
 
-// TestReportJSONFiltersFieldsByKey covers the non-verbose render's key-based allowlist: a field
-// whose key is not in nonVerboseFieldKeys is dropped from the render entirely, key and value
-// both, while an allowlisted field survives with its value intact. Both fields are present in a
-// verbose render.
-func TestReportJSONFiltersFieldsByKey(t *testing.T) {
+// TestReportJSONDropsVerboseFields covers the non-verbose render's visibility filter: a field a
+// check marked verbose is dropped from the render entirely, key and value both, while a
+// non-verbose field survives with its value intact. Both fields are present in a verbose render.
+func TestReportJSONDropsVerboseFields(t *testing.T) {
+	const sha = "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"
 	report := Report{
 		Checks: []CheckResult{{
 			ID: "deploy",
 			Outcome: spine.Outcome{
 				State: spine.OK,
 				Fields: []spine.OutcomeField{
-					{Key: "errorCount", Value: json.RawMessage("3")},
-					{Key: "lastBuildSHA", Value: json.RawMessage(`"9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"`)},
+					field("errorCount", 3),
+					verboseField("lastBuildSHA", sha),
 				},
 			},
 		}},
@@ -123,7 +124,7 @@ func TestReportJSONFiltersFieldsByKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("JSON(true): %v", err)
 	}
-	for _, want := range []string{"errorCount", "lastBuildSHA", "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"} {
+	for _, want := range []string{"errorCount", "lastBuildSHA", sha} {
 		if !strings.Contains(string(verbose), want) {
 			t.Errorf("verbose render dropped %q: %s", want, verbose)
 		}
@@ -134,11 +135,35 @@ func TestReportJSONFiltersFieldsByKey(t *testing.T) {
 		t.Fatalf("JSON(false): %v", err)
 	}
 	if !strings.Contains(string(nonVerbose), `"errorCount"`) {
-		t.Errorf("non-verbose render dropped the allowlisted field %q: %s", "errorCount", nonVerbose)
+		t.Errorf("non-verbose render dropped the non-verbose field %q: %s", "errorCount", nonVerbose)
 	}
-	for _, leaked := range []string{"lastBuildSHA", "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"} {
+	for _, leaked := range []string{"lastBuildSHA", sha} {
 		if strings.Contains(string(nonVerbose), leaked) {
-			t.Errorf("non-verbose render kept the non-allowlisted field's %q: %s", leaked, nonVerbose)
+			t.Errorf("non-verbose render kept the verbose field's %q: %s", leaked, nonVerbose)
+		}
+	}
+}
+
+// TestReportJSONNeverEmitsVerboseKey asserts the visibility flag stays render metadata: neither
+// render marshals a "Verbose" key, so a parsing consumer reads the same field shape it always
+// did.
+func TestReportJSONNeverEmitsVerboseKey(t *testing.T) {
+	report := Report{
+		Checks: []CheckResult{{
+			ID: "deploy",
+			Outcome: spine.Outcome{
+				State:  spine.OK,
+				Fields: []spine.OutcomeField{field("errorCount", 3), verboseField("buildId", "b-1")},
+			},
+		}},
+	}
+	for _, verbose := range []bool{true, false} {
+		data, err := report.JSON(verbose)
+		if err != nil {
+			t.Fatalf("JSON(%v): %v", verbose, err)
+		}
+		if strings.Contains(string(data), "Verbose") {
+			t.Errorf("JSON(%v) emitted a Verbose key: %s", verbose, data)
 		}
 	}
 }
@@ -155,7 +180,7 @@ func TestReportJSONEmptyFieldsRendersLikeFullyFiltered(t *testing.T) {
 			ID: "deploy",
 			Outcome: spine.Outcome{
 				State:  spine.OK,
-				Fields: []spine.OutcomeField{{Key: "lastBuildSHA", Value: json.RawMessage(`"abc123"`)}},
+				Fields: []spine.OutcomeField{verboseField("lastBuildSHA", "abc123")},
 			},
 		}},
 	}
@@ -173,31 +198,44 @@ func TestReportJSONEmptyFieldsRendersLikeFullyFiltered(t *testing.T) {
 	}
 }
 
-// TestReportJSONKeepsEveryNamedNonVerboseKey covers the named keys the count-, age-, and
-// state-carrying checks report: each one survives a non-verbose render with its value, and the
-// generic names they replaced carry no allowlist entry of their own, so a check cannot reach a
-// non-verbose render by reporting an unnamed category again.
-func TestReportJSONKeepsEveryNamedNonVerboseKey(t *testing.T) {
-	named := []string{"errorCount", "openBranchCount", "branchAgeDays", "releasesBehind", "consumersMust"}
-	for _, key := range named {
-		report := Report{
-			Checks: []CheckResult{{
-				ID:      "check",
-				Outcome: spine.Outcome{State: spine.OK, Fields: []spine.OutcomeField{{Key: key, Value: json.RawMessage("7")}}},
-			}},
-		}
-		data, err := report.JSON(false)
-		if err != nil {
-			t.Fatalf("JSON(false): %v", err)
-		}
-		if !strings.Contains(string(data), `"`+key+`"`) {
-			t.Errorf("non-verbose render dropped %q: %s", key, data)
-		}
+// TestCheckDetailFieldVisibility pins which keys each flattening check carries into a non-verbose
+// render. A field whose value is enough to look an account, a repository, or a build up is
+// verbose-only, so it must not appear here; a check that adds one through field rather than
+// verboseField goes red.
+func TestCheckDetailFieldVisibility(t *testing.T) {
+	tests := []struct {
+		name   string
+		fields []spine.OutcomeField
+		want   []string
+	}{
+		{
+			name:   "deploy",
+			fields: deployDetail{}.fields(),
+			want: []string{
+				"workerExists", "buildsConnected", "pushToDeploy", "lastBuild", "lastBuildAt",
+				"behind", "lastBuildShortSHA", "mainShortSHA",
+			},
+		},
+		{
+			name:   "publish path",
+			fields: publishDetail{}.fields(),
+			want:   []string{"openBranchCount", "branchAgeDays"},
+		},
+		{
+			name:   "engine",
+			fields: engineDetail{}.fields(),
+			want:   []string{"releasesBehind", "consumersMust"},
+		},
 	}
-
-	for _, generic := range []string{"count", "age", "state"} {
-		if nonVerboseFieldKeys[generic] {
-			t.Errorf("the allowlist still carries the generic key %q", generic)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got []string
+			for _, f := range nonVerboseFields(tt.fields) {
+				got = append(got, f.Key)
+			}
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("non-verbose keys = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

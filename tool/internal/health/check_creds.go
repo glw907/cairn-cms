@@ -2,12 +2,10 @@ package health
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
@@ -86,25 +84,6 @@ func checkGitHubCredential(ctx context.Context, c Clients, now time.Time) creden
 		return credentialSide{outcome: spine.Outcome{State: spine.Failing, Detail: detail}, from: c.GHFrom}
 	}
 	return credentialSide{outcome: spine.Outcome{State: spine.OK}, from: c.GHFrom}
-}
-
-// credentialErrorOutcome classifies err through spine.ReasonToOutcome, the module's one
-// translation from a classified provider Reason to a verdict, then relabels a Failing verdict's
-// Detail as reason.cred-revoked: a bad credential is exactly what the creds check measures, the
-// one place a 401 or 403 answers Failing rather than the Unknown every other check reports for
-// the same pair. An error this package cannot classify at all, a dial failure or a context
-// deadline, is Unknown with reason.timeout: the endpoint itself could not be reached, not merely
-// rejected.
-func credentialErrorOutcome(err error) spine.Outcome {
-	var pe providers.ProviderError
-	if !errors.As(err, &pe) {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonTimeout}
-	}
-	outcome := spine.ReasonToOutcome(pe.ClassifiedReason())
-	if outcome.State == spine.Failing {
-		outcome.Detail = string(spine.ReasonCredRevoked)
-	}
-	return outcome
 }
 
 // credentialRank orders an Unknown credentialSide's Reason for worseCredentialOutcome's tie

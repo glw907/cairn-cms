@@ -23,42 +23,42 @@ const buildStoppedStatus = "stopped"
 // deploy is fine (the Node CLI's own runChapter3 draws the same line).
 const buildOutcomeSuccess = "success"
 
-// BuildState is a Workers Builds run's settled state, as deployCheck reports it in its
+// buildState is a Workers Builds run's settled state, as deployCheck reports it in its
 // "lastBuild" field.
-type BuildState int
+type buildState int
 
-// The four BuildState values a Workers Builds run can be in.
+// The four buildState values a Workers Builds run can be in.
 const (
-	// BuildNone means Builds is connected but has never run a build.
-	BuildNone BuildState = iota
-	// BuildOK means the last build stopped with build_outcome "success".
-	BuildOK
-	// BuildFailed means the last build stopped with any other settled outcome.
-	BuildFailed
-	// BuildRunning means the last build has not settled: its status has not reached "stopped",
+	// buildNone means Builds is connected but has never run a build.
+	buildNone buildState = iota
+	// buildOK means the last build stopped with build_outcome "success".
+	buildOK
+	// buildFailed means the last build stopped with any other settled outcome.
+	buildFailed
+	// buildRunning means the last build has not settled: its status has not reached "stopped",
 	// or its status is "stopped" but its build_outcome has not been written yet.
-	BuildRunning
+	buildRunning
 )
 
 // String names s for the check's own "lastBuild" field.
-func (s BuildState) String() string {
+func (s buildState) String() string {
 	switch s {
-	case BuildOK:
+	case buildOK:
 		return "ok"
-	case BuildFailed:
+	case buildFailed:
 		return "failed"
-	case BuildRunning:
+	case buildRunning:
 		return "running"
 	default:
 		return "none"
 	}
 }
 
-// DeployDetail is deployCheck's own internal measurement, flattened into deployCheck's eleven
+// deployDetail is deployCheck's own internal measurement, flattened into deployCheck's eleven
 // ordered Fields entries rather than carried as one struct: Outcome.Fields holds a key and a
 // json.RawMessage per value, so a struct placed in one entry would render as one opaque blob a
 // per-field non-verbose filter could not reach inside.
-type DeployDetail struct {
+type deployDetail struct {
 	// WorkerExists reports whether the record's named Worker exists in the account.
 	WorkerExists bool
 	// BuildsConnected reports whether the Worker has at least one Builds trigger.
@@ -68,7 +68,7 @@ type DeployDetail struct {
 	// read-level flag Builds exposes for it.
 	PushToDeploy bool
 	// LastBuild is the most recent build's settled state.
-	LastBuild BuildState
+	LastBuild buildState
 	// BuildID is the most recent build's own id, verbose-only: an operator needs it to fetch that
 	// build's logs, but it identifies no more than the short SHAs already do not.
 	BuildID string
@@ -92,30 +92,30 @@ func shortSHA(sha string) string {
 }
 
 // fields flattens d into the eleven ordered spine.OutcomeField entries every deployCheck outcome
-// carries, in the fixed order the check's own goldens and nonVerboseFieldKeys allowlist key off:
+// carries, in the fixed order the check's own goldens key off:
 // workerExists, buildsConnected, pushToDeploy, lastBuild, lastBuildSHA, mainSHA, lastBuildAt,
 // behind, lastBuildShortSHA, mainShortSHA, buildId.
-func (d DeployDetail) fields() []spine.OutcomeField {
+func (d deployDetail) fields() []spine.OutcomeField {
 	return []spine.OutcomeField{
 		field("workerExists", d.WorkerExists),
 		field("buildsConnected", d.BuildsConnected),
 		field("pushToDeploy", d.PushToDeploy),
 		field("lastBuild", d.LastBuild.String()),
-		field("lastBuildSHA", d.LastBuildSHA),
-		field("mainSHA", d.MainSHA),
+		verboseField("lastBuildSHA", d.LastBuildSHA),
+		verboseField("mainSHA", d.MainSHA),
 		field("lastBuildAt", d.LastBuildAt),
 		field("behind", d.Behind),
 		field("lastBuildShortSHA", shortSHA(d.LastBuildSHA)),
 		field("mainShortSHA", shortSHA(d.MainSHA)),
-		field("buildId", d.BuildID),
+		verboseField("buildId", d.BuildID),
 	}
 }
 
 // outcome builds the spine.Outcome deployCheck.Run returns for state and detail, always
 // flattening d into the eleven Fields entries above regardless of which branch of Run reached it: a
-// partial DeployDetail (an absent worker's zero value, for instance) flattens the same way, with
+// partial deployDetail (an absent worker's zero value, for instance) flattens the same way, with
 // each not-yet-measured field at its zero value.
-func (d DeployDetail) outcome(state spine.State, reason spine.ReasonCode, detail string) spine.Outcome {
+func (d deployDetail) outcome(state spine.State, reason spine.ReasonCode, detail string) spine.Outcome {
 	return spine.Outcome{State: state, Reason: reason, Detail: detail, Fields: d.fields()}
 }
 
@@ -157,7 +157,7 @@ func defaultBranch(r record.Record) string {
 }
 
 // Run implements Check. Worker absence and an unreachable or misclassified API call return
-// immediately; every other branch flattens whatever of DeployDetail the run measured before
+// immediately; every other branch flattens whatever of deployDetail the run measured before
 // settling, so a partial measurement (a worker that exists but has never built, say) still
 // renders through the same eleven Fields.
 func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
@@ -166,9 +166,9 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 	if worker == nil {
-		return DeployDetail{}.outcome(spine.Failing, "", "worker not found")
+		return deployDetail{}.outcome(spine.Failing, "", "worker not found")
 	}
-	detail := DeployDetail{WorkerExists: true}
+	detail := deployDetail{WorkerExists: true}
 
 	if !c.HaveBuilds {
 		return detail.outcome(spine.Unknown, spine.ReasonCredMissing, "")
@@ -196,7 +196,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	detail.BuildID = build.UUID
 
 	if build.Status != buildStoppedStatus || build.Outcome == "" {
-		detail.LastBuild = BuildRunning
+		detail.LastBuild = buildRunning
 		return detail.outcome(spine.Unknown, spine.ParkReason(spine.ParkBuildRunning), "")
 	}
 
@@ -204,7 +204,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	// GitHub answers, so this verdict comes before the HeadSHA read. Behind is only meaningful
 	// against a build that succeeded, so a failed build never measures MainSHA or Behind.
 	if build.Outcome != buildOutcomeSuccess {
-		detail.LastBuild = BuildFailed
+		detail.LastBuild = buildFailed
 		return detail.outcome(spine.Failing, "", "last build did not succeed")
 	}
 
@@ -215,6 +215,6 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	detail.MainSHA = mainSHA
 	detail.Behind = detail.LastBuildSHA != "" && mainSHA != "" && detail.LastBuildSHA != mainSHA
 
-	detail.LastBuild = BuildOK
+	detail.LastBuild = buildOK
 	return detail.outcome(spine.OK, "", "")
 }

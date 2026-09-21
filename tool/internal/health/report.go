@@ -48,47 +48,19 @@ type CheckResult struct {
 	AckExpires time.Time
 }
 
-// nonVerboseFieldKeys is the enumerated allowlist of Outcome.Fields keys a non-verbose render
-// keeps; every other key is dropped from the render entirely, not merely its value. A shape-based
-// filter (a regex over "looks like a UUID" or "looks like owner/repo") both over- and
-// under-matches an arbitrary value, so the filter instead trusts a check's own field name: an
-// account id, a zone id, a worker name, a repository slug, a build UUID, and a full commit SHA are
-// each verbose-only, so a check that carries one names its field outside this set.
+// nonVerboseFields returns the subset of fields a non-verbose render keeps, in their original
+// order, or nil when fields is empty or every field is filtered out, so a fields-empty render is
+// indistinguishable from a fields-fully-redacted one. A dropped field is dropped entirely, key
+// and value.
 //
-// Every key names what it measures, never its category: "errorCount", not "count". A generic name
-// collides the moment one check reports two of the same category, and it leaves a reader of the
-// rendered field no way to tell what the number counts. A check that introduces a new
-// non-verbose-safe key adds it here in the same commit.
-var nonVerboseFieldKeys = map[string]bool{
-	// errorsCheck's matched-record count over the log window.
-	"errorCount": true,
-	// publishPathCheck's open "cairn/*" branch count and each of those branches' age in days.
-	"openBranchCount": true,
-	"branchAgeDays":   true,
-	// engineCheck's published-versions-behind count and whether a skipped release asks anything
-	// of a consumer.
-	"releasesBehind": true,
-	"consumersMust":  true,
-	// deployCheck's own non-verbose-safe fields: a boolean, a build state word, a timestamp, and
-	// the two seven-character short SHAs. lastBuildSHA, mainSHA, and buildId stay out of this set
-	// on purpose: the two full commit SHAs and the build id are each enough to look a build up.
-	"workerExists":      true,
-	"buildsConnected":   true,
-	"pushToDeploy":      true,
-	"lastBuild":         true,
-	"lastBuildAt":       true,
-	"behind":            true,
-	"lastBuildShortSHA": true,
-	"mainShortSHA":      true,
-}
-
-// nonVerboseFields returns the subset of fields whose Key is in nonVerboseFieldKeys, in their
-// original order, or nil when fields is empty or every field is filtered out, so a fields-empty
-// render is indistinguishable from a fields-fully-redacted one.
+// Visibility is the producing check's decision, carried on the field itself (see field and
+// verboseField), not a judgment made here: a shape-based filter over the value (a regex for
+// "looks like a UUID" or "looks like owner/repo") both over- and under-matches, and a key
+// allowlist held in this file diverges from the checks that produce the keys.
 func nonVerboseFields(fields []spine.OutcomeField) []spine.OutcomeField {
 	var kept []spine.OutcomeField
 	for _, f := range fields {
-		if nonVerboseFieldKeys[f.Key] {
+		if !f.Verbose {
 			kept = append(kept, f)
 		}
 	}
@@ -98,7 +70,7 @@ func nonVerboseFields(fields []spine.OutcomeField) []spine.OutcomeField {
 // nonVerboseOutcome returns a copy of o for a non-verbose render. Detail passes through
 // unchanged: Detail is free text, and a check that puts a verbose-only value there instead of a
 // named Fields entry is that check's own bug, not something a rendering-time filter can safely
-// repair by mangling arbitrary text. Fields is cut down to the allowlisted keys.
+// repair by mangling arbitrary text. Fields is cut down to the fields no check marked verbose.
 func nonVerboseOutcome(o spine.Outcome) spine.Outcome {
 	o.Fields = nonVerboseFields(o.Fields)
 	return o
@@ -106,7 +78,7 @@ func nonVerboseOutcome(o spine.Outcome) spine.Outcome {
 
 // JSON is Report's only marshal path. A verbose render carries every field as measured; a
 // non-verbose render keeps every check's Outcome.Detail as written and drops every Outcome.Fields
-// entry whose key is not in nonVerboseFieldKeys. Report and CheckResult declare no MarshalJSON,
+// entry its check marked verbose. Report and CheckResult declare no MarshalJSON,
 // so a bare json.Marshal on either one always produces the raw, unredacted shape rather than
 // silently reproducing this filter (correctly or not); JSON is the one place a Report's bytes are
 // meant to leave the process.

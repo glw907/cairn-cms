@@ -9,9 +9,9 @@ import "slices"
 // known failure mode a verdict names.
 type Condition string
 
-// ConditionNone is the Condition a check declares when no cairn-doctor condition id exists yet
-// for it (docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md's health table
-// marks Deploy, Behind, Engine, the error count, and the credential check "new"). It is the only
+// ConditionNone is the Condition a verdict declares when no cairn-doctor condition id names it
+// (docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md's health table marks
+// Deploy, Behind, Engine, the error count, and the credential check "new"). It is the only
 // Condition value with no dot in it.
 const ConditionNone Condition = ""
 

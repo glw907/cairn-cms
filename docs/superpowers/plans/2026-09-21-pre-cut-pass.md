@@ -680,8 +680,9 @@ The `cairn-pass` consolidation ritual, in its own order:
 `origin/main`.** The owner ruled (2026-09-21) that `0.97.0` must include the 1.0 of the Go
 `cairn` tool, so the cut HOLDS until Pass B2 is merged. The tool's tag can exist on its own
 branch before the merge to `main`, so a tag check alone can pass too early: the gate is the Go
-tool session's own close line, written last of all under `docs/STATUS.md`'s "Immediate next
-action" naming the `tool/v1.0.0` tag and the merge SHA and saying "the 0.97.0 cut is unblocked."
+tool session's own close line under `docs/STATUS.md`'s "Immediate next action" naming the
+`tool/v1.0.0` tag and the merge SHA and saying the tool's 1.0 is merged, tagged, and released.
+That line never says the cut is unblocked; the gates below name the line that does.
 The cut starts only when that line is present on `origin/main`, confirmed by
 `git log origin/main -- tool/` (Pass B2's task commits must appear) and `git tag -l 'tool/v1*'`
 (the tag must exist). If that STATUS line is absent, **stop and say so**; do not proceed with the
@@ -690,7 +691,8 @@ carrying its install line and the statement that the binary is not in the npm ta
 entry is missing, **stop**, because the release body is rolled from that window.
 
 **A third gate (Geoff, 2026-09-21): the doctor is retired before `0.97.0`.** The "unblocked" line
-is written by the doctor-retirement pass's close, which lands last, never by Pass B2's close;
+is written ONLY by the `tool/v1.1.0` tag's close, which lands last (see the fourth gate), never
+by Pass B2's close, the retirement's close, or draft docs pass A's close;
 B2's line says only that the tool's 1.0 is merged, tagged, and released. The cut starts only when
 the unblocked line is present AND the doctor is gone from `origin/main`: `src/lib/doctor` no
 longer exists at `origin/main` (`git ls-tree origin/main src/lib/doctor` prints nothing, and
@@ -701,6 +703,16 @@ tool at the version the retirement shipped (`tool/v1.1.0` as planned). If any of
 **stop and say so**. Runnable checks for the last two: `node -p "require('./package.json').bin"`
 (fetched at `origin/main`) shows no `cairn-doctor` key; `grep -rn 'cairn-doctor'
 packages/create-cairn-site/src` finds no printed command.
+
+**A fourth gate (Geoff, 2026-09-21): the tool's contract pages ship in the `0.97.0` tarball, and
+one tool tag follows them.** The retirement merges WITHOUT a tool tag; draft docs pass A
+(`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`) then moves the tool's contract pages
+and its six schemas under `docs/reference/`; then one `tool/v1.1.0` tag is cut, carrying the
+retirement and the repointed links, so the binary `0.97.0` announces never names a deleted path.
+The tool's contract pages are on `origin/main` and tagged: `git ls-tree origin/main
+docs/reference/cli-cairn-exit-codes.md docs/reference/cli-cairn-json-output.md` prints both;
+`git ls-tree -r origin/main tool/docs/reference` prints only `README.md`; the tag `tool/v1.1.0`
+exists and its commit contains pass A's merge. If any fails, **stop and say so**.
 
 **Runs through the `cairn-release` skill**, which re-derives the release size and the number from
 the window's contents. `check:version` enforces the `release-size` marker against the CHANGELOG,

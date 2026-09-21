@@ -114,6 +114,27 @@ func TestKeyringSetDeadlineMiss(t *testing.T) {
 	}
 }
 
+// TestKeyringSetDropsBackendText swaps keyringSet for a func that fails with a distinctive
+// string and asserts Set's returned error carries neither that string nor any other backend
+// text, matching errKeyringUnavailable's own doc comment.
+func TestKeyringSetDropsBackendText(t *testing.T) {
+	prevSet := keyringSet
+	keyringSet = func(string, string, string) error {
+		return errors.New("XYZZY-BACKEND-REFUSED")
+	}
+	t.Cleanup(func() {
+		keyringSet = prevSet
+	})
+
+	err := NewKeyring().Set("CAIRN_GH_READ_TOKEN", "ghp_example")
+	if !errors.Is(err, errKeyringUnavailable) {
+		t.Fatalf("Set() on a backend failure = %v, want errKeyringUnavailable", err)
+	}
+	if strings.Contains(err.Error(), "XYZZY-BACKEND-REFUSED") {
+		t.Errorf("Set() error = %q, must not carry the backend's own text", err.Error())
+	}
+}
+
 // TestReadClassifiesItsFailures covers the distinction Get flattens away but a writing caller
 // needs: an entry the keyring does not hold reports ErrNotFound, while a keyring that cannot be
 // consulted at all, whether it failed or ran past the deadline, reports errKeyringUnavailable.

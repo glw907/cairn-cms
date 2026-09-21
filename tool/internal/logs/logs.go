@@ -203,7 +203,8 @@ func parseEntry(raw json.RawMessage) (Entry, error) {
 
 // fetch runs one telemetry query against cf, classifying an API-level error before deciding how
 // to report it (see ErrObservabilityOff's own doc comment for the split), and decoding the
-// returned events in the order the API carried them.
+// returned events, sorting them newest first with entries that carry no timestamp last in
+// arrival order.
 func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) ([]Entry, error) {
 	result, err := cf.ObservabilityQuery(ctx, buildQuery(worker, clampSince(since), now, filterKey, filterValue, limit))
 	if err != nil {
@@ -227,8 +228,10 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 		entries = append(entries, entry)
 	}
 	// Newest first is the order every caller's doc promises, and the endpoint guarantees no
-	// order of its own. An entry carrying no parseable timestamp cannot be placed in the
-	// sequence at all, so it sorts after every dated entry, keeping its arrival order.
+	// order of its own. A malformed timestamp aborts the whole fetch in parseEntry, so the
+	// only zero-time entries here are ones that carried no "timestamp" key at all; those
+	// cannot be placed in the sequence, so they sort after every dated entry, keeping their
+	// arrival order.
 	slices.SortStableFunc(entries, func(a, b Entry) int {
 		if a.At.IsZero() != b.At.IsZero() {
 			if a.At.IsZero() {

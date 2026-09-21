@@ -22,6 +22,27 @@ func (errorsCheck) ID() string { return "errors" }
 // Needs implements Check. Errors reads Workers Logs through Cloudflare.
 func (errorsCheck) Needs() Tier { return TierCF }
 
+// errorsDetail is errorsCheck's own internal measurement, flattened into Fields as a
+// non-verbose "errorCount" entry and a verbose-only "topEvents" entry, so a reverted
+// verboseField call on TopEvents goes red against TestCheckDetailFieldVisibility rather than
+// silently reaching a non-verbose render.
+type errorsDetail struct {
+	// Count is how many level: error records logs.FetchLevel returned over Options.LogWindow.
+	Count int
+	// TopEvents is the up-to-three most frequent Event values among those records, most
+	// frequent first.
+	TopEvents []string
+}
+
+// fields flattens d into its two ordered spine.OutcomeField entries: errorCount, non-verbose,
+// and topEvents, verbose-only since it names the events a Worker actually logged.
+func (d errorsDetail) fields() []spine.OutcomeField {
+	return []spine.OutcomeField{
+		field("errorCount", d.Count),
+		verboseField("topEvents", d.TopEvents),
+	}
+}
+
 // topEventNames returns the up-to-n most frequent Event values in entries, most frequent first,
 // ties broken by first appearance: entries arrive newest first, so a tie favors the more recent
 // event.
@@ -62,7 +83,7 @@ func (errorsCheck) Run(ctx context.Context, r record.Record, c Clients, o Option
 	}
 
 	count := len(entries)
-	fields := []spine.OutcomeField{field("errorCount", count), verboseField("topEvents", topEventNames(entries, 3))}
+	fields := errorsDetail{Count: count, TopEvents: topEventNames(entries, 3)}.fields()
 
 	if count == 0 {
 		return spine.Outcome{State: spine.OK, Fields: fields}

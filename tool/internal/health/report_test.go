@@ -226,6 +226,11 @@ func TestCheckDetailFieldVisibility(t *testing.T) {
 			fields: engineDetail{}.fields(),
 			want:   []string{"releasesBehind", "consumersMust"},
 		},
+		{
+			name:   "errors",
+			fields: errorsDetail{}.fields(),
+			want:   []string{"errorCount"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

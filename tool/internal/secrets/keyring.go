@@ -63,10 +63,12 @@ func withDeadline[T any](f func() (T, error)) (T, error) {
 		done <- result{value: v, err: err}
 	}()
 
+	timer := time.NewTimer(keyringDeadline)
 	select {
 	case r := <-done:
+		timer.Stop()
 		return r.value, r.err
-	case <-time.After(keyringDeadline):
+	case <-timer.C:
 		var zero T
 		return zero, errKeyringUnavailable
 	}
@@ -104,10 +106,18 @@ func (Keyring) Get(name string) (string, bool, error) {
 }
 
 // Set writes name's value to the keyring, under the same deadline a read
-// takes: a locked collection blocks a write the same way.
+// takes: a locked collection blocks a write the same way. Any failure, a
+// deadline miss or a backend error, flattens to errKeyringUnavailable: a
+// backend refusing a write (a locked collection, a busy bus) is the same
+// "could not be consulted" condition read reports, and errKeyringUnavailable's
+// own doc comment promises that no backend text reaches a caller, so a raw
+// backend error is never returned here either.
 func (Keyring) Set(name, value string) error {
 	_, err := withDeadline(func() (struct{}, error) {
 		return struct{}{}, keyringSet(service, name, value)
 	})
-	return err
+	if err != nil {
+		return errKeyringUnavailable
+	}
+	return nil
 }

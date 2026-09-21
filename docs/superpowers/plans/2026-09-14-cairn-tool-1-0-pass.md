@@ -2142,6 +2142,11 @@ that MAY add operator-facing strings, because its whole deliverable is the table
 adds comes from the catalogue in `copy-standard.md` section 3, and any string the catalogue does
 not cover is listed in the report for the editorial gate at Task 22a.
 
+**Conductor rulings (pre-flight, 2026-09-20):**
+- `cmd/copylist` is an accepted second binary in this module. The release still builds only
+  `./cmd/cairn`; the lister exists for the golden and is proven to have no non-shipped-binary
+  importer by criterion 13.
+
 **Files:**
 - Create: `tool/internal/health/messages.go`, `messages_test.go`, `fixes.go`, `fixes_test.go`
 - Create: `tool/internal/spine/code.go`, `code_test.go`
@@ -2151,25 +2156,36 @@ not cover is listed in the report for the editorial gate at Task 22a.
   `copy-review` target)
 - Modify: every `tool/internal/health/check_*.go` (prose out of the check bodies)
 - Modify: `tool/internal/spine/outcome.go` (the typed code slot)
-- Modify: `tool/.vale.ini` (the golden's glob and the Microsoft package)
+- Create: `tool/.vale/copy.ini` (`StylesPath = ../../.vale/styles`, globbing
+  `testdata/copy.golden.md` alone; see criterion 10). `tool/.vale.ini` is not modified.
 
 **Acceptance, one reviewable place:**
 1. **Every operator-facing string this package prints lives in a messages table, and no operator
    prose sits at a call site.** `internal/health/messages.go` holds the nine checks' detail and
    skip fragments; `internal/health/fixes.go` holds the fix lines. A check returns a condition and
    its measured values, and the table renders the line. A test asserts no `check_*.go` file
-   contains a string literal longer than a stated length outside a table entry or a Go error value.
-   The `cmd/cairn` table is Task 19c-ii's and is not built here.
+   contains a string literal longer than **40 characters**, excluding `_test.go` files, struct
+   tags, and the arguments to `errors.New` and `fmt.Errorf`, outside a table entry. The exceptions
+   are restated in the test's own comment so a later reader does not have to recover them from this
+   plan. The `cmd/cairn` table is Task 19c-ii's and is not built here.
 2. **The fix table is keyed by the failure's identity**, which is `spine.Condition` where the
    engine declares one and the tool-owned `spine.Code` of criterion 6 otherwise. Criterion 6
    establishes that most Failing outcomes carry `ConditionNone`, so a table keyed on `Condition`
-   alone would collapse them onto one entry. **Two invariants a test holds:** there is exactly one
-   fix line per declared `Condition` and per declared `Code`, and every fix line's key exists. A
-   third test asserts every Failing or held outcome the tool can produce resolves to exactly one
-   fix line. This is the shape `check:readiness` already enforces on the TypeScript side.
+   alone would collapse them onto one entry. **The key domain is the conditions the checks
+   actually declare, not the engine's full registry**: `spine.Conditions()` carries 24 ids but this
+   tool can print only three (criterion 7), so the table is keyed on the conditions enumerated by a
+   test walking `health.All` plus every declared `spine.Code`. **Two invariants a test holds:**
+   there is exactly one fix line per declared `Condition` and per declared `Code`, and every fix
+   line's key exists. The test asserts coverage of what the checks declare, not parity with the
+   engine's registry. A third test asserts every Failing or held outcome the tool can produce
+   resolves to exactly one fix line. This is the shape `check:readiness` already enforces on the
+   TypeScript side.
 3. **Every fix line's anchor resolves to an actual heading in `docs/admin/is-it-working.md`,** read
    at test time through `providers.RepoRoot`, so the table cannot drift from the page. A second
-   test covers the no-anchor branch. This is the re-homed remedy map the seams table names.
+   test covers the no-anchor branch: **no-anchor is legal, and this task does not edit the frozen
+   page to manufacture headings.** Verified 2026-09-20: six checks have no heading in that page
+   today (reconciliation row 16); the implementer's report lists which six. This is the re-homed
+   remedy map the seams table names.
 4. **Each fix carries an `actor` and an `outward` flag,** held in this table. `actor` is one of
    `operator`, `developer`, `provider-console`, or `registrar`; `outward` is true when carrying
    the fix out changes what the public sees. An agent applies one rule with these: run a fix whose
@@ -2187,8 +2203,16 @@ not cover is listed in the report for the editorial gate at Task 22a.
    exceeds the threshold` and `error count is within the advisory band` (`check_errors.go:92,94`,
    both judgments that withhold the number the check measured), and `unauthorized`/`forbidden`
    from `spine.ReasonToOutcome` (`outcome.go`). Each becomes the catalogue's sentence, carrying
-   its measured number where the check measured one. A test over every check's Outcome asserts no
-   `Detail` matches `^[a-z0-9]+(-[a-z0-9]+)+$`.
+   its measured number where the check measured one. **`spine.ReasonToOutcome` is the one case
+   this task cannot render from `health`'s table**, because `spine` cannot import `health` (the
+   reverse import already exists) and the Files list carries no spine-side messages file. Rule:
+   `ReasonToOutcome` sets the new `spine.Code` from criterion 6 and leaves `Detail` empty; the
+   rendering stays in `health`'s one table, keyed on the `Code`. One prose table per package, no
+   import cycle. A test over every check's Outcome asserts `Detail` is either empty or
+   prose-shaped (a lowercase opener, containing a space), and a second assertion keeps the
+   `^[a-z0-9]+(-[a-z0-9]+)+$` hyphen-token check for the cases still worth ruling out directly; the
+   hyphen regex alone cannot prove the prose list, since it never matches `unauthorized` or
+   `forbidden` in the first place.
 6. **A Failing verdict's machine token lives on a typed code slot, not in `Detail`.**
    `spine.Condition` already carries the engine's dotted id when the verdict declares one, and at
    HEAD most Failing verdicts declare `ConditionNone` because the engine's registry has no id for
@@ -2231,12 +2255,20 @@ not cover is listed in the report for the editorial gate at Task 22a.
     column of `copy-standard.md` section 2.9 and the list in section 2.10, plus three structural
     rules a word list cannot express, namely a string matching `^[a-z0-9]+(-[a-z0-9]+)+$`, a fix
     line with more than one comma before its first period, and any `!`. The second is Vale against
-    **the repository's own vendored Microsoft style at `.vale/styles/Microsoft`**, never `vale
-    sync`, which would drift from the 3.15.1 pin CI carries. `tellgrader` is deliberately NOT in
-    this step: it is a Linux-only binary at `~/.local/bin`, and `.github/workflows/tool.yml` runs
-    `make -C tool check` on ubuntu, macos, and windows, where the step would hard-fail rather than
-    skip. The step runs in the light lane; it launches no browser. **Its failure message names
+    **the repository's own vendored Microsoft style, which lives at the repo root
+    (`.vale/styles/Microsoft`), never under `tool/`**: `tool/.vale/styles/` holds only `glw907`.
+    Rule: a separate `tool/.vale/copy.ini` with `StylesPath = ../../.vale/styles`, globbing
+    `testdata/copy.golden.md` alone; `tool/.vale.ini` stays untouched, so Microsoft never grades
+    the ADR or the design docs `tool/.vale.ini` already covers. Never `vale sync`, which would
+    drift from the 3.15.1 pin CI carries. `tellgrader` is deliberately NOT in this step: it is a
+    Linux-only binary at `~/.local/bin`, and `.github/workflows/tool.yml` runs `make -C tool check`
+    on ubuntu, macos, and windows, where the step would hard-fail rather than skip. The step runs
+    in the light lane; it launches no browser. **Its failure message names
     `tool/docs/design/copy-standard.md`**, which is how the rule reaches the next implementer.
+    Verified 2026-09-20: the workflow's `actions/checkout@v7` step takes no sparse-checkout
+    filter, so the full repository lands at the runner's working directory and the relative
+    `../../.vale/styles` path from `tool/.vale/copy.ini` resolves to the checked-out repo root's
+    `.vale/styles`, which carries `Microsoft`. The relative path is valid as written.
 11. **`tellgrader` lives in a local-only `make -C tool copy-review` target**, not in `check`. The
     target runs `tellgrader --register editor` over the golden, is documented in the Makefile's own
     help as a local editorial aid, and is what Task 22a's editorial gate runs before the 1.0 tag.
@@ -2261,19 +2293,33 @@ writing any Go file. Suggested model: `opus`, for the precedence arithmetic, whi
 
 **Notes (verbatim in the dispatch):** the standing B2 note above.
 
+**Conductor rulings (pre-flight, 2026-09-20):**
+- The new record's id is generated inside `Adopt` with `crypto/rand`, to reconciliation row 4's
+  shape. A test proves the shape and uniqueness; the signature stays as stated below, unwidened.
+- `Discover`'s `gh *providers.GitHub` parameter is dropped: no criterion in this task uses it, and
+  an unused constructor parameter is a signature nobody can test. If a later task needs a GitHub
+  lookup inside `Discover`, that task states the use and adds the parameter back.
+
 **Files:**
 - Create: `tool/internal/spine/adopt.go`, `adopt_test.go`
 - Create: `tool/internal/spine/exit.go`, `exit_test.go`
 - Modify: `tool/cmd/cairn/probe_token.go`, `probe_token_test.go` (the two moved functions)
 
-**Produces:** `type Candidate struct{ Worker, Repo, Zone, AccountID string; Connected bool }`.
-`func Discover(ctx, cf *providers.Cloudflare, gh *providers.GitHub, accountID string)
-([]Candidate, error)`. `func Adopt(st *store.Store, c Candidate, name string, resolve
-providers.Resolver) (record.Record, error)` writing step `live`, `adopted: true`, no secrets, and
-a fresh id in the Node shape. `func AlreadyAdopted(st *store.Store, c Candidate) bool` by worker
-name. `adopt list` is a plain non-writing function over `Discover`, not a mode flag threaded
-through the adopt path (Geoff, 2026-09-20, ruling 3). Also `func ExitCode(reports []health.Report,
-listErrs []error, expectSites int) int` returning a monitoring-plugin code.
+**Produces:** `type Candidate struct{ Worker, Repo, Zone, Domain, AccountID string; Connected
+bool}`, `Domain` filled from `cf.WorkerDomains` and `Zone` the zone name. `func Discover(ctx, cf
+*providers.Cloudflare, accountID string) ([]Candidate, error)`. `func Adopt(st *store.Store, c
+Candidate, name string, resolve providers.Resolver) (record.Record, error)` writing step `live`,
+`adopted: true`, no secrets, and a fresh id in the Node shape. `func AlreadyAdopted(st
+*store.Store, c Candidate) bool` by worker name. `adopt list` is a plain non-writing function over
+`Discover`, not a mode flag threaded through the adopt path (Geoff, 2026-09-20, ruling 3). Also
+`func ExitCode(reports []health.Report, listErrs []error, expectSites int) int` returning a
+monitoring-plugin code, `var ErrExpectSites error` mapped to UNKNOWN, and `type Verdict int` with
+the four constants `VerdictOK`, `VerdictWarning`, `VerdictCritical`, `VerdictUnknown` (the exit
+codes themselves) and a `String` returning the monitoring word. Task 20b-i re-exports this type as
+`render.Verdict` rather than declaring its own. Beside `Verdict`, `func StateWord(s
+State, reason ReasonCode, ack bool) string` (or equivalent) returns the pass/fail/skip/held wire
+word from the `State`, `Reason`, and `Acknowledged` inputs; Task 20b-i's plain body and Task 20c's
+JSON boundary both consume it rather than each computing the mapping.
 
 **Acceptance, `adopt`:**
 1. **2.0 seam kept on purpose: adopt as plain functions.** `Discover`, `Adopt`, and
@@ -2282,9 +2328,10 @@ listErrs []error, expectSites int) int` returning a monitoring-plugin code.
 2. **The listing path performs no write at all,** proved against a store whose directory is
    read-only: the function returns candidates and the directory's mtime is unchanged. No `adopt
    --list` mode flag is implemented, because `adopt list` in Task 19a-i replaces it.
-3. `Discover` lists every Worker on the account and marks `Connected` from Builds. `Adopt` is
-   refused for a candidate whose domain fails `record.ValidateDomain`.
-4. `Adopt` also refuses a candidate whose domain resolves into a private, link-local, or loopback
+3. `Discover` lists every Worker on the account, marks `Connected` from Builds, and fills each
+   candidate's `Domain` from `cf.WorkerDomains` (`Zone` is the zone name, not the domain). `Adopt`
+   is refused for a candidate whose `Domain` fails `record.ValidateDomain`.
+4. `Adopt` also refuses a candidate whose `Domain` resolves into a private, link-local, or loopback
    range, using the injected `Resolver`. This is the spec's resolution check, and it lives here
    because `record.ValidateDomain` stays resolution-free. A table covers `10.0.0.0/8`,
    `169.254.0.0/16`, `127.0.0.0/8`, and a public address.
@@ -2298,6 +2345,11 @@ listErrs []error, expectSites int) int` returning a monitoring-plugin code.
 7. **The codes are the monitoring-plugin convention** (Geoff, 2026-09-14), which Nagios and every
    alerting tool compatible with it already reads. 0 is OK: every check is pass. 1 is WARNING. 2 is
    CRITICAL: a check is failing, unacknowledged, and its failure warrants CRITICAL. 3 is UNKNOWN.
+   **A held (acknowledged) failing check contributes WARNING, and an expired hold contributes
+   CRITICAL** (conductor's ruling, 2026-09-20, Nagios-style: an acknowledgement silences
+   notification, never status). OK would reprint the false green criterion 11 forbids. One table
+   row each; this is confirmed with the owner before the 1.0 freeze, filed under "outside the
+   amendment, for the owner."
 8. **Precedence, stated because a run mixes states and an agent will guess wrong.** CRITICAL beats
    UNKNOWN, UNKNOWN beats WARNING, WARNING beats OK. **This is not numeric order: 3 does not beat
    2.** A failing check is a known fault and must not be masked by an unrelated transport unknown;
@@ -2315,14 +2367,18 @@ listErrs []error, expectSites int) int` returning a monitoring-plugin code.
     tests pass unchanged but for the call path.
 11. **`Report` with zero checks is UNKNOWN**, never OK. Folding an empty check slice to OK prints a
     false green, which the reference program did. A test asserts the code and the verdict word.
-12. **`ErrExpectSites` is mapped here and nowhere else**, and `render.Verdict` (Task 20b-i) is this
-    function's return value widened to a type. A test asserts the four codes and the four words
-    correspond.
-13. **The per-check CRITICAL-or-WARNING severity is an input, not a judgment made here.** Task 21
-    builds the table that says which check's failure warrants which, and until it lands `ExitCode`
-    treats every unacknowledged failing check as CRITICAL. The seam is stated so Task 21 widens
-    this function rather than forking it, and a test pins today's behaviour so Task 21's change
-    shows up as a diff rather than as a silent reinterpretation.
+12. **`spine.ErrExpectSites` is mapped here and nowhere else, and `spine.Verdict` (the four
+    constants and `String`) is this function's return value widened to a type.** Neither exists at
+    HEAD. Task 20b-i re-exports `spine.Verdict` as `render.Verdict` rather than redeclaring it: the
+    spine computes the verdict, and a view must not own the vocabulary (ADR). A test asserts the
+    four codes and the four words correspond.
+13. **The per-check CRITICAL-or-WARNING severity is an input, not a judgment made here, with one
+    named exception.** Task 21 builds the table that says which check's failure warrants which,
+    and until it lands `ExitCode` treats every unacknowledged failing check as CRITICAL, **except**
+    a held failing check, which criterion 7 fixes at WARNING (or CRITICAL once its hold has
+    expired) rather than leaving to Task 21. The seam is stated so Task 21 widens this function
+    rather than forking it, and a test pins today's behaviour so Task 21's change shows up as a
+    diff rather than as a silent reinterpretation.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
 
 ### Task 19a-i: The cobra tree, the grammar, the file split, and the signal path
@@ -2381,16 +2437,22 @@ run's wall-clock deadline; `--verbose`; `--quiet`; and `--color=auto|always|neve
    of the four shorthands.
 7. **`-q/--quiet` prints only on a non-OK result.** On a run whose verdict is OK it writes nothing
    at all to stdout or stderr and still exits 0; on WARNING, CRITICAL, or UNKNOWN it prints the
-   verdict line and the failing detail. A test asserts byte-empty output on the OK path, which is
-   what makes a cron-driven green run silent and mail-free. `--quiet` and `--verbose` together is
-   a usage error naming both.
+   verdict line and the failing detail. **`internal/render` does not exist yet in this segment**
+   (Task 20 lands two segments later), so this task's non-OK body is the verdict line from
+   `spine.Verdict.String()` plus each failing check's line from 19c-i's `health` messages table,
+   and nothing else: no ad-hoc human-body prose composed at this call site, which is exactly the
+   call-site prose the standing note bans. A test asserts byte-empty output on the OK path, which
+   is what makes a cron-driven green run silent and mail-free. `--quiet` and `--verbose` together
+   is a usage error naming both.
 8. **`--json` wins over `--quiet`, and the payload always prints** (conductor, 2026-09-20). The
    combination is not a usage error and is not silent: `--quiet` suppresses the human body on an OK
    run, and under `--json` the payload IS the output, so suppressing it would give an agent an
-   empty stdout that Task 21 freezes as meaning "your invocation was wrong". A test asserts `cairn
-   health --json --quiet` on an OK run writes the whole payload to stdout and nothing to stderr,
-   and the rule is stated in `cairn help agents` and in `tool/docs/reference/exit-codes.md` by Task
-   21 and frozen by Task 20c's freeze list.
+   empty stdout that Task 21 freezes as meaning "your invocation was wrong". **Before Task 20c
+   lands, the payload this task prints is `Report.JSON`**, the health package's existing
+   redaction-safe marshal, not a hand-built shape; Task 20c later replaces the call site, not this
+   task's contract. A test asserts `cairn health --json --quiet` on an OK run writes the whole
+   payload to stdout and nothing to stderr, and the rule is stated in `cairn help agents` and in
+   `tool/docs/reference/exit-codes.md` by Task 21 and frozen by Task 20c's freeze list.
 9. **Every command carries an `Example:`.** A test walks the tree and asserts each command,
    including each `auth` subcommand and each alias's target, has a non-empty `Example` whose first
    line begins with `cairn `. No example puts a credential value on a command line.
@@ -2400,20 +2462,27 @@ run's wall-clock deadline; `--verbose`; `--quiet`; and `--color=auto|always|neve
 11. **The one permitted TTY check** (Geoff, 2026-09-20, ruling 1). This task's grep test forbids
     `term.IsTerminal` and `os.Stdout.Stat()` everywhere under `tool/` **except**
     `internal/render/profile.go` (Task 20a), and allows `term.ReadPassword` in `auth.go` alone.
-    **Verified 2026-09-20 at HEAD: no file under `tool/` names `term.IsTerminal` today, and this
-    grep test does not exist.** The only chokepoint grep on the branch is
-    `TestOSGetenvOnlyInEnvGo` (`tool/cmd/cairn/env_test.go:182`). So this task creates the test,
-    narrowed from the start. Falsify it: add `term.IsTerminal` to a second file, confirm the
-    failure names that file, remove it.
+    **`internal/render/profile.go` does not exist yet at this task's segment**, so the exception
+    path is hard-coded by name now rather than left for 20a to invent: the test asserts that path
+    is the sole match when a file at it exists, and until then the grep simply finds no match
+    there, which is not the same as the exception being unproven. **Verified 2026-09-20 at HEAD: no
+    file under `tool/` names `term.IsTerminal` today, and this grep test does not exist.** The only
+    chokepoint grep on the branch is `TestOSGetenvOnlyInEnvGo` (`tool/cmd/cairn/env_test.go:182`).
+    So this task creates the test, narrowed from the start. Falsify it: add `term.IsTerminal` to a
+    second file, confirm the failure names that file, remove it.
 12. No command reads an environment variable except through `loadEnv`, and no command reads the
     keyring except through `secrets`. `TestOSGetenvOnlyInEnvGo` still passes over the grown
     package.
 
 **Acceptance, the file split and the signal path:**
-13. **The probe command's five constructor parameters become one dependencies struct,** in a new
-    `tool/cmd/cairn/deps.go`. `buildProbeTokenCmd(envFn, p, rt, registryDir, exit)` becomes one
-    struct parameter, so a sixth dependency is a field rather than a signature break across every
-    test. Its existing tests pass with the struct substituted. **`cmd/cairn` splits by concern**:
+13. **One package-level dependencies struct, built once in `main.go` and passed to every
+    `newXCmd(d deps)`,** in a new `tool/cmd/cairn/deps.go`. The probe command's five constructor
+    parameters fold into it first: `buildProbeTokenCmd(envFn, p, rt, registryDir, exit)` becomes
+    one struct parameter, so a sixth dependency is a field rather than a signature break across
+    every test. The same single struct is also what criterion 5's single writer and criterion 12's
+    single env path need, so every command built in this task takes `deps` rather than its own
+    constructor shape. Its existing tests pass with the struct substituted. **`cmd/cairn` splits by
+    concern**:
     `probe_token.go` is 475 lines at HEAD, the largest file in the package, and its command body,
     its Cloudflare probe, its GitHub probe, and its registry walk are four concerns. After this
     task no file under `cmd/cairn` except a test exceeds 300 lines, asserted by a test. The
@@ -2901,6 +2970,13 @@ not acceptance. Invoke `go-conventions` before writing any Go file. Suggested mo
 **Notes (verbatim in the dispatch):** the standing B2 note above, plus the capture rule from
 Task 20a's notes.
 
+**Conductor rulings (pre-flight, 2026-09-20):**
+- `Verdict` is `spine.Verdict` (Task 18), re-exported here (`type Verdict = spine.Verdict` or the
+  package's own re-export idiom), never a second, independently declared type. The spine computes
+  the verdict; this package must not own the vocabulary (ADR).
+- The plain body's `pass`/`fail`/`skip`/`held` words (criterion 13 below) come from `spine`'s
+  `State`/`Reason`/`Acknowledged` mapping (Task 18), not from logic reimplemented in this package.
+
 **Files:**
 - Create: `tool/internal/render/body_single.go`, `body_plain.go`, `rank.go`, `rank_test.go`,
   `body_test.go`, `golden_test.go`, `testdata/golden/`, `fixtures/`
@@ -2910,9 +2986,9 @@ Task 20a's notes.
 **Produces:** `func Render(in RenderInput) Frame` with no I/O, where `RenderInput` carries `View`,
 `Width`, `Height`, `Dark`, `Profile`, `Body` (the scope-and-TTY selection), `Reports
 []health.Report`, `Entries []logs.Entry`, `Status StatusState`, `Verdict Verdict`, and `Now`.
-`Verdict` is a typed int whose constants are the four exit codes themselves (`VerdictOK` 0,
-`VerdictWarning` 1, `VerdictCritical` 2, `VerdictUnknown` 3) with a `String` returning the
-monitoring word.
+`Verdict` is `spine.Verdict` (Task 18): a typed int whose constants are the four exit codes
+themselves (`VerdictOK` 0, `VerdictWarning` 1, `VerdictCritical` 2, `VerdictUnknown` 3) with a
+`String` returning the monitoring word, re-exported from `spine` rather than redeclared here.
 
 **Acceptance, one design system and the shared layer:**
 1. **Three bodies, chosen by scope and by whether stdout is a terminal.** Single site when one
@@ -3876,7 +3952,7 @@ Owner-gated because it merges the branch Task 22b's published tag lives on. Sugg
 
 ### Outside the amendment, for the owner
 
-Six items the pass surfaced that sit outside the bounds Geoff pre-approved. None is a task, none
+Seven items the pass surfaced that sit outside the bounds Geoff pre-approved. None is a task, none
 is executed by this pass, and each names what would settle it. Task 25 carries them forward to the
 ROADMAP, STATUS, or the facts container.
 
@@ -3910,6 +3986,10 @@ ROADMAP, STATUS, or the facts container.
    observe the site. The catalogue's reading is that an operator who sees UNKNOWN goes looking for
    a fault that is not there. Both are defensible; the plan's is what ships unless the owner rules
    otherwise, and this one also freezes at 1.0.
+7. **Whether a held failing check contributes WARNING and an expired hold contributes CRITICAL.**
+   Task 18 ships this as the conductor's ruling, Nagios-style: an acknowledgement silences
+   notification, never the underlying status. Confirm before the 1.0 freeze, because the exit-code
+   table is one of the surfaces this pass freezes.
 
 ---
 

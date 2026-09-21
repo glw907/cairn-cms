@@ -566,6 +566,10 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   cross-check against, so this rests on documented platform behavior rather than a repo grep.
   [candidate: sourced to the page only, not traced to code]
 
+## docs/reference/guidance.md
+
+- `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`). [verified]
+
 ## docs/reference/islands.md
 
 - `hydrateIslands` mounts with Svelte's own `mount()`/`unmount()` directly, no framework

@@ -842,6 +842,24 @@ the named human gates only):**
 
 ## Next
 
+- **`cairn-guidance install` write-hardening candidates, from the security re-read (extend-2,
+  2026-09-20).** The blocking read that found the symlink-containment defect (fixed in `9aa7765a`)
+  also named six smaller items, verified against the code as it stands after that fix and left
+  open: (1) each directory level should be created with a non-recursive `mkdir` that refuses on
+  `EEXIST` when the existing entry is a symlink, closing a race between the `lstat` walk and the
+  `mkdir` call where a planted symlink lands between the two; this needs a concurrent local writer
+  in the same working tree, out of the threat model for a developer's own checkout, which is why
+  it is filed rather than fixed now; (2) a destination whose `nlink > 1` (a hard link) should be
+  refused the same way a symlink is, since a hard link bypasses the symlink check entirely; (3)
+  `err.code` should carry out of the write's `catch` so an `ENOSPC` or `EACCES` failure is
+  reported as an error rather than silently naming a truncated destination as written; (4)
+  `readIfExists` and `mkdir` should move inside the same `try` as the write, so an `EACCES` on
+  either refuses the destination rather than aborting the whole install; (5) `cairn-guidance
+  check`'s read side should reuse the same `lstat` walk `install` uses, rather than a separate,
+  looser read path; (6) a refused destination should itself appear in the report's lists, not
+  only its `.orig` sibling. Trigger: the next pass that touches `src/lib/guidance/install.ts`'s
+  write path, or a second independent report of any of the six.
+
 - **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
   until a site pass has filed about twenty facts by hand and the shape has stopped moving
   (`docs/internal/record/2026-09-15-facts-container-review/`, charter report finding 9).
@@ -2151,6 +2169,14 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **`docs/reference` has no dedicated page for the `./admin-sources.css` subpath export; it gets
+  one section inside `docs/reference/cairn-audit.md` instead (extend-2 friction, 2026-09-20).**
+  `check:reference`'s coverage gate reads only `.d.ts`-typed exports, so a CSS-only subpath is not
+  gated either way; grouping the admin-sources documentation with the audit config it feeds is a
+  legitimate reading of the reference arm's page structure, not a known bug, but the docs rebuild
+  is the point where the arm's page-per-subpath convention gets a deliberate read. Trigger: the
+  docs rebuild's reference-arm pass.
 
 - **The showcase's own public route map is written nowhere a plan author reads (extend-1,
   2026-09-20).** extend-1's stylesheet-seam proof was planned against a `/posts` archive route the

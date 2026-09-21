@@ -316,9 +316,17 @@ export interface InstallReport {
   origPresent: string[];
   /**
    * Destinations refused, by name: outside `<cwd>/.claude`, reached through a symlink, a symlink
-   *  themselves, already a directory, or a `.orig` path whose recovery copy could not be made.
+   *  themselves, already a directory, or a `.orig` path whose recovery copy could not be made
+   *  (which also refuses the destination beside it).
    */
   refused: string[];
+  /**
+   * Destinations whose write failed with a disk error rather than a containment refusal (an
+   *  `ENOSPC`, an `EACCES`, ...), each carrying the failed write's `err.code`, or `'UNKNOWN'`
+   *  when the thrown value carries none. Kept separate from {@link refused} so the bin can tell
+   *  an operator to check disk space or permissions instead of the containment rules.
+   */
+  writeErrors: { path: string; code: string }[];
   /** Paths the previous MANIFEST listed that this run's package no longer ships. */
   removable: string[];
   /** Packaged entries the source walk refused, carried through from {@link GuidanceSource}. */
@@ -342,6 +350,7 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
     origWritten: [],
     origPresent: [],
     refused: [],
+    writeErrors: [],
     removable: [],
     sourceRefused: [...source.refused],
   };
@@ -368,13 +377,14 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
       continue;
     }
     if (existing !== null && !(await preserveOriginal(destAbs, destRelPath, existing, report))) {
+      report.refused.push(destRelPath);
       continue;
     }
     await mkdir(dirname(destAbs), { recursive: true });
     try {
       await writeWithoutFollowing(destAbs, content, OVERWRITE_FLAGS);
-    } catch {
-      report.refused.push(destRelPath);
+    } catch (err) {
+      report.writeErrors.push({ path: destRelPath, code: (err as NodeJS.ErrnoException).code ?? 'UNKNOWN' });
       continue;
     }
     writtenPaths.add(destRelPath);

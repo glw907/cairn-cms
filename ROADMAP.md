@@ -844,21 +844,21 @@ the named human gates only):**
 
 - **`cairn-guidance install` write-hardening candidates, from the security re-read (extend-2,
   2026-09-20).** The blocking read that found the symlink-containment defect (fixed in `9aa7765a`)
-  also named six smaller items, verified against the code as it stands after that fix and left
-  open: (1) each directory level should be created with a non-recursive `mkdir` that refuses on
+  also named six smaller items, verified against the code as it stands after that fix. Two of the
+  six landed in the pre-cut pass (2026-09-21): `err.code` now carries out of the write's `catch`
+  into `InstallReport.writeErrors`, and a destination skipped because its `.orig` recovery copy
+  could not be made now lands in `report.refused` alongside the `.orig` path. Four remain open:
+  (1) each directory level should be created with a non-recursive `mkdir` that refuses on
   `EEXIST` when the existing entry is a symlink, closing a race between the `lstat` walk and the
   `mkdir` call where a planted symlink lands between the two; this needs a concurrent local writer
   in the same working tree, out of the threat model for a developer's own checkout, which is why
   it is filed rather than fixed now; (2) a destination whose `nlink > 1` (a hard link) should be
   refused the same way a symlink is, since a hard link bypasses the symlink check entirely; (3)
-  `err.code` should carry out of the write's `catch` so an `ENOSPC` or `EACCES` failure is
-  reported as an error rather than silently naming a truncated destination as written; (4)
   `readIfExists` and `mkdir` should move inside the same `try` as the write, so an `EACCES` on
-  either refuses the destination rather than aborting the whole install; (5) `cairn-guidance
+  either refuses the destination rather than aborting the whole install; (4) `cairn-guidance
   check`'s read side should reuse the same `lstat` walk `install` uses, rather than a separate,
-  looser read path; (6) a refused destination should itself appear in the report's lists, not
-  only its `.orig` sibling. Trigger: the next pass that touches `src/lib/guidance/install.ts`'s
-  write path, or a second independent report of any of the six.
+  looser read path. Trigger: the next pass that touches `src/lib/guidance/install.ts`'s write
+  path, or a second independent report of any of the four.
 
 - **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
   until a site pass has filed about twenty facts by hand and the shape has stopped moving

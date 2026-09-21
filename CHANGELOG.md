@@ -1880,6 +1880,16 @@
   refused is now reported instead of discarded. A project directory reached through a symlinked
   parent still installs. No consumer action.
 
+- `cairn-guidance install` no longer folds a failed write (an `ENOSPC`, an `EACCES`, ...) into the
+  containment refusals: it now carries the write's `err.code` in a new `InstallReport.writeErrors`
+  list, and the bin prints a distinct `write error <path>: <code>` line instead of the misleading
+  `refused ... outside .claude/, a symlink, or not a regular file` sentence. Separately, a
+  destination skipped because its `.orig` recovery copy could not be made now appears in
+  `report.refused` alongside the `.orig` path itself, not only the `.orig` sibling, so an operator
+  can see which destination was left stale. `cairn-guidance` is a bin, not a typed export
+  subpath, and no parser of the report's printed shape exists anywhere in `tool/` or `packages/`.
+  No consumer action.
+
 - The showcase's Signups admin screen, and the Waymark template that mirrors it, give the create
   form's Name and Email fields a visible label in place of the `sr-only` pair: each control now
   sits inside a `<label>` carrying a `type-body font-medium` span above it, the same stacked

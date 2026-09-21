@@ -13,8 +13,7 @@ import (
 // over key names of its own: recordFields is the only place a key becomes
 // recognized, so a key the field table does not name can never reach a
 // typed field, and a key it does name can never be missing from Marshal's
-// own table, closing the gap where Pass A's guard could miss a key added
-// to a switch alone.
+// own table.
 func Parse(data []byte) (Record, error) {
 	r, err := parseObject[Record](data, recordFields)
 	if err != nil {

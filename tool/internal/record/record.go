@@ -136,7 +136,7 @@ type ordered interface {
 // emitting when the source document never carried the key. A slice of field values is the single
 // table Parse, Marshal, and the key order all derive from, for one typed object: a key Parse
 // recognizes is a key in this slice, and a key in this slice is a key Marshal can emit, so the
-// two can no longer drift the way Pass A's separately authored parsedXKeys and typedXKeys slices
+// two can no longer drift the way three separately authored key-order slices per level once
 // could.
 type field[T any] struct {
 	key     string

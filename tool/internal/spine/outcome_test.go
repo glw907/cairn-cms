@@ -153,10 +153,9 @@ func TestStateSeverity(t *testing.T) {
 	}
 }
 
-// TestReasonToOutcome is the exhaustive table over every providers.Reason value: the one
-// translation this task consolidates from probe-token's own reasonLevel switch. A rate-limited
-// reason is asserted separately from the table, since criterion 16 singles it out: it must never
-// answer Failing.
+// TestReasonToOutcome is the exhaustive table over every providers.Reason value. A rate-limited
+// reason is asserted separately from the table: it must never answer Failing, since the tool
+// being throttled is not the site being broken.
 func TestReasonToOutcome(t *testing.T) {
 	tests := []struct {
 		reason    providers.Reason

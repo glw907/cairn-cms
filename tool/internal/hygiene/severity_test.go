@@ -27,12 +27,6 @@ func moduleRoot(t *testing.T) string {
 	return root
 }
 
-// bannedOutsideSpine names identifiers that named Pass A's own severity and reason-to-outcome
-// orderings in probe-token, before this task consolidated both into spine (State.Severity and
-// ReasonToOutcome). Their reappearance anywhere outside internal/spine is a second ordering or a
-// second translation, exactly what these two guards exist to catch.
-var bannedOutsideSpine = []string{"precedenceRank", "combineLevel", "reasonLevel"}
-
 // grepModuleExcludingSpine walks every .go file under root except internal/spine and this file
 // itself, and reports the relative paths of files whose content contains needle.
 func grepModuleExcludingSpine(t *testing.T, root, needle, skipFile string) []string {
@@ -78,7 +72,7 @@ func grepModuleExcludingSpine(t *testing.T, root, needle, skipFile string) []str
 
 // TestOneSeverityTable asserts exactly one ordering of the three spine.State values, or of an
 // equivalent exit-level ranking, exists under tool/: spine.State.Severity. It goes red the moment
-// a second precedence table (Pass A's probe-token precedenceRank/combineLevel pair) reappears in
+// a second precedence table (a probe-token-shaped precedenceRank/combineLevel pair) reappears in
 // any other package.
 func TestOneSeverityTable(t *testing.T) {
 	root := moduleRoot(t)
@@ -91,9 +85,8 @@ func TestOneSeverityTable(t *testing.T) {
 
 // TestOneReasonToOutcomeTranslation asserts exactly one translation from a classified
 // providers.Reason to a verdict exists under tool/: spine.ReasonToOutcome. It goes red the moment
-// another file switches on a providers.Reason value (probe-token's own reasonLevel did exactly
-// that) or reintroduces a reasonLevel-shaped function outside spine, which is the residual gap
-// criterion 21 describes: a second translation with no test naming it as the duplicate it is.
+// another file switches on a providers.Reason value, or reintroduces a reasonLevel-shaped
+// function outside spine: a second translation with no test naming it as the duplicate it is.
 func TestOneReasonToOutcomeTranslation(t *testing.T) {
 	root := moduleRoot(t)
 	if offenders := grepModuleExcludingSpine(t, root, "reasonLevel", "internal/hygiene/severity_test.go"); len(offenders) > 0 {

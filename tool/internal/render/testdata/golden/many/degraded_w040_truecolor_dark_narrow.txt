@@ -15,7 +15,7 @@
       [38;2;193;189;184mCreate a new token, then run[m
       [38;2;193;189;184m`cairn auth set` naming[m
       [38;2;193;189;184mthe credential.[m
-  [38;2;157;132;236m→[m [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158memail[m[38;2;168;164;158m[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158mCAIRN_CF_READ_TOKEN[m[38;2;168;164;158m[m
       [38;2;193;189;184mRun `cairn auth set` naming the[m
       [38;2;193;189;184mmissing token, then run the[m
       [38;2;193;189;184mcommand again.[m

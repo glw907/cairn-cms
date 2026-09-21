@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -434,22 +435,25 @@ func TestColorTakesOnlyItsThreeValues(t *testing.T) {
 	}
 }
 
-// TestWidthRejectsNonPositiveAndAbsurdValues is criterion 5: --width is validated at the flag,
-// as a usage error naming --width, rather than left to the renderer to clamp or panic on.
-func TestWidthRejectsNonPositiveAndAbsurdValues(t *testing.T) {
+// TestWidthRejectsValuesOutsideItsBounds asserts --width is validated at the flag, as a usage
+// error naming --width, rather than left to the renderer to clamp or panic on. The bounds
+// themselves are inclusive, so both ends are accepted rows here.
+func TestWidthRejectsValuesOutsideItsBounds(t *testing.T) {
 	d, _ := testDeps(t)
 
-	if _, _, err := execTree(t, d, "sites", "list", "--width", "80"); err != nil {
-		t.Errorf("--width 80 = %v, want nil", err)
+	for _, value := range []string{strconv.Itoa(widthMin), "80", strconv.Itoa(widthMax)} {
+		if _, _, err := execTree(t, d, "sites", "list", "--width", value); err != nil {
+			t.Errorf("--width %s = %v, want nil", value, err)
+		}
 	}
-	for _, value := range []string{"0", "-1", "1000000"} {
+	for _, value := range []string{"0", "-1", strconv.Itoa(widthMin - 1), strconv.Itoa(widthMax + 1)} {
 		_, _, err := execTree(t, d, "sites", "list", "--width", value)
 		if err == nil {
 			t.Errorf("--width %s was accepted; it must be a usage error", value)
 			continue
 		}
-		if !strings.Contains(err.Error(), "width") {
-			t.Errorf("--width %s: error %q does not name width", value, err)
+		if !strings.Contains(err.Error(), "--width") {
+			t.Errorf("--width %s: error %q does not name --width", value, err)
 		}
 	}
 }

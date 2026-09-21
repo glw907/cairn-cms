@@ -8,7 +8,7 @@
 [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days[m
 
 [38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────────────────────────[m
-  [38;2;157;132;236m→[m [1;38;2;234;231;227mtopo.907.life[m  [38;2;168;164;158mdelegation[m[38;2;168;164;158m[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mtopo.907.life[m  [38;2;168;164;158mCAIRN_CF_READ_TOKEN[m[38;2;168;164;158m[m
       [38;2;193;189;184mRun `cairn auth set` naming the missing token, then run the command again.[m
       [38;2;168;164;158mfix for: delegation, deploy, publish-path, email, errors, https-forced, creds[m
 

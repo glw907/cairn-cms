@@ -1,10 +1,13 @@
-[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158m2 could not run · 7 passing[m
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158m3 could not run · 6 passing[m
 [38;2;168;164;158mchecked 4m ago (2026-09-20 14:28-08:00), in 16.3s[m
 
 [38;2;74;68;59m──[m [38;2;234;231;227mcould not run[m [38;2;74;68;59m───────────────────────────────────────────────────────────────────────────────────[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227memail[m         [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227merrors[m        [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+  [38;2;247;172;77m?[m [1;38;2;234;231;227mcreds[m         [38;2;193;189;184mCloudflare token not found; GitHub token read from the keyring[m[38;2;168;164;158m[m
+                  [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so email and errors could not run[m
+                  [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days[m
 
-[38;2;168;164;158m●[m [38;2;168;164;158m7 passing[m  [38;2;168;164;158mserving · engine · creds · delegation · https-forced · deploy · publish-path[m
+[38;2;168;164;158m●[m [38;2;168;164;158m6 passing[m  [38;2;168;164;158mserving · engine · delegation · https-forced · deploy · publish-path[m
 
-[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158m2 could not run · 7 passing[m
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227mecxc.ski[m  [38;2;168;164;158m3 could not run · 6 passing[m

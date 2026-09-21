@@ -86,6 +86,27 @@ var falsificationTable = [][]string{
 	{"auth"},
 }
 
+// TestAnOutOfBoundsWidthExitsUnknown takes the --width bounds to the real process, where the
+// exit code exists: an in-memory run proves the refusal but never the code a scheduled caller
+// reads. The four values bracket both bounds from outside.
+func TestAnOutOfBoundsWidthExitsUnknown(t *testing.T) {
+	for _, value := range []string{"0", "-1", strconv.Itoa(widthMin - 1), strconv.Itoa(widthMax + 1)} {
+		t.Run(value, func(t *testing.T) {
+			stdout, stderr, code := runBinary(t, "health", "--width", value)
+
+			if code != int(spine.VerdictUnknown) {
+				t.Errorf("exit code = %d, want %d", code, int(spine.VerdictUnknown))
+			}
+			if len(stdout) != 0 {
+				t.Errorf("stdout = %q, want no bytes at all", stdout)
+			}
+			if !strings.Contains(stderr, "--width") {
+				t.Errorf("stderr = %q, want the line to name --width", stderr)
+			}
+		})
+	}
+}
+
 // TestAUsageErrorExitsUnknownWithEmptyStdout runs the falsification table against the built
 // binary. Byte-empty stdout is the assertion that matters as much as the code: under --json an
 // empty stdout has to mean the invocation was wrong, never that the site is healthy.

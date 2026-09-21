@@ -163,15 +163,14 @@ const labelWhatToFix = "what to fix"
 // own head line names. The list is never cut: a site left off it is a site the operator does not
 // know needs the same work.
 //
-// The wording is drafted to the copy standard's grammar and is owed to Task 22a's editorial
-// gate, like every other string this body introduced.
+// Drafted to the copy standard's grammar rather than copied, since the catalogue carries no row
+// for a repair's second site, and reviewed at the 1.0 editorial gate.
 const labelAlsoOn = "also on: "
 
 // wordTokens is the blocked-group head's collective word for a group more than one missing
 // token together explains, since no single token's own name would cover what stopped it.
 // copy-standard.md's section 2.9 fixes "token" as the word for one credential; this is its
-// plural rather than a fresh coinage, and is owed to the editorial gate like every other string
-// this body introduced.
+// plural rather than a fresh coinage, and was reviewed at the 1.0 editorial gate.
 const wordTokens = "tokens"
 
 // freshest returns the instant the most recently checked site settled, the one clock the fleet
@@ -494,14 +493,16 @@ func collectFleetFixes(in RenderInput, rs []health.Report) []fleetFix {
 		}
 		for _, g := range groupBlockedFixes(s.CouldNotRun) {
 			check := g.ids[0]
-			switch vars := blockingVariables(in.Status, g.ids); len(vars) {
-			case 0:
-				// No single missing token's Disables list explains the whole group; the check id
-				// stays, since the group was not blocked by a credential this run named.
-			case 1:
-				check = vars[0]
-			default:
-				check = wordTokens
+			if g.credMissing {
+				switch vars := missingVariables(in.Status); len(vars) {
+				case 0:
+					// The run named no missing credential, so there is no token to head with and
+					// the first covered check id stays.
+				case 1:
+					check = vars[0]
+				default:
+					check = wordTokens
+				}
 			}
 			f := fleetFix{
 				site: site, siteRank: i, check: check, tail: g.tail,
@@ -547,6 +548,9 @@ type blockedGroup struct {
 	ids []string
 	// tail is the condition id the first covered check declared, where one did.
 	tail string
+	// credMissing reports whether every check in the group was skipped for a missing
+	// credential, which is what makes the group's head a token rather than a check id.
+	credMissing bool
 	// fix is the shared fix.
 	fix health.Fix
 }
@@ -565,49 +569,36 @@ func groupBlockedFixes(blocked []health.CheckResult) []blockedGroup {
 			continue
 		}
 		id := Sanitize(c.ID)
+		credMissing := c.Outcome.Reason == spine.ReasonCredMissing
 		found := false
 		for i := range out {
 			if out[i].fix == fix {
 				out[i].ids = append(out[i].ids, id)
+				out[i].credMissing = out[i].credMissing && credMissing
 				found = true
 				break
 			}
 		}
 		if !found {
-			out = append(out, blockedGroup{ids: []string{id}, tail: conditionID(c.Outcome), fix: fix})
+			out = append(out, blockedGroup{
+				ids: []string{id}, tail: conditionID(c.Outcome), credMissing: credMissing, fix: fix,
+			})
 		}
 	}
 	return out
 }
 
-// blockingVariables returns the missing tokens' own variables that, taken together, explain
-// every check in ids, one entry per token that disables at least one of them, or nil where the
-// group is not fully explained by a missing token this run named. A length of one is the case a
-// grouped entry names on its own head line; a length above one is what tells the caller to fall
-// back to the collective word instead of naming a token that does not cover the whole group.
-func blockingVariables(s StatusState, ids []string) []string {
-	if len(ids) == 0 {
-		return nil
-	}
+// missingVariables returns the variables of every credential this run could not find, in the
+// order the status names them. A group of checks skipped for a missing credential is headed by
+// the one variable this returns, or by the collective word where it returns more than one: the
+// per-credential Disables lists say which checks a token gates, never which token a given skip
+// went without, so the run's own missing set is the only thing that can name the head.
+func missingVariables(s StatusState) []string {
 	var vars []string
-	covered := map[string]bool{}
 	for _, c := range s.Credentials {
-		if !c.missing() {
-			continue
-		}
-		contributes := false
-		for _, id := range ids {
-			if slices.Contains(c.Disables, id) {
-				covered[id] = true
-				contributes = true
-			}
-		}
-		if contributes {
+		if c.missing() {
 			vars = append(vars, Sanitize(c.Variable))
 		}
-	}
-	if len(covered) < len(ids) {
-		return nil
 	}
 	return vars
 }

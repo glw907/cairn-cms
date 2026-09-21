@@ -71,20 +71,24 @@ type rootFlags struct {
 	ackFile string
 }
 
-// widthMax bounds --width against a typo rather than a real terminal: the widest ultrawide
-// monitor at the smallest legible font still sits well under it, so a value above it is read as
-// a stray digit rather than a screen size to render at.
-const widthMax = 2000
+// The bounds an explicit --width is held to. Both exist to catch a typo rather than to describe
+// a terminal: below widthMin the renderer has no room for a site name beside a verdict word, and
+// above widthMax a value is a stray digit rather than a screen size, since the widest ultrawide
+// monitor at the smallest legible font still sits under it.
+const (
+	widthMin = 20
+	widthMax = 1000
+)
 
 // validate reports an error when --color names a value outside the three, or when an explicit
-// --width is non-positive or above widthMax.
+// --width falls outside widthMin to widthMax.
 func (f rootFlags) validate() error {
 	switch f.color {
 	case colorAuto, colorAlways, colorNever:
 	default:
 		return colorInvalidError(f.color)
 	}
-	if f.widthSet && (f.width <= 0 || f.width > widthMax) {
+	if f.widthSet && (f.width < widthMin || f.width > widthMax) {
 		return widthInvalidError(f.width)
 	}
 	return nil

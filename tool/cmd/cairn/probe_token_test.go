@@ -403,6 +403,38 @@ func TestAuthCheckExitCriticalOnRejectedCloudflareToken(t *testing.T) {
 	}
 }
 
+// TestAuthCheckOneForbiddenPermissionFailsItsOwnRow drives a run whose token is valid but holds
+// one permission short, the shape criterion 7's "a run with one missing permission" names. The
+// rejected-token case above exercises a 401 over the whole token; this is the 403 an operator
+// sees when they built the token from an incomplete scope list.
+func TestAuthCheckOneForbiddenPermissionFailsItsOwnRow(t *testing.T) {
+	dir := openTestRegistry(t, nil)
+	rt := mergeRoutes(cloudflareOKRoutes(), githubOKRoutes("", ""), routeRoundTripper{
+		"/client/v4/accounts/" + testAccountID + "/builds/tokens": {
+			status: http.StatusForbidden,
+			body:   []byte(`{"success":false,"errors":[{"code":10000,"message":"Authentication error"}]}`),
+		},
+	})
+
+	var code int
+	cmd := newAuthCheckCmd(checkDeps(testEnv(), rt, func() (string, error) { return dir, nil }, func(c int) { code = c }))
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&bytes.Buffer{})
+
+	code = runCheck(t, cmd)
+	got := out.String()
+	if !strings.Contains(got, "Workers Builds Configuration     CAIRN_CF_READ_TOKEN  fail, forbidden") {
+		t.Errorf("the forbidden row does not read fail; output:\n%s", got)
+	}
+	if !strings.Contains(got, "Workers Scripts                  CAIRN_CF_READ_TOKEN  pass") {
+		t.Errorf("a permission the token does hold no longer reads pass; output:\n%s", got)
+	}
+	if code != int(spine.VerdictCritical) {
+		t.Errorf("exit code = %d, want CRITICAL (%d)", code, int(spine.VerdictCritical))
+	}
+}
+
 func TestAuthCheckExitUnknownOnUnreachableEndpoint(t *testing.T) {
 	env := testEnv()
 	dir := openTestRegistry(t, nil)

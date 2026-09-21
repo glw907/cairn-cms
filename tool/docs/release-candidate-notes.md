@@ -55,7 +55,11 @@ cairn sites list --json
    repository-scoped row reads `skip` and names `cairn auth check <site>` as the way to confirm
    it, and the run exits 1 (WARNING) because of those skips, even with all three credentials set
    and correct. Run it again naming one registered site: do those same rows read `pass` against
-   the live token, and does the run exit 0?
+   the live token, and does the run exit 0? One known exception: the Workers Observability row
+   reads `unknown, unreachable` against live credentials, because
+   `internal/providers/cloudflare.go` decodes the telemetry route's `result.events` as an array
+   and the live route answers an object. That defect predates this candidate and is filed, not
+   fixed here; read that one row as unknown rather than as a token fault.
 7. **`--json`, validated against the published schemas.** Run `cairn health <site> --json`, `cairn
    health --json`, and `cairn auth check --json`, and validate each payload against its schema in
    `docs/reference/` (`cairn-health.schema.json`, `cairn-health-summary.schema.json`,

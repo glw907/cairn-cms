@@ -114,7 +114,7 @@ func runAuthCheck(cmd *cobra.Command, d deps, args []string, asJSON bool) error 
 	}
 
 	if !asJSON {
-		_, _ = fmt.Fprintln(out, "Permissions:")
+		_, _ = fmt.Fprintln(out, authCheckPermissionsHeading)
 	}
 	verdicts := make(spine.SiteVerdicts, 0, len(permissionTable))
 	rows := make([]render.AuthCheckPermission, 0, len(permissionTable))
@@ -256,7 +256,7 @@ func isMissing(missing []providers.Missing, name string) bool {
 // printCredentialSources writes which provider answered each of the three variables loadEnv
 // resolves, by name only, never the value.
 func printCredentialSources(out io.Writer, e env) {
-	_, _ = fmt.Fprintln(out, "Credentials:")
+	_, _ = fmt.Fprintln(out, authCheckCredentialsHeading)
 	for _, r := range e.sourceLines() {
 		_, _ = fmt.Fprintf(out, "  %-20s %s\n", r.name, r.display)
 	}

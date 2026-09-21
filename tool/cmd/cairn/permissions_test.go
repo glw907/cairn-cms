@@ -66,3 +66,22 @@ func TestPermissionTableMatchesCredentialsDoc(t *testing.T) {
 		}
 	}
 }
+
+// TestEveryPermissionHasAProbe closes the gap the doc drift test leaves: that test holds the
+// table and tool/docs/credentials.md together, and nothing holds the table and the two probe
+// switches together. A row whose label no switch arm matches yields a nil call, which
+// checkPermission invokes unguarded, so the miss would surface as a panic in an operator's
+// terminal rather than as a failing gate.
+func TestEveryPermissionHasAProbe(t *testing.T) {
+	for _, p := range permissionTable {
+		if p.Credential == varCFReadToken {
+			if cloudflareProbe(p.Label, nil, testZoneID) == nil {
+				t.Errorf("cloudflareProbe(%q) = nil; every table row needs a probe", p.Label)
+			}
+			continue
+		}
+		if githubProbe(p.Label, nil, "glw907", "ecxc-ski", "main") == nil {
+			t.Errorf("githubProbe(%q) = nil; every table row needs a probe", p.Label)
+		}
+	}
+}

@@ -421,6 +421,11 @@ const (
 	tmplAuthCheckCFSkipped = "Cloudflare: skip, %s"
 	tmplAuthCheckGHSkipped = "GitHub: skip, %s"
 
+	// authCheckCredentialsHeading and authCheckPermissionsHeading head auth check's two
+	// sections. New to this table, reviewed at the 1.0 editorial gate.
+	authCheckCredentialsHeading = "Credentials:"
+	authCheckPermissionsHeading = "Permissions:"
+
 	// authCheckSiteRequiredReason is a site-scoped row's own skip reason when the run was given
 	// no positional site id to confirm it against. New to this table, reviewed at the 1.0
 	// editorial gate.

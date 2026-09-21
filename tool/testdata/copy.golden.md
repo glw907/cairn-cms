@@ -97,12 +97,14 @@ Run the command again in %s
 With no site named, every zone-scoped and repository-scoped permission reports skip: run cairn auth check <site> to confirm those against one registered site's own zone and repository, read-only.
 
 auth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
+- Credentials:
 - Delete one credential's keyring entry
 - GitHub: skip, %s
 - List the Workers on the account that cairn could adopt
 - List the sites cairn knows
 - Manage credentials in the OS keyring
 - Operate a cairn-cms production site
+- Permissions:
 - Print the contract a program or an agent reads
 - Prompt for a value and store it in the keyring
 - Read one site's engine log records

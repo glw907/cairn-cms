@@ -19,7 +19,13 @@ clear. CI on `main` is green.
 
 ## Immediate next action
 
-**The `0.97.0` cut HOLDS until the Go tool's 1.0 is complete (Geoff, 2026-09-21).** No publish,
+**The `0.97.0` cut HOLDS on two things (Geoff, 2026-09-21): the Go tool's 1.0, and the retirement of
+`cairn-doctor` into `cairn`** (the bin and `src/lib/doctor` removed inside the `0.97.0` window with a
+`Consumers must:` line, the Go tool carrying the replacement checks as `tool/v1.1.0`). The docs
+conductor specs the retirement pass; sizing and the open credential questions are in
+`~/.cache/cairn-tool-b2/owner-rulings-2026-09-21.md`. B2's close writes that the tool's 1.0 is
+merged, tagged, and released; ONLY the retirement pass's close writes "the `0.97.0` cut is
+unblocked", since it lands last. A cut session that finds no such line does not cut. No publish,
 no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff gave the B2
 conductor the go for the tag, the release, his timer, and B2's close and merge, on the
 conditions in the Go tool entry below. **The engine cut includes the tool's

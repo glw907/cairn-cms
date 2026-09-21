@@ -392,12 +392,6 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 		worst = combineState(worst, s)
 	}
 
-	type repoLine struct {
-		label   string
-		v       verdict
-		private bool
-		known   bool
-	}
 	var repos []repoLine
 
 	// report prints one probed GET's line, labelled "<endpoint> (owner/repo)" and carrying
@@ -430,13 +424,30 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 
 	repos = append(repos, probeRepo(engineOwner, engineRepo))
 
+	raise(printRepoLines(out, errOut, repos))
+	return worst
+}
+
+// repoLine is one repository's scope verdict, as printRepoLines renders it. known reports whether
+// this run confirmed the repository's visibility at all, which is what separates a
+// confirmed-public repository from one the token could not read.
+type repoLine struct {
+	label   string
+	v       verdict
+	private bool
+	known   bool
+}
+
+// printRepoLines writes the Repositories section and returns the worst state among its lines. It
+// warns on errOut when every line is a confirmed-public repository, the condition that leaves a
+// fine-grained token's own scope unconfirmed: a public repository answers a contents read with no
+// permissions at all, so seeing only public repositories proves nothing about what the token
+// itself grants. A repository whose visibility this run could not confirm counts against that
+// claim the same way a private one does, since either leaves at least one line that is not
+// confirmed-public.
+func printRepoLines(out, errOut io.Writer, repos []repoLine) spine.State {
 	_, _ = fmt.Fprintln(out, "Repositories:")
-	// allPublic tracks whether every repository this run confirmed is public, the condition
-	// that leaves a fine-grained token's own scope unconfirmed: a public repository answers a
-	// contents read with no permissions at all, so seeing only public repositories proves
-	// nothing about what the token itself grants. A repository whose ownership this run could
-	// not confirm counts against the claim the same way a private one does, since either
-	// leaves at least one line that is not confirmed-public.
+	worst := spine.OK
 	allPublic := true
 	for _, r := range repos {
 		visibility := "unknown"
@@ -450,11 +461,10 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 			allPublic = false
 		}
 		_, _ = fmt.Fprintf(out, "  %-28s %3d  %-9s %s\n", r.label, r.v.status, r.v.reason, visibility)
-		raise(r.v.state)
+		worst = combineState(worst, r.v.state)
 	}
 	if allPublic {
 		_, _ = fmt.Fprintln(errOut, "probe-token: every probed repository is public; the GitHub token's scope is unconfirmed")
 	}
-
 	return worst
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func TestEnvName(t *testing.T) {
-	if got := NewEnv().Name(); got != "environment" {
+	if got := (Env{}).Name(); got != "environment" {
 		t.Errorf("Name() = %q, want %q", got, "environment")
 	}
 }
@@ -22,7 +22,8 @@ func TestEnvGet(t *testing.T) {
 		}
 	})
 
-	e := NewEnv()
+	// The zero Env is the documented way to read the real process environment.
+	var e Env
 
 	if v, ok, err := e.Get(name); ok || v != "" || err != nil {
 		t.Fatalf("Get() on an unset variable = (%q, %v, %v), want (\"\", false, nil)", v, ok, err)
@@ -50,7 +51,7 @@ func TestEnvGetTreatsBlankExportedValueAsMiss(t *testing.T) {
 		}
 	})
 
-	if v, ok, err := NewEnv().Get(name); ok || v != "" || err != nil {
+	if v, ok, err := (Env{}).Get(name); ok || v != "" || err != nil {
 		t.Fatalf("Get() on a blank exported variable = (%q, %v, %v), want (\"\", false, nil)", v, ok, err)
 	}
 }

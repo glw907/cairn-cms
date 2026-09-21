@@ -2,8 +2,6 @@
 // a command uses it. A Provider answers one variable name from one
 // backend; Resolve walks a list of them in order and reports which one
 // answered, so a caller never has to know how a value reached the process.
-// A third backend, a file vault or a password manager's own CLI, is one
-// more Provider implementation and no change to any caller.
 package secrets
 
 import "fmt"
@@ -18,11 +16,7 @@ type Provider interface {
 	Name() string
 	// Get reports name's value and whether the backend holds one. A miss
 	// is (false, nil), not an error; only an unexpected failure returns a
-	// non-nil err. An implementation's err must never carry the value
-	// itself: Resolve returns it wrapped in a *ResolveError, whose Error()
-	// never prints it but whose Unwrap exposes it to errors.Is and
-	// errors.As, so an untrusted backend's own error text still cannot
-	// reach a caller that prints the error string directly.
+	// non-nil err, and that err must never carry the value itself.
 	Get(name string) (value string, ok bool, err error)
 }
 
@@ -32,8 +26,7 @@ type Writer interface {
 }
 
 // ResolveError reports that a Provider's own Get call failed while Resolve
-// tried name, naming the provider without repeating its error, which might
-// carry more than is safe to print.
+// tried name.
 type ResolveError struct {
 	provider string
 	err      error

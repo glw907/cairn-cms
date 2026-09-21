@@ -14,11 +14,6 @@ type Env struct {
 	lookup func(string) (string, bool)
 }
 
-// NewEnv returns the environment Provider, reading through os.LookupEnv.
-func NewEnv() Env {
-	return Env{lookup: os.LookupEnv}
-}
-
 // NewEnvFromLookup returns the environment Provider reading through lookup
 // instead of the real process environment, for a caller that already owns
 // its own environment chokepoint or a test that needs a fixed set of

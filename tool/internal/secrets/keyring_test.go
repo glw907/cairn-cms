@@ -89,6 +89,76 @@ func TestKeyringDeadlineMiss(t *testing.T) {
 	}
 }
 
+// TestKeyringSetDeadlineMiss swaps keyringSet for a func that never returns, the write-side twin
+// of a locked collection blocking a read, and asserts Set gives up at the deadline rather than
+// hanging the command that called it.
+func TestKeyringSetDeadlineMiss(t *testing.T) {
+	prevSet, prevDeadline := keyringSet, keyringDeadline
+	keyringSet = func(string, string, string) error {
+		select {}
+	}
+	keyringDeadline = 20 * time.Millisecond
+	t.Cleanup(func() {
+		keyringSet, keyringDeadline = prevSet, prevDeadline
+	})
+
+	start := time.Now()
+	err := NewKeyring().Set("CAIRN_GH_READ_TOKEN", "ghp_example")
+	elapsed := time.Since(start)
+
+	if !errors.Is(err, errKeyringUnavailable) {
+		t.Errorf("Set() on a blocked backend = %v, want errKeyringUnavailable", err)
+	}
+	if elapsed > time.Second {
+		t.Fatalf("Set() took %s, want it to return at the deadline", elapsed)
+	}
+}
+
+// TestReadClassifiesItsFailures covers the distinction Get flattens away but a writing caller
+// needs: an entry the keyring does not hold reports ErrNotFound, while a keyring that cannot be
+// consulted at all, whether it failed or ran past the deadline, reports errKeyringUnavailable.
+func TestReadClassifiesItsFailures(t *testing.T) {
+	t.Run("absent entry is not found", func(t *testing.T) {
+		zkeyring.MockInit()
+		if _, err := read("CAIRN_CF_READ_TOKEN"); !errors.Is(err, zkeyring.ErrNotFound) {
+			t.Errorf("read() on an unset entry = %v, want ErrNotFound", err)
+		}
+	})
+
+	t.Run("unreachable bus is unavailable", func(t *testing.T) {
+		zkeyring.MockInitWithError(errors.New("dbus: could not connect"))
+		t.Cleanup(zkeyring.MockInit)
+		if _, err := read("CAIRN_CF_READ_TOKEN"); !errors.Is(err, errKeyringUnavailable) {
+			t.Errorf("read() on an unreachable bus = %v, want errKeyringUnavailable", err)
+		}
+	})
+
+	t.Run("deadline miss is unavailable", func(t *testing.T) {
+		prevGet, prevDeadline := keyringGet, keyringDeadline
+		keyringGet = func(string, string) (string, error) {
+			select {}
+		}
+		keyringDeadline = 20 * time.Millisecond
+		t.Cleanup(func() {
+			keyringGet, keyringDeadline = prevGet, prevDeadline
+		})
+		if _, err := read("CAIRN_GH_READ_TOKEN"); !errors.Is(err, errKeyringUnavailable) {
+			t.Errorf("read() on a blocked backend = %v, want errKeyringUnavailable", err)
+		}
+	})
+
+	t.Run("a stored value reads back", func(t *testing.T) {
+		zkeyring.MockInit()
+		if err := NewKeyring().Set("CAIRN_GH_READ_TOKEN", "ghp_example"); err != nil {
+			t.Fatalf("Set() = %v", err)
+		}
+		v, err := read("CAIRN_GH_READ_TOKEN")
+		if v != "ghp_example" || err != nil {
+			t.Errorf("read() = (%q, %v), want (\"ghp_example\", nil)", v, err)
+		}
+	})
+}
+
 // TestKeyringLive exercises the real OS keyring on whichever machine runs
 // it. It is skipped by default so the suite passes on a headless CI leg
 // with no Secret Service and no session keyring; set CAIRN_KEYRING_LIVE=1
@@ -111,7 +181,7 @@ func TestKeyringLive(t *testing.T) {
 
 // TestKeyringLibraryOnlyInKeyringGo asserts no other file under the module
 // imports github.com/zalando/go-keyring, so every keyring call goes through
-// this file.
+// keyring.go and takes its deadline.
 func TestKeyringLibraryOnlyInKeyringGo(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {

@@ -15,7 +15,7 @@
       [38;2;193;189;184mRaise the @glw907/cairn-cms range[m
       [38;2;193;189;184min package.json, then[m
       [38;2;193;189;184mdeploy again.[m
-  [38;2;157;132;236m→[m [1;38;2;234;231;227mcairn.pub[m  ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158merrors[m]8;;        [38;2;168;164;158mconfig.obse[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mcairn.pub[m  ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158mCAIRN_CF_READ…[m]8;;[38;2;168;164;158mconfig.obse[m
       [38;2;193;189;184mTurn on observability for the[m
       [38;2;193;189;184mWorker in wrangler.jsonc, then[m
       [38;2;193;189;184mdeploy again.[m

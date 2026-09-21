@@ -406,6 +406,26 @@ func TestColorTakesOnlyItsThreeValues(t *testing.T) {
 	}
 }
 
+// TestWidthRejectsNonPositiveAndAbsurdValues is criterion 5: --width is validated at the flag,
+// as a usage error naming --width, rather than left to the renderer to clamp or panic on.
+func TestWidthRejectsNonPositiveAndAbsurdValues(t *testing.T) {
+	d, _ := testDeps(t)
+
+	if _, _, err := execTree(t, d, "sites", "list", "--width", "80"); err != nil {
+		t.Errorf("--width 80 = %v, want nil", err)
+	}
+	for _, value := range []string{"0", "-1", "1000000"} {
+		_, _, err := execTree(t, d, "sites", "list", "--width", value)
+		if err == nil {
+			t.Errorf("--width %s was accepted; it must be a usage error", value)
+			continue
+		}
+		if !strings.Contains(err.Error(), "width") {
+			t.Errorf("--width %s: error %q does not name width", value, err)
+		}
+	}
+}
+
 // mustDeps returns testDeps's dependency set alone, for a test that inspects the tree's shape
 // rather than what a run writes.
 func mustDeps(t *testing.T) deps {

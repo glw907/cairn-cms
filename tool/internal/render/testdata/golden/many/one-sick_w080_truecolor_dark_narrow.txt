@@ -14,7 +14,7 @@
       [38;2;193;189;184mCreate a new token, then run `cairn auth set` naming the credential.[m
   [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m  [38;2;168;164;158mengine[m[38;2;168;164;158m[m
       [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m
-  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m  [38;2;168;164;158memail[m         [38;2;168;164;158mCAIRN_CF_READ_TOKEN[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m  [38;2;168;164;158mCAIRN_CF_READ_TOKEN[m[38;2;168;164;158m[m
       [38;2;193;189;184mRun `cairn auth set` naming the missing token, then run the command again.[m
       [38;2;168;164;158mfix for: email, errors[m
 

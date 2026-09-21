@@ -173,6 +173,12 @@ const labelWhatToFix = "what to fix"
 // gate, like every other string this body introduced.
 const labelAlsoOn = "also on: "
 
+// wordTokens is the blocked-group head's collective word for a group more than one missing
+// token together explains, since no single token's own name would cover what stopped it. New to
+// this table, owed to Task 22a's editorial gate: copy-standard.md's section 2.9 fixes "token" as
+// the word for one credential, and this is its plural rather than a fresh coinage.
+const wordTokens = "tokens"
+
 // freshest returns the instant the most recently checked site settled, the one clock the fleet
 // header measures against.
 func freshest(rs []health.Report, fallback time.Time) time.Time {
@@ -492,15 +498,19 @@ func collectFleetFixes(in RenderInput, rs []health.Report) []fleetFix {
 			})
 		}
 		for _, g := range groupBlockedFixes(s.CouldNotRun) {
+			check := g.ids[0]
+			switch vars := blockingVariables(in.Status, g.ids); len(vars) {
+			case 0:
+				// No single missing token's Disables list explains the whole group; the check id
+				// stays, since the group was not blocked by a credential this run named.
+			case 1:
+				check = vars[0]
+			default:
+				check = wordTokens
+			}
 			f := fleetFix{
-				site: site, siteRank: i, check: g.ids[0], tail: g.tail,
-				class: severityClass(g.ids[0]), blocked: true, fix: g.fix,
-			}
-			if len(g.ids) > 1 {
-				f.ids = g.ids
-			}
-			if f.tail == "" {
-				f.tail = blockingVariable(in.Status, g.ids)
+				site: site, siteRank: i, check: check, tail: g.tail,
+				class: severityClass(g.ids[0]), blocked: true, ids: g.ids, fix: g.fix,
 			}
 			add(f)
 		}
@@ -508,21 +518,25 @@ func collectFleetFixes(in RenderInput, rs []health.Report) []fleetFix {
 	return out
 }
 
-// mergeCoveredIDs returns the check ids one remedy unblocks once src has been folded into dst.
-// The merged entry says what the whole fleet's copy of the repair covers, so folding two sites
-// together never loses a check either of them named. It returns nil for a remedy that still
-// covers exactly one check, which is the shape that prints no covered-checks line at all.
+// mergeCoveredIDs returns the check ids one remedy unblocks on every site it now covers, once
+// src has been folded into dst. The merged entry says what dst and src actually share, the
+// intersection of what each named on its own, never their union: a check one site's group covers
+// and the other's does not is not something the merged line may claim for both, since a site
+// whose group differs by even one check does not carry the fix for every id the union would list.
+// It returns nil below two shared ids, which is the shape that prints no covered-checks line at
+// all.
 func mergeCoveredIDs(dst, src fleetFix) []string {
-	ids := dst.ids
-	if len(ids) == 0 {
-		ids = []string{dst.check}
+	dstIDs := dst.ids
+	if len(dstIDs) == 0 {
+		dstIDs = []string{dst.check}
 	}
-	add := src.ids
-	if len(add) == 0 {
-		add = []string{src.check}
+	srcIDs := src.ids
+	if len(srcIDs) == 0 {
+		srcIDs = []string{src.check}
 	}
-	for _, id := range add {
-		if !slices.Contains(ids, id) {
+	var ids []string
+	for _, id := range dstIDs {
+		if slices.Contains(srcIDs, id) {
 			ids = append(ids, id)
 		}
 	}
@@ -571,27 +585,36 @@ func groupBlockedFixes(blocked []health.CheckResult) []blockedGroup {
 	return out
 }
 
-// blockingVariable returns the variable naming the one missing token that stopped every check in
-// ids, or empty where no single missing token covers them all. It is what lets a grouped entry
-// name the credential an operator has to supply without composing a sentence about it.
-func blockingVariable(s StatusState, ids []string) string {
+// blockingVariables returns the missing tokens' own variables that, taken together, explain
+// every check in ids, one entry per token that disables at least one of them, or nil where the
+// group is not fully explained by a missing token this run named. A length of one is the case a
+// grouped entry names on its own head line; a length above one is what tells the caller to fall
+// back to the collective word instead of naming a token that does not cover the whole group.
+func blockingVariables(s StatusState, ids []string) []string {
+	if len(ids) == 0 {
+		return nil
+	}
+	var vars []string
+	covered := map[string]bool{}
 	for _, c := range s.Credentials {
-		if !c.missing() || !covers(c.Disables, ids) {
+		if !c.missing() {
 			continue
 		}
-		return Sanitize(c.Variable)
-	}
-	return ""
-}
-
-// covers reports whether every id in ids appears in disabled.
-func covers(disabled, ids []string) bool {
-	for _, id := range ids {
-		if !slices.Contains(disabled, id) {
-			return false
+		contributes := false
+		for _, id := range ids {
+			if slices.Contains(c.Disables, id) {
+				covered[id] = true
+				contributes = true
+			}
+		}
+		if contributes {
+			vars = append(vars, Sanitize(c.Variable))
 		}
 	}
-	return len(ids) > 0
+	if len(covered) < len(ids) {
+		return nil
+	}
+	return vars
 }
 
 // rankFleetFixes orders the list by the one severity key, with every fix for a check that could
@@ -651,14 +674,34 @@ func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	out := []string{strings.TrimRight(head, " ")}
 	out = append(out, atColumn(t.Style(RoleSubtle), fixSentence,
 		t.wrapNoOrphan(Sanitize(f.fix.Text), width-fixSentence))...)
+	// A merged entry can cover, or list "also on:", as many sites as the fleet holds: one shared
+	// token disables the same checks fleet-wide, so both lists below wrap through wrapNoOrphan
+	// rather than plain wrap, the same guard the sentence above already takes.
 	if len(f.ids) > 1 {
 		out = append(out, atColumn(t.Style(RoleMuted), fixSentence,
-			t.wrap(keyFixFor+strings.Join(f.ids, ", "), width-fixSentence))...)
+			t.wrapNoOrphan(keyFixFor+strings.Join(f.ids, ", "), width-fixSentence))...)
 	}
 	if len(f.alsoOn) > 0 {
 		lead := strings.Repeat(" ", fixSentence) + t.Style(RoleMuted).Render(labelAlsoOn)
-		out = append(out, t.hangingAt(t.Style(RoleMuted), lead, fixSentence+t.Width(labelAlsoOn),
+		out = append(out, t.hangingAtNoOrphan(t.Style(RoleMuted), lead, fixSentence+t.Width(labelAlsoOn),
 			strings.Join(f.alsoOn, ", "), width)...)
+	}
+	return out
+}
+
+// hangingAtNoOrphan is layout.go's hangingAt through wrapNoOrphan rather than wrap: a fleet-wide
+// "also on:" list is exactly the comma-joined shape a naive break can leave one site name
+// dangling on, which wrapNoOrphan already exists to prevent for the sentence above it.
+func (t Theme) hangingAtNoOrphan(st lipgloss.Style, lead string, col int, text string, width int) []string {
+	body := t.wrapNoOrphan(text, width-col)
+	pad := strings.Repeat(" ", col)
+	out := make([]string, 0, len(body))
+	for i, l := range body {
+		if i == 0 {
+			out = append(out, lead+st.Render(l))
+			continue
+		}
+		out = append(out, pad+st.Render(l))
 	}
 	return out
 }

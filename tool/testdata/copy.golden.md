@@ -133,6 +133,8 @@ Name a file that exists, or drop the flag to use the registry's default
 - cairn: --color %q is not %s, %s, or %s
 - cairn: --since %q is not a duration.
 Use a whole number of minutes, hours, or days: 90m, 24h, 7d
+- cairn: --width %d is not a usable column count.
+Name a whole number greater than 0 and at most %d
 - cairn: Cloudflare rate-limited this run.
 The checks that need Cloudflare could not run; the others are reported above
 - cairn: cairn adopt names one Worker.

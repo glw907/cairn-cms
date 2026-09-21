@@ -9,6 +9,7 @@ package fixtures
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"time"
 
@@ -83,6 +84,53 @@ func heldUntil(c health.CheckResult, expires time.Time) health.CheckResult {
 func holdLapsed(c health.CheckResult, expired time.Time) health.CheckResult {
 	c.AckExpires = expired
 	return c
+}
+
+// nineCheckIDs is health.All's own nine check ids, in report order, the set fillNine completes
+// every site to.
+var nineCheckIDs = []string{"creds", "serving", "delegation", "https-forced", "email", "deploy", "publish-path", "engine", "errors"}
+
+// fillNine returns checks completed to all nine of health.All's ids: any id checks already names
+// is kept exactly as given, and any id it omits is filled with a plausible default, so a strip
+// golden built from it never falls back to the separator glyph for a check the scenario simply
+// did not bother to script. email and errors, the two ids the shared CAIRN_CF_READ_TOKEN gap
+// this package's callers pair with disables, are filled with the same missing-credential skip
+// every other fixture already shows on those ids; every other omitted id is filled with a pass.
+func fillNine(checks ...health.CheckResult) []health.CheckResult {
+	have := make(map[string]bool, len(checks))
+	for _, c := range checks {
+		have[c.ID] = true
+	}
+	out := slices.Clone(checks)
+	for _, id := range nineCheckIDs {
+		if have[id] {
+			continue
+		}
+		out = append(out, fillDefault(id))
+	}
+	return out
+}
+
+// fillDefault returns fillNine's own default result for one omitted check id.
+func fillDefault(id string) health.CheckResult {
+	switch id {
+	case "email", "errors":
+		return skip(id, spine.ReasonCredMissing, "")
+	case "creds":
+		return pass(id, "Cloudflare and GitHub tokens read from the keyring")
+	case "delegation":
+		return pass(id, "nameservers match the zone")
+	case "https-forced":
+		return pass(id, "forced at the edge, HSTS 1 year")
+	case "deploy":
+		return pass(id, "built 4h ago (a91f2c7), main is level")
+	case "publish-path":
+		return pass(id, "App installed, branch writable")
+	case "engine":
+		return withEngineVersion(pass(id, "0.78.0 is current"), "0.78.0")
+	default:
+		return pass(id, "")
+	}
 }
 
 // report assembles one site's settled report.
@@ -202,25 +250,33 @@ func WarningOnly() []health.Report {
 }
 
 // TwelveSites is a registry large enough that ranking is the only thing that makes the run
-// readable: one site nobody can load, several with one fault each, and the rest passing.
+// readable: one site nobody can load, several with one fault each, and the rest passing. Every
+// site carries all nine checks (fillNine), the shape one sweep over a real registry produces:
+// one set of provider tokens covers every site in it, so a missing CAIRN_CF_READ_TOKEN disables
+// email and errors everywhere, not only on the site a scenario names it for.
 func TwelveSites() []health.Report {
 	out := []health.Report{
-		report("ecxc.ski", "ecxc.ski", pass("serving", "200 in 84ms"), withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0")),
-		report("cairn.pub", "cairn.pub", pass("serving", "200 in 96ms"),
-			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.76.0 installed, 0.78.0 latest, 2 releases behind"), "0.76.0")),
-		report("topo.907.life", "topo.907.life",
+		report("ecxc.ski", "ecxc.ski", fillNine(
+			pass("serving", "200 in 84ms"), withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0"))...),
+		report("cairn.pub", "cairn.pub", fillNine(
+			pass("serving", "200 in 96ms"),
+			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.76.0 installed, 0.78.0 latest, 2 releases behind"), "0.76.0"))...),
+		report("topo.907.life", "topo.907.life", fillNine(
 			fail("serving", spine.CodeServingMismatch, "the hostname does not answer"),
-			skip("engine", spine.ReasonCredMissing, "")),
-		report("907.life", "907.life", pass("serving", "200 in 132ms"),
-			fail("deploy", spine.CodeDeployBuildFailed, "build failed 26m ago (3f0ba18), main is 2 commits ahead")),
-		report("aksailingclub.org", "aksailingclub.org", pass("serving", "200 in 210ms"),
-			failCondition("email", spine.ConditionEmailSenderNotOnboarded, "the sending subdomain is not onboarded")),
-		report("xcathletes.org", "xcathletes.org", pass("serving", "200 in 121ms"),
-			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.77.0 installed, 0.78.0 latest, 1 release behind"), "0.77.0")),
+			skip("engine", spine.ReasonCredMissing, ""))...),
+		report("907.life", "907.life", fillNine(
+			pass("serving", "200 in 132ms"),
+			fail("deploy", spine.CodeDeployBuildFailed, "build failed 26m ago (3f0ba18), main is 2 commits ahead"))...),
+		report("aksailingclub.org", "aksailingclub.org", fillNine(
+			pass("serving", "200 in 210ms"),
+			failCondition("email", spine.ConditionEmailSenderNotOnboarded, "the sending subdomain is not onboarded"))...),
+		report("xcathletes.org", "xcathletes.org", fillNine(
+			pass("serving", "200 in 121ms"),
+			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.77.0 installed, 0.78.0 latest, 1 release behind"), "0.77.0"))...),
 	}
 	for _, name := range []string{"one", "two", "three", "four", "five", "six"} {
-		out = append(out, report(name+".example.org", name+".example.org",
-			pass("serving", "200 in 100ms"), withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0")))
+		out = append(out, report(name+".example.org", name+".example.org", fillNine(
+			pass("serving", "200 in 100ms"), withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0"))...))
 	}
 	return out
 }

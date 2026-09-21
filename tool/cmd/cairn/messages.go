@@ -77,6 +77,17 @@ func colorInvalidError(color string) error {
 	return translated(fmt.Errorf(tmplColorInvalid, color, colorAuto, colorAlways, colorNever))
 }
 
+// tmplWidthInvalid is root.go's refusal of a --width value that is non-positive or above
+// widthMax. New to this table, owed to Task 22a's editorial gate: copy-standard.md carries no
+// row for a --width value error, so this is drafted to sections 2.4 through 2.7 rather than
+// copied.
+const tmplWidthInvalid = "cairn: --width %d is not a usable column count.\nName a whole number greater than 0 and at most %d"
+
+// widthInvalidError renders tmplWidthInvalid for the value the operator gave.
+func widthInvalidError(width int) error {
+	return translated(fmt.Errorf(tmplWidthInvalid, width, widthMax))
+}
+
 // sites.go's own Short, Example, and flag help.
 const (
 	shortSites          = "List the sites cairn knows"

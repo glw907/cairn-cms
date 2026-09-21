@@ -54,19 +54,32 @@ type rootFlags struct {
 	// otherwise read. Zero means unset: the operator's own terminal width applies. Task 20a
 	// reads the chosen value and carries it; the seam that composes a frame to it is Task 20b-i.
 	width int
+	// widthSet reports whether the operator passed --width explicitly, the same Changed-bit
+	// pattern timeoutSet uses: zero is both the flag's default and a value an operator could
+	// type, so only Changed tells the two apart, and only an explicit --width is validated.
+	widthSet bool
 	// ackFile names the acknowledgement file health reads and sites list skips. Empty means the
 	// default, ackFilePath's own <registry directory>/acknowledgements.json.
 	ackFile string
 }
 
-// validate reports an error when --color names a value outside the three.
+// widthMax bounds --width against a typo rather than a real terminal: the widest ultrawide
+// monitor at the smallest legible font still sits well under it, so a value above it is read as
+// a stray digit rather than a screen size to render at.
+const widthMax = 2000
+
+// validate reports an error when --color names a value outside the three, or when an explicit
+// --width is non-positive or above widthMax.
 func (f rootFlags) validate() error {
 	switch f.color {
 	case colorAuto, colorAlways, colorNever:
-		return nil
 	default:
 		return colorInvalidError(f.color)
 	}
+	if f.widthSet && (f.width <= 0 || f.width > widthMax) {
+		return widthInvalidError(f.width)
+	}
+	return nil
 }
 
 // deadline bounds ctx by --timeout. A zero or negative timeout means no deadline, which is how
@@ -104,6 +117,9 @@ func newRootCmd(d deps) *cobra.Command {
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			if flag := c.Flags().Lookup("timeout"); flag != nil {
 				f.timeoutSet = flag.Changed
+			}
+			if flag := c.Flags().Lookup("width"); flag != nil {
+				f.widthSet = flag.Changed
 			}
 			return f.validate()
 		},

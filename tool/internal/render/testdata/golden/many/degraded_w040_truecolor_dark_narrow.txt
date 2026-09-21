@@ -19,7 +19,7 @@
       [38;2;193;189;184mRun `cairn auth set` naming the[m
       [38;2;193;189;184mmissing token, then run the[m
       [38;2;193;189;184mcommand again.[m
-      [38;2;168;164;158mfix for: email, errors,[m
-      [38;2;168;164;158mhttps-forced[m
+      [38;2;168;164;158mfix for: email,[m
+      [38;2;168;164;158merrors, https-forced[m
 
 [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 CRITICAL[m

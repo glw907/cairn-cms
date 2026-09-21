@@ -3,6 +3,7 @@ package health
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -188,6 +189,45 @@ func TestCredsCheckExpiryVerdictFollowsOptionsNow(t *testing.T) {
 	}
 	if outcome.Code != spine.CodeCredsExpiringSoon {
 		t.Errorf("Code = %v, want %v", outcome.Code, spine.CodeCredsExpiringSoon)
+	}
+}
+
+// TestCredsCheckHealthyTokenAttachesGitHubExpiry is criterion 4: a GitHub token that verifies
+// clean and is not within credExpiryWindow still carries its own expiry on the combined
+// outcome's Fields, alongside the engine outcome's own installed-version field, so the command
+// layer can put the date on the run's status line without a second request.
+func TestCredsCheckHealthyTokenAttachesGitHubExpiry(t *testing.T) {
+	c := credsCheck{}
+	expiry := fixedNow().Add(20 * 24 * time.Hour)
+	header := make(http.Header)
+	header.Set("Github-Authentication-Token-Expiration", expiry.Format("2006-01-02 15:04:05 MST"))
+	clients := Clients{
+		CF:     cfClient(credRoundTripper{status: http.StatusOK, body: []byte(cfVerifyOKBody)}),
+		GH:     ghClient(credRoundTripper{status: http.StatusOK, body: []byte("{}"), header: header}),
+		HaveCF: true, HaveGH: true,
+		CFFrom: "environment", GHFrom: "keyring",
+	}
+
+	outcome := c.Run(context.Background(), record.Record{}, clients, validOptions)
+	if outcome.State != spine.OK {
+		t.Fatalf("State = %v, want OK", outcome.State)
+	}
+	var found bool
+	for _, f := range outcome.Fields {
+		if f.Key != FieldGitHubTokenExpiry {
+			continue
+		}
+		found = true
+		var got time.Time
+		if err := json.Unmarshal(f.Value, &got); err != nil {
+			t.Fatalf("unmarshal %s: %v", FieldGitHubTokenExpiry, err)
+		}
+		if !got.Equal(expiry) {
+			t.Errorf("%s = %v, want %v", FieldGitHubTokenExpiry, got, expiry)
+		}
+	}
+	if !found {
+		t.Errorf("outcome carries no %s field: %+v", FieldGitHubTokenExpiry, outcome.Fields)
 	}
 }
 

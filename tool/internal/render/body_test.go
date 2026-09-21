@@ -610,6 +610,32 @@ func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
 	}
 }
 
+// TestFixtureSitesCarryAllNineChecks is criterion 3: the twelve-site and all-unknown fixtures
+// enumerate all nine checks for every site, so a strip golden built from either never falls back
+// to the separator glyph for a check the fixture simply omitted.
+func TestFixtureSitesCarryAllNineChecks(t *testing.T) {
+	named := map[string][]health.Report{
+		"twelve-site": fixtures.TwelveSites(),
+		"all-unknown": fixtures.AllUnknown(),
+	}
+	for name, reports := range named {
+		for _, r := range reports {
+			for _, id := range stripColumns() {
+				found := false
+				for _, c := range r.Checks {
+					if c.ID == id {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("%s: %s carries no %q check", name, r.Site, id)
+				}
+			}
+		}
+	}
+}
+
 // TestEveryFixtureRendersInEveryBody is criterion 20: the whole corpus through every body, at
 // the degenerate widths included, with no panic and no empty frame.
 func TestEveryFixtureRendersInEveryBody(t *testing.T) {
@@ -884,11 +910,96 @@ func TestAllSkippedSiteProducesExactlyOneFix(t *testing.T) {
 	if len(entry.ids) != len(stripColumns()) {
 		t.Errorf("the entry covers %d checks, want all %d", len(entry.ids), len(stripColumns()))
 	}
-	if entry.tail != "CAIRN_CF_READ_TOKEN" {
-		t.Errorf("the entry names %q, want the missing token's own variable", entry.tail)
+	if entry.check != "CAIRN_CF_READ_TOKEN" {
+		t.Errorf("the entry heads with %q, want the missing token's own variable", entry.check)
 	}
-	if !strings.Contains(strings.Join(plainLines(in), "\n"), keyFixFor) {
+	// Rendered alone, so the assertion reads the site's own nine-check entry rather than the
+	// whole fleet's merged line, whose covered-checks list is the intersection every other
+	// twelve-site entry shares (criterion 2) and so is not guaranteed to name every one of this
+	// site's own nine checks once merged.
+	aloneIn := manyInput([]health.Report{allSkippedSite()}, 120, false)
+	aloneIn.Status = in.Status
+	if !strings.Contains(strings.Join(plainLines(aloneIn), "\n"), keyFixFor) {
 		t.Error("the entry does not name the checks its one fix covers")
+	}
+}
+
+// blockedByCred returns one check that could not run because token was missing.
+func blockedByCred(id string) health.CheckResult {
+	return health.CheckResult{ID: id, Outcome: spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing},
+		CheckedAt: fixtures.Now().Add(-4 * time.Minute)}
+}
+
+// TestBlockedGroupHeadsWithTheBlockingVariableOrTheCollectiveWord is criterion 1: a group one
+// missing token explains heads with that token's own variable, and a group two different missing
+// tokens together explain heads with the collective word, never the first covered check id.
+func TestBlockedGroupHeadsWithTheBlockingVariableOrTheCollectiveWord(t *testing.T) {
+	oneToken := health.Report{Site: "one.example.org", Domain: "one.example.org", Degraded: true,
+		Checks: []health.CheckResult{blockedByCred("https-forced"), blockedByCred("email")}}
+	in := manyInput([]health.Report{oneToken}, 120, false)
+	in.Status = StatusState{
+		Credentials: []Credential{{Variable: "CAIRN_CF_READ_TOKEN", Disables: []string{"https-forced", "email"}}},
+		Degraded:    true,
+	}
+	entries := collectFleetFixes(in, []health.Report{oneToken})
+	if len(entries) != 1 {
+		t.Fatalf("%d entries, want 1", len(entries))
+	}
+	if got := entries[0].check; got != "CAIRN_CF_READ_TOKEN" {
+		t.Errorf("head names %q, want the blocking token's own variable", got)
+	}
+
+	twoTokens := health.Report{Site: "two.example.org", Domain: "two.example.org", Degraded: true,
+		Checks: []health.CheckResult{blockedByCred("https-forced"), blockedByCred("errors")}}
+	in2 := manyInput([]health.Report{twoTokens}, 120, false)
+	in2.Status = StatusState{
+		Credentials: []Credential{
+			{Variable: "CAIRN_CF_READ_TOKEN", Disables: []string{"https-forced"}},
+			{Variable: "CAIRN_GH_READ_TOKEN", Disables: []string{"errors"}},
+		},
+		Degraded: true,
+	}
+	entries2 := collectFleetFixes(in2, []health.Report{twoTokens})
+	if len(entries2) != 1 {
+		t.Fatalf("%d entries, want 1", len(entries2))
+	}
+	if got := entries2[0].check; got != wordTokens {
+		t.Errorf("head names %q, want the collective word %q", got, wordTokens)
+	}
+	for _, id := range []string{"https-forced", "errors"} {
+		if entries2[0].check == id {
+			t.Errorf("head names the check id %q rather than a credential word", id)
+		}
+	}
+}
+
+// TestMergedCoveredIDsIsTheIntersection is criterion 2: when two sites' blocked groups differ by
+// one check, the merged entry's covered-checks line names only what both sites actually share,
+// never the union padded with a check one of them lacks.
+func TestMergedCoveredIDsIsTheIntersection(t *testing.T) {
+	full := health.Report{Site: "full.example.org", Domain: "full.example.org", Degraded: true,
+		Checks: []health.CheckResult{blockedByCred("https-forced"), blockedByCred("email"), blockedByCred("errors")}}
+	partial := health.Report{Site: "partial.example.org", Domain: "partial.example.org", Degraded: true,
+		Checks: []health.CheckResult{blockedByCred("https-forced"), blockedByCred("email")}}
+	in := manyInput([]health.Report{full, partial}, 120, false)
+	in.Status = StatusState{
+		Credentials: []Credential{{Variable: "CAIRN_CF_READ_TOKEN",
+			Disables: []string{"https-forced", "email", "errors"}}},
+		Degraded: true,
+	}
+
+	entries := collectFleetFixes(in, []health.Report{full, partial})
+	if len(entries) != 1 {
+		t.Fatalf("%d entries, want 1 (the same fix on both sites)", len(entries))
+	}
+	entry := entries[0]
+	if slices.Contains(entry.ids, "errors") {
+		t.Errorf("merged entry names %q, which only %s covers", "errors", full.Site)
+	}
+	for _, id := range []string{"https-forced", "email"} {
+		if !slices.Contains(entry.ids, id) {
+			t.Errorf("merged entry lost %q, which both sites share", id)
+		}
 	}
 }
 

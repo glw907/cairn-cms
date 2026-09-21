@@ -10,7 +10,7 @@
 [38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────[m
   [38;2;157;132;236m→[m [1;38;2;234;231;227mcairn.pub[m  [38;2;168;164;158mengine[m[38;2;168;164;158m[m
       [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m
-  [38;2;157;132;236m→[m [1;38;2;234;231;227mcairn.pub[m  ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158merrors[m]8;;        [38;2;168;164;158mconfig.observability-off[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mcairn.pub[m  ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158mCAIRN_CF_READ…[m]8;;[38;2;168;164;158mconfig.observability-off[m
       [38;2;193;189;184mTurn on observability for the Worker in wrangler.jsonc, then deploy again.[m
 
 [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 CRITICAL[m

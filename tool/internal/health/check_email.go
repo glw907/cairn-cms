@@ -29,12 +29,6 @@ type emailCheck struct{}
 // ID implements Check.
 func (emailCheck) ID() string { return "email" }
 
-// Condition implements Check. src/lib/diagnostics/conditions.ts's email.sender-not-onboarded
-// covers every Failing verdict this check can reach: a missing or misconfigured DMARC, SPF, or
-// DKIM record and an unenabled sending subdomain are all fixed the same way, by re-running the
-// sending domain's onboarding, which rewrites all of them together.
-func (emailCheck) Condition() spine.Condition { return spine.ConditionEmailSenderNotOnboarded }
-
 // Needs implements Check. The DNS-hygiene half needs no credential, but the check's second half
 // reads the zone's Email Sending subdomains through Cloudflare, so the whole check is gated on
 // that credential rather than running the DNS half alone when it is absent.
@@ -42,7 +36,10 @@ func (emailCheck) Needs() Tier { return TierCF }
 
 // Run implements Check, in the credential-free-then-Cloudflare order the two halves must run in:
 // a DNS misconfiguration is reported on its own terms before ever asking whether Cloudflare
-// considers the subdomain enabled.
+// considers the subdomain enabled. Only the never-onboarded sending subdomain declares
+// email.sender-not-onboarded; a DMARC, SPF, or DKIM record that onboarding already wrote and
+// something later weakened is DNS hygiene to repair in place, not an onboarding to re-run, so
+// those verdicts name no condition.
 func (emailCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	if outcome, ok := checkDMARC(ctx, c.Probe, r.Domain); !ok {
 		return outcome
@@ -139,5 +136,5 @@ func checkSendingSubdomain(ctx context.Context, r record.Record, c Clients) spin
 		}
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkEmailNotReady)}
 	}
-	return spine.Outcome{State: spine.Failing, Detail: "sending subdomain not onboarded"}
+	return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEmailSenderNotOnboarded, Detail: "sending subdomain not onboarded"}
 }

@@ -57,10 +57,6 @@ type publishPathCheck struct{}
 // ID implements Check.
 func (publishPathCheck) ID() string { return "publish-path" }
 
-// Condition implements Check. src/lib/diagnostics/conditions.ts carries no id for a stuck
-// publish path, so it declares no cairn-doctor condition.
-func (publishPathCheck) Condition() spine.Condition { return spine.ConditionNone }
-
 // Needs implements Check. Publish-path reads the repository's branches and commits through
 // GitHub alone.
 func (publishPathCheck) Needs() Tier { return TierGH }

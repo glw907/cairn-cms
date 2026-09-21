@@ -120,16 +120,13 @@ func deployClients(haveBuilds bool, routes ...deployRoute) Clients {
 	}
 }
 
-func TestDeployCheckDeclaresTierBothAndNoCondition(t *testing.T) {
+func TestDeployCheckDeclaresIDAndTierBoth(t *testing.T) {
 	c := deployCheck{}
 	if got := c.ID(); got != "deploy" {
 		t.Errorf("ID() = %q, want %q", got, "deploy")
 	}
 	if got := c.Needs(); got != TierBoth {
 		t.Errorf("Needs() = %v, want TierBoth", got)
-	}
-	if got := c.Condition(); got != spine.ConditionNone {
-		t.Errorf("Condition() = %q, want ConditionNone", got)
 	}
 }
 

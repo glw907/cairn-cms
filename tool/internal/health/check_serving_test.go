@@ -14,12 +14,9 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-func TestServingCheckDeclaresTierNoneAndNoCondition(t *testing.T) {
+func TestServingCheckDeclaresIDAndTierNone(t *testing.T) {
 	if got := (servingCheck{}).Needs(); got != TierNone {
 		t.Errorf("Needs() = %v, want TierNone", got)
-	}
-	if got := (servingCheck{}).Condition(); got != spine.ConditionNone {
-		t.Errorf("Condition() = %q, want ConditionNone", got)
 	}
 	if got := (servingCheck{}).ID(); got != "serving" {
 		t.Errorf("ID() = %q, want %q", got, "serving")

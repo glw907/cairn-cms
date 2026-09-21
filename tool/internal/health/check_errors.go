@@ -18,12 +18,6 @@ type errorsCheck struct{}
 // ID implements Check.
 func (errorsCheck) ID() string { return "errors" }
 
-// Condition implements Check. The one addressable condition this check can report is the
-// dataset-absent Unknown: a plain over-threshold error count has no cairn-doctor remedy of its
-// own yet (src/lib/diagnostics/conditions.ts carries none for it), so ConditionConfigObservabilityOff
-// is the id an ErrObservabilityOff verdict resolves to.
-func (errorsCheck) Condition() spine.Condition { return spine.ConditionConfigObservabilityOff }
-
 // Needs implements Check. Errors reads Workers Logs through Cloudflare.
 func (errorsCheck) Needs() Tier { return TierCF }
 
@@ -48,12 +42,20 @@ func topEventNames(entries []logs.Entry, n int) []string {
 	return order
 }
 
-// Run implements Check.
+// Run implements Check. Only the dataset-absent Unknown declares a condition, config.observability-off,
+// whose remedy is to turn observability on. An over-threshold count declares none: the site is
+// logging real errors, and telling its operator to enable a setting already enabled would be the
+// wrong remedy for the one verdict that means something is actually broken.
 func (errorsCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
 	entries, err := logs.FetchLevel(ctx, c.CF, r.Cloudflare.WorkerName, "error", o.LogWindow)
 	if err != nil {
 		if errors.Is(err, logs.ErrObservabilityOff) {
-			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "worker has no observability dataset"}
+			return spine.Outcome{
+				State:     spine.Unknown,
+				Reason:    spine.ReasonNotObservable,
+				Condition: spine.ConditionConfigObservabilityOff,
+				Detail:    "worker has no observability dataset",
+			}
 		}
 		return apiErrorOutcome(err)
 	}

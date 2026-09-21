@@ -81,16 +81,13 @@ func engineClients(files ...engineFile) Clients {
 	}
 }
 
-func TestEngineCheckDeclaresTierGHAndNoCondition(t *testing.T) {
+func TestEngineCheckDeclaresIDAndTierGH(t *testing.T) {
 	c := engineCheck{}
 	if got := c.ID(); got != "engine" {
 		t.Errorf("ID() = %q, want %q", got, "engine")
 	}
 	if got := c.Needs(); got != TierGH {
 		t.Errorf("Needs() = %v, want TierGH", got)
-	}
-	if got := c.Condition(); got != spine.ConditionNone {
-		t.Errorf("Condition() = %q, want ConditionNone", got)
 	}
 }
 

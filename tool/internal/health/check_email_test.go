@@ -58,12 +58,9 @@ func sendingSubdomainsBody(enabled bool) []byte {
 	return []byte(`{"success":true,"result":[{"name":"example.test","enabled":` + boolString(enabled) + `}]}`)
 }
 
-func TestEmailCheckDeclaresTierCFAndCondition(t *testing.T) {
+func TestEmailCheckDeclaresIDAndTierCF(t *testing.T) {
 	if got := (emailCheck{}).Needs(); got != TierCF {
 		t.Errorf("Needs() = %v, want TierCF", got)
-	}
-	if got := (emailCheck{}).Condition(); got != spine.ConditionEmailSenderNotOnboarded {
-		t.Errorf("Condition() = %q, want ConditionEmailSenderNotOnboarded", got)
 	}
 	if got := (emailCheck{}).ID(); got != "email" {
 		t.Errorf("ID() = %q, want %q", got, "email")

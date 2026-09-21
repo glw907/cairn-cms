@@ -20,10 +20,6 @@ type delegationCheck struct{}
 // ID implements Check.
 func (delegationCheck) ID() string { return "delegation" }
 
-// Condition implements Check. src/lib/diagnostics/conditions.ts carries no id for Delegation, so
-// it declares no cairn-doctor condition.
-func (delegationCheck) Condition() spine.Condition { return spine.ConditionNone }
-
 // Needs implements Check. Once the nameservers match, Delegation reads the zone's own activation
 // state through the Cloudflare API.
 func (delegationCheck) Needs() Tier { return TierCF }

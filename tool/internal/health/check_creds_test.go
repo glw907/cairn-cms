@@ -63,16 +63,13 @@ func okCredsClients() Clients {
 	}
 }
 
-func TestCredsCheckDeclaresTierNoneAndNoCondition(t *testing.T) {
+func TestCredsCheckDeclaresIDAndTierNone(t *testing.T) {
 	c := credsCheck{}
 	if got, want := c.ID(), "creds"; got != want {
 		t.Errorf("ID() = %q, want %q", got, want)
 	}
 	if got := c.Needs(); got != TierNone {
 		t.Errorf("Needs() = %v, want TierNone", got)
-	}
-	if got := c.Condition(); got != spine.ConditionNone {
-		t.Errorf("Condition() = %v, want ConditionNone", got)
 	}
 }
 

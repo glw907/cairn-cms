@@ -55,12 +55,9 @@ func zoneEnvelope(status string) []byte {
 	return []byte(`{"success":true,"result":[{"id":"zone-id","name":"example.test","status":"` + status + `"}]}`)
 }
 
-func TestDelegationCheckDeclaresTierCFAndNoCondition(t *testing.T) {
+func TestDelegationCheckDeclaresIDAndTierCF(t *testing.T) {
 	if got := (delegationCheck{}).Needs(); got != TierCF {
 		t.Errorf("Needs() = %v, want TierCF", got)
-	}
-	if got := (delegationCheck{}).Condition(); got != spine.ConditionNone {
-		t.Errorf("Condition() = %q, want ConditionNone", got)
 	}
 	if got := (delegationCheck{}).ID(); got != "delegation" {
 		t.Errorf("ID() = %q, want %q", got, "delegation")

@@ -103,16 +103,13 @@ func publishClients(rt publishGHRoundTripper) Clients {
 	return Clients{GH: ghClient(rt), HaveGH: true}
 }
 
-func TestPublishPathCheckDeclaresTierGHAndNoCondition(t *testing.T) {
+func TestPublishPathCheckDeclaresIDAndTierGH(t *testing.T) {
 	c := publishPathCheck{}
 	if got := c.ID(); got != "publish-path" {
 		t.Errorf("ID() = %q, want %q", got, "publish-path")
 	}
 	if got := c.Needs(); got != TierGH {
 		t.Errorf("Needs() = %v, want TierGH", got)
-	}
-	if got := c.Condition(); got != spine.ConditionNone {
-		t.Errorf("Condition() = %q, want ConditionNone", got)
 	}
 }
 

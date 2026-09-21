@@ -120,11 +120,17 @@ type OutcomeField struct {
 // Outcome is the read-side result a Check returns. Reason is set only when State is Unknown;
 // Detail carries a human-readable note for OK or Failing and is otherwise unused. Fields carries
 // any structured facts behind Detail's one-line summary, in the order a Check appended them.
+//
+// Condition belongs to the verdict, not to the check that measured it: one check's two failures
+// can have two different remedies, and a check with a catalogued remedy for one failure mode
+// usually has none for the rest. A verdict no condition id names leaves it ConditionNone, which
+// is what a renderer reads to omit the remedy line.
 type Outcome struct {
-	State  State
-	Reason ReasonCode
-	Detail string
-	Fields []OutcomeField
+	State     State
+	Reason    ReasonCode
+	Condition Condition
+	Detail    string
+	Fields    []OutcomeField
 }
 
 // Validate reports an error if Outcome does not match the one Reason rule every check obeys: a

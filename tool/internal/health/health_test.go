@@ -30,9 +30,8 @@ type fixedOutcomeCheck struct {
 	outcome spine.Outcome
 }
 
-func (c fixedOutcomeCheck) ID() string               { return c.id }
-func (fixedOutcomeCheck) Condition() spine.Condition { return spine.ConditionNone }
-func (c fixedOutcomeCheck) Needs() Tier              { return c.tier }
+func (c fixedOutcomeCheck) ID() string  { return c.id }
+func (c fixedOutcomeCheck) Needs() Tier { return c.tier }
 func (c fixedOutcomeCheck) Run(context.Context, record.Record, Clients, Options) spine.Outcome {
 	return c.outcome
 }
@@ -44,9 +43,8 @@ type cancelingCheck struct {
 	cancel context.CancelFunc
 }
 
-func (c cancelingCheck) ID() string               { return c.id }
-func (cancelingCheck) Condition() spine.Condition { return spine.ConditionNone }
-func (cancelingCheck) Needs() Tier                { return TierNone }
+func (c cancelingCheck) ID() string { return c.id }
+func (cancelingCheck) Needs() Tier  { return TierNone }
 func (c cancelingCheck) Run(context.Context, record.Record, Clients, Options) spine.Outcome {
 	c.cancel()
 	return spine.Outcome{State: spine.OK}
@@ -56,9 +54,8 @@ func (c cancelingCheck) Run(context.Context, record.Record, Clients, Options) sp
 // must not take the rest of the sweep down with it.
 type panickingCheck struct{ value any }
 
-func (panickingCheck) ID() string                 { return "panics" }
-func (panickingCheck) Condition() spine.Condition { return spine.ConditionNone }
-func (panickingCheck) Needs() Tier                { return TierNone }
+func (panickingCheck) ID() string  { return "panics" }
+func (panickingCheck) Needs() Tier { return TierNone }
 func (c panickingCheck) Run(context.Context, record.Record, Clients, Options) spine.Outcome {
 	panic(c.value)
 }
@@ -72,9 +69,8 @@ type statefulStubCheck struct {
 	calls *int
 }
 
-func (statefulStubCheck) ID() string                 { return "stub" }
-func (statefulStubCheck) Condition() spine.Condition { return spine.ConditionNone }
-func (statefulStubCheck) Needs() Tier                { return TierNone }
+func (statefulStubCheck) ID() string  { return "stub" }
+func (statefulStubCheck) Needs() Tier { return TierNone }
 func (c statefulStubCheck) Run(context.Context, record.Record, Clients, Options) spine.Outcome {
 	*c.calls++
 	return spine.Outcome{State: spine.OK, Detail: fmt.Sprintf("call %d", *c.calls)}

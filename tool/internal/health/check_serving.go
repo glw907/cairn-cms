@@ -24,10 +24,6 @@ type servingCheck struct{}
 // ID implements Check.
 func (servingCheck) ID() string { return "serving" }
 
-// Condition implements Check. src/lib/diagnostics/conditions.ts carries no id for Serving, so it
-// declares no cairn-doctor condition.
-func (servingCheck) Condition() spine.Condition { return spine.ConditionNone }
-
 // Needs implements Check. Serving reaches only the site's own public domain, never a provider
 // API, so it needs no credential.
 func (servingCheck) Needs() Tier { return TierNone }

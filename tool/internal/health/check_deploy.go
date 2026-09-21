@@ -132,10 +132,6 @@ type deployCheck struct{}
 // ID implements Check.
 func (deployCheck) ID() string { return "deploy" }
 
-// Condition implements Check. src/lib/diagnostics/conditions.ts carries no id for Deploy, so it
-// declares no cairn-doctor condition.
-func (deployCheck) Condition() spine.Condition { return spine.ConditionNone }
-
 // Needs implements Check. Deploy reads the Worker and its Builds triggers through Cloudflare and
 // the repository's default-branch head through GitHub, so it needs both.
 func (deployCheck) Needs() Tier { return TierBoth }

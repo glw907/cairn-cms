@@ -35,14 +35,12 @@ type Check interface {
 	// ID names the check, stable across releases: it is the key an acknowledgement targets and
 	// the id a rendered report lists a check by.
 	ID() string
-	// Condition returns the cairn-doctor condition id this check's Failing verdict corresponds
-	// to, or spine.ConditionNone when no id exists yet for it. Run records whichever Condition
-	// returns, and a renderer omits the remedy line for ConditionNone.
-	Condition() spine.Condition
 	// Needs reports which provider credential this check requires. Run skips a check whose
 	// required client is absent rather than calling it.
 	Needs() Tier
-	// Run measures the check's verdict against r, using c's clients and o's tunables.
+	// Run measures the check's verdict against r, using c's clients and o's tunables. The
+	// returned Outcome names its own cairn-doctor condition id, so a check whose failures have
+	// different remedies declares a different Condition per verdict.
 	Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome
 }
 
@@ -53,7 +51,6 @@ var All = []Check{
 	servingCheck{},
 	delegationCheck{},
 	httpsForcedCheck{},
-	hstsCheck{},
 	emailCheck{},
 	deployCheck{},
 	publishPathCheck{},
@@ -121,7 +118,7 @@ func Run(ctx context.Context, r record.Record, c Clients, checks []Check, now fu
 // settle runs one check, skipping it when its tier's client is absent or the run's context has
 // already ended, and recovering a panic into an Unknown result rather than propagating it.
 func settle(ctx context.Context, check Check, r record.Record, c Clients, o Options, now func() time.Time) CheckResult {
-	result := CheckResult{ID: check.ID(), Condition: check.Condition(), Tier: check.Needs(), CheckedAt: now()}
+	result := CheckResult{ID: check.ID(), Tier: check.Needs(), CheckedAt: now()}
 
 	select {
 	case <-ctx.Done():

@@ -33,9 +33,8 @@ type Report struct {
 type CheckResult struct {
 	// ID is the check's stable identifier.
 	ID string
-	// Condition is the cairn-doctor condition id the check declared.
-	Condition spine.Condition
-	// Outcome is the check's measured verdict.
+	// Outcome is the check's measured verdict, which carries the condition id the verdict itself
+	// declared.
 	Outcome spine.Outcome
 	// CheckedAt is when Run settled this result, read from the run's injected clock.
 	CheckedAt time.Time

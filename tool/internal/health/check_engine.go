@@ -69,10 +69,6 @@ type engineCheck struct{}
 // ID implements Check.
 func (engineCheck) ID() string { return "engine" }
 
-// Condition implements Check. The spine package's own doc comment marks Engine "new": no
-// cairn-doctor condition id exists for it yet.
-func (engineCheck) Condition() spine.Condition { return spine.ConditionNone }
-
 // Needs implements Check. Engine reads the site's own package.json and engineRepo's CHANGELOG.md
 // through GitHub; the npm registry read that follows needs no credential.
 func (engineCheck) Needs() Tier { return TierGH }

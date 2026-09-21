@@ -63,16 +63,13 @@ func errorsClients(rt errorsEventsRoundTripper) Clients {
 	}
 }
 
-func TestErrorsCheckDeclaresTierCFAndTheObservabilityOffCondition(t *testing.T) {
+func TestErrorsCheckDeclaresIDAndTierCF(t *testing.T) {
 	c := errorsCheck{}
 	if got, want := c.ID(), "errors"; got != want {
 		t.Errorf("ID() = %q, want %q", got, want)
 	}
 	if got := c.Needs(); got != TierCF {
 		t.Errorf("Needs() = %v, want TierCF", got)
-	}
-	if got := c.Condition(); got != spine.ConditionConfigObservabilityOff {
-		t.Errorf("Condition() = %v, want ConditionConfigObservabilityOff", got)
 	}
 }
 

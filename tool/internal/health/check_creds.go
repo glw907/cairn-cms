@@ -26,10 +26,6 @@ type credsCheck struct{}
 // ID implements Check.
 func (credsCheck) ID() string { return "creds" }
 
-// Condition implements Check. The spec's health table marks the credential check "new", so it
-// declares no cairn-doctor condition id.
-func (credsCheck) Condition() spine.Condition { return spine.ConditionNone }
-
 // Needs implements Check.
 func (credsCheck) Needs() Tier { return TierNone }
 

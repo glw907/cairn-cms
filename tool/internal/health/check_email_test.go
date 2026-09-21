@@ -54,8 +54,8 @@ func fullyCompliantRecords() map[string][]string {
 	}
 }
 
-func sendingSubdomainsBody(name string, enabled bool) []byte {
-	return []byte(`{"success":true,"result":[{"name":"` + name + `","enabled":` + boolString(enabled) + `}]}`)
+func sendingSubdomainsBody(enabled bool) []byte {
+	return []byte(`{"success":true,"result":[{"name":"example.test","enabled":` + boolString(enabled) + `}]}`)
 }
 
 func TestEmailCheckDeclaresTierCFAndCondition(t *testing.T) {
@@ -71,7 +71,7 @@ func TestEmailCheckDeclaresTierCFAndCondition(t *testing.T) {
 }
 
 func TestEmailCheckOKWhenEveryHalfPasses(t *testing.T) {
-	c := emailClients(fullyCompliantRecords(), settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", true)})
+	c := emailClients(fullyCompliantRecords(), settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
 	if got.State != spine.OK {
 		t.Errorf("Outcome = %+v, want OK", got)
@@ -81,7 +81,7 @@ func TestEmailCheckOKWhenEveryHalfPasses(t *testing.T) {
 func TestEmailCheckFailingWhenDMARCMissing(t *testing.T) {
 	records := fullyCompliantRecords()
 	delete(records, "_dmarc.example.test")
-	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", true)})
+	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
 	if got.State != spine.Failing || got.Detail != "no _dmarc TXT record published" {
 		t.Errorf("Outcome = %+v, want Failing no _dmarc TXT record published", got)
@@ -91,7 +91,7 @@ func TestEmailCheckFailingWhenDMARCMissing(t *testing.T) {
 func TestEmailCheckFailingWhenDMARCPolicyIsNone(t *testing.T) {
 	records := fullyCompliantRecords()
 	records["_dmarc.example.test"] = []string{"v=DMARC1; p=none"}
-	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", true)})
+	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
 	if got.State != spine.Failing || got.Detail != "dmarc policy is p=none" {
 		t.Errorf("Outcome = %+v, want Failing dmarc policy is p=none", got)
@@ -101,7 +101,7 @@ func TestEmailCheckFailingWhenDMARCPolicyIsNone(t *testing.T) {
 func TestEmailCheckOKWhenDMARCPolicyIsReject(t *testing.T) {
 	records := fullyCompliantRecords()
 	records["_dmarc.example.test"] = []string{"v=DMARC1; p=reject"}
-	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", true)})
+	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
 	if got.State != spine.OK {
 		t.Errorf("Outcome = %+v, want OK", got)
@@ -111,7 +111,7 @@ func TestEmailCheckOKWhenDMARCPolicyIsReject(t *testing.T) {
 func TestEmailCheckFailingWhenSPFIncludeMissing(t *testing.T) {
 	records := fullyCompliantRecords()
 	records["example.test"] = []string{"v=spf1 include:_spf.example.com ~all"}
-	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", true)})
+	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
 	if got.State != spine.Failing || got.Detail != "sending subdomain SPF record missing "+cloudflareSPFInclude {
 		t.Errorf("Outcome = %+v, want Failing SPF include missing", got)
@@ -121,7 +121,7 @@ func TestEmailCheckFailingWhenSPFIncludeMissing(t *testing.T) {
 func TestEmailCheckFailingWhenNoDKIMSelectorResolves(t *testing.T) {
 	records := fullyCompliantRecords()
 	delete(records, "google._domainkey.example.test")
-	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", true)})
+	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
 	if got.State != spine.Failing || got.Detail != "no dkim selector txt resolved" {
 		t.Errorf("Outcome = %+v, want Failing no dkim selector txt resolved", got)
@@ -132,7 +132,7 @@ func TestEmailCheckOKWhenAnyKnownDKIMSelectorResolves(t *testing.T) {
 	records := fullyCompliantRecords()
 	delete(records, "google._domainkey.example.test")
 	records["selector1._domainkey.example.test"] = []string{"v=DKIM1; k=rsa; p=xyz"}
-	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", true)})
+	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
 	if got.State != spine.OK {
 		t.Errorf("Outcome = %+v, want OK", got)
@@ -148,7 +148,7 @@ func TestEmailCheckFailingWhenSendingSubdomainNotOnboarded(t *testing.T) {
 }
 
 func TestEmailCheckParkedWhenSendingSubdomainNotYetEnabled(t *testing.T) {
-	c := emailClients(fullyCompliantRecords(), settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", false)})
+	c := emailClients(fullyCompliantRecords(), settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(false)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
 	want := spine.ParkReason(spine.ParkEmailNotReady)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -157,7 +157,7 @@ func TestEmailCheckParkedWhenSendingSubdomainNotYetEnabled(t *testing.T) {
 }
 
 func TestEmailCheckNoZoneIDIsUnknownNotObservable(t *testing.T) {
-	c := emailClients(fullyCompliantRecords(), settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody("example.test", true)})
+	c := emailClients(fullyCompliantRecords(), settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), record.Record{Domain: "example.test"}, c, Options{})
 	if got.State != spine.Unknown || got.Reason != spine.ReasonNotObservable {
 		t.Errorf("Outcome = %+v, want Unknown reason.not-observable", got)

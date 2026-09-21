@@ -59,7 +59,7 @@ func (emailCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options
 // dmarcPolicy returns the "p=" tag's value out of a DMARC TXT record's semicolon-separated tags,
 // or "" when the record carries none.
 func dmarcPolicy(txt string) string {
-	for _, tag := range strings.Split(txt, ";") {
+	for tag := range strings.SplitSeq(txt, ";") {
 		tag = strings.TrimSpace(tag)
 		if value, found := strings.CutPrefix(tag, "p="); found {
 			return value

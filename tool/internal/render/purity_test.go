@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -159,6 +160,57 @@ func TestNoLipglossSetterOutsidePaletteGo(t *testing.T) {
 			}
 			return true
 		})
+	}
+}
+
+// renderDirectRequires is ADR-0002's pin policy, now four: the three libraries the record took at
+// Task 20a plus displaywidth, promoted from indirect at segment 3 so both width tables come from
+// the one library x/ansi's own narrow measure already rests on. A fifth is a decision, not an
+// import, so it fails here first.
+var renderDirectRequires = []string{
+	"charm.land/lipgloss/v2",
+	"github.com/charmbracelet/colorprofile",
+	"github.com/charmbracelet/x/ansi",
+	"github.com/clipperhouse/displaywidth",
+}
+
+// otherDirectRequires is how many direct requires the rest of the module carries: the CLI
+// framework, the keyring library, and the two x/ packages. They are counted rather than named,
+// because internal/secrets confines one of those import paths to its own file and that check
+// reads every .go file in the module as text, this one included.
+const otherDirectRequires = 4
+
+// TestRenderDirectRequiresArePinned holds ADR-0002's pin policy to its own list, and the module
+// to its total. A fifth library taken for this package, or one of the four dropped, fails here
+// and is named in the diff; a new direct require anywhere else in the module fails the count.
+func TestRenderDirectRequiresArePinned(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var direct, mine []string
+	for line := range strings.SplitSeq(string(data), "\n") {
+		trimmed := strings.TrimSpace(line)
+		path, version, found := strings.Cut(trimmed, " ")
+		switch {
+		case !found, strings.HasSuffix(trimmed, "// indirect"):
+			continue
+		case !strings.HasPrefix(version, "v"), !strings.Contains(path, "."):
+			continue
+		}
+		direct = append(direct, path)
+		if slices.Contains(renderDirectRequires, path) {
+			mine = append(mine, path)
+		}
+	}
+	slices.Sort(mine)
+	want := slices.Clone(renderDirectRequires)
+	slices.Sort(want)
+	if !slices.Equal(mine, want) {
+		t.Errorf("render's direct requires are\n%v\nwant\n%v", mine, want)
+	}
+	if n, total := len(direct), len(renderDirectRequires)+otherDirectRequires; n != total {
+		t.Errorf("go.mod carries %d direct requires, want %d: %v", n, total, direct)
 	}
 }
 

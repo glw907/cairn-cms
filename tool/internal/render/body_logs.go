@@ -54,11 +54,11 @@ func renderLogs(t Theme, in RenderInput) Frame {
 			t.SizedStrong(RoleText, logEvent).Render(Sanitize(e.Event)),
 		)
 		if wide {
-			body = append(body, hangingAt(t.Style(RoleSubtle), lead, logFields, logFieldText(e), width)...)
+			body = append(body, t.hangingAt(t.Style(RoleSubtle), lead, logFields, logFieldText(e), width)...)
 			continue
 		}
 		body = append(body, strings.TrimRight(lead, " "))
-		body = append(body, indented(t.Style(RoleSubtle), logIndent+logTime, logFieldText(e), width)...)
+		body = append(body, t.indented(t.Style(RoleSubtle), logIndent+logTime, logFieldText(e), width)...)
 	}
 	f.Body = body
 

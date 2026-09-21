@@ -26,5 +26,5 @@
              [38;2;168;164;158memail · deploy ·[m
              [38;2;168;164;158mpublish-path[m
 
-[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227mcairn.pub[m
 [38;2;168;164;158m1 failing · 1 could not run · 7 passing[m
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227mcairn.pub[m

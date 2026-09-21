@@ -285,6 +285,72 @@ func TestGolden(t *testing.T) {
 	}
 }
 
+// TestGoldenVerdictIsTheLastLine holds the conductor's 2026-09-21 ruling on criterion 3 across
+// the whole committed corpus: in a terminal body the verdict word is the last non-blank line at
+// every width, and the tally goes above it when the block wraps. Reading the last line is how a
+// truncated cron mail, a scrollback glance, and a screen reader all take the run's verdict.
+func TestGoldenVerdictIsTheLastLine(t *testing.T) {
+	for _, c := range goldenCases() {
+		if c.view != "single" && c.view != "many" {
+			continue
+		}
+		t.Run(c.path(), func(t *testing.T) {
+			data, err := os.ReadFile(c.path())
+			if err != nil {
+				t.Fatalf("%v; run `make -C tool golden` to cut it", err)
+			}
+			var last string
+			for line := range strings.SplitSeq(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n") {
+				if stripped := stripANSI(line); strings.TrimSpace(stripped) != "" {
+					last = stripped
+				}
+			}
+			if word := verdictFor(c.reports).String(); !strings.Contains(last, word) {
+				t.Errorf("last non-blank line %q carries no %s", last, word)
+			}
+		})
+	}
+}
+
+// TestGoldenPrintsNoRemedyTwice is the conductor's 2026-09-21 ruling on criterion 9: a fix
+// sentence appears at most once in a frame, whatever the fleet's shape, with the sites it
+// applies to named in the one entry. The many-site goldens are the corpus that carries the case,
+// twelve sites of which three share a remedy.
+func TestGoldenPrintsNoRemedyTwice(t *testing.T) {
+	// Every fix sentence the shipped table carries, so a repeat is recognised by the sentence
+	// itself rather than by a guess at what a fix line looks like.
+	// FixLines carries each fix's sentence and, where it has one, its command. The sentences are
+	// the ones that end in a period, which is the copy standard's own rule for them.
+	var sentences []string
+	for _, line := range health.FixLines() {
+		if strings.HasSuffix(line, ".") {
+			sentences = append(sentences, line)
+		}
+	}
+	if len(sentences) == 0 {
+		t.Fatal("the fix table is empty, so this test could not fail")
+	}
+	for _, c := range goldenCases() {
+		if c.view != "many" {
+			continue
+		}
+		t.Run(c.path(), func(t *testing.T) {
+			data, err := os.ReadFile(c.path())
+			if err != nil {
+				t.Fatalf("%v; run `make -C tool golden` to cut it", err)
+			}
+			// A frame wraps a sentence across lines, so the comparison runs over the frame with
+			// its escapes and its wrap whitespace collapsed into single spaces.
+			flat := strings.Join(strings.Fields(stripANSI(strings.ReplaceAll(string(data), "\n", " "))), " ")
+			for _, s := range sentences {
+				if n := strings.Count(flat, s); n > 1 {
+					t.Errorf("the remedy %q is printed %d times", s, n)
+				}
+			}
+		})
+	}
+}
+
 // TestGoldenCorpusHasNoOrphan walks the committed corpus against the same matrix table TestGolden
 // cuts from, so a golden left behind by a renamed fixture or a dropped rung fails here rather
 // than sitting in the tree forever looking like acceptance.

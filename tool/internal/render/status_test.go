@@ -35,8 +35,31 @@ func TestMissingCredentialNamesTheChecksItDisables(t *testing.T) {
 			t.Errorf("the line does not name %q among the checks the missing token disables:\n%s", id, text)
 		}
 	}
-	if !strings.Contains(text, "could not run") {
-		t.Errorf("the line does not say what the absence cost, in the section's own words:\n%s", text)
+	// The status view is the site listing's own frame, where no check was attempted, so the line
+	// says what the absence will cost rather than reporting a failure that did not happen.
+	if !strings.Contains(text, "cannot run") {
+		t.Errorf("the listing's line does not say what the absence costs:\n%s", text)
+	}
+	if strings.Contains(text, "could not run") {
+		t.Errorf("the listing's line claims checks could not run, and none was attempted:\n%s", text)
+	}
+}
+
+// TestHealthFrameKeepsThePastTenseMissingTokenLine is the other half of the same ruling: where
+// checks did run, the line stays in the past tense, since a missing token there is a cost the
+// run already paid.
+func TestHealthFrameKeepsThePastTenseMissingTokenLine(t *testing.T) {
+	in := input(fixtures.OneSick(), BodySingle, Width100, ProfileNoColor, false, spine.VerdictCritical)
+	in.Status = StatusState{Credentials: []Credential{{
+		Variable: "CAIRN_GH_READ_TOKEN",
+		Disables: []string{"deploy", "engine", "publish-path"},
+	}}}
+	// The line wraps into the creds row's own detail column, so the frame is flattened before
+	// the clause is looked for. The whole clause, not the bare words: "could not run" is also a
+	// section label, so a substring test on it alone would pass whatever the line says.
+	text := strings.Join(strings.Fields(strings.Join(plainLines(in), " ")), " ")
+	if !strings.Contains(text, "publish-path could not run") {
+		t.Errorf("the health frame's line does not say what the absence cost:\n%s", text)
 	}
 }
 

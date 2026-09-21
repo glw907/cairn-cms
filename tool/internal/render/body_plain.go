@@ -35,7 +35,12 @@ const (
 func renderPlain(t Theme, in RenderInput) Frame {
 	report := firstReport(in)
 	s := split(report)
+	// The tally is taken before the rows are filtered, so --quiet's body, the one a cron mail
+	// carries, counts the run that happened rather than the slice it drew.
 	verdict := t.verdictKeyLine(in.Verdict, Sanitize(report.Site), s.tally(", "))
+	if in.FailingOnly {
+		s = s.failingRowsOnly()
+	}
 
 	f := Frame{Header: []string{
 		verdict,

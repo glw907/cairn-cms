@@ -23,8 +23,10 @@ type Glyphs struct {
 	Rule string
 	// Sep separates two facts on one line.
 	Sep string
-	// Ellipsis marks text a wrap or truncation cut short. It is three periods at both tiers,
-	// never a tilde, which reads as vi filler and collides with Rule at a glance.
+	// Ellipsis marks text a wrap or truncation cut short: U+2026 at the Unicode tier and three
+	// periods at the ASCII tier, never a tilde, which reads as vi filler and collides with Rule
+	// at a glance. It is the one pair whose two tiers differ in cell width, which is why
+	// glyph_test.go's eachGlyphPair exempts it from the parity test.
 	Ellipsis string
 }
 
@@ -69,9 +71,11 @@ var asciiGlyphs = Glyphs{
 
 // ambiguousRunes names the East Asian Width=Ambiguous runes in unicodeGlyphs, measured in
 // docs/design/render-reference/measurements.txt. Every glyph in the set is Ambiguous except '?'.
-// width.go's Theme.Width widens these specific runes by one cell under the ASCII tier's width
-// table, since Ambiguous=Wide is the one Unicode-tier combination ADR-0002 documents as
-// unsupported (measurements.txt records 2980 over-width lines under it).
+// They are the runes width.go's two tables disagree on: one cell under tableNarrow, two under
+// tableWide. A terminal reading Ambiguous wide takes the ASCII tier, whose glyphs are all plain
+// ASCII, so none of these ever reaches a frame measured under the wide table; the Unicode tier on
+// such a terminal is the combination ADR-0002 records as unsupported (measurements.txt counts
+// 2980 over-width lines under it).
 var ambiguousRunes = map[rune]bool{
 	'●': true, // U+25CF pass
 	'■': true, // U+25A0 fail

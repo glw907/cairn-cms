@@ -12,6 +12,10 @@ import (
 type hostileEntry struct {
 	Name  string `json:"name"`
 	Input string `json:"input"`
+	// Want is the exact output Sanitize must produce. It is committed beside the input so the
+	// corpus is the assertion: weakening the sanitizer fails the entry by name rather than
+	// passing a property test that the control-dropping loop alone already satisfies.
+	Want string `json:"want"`
 }
 
 // loadHostileCorpus reads the committed corpus so the test data stays reviewable and diffable
@@ -43,13 +47,19 @@ func hasC0OrC1(s string) bool {
 	return false
 }
 
-// TestSanitizeHostileCorpus is criterion 22: every entry in the committed corpus, once
-// sanitized, carries no C0 or C1 byte, and the line count stays at one, since \n, \r, and \t all
-// become a single space rather than a break.
+// TestSanitizeHostileCorpus is criterion 22: every entry in the committed corpus sanitizes to
+// exactly the output committed beside it. Byte equality is the assertion rather than a property,
+// so dropping ansi.Strip from the sanitizer fails the entries that carry an escape sequence and
+// names each one, instead of leaving "before[31mafter" as debris a C0 check waves through. The
+// no-control and one-line properties are checked too, since they are what the committed outputs
+// are correct against.
 func TestSanitizeHostileCorpus(t *testing.T) {
 	for _, e := range loadHostileCorpus(t) {
 		t.Run(e.Name, func(t *testing.T) {
 			out := Sanitize(e.Input)
+			if out != e.Want {
+				t.Errorf("Sanitize(%q) = %q, want %q", e.Input, out, e.Want)
+			}
 			if hasC0OrC1(out) {
 				t.Errorf("Sanitize(%q) = %q still carries a C0 or C1 byte", e.Input, out)
 			}

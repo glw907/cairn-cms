@@ -8,6 +8,7 @@
 package fixtures
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -51,6 +52,19 @@ func skipCondition(id string, cond spine.Condition, detail string) health.CheckR
 // skip returns a check that could not run.
 func skip(id string, reason spine.ReasonCode, detail string) health.CheckResult {
 	return result(id, spine.Outcome{State: spine.Unknown, Reason: reason, Detail: detail})
+}
+
+// withEngineVersion attaches the installed engine version to c as the structured field the
+// engine check itself reports, so a fixture's engine row carries the fact the fleet table's
+// engine column reads rather than only the prose detail beside it.
+func withEngineVersion(c health.CheckResult, installed string) health.CheckResult {
+	data, err := json.Marshal(installed)
+	if err != nil {
+		panic(err)
+	}
+	c.Outcome.Fields = append(c.Outcome.Fields,
+		spine.OutcomeField{Key: health.FieldEngineInstalledVersion, Value: data})
+	return c
 }
 
 // result wraps one outcome in the settled result health.Run would have produced for it.
@@ -117,7 +131,7 @@ func Degraded() []health.Report {
 		skip("email", spine.ReasonCredMissing, ""),
 		pass("deploy", "built 4h ago (a91f2c7), main is level"),
 		pass("publish-path", "App installed, branch writable"),
-		pass("engine", "0.78.0 is current"),
+		withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0"),
 		skip("errors", spine.ReasonCredMissing, ""),
 	)}
 }
@@ -151,7 +165,7 @@ func OneSick() []health.Report {
 		skip("email", spine.ReasonCredMissing, ""),
 		fail("deploy", spine.CodeDeployBuildFailed, "build failed 26m ago (3f0ba18), main is 2 commits ahead"),
 		pass("publish-path", "App installed, branch writable"),
-		fail("engine", spine.CodeEngineBehind, "0.71.0 installed, 0.78.0 latest, 7 releases behind"),
+		withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.71.0 installed, 0.78.0 latest, 7 releases behind"), "0.71.0"),
 		skip("errors", spine.ReasonCredMissing, ""),
 	)}
 }
@@ -166,7 +180,7 @@ func Healthy() []health.Report {
 		pass("email", "sending domain onboarded 41 days ago"),
 		pass("deploy", "built 4h ago (a91f2c7), main is level"),
 		pass("publish-path", "App installed, branch writable"),
-		pass("engine", "0.78.0 is current"),
+		withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0"),
 		pass("errors", "0 errors in 24h"),
 	)}
 }
@@ -182,7 +196,7 @@ func WarningOnly() []health.Report {
 		pass("email", "sending domain onboarded 41 days ago"),
 		pass("deploy", "built 9h ago (5c1d0b2), main is level"),
 		pass("publish-path", "App installed, branch writable"),
-		fail("engine", spine.CodeEngineBehind, "0.76.0 installed, 0.78.0 latest, 2 releases behind"),
+		withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.76.0 installed, 0.78.0 latest, 2 releases behind"), "0.76.0"),
 		skipCondition("errors", spine.ConditionConfigObservabilityOff, "the Worker has no observability dataset"),
 	)}
 }
@@ -191,9 +205,9 @@ func WarningOnly() []health.Report {
 // readable: one site nobody can load, several with one fault each, and the rest passing.
 func TwelveSites() []health.Report {
 	out := []health.Report{
-		report("ecxc.ski", "ecxc.ski", pass("serving", "200 in 84ms"), pass("engine", "0.78.0 is current")),
+		report("ecxc.ski", "ecxc.ski", pass("serving", "200 in 84ms"), withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0")),
 		report("cairn.pub", "cairn.pub", pass("serving", "200 in 96ms"),
-			fail("engine", spine.CodeEngineBehind, "0.76.0 installed, 0.78.0 latest, 2 releases behind")),
+			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.76.0 installed, 0.78.0 latest, 2 releases behind"), "0.76.0")),
 		report("topo.907.life", "topo.907.life",
 			fail("serving", spine.CodeServingMismatch, "the hostname does not answer"),
 			skip("engine", spine.ReasonCredMissing, "")),
@@ -202,11 +216,11 @@ func TwelveSites() []health.Report {
 		report("aksailingclub.org", "aksailingclub.org", pass("serving", "200 in 210ms"),
 			failCondition("email", spine.ConditionEmailSenderNotOnboarded, "the sending subdomain is not onboarded")),
 		report("xcathletes.org", "xcathletes.org", pass("serving", "200 in 121ms"),
-			fail("engine", spine.CodeEngineBehind, "0.77.0 installed, 0.78.0 latest, 1 release behind")),
+			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.77.0 installed, 0.78.0 latest, 1 release behind"), "0.77.0")),
 	}
 	for _, name := range []string{"one", "two", "three", "four", "five", "six"} {
 		out = append(out, report(name+".example.org", name+".example.org",
-			pass("serving", "200 in 100ms"), pass("engine", "0.78.0 is current")))
+			pass("serving", "200 in 100ms"), withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0")))
 	}
 	return out
 }
@@ -225,7 +239,7 @@ func Hostile() []health.Report {
 		holdLapsed(
 			failCondition("https-forced", spine.ConditionEdgeHTTPSNotForced, "Always Use HTTPS is off for the zone"),
 			Now().Add(-40*24*time.Hour)),
-		pass("engine", "0.78.0 is current"),
+		withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0"),
 	)}
 }
 

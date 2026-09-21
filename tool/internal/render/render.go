@@ -93,6 +93,16 @@ type RenderInput struct {
 	// Reports holds the health sweep's settled reports, in the order the sweep ran them. The
 	// render owns the ranking; nothing upstream re-orders.
 	Reports []health.Report
+	// FailingOnly draws the failing rows alone, which is --quiet's own body. It filters rows and
+	// nothing else: the verdict and the tally still describe the whole run, so a body that says
+	// "1 failing, 0 passing" for a report carrying a pass and a skip is not reachable from here.
+	// The caller hands over the uncut reports and this field decides what is drawn, rather than
+	// cutting them upstream where the counts can no longer see what was removed.
+	//
+	// The fleet body ignores it. That body is already one line per site rather than a list of
+	// check rows, and filtering its checks left most of the strip drawn as the separator glyph,
+	// which says less than the marks it replaced.
+	FailingOnly bool
 	// Entries holds a log query's records, newest first, for ViewLogs.
 	Entries []logs.Entry
 	// Site names the subject a view that carries no report still has to name, which is the log
@@ -126,7 +136,7 @@ func (in RenderInput) width() int {
 // a pipe prints its own line-oriented form for those two rather than asking for a column layout
 // nothing will read.
 func Render(in RenderInput) Frame {
-	t := NewTheme(in.Dark, in.Profile)
+	t := NewTheme(in.Dark, in.Profile).forTier(in.ASCII)
 	switch {
 	case in.View == ViewStatus:
 		return renderStatus(t, in)

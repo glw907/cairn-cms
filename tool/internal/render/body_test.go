@@ -3,6 +3,7 @@ package render
 import (
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -107,8 +108,20 @@ func TestSharedLayer(t *testing.T) {
 // follows its last verdict line.
 func TestVerdictFirstAndLast(t *testing.T) {
 	for _, v := range []Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
-		for _, body := range []Body{BodySingle, BodyPlain} {
-			lines := plainLines(input(fixtures.OneSick(), body, 100, ProfileTrueColor, false, v))
+		for _, tc := range []struct {
+			body  Body
+			width int
+		}{
+			{BodySingle, 100},
+			// 40 and 60 are the widths where the verdict block wraps, which is where the tally
+			// used to take the last line from the verdict word.
+			{BodySingle, 60},
+			{BodySingle, 40},
+			{BodyMany, 60},
+			{BodyPlain, 100},
+		} {
+			body, width := tc.body, tc.width
+			lines := plainLines(input(fixtures.OneSick(), body, width, ProfileTrueColor, false, v))
 			var live []string
 			for _, l := range lines {
 				if strings.TrimSpace(l) != "" {
@@ -546,22 +559,53 @@ func TestWidthDefaultAndExactHonouring(t *testing.T) {
 	}
 }
 
-// TestNoLineExceedsTheRequestedWidth sweeps the whole width range over every fixture and both
-// tiers: a line wider than the terminal wraps, and a wrapped row is a row whose columns mean
-// nothing.
+// TestNoLineExceedsTheRequestedWidth is criterion 19's two-table sweep over whole frames: every
+// fixture, every terminal body, the width range from 20 to 400, at both glyph tiers, each frame
+// measured under the width table its own tier chose. The Unicode tier is checked against the
+// narrow table and the ASCII tier against Ambiguous=wide, which is the pairing a terminal ever
+// presents: a terminal configured for the wide reading takes the ASCII tier (ADR-0002).
 func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
-	theme := NewTheme(true, ProfileTrueColor)
 	for _, f := range fixtures.All() {
 		for _, width := range []int{20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400} {
 			for _, ascii := range []bool{false, true} {
+				theme := NewTheme(true, ProfileTrueColor).forTier(ascii)
 				budget := min(width, WidthCap)
-				for _, l := range Render(input(f.Reports, BodySingle, width, ProfileTrueColor, ascii, spine.VerdictCritical)).Lines() {
-					if theme.Width(l) > budget {
-						t.Errorf("%s at width %d ascii %v: line is %d cells: %q",
-							f.Name, width, ascii, theme.Width(l), stripANSI(l))
+				for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
+					in := input(f.Reports, body, width, ProfileTrueColor, ascii, spine.VerdictCritical)
+					in.Status = goldenStatus()
+					for _, l := range Render(in).Lines() {
+						// The plain body is line-oriented by contract and depends on no width at
+						// all, so it is swept for the other two tables' sake and exempted here.
+						if body != BodyPlain && theme.Width(l) > budget {
+							t.Errorf("%s body %v at width %d ascii %v: line is %d cells: %q",
+								f.Name, body, width, ascii, theme.Width(l), stripANSI(l))
+						}
 					}
 				}
 			}
+		}
+	}
+}
+
+// TestWidthTableFollowsTheGlyphTier is criterion 12: the width table is a field on Theme chosen
+// by tier, not a package-level setting, and the two tables disagree on an East Asian Ambiguous
+// rune exactly as their names promise.
+func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
+	// U+25CF is the Unicode tier's own pass mark and is EAW=Ambiguous (glyph.go's
+	// ambiguousRunes), so it is the one rune that separates the two tables.
+	const ambiguous = "●"
+	narrow := NewTheme(true, ProfileTrueColor).forTier(false)
+	wide := NewTheme(true, ProfileTrueColor).forTier(true)
+	if got := narrow.Width(ambiguous); got != 1 {
+		t.Errorf("narrow table measures %q as %d cells, want 1", ambiguous, got)
+	}
+	if got := wide.Width(ambiguous); got != 2 {
+		t.Errorf("wide table measures %q as %d cells, want 2", ambiguous, got)
+	}
+	// The tables agree on plain ASCII, which is the whole of the ASCII tier's own glyph set.
+	for _, s := range []string{"+", "!", "*", "?", "o", ">", "-", "...", "ecxc.ski"} {
+		if narrow.Width(s) != wide.Width(s) {
+			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.Width(s), wide.Width(s))
 		}
 	}
 }
@@ -627,12 +671,13 @@ func nineCheckFleet() []health.Report {
 func TestStripWidthFormulaIsExact(t *testing.T) {
 	reports := nineCheckFleet()
 	ids := stripColumns()
-	siteCol := siteColWidth(reports)
+	theme := NewTheme(true, ProfileNoColor)
+	siteCol := theme.siteColWidth(reports)
 	// 8 for "ecxc.ski", the widest of the two sites, plus a gutter, plus the nine headings
 	// (creds serving delegation https email deploy publish-path engine errors) with eight
 	// gutters between them, plus a gutter, plus the eight cells CRITICAL needs.
 	const want = 88
-	if got := stripWidth(stripHeadingsFor(ids), siteCol, verdictColWidth); got != want {
+	if got := theme.stripWidth(stripHeadingsFor(ids), siteCol, verdictColWidth); got != want {
 		t.Fatalf("stripWidth = %d, want %d", got, want)
 	}
 	strip := strings.Join(plainLines(manyInput(reports, want, true)), "\n")
@@ -709,6 +754,29 @@ func TestHeldFailureKeepsTheHeldMarkInTheStrip(t *testing.T) {
 		if glyph, _ := theme.mark(in, c); glyph != theme.GlyphSet.Unicode.Held {
 			t.Errorf("%s: held failure drew %q, want the held glyph", c.ID, glyph)
 		}
+	}
+}
+
+// TestFallbackTableCarriesTheEngineVersionAndTheDataAge is criterion 1's column list for the
+// plain table: the counts by state, the engine version each site runs, and how old the data is.
+// The version is read from the engine check's own structured field, so a reworded detail
+// sentence cannot move it.
+func TestFallbackTableCarriesTheEngineVersionAndTheDataAge(t *testing.T) {
+	reports := fixtures.TwelveSites()
+	// 80 columns is under the strip's own 88, so the fallback table is what draws.
+	text := strings.Join(plainLines(manyInput(reports, 80, false)), "\n")
+	for _, want := range []string{"engine", "checked", "0.78.0", "0.76.0", "4m ago"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("the fallback table does not carry %q:\n%s", want, text)
+		}
+	}
+	// The field is the source. A report whose engine check carries no field leaves the cell
+	// empty rather than reaching into the prose beside it.
+	bare := health.Report{Site: "bare.example", Checks: []health.CheckResult{
+		{ID: engineCheckID, Outcome: spine.Outcome{State: spine.OK, Detail: "9.9.9 is current"}},
+	}}
+	if got := engineVersion(bare); got != "" {
+		t.Errorf("engineVersion read %q out of the prose detail, want no version at all", got)
 	}
 }
 
@@ -794,18 +862,24 @@ func TestAllSkippedSiteProducesExactlyOneFix(t *testing.T) {
 		Credentials: []Credential{{Variable: "CAIRN_CF_READ_TOKEN", Disables: stripColumns()}},
 		Degraded:    true,
 	}
-	entries := collectFleetFixes(in, rankReports(reports))
+	// The site alone, so the entry under test is the one its own nine skips produced rather than
+	// one an earlier site in the fleet owns the head line of.
+	alone := collectFleetFixes(in, []health.Report{allSkippedSite()})
+	if len(alone) != 1 {
+		t.Fatalf("%d fix entries for the all-skipped site, want exactly 1", len(alone))
+	}
+	entry := alone[0]
 
+	// In the whole fleet the same sentence is one entry, and the site is named once in it,
+	// either on its head line or in the list of sites the one remedy also applies to.
 	n := 0
-	var entry fleetFix
-	for _, f := range entries {
-		if f.site == "tidelinepress.org" {
+	for _, f := range collectFleetFixes(in, rankReports(reports)) {
+		if f.site == "tidelinepress.org" || slices.Contains(f.alsoOn, "tidelinepress.org") {
 			n++
-			entry = f
 		}
 	}
 	if n != 1 {
-		t.Fatalf("%d fix entries for the all-skipped site, want exactly 1", n)
+		t.Errorf("the all-skipped site is named in %d fix entries, want exactly 1", n)
 	}
 	if len(entry.ids) != len(stripColumns()) {
 		t.Errorf("the entry covers %d checks, want all %d", len(entry.ids), len(stripColumns()))

@@ -1,6 +1,9 @@
 package render
 
-import "github.com/charmbracelet/x/ansi"
+import (
+	"github.com/charmbracelet/x/ansi"
+	"github.com/clipperhouse/displaywidth"
+)
 
 // The named width rungs (docs/design/render-reference/measurements.txt). A terminal narrower than
 // WidthNarrow drops to a single column; content stops growing at WidthCap and a wider terminal
@@ -36,28 +39,42 @@ func content(w int) int {
 	}
 }
 
-// Width measures s in the cells a layout budgets, x/ansi's own grapheme-aware measure with East
-// Asian Width=Ambiguous read narrow. Every glyph in render's own glyph set, Unicode or ASCII, is
-// exactly one cell under it (glyph_test.go's parity test), which is the Unicode tier's own
-// assumption and matches nearly every terminal.
-//
-// Deviation from criterion 12's own wording (recorded here and in the task report): the criterion
-// asks for a second, Ambiguous=Wide table as a field on Theme, chosen by tier. A correct
-// general-purpose Ambiguous-wide measure over arbitrary site content, not just render's own eight
-// glyphs, needs the East Asian Width table go-runewidth or displaywidth carry; both are indirect
-// dependencies here (the same fact criterion 7 names for go-colorful's luminance function), and
-// importing either directly to reach it would add a fourth direct require, which criterion 1's
-// pin policy forbids. ADR-0002 records the gap; Task 20b-ii's own golden sweep, the task that
-// first exercises a wide terminal against real content rather than render's own fixed glyphs, is
-// where that dependency tradeoff belongs.
-func (t Theme) Width(s string) int {
-	return textWidth(s)
+// widthTable is one East Asian Width reading of the Unicode width data, the two a Theme
+// measures under. It is a value a Theme carries rather than a package-level setting, so two
+// frames at two tiers can be composed in one process without either one moving the other's
+// arithmetic; x/ansi's own tables are the counter-example, switched once at init from
+// RUNEWIDTH_EASTASIAN and shared by every caller in the binary.
+type widthTable int
+
+const (
+	// tableNarrow reads East Asian Width=Ambiguous as one cell, which is what nearly every
+	// terminal does and what the Unicode glyph tier assumes.
+	tableNarrow widthTable = iota
+	// tableWide reads Ambiguous as two cells, the reading a terminal configured for a CJK locale
+	// takes. The ASCII tier measures under it: that tier is what such a terminal is given, and
+	// budgeting the wider of the two readings is what keeps arbitrary site content inside a fixed
+	// column there.
+	tableWide
+)
+
+// options returns the displaywidth settings w measures with. Escape handling is left off and
+// ansi.Strip does that job instead (measure), since x/ansi's parser is the one this package
+// already composes its escapes with.
+func (w widthTable) options() displaywidth.Options {
+	return displaywidth.Options{EastAsianWidth: w == tableWide}
 }
 
-// textWidth is Theme.Width's receiver-free form, so the wrap and cut primitives in layout.go
-// measure with the one table rather than reaching for a second.
-func textWidth(s string) int {
-	return ansi.StringWidth(s)
+// measure returns s in cells under w, escape sequences discounted.
+func (w widthTable) measure(s string) int {
+	return w.options().String(ansi.Strip(s))
+}
+
+// Width measures s in the cells a layout budgets, under the width table the Theme's own tier
+// chose: Ambiguous=narrow for the Unicode tier, Ambiguous=wide for the ASCII tier. Every glyph in
+// render's own glyph set is exactly one cell under the narrow table (glyph_test.go's parity
+// test), and the ASCII tier's glyphs are plain ASCII and exact under both.
+func (t Theme) Width(s string) int {
+	return t.widths.measure(s)
 }
 
 // Clamp cuts s to width cells, measured by Width, never longer. It is the last thing a dynamic

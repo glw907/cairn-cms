@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted, 2026-09-21 (Task 20a).
+Accepted, 2026-09-21 (Task 20a); amended the same day at the segment 3 review,
+which took the fourth dependency and built the second width table.
 
 ## Context
 
@@ -12,20 +13,28 @@ one has to answer colour, glyph width, and terminal capability, none of which th
 standard library or the module's existing dependencies cover.
 `docs/design/charm-v2-capabilities.md` section B.1 surveyed the Charm v2 stack for
 this exact purpose and named three libraries to take and four to decline. This
-record carries that decision forward into the module.
+record carries that decision forward into the module, and the amendment below
+records the fourth library the width tables needed.
 
 ## Decision
 
-### Three dependencies, pinned exactly
+### Four dependencies, pinned exactly
 
 `charm.land/lipgloss/v2 v2.0.6`, `github.com/charmbracelet/colorprofile v0.4.3`,
-and `github.com/charmbracelet/x/ansi v0.11.8`. They bring `ultraviolet`,
-`go-colorful`, `displaywidth`, `uax29`, `go-runewidth`, `uniseg`, and `terminfo`
-as indirect requires: seven transitive modules, no cgo, all pure Go, all already
-vetted on this workstation by poplar. The versions are exact in `go.mod`, taken at
-the survey's measured values; a later bump goes through the workstation's
-`dependency-upgrade` skill like every other dependency in this module, never an
-ad hoc `go get` inside an unrelated task.
+`github.com/charmbracelet/x/ansi v0.11.8`, and
+`github.com/clipperhouse/displaywidth v0.11.0`. The first three bring
+`ultraviolet`, `go-colorful`, `uax29`, `go-runewidth`, `uniseg`, and `terminfo` as
+indirect requires: no cgo, all pure Go, all already vetted on this workstation by
+poplar. The versions are exact in `go.mod`, taken at the survey's measured values;
+a later bump goes through the workstation's `dependency-upgrade` skill like every
+other dependency in this module, never an ad hoc `go get` inside an unrelated task.
+`internal/render/purity_test.go` pins both the list and the module's total count,
+so a fifth library fails a test rather than arriving in a diff nobody read.
+
+The fourth was promoted from indirect rather than chosen: `x/ansi`'s own
+grapheme-aware width measure already rests on `displaywidth`, so taking it
+directly adds no module to the build graph and makes both width tables read the
+same data. The section below records why a second table was needed at all.
 
 The alternative, hand-rolled `fmt.Sprintf` padding, fails this package's first
 job: padding a column holding `●` or `─` to a fixed width, where `len` and rune
@@ -64,55 +73,47 @@ unreachable through it. `colorprofile.Env` reads `TERM`'s own `-256color`
 convention instead, which is the signal a 256-colour terminal actually
 advertises, and is what `profile.go` calls.
 
-### The Ambiguous=Wide width table is a known gap, deferred to Task 20b-ii
+### Both width tables, chosen by glyph tier
 
-Criterion 12 of Task 20a asks for two width tables on `Theme`, chosen by glyph
-tier: East Asian Width=Ambiguous read narrow for the Unicode tier (nearly every
-terminal), and read wide for the ASCII tier, so a terminal configured the other
-way still renders exactly within budget. `width.go`'s `Theme.Width` supplies only
-the narrow table, built from `x/ansi.StringWidth`.
+Criterion 12 asks for two width tables on `Theme`, chosen by glyph tier: East
+Asian Width=Ambiguous read narrow for the Unicode tier (nearly every terminal),
+and read wide for the ASCII tier, so a terminal configured the other way still
+renders exactly within budget. Both exist. `widthTable` is a field on `Theme`,
+never a package-level setting, and `Render` sets it once from `RenderInput.ASCII`.
 
-The reason is the same one criterion 7 states for the contrast test's luminance
-function: a general-purpose Ambiguous=Wide measure over arbitrary site content
-(a CJK domain, a site name with combining marks) needs the East Asian Width
-table `github.com/mattn/go-runewidth` or `github.com/clipperhouse/displaywidth`
-carries, and both are indirect dependencies of the three taken above. Importing
-either directly to reach that table would promote it to a fourth direct require,
-which the pin policy above forbids. `x/ansi` itself carries no per-call toggle
-for this (only a package-init `RUNEWIDTH_EASTASIAN` environment read inside the
-library's own `method.go`, which this package does not touch and does not rely
-on).
+The table has to be a value a `Theme` carries. `x/ansi` is the counter-example:
+its own two width options are package globals set once at init from
+`RUNEWIDTH_EASTASIAN`, shared by every caller in the binary, so a process
+composing one frame at each tier would have the second move the first's
+arithmetic. That is the shape criterion 12 rules out by name.
 
-Every glyph render's own glyph set carries, Unicode or ASCII, is already exactly
-one cell wide under the narrow table (`glyph_test.go`'s parity test), so nothing
-in this task's own scope needs the wide table for render's own marks. What the
-wide table protects against is arbitrary DATA overflowing a fixed column on a
-wide-configured terminal running the ASCII tier, and that is exactly the case
-`docs/design/render-reference/measurements.txt` records as the one unsupported
-combination (Unicode tier on an Ambiguous=Wide terminal, 2980 over-width lines).
-Task 20b-ii owns the golden sweep across real frames and real site content; it
-is the task in a position to weigh the fourth dependency against a hand-rolled
-alternative, not this one.
+`displaywidth` supplies both readings through one `Options` value, and `x/ansi`'s
+own grapheme measure already calls it, so the library was promoted from indirect
+rather than chosen: no module joined the build graph, and both tables read the
+same Unicode data. Escape sequences are discounted by `ansi.Strip` before the
+measure rather than by `displaywidth`'s own control-sequence options, since
+`x/ansi`'s parser is the one this package composes its escapes with. The narrow
+table measures every committed frame identically to the `ansi.StringWidth` call it
+replaced: the 146-frame corpus was unchanged by the swap.
 
-### The deferral is resolved: the narrow table stays, and no fourth require lands (2026-09-21)
+Criterion 19's sweep runs on both: every fixture, every terminal body, widths 20
+through 400, at both tiers, each frame measured under the table its own tier chose
+(`body_test.go`'s `TestNoLineExceedsTheRequestedWidth`). The pairing is per tier
+rather than every frame against both, because a terminal never presents the other
+combination: one reading Ambiguous wide takes the ASCII tier, whose glyphs are
+plain ASCII and exact under both tables. The Unicode tier on such a terminal
+remains what `docs/design/render-reference/measurements.txt` records as the one
+unsupported combination (2980 over-width lines under it).
 
-Task 20b-ii ran the sweep the deferral above waits on: 146 committed frames over
-nine fixtures, four views, and five width rungs, plus a 20-to-400 width sweep at
-both glyph tiers over the same fixtures, the hostile corpus included. The
-decision is to keep the single narrow table and add no dependency.
+### The Windows console branch is unverified on real hardware
 
-Two facts carry it. The fleet strip, the one surface this task added that spends
-a fixed column on a glyph, draws only marks from render's own glyph set, and
-every one of them is exactly one cell under the narrow table; arbitrary site
-content reaches a fixed column in one place, the site name, and it is cut to the
-column with `fitted` before the cell is rendered rather than measured and
-trusted. And the combination the wide table would protect, the Unicode tier on
-an Ambiguous=Wide terminal, is the one `measurements.txt` already records as
-unsupported: such a terminal takes the ASCII tier, whose glyphs are plain ASCII
-and exact under both tables.
-
-What would reopen it is a surface that budgets a fixed column for arbitrary text
-and cannot cut it, which is a shape none of the four views has.
+`profile_windows.go`'s `enableVirtualTerminal` is compile-checked and vet-clean on
+a `GOOS=windows` build, and no test drives it against a real console. `go test` on
+the Windows CI leg writes to a pipe, where `DetectProfile` short-circuits before
+calling it at all, and a pipe handle only ever produces its `GetConsoleMode`
+failure path. A test cannot allocate a conhost from CI, so the branch stands
+unverified until an operator runs the binary at a Windows terminal. Stated here
+rather than papered over with a test that proves the pipe case twice.
 
 ## Consequences
 
@@ -121,7 +122,7 @@ and cannot cut it, which is a shape none of the four views has.
   `Theme.GlyphSet`, and the `RenderInput.ASCII`/`Profile` fields `profile.go`
   fills. No file outside `palette.go` names a hex or ANSI value, and no file
   outside `profile.go` queries a terminal.
-- A future task that needs the wide width table for arbitrary content
-  (Task 20b-ii, per the deferral above) must either accept the fourth direct
-  dependency and record the decision here, or hand-author a narrow lookup table
-  scoped to what the sweep actually needs.
+- A task that needs a third width reading reaches it through `widthTable`, never
+  through a package variable and never through a second library.
+- The Windows console path is the one behaviour in this package no gate can
+  assert. A regression there surfaces from an operator, not from CI.

@@ -128,6 +128,33 @@ func isRealTTY() bool {
 	return fi.Mode()&os.ModeCharDevice != 0
 }
 
+// TestBodyFollowsTheTerminalFactAloneNotTheTier is criterion 15: the one TTY predicate selects
+// the body, and the ASCII tier never does. A dumb but real terminal takes a styled body while
+// rendering at the ASCII tier; a pipe takes the plain body under the same tier. Reading the tier
+// instead would give the real terminal a cron mail's body.
+func TestBodyFollowsTheTerminalFactAloneNotTheTier(t *testing.T) {
+	tests := []struct {
+		name      string
+		isTTY     bool
+		wantASCII bool
+		wantBody  Body
+	}{
+		{"dumb_but_real_terminal", true, true, BodySingle},
+		{"pipe", false, true, BodyPlain},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, ascii := detect(tt.isTTY, true, Env{Color: "auto", Term: "dumb"})
+			if ascii != tt.wantASCII {
+				t.Errorf("ascii = %v, want %v", ascii, tt.wantASCII)
+			}
+			if got := SelectBody(1, tt.isTTY); got != tt.wantBody {
+				t.Errorf("SelectBody(1, tty=%v) = %v, want %v", tt.isTTY, got, tt.wantBody)
+			}
+		})
+	}
+}
+
 // TestFromColorprofileNeverPanics exercises every colorprofile.Profile byte value, including ones
 // with no named constant, since Terminfo's return value is not restricted to the six documented
 // ones by the type system.

@@ -67,17 +67,31 @@ var groundHex = struct{ light, dark string }{"#fdfbf9", "#221f1a"}
 type Theme struct {
 	dark     bool
 	profile  Profile
+	widths   widthTable
 	GlyphSet GlyphSet
 }
 
-// NewTheme returns the theme for a background and a colour profile. It reads nothing else:
-// profile_test.go asserts the signature and glyph_test.go asserts GlyphSet carries both tiers.
+// NewTheme returns the theme for a background and a colour profile, measuring under the narrow
+// width table. It reads nothing else: profile_test.go asserts the signature and glyph_test.go
+// asserts GlyphSet carries both tiers. The tier is applied afterwards by forTier, which is what
+// keeps the glyph tier off this signature and out of Profile.
 func NewTheme(dark bool, p Profile) Theme {
 	return Theme{
 		dark:     dark,
 		profile:  p,
+		widths:   tableNarrow,
 		GlyphSet: GlyphSet{Unicode: unicodeGlyphs, ASCII: asciiGlyphs},
 	}
+}
+
+// forTier returns t measuring under the width table the glyph tier implies. Render is the one
+// caller: it reads RenderInput.ASCII, which profile.go's detector alone fills.
+func (t Theme) forTier(ascii bool) Theme {
+	t.widths = tableNarrow
+	if ascii {
+		t.widths = tableWide
+	}
+	return t
 }
 
 // color resolves role through lipgloss's own light/dark and per-profile seams, so the value a

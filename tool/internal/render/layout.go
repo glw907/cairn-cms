@@ -69,6 +69,13 @@ func split(r health.Report) sections {
 	return s
 }
 
+// failingRowsOnly returns s carrying its failing checks alone, the rows --quiet draws. The
+// counts a caller already took off the whole sections value are unaffected, which is the whole
+// point of filtering here rather than cutting the report upstream.
+func (s sections) failingRowsOnly() sections {
+	return sections{Failing: s.Failing}
+}
+
 // tally renders the header's counts in the section words, joined by sep, omitting a state with
 // none. The passing count always prints, so a reader always learns how much did run.
 func (s sections) tally(sep string) string {
@@ -248,28 +255,43 @@ func verdictRole(v Verdict) Role {
 	}
 }
 
-// verdictLines is the line every terminal body leads with and ends on: the verdict, the subject
-// bold, the tallies muted. A tally is a fact, so when the three will not fit on one line the
-// tally takes a line of its own rather than being cut.
+// verdictLines is the block every terminal body leads with: the verdict, the subject bold, the
+// tallies muted. A tally is a fact, so when the three will not fit on one line the tally takes a
+// line of its own rather than being cut.
 func (t Theme) verdictLines(v Verdict, subject, tally string, width int) []string {
+	head, tallyLines := t.verdictParts(v, subject, tally, width)
+	return append([]string{head}, tallyLines...)
+}
+
+// verdictFooterLines is the same block at the end of a frame, with the wrapped tally above the
+// verdict rather than below it. The verdict word is the last non-blank line of every frame at
+// every width: a truncated cron mail, a scrollback glance, and a screen reader all read the last
+// line, and a tally sitting there would leave the run's own word off the end of the output at
+// exactly the widths where it wrapped.
+func (t Theme) verdictFooterLines(v Verdict, subject, tally string, width int) []string {
+	head, tallyLines := t.verdictParts(v, subject, tally, width)
+	return append(tallyLines, head)
+}
+
+// verdictParts renders the verdict block's two pieces: the head line, and the tally lines where
+// the tally did not fit beside it. An empty tally slice means the tally rode the head line, or
+// that the run had nothing to count at all, which is the empty registry's own frame.
+func (t Theme) verdictParts(v Verdict, subject, tally string, width int) (head string, tallyLines []string) {
 	word := v.String()
-	head := t.Strong(verdictRole(v)).Render(word)
+	head = t.Strong(verdictRole(v)).Render(word)
 	if subject != "" {
 		head += "  " + t.Strong(RoleText).Render(subject)
 	}
-	// A run with nothing to count says nothing rather than trailing two spaces after its
-	// subject: the empty registry is the one frame that reaches here with no tally at all.
 	if tally == "" {
-		return []string{head}
+		return head, nil
 	}
 	if t.Width(word)+2+t.Width(subject)+2+t.Width(tally) <= width {
-		return []string{head + "  " + t.Style(RoleMuted).Render(tally)}
+		return head + "  " + t.Style(RoleMuted).Render(tally), nil
 	}
-	out := []string{head}
-	for _, l := range wrap(tally, width) {
-		out = append(out, t.Style(RoleMuted).Render(l))
+	for _, l := range t.wrap(tally, width) {
+		tallyLines = append(tallyLines, t.Style(RoleMuted).Render(l))
 	}
-	return out
+	return head, tallyLines
 }
 
 // insetRule is the one section device this design uses: a lowercase label inset two cells into a
@@ -299,7 +321,7 @@ func row(cells ...string) string {
 //
 // The break is the space and nothing else. A library word wrap also breaks after a hyphen, which
 // turns 2026-09-25 into two dates and a stray dash.
-func wrap(text string, width int) []string {
+func (t Theme) wrap(text string, width int) []string {
 	if width < 1 {
 		width = 1
 	}
@@ -313,12 +335,12 @@ func wrap(text string, width int) []string {
 		if i > 0 && cur != "" {
 			sep = " "
 		}
-		if cur != "" && textWidth(cur)+textWidth(sep)+textWidth(tok) > width {
+		if cur != "" && t.Width(cur)+t.Width(sep)+t.Width(tok) > width {
 			out = append(out, strings.TrimRight(cur, " "))
 			cur, sep = "", ""
 		}
-		for textWidth(tok) > width {
-			head, tail := cutAt(tok, width)
+		for t.Width(tok) > width {
+			head, tail := t.cutAt(tok, width)
 			out = append(out, head)
 			tok = tail
 		}
@@ -334,8 +356,8 @@ func wrap(text string, width int) []string {
 // last line is a single word, so a sentence never ends on a stray verb sitting alone. It gives
 // up where the line above has nothing to spare, which is the only shape where an orphan is the
 // honest result: a single token wider than the width has nowhere else to go.
-func wrapNoOrphan(text string, width int) []string {
-	lines := wrap(text, width)
+func (t Theme) wrapNoOrphan(text string, width int) []string {
+	lines := t.wrap(text, width)
 	if len(lines) < 2 {
 		return lines
 	}
@@ -348,7 +370,7 @@ func wrapNoOrphan(text string, width int) []string {
 		return lines
 	}
 	moved := words[len(words)-1]
-	if textWidth(moved)+1+textWidth(lines[last]) > width {
+	if t.Width(moved)+1+t.Width(lines[last]) > width {
 		return lines
 	}
 	lines[last-1] = strings.Join(words[:len(words)-1], " ")
@@ -358,10 +380,10 @@ func wrapNoOrphan(text string, width int) []string {
 
 // cutAt splits s after width cells, returning the head and the remainder. It walks runes rather
 // than bytes so a multi-byte or double-width rune is never split down the middle.
-func cutAt(s string, width int) (head, tail string) {
+func (t Theme) cutAt(s string, width int) (head, tail string) {
 	n := 0
 	for i, r := range s {
-		rw := textWidth(string(r))
+		rw := t.Width(string(r))
 		if n+rw > width && i > 0 {
 			return s[:i], s[i:]
 		}
@@ -372,8 +394,8 @@ func cutAt(s string, width int) (head, tail string) {
 
 // hangingAt wraps text into the column at col, with lead printed before the first line, so a fix
 // wraps under itself and is never truncated.
-func hangingAt(st lipgloss.Style, lead string, col int, text string, width int) []string {
-	body := wrap(text, width-col)
+func (t Theme) hangingAt(st lipgloss.Style, lead string, col int, text string, width int) []string {
+	body := t.wrap(text, width-col)
 	pad := strings.Repeat(" ", col)
 	out := make([]string, 0, len(body))
 	for i, l := range body {
@@ -387,8 +409,8 @@ func hangingAt(st lipgloss.Style, lead string, col int, text string, width int) 
 }
 
 // indented renders text wrapped into the column at col, every line at that column.
-func indented(st lipgloss.Style, col int, text string, width int) []string {
-	return atColumn(st, col, wrap(text, width-col))
+func (t Theme) indented(st lipgloss.Style, col int, text string, width int) []string {
+	return atColumn(st, col, t.wrap(text, width-col))
 }
 
 // atColumn renders already-wrapped lines at col, each in st.
@@ -404,15 +426,15 @@ func atColumn(st lipgloss.Style, col int, lines []string) []string {
 // wrapLeavingTail wraps text to width and re-flows its last line until tailWidth cells are free
 // at the end of it, so a trailing field shares that line rather than taking one of its own. It
 // reports false when no re-flow leaves the room, which is a width too narrow to carry both.
-func wrapLeavingTail(text string, width, tailWidth int) (lines []string, ok bool) {
-	lines = wrap(text, width)
+func (t Theme) wrapLeavingTail(text string, width, tailWidth int) (lines []string, ok bool) {
+	lines = t.wrap(text, width)
 	if len(lines) == 0 {
 		return nil, false
 	}
-	for textWidth(lines[len(lines)-1])+tailWidth > width {
+	for t.Width(lines[len(lines)-1])+tailWidth > width {
 		words := strings.Fields(lines[len(lines)-1])
 		if len(words) < 2 {
-			return wrap(text, width), false
+			return t.wrap(text, width), false
 		}
 		lines[len(lines)-1] = strings.Join(words[:len(words)-1], " ")
 		lines = append(lines, words[len(words)-1])

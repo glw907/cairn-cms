@@ -27,10 +27,15 @@ func renderSingle(t Theme, in RenderInput) Frame {
 	report := firstReport(in)
 	s := split(report)
 	subject := Sanitize(report.Site)
+	// The tally is taken before the rows are filtered, so --quiet's body counts the run that
+	// happened rather than the slice it drew.
 	tally := s.tally(" " + t.glyphs(in.ASCII).Sep + " ")
+	if in.FailingOnly {
+		s = s.failingRowsOnly()
+	}
 
 	f := Frame{Header: t.verdictLines(in.Verdict, subject, tally, width)}
-	f.Header = append(f.Header, indented(t.Style(RoleMuted), 0,
+	f.Header = append(f.Header, t.indented(t.Style(RoleMuted), 0,
 		checkedPhrase(checkedAt(report, in.Now), in.Now, in.Status.Elapsed), width)...)
 
 	var body []string
@@ -60,7 +65,7 @@ func renderSingle(t Theme, in RenderInput) Frame {
 	}
 	f.Body = body
 
-	f.Footer = append([]string{""}, t.verdictLines(in.Verdict, subject, tally, width)...)
+	f.Footer = append([]string{""}, t.verdictFooterLines(in.Verdict, subject, tally, width)...)
 	return t.clampFrame(f, width)
 }
 
@@ -192,7 +197,7 @@ func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 		t.placeCondition(head, block, t.Style(RoleMuted).Render(tail), width)
 	}
 
-	out := append(head, indented(t.Style(holdRole), col, hold, width)...)
+	out := append(head, t.indented(t.Style(holdRole), col, hold, width)...)
 	// The credential and keyring detail sit on the creds row, in its own detail column, rather
 	// than in the header block: it is detail about the check the operator is already reading.
 	if c.ID == credsRowID {
@@ -208,9 +213,9 @@ func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 func (t Theme) detailLines(detail, tail string, col, width int) (lines []string, placed bool) {
 	avail := width - col
 	if tail == "" || width >= Width100 {
-		return atColumn(t.Style(RoleSubtle), col, wrap(detail, avail)), false
+		return atColumn(t.Style(RoleSubtle), col, t.wrap(detail, avail)), false
 	}
-	wrapped, ok := wrapLeavingTail(detail, avail, t.Width(tail))
+	wrapped, ok := t.wrapLeavingTail(detail, avail, t.Width(tail))
 	lines = atColumn(t.Style(RoleSubtle), col, wrapped)
 	if !ok || len(lines) == 0 {
 		return lines, false
@@ -240,7 +245,7 @@ func (t Theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 	indent := colIndent + colGlyph
 	col := indent + t.Width(g.Arrow) + 1
 	lead := strings.Repeat(" ", indent) + t.Style(RoleAccent).Render(g.Arrow) + " "
-	out := hangingAt(t.Style(RoleSubtle), lead, col, Sanitize(fix.Text), width)
+	out := t.hangingAt(t.Style(RoleSubtle), lead, col, Sanitize(fix.Text), width)
 
 	url := fixURL(fix)
 	if url == "" {
@@ -252,7 +257,7 @@ func (t Theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 	if in.Profile != ProfileNoColor && linkable(url) {
 		style = t.Link(RoleMuted, url)
 	}
-	return append(out, indented(style, col, url, width)...)
+	return append(out, t.indented(style, col, url, width)...)
 }
 
 // placeCondition writes the condition id onto the tail of a line it shares, in place. The id
@@ -303,7 +308,7 @@ func (t Theme) foldLine(in RenderInput, passing []health.CheckResult, width int)
 	label := count(len(passing), labelPassing)
 	lead := t.Style(passRole(in.Verdict)).Render(g.Pass) + " " + t.Style(RoleMuted).Render(label) + "  "
 	col := t.Width(g.Pass) + 1 + t.Width(label) + 2
-	return hangingAt(t.Style(RoleMuted), lead, col, strings.Join(names, " "+g.Sep+" "), width)
+	return t.hangingAt(t.Style(RoleMuted), lead, col, strings.Join(names, " "+g.Sep+" "), width)
 }
 
 // clampFrame cuts every emitted line to the requested width, the last thing a terminal body

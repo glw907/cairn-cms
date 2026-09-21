@@ -67,32 +67,38 @@ func (t Theme) statusLines(in RenderInput, col, width int) []string {
 		if c.missing() {
 			named = true
 		}
-		out = append(out, t.statusLine(c, in.Now, col, width)...)
+		out = append(out, t.statusLine(c, in.Now, in.View == ViewStatus, col, width)...)
 	}
 	// The degraded flag says a missing token cost the run some checks. Where a missing token was
 	// already named with the checks it disabled, that line has already said it, in more detail
 	// than a second line could.
 	if in.Status.Degraded && !named {
-		out = append(out, indented(t.Style(RoleUnknown), col, statusDegraded, width)...)
+		out = append(out, t.indented(t.Style(RoleUnknown), col, statusDegraded, width)...)
 	}
 	return out
 }
 
-// statusLine renders one token's own fact.
-func (t Theme) statusLine(c Credential, now time.Time, col, width int) []string {
+// statusLine renders one token's own fact. listing selects the phrasing for a frame where no
+// check was attempted: a site listing runs none, so the past tense would tell the operator that
+// checks failed to run when nothing ran at all.
+func (t Theme) statusLine(c Credential, now time.Time, listing bool, col, width int) []string {
 	variable := Sanitize(c.Variable)
 	if variable == "" {
 		return nil
 	}
 	if c.missing() {
-		return indented(t.Style(RoleUnknown), col,
-			variable+statusUnsetJoin+joinWords(sanitizeAll(c.Disables))+statusUnsetTail, width)
+		tail := statusUnsetTail
+		if listing {
+			tail = statusUnsetTailListing
+		}
+		return t.indented(t.Style(RoleUnknown), col,
+			variable+statusUnsetJoin+joinWords(sanitizeAll(c.Disables))+tail, width)
 	}
 	line := variable + statusReadJoin + Sanitize(c.Provider)
 	if !c.Expires.IsZero() {
 		line += statusExpiresJoin + isoDate(c.Expires) + ", in " + remainingDays(c.Expires.Sub(now))
 	}
-	return indented(t.Style(RoleMuted), col, line, width)
+	return t.indented(t.Style(RoleMuted), col, line, width)
 }
 
 // The status line's own fragments. They are the strings this file composes a status line from,
@@ -100,8 +106,16 @@ func (t Theme) statusLine(c Credential, now time.Time, col, width int) []string 
 const (
 	// statusUnsetJoin opens a missing token's line, which then names the checks it disabled.
 	statusUnsetJoin = " is not set, so "
-	// statusUnsetTail closes it in the section vocabulary's own words.
+	// statusUnsetTail closes it in the section vocabulary's own words, for a frame whose checks
+	// did run.
 	statusUnsetTail = " could not run"
+	// statusUnsetTailListing closes it where no check was attempted, which is the site listing.
+	// The past tense would report a failure that did not happen: the listing ran nothing, and
+	// what the missing token costs is the next health run, not this one.
+	//
+	// The wording is drafted to the copy standard's grammar and is owed to Task 22a's editorial
+	// gate, alongside the eight strings section 4.7 already lists.
+	statusUnsetTailListing = " cannot run"
 	// statusReadJoin opens a present token's line, which then names the store it came from.
 	statusReadJoin = " read from the "
 	// statusExpiresJoin opens the expiry a provider publishes for a present token.

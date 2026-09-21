@@ -842,23 +842,97 @@ the named human gates only):**
 
 ## Next
 
+- **Report the drawer `:where()` specificity defect upstream to daisyUI (pre-cut, 2026-09-21).**
+  `components/drawer.css` releases its open panel's `will-change` through a rule whose prelude is
+  wrapped in `:where()`, which zeroes the prelude, so the release measures (0,1,0) against its own
+  base rule's (0,2,0) in the same layer and never applies; the `drawer-open` persistent forms carry
+  no release at all. Present unchanged in 5.7.20 and 5.7.42. cairn carries a pinned unlayered
+  override (`daisyui-drawer-will-change-where-wrapper` in the rulings ledger), which retires the day
+  upstream fixes it. Trigger: this is a standing item until the issue is filed.
+
+- **Decide whether `e2e.yml`'s baseline regen should stay on Playwright's `changed` preset (pre-cut,
+  2026-09-21).** The `changed` preset skips a baseline that still passes its threshold, and the
+  `admin drawer overlay` cases carry a local `maxDiffPixels: 1000` rather than the suite's 120. When
+  the drawer's raster moved, four of the six affected baselines still passed at 1000, so the regen
+  would have left them stale and only a hand `git rm` forced them to be rewritten. The alternative
+  is a delete-then-regen by spec, which costs a full rewrite of every baseline the named spec owns.
+  Trigger: the next regen that a pass has to hand-force, or a third stale baseline found in a
+  loose-threshold spec.
+
+- **Add a computed-style guard for the `xl:drawer-open` arm of pinned unlayered rule 5 of 14
+  (pre-cut, 2026-09-21).** The e2e suite covers the overlay and `lg:drawer-open` forms of the
+  `will-change` release; the third selector arm, `xl:drawer-open`, has no guard on the desk
+  route. Trigger: the next pass that touches the desk route's viewport coverage.
+
 - **`cairn-guidance install` write-hardening candidates, from the security re-read (extend-2,
   2026-09-20).** The blocking read that found the symlink-containment defect (fixed in `9aa7765a`)
-  also named six smaller items, verified against the code as it stands after that fix and left
-  open: (1) each directory level should be created with a non-recursive `mkdir` that refuses on
+  also named six smaller items, verified against the code as it stands after that fix. Two of the
+  six landed in the pre-cut pass (2026-09-21): `err.code` now carries out of the write's `catch`
+  into `InstallReport.writeErrors`, and a destination skipped because its `.orig` recovery copy
+  could not be made now lands in `report.refused` alongside the `.orig` path. Four remain open:
+  (1) each directory level should be created with a non-recursive `mkdir` that refuses on
   `EEXIST` when the existing entry is a symlink, closing a race between the `lstat` walk and the
   `mkdir` call where a planted symlink lands between the two; this needs a concurrent local writer
   in the same working tree, out of the threat model for a developer's own checkout, which is why
   it is filed rather than fixed now; (2) a destination whose `nlink > 1` (a hard link) should be
   refused the same way a symlink is, since a hard link bypasses the symlink check entirely; (3)
-  `err.code` should carry out of the write's `catch` so an `ENOSPC` or `EACCES` failure is
-  reported as an error rather than silently naming a truncated destination as written; (4)
   `readIfExists` and `mkdir` should move inside the same `try` as the write, so an `EACCES` on
-  either refuses the destination rather than aborting the whole install; (5) `cairn-guidance
+  either refuses the destination rather than aborting the whole install; (4) `cairn-guidance
   check`'s read side should reuse the same `lstat` walk `install` uses, rather than a separate,
-  looser read path; (6) a refused destination should itself appear in the report's lists, not
-  only its `.orig` sibling. Trigger: the next pass that touches `src/lib/guidance/install.ts`'s
-  write path, or a second independent report of any of the six.
+  looser read path; (5) `cairn-guidance install` (`src/lib/guidance/bin.ts:94-99`) never sets
+  `process.exitCode`, so a run that reports refusals or write errors still exits 0, and a
+  disk-failed install should exit non-zero instead of looking like a clean run in CI or a script;
+  (6) the pre-cut pass's fix A (`writeErrors` carrying `err.code`) means an `ELOOP` from
+  `O_NOFOLLOW` losing the check-to-open race between `resolveWritableDest`'s `lstat` and
+  `writeWithoutFollowing`'s open (`src/lib/guidance/install.ts:387`) now reports under
+  `writeErrors`, not `refused`, but `installGuidance`'s own doc block near `install.ts:339` still
+  says a symlink is refused by name at every point of the write, which is no longer true of that
+  one race window; the doc needs a carve-out, or the race needs to resolve to a refusal instead.
+  Trigger: the next pass that touches `src/lib/guidance/install.ts`'s write path, or a second
+  independent report of any of the six.
+
+- **Blueprint pre-cut admin audit findings, five items over the whole admin surface (pre-cut
+  pass, 2026-09-21).** Full record:
+  `docs/internal/record/2026-09-21-blueprint-pre-cut-admin-audit.md`. (1) `CairnAdminShell.svelte:1046`
+  builds a dynamic nav-menu class string with an interpolated `extraClass`; verify every caller
+  passes a static string, since Tailwind's scanner cannot see a truly dynamic one. (2)
+  `HelpHome.svelte:230` and `MarkdownHelpDialog.svelte:29` carry tables with no local overflow
+  strategy; check both at 320px against the five-viewport standard and wrap in `overflow-x-auto`
+  if either scrolls the page. (3) `CairnMediaLibrary.svelte:781` and `:992` size thumbnails with
+  `max-h-full max-w-full object-contain` inside a sized tile; confirm the tile reserves the space
+  so a slow-loading thumbnail cannot shift layout. (4) `EditPage.svelte` carries fifteen inline
+  `<path>` elements (`:1529` to `:2282`) beside the project's `@lucide/svelte` icon library;
+  decide which are hand-drawn Lucide icons that should swap to the library and which are
+  deliberate custom glyphs. (5) `EditPage.svelte:2429` and `:2491` write
+  `hover:text-[var(--color-primary)]` and `text-[var(--color-accent)]` where the semantic
+  utilities `hover:text-primary` and `text-accent` already cover the same token; a plain swap.
+  Trigger: the next pass that touches `src/lib/components/`.
+
+- **Two admin glyphs are drawn as bare text characters, not icons (pre-cut pass fix round,
+  2026-09-21).** `DeleteDialog.svelte`'s dialog close button is a bare `✕` character
+  (`src/lib/components/DeleteDialog.svelte:75`), and the command palette's keyboard hint is a bare
+  `&#8984;` inside a `<kbd>` (`src/lib/components/CairnAdminShell.svelte:851`). Neither pins a
+  font, so both resolve through whatever fallback font the rendering environment supplies, which
+  made the visual baselines depend on the CI runner's font fallback for `U+2318` rather than on
+  cairn's own markup. Draw both from the icon library (`@lucide/svelte`) or a pinned symbol font
+  instead. Trigger: the next pass that touches either component.
+
+- **`publish.yml` uses `npm install --no-audit --no-fund`, not `npm ci`, for the published build
+  (pre-cut pass, 2026-09-21).** A reviewer proposed the switch during the pass; declined for the
+  cut because `npm install` with a committed lockfile already honors it, and changing the release
+  pipeline sat outside the owner's four rulings for that pass. Evaluate `npm ci` for the
+  reproducibility guarantee it adds over a committed lockfile in a release workflow. Trigger: the
+  next pass that touches `publish.yml`.
+
+- **The `cairn-release` skill has no step enforcing that `package.json` and
+  `packages/cairn-cms-dev/package.json` carry the same version (pre-cut pass, 2026-09-21).**
+  Task 6 of the pre-cut plan hand-asserts the two versions are equal before tagging
+  (`docs/superpowers/plans/2026-09-21-pre-cut-pass.md`, Task 6), but neither the skill's own
+  procedure nor `check:version` or `check:dev-package` enforces the lockstep bump as a gate, so a
+  future cut that skips the plan's hand step can silently publish a mismatched dev-package version
+  the way `0.95.0` almost did. Add the assertion to the skill's own steps, or extend
+  `check:version` (or `check:dev-package`) to fail when the two manifests disagree. Trigger: the
+  next release cut, or the next pass that touches either gate script.
 
 - **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
   until a site pass has filed about twenty facts by hand and the shape has stopped moving
@@ -910,9 +984,10 @@ the named human gates only):**
   are out.
 
 - **Five admin defaults from the Carbon survey, accepted (Geoff, 2026-09-13; record
-  `docs/internal/record/2026-09-13-carbon-patterns-survey.md`, Part 5b).** Three land as one
-  bounded task in the pre-cut window on `main`, after the motion pass merges and beside the
-  dependency sweep, since each is a few lines with no new surface: `Pagination`'s selected
+  `docs/internal/record/2026-09-13-carbon-patterns-survey.md`, Part 5b).** Three were slated to
+  land as one bounded task in the pre-cut window; they did not land there (the pre-cut pass's five
+  tasks did not include this one) and remain filed here, unstarted, since each is a few lines with
+  no new surface: `Pagination`'s selected
   page gains a non-color cue (the design-system gap below, sweep finding 23); `DeleteDialog`
   drops its `method="dialog"` backdrop form so a stray click no longer dismisses a destructive
   confirm (Carbon forbids outside-click dismissal on a danger modal; cairn's safe-delete recipe
@@ -933,7 +1008,13 @@ the named human gates only):**
   boundary): Pass A ships the registry, the health checks, the cobra
   subcommands, and the scheduled tripwire with every action usable from the shell; the
   tool's 1.0 is that complete single-site CLI, in which a user can do everything without the
-  TUI; its 2.0 adds the bubbletea HUD and multi-site management. The 1.0 architecture must
+  TUI; its 2.0 adds the bubbletea HUD and multi-site management. **Superseded in part
+  (Geoff, 2026-09-21):
+  [`the after-1.0 framing`](docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md)
+  governs what follows the tag. Use through the site round, then 1.1 headed by the
+  agent-permission check, then the HUD as a 1.x minor under `cairn hud`; 2.0 is reserved for a
+  break of a frozen surface; the MCP front end named below is declined (2026-09-20). B2's close
+  rewrites this entry.** The 1.0 architecture must
   carry both: keep the registry's shape and site record (the 2026-08-20 plan's registry adopts
   several sites; 1.0's commands operate on one at a time), keep checks as pure functions over a
   site record, and keep the pure render seam the HUD later mounts on, so 2.0 adds a view and a
@@ -965,6 +1046,10 @@ the named human gates only):**
   codes, and the 1.0 cut. The recut brief is
   `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, pre-approved by Geoff
   within that brief's bounds.
+
+- **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
+  2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact
+  upload on failure so a CI-only visual diff is viewable without one.
 
 - **Items filed at Pass B1's close (2026-09-20), for Pass B2 or a later pass.**
   - The engine's condition registry (`tool/internal/spine/condition.go`, ported from
@@ -2199,6 +2284,22 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **Five small simplifications the pre-cut dependency sweep found and filed, none taken (Task 1,
+  2026-09-20).** Ruling 3 defaults every survey finding to "file" unless it is zero-behavior-change
+  with an existing test; none of these five qualified. (1) `ManageEditors.svelte:169-174`'s
+  per-option `selected={entry.role === 'editor'}` boolean can become Svelte 5.57's `defaultValue`
+  on `<select>`. (2) `MediaOrphanTools.svelte:55-79`'s imperative DOM-property indeterminate
+  checkbox has no ARIA mirror; DaisyUI 5.7.25 added native `aria-checked="mixed"` styling it could
+  adopt. (3) `packages/create-cairn-site/src/cloudflare/prefill.mjs:265-289`'s manual two-try
+  Cloudflare token prompt could use `@clack/prompts` 1.8.0's async `validate` callback, keeping
+  the deliberate one-retry ceiling via an explicit attempt counter. (4) `Pagination.svelte:97-101`'s
+  manual `btn-active` class alongside `aria-current="page"` is now redundant with DaisyUI 5.7.38's
+  native `[aria-current]` styling; dropping it needs a visual-baseline read first. (5) The nav
+  `<details>`/`.cairn-caret` groups in `CairnAdminShell.svelte` (documented at
+  `admin-design-system.md:369-374`) could become DaisyUI's `collapse`/`collapse-arrow`; cosmetic
+  value only. Full detail: `docs/internal/record/2026-09-13-minor-bump-features.md`, "Refactor-
+  decision table." **Trigger:** the next pass that touches any of the five named files.
 
 - **`docs/reference` has no dedicated page for the `./admin-sources.css` subpath export; it gets
   one section inside `docs/reference/cairn-audit.md` instead (extend-2 friction, 2026-09-20).**

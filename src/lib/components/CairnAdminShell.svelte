@@ -800,7 +800,15 @@ discriminant, not the fields, gates the chrome).
                  (not the wrapper's own inline content), so a text-overflow rule on the wrapper
                  alone never renders one (audit finding). min-w-0 lets the flex-laid label shrink
                  past its content size so truncate can take effect. -->
-            <nav aria-label="Breadcrumb" class="breadcrumbs min-w-0 max-w-full p-0 type-body">
+            <!-- ms-0 cancels only daisyUI's own breadcrumb margin, not its list padding: daisyUI
+                 5.7.28 pairs `.breadcrumbs { margin-inline-start: -.25rem }` with
+                 `.breadcrumbs > ul { padding-inline-start: .25rem }`, and the margin alone was
+                 what overflowed this wrapper's flex line by 4px and shrank every crumb into an
+                 ellipsis with room to spare. The list's own 4px padding stays: it is the room
+                 the first crumb's keyboard focus ring needs, since `.breadcrumbs` scroll-clips
+                 (overflow-x: auto) anything the ring would otherwise draw past the edge. The
+                 first crumb sits 4px inside the band's left edge as a result, which is accepted. -->
+            <nav aria-label="Breadcrumb" class="breadcrumbs ms-0 min-w-0 max-w-full p-0 type-body">
               <!-- role="list"/"listitem": the .breadcrumbs > ul > li descendant selector renders
                    every crumb at display: flex, which strips the implicit list role in
                    WebKit/VoiceOver (cairn-audit's list-role rule, rendered mode). -->

@@ -9,7 +9,7 @@ import { resolveColors, type RenderedPage } from '../../lib/audit/rendered.js';
 // when no color variant supplies `--input-color`, and no admin call site sets one, so every
 // unchecked toggle in the admin falls to that fallback. `.input`/`.select`/`.textarea` resolve
 // their border through the identical `--input-color` construction, and share the same gap when
-// unfocused. `cairn-admin.css`'s own pinned unlayered rules 12 and 13 of 13 raise both edges to a
+// unfocused. `cairn-admin.css`'s own pinned unlayered rules 13 and 14 of 14 raise both edges to a
 // 55% mix, the same one already locked for the scrollbar thumb and the outline chip border. This
 // is the standing readback proof, in the same canvas-readback mold as
 // status-chip-register-tuning.test.ts (paint the resolved color, then read the pixel back,
@@ -151,7 +151,7 @@ describe('unfocused field-family edge contrast', () => {
   });
 
   // Same falsifiability discipline as the checkbox/radio suite above, for the sibling rule
-  // (pinned unlayered rule 13 of 13) this task adds: reverting the field family's mix back to the
+  // (pinned unlayered rule 14 of 14) this task adds: reverting the field family's mix back to the
   // daisyUI 20% fallback reproduces the pre-fix measurement (1.492:1 light / 1.773:1 dark, both
   // under the 3:1 floor), proving the field-family assertions above are load-bearing too. Covers
   // both themes, not only light, mirroring the checkbox/radio suite's own light/dark coverage.

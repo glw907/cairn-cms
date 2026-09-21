@@ -384,6 +384,11 @@ The release step sets the version number at the cut and renames this section to 
   which installs every packaged skill directory, the read-only review agent, and the `CLAUDE.md`
   fragment, and checks their freshness the same way. Run `npx cairn-guidance install` after the
   bump; `cairn-doctor --fix` is gone.
+- **The pre-cut dependency sweep bumps the daisyUI build dependency to `5.7.42`, recompiling the
+  shipped `dist/components/cairn-admin.css`.** No call-site change; the fix range (`5.7.35`
+  through `5.7.42`) changes the checkbox tick/dash alignment and badge-in-flex shrinking pixels
+  the precompiled sheet renders. A site that snapshot-tests the admin visually should refresh
+  those baselines after the bump.
 
 ### The four sites' upgrade order
 

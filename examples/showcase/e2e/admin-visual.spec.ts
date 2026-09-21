@@ -286,11 +286,12 @@ for (const width of WIDTH_BAR) {
 // persist breakpoint, flips the checkbox that makes the nav an APG modal dialog over the
 // document. Above the persist breakpoint the toggle is hidden (the persistent sidebar already
 // stands in for it), so the click is conditional on the trigger's own visibility rather than
-// forcing a state the shell does not offer at that width. The nav's own text sits on DaisyUI's
-// transformed `.drawer-side` layer, whose glyph antialiasing varies a little more between runs
-// than an untransformed surface's own (measured up to ~850 of this page's ~280,000 pixels, still
-// two orders below a defect footprint); `maxDiffPixels` widens locally to this surface rather than
-// raising the suite-wide floor `playwright.config.ts` sets for every other screenshot.
+// forcing a state the shell does not offer at that width. The run-to-run variance this
+// `maxDiffPixels` was widened for had one cause, daisyUI leaving the open panel compositor-
+// promoted, and `cairn-admin.css` now closes it (the drawer `will-change` rule, guarded by
+// computed style in admin-shell-sidebar.spec.ts). The local allowance stays for now rather than
+// dropping to the suite floor: re-costing it moves every baseline this block owns, which is filed
+// with the regen-preset decision in ROADMAP.md's Next tier.
 for (const width of WIDTH_BAR) {
   test(`admin drawer overlay — light — ${width}px`, async ({ page, context, baseURL }) => {
     await page.setViewportSize({ width, height: 900 });

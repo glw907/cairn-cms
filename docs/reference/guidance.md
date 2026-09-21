@@ -37,14 +37,18 @@ refuses a destination whose path passes through a symlink at any point, and it r
 destination that is itself a symlink. A `.claude` that is a symlink refuses the whole tree,
 because the files would land somewhere these rules do not cover. A working directory reached
 through a symlinked parent is fine and installs normally. A refusal names the path, repairs
-nothing, and the run continues with the remaining files.
+nothing, and the run continues with the remaining files. A refusal is distinct from a write
+error: a failed write (an out-of-space disk, a permissions error) is reported by name with its
+error code, not folded into the containment refusals, since the fix is different (free disk
+space or a permission change, not a symlink or a path outside `.claude/`).
 
 When a destination's existing content differs from what the package now ships, `install` writes
 `<destination>.orig` beside it before overwriting, so an edit is recoverable. An existing `.orig`
 is never rewritten: the first divergence is what gets preserved, and a later install keeps
 refreshing the destination without touching it again. A symlink at the `.orig` path is refused by
-name, and the destination beside it is left alone in that run: the recovery copy could not be
-made, so the edit stays as the site left it. `.orig` files are meant to be read and
+name, and the destination beside it is refused too and left alone in that run: the recovery copy
+could not be made, so the edit stays as the site left it, and both paths are named so an operator
+can find which destination is stale. `.orig` files are meant to be read and
 deleted, not ignored, and the whole guidance tree belongs in the site's own commit, so an upgrade's
 guidance change is a reviewable diff in the site's repo.
 

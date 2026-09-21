@@ -1,0 +1,191 @@
+package providers
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+)
+
+// Resolver is the DNS lookup surface Probe depends on, satisfied by *net.Resolver in production
+// and a fake in tests. Its three methods are *net.Resolver's own signatures, so no adapter is
+// needed to satisfy it in production code.
+type Resolver interface {
+	LookupTXT(ctx context.Context, name string) ([]string, error)
+	LookupNS(ctx context.Context, name string) ([]*net.NS, error)
+	LookupIP(ctx context.Context, network, host string) ([]net.IP, error)
+}
+
+// AuthorityLookup asks nameserver directly for host's own address records, bypassing the
+// ordinary recursive resolver and its negative cache: the read diagnoseUnreachable
+// (packages/create-cairn-site/src/cloudflare/hostname.mjs) performs to tell a record that
+// already exists at the zone's own authority from one that has not propagated there at all.
+// nameserver is a hostname, resolved to its own address before the direct query. A record that
+// does not exist at the authority may surface either way: as an error (a *net.DNSError with
+// IsNotFound true) or as a nil/empty slice with no error, and a caller must treat both as
+// absence.
+type AuthorityLookup func(ctx context.Context, nameserver, host string) ([]net.IP, error)
+
+// RequestTimeout is the same per-request budget every Probe method applies below, exported so a
+// caller composing several lookups into one operation (diagnoseUnreachable's per-nameserver
+// sweep) can derive a single shared deadline from it instead of guessing at the underlying
+// policy.
+const RequestTimeout = requestTimeout
+
+// Probe is the tool's unauthenticated HTTP and DNS client, used by the checks that reach an
+// arbitrary site's own domain rather than a fixed provider API. It carries no
+// Credential field and never sends an Authorization header, since a check probing a third
+// party's DNS or a custom domain has no business presenting this operator's own token to it.
+type Probe struct {
+	resolver  Resolver
+	authority AuthorityLookup
+	following *http.Client
+	noFollow  *http.Client
+}
+
+// NewProbe returns a Probe sending every HTTP request through rt and every DNS lookup through
+// resolver. A nil resolver defaults to net.DefaultResolver. Its authoritative-nameserver lookup
+// defaults to a real dial; NewProbeWithAuthority replaces it for a test that must not touch the
+// network.
+func NewProbe(rt http.RoundTripper, resolver Resolver) *Probe {
+	return NewProbeWithAuthority(rt, resolver, defaultAuthorityLookup)
+}
+
+// NewProbeWithAuthority is NewProbe with the authoritative-nameserver lookup given explicitly.
+// It stays a constructor rather than a package-level variable a test swaps because the tests
+// that need a fake authority live in another package (internal/health's serving check) and so
+// cannot reach an unexported var. A nil resolver defaults to net.DefaultResolver, as in NewProbe.
+func NewProbeWithAuthority(rt http.RoundTripper, resolver Resolver, authority AuthorityLookup) *Probe {
+	if resolver == nil {
+		resolver = net.DefaultResolver
+	}
+	if authority == nil {
+		authority = defaultAuthorityLookup
+	}
+	return &Probe{
+		resolver:  resolver,
+		authority: authority,
+		following: &http.Client{Timeout: requestTimeout, Transport: rt},
+		noFollow: &http.Client{
+			Timeout:   requestTimeout,
+			Transport: rt,
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
+	}
+}
+
+// Get performs a GET against rawURL, following redirects, the behavior a check wants when it
+// only cares about the page a domain finally serves.
+func (p *Probe) Get(ctx context.Context, rawURL string) (*http.Response, error) {
+	return p.do(ctx, p.following, rawURL)
+}
+
+// GetNoFollow performs a GET against rawURL and returns a redirect response unfollowed, the
+// behavior the hostname and delegation checks want when the redirect itself, and its Location,
+// is the thing under test.
+func (p *Probe) GetNoFollow(ctx context.Context, rawURL string) (*http.Response, error) {
+	return p.do(ctx, p.noFollow, rawURL)
+}
+
+// do sends a GET through hc, applying the same timeout and single-retry-on-rate-limit policy
+// transport.go's doWithRetry applies for every other provider. It cannot share client.Do: Get
+// and GetNoFollow need two different redirect policies on the same Probe, while every other
+// client in this package refuses every redirect unconditionally.
+func (p *Probe) do(ctx context.Context, hc *http.Client, rawURL string) (*http.Response, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("providers: build request for %s: %w", rawURL, err)
+	}
+	req.Header.Set("User-Agent", userAgent())
+
+	resp, err := doWithRetry(hc, req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("providers: read response body for %s: %w", rawURL, err)
+	}
+	resp.Body = io.NopCloser(bytes.NewReader(body))
+	return resp, nil
+}
+
+// LookupTXT resolves name's TXT records, bounded by the package's shared request timeout.
+func (p *Probe) LookupTXT(ctx context.Context, name string) ([]string, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	return p.resolver.LookupTXT(reqCtx, name)
+}
+
+// LookupNS resolves name's NS records, bounded by the package's shared request timeout.
+func (p *Probe) LookupNS(ctx context.Context, name string) ([]*net.NS, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	return p.resolver.LookupNS(reqCtx, name)
+}
+
+// lookupA resolves name's IPv4 addresses, bounded by the package's shared request timeout.
+func (p *Probe) lookupA(ctx context.Context, name string) ([]net.IP, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	return p.resolver.LookupIP(reqCtx, "ip4", name)
+}
+
+// LookupAuthoritative asks nameserver directly for host's own address records, through the
+// AuthorityLookup a Probe was built with, bounded by the package's shared request timeout.
+func (p *Probe) LookupAuthoritative(ctx context.Context, nameserver, host string) ([]net.IP, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	return p.authority(reqCtx, nameserver, host)
+}
+
+// defaultAuthorityLookup is AuthorityLookup's production implementation: it resolves
+// nameserver's own address with the ordinary system resolver, trying IPv4 then IPv6 since a
+// nameserver may publish only one family, then dials that address directly (port 53) for
+// host's AAAA records, the same record type hostname.mjs's diagnoseUnreachable reads. No
+// recursive resolver's negative cache sits between this query and the zone's own authority.
+func defaultAuthorityLookup(ctx context.Context, nameserver, host string) ([]net.IP, error) {
+	nsAddr, err := resolveNameserverAddress(ctx, nameserver)
+	if err != nil {
+		return nil, err
+	}
+	authoritative := &net.Resolver{
+		PreferGo: true,
+		Dial: func(dialCtx context.Context, network, _ string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(dialCtx, network, net.JoinHostPort(nsAddr, "53"))
+		},
+	}
+	return authoritative.LookupIP(ctx, "ip6", host)
+}
+
+// resolveNameserverAddress resolves nameserver's own address through the system resolver, the
+// ordinary recursive hop defaultAuthorityLookup needs before it can dial the nameserver
+// directly for the actual authoritative query.
+func resolveNameserverAddress(ctx context.Context, nameserver string) (string, error) {
+	ip4Addrs, ip4Err := net.DefaultResolver.LookupIP(ctx, "ip4", nameserver)
+	if ip4Err == nil && len(ip4Addrs) > 0 {
+		return ip4Addrs[0].String(), nil
+	}
+	if ip4Err != nil && ctx.Err() != nil {
+		// The ip4 attempt failed because the caller's own context ended, not because ip4 lacks
+		// an address; that is the more informative error, so report it rather than masking it
+		// behind whatever the ip6 attempt below returns for the same expired context.
+		return "", fmt.Errorf("providers: resolve nameserver %s: %w", nameserver, ip4Err)
+	}
+	addrs, err := net.DefaultResolver.LookupIP(ctx, "ip6", nameserver)
+	if err != nil {
+		return "", fmt.Errorf("providers: resolve nameserver %s: %w", nameserver, err)
+	}
+	if len(addrs) == 0 {
+		return "", fmt.Errorf("providers: resolve nameserver %s: no address found", nameserver)
+	}
+	return addrs[0].String(), nil
+}

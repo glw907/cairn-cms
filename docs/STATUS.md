@@ -33,13 +33,46 @@ container, then beta.
   `.claude/worktrees/cairn-tool-a`; check it is idle before touching it.** The re-cut is done
   (`7d06e29c`), the three-lens review folded (`2bb2cb3f`), segment 1's pre-flight applied
   (`35b6f97d`), all on the branch, unpushed. B1 is nine tasks: segment 1 (11b-i, 11b-ii, 12, 13)
-  runs as `pass-execute` run `wf_9deb92f1-2d5`; segment 2 is 14 to 17; segment 3 is 17b, the
-  close and the PR #60 merge. Each segment gets a factual pre-flight first. Runner args: `gate:
-  "make -C tool check"`, `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an
-  unpinned task makes the runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings
-  accepted by Geoff 2026-09-20: B1 8M, B2 10M; the mechanics review prices B1 at 9 to 9.5M, so
-  the 6.4M flag is the expected question. Spend so far: about 1.1M (authorship, reviews, fold,
-  pre-flight). Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
+  ran as `pass-execute` run `wf_9deb92f1-2d5`; segment 2 is 14 to 17; segment 3 is 17b, the
+  close and the PR #60 merge. **Checkpoint (2026-09-20 21:30): eight of nine B1 tasks ACCEPTED; only
+  17b (the close and the PR #60 merge) remains.** Segment 2's four escalations were ruled and
+  fixed by direct dispatches, closing review read, final round `7ef6112f` gate-green; the plan
+  on the branch records everything as landed (`6a051532`), so 17b and B2 read true text. What
+  a cold session must know: a verdict's condition is `spine.Outcome.Condition`; the sweep's
+  clock is `Options.Now` and a hygiene test bans `time.Now/Since/Until` in `health` and `logs`;
+  `Fields` keys are named; nine checks (`creds`, `serving`, `delegation`, `https-forced`,
+  `email`, `deploy`, `publish-path`, `engine`, `errors`). Owner items filed in the plan: an
+  `edge.hsts-off` condition id and a publish-path condition id. **Next: 17b's factual
+  pre-flight, then the close (simplifier, one `go-architecture-reader` per touched package, one
+  fold, the ritual, merge `main` in, PR #60 green at the final SHA, merge).** extend-2 merged
+  as PR #67, so `main` moved; re-measure the conflict set. **The UI track (Geoff, 2026-09-20:
+  best-quality CLI UI is a top priority; agent usability and production-grade language are
+  part of it).** All in `~/.cache/cairn-tool-b2/`: the Charm v2 survey (also on the branch at
+  `tool/docs/design/`), iteration 1 mockups, six adversarial reviews in `reviews/` (beauty,
+  charm-stack, usability, family, robustness, agent-usability), `iteration-2-brief.md`,
+  iteration 2 building in `mockups-2/`, and a copy standard plus string catalogue building at
+  `reviews/copy.md`. They feed ONE B2 plan amendment for Geoff's approval before B2's segment
+  2: Task 20 takes `lipgloss/v2`, `colorprofile`, `x/ansi`, one design system with three bodies
+  (single site, many sites, plain text whenever stdout is not a terminal), sanitizing at the
+  render seam, named width rungs, a sectioned frame; Task 21 gets a real WARNING tier, zero
+  checks as UNKNOWN, a usage-error falsification table; the `--json` contract gets string
+  state enums (today `State` marshals as a Go int that inverts against exit codes), camelCase
+  keys, a structured remedy, RFC 3339 only; all operator-facing strings in one reviewed table.
+  Outside the brief, his call: `health --all --json` as NDJSON, an `actor` field on the engine's
+  condition registry, renaming the `engine` check id before the tag freezes it, `cairn help
+  agents` plus a shipped skill. Captures never pop one kitty window per frame (memory
+  `terminal-captures-no-popover`). PR #68 (`gate-tier` tool tier) is open, reviewed, fixed,
+  awaiting Geoff's merge word; after it merges, B2 drops the `gateTier` pin. Runner args: `gate: "make -C tool check"`,
+  `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an unpinned task makes the
+  runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings (Geoff, 2026-09-20): **B1 raised to 10M** (the flag is
+  now 8M), B2 10M. **B2 decisions taken (Geoff, 2026-09-20), owed to the plan at the segment
+  boundary:** Task 20's glyph tier is Unicode by default and ASCII when output is not a TTY,
+  `TERM=dumb` is set, or the Windows console refuses virtual-terminal mode; Task 22 generates a
+  man page with cobra's doc generator and ships it in the release archives. **Chore in flight:**
+  a `tool/**` rule for `gate-tier.mjs` on `chore/gate-tier-tool-rule`
+  (`.claude/worktrees/gate-tier-tool`, off `origin/main`), so B2 drops the `gateTier` pin. Spend: about 6.8M of 10M with the close left (1.1M plan work, 2.03M segment 1, 0.8M its
+  fixes, 1.54M segment 2, 1.3M its fixes and reviews); the UI track and PR #68 are about 2.3M
+  outside B1. Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
   `cairn-tool-a`, worktree `.claude/worktrees/cairn-tool-a`, draft PR #60, green on all three
   `make check` legs. `main` carries NO `tool/` tree until the merge, and the merge rides B1's
   close (Geoff, 2026-09-20), so **B1 runs in that existing worktree on that branch, never on a

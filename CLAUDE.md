@@ -93,6 +93,10 @@ durable orientation only.
   `https://gitmcp.io/saadeghi/daisyui` and `https://mcp.svelte.dev/mcp`.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
+- **The Go `cairn` tool** (`tool/`) is a separate module with its own gate; `go-conventions` is
+  mandatory for every file under `tool/`, and `golang-spf13-cobra` is mandatory for
+  `tool/cmd/cairn`. See `tool/docs/adr/0001-the-spine-is-the-product.md` for the tool's
+  architecture.
 
 ## Documentation is a pass dimension
 

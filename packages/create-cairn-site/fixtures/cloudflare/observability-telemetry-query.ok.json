@@ -1,0 +1,58 @@
+{
+  "provenance": {
+    "captured": "2026-09-20",
+    "source": "tool/docs/credentials.md, \"Workers Logs retention\" (Task 10's probe recorded only the response's top-level key set: errors, messages, result, success, and result: events, run, statistics)",
+    "status": 200,
+    "note": "synthesized from a live response's key set, no body captured. The ray id, account id, zone id, worker name, and every editor value below are placeholders, and no editor value is email-shaped: the fixture corpus bans any email-shaped string regardless of realism (packages/create-cairn-site/test/fixtures-hygiene.test.mjs)."
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": {
+      "events": [
+        {
+          "$workers.scriptName": "example-site",
+          "$metadata.accountId": "0000000000000000000000000000ex01",
+          "level": "error",
+          "event": "auth.link.send_failed",
+          "timestamp": "2026-09-14T09:32:11.000Z",
+          "email": "example-editor-placeholder",
+          "error": "send failed: upstream 500",
+          "code": "E_SEND_FAILED",
+          "conditionId": "email.send-failed"
+        },
+        {
+          "$workers.scriptName": "example-site",
+          "$metadata.accountId": "0000000000000000000000000000ex01",
+          "level": "warn",
+          "event": "commit.failed",
+          "timestamp": "2026-09-14T09:12:44.000Z",
+          "concept": "posts",
+          "id": "example-post-id",
+          "editor": "example-editor-placeholder",
+          "reason": "conflict",
+          "branch": "cairn/posts/example-post-id"
+        },
+        {
+          "$workers.scriptName": "example-site",
+          "$metadata.accountId": "0000000000000000000000000000ex01",
+          "level": "info",
+          "event": "entry.published",
+          "timestamp": "2026-09-14T08:55:02.000Z",
+          "concept": "posts",
+          "id": "example-post-id",
+          "editor": "example-editor-placeholder",
+          "batch": false
+        }
+      ],
+      "run": {
+        "queryId": "cairn-logs",
+        "rayId": "example-ray-id-0000000000000000"
+      },
+      "statistics": {
+        "elapsedMs": 42
+      }
+    }
+  }
+}

@@ -13,7 +13,9 @@ name: create-site
 on:
   push:
     branches: [main, rebuild]
+    paths-ignore: ['tool/**']
   pull_request:
+    paths-ignore: ['tool/**']
 
 jobs:
   create-site:

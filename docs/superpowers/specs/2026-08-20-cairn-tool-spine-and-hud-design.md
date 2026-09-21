@@ -452,3 +452,66 @@ source as it stands on `main`. The first session invokes `go-conventions` and
 writing ADR-0001, executes the setup brief's Tasks 1, 2, and 4 as the plan's opening tasks,
 mints and probes the read token before any check is written, and extracts the fixture corpus
 before any `spine` code.
+
+## Addendum, 2026-09-20: what a HUD plan must correct before planning from this spec
+
+This spec was approved on 2026-08-20. Sub-project 1 became the 1.0 CLI and 2.0 became the HUD plus
+multi-site management (Geoff, 2026-09-13), and a bubbletea v2 readiness audit on 2026-09-20 found
+that several of the sections above no longer describe the libraries or the house patterns a HUD
+would be built on. This addendum is the list. It is appended, not merged: the sections above stand
+as the 2026-08-20 record, and a plan that builds a HUD reads this list first and corrects each item
+in its own plan rather than in this spec.
+
+**Module paths and the v2 API.** The Charm v2 modules are `charm.land/bubbletea/v2`,
+`charm.land/lipgloss/v2`, and `charm.land/bubbles/v2`, not the `github.com/charmbracelet/*` paths a
+v1 plan would write. `App.View()` returns a `tea.View`, not a string, and alt-screen and mouse mode
+are declared per frame on that value rather than passed once as program options. `Frame` gains
+`Cursor *tea.Cursor` at the HUD pass, hoisted at the root the way every other piece of global
+chrome is.
+
+**The sweep is not one Cmd returning many reports.** One `Cmd` yields one `Msg`, so the
+generation-counted sweep is either a `tea.Batch` of per-site Cmds or a single channel-reader Cmd
+that re-issues itself. Each message carries its `gen` and its context. The "one sweep `Cmd` whose
+closure owns an `errgroup`" sentence above describes a shape bubbletea cannot deliver as written.
+Generation-counted refresh itself is a house idiom poplar already runs, not a Charm-documented
+pattern, and the HUD plan should say so rather than citing it as upstream practice.
+
+**Input.** The HUD handles `tea.KeyPressMsg` only, and its bindings are `key.Binding` values matched
+with `key.Matches` rather than string comparisons. `WindowSizeMsg` is both acted on at the root and
+forwarded to children, since a child that never sees it cannot re-layout.
+
+**Testing.** The sentence above that goldens go "through poplar's harness rather than `teatest`,
+which poplar evaluated and rejected" is wrong as written. Poplar requires `teatest` directly and
+keeps it for one end-to-end flow test; the goldens are what go through the harness. A HUD plan
+states both.
+
+**Screen registration.** Registering screens by `init()`, as decision 3 describes, conflicts with
+the 1.0 plan's rule that a registry is a literal slice. A HUD plan either uses a literal slice or
+states the `init()` exception explicitly with the analyzer that enforces it.
+
+**Resize coverage.** The three breakpoints above (80, 120, 160) need two more rungs: a very-wide
+rung, where a layout that only ever grew is tested for looking composed rather than stretched, and
+a too-small floor, where the HUD says it cannot render rather than painting garbage.
+
+**The log screen.** Name bubbles v2's `viewport` and its setter API, since the scrolling log view is
+a viewport and not hand-rolled scrolling.
+
+**The accessibility contract, which the spec above does not carry.** The CLI is the screen-reader
+path, and that works because every HUD action has a subcommand, which 1.0 delivers. `NO_COLOR`, a
+`TERM=dumb` terminal, and a non-TTY stdout each mean no color, handled by the one profile-detection
+file 1.0 ships in `render/profile.go`. The refresh spinner honors reduced motion.
+
+**The adopt dialog's component is ruled: bubbles `list`, not `huh`.** The dialog is a pick list over
+discovered candidates, which is what `list` is for; `huh` would bring a form framework for one
+selection.
+
+**Registry reads never happen in `Update` or `View`.** The registry is re-listed once per sweep, and
+`store.List` and `store.Load` are called from a `Cmd` only. A read inside `Update` or `View` is
+synchronous I/O on the render path.
+
+**Two 1.0 seams a HUD plan reads as given rather than as work.** `spine.State.Severity()` is the
+module's one severity order, Failing above Unknown above OK, enforced by a test asserting exactly
+one severity table exists under `tool/`. `context.Context` is threaded through every exported
+`providers` method, which is the HUD's only cancellation lever: bubbletea gives a `Cmd` no per-Cmd
+cancellation, so a stale generation's in-flight requests can be stopped only through a context the
+sweep owns.

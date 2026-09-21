@@ -857,8 +857,51 @@ the named human gates only):**
   `readIfExists` and `mkdir` should move inside the same `try` as the write, so an `EACCES` on
   either refuses the destination rather than aborting the whole install; (4) `cairn-guidance
   check`'s read side should reuse the same `lstat` walk `install` uses, rather than a separate,
-  looser read path. Trigger: the next pass that touches `src/lib/guidance/install.ts`'s write
-  path, or a second independent report of any of the four.
+  looser read path; (5) `cairn-guidance install` (`src/lib/guidance/bin.ts:94-99`) never sets
+  `process.exitCode`, so a run that reports refusals or write errors still exits 0, and a
+  disk-failed install should exit non-zero instead of looking like a clean run in CI or a script;
+  (6) the pre-cut pass's fix A (`writeErrors` carrying `err.code`) means an `ELOOP` from
+  `O_NOFOLLOW` losing the check-to-open race between `resolveWritableDest`'s `lstat` and
+  `writeWithoutFollowing`'s open (`src/lib/guidance/install.ts:387`) now reports under
+  `writeErrors`, not `refused`, but `installGuidance`'s own doc block near `install.ts:339` still
+  says a symlink is refused by name at every point of the write, which is no longer true of that
+  one race window; the doc needs a carve-out, or the race needs to resolve to a refusal instead.
+  Trigger: the next pass that touches `src/lib/guidance/install.ts`'s write path, or a second
+  independent report of any of the six.
+
+- **Blueprint pre-cut admin audit findings, five items over the whole admin surface (pre-cut
+  pass, 2026-09-21).** Full record:
+  `docs/internal/record/2026-09-21-blueprint-pre-cut-admin-audit.md`. (1) `CairnAdminShell.svelte:1046`
+  builds a dynamic nav-menu class string with an interpolated `extraClass`; verify every caller
+  passes a static string, since Tailwind's scanner cannot see a truly dynamic one. (2)
+  `HelpHome.svelte:230` and `MarkdownHelpDialog.svelte:29` carry tables with no local overflow
+  strategy; check both at 320px against the five-viewport standard and wrap in `overflow-x-auto`
+  if either scrolls the page. (3) `CairnMediaLibrary.svelte:781` and `:992` size thumbnails with
+  `max-h-full max-w-full object-contain` inside a sized tile; confirm the tile reserves the space
+  so a slow-loading thumbnail cannot shift layout. (4) `EditPage.svelte` carries fifteen inline
+  `<path>` elements (`:1529` to `:2282`) beside the project's `@lucide/svelte` icon library;
+  decide which are hand-drawn Lucide icons that should swap to the library and which are
+  deliberate custom glyphs. (5) `EditPage.svelte:2429` and `:2491` write
+  `hover:text-[var(--color-primary)]` and `text-[var(--color-accent)]` where the semantic
+  utilities `hover:text-primary` and `text-accent` already cover the same token; a plain swap.
+  Trigger: the next pass that touches `src/lib/components/`.
+
+- **`publish.yml` uses `npm install --no-audit --no-fund`, not `npm ci`, for the published build
+  (pre-cut pass, 2026-09-21).** A reviewer proposed the switch during the pass; declined for the
+  cut because `npm install` with a committed lockfile already honors it, and changing the release
+  pipeline sat outside the owner's four rulings for that pass. Evaluate `npm ci` for the
+  reproducibility guarantee it adds over a committed lockfile in a release workflow. Trigger: the
+  next pass that touches `publish.yml`.
+
+- **The `cairn-release` skill has no step enforcing that `package.json` and
+  `packages/cairn-cms-dev/package.json` carry the same version (pre-cut pass, 2026-09-21).**
+  Task 6 of the pre-cut plan hand-asserts the two versions are equal before tagging
+  (`docs/superpowers/plans/2026-09-21-pre-cut-pass.md`, Task 6), but neither the skill's own
+  procedure nor `check:version` or `check:dev-package` enforces the lockstep bump as a gate, so a
+  future cut that skips the plan's hand step can silently publish a mismatched dev-package version
+  the way `0.95.0` almost did. Add the assertion to the skill's own steps, or extend
+  `check:version` (or `check:dev-package`) to fail when the two manifests disagree. Trigger: the
+  next release cut, or the next pass that touches either gate script.
 
 - **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
   until a site pass has filed about twenty facts by hand and the shape has stopped moving

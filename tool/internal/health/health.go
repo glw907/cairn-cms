@@ -52,6 +52,9 @@ var All = []Check{
 	credsCheck{},
 	servingCheck{},
 	delegationCheck{},
+	httpsForcedCheck{},
+	hstsCheck{},
+	emailCheck{},
 }
 
 // reportSchemaVersion is Report's own JSON schema version.

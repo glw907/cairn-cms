@@ -67,19 +67,30 @@ type env struct {
 	resolutions []resolution
 }
 
-// nonSecretVar names one of loadEnv's variables whose resolved value is a plain string, never
-// wrapped in providers.Credential. Only a value of this type reaches (env).value, so reading a
-// secret variable (CAIRN_CF_READ_TOKEN, CAIRN_GH_READ_TOKEN) through it is a compile error
-// rather than a silent empty string, however the caller obtained the name.
-type nonSecretVar string
+// nonSecretVar enumerates loadEnv's variables whose resolved value is a plain string, never
+// wrapped in providers.Credential. Its underlying type is int, not string, so no string literal
+// or variable converts into it implicitly; only a value of this type reaches (env).value, which
+// makes reading a secret variable (CAIRN_CF_READ_TOKEN, CAIRN_GH_READ_TOKEN) through it a compile
+// error rather than a silent empty string, however the caller obtained the name.
+type nonSecretVar int
 
 // accountIDVar is the one non-secret variable loadEnv resolves today.
-const accountIDVar nonSecretVar = "CAIRN_CF_ACCOUNT_ID"
+const accountIDVar nonSecretVar = iota
+
+// name returns v's resolved variable name.
+func (v nonSecretVar) name() string {
+	switch v {
+	case accountIDVar:
+		return "CAIRN_CF_ACCOUNT_ID"
+	default:
+		return ""
+	}
+}
 
 // value returns v's resolved value, or empty when v was not resolved.
 func (e env) value(v nonSecretVar) string {
 	for _, r := range e.resolutions {
-		if r.name == string(v) {
+		if r.name == v.name() {
 			return r.value
 		}
 	}

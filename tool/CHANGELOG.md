@@ -34,19 +34,21 @@ The complete single-site operator CLI.
 - **`cairn help agents`**: the tool's whole contract for a program, printed from the binary
   itself so it reads the same on a machine that holds no copy of this repository.
 - **A man page** for every non-hidden command (`make install` installs it beside the binary).
-- **`cairn auth check`**: confirms the nine credential permissions this tool itself needs, either
-  from credentials alone or, naming one registered site, against that site's own zone and
-  repository too (`docs/credentials.md`'s "Token scopes"). `cairn auth probe` is now its hidden
-  alias.
+- **`cairn auth check [<site>]`**: confirms the nine credential permissions this tool itself
+  needs, either from credentials alone or, naming one registered site, against that site's own
+  zone and repository too (`docs/credentials.md`'s "Token scopes"). Named with no site, the four
+  zone-scoped and repository-scoped rows read `skip`, so the run exits WARNING even on a perfect
+  token. `cairn auth probe` is now its hidden alias.
 - **`--theme dark|light`**: a root flag choosing the ground the palette is read against,
   defaulting to `dark`. It detects nothing and reads no environment variable, and it is
   independent of colour: `--color` and `NO_COLOR` decide whether cairn paints at all.
-- **A fifth check-result word, `unknown`**: a check that was attempted and observed nothing (a
-  timeout, a transport failure, a rate limit) reads `unknown`, and `skip` now means only a check
-  that was not attempted, by configuration. Both still carry a `reason`, and the exit-code
-  arithmetic is unchanged: a cred-missing `skip` contributes `WARNING` and every `unknown`
-  contributes `UNKNOWN`. `cairn-health.schema.json`'s `state` enum carries the word, with no
-  `schemaVersion` increment: no consumer exists before the tag.
+- **A fifth check-result word, `unknown`**: a check result now reads `pass`, `fail`, `held`,
+  `skip`, or `unknown`. `skip` means only a check that was not attempted, by configuration, such
+  as one needing a credential the operator has not set; `unknown` means a check that was
+  attempted and observed nothing, such as a timeout, a transport failure, or a rate limit. Both
+  carry a `reason`, and the exit-code arithmetic is unchanged: a cred-missing `skip` contributes
+  `WARNING` and every `unknown` contributes `UNKNOWN`. `cairn-health.schema.json`'s `state` enum
+  carries the word, with no `schemaVersion` increment: no consumer exists before the tag.
 - **`--quiet` prints the whole body on a non-OK run**, rather than the failing rows alone. It
   still writes nothing at all when the run is OK, which is what keeps a cron-driven green run
   silent, and it never changes an exit code.

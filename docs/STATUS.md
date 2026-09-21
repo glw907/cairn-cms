@@ -34,17 +34,36 @@ container, then beta.
   (`7d06e29c`), the three-lens review folded (`2bb2cb3f`), segment 1's pre-flight applied
   (`35b6f97d`), all on the branch, unpushed. B1 is nine tasks: segment 1 (11b-i, 11b-ii, 12, 13)
   ran as `pass-execute` run `wf_9deb92f1-2d5`; segment 2 is 14 to 17; segment 3 is 17b, the
-  close and the PR #60 merge. **Checkpoint (2026-09-20 18:20):** segment 1 is done: 11b-i, 11b-ii, and 12
-  ACCEPTED; 13 fixed twice on conductor rulings (`ceddd1f8`, `3f9ce7a8`), its last
-  `diff-reviewer` read pending by SHA. **Segment 2 (14 to 17) is IN FLIGHT as run
-  `wf_afcd830b-427`.** Rulings, all recorded in the plan on the branch (`1798f71e`): an expired
-  matching ack leaves `Acknowledged` false and sets `AckExpires`; a zero GitHub `TokenExpiry` is
-  OK, never Unknown; the non-verbose render is a key allowlist over `Fields` (`count`, `age`,
-  `state`, and Task 15 adds its own keys plus two short-SHA fields), and `Detail` never carries
-  a verbose-only value; the unreachable diagnosis reads the apex at the authority, discovering
-  nameservers first and falling back to the saved pair. For the close: Go's resolver reads
-  `/etc/hosts` before the authoritative dial (recorded, not fixed); `tool/docs/*.md` cites task
-  numbers. Runner args: `gate: "make -C tool check"`,
+  close and the PR #60 merge. **Checkpoint (2026-09-20 20:00):** segment 1 done (11b-i, 11b-ii, 12 ACCEPTED;
+  13 fixed twice, one test-only finding owed). **Segment 2 ran (`wf_afcd830b-427`, 1.54M): 14,
+  15, 16, 17 all gate-green and all ESCALATED; the conductor ruled and fixes run as direct
+  `cairn-implementer` dispatches, in this order, one at a time, each followed by a
+  `diff-reviewer` read by SHA.** (A, in flight, `model: opus`) the cross-cutting contract fix:
+  the condition moves from the check to the verdict, `https-forced` and `hsts` merge back into
+  one check, no `time.Now` inside a check (the sweep's clock is threaded), and `Fields` keys
+  are named (`releasesBehind`, not `count`). (B) Task 14: DMARC and SPF matching is
+  case-insensitive; a DNS transport error is Unknown, never Failing; a `_dmarc` record with no
+  `p=` gets its own Detail; Email needs no credential for its DNS half (the spec's "none, then
+  Cloudflare read") and a missing Cloudflare credential after a clean DNS half is Unknown
+  `cred-missing`; plus Task 13's owed test fix (a nameserver-keyed fake, the discovery-errors
+  path, a 100 ms budget). (C) Task 15: `buildId` is an eleventh, verbose-only key; a failed
+  build is Failing before the GitHub read; a providers test for `Build`'s JSON shape. Task 16:
+  a `Consumers must:` line whose text is "nothing" does not count. (D) Task 17: a classified
+  `APIError` keeps its reason and only the unclassified or not-found case is
+  observability-off; entries are filtered by level in Go; two comment-only fixes. Ratified as
+  landed: DKIM passes on any one selector, SPF is read at the apex, a not-yet-enabled sending
+  subdomain parks, a Failing outcome carries no ReasonCode, the engine repo is hardcoded,
+  releases-behind counts from the declared range. **Owed to the plan at the boundary:** Task
+  17's stderr notice and the shared `--since` parser test move to Task 19a (add the criterion,
+  naming `logs.ParseSince`); Task 15's Produces becomes eleven keys; the two B2 decisions; the
+  `gate-tier` instruction once PR #68 merges. **For the close:** Go's resolver reads
+  `/etc/hosts` before the authoritative dial; `tool/docs/*.md` cites task numbers;
+  releases-behind could read the lockfile. **UI priority (Geoff, 2026-09-20): best-quality CLI
+  UI is a top priority.** The Charm v2 survey is at `~/.cache/cairn-tool-b2/charm-v2-capabilities.md`
+  (lands under `tool/docs/` at the boundary); three render directions are being mocked up in
+  `~/.cache/cairn-tool-b2/mockups/`; his pick becomes a Task 20 amendment needing his
+  approval (it adds `lipgloss/v2`, `colorprofile`, `x/ansi`, a palette, five width rungs).
+  Runner args: `gate: "make -C tool check"`,
   `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an unpinned task makes the
   runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings (Geoff, 2026-09-20): **B1 raised to 10M** (the flag is
   now 8M), B2 10M. **B2 decisions taken (Geoff, 2026-09-20), owed to the plan at the segment
@@ -52,9 +71,9 @@ container, then beta.
   `TERM=dumb` is set, or the Windows console refuses virtual-terminal mode; Task 22 generates a
   man page with cobra's doc generator and ships it in the release archives. **Chore in flight:**
   a `tool/**` rule for `gate-tier.mjs` on `chore/gate-tier-tool-rule`
-  (`.claude/worktrees/gate-tier-tool`, off `origin/main`), so B2 drops the `gateTier` pin. Spend: about 3.9M of 8M after four of nine tasks (1.1M plan work,
-  2.03M segment 1, 0.8M fix rounds and reviews), so the 6.4M flag will likely trip inside
-  segment 2. Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
+  (`.claude/worktrees/gate-tier-tool`, off `origin/main`), so B2 drops the `gateTier` pin. Spend: about 5.5M of 10M after eight of nine tasks built (1.1M plan work, 2.03M segment 1,
+  0.8M its fixes, 1.54M segment 2); side work (survey, mockups, PR #68) is about 0.7M outside
+  B1. Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
   `cairn-tool-a`, worktree `.claude/worktrees/cairn-tool-a`, draft PR #60, green on all three
   `make check` legs. `main` carries NO `tool/` tree until the merge, and the merge rides B1's
   close (Geoff, 2026-09-20), so **B1 runs in that existing worktree on that branch, never on a

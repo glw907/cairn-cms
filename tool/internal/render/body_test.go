@@ -883,7 +883,34 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 			"reason=the branch is behind main by 2 commits") {
 			t.Errorf("width %d: the reason was cut:\n%s", width, text)
 		}
+
+		// The field column pays for itself only where it leaves the fields a readable share of
+		// the line. Below the wide rung the record names itself on one line and its fields
+		// follow, which is what keeps a field from being hard-wrapped inside its own token.
+		record := lineCarryingIn(t, lines, "commit.failed")
+		if width >= Width100 && !strings.Contains(record, "=") {
+			t.Errorf("width %d: the record line carries no field: %q", width, record)
+		}
+		if width < Width100 && strings.Contains(record, "=") {
+			t.Errorf("width %d: a field shares the record line at a width too narrow for it: %q",
+				width, record)
+		}
 	}
+}
+
+// lineCarryingIn returns the one line of lines holding want, failing when none or several do.
+func lineCarryingIn(t *testing.T, lines []string, want string) string {
+	t.Helper()
+	var found []string
+	for _, l := range lines {
+		if strings.Contains(l, want) {
+			found = append(found, l)
+		}
+	}
+	if len(found) != 1 {
+		t.Fatalf("%d lines carry %q, want exactly 1", len(found), want)
+	}
+	return found[0]
 }
 
 // TestNeverColourAlone is criterion 14: every state word a colour render shows at a width also
@@ -930,6 +957,27 @@ func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
 	for _, sp := range parseSpans(row) {
 		if strings.TrimSpace(sp.text) == "" && !strings.Contains(sp.sgr, "48;2;18;52;86") {
 			t.Errorf("a row's padding carries %q rather than the row's own ground", sp.sgr)
+		}
+	}
+}
+
+// TestFleetOnePassRule extends criterion 4 to the fleet body, which is where it is easiest to
+// break: a site reporting OK inside a failing sweep is muted like every other passing mark, so
+// the only saturated ink on the screen belongs to what failed.
+func TestFleetOnePassRule(t *testing.T) {
+	theme := NewTheme(true, ProfileTrueColor)
+	ok := inkOf(theme, RoleOK)
+	for _, width := range []int{Width80, Width100, WidthCap} {
+		in := input(fixtures.TwelveSites(), BodyMany, width, ProfileTrueColor, false, spine.VerdictCritical)
+		in.Status = goldenStatus()
+		for _, sp := range frameSpans(Render(in)) {
+			// Containment, not equality: a bold cell carries the weight parameter ahead of the
+			// colour, so an exact match would miss the verdict word, which is the one span this
+			// rule is most easily broken on.
+			if strings.Contains(sp.sgr, ok) {
+				t.Errorf("width %d: %q carries the ok role's saturated ink in a CRITICAL run",
+					width, sp.text)
+			}
 		}
 	}
 }

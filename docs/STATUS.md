@@ -133,13 +133,15 @@ Three tracks, one session each.
 memory. Geoff approved the spec and three plans on 2026-09-21: `2026-09-21-doctor-pretask.md`,
 `2026-09-21-doctor-retire-2-engine.md` (retire-2a, the removal), and
 `2026-09-21-doctor-retire-2b-records.md` (retire-2b, whose close writes the cut's unblocked line),
-all under `docs/superpowers/plans/`. Nothing executes before B2 merges; check STATUS for B2's close
-line and `git ls-remote --tags origin 'tool/v1.0.0'`. Then, in order: run the pre-task; draft
-retire-1's plan (the Go half, `cairn doctor`) against the merged `tool/`, with three review lenses,
-and bring it to Geoff; at the same time write the pass A inventory file under
-`docs/internal/record/` (the `cairn doctor` page path, the seventh schema's file name, every test
-naming either), since pass A's pre-flight stops without it; execute retire-1 and merge it WITHOUT a
-tag. Pass A and the `tool/v1.1.0` tag follow (the retirement track conducts the tag, in its own short session, with Geoff's go), then
+all under `docs/superpowers/plans/`. Two things start NOW, before B2 merges (Geoff, 2026-09-21; B2's
+branch touches none of the pre-task's files): execute the pre-task in its own worktree and hold its
+PR open, merging only after B2's close line and the `tool/v1.0.0` tag are on `origin/main`; and
+draft retire-1's plan (the Go half, `cairn doctor`) against B2's COMMITTED branch head, read with
+`git show` and never from its live worktree, with a pre-flight that re-verifies every cited surface
+against merged `main`, three review lenses, then Geoff's approval. With that plan, write the pass A
+inventory file under `docs/internal/record/` (the `cairn doctor` page path, the seventh schema's
+file name, every test naming either), since pass A's pre-flight stops without it. retire-1 EXECUTES
+only once B2 and the pre-task are both on `main`, and merges WITHOUT a tag. Pass A and the `tool/v1.1.0` tag follow (the retirement track conducts the tag, in its own short session, with Geoff's go), then
 retire-2a, then retire-2b. Read the hold paragraph under "Immediate next action" for the order.
 
 **One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once the

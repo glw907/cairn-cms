@@ -196,7 +196,7 @@ them red is a real finding, not noise from the other.
 | **Goal** | Land the three pre-task deliverables on `main` so retire-1 can branch: the committed conditions mirror under `tool/` with its drift gate and CI workflow, the built-and-verified `site-facts.json` cross-language contract, and the two `conditions.ts` rewordings of ruling 3a. |
 | **Spec** | `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` ("Pre-task"; the pre-task bullets of "Acceptance"). |
 | **Place in the order** | Step 2 of the spec's five-step Choreography: B2's tool 1.0 merges, **this pass**, retire-1 merges untagged, draft docs pass A, `tool/v1.1.0` tagged and released, retire-2 last. |
-| **Pass precondition** | See below. Checked by the conductor once, before Task 1 is dispatched. |
+| **Pass precondition** | See below: one check to execute, two more to merge. Execution may start before B2 merges; the merge may not. |
 | **Branch** | `doctor-pretask`, off `origin/main`. |
 | **Worktree** | `.claude/worktrees/doctor-pretask`, created by the conductor before Task 1. No task touches the main checkout, the `doctor-retirement` worktree, or any other worktree. |
 | **Token ceiling** | **700K.** The 80 percent decision point is **560K**. Raised from 600K by the adversarial review's two blockers: Task 1 now carries a Go edit and a second gate, and Task 3 carries two behavioral arms with a test each. |
@@ -207,18 +207,29 @@ them red is a real finding, not noise from the other.
 
 ### The pass precondition
 
-**B2 is merged to `main`, and `docs/STATUS.md` on `main` carries B2's close line naming
-`tool/v1.0.0`.** That is step 1 of the spec's five-step order. This pass edits
-`tool/internal/spine/condition.go` (finding 13), a file B2's branch also touches, so it never runs
-before that merge; starting early buys a merge conflict in the one file both passes must agree on.
+**Revised 2026-09-21 (Geoff): this pass may EXECUTE before B2 merges; it must not MERGE before
+B2 merges.** The first draft held the whole pass behind B2 on the belief that B2's branch also
+edits `tool/internal/spine/condition.go`. Checked against B2's head `df27a34d` on 2026-09-21, it
+does not: B2 touches none of `condition.go`, `src/lib/diagnostics/conditions.ts`,
+`docs/admin/is-it-working.md`, `src/lib/vite`, `package.json`, or any workflow. Its one nearby
+change is seven lines in `tool/internal/spine/condition_test.go`, a file no task here edits.
 
-The conductor runs both checks and does not dispatch Task 1 until each passes:
+To execute, the conductor needs only this, before Task 1 is dispatched:
 
 - `git fetch origin && git ls-tree -d origin/main tool/internal/spine` prints a tree entry.
   (Verified present on 2026-09-21.)
-- `git ls-remote --tags origin 'tool/v1.0.0'` prints a non-empty result. (Verified **empty** on
-  2026-09-21, so the precondition is unsatisfied as this plan is written, exactly as the ordering
-  note predicts.)
+
+To merge, the PR stays open until both of these hold; merging earlier would put an unused constant
+and the mirror file into the tree B2 tags as 1.0, and would make the B2 conductor pull `main` into
+a head it is holding still for CI and live verification:
+
+- `docs/STATUS.md` on `origin/main` carries B2's close line naming `tool/v1.0.0`, and
+  `git ls-remote --tags origin 'tool/v1.0.0'` prints a non-empty result.
+- After B2's merge: `git merge origin/main` into `doctor-pretask`, re-run Task 1's light Go gate
+  (`CAIRN_GATE_LANE=light cairn-run-gate 'make -C <abs worktree>/tool check'`) and the heavy gate
+  once, then merge on green CI. If `tool/internal/spine/condition.go` or `condition_test.go`
+  conflicts, resolve by keeping B2's text and re-adding this pass's one constant and its
+  `Conditions()` slot.
 
 A failure here is a halt: write STATUS, say which check failed, and stop. No task in this pass
 reads, writes, or assumes any path under `tool/` other than `tool/internal/spine/` and the new

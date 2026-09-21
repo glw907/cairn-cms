@@ -263,7 +263,7 @@ finding `go-architecture-reader` would otherwise file at both closes.
 | The registry's shape: a directory of many records, listed, loaded, and saved by id | 5 | The HUD's sites table screen | `List` over a directory of three live records returns three entries with their ids in `Name` order, and returns a skip error naming the malformed fourth's id rather than failing the list. |
 | The site record: typed non-secret fields plus the opaque ordered tail | 4 | The HUD's adopt dialog and detail view | The version 0 fixture round-trips byte-equal including key order after trailing-whitespace normalization, secrets included, and the typed struct has no field for any secret. |
 | Checks as pure functions over a site record | 12 | The HUD's per-site refresh | Every `Check` satisfies `Run(ctx, record.Record, Clients, Options) spine.Outcome`; a test runs a slice holding the whole `All` set plus a deliberately stateful stub twice against a recorded `RoundTripper` and asserts identical reports, which goes red on the stub. |
-| `health.Run` pure over its inputs, including an injected clock, options, and acknowledgements | 12 | 2.0's generation-counted refresh | The same record, clients, options, and acknowledgements with a fixed `now` produce a byte-identical report across two calls in one process. |
+| `health.Run` pure over its inputs, with the sweep's clock carried on `Options.Now` rather than a separate parameter | 12 | 2.0's generation-counted refresh | The same record, clients, options (with a fixed `Options.Now`), and acknowledgements produce a byte-identical `(Report, error)` across two calls in one process. |
 | `Options.OnCheck`, the per-check callback `health.Run` fires as each check settles | 12 | The HUD's per-site refresh, which paints a check's result the moment it lands rather than at the end of a sweep | A three-check run fires the callback three times, once per check id, in completion order, and a nil callback runs the sweep unchanged. |
 | `ExitCode` over a slice of reports | 21 | The multi-site sweep's exit | The table covers a one-element slice, which is 1.0's only health caller, a zero-report call with `expectSites` mismatched, which is `sites`' only caller, and a three-element slice with mixed outcomes, which is 2.0's. |
 | The pure render seam: `Render(RenderInput) Frame`, no I/O, no program | 20 | The HUD's screen render | A golden sweep over fixture, width, and profile, plus a test asserting the package imports none of `os`, `golang.org/x/term`, or a color-profile detection package, each forbidden by name as Task 20 states them, outside its profile-detection file. |
@@ -1074,13 +1074,18 @@ narrowed grep test and Task 20's profile-detection file, which is also where `lo
 split. Ruling 3, the grammar cleanup, lands in B2's Tasks 18, 19a, and 22. The full text of all
 three is in the "Conductor rulings recorded here" list under Self-review.
 
-**Outside the brief, recorded for the owner rather than taken here.** One item, and it is not a task
-in this plan; it is a question for Geoff at a checkpoint or after the pass.
+**Outside the brief, recorded for the owner rather than taken here.** Two items, and neither is a
+task in this plan; each is a question for Geoff at a checkpoint or after the pass.
 
 - **An `edge.hsts-off` condition id in the engine's conditions vocabulary.** Task 14's HSTS half
   wants one and `src/lib/diagnostics/conditions.ts` has none (re-verified 2026-09-20 at HEAD: the
   file carries `edge.https-not-forced` and no other `edge.` id). B1 does not add a condition id to
   the engine; the HSTS half declares `spine.ConditionNone` instead.
+- **A publish-path condition id in the engine registry for a stale unpublished edit branch.** Task
+  16's publish-path check declares `spine.ConditionNone` on its stale-branch Failing rather than
+  `github.app-unreachable`, since a stale `cairn/*` branch usually means an unpublished draft, not
+  a broken App (conductor ruling 2026-09-20). An engine-side condition id naming the unpublished-
+  draft case, if the owner wants one, is not this pass's to add.
 
 ### Task 11b-i: the opening refactor, `providers` half
 
@@ -1307,23 +1312,37 @@ Invoke `go-conventions` before writing any Go file.
 - Modify: `tool/internal/spine/outcome.go`, `outcome_test.go` (the ordered `Fields` beside
   `Detail`; Task 11b-ii already opens this file, so 11b-ii runs first)
 
-**Produces:** `type Clients struct{ CF *providers.Cloudflare; GH *providers.GitHub; NPM
+**Produces, as landed (the verdict's condition moved onto the Outcome; see this task's acceptance
+below for why):** `type Clients struct{ CF *providers.Cloudflare; GH *providers.GitHub; NPM
 *providers.NPM; Probe *providers.Probe; HaveCF, HaveGH, HaveBuilds bool; CFFrom, GHFrom string }`,
 where the two `From` fields name the provider each credential resolved through. `type Check
-interface{ ID() string; Condition() spine.Condition; Needs() Tier; Run(ctx, record.Record,
-Clients, Options) spine.Outcome }` with `Tier` one of `TierNone`, `TierCF`, `TierGH`,
-`TierBoth`. `type Options struct{ ErrorThreshold int; LogWindow time.Duration; OnCheck func(CheckResult) }`,
-the tunables the CLI exposes as flags plus one optional per-check callback, passed to every run so no
-threshold is a literal inside a check.
-`Condition()` may return `spine.ConditionNone`; `Run` records it and the remedy line is omitted.
+interface{ ID() string; Needs() Tier; Run(ctx, record.Record, Clients, Options) spine.Outcome }`
+with `Tier` one of `TierNone`, `TierCF`, `TierGH`, `TierBoth`. There is no `Check.Condition()`
+method: a check's Outcome names its own condition per verdict (see below). `type Options
+struct{ ErrorThreshold int; LogWindow time.Duration; Now func() time.Time; OnCheck
+func(CheckResult) }`, the tunables the CLI exposes as flags, the sweep's own clock, and one
+optional per-check callback, passed to every run so no threshold and no clock read is a literal
+inside a check. `Options.Now` is validated: a zero `Options` (including a nil `Now`) is `Run`'s
+own rejection error, per the acceptance below.
+A verdict may declare `spine.ConditionNone`; `Run` records it and the remedy line is omitted.
 `type Report struct{ SchemaVersion int; Site string; Domain string; Checks []CheckResult;
-Degraded bool; Acknowledged []string }`. `type CheckResult struct{ ID string; Condition
-spine.Condition; Outcome spine.Outcome; CheckedAt time.Time; Tier Tier; Acknowledged bool;
-AckExpires time.Time }`. `type Ack struct{ CheckID string; Expires time.Time }` and `type Acks
-[]Ack` with `func (a Acks) Match(id string, now time.Time) (Ack, bool)`. `func (r Report)
-JSON(verbose bool) ([]byte, error)`. `func Run(ctx, r record.Record, c Clients, checks []Check,
-now func() time.Time, o Options, acks Acks) (Report, error)`. `var All []Check`, a literal slice whose
-first member is the `creds` check and which Tasks 13 through 17 append to.
+Degraded bool; Acknowledged []string }`. `type CheckResult struct{ ID string; Outcome
+spine.Outcome; CheckedAt time.Time; Tier Tier; Acknowledged bool; AckExpires time.Time }`, with
+no `Condition` field of its own: a result's condition is `Outcome.Condition`. `type Ack struct{
+CheckID string; Expires time.Time }` and `type Acks []Ack` with `func (a Acks) Match(id string,
+now time.Time) (Ack, bool)`. `func (r Report) JSON(verbose bool) ([]byte, error)`. `func
+Run(ctx context.Context, r record.Record, c Clients, checks []Check, o Options, acks Acks)
+(Report, error)`, with no separate `now` parameter: the sweep's clock is `Options.Now` alone.
+`var All []Check`, a literal slice whose first member is the `creds` check and which Tasks 13
+through 17 append to.
+
+**A seam the HUD depends on: no non-test file under `tool/internal/health` or `tool/internal/logs`
+may call `time.Now`, `time.Since`, or `time.Until`.** Both packages promise that a replay through
+the same `Options.Now` (or the same `now` argument, for `logs`) produces a byte-identical result, and
+a system-clock read inside either would break that promise silently, on any single run looking
+correct. `internal/hygiene/wallclock_test.go`'s `TestNoWallClockReadsInClockFreePackages` parses
+every non-test file in both packages and fails on a `time.Now`, `time.Since`, or `time.Until`
+selector anywhere outside a doc comment.
 
 **Acceptance:**
 - **`spine.Outcome` gains an ordered `Fields`, and `Detail` stays.** `Fields` is a slice of a **new
@@ -1353,9 +1372,9 @@ first member is the `creds` check and which Tasks 13 through 17 append to.
   byte-identical reports. The stub makes the assertion go red at this task, where `All` is still
   nearly empty, so the test is proved rather than vacuous. Task 17 re-runs it over the complete
   `All`. 2.0's HUD calls the same functions per site with no wrapper.
-- **2.0 seam kept on purpose: `health.Run` pure over its inputs.** The injected `now` makes the
-  report reproducible; a test asserts two calls with a fixed clock, the same options, and the
-  same acknowledgements are byte-identical.
+- **2.0 seam kept on purpose: `health.Run` pure over its inputs.** The injected `Options.Now`
+  makes the report reproducible; a test asserts two calls with a fixed clock, the same options,
+  and the same acknowledgements are byte-identical.
 - **Acknowledgements are data, applied after a check runs.** `Run` marks a `CheckResult`
   acknowledged when `acks.Match` finds an unexpired entry for its id, records the expiry, and
   lists the ids in `Report.Acknowledged`. A check never sees an acknowledgement, so the report
@@ -1409,16 +1428,22 @@ first member is the `creds` check and which Tasks 13 through 17 append to.
 - `Report.JSON(verbose bool)` is the only marshal path, and `Report` and every type it contains
   declare no `MarshalJSON`, asserted by a test, so a bare `json.Marshal(r)` cannot leak. The
   non-verbose filter is a key allowlist over every `Outcome.Fields` entry (`nonVerboseFieldKeys`
-  in `report.go`): an entry whose key is outside the set is dropped, key and value. The
-  non-verbose-safe categories are check id, condition, reason (typed fields, never filtered),
-  counts, ages, states, and 7-character SHAs. Account ids, zone ids, worker names, repository
-  slugs, build UUIDs, and full SHAs are verbose-only. `Outcome.Detail` is free text, passes
-  through both renders unchanged, and must never carry a verbose-only value; a check puts such
-  a value in `Fields` under a named key (conductor ruling 2026-09-20, replacing a regex filter
-  over `Detail`). As landed the set is `count`, `age`, `state`. A check that emits a new
-  non-verbose-safe field adds its key to the set in the same commit, with a test, and a key
-  filter cannot shorten a value, so a check that wants a short SHA non-verbose emits it as its
-  own field beside the full one.
+  in `report.go`): an entry whose key is outside the set is dropped, key and value. `Outcome.State`,
+  `Outcome.Condition`, and `Outcome.Reason` are typed fields on the outcome itself, never filtered.
+  Account ids, zone ids, worker names, repository slugs, build UUIDs, and full SHAs are
+  verbose-only. `Outcome.Detail` is free text, passes through both renders unchanged, and must
+  never carry a verbose-only value; a check puts such a value in `Fields` under a named key
+  (conductor ruling 2026-09-20, replacing a regex filter over `Detail`). **As landed, `report.go`
+  names every non-verbose-safe key by what it measures rather than by a category; the set grew as
+  Tasks 13 through 17 each added their own fields.** The final `nonVerboseFieldKeys` set, verbatim:
+  `errorCount` (errors), `openBranchCount` and `branchAgeDays` (publish-path), `releasesBehind` and
+  `consumersMust` (engine), and `workerExists`, `buildsConnected`, `pushToDeploy`, `lastBuild`,
+  `lastBuildAt`, `behind`, `lastBuildShortSHA`, `mainShortSHA` (deploy, per Task 15's Produces
+  block, which also lists deploy's three verbose-only siblings: `lastBuildSHA`, `mainSHA`, and
+  `buildId`). `errorsCheck`'s own `topEvents` field is verbose-only, carrying event names rather
+  than a count. A check that emits a new non-verbose-safe field adds its key to the set in the
+  same commit, with a test, and a key filter cannot shorten a value, so a check that wants a short
+  SHA non-verbose emits it as its own field beside the full one.
 - Conductor rulings of 2026-09-20 on this task, which govern over any earlier wording. A zero
   `TokenExpiry` means GitHub reported no expiry for the token (a classic PAT, an OAuth token, a
   non-expiring fine-grained PAT): the `creds` check is OK and its Detail says so, never Unknown,
@@ -1437,7 +1462,19 @@ Invoke `go-conventions` before writing any Go file.
 **Files:**
 - Create: `tool/internal/health/check_serving.go`, `check_serving_test.go`,
   `check_delegation.go`, `check_delegation_test.go`
-- Modify: `tool/internal/health/health.go` (append to `All`)
+- Modify: `tool/internal/health/health.go` (append to `All`), `tool/internal/providers/probe.go`
+  and `probe_test.go` (the authoritative-nameserver lookup seam Serving's DNS diagnosis needs)
+
+**Produces, as landed:** on `providers.Probe`: `type AuthorityLookup func(ctx context.Context,
+nameserver, host string) ([]net.IP, error)`, the seam that asks a nameserver directly for a
+host's own address records, bypassing the ordinary recursive resolver and its negative cache.
+`func NewProbeWithAuthority(rt http.RoundTripper, resolver Resolver, authority AuthorityLookup)
+*Probe`, `NewProbe`'s own constructor with the lookup given explicitly, the seam a test fakes to
+exercise the propagation split with no network; `NewProbe` itself now calls it with a real dial.
+`func (p *Probe) LookupAuthoritative(ctx context.Context, nameserver, host string) ([]net.IP,
+error)`, bounded by the package's shared request timeout. `const RequestTimeout = requestTimeout`,
+exported so a caller composing several lookups into one operation can derive a single shared
+deadline from the same policy every other `Probe` method uses.
 
 **Acceptance:**
 - Serving ports `confirmHostname` exactly: `GET https://<domain>/` must be 200, and `GET
@@ -1450,6 +1487,15 @@ Invoke `go-conventions` before writing any Go file.
 - Serving declares `spine.ConditionNone`, because `src/lib/diagnostics/conditions.ts` carries no
   id for it. `hostname-not-serving`, `hostname-records-absent`, `hostname-resolver-lagging`, and
   `certificate-pending` are `ReasonCode` values, not conditions.
+- **The unreachable diagnosis discovers nameservers live first and falls back to the record's own
+  saved pair only when that discovery answers with none,** because the record's saved
+  nameservers can still hold a negative NS answer while Cloudflare's own nameservers already
+  serve the apex record, and only the saved pair catches that case as resolver-lagging rather
+  than records-absent. One deadline bounds the whole sweep across every nameserver tried, not a
+  per-nameserver allowance, so a domain whose nameservers are all unreachable cannot hold the
+  check for the deadline times the nameserver count. When neither source yields a nameserver, or
+  every authoritative query fails outright, the outcome defaults to records-absent, the
+  conservative default.
 - Delegation ports `checkDelegation`'s four states, mapping `active` to OK, `propagating` and
   `pending` to Unknown with a park reason, and `wrong-nameservers` to Failing. It declares
   `spine.ConditionNone` for the same reason.
@@ -1478,9 +1524,20 @@ Invoke `go-conventions` before writing any Go file.
   question for the owner. A test asserts each half's declared condition, so the asymmetry is
   deliberate rather than a later reader's puzzle.
 - Email runs two halves in order. Credential-free first: `_dmarc.<domain>` TXT must exist and
-  its `p=` must not be `none`, with the policy quoted in the detail on a Failing; the SPF TXT on
-  the sending subdomain must include Cloudflare's Email Sending include; the DKIM selector TXTs
+  its `p=` must not be `none`, with the policy quoted in the detail on a Failing; the SPF TXT at
+  the domain's apex must include Cloudflare's Email Sending include; the DKIM selector TXTs
   must resolve. Then, with a Cloudflare client, the zone's sending subdomain must be verified.
+  **As landed:** DMARC and SPF matching is case-insensitive, since DNS TXT values carry no case
+  convention. A DNS transport-level failure is Unknown; only a `*net.DNSError` with `IsNotFound`
+  true is treated as the record's absence. The DNS-hygiene half needs no Cloudflare credential
+  and always runs regardless of tier; `emailCheck` declares `TierNone` and inspects
+  `Clients.HaveCF` itself for the second half. When DNS is clean but no Cloudflare credential is
+  available, the check reports Unknown `reason.cred-missing`, which sets `Degraded` by Task 12's
+  one existing cred-missing rule. DKIM passes on any one of the six selectors it probes (Google's,
+  Fastmail's rotation, and Microsoft 365's default pair). A sending subdomain Cloudflare has not
+  yet onboarded declares `spine.ConditionEmailSenderNotOnboarded`, the only verdict this check
+  names a condition for; a subdomain onboarded but not yet enabled parks as Unknown rather than
+  Failing.
 - The DMARC-is-TXT expectation and the DKIM selector names are ported from reconciliation row
   28, not invented.
 - The test suite includes both live shapes: a `p=none` record is Failing and a `p=reject` one
@@ -1499,19 +1556,20 @@ Invoke `go-conventions` before writing any Go file.
 - Modify: `tool/internal/health/health.go` (append to `All`)
 
 **Produces:** `type DeployDetail struct{ WorkerExists, BuildsConnected, PushToDeploy bool;
-LastBuild BuildState; LastBuildSHA, MainSHA string; LastBuildAt time.Time; Behind bool }`, the
+LastBuild BuildState; BuildID, LastBuildSHA, MainSHA string; LastBuildAt time.Time; Behind bool }`, the
 check's own internal value, **flattened into named entries on the outcome's ordered `Fields` rather
 than carried as one struct**: `Fields` holds a key and a `json.RawMessage` per value, so a struct
 placed in one entry would render as one opaque blob and Task 12's per-field non-verbose filter could
-not reach inside it. The keys are enumerated here so the filter and the goldens have a fixed set:
-`workerExists`, `buildsConnected`, `pushToDeploy`, `lastBuild`, `lastBuildSHA`, `mainSHA`,
-`lastBuildAt`, and `behind`, in that order, followed by two short-SHA entries,
-`lastBuildShortSHA` and `mainShortSHA` (the first seven characters), because Task 12's filter
-selects by key and cannot shorten a full SHA. This task adds `workerExists`, `buildsConnected`,
-`pushToDeploy`, `lastBuild`, `lastBuildAt`, `behind`, `lastBuildShortSHA`, and `mainShortSHA`
-to `nonVerboseFieldKeys`; `lastBuildSHA` and `mainSHA` stay verbose-only, as does the build id
-(conductor amendment 2026-09-20, from the Task 12 fix review). `BuildState` is one of `BuildOK`, `BuildFailed`,
-`BuildRunning`, `BuildNone`.
+not reach inside it. The keys are enumerated here so the filter and the goldens have a fixed set,
+**eleven in order**: `workerExists`, `buildsConnected`, `pushToDeploy`, `lastBuild`, `lastBuildSHA`,
+`mainSHA`, `lastBuildAt`, and `behind`, then two short-SHA entries, `lastBuildShortSHA` and
+`mainShortSHA` (the first seven characters), because Task 12's filter selects by key and cannot
+shorten a full SHA, and finally `buildId` last, verbose-only like `lastBuildSHA` and `mainSHA`. This
+task adds `workerExists`, `buildsConnected`, `pushToDeploy`, `lastBuild`, `lastBuildAt`, `behind`,
+`lastBuildShortSHA`, and `mainShortSHA` to `nonVerboseFieldKeys`; `lastBuildSHA`, `mainSHA`, and
+`buildId` stay verbose-only (conductor amendment 2026-09-20, from the Task 12 fix review): the two
+full commit SHAs and the build id are each enough to look a build up on their own. `BuildState` is
+one of `BuildOK`, `BuildFailed`, `BuildRunning`, `BuildNone`.
 
 **Acceptance:**
 - Worker absent is Failing. Builds not connected is Failing with
@@ -1520,14 +1578,17 @@ to `nonVerboseFieldKeys`; `lastBuildSHA` and `mainSHA` stay verbose-only, as doe
   found no such code; conductor ruling 2026-09-19). Tested with a handcrafted empty-list
   response, since the fixture corpus carries no captured body for this condition (conductor
   ruling 2026-09-19), not against the corpus body.
-  A failed last build is Failing with the build id in the fields. Running is Unknown with
+  **A failed last build is Failing before, and regardless of, the GitHub read:** the check settles
+  the last-build verdict on the Cloudflare-side outcome alone and never measures `MainSHA` or
+  `Behind` for a failed build, since a failed build is no more or less broken depending on whether
+  GitHub answers. A failed last build is Failing with the build id in the fields. Running is Unknown with
   `reason.park.builds-running`. OK with `MainSHA == LastBuildSHA` is OK. OK with differing SHAs
   is OK with `Behind: true`, because Behind is a state of this cell and not a separate check.
 - The check declares `spine.ConditionNone`, per the spec's table marking it new.
 - The build id, the repository slug, and the full SHAs are verbose-only, which
   Task 12's filter enforces per field. A test asserts a non-verbose render of a Failing deploy
   carries the build state and the two short-SHA entries and none of the verbose-only values
-  (the full SHAs, the build id, the repository slug), and a second test asserts the ten keys
+  (the full SHAs, the build id, the repository slug), and a second test asserts all eleven keys
   appear in the order the Produces block lists.
 - If Task 10 found no read-level Builds permission group, the Builds half is gated at runtime on
   `Clients.HaveBuilds`, which is false in that case, and the check degrades to worker-exists plus
@@ -1550,18 +1611,32 @@ Invoke `go-conventions` before writing any Go file.
 - Publish-path lists `cairn/` branches and the newest `cairn-cms[bot]` commit on `main`. It is
   Failing when any `cairn/*` branch is older than 14 days with no later bot commit, Unknown with
   `reason.not-observable` when there are no branches and no bot commits at all, and OK
-  otherwise. The fields carry the branch count and ages.
+  otherwise. The fields carry `openBranchCount` and one array-valued `branchAgeDays` field
+  (oldest first).
+- Publish-path declares `spine.ConditionNone` on every verdict, including the stale-branch
+  Failing: a stale `cairn/*` branch usually means an unpublished draft an editor has not returned
+  to, not a broken GitHub App, so declaring `github.app-unreachable` would misdiagnose the common
+  case (conductor ruling 2026-09-20). A publish-path condition id for a stale unpublished edit
+  branch is recorded under this pass's "outside the brief" notes as a question for the owner.
 - Engine parses the site's `package.json` on `main`, reads the `@glw907/cairn-cms` range, and
-  compares it to the latest published version. The fields carry releases-behind and whether any
-  skipped version's changelog section has a `Consumers must:` line, read from this repo's
-  `CHANGELOG.md` through GitHub with the same token. Behind by one or more with a `Consumers
-  must:` line is Failing; behind without one is OK with a detail; current is OK.
+  compares its declared range's base version to the latest published version. The fields carry
+  `releasesBehind` and `consumersMust`, whether any skipped version's changelog section has an
+  actionable `Consumers must:` line, read from this repo's `CHANGELOG.md` through GitHub with the
+  same token. Behind by one or more with an actionable line is Failing; behind without one is OK
+  with a detail; current is OK.
+  **A `Consumers must:` clause counts as actionable unless its own text begins with the whole
+  word "nothing"** (case-insensitively, followed by end of text or a non-letter, so "nothing."
+  and "nothing else" are non-actionable but "nothingness" is not caught by the rule and is judged
+  on its own words), **per every lead-in the changelog section carries** (a lead-in wrapped in
+  backticks is a prose mention, not a real clause, and is skipped). Each clause is bounded at the
+  next lead-in or the section's end, so two clauses sharing one paragraph are judged separately
+  and any single actionable one makes the version actionable.
+- Engine declares `spine.ConditionNone` on every verdict.
 - Both checks read the repository of the site under test plus this engine's repository, which is
   the scope Task 10 states for the GitHub token and the scope its probe verifies against the
   operator's own registry. A test asserts a 403 maps to Unknown rather than OK, so a mis-scoped
   token is visible rather than silent. Geoff's five repositories in reconciliation row 30 are
   this pass's verification set.
-- Both declare `spine.ConditionNone`.
 - The changelog parse is tested against the post-`0.97.0` shape, per reconciliation row 21, and
   not against `## Unreleased` as it stands today.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
@@ -1576,12 +1651,21 @@ Invoke `go-conventions` before writing any Go file.
 - Create: `packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.ok.json`
 - Modify: `tool/internal/health/health.go` (append to `All`)
 
-**Produces:** `type Query struct{ Worker string; Since time.Duration; Event string; Limit int }`.
-`type Entry struct{ At time.Time; Level string; Event string; Fields []Field }`, where `Field` is
-`struct{ Key string; Value json.RawMessage }`. `func Fetch(ctx, cf *providers.Cloudflare, q
-Query) ([]Entry, error)`. `func CountErrors(ctx, cf, worker, since) (int, error)`. A sentinel
+**Produces, as landed:** `type Query struct{ Worker string; Since time.Duration; Event string;
+Limit int }`. `type Entry struct{ At time.Time; Level string; Event string; Fields []Field }`,
+where `Field` is `struct{ Key string; Value json.RawMessage }`. `func Fetch(ctx, cf
+*providers.Cloudflare, q Query, now time.Time) ([]Entry, error)`. `func FetchLevel(ctx, cf,
+worker, level string, since time.Duration, now time.Time) ([]Entry, error)`, `Fetch`'s own
+level-filtered sibling and the health errors check's read path: it filters to `level` in Go
+after the query returns, since the request's own filter grammar is unverified against the live
+API. `func CountErrors(ctx, cf, worker string, since time.Duration, now time.Time) (int,
+error)`, built on `FetchLevel`. Every one of these three takes `now time.Time` explicitly rather
+than reading the system clock, per this pass's clock-free-package hygiene test. A sentinel
 `ErrObservabilityOff` mapped from the API's response when the Worker has no observability
-dataset.
+dataset: `fetch` classifies the underlying error as a `*providers.APIError` first, and only a
+not-found or unclassified reason maps to `ErrObservabilityOff`; every other classified reason
+(unauthorized, forbidden, rate-limited, and the like) passes through unchanged, since it is a
+credential or transport problem rather than a sign about the dataset itself.
 
 **Acceptance:**
 - **`Entry.Fields` is an ordered slice, not a map.** Values stay unparsed as `json.RawMessage`.
@@ -1618,7 +1702,14 @@ dataset.
   five, `--error-threshold`, carried on `Options` rather than as a literal in the check, so an
   operator with a noisier or quieter site sets their own. A table covers zero, the threshold
   exactly, and one above it, with the threshold read from `Options` and not from a constant.
-  `ErrObservabilityOff` is Unknown with condition `config.observability-off`.
+  The `errorCount` field is present on every verdict that measured a count (zero, within the
+  advisory band, and above the threshold alike); `topEvents` rides beside it but is verbose-only,
+  since it carries event names rather than a count.
+  Only the dataset-absent Unknown declares a condition: `ErrObservabilityOff` is Unknown with
+  `spine.ConditionConfigObservabilityOff`. Every other verdict (zero, within the advisory band, or
+  above the threshold) declares `spine.ConditionNone`, since the site is logging real errors and a
+  remedy pointed at "turn observability on" would be wrong for the one verdict that means
+  something is actually broken.
 - `--since` is clamped to the Workers Logs retention window Task 10's probe observed and
   `tool/docs/credentials.md` records. A request past retention would return a short window that
   reads clean, so the clamp is what keeps the count honest. The default window is 24 hours and
@@ -1628,15 +1719,19 @@ dataset.
 - **`cairn logs` output carries editor emails, so `logs` is implicitly verbose and says so.**
   Fourteen or more engine events carry an editor's email per reconciliation row 15, and
   `Entry.Fields` is verbatim JSON, so the printed output holds personal data whatever the operator
-  passed. `logs` therefore prints **the same not-safe-to-paste stderr notice `adopt list` gets** and
-  is named in the global constraint beside it, rather than hiding fields behind `--verbose` and
-  shipping a log reader that omits the field an operator opened it for. A test asserts the stderr
-  notice on a `logs` run and that it goes to stderr, so `--json` on stdout stays machine-readable.
-  Task 20's `tool/docs/reference/json-output.md` marks the log payload as carrying personal data.
+  passed. `logs` is one of the two implicitly verbose commands named in the global constraint
+  beside `adopt list`, rather than hiding fields behind `--verbose` and shipping a log reader that
+  omits the field an operator opened it for. **The stderr notice itself and its test move to Task
+  19a's acceptance criterion 20**, which needs the `cmd/cairn logs` command this task does not yet
+  build: that criterion covers both `adopt list` and `logs` together and is where the notice and
+  its test now live. Task 20's `tool/docs/reference/json-output.md` marks the log payload as
+  carrying personal data.
 - Event names are read against the engine's union per reconciliation row 14, after polish-C's
   renames, not before.
 - Re-run Task 12's purity assertion over the now-complete `All` and record the run in the task
-  report.
+  report. **`All` is now the complete 1.0 set, nine checks in report order:** `creds`, `serving`,
+  `delegation`, `https-forced`, `email`, `deploy`, `publish-path`, `engine`, `errors`, the literal
+  order `health.go`'s own `All` slice carries.
 - Gate: one string in the light lane,
   `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check && npm test -w packages/create-cairn-site'`.
   The Node half is this one package's suite and launches no browser, so it belongs in the light lane
@@ -1706,6 +1801,27 @@ this task is its own segment.
    its commit, verify it, then merge. One sentence to Geoff beats a race.
 8. The task report records the final SHA, every check's name and result at that SHA, the merge
    commit, and each conflicted file's resolution with the entries it kept from each pass.
+
+**Recorded for the close (17b).** Observations from B1's own work that belong to no task here, kept
+so the close and a later pass do not rediscover them from scratch.
+
+- Go's resolver consults `/etc/hosts` before the authoritative dial
+  `providers.Probe.LookupAuthoritative` performs, so a machine with a local hosts-file override
+  for the probed domain would see a diagnosis that does not reflect the live DNS.
+- A DNS transport failure (a down resolver, an offline machine) reports Unknown under
+  `reason.timeout` in the checks that read `providers.Probe`, which misdescribes a resolver that
+  is merely refusing rather than timing out; the two failure modes share one reason today.
+- A `Consumers must:` changelog clause whose own text opens with "nothing" (and the variants Task
+  16 states) reads as non-actionable by a fixed rule; a clause that says "nothing" but means
+  something an operator should still read would be missed by that rule.
+- `tool/docs/*.md` files (`credentials.md` at least) cite task numbers from this plan directly,
+  which will read as stale once the plan itself is archived history.
+- `check_engine.go`'s releases-behind count reads the declared dependency range's base version
+  from `package.json` rather than the resolved version a lockfile would carry, so a site pinned
+  loosely reports behind-ness relative to its floor, not its installed version.
+- `logs.CountErrors` and `logs.Fetch` have no non-test caller as of B1's close: `health`'s errors
+  check reads `logs.FetchLevel` directly. Both remain 2.0 seams, per the seams table, exercised
+  only by their own package tests until a HUD or a `cairn logs --event` caller lands.
 
 ---
 
@@ -1936,12 +2052,18 @@ defined once, in `ExitCode`.
     list` when the argument is missing. The multi-site sweep is 2.0.
 20. `adopt list` prints candidates as JSON, preceded by a stderr line saying the output is not
     safe to paste. It is one of the **two** implicitly verbose commands, per the global constraint;
-    `logs` is the other, because its entries carry editor emails, and Task 17 gives it the same
-    notice. A test asserts both commands emit that line and that no other command does.
+    `logs` is the other, because its entries carry editor emails per Task 17, and this task is
+    where `logs` gains the same notice, since `logs` does not exist as a `cmd/cairn` command
+    before this task. A test asserts both commands emit that line and that no other command does.
     `adopt --worker X` adopts without a prompt.
 21. No command reads an environment variable except through `loadEnv`, and no command reads the
     keyring except through `secrets`. `TestOSGetenvOnlyInEnvGo` still passes over the grown
     package. This holds because Task 9 created the chokepoint before any command needed it.
+22. **`health --since` and `logs --since` both resolve through `logs.ParseSince`.** A test builds
+    the value table Task 17 states for the grammar (`90m`, `24h`, `7d` accepted; a bare integer, a
+    negative value, a zero, a float, and a unit outside the three each rejected) and asserts both
+    flags accept and reject the same rows, so the two commands cannot drift onto two different
+    parsers over time.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
 
 ### Task 19b: Acknowledgements, the non-interactive credential path, and completions

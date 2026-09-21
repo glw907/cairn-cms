@@ -40,9 +40,18 @@ var consumersMustLead = regexp.MustCompile("(`)?\\*{0,2}Consumers must:\\*{0,2}(
 // multiple indented lines, so a clause's true end is the next blank line, not the next newline.
 var blankLine = regexp.MustCompile(`\n\s*\n`)
 
-// engineDetail is engineCheck's own internal measurement, flattened into Fields as a
-// "releasesBehind" entry and a "consumersMust" entry.
+// FieldEngineInstalledVersion names the installed engine version on the engine check's Outcome.
+// A renderer reads it by key: the version also appears inside the check's own prose Detail, and
+// parsing prose to recover a fact the check already measured is how a column silently goes wrong
+// the first time the sentence is reworded.
+const FieldEngineInstalledVersion = "installedVersion"
+
+// engineDetail is engineCheck's own internal measurement, flattened into Fields as an
+// "installedVersion" entry, a "releasesBehind" entry and a "consumersMust" entry.
 type engineDetail struct {
+	// Installed is the bare version the site's own dependency range names, the version the site
+	// is running.
+	Installed string
 	// ReleasesBehind is how many published versions of cairnPackageName the site's own dependency
 	// range has not yet taken, up to and including the latest.
 	ReleasesBehind int
@@ -51,16 +60,17 @@ type engineDetail struct {
 	ConsumersMust bool
 }
 
-// fields flattens d into its two ordered spine.OutcomeField entries.
+// fields flattens d into its three ordered spine.OutcomeField entries.
 func (d engineDetail) fields() []spine.OutcomeField {
 	return []spine.OutcomeField{
+		field(FieldEngineInstalledVersion, d.Installed),
 		field("releasesBehind", d.ReleasesBehind),
 		field("consumersMust", d.ConsumersMust),
 	}
 }
 
 // outcome builds the spine.Outcome engineCheck.Run returns for state, code, and detail, always
-// flattening d into its two Fields entries regardless of which branch of Run reached it.
+// flattening d into its Fields entries regardless of which branch of Run reached it.
 func (d engineDetail) outcome(state spine.State, code spine.Code, detail string) spine.Outcome {
 	return spine.Outcome{State: state, Code: code, Detail: detail, Fields: d.fields()}
 }
@@ -213,7 +223,7 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 
 	skipped := skippedVersions(versions, siteIndex, latestIndex)
 	if len(skipped) == 0 {
-		return engineDetail{}.outcome(spine.OK, "", detailEngineCurrent(siteVersion))
+		return engineDetail{Installed: siteVersion}.outcome(spine.OK, "", detailEngineCurrent(siteVersion))
 	}
 
 	changelog, err := c.GH.FileAtRef(ctx, engineOwner, engineRepo, "CHANGELOG.md", "main")
@@ -230,7 +240,7 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		}
 	}
 
-	detail := engineDetail{ReleasesBehind: len(skipped), ConsumersMust: actionable}
+	detail := engineDetail{Installed: siteVersion, ReleasesBehind: len(skipped), ConsumersMust: actionable}
 	if actionable {
 		return detail.outcome(spine.Failing, spine.CodeEngineBehind, detailEngineBehindActionable(siteVersion, latest, len(skipped)))
 	}

@@ -224,7 +224,7 @@ func TestCheckDetailFieldVisibility(t *testing.T) {
 		{
 			name:   "engine",
 			fields: engineDetail{}.fields(),
-			want:   []string{"releasesBehind", "consumersMust"},
+			want:   []string{"installedVersion", "releasesBehind", "consumersMust"},
 		},
 		{
 			name:   "errors",

@@ -35,8 +35,20 @@ func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, o Options
 
 	combined := worseCredentialOutcome(cf.outcome, gh.outcome)
 	combined.Detail = credentialLine("cloudflare", cf) + "; " + credentialLine("github", gh)
+	// The expiry travels as a field whatever the verdict. A healthy token's own OK outcome
+	// carries no Detail at all, so without this the date the check already measured is reachable
+	// nowhere but inside the fourteen-day warning, and the command layer would have to spend a
+	// second request on a fact this one already holds.
+	combined.Fields = nil
+	if !gh.expiry.IsZero() {
+		combined.Fields = []spine.OutcomeField{field(FieldGitHubTokenExpiry, gh.expiry)}
+	}
 	return combined
 }
+
+// FieldGitHubTokenExpiry names the GitHub token's own expiry on the creds check's Outcome. The
+// command layer reads it by key to put the date on the run's status line.
+const FieldGitHubTokenExpiry = "githubTokenExpiry"
 
 // credentialSide is the outcome of measuring one provider's credential, paired with the provider
 // name it resolved through, so Run can name that provider in the combined check's Detail without
@@ -44,6 +56,9 @@ func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, o Options
 type credentialSide struct {
 	outcome spine.Outcome
 	from    string
+	// expiry is the token's own expiry where the provider publishes one, and the zero time
+	// otherwise. Only the GitHub side ever sets it.
+	expiry time.Time
 }
 
 // checkCloudflareCredential verifies c's Cloudflare credential, the way credentialErrorOutcome
@@ -80,9 +95,9 @@ func checkGitHubCredential(ctx context.Context, c Clients, now time.Time) creden
 	}
 	if expiry.Sub(now) < credExpiryWindow {
 		outcome := spine.Outcome{State: spine.Failing, Code: spine.CodeCredsExpiringSoon, Detail: detailCredsGitHubExpiring(expiry, now)}
-		return credentialSide{outcome: outcome, from: c.GHFrom}
+		return credentialSide{outcome: outcome, from: c.GHFrom, expiry: expiry}
 	}
-	return credentialSide{outcome: spine.Outcome{State: spine.OK}, from: c.GHFrom}
+	return credentialSide{outcome: spine.Outcome{State: spine.OK}, from: c.GHFrom, expiry: expiry}
 }
 
 // credentialRank orders an Unknown credentialSide's Reason for worseCredentialOutcome's tie

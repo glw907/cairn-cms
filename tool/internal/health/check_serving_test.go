@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/internal/record"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
@@ -63,7 +65,7 @@ func TestProbeServingLiveIsOK(t *testing.T) {
 	defer srv.Close()
 
 	probe := providers.NewProbe(srv.Client().Transport, servingResolver{})
-	got := probeServing(context.Background(), probe, srv.Listener.Addr().String())
+	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
 
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK (Outcome: %+v)", got.State, got)
@@ -75,7 +77,7 @@ func TestProbeServingBareAdmin200IsFailing(t *testing.T) {
 	defer srv.Close()
 
 	probe := providers.NewProbe(srv.Client().Transport, servingResolver{})
-	got := probeServing(context.Background(), probe, srv.Listener.Addr().String())
+	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
 
 	if got.State != spine.Failing || got.Detail != "hostname-not-serving" {
 		t.Errorf("Outcome = %+v, want Failing hostname-not-serving", got)
@@ -90,7 +92,7 @@ func TestProbeServingCertificatePendingFallsBackToHTTP(t *testing.T) {
 	defer srv.Close()
 
 	probe := providers.NewProbe(http.DefaultTransport, servingResolver{})
-	got := probeServing(context.Background(), probe, srv.Listener.Addr().String())
+	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
 
 	want := spine.ParkReason(spine.ParkCertificatePending)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -101,7 +103,7 @@ func TestProbeServingCertificatePendingFallsBackToHTTP(t *testing.T) {
 func TestProbeServingHostnameRecordsAbsent(t *testing.T) {
 	probe := providers.NewProbe(http.DefaultTransport, servingResolver{ns: nil})
 	// 127.0.0.1:1 has no listener: both schemes fail to connect at all.
-	got := probeServing(context.Background(), probe, "127.0.0.1:1")
+	got := probeServing(context.Background(), probe, record.Record{}, "127.0.0.1:1")
 
 	want := spine.ParkReason(spine.ParkHostnameRecordsAbsent)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -115,7 +117,7 @@ func TestProbeServingHostnameResolverLagging(t *testing.T) {
 		servingResolver{ns: []*net.NS{{Host: "ada.ns.cloudflare.com."}}},
 		fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
 	)
-	got := probeServing(context.Background(), probe, "127.0.0.1:1")
+	got := probeServing(context.Background(), probe, record.Record{}, "127.0.0.1:1")
 
 	want := spine.ParkReason(spine.ParkHostnameResolverLagging)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -137,15 +139,19 @@ func fakeAuthority(ips []net.IP, err error) providers.AuthorityLookup {
 // all driven through the fake nameserver and authority lookups: an authoritative nameserver
 // holding the record means resolver-lagging, and every other case (the record absent
 // at the authority, every authoritative nameserver unreachable, or no nameservers known at all)
-// means records-absent, the conservative default.
+// means records-absent, the conservative default. The last three rows exercise the
+// discover-first, saved-pair-fallback order: an empty discovery falls back to the record's saved
+// nameservers, and a non-empty discovery wins outright even when the saved pair would answer
+// differently.
 func TestDiagnoseUnreachablePropagationSplit(t *testing.T) {
 	oneNS := []*net.NS{{Host: "ns1.example.test."}}
 
 	tests := []struct {
-		name      string
-		ns        []*net.NS
-		authority providers.AuthorityLookup
-		want      spine.ReasonCode
+		name       string
+		ns         []*net.NS
+		assignedNS []string
+		authority  providers.AuthorityLookup
+		want       spine.ReasonCode
 	}{
 		{
 			name:      "authority has record",
@@ -173,15 +179,68 @@ func TestDiagnoseUnreachablePropagationSplit(t *testing.T) {
 			authority: fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
 			want:      spine.ParkReason(spine.ParkHostnameRecordsAbsent),
 		},
+		{
+			name:       "discovery empty falls back to saved pair that has the record",
+			ns:         nil,
+			assignedNS: assignedPair,
+			authority:  fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
+			want:       spine.ParkReason(spine.ParkHostnameResolverLagging),
+		},
+		{
+			name:       "discovery empty falls back to saved pair that lacks the record",
+			ns:         nil,
+			assignedNS: assignedPair,
+			authority:  fakeAuthority(nil, nil),
+			want:       spine.ParkReason(spine.ParkHostnameRecordsAbsent),
+		},
+		{
+			name:       "discovery present wins over a saved pair that would answer differently",
+			ns:         oneNS,
+			assignedNS: assignedPair,
+			// The saved pair, if it were queried instead, would answer resolver-lagging; the
+			// discovered nameserver must be the one actually queried, giving records-absent.
+			authority: fakeAuthority(nil, nil),
+			want:      spine.ParkReason(spine.ParkHostnameRecordsAbsent),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			probe := providers.NewProbeWithAuthority(http.DefaultTransport, servingResolver{ns: tt.ns}, tt.authority)
-			got := diagnoseUnreachable(context.Background(), probe, "example.test")
+			r := delegationRecord(t, tt.assignedNS)
+			got := diagnoseUnreachable(context.Background(), probe, r, "example.test", providers.RequestTimeout)
 			if got.State != spine.Unknown || got.Reason != tt.want {
 				t.Errorf("Outcome = %+v, want Unknown %s", got, tt.want)
 			}
 		})
+	}
+}
+
+// TestDiagnoseUnreachableSweepSharesOneDeadline proves the per-nameserver loop applies one
+// shared budget rather than one per nameserver: three nameservers whose authoritative lookup
+// blocks until its context ends still return in close to one budget, not three.
+func TestDiagnoseUnreachableSweepSharesOneDeadline(t *testing.T) {
+	blocking := func(ctx context.Context, _, _ string) ([]net.IP, error) {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	nameservers := []*net.NS{
+		{Host: "ns1.example.test."},
+		{Host: "ns2.example.test."},
+		{Host: "ns3.example.test."},
+	}
+	probe := providers.NewProbeWithAuthority(http.DefaultTransport, servingResolver{ns: nameservers}, blocking)
+
+	budget := 30 * time.Millisecond
+	start := time.Now()
+	got := diagnoseUnreachable(context.Background(), probe, record.Record{}, "example.test", budget)
+	elapsed := time.Since(start)
+
+	if elapsed >= 2*budget {
+		t.Errorf("diagnoseUnreachable took %v for 3 blocking nameservers, want near the single shared budget %v", elapsed, budget)
+	}
+	want := spine.ParkReason(spine.ParkHostnameRecordsAbsent)
+	if got.State != spine.Unknown || got.Reason != want {
+		t.Errorf("Outcome = %+v, want Unknown %s", got, want)
 	}
 }

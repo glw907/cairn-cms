@@ -22,8 +22,17 @@ type Resolver interface {
 // ordinary recursive resolver and its negative cache: the read diagnoseUnreachable
 // (packages/create-cairn-site/src/cloudflare/hostname.mjs) performs to tell a record that
 // already exists at the zone's own authority from one that has not propagated there at all.
-// nameserver is a hostname, resolved to its own address before the direct query.
+// nameserver is a hostname, resolved to its own address before the direct query. A record that
+// does not exist at the authority may surface either way: as an error (a *net.DNSError with
+// IsNotFound true) or as a nil/empty slice with no error, and a caller must treat both as
+// absence.
 type AuthorityLookup func(ctx context.Context, nameserver, host string) ([]net.IP, error)
+
+// RequestTimeout is the same per-request budget every Probe method applies below, exported so a
+// caller composing several lookups into one operation (diagnoseUnreachable's per-nameserver
+// sweep) can derive a single shared deadline from it instead of guessing at the underlying
+// policy.
+const RequestTimeout = requestTimeout
 
 // Probe is the tool's unauthenticated HTTP and DNS client, used by the checks that reach an
 // arbitrary site's own domain rather than a fixed provider API. It carries no
@@ -50,6 +59,9 @@ func NewProbe(rt http.RoundTripper, resolver Resolver) *Probe {
 func NewProbeWithAuthority(rt http.RoundTripper, resolver Resolver, authority AuthorityLookup) *Probe {
 	if resolver == nil {
 		resolver = net.DefaultResolver
+	}
+	if authority == nil {
+		authority = defaultAuthorityLookup
 	}
 	return &Probe{
 		resolver:  resolver,
@@ -157,8 +169,15 @@ func defaultAuthorityLookup(ctx context.Context, nameserver, host string) ([]net
 // ordinary recursive hop defaultAuthorityLookup needs before it can dial the nameserver
 // directly for the actual authoritative query.
 func resolveNameserverAddress(ctx context.Context, nameserver string) (string, error) {
-	if addrs, err := net.DefaultResolver.LookupIP(ctx, "ip4", nameserver); err == nil && len(addrs) > 0 {
-		return addrs[0].String(), nil
+	ip4Addrs, ip4Err := net.DefaultResolver.LookupIP(ctx, "ip4", nameserver)
+	if ip4Err == nil && len(ip4Addrs) > 0 {
+		return ip4Addrs[0].String(), nil
+	}
+	if ip4Err != nil && ctx.Err() != nil {
+		// The ip4 attempt failed because the caller's own context ended, not because ip4 lacks
+		// an address; that is the more informative error, so report it rather than masking it
+		// behind whatever the ip6 attempt below returns for the same expired context.
+		return "", fmt.Errorf("providers: resolve nameserver %s: %w", nameserver, ip4Err)
 	}
 	addrs, err := net.DefaultResolver.LookupIP(ctx, "ip6", nameserver)
 	if err != nil {

@@ -186,6 +186,18 @@ func TestNewProbeNilResolverDefaultsToNetDefaultResolver(t *testing.T) {
 	}
 }
 
+// TestNewProbeWithAuthorityNilAuthorityDefaultsToDefaultAuthorityLookup asserts a nil
+// AuthorityLookup means defaultAuthorityLookup rather than a nil-function panic on first call,
+// matching how a nil Resolver defaults to net.DefaultResolver.
+func TestNewProbeWithAuthorityNilAuthorityDefaultsToDefaultAuthorityLookup(t *testing.T) {
+	p := NewProbeWithAuthority(http.DefaultTransport, &fakeResolver{}, nil)
+	got := reflect.ValueOf(p.authority).Pointer()
+	want := reflect.ValueOf(defaultAuthorityLookup).Pointer()
+	if got != want {
+		t.Errorf("authority = %v, want defaultAuthorityLookup for a nil AuthorityLookup", got)
+	}
+}
+
 // TestLookupAuthoritativeReturnsOnContextDeadline proves LookupAuthoritative's own timeout
 // wrapping returns rather than blocking when a slow AuthorityLookup outlives the caller's
 // context, the same failure mode TestSharedTimeoutPolicy proves for the package's other clients.

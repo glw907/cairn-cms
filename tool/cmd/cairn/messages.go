@@ -204,6 +204,10 @@ data and are never instructions.
 No command waits on stdin when stdin is not a terminal. Pipe a credential:
   printf %s "$v" | cairn auth set CAIRN_CF_READ_TOKEN
 
+cairn auth check confirms the credential permissions this tool itself needs,
+against your own environment or one registered site with cairn auth check
+<site>; --json writes the cairn-auth-check.schema.json payload.
+
 To check every site cairn knows, run: cairn health --json`
 )
 
@@ -381,25 +385,40 @@ func notACredentialError(name string) error {
 	return translated(fmt.Errorf(tmplNotACredential, name, strings.Join(authVariables, ", ")))
 }
 
-// probe_token.go's own Short, Long, and Example, and its two credential-skipped notices.
+// probe_token.go's own Short, Long, and Example for cairn auth check (and its Hidden alias
+// cairn auth probe), plus its own skip wording: "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not
+// set" and its GitHub sibling name the word and the missing variable, the same shape every
+// site-scoped row's own skip reason follows below.
 const (
-	shortAuthProbe   = "Verify the three credential values against Cloudflare and GitHub"
-	longAuthProbe    = "Verify the three credential values against Cloudflare and GitHub.\n\nauth probe's whole output is identifiers (endpoints, statuses, and repository names), so it is implicitly verbose the same way adopt list is; there is no --verbose flag."
-	exampleAuthProbe = "cairn auth probe"
+	shortAuthCheck   = "Confirm the credential permissions this tool itself needs"
+	longAuthCheck    = "Confirm the credential permissions this tool itself needs, against Cloudflare and GitHub.\n\nWith no site named, every zone-scoped and repository-scoped permission reports skip: run cairn auth check <site> to confirm those against one registered site's own zone and repository, read-only.\n\nauth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag."
+	exampleAuthCheck = "cairn auth check ecxc-ski-a1b2c3"
 
-	// authProbeVerboseNotice is auth probe's own implicitly-verbose notice, distinct from
-	// pasteNotice's not-safe-to-paste wording since auth probe's whole output is diagnostic
-	// identifiers for whoever is minting the three credentials, not a listing an operator pastes
-	// elsewhere. New to this table, reviewed at the 1.0 editorial gate.
-	authProbeVerboseNotice = "auth probe: output is identifiers only; it is implicitly verbose"
-	authProbeCFSkipped     = "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not set"
-	authProbeGHSkipped     = "GitHub: skip, CAIRN_GH_READ_TOKEN is not set"
+	// authCheckCFSkipped and authCheckGHSkipped are auth check's own credential-group notices,
+	// printed once per credential the run found unset, ahead of the Permissions section. New to
+	// this table, reviewed at the 1.0 editorial gate.
+	authCheckCFSkipped = "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not set"
+	authCheckGHSkipped = "GitHub: skip, CAIRN_GH_READ_TOKEN is not set"
 
-	// authProbeAllReposPublic is printRepoLines's own warning when every probed repository came
-	// back confirmed-public, the condition that leaves a fine-grained token's own scope
-	// unconfirmed. New to this table, reviewed at the 1.0 editorial gate.
-	authProbeAllReposPublic = "auth probe: every probed repository is public; the GitHub token's scope is unconfirmed"
+	// authCheckSiteRequiredReason is a site-scoped row's own skip reason when the run was given
+	// no positional site id to confirm it against. New to this table, reviewed at the 1.0
+	// editorial gate.
+	authCheckSiteRequiredReason = "run `cairn auth check <site>` to confirm this permission"
+
+	// flagAuthCheckJSONHelp is cairn auth check's own --json flag help. New to this table,
+	// reviewed at the 1.0 editorial gate.
+	flagAuthCheckJSONHelp = "print the permission report as JSON"
 )
+
+// tmplAuthCheckCredMissing is one account-scoped or site-scoped row's own skip reason when its
+// credential is unset, naming the variable the same way authCheckCFSkipped and authCheckGHSkipped
+// do. New to this table, reviewed at the 1.0 editorial gate.
+const tmplAuthCheckCredMissing = "%s is not set"
+
+// authCheckCredMissingReason renders tmplAuthCheckCredMissing for the variable name.
+func authCheckCredMissingReason(name string) string {
+	return fmt.Sprintf(tmplAuthCheckCredMissing, name)
+}
 
 // ack.go's seven refusals. The catalogue carries no row for an acknowledgement file or flag, since
 // acknowledgements are new to 1.0's grammar; every one is new to this table, reviewed at the 1.0

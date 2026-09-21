@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schema/cairn-auth-check.schema.json",
+  "title": "cairn auth check payload",
+  "description": "The permission report `cairn auth check --json` writes: one row per permission this tool itself needs, whether the run confirmed it, and the reason for anything else.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "verdict", "exitCode", "permissions"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "authCheck" },
+    "verdict": { "type": "string", "enum": ["OK", "WARNING", "CRITICAL", "UNKNOWN"] },
+    "exitCode": { "type": "integer", "enum": [0, 1, 2, 3] },
+    "site": { "type": "string" },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "credential", "state"],
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string" },
+          "credential": { "type": "string" },
+          "state": { "type": "string", "enum": ["pass", "fail", "skip", "unknown"] },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

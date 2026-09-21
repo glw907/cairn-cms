@@ -25,6 +25,7 @@ var wantPages = []string{
 	"cairn-auth-set.1",
 	"cairn-auth-list.1",
 	"cairn-auth-unset.1",
+	"cairn-auth-check.1",
 	"cairn-agents.1",
 	"cairn-completion.1",
 	"cairn-help.1",

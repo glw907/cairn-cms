@@ -1,224 +1,244 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"errors"
 	"fmt"
 	"io"
-	"maps"
-	"net/http"
-	"slices"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/internal/record"
+	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/spf13/cobra"
 )
 
-// engineOwner and engineRepo name the engine repository every registry, beyond its own sites,
-// must also grant read access to, for the Engine check's changelog read.
-const (
-	engineOwner = "glw907"
-	engineRepo  = "cairn-cms"
-)
-
-// newAuthProbeCmd builds the hidden cairn auth probe subcommand over d, so a test can supply a
+// newAuthCheckCmd builds the visible cairn auth check command over d, so a test can supply a
 // fake environment, a fake keyring, a fake registry directory, a routed RoundTripper, and a
 // captured exit without touching a real credential, disk location, or network call.
-//
-// It stays hidden after the 2026-09-20 grammar cleanup renamed it from probe-token: it is an
-// aid for whoever is minting the three credentials, not a verb an operator runs against a site.
+func newAuthCheckCmd(d deps) *cobra.Command {
+	return newAuthCheckCommand(d, "check [<site>]", false)
+}
+
+// newAuthProbeCmd builds cairn auth probe, a Hidden alias of cairn auth check that keeps its
+// earlier name reachable for a script that already types it. Both build the identical command
+// over the same RunE; only Use and Hidden differ.
 func newAuthProbeCmd(d deps) *cobra.Command {
-	return &cobra.Command{
-		Use:     "probe",
-		Short:   shortAuthProbe,
-		Long:    longAuthProbe,
-		Example: exampleAuthProbe,
-		Hidden:  true,
-		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runProbeToken(cmd, d)
+	return newAuthCheckCommand(d, "probe [<site>]", true)
+}
+
+// newAuthCheckCommand builds the command both newAuthCheckCmd and newAuthProbeCmd return.
+func newAuthCheckCommand(d deps, use string, hidden bool) *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:               use,
+		Short:             shortAuthCheck,
+		Long:              longAuthCheck,
+		Example:           exampleAuthCheck,
+		Hidden:            hidden,
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeSiteIDs(d),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runAuthCheck(cmd, d, args, asJSON)
 		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, flagAuthCheckJSONHelp)
+	return cmd
+}
+
+// checkSite is the registered site cairn auth check probes the site-scoped permissions against,
+// present only when the operator named a site.
+type checkSite struct {
+	id          string
+	zoneID      string
+	owner, repo string
+}
+
+// checkRow is one permissionTable row's settled outcome: the CheckVerdict spine.ExitCode folds,
+// and the display text printCheckRow prints beside it.
+type checkRow struct {
+	permission
+	verdict spine.CheckVerdict
+	display string
+}
+
+// runAuthCheck is newAuthCheckCommand's RunE body: it resolves the three credentials and, when
+// the operator named one, the site those credentials are checked against, settles one row per
+// permissionTable entry, writes them as text or, under asJSON, as render.MarshalAuthCheck's
+// payload, and exits on the worst row's verdict.
+func runAuthCheck(cmd *cobra.Command, d deps, args []string, asJSON bool) error {
+	ctx := commandContext(cmd)
+	out := cmd.OutOrStdout()
+
+	var site *checkSite
+	if len(args) == 1 {
+		st, err := openRegistry(d)
+		if err != nil {
+			return err
+		}
+		rec, err := st.Load(args[0])
+		if err != nil {
+			return unknownSiteError(args[0])
+		}
+		site = siteFromRecord(args[0], rec)
+	}
+
+	resolved, missing := loadEnv(d.env, d.secretProviders()...)
+	if !asJSON {
+		printCredentialSources(out, resolved)
+	}
+
+	cfMissing := isMissing(missing, varCFAccountID) || isMissing(missing, varCFReadToken)
+	ghMissing := isMissing(missing, varGHReadToken)
+	if !asJSON {
+		if cfMissing {
+			_, _ = fmt.Fprintln(out, authCheckCFSkipped)
+		}
+		if ghMissing {
+			_, _ = fmt.Fprintln(out, authCheckGHSkipped)
+		}
+	}
+
+	var cf *providers.Cloudflare
+	if !cfMissing {
+		cf = providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), d.transport)
+	}
+	var gh *providers.GitHub
+	if !ghMissing {
+		gh = providers.NewGitHub(resolved.ghToken(), d.transport)
+	}
+
+	if !asJSON {
+		_, _ = fmt.Fprintln(out, "Permissions:")
+	}
+	verdicts := make(spine.SiteVerdicts, 0, len(permissionTable))
+	rows := make([]render.AuthCheckPermission, 0, len(permissionTable))
+	for _, p := range permissionTable {
+		row := checkPermission(ctx, p, cf, gh, cfMissing, ghMissing, site)
+		if asJSON {
+			rows = append(rows, render.AuthCheckPermission{Label: row.Label, Credential: row.Credential, State: checkRowWord(row), Reason: row.display})
+		} else {
+			printCheckRow(out, row)
+		}
+		verdicts = append(verdicts, row.verdict)
+	}
+
+	verdict := spine.ExitCode([]spine.SiteVerdicts{verdicts}, nil, 0)
+	if asJSON {
+		siteID := ""
+		if site != nil {
+			siteID = site.id
+		}
+		data, err := render.MarshalAuthCheck(siteID, rows, verdict)
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(out, "%s\n", data); err != nil {
+			return err
+		}
+	}
+	return codedExit(verdict)
+}
+
+// siteFromRecord narrows a loaded registry record to the identifiers cairn auth check's
+// site-scoped rows read.
+func siteFromRecord(id string, rec record.Record) *checkSite {
+	return &checkSite{
+		id:     id,
+		zoneID: rec.Cloudflare.ZoneID,
+		owner:  rec.GitHub.Repo.Owner,
+		repo:   rec.GitHub.Repo.Repo,
 	}
 }
 
-// verdict pairs one probed endpoint's outcome with the spine.State it contributes: 200 is OK, an
-// unauthorized or forbidden credential is Failing, and anything else (a 404, a rate limit, a
-// transport failure) is Unknown, since the endpoint simply could not be observed rather than
-// proving the credential wrong. spine.ReasonToOutcome is the one place that classification lives;
-// this command only carries its State through to an exit code.
-type verdict struct {
-	status int
-	reason string
-	state  spine.State
+// checkPermission settles one permissionTable row: skipped for a missing credential or an
+// unnamed site on a site-scoped row, and probed otherwise.
+func checkPermission(ctx context.Context, p permission, cf *providers.Cloudflare, gh *providers.GitHub, cfMissing, ghMissing bool, site *checkSite) checkRow {
+	credMissing := (p.Credential == varCFReadToken && cfMissing) || (p.Credential == varGHReadToken && ghMissing)
+	if credMissing {
+		return skipRow(p, authCheckCredMissingReason(p.Credential))
+	}
+	if p.Scope == scopeSite && site == nil {
+		return skipRow(p, authCheckSiteRequiredReason)
+	}
+
+	var call func(context.Context) error
+	if p.Credential == varCFReadToken {
+		zoneID := ""
+		if site != nil {
+			zoneID = site.zoneID
+		}
+		call = cloudflareProbe(p.Label, cf, zoneID)
+	} else {
+		owner, repo := "", ""
+		if site != nil {
+			owner, repo = site.owner, site.repo
+		}
+		call = githubProbe(p.Label, gh, owner, repo)
+	}
+	return probeRow(p, call(ctx))
 }
 
-// okVerdict returns the verdict a 200 response reports; every endpoint this command probes
-// treats 200 as the only success status.
-func okVerdict() verdict {
-	return verdict{status: http.StatusOK, reason: "ok", state: spine.OK}
+// skipRow builds a checkRow for a permission this run did not attempt, folding to spine.Unknown
+// with spine.ReasonCredMissing so spine.CheckVerdict.Verdict reports WARNING rather than
+// UNKNOWN: an operator who has not set a credential, or who ran with no site to confirm a
+// site-scoped permission against, disclosed a gap rather than hit a measurement failure.
+func skipRow(p permission, display string) checkRow {
+	return checkRow{permission: p, verdict: spine.CheckVerdict{ID: p.Label, State: spine.Unknown, Reason: spine.ReasonCredMissing}, display: display}
 }
 
-// providerVerdict reports the verdict a Cloudflare or GitHub call's error carries, or okVerdict
-// for a nil err, through the one providers.ProviderError contract both APIError and GitHubError
-// implement. An error this package cannot classify reports "unreachable" at spine.Unknown.
-func providerVerdict(err error) verdict {
+// probeRow classifies err through the same provider-error path health checks use, and builds the
+// row's own display text from the classified reason.
+func probeRow(p permission, err error) checkRow {
 	if err == nil {
-		return okVerdict()
+		return checkRow{permission: p, verdict: spine.CheckVerdict{ID: p.Label, State: spine.OK}}
 	}
 	if pe, ok := errors.AsType[providers.ProviderError](err); ok {
 		reason := pe.ClassifiedReason()
-		return verdict{status: pe.HTTPStatus(), reason: reason.String(), state: spine.ReasonToOutcome(reason).State}
+		outcome := spine.ReasonToOutcome(reason)
+		return checkRow{permission: p, verdict: spine.CheckVerdict{ID: p.Label, State: outcome.State, Reason: outcome.Reason}, display: reason.String()}
 	}
-	return verdict{reason: "unreachable", state: spine.Unknown}
+	return checkRow{permission: p, verdict: spine.CheckVerdict{ID: p.Label, State: spine.Unknown, Reason: spine.ReasonNotObservable}, display: "unreachable"}
 }
 
-// markerArray and markerNotJSON label a recordedBody whose top-level shape is not a plain
-// object: an empty marker means recordBody found an object.
-const (
-	markerArray   = "(array)"
-	markerNotJSON = "(not JSON)"
-)
-
-// recordedBody captures a single 200 response body's shape by key names only, never its values,
-// the shape a test's query mock is synthesized from. keys holds the top-level object's own key
-// names, or an array's first element's key names when marker is markerArray. resultKeys holds
-// the "result" field's own key names, when the top level is an object carrying one: a Cloudflare
-// v4 envelope's own four keys (success, errors, result, result_info) carry none of its payload's
-// shape, so auth probe prints this alongside the envelope's own keys.
-type recordedBody struct {
-	marker     string
-	keys       []string
-	resultKeys []string
-}
-
-// recordBody classifies data's top-level JSON shape into a recordedBody.
-func recordBody(data []byte) recordedBody {
-	var obj map[string]json.RawMessage
-	if err := json.Unmarshal(data, &obj); err == nil {
-		rb := recordedBody{keys: slices.Sorted(maps.Keys(obj))}
-		if result, ok := obj["result"]; ok {
-			var resultObj map[string]json.RawMessage
-			if err := json.Unmarshal(result, &resultObj); err == nil {
-				rb.resultKeys = slices.Sorted(maps.Keys(resultObj))
-			}
+// checkRowWord names row's own wire word: "pass", "fail", "skip" for a credential the operator
+// never set or a site-scoped permission run with no site to confirm it against, or "unknown" for
+// a probe that ran but could not observe a verdict (a rate limit, a transport failure). This
+// mirrors spine.StateWord's own division between a disclosed gap and a failed measurement, kept
+// local here since this command settles CheckVerdicts directly rather than health.CheckResults.
+func checkRowWord(row checkRow) string {
+	switch row.verdict.State {
+	case spine.OK:
+		return "pass"
+	case spine.Failing:
+		return "fail"
+	default:
+		if row.verdict.Reason == spine.ReasonCredMissing {
+			return "skip"
 		}
-		return rb
+		return "unknown"
 	}
-	var arr []json.RawMessage
-	if err := json.Unmarshal(data, &arr); err == nil {
-		rb := recordedBody{marker: markerArray}
-		if len(arr) > 0 {
-			var first map[string]json.RawMessage
-			if err := json.Unmarshal(arr[0], &first); err == nil {
-				rb.keys = slices.Sorted(maps.Keys(first))
-			}
-		}
-		return rb
-	}
-	return recordedBody{marker: markerNotJSON}
 }
 
-// recordingRoundTripper wraps another RoundTripper, recording every 200 JSON response's
-// top-level key shape against the request's method and path before handing the provider a fresh
-// copy of the identical body. It keeps key names only: the response bytes are dropped as soon as
-// recordBody has classified them, never written to a file or held past this run.
-type recordingRoundTripper struct {
-	next     http.RoundTripper
-	recorded map[string]recordedBody
-}
-
-// newRecordingRoundTripper returns a recordingRoundTripper delegating every request to next.
-func newRecordingRoundTripper(next http.RoundTripper) *recordingRoundTripper {
-	return &recordingRoundTripper{next: next, recorded: map[string]recordedBody{}}
-}
-
-// RoundTrip implements http.RoundTripper.
-func (rt *recordingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	resp, err := rt.next.RoundTrip(req)
-	if err != nil || resp == nil || resp.StatusCode != http.StatusOK || resp.Body == nil {
-		return resp, err
-	}
-	data, readErr := io.ReadAll(resp.Body)
-	_ = resp.Body.Close()
-	if readErr != nil {
-		return nil, readErr
-	}
-	rt.recorded[req.Method+" "+req.URL.Path] = recordBody(data)
-	resp.Body = io.NopCloser(bytes.NewReader(data))
-	return resp, nil
-}
-
-// lookup returns the recorded body shape for a method/path pair, or a zero recordedBody when
-// nothing was recorded (a non-200 status, or a path this run never reached).
-func (rt *recordingRoundTripper) lookup(method, path string) recordedBody {
-	return rt.recorded[method+" "+path]
-}
-
-// printEndpoint writes one probed endpoint's line, and its recorded body shape on a 200, to out.
-func printEndpoint(out io.Writer, endpoint string, v verdict, rb recordedBody) {
-	_, _ = fmt.Fprintf(out, "  %-32s %3d  %s\n", endpoint, v.status, v.reason)
-	if v.state != spine.OK {
+// printCheckRow writes row's own line: the permission label, the credential it belongs to, the
+// wire word its verdict carries, and the display text for anything beyond a pass.
+func printCheckRow(out io.Writer, row checkRow) {
+	word := checkRowWord(row)
+	if row.display == "" {
+		_, _ = fmt.Fprintf(out, "  %-32s %-20s %s\n", row.Label, row.Credential, word)
 		return
 	}
-	switch rb.marker {
-	case markerNotJSON:
-		_, _ = fmt.Fprintln(out, "      body:", markerNotJSON)
-	case markerArray:
-		_, _ = fmt.Fprintln(out, "      body:", markerArray)
-		if len(rb.keys) > 0 {
-			_, _ = fmt.Fprintf(out, "      keys (first element): %v\n", rb.keys)
-		}
-	default:
-		if len(rb.keys) > 0 {
-			_, _ = fmt.Fprintf(out, "      keys: %v\n", rb.keys)
-		}
-		if len(rb.resultKeys) > 0 {
-			_, _ = fmt.Fprintf(out, "      result: %v\n", rb.resultKeys)
-		}
-	}
-}
-
-// runProbeToken is newAuthProbeCmd's RunE body, split out so it reads as plain sequential
-// steps rather than a closure body.
-func runProbeToken(cmd *cobra.Command, d deps) error {
-	ctx := commandContext(cmd)
-	out := cmd.OutOrStdout()
-	errOut := cmd.ErrOrStderr()
-	_, _ = fmt.Fprintln(errOut, authProbeVerboseNotice)
-
-	resolved, missing := loadEnv(d.env, d.secretProviders()...)
-	printCredentialSources(out, resolved)
-
-	rec := newRecordingRoundTripper(d.transport)
-
-	worst := spine.OK
-	raise := func(s spine.State) {
-		worst = spine.CombineState(worst, s)
-	}
-
-	if isMissing(missing, varCFAccountID) || isMissing(missing, varCFReadToken) {
-		_, _ = fmt.Fprintln(out, authProbeCFSkipped)
-		raise(spine.Unknown)
-	} else {
-		raise(probeCloudflare(ctx, out, providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), rec), resolved.accountID(), rec))
-	}
-
-	if isMissing(missing, varGHReadToken) {
-		_, _ = fmt.Fprintln(out, authProbeGHSkipped)
-		raise(spine.Unknown)
-	} else {
-		raise(probeRegistryGitHub(ctx, out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, d.registryDir))
-	}
-
-	// auth probe settles provider States rather than site reports, so its code reaches main as a
-	// typed coded error rather than through spine.ExitCode, whose inputs it has none of.
-	return codedExit(spine.ExitCodeFor(worst))
+	_, _ = fmt.Fprintf(out, "  %-32s %-20s %s, %s\n", row.Label, row.Credential, word, row.display)
 }
 
 // isMissing reports whether missing names the variable name.
 func isMissing(missing []providers.Missing, name string) bool {
-	return slices.ContainsFunc(missing, func(m providers.Missing) bool { return m.Var == name })
+	for _, m := range missing {
+		if m.Var == name {
+			return true
+		}
+	}
+	return false
 }
 
 // printCredentialSources writes which provider answered each of the three variables loadEnv

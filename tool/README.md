@@ -29,7 +29,9 @@ page when you want a newer version.
 `CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, and `CAIRN_GH_READ_TOKEN`. It resolves each one
 from the environment first, then the OS keyring (`cairn auth set` writes to the keyring).
 [The credentials reference](docs/credentials.md) covers scopes, storage, and the platform-specific
-detail for Linux, macOS, and Windows.
+detail for Linux, macOS, and Windows. `cairn auth check` confirms the permissions this tool itself
+needs against your own two tokens, either with credentials alone or, naming one registered site
+(`cairn auth check <site>`), against that site's own zone and repository too.
 
 ## The site registry, and where it lives
 

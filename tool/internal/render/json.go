@@ -29,6 +29,8 @@ const (
 	LogsSchemaVersion = 1
 	// AdoptListSchemaVersion versions the adopt candidate list payload.
 	AdoptListSchemaVersion = 1
+	// AuthCheckSchemaVersion versions cairn auth check's own payload.
+	AuthCheckSchemaVersion = 1
 )
 
 // The kind each payload declares, so a consumer reading a mixed stream keys off a field rather
@@ -39,6 +41,7 @@ const (
 	kindSites     = "sites"
 	kindLogs      = "logs"
 	kindAdoptList = "adoptCandidates"
+	kindAuthCheck = "authCheck"
 )
 
 // sitePayload is one site's machine-readable health result. It is the whole published shape:
@@ -428,6 +431,56 @@ func MarshalAdoptList(candidates []AdoptCandidate) ([]byte, error) {
 		ExitCode:             int(spine.VerdictOK),
 		ContainsPersonalData: true,
 		Candidates:           candidates,
+	})
+}
+
+// authCheckPayload is cairn auth check's own payload.
+type authCheckPayload struct {
+	SchemaVersion int    `json:"schemaVersion"`
+	Kind          string `json:"kind"`
+	Verdict       string `json:"verdict"`
+	ExitCode      int    `json:"exitCode"`
+	// Site is the registered site the run confirmed its zone-scoped and repository-scoped
+	// permissions against, and empty when the operator named none.
+	Site        string                `json:"site,omitempty"`
+	Permissions []authCheckPermission `json:"permissions"`
+}
+
+// authCheckPermission is one permission row on the wire: the label the provider's own token page
+// uses, the credential variable it belongs to, the state word the run settled, and the reason
+// text beside anything other than a pass.
+type authCheckPermission struct {
+	Label      string `json:"label"`
+	Credential string `json:"credential"`
+	State      string `json:"state"`
+	Reason     string `json:"reason,omitempty"`
+}
+
+// AuthCheckPermission carries one row cmd/cairn's auth check command settled, the caller-facing
+// shape MarshalAuthCheck builds its payload from.
+type AuthCheckPermission struct {
+	Label      string
+	Credential string
+	// State is the row's own wire word: "pass", "fail", "skip", or "unknown".
+	State string
+	// Reason is the row's own display text, empty for a pass.
+	Reason string
+}
+
+// MarshalAuthCheck writes cairn auth check's payload: site is the registered site the run named,
+// empty when it named none, and verdict is the run's own exit verdict.
+func MarshalAuthCheck(site string, permissions []AuthCheckPermission, verdict spine.Verdict) ([]byte, error) {
+	rows := make([]authCheckPermission, 0, len(permissions))
+	for _, p := range permissions {
+		rows = append(rows, authCheckPermission{Label: p.Label, Credential: p.Credential, State: p.State, Reason: p.Reason})
+	}
+	return json.Marshal(authCheckPayload{
+		SchemaVersion: AuthCheckSchemaVersion,
+		Kind:          kindAuthCheck,
+		Verdict:       verdict.String(),
+		ExitCode:      int(verdict),
+		Site:          site,
+		Permissions:   rows,
 	})
 }
 

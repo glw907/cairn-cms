@@ -19,14 +19,15 @@ import (
 // TestCheckFilesCarryNoLongProseLiterals excludes one).
 const maxCommandBodyLiteral = 30
 
-// probeDumpFiles hold auth probe's own raw diagnostic dump: endpoint labels, HTTP methods, and
-// JSON key-shape summaries for whoever is minting the three credentials. probe_token.go's own
-// Long text states the design this codifies: "auth probe's whole output is identifiers
-// (endpoints, statuses, and repository names)", the same reason copy-standard.md section 3.9
-// keeps a log line's field values verbatim rather than routing them through the prose table.
-// probe_token.go's own genuine prose (Short, Long, Example, and its two skipped-credential
-// notices) is still moved into messages.go despite this exemption; TestAuthProbeStringsLiveInMessages
-// covers that half directly.
+// probeDumpFiles hold cairn auth check's own raw diagnostic dump: permission labels, credential
+// variable names, and provider-classified reason words for whoever is minting the three
+// credentials. probe_token.go's own Long text states the design this codifies: "auth check's
+// whole output is identifiers (permission labels, credential variable names, and
+// pass/fail/skip/unknown words)", the same reason copy-standard.md section 3.9 keeps a log
+// line's field values verbatim rather than routing them through the prose table.
+// probe_token.go's own genuine prose (Short, Long, Example, and its skip notices) is still moved
+// into messages.go despite this exemption; TestAuthCheckStringsLiveInMessages covers that half
+// directly.
 var probeDumpFiles = map[string]bool{
 	"probe_cloudflare.go": true,
 	"probe_github.go":     true,
@@ -90,33 +91,21 @@ func TestNoLongProseLiteralOutsideMessages(t *testing.T) {
 	}
 }
 
-// TestAuthProbeStringsLiveInMessages pins the half of probe_token.go's own prose the
-// probeDumpFiles exemption above does not cover: its Short, Long, Example, and its two
-// skipped-credential notices are still messages.go constants, not literals reintroduced at the
-// call site.
-func TestAuthProbeStringsLiveInMessages(t *testing.T) {
-	cmd := newAuthProbeCmd(mustDeps(t))
-	if cmd.Short != shortAuthProbe {
-		t.Errorf("auth probe Short = %q, want messages.go's shortAuthProbe", cmd.Short)
-	}
-	if cmd.Long != longAuthProbe {
-		t.Errorf("auth probe Long does not match messages.go's longAuthProbe")
-	}
-	if cmd.Example != exampleAuthProbe {
-		t.Errorf("auth probe Example = %q, want messages.go's exampleAuthProbe", cmd.Example)
-	}
-}
-
-// TestPrintRepoLinesAllPublicWarningLivesInMessages pins printRepoLines's own
-// all-repositories-public warning to messages.go's authProbeAllReposPublic constant, so
-// probe_github.go's whole-file exemption from TestNoLongProseLiteralOutsideMessages cannot again
-// shield a genuine operator-facing string reintroduced as a literal at its call site.
-func TestPrintRepoLinesAllPublicWarningLivesInMessages(t *testing.T) {
-	var out, errOut strings.Builder
-	repos := []repoLine{{label: "glw907/example", v: okVerdict(), private: false, known: true}}
-	printRepoLines(&out, &errOut, repos)
-	if got, want := errOut.String(), authProbeAllReposPublic+"\n"; got != want {
-		t.Errorf("printRepoLines all-public warning = %q, want messages.go's authProbeAllReposPublic %q", got, want)
+// TestAuthCheckStringsLiveInMessages pins the half of probe_token.go's own prose the
+// probeDumpFiles exemption above does not cover: its Short, Long, and Example, on both cairn
+// auth check and its Hidden alias cairn auth probe, are still messages.go constants, not
+// literals reintroduced at the call site.
+func TestAuthCheckStringsLiveInMessages(t *testing.T) {
+	for _, cmd := range []*cobra.Command{newAuthCheckCmd(mustDeps(t)), newAuthProbeCmd(mustDeps(t))} {
+		if cmd.Short != shortAuthCheck {
+			t.Errorf("%s Short = %q, want messages.go's shortAuthCheck", cmd.Use, cmd.Short)
+		}
+		if cmd.Long != longAuthCheck {
+			t.Errorf("%s Long does not match messages.go's longAuthCheck", cmd.Use)
+		}
+		if cmd.Example != exampleAuthCheck {
+			t.Errorf("%s Example = %q, want messages.go's exampleAuthCheck", cmd.Use, cmd.Example)
+		}
 	}
 }
 

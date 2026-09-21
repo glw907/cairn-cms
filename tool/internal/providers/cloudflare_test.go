@@ -236,3 +236,55 @@ func TestListZonesDecodesEveryPage(t *testing.T) {
 		}
 	}
 }
+
+// TestBuildsTokensSucceedsWithNoWorkerTag asserts BuildsTokens confirms Workers Builds
+// Configuration read access with no worker tag in the request path, unlike BuildsConnections and
+// BuildsLatest.
+func TestBuildsTokensSucceedsWithNoWorkerTag(t *testing.T) {
+	body := []byte(`{"success":true,"errors":[],"result":[]}`)
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	if err := cf.BuildsTokens(context.Background()); err != nil {
+		t.Fatalf("BuildsTokens: %v", err)
+	}
+}
+
+// TestBuildsTokensClassifiesFailure asserts a rejected token still reaches BuildsTokens' caller
+// as a classified *APIError, the same as every other read route.
+func TestBuildsTokensClassifiesFailure(t *testing.T) {
+	body := []byte(`{"success":false,"errors":[{"code":10000,"message":"Invalid API Token"}]}`)
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: http.StatusUnauthorized, body: body})
+
+	err := cf.BuildsTokens(context.Background())
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("BuildsTokens: got %v, want an *APIError", err)
+	}
+	if apiErr.Reason != ReasonUnauthorized {
+		t.Errorf("Reason = %v, want %v", apiErr.Reason, ReasonUnauthorized)
+	}
+}
+
+// TestDNSRecordsDecodesEveryPage asserts DNSRecords returns each record's name and type,
+// following the route's own result_info like every other paginated list.
+func TestDNSRecordsDecodesEveryPage(t *testing.T) {
+	body := []byte(`{"success":true,"result":[{"name":"ecxc.ski","type":"A"},{"name":"www.ecxc.ski","type":"CNAME"}],"result_info":{"page":1,"total_pages":1}}`)
+	cf := NewCloudflare("account-id", NewCredential("token"), fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	records, err := cf.DNSRecords(context.Background(), "zone-1")
+	if err != nil {
+		t.Fatalf("DNSRecords: %v", err)
+	}
+	want := []DNSRecord{
+		{Name: "ecxc.ski", Type: "A"},
+		{Name: "www.ecxc.ski", Type: "CNAME"},
+	}
+	if len(records) != len(want) {
+		t.Fatalf("DNSRecords returned %d records, want %d", len(records), len(want))
+	}
+	for i := range want {
+		if records[i] != want[i] {
+			t.Errorf("record %d = %+v, want %+v", i, records[i], want[i])
+		}
+	}
+}

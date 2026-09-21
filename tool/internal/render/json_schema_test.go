@@ -301,6 +301,49 @@ func validateObject(value map[string]any, schema, root map[string]any, path stri
 	return problems
 }
 
+// TestAuthCheckPayloadValidatesAgainstSchema covers cairn auth check's own published schema
+// directly, rather than through jsonGoldens' shared corpus: unlike the other five payloads, auth
+// check carries no committed golden under testdata/json, since its own command test suite
+// (cmd/cairn's TestAuthCheck* family) already exercises every state the payload can carry. This
+// test proves the schema itself matches MarshalAuthCheck's real output, on two representative
+// cases: an all-confirmed run with a site named, and a run with no site, a rejected token, and an
+// unobservable permission.
+func TestAuthCheckPayloadValidatesAgainstSchema(t *testing.T) {
+	schema := loadSchema(t, "cairn-auth-check.schema.json")
+
+	cases := map[string][]byte{}
+	confirmed, err := MarshalAuthCheck("ecxc-ski-a1b2c3", []AuthCheckPermission{
+		{Label: "Workers Scripts", Credential: "CAIRN_CF_READ_TOKEN", State: "pass"},
+		{Label: "Metadata", Credential: "CAIRN_GH_READ_TOKEN", State: "pass"},
+	}, spine.VerdictOK)
+	if err != nil {
+		t.Fatalf("MarshalAuthCheck (confirmed): %v", err)
+	}
+	cases["confirmed"] = confirmed
+
+	mixed, err := MarshalAuthCheck("", []AuthCheckPermission{
+		{Label: "Workers Scripts", Credential: "CAIRN_CF_READ_TOKEN", State: "fail", Reason: "unauthorized"},
+		{Label: "Zone Settings", Credential: "CAIRN_CF_READ_TOKEN", State: "skip", Reason: "run `cairn auth check <site>` to confirm this permission"},
+		{Label: "Metadata", Credential: "CAIRN_GH_READ_TOKEN", State: "unknown", Reason: "rate-limited"},
+	}, spine.VerdictCritical)
+	if err != nil {
+		t.Fatalf("MarshalAuthCheck (mixed): %v", err)
+	}
+	cases["mixed"] = mixed
+
+	for name, data := range cases {
+		t.Run(name, func(t *testing.T) {
+			var value any
+			if err := json.Unmarshal(data, &value); err != nil {
+				t.Fatalf("payload does not parse: %v", err)
+			}
+			for _, problem := range validate(value, schema, schema, "$") {
+				t.Errorf("%s", problem)
+			}
+		})
+	}
+}
+
 // resolveRef follows a local "#/$defs/name" pointer, the one reference form these schemas use.
 func resolveRef(root map[string]any, ref string) map[string]any {
 	name := strings.TrimPrefix(ref, "#/$defs/")

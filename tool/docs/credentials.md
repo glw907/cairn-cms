@@ -116,6 +116,13 @@ resolves in this order:
 
 ## Token scopes
 
+`cairn auth check` confirms the permissions below against your own two
+tokens: every account-scoped permission with credentials alone, and every
+zone-scoped or repository-scoped permission against one registered site
+with `cairn auth check <site>`. The nine labels below are cairn's own
+single source (`tool/cmd/cairn/permissions.go`); a permission added to one
+without the other fails the tool's own test suite.
+
 ### Cloudflare
 
 `CAIRN_CF_READ_TOKEN` is a Cloudflare API token carrying read permission in
@@ -146,32 +153,28 @@ at the shortest expiry the operator can live with. A narrower scope is a
 silent failure: a check that cannot read a repository returns UNKNOWN on
 403 forever, never CRITICAL, so nothing calls the gap out.
 
-**A probe over public repositories cannot confirm this scope.** GitHub
-serves a public repository's contents and commits with no token at all, so
-a 200 from `cairn auth probe` on a public repository proves only that the
+**A probe over a public repository cannot confirm Contents.** GitHub serves
+a public repository's contents with no token at all, so a pass from
+`cairn auth check <site>` against a public repository proves only that the
 token is not actively rejected, not that its Contents permission is doing
-any work. `auth probe` reports each probed repository's visibility (the
-repos endpoint's own `private` field, read from its own `repos` check for
-that repository) and prints a warning on stderr when every probed
-repository came back public, since that run has confirmed nothing about
-the token's own scope.
-An operator whose registry names at least one private repository gets a
-real confirmation the first time `auth probe` reaches it.
+any work. A real confirmation needs a site whose repository is private.
 
 A private repository the token cannot see answers 404, not 403, on every
 GitHub REST route this tool calls (commits, contents, and the repos
-route). `auth probe` and every 1.0 check that reads a repository classify
-a 404 as `not-found`, never `forbidden`; an operator who sees `not-found`
-on a repository they expect the token to reach should re-check the
-token's repository list before assuming the repository itself moved.
+route). `cairn auth check` and every 1.0 check that reads a repository
+classify a 404 as `not-found`, never `forbidden`; an operator who sees
+`not-found` on a repository they expect the token to reach should
+re-check the token's repository list before assuming the repository
+itself moved.
 
-### The repository scope is discovered, never hardcoded
+### Confirming one site's own scope
 
-`cairn auth probe` reads the operator's registry, then verifies a
-contents read against every repository the registry names plus
-`glw907/cairn-cms`; no repository list is compiled into the binary. It
-prints one line per repository with the status and reason, and exits
-non-zero if any of them is not 200.
+`cairn auth check <site>` reads that site's own record from the registry
+and probes Zone Settings, DNS, and Email Sending against its zone, and
+Contents against its repository, all read-only; no site's zone id or
+repository is compiled into the binary. With no site named, those four
+rows report `skip`, each naming `cairn auth check <site>` as the way to
+confirm them.
 
 ## The credential mint-and-probe run (2026-09-19/20)
 

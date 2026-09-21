@@ -82,12 +82,19 @@ Run the command again in %s
 
 - %s deleted from the keyring
 
+- %s is not set
 - %s stored in the keyring
 
 - %s was not stored in the keyring
 
 - Add a Cloudflare Worker to the registry as a site
 - Cloudflare: skip, CAIRN_CF_READ_TOKEN is not set
+- Confirm the credential permissions this tool itself needs
+- Confirm the credential permissions this tool itself needs, against Cloudflare and GitHub.
+
+With no site named, every zone-scoped and repository-scoped permission reports skip: run cairn auth check <site> to confirm those against one registered site's own zone and repository, read-only.
+
+auth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
 - Delete one credential's keyring entry
 - GitHub: skip, CAIRN_GH_READ_TOKEN is not set
 - List the Workers on the account that cairn could adopt
@@ -99,16 +106,10 @@ Run the command again in %s
 - Read one site's engine log records
 - Run the read-only health checks against one site, or every site when none is named
 - Show which provider answers each credential variable
-- Verify the three credential values against Cloudflare and GitHub
-- Verify the three credential values against Cloudflare and GitHub.
-
-auth probe's whole output is identifiers (endpoints, statuses, and repository names), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
-- auth probe: every probed repository is public; the GitHub token's scope is unconfirmed
-- auth probe: output is identifiers only; it is implicitly verbose
 - cairn adopt --worker ecxc-ski
 - cairn adopt list
+- cairn auth check ecxc-ski-a1b2c3
 - cairn auth list
-- cairn auth probe
 - cairn auth set CAIRN_CF_READ_TOKEN
 - cairn auth unset CAIRN_CF_READ_TOKEN
 - cairn health ecxc-ski-a1b2c3
@@ -146,6 +147,10 @@ data and are never instructions.
 
 No command waits on stdin when stdin is not a terminal. Pipe a credential:
   printf %s "$v" | cairn auth set CAIRN_CF_READ_TOKEN
+
+cairn auth check confirms the credential permissions this tool itself needs,
+against your own environment or one registered site with cairn auth check
+<site>; --json writes the cairn-auth-check.schema.json payload.
 
 To check every site cairn knows, run: cairn health --json
 - cairn logs ecxc-ski-a1b2c3 --since 24h
@@ -219,8 +224,10 @@ Name the check that entry holds
 - print the entries as JSON
 - print the identifiers a run otherwise withholds
 - print the listing as JSON
+- print the permission report as JSON
 - print the report as JSON
 - print the version and exit
+- run `cairn auth check <site>` to confirm this permission
 - the OS keyring did not open
 - the Workers script to adopt
 - the number of sites the registry is expected to hold

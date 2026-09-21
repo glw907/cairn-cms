@@ -134,7 +134,7 @@ func newAuthCmd(d deps) *cobra.Command {
 			return authNoSubcommandError()
 		},
 	}
-	cmd.AddCommand(newAuthSetCmd(d), newAuthListCmd(d), newAuthUnsetCmd(d), newAuthProbeCmd(d))
+	cmd.AddCommand(newAuthSetCmd(d), newAuthListCmd(d), newAuthUnsetCmd(d), newAuthCheckCmd(d), newAuthProbeCmd(d))
 	return cmd
 }
 

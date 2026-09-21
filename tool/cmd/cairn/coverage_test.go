@@ -64,6 +64,7 @@ func TestEveryActionCoverage(t *testing.T) {
 		"cairn auth set",
 		"cairn auth list",
 		"cairn auth unset",
+		"cairn auth check",
 		"cairn auth probe",
 		"cairn agents",
 		"cairn completion",
@@ -96,6 +97,14 @@ func TestEveryActionCoverage(t *testing.T) {
 	assertOwnFlags(t, byPath["cairn adopt"], "worker", "repo", "help")
 	// adopt list's --json is declared on the list subcommand itself, unlike sites list's.
 	assertOwnFlags(t, byPath["cairn adopt list"], "json", "help")
+	assertOwnFlags(t, byPath["cairn auth check"], "json", "help")
+
+	if byPath["cairn auth check"].Hidden {
+		t.Error("cairn auth check is Hidden; it must appear in --help")
+	}
+	if !byPath["cairn auth probe"].Hidden {
+		t.Error("cairn auth probe is not Hidden; it must stay a hidden alias of auth check")
+	}
 }
 
 // collectByPath indexes c and every descendant it walks (the same rule coveragePaths follows)

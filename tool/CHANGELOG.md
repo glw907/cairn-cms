@@ -34,6 +34,10 @@ The complete single-site operator CLI.
 - **`cairn help agents`**: the tool's whole contract for a program, printed from the binary
   itself so it reads the same on a machine that holds no copy of this repository.
 - **A man page** for every non-hidden command (`make install` installs it beside the binary).
+- **`cairn auth check`**: confirms the nine credential permissions this tool itself needs, either
+  from credentials alone or, naming one registered site, against that site's own zone and
+  repository too (`docs/credentials.md`'s "Token scopes"). `cairn auth probe` is now its hidden
+  alias.
 
 ### Not in 1.0
 

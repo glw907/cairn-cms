@@ -342,6 +342,30 @@ func (cf *Cloudflare) ListZones(ctx context.Context) ([]Zone, error) {
 	return getPaginated[Zone](ctx, cf, "/zones")
 }
 
+// BuildsTokens confirms this client's read access to Workers Builds Configuration with no
+// worker tag needed: GET /accounts/{id}/builds/tokens is account-scoped, unlike
+// BuildsConnections and BuildsLatest, which both need a worker already registered for Builds.
+// The route's own body carries no field a caller reads; only whether the call succeeded matters
+// here.
+func (cf *Cloudflare) BuildsTokens(ctx context.Context) error {
+	return cf.get(ctx, fmt.Sprintf("/accounts/%s/builds/tokens", cf.accountID), nil)
+}
+
+// DNSRecord is one zone DNS record's name and type, the shape GET /zones/{id}/dns_records
+// returns.
+type DNSRecord struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// DNSRecords returns every DNS record Cloudflare reports for zoneID, following every page of the
+// route's result_info, confirming this client's read access to the DNS permission group against
+// one zone.
+func (cf *Cloudflare) DNSRecords(ctx context.Context, zoneID string) ([]DNSRecord, error) {
+	path := fmt.Sprintf("/zones/%s/dns_records", zoneID)
+	return getPaginated[DNSRecord](ctx, cf, path)
+}
+
 // ZoneSetting is one zone setting's id and current value, the shape every entry of
 // GET /zones/{id}/settings shares regardless of the setting.
 type ZoneSetting struct {

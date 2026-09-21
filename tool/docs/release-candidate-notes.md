@@ -1,7 +1,8 @@
-# Try the 1.0 release candidate
+# Verify the 1.0 release candidate
 
-This is a one-page note for Geoff, before the `tool/v1.0.0` tag. Build it, point it at your own
-sites, and look at six things.
+Release candidate verification is the conductor's work, not the owner's: this page is a checklist
+for whoever builds and runs the candidate before the `tool/v1.0.0` tag, run in a real terminal
+against the owner's own four production sites.
 
 ## Build it
 
@@ -12,51 +13,59 @@ make install
 ```
 
 That builds `cairn`, generates its man pages, and installs both to `~/.local/bin/cairn` and
-`~/.local/share/man/man1/`. `cairn --version` should print a `-dirty` suffix if your tree has
+`~/.local/share/man/man1/`. `cairn --version` should print a `-dirty` suffix if the tree has
 uncommitted changes, and none if it doesn't.
 
-## Point it at your own registry
+## Point it at the registry
 
 ```sh
 source ~/.local/secrets
 cairn adopt list
 ```
 
-Adopt the four production sites (`cairn adopt --worker <name>` for each one `adopt list` shows
-you), then confirm the registry holds them:
+Adopt the four production sites (`cairn adopt --worker <name>` for each one `adopt list` shows),
+then confirm the registry holds them:
 
 ```sh
 cairn sites list --json
 ```
 
-## Six things to look at
+## What to run, in this order
 
-1. **The single-site body, at your own terminal width.** Run `cairn health <one site>` in your
-   own terminal, not a captured frame. Does it read cleanly at the width your terminal actually
-   is?
-2. **The sweep's strip.** Run bare `cairn health` and read the summary strip and fix list across
-   all four sites. Does the worst verdict jump out at a glance?
-3. **The ASCII tier, through a pipe.** Run `cairn health | cat`. Does the fallback still read,
-   with no broken glyphs?
-4. **The JSON contract.** Run `cairn health --json | jq`. Does the shape make sense as something
-   a script would consume?
-5. **An error message.** Trigger one on purpose, for example `cairn health does-not-exist`. Does
-   it say what's wrong and what to do next, without a Go stack trace or an internal identifier?
-6. **`cairn help agents`.** Read it as if you were a program with no other documentation. Does it
-   cover what you'd need to know before running a command?
-
-Three offscreen frames from the overnight run may still be sitting in the session scratchpad
-from before this candidate was built (a single-site body, the sweep's strip, and the log body).
-They're a quick before-you-build preview, never a substitute for items 1 and 2 above: those two
-ask for your own terminal, at your own width, because a captured frame can't show you that.
+1. **The single-site body and the sweep's strip, in the real terminal, at its own width.** Run
+   `cairn health <one site>` and bare `cairn health`, not a captured frame. This settles the
+   standing "real-terminal evidence" item by the conductor's own eyes rather than by a captured
+   frame: does either body read cleanly at the terminal's actual width?
+2. **`cairn auth check`, against the real credentials.** Run it bare, then again naming one
+   registered site (`cairn auth check <site>`). Bare, does every zone-scoped and
+   repository-scoped row read `skip` and name `cairn auth check <site>` as the way to confirm it?
+   Named, do those same rows read `pass` against a live token?
+3. **`--theme light` on a light terminal.** No golden can grade this; it needs a light background
+   to look at. **Not available in this candidate**: the `--theme` flag has not landed in this
+   worktree as of this commit. Skip this item until a candidate built after it lands.
+4. **A held check, and the exit code it produces.** Write an `--ack` entry for one check
+   (`cairn health <site> --ack <check-id>=<a future date>`) and run the sweep again. Does the held
+   row read distinctly from a plain pass or fail, and does the exit code reflect a hold rather
+   than a fresh failure?
+5. **`--quiet` on the sweep.** Run `cairn health --quiet` against a clean registry (silent) and
+   again after a real or induced failure (the normal strip, not silence). Does silence on green
+   read as confidence rather than as a hang?
+6. **The launchd and Windows Task Scheduler wrappers, read rather than run.** Neither runs on this
+   machine: read `docs/tripwire.md`'s launchd plist and Windows Task Scheduler sections and judge
+   whether each is something a macOS or Windows operator could paste and adapt with no further
+   cairn-specific knowledge. A "no" here means the wrapper's own prose needs another pass, not
+   that the schedule itself is broken.
 
 ## What a "no" would mean
 
-- **Item 1 or 2 reads badly**: the render needs another pass before the tag. Say so and it holds.
-- **Item 3 breaks**: the ASCII fallback has a real bug; the tag waits on a fix.
-- **Item 4 doesn't make sense as JSON**: the contract needs a rewrite before it's published and
-  frozen; once tagged, this is a breaking change to fix.
-- **Item 5 leaks something internal**: the error boundary has a gap; the tag waits on a fix.
-- **Item 6 is missing something you'd need**: the agents page gets one more edit before the tag.
+- **Item 1 reads badly**: the render needs another pass before the tag. Say so and it holds.
+- **Item 2 misreports a row**: the permission table or its probe has a real bug; the tag waits on
+  a fix.
+- **Item 4's held row or exit code is wrong**: the hold arithmetic has a gap; the tag waits on a
+  fix.
+- **Item 5's silence or strip is wrong**: `--quiet`'s own rule has a gap; the tag waits on a fix.
+- **Item 6's wrapper prose is unusable as written**: `docs/tripwire.md` gets one more edit before
+  the tag.
 
-A "yes" on all six is what "go" for `tool/v1.0.0` means.
+A "yes" on every runnable item (1, 2, 4, 5, 6) is what "go" for `tool/v1.0.0` means; item 3 is
+deferred to a candidate built after `--theme` lands.

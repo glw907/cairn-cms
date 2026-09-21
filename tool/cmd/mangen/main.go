@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/internal/exe"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
@@ -376,7 +377,7 @@ func buildCairn() (bin string, cleanup func(), err error) {
 	}
 	cleanup = func() { _ = os.RemoveAll(tmp) }
 
-	bin = filepath.Join(tmp, "cairn")
+	bin = exe.Path(tmp, "cairn")
 	build := exec.Command("go", "build", "-o", bin, "./cmd/cairn")
 	build.Dir = moduleRoot()
 	if out, err := build.CombinedOutput(); err != nil {

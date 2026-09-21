@@ -2,10 +2,28 @@ package render
 
 import (
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/charmbracelet/colorprofile"
 )
+
+// emptyTermProfile is what --color=auto settles on for a terminal that sets no TERM, which is
+// the one row of the detection table whose right answer is not the same on every platform.
+//
+// On Unix an empty TERM means no terminfo entry, so nothing advertises colour support and cairn
+// paints none. On Windows it means Windows Terminal or cmd.exe, neither of which sets TERM at
+// all; colorprofile asks the OS instead (colorprofile@v0.4.3, envColorProfile's windows branch)
+// and a build at or past 14931 answers TrueColor. Both answers are correct for their platform,
+// and pinning the Unix one everywhere is what made the Windows CI leg red. Verified by reading
+// the dependency's source, not by running on Windows: only the CI leg can confirm the build
+// number the runner reports.
+func emptyTermProfile() Profile {
+	if runtime.GOOS == "windows" {
+		return ProfileTrueColor
+	}
+	return ProfileNoColor
+}
 
 // TestDetectColourOrder covers criterion 14's detection table: NO_COLOR beats --color=always,
 // --color=never and --color=always both settle it before TERM or TTY are consulted, and auto
@@ -25,7 +43,7 @@ func TestDetectColourOrder(t *testing.T) {
 		{"auto_non_tty", false, Env{Color: "auto", Term: "xterm-256color"}, ProfileNoColor},
 		{"auto_ansi256", true, Env{Color: "auto", Term: "xterm-256color"}, ProfileANSI256},
 		{"auto_ansi16", true, Env{Color: "auto", Term: "xterm"}, ProfileANSI16},
-		{"auto_unknown_term_no_colour", true, Env{Color: "auto", Term: ""}, ProfileNoColor},
+		{"auto_empty_term", true, Env{Color: "auto", Term: ""}, emptyTermProfile()},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

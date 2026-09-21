@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/internal/exe"
 	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/logx"
 	"github.com/glw907/cairn-cms/tool/internal/providers"
@@ -30,7 +31,7 @@ var builtBinary = sync.OnceValues(func() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	bin := filepath.Join(dir, "cairn")
+	bin := exe.Path(dir, "cairn")
 	// The build runs from the module root: a test binary's working directory is its own package
 	// directory, where ./cmd/cairn does not resolve.
 	build := exec.Command("go", "build", "-o", bin, "./cmd/cairn")
@@ -571,5 +572,35 @@ func TestTheSweepCapIsThePublishedOne(t *testing.T) {
 		strconv.Itoa(int(maxSweepTimeout.Seconds())) + " seconds)"
 	if !strings.Contains(body, formula) {
 		t.Errorf("exit-codes.md does not carry the formula %q", formula)
+	}
+}
+
+// TestEveryUsageErrorCarriesTwoLines covers the second half of catalogue section 3.8's usage
+// row, which the exit-code table above does not: a usage error states the refusal, then where to
+// read what the tool does accept. `cairn frobnicate` printed only the first until 2026-09-21,
+// because cobra's own NoArgs message is one line.
+func TestEveryUsageErrorCarriesTwoLines(t *testing.T) {
+	for _, args := range falsificationTable {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			_, stderr, _ := runBinary(t, args...)
+			if got := len(strings.Split(strings.TrimRight(stderr, "\n"), "\n")); got < 2 {
+				t.Errorf("stderr = %q, %d line(s); a usage error names where to read usage", stderr, got)
+			}
+		})
+	}
+}
+
+// TestAFirstRunWithNoRegistryListsNothing covers an operator's very first command. The registry
+// directory does not exist yet, and reporting "no such file or directory" tells them nothing they
+// can act on: an absent registry is an empty registry, and `cairn adopt` creates the directory
+// when it writes the first record.
+func TestAFirstRunWithNoRegistryListsNothing(t *testing.T) {
+	for _, args := range [][]string{{"sites", "list"}, {"adopt", "list"}} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			_, stderr, _ := runBinary(t, args...)
+			if strings.Contains(stderr, "no such file or directory") || strings.Contains(stderr, "cannot find the") {
+				t.Errorf("stderr = %q; an absent registry is reported as a filesystem fault", stderr)
+			}
+		})
 	}
 }

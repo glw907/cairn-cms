@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
 	"slices"
@@ -25,9 +27,40 @@ func fixedNow() time.Time {
 	return time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
 }
 
+// noRecordsResolver answers every lookup the way a resolver answers a name that does not exist.
+// It is the fake the whole package's testDeps wires in, because a nil Resolver falls through to
+// net.DefaultResolver: without it these tests query live DNS, for domains including real ones a
+// fixture names, and settle on whatever the runner's network happens to answer. That is what made
+// three of them platform-dependent, passing on the Linux and macOS CI legs and failing on the
+// Windows one, where the lookups for ecxc.ski and the .example fixtures did not return in time
+// and the email check settled unknown instead of failing.
+type noRecordsResolver struct{}
+
+// notFound is the error a resolver returns for a name with no such record, the shape
+// check_email.go's own dnsNotFound predicate reads.
+func notFound(name string) error {
+	return &net.DNSError{Err: "no such host", Name: name, IsNotFound: true}
+}
+
+// LookupTXT implements providers.Resolver.
+func (noRecordsResolver) LookupTXT(_ context.Context, name string) ([]string, error) {
+	return nil, notFound(name)
+}
+
+// LookupNS implements providers.Resolver.
+func (noRecordsResolver) LookupNS(_ context.Context, name string) ([]*net.NS, error) {
+	return nil, notFound(name)
+}
+
+// LookupIP implements providers.Resolver.
+func (noRecordsResolver) LookupIP(_ context.Context, _, host string) ([]net.IP, error) {
+	return nil, notFound(host)
+}
+
 // testDeps returns a dependency set wired entirely to fakes: an empty environment, a keyring
-// holding nothing, a transport that answers 404 for every path, a fresh registry directory, a
-// prompt that refuses, and an exit that records instead of ending the process.
+// holding nothing, a transport that answers 404 for every path, a resolver that finds no record,
+// a fresh registry directory, a prompt that refuses, and an exit that records instead of ending
+// the process.
 func testDeps(t *testing.T) (deps, *int) {
 	t.Helper()
 	dir := t.TempDir()
@@ -44,6 +77,7 @@ func testDeps(t *testing.T) (deps, *int) {
 		keyringDeleter: &fakeDeleter{},
 		keyringStatus:  func(string) (bool, error) { return false, nil },
 		transport:      routeRoundTripper{},
+		resolver:       noRecordsResolver{},
 		registryDir:    func() (string, error) { return dir, nil },
 		registrySource: func() (string, store.Source, error) { return dir, store.SourceUserConfig, nil },
 		now:            fixedNow,

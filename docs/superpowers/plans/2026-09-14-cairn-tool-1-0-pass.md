@@ -293,12 +293,12 @@ finding `go-architecture-reader` would otherwise file at both closes.
 | Checks as pure functions over a site record | 12 | The HUD's per-site refresh | Every `Check` satisfies `Run(ctx, record.Record, Clients, Options) spine.Outcome`; a test runs a slice holding the whole `All` set plus a deliberately stateful stub twice against a recorded `RoundTripper` and asserts identical reports, which goes red on the stub. |
 | `health.Run` pure over its inputs, with the sweep's clock carried on `Options.Now` rather than a separate parameter | 12 | 2.0's generation-counted refresh | The same record, clients, options (with a fixed `Options.Now`), and acknowledgements produce a byte-identical `(Report, error)` across two calls in one process. |
 | `Options.OnCheck`, the per-check callback `health.Run` fires as each check settles | 12 | The HUD's per-site refresh, which paints a check's result the moment it lands rather than at the end of a sweep | A three-check run fires the callback three times, once per check id, in completion order, and a nil callback runs the sweep unchanged. |
-| `ExitCode` over a slice of reports | 18 | The multi-site sweep's exit | The table covers a one-element slice, a zero-report call with `expectSites` mismatched, which is `sites list`'s only caller, and a three-element slice with mixed outcomes, which is bare `cairn health`'s. The 2026-09-20 amendment gave the many-element case a 1.0 caller, so this row is no longer a callerless seam. |
+| `ExitCode` over a slice of site verdicts (converted from `health.Report` at the call site, ratified 2026-09-21) | 18 | The multi-site sweep's exit | The table covers a one-element slice, a zero-report call with `expectSites` mismatched, which is `sites list`'s only caller, and a three-element slice with mixed outcomes, which is bare `cairn health`'s. The 2026-09-20 amendment gave the many-element case a 1.0 caller, so this row is no longer a callerless seam. |
 | The pure render seam: `Render(RenderInput) Frame`, no I/O, no program, the frame sectioned as Header, Body, Footer | 20a, 20b-i, 20b-ii | The HUD's screen render, which pins the header and scrolls the body in a `viewport` | A golden sweep over fixture, width, and profile, plus a test asserting the package imports none of `os`, `golang.org/x/term`, `colorprofile`'s detection entry points, `lipgloss.Writer`, or the `lipgloss.Print*` family, each forbidden by name as Task 20a states them, outside its profile-detection file. A second test asserts `Frame` carries no bubbletea type. |
 | `render.NewTheme(dark bool, p Profile) Theme` with `Style(role)`, `Sized(role, w)`, and the glyph set, the one palette file | 20a | The HUD's theme, widened rather than replaced | A contrast table over every role in both grounds, a named ANSI-16 slot per role in both branches, and a test asserting no caller chains a raw lipgloss setter off a returned style. |
 | The condition-to-fix map, re-homed out of `ui` | 19c-i | The HUD's detail view | Every anchor the map returns resolves to an actual heading in `docs/admin/is-it-working.md`, read at test time, and a second test covers the no-anchor branch. |
 | `logs.Query`, `logs.Entry`, `logs.Fetch` shaped for both a printed list and a scrolling view | 17 | The HUD's scrolling log screen | `Fetch` returns entries newest-first, with `Entry.Fields` an ordered slice (never a map, whose iteration order would make any golden over it nondeterministic) whose values are unparsed `json.RawMessage`, so no renderer choice is baked into the fetch. |
-| `spine.Discover`, `spine.Adopt`, `spine.AlreadyAdopted` as plain functions | 18 | The HUD's adopt dialog | `Discover` never writes, and adopting the same candidate twice yields one record. |
+| `adopt.Discover`, `adopt.Adopt`, `adopt.AlreadyAdopted` as plain functions (package `tool/internal/adopt`, ratified 2026-09-21; not `spine`, which cannot import `record` or `store`) | 18 | The HUD's adopt dialog | `Discover` never writes, and adopting the same candidate twice yields one record. |
 | `spine.TerminalSteps()`, `spine.Chapter3TerminalSteps()`, `spine.Chapter3ResumableSteps()` (Task 11 fold, 2026-09-20: functions returning a clone of an unexported backing slice, not vars) | 8 | The HUD's detail view, which shows an onboarding site's hold state | The step-literal drift test reads the Node constants at test time, so a Node-side edit fails the Go suite even with no 1.0 caller. |
 | `spine.FromKind` | 8 | The HUD's detail view, which renders a park state from the doctor's own kind | A table over every `Kind` asserts the spec's mapping, so the function is covered before 2.0 calls it. |
 | `spine.Conditions()` (Task 11 fold, 2026-09-20: a function returning a clone of an unexported backing slice, not a var) | 8 | The HUD's condition filter on the sites table | The drift test against `src/lib/diagnostics/conditions.ts` is the function's only 1.0 reader, and the task states that. |
@@ -2074,6 +2074,11 @@ root `npm test` must NOT take the light lane, because that suite launches a brow
 unlaned. Tasks 23, 24b, and 25 are the three whose diffs reach outside `tool/`; each states its own
 lane.
 
+**Note for reviewers, 2026-09-21: the resolved gate string is not a bare command.** The runner's
+resolved gate string carries the classifier's preamble and file list before the command itself, so
+a string that merely ends in the same `make -C tool check` command is no mismatch and never a
+blocking `diff-reviewer` finding.
+
 **The note every B2 dispatch carries, verbatim.** One line, restated in each task below because a
 subagent starts with zero context:
 
@@ -2300,20 +2305,38 @@ writing any Go file. Suggested model: `opus`, for the precedence arithmetic, whi
   an unused constructor parameter is a signature nobody can test. If a later task needs a GitHub
   lookup inside `Discover`, that task states the use and adds the parameter back.
 
+**Conductor ratification (2026-09-21).** `diff-reviewer` escalated three deviations from this
+task's original signatures; the conductor accepts all three, and every B2 reference to them is
+corrected to match:
+- **`Candidate`, `Discover`, `Adopt`, and `AlreadyAdopted` live in a new package,
+  `tool/internal/adopt`, not `spine`.** `TestSpineImportsOnlyProviders` forbids `spine` importing
+  `record` or `store`, and `Adopt`'s store write and `record.Record` return type need both.
+- **`ExitCode`'s signature is `spine.ExitCode(sites []SiteVerdicts, listErrs []error, expectSites
+  int) Verdict`, not a slice of `health.Report`.** `health` imports `spine`, so `spine` cannot
+  import `health` back; a caller converts its `[]health.Report` to `[]SiteVerdicts` at the call
+  site. `ExitCode(nil, nil, 0)` returns `VerdictOK`.
+- **`adopt.Adopt` takes a leading `ctx` parameter**, so the live DNS check in criterion 4 honors the
+  operator's `--timeout`.
+
 **Files:**
-- Create: `tool/internal/spine/adopt.go`, `adopt_test.go`
+- Create: `tool/internal/adopt/adopt.go`, `adopt_test.go`
 - Create: `tool/internal/spine/exit.go`, `exit_test.go`
 - Modify: `tool/cmd/cairn/probe_token.go`, `probe_token_test.go` (the two moved functions)
 
-**Produces:** `type Candidate struct{ Worker, Repo, Zone, Domain, AccountID string; Connected
+**Produces:** in the new package `tool/internal/adopt` (ratified above, not `spine`):
+`type Candidate struct{ Worker, Repo, Zone, Domain, AccountID string; Connected
 bool}`, `Domain` filled from `cf.WorkerDomains` and `Zone` the zone name. `func Discover(ctx, cf
-*providers.Cloudflare, accountID string) ([]Candidate, error)`. `func Adopt(st *store.Store, c
-Candidate, name string, resolve providers.Resolver) (record.Record, error)` writing step `live`,
+*providers.Cloudflare, accountID string) ([]Candidate, error)`. `func Adopt(ctx context.Context, st
+*store.Store, c Candidate, name string, resolve providers.Resolver) (record.Record, error)`
+writing step `live`,
 `adopted: true`, no secrets, and a fresh id in the Node shape. `func AlreadyAdopted(st
 *store.Store, c Candidate) bool` by worker name. `adopt list` is a plain non-writing function over
-`Discover`, not a mode flag threaded through the adopt path (Geoff, 2026-09-20, ruling 3). Also
-`func ExitCode(reports []health.Report, listErrs []error, expectSites int) int` returning a
-monitoring-plugin code, `var ErrExpectSites error` mapped to UNKNOWN, and `type Verdict int` with
+`Discover`, not a mode flag threaded through the adopt path (Geoff, 2026-09-20, ruling 3). In
+`internal/spine`: `func ExitCode(sites []SiteVerdicts, listErrs []error, expectSites int) Verdict`
+returning a monitoring-plugin verdict (`ExitCode(nil, nil, 0)` is `VerdictOK`), where
+`SiteVerdicts` is spine's own small per-site type so a caller converts a `[]health.Report` at the
+call site rather than `spine` importing `health`. Also `var ErrExpectSites error` mapped to
+UNKNOWN, and `type Verdict int` with
 the four constants `VerdictOK`, `VerdictWarning`, `VerdictCritical`, `VerdictUnknown` (the exit
 codes themselves) and a `String` returning the monitoring word. Task 20b-i re-exports this type as
 `render.Verdict` rather than declaring its own. Beside `Verdict`, `func StateWord(s
@@ -2391,6 +2414,10 @@ secrets work: this task owns `root.go`, `main.go`, and the shape of the tree, an
 Suggested model: `opus`, the largest command surface in the plan.
 
 **Notes (verbatim in the dispatch):** the standing B2 note above.
+
+**Conductor ratification (2026-09-21), accepted decisions:** `main` exits 3 on an error out of
+`RunE` (interim, ahead of Task 21's typed exit-error mechanism); `adopt list --json` defaults to
+`true`.
 
 **Files:**
 - Create: `tool/cmd/cairn/sites.go`, `health.go`, `logs.go`, `adopt.go`, `deps.go`,
@@ -2517,17 +2544,33 @@ before any `cmd/cairn` file. Suggested model: `sonnet`.
 
 **Notes (verbatim in the dispatch):** the standing B2 note above.
 
+**Conductor rulings (pre-flight, 2026-09-21):**
+- **Cancellation is one path (criteria 6 and 8).** A budget miss and SIGINT both cancel the same
+  run context, and `TestSignalCancelsTheRunAndExitsUnknown` already exists: settled sites print,
+  unsettled sites are reported by id as UNKNOWN with `reason.timeout`, and the process exits
+  `spine.ExitCode` over the whole slice for both causes, never two separate mappings.
+- **The many-sites output before `render` lands** (Task 20 is two segments later): reuse
+  `writeHealthBody` per site in `store.List` order, separated by a blank line, with one final
+  `ExitCode` verdict line; no ranking and no new labels here (Task 20b-i owns both).
+- **An operator-facing string the catalogue lacks** (this task is likely to need one for an `auth
+  unset` outcome): the implementer drafts it to `tool/docs/design/copy-standard.md`'s rules, marks
+  it in the messages table's comment as not in the catalogue and owed to Task 22a's editorial gate,
+  and lists it in the task report. This is the sanctioned route and does not breach the standing
+  never-invent-copy note above.
+
 **Files:**
 - Create: `tool/internal/store/discover.go`, `discover_test.go`
 - Modify: `tool/cmd/cairn/root.go`, `auth.go`, `auth_test.go`, `health.go`, `sites.go`,
-  `probe_token.go`, `probe_token_test.go`, `env.go`, `env_test.go`
+  `registry.go` (no `registry_test.go` exists yet), `probe_token.go`, `probe_token_test.go`,
+  `env.go`, `env_test.go`
 - Modify: `tool/internal/secrets/secrets.go`, `keyring.go`, `keyring_test.go`, `env.go` (the
   `Deleter` seam)
 
 **Produces:** `auth unset <name>`; `secrets.Deleter`; `store.Discover` and the moved registry
-types; bare `cairn health` as a sweep over every registered site. `sites list` returns a sentinel
-`ErrExpectSites` on a count mismatch, which Task 18's `ExitCode` maps to UNKNOWN; the mapping is
-defined once, in `ExitCode`.
+types; bare `cairn health` as a sweep over every registered site. `sites list` compares the
+registered count itself and appends a sentinel `spine.ErrExpectSites` to its list errors on a
+mismatch, then calls `spine.ExitCode(nil, listErrs, 0)`, which maps that sentinel to UNKNOWN; the
+mapping is defined once, in `ExitCode`.
 
 **Acceptance, `auth unset` and the `secrets.Deleter` seam:**
 1. **`auth unset <name>` deletes the keyring entry for one of the three variable names** so a
@@ -2548,20 +2591,27 @@ defined once, in `ExitCode`.
    rather than hanging.
 4. **A backend that cannot be reached is a distinct non-zero outcome, separate from not-found,
    and it names the environment-variable fallback, on all three `auth` commands.**
-   `errKeyringUnavailable` already distinguishes the two at HEAD; this task carries the distinction
-   up to the operator on `auth unset`, `auth set`, and `auth list` alike, because on a headless
-   Linux box all three otherwise say "not set" for a keyring that could not be reached. Not-found
+   **Ratified 2026-09-21**: `Keyring.Get` deliberately flattens `errKeyringUnavailable` to a miss
+   (`keyring.go`), so `auth list` cannot currently distinguish the four rows from `Get` alone; this
+   task exports `secrets.ErrKeyringUnavailable` and adds one `Keyring.Status()`-style direct read
+   that the three `auth` commands call for the distinction, and leaves `Get`'s flattening untouched
+   so credential-resolution behavior is unchanged. Not-found
    is success with a message; unavailable is a failure whose message says the keyring could not be
    reached and that the variable can be set in the environment instead. Conflating them would tell
    an operator with a locked keyring that their credential was already gone. A table covers four
    rows per command: a present entry, an absent entry, an unavailable backend, and a name outside
    the known set.
-5. **`credentialVars` is the only place a variable name is spelled.** Verified 2026-09-20 at
-   HEAD: `credentialVars` exists at `cmd/cairn/env.go:31` and `authVariables` derives from it at
-   `:39`. `auth set`, `auth list`, `auth unset`, the completions, and every message that names a
-   variable read through it. A grep test asserts no file under `tool/` outside `env.go` and the
-   messages tables contains the literal string `CAIRN_`, and Task 19c-i's membership test is what
-   covers the tables the grep exempts.
+5. **`credentialVars` is the only place a `CAIRN_CF_`/`CAIRN_GH_` variable name is spelled.**
+   Verified 2026-09-20 at HEAD: `credentialVars` exists at `cmd/cairn/env.go:31` and
+   `authVariables` derives from it at `:39`. **Ratified 2026-09-21, narrowing the grep's original
+   scope**: a bare `CAIRN_` grep also matches `store/paths.go`'s `CAIRN_STATE_DIR` and
+   `providers/cloudflare.go`'s `CAIRN_CLOUDFLARE_API_BASE`, neither a credential and neither this
+   task's concern, plus ten `_test.go` files and comments elsewhere. The grep test is scoped to
+   non-test `.go` files under `cmd/cairn`, to the `CAIRN_CF_`/`CAIRN_GH_` prefixes only, in code
+   rather than comments, allowing only `env.go` and `messages.go`. This task routes `deps.go`,
+   `probe_token.go`, `adopt.go`, and `logs.go` through `credentialVars` so the narrowed grep passes.
+   `auth set`, `auth list`, `auth unset`, the completions, and every message that names a variable
+   read through it. Task 19c-i's membership test is what covers the tables the grep exempts.
 
 **Acceptance, the multi-site sweep (2026-09-20 amendment):**
 6. **Bare `cairn health` sweeps every registered site; `cairn health <site>` is the single-site
@@ -2585,7 +2635,12 @@ defined once, in `ExitCode`.
    returned all-UNKNOWN. **A test over a 4-site fixture and a 10-site fixture asserts each sweep
    completes at the default with no `reason.timeout` on any check**, and a second test with an
    explicit `--timeout` and one blocking stub asserts the command returns by that deadline with
-   every non-blocked site reported.
+   every non-blocked site reported. **Ratified 2026-09-21, on detecting "explicit":** `--timeout`
+   is a persistent root flag defaulting to 120 seconds, so a value equal to the default cannot be
+   told apart from an unset default by value alone; `PersistentPreRunE` reads
+   `cmd.Flags().Lookup("timeout").Changed` into a `timeoutSet` field on `rootFlags`, and the
+   divide-only-when-explicit rule above tests `timeoutSet` rather than comparing against the
+   default.
 8. **A sweep that runs out of budget reports partial results, never nothing.** Every site that
    settled is printed with its verdict; every site that did not is reported by id as UNKNOWN with
    the reason `reason.timeout`, and counted toward the run's exit code. A test asserts a run cut
@@ -2602,22 +2657,32 @@ defined once, in `ExitCode`.
 
 **Acceptance, the registry query and the remaining carry-ins:**
 12. **`discoverSites` and `registrySite` move into `store`** as the one registry query every
-    command shares. Verified 2026-09-20 at HEAD: `discoverSites` is a private function at
-    `tool/cmd/cairn/probe_token.go:245` and `registrySite` is a private type at `:238`, so the one
-    command that needed them owns them and `health`, `logs`, and the completions would each grow a
-    copy. After this task they live in `tool/internal/store/discover.go` and `cmd/cairn` holds no
-    registry walk of its own. A grep test asserts no file under `cmd/cairn` calls `store.Open`
-    followed by `List` directly. `auth probe`'s repository discovery reads through the moved
-    function and its existing registry tests pass unchanged.
-13. **`NewProbe` and `NewNPM` gain their first production callers.** Verified 2026-09-20 at HEAD:
-    every call to either is in a `_test.go` file. `health`'s client construction is that caller. A
-    test asserts each constructor is named from at least one non-test file under `cmd/cairn`.
+    command shares. **Corrected 2026-09-21 against HEAD**: segment 1 already extracted both out of
+    `probe_token.go` into `tool/cmd/cairn/registry.go`, at `:33` and `:40`, and `registry.go`'s
+    `openRegistry` is the current single call path into `store.Open`; the one command that needed
+    them no longer owns them alone, and `health`, `logs`, and the completions would each grow a
+    copy. After this task the two symbols live in `tool/internal/store/discover.go`, `openRegistry`
+    keeps calling `store.Open`, and `cmd/cairn` holds no registry walk of its own beyond that one
+    call. A grep test asserts no file under `cmd/cairn` other than `registry.go` names
+    `store.Open`. `auth probe`'s repository discovery reads through the moved function and its
+    existing registry tests pass unchanged.
+13. **`NewProbe` and `NewNPM` already have a production caller; this task verifies that, rather
+    than adding the first one.** **Corrected 2026-09-21**: at HEAD, segment 1's
+    `cmd/cairn/deps.go` (`buildClients`, `:65-66`) already calls both `providers.NewNPM` and
+    `providers.NewProbe` from production code, so the criterion as first drafted here is already
+    satisfied. A test asserts each constructor is named from at least one non-test file under
+    `cmd/cairn`, which this task keeps green.
 14. `sites list --json` carries each site's id from `store.Entry.ID`, and `health <id>` resolves
     by id.
-15. `sites list` computes its exit code through `ExitCode(nil, listErrs, expectSites)`: UNKNOWN
-    when the registry is empty, when any record failed to parse, or when `--expect-sites N` does
-    not match the count, and OK otherwise. Each of the three is a case where the tool cannot say
-    whether the sites are healthy. A test covers all three.
+15. **`sites list` compares the registered count itself and calls `spine.ExitCode(nil, listErrs,
+    0)`.** **Corrected 2026-09-21** against the ratified Task 18 deviation and current `sites.go`
+    (already a first cut from segment 1/19a-i): `runSitesList` appends `spine.ErrExpectSites` to
+    `listErrs` itself on a `--expect-sites` mismatch, rather than passing `expectSites` through to
+    `ExitCode` for it to decide. UNKNOWN follows when the registry is empty, when any record failed
+    to parse, or when the count mismatches, and OK otherwise. **An empty registry with no
+    `--expect-sites` flag currently exits OK; this task must close that gap so it exits UNKNOWN
+    too**, since all three are cases where the tool cannot say whether the sites are healthy. A
+    test covers all three.
 16. `sites list --verbose` prints the registry directory it read and the `store.Source` that chose
     it. This is `Source`'s 1.0 caller, which is why `Source` stays exported.
 17. A report carrying `degraded: true` exits WARNING, which is 1, with no flag to ask for it. The
@@ -2630,6 +2695,17 @@ defined once, in `ExitCode`.
 file and `golang-spf13-cobra` before any `cmd/cairn` file. Suggested model: `sonnet`.
 
 **Notes (verbatim in the dispatch):** the standing B2 note above.
+
+**Conductor rulings (pre-flight, 2026-09-21):**
+- **Who validates expiry (criterion 1).** `cmd/cairn/ack.go` parses each entry, merges flag and
+  file entries, and refuses a missing or malformed expiry date; the expiry comparison itself stays
+  in `health.Run` against `Options.Now` (the ratified segment-1 fact), so an already-expired entry
+  parses successfully here and contributes CRITICAL there, never a parse failure.
+- **An operator-facing string the catalogue lacks** (this task is likely to need one for the ack
+  file's malformed-date, missing-expiry, or missing-explicit-file errors): the implementer drafts
+  it to `tool/docs/design/copy-standard.md`'s rules, marks it in the messages table's comment as
+  not in the catalogue and owed to Task 22a's editorial gate, and lists it in the task report. This
+  is the sanctioned route and does not breach the standing never-invent-copy note above.
 
 **Files:**
 - Create: `tool/cmd/cairn/ack.go`, `ack_test.go`, `tool/cmd/cairn/completion_test.go`
@@ -2653,12 +2729,16 @@ file and `golang-spf13-cobra` before any `cmd/cairn` file. Suggested model: `son
    A test covers both.
 3. **`sites list` ignores the resolved acknowledgement-file path when it lists the registry
    directory.** This criterion moved here from Task 19a at the 2026-09-20 night review, because it
-   tests `--ack-file`, a flag this task creates. `store.List` already skips a filename stem that
-   fails `record.ValidateSiteID`, which covers the default name, but the check is on the
-   **resolved path** rather than on that name, so an operator who passes `--ack-file` pointing at a
-   differently named file inside the registry directory does not see it reported as a malformed
-   record. A test puts an ack file with a site-id-shaped stem in the registry directory, passes it
-   as `--ack-file`, and asserts the listing reports the real sites only and exits OK.
+   tests `--ack-file`, a flag this task creates. **Ratified 2026-09-21, on ownership**: `--ack-file`
+   is a root persistent flag, resolved through one `ackFilePath(d, flags)` helper that both
+   `health` and `sites list` call, so `sites list` can skip it without owning a copy of the flag;
+   `--ack` itself stays on `health` alone, since only `health` accepts acknowledgement entries.
+   `store.List` already skips a filename stem that fails `record.ValidateSiteID`, which covers the
+   default name, but the check is on the **resolved path** rather than on that name, so an operator
+   who passes `--ack-file` pointing at a differently named file inside the registry directory does
+   not see it reported as a malformed record; `sites list` skips the resolved path by comparison,
+   never by name. A test puts an ack file with a site-id-shaped stem in the registry directory,
+   passes it as `--ack-file`, and asserts the listing reports the real sites only and exits OK.
 4. An acknowledged check reads as acknowledged in the report and in the exit code, through Task
    12's `Acks` and Task 18's `ExitCode`. This task wires the flags to those; it re-implements
    neither. **The acknowledgement carries no author field.** Verified 2026-09-20 at HEAD:
@@ -2681,7 +2761,10 @@ file and `golang-spf13-cobra` before any `cmd/cairn` file. Suggested model: `son
    stripped as well as a trailing `\n`**, since Windows is a product platform and a value piped from
    a PowerShell or `cmd` pipeline arrives with the carriage return; a credential stored with a stray
    `\r` fails every request with no visible cause. A test proves it on a CRLF fixture as well as an
-   LF one. An empty value is an error; the value never appears in output.
+   LF one. An empty value is an error; the value never appears in output. **Ratified 2026-09-21**:
+   the fallback triggers on any non-nil error `term.ReadPassword` returns, with no errno
+   inspection, since errno is not portable across the three target platforms; the injected stdin
+   reader supplies the one `bufio` line the fallback reads.
 7. **The prompt reads from an injectable stream,** so the echo-off path is testable without a pty
    and the stdin path without a pipe. The injection is a field on the command's dependencies struct
    from Task 19a-i, not a package-level variable. A test asserts the default wiring reads the
@@ -2701,9 +2784,16 @@ file and `golang-spf13-cobra` before any `cmd/cairn` file. Suggested model: `son
     Reconciliation row 15 already assumes the `--event` completion exists and no task produced it.
     **The vocabulary is a Go literal slice in the tool**, not a value read from the engine's
     TypeScript at build time: `go-conventions` forbids code generation, the module builds with no
-    repository present, and a `go install` build reaches no `src/lib` tree at all. The existing
-    drift test from reconciliation row 14 keeps the slice honest by asserting at test time that the
-    literal matches the union in `src/lib/log/events.ts`. Tests call each completion function
+    repository present, and a `go install` build reaches no `src/lib` tree at all. **Corrected
+    2026-09-21: no drift test for this literal exists yet.** "The existing drift test from
+    reconciliation row 14" was stale; only `conditions.ts` drift tests exist today
+    (`spine/condition_test.go:52`, `health/fixes_test.go`). This task writes the missing test: an
+    `Events()` function in `internal/logs` returning a clone of the package's literal slice, and a
+    new drift test modelled on `condition_test.go` that reads `src/lib/log/events.ts` through
+    `providers.RepoRoot()` and **fails, rather than skips, when the repository is absent**, so the
+    slice cannot silently drift. **Ratified 2026-09-21, on I/O**: site-id completion reads the
+    registry only, never the network; any error it hits returns an empty candidate list with
+    `cobra.ShellCompDirectiveNoFileComp`, never a printed error. Tests call each completion function
     directly against a fixture registry and a fixture vocabulary and assert the candidate lists,
     with the no-registry and no-match cases covered.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`. Commit.
@@ -2718,6 +2808,12 @@ is the contract. Invoke `go-conventions` before writing any Go file. Suggested m
 **Notes (verbatim in the dispatch):** the standing B2 note above. This is the second of the
 two tasks that MAY add operator-facing strings, on the same terms as 19c-i.
 
+**Conductor rulings (pre-flight, 2026-09-21):**
+- **An operator-facing string the catalogue lacks**: the implementer drafts it to
+  `tool/docs/design/copy-standard.md`'s rules, marks it in the messages table's comment as not in
+  the catalogue and owed to Task 22a's editorial gate, and lists it in the task report. This is the
+  sanctioned route and does not breach the standing never-invent-copy note above.
+
 **Files:**
 - Create: `tool/cmd/cairn/messages.go`, `messages_test.go`
 - Modify: `tool/cmd/cairn/main.go`, `root.go`, `auth.go`, `sites.go`, `health.go`, `logs.go`,
@@ -2728,14 +2824,22 @@ two tasks that MAY add operator-facing strings, on the same terms as 19c-i.
 1. **Every operator-facing string `cmd/cairn` prints lives in `cmd/cairn/messages.go`**: every
    error message, every command's `Short`, `Long`, and `Example`, the two not-safe-to-paste
    notices, the `auth` outcome messages, and the usage hints. No operator prose sits at a call
-   site or in a format string. A test asserts no file under `cmd/cairn` outside `messages.go`
-   contains a string literal longer than a stated length outside a Go error value or a flag name.
+   site or in a format string. **Ratified 2026-09-21, resolving the escalation against
+   `root_test.go:358`'s `TestNoCommandFileExceedsItsBound`** (every `cmd/cairn/*.go` capped at 300
+   lines): `messages.go` is exempted from that bound by name, since holding every `Short`/`Long`/
+   `Example` plus section 3.8's eight errors is one concern by construction; the literal-length
+   threshold this criterion's grep enforces is **30 characters**, skipping struct tags, flag names,
+   and `cobra.Command` field keys. A test asserts no file under `cmd/cairn` outside `messages.go`
+   contains a string literal longer than 30 characters outside those exemptions.
    The five command files Task 19a-i and Task 19b created are in scope and are named in Files
    above, which is what the first cut of this task missed.
-2. **`main` translates an error rather than printing it.** Verified 2026-09-20 at HEAD:
-   `cmd/cairn/main.go:14` does `fmt.Fprintln(os.Stderr, err)`, which prints a Go error chain such
-   as `store: open /home/geoff/.config/cairn/sites: permission denied` to an operator. One
-   translation function maps a sentinel or wrapped error onto a message from the table, falling
+2. **`main` translates an error rather than printing it.** **Corrected 2026-09-21**: at HEAD the
+   raw-error print is `cmd/cairn/main.go:42`, `fmt.Fprintln(errOut, err)` through the
+   `processWriters()`-derived `errOut` rather than `os.Stderr` directly (segment 1's
+   signal-handling refactor moved and changed this line since it was last verified). It still
+   prints a Go error chain such as `store: open /home/geoff/.config/cairn/sites: permission denied`
+   to an operator, untranslated, so the criterion's substance is unchanged. One translation
+   function maps a sentinel or wrapped error onto a message from the table, falling
    back to `cairn: <err>` only for an error the table does not know. Go error values keep the
    `go-conventions` grammar, lowercase and package-prefixed; the boundary renders them. A table
    covers the eight cases in `copy-standard.md` section 3.8 plus the fallback, with the plan's
@@ -2749,7 +2853,12 @@ two tasks that MAY add operator-facing strings, on the same terms as 19c-i.
    cobra tree, now checked against the real tree rather than an allow-list.
 5. **The golden is regenerated and covers both packages.** `make -C tool copy-list` now lists
    `internal/health`, `internal/spine`, and `cmd/cairn`, and `tool/testdata/copy.golden.md` is
-   updated in this commit. `check-copy` passes over the grown golden.
+   updated in this commit. **Ratified 2026-09-21**: at HEAD `catalogues()`
+   (`cmd/copylist/main.go:31`) lists `health` alone, and `spine` exports no `Catalogue` or
+   `FixLines`; its only strings today are `Verdict.String` and `StateWord`'s wire words. This task
+   adds `spine.Catalogue()`, returning the four verdict words and the four state words, and lists
+   it alongside `health` and `cmd/cairn`, since the golden is where that fixed vocabulary becomes
+   reviewable. `check-copy` passes over the grown golden.
 6. **Prose outside the tables is named as outside the golden.** `tool/README.md`,
    `tool/docs/credentials.md`, `tool/docs/tripwire.md`, and the reference pages are documentation
    rather than program strings: they are not listed by `copy-list`, they are linted by the
@@ -3423,7 +3532,9 @@ scrub last, over line boundaries.
     `spine.ExitCode` decides the code for a run that produced reports. Everything that produced no
     report is a **typed error that `main` maps**: a cancelled run, a usage error, `auth probe`'s
     typed coded error, and a tool fault. The two cannot disagree, because `ExitCode`'s inputs are
-    reports, list errors, and an expected count, and none of the four can be expressed in those. A
+    site verdicts converted from reports (ratified 2026-09-21: `[]SiteVerdicts`, not
+    `[]health.Report`, directly), list errors, and an expected count, and none of the four can be
+    expressed in those. A
     test asserts each of the four reaches its code through `main` without `ExitCode` being called,
     and `exit-codes.md` states the split.
 11. **`cmd/cairn` returns a typed exit error from `RunE` and `main` is the only `os.Exit` caller.**

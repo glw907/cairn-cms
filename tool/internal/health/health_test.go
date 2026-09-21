@@ -158,9 +158,9 @@ func TestRunRecoversPanickingCheck(t *testing.T) {
 		t.Errorf("Outcome = %+v, want Unknown/reason.not-run", cr.Outcome)
 	}
 
-	data, err := report.JSON(true)
+	data, err := reportJSON(report, true)
 	if err != nil {
-		t.Fatalf("JSON(true): %v", err)
+		t.Fatalf("reportJSON(verbose): %v", err)
 	}
 	if strings.Contains(string(data), "do-not-leak-me") {
 		t.Error("the recovered panic value's contents leaked into the report")
@@ -211,13 +211,13 @@ func TestRunIsPureOverItsInputs(t *testing.T) {
 		return report
 	}
 
-	first, err := run().JSON(true)
+	first, err := reportJSON(run(), true)
 	if err != nil {
-		t.Fatalf("JSON(true): %v", err)
+		t.Fatalf("reportJSON(verbose): %v", err)
 	}
-	second, err := run().JSON(true)
+	second, err := reportJSON(run(), true)
 	if err != nil {
-		t.Fatalf("JSON(true): %v", err)
+		t.Fatalf("reportJSON(verbose): %v", err)
 	}
 	if string(first) != string(second) {
 		t.Errorf("two Run calls over equivalent fresh inputs produced different reports:\n%s\n---\n%s", first, second)

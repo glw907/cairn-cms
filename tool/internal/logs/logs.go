@@ -35,22 +35,22 @@ type Query struct {
 // Fetch never stringifies a value it did not itself put there.
 type Field struct {
 	// Key is the JSON key, in the order the source record carried it.
-	Key string
+	Key string `json:"key"`
 	// Value is the key's value, exactly as the API returned it.
-	Value json.RawMessage
+	Value json.RawMessage `json:"value"`
 }
 
 // Entry is one engine log record, its envelope split out of Fields so a caller reads At, Level,
 // and Event without decoding JSON itself, with every other key left in Fields, ordered.
 type Entry struct {
 	// At is the record's own "timestamp" field.
-	At time.Time
+	At time.Time `json:"at"`
 	// Level is the record's own "level" field ("info", "warn", or "error").
-	Level string
+	Level string `json:"level"`
 	// Event is the record's own "event" field, one of src/lib/log/events.ts's union.
-	Event string
+	Event string `json:"event"`
 	// Fields carries every key beyond the envelope, in the order the source record carried them.
-	Fields []Field
+	Fields []Field `json:"fields"`
 }
 
 // ErrObservabilityOff is the sentinel Fetch and CountErrors return when a Worker's telemetry

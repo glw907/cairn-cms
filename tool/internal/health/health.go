@@ -5,6 +5,7 @@ package health
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -26,6 +27,29 @@ const (
 	// TierBoth means the check needs both.
 	TierBoth
 )
+
+// String names the tier in the wire vocabulary: "none", "cloudflare", "github", or "both". A
+// Tier this package does not know names itself "none": a credential requirement nothing can
+// satisfy is not a requirement a reader can act on.
+func (t Tier) String() string {
+	switch t {
+	case TierCF:
+		return "cloudflare"
+	case TierGH:
+		return "github"
+	case TierBoth:
+		return "both"
+	default:
+		return "none"
+	}
+}
+
+// MarshalJSON writes the tier as its word. Tier's four values and its four words are one to one,
+// which is what makes a marshaller the right home for the mapping here and the wrong home for
+// spine.State, whose three values answer four wire words.
+func (t Tier) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
 
 // Check is one health measurement: a pure function over a site record, the run's injected
 // provider clients, and its options, with no store access, no globals, and no I/O beyond the

@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/render"
 )
 
 // adoptRoutes returns the Cloudflare routes adopt.Discover reads for one Worker with no custom
@@ -50,14 +52,23 @@ func TestAdoptListPrintsCandidatesAsJSONAndWritesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adopt list: %v", err)
 	}
-	if !strings.Contains(stderr, pasteNotice) {
-		t.Errorf("stderr %q carries no paste notice", stderr)
+	// The listing defaults to --json, where stderr carries nothing but an error and the
+	// sensitive-data notice travels inside the payload instead.
+	if stderr != "" {
+		t.Errorf("stderr = %q, want empty under the listing's default --json", stderr)
 	}
 
-	var lines []candidateLine
-	if err := json.Unmarshal([]byte(stdout), &lines); err != nil {
+	var payload struct {
+		ContainsPersonalData bool                    `json:"containsPersonalData"`
+		Candidates           []render.AdoptCandidate `json:"candidates"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
 		t.Fatalf("stdout %q is not JSON: %v", stdout, err)
 	}
+	if !payload.ContainsPersonalData {
+		t.Error("the payload does not carry containsPersonalData; the notice reaches nobody under --json")
+	}
+	lines := payload.Candidates
 	if len(lines) != 1 || lines[0].Worker != "ecxc-ski" {
 		t.Fatalf("got %+v, want the one discovered Worker", lines)
 	}

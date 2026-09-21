@@ -111,8 +111,9 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 	}
 
 	verdict := spine.ExitCode([]spine.SiteVerdicts{siteVerdicts(report)}, nil, 0)
-	status := runStatus(clients, d.now().Sub(started), report.Degraded, []health.Report{report})
-	if err := writeHealth(cmd, d, report, verdict, status, f, rf); err != nil {
+	elapsed := d.now().Sub(started)
+	status := runStatus(clients, elapsed, report.Degraded, []health.Report{report})
+	if err := writeHealth(cmd, d, report, verdict, status, f, rf, elapsed); err != nil {
 		return err
 	}
 
@@ -141,14 +142,9 @@ func siteVerdicts(r health.Report) spine.SiteVerdicts {
 // invocation looks like. --quiet writes nothing at all on an OK run, which is what makes a
 // cron-driven green run silent and mail-free, and on any other verdict writes the verdict word
 // and the failing checks only.
-func writeHealth(cmd *cobra.Command, d deps, r health.Report, verdict spine.Verdict, status render.StatusState, f healthFlags, rf *rootFlags) error {
+func writeHealth(cmd *cobra.Command, d deps, r health.Report, verdict spine.Verdict, status render.StatusState, f healthFlags, rf *rootFlags, elapsed time.Duration) error {
 	if f.asJSON {
-		data, err := r.JSON(rf.verbose)
-		if err != nil {
-			return err
-		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", data)
-		return err
+		return writeSiteJSON(cmd.OutOrStdout(), d, rf, r, verdict, elapsed)
 	}
 	if rf.quiet && verdict == spine.VerdictOK {
 		return nil

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/glw907/cairn-cms/tool/internal/render"
@@ -17,14 +16,6 @@ type sitesFlags struct {
 	asJSON bool
 	// expectSites is the count the operator asserts the registry holds. Zero means no assertion.
 	expectSites int
-}
-
-// siteLine is one listed site's JSON shape.
-type siteLine struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Domain string `json:"domain"`
-	Step   string `json:"step"`
 }
 
 // newSitesCmd builds cairn sites list, with bare cairn sites as its alias. The alias is the
@@ -73,7 +64,9 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	entries, listErrs := st.List()
 	entries, listErrs = excludeAckFile(entries, listErrs, dir, rf)
 
-	if rf.verbose {
+	// --verbose adds a line to stdout, which under --json is the payload alone: a plain line
+	// ahead of the object would leave a consumer parsing a stream that is no longer JSON.
+	if rf.verbose && !f.asJSON {
 		if err := printRegistrySource(cmd, d); err != nil {
 			return err
 		}
@@ -90,7 +83,7 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	// none, so the count is compared here and reaches the arithmetic as the sentinel the
 	// listing is meant to return. Nothing below re-derives the mapping from sentinel to code.
 	verdict := spine.ExitCode(nil, listErrs, 0)
-	if err := writeSites(cmd, entries, f, rf, verdict); err != nil {
+	if err := writeSites(cmd, entries, f, rf, verdict, listErrs); err != nil {
 		return err
 	}
 	if err := writeSitesStatus(cmd, d, rf, f, verdict); err != nil {
@@ -141,13 +134,17 @@ func printRegistrySource(cmd *cobra.Command, d deps) error {
 
 // writeSites writes the listing itself, honouring --json over --quiet: under --json the payload
 // is the output, so suppressing it would hand an agent an empty stdout.
-func writeSites(cmd *cobra.Command, entries []store.Entry, f sitesFlags, rf *rootFlags, verdict spine.Verdict) error {
+func writeSites(cmd *cobra.Command, entries []store.Entry, f sitesFlags, rf *rootFlags, verdict spine.Verdict, listErrs []error) error {
 	if f.asJSON {
-		lines := make([]siteLine, 0, len(entries))
+		lines := make([]render.SiteListEntry, 0, len(entries))
 		for _, e := range entries {
-			lines = append(lines, siteLine{ID: e.ID, Name: e.Record.Name, Domain: e.Record.Domain, Step: e.Record.Step})
+			lines = append(lines, render.SiteListEntry{ID: e.ID, Name: e.Record.Name, Domain: e.Record.Domain, Step: e.Record.Step})
 		}
-		data, err := json.MarshalIndent(lines, "", "  ")
+		var reasons []string
+		for _, e := range listErrs {
+			reasons = append(reasons, e.Error())
+		}
+		data, err := render.MarshalSitesList(lines, verdict, reasons)
 		if err != nil {
 			return err
 		}

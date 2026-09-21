@@ -52,6 +52,11 @@ func conditionIDsIn(path string) (map[string]bool, error) {
 // TestConditionsMatchRegistry reads src/lib/diagnostics/conditions.ts through providers.RepoRoot
 // and asserts Conditions() equals REGISTRY's own id set, so a condition id added or renamed on
 // the TypeScript side fails here.
+//
+// A failure is a decision for a human, never an automatic follow. Condition ids are frozen in
+// the tool's own copy and published in tool/docs/reference/json-output.md, so renaming one here
+// to match the engine breaks every agent reading that contract. Renaming the id is a
+// major-version event carrying a "Consumers must:" line; adding one is not.
 func TestConditionsMatchRegistry(t *testing.T) {
 	root, err := providers.RepoRoot()
 	if err != nil {
@@ -80,7 +85,7 @@ func TestConditionsMatchRegistry(t *testing.T) {
 	slices.Sort(goIDs)
 
 	if !slices.Equal(tsIDs, goIDs) {
-		t.Fatalf("condition id sets differ:\nconditions.ts: %v\nspine:         %v", tsIDs, goIDs)
+		t.Fatalf("condition id sets differ; read the note above before changing either side:\nconditions.ts: %v\nspine:         %v", tsIDs, goIDs)
 	}
 }
 

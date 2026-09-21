@@ -41,7 +41,7 @@ func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, o Options
 	// second request on a fact this one already holds.
 	combined.Fields = nil
 	if !gh.expiry.IsZero() {
-		combined.Fields = []spine.OutcomeField{field(FieldGitHubTokenExpiry, gh.expiry)}
+		combined.Fields = []spine.OutcomeField{observedField(FieldGitHubTokenExpiry, gh.expiry, spine.SourceGitHub)}
 	}
 	return combined
 }

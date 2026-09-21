@@ -3,6 +3,7 @@ package spine
 import (
 	"encoding/json"
 	"errors"
+	"slices"
 	"strconv"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
@@ -64,6 +65,27 @@ const (
 	ReasonNotObservable ReasonCode = "reason.not-observable"
 )
 
+// fixedReasonCodes is every ReasonCode constant above, in declaration order.
+var fixedReasonCodes = []ReasonCode{
+	ReasonCredMissing, ReasonCredForbidden, ReasonCredRevoked, ReasonCredExpiring,
+	ReasonTimeout, ReasonOffline, ReasonNotRun, ReasonNotObservable,
+}
+
+// ReasonCodes is the closed reason vocabulary a run can emit: the eight fixed constants, then
+// the reason.park.<code> family over every ParkCode, then the reason.api.<reason> family over
+// every providers.Reason. It is built from those three sets rather than written out, so a code
+// added to any of them joins the published vocabulary without a second list to keep in step.
+func ReasonCodes() []ReasonCode {
+	out := slices.Clone(fixedReasonCodes)
+	for _, p := range ParkCodes() {
+		out = append(out, ParkReason(p))
+	}
+	for _, r := range providers.Reasons() {
+		out = append(out, APIReason(r))
+	}
+	return out
+}
+
 // ParkReason builds the reason.park.<code> ReasonCode a wait-kind outcome carries.
 func ParkReason(code ParkCode) ReasonCode {
 	return ReasonCode("reason.park." + string(code))
@@ -104,15 +126,35 @@ func ReasonToOutcome(r providers.Reason) Outcome {
 // renderer unredacted, so a Check must not put a secret in one.
 type OutcomeField struct {
 	// Key names the field, stable across releases: a renderer and a golden test both key off it.
-	Key string
+	Key string `json:"key"`
 	// Value is the field's value, carried as raw JSON so a caller decodes it as whatever shape
 	// it actually is (a string, a number, a bool) without OutcomeField itself guessing.
-	Value json.RawMessage
+	Value json.RawMessage `json:"value"`
 	// Verbose marks a value only a verbose render carries, so a non-verbose render drops the
 	// whole field rather than the value alone. It is render metadata about the field and never
 	// part of the rendered field, which is what the json tag holds it out of.
 	Verbose bool `json:"-"`
+	// Source names the provider whose response this value was copied from, and is empty for a
+	// value the tool derived itself. The producing check sets it; the JSON boundary reads it to
+	// decide which values are marked as a site's own strings rather than cairn's, and never
+	// infers a source from a key name or a value's shape. It is boundary metadata about the
+	// field and never a key inside the rendered field.
+	Source FieldSource `json:"-"`
 }
+
+// FieldSource names where an OutcomeField's value came from, when it came from outside cairn.
+// The empty value means the tool derived the value itself.
+type FieldSource string
+
+// The provider sources a copied value can carry.
+const (
+	// SourceCloudflare marks a value read out of a Cloudflare API response, Workers Logs
+	// included.
+	SourceCloudflare FieldSource = "cloudflare"
+	// SourceGitHub marks a value read out of a GitHub API response or the site repository's own
+	// metadata.
+	SourceGitHub FieldSource = "github"
+)
 
 // Outcome is the read-side result a Check returns. Reason is set only when State is Unknown;
 // Detail carries a human-readable note for OK or Failing and is otherwise unused. Fields carries
@@ -127,12 +169,12 @@ type OutcomeField struct {
 // names no id for. It is set only alongside Failing, and never alongside a Condition: the two
 // name the same failure at most once, through whichever vocabulary actually owns it.
 type Outcome struct {
-	State     State
-	Reason    ReasonCode
-	Condition Condition
-	Code      Code
-	Detail    string
-	Fields    []OutcomeField
+	State     State          `json:"state"`
+	Reason    ReasonCode     `json:"reason"`
+	Condition Condition      `json:"condition"`
+	Code      Code           `json:"code"`
+	Detail    string         `json:"detail"`
+	Fields    []OutcomeField `json:"fields"`
 }
 
 // Validate reports an error if Outcome does not match the rules every check obeys: a non-Unknown

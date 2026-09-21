@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schema/cairn-health.schema.json",
+  "title": "cairn health site payload",
+  "description": "One site's health result, as written by `cairn health <site> --json` and as each per-site line of `cairn health --json`. The stream form omits exitCode, which is scoped to the run.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "site",
+    "domain",
+    "verdict",
+    "checkedAt",
+    "durationMs",
+    "degraded",
+    "acknowledged",
+    "checks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "site" },
+    "site": { "type": "string" },
+    "domain": { "type": "string" },
+    "verdict": { "type": "string", "enum": ["OK", "WARNING", "CRITICAL", "UNKNOWN"] },
+    "exitCode": { "type": "integer", "enum": [0, 1, 2, 3] },
+    "checkedAt": { "type": "string" },
+    "durationMs": { "type": "integer" },
+    "degraded": { "type": "boolean" },
+    "acknowledged": { "type": "array", "items": { "type": "string" } },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "required": ["checkId", "state", "tier", "checkedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "checkId": { "type": "string" },
+        "state": { "type": "string", "enum": ["pass", "fail", "skip", "held"] },
+        "reason": { "type": "string" },
+        "condition": { "type": "string" },
+        "code": { "type": "string" },
+        "tier": { "type": "string", "enum": ["none", "cloudflare", "github", "both"] },
+        "detail": { "type": "string" },
+        "checkedAt": { "type": "string" },
+        "fields": { "type": "object", "additionalProperties": {} },
+        "observed": { "type": "object", "additionalProperties": { "$ref": "#/$defs/observedValue" } },
+        "fix": { "$ref": "#/$defs/fix" },
+        "hold": { "$ref": "#/$defs/hold" }
+      }
+    },
+    "observedValue": {
+      "type": "object",
+      "required": ["value", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {},
+        "source": { "type": "string", "enum": ["cloudflare", "github"] }
+      }
+    },
+    "fix": {
+      "type": "object",
+      "required": ["summary", "actor", "outward"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string" },
+        "command": { "type": "string" },
+        "url": { "type": "string" },
+        "actor": {
+          "type": "string",
+          "enum": ["operator", "developer", "provider-console", "registrar"]
+        },
+        "outward": { "type": "boolean" }
+      }
+    },
+    "hold": {
+      "type": "object",
+      "required": ["until", "expired"],
+      "additionalProperties": false,
+      "properties": {
+        "until": { "type": "string" },
+        "expired": { "type": "boolean" }
+      }
+    }
+  }
+}

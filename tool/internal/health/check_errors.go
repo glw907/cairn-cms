@@ -39,7 +39,7 @@ type errorsDetail struct {
 func (d errorsDetail) fields() []spine.OutcomeField {
 	return []spine.OutcomeField{
 		field("errorCount", d.Count),
-		verboseField("topEvents", d.TopEvents),
+		verboseObservedField("topEvents", d.TopEvents, spine.SourceCloudflare),
 	}
 }
 

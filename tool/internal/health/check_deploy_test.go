@@ -288,9 +288,9 @@ func TestDeployCheckNonVerboseRenderDropsVerboseOnlyValues(t *testing.T) {
 	outcome := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 
 	report := Report{Checks: []CheckResult{{ID: "deploy", Outcome: outcome}}}
-	nonVerbose, err := report.JSON(false)
+	nonVerbose, err := reportJSON(report, false)
 	if err != nil {
-		t.Fatalf("JSON(false): %v", err)
+		t.Fatalf("reportJSON(non-verbose): %v", err)
 	}
 	rendered := string(nonVerbose)
 
@@ -308,11 +308,11 @@ func TestDeployCheckNonVerboseRenderDropsVerboseOnlyValues(t *testing.T) {
 		t.Errorf("non-verbose render carries the buildId key: %s", rendered)
 	}
 
-	verbose, err := report.JSON(true)
+	verbose, err := reportJSON(report, true)
 	if err != nil {
-		t.Fatalf("JSON(true): %v", err)
+		t.Fatalf("reportJSON(verbose): %v", err)
 	}
-	if !strings.Contains(string(verbose), `"Key":"buildId","Value":"build-uuid"`) {
+	if !strings.Contains(string(verbose), `"key":"buildId","value":"build-uuid"`) {
 		t.Errorf("verbose render dropped buildId: %s", verbose)
 	}
 }

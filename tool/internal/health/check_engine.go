@@ -63,7 +63,7 @@ type engineDetail struct {
 // fields flattens d into its three ordered spine.OutcomeField entries.
 func (d engineDetail) fields() []spine.OutcomeField {
 	return []spine.OutcomeField{
-		field(FieldEngineInstalledVersion, d.Installed),
+		observedField(FieldEngineInstalledVersion, d.Installed, spine.SourceGitHub),
 		field("releasesBehind", d.ReleasesBehind),
 		field("consumersMust", d.ConsumersMust),
 	}

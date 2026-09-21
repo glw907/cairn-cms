@@ -67,7 +67,7 @@ func writeHealthTo(t *testing.T, r health.Report, verdict spine.Verdict, f healt
 	cmd := &cobra.Command{}
 	cmd.SetOut(&out)
 	cmd.SetErr(&errOut)
-	if err := writeHealth(cmd, d, r, verdict, render.StatusState{}, f, rf); err != nil {
+	if err := writeHealth(cmd, d, r, verdict, render.StatusState{}, f, rf, 0); err != nil {
 		t.Fatalf("writeHealth: %v", err)
 	}
 	return out.String(), errOut.String()
@@ -179,12 +179,11 @@ func TestJSONWinsOverQuiet(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
 		t.Fatalf("stdout %q is not the JSON payload: %v", stdout, err)
 	}
-	want, err := okReport().JSON(false)
-	if err != nil {
-		t.Fatalf("Report.JSON: %v", err)
+	if payload["verdict"] != spine.VerdictOK.String() {
+		t.Errorf("payload verdict = %v, want %q", payload["verdict"], spine.VerdictOK)
 	}
-	if strings.TrimSpace(stdout) != strings.TrimSpace(string(want)) {
-		t.Errorf("stdout = %q, want Report.JSON's own bytes %q", stdout, want)
+	if payload["exitCode"] != float64(spine.VerdictOK) {
+		t.Errorf("payload exitCode = %v, want %d", payload["exitCode"], int(spine.VerdictOK))
 	}
 	if stderr != "" {
 		t.Errorf("stderr = %q, want empty", stderr)

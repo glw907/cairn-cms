@@ -97,18 +97,18 @@ func TestCredsCheckBothCredentialsValid(t *testing.T) {
 	}
 
 	report := Report{Checks: []CheckResult{{ID: c.ID(), Outcome: outcome}}}
-	nonVerbose, err := report.JSON(false)
+	nonVerbose, err := reportJSON(report, false)
 	if err != nil {
-		t.Fatalf("JSON(false): %v", err)
+		t.Fatalf("reportJSON(non-verbose): %v", err)
 	}
 	for _, provider := range []string{"environment", "keyring"} {
 		if !strings.Contains(string(nonVerbose), provider) {
-			t.Errorf("JSON(false) = %s, want it to name provider %q", nonVerbose, provider)
+			t.Errorf("the non-verbose render = %s, want it to name provider %q", nonVerbose, provider)
 		}
 	}
 	for _, secret := range []string{"cf-secret-value", "gh-secret-value"} {
 		if strings.Contains(string(nonVerbose), secret) {
-			t.Errorf("JSON(false) = %s, leaked the credential value %q", nonVerbose, secret)
+			t.Errorf("the non-verbose render = %s, leaked the credential value %q", nonVerbose, secret)
 		}
 	}
 }

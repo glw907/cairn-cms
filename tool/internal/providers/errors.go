@@ -1,6 +1,9 @@
 package providers
 
-import "net/http"
+import (
+	"net/http"
+	"slices"
+)
 
 // Reason classifies why a provider API call failed, past the raw HTTP status, so a health check
 // can render one stable, translatable message instead of branching on a provider's own numeric
@@ -28,6 +31,25 @@ const (
 	ReasonRateLimited
 	ReasonUnknown
 )
+
+// reasons is every Reason above, in declaration order.
+var reasons = []Reason{
+	ReasonUnauthorized,
+	ReasonForbidden,
+	ReasonNotFound,
+	ReasonBuildsNotConnected,
+	ReasonBuildsRepoNotSelected,
+	ReasonBuildsAppNotAuthorized,
+	ReasonSenderNotConfigured,
+	ReasonRateLimited,
+	ReasonUnknown,
+}
+
+// Reasons is every known Reason. spine.ReasonCodes spends it to build the reason.api.<reason>
+// family, so the published reason vocabulary is read off these constants rather than retyped.
+func Reasons() []Reason {
+	return slices.Clone(reasons)
+}
 
 // String names the Reason for a log line or an error message.
 func (r Reason) String() string {

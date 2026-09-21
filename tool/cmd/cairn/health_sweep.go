@@ -45,6 +45,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 	out := cmd.OutOrStdout()
 	sites := make([]spine.SiteVerdicts, 0, len(entries))
 	reports := make([]health.Report, 0, len(entries))
+	verdicts := make([]spine.Verdict, 0, len(entries))
 	cut := len(entries)
 	wroteAny := false
 
@@ -83,6 +84,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 		}
 
 		siteCtx, siteCancel := siteBudget(envelope, rf, len(entries)-i)
+		siteStarted := d.now()
 		report, err := health.Run(siteCtx, e.Record, clients, health.All, health.Options{
 			ErrorThreshold: f.errorThreshold,
 			LogWindow:      window,
@@ -96,20 +98,18 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 		checks := siteVerdicts(report)
 		sites = append(sites, checks)
 		reports = append(reports, report)
-		if f.asJSON || fleet {
-			if f.asJSON {
-				data, err := report.JSON(rf.verbose)
-				if err != nil {
-					return err
-				}
-				if _, err := fmt.Fprintf(out, "%s\n", data); err != nil {
-					return err
-				}
+		siteVerdict := spine.ExitCode([]spine.SiteVerdicts{checks}, nil, 0)
+		verdicts = append(verdicts, siteVerdict)
+		if f.asJSON {
+			if err := writeSweepLineJSON(out, d, rf, report, siteVerdict, d.now().Sub(siteStarted)); err != nil {
+				return err
 			}
 			continue
 		}
-		verdict := spine.ExitCode([]spine.SiteVerdicts{checks}, nil, 0)
-		if err := writeHealthBody(out, d, rf, []health.Report{report}, verdict,
+		if fleet {
+			continue
+		}
+		if err := writeHealthBody(out, d, rf, []health.Report{report}, siteVerdict,
 			runStatus(clients, 0, report.Degraded, []health.Report{report}), rf.quiet); err != nil {
 			return err
 		}
@@ -129,6 +129,13 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 
 	verdict := spine.ExitCode(sites, listErrs, 0)
 	switch {
+	// The summary line closes the stream whatever --quiet says: under --json the payload is the
+	// output, and a stream carrying no summary is UNKNOWN by json-output.md's own rule, so
+	// suppressing it would leave an agent unable to tell a quiet green run from a truncated one.
+	case f.asJSON:
+		if err := writeSweepSummaryJSON(out, d, reports, verdicts, verdict, len(entries), d.now().Sub(started)); err != nil {
+			return err
+		}
 	// --quiet on an OK sweep writes nothing at all, the rule that makes a cron-driven green run
 	// silent and mail-free, and on any other verdict hands the frame its failing checks alone.
 	case fleet && rf.quiet && verdict == spine.VerdictOK:
@@ -142,9 +149,9 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 				return err
 			}
 		}
-	// The bare aggregate verdict word is not itself JSON, so it is omitted under --json rather
-	// than corrupting the newline-delimited JSON this sweep otherwise emits, one object per site.
-	case !f.asJSON:
+	// Every plain-body sweep ends on the bare aggregate verdict word. The --json stream ends on
+	// its summary line instead, in the first case above, since the word is not itself JSON.
+	default:
 		if err := writeSeparator(); err != nil {
 			return err
 		}

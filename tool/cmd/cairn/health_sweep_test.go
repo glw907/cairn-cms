@@ -349,13 +349,36 @@ func TestHealthSweepUnderJSONEmitsNoSeparatorBetweenSettledSites(t *testing.T) {
 	}
 
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
-	if len(lines) != 2 {
-		t.Fatalf("output %q has %d lines, want exactly 2 (one JSON object per settled site, no blank separator)", out, len(lines))
+	if len(lines) != 3 {
+		t.Fatalf("output %q has %d lines, want exactly 3 (one JSON object per settled site plus the summary, no blank separator)", out, len(lines))
 	}
 	for _, line := range lines {
 		var payload map[string]any
 		if err := json.Unmarshal([]byte(line), &payload); err != nil {
 			t.Errorf("line %q does not unmarshal as JSON: %v", line, err)
+		}
+	}
+
+	// The summary is last and carries the run's exit code. A stream with no summary line is
+	// UNKNOWN by the published contract, so its presence and its position are the whole of what
+	// makes a truncated stream tellable from a complete one.
+	var summary map[string]any
+	if err := json.Unmarshal([]byte(lines[len(lines)-1]), &summary); err != nil {
+		t.Fatalf("the last line does not unmarshal as JSON: %v", err)
+	}
+	if summary["kind"] != "summary" {
+		t.Errorf("the last line's kind = %v, want the summary", summary["kind"])
+	}
+	if _, present := summary["exitCode"]; !present {
+		t.Error("the summary line carries no exitCode")
+	}
+	for _, line := range lines[:len(lines)-1] {
+		var site map[string]any
+		if err := json.Unmarshal([]byte(line), &site); err != nil {
+			t.Fatalf("a per-site line does not unmarshal as JSON: %v", err)
+		}
+		if _, present := site["exitCode"]; present {
+			t.Errorf("per-site line %q carries exitCode; the run's code belongs on the summary alone", line)
 		}
 	}
 }

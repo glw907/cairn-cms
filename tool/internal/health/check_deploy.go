@@ -104,13 +104,13 @@ func (d deployDetail) fields() []spine.OutcomeField {
 		field("buildsConnected", d.BuildsConnected),
 		field("pushToDeploy", d.PushToDeploy),
 		field("lastBuild", d.LastBuild.String()),
-		verboseField("lastBuildSHA", d.LastBuildSHA),
-		verboseField("mainSHA", d.MainSHA),
-		field("lastBuildAt", d.LastBuildAt),
+		verboseObservedField("lastBuildSHA", d.LastBuildSHA, spine.SourceCloudflare),
+		verboseObservedField("mainSHA", d.MainSHA, spine.SourceGitHub),
+		observedField("lastBuildAt", d.LastBuildAt, spine.SourceCloudflare),
 		field("behind", d.Behind),
-		field("lastBuildShortSHA", shortSHA(d.LastBuildSHA)),
-		field("mainShortSHA", shortSHA(d.MainSHA)),
-		verboseField("buildId", d.BuildID),
+		observedField("lastBuildShortSHA", shortSHA(d.LastBuildSHA), spine.SourceCloudflare),
+		observedField("mainShortSHA", shortSHA(d.MainSHA), spine.SourceGitHub),
+		verboseObservedField("buildId", d.BuildID, spine.SourceCloudflare),
 	}
 }
 

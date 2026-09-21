@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/glw907/cairn-cms/tool/internal/adopt"
+	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/spf13/cobra"
 )
 
@@ -25,17 +25,6 @@ type adoptListFlags struct {
 	// identifiers all the way down, and JSON is the shape that survives being handed to
 	// whatever decides which Worker to adopt. --json=false asks for the plain listing.
 	asJSON bool
-}
-
-// candidateLine is one discovered candidate's JSON shape.
-type candidateLine struct {
-	Worker    string `json:"worker"`
-	Repo      string `json:"repo"`
-	Zone      string `json:"zone"`
-	Domain    string `json:"domain"`
-	AccountID string `json:"accountId"`
-	Connected bool   `json:"connected"`
-	Adopted   bool   `json:"adopted"`
 }
 
 // newAdoptCmd builds cairn adopt and its list subcommand. The listing is a separate
@@ -75,7 +64,7 @@ func newAdoptCmd(d deps, rf *rootFlags) *cobra.Command {
 
 // discoverCandidates resolves the account and lists every Worker on it as a candidate, marking
 // each one the registry already holds.
-func discoverCandidates(ctx context.Context, d deps) ([]candidateLine, error) {
+func discoverCandidates(ctx context.Context, d deps) ([]render.AdoptCandidate, error) {
 	clients := buildClients(d)
 	if !clients.HaveCF {
 		return nil, noCloudflareCredentialError()
@@ -91,9 +80,9 @@ func discoverCandidates(ctx context.Context, d deps) ([]candidateLine, error) {
 		return nil, err
 	}
 
-	lines := make([]candidateLine, 0, len(candidates))
+	lines := make([]render.AdoptCandidate, 0, len(candidates))
 	for _, c := range candidates {
-		lines = append(lines, candidateLine{
+		lines = append(lines, render.AdoptCandidate{
 			Worker:    c.Worker,
 			Repo:      c.Repo,
 			Zone:      c.Zone,
@@ -109,8 +98,12 @@ func discoverCandidates(ctx context.Context, d deps) ([]candidateLine, error) {
 // runAdoptList prints the discovered candidates. It writes nothing to the registry, which is
 // what makes it safe to run against an account before any decision has been taken.
 func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) error {
-	if _, err := fmt.Fprintln(cmd.ErrOrStderr(), pasteNotice); err != nil {
-		return err
+	// Under --json stderr carries nothing but an error, so the notice travels as the payload's
+	// own containsPersonalData field instead of a line no agent reading stdout would see.
+	if !lf.asJSON {
+		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), pasteNotice); err != nil {
+			return err
+		}
 	}
 
 	ctx, cancel := rf.deadline(commandContext(cmd))
@@ -128,7 +121,7 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 		}
 		return nil
 	}
-	data, err := json.MarshalIndent(lines, "", "  ")
+	data, err := render.MarshalAdoptList(lines)
 	if err != nil {
 		return err
 	}

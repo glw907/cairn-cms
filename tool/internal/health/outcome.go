@@ -33,6 +33,29 @@ func verboseField(key string, value any) spine.OutcomeField {
 	return f
 }
 
+// observedField wraps value as a spine.OutcomeField named key whose value was copied out of a
+// provider's response rather than derived by cairn. The marshal boundary carries such a field
+// under its own key with the source beside it, so an agent's rule about untrusted data has
+// something to key on; it never infers the source, which is why every copying check declares it
+// here at the point the value is lifted.
+//
+// A count, a comparison, or a word from cairn's own vocabulary is not copied, even when a
+// provider's response is what it was computed from: what the mark names is a string a site
+// controls the bytes of.
+func observedField(key string, value any, source spine.FieldSource) spine.OutcomeField {
+	f := field(key, value)
+	f.Source = source
+	return f
+}
+
+// verboseObservedField wraps value as a copied field only a verbose render carries, the
+// intersection of verboseField and observedField.
+func verboseObservedField(key string, value any, source spine.FieldSource) spine.OutcomeField {
+	f := observedField(key, value, source)
+	f.Verbose = true
+	return f
+}
+
 // apiErrorOutcome classifies a Cloudflare or GitHub API failure, shared by every check that
 // reads one of those APIs but does not itself measure the credential (delegation,
 // HTTPS-forced, HSTS, email, deploy). Unlike credsCheck, a 401 or 403 here is Unknown with its

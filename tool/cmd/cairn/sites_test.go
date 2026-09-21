@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/glw907/cairn-cms/tool/internal/record"
+	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 )
@@ -45,10 +46,13 @@ func TestSitesListJSONCarriesEachSiteID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sites list --json: %v", err)
 	}
-	var lines []siteLine
-	if err := json.Unmarshal([]byte(out), &lines); err != nil {
+	var payload struct {
+		Sites []render.SiteListEntry `json:"sites"`
+	}
+	if err := json.Unmarshal([]byte(out), &payload); err != nil {
 		t.Fatalf("unmarshal %q: %v", out, err)
 	}
+	lines := payload.Sites
 	if len(lines) != 1 {
 		t.Fatalf("got %d sites, want 1", len(lines))
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -69,8 +68,12 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 		return err
 	}
 
-	if _, err := fmt.Fprintln(cmd.ErrOrStderr(), pasteNotice); err != nil {
-		return err
+	// Under --json stderr carries nothing but an error, so the notice travels as the payload's
+	// own containsPersonalData field instead of a line no agent reading stdout would see.
+	if !f.asJSON {
+		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), pasteNotice); err != nil {
+			return err
+		}
 	}
 
 	st, err := openRegistry(d)
@@ -107,7 +110,7 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 // record the engine wrote.
 func writeLogs(cmd *cobra.Command, d deps, rf *rootFlags, entries []logs.Entry, f logsFlags, site string) error {
 	if f.asJSON {
-		data, err := json.MarshalIndent(entries, "", "  ")
+		data, err := render.MarshalLogs(site, entries)
 		if err != nil {
 			return err
 		}

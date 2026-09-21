@@ -100,7 +100,7 @@ front-door stage of the rebuild.
 
 The retirement is not this initiative's work. Its inputs are
 `docs/internal/record/2026-09-21-doctor-retirement-inventory.md` and
-`~/.cache/cairn-tool-b2/doctor-retirement-sizing.md`. Its close is the only writer of "the
+`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`. Its close is the only writer of "the
 `0.97.0` cut is unblocked".
 
 This initiative hands that session three things.
@@ -120,7 +120,7 @@ A rebuilt page keeps its file path and every heading slug that code, a gate, or 
 A rename adds a row to the redirect map in `scripts/checks/docs-links.mjs` and updates whatever
 read the old path, named in the plan. The known pins:
 
-- `docs/admin/is-it-working.md`: about twenty `docsAnchor` values in
+- `docs/admin/is-it-working.md`: all 24 `docsAnchor` values in
   `src/lib/diagnostics/conditions.ts`, the tool's fix-line anchors in
   `tool/internal/health/fixes.go` (a Go test resolves each against the file), the runtime URL base
   in `tool/internal/render/layout.go`, and `check:readiness`.

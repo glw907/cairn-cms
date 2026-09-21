@@ -127,11 +127,19 @@ container, then beta.
 
 Three tracks, one session each.
 
-**Doctor retirement:** The spec is approved. The plans are
-`docs/superpowers/plans/2026-09-21-doctor-pretask.md` and
-`docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md`, on branch `doctor-retirement` (in
-review); retire-1's plan is drafted after B2 merges. Read the hold paragraph under "Immediate next
-action" for the five-step order; retire-2's close writes the cut's unblocked line.
+**Doctor retirement:** In a fresh session, conduct the doctor retirement from
+`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` and the `doctor-retirement-pass`
+memory. Geoff approved the spec and three plans on 2026-09-21: `2026-09-21-doctor-pretask.md`,
+`2026-09-21-doctor-retire-2-engine.md` (retire-2a, the removal), and
+`2026-09-21-doctor-retire-2b-records.md` (retire-2b, whose close writes the cut's unblocked line),
+all under `docs/superpowers/plans/`. Nothing executes before B2 merges; check STATUS for B2's close
+line and `git ls-remote --tags origin 'tool/v1.0.0'`. Then, in order: run the pre-task; draft
+retire-1's plan (the Go half, `cairn doctor`) against the merged `tool/`, with three review lenses,
+and bring it to Geoff; at the same time write the pass A inventory file under
+`docs/internal/record/` (the `cairn doctor` page path, the seventh schema's file name, every test
+naming either), since pass A's pre-flight stops without it; execute retire-1 and merge it WITHOUT a
+tag. Pass A and the `tool/v1.1.0` tag follow (who conducts the tag is unruled; ask Geoff), then
+retire-2a, then retire-2b. Read the hold paragraph under "Immediate next action" for the order.
 
 **One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once the
 Go tool's 1.0 is released AND `cairn-doctor` is retired on `main`; verify both first.

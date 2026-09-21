@@ -1,10 +1,62 @@
 package spine
 
 import (
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"reflect"
+	"runtime"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
+
+// internalPackagePrefix is this module's own internal import root, the prefix every check
+// against spine's dependency boundary strips before comparing.
+const internalPackagePrefix = "github.com/glw907/cairn-cms/tool/internal/"
+
+// TestSpineImportsOnlyProviders asserts every file in this package imports at most one internal
+// package, tool/internal/providers, and never tool/internal/record: the module's downward
+// architecture puts spine below record, so a dependency the other way would be a layering
+// violation, not merely an unused import. Parsing each file's own import specs (rather than
+// grepping for the literal string) means a comment or a string literal mentioning the path can
+// never trip this test by accident.
+func TestSpineImportsOnlyProviders(t *testing.T) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("resolve this file's own path")
+	}
+	dir := filepath.Dir(thisFile)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read %s: %v", dir, err)
+	}
+
+	fset := token.NewFileSet()
+	allowed := internalPackagePrefix + "providers"
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+			continue
+		}
+		path := filepath.Join(dir, entry.Name())
+		f, err := parser.ParseFile(fset, path, nil, parser.ImportsOnly)
+		if err != nil {
+			t.Fatalf("parse %s: %v", path, err)
+		}
+		for _, imp := range f.Imports {
+			importPath, err := strconv.Unquote(imp.Path.Value)
+			if err != nil {
+				t.Fatalf("unquote import in %s: %v", path, err)
+			}
+			if strings.HasPrefix(importPath, internalPackagePrefix) && importPath != allowed {
+				t.Errorf("%s imports %s, spine may depend only on %s among this module's internal packages", entry.Name(), importPath, allowed)
+			}
+		}
+	}
+}
 
 // TestStateString covers the three known verdicts plus an out-of-range value, which the default
 // branch renders rather than misreporting as "unknown".
@@ -92,7 +144,7 @@ func TestFromKind(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := FromKind(tt.kind, tt.code)
-			if got != tt.want {
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FromKind(%q, %q) = %+v, want %+v", tt.kind, tt.code, got, tt.want)
 			}
 			if err := got.Validate(); err != nil {

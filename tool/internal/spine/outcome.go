@@ -1,6 +1,7 @@
 package spine
 
 import (
+	"encoding/json"
 	"errors"
 	"strconv"
 
@@ -98,12 +99,32 @@ func ReasonToOutcome(r providers.Reason) Outcome {
 	}
 }
 
+// OutcomeField is one ordered, named value a Check reports beyond its one-line Detail: a
+// structured fact (a count, a build id, a timestamp) an operator's detail view or a golden test
+// reads by key rather than re-parsing a formatted string. It has the same two-field shape as
+// record.ExtraField but is declared fresh here rather than reused: spine imports providers and
+// nothing else internal today, and the module's downward architecture gives it no reason to gain
+// a dependency on record for a two-field struct. It also carries no redacting String() the way
+// record.ExtraField does; ExtraField's redaction exists because a record's opaque tail can carry
+// a secret, while an OutcomeField is check output a Report's own non-verbose filter already
+// governs, so hiding its value behind a second, uncoordinated redaction would only fight that
+// filter.
+type OutcomeField struct {
+	// Key names the field, stable across releases: a renderer and a golden test both key off it.
+	Key string
+	// Value is the field's value, carried as raw JSON so a caller decodes it as whatever shape
+	// it actually is (a string, a number, a bool) without OutcomeField itself guessing.
+	Value json.RawMessage
+}
+
 // Outcome is the read-side result a Check returns. Reason is set only when State is Unknown;
-// Detail carries a human-readable note for OK or Failing and is otherwise unused.
+// Detail carries a human-readable note for OK or Failing and is otherwise unused. Fields carries
+// any structured facts behind Detail's one-line summary, in the order a Check appended them.
 type Outcome struct {
 	State  State
 	Reason ReasonCode
 	Detail string
+	Fields []OutcomeField
 }
 
 // Validate reports an error if Outcome does not match the one Reason rule every check obeys: a

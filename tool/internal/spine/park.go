@@ -22,21 +22,3 @@ const (
 	ParkBuildRunning            ParkCode = "build-running"
 	ParkBuildsReconcileParked   ParkCode = "builds-reconcile-parked"
 )
-
-// allParkCodes enumerates every ParkCode constant, so a test that needs the whole set does not
-// retype it.
-var allParkCodes = []ParkCode{
-	ParkDelegationPropagating,
-	ParkDelegationPending,
-	ParkHostnameRecordsAbsent,
-	ParkHostnameResolverLagging,
-	ParkCertificatePending,
-	ParkEmailNotReady,
-	ParkEmailSenderPropagating,
-	ParkEmailDailyLimit,
-	ParkBuildsAppNotAuthorized,
-	ParkBuildsRepoNotSelected,
-	ParkBuildNotStarted,
-	ParkBuildRunning,
-	ParkBuildsReconcileParked,
-}

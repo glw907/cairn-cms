@@ -64,13 +64,6 @@ const (
 	ReasonNotObservable ReasonCode = "reason.not-observable"
 )
 
-// allReasonCodes enumerates every fixed ReasonCode constant, so a test that needs the whole set
-// does not retype it.
-var allReasonCodes = []ReasonCode{
-	ReasonCredMissing, ReasonCredForbidden, ReasonCredRevoked, ReasonCredExpiring,
-	ReasonTimeout, ReasonOffline, ReasonNotRun, ReasonNotObservable,
-}
-
 // ParkReason builds the reason.park.<code> ReasonCode a wait-kind outcome carries.
 func ParkReason(code ParkCode) ReasonCode {
 	return ReasonCode("reason.park." + string(code))
@@ -101,14 +94,8 @@ func ReasonToOutcome(r providers.Reason) Outcome {
 
 // OutcomeField is one ordered, named value a Check reports beyond its one-line Detail: a
 // structured fact (a count, a build id, a timestamp) an operator's detail view or a golden test
-// reads by key rather than re-parsing a formatted string. It has the same two-field shape as
-// record.ExtraField but is declared fresh here rather than reused: spine imports providers and
-// nothing else internal today, and the module's downward architecture gives it no reason to gain
-// a dependency on record for a two-field struct. It also carries no redacting String() the way
-// record.ExtraField does; ExtraField's redaction exists because a record's opaque tail can carry
-// a secret, while an OutcomeField is check output a Report's own non-verbose filter already
-// governs, so hiding its value behind a second, uncoordinated redaction would only fight that
-// filter.
+// reads by key rather than re-parsing a formatted string. Its value is raw JSON and reaches a
+// renderer unredacted, so a Check must not put a secret in one.
 type OutcomeField struct {
 	// Key names the field, stable across releases: a renderer and a golden test both key off it.
 	Key string
@@ -143,34 +130,4 @@ func (o Outcome) Validate() error {
 		return errors.New("spine: a non-Unknown outcome must carry no Reason")
 	}
 	return nil
-}
-
-// Kind is the Node CLI's own chapter-error classification
-// (packages/create-cairn-site/src/{cloudflare,github}/catalogue.mjs's ErrorKind), the input
-// FromKind maps onto an Outcome.
-type Kind string
-
-// The four Kind values every catalogue row declares.
-const (
-	KindWait       Kind = "wait"
-	KindAct        Kind = "act"
-	KindAskSomeone Kind = "ask-someone"
-	KindDeclined   Kind = "declined"
-)
-
-// FromKind maps a catalogue row's Kind and code onto an Outcome, the spec's table: wait becomes
-// Unknown with a park reason built from code, act and ask-someone become Failing with code as
-// Detail, and declined becomes OK with code as Detail. 2.0 seam kept on purpose: FromKind has no
-// caller in 1.0 by design.
-func FromKind(kind Kind, code string) Outcome {
-	switch kind {
-	case KindWait:
-		return Outcome{State: Unknown, Reason: ParkReason(ParkCode(code))}
-	case KindAct, KindAskSomeone:
-		return Outcome{State: Failing, Detail: code}
-	case KindDeclined:
-		return Outcome{State: OK, Detail: code}
-	default:
-		return Outcome{State: Unknown, Reason: ReasonNotObservable}
-	}
 }

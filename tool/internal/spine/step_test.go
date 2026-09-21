@@ -120,9 +120,9 @@ func TestParseStep(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok := ParseStep(tt.input)
+			got, ok := parseStep(tt.input)
 			if got != tt.want || ok != tt.ok {
-				t.Errorf("ParseStep(%q) = (%q, %v), want (%q, %v)", tt.input, got, ok, tt.want, tt.ok)
+				t.Errorf("parseStep(%q) = (%q, %v), want (%q, %v)", tt.input, got, ok, tt.want, tt.ok)
 			}
 		})
 	}
@@ -136,9 +136,9 @@ func TestTerminalStepSeams(t *testing.T) {
 		got  []Step
 		want []Step
 	}{
-		{name: "TerminalSteps", got: TerminalSteps(), want: []Step{StepEmailLive, StepPaidPlanDeclined}},
-		{name: "Chapter3TerminalSteps", got: Chapter3TerminalSteps(), want: []Step{StepBuildsLive, StepBuildsConnectDeclined}},
-		{name: "Chapter3ResumableSteps", got: Chapter3ResumableSteps(), want: []Step{StepBuildsConnected, StepConfigReconciled}},
+		{name: "terminalSteps", got: terminalSteps(), want: []Step{StepEmailLive, StepPaidPlanDeclined}},
+		{name: "chapter3TerminalSteps", got: chapter3TerminalSteps(), want: []Step{StepBuildsLive, StepBuildsConnectDeclined}},
+		{name: "chapter3ResumableSteps", got: chapter3ResumableSteps(), want: []Step{StepBuildsConnected, StepConfigReconciled}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -11,6 +11,24 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
 
+// allParkCodes enumerates every ParkCode constant, so a test that needs the whole set does not
+// retype it.
+var allParkCodes = []ParkCode{
+	ParkDelegationPropagating,
+	ParkDelegationPending,
+	ParkHostnameRecordsAbsent,
+	ParkHostnameResolverLagging,
+	ParkCertificatePending,
+	ParkEmailNotReady,
+	ParkEmailSenderPropagating,
+	ParkEmailDailyLimit,
+	ParkBuildsAppNotAuthorized,
+	ParkBuildsRepoNotSelected,
+	ParkBuildNotStarted,
+	ParkBuildRunning,
+	ParkBuildsReconcileParked,
+}
+
 var (
 	catalogueRowKey = regexp.MustCompile(`^\s*'([a-z0-9-]+)':\s*\{`)
 	catalogueKind   = regexp.MustCompile(`kind:\s*'wait'`)

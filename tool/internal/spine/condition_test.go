@@ -11,6 +11,13 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
 
+// allReasonCodes enumerates every fixed ReasonCode constant, so a test that needs the whole set
+// does not retype it.
+var allReasonCodes = []ReasonCode{
+	ReasonCredMissing, ReasonCredForbidden, ReasonCredRevoked, ReasonCredExpiring,
+	ReasonTimeout, ReasonOffline, ReasonNotRun, ReasonNotObservable,
+}
+
 // conditionRegistryKey matches one of REGISTRY's own top-level keys in
 // src/lib/diagnostics/conditions.ts: a quoted, dotted id starting a line at the object's
 // indentation, immediately followed by its own opening brace.

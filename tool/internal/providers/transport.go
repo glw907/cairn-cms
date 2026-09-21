@@ -60,6 +60,17 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 	return doWithRetry(c.httpClient, req)
 }
 
+// getWith performs a GET against base+path through c, sending accept as the request's Accept
+// header alongside the User-Agent every host this package talks to expects. It returns the raw
+// status, response headers, and body with no classification, the one GET shape both the GitHub
+// and the npm client read through.
+func (c *client) getWith(ctx context.Context, base, path, accept string) (int, http.Header, []byte, error) {
+	return c.rawGet(ctx, base+path, http.Header{
+		"Accept":     {accept},
+		"User-Agent": {userAgent()},
+	})
+}
+
 // rawGet performs a GET against url through c, setting header on the request, and returns the
 // raw status, response headers, and body with no classification: a caller like GitHub.getJSON or
 // NPM's packument turns a non-2xx status into its own typed error, and TokenExpiry reads a

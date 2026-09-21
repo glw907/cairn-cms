@@ -80,10 +80,10 @@ func (e *APIError) HTTPStatus() int { return e.Status }
 // throwMapped and throwBuildsMapped do for the Node CLI. Four codes are specific enough to
 // classify on their own regardless of status or position: the two Builds authorization refusals
 // and the two Email Sending sender-readiness codes are matched against every entry of errs, not
-// just the first, the same way the Node client's errors.some(...) does (api.mjs:335-349), since a
+// just the first, the same way the Node client's errors.some(...) does (api.mjs), since a
 // warning ahead of the refusal must not make the row fall through to the status-only fallback.
 // HTTP 400 with code 6003 also classifies as ReasonUnauthorized, the second half of the Node
-// client's throwIfTokenInvalid (api.mjs:247-249: 400/6003 and 401/10000 both mean the token
+// client's throwIfTokenInvalid (api.mjs: 400/6003 and 401/10000 both mean the token
 // itself is unusable). There is no code for ReasonBuildsNotConnected here (see that constant's
 // own doc comment); everything else falls back to reasonForStatus, which is how a plain
 // unauthenticated, underscoped, or rate-limited request classifies.

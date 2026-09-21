@@ -66,21 +66,14 @@ func (e *GitHubError) ClassifiedReason() Reason { return e.Reason }
 // HTTPStatus implements ProviderError.
 func (e *GitHubError) HTTPStatus() int { return e.Status }
 
-// githubHeader is the Accept and User-Agent pair every GitHub request in this file sends.
-func githubHeader() http.Header {
-	return http.Header{
-		"Accept":     {"application/vnd.github+json"},
-		"User-Agent": {userAgent()},
-	}
-}
+// githubAccept is the media type every GitHub request in this file asks for.
+const githubAccept = "application/vnd.github+json"
 
-// get performs a GET against path (resolved against githubBase) through the one raw GET helper
-// transport.go shares with npm.go, and returns the raw status, response headers, and body, with
-// no classification: getJSON is the caller that turns a non-2xx status into a *GitHubError, and
-// the shared transport-policy test (probe_test.go) calls client.Do directly so it can drive a raw
-// status through the same retry and timeout policy every provider shares.
+// get performs a GET against path (resolved against githubBase) through the one GET helper
+// transport.go shares with npm.go, and returns the raw status, response headers, and body with
+// no classification: getJSON is the caller that turns a non-2xx status into a *GitHubError.
 func (gh *GitHub) get(ctx context.Context, path string) (int, http.Header, []byte, error) {
-	return gh.client.rawGet(ctx, githubBase+path, githubHeader())
+	return gh.client.getWith(ctx, githubBase, path, githubAccept)
 }
 
 // getJSON performs a GET like get, decoding a 2xx body into out, or returning a *GitHubError
@@ -237,7 +230,7 @@ func (gh *GitHub) LatestBotCommit(ctx context.Context, owner, repo, branch strin
 // apart, so the zero value means only "GitHub reported no expiry for this token": a caller must
 // never read it as a date, and must not treat it as an unknown or unreadable expiry either.
 func (gh *GitHub) TokenExpiry(ctx context.Context) (time.Time, error) {
-	_, header, _, err := gh.client.rawGet(ctx, githubBase+"/rate_limit", githubHeader())
+	_, header, _, err := gh.get(ctx, "/rate_limit")
 	if err != nil {
 		return time.Time{}, err
 	}

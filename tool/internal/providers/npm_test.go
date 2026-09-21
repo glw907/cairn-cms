@@ -55,6 +55,38 @@ func TestVersionsPreservesPublishOrder(t *testing.T) {
 	}
 }
 
+// TestNPMErrorClassifiesThroughProviderError asserts an npm failure reaches a caller through the
+// same uniform path a Cloudflare or GitHub failure does, so a caller classifying by
+// ProviderError never has to branch on which provider produced the failure.
+func TestNPMErrorClassifiesThroughProviderError(t *testing.T) {
+	tests := []struct {
+		name   string
+		status int
+		want   Reason
+	}{
+		{"not found", http.StatusNotFound, ReasonNotFound},
+		{"unauthorized", http.StatusUnauthorized, ReasonUnauthorized},
+		{"rate limited", http.StatusTooManyRequests, ReasonRateLimited},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			n := NewNPM(fixtureRoundTripper{status: tt.status, body: []byte(`{"error":"no"}`)})
+
+			_, err := n.Latest(context.Background(), "@glw907/does-not-exist")
+			var pe ProviderError
+			if !errors.As(err, &pe) {
+				t.Fatalf("err = %v (%T), want a ProviderError", err, err)
+			}
+			if got := pe.ClassifiedReason(); got != tt.want {
+				t.Errorf("ClassifiedReason() = %v, want %v", got, tt.want)
+			}
+			if got := pe.HTTPStatus(); got != tt.status {
+				t.Errorf("HTTPStatus() = %d, want %d", got, tt.status)
+			}
+		})
+	}
+}
+
 func TestNPMErrorOnNotFound(t *testing.T) {
 	n := NewNPM(fixtureRoundTripper{status: http.StatusNotFound, body: []byte(`{"error":"Not found"}`)})
 

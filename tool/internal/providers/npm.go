@@ -42,20 +42,20 @@ func (e *NPMError) Error() string {
 	return fmt.Sprintf("npm: unexpected status %d", e.Status)
 }
 
-// npmHeader is the Accept and User-Agent pair every npm request in this file sends.
-func npmHeader() http.Header {
-	return http.Header{
-		"Accept":     {"application/json"},
-		"User-Agent": {userAgent()},
-	}
-}
+// ClassifiedReason implements ProviderError.
+func (e *NPMError) ClassifiedReason() Reason { return e.Reason }
 
-// get performs a GET against path (resolved against npmBase) through the one raw GET helper
-// transport.go shares with github.go, and returns the raw status, response headers, and body,
-// with no classification, the same shape github.go's get uses so the shared transport-policy
-// test (probe_test.go) can drive both through one table.
+// HTTPStatus implements ProviderError.
+func (e *NPMError) HTTPStatus() int { return e.Status }
+
+// npmAccept is the media type every npm request in this file asks for.
+const npmAccept = "application/json"
+
+// get performs a GET against path (resolved against npmBase) through the one GET helper
+// transport.go shares with github.go, and returns the raw status, response headers, and body
+// with no classification: packument is the caller that turns a non-2xx status into an *NPMError.
 func (n *NPM) get(ctx context.Context, path string) (int, http.Header, []byte, error) {
-	return n.client.rawGet(ctx, npmBase+path, npmHeader())
+	return n.client.getWith(ctx, npmBase, path, npmAccept)
 }
 
 // packument fetches name's packument (the registry's per-package metadata document) and returns

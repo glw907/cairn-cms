@@ -53,9 +53,10 @@ func NewProbe(rt http.RoundTripper, resolver Resolver) *Probe {
 	return NewProbeWithAuthority(rt, resolver, defaultAuthorityLookup)
 }
 
-// NewProbeWithAuthority is NewProbe with the authoritative-nameserver lookup given explicitly,
-// the seam a test fakes to exercise diagnoseUnreachable's propagation split with no network. A
-// nil resolver defaults to net.DefaultResolver, as in NewProbe.
+// NewProbeWithAuthority is NewProbe with the authoritative-nameserver lookup given explicitly.
+// It stays a constructor rather than a package-level variable a test swaps because the tests
+// that need a fake authority live in another package (internal/health's serving check) and so
+// cannot reach an unexported var. A nil resolver defaults to net.DefaultResolver, as in NewProbe.
 func NewProbeWithAuthority(rt http.RoundTripper, resolver Resolver, authority AuthorityLookup) *Probe {
 	if resolver == nil {
 		resolver = net.DefaultResolver
@@ -130,8 +131,8 @@ func (p *Probe) LookupNS(ctx context.Context, name string) ([]*net.NS, error) {
 	return p.resolver.LookupNS(reqCtx, name)
 }
 
-// LookupA resolves name's IPv4 addresses, bounded by the package's shared request timeout.
-func (p *Probe) LookupA(ctx context.Context, name string) ([]net.IP, error) {
+// lookupA resolves name's IPv4 addresses, bounded by the package's shared request timeout.
+func (p *Probe) lookupA(ctx context.Context, name string) ([]net.IP, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 	return p.resolver.LookupIP(reqCtx, "ip4", name)

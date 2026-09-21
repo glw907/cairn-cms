@@ -131,7 +131,7 @@ func (r *fakeResolver) LookupNS(_ context.Context, name string) ([]*net.NS, erro
 func (r *fakeResolver) LookupIP(_ context.Context, network, host string) ([]net.IP, error) {
 	r.gotName = host
 	if network != "ip4" {
-		panic("LookupA must request the ip4 network, got " + network)
+		panic("lookupA must request the ip4 network, got " + network)
 	}
 	return r.ips, r.ipsErr
 }
@@ -168,12 +168,12 @@ func TestProbeLookupA(t *testing.T) {
 	r := &fakeResolver{ips: []net.IP{want}}
 	p := NewProbe(http.DefaultTransport, r)
 
-	got, err := p.LookupA(context.Background(), "example.com")
+	got, err := p.lookupA(context.Background(), "example.com")
 	if err != nil {
-		t.Fatalf("LookupA: %v", err)
+		t.Fatalf("lookupA: %v", err)
 	}
 	if len(got) != 1 || !got[0].Equal(want) {
-		t.Errorf("LookupA = %v, want [%v]", got, want)
+		t.Errorf("lookupA = %v, want [%v]", got, want)
 	}
 }
 
@@ -247,7 +247,7 @@ func (rt rewriteHostTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return http.DefaultTransport.RoundTrip(clone)
 }
 
-// TestSharedTimeoutPolicy is the "one shared table test" the task names for the timeout half: it
+// TestSharedTimeoutPolicy covers the timeout half of the shared transport policy in one table: it
 // drives GitHub's and NPM's shared *client type, and Probe's own doWithRetry, through a handler
 // that outlives a short caller-supplied deadline, and asserts every one returns rather than
 // hanging. It calls the unexported client.Do and doWithRetry directly with a request built on a

@@ -88,8 +88,8 @@ func checkGitHubCredential(ctx context.Context, c Clients) credentialSide {
 // credentialErrorOutcome classifies err through spine.ReasonToOutcome, the module's one
 // translation from a classified provider Reason to a verdict, then relabels a Failing verdict's
 // Detail as reason.cred-revoked: a bad credential is exactly what the creds check measures, the
-// one exception the pass's global constraints name to the rule that 401 and 403 are always
-// Unknown elsewhere. An error this package cannot classify at all, a dial failure or a context
+// one place a 401 or 403 answers Failing rather than the Unknown every other check reports for
+// the same pair. An error this package cannot classify at all, a dial failure or a context
 // deadline, is Unknown with reason.timeout: the endpoint itself could not be reached, not merely
 // rejected.
 func credentialErrorOutcome(err error) spine.Outcome {

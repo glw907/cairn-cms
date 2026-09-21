@@ -47,8 +47,7 @@ type Check interface {
 }
 
 // All is the complete 1.0 health check set, in report order. It is a literal slice, never
-// populated by init(), so every task that adds a check modifies this file, per the pass's global
-// constraints.
+// populated by init(), so adding a check always means modifying this file directly.
 var All = []Check{
 	credsCheck{},
 }

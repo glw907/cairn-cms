@@ -64,10 +64,10 @@ func (c panickingCheck) Run(context.Context, record.Record, Clients, Options) sp
 }
 
 // statefulStubCheck counts its own invocations and folds the count into its Outcome, standing in
-// for a check that (unlike creds, the only real check this task ships) carries mutable state.
-// TestRunIsPureOverItsInputs gives each of its two Run calls a fresh instance with its own zeroed
-// counter, so the resulting reports are identical only if Run itself calls each check's Run
-// method exactly once per sweep and introduces no hidden state of its own between separate calls.
+// for a check that (unlike creds) carries mutable state. TestRunIsPureOverItsInputs gives each of
+// its two Run calls a fresh instance with its own zeroed counter, so the resulting reports are
+// identical only if Run itself calls each check's Run method exactly once per sweep and
+// introduces no hidden state of its own between separate calls.
 type statefulStubCheck struct {
 	calls *int
 }

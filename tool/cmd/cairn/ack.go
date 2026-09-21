@@ -172,39 +172,7 @@ func excludeAckFile(entries []store.Entry, errs []error, dir string, rf *rootFla
 	return outEntries, outErrs
 }
 
-// The six errors below are new to the messages table and owed to Task 22a's editorial gate:
-// the catalogue carries no row for a malformed or missing acknowledgement entry.
-
-// ackFlagError is --ack's refusal of a value that is not <check-id>=<YYYY-MM-DD>.
-func ackFlagError(entry string) error {
-	return fmt.Errorf("cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.\nName the check and an expiry date, for example deploy=2026-10-01", entry)
-}
-
-// ackFileNotFoundError is --ack-file's refusal of a path that does not exist, distinct from the
-// default path's silent absence.
-func ackFileNotFoundError(path string) error {
-	return fmt.Errorf("cairn: --ack-file %s not found.\nName a file that exists, or drop the flag to use the registry's default", path)
-}
-
-// ackFileMalformedError is the refusal of an acknowledgement file whose contents are not the
-// documented JSON array.
-func ackFileMalformedError(path string, cause error) error {
-	return fmt.Errorf("cairn: %s is not a valid acknowledgement file: %v.\nIt holds a JSON array of {\"checkId\", \"expires\"} entries", path, cause)
-}
-
-// ackFileMissingCheckIDError is the refusal of an acknowledgement file entry with no check id.
-func ackFileMissingCheckIDError(path string) error {
-	return fmt.Errorf("cairn: %s carries an entry with no checkId.\nName the check each entry acknowledges", path)
-}
-
-// ackFileMissingExpiryError is the refusal of an acknowledgement file entry with no expiry
-// date, so no acknowledgement outlives its author's attention.
-func ackFileMissingExpiryError(path, checkID string) error {
-	return fmt.Errorf("cairn: %s's %q entry has no expires date.\nAdd an expires date so the acknowledgement does not outlive it", path, checkID)
-}
-
-// ackFileMalformedDateError is the refusal of an acknowledgement file entry whose expires value
-// does not parse as a calendar date.
-func ackFileMalformedDateError(path, checkID, value string) error {
-	return fmt.Errorf("cairn: %s's %q entry has a malformed expires date %q.\nUse YYYY-MM-DD", path, checkID, value)
-}
+// The six errors above (ackFlagError, ackFileNotFoundError, ackFileMalformedError,
+// ackFileMissingCheckIDError, ackFileMissingExpiryError, ackFileMalformedDateError) are defined
+// in cmd/cairn/messages.go: the catalogue carries no row for a malformed or missing
+// acknowledgement entry, so each is new to that table and owed to Task 22a's editorial gate.

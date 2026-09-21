@@ -13,11 +13,32 @@ package main
 
 import (
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"path/filepath"
+	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
+
+// cairnMessagesPath resolves cmd/cairn's own messages table from this source file's own
+// location via runtime.Caller, so the parse below finds it regardless of the caller's working
+// directory: `go run ./cmd/copylist` runs from tool/ (the Makefile's own cwd) while `go test`
+// runs from cmd/copylist/, and a path relative to either alone would break the other. cmd/cairn
+// is package main, which Go forbids importing, so its catalogue is read by parsing the source
+// rather than calling a Catalogue function the way health's and spine's own are called.
+func cairnMessagesPath() (string, error) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", fmt.Errorf("resolve this file's own path")
+	}
+	return filepath.Join(filepath.Dir(thisFile), "..", "cairn", "messages.go"), nil
+}
 
 // packageCatalogue is one package's own sorted, deduplicated set of operator-facing strings.
 type packageCatalogue struct {
@@ -25,13 +46,62 @@ type packageCatalogue struct {
 	entries []string
 }
 
-// catalogues returns every package's own catalogue, in a fixed package order: today only
-// health carries operator-facing strings, and a later task's cmd/cairn table adds a second
-// entry here rather than a second binary.
+// catalogues returns every package's own catalogue, in a fixed package order.
 func catalogues() []packageCatalogue {
+	path, err := cairnMessagesPath()
+	if err != nil {
+		panic(err)
+	}
+	cairn, err := cairnCatalogue(path)
+	if err != nil {
+		// render and main both treat a parse failure as fatal: a golden built without
+		// cmd/cairn's own strings would silently under-report, which is worse than failing loud.
+		panic(fmt.Sprintf("parse %s: %v", path, err))
+	}
 	return []packageCatalogue{
 		{name: "health", entries: sortedUnique(append(health.Catalogue(), health.FixLines()...))},
+		{name: "spine", entries: sortedUnique(spine.Catalogue())},
+		{name: "cmd/cairn", entries: sortedUnique(cairn)},
 	}
+}
+
+// cairnCatalogue returns every string-valued package-level const messages.go declares at path:
+// every fixed string and every `tmplXxx` format template this table's own doc comment promises
+// lives there. It is a parse, not an execution, since messages.go's file comment states the
+// convention this depends on: every operator-facing string in that file is a named const, and no
+// function composes one from a bare literal of its own.
+func cairnCatalogue(path string) ([]string, error) {
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, path, nil, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var entries []string
+	for _, decl := range f.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.CONST {
+			continue
+		}
+		for _, spec := range gen.Specs {
+			vs, ok := spec.(*ast.ValueSpec)
+			if !ok {
+				continue
+			}
+			for _, val := range vs.Values {
+				lit, ok := val.(*ast.BasicLit)
+				if !ok || lit.Kind != token.STRING {
+					continue
+				}
+				s, err := strconv.Unquote(lit.Value)
+				if err != nil {
+					return nil, err
+				}
+				entries = append(entries, s)
+			}
+		}
+	}
+	return entries, nil
 }
 
 // sortedUnique returns entries sorted and de-duplicated, so a string two tables happen to share

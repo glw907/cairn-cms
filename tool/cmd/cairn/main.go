@@ -39,7 +39,7 @@ func main() {
 	cmd.SetErr(errOut)
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
-		_, _ = fmt.Fprintln(errOut, err)
+		_, _ = fmt.Fprintln(errOut, translateError(err))
 		// A run that ended in an error observed nothing, so it reports UNKNOWN rather than the
 		// 1 a non-monitoring CLI would exit with: 1 is WARNING in this tool's convention and
 		// would tell a scheduler the site was measured and found wanting.

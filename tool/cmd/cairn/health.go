@@ -39,21 +39,26 @@ func newHealthCmd(d deps, rf *rootFlags) *cobra.Command {
 	var f healthFlags
 
 	cmd := &cobra.Command{
-		Use:               "health [<site>]",
-		Short:             "Run the read-only health checks against one site, or every site when none is named",
-		Example:           "cairn health ecxc-ski-a1b2c3 --json",
-		GroupID:           groupSite,
-		Args:              cobra.MaximumNArgs(1),
+		Use:     "health [<site>]",
+		Short:   shortHealth,
+		Example: exampleHealth,
+		GroupID: groupSite,
+		Args: func(_ *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return healthTooManyArgsError()
+			}
+			return nil
+		},
 		ValidArgsFunction: completeSiteIDs(d),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runHealth(cmd, d, rf, f, args)
 		},
 	}
 
-	cmd.Flags().BoolVar(&f.asJSON, "json", false, "print the report as JSON")
-	cmd.Flags().IntVar(&f.errorThreshold, "error-threshold", defaultErrorThreshold, "error records in the window that still report OK")
-	cmd.Flags().StringVar(&f.since, "since", defaultSince, "lookback window for the error count: a whole number of m, h, or d")
-	cmd.Flags().StringArrayVar(&f.acks, "ack", nil, "acknowledge one check until an expiry date: <check-id>=<YYYY-MM-DD>, repeatable; applies to that check on every site in a sweep")
+	cmd.Flags().BoolVar(&f.asJSON, "json", false, flagHealthJSONHelp)
+	cmd.Flags().IntVar(&f.errorThreshold, "error-threshold", defaultErrorThreshold, flagErrorThresholdHelp)
+	cmd.Flags().StringVar(&f.since, "since", defaultSince, flagHealthSinceHelp)
+	cmd.Flags().StringArrayVar(&f.acks, "ack", nil, flagAckHelp)
 
 	return cmd
 }
@@ -86,7 +91,7 @@ func runHealth(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, args []
 func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, id string, window time.Duration, acks health.Acks) error {
 	rec, err := st.Load(id)
 	if err != nil {
-		return fmt.Errorf("cairn: no site named %q.\nRun `cairn sites list` to see the sites cairn knows", id)
+		return unknownSiteError(id)
 	}
 
 	ctx, cancel := rf.deadline(commandContext(cmd))
@@ -181,7 +186,7 @@ func checkDetail(c health.CheckResult) string {
 func parseSince(s string) (time.Duration, error) {
 	window, err := logs.ParseSince(s)
 	if err != nil {
-		return 0, fmt.Errorf("cairn: --since %q is not a duration.\nUse a whole number of minutes, hours, or days: 90m, 24h, 7d", s)
+		return 0, invalidSinceError(s)
 	}
 	return window, nil
 }

@@ -46,28 +46,28 @@ func newAdoptCmd(d deps, rf *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "adopt",
-		Short:   "Add a Cloudflare Worker to the registry as a site",
-		Example: "cairn adopt --worker ecxc-ski",
+		Short:   shortAdopt,
+		Example: exampleAdopt,
 		GroupID: groupSite,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runAdopt(cmd, d, rf, f)
 		},
 	}
-	cmd.Flags().StringVar(&f.worker, "worker", "", "the Workers script to adopt")
-	cmd.Flags().StringVar(&f.repo, "repo", "", "the repository the Worker deploys from, as owner/name")
+	cmd.Flags().StringVar(&f.worker, "worker", "", flagWorkerHelp)
+	cmd.Flags().StringVar(&f.repo, "repo", "", flagRepoHelp)
 
 	var lf adoptListFlags
 	list := &cobra.Command{
 		Use:     "list",
-		Short:   "List the Workers on the account that cairn could adopt",
-		Example: "cairn adopt list",
+		Short:   shortAdoptList,
+		Example: exampleAdoptList,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runAdoptList(cmd, d, rf, lf)
 		},
 	}
-	list.Flags().BoolVar(&lf.asJSON, "json", true, "print the candidates as JSON")
+	list.Flags().BoolVar(&lf.asJSON, "json", true, flagAdoptListJSONHelp)
 	cmd.AddCommand(list)
 
 	return cmd
@@ -139,7 +139,7 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 // runAdopt writes the registry record for one named Worker.
 func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 	if f.worker == "" {
-		return fmt.Errorf("cairn: cairn adopt names one Worker.\nRun `cairn adopt list` to see the Workers on the account")
+		return adoptNoWorkerError()
 	}
 
 	ctx, cancel := rf.deadline(commandContext(cmd))
@@ -164,7 +164,7 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 		}
 	}
 	if !found {
-		return fmt.Errorf("cairn: no Worker named %q on this account.\nRun `cairn adopt list` to see the Workers on the account", f.worker)
+		return adoptUnknownWorkerError(f.worker)
 	}
 	if f.repo != "" {
 		chosen.Repo = f.repo
@@ -178,6 +178,6 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s added as %s\n", rec.Name, rec.Domain)
+	_, err = fmt.Fprint(cmd.OutOrStdout(), adoptAddedMessage(rec.Name, rec.Domain))
 	return err
 }

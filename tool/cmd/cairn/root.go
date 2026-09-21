@@ -31,13 +31,6 @@ const (
 	colorNever  = "never"
 )
 
-// pasteNotice is the stderr line the two implicitly verbose commands, adopt list and logs,
-// print before their output. Neither command has a --verbose flag to hide behind: the whole of
-// what they print is identifiers, so the notice is unconditional. The catalogue in
-// tool/docs/design/copy-standard.md carries no row for it; this is the plainest fragment
-// satisfying the standard's section 2.7, reported to the editorial gate.
-const pasteNotice = "cairn: this output carries identifiers and is not safe to paste in public."
-
 // rootFlags holds the persistent flags every command below the root reads. The root owns the
 // values and hands the struct to each newXCmd, so a subcommand reads --quiet without looking
 // its own parent up.
@@ -68,7 +61,7 @@ func (f rootFlags) validate() error {
 	case colorAuto, colorAlways, colorNever:
 		return nil
 	default:
-		return fmt.Errorf("cairn: --color %q is not %s, %s, or %s", f.color, colorAuto, colorAlways, colorNever)
+		return colorInvalidError(f.color)
 	}
 }
 
@@ -96,8 +89,8 @@ func newRootCmd(d deps) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "cairn",
-		Short:   "Operate a cairn-cms production site",
-		Example: "cairn health ecxc-ski-a1b2c3",
+		Short:   shortRoot,
+		Example: exampleRoot,
 		Args:    cobra.NoArgs,
 		// SilenceUsage and SilenceErrors are set here and nowhere else in this package. Cobra
 		// inherits both from the nearest ancestor whose field is true, so repeating them on a
@@ -119,14 +112,14 @@ func newRootCmd(d deps) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&f.showVersion, "version", "V", false, "print the version and exit")
+	cmd.Flags().BoolVarP(&f.showVersion, "version", "V", false, flagVersionHelp)
 
 	p := cmd.PersistentFlags()
-	p.DurationVarP(&f.timeout, "timeout", "t", defaultTimeout, "wall-clock budget for the whole run")
-	p.BoolVarP(&f.verbose, "verbose", "v", false, "print the identifiers a run otherwise withholds")
-	p.BoolVarP(&f.quiet, "quiet", "q", false, "print nothing when the run is OK")
-	p.StringVar(&f.color, "color", colorAuto, "when to colour the output: auto, always, or never")
-	p.StringVar(&f.ackFile, "ack-file", "", "path to a JSON file of acknowledgement entries (default: acknowledgements.json in the registry directory)")
+	p.DurationVarP(&f.timeout, "timeout", "t", defaultTimeout, flagTimeoutHelp)
+	p.BoolVarP(&f.verbose, "verbose", "v", false, flagVerboseHelp)
+	p.BoolVarP(&f.quiet, "quiet", "q", false, flagQuietHelp)
+	p.StringVar(&f.color, "color", colorAuto, flagColorHelp)
+	p.StringVar(&f.ackFile, "ack-file", "", flagAckFileHelp)
 	cmd.MarkFlagsMutuallyExclusive("quiet", "verbose")
 
 	cmd.AddGroup(

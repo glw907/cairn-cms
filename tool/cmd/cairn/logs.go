@@ -29,8 +29,8 @@ func newLogsCmd(d deps, rf *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "logs <site>",
-		Short:             "Read one site's engine log records",
-		Example:           "cairn logs ecxc-ski-a1b2c3 --since 24h",
+		Short:             shortLogs,
+		Example:           exampleLogs,
 		GroupID:           groupSite,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: completeSiteIDs(d),
@@ -39,9 +39,9 @@ func newLogsCmd(d deps, rf *rootFlags) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&f.event, "event", "", "narrow the query to one engine event name")
-	cmd.Flags().StringVar(&f.since, "since", defaultSince, "lookback window: a whole number of m, h, or d")
-	cmd.Flags().BoolVar(&f.asJSON, "json", false, "print the entries as JSON")
+	cmd.Flags().StringVar(&f.event, "event", "", flagEventHelp)
+	cmd.Flags().StringVar(&f.since, "since", defaultSince, flagLogsSinceHelp)
+	cmd.Flags().BoolVar(&f.asJSON, "json", false, flagLogsJSONHelp)
 	_ = cmd.RegisterFlagCompletionFunc("event", completeLogEvents)
 
 	return cmd
@@ -77,7 +77,7 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 	}
 	rec, err := st.Load(site)
 	if err != nil {
-		return fmt.Errorf("cairn: no site named %q.\nRun `cairn sites list` to see the sites cairn knows", site)
+		return unknownSiteError(site)
 	}
 
 	clients := buildClients(d)

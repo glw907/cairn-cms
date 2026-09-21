@@ -30,13 +30,10 @@ const (
 // aid for whoever is minting the three credentials, not a verb an operator runs against a site.
 func newAuthProbeCmd(d deps) *cobra.Command {
 	return &cobra.Command{
-		Use:   "probe",
-		Short: "Verify the three credential values against Cloudflare and GitHub",
-		Long: "Verify the three credential values against Cloudflare and GitHub.\n\n" +
-			"auth probe's whole output is identifiers (endpoints, statuses, and repository " +
-			"names), so it is implicitly verbose the same way adopt list is; there is no " +
-			"--verbose flag.",
-		Example: "cairn auth probe",
+		Use:     "probe",
+		Short:   shortAuthProbe,
+		Long:    longAuthProbe,
+		Example: exampleAuthProbe,
 		Hidden:  true,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -188,7 +185,7 @@ func runProbeToken(cmd *cobra.Command, d deps) error {
 	ctx := commandContext(cmd)
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
-	_, _ = fmt.Fprintln(errOut, "auth probe: output is identifiers only; it is implicitly verbose")
+	_, _ = fmt.Fprintln(errOut, authProbeVerboseNotice)
 
 	resolved, missing := loadEnv(d.env, d.secretProviders()...)
 	printCredentialSources(out, resolved)
@@ -201,14 +198,14 @@ func runProbeToken(cmd *cobra.Command, d deps) error {
 	}
 
 	if isMissing(missing, varCFAccountID) || isMissing(missing, varCFReadToken) {
-		_, _ = fmt.Fprintln(out, "Cloudflare: skipped, a credential is missing")
+		_, _ = fmt.Fprintln(out, authProbeCFSkipped)
 		raise(spine.Unknown)
 	} else {
 		raise(probeCloudflare(ctx, out, providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), rec), resolved.accountID(), rec))
 	}
 
 	if isMissing(missing, varGHReadToken) {
-		_, _ = fmt.Fprintln(out, "GitHub: skipped, a credential is missing")
+		_, _ = fmt.Fprintln(out, authProbeGHSkipped)
 		raise(spine.Unknown)
 	} else {
 		raise(probeRegistryGitHub(ctx, out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, d.registryDir))

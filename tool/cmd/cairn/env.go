@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
@@ -152,12 +151,8 @@ func (e env) sourceLines() []resolution {
 	return lines
 }
 
-// noCloudflareCredentialError is the error logs and adopt both return when buildClients resolved
-// no Cloudflare credential at all. One function, so the two commands cannot drift into naming a
-// different variable from each other's copy of the same message.
-func noCloudflareCredentialError() error {
-	return fmt.Errorf("cairn: no Cloudflare credentials found.\nRun `cairn auth set %s` to store one", varCFReadToken)
-}
+// noCloudflareCredentialError (cmd/cairn/messages.go) is the error logs and adopt both return
+// when buildClients resolved no Cloudflare credential at all.
 
 // loadEnv resolves every variable in credentialVars by trying envFn first
 // and then each provider in p in order, and reports which ones it could

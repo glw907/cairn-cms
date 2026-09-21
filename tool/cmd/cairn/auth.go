@@ -102,38 +102,16 @@ func readPipedValue(stdin io.Reader, name string) (string, error) {
 	return line, nil
 }
 
-// emptyPipedValueError is auth set's refusal of an empty piped value, new to this table and
-// owed to Task 22a's editorial gate.
-func emptyPipedValueError(name string) error {
-	return fmt.Errorf("cairn: %s is empty.\nPipe a non-empty value: printf %%s \"$v\" | cairn auth set %s", name, name)
-}
-
 // newAuthCmd builds the cairn auth command tree.
 func newAuthCmd(d deps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "auth",
-		Short:   "Manage credentials in the OS keyring",
-		Example: "cairn auth list",
+		Short:   shortAuth,
+		Example: exampleAuth,
 		GroupID: groupCredentials,
 	}
 	cmd.AddCommand(newAuthSetCmd(d), newAuthListCmd(d), newAuthUnsetCmd(d), newAuthProbeCmd(d))
 	return cmd
-}
-
-// keyringUnavailableDisplay is auth list's line for a variable the keyring holds no answer for
-// because the keyring itself could not be reached, distinct from "not set": the operator's
-// credential may well be sitting in the keyring, unreadable right now rather than absent.
-// Adapted from copy-standard.md section 3.8's "keyring unavailable" row for one status-line word
-// rather than that row's own three-line boundary error; new to this table and owed to Task
-// 22a's editorial gate.
-const keyringUnavailableDisplay = "keyring unavailable, set in the environment instead"
-
-// keyringUnavailableError is the error auth set and auth unset return when the keyring itself
-// could not be reached, naming the environment-variable fallback the way copy-standard.md
-// section 3.8's "keyring unavailable" row does; new to this table and owed to Task 22a's
-// editorial gate.
-func keyringUnavailableError(name string) error {
-	return fmt.Errorf("cairn: the OS keyring did not open.\nSet %s in the environment instead", name)
 }
 
 // newAuthSetCmd builds cairn auth set <name>. Its prompt and its keyring both come from d, so
@@ -141,25 +119,25 @@ func keyringUnavailableError(name string) error {
 func newAuthSetCmd(d deps) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set <name>",
-		Short:   "Prompt for a value and store it in the keyring",
-		Example: "cairn auth set " + varCFReadToken,
+		Short:   shortAuthSet,
+		Example: exampleAuthSet,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 			if !isAuthVariable(name) {
-				return fmt.Errorf("auth set: %q is not one of %s", name, strings.Join(authVariables, ", "))
+				return notACredentialError(name)
 			}
 			value, err := d.readPassword(cmd, name)
 			if err != nil {
-				return fmt.Errorf("auth set: %w", err)
+				return err
 			}
 			if err := d.keyringWriter.Set(name, value); err != nil {
 				if errors.Is(err, secrets.ErrKeyringUnavailable) {
 					return keyringUnavailableError(name)
 				}
-				return fmt.Errorf("auth set: write keyring: %w", err)
+				return err
 			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s stored in the keyring\n", name)
+			_, err = fmt.Fprint(cmd.OutOrStdout(), authStoredMessage(name))
 			return err
 		},
 	}
@@ -171,25 +149,25 @@ func newAuthSetCmd(d deps) *cobra.Command {
 func newAuthUnsetCmd(d deps) *cobra.Command {
 	return &cobra.Command{
 		Use:     "unset <name>",
-		Short:   "Delete one credential's keyring entry",
-		Example: "cairn auth unset " + varCFReadToken,
+		Short:   shortAuthUnset,
+		Example: exampleAuthUnset,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 			if !isAuthVariable(name) {
-				return fmt.Errorf("auth unset: %q is not one of %s", name, strings.Join(authVariables, ", "))
+				return notACredentialError(name)
 			}
 			switch err := d.keyringDeleter.Delete(name); {
 			case err == nil:
-				_, ferr := fmt.Fprintf(cmd.OutOrStdout(), "%s deleted from the keyring\n", name)
+				_, ferr := fmt.Fprint(cmd.OutOrStdout(), authDeletedMessage(name))
 				return ferr
 			case errors.Is(err, secrets.ErrNotFound):
-				_, ferr := fmt.Fprintf(cmd.OutOrStdout(), "%s was not stored in the keyring\n", name)
+				_, ferr := fmt.Fprint(cmd.OutOrStdout(), authNotStoredMessage(name))
 				return ferr
 			case errors.Is(err, secrets.ErrKeyringUnavailable):
 				return keyringUnavailableError(name)
 			default:
-				return fmt.Errorf("auth unset: %w", err)
+				return err
 			}
 		},
 	}
@@ -199,8 +177,8 @@ func newAuthUnsetCmd(d deps) *cobra.Command {
 func newAuthListCmd(d deps) *cobra.Command {
 	return &cobra.Command{
 		Use:     "list",
-		Short:   "Show which provider answers each credential variable",
-		Example: "cairn auth list",
+		Short:   shortAuthList,
+		Example: exampleAuthList,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			resolved, _ := loadEnv(d.env, d.secretProviders()...)

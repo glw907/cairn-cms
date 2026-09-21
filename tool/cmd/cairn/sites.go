@@ -35,23 +35,23 @@ func newSitesCmd(d deps, rf *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "sites",
-		Short:   "List the sites cairn knows",
-		Example: "cairn sites",
+		Short:   shortSites,
+		Example: exampleSites,
 		GroupID: groupSite,
 		Args:    cobra.NoArgs,
 		RunE:    run,
 	}
 	cmd.AddCommand(&cobra.Command{
 		Use:     "list",
-		Short:   "List the sites cairn knows",
-		Example: "cairn sites list --json",
+		Short:   shortSites,
+		Example: exampleSitesList,
 		Args:    cobra.NoArgs,
 		RunE:    run,
 	})
 
 	p := cmd.PersistentFlags()
-	p.BoolVar(&f.asJSON, "json", false, "print the listing as JSON")
-	p.IntVar(&f.expectSites, "expect-sites", 0, "the number of sites the registry is expected to hold")
+	p.BoolVar(&f.asJSON, "json", false, flagSitesJSONHelp)
+	p.IntVar(&f.expectSites, "expect-sites", 0, flagExpectSitesHelp)
 
 	return cmd
 }

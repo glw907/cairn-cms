@@ -58,3 +58,117 @@ and commit the diff.
 - the token lacks a required permission
 - the token was rejected
 - wrangler email sending enable <domain>
+
+## spine
+
+- CRITICAL
+- OK
+- UNKNOWN
+- WARNING
+- fail
+- held
+- pass
+- skip
+
+## cmd/cairn
+
+- 
+Run the command again in %s
+- %s added as %s
+
+- %s deleted from the keyring
+
+- %s stored in the keyring
+
+- %s was not stored in the keyring
+
+- Add a Cloudflare Worker to the registry as a site
+- Cloudflare: skipped, a credential is missing
+- Delete one credential's keyring entry
+- GitHub: skipped, a credential is missing
+- List the Workers on the account that cairn could adopt
+- List the sites cairn knows
+- Manage credentials in the OS keyring
+- Operate a cairn-cms production site
+- Prompt for a value and store it in the keyring
+- Read one site's engine log records
+- Run the read-only health checks against one site, or every site when none is named
+- Show which provider answers each credential variable
+- Verify the three credential values against Cloudflare and GitHub
+- Verify the three credential values against Cloudflare and GitHub.
+
+auth probe's whole output is identifiers (endpoints, statuses, and repository names), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
+- acknowledge one check until an expiry date: <check-id>=<YYYY-MM-DD>, repeatable; applies to that check on every site in a sweep
+- auth probe: output is identifiers only; it is implicitly verbose
+- cairn adopt --worker ecxc-ski
+- cairn adopt list
+- cairn auth list
+- cairn auth probe
+- cairn auth set CAIRN_CF_READ_TOKEN
+- cairn auth unset CAIRN_CF_READ_TOKEN
+- cairn health ecxc-ski-a1b2c3
+- cairn health ecxc-ski-a1b2c3 --json
+- cairn logs ecxc-ski-a1b2c3 --since 24h
+- cairn sites
+- cairn sites list --json
+- cairn: %q is not a credential cairn stores.
+The names are %s
+- cairn: %s carries an entry with no checkId.
+Name the check each entry acknowledges
+- cairn: %s is empty.
+Pipe a non-empty value: printf %%s "$v" | cairn auth set %s
+- cairn: %s is not a valid acknowledgement file: %v.
+It holds a JSON array of entries, each carrying checkId and expires
+- cairn: %s's %q entry has a malformed expires date %q.
+Use YYYY-MM-DD
+- cairn: %s's %q entry has no expires date.
+Add an expires date so the acknowledgement does not outlive it
+- cairn: %v
+- cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.
+Name the check and an expiry date, for example deploy=2026-10-01
+- cairn: --ack-file %s not found.
+Name a file that exists, or drop the flag to use the registry's default
+- cairn: --color %q is not %s, %s, or %s
+- cairn: --since %q is not a duration.
+Use a whole number of minutes, hours, or days: 90m, 24h, 7d
+- cairn: Cloudflare rate-limited this run.
+The checks that need Cloudflare could not run; the others are reported above
+- cairn: cairn adopt names one Worker.
+Run `cairn adopt list` to see the Workers on the account
+- cairn: cairn health takes at most one site.
+Run `cairn health --help` for usage
+- cairn: could not reach the network.
+No check ran, so this run says nothing about the site.
+Check your connection, then run the command again
+- cairn: no Cloudflare credentials found.
+Run `cairn auth set %s` to store one
+- cairn: no Worker named %q on this account.
+Run `cairn adopt list` to see the Workers on the account
+- cairn: no credentials found.
+The health checks read your Cloudflare and GitHub tokens from the OS keyring or the environment.
+Run `cairn auth set %s` to store one
+- cairn: no site named %q.
+Run `cairn sites list` to see the sites cairn knows
+- cairn: the %s check crashed.
+This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
+- cairn: the OS keyring did not open.
+Set %s in the environment instead
+- cairn: this output carries identifiers and is not safe to paste in public.
+- error records in the window that still report OK
+- lookback window for the error count: a whole number of m, h, or d
+- lookback window: a whole number of m, h, or d
+- narrow the query to one engine event name
+- path to a JSON file of acknowledgement entries (default: acknowledgements.json in the registry directory)
+- print nothing when the run is OK
+- print the candidates as JSON
+- print the entries as JSON
+- print the identifiers a run otherwise withholds
+- print the listing as JSON
+- print the report as JSON
+- print the version and exit
+- the OS keyring did not open, set in the environment instead
+- the Workers script to adopt
+- the number of sites the registry is expected to hold
+- the repository the Worker deploys from, as owner/name
+- wall-clock budget for the whole run
+- when to colour the output: auto, always, or never

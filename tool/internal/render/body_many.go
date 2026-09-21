@@ -174,9 +174,10 @@ const labelWhatToFix = "what to fix"
 const labelAlsoOn = "also on: "
 
 // wordTokens is the blocked-group head's collective word for a group more than one missing
-// token together explains, since no single token's own name would cover what stopped it. New to
-// this table, owed to Task 22a's editorial gate: copy-standard.md's section 2.9 fixes "token" as
-// the word for one credential, and this is its plural rather than a fresh coinage.
+// token together explains, since no single token's own name would cover what stopped it.
+// copy-standard.md's section 2.9 fixes "token" as the word for one credential; this is its
+// plural rather than a fresh coinage, and is owed to the editorial gate like every other string
+// this body introduced.
 const wordTokens = "tokens"
 
 // freshest returns the instant the most recently checked site settled, the one clock the fleet

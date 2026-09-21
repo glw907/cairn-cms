@@ -698,7 +698,9 @@ longer exists at `origin/main` (`git ls-tree origin/main src/lib/doctor` prints 
 `cairn-doctor` key, and `packages/create-cairn-site` prints no `npx cairn-doctor`. The removal's
 `Consumers must:` line sits in the same `CHANGELOG.md` entry, and the release then announces the
 tool at the version the retirement shipped (`tool/v1.1.0` as planned). If any of these fails,
-**stop and say so**.
+**stop and say so**. Runnable checks for the last two: `node -p "require('./package.json').bin"`
+(fetched at `origin/main`) shows no `cairn-doctor` key; `grep -rn 'cairn-doctor'
+packages/create-cairn-site/src` finds no printed command.
 
 **Runs through the `cairn-release` skill**, which re-derives the release size and the number from
 the window's contents. `check:version` enforces the `release-size` marker against the CHANGELOG,
@@ -874,3 +876,11 @@ committed baselines separates a real regression from an intended or unrelated ch
 
 **Execution sittings: none.** No pull-in after plan approval; the pass ran to completion under the
 rulings already settled in the header, up to the halt described above.
+
+### Close
+
+The pass merged as PR #69 (`2e2f2235`) after two owner-authorized fix rounds. The cut was not run.
+Planning misses: four (the gate list omitted `norms:check`'s preview prerequisite; Task 1 did not
+name the visual spec files; a bounding-box classification stood in for a visual read before the
+first regen; no gate list carried the showcase's Prettier `format:check`). Execution sittings:
+three. Token spend was not measured by the conductor.

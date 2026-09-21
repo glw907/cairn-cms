@@ -8,15 +8,19 @@ pass-end. Durable orientation is `CLAUDE.md`; everything past tense is [`docs/HI
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries eleven
 engine passes plus chassis-A/B1/B2, polish-11a/11b-i/11b-ii/C, the admin motion pass,
-docs-to-facts, extend-1 (PR #66), and extend-2 (PR #67, the guidance layer), both merged
-2026-09-20, unpublished under `## Unreleased`. The window holds for one cut. CI on `main` is
-green.
+docs-to-facts, extend-1 (PR #66), extend-2 (PR #67, the guidance layer), and the pre-cut pass
+(PR pending, the dependency sweep, two `cairn-guidance` hardening fixes, the site upgrade
+brief's tools section, and the Blueprint admin audit), unpublished under `## Unreleased`. The
+window holds for one cut. Held majors: TypeScript 7, Vitest 5, `@types/node` 26, and now
+`devalue` 6 (new this sweep, no direct call site to migrate). Two `npm audit` findings (the
+`cookie` transitive under `@sveltejs/kit` and a `@cloudflare/vitest-pool-workers` transitive)
+are held, needing `--force` or a downgrade to clear. CI on `main` is green.
 
 ## Immediate next action
 
-The one cut is next (`cairn-release`), with the dependency sweep (the `dependency-upgrade`
-skill) and the site upgrade brief's tools section landing in the pre-cut pass. The pending
-version is `0.97.0`, verified free against the registry with `npm view @glw907/cairn-cms
+The one cut is next (`cairn-release`, Task 6 of
+`docs/superpowers/plans/2026-09-21-pre-cut-pass.md`), now that the pre-cut pass has merged. The
+pending version is `0.97.0`, verified free against the registry with `npm view @glw907/cairn-cms
 versions --json` at the cut. extend-1's two advisory audit rules (`log-event-grammar`,
 `log-secret-field`) promote to error tier at `0.98.0`.
 
@@ -108,7 +112,8 @@ container, then beta.
 
 Two tracks, one session each.
 
-**One cut:** Cut the one release (`cairn-release` skill), starting with the dependency sweep.
+**One cut:** the pre-cut pass has merged. Run Task 6 of
+`docs/superpowers/plans/2026-09-21-pre-cut-pass.md` (the `cairn-release` skill) to cut `0.97.0`.
 
 **Go tool Pass B2** (launch inside `cairn-cms`): Conduct Go tool Pass B2 overnight per
 `docs/STATUS.md`'s Go tool entry: amendment, three-lens review, fold, pre-flights, execute,

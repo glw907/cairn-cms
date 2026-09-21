@@ -7,6 +7,37 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## The pre-cut pass, five tasks, 2026-09-21
+
+Branch `pre-cut`, PR pending. Plan and post-mortem: `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`.
+
+**What landed.** Task 1, the dependency sweep, regenerated both lockfiles from scratch
+(`494d151d`) and recorded the visual gate result (`cab9c670`). Task 2, the two `cairn-guidance`
+write-hardening fixes (item 3, carrying `err.code` out of the write's `catch` into
+`InstallReport.writeErrors`; item 6, listing a refused destination itself alongside its `.orig`
+sibling), landed with `f2a13a83` and was code-simplified in `4035cb8c`. Task 3, the site upgrade
+brief's tools section, landed in `f6af8133` and `41e04390`. Task 4, the Blueprint pre-cut admin
+audit over all 49 admin components, ran in the conductor's own turns and landed in `49e21caa`,
+filing five findings and none taken (owner's ruling 3).
+
+**What the gate caught, and what it did not.** The first full gate died at `norms:check`
+because that check needs the showcase preview running on port 4173; it is not a standalone
+static check. The implementer initially ran only the `styleguide` e2e spec named in the task and
+had to be re-dispatched to run the full visual suite, 139 baselines, before the gate was trusted.
+The three-lens plan review caught both of these before execution started, so neither cost a fix
+round; they are recorded here because a later pass's own gate list should carry the preview
+prerequisite and the full baseline count explicitly rather than rediscovering them from a red run.
+
+**What a later pass would be wrong to rediscover.** `templates/waymark` is generated wholesale by
+`packages/create-cairn-site/scripts/emit-template-dir.mjs` from `examples/showcase` plus the bake;
+it is never hand-edited, and a hand edit survives at most one emit. `packages/cairn-cms-dev`
+carries its own `version` field, separate from the root manifest, and `publish.yml`'s
+`publish-dev` job's already-published guard exits 0 green when that version is stale, so a root
+version bump alone can produce a silently incomplete publish; no gate enforces the two manifests
+staying in lockstep today (filed to `ROADMAP.md`). A worktree's `examples/showcase/node_modules`
+symlinks back to the main checkout, so a from-scratch `npm install` there is required before any
+showcase build or e2e run in a worktree is trusted.
+
 ## Go tool pass B1 (`cairn-tool-B1`), nine tasks, 2026-09-20
 
 Branch `cairn-tool-a`, PR #60, MERGED with Pass A as `efc75093`. Plan and full post-mortem:

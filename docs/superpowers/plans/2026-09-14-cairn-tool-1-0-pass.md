@@ -1823,6 +1823,86 @@ so the close and a later pass do not rediscover them from scratch.
   check reads `logs.FetchLevel` directly. Both remain 2.0 seams, per the seams table, exercised
   only by their own package tests until a HUD or a `cairn logs --event` caller lands.
 
+## Pass B1 post-mortem (2026-09-20)
+
+**What was built.** Nine tasks (11b-i, 11b-ii, 12 to 17, 17b), on the `cairn-tool-a` worktree.
+The commit range from Pass A's close (`4d4728d7`) to Pass B1's close carries 49 commits and
+touches 82 files (9,966 insertions, 1,469 deletions). The `health` package's nine checks
+(`creds`, `serving`, `delegation`, `https-forced`, `email`, `deploy`, `publish-path`, `engine`,
+`errors`), the `logs` package, `context.Context` threaded through every `providers` call, an
+authoritative DNS lookup in `providers`, and the `spine`/`record` refactors carried over from
+Pass A's known residual.
+
+**Process.** The pass ran from the 2026-09-20 recut brief, with a three-lens plan review folded
+into one revision. Each segment opened with a factual pre-flight against the code: segment 1
+checked 34 claims and found one false, segment 2 checked 19 claims and found one stale anchor,
+and the close checked five claims and made five corrections. Two `pass-execute` runs drove the
+segments on the light gate lane, with `gateTier: "docs"` pinned on every task.
+
+**What the gate and reviews caught.** Segment 1's Tasks 12 and 13, and all four of segment 2's
+tasks, passed the gate and were escalated by the diff reviewer for a conductor decision. The
+gate itself caught none of the pass's real defects; the diff reviewer did, on every escalated
+task. The defects found: a DMARC `p=None` read as OK; a DNS outage reported as Failing; a GitHub
+outage masking a failed build; the build id dropped entirely; every telemetry API error read as
+"observability off"; an error count that trusted an unverified server filter; `credsCheck`
+reading the wall clock through `time.Until` while a hygiene test only banned `time.Now`; a
+changelog clause parser that found one clause per paragraph; a test row that passed whichever
+nameserver source the code used; the non-verbose allowlist silently dropping `topEvents`; and
+`Keyring.Set` unbounded by the deadline `Get` had.
+
+**Rulings taken during execution (the conductor's).**
+
+- A verdict's condition lives on `spine.Outcome.Condition`.
+- `https-forced` is one check with two halves.
+- The sweep's clock is `Options.Now`, and a hygiene test bans `time.Now`, `time.Since`, and
+  `time.Until` in `health` and `logs`.
+- Field visibility is set where a field is produced (`verboseField`).
+- `Detail` never carries a verbose-only value.
+- A zero GitHub `TokenExpiry` is OK.
+- An expired matching acknowledgement records `AckExpires` and softens nothing.
+- The unreachable diagnosis discovers nameservers first and falls back to the saved pair.
+- Email's DNS half needs no credential.
+- The `Consumers must:` rule: a leading whole word "nothing", a clause bounded at the next
+  lead-in, and a backticked lead-in counts as a mention.
+- Publish-path declares no condition.
+
+**A conductor error worth recording.** The first `Consumers must:` ruling, an exact match on the
+text "nothing" alone, was too strict: it would have reported a false Failing for most sites a
+few releases behind. The implementer's check against the real `CHANGELOG.md` exposed the
+mismatch, and the ruling was corrected the same session.
+
+**What a later pass would be wrong to rediscover.**
+
+- A sonnet implementer's first pass cleared the gate every time and still needed a
+  reviewer-driven fix round on every task but one, so the diff review, not the gate, is where
+  this module's defects surface.
+- A plan criterion that names an engine condition should be checked against that condition's
+  remedy text.
+- The root `npm test` launches a browser and must not take the light gate lane; only `make -C
+  tool check`, lint-only runs, and a Node-only workspace suite may.
+- One kitty window per screenshot is not acceptable on the owner's desktop.
+- The health checks are wired only from their own tests until Pass B2 adds `cmd/cairn`'s
+  `health` command: `NewProbe` and `NewNPM` have no non-test caller.
+
+**Both budgets.** The ceiling was raised from 8M to 10M by Geoff on 2026-09-20. Spend: <conductor
+fills at merge>. Attended-time score: <conductor fills at merge>.
+
+**Carried to Pass B2.**
+
+- The render design track (a capability survey at `tool/docs/design/charm-v2-capabilities.md`,
+  two mockup iterations, seven reviews, and a copy standard, all held under
+  `~/.cache/cairn-tool-b2/` until they land) feeds one plan amendment that needs the owner's
+  approval.
+- `State` marshals to JSON as a bare integer that inverts against exit codes.
+- Usage errors exit 0 today.
+- `Detail` strings are machine tokens, to be replaced by catalogue prose with the token carried
+  on `Condition`.
+- A typed code slot for a Failing verdict is still owed.
+- `cmd/cairn` should return a typed exit error from `RunE` rather than calling `os.Exit` inside
+  it, split its files by concern, and move `combineState` and `exitCodeFor` into `spine`.
+- `secrets` now has the deadline helper and the not-found-versus-unavailable classification that
+  `auth unset` needs.
+
 ---
 
 ## Pass `cairn-tool-B2`: the CLI surface, the 1.0 cut, the release, and the tripwire

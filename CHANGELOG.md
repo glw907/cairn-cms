@@ -14,6 +14,17 @@
   `probe-token` subcommand. Nothing under `tool/` is reachable from `npm test` or the npm
   tarball, and no command an operator would run ships yet.
 
+- The `tool/` module's `health` package gains nine checks (`creds`, `serving`, `delegation`,
+  `https-forced`, `email`, `deploy`, `publish-path`, `engine`, `errors`), each a pure function
+  over a site record and a set of providers. A new `logs` package fetches and classifies
+  Cloudflare Workers Logs entries for the errors check. `context.Context` now threads through
+  every `providers` method call, and `providers` gains an authoritative DNS lookup the serving
+  and email checks use. The `spine` and `record` packages each got a refactor: `spine` now
+  carries one severity table instead of a duplicated one, and `record`'s field tables read from a
+  single source instead of hand-maintained mirror slices. No command exposes the health checks
+  yet; they run only under their own package tests. Consumers must: nothing, since the `tool/`
+  module is not part of the npm package a site installs.
+
 - `cairn-audit`'s rendered mode gains `motion-reduced-delay`, an advisory rule that opens its own
   `reducedMotion: 'reduce'` browser context and flags any element (or `::before`/`::after`) whose
   computed `transition-delay` or `animation-delay` stays nonzero there, since a delay alone still

@@ -913,21 +913,40 @@ the named human gates only):**
   docs because it changes what the admin track describes and because building its checks
   surfaces what the operational contract leaves unsaid.
 
-  **Status (2026-09-20).** Pass A (Tasks 1 to 11) is complete on the `cairn-tool-a` worktree,
-  draft PR #60, not yet merged; the merge rides Pass B1's close, per Geoff's ruling that Pass A's
-  session stops after its close ritual and hands the re-cut to a fresh B1 session. Pass B is
-  re-cut into Pass B1 (the opening refactor task, then the checks and logs, old Tasks 12 to 17)
-  and Pass B2 (the CLI surface, old Tasks 18 to 25, with grammar amendments), per the brief at
+  **Status (2026-09-20).** Pass A (Tasks 1 to 11) landed on the `cairn-tool-a` worktree. Pass B1
+  (Tasks 11b-i, 11b-ii, 12 to 17, 17b) shipped the `health` package's nine checks (`creds`,
+  `serving`, `delegation`, `https-forced`, `email`, `deploy`, `publish-path`, `engine`, `errors`),
+  the `logs` package, `context.Context` threaded through every `providers` call, an authoritative
+  DNS lookup in `providers`, and the `spine`/`record` refactors (one severity table, single-source
+  record field tables). No command exposes the health checks yet; Pass B2 (old Tasks 18 to 25,
+  with grammar amendments per the recut brief) adds the CLI surface, the `render` package, exit
+  codes, and the 1.0 cut. The recut brief is
   `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, pre-approved by Geoff
   within that brief's bounds.
 
-- **Two Go-tool CI gaps found closing Pass A (2026-09-20), for the B1/B2 re-cut to fold in.**
-  `scripts/checks/gate-tier.mjs` has no rule for `tool/` paths, so a Go-only diff resolves to the
-  full Node gate instead of the light Go-only lane; it should classify `tool/**` paths to the Go
-  gate on the light lane (`CAIRN_GATE_LANE=light`). Separately, the tool's CI runs `go test`
-  without `-v`, so a skipped test is invisible in the log; a verbose run of the security-relevant
-  packages on the Windows leg would make per-test proof (for example, the junction-based
-  reparse-point rejection) durable and visible rather than inferred from a green summary line.
+- **The Go-tool CI gate-tier gap found closing Pass A (2026-09-20).** `scripts/checks/gate-tier.mjs`
+  had no rule for `tool/` paths, so a Go-only diff resolved to the full Node gate instead of the
+  light Go-only lane. PR #68 implements the fix (a sixth `tool` gate tier, plus a `<npm
+  tier>+tool` shape for a mixed diff) and is open, awaiting merge.
+
+- **Items filed at Pass B1's close (2026-09-20), for Pass B2 or a later pass.**
+  - The engine's condition registry (`tool/internal/spine/condition.go`, ported from
+    `src/lib/diagnostics/conditions.ts`) has no condition id for an HSTS-off finding (the
+    `https-forced` check reports it under `ConditionNone`) and none for a stale publish-path
+    draft (the publish-path check declares no condition at all). Both need an owner decision on
+    the id and its registry entry before a check can carry one.
+  - Go's resolver consults `/etc/hosts` before the authoritative dial
+    `providers.Probe.LookupAuthoritative` performs, so a machine with a local hosts-file override
+    for the probed domain sees a diagnosis that does not reflect the live DNS.
+  - A DNS transport failure (a down resolver, an offline machine) reports Unknown under
+    `reason.timeout` in every check that reads `providers.Probe`, which misdescribes a resolver
+    that is refusing rather than timing out; the two failure modes share one reason today.
+  - The engine check's releases-behind count reads the declared dependency range's base version
+    from `package.json` rather than the resolved version a lockfile would carry, so a site pinned
+    loosely reports behind-ness relative to its floor, not its installed version.
+  - `logs.ErrObservabilityOff`'s trigger is unconfirmed against a live Worker that never enabled
+    observability; it needs a real-Worker check before the errors check's classification can be
+    trusted.
 
 - **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
   browser).** The admin animates in places (the drawer's width, the palette's opacity, the

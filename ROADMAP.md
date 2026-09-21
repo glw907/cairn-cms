@@ -933,7 +933,13 @@ the named human gates only):**
   boundary): Pass A ships the registry, the health checks, the cobra
   subcommands, and the scheduled tripwire with every action usable from the shell; the
   tool's 1.0 is that complete single-site CLI, in which a user can do everything without the
-  TUI; its 2.0 adds the bubbletea HUD and multi-site management. The 1.0 architecture must
+  TUI; its 2.0 adds the bubbletea HUD and multi-site management. **Superseded in part
+  (Geoff, 2026-09-21):
+  [`the after-1.0 framing`](docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md)
+  governs what follows the tag. Use through the site round, then 1.1 headed by the
+  agent-permission check, then the HUD as a 1.x minor under `cairn hud`; 2.0 is reserved for a
+  break of a frozen surface; the MCP front end named below is declined (2026-09-20). B2's close
+  rewrites this entry.** The 1.0 architecture must
   carry both: keep the registry's shape and site record (the 2026-08-20 plan's registry adopts
   several sites; 1.0's commands operate on one at a time), keep checks as pure functions over a
   site record, and keep the pure render seam the HUD later mounts on, so 2.0 adds a view and a

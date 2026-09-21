@@ -40,8 +40,11 @@ container, then beta.
   Geoff ruled the whole owner list on 2026-09-21: `~/.cache/cairn-tool-b2/owner-rulings-2026-09-21.md`
   (a fifth wire word `unknown`, holds restore own severity, quiet sweep silent when all OK,
   `--theme dark|light`; rate-limited stays UNKNOWN; Windows CI suffices). At the segment 4
-  boundary, fold that file into the plan and cut Task 21b from it, to run before the RC is
-  handed over. The dotfiles runner fix landed (`75caf88`).**
+  boundary, fold that file into the plan and cut Tasks 21b and 21c from it (21c promotes the
+  hidden `auth probe` to a visible `cairn auth check`), both to run before the RC is handed
+  over; together they put B2 near 17M of 18M. What follows the tag is framed in
+  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`: use through the site
+  round, 1.1 headed by the agent-permission check, then the HUD as a 1.x minor. The dotfiles runner fix landed (`75caf88`).**
   **Earlier ledger (2026-09-21 07:00): the overnight run STOPPED CLEAN at the named cut after
   20b-ii, about 10.5M of the 14M ceiling.** Segments 1 to 3 are DONE and accepted on
   `cairn-tool-b2` (pushed, HEAD `76364ca2`, gate green): 19c-i, 18, 19a-i | 19a-ii, 19b, 19c-ii |

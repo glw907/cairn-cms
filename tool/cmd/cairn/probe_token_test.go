@@ -16,6 +16,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
+	"github.com/glw907/cairn-cms/tool/internal/secrets"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
 )
@@ -27,7 +28,7 @@ type routedResponse struct {
 }
 
 // routeRoundTripper serves a fixed response per exact URL path (query strings ignored), standing
-// in for both the Cloudflare and GitHub hosts in one fake so a test can drive probe-token's full
+// in for both the Cloudflare and GitHub hosts in one fake so a test can drive auth probe's full
 // run with no real network call. A path with no registered response answers 404, the same shape
 // an operator would see probing an endpoint this fake does not know about.
 type routeRoundTripper map[string]routedResponse
@@ -91,7 +92,7 @@ func mergeRoutes(routes ...routeRoundTripper) routeRoundTripper {
 
 // openTestRegistry opens a fresh store at t.TempDir() and saves one record per owner/repo pair,
 // through record and store's own real shapes rather than hand-built JSON, and returns the
-// directory for probe-token's registryDir dependency.
+// directory for auth probe's registryDir dependency.
 func openTestRegistry(t *testing.T, sites map[string][2]string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -126,14 +127,22 @@ func testEnv() func(string) string {
 	})
 }
 
+// probeDeps builds the dependency set auth probe runs over, from the five dependencies this
+// command's tests vary. Every other field stays at its zero value, which auth probe never
+// reads: folding the old five-parameter constructor into deps is what keeps a sixth dependency
+// from breaking every call site here.
+func probeDeps(envFn func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) deps {
+	return deps{env: envFn, keyring: p, transport: rt, registryDir: registryDir, exit: exit}
+}
+
 func TestProbeTokenHiddenAndTakesNoArgs(t *testing.T) {
-	cmd := buildProbeTokenCmd(fakeEnv(nil), fakeProvider{name: "keyring"}, routeRoundTripper{}, func() (string, error) { return t.TempDir(), nil }, func(int) {})
+	cmd := newAuthProbeCmd(probeDeps(fakeEnv(nil), fakeProvider{name: "keyring"}, routeRoundTripper{}, func() (string, error) { return t.TempDir(), nil }, func(int) {}))
 
 	if !cmd.Hidden {
-		t.Error("probe-token is not Hidden; it must not appear in --help")
+		t.Error("auth probe is not Hidden; it must not appear in --help")
 	}
 	if err := cmd.Args(cmd, []string{"extra"}); err == nil {
-		t.Error("probe-token accepted an argument; it must accept none")
+		t.Error("auth probe accepted an argument; it must accept none")
 	}
 }
 
@@ -143,7 +152,7 @@ func TestProbeTokenPrintsCredentialSourcesNeverValues(t *testing.T) {
 	rt := mergeRoutes(cloudflareOKRoutes(), githubOKRoutesForEngine())
 
 	var code int
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c })
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c }))
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&bytes.Buffer{})
@@ -167,7 +176,7 @@ func TestProbeTokenPrintsCredentialSourcesNeverValues(t *testing.T) {
 // replaced cloudflareVerdict and githubVerdict, over a matched pair of errors per Reason, an
 // *providers.APIError and a *providers.GitHubError carrying the same Reason and status, and
 // asserts it returns the same level, status, and reason string for both: the guarantee that
-// collapsing the two call sites onto one function left probe-token's output unchanged.
+// collapsing the two call sites onto one function left auth probe's output unchanged.
 func TestProviderVerdictAgreesAcrossErrorTypes(t *testing.T) {
 	reasons := []providers.Reason{
 		providers.ReasonUnauthorized,
@@ -212,7 +221,7 @@ func TestProbeTokenExitCriticalOnRejectedCloudflareToken(t *testing.T) {
 	}, githubOKRoutesForEngine())
 
 	var code int
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c })
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c }))
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 
@@ -232,7 +241,7 @@ func TestProbeTokenExitUnknownOnUnreachableEndpoint(t *testing.T) {
 	rt := routeRoundTripper{}
 
 	var code int
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c })
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c }))
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 
@@ -247,7 +256,7 @@ func TestProbeTokenExitUnknownOnUnreachableEndpoint(t *testing.T) {
 func TestProbeTokenSkipsCloudflareAndGitHubWhenCredentialsMissing(t *testing.T) {
 	dir := openTestRegistry(t, nil)
 	var code int
-	cmd := buildProbeTokenCmd(fakeEnv(nil), fakeProvider{name: "keyring"}, routeRoundTripper{}, func() (string, error) { return dir, nil }, func(c int) { code = c })
+	cmd := newAuthProbeCmd(probeDeps(fakeEnv(nil), fakeProvider{name: "keyring"}, routeRoundTripper{}, func() (string, error) { return dir, nil }, func(c int) { code = c }))
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&bytes.Buffer{})
@@ -277,7 +286,7 @@ func TestProbeTokenDiscoversRepositoriesFromRegistryNoHardcodedList(t *testing.T
 	)
 
 	var code int
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c })
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c }))
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	cmd.SetOut(&out)
@@ -325,7 +334,7 @@ func TestProbeTokenWarnsWhenEveryRepositoryIsPublic(t *testing.T) {
 		githubOKRoutesForEngine(),
 	)
 
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(int) {})
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(int) {}))
 	cmd.SetOut(&bytes.Buffer{})
 	var errOut bytes.Buffer
 	cmd.SetErr(&errOut)
@@ -349,7 +358,7 @@ func TestProbeTokenNoWarningWhenARepositoryIsPrivate(t *testing.T) {
 		githubOKRoutesForEngine(),
 	)
 
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(int) {})
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(int) {}))
 	cmd.SetOut(&bytes.Buffer{})
 	var errOut bytes.Buffer
 	cmd.SetErr(&errOut)
@@ -383,7 +392,7 @@ func TestProbeTokenExitCriticalOnMixedRepositoryResult(t *testing.T) {
 	)
 
 	var code int
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c })
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) { return dir, nil }, func(c int) { code = c }))
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 
@@ -400,9 +409,9 @@ func TestProbeTokenExitUnknownWhenRegistryDirUnresolvable(t *testing.T) {
 	rt := mergeRoutes(cloudflareOKRoutes(), githubOKRoutesForEngine())
 
 	var code int
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) {
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) {
 		return "", errors.New("boom")
-	}, func(c int) { code = c })
+	}, func(c int) { code = c }))
 	cmd.SetOut(&bytes.Buffer{})
 	var errOut bytes.Buffer
 	cmd.SetErr(&errOut)
@@ -426,9 +435,9 @@ func TestProbeTokenExitUnknownWhenRegistryUnreadable(t *testing.T) {
 	missing := t.TempDir() + "/missing"
 
 	var code int
-	cmd := buildProbeTokenCmd(env, fakeProvider{name: "keyring"}, rt, func() (string, error) {
+	cmd := newAuthProbeCmd(probeDeps(env, fakeProvider{name: "keyring"}, rt, func() (string, error) {
 		return missing, nil
-	}, func(c int) { code = c })
+	}, func(c int) { code = c }))
 	cmd.SetOut(&bytes.Buffer{})
 	var errOut bytes.Buffer
 	cmd.SetErr(&errOut)
@@ -439,8 +448,8 @@ func TestProbeTokenExitUnknownWhenRegistryUnreadable(t *testing.T) {
 	if code != int(spine.VerdictUnknown) {
 		t.Errorf("exit code = %d, want UNKNOWN (%d) when the registry cannot be opened", code, int(spine.VerdictUnknown))
 	}
-	if !strings.Contains(errOut.String(), "probe-token:") {
-		t.Errorf("stderr = %q, want a probe-token reason line", errOut.String())
+	if !strings.Contains(errOut.String(), "auth probe:") {
+		t.Errorf("stderr = %q, want a auth probe reason line", errOut.String())
 	}
 }
 

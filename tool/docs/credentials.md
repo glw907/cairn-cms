@@ -131,26 +131,26 @@ silent failure: a check that cannot read a repository returns UNKNOWN on
 
 **A probe over public repositories cannot confirm this scope.** GitHub
 serves a public repository's contents and commits with no token at all, so
-a 200 from `cairn probe-token` on a public repository proves only that the
+a 200 from `cairn auth probe` on a public repository proves only that the
 token is not actively rejected, not that its Contents permission is doing
-any work. `probe-token` reports each probed repository's visibility (the
+any work. `auth probe` reports each probed repository's visibility (the
 repos endpoint's own `private` field, read from its own `repos` check for
 that repository) and prints a warning on stderr when every probed
 repository came back public, since that run has confirmed nothing about
 the token's own scope.
 An operator whose registry names at least one private repository gets a
-real confirmation the first time `probe-token` reaches it.
+real confirmation the first time `auth probe` reaches it.
 
 A private repository the token cannot see answers 404, not 403, on every
 GitHub REST route this tool calls (commits, contents, and the repos
-route). `probe-token` and every 1.0 check that reads a repository classify
+route). `auth probe` and every 1.0 check that reads a repository classify
 a 404 as `not-found`, never `forbidden`; an operator who sees `not-found`
 on a repository they expect the token to reach should re-check the
 token's repository list before assuming the repository itself moved.
 
 ### The repository scope is discovered, never hardcoded
 
-`cairn probe-token` reads the operator's registry, then verifies a
+`cairn auth probe` reads the operator's registry, then verifies a
 contents read against every repository the registry names plus
 `glw907/cairn-cms`; no repository list is compiled into the binary. It
 prints one line per repository with the status and reason, and exits
@@ -162,7 +162,7 @@ Geoff minted both tokens for his own five repositories
 (`glw907/ecxc-ski`, `glw907/907-life`, `glw907/aksailingclub-org`,
 `glw907/xcathletes-org`, and `glw907/cairn-cms`) and stored the values
 through the workstation age store, per his own deployment's rules (not
-this product's storage path). `cairn probe-token` reached the following
+this product's storage path). `cairn auth probe` reached the following
 endpoints against the live tokens, with `xcathletes-org` private and the
 other four public:
 
@@ -177,7 +177,7 @@ other four public:
 | `contents/CHANGELOG.md` (`glw907/cairn-cms`) | 200 | ok | same key set as `contents/package.json` |
 | `repos` (each of the five repositories) | 200 | ok | the full GitHub repository object, including `private` and `visibility` |
 
-`probe-token` prints these key sets itself, by names only, through a
+`auth probe` prints these key sets itself, by names only, through a
 recording `http.RoundTripper` that reads each 200 response body once,
 records its top-level key names (and, for the Cloudflare v4 envelope, the
 `result` field's own key names, since the envelope's own four keys carry
@@ -192,8 +192,8 @@ The zone-scoped Zone Settings endpoints
 (`zones/{id}/settings/always_use_https`,
 `zones/{id}/settings/security_header`) were verified separately, by a
 direct API call against one of the operator's own zones rather than
-through `probe-token`: 1.0 has no `adopt` yet (Task 18), so no registry
-record before this pass carries a zone id `probe-token` could target
+through `auth probe`: 1.0 has no `adopt` yet (Task 18), so no registry
+record before this pass carries a zone id `auth probe` could target
 generically. Both answered 403 before the Zone Settings group was added
 to the token and 200 after, which is the evidence behind the seven-group
 scope above.
@@ -210,7 +210,7 @@ Cloudflare client calls the user path for this reason.
 
 ### Workers Logs retention
 
-`cairn probe-token`'s Observability query answered 200 for a one-hour
+`cairn auth probe`'s Observability query answered 200 for a one-hour
 window anywhere in the trailing 7 days, and 0 events (with no error) for
 the same one-hour window 8 or more days back, measured by narrowing the
 boundary directly: every window fully inside 7 days returned events, and

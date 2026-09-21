@@ -2,21 +2,16 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"maps"
 	"net/http"
-	"os"
 	"slices"
-	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/secrets"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
-	"github.com/glw907/cairn-cms/tool/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -27,39 +22,25 @@ const (
 	engineRepo  = "cairn-cms"
 )
 
-// newProbeTokenCmd builds the hidden cairn probe-token subcommand.
-func newProbeTokenCmd() *cobra.Command {
-	return buildProbeTokenCmd(osEnviron, secrets.NewKeyring(), http.DefaultTransport, defaultRegistryDir, os.Exit)
-}
-
-// defaultRegistryDir resolves the registry directory the way every other command does, through
-// store.Dir's own precedence.
-func defaultRegistryDir() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("probe-token: resolve home directory: %w", err)
-	}
-	dir, _, err := store.Dir(osEnviron, os.UserConfigDir, home)
-	return dir, err
-}
-
-// buildProbeTokenCmd builds cairn probe-token over injected dependencies, so a test can supply a
+// newAuthProbeCmd builds the hidden cairn auth probe subcommand over d, so a test can supply a
 // fake environment, a fake keyring, a fake registry directory, a routed RoundTripper, and a
-// captured exit function without touching a real credential, disk location, or network call.
-func buildProbeTokenCmd(envFn func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) *cobra.Command {
+// captured exit without touching a real credential, disk location, or network call.
+//
+// It stays hidden after the 2026-09-20 grammar cleanup renamed it from probe-token: it is an
+// aid for whoever is minting the three credentials, not a verb an operator runs against a site.
+func newAuthProbeCmd(d deps) *cobra.Command {
 	return &cobra.Command{
-		Use:   "probe-token",
+		Use:   "probe",
 		Short: "Verify the three credential values against Cloudflare and GitHub",
 		Long: "Verify the three credential values against Cloudflare and GitHub.\n\n" +
-			"probe-token's whole output is identifiers (endpoints, statuses, and repository " +
-			"names), so it is implicitly verbose the same way adopt --list is; there is no " +
+			"auth probe's whole output is identifiers (endpoints, statuses, and repository " +
+			"names), so it is implicitly verbose the same way adopt list is; there is no " +
 			"--verbose flag.",
-		Hidden:        true,
-		Args:          cobra.NoArgs,
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		Example: "cairn auth probe",
+		Hidden:  true,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runProbeToken(cmd, envFn, p, rt, registryDir, exit)
+			return runProbeToken(cmd, d)
 		},
 	}
 }
@@ -107,7 +88,7 @@ const (
 // names, or an array's first element's key names when marker is markerArray. resultKeys holds
 // the "result" field's own key names, when the top level is an object carrying one: a Cloudflare
 // v4 envelope's own four keys (success, errors, result, result_info) carry none of its payload's
-// shape, so probe-token prints this alongside the envelope's own keys.
+// shape, so auth probe prints this alongside the envelope's own keys.
 type recordedBody struct {
 	marker     string
 	keys       []string
@@ -201,49 +182,18 @@ func printEndpoint(out io.Writer, endpoint string, v verdict, rb recordedBody) {
 	}
 }
 
-// registrySite names one repository probe-token discovered from the registry.
-type registrySite struct {
-	id, owner, repo string
-}
-
-// discoverSites reads every record in dir's registry and returns the sites whose GitHub
-// repository is known, in list order. A record the store cannot parse is skipped; a record with
-// no adopted repository yet carries nothing this probe can check and is skipped too.
-func discoverSites(dir string) ([]registrySite, error) {
-	s, err := store.Open(dir)
-	if err != nil {
-		return nil, fmt.Errorf("probe-token: open registry: %w", err)
-	}
-	entries, errs := s.List()
-	if len(errs) > 0 {
-		return nil, fmt.Errorf("probe-token: list registry: %w", errors.Join(errs...))
-	}
-	var sites []registrySite
-	for _, e := range entries {
-		owner, repo := e.Record.GitHub.Repo.Owner, e.Record.GitHub.Repo.Repo
-		if owner == "" || repo == "" {
-			continue
-		}
-		sites = append(sites, registrySite{id: e.ID, owner: owner, repo: repo})
-	}
-	return sites, nil
-}
-
-// runProbeToken is buildProbeTokenCmd's RunE body, split out so it reads as plain sequential
+// runProbeToken is newAuthProbeCmd's RunE body, split out so it reads as plain sequential
 // steps rather than a closure body.
-func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Provider, rt http.RoundTripper, registryDir func() (string, error), exit func(int)) error {
-	ctx := cmd.Context()
-	if ctx == nil {
-		ctx = context.Background()
-	}
+func runProbeToken(cmd *cobra.Command, d deps) error {
+	ctx := commandContext(cmd)
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
-	_, _ = fmt.Fprintln(errOut, "probe-token: output is identifiers only; it is implicitly verbose")
+	_, _ = fmt.Fprintln(errOut, "auth probe: output is identifiers only; it is implicitly verbose")
 
-	resolved, missing := loadEnv(envFn, p)
+	resolved, missing := loadEnv(d.env, d.secretProviders()...)
 	printCredentialSources(out, resolved)
 
-	rec := newRecordingRoundTripper(rt)
+	rec := newRecordingRoundTripper(d.transport)
 
 	worst := spine.OK
 	raise := func(s spine.State) {
@@ -261,28 +211,11 @@ func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Prov
 		_, _ = fmt.Fprintln(out, "GitHub: skipped, a credential is missing")
 		raise(spine.Unknown)
 	} else {
-		raise(probeRegistryGitHub(ctx, out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, registryDir))
+		raise(probeRegistryGitHub(ctx, out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, d.registryDir))
 	}
 
-	exit(int(spine.ExitCodeFor(worst)))
+	d.exit(int(spine.ExitCodeFor(worst)))
 	return nil
-}
-
-// probeRegistryGitHub discovers the registry's sites and hands them to probeGitHub, reporting
-// spine.Unknown when the registry cannot be located or read at all: the credential is unjudged
-// either way, so the run reports that it could not observe rather than that the token is wrong.
-func probeRegistryGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, registryDir func() (string, error)) spine.State {
-	dir, err := registryDir()
-	if err != nil {
-		_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
-		return spine.Unknown
-	}
-	sites, err := discoverSites(dir)
-	if err != nil {
-		_, _ = fmt.Fprintf(errOut, "probe-token: %v\n", err)
-		return spine.Unknown
-	}
-	return probeGitHub(ctx, out, errOut, gh, rec, sites)
 }
 
 // isMissing reports whether missing names the variable name.
@@ -297,146 +230,4 @@ func printCredentialSources(out io.Writer, e env) {
 	for _, r := range e.sourceLines() {
 		_, _ = fmt.Fprintf(out, "  %-20s %s\n", r.name, r.display)
 	}
-}
-
-// probeCloudflare hits the account-scoped Cloudflare endpoints a health check uses with no
-// per-site zone or worker to target, and returns the worst state among them. Zone-scoped
-// endpoints (settings, DNS, Email Sending) need a zone id no registry record carries before the
-// adopt command exists; tool/docs/credentials.md records those as verified separately.
-func probeCloudflare(ctx context.Context, out io.Writer, cf *providers.Cloudflare, accountID string, rec *recordingRoundTripper) spine.State {
-	_, _ = fmt.Fprintln(out, "Cloudflare:")
-	worst := spine.OK
-
-	run := func(endpoint, method, path string, call func() error) {
-		v := providerVerdict(call())
-		worst = spine.CombineState(worst, v.state)
-		printEndpoint(out, endpoint, v, rec.lookup(method, path))
-	}
-
-	run("user/tokens/verify", http.MethodGet, "/client/v4/user/tokens/verify", func() error {
-		_, err := cf.VerifyToken(ctx)
-		return err
-	})
-	run("accounts/{id}/workers/scripts", http.MethodGet, "/client/v4/accounts/"+accountID+"/workers/scripts", func() error {
-		_, err := cf.ListWorkers(ctx)
-		return err
-	})
-	run("accounts/{id}/workers/domains", http.MethodGet, "/client/v4/accounts/"+accountID+"/workers/domains", func() error {
-		_, err := cf.WorkerDomains(ctx)
-		return err
-	})
-	run("accounts/{id}/workers/observability/telemetry/query", http.MethodPost, "/client/v4/accounts/"+accountID+"/workers/observability/telemetry/query", func() error {
-		now := time.Now()
-		_, err := cf.ObservabilityQuery(ctx, map[string]any{
-			"queryId": "cairn-probe-token",
-			"timeframe": map[string]any{
-				"from": now.Add(-time.Hour).UnixMilli(),
-				"to":   now.UnixMilli(),
-			},
-			"view":       "events",
-			"limit":      1,
-			"parameters": map[string]any{"datasets": []string{}},
-		})
-		return err
-	})
-
-	return worst
-}
-
-// probeGitHub hits, for every discovered site plus the engine repository, the endpoints the
-// Deploy and Engine checks use (commits/main, contents/package.json, contents/CHANGELOG.md), and
-// separately prints the repository-scope line every discovered repository (and the engine
-// repository) contributes: whether the token can read it at all, and whether the repository is
-// public or private. It warns on errOut when every probed repository is public, since a public
-// repository proves nothing about a fine-grained token's own permissions. It returns the worst
-// state among every check.
-func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHub, rec *recordingRoundTripper, sites []registrySite) spine.State {
-	_, _ = fmt.Fprintln(out, "GitHub:")
-	worst := spine.OK
-	raise := func(s spine.State) {
-		worst = spine.CombineState(worst, s)
-	}
-
-	var repos []repoLine
-
-	// probe prints one probed GET's line, labelled "<endpoint> (owner/repo)" and carrying
-	// whatever shape the recorder captured for path, and returns its verdict without folding it.
-	probe := func(endpoint, owner, repo, path string, err error) verdict {
-		v := providerVerdict(err)
-		printEndpoint(out, fmt.Sprintf("%s (%s/%s)", endpoint, owner, repo), v, rec.lookup(http.MethodGet, path))
-		return v
-	}
-
-	// report is probe for a line no later section folds again, so it folds the verdict here.
-	report := func(endpoint, owner, repo, path string, err error) {
-		raise(probe(endpoint, owner, repo, path, err).state)
-	}
-
-	// probeRepo reads one repository's visibility and prints its endpoint line, leaving the fold
-	// to printRepoLines: a repository's verdict reaches worst through the Repositories section,
-	// and folding it here as well would count the same verdict twice.
-	probeRepo := func(owner, repo string) repoLine {
-		private, ownErr := gh.RepoOwnership(ctx, owner, repo)
-		v := probe("repos", owner, repo, fmt.Sprintf("/repos/%s/%s", owner, repo), ownErr)
-		return repoLine{label: owner + "/" + repo, v: v, private: private, known: ownErr == nil}
-	}
-
-	for _, s := range sites {
-		_, shaErr := gh.HeadSHA(ctx, s.owner, s.repo, "main")
-		report("commits/main", s.owner, s.repo, fmt.Sprintf("/repos/%s/%s/commits/main", s.owner, s.repo), shaErr)
-
-		_, contentErr := gh.FileAtRef(ctx, s.owner, s.repo, "package.json", "main")
-		report("contents/package.json", s.owner, s.repo, fmt.Sprintf("/repos/%s/%s/contents/package.json", s.owner, s.repo), contentErr)
-
-		repos = append(repos, probeRepo(s.owner, s.repo))
-	}
-
-	_, engineErr := gh.FileAtRef(ctx, engineOwner, engineRepo, "CHANGELOG.md", "main")
-	report("contents/CHANGELOG.md", engineOwner, engineRepo, fmt.Sprintf("/repos/%s/%s/contents/CHANGELOG.md", engineOwner, engineRepo), engineErr)
-
-	repos = append(repos, probeRepo(engineOwner, engineRepo))
-
-	raise(printRepoLines(out, errOut, repos))
-	return worst
-}
-
-// repoLine is one repository's scope verdict, as printRepoLines renders it. known reports whether
-// this run confirmed the repository's visibility at all, which is what separates a
-// confirmed-public repository from one the token could not read.
-type repoLine struct {
-	label   string
-	v       verdict
-	private bool
-	known   bool
-}
-
-// printRepoLines writes the Repositories section and returns the worst state among its lines. It
-// warns on errOut when every line is a confirmed-public repository, the condition that leaves a
-// fine-grained token's own scope unconfirmed: a public repository answers a contents read with no
-// permissions at all, so seeing only public repositories proves nothing about what the token
-// itself grants. A repository whose visibility this run could not confirm counts against that
-// claim the same way a private one does, since either leaves at least one line that is not
-// confirmed-public.
-func printRepoLines(out, errOut io.Writer, repos []repoLine) spine.State {
-	_, _ = fmt.Fprintln(out, "Repositories:")
-	worst := spine.OK
-	allPublic := true
-	for _, r := range repos {
-		visibility := "unknown"
-		switch {
-		case r.known && r.private:
-			visibility = "private"
-		case r.known:
-			visibility = "public"
-		}
-		if visibility != "public" {
-			allPublic = false
-		}
-		_, _ = fmt.Fprintf(out, "  %-28s %3d  %-9s %s\n", r.label, r.v.status, r.v.reason, visibility)
-		worst = spine.CombineState(worst, r.v.state)
-	}
-	if allPublic {
-		_, _ = fmt.Fprintln(errOut, "probe-token: every probed repository is public; the GitHub token's scope is unconfirmed")
-	}
-	return worst
 }

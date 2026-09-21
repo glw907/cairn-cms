@@ -103,3 +103,30 @@ test('at 768, a desk route recedes the sidebar behind the toggle, same as below 
   await page.getByRole('button', { name: 'Open menu' }).click();
   await expect(sidebar).toBeVisible();
 });
+
+// 3. Breadcrumb crumbs ellipsized with room to spare. daisyUI 5.7.21 gave `.breadcrumbs > ul` a
+//    `padding-inline-start: .25rem` and `.breadcrumbs` a matching `margin-inline-start: -.25rem`,
+//    so the crumb list's content box lost 4px inside a wrapper that sizes to the crumbs. The flex
+//    line then overflowed by exactly that 4px and every crumb shrank, which `truncate` turned into
+//    an ellipsis: "Posts" read "Pos..." beside free space. The fix resets both on this call site,
+//    the same opt-out the nav's own `p-0` already makes. Read against the real preview build,
+//    since the component project loads the variables-only stylesheet and carries no daisyUI rules.
+test('at desktop width, a breadcrumb that fits is not ellipsized', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/admin/posts/2026-06-hello');
+  await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
+
+  const labels = page.locator('nav[aria-label="Breadcrumb"] li span');
+  await expect(labels).toHaveCount(2);
+  // scrollWidth past clientWidth is the DOM's own record that `truncate` clipped the label.
+  const overflow = await labels.evaluateAll((nodes) =>
+    nodes.map((node) => ({
+      text: node.textContent,
+      overflowing: node.scrollWidth > node.clientWidth,
+    })),
+  );
+  expect(overflow).toEqual([
+    { text: 'Posts', overflowing: false },
+    { text: '2026-06-hello', overflowing: false },
+  ]);
+});

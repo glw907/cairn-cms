@@ -139,12 +139,24 @@ sets both `class="... {item === page ? 'btn-active' : ''}"` and `aria-current={i
 'page' : undefined}` on the same button, hand-rolling exactly what daisyui's CSS now does from
 the `aria-current` attribute alone. The manual `btn-active` class is now redundant, not
 conflicting (both target the same state), so this is a genuine simplification candidate, ruled
-in the refactor-decision table below. `ListToolbar.svelte`'s facet buttons are unaffected: its
-own doc comment states it deliberately uses `aria-checked`, never `aria-pressed`
-(`ListToolbar.svelte:52`), so daisyui's new selector does not reach it. 5.7.39-5.7.41 (Firefox
-Android drag-resize, validator-color specificity, `dock`/`menu` `aria-current` styling) touch no
-surface cairn uses. 5.7.42 fixes disabled styling for `input`/`select`/`textarea`/`file-input`,
-a pixel-only fix to already-shipped markup, same class as the checkbox/badge fixes below.
+in the refactor-decision table below. 5.7.42 fixes disabled styling for
+`input`/`select`/`textarea`/`file-input`, a pixel-only fix to already-shipped markup, same class
+as the checkbox/badge fixes below.
+
+**Correction, 2026-09-21 (from the post-bump baseline regen).** Two claims above read the
+selectors too narrowly, and the visual regen is what surfaced both.
+
+- `ListToolbar.svelte`'s facet buttons are NOT out of reach. 5.7.38's selector reads
+  `.btn:is([aria-pressed=true],[aria-checked=true],[aria-current]:not([aria-current=false],[aria-current=""]))`,
+  so `aria-checked` matches it as squarely as `aria-pressed` does. The outcome is still no visual
+  move, but for a different reason than the one recorded: `ListToolbar.svelte:289` already writes
+  `btn-active` on the same state, so daisyui's rule lands on a button that already had the
+  treatment. The record's "does not reach it" was wrong; "changes nothing" is right.
+- 5.7.39-5.7.41 do reach a surface cairn uses. 5.7.41's `menu` `aria-current` styling adds a
+  visible depth shadow under the admin sidebar's active nav item
+  (`box-shadow: 0 2px calc(var(--depth) * 3px) -2px var(--menu-active-bg)`, `menu.css`), which is
+  more than the `--menu-active-fg` color entry the norms check caught. Taken as daisyui's stock
+  active treatment, not overridden.
 
 **Features to leverage.** 5.7.25 adds native `checkbox` support for `aria-checked="mixed"`
 styling (parallel to `:indeterminate`). `src/lib/components/MediaOrphanTools.svelte:55-79`
@@ -161,9 +173,36 @@ diffs on those elements specifically.
 
 **Risks in the bump.** Check the checkbox, badge, `loading-sm`, disabled-input, and
 Pagination's `aria-current` button visual/e2e baselines specifically after bumping; the other
-patches (OTP, RTL dropdown/toast, breadcrumbs, join, skeleton, menu, floating-label, FAB,
-text-rotate, Firefox Android drag-resize, validator colors, `dock`) touch surfaces cairn
-doesn't use.
+patches (OTP, RTL dropdown/toast, join, skeleton, floating-label, FAB, text-rotate, Firefox
+Android drag-resize, validator colors, `dock`) touch surfaces cairn doesn't use.
+
+**Gate risk, resolved 2026-09-21.** The post-bump CI regen rewrote 33 admin baselines, and a
+fresh visual read of that regen reported four regressions. Measured against the two committed
+baseline sets, the regen moved exactly three things, and only one of them is breakage:
+
+1. **The breadcrumb, real breakage.** 5.7.21 added
+   `.breadcrumbs { margin-inline-start: -.25rem }` and
+   `.breadcrumbs > ul { padding-inline-start: .25rem }` (`breadcrumbs.css`). The pair nets to no
+   visible shift, but it takes 4px out of the crumb list's content box inside a wrapper that
+   sizes to its crumbs, so the flex line overflowed by 4px and every crumb ellipsized. Fixed by
+   `ms-0` and `ps-0` on the call site. The 40px of left inset the same change removed was the
+   UA's own `<ul>` marker gutter, never authored; the band now starts at the topbar's own left
+   padding, aligned with an office route's site name.
+2. **The active nav item's depth shadow, intended.** 5.7.41, above. Taken as stock.
+3. **The media view toggle's pressed ring, not the bump at all.** The ring darkened from a 20%
+   `base-content` mix to a 55% one. That is `2ca47771` (2026-09-12), which raised the pressed
+   cue above the WCAG 1.4.11 3:1 floor, reaching a baseline for the first time; the previous
+   regen (`3a5e2f3b`, 2026-08-29) predates it. The packaged sheet's `.ring-base-content\/55` rule
+   is byte-identical under 5.7.20 and 5.7.42.
+
+The fourth reported regression, a shrunken `⌘K` hint, is not in the regen: the two baseline sets
+are pixel-identical in that region. The hint renders differently on this workstation than on CI
+because `<kbd>` inherits the UA's `monospace` keyword and the two font sets resolve `U+2318`
+differently; the comparison that reported it read a local render against a CI baseline.
+
+The wider lesson for the next bump: baselines regenerate on CI only, so a regen after a long gap
+carries every intended change since the last one (this one spanned 1033 commits and three weeks).
+Attribute a regen's diff against the code that moved, not against the bump alone.
 
 **Confirmed, 2026-09-20: `npm run norms:check` caught a real, attributable move.**
 `CairnAdminShell.svelte:1055` sets `aria-current="page"` on the active nav item inside its

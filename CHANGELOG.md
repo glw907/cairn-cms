@@ -1869,6 +1869,19 @@
 
 ### Fixed
 
+- The admin topbar's breadcrumb no longer ellipsizes a crumb that fits. daisyUI 5.7.21 took 4px
+  out of `.breadcrumbs > ul`'s content box (a `padding-inline-start: .25rem` against a matching
+  negative margin on the wrapper), and the breadcrumb's own wrapper sizes to its crumbs, so the
+  flex line overflowed by exactly those 4px and every crumb shrank behind a `truncate`: on the
+  edit page and the delete dialog, "Posts" read "Pos..." beside free space and the entry id lost
+  its last character. `CairnAdminShell` now writes `ms-0` on the breadcrumb `nav` and `ps-0` on
+  its `ul`, the inline-axis half of the opt-out the `nav`'s `p-0` already made. The crumb trail
+  also picks up 40px of left inset that the UA's default list gutter had been supplying: it now
+  starts at the topbar's own left padding, the same edge an office route's site name starts at,
+  so the desk band and the office band share one left edge. An e2e regression guard reads the
+  crumbs' `scrollWidth` against their `clientWidth` on the real preview build. Admin-internal
+  only; no consumer action.
+
 - `cairn-guidance install` now resolves every destination against the real `.claude` directory
   instead of trusting a lexical path: a destination reached through a symlink, a destination that
   is itself a symlink, a `.claude` that is a symlink, and a destination that already exists as a
@@ -2456,8 +2469,18 @@
   peer range. **Consumers must: the daisyUI bump (`5.7.20` to `5.7.42`) recompiles the
   shipped `dist/components/cairn-admin.css`**, the packaged stylesheet `/admin-sources.css`
   imports; 5.7.35 through 5.7.42's checkbox tick/dash alignment and badge-in-flex shrinking
-  fixes change the precompiled sheet's pixel output on those two elements. No code change is
-  required; a site that snapshot-tests the admin visually should refresh those baselines.
+  fixes change the precompiled sheet's pixel output on those two elements. Three more of the
+  bump's rules reach the admin's own paint, all taken as daisyUI's stock treatment rather than
+  overridden. 5.7.21 gives `.breadcrumbs` a `margin-inline-start: -.25rem` and `.breadcrumbs > ul`
+  a `padding-inline-start: .25rem`, which resets the UA's default list gutter under a breadcrumb;
+  see the breadcrumb fix under Fixed for the admin's own response. 5.7.41 styles an
+  `[aria-current]` `.menu` item as active, so the admin sidebar's active nav item now carries
+  daisyUI's depth shadow under it. 5.7.38 gives a `.btn` carrying `aria-pressed="true"`,
+  `aria-checked="true"`, or `aria-current` the `.btn-active` treatment; the admin's own
+  `.btn`-based pickers (`ListToolbar`'s segmented facet, `Pagination`) already set `btn-active`
+  explicitly on the same state, so daisyUI's rule is redundant there rather than additive. No
+  code change is required; a site that snapshot-tests the admin visually should refresh those
+  baselines.
   `devalue`'s move to `5.9.4` (a devDependency, not shipped) is worth naming despite carrying no
   consumer action: `5.9.2` through `5.9.4` close a prototype-pollution-bypass in `parse`/
   `unflatten` and a shared-buffer disclosure in `stringify`/`uneval`, on the same serialization

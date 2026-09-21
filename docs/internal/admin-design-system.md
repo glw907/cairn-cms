@@ -136,7 +136,11 @@ Three rules carry the model:
   `CairnAdminShell` holds a `$state` holder, `EditPage` registers a `desk` snippet into it in an `$effect`
   and clears it on teardown). The band reads as three clusters, not a uniform row: the way back (drawer
   toggle, breadcrumb), the document status behind a hairline, and the actions split by a second
-  hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save).
+  hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save). The way
+  back starts at the band's own left padding, the same edge an office route's site name starts at, so
+  the two bands share one left edge. The breadcrumb carries `ms-0` on its `nav` and `ps-0` on its
+  `ul` to hold that edge: daisyUI's `.breadcrumbs` recipe sets an inset of its own on both, and the
+  UA's default list gutter sits under it.
 - **The chrome recedes through a band, not outright; it persists again at `xl`.** The persistent
   sidebar sits at a route-kind-specific breakpoint: `lg` (1024px) for office routes, `xl` (1280px)
   for desk routes (the desk rider, spec §5, 2026-07-14). A desk route no longer drops the sidebar
@@ -360,7 +364,15 @@ alongside the component recipes above and below it.
   them. Do not use a flat `base-300` border, and do not write the bracketed `var()` form the roles
   replace (`docs/reference/admin-grammar-tokens.md` has the full contract).
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
-  `font-medium text-subtle`.
+  `font-medium text-subtle`. From daisyUI 5.7.41 the `.menu` recipe styles an `[aria-current]` item
+  natively, which adds its own depth shadow under the active item
+  (`box-shadow: 0 2px calc(var(--depth) * 3px) -2px var(--menu-active-bg)`). That shadow is the stock
+  active treatment and the admin takes it; the utilities above still carry the fill and the ink.
+  Flatness under an active nav item is not a rule, so do not write a cancel rule for it. The same
+  holds for an active toggle button: daisyUI 5.7.38 gives a `.btn` carrying `aria-pressed="true"`,
+  `aria-checked="true"`, or `aria-current` the `.btn-active` treatment, and the admin takes that too.
+  `--depth` (set to `1` on both theme roots) is the stock lever if a flatter active item is ever
+  wanted; it scales the menu item's shadow blur, not the shadow's existence.
 - **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
   own screens and a site's flat entries alike, as loose top-level nodes with no section wrapper. A
   category header costs a reader a decision on every visit, a cost the sizes a zero-config sidebar

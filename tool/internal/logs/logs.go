@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -115,10 +116,7 @@ func ParseSince(s string) (time.Duration, error) {
 
 // clampSince narrows since to RetentionClamp when it exceeds it.
 func clampSince(since time.Duration) time.Duration {
-	if since > RetentionClamp {
-		return RetentionClamp
-	}
-	return since
+	return min(since, RetentionClamp)
 }
 
 // buildQuery constructs the Workers Logs telemetry query body Cloudflare's
@@ -249,13 +247,7 @@ func FetchLevel(ctx context.Context, cf *providers.Cloudflare, worker, level str
 	if err != nil {
 		return nil, err
 	}
-	filtered := make([]Entry, 0, len(entries))
-	for _, e := range entries {
-		if e.Level == level {
-			filtered = append(filtered, e)
-		}
-	}
-	return filtered, nil
+	return slices.DeleteFunc(entries, func(e Entry) bool { return e.Level != level }), nil
 }
 
 // CountErrors returns the count of level: error records worker logged over the since window ending

@@ -91,6 +91,7 @@ func conditionCases() []conditionCase {
 			check:     publishPathCheck{},
 			record:    publishRecord(),
 			clients:   publishClients(publishGHRoundTripper{}),
+			options:   publishOptions(),
 			wantState: spine.Unknown,
 		},
 		{
@@ -104,7 +105,7 @@ func conditionCases() []conditionCase {
 			name:          "errors with no observability dataset",
 			check:         errorsCheck{},
 			clients:       errorsClients(errorsEventsRoundTripper{status: http.StatusBadRequest}),
-			options:       Options{ErrorThreshold: 1, LogWindow: time.Hour},
+			options:       Options{ErrorThreshold: 1, LogWindow: time.Hour, Now: fixedNow},
 			wantState:     spine.Unknown,
 			wantCondition: spine.ConditionConfigObservabilityOff,
 		},
@@ -112,7 +113,7 @@ func conditionCases() []conditionCase {
 			name:      "errors over the threshold",
 			check:     errorsCheck{},
 			clients:   errorsClients(errorsEventsRoundTripper{events: []string{"commit.failed", "commit.failed"}}),
-			options:   Options{ErrorThreshold: 1, LogWindow: time.Hour},
+			options:   Options{ErrorThreshold: 1, LogWindow: time.Hour, Now: fixedNow},
 			wantState: spine.Failing,
 		},
 	}

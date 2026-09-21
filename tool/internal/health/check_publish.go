@@ -87,7 +87,9 @@ func staleBranchCount(branches []providers.Branch, botCommitAt, now time.Time) i
 
 // Run implements Check. A repository with neither an open "cairn/*" branch nor any bot commit at
 // all has never been observed publishing anything, so it is Unknown rather than a vacuous OK.
-func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
+// Every branch age is measured against o.Now, the sweep's clock, so the same branch list replays
+// to the same ages.
+func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
 	owner, repo := r.GitHub.Repo.Owner, r.GitHub.Repo.Repo
 
 	branches, err := c.GH.Branches(ctx, owner, repo)
@@ -105,7 +107,7 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, _ O
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no cairn branches or publish commits observed"}
 	}
 
-	now := time.Now()
+	now := o.Now()
 	detail := PublishDetail{BranchCount: len(open)}
 	for _, b := range open {
 		detail.AgeDays = append(detail.AgeDays, int(now.Sub(b.CommitDate).Hours()/24))

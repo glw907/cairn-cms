@@ -43,7 +43,8 @@ func TestAcksMatch(t *testing.T) {
 // Report.Acknowledged, following the same absent-id path unchanged).
 func TestRunAppliesAcknowledgements(t *testing.T) {
 	now := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
-	nowFn := func() time.Time { return now }
+	opts := validOptions
+	opts.Now = func() time.Time { return now }
 	checks := []Check{
 		fixedOutcomeCheck{id: "deploy", outcome: spine.Outcome{State: spine.Failing, Detail: "known issue"}},
 		fixedOutcomeCheck{id: "logs", outcome: spine.Outcome{State: spine.OK}},
@@ -55,7 +56,7 @@ func TestRunAppliesAcknowledgements(t *testing.T) {
 		{CheckID: "expired", Expires: now.Add(-time.Hour)},
 	}
 
-	report, err := Run(context.Background(), record.Record{}, Clients{}, checks, nowFn, validOptions, acks)
+	report, err := Run(context.Background(), record.Record{}, Clients{}, checks, opts, acks)
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}

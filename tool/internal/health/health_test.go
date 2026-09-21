@@ -14,10 +14,10 @@ import (
 
 // validOptions is the minimal Options every test in this package that does not itself exercise
 // Options.Validate needs to pass Run's zero-value rejection.
-var validOptions = Options{ErrorThreshold: 1, LogWindow: time.Minute}
+var validOptions = Options{ErrorThreshold: 1, LogWindow: time.Minute, Now: fixedNow}
 
-// fixedNow is the clock every test in this package passes to Run so a settled CheckResult's
-// CheckedAt is reproducible.
+// fixedNow is the clock every test in this package sweeps against so a settled CheckResult's
+// CheckedAt, and every age a check measures, is reproducible.
 func fixedNow() time.Time {
 	return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 }
@@ -86,7 +86,7 @@ func TestRunOnCheckCallbackFiresOncePerCheckInOrder(t *testing.T) {
 	opts := validOptions
 	opts.OnCheck = func(cr CheckResult) { seen = append(seen, cr.ID) }
 
-	if _, err := Run(context.Background(), record.Record{}, Clients{}, checks, fixedNow, opts, nil); err != nil {
+	if _, err := Run(context.Background(), record.Record{}, Clients{}, checks, opts, nil); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
 
@@ -99,7 +99,7 @@ func TestRunOnCheckCallbackFiresOncePerCheckInOrder(t *testing.T) {
 func TestRunNilOnCheckRunsUnchanged(t *testing.T) {
 	checks := []Check{fixedOutcomeCheck{id: "a", outcome: spine.Outcome{State: spine.OK}}}
 
-	report, err := Run(context.Background(), record.Record{}, Clients{}, checks, fixedNow, validOptions, nil)
+	report, err := Run(context.Background(), record.Record{}, Clients{}, checks, validOptions, nil)
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestRunPartialResultsOnCancelledContext(t *testing.T) {
 		fixedOutcomeCheck{id: "third", outcome: spine.Outcome{State: spine.OK}},
 	}
 
-	report, err := Run(ctx, record.Record{}, Clients{}, checks, fixedNow, validOptions, nil)
+	report, err := Run(ctx, record.Record{}, Clients{}, checks, validOptions, nil)
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestRunRecoversPanickingCheck(t *testing.T) {
 	type sentinel struct{ secret string }
 	checks := []Check{panickingCheck{value: sentinel{secret: "do-not-leak-me"}}}
 
-	report, err := Run(context.Background(), record.Record{}, Clients{}, checks, fixedNow, validOptions, nil)
+	report, err := Run(context.Background(), record.Record{}, Clients{}, checks, validOptions, nil)
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -170,7 +170,7 @@ func TestRunRecoversPanickingCheck(t *testing.T) {
 func TestRunSkipsCheckWhoseTierClientIsAbsentAndSetsDegraded(t *testing.T) {
 	checks := []Check{fixedOutcomeCheck{id: "cf-only", tier: TierCF, outcome: spine.Outcome{State: spine.OK}}}
 
-	report, err := Run(context.Background(), record.Record{}, Clients{HaveCF: false}, checks, fixedNow, validOptions, nil)
+	report, err := Run(context.Background(), record.Record{}, Clients{HaveCF: false}, checks, validOptions, nil)
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -186,7 +186,7 @@ func TestRunSkipsCheckWhoseTierClientIsAbsentAndSetsDegraded(t *testing.T) {
 func TestRunDegradedClearForNonCredMissingUnknown(t *testing.T) {
 	checks := []Check{fixedOutcomeCheck{id: "timeout", outcome: spine.Outcome{State: spine.Unknown, Reason: spine.ReasonTimeout}}}
 
-	report, err := Run(context.Background(), record.Record{}, Clients{}, checks, fixedNow, validOptions, nil)
+	report, err := Run(context.Background(), record.Record{}, Clients{}, checks, validOptions, nil)
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -204,7 +204,7 @@ func TestRunIsPureOverItsInputs(t *testing.T) {
 
 	run := func() Report {
 		checks := append(slices.Clone(All), statefulStubCheck{calls: new(int)})
-		report, err := Run(context.Background(), r, clients, checks, fixedNow, validOptions, nil)
+		report, err := Run(context.Background(), r, clients, checks, validOptions, nil)
 		if err != nil {
 			t.Fatalf("Run: %v", err)
 		}

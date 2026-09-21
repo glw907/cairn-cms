@@ -78,7 +78,7 @@ func TestErrorsCheckDeclaresIDAndTierCF(t *testing.T) {
 // literal.
 func TestErrorsCheckAdvisoryBand(t *testing.T) {
 	const threshold = 3
-	opts := Options{ErrorThreshold: threshold, LogWindow: time.Hour}
+	opts := Options{ErrorThreshold: threshold, LogWindow: time.Hour, Now: fixedNow}
 
 	tests := []struct {
 		name      string
@@ -123,7 +123,7 @@ func TestErrorsCheckAdvisoryBand(t *testing.T) {
 // TestErrorsCheckReportsTopThreeEventNames asserts the Fields carry the up-to-three most frequent
 // event names, most frequent first.
 func TestErrorsCheckReportsTopThreeEventNames(t *testing.T) {
-	opts := Options{ErrorThreshold: 100, LogWindow: time.Hour}
+	opts := Options{ErrorThreshold: 100, LogWindow: time.Hour, Now: fixedNow}
 	events := []string{
 		"auth.link.send_failed", "auth.link.send_failed", "auth.link.send_failed",
 		"commit.failed", "commit.failed",
@@ -157,7 +157,7 @@ func TestErrorsCheckReportsTopThreeEventNames(t *testing.T) {
 // reports Unknown with a Detail naming the missing dataset, and Validate accepts the Reason it
 // carries.
 func TestErrorsCheckObservabilityOff(t *testing.T) {
-	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour}
+	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}
 	clients := errorsClients(errorsEventsRoundTripper{status: http.StatusBadRequest})
 
 	outcome := errorsCheck{}.Run(context.Background(), record.Record{}, clients, opts)

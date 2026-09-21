@@ -47,7 +47,7 @@ func topEventNames(entries []logs.Entry, n int) []string {
 // logging real errors, and telling its operator to enable a setting already enabled would be the
 // wrong remedy for the one verdict that means something is actually broken.
 func (errorsCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
-	entries, err := logs.FetchLevel(ctx, c.CF, r.Cloudflare.WorkerName, "error", o.LogWindow)
+	entries, err := logs.FetchLevel(ctx, c.CF, r.Cloudflare.WorkerName, "error", o.LogWindow, o.Now())
 	if err != nil {
 		if errors.Is(err, logs.ErrObservabilityOff) {
 			return spine.Outcome{

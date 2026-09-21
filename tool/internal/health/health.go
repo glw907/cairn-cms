@@ -77,17 +77,19 @@ func needsClient(tier Tier, c Clients) bool {
 
 // Run sweeps every check in checks against r, in order, and returns the settled Report. Run is
 // pure over its inputs: the same checks, record, clients, options, and acks, replayed through the
-// same now func, produce a byte-identical Report every time, which is what lets a caller
-// golden-test a run or, in 2.0, a HUD poll loop call it with no wrapper.
+// same Options.Now, produce a byte-identical Report every time, which is what lets a caller
+// golden-test a run or, in 2.0, a HUD poll loop call it with no wrapper. Options.Now is the
+// sweep's only clock, handed to every check through Options so a check has no reason to read the
+// system clock itself.
 //
-// Run rejects a zero Options outright, since a threshold or window left at zero would otherwise
-// run silently rather than loudly. A check whose Needs tier's client is absent is never called:
+// Run rejects a zero Options outright, since a threshold, window, or clock left at its zero value
+// would otherwise run silently rather than loudly. A check whose Needs tier's client is absent is never called:
 // Run records it Unknown with reason.cred-missing and sets Degraded, the one report-level signal
 // that distinguishes a missing credential from every other Unknown. A cancelled or expired ctx
 // stops the sweep after the check already in flight settles; every remaining check is recorded
 // Unknown with reason.not-run rather than dropped from the report. A panicking check is
 // recovered the same way, so one broken check never loses the rest of the sweep.
-func Run(ctx context.Context, r record.Record, c Clients, checks []Check, now func() time.Time, o Options, acks Acks) (Report, error) {
+func Run(ctx context.Context, r record.Record, c Clients, checks []Check, o Options, acks Acks) (Report, error) {
 	if err := o.Validate(); err != nil {
 		return Report{}, err
 	}
@@ -100,25 +102,25 @@ func Run(ctx context.Context, r record.Record, c Clients, checks []Check, now fu
 	}
 
 	for _, check := range checks {
-		result := settle(ctx, check, r, c, o, now)
+		result := settle(ctx, check, r, c, o)
 		if result.Outcome.Reason == spine.ReasonCredMissing {
 			report.Degraded = true
 		}
-		applyAck(&result, acks, now())
+		applyAck(&result, acks, o.Now())
 		report.Checks = append(report.Checks, result)
 		if o.OnCheck != nil {
 			o.OnCheck(result)
 		}
 	}
 
-	report.Acknowledged = activeAckIDs(acks, now())
+	report.Acknowledged = activeAckIDs(acks, o.Now())
 	return report, nil
 }
 
 // settle runs one check, skipping it when its tier's client is absent or the run's context has
 // already ended, and recovering a panic into an Unknown result rather than propagating it.
-func settle(ctx context.Context, check Check, r record.Record, c Clients, o Options, now func() time.Time) CheckResult {
-	result := CheckResult{ID: check.ID(), Tier: check.Needs(), CheckedAt: now()}
+func settle(ctx context.Context, check Check, r record.Record, c Clients, o Options) CheckResult {
+	result := CheckResult{ID: check.ID(), Tier: check.Needs(), CheckedAt: o.Now()}
 
 	select {
 	case <-ctx.Done():

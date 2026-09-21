@@ -16,9 +16,10 @@ func TestOptionsValidate(t *testing.T) {
 		o             Options
 		wantErrSubstr string
 	}{
-		{"a fully set Options validates", Options{ErrorThreshold: 5, LogWindow: time.Hour}, ""},
-		{"a zero ErrorThreshold names ErrorThreshold", Options{LogWindow: time.Hour}, "ErrorThreshold"},
-		{"a zero LogWindow names LogWindow", Options{ErrorThreshold: 5}, "LogWindow"},
+		{"a fully set Options validates", Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}, ""},
+		{"a zero ErrorThreshold names ErrorThreshold", Options{LogWindow: time.Hour, Now: fixedNow}, "ErrorThreshold"},
+		{"a zero LogWindow names LogWindow", Options{ErrorThreshold: 5, Now: fixedNow}, "LogWindow"},
+		{"a nil Now names Now", Options{ErrorThreshold: 5, LogWindow: time.Hour}, "Now"},
 		{"a fully zero Options names ErrorThreshold first", Options{}, "ErrorThreshold"},
 	}
 	for _, tt := range tests {
@@ -40,7 +41,7 @@ func TestOptionsValidate(t *testing.T) {
 // TestRunRejectsZeroOptions asserts Run itself refuses to sweep with a zero Options, returning
 // the zero Report alongside the error Options.Validate names.
 func TestRunRejectsZeroOptions(t *testing.T) {
-	report, err := Run(context.Background(), record.Record{}, Clients{}, nil, fixedNow, Options{}, nil)
+	report, err := Run(context.Background(), record.Record{}, Clients{}, nil, Options{}, nil)
 	if err == nil {
 		t.Fatal("Run(zero Options) = nil error, want one naming the unset field")
 	}

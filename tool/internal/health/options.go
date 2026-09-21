@@ -13,6 +13,10 @@ type Options struct {
 	ErrorThreshold int
 	// LogWindow is the lookback window ErrorThreshold is measured over.
 	LogWindow time.Duration
+	// Now is the sweep's clock, the one time source Run and every check read. A check never calls
+	// time.Now itself: a replay through the same Now must produce a byte-identical Report, which
+	// a second, uninjected clock inside a check would break silently.
+	Now func() time.Time
 	// OnCheck, when non-nil, is called once per check as it settles, in completion order, with
 	// its settled CheckResult. nil is the default every non-interactive caller passes.
 	OnCheck func(CheckResult)
@@ -26,6 +30,9 @@ func (o Options) Validate() error {
 	}
 	if o.LogWindow == 0 {
 		return errors.New("health: Options.LogWindow must be set")
+	}
+	if o.Now == nil {
+		return errors.New("health: Options.Now must be set")
 	}
 	return nil
 }

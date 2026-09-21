@@ -54,7 +54,7 @@ func newFixtureClient(t *testing.T) *providers.Cloudflare {
 func TestFetchOrdersEntriesAsTheResponseCarriedThem(t *testing.T) {
 	cf := newFixtureClient(t)
 
-	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour})
+	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
 	if err != nil {
 		t.Fatalf("Fetch: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestFetchOrdersEntriesAsTheResponseCarriedThem(t *testing.T) {
 func TestFetchNeverStringifiesAField(t *testing.T) {
 	cf := newFixtureClient(t)
 
-	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour})
+	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
 	if err != nil {
 		t.Fatalf("Fetch: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestFetchNeverStringifiesAField(t *testing.T) {
 func TestFetchNarrowsToOneEvent(t *testing.T) {
 	cf := newFixtureClient(t)
 
-	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour, Event: "commit.failed"})
+	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour, Event: "commit.failed"}, queryNow)
 	if err != nil {
 		t.Fatalf("Fetch: %v", err)
 	}
@@ -125,9 +125,13 @@ func TestFetchNarrowsToOneEvent(t *testing.T) {
 
 // TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors asserts Fetch filters on the JSON
 // "event" key and CountErrors's own path filters on "level", the one distinction between them.
+// queryNow is the fixed query clock every test in this file reads, so a timeframe a test asserts
+// on does not move between runs.
+var queryNow = time.Date(2026, 9, 14, 12, 0, 0, 0, time.UTC)
+
 func TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors(t *testing.T) {
-	fetchQuery := buildQuery("site", time.Hour, "event", "auth.link.send_failed", 0)
-	countQuery := buildQuery("site", time.Hour, "level", "error", errorCountLimit)
+	fetchQuery := buildQuery("site", time.Hour, queryNow, "event", "auth.link.send_failed", 0)
+	countQuery := buildQuery("site", time.Hour, queryNow, "level", "error", errorCountLimit)
 
 	fetchParams, ok := fetchQuery["parameters"].(map[string]any)
 	if !ok {
@@ -160,7 +164,7 @@ func TestBuildQuerySharesTheGrammarBetweenFetchAndCountErrors(t *testing.T) {
 func TestCountErrorsCountsLevelErrorRecords(t *testing.T) {
 	cf := newFixtureClient(t)
 
-	count, err := CountErrors(context.Background(), cf, "example-site", 24*time.Hour)
+	count, err := CountErrors(context.Background(), cf, "example-site", 24*time.Hour, queryNow)
 	if err != nil {
 		t.Fatalf("CountErrors: %v", err)
 	}
@@ -178,7 +182,7 @@ func TestFetchMapsAnAPIErrorToErrObservabilityOff(t *testing.T) {
 		body:   []byte(`{"success":false,"errors":[{"code":7003}],"result":null}`),
 	})
 
-	_, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour})
+	_, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
 	if !errors.Is(err, ErrObservabilityOff) {
 		t.Errorf("Fetch: err = %v, want ErrObservabilityOff", err)
 	}
@@ -189,7 +193,7 @@ func TestFetchMapsAnAPIErrorToErrObservabilityOff(t *testing.T) {
 func TestFetchTransportFailurePassesThrough(t *testing.T) {
 	cf := providers.NewCloudflare("acct123", providers.Credential{}, errorRoundTripper{})
 
-	_, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour})
+	_, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
 	if err == nil {
 		t.Fatal("Fetch: want an error over a transport failure")
 	}

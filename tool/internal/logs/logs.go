@@ -122,11 +122,10 @@ func clampSince(since time.Duration) time.Duration {
 // Task 10's probe confirmed (queryId, timeframe, view, limit, parameters.datasets) with a
 // worker-name filter on "$metadata.service" and, when filterValue is set, one more equality
 // filter on filterKey: "event" for Fetch, "level" for CountErrors.
-func buildQuery(worker string, since time.Duration, filterKey, filterValue string, limit int) map[string]any {
+func buildQuery(worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) map[string]any {
 	if limit <= 0 {
 		limit = DefaultLimit
 	}
-	now := time.Now()
 	filters := []map[string]any{
 		{"key": "$metadata.service", "operation": "eq", "value": worker},
 	}
@@ -204,8 +203,8 @@ func parseEntry(raw json.RawMessage) (Entry, error) {
 // fetch runs one telemetry query against cf, mapping an API-level error to ErrObservabilityOff
 // (see that sentinel's own doc comment for why), and decoding the returned events in the order
 // the API carried them.
-func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, filterKey, filterValue string, limit int) ([]Entry, error) {
-	result, err := cf.ObservabilityQuery(ctx, buildQuery(worker, clampSince(since), filterKey, filterValue, limit))
+func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, now time.Time, filterKey, filterValue string, limit int) ([]Entry, error) {
+	result, err := cf.ObservabilityQuery(ctx, buildQuery(worker, clampSince(since), now, filterKey, filterValue, limit))
 	if err != nil {
 		if _, ok := errors.AsType[*providers.APIError](err); ok {
 			return nil, ErrObservabilityOff
@@ -223,26 +222,27 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 	return entries, nil
 }
 
-// Fetch returns worker's log entries over q.Since (clamped to RetentionClamp), in the order the
-// API returned them, narrowed to q.Event when set. 2.0 seam kept on purpose: Fetch leaves every
-// field as json.RawMessage with no rendering choice baked in, so 2.0's scrolling view consumes
-// the same function 1.0's printed list does.
-func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query) ([]Entry, error) {
-	return fetch(ctx, cf, q.Worker, q.Since, "event", q.Event, q.Limit)
+// Fetch returns worker's log entries over the q.Since window ending at now (clamped to
+// RetentionClamp), in the order the API returned them, narrowed to q.Event when set. now is a
+// parameter, not a system-clock read, so a caller replaying a query gets the same window every
+// time. 2.0 seam kept on purpose: Fetch leaves every field as json.RawMessage with no rendering
+// choice baked in, so 2.0's scrolling view consumes the same function 1.0's printed list does.
+func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query, now time.Time) ([]Entry, error) {
+	return fetch(ctx, cf, q.Worker, q.Since, now, "event", q.Event, q.Limit)
 }
 
-// FetchLevel returns worker's log entries at level, over the trailing since window (clamped to
-// RetentionClamp). It is CountErrors's own read path, exported so a caller that also needs the
+// FetchLevel returns worker's log entries at level, over the since window ending at now (clamped
+// to RetentionClamp). It is CountErrors's own read path, exported so a caller that also needs the
 // matched entries themselves, the health errors check's top-event-name tally, reads them without
 // a second, re-filtered query.
-func FetchLevel(ctx context.Context, cf *providers.Cloudflare, worker, level string, since time.Duration) ([]Entry, error) {
-	return fetch(ctx, cf, worker, since, "level", level, errorCountLimit)
+func FetchLevel(ctx context.Context, cf *providers.Cloudflare, worker, level string, since time.Duration, now time.Time) ([]Entry, error) {
+	return fetch(ctx, cf, worker, since, now, "level", level, errorCountLimit)
 }
 
-// CountErrors returns the count of level: error records worker logged over the trailing since
-// window, the health errors check's own signal.
-func CountErrors(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration) (int, error) {
-	entries, err := FetchLevel(ctx, cf, worker, "error", since)
+// CountErrors returns the count of level: error records worker logged over the since window ending
+// at now, the health errors check's own signal.
+func CountErrors(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, now time.Time) (int, error) {
+	entries, err := FetchLevel(ctx, cf, worker, "error", since, now)
 	if err != nil {
 		return 0, err
 	}

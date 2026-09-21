@@ -14,9 +14,13 @@ its preconditions hold. The first plan is `docs/superpowers/plans/2026-09-21-dra
 The order of work, as ruled:
 
 1. The Go tool's 1.0: the `tool/v1.0.0` tag, the release, and B2's merge.
-2. The doctor retirement, its own pass, conducted by a fresh tool session. It ships `tool/v1.1.0`.
-3. **Pass A**, the tool's contract pages, so the `0.97.0` tarball carries them.
-4. The one engine cut, `0.97.0`.
+2. The doctor retirement, its own pass, conducted by a fresh tool session. It merges without a
+   tool tag.
+3. **Pass A**, the tool's contract pages, so the `0.97.0` tarball carries them. One
+   `tool/v1.1.0` is cut after pass A merges, carrying the retirement and the repointed links, so
+   the binary the release announces never names a deleted path. That tag's close is the only
+   writer of "the `0.97.0` cut is unblocked", since it lands last.
+4. The one engine cut, `0.97.0`, after that tag.
 5. The docs chore that updates the narrative-arm freeze and the site-agent rule.
 6. The docs-infra currency pass, whole
    (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`).
@@ -61,10 +65,13 @@ code on `main`, and a transcript needs a real run of the released behaviour.
   agent's primary surface. The overturn is recorded in the register, in a dated note appended to
   `docs/internal/record/2026-08-14-audience-profiles.md`, and in the friction log's list of
   perspectives.
-- **Schemas stay beside the code.** The JSON Schema files move to `tool/schema/`. Each `$id`
-  under `https://cairn.pub/schema/` freezes with the 1.0 tag. A `$id` is an identifier and need
-  not resolve; the reference page says so until cairn.pub serves the route. `tool/README.md` stays
-  as a short landing page for pkg.go.dev and GitHub.
+- **Schemas ship with the docs.** The JSON Schema files move to `docs/reference/schema/`, which
+  the npm tarball carries, so cairn.pub can serve them verbatim at their `$id` URLs under
+  `https://cairn.pub/schema/`. This reverses the same day's first ruling for `tool/schema/`:
+  cairn.pub renders only the tarball and `tool/` is kept out of it. The Go tests read the
+  schemas at the repository root, as they already read `docs/admin/is-it-working.md`; nothing
+  embeds them. Each `$id` freezes with the 1.0 tag and need not resolve until cairn.pub serves
+  the route, and the page says so. `tool/README.md` stays as a short landing page.
 - **A vendor figure may be stated.** The container gains one tag, `[vendor-figure: as of <date>]`,
   whose `Source:` is the vendor's URL, accepted by `check:facts`. A page prints the figure with
   its as-of date. The admin register requires a cost before the step that incurs it, and a
@@ -89,22 +96,30 @@ code on `main`, and a transcript needs a real run of the released behaviour.
    does not cover them. They document the contracts as `main` has them after the retirement,
    including the local action's payload and any reason code it added. Their facts get new `##`
    sections in `docs/internal/facts/reference.md`. They carry no transcripts; each JSON example
-   is copied from a golden under `tool/internal/render/testdata/`, named in the brief's manifest.
-   Their exemplar is `docs/reference/cli-cairn-manifest.md`.
+   is derived from a golden under `tool/internal/render/testdata/`, named in the brief's
+   manifest, with the owner's site names, repository, and Cloudflare account id replaced by
+   example values, since these pages ship in every consumer's `node_modules`. The JSON page
+   keeps the structure `tool/internal/render/json_schema_test.go` asserts. Each page carries a
+   line naming the `cairn` version it describes, and a Go test guards that line and the
+   exit-code table against `internal/spine`. Their exemplar is
+   `docs/reference/cli-cairn-manifest.md`.
 4. The tool's log-event content folded into `docs/reference/log-events.md`, which stays the one
    log vocabulary page.
 5. The tool-side move, **in the same merge**: `tool/docs/reference/exit-codes.md`,
-   `json-output.md`, and `log-events.md` deleted; every `*.schema.json` beside them (six after
-   B2's segment 5) moved to `tool/schema/`; one docs base URL constant, reusing `docsBase` in
-   `tool/internal/render/layout.go`; the `--json` help text and `cairn help agents` repointed;
+   `json-output.md`, and `log-events.md` deleted, with a short README left in that directory
+   saying where the pages and schemas went; every `*.schema.json` beside them (six after B2's
+   segment 5) moved to `docs/reference/schema/`; a real docs base URL constant beside the
+   anchor prefix `tool/internal/render/layout.go` calls `docsBase` today, following the URL
+   shape the 1.0 fix lines froze, `https://cairn.pub/docs/<arm>/<page>`; the two new pages added
+   to `.github/workflows/tool.yml`'s path filters; the `--json` help text and `cairn help agents` repointed;
    the drift tests' paths moved (`usage_test.go`, `json_schema_test.go`, `help_agents_test.go`);
    `messages_test.go`'s budget-docs test, which reads `exit-codes.md` and `tripwire.md` in one
    loop, split so the half that stays still passes; `tool/README.md`'s exit-codes link
    repointed; the help goldens recut. Four Go tests read these files at test time, so a deletion merged apart from the Go
    edits turns `main` red. The pass's gate includes `make -C tool check`, and `go-conventions`
    governs every Go edit. The tool's conductor confirms `tool/` is quiet before the pass starts.
-6. The moved pages change graders, from `tool/.vale.ini`'s own styles to the repo's Google and
-   Cairn set. `tool/.vale.ini` keeps governing what stays under `tool/docs/`. A Vale finding is
+6. `tool/.vale.ini` grades Go comments only, so this content meets Vale's Google and Cairn set
+   for the first time and gets a first triage. A Vale finding is
    fixed on the page; a wrong one gets the scoped suppression the register's "When a Vale finding
    is wrong" section prescribes.
 
@@ -113,10 +128,10 @@ because their destinations are admin pages. `tool/docs/release-candidate-notes.m
 `tool/docs/adr/`, and `tool/docs/design/` stay for good, and so does `tool/docs/friction.md` once
 the after-1.0 framing's site round creates it, since it is a working record and no public page.
 
-The link repoint reaches operators in the next tool tag after pass A merges, cut by the tool's
-conductor. This supersedes the line in
+The link repoint reaches operators in `tool/v1.1.0`, cut by the tool's conductor after pass A
+merges. This supersedes the line in
 `docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md` that folds the repoint into
-`tool/v1.1.0`, which ships before these pages exist.
+`tool/v1.1.0` at the retirement's close, before these pages exist.
 
 ### Pass B: the admin arm (after docs-infra)
 
@@ -223,7 +238,7 @@ it catches.
 | Admin | Literal walk: install, credentials, health, schedule on a clean machine, every command as printed, every success signal asserted | once, at pass B's end | a command that does not run, a signal that never appears |
 | Admin | Anchor landing: each anchored section of `is-it-working.md` states what the condition means, whether to act, wait, or ask, and its own next step, with no upward reading; a structural check over all, cold reads on six | that page's acceptance | a fix-line arrival that strands the reader |
 | Admin | The owner sitting on `check-your-credentials.md` and its stall log | after that page's chain | which stalls are defects; it calibrates every later brief |
-| Scripter or agent | A fresh agent given only the two contract pages writes a wrapper branching on every code and a parser for every payload, run against `tool/schema/` and the goldens under `tool/internal/render/testdata/` | pass A's end | a contract page that under-specifies |
+| Scripter or agent | A fresh agent given only the two contract pages writes a wrapper branching on every code and a parser for every payload, run against `docs/reference/schema/` and the goldens under `tool/internal/render/testdata/` | pass A's end | a contract page that under-specifies |
 | Extender | Each site agent logs every read of engine source or the cairn-cms checkout made to finish a docs-described task, as a docs failure with the page and the unanswered question | site round | a page that needs engine source |
 | Extender and admin | One report line per page per site: followed verbatim, deviated where, knew what the page did not say | site round | evidence an in-place edit would erase |
 
@@ -288,6 +303,6 @@ page-only `[candidate]` bullets.
 
 ## Budgets
 
-Pass A: a 2.5M token ceiling. Pass B: 7M, with the 80 percent flag at 5.6M. Pass C's ceiling is
+Pass A: a 3.5M token ceiling, flag at 2.8M. Pass B: 7M, with the 80 percent flag at 5.6M. Pass C's ceiling is
 set in its own plan. Checkpoints fall every four tasks, and pass B has one attended stop, the
 owner sitting.

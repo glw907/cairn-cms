@@ -94,10 +94,12 @@ wrong and the plan is written against the truth**; they are marked CONTRADICTS.
    checklist, the doctor probe, and the runtime renderer all draw from". `:131` is
    `config.tidy-key-missing`'s `why`, naming "the doctor" twice ("anywhere the doctor can read",
    "the doctor could read locally"). **A third mention the spec does not name:** `:235`'s
-   `remediation` says "run the full doctor against the same site". **No test pins either string.**
+   `remediation` says "run the full doctor against the same site". **No test pins any of those
+   three strings**, which is what the spec's "no test pins the text" means and all it means.
    `src/tests/unit/conditions.test.ts:123` asserts only `c.why).toMatch(/ANTHROPIC_API_KEY/)` for
    `config.tidy-key-missing`, and `:125` pins its `docsAnchor`. Both rewordings are safe as long as
-   `ANTHROPIC_API_KEY` survives in the `why`.
+   `ANTHROPIC_API_KEY` survives in the `why`. **The registry's SIZE is pinned, though** (finding
+   13), so "no test pins anything" would be the wrong reading.
 10. **The showcase and the template both commit `.cairn/*.json`.** `git ls-files` shows
     `examples/showcase/src/content/.cairn/{index,media}.json` and
     `templates/waymark/src/content/.cairn/{index,media}.json`. `templates/waymark` is **generated
@@ -125,6 +127,65 @@ wrong and the plan is written against the truth**; they are marked CONTRADICTS.
     conventions pass, Task 10 doing this same split for `config.tidy-key`, giving it
     `config.tidy-key-missing` with its own `docsAnchor` (`is-it-working.md#configure-the-tidy-api-key`)
     and its own checklist section. Task 1 follows it. See "Decisions this plan makes".
+13. **BLOCKER the spec does not cost: the new condition id breaks the Go gate unless Task 1 also
+    edits Go.** Two assertions pin the id set from the other side.
+    `tool/internal/spine/condition.go` declares 24 typed `Condition` constants (`:20-44`) and lists
+    all 24 again in the `conditions` slice backing `Conditions()` (`:47-73`).
+    `tool/internal/spine/condition_test.go`'s `TestConditionsMatchRegistry` (`:52-85`) reads
+    `src/lib/diagnostics/conditions.ts` through `providers.RepoRoot()`, scrapes `REGISTRY`'s own
+    keys with a regex, sorts both, and `slices.Equal`s them. **Set equality, not containment**, so
+    adding `config.media-bucket-missing` to `REGISTRY` alone turns `make -C tool check` red, and
+    with it `tool.yml`, which path-triggers on `src/lib/diagnostics/conditions.ts`. Task 1
+    therefore edits Go in the same commit. On the TypeScript side,
+    `src/tests/unit/conditions.test.ts:117` pins `allConditions()` at 24 with a comment reciting
+    every addition and retirement; it moves to 25 with its comment extended.
+14. **BLOCKER the spec does not cost: an absent `site-facts.json` would break every upgrading
+    site's build.** The build only ever **verifies**; the `cairn-manifest` bin **writes**. No
+    site's `build` script runs the bin: `examples/showcase/package.json:9` is `vite build`, and
+    the bin sits behind a separate `cairn:manifest` script (`:12`, and the same in
+    `templates/waymark/package.json:12`). Verify mode imports the committed file as `?raw`
+    (`src/lib/vite/internal.ts:62`), which throws at `buildStart` when the file is absent. A site
+    upgrading to `0.97.0` has no `site-facts.json` until it runs the bin, so a verify that treats
+    absent as drift breaks the build of every consumer on the upgrade, before they can act. Task 3
+    splits the two cases: **absent is not drift**; **stale is**.
+
+---
+
+## Verified facts, recorded so no task re-derives them
+
+Each was checked against this worktree on 2026-09-21. An implementer takes these as given and
+spends no turns re-proving them.
+
+- **Template emit needs no change of its own.** `templates/waymark/src/theme/cairn.config.ts:50`
+  carries the same `media = { bucketBinding: 'MEDIA_BUCKET' }` the showcase does, declares no
+  custom roles, and leaves `aiPosture` commented out (`:158-160`), so the emitted facts file is
+  the showcase's. The copy walk carries any new file under `src/content/.cairn`: `isExcluded`
+  (`scripts/build/emit-template.mjs:99-101`) matches a repo-relative path exactly or as a
+  directory prefix, and `.cairn-template.json`'s `.cairn` entry is therefore the **root-level**
+  directory, never `src/content/.cairn`. The proof is already committed:
+  `templates/waymark/src/content/.cairn/index.json` and `media.json` both exist.
+- **The e2e visual baselines are unaffected.** Nothing in this pass renders a pixel: no Svelte
+  component, no admin CSS, no public route. No baseline is regenerated, and the CI-canonical
+  baseline gotcha in `CLAUDE.md` does not apply to any task here.
+- **`dist/` freshness is sound.** `check:readiness` is `npm run package && node
+  scripts/checks/check-readiness.mjs` (`package.json:42`), so a check script that reads the built
+  registry already owns its own build. `check:tool-conditions` takes the identical shape, and no
+  task needs a separate freshness guard.
+
+### Drift mechanisms: after this pass there are two
+
+Both watch the same registry, and they are not redundant.
+
+1. **The Go regex test**, `TestConditionsMatchRegistry`, reads `conditions.ts` directly and pins
+   the **id set**. It stays canonical for the id set through this pass and retire-1, until
+   retire-1 repoints it at the embedded mirror, which is where the spec's "replacing the regex
+   read of `conditions.ts`" lands.
+2. **The JSON mirror gate**, `check:tool-conditions`, regenerates the mirror and compares bytes.
+   It is canonical for the **text** (`title`, `why`, `remediation`, `docsAnchor`), which the Go
+   test does not read at all.
+
+Neither task in this pass may delete or weaken the other mechanism. A change that makes one of
+them red is a real finding, not noise from the other.
 
 ---
 
@@ -134,13 +195,34 @@ wrong and the plan is written against the truth**; they are marked CONTRADICTS.
 | --- | --- |
 | **Goal** | Land the three pre-task deliverables on `main` so retire-1 can branch: the committed conditions mirror under `tool/` with its drift gate and CI workflow, the built-and-verified `site-facts.json` cross-language contract, and the two `conditions.ts` rewordings of ruling 3a. |
 | **Spec** | `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` ("Pre-task"; the pre-task bullets of "Acceptance"). |
+| **Place in the order** | Step 2 of the spec's five-step Choreography: B2's tool 1.0 merges, **this pass**, retire-1 merges untagged, draft docs pass A, `tool/v1.1.0` tagged and released, retire-2 last. |
+| **Pass precondition** | See below. Checked by the conductor once, before Task 1 is dispatched. |
 | **Branch** | `doctor-pretask`, off `origin/main`. |
 | **Worktree** | `.claude/worktrees/doctor-pretask`, created by the conductor before Task 1. No task touches the main checkout, the `doctor-retirement` worktree, or any other worktree. |
-| **Token ceiling** | **600K.** The 80 percent decision point is **480K**. |
+| **Token ceiling** | **700K.** The 80 percent decision point is **560K**. Raised from 600K by the adversarial review's two blockers: Task 1 now carries a Go edit and a second gate, and Task 3 carries two behavioral arms with a test each. |
 | **Checkpoint interval** | Four tasks, so one checkpoint, at Task 3's accept. One STATUS write at that checkpoint. |
 | **Execution mode** | Per-task chain via the Agent tool: `cairn-implementer` (`model: sonnet`), then `diff-reviewer` (`model: claude-opus-5`), with the full gate run **inside** the chain. No workflow runner. **Serial, one task at a time, one executor in the worktree.** |
 | **Segments** | One. Every task boundary is a commit the gate proved green, so any of them is a safe stop. |
 | **Merge** | By PR. Before the PR, `git merge origin/main` into `doctor-pretask` and re-gate; another session may push STATUS to `main`. Merge on green CI. |
+
+### The pass precondition
+
+**B2 is merged to `main`, and `docs/STATUS.md` on `main` carries B2's close line naming
+`tool/v1.0.0`.** That is step 1 of the spec's five-step order. This pass edits
+`tool/internal/spine/condition.go` (finding 13), a file B2's branch also touches, so it never runs
+before that merge; starting early buys a merge conflict in the one file both passes must agree on.
+
+The conductor runs both checks and does not dispatch Task 1 until each passes:
+
+- `git fetch origin && git ls-tree -d origin/main tool/internal/spine` prints a tree entry.
+  (Verified present on 2026-09-21.)
+- `git ls-remote --tags origin 'tool/v1.0.0'` prints a non-empty result. (Verified **empty** on
+  2026-09-21, so the precondition is unsatisfied as this plan is written, exactly as the ordering
+  note predicts.)
+
+A failure here is a halt: write STATUS, say which check failed, and stop. No task in this pass
+reads, writes, or assumes any path under `tool/` other than `tool/internal/spine/` and the new
+`tool/internal/doctor/` directory it creates.
 
 ### The gate
 
@@ -164,7 +246,8 @@ merge from `main`, and on CI.
 
 1. `git -C <path> status --porcelain` is empty for every entry `git worktree list` reports, except
    `doctor-pretask` itself.
-2. `pgrep -f .claude/worktrees/doctor-pretask` returns nothing.
+2. `pgrep -f .claude/worktrees/doctor-pretask` prints nothing (`pgrep` exits 1 on no match, the
+   same as `grep`; read the output, not the exit status).
 3. Warm uncommitted code in `doctor-pretask` this pass did not author is stop-and-investigate,
    never free progress.
 
@@ -173,7 +256,7 @@ merge from `main`, and on CI.
 Stop, write STATUS, and ask one combined question on any of these. Everything else runs to
 completion with no check-in.
 
-- The Task 1 precondition failing (see Task 1).
+- The pass precondition failing (see "The pass precondition" above).
 - A second `fix` verdict on any task.
 - A red gate that a single fix round does not clear.
 - A `diff-reviewer` finding that a task changed a published condition id, a `docsAnchor`, or an
@@ -206,42 +289,37 @@ completion with no check-in.
 
 ## Task table
 
-| Task | Runs as | Files | Independent-of |
+| Task | Runs as | Files | Serial after |
 | --- | --- | --- | --- |
-| 1, the `conditions.ts` rewordings and the media-bucket condition id | `cairn-implementer` chain, `sonnet` | `src/lib/diagnostics/conditions.ts`, `src/lib/doctor/checks-local.ts`, `src/tests/unit/conditions.test.ts`, `src/tests/unit/doctor-checks-local.test.ts`, `docs/admin/is-it-working.md`, `docs/internal/facts/admin.md`, `CHANGELOG.md` | Task 3 |
-| 2, the conditions mirror, its gate, and the third workflow | `cairn-implementer` chain, `sonnet` | `scripts/build/emit-tool-conditions.mjs`, `scripts/checks/check-tool-conditions.mjs`, `tool/internal/spine/conditions.json`, `tool/internal/doctor/site-config-path.json`, `package.json`, `.github/workflows/test.yml`, `.github/workflows/tool-conditions.yml`, `docs/internal/facts/reference.md`, `CHANGELOG.md` | none (depends on Task 1) |
-| 3, `site-facts.json` | `cairn-implementer` chain, `sonnet` | `src/lib/vite/internal.ts`, `src/lib/vite/index.ts`, `src/lib/vite/bin.ts`, `src/tests/unit/vite/*`, `examples/showcase/src/content/.cairn/site-facts.json`, `templates/waymark/src/content/.cairn/site-facts.json`, `docs/reference/site-facts.md`, `docs/reference/README.md`, `docs/reference/cli-cairn-manifest.md`, `docs/reference/vite.md`, `scripts/checks/check-symbols-allowlist.mjs`, `docs/internal/facts/reference.md`, `docs/extend/migration-notes.md`, `CHANGELOG.md` | Tasks 1 and 2 |
-| 4, close | ritual, conductor's own turns plus one `code-simplifier` and one `diff-reviewer` | `docs/STATUS.md`, `docs/HISTORY.md`, `ROADMAP.md`, this plan file | none |
+| 1, the `conditions.ts` rewordings and the media-bucket condition id | `cairn-implementer` chain, `sonnet` | `src/lib/diagnostics/conditions.ts`, `src/lib/doctor/checks-local.ts`, `tool/internal/spine/condition.go`, `src/tests/unit/conditions.test.ts`, `src/tests/unit/doctor-checks-local.test.ts`, `docs/admin/is-it-working.md`, `docs/internal/facts/admin.md`, `CHANGELOG.md` | the pass precondition |
+| 2, the conditions mirror, its gate, and the third workflow | `cairn-implementer` chain, `sonnet` | `scripts/build/emit-tool-conditions.mjs`, `scripts/checks/check-tool-conditions.mjs`, `tool/internal/spine/conditions.json`, `tool/internal/doctor/site-config-path.json`, `package.json`, `.github/workflows/test.yml`, `.github/workflows/tool-conditions.yml`, `docs/internal/facts/reference.md`, `CHANGELOG.md` | Task 1 |
+| 3, `site-facts.json` | `cairn-implementer` chain, `sonnet` | `src/lib/vite/internal.ts`, `src/lib/vite/index.ts`, `src/lib/vite/bin.ts`, `src/tests/unit/vite/*`, `examples/showcase/src/content/.cairn/site-facts.json`, `templates/waymark/src/content/.cairn/site-facts.json`, `docs/reference/site-facts.md`, `docs/reference/README.md`, `docs/reference/cli-cairn-manifest.md`, `docs/reference/vite.md`, `scripts/checks/check-symbols-allowlist.mjs`, `docs/internal/facts/reference.md`, `docs/extend/migration-notes.md`, `CHANGELOG.md` | Task 2 |
+| 4, close | ritual, conductor's own turns plus one `code-simplifier` and one `diff-reviewer` | `docs/STATUS.md`, `docs/HISTORY.md`, `ROADMAP.md`, this plan file | Task 3 |
 
-**Ordering.** Tasks 1, 2, 3, 4 run strictly serially in the one worktree, per the one-executor
-rule. Task 2 must follow Task 1: the generator copies `why` and `remediation` verbatim, so it is
-built once against the final registry text and against the new condition id. Task 3's Files are
-disjoint from Tasks 1 and 2 and it is marked independent for a conductor who chooses to run it in a
-second worktree; doing so requires a second worktree and a second PR, and is not the default.
+**Ordering. Every task in this pass is serial; none is independent, and none may be split into a
+second worktree.** Three reasons, each sufficient:
+
+- The one-executor rule: one worktree, one executor, always.
+- Task 2 must follow Task 1. The generator copies `why` and `remediation` verbatim, so the mirror
+  is built once against the final registry text and against the new condition id.
+- **Tasks 2 and 3 contend on two files: `docs/internal/facts/reference.md` and `CHANGELOG.md`.**
+  Both write a bullet to the first and an entry to the second. An earlier draft of this plan
+  called their Files disjoint and marked Task 3 independent; that was wrong, and the two contended
+  files are why.
 
 ---
 
 ## Task 1: the `conditions.ts` rewordings and the media-bucket condition id
 
-**Runs as:** `cairn-implementer` chain, `model: sonnet`, test-first.
-
-### Precondition, checked first and reported before any edit
-
-The Go tool's newer branch must have merged before this pass executes. `tool/` on `main` is Pass A's
-state. The implementer runs these two and **stops, reporting the result, if either fails**:
-
-- `git ls-remote --tags origin 'refs/tags/tool/v1.0.0'` prints a ref. (Verified empty on
-  2026-09-21; this is the gate that says the merge has happened.)
-- `git ls-tree -d origin/main tool/internal/spine` prints a tree entry.
-
-No task in this pass reads, writes, or assumes any path under `tool/` other than
-`tool/internal/spine/` and the new `tool/internal/doctor/` directory it creates.
+**Runs as:** `cairn-implementer` chain, `model: sonnet`, test-first. **The pass precondition is the
+conductor's check, already cleared before this dispatch; the implementer does not re-run it.**
 
 ### Outcome
 
 The condition registry names `cairn doctor` (or no tool at all) rather than "the doctor", so the
 generator copies no stale actor into the Go tool's printed output; and `config.media-bucket` raises
-a condition of its own carrying its own remediation.
+a condition of its own carrying its own remediation, **with the Go side's id set moved in the same
+commit** so neither language's gate goes red.
 
 ### Constraints
 
@@ -251,12 +329,22 @@ a condition of its own carrying its own remediation.
 - `config.tidy-key-missing`'s `why` keeps the literal string `ANTHROPIC_API_KEY`
   (`src/tests/unit/conditions.test.ts:123` pins it) and keeps its `docsAnchor` unchanged (`:125`).
 - The em dash is banned in code comments; TSDoc rules apply to every comment touched.
-- `docs/admin/is-it-working.md` gains a section and a label-to-section table row. **No other prose
+- `docs/admin/is-it-working.md` gains a section and a label-to-section row. **No other prose
   on that page is rewritten**; the freeze governs rewrites, and an addition required by a new
   condition is not one.
+- **The new section adds no transcript block.** `scripts/checks/transcript-blocks.mjs:34` floors
+  that page at exactly one block, and the existing capture at the top of the page is it. A second
+  block in the new section would be a change to a floor this pass has no business moving, and
+  retire-2 owns the page's transcript story.
 - The new condition id is `config.media-bucket-missing`, severity `warning`, matching the existing
   check's non-blocking stance (`checks-local.ts:38-41` states a no-media site must never fail).
 - `checks-local.ts:38-41`'s comment asserting the borrow becomes false and is rewritten.
+- **`go-conventions` is mandatory for the Go edit**, as it is for every file under `tool/`. The
+  edit is two lines and one comment, and it still conforms: Go Doc Comments, no em dash, the
+  existing naming pattern.
+- The Go edit changes **only** the constant block and the `conditions` slice in
+  `tool/internal/spine/condition.go`. No other Go file, no new Go package, no `go:embed`; retire-1
+  owns those.
 
 ### What changes
 
@@ -267,20 +355,56 @@ a condition of its own carrying its own remediation.
 - `src/lib/diagnostics/conditions.ts:235`: "run the full doctor against the same site" in that
   entry's `remediation`. **Found in pre-flight, not named by the spec**; the generator copies
   `remediation` verbatim too, so it carries the same defect as `:131`.
-- A new `config.media-bucket-missing` entry in `REGISTRY`, with `docsAnchor` naming a new
-  `is-it-working.md` heading.
+- A new `config.media-bucket-missing` entry in `REGISTRY`, with
+  `docsAnchor: 'is-it-working.md#declare-the-media-bucket-binding'`.
 - `src/lib/doctor/checks-local.ts:44`: `configMediaBucket.conditionId` repoints to the new id, and
   the comment above it is rewritten.
+- `src/tests/unit/conditions.test.ts:117`: the registry-size pin moves from 24 to 25, and its
+  comment gains one clause naming `config.media-bucket-missing` and why (its own condition id, no
+  longer borrowing `config.bindings-missing`), in the shape the existing clauses use.
+- **`tool/internal/spine/condition.go`, both lists.** A new typed constant
+  `ConditionConfigMediaBucketMissing Condition = "config.media-bucket-missing"` in the constant
+  block (`:20-44`), and the same identifier in the `conditions` slice (`:47-73`) at the matching
+  slot. Finding 13: `TestConditionsMatchRegistry` asserts **set equality** with `REGISTRY`, so
+  omitting either list turns `make -C tool check` and `tool.yml` red. Place it beside
+  `ConditionConfigBindingsMissing` in both lists, since the two ids are siblings and the file
+  groups by prefix.
+- **`docs/admin/is-it-working.md`, three named edits and nothing else:**
+  1. A new section, heading exactly `## Declare the media bucket binding`, anchor
+     `#declare-the-media-bucket-binding`. Place it immediately after
+     `## Deploy the Worker with its bindings` and before `## Turn on observability`. Follow the
+     `## Configure the Tidy API key` section's shape: a bolded lead naming the id and its
+     severity (`**config.media-bucket-missing**, a warning.`), what the check found, then an
+     **Ask a developer:** paragraph with the fix.
+  2. The label-to-section list, which sits under "Match what your doctor printed to the section
+     that explains it" (currently around `:130-165`). Today one row reads
+     `` `Wrangler bindings`, `Media bucket binding`—[Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings), `config.bindings-missing` ``.
+     Split it: that row keeps `` `Wrangler bindings` `` and `config.bindings-missing` alone, and a
+     new row directly beneath reads
+     `` `Media bucket binding`—[Declare the media bucket binding](#declare-the-media-bucket-binding), `config.media-bucket-missing` ``.
+  3. The closing paragraph of `## Deploy the Worker with its bindings` (currently `:258-261`),
+     which tells the reader "This same condition id also covers one other check", becomes false
+     the moment the split lands and is removed or rewritten to point at the new section. That is
+     a stale-warning fix under the freeze's stale-step allowance, not a rewrite.
 
 ### Acceptance criteria
 
-- `grep -n 'the doctor\|cairn-doctor' src/lib/diagnostics/conditions.ts` returns nothing.
+- `grep -n 'the doctor\|cairn-doctor' src/lib/diagnostics/conditions.ts` **prints nothing (grep
+  exits 1)**. A grep that matches nothing exits nonzero, so read the output, never the exit
+  status, and never chain this one with `&&`.
 - `node -e "..."` over the built registry, or a unit test, shows `config.media-bucket-missing`
-  present with `severity: 'warning'` and a `docsAnchor` of the form `is-it-working.md#<anchor>`. A
-  test in `src/tests/unit/conditions.test.ts` asserts it, written before the entry exists and
-  failing at `HEAD`.
+  present with `severity: 'warning'` and
+  `docsAnchor === 'is-it-working.md#declare-the-media-bucket-binding'`. A test in
+  `src/tests/unit/conditions.test.ts` asserts it, written before the entry exists and failing at
+  `HEAD`.
+- `src/tests/unit/conditions.test.ts`'s registry-size pin reads 25, and `npm test` proves it.
 - `src/tests/unit/doctor-checks-local.test.ts` asserts
   `configMediaBucket.conditionId === 'config.media-bucket-missing'`, failing at `HEAD`.
+- **The Go gate is green:** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C <abs worktree>/tool
+  check'`, with the absolute path of this worktree's `tool/` directory. It launches no browser, so
+  the light lane is correct and required; the heavy lane would queue it behind a browser gate for
+  no reason. `TestConditionsMatchRegistry` passing is the proof the Go and TypeScript id sets
+  agree at 25.
 - `npm run check:readiness` is green (it fails closed on a `docsAnchor` naming no heading, so this
   is the proof the new section exists and the anchor matches).
 - `npm run check:vale`, `npm run check:comments`, `npm run check:docs`, `npm run check:arm-indexes`,
@@ -296,11 +420,12 @@ a condition of its own carrying its own remediation.
 
 ### The implementer reports
 
-Files touched; the two precondition command outputs verbatim; the gate result; the exact new
-`is-it-working.md` heading text and its anchor; whether any other `remediation` or `why` in the
-registry names a retiring actor that this task did not change; anything the plan did not cover.
+Files touched; the gate result, **both gates, the heavy one and the Go one**; whether any other
+`remediation` or `why` in the registry names a retiring actor that this task did not change; the
+disposition of the stale "This same condition id also covers one other check" paragraph (removed
+or rewritten, and the wording if rewritten); anything the plan did not cover.
 
-**Halt:** the precondition failing; a second fix round; a red gate.
+**Halt:** a second fix round; a red gate in either language.
 
 ---
 
@@ -352,8 +477,11 @@ workflow runs that gate on the commits the other two workflows cannot see.
 - The generator emits no field the spec does not name, and no engine-internal detail. `logEvent` and
   `docsAnchor` are optional in the registry (`conditions.ts:27,29`) and are omitted from an entry
   that carries none, rather than written as `null`.
-- The pre-task adds **no Go code**. No `go:embed`, no package under `tool/internal/doctor/` beyond
-  the JSON file. retire-1 owns the Go side.
+- **This task adds no new Go package and no `go:embed`**, and creates no `.go` file under
+  `tool/internal/doctor/` beyond the JSON artifact. retire-1 adds both. This is narrower than "the
+  pre-task adds no Go code", which an earlier draft said and which is now false: Task 1 edits
+  `tool/internal/spine/condition.go` because the Go id set must move with the registry
+  (finding 13).
 - This task's PR touches `tool/**`, so `tool.yml` will run its three-platform `make -C tool check`.
   That is expected and must be green; it is not a new gate this task authors.
 
@@ -365,14 +493,24 @@ workflow runs that gate on the commits the other two workflows cannot see.
   `npm run check:tool-conditions`, records the nonzero exit and the message, then restores the file
   with the generator and re-runs green. Both outputs go in the report.
 - Regeneration is a no-op twice in a row: running the generator, then `git status --porcelain
-  tool/internal/`, prints nothing.
+  tool/internal/`, prints nothing (this one exits 0 either way, so the output is the signal).
 - `tool/internal/spine/conditions.json` contains one entry per `REGISTRY` id, proven by comparing
   its length against `allConditions().length` from the built dist.
 - `tool/internal/doctor/site-config-path.json` is byte-identical to
   `packages/create-cairn-site/src/site-config-path.json`, proven with `diff`.
-- `.github/workflows/tool-conditions.yml` parses: `gh workflow list` shows it after the push, and
-  the run appears on this PR because the PR touches `conditions.ts` (Task 1) and the mirror.
-  **The third workflow running on this very PR is the proof the spec asks for.**
+- `.github/workflows/tool-conditions.yml` parses and runs, proven two ways. **Never with
+  `gh workflow list`:** it lists the workflows on the repository's default branch, so a workflow
+  that exists only on `doctor-pretask` is absent from it, and an absent row would read as a parse
+  failure that never happened.
+  1. Locally, parse the file as YAML and print its top-level keys, for example
+     `node -e "import('js-yaml')"` against the committed file, or `python3 -c "import
+     yaml,sys; print(list(yaml.safe_load(open(sys.argv[1])).keys()))" .github/workflows/tool-conditions.yml`.
+     A parse error is a red.
+  2. After the PR opens, `gh run list --branch doctor-pretask --workflow tool-conditions.yml`
+     lists at least one run, and it concluded success. The run happens because the PR touches
+     `conditions.ts` (Task 1) and the mirror. **The third workflow running on this very PR is the
+     proof the spec asks for**, and this command is how it is read. The PR must exist first, so
+     the conductor collects this criterion at Task 4, after the push, and records it there.
 - The heavy gate is green: `cairn-run-gate 'npm run check && npm test'`. Scoped checks on top:
   `npm run check:readiness`, `npm run check:docs`, `npm run check:facts`, `npm run check:comments`,
   `npm run check:vale`, `npm run check:package`.
@@ -398,7 +536,8 @@ wrote into the third workflow; anything the plan did not cover.
 ## Task 3: `site-facts.json`
 
 **Runs as:** `cairn-implementer` chain, `model: sonnet`, test-first.
-**Independent-of:** Tasks 1 and 2 (disjoint Files).
+**Serial after:** Task 2. It is **not** independent: it contends with Task 2 on
+`docs/internal/facts/reference.md` and `CHANGELOG.md`. See "Ordering".
 
 ### Outcome
 
@@ -425,6 +564,18 @@ file leaks nothing; the implementer confirms this by reading `adapterFactsSource
   manifest (`writeManifest`, `internal.ts:195-218`, invoked by the `cairn-manifest` bin), resolving
   the out path against the Vite root the same way (`internal.ts:207,212`). Do **not** reuse
   `virtualSource`; it is manifest-shaped.
+- **Absent is not drift; stale is. Two arms, both mandatory** (finding 14). The manifest's verify
+  can assume its file exists because every site has committed one; `site-facts.json` cannot,
+  because no site has one until it runs the bin, and no site's `build` script runs the bin
+  (`examples/showcase/package.json:9` is `vite build`; the bin hides behind the separate
+  `cairn:manifest` script at `:12`). So:
+  - **Absent:** the verify is **skipped**, the build proceeds, and at most **one** warning reaches
+    the build log, naming `npx cairn-manifest` as the command that creates the file. One warning,
+    not one per module and not one per concept. Do not import the committed file as `?raw`
+    unconditionally the way `virtualSource` does at `internal.ts:62`; that import is what would
+    throw at `buildStart` on every upgrading site.
+  - **Present and stale:** a build **error**, in the manifest's own shape and through the same
+    `this.error(...)` path (`internal.ts:171-177`), naming the file and the command that fixes it.
 - This runs at build time and on the bin path only, **never in the request lifecycle**
   (`internal.ts:348-349` states the same constraint for `readAdapterFacts`). A design that requires
   evaluating the adapter in a request is a halt.
@@ -455,13 +606,16 @@ file leaks nothing; the implementer confirms this by reading `adapterFactsSource
   exactly one status tag, tag last. Gated by `check:facts`.
 - **`docs/extend/migration-notes.md`**: a bullet under its `## Unreleased` section. That file is a
   per-version record outside the docs freeze and is maintained every pass.
-- **`CHANGELOG.md`** under `## Unreleased`, **with a `Consumers must:` line**: build once on the new
-  version so `site-facts.json` exists, and commit it. The file is a consumer-visible artifact in the
-  site's own tree, which is exactly what that line is for.
+- **`CHANGELOG.md`** under `## Unreleased`, **with a `Consumers must:` line**. The wording is the
+  bin, not the build, because the build does not write the file: **run `npx cairn-manifest` once
+  and commit the new `src/content/.cairn/site-facts.json`.** "Build once on the new version so
+  `site-facts.json` exists" would be wrong, and an earlier draft of this plan said it.
 - **The showcase and the template both commit the file** (pre-flight finding 10). Generate the
   showcase's copy by running the bin against `examples/showcase`, then re-emit the template with
   `npm run emit:template` and prove it with `npm run check:template`. **Do not hand-write
   `templates/waymark/src/content/.cairn/site-facts.json`;** the emitter would discard the edit.
+  The emitter needs no change of its own, and the template's facts equal the showcase's: see
+  "Verified facts", above, which settles both and is not to be re-derived.
 
 ### Acceptance criteria
 
@@ -469,6 +623,12 @@ file leaks nothing; the implementer confirms this by reading `adapterFactsSource
   bullet. The implementer proves it in a test: change a fact in the fixture adapter, leave the
   committed file, run the build or the verify entry point, and assert the throw and its message.
   The test fails at `HEAD`.
+- **The absent arm, one test:** with no `site-facts.json` on disk, the build (or the verify entry
+  point) **succeeds**, and the build log carries exactly one warning whose text names
+  `cairn-manifest`. The test asserts both the success and the warning count. This is the upgrading
+  consumer's case and the single most important criterion in the task.
+- **The stale arm, one test:** it is the criterion directly above, the changed-adapter throw. The
+  two arms are proven separately; a test that only covers one does not satisfy this task.
 - A build against an unchanged tree passes, and regenerating with the bin is a no-op:
   `git status --porcelain examples/showcase/src/content/.cairn/site-facts.json` prints nothing after
   a regenerate.
@@ -492,9 +652,10 @@ file leaks nothing; the implementer confirms this by reading `adapterFactsSource
 
 ### The implementer reports
 
-Files touched; the stale-file failure message verbatim; the chosen degradation for a site with no
-plugin or a throwing adapter, and why; the exact key set written for the showcase; confirmation that
-the showcase reinstall was from scratch; the gate result; anything the plan did not cover.
+Files touched; the stale-file failure message verbatim; the absent-file warning text verbatim, with
+the count of warnings the build emitted; the chosen degradation for a site with no plugin or a
+throwing adapter, and why; the exact key set written for the showcase; confirmation that the
+showcase reinstall was from scratch; the gate result; anything the plan did not cover.
 
 **Halt:** a second fix round; a red gate; a design that needs the adapter evaluated in a request; a
 `check:template` red that re-emitting does not clear.
@@ -526,11 +687,15 @@ over the fold's own diff.
 - [ ] **`ROADMAP.md`**: a line for anything this pass filed rather than took. Nothing this pass
       shipped is left listed.
 - [ ] **A post-mortem** appended to this plan file, with both budget scores: tokens against the
-      600K ceiling (`/cost`), and attended time as two counts (planning misses, execution sittings).
+      700K ceiling (`/cost`), and attended time as two counts (planning misses, execution sittings).
 - [ ] **`git merge origin/main`** into `doctor-pretask`; `docs/STATUS.md` is the expected conflict.
 - [ ] **Re-gate after the merge with the full CI list** (every step in `test.yml`, plus `design.yml`
       and `norms.yml`), sequentially where the sequencing rule applies. Then open the PR and merge
       on green CI.
+- [ ] **Collect Task 2's deferred criterion** once the PR is open:
+      `gh run list --branch doctor-pretask --workflow tool-conditions.yml` lists at least one run,
+      concluded success. Record the output in the post-mortem. Never `gh workflow list`, which
+      reads the default branch only and would show nothing.
 
 ### Acceptance criteria
 
@@ -568,6 +733,10 @@ over the fold's own diff.
 | The two `conditions.ts` rewordings of ruling 3a (`:2` and `:131`) | 1 |
 | A third stale mention at `:235`, found in pre-flight and not named by the spec | 1 |
 | A new condition id if `config.media-bucket`'s remediation needs one (pre-flight finding 12: it does) | 1 |
+| The new id's `is-it-working.md` section, following the `config.tidy-key-missing` precedent | 1 (heading, anchor, placement, and the label row are named in the task) |
+| The Go id set moving with the registry (finding 13, costed by neither spec nor first draft) | 1 (`tool/internal/spine/condition.go`, proven by the light-lane Go gate) |
+| Absent versus stale `site-facts.json` (finding 14, costed by neither spec nor first draft) | 3 (two arms, one test each) |
 | Acceptance: a build with a changed adapter and a stale `site-facts.json` fails | 3 |
-| Acceptance: the third workflow runs `check:tool-conditions` | 2 |
+| Acceptance: the third workflow runs `check:tool-conditions` | 2 (local YAML parse) and 4 (`gh run list --branch`, after the PR opens) |
+| Choreography step 2: this pass runs after B2's `tool/v1.0.0` and before retire-1 branches | Header ("Place in the order", "The pass precondition") |
 | Branch `doctor-pretask` off `main`, heavy gate, one PR, merging before retire-1 branches | Header, Task 4 |

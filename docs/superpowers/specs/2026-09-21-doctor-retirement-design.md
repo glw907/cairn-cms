@@ -91,7 +91,9 @@ hand-edited mirror.
 **`site-facts.json`.** It follows the split `index.json` already has: the `cairn-manifest` bin
 **writes** it (`writeManifest`, `src/lib/vite/internal.ts:195-218`) and the Vite plugin
 **verifies** it at `buildStart` (`:171-177`), so a stale file fails the build exactly as a stale
-manifest does. `virtualSource` is manifest-shaped and is not reused; `evalVirtual`,
+manifest does. An **absent** file never fails a build: no site's `build` script runs the bin, so
+an upgrading site has no file yet, and the verify is skipped with one warning naming
+`npx cairn-manifest`. `virtualSource` is manifest-shaped and is not reused; `evalVirtual`,
 `findCairnOptions`, and `resolveViteRoot` are. Shape: `"version": 1`,
 `mediaBucketBinding`, `roles` (the custom role vocabulary), `aiPosture`. All three values already
 sit in committed adapter source, so the file leaks nothing. It is a cross-language contract, so it
@@ -338,7 +340,9 @@ registry entries, the cairn-pub link); then the STATUS line, in the commit that 
 
 0. This spec and the two plans land on `main` by PR from `doctor-retirement`.
 1. B2 closes: `tool/v1.0.0` tagged, merged, released. B2's worktree is never touched.
-2. Pre-task, branch `doctor-pretask`, merges.
+2. Pre-task, branch `doctor-pretask`, merges. It adds one Go constant for the new condition id,
+   since the tool's drift test asserts id-set equality with `conditions.ts`, so it never runs
+   before B2's merge.
 3. retire-1, branch `doctor-go`: verified, then merged to `main` **without a tool tag**. It has
    no tag task and no release task.
 4. Draft docs pass A (the docs conductor's pass,
@@ -352,8 +356,11 @@ registry entries, the cairn-pub link); then the STATUS line, in the commit that 
 5. One `tool/v1.1.0`, tagged and released from a commit carrying retire-1 and pass A. A tag's
    help text is permanent, so the binary `0.97.0` announces never names a deleted path. Who
    conducts this tag is Geoff's to rule; it is no task of retire-1 or retire-2.
-6. retire-2, branch `doctor-engine`, only once that release exists. It lands last, so its close
-   writes "the `0.97.0` cut is unblocked".
+6. retire-2, only once that release exists, as two plans in order: **retire-2a**, the removal
+   (branch `doctor-engine`, heavy gate), then **retire-2b**, the records (branch
+   `doctor-records`, light lane: facts additions, the changelog window, the ledger, the close).
+   "retire-2's close" means 2b's close; it lands last and writes "the `0.97.0` cut is
+   unblocked".
 
 (Geoff, 2026-09-21, the five-step order, relayed by the docs conductor and matching his opening
 constraints to this pass.) Consequences elsewhere in this spec: the `cairn doctor` command page

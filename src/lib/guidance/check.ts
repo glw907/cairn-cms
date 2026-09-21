@@ -3,11 +3,11 @@
 // already-resolved content (a `readFile` callback and a `GuidanceSource`) so every judgment is
 // unit-testable without touching a real filesystem; bin.ts wires the real reads.
 import {
-  FRAGMENT_DEST,
+  CAIRN_DIR,
   MANIFEST_DEST,
   flattenGuidanceTree,
   hashFileTree,
-  isGuidancePath,
+  removableFromManifest,
   type GuidanceSource,
 } from './install.js';
 
@@ -139,15 +139,7 @@ export async function runGuidanceCheck(
 
   const installed = await readInstalledTree(readFile, destPaths);
   const treeStatus = judgeTree(installed, tree);
-  const manifestText = await readFile(MANIFEST_DEST);
-  const manifestPaths = manifestText
-    ? manifestText.split('\n').map((line) => line.trim()).filter(Boolean)
-    : [];
-  // A previous MANIFEST is an editable file in the site's own repo, and these lines get printed,
-  // so a line naming anything outside .claude/ is dropped rather than shown as removable.
-  const removable = manifestPaths.filter(
-    (path) => !destPaths.includes(path) && isGuidancePath(path)
-  );
+  const removable = removableFromManifest(await readFile(MANIFEST_DEST), destPaths);
 
   const rootClaudeMd = await readFile('CLAUDE.md');
   const importPresent = rootClaudeMd !== null && rootClaudeMd.includes(IMPORT_LINE);
@@ -167,7 +159,7 @@ export async function runGuidanceCheck(
       removable,
       detail:
         treeStatus === 'fresh'
-          ? `the guidance tree at ${FRAGMENT_DEST.replace('/CLAUDE.md', '')} matches the installed package`
+          ? `the guidance tree at ${CAIRN_DIR} matches the installed package`
           : treeStatus === 'missing'
             ? 'the guidance tree is not installed; run npx cairn-guidance install'
             : `the guidance tree is stale; run npx cairn-guidance install to refresh it${removable.length > 0 ? ` (removable: ${removable.join(', ')})` : ''}`,

@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
+import { parsePackFilePaths } from '../../../scripts/checks/check-package-files.mjs';
 
 const ROOT = resolve(process.cwd());
 const DIST_FILE = resolve(ROOT, 'dist/admin-sources.css');
@@ -25,9 +26,7 @@ describe('admin-sources.css (needs dist; run npm run package to unskip)', () => 
       cwd: ROOT,
       encoding: 'utf8',
     });
-    const [manifest] = JSON.parse(out.slice(out.indexOf('[')));
-    const paths = manifest.files.map((f: { path: string }) => f.path);
-    expect(paths).toContain('dist/admin-sources.css');
+    expect(parsePackFilePaths(out)).toContain('dist/admin-sources.css');
   });
 
   it.skipIf(!BUILT)('every @source path resolves to a directory that exists, relative to the file itself', () => {

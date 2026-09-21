@@ -1,8 +1,7 @@
-// cairn-guidance: the install primitives. Generalizes doctor/check-skill.ts's tree-hash approach
-// (the one prior consumer, the admin-screens skill, which this replaces) over a list of packaged
-// trees instead of one: every directory under `skills/`, the review agent under `claude/agents/`,
-// and the `claude/CLAUDE.md` fragment. The containment and `.orig` rules here are the write-side
-// twin of doctor/bin.ts's `readFileUnderCwd`.
+// cairn-guidance: the install primitives. One tree hash decides freshness across every packaged
+// tree the install copies: each directory under `skills/`, the review agent under
+// `claude/agents/`, and the `claude/CLAUDE.md` fragment. The containment and `.orig` rules here
+// are the write-side twin of doctor/bin.ts's `readFileUnderCwd`.
 import { createHash } from 'node:crypto';
 import { constants, type Dirent, type Stats } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -41,9 +40,8 @@ export function hashFileTree(files: Record<string, string>): string {
 }
 
 /**
- * Resolve a directory under the installed package's root, the same self-reference
- *  `readEnginePeers` uses for the dependency floors, generalized from one hardcoded skill
- *  directory to any packaged subdirectory (`skills`, `claude/agents`, and so on).
+ * Resolve a packaged subdirectory (`skills`, `claude/agents`, and so on) under the installed
+ *  package's root, the same self-reference `readEnginePeers` uses for the dependency floors.
  */
 export function resolveSourceRoot(relDir: string): string {
   const require = createRequire(import.meta.url);
@@ -223,6 +221,20 @@ export function isGuidancePath(destPath: string): boolean {
   return normalized === GUIDANCE_ROOT || normalized.startsWith(`${GUIDANCE_ROOT}/`);
 }
 
+/**
+ * The paths a previous `MANIFEST` lists that the packaged tree no longer ships. A `MANIFEST` is an
+ *  editable file in the site's own repo and these paths get printed, so a line naming anything
+ *  outside `.claude/` is dropped rather than reported as removable.
+ */
+export function removableFromManifest(manifestText: string | null, shipped: string[]): string[] {
+  if (manifestText === null) return [];
+  const stillShipped = new Set(shipped);
+  return manifestText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !stillShipped.has(line) && isGuidancePath(line));
+}
+
 /** True when a destination path, resolved against cwd, stays inside `<cwd>/.claude`. */
 export function isContained(cwd: string, destRelPath: string): boolean {
   const root = resolve(cwd, GUIDANCE_ROOT);
@@ -337,9 +349,6 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
   const realCwd = await realpath(cwd);
   const manifestAbs = await resolveWritableDest(cwd, realCwd, MANIFEST_DEST);
   const previousManifestText = manifestAbs === null ? null : await readIfExists(manifestAbs);
-  const previousManifest = previousManifestText
-    ? previousManifestText.split('\n').map((line) => line.trim()).filter(Boolean)
-    : [];
 
   const writtenPaths = new Set<string>();
   for (const [destRelPath, content] of Object.entries(tree)) {
@@ -372,8 +381,7 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
     report.written.push(destRelPath);
   }
 
-  const shipped = new Set(Object.keys(tree));
-  report.removable = previousManifest.filter((path) => !shipped.has(path) && isGuidancePath(path));
+  report.removable = removableFromManifest(previousManifestText, Object.keys(tree));
 
   if (manifestAbs === null) {
     report.refused.push(MANIFEST_DEST);

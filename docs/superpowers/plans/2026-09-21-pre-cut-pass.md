@@ -763,3 +763,46 @@ The three-lens plan review closed every item below. None is open at dispatch.
    (`src/lib/admin-toolkit/ListToolbar.svelte:364` and `:393`,
    `src/lib/admin-toolkit/Pagination.svelte:74`) for the Svelte 5.57 bump; those carry forward, and
    the extension adds to them. **Resolved as a procedure, not a list.**
+
+---
+
+## Post-mortem
+
+**Built.** Task 1's dependency sweep (both lockfiles regenerated from scratch, held majors
+recorded, the survey record extended in place). Task 2's two `cairn-guidance` write-hardening
+fixes, test-first, code-simplified. Task 3's site upgrade brief tools section. Task 4's Blueprint
+pre-cut admin audit over all 49 admin components, five findings filed, none taken. Task 5's close:
+`ROADMAP.md` lines for every filed finding (the guidance hardening entry's two new items, the five
+Blueprint findings, the `publish.yml` install-command chore, and the `cairn-release` lockstep
+version-bump gap), a friction-log triage that found the log already fully clear (nothing to move),
+`docs/HISTORY.md`'s new entry, this post-mortem, the merge from `origin/main`, and the full gate.
+
+**Verified with evidence.** The merge from `origin/main` (`702b184b`) was clean, no conflicts.
+`ROADMAP.md`'s existing `cairn-guidance install` write-hardening entry was read and cross-checked
+against the code before editing: `src/lib/guidance/bin.ts:94-99` confirmed to never set
+`process.exitCode` on `report.refused` or `report.writeErrors`, so `install` exits 0 on both;
+`src/lib/guidance/install.ts:336-343`'s doc block confirmed to still state a symlink is refused by
+name at every point of the write, against the `writeErrors`-not-`refused` behavior Fix A gave the
+`ELOOP` check-to-open race at `install.ts:387`. The friction log's "Open findings" section was read
+in full and confirmed empty (the extend-1 and extend-2 passes already cleared it whole); zero
+entries needed triage this pass.
+
+**Decisions locked.** The `norms:check` gate-invocation fault (needing the showcase preview on
+port 4173) and the narrowed first-run gate scope (`styleguide` only, not the full 139-baseline
+visual suite) are recorded as planning misses, not fix rounds: the three-lens plan review caught
+both before dispatch, so neither task needed a second fix round or a `diff-reviewer` escalation.
+`npm ci` for `publish.yml` is declined for this pass, per the plan's own Task 5 checklist item, and
+filed to `ROADMAP.md` as a chore rather than taken. The Blueprint audit stayed in scope per the
+owner's approval; no finding from it gated the cut, and all five are filed rather than fixed.
+
+**Token spend.** Recorded by the conductor at pass end.
+
+**Planning misses: two.** (1) The plan's gate list did not name `norms:check`'s prerequisite that
+the showcase admin be built and served on port 4173; a task following the gate list alone would
+have hit a fault the plan itself did not anticipate. (2) Task 1's acceptance criteria said "the
+full gate is green" without naming the visual spec files by name, so an implementer satisfied the
+letter of the criterion by running only the `styleguide` e2e spec; the full 139-baseline visual
+suite had to be run by a second dispatch before the result was trusted.
+
+**Execution sittings: none.** No pull-in after plan approval; the pass ran to completion under the
+rulings already settled in the header.

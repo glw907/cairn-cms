@@ -62,6 +62,17 @@ var nonVerboseFieldKeys = map[string]bool{
 	"count": true,
 	"age":   true,
 	"state": true,
+	// deployCheck's own non-verbose-safe fields: a boolean, a build state word, a timestamp, and
+	// the two seven-character short SHAs. lastBuildSHA and mainSHA, the full commit SHAs they are
+	// shortened from, stay out of this set on purpose.
+	"workerExists":      true,
+	"buildsConnected":   true,
+	"pushToDeploy":      true,
+	"lastBuild":         true,
+	"lastBuildAt":       true,
+	"behind":            true,
+	"lastBuildShortSHA": true,
+	"mainShortSHA":      true,
 }
 
 // nonVerboseFields returns the subset of fields whose Key is in nonVerboseFieldKeys, in their

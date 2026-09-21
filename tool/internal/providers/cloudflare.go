@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // cloudflareHost is the only host a Cloudflare client will ever send a request to. There is no
@@ -281,11 +282,19 @@ func (cf *Cloudflare) BuildsConnections(ctx context.Context, workerTag string) (
 	return triggers, nil
 }
 
-// Build is one Workers Builds run.
+// Build is one Workers Builds run. The field names below match the live shape captured in
+// docs/internal/record/2026-08-13-t5-task8-live-e2e.md and the fake server's own
+// createBuildKickHandler (packages/create-cairn-site/test/fake-cloudflare.mjs): the commit hash
+// nests under "build_trigger_metadata" rather than sitting on the build itself, since that
+// object also carries the commit that triggered a push-sourced build.
 type Build struct {
-	UUID       string `json:"uuid"`
-	Status     string `json:"status"`
-	CommitHash string `json:"commit_hash"`
+	UUID            string    `json:"build_uuid"`
+	Status          string    `json:"status"`
+	Outcome         string    `json:"build_outcome"`
+	CreatedOn       time.Time `json:"created_on"`
+	TriggerMetadata struct {
+		CommitHash string `json:"commit_hash"`
+	} `json:"build_trigger_metadata"`
 }
 
 // BuildsLatest returns workerTag's most recent Builds run, or a nil Build with no error when it

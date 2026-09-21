@@ -46,8 +46,13 @@ container, then beta.
   `/etc/hosts` before the authoritative dial (recorded, not fixed); `tool/docs/*.md` cites task
   numbers. Runner args: `gate: "make -C tool check"`,
   `gateLane: "light"`, `gateTier: "docs"` pinned on every task (an unpinned task makes the
-  runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings accepted by Geoff
-  2026-09-20: B1 8M, B2 10M. Spend: about 3.9M of 8M after four of nine tasks (1.1M plan work,
+  runner run `gate-tier.mjs`, which has no `tool/**` rule). Ceilings (Geoff, 2026-09-20): **B1 raised to 10M** (the flag is
+  now 8M), B2 10M. **B2 decisions taken (Geoff, 2026-09-20), owed to the plan at the segment
+  boundary:** Task 20's glyph tier is Unicode by default and ASCII when output is not a TTY,
+  `TERM=dumb` is set, or the Windows console refuses virtual-terminal mode; Task 22 generates a
+  man page with cobra's doc generator and ships it in the release archives. **Chore in flight:**
+  a `tool/**` rule for `gate-tier.mjs` on `chore/gate-tier-tool-rule`
+  (`.claude/worktrees/gate-tier-tool`, off `origin/main`), so B2 drops the `gateTier` pin. Spend: about 3.9M of 8M after four of nine tasks (1.1M plan work,
   2.03M segment 1, 0.8M fix rounds and reviews), so the 6.4M flag will likely trip inside
   segment 2. Owner item filed in the plan: an `edge.hsts-off` engine condition id. Branch
   `cairn-tool-a`, worktree `.claude/worktrees/cairn-tool-a`, draft PR #60, green on all three

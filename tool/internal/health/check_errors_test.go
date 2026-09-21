@@ -107,14 +107,14 @@ func TestErrorsCheckAdvisoryBand(t *testing.T) {
 
 			var gotCount int
 			for _, f := range outcome.Fields {
-				if f.Key == "count" {
+				if f.Key == "errorCount" {
 					if err := json.Unmarshal(f.Value, &gotCount); err != nil {
-						t.Fatalf("unmarshal count field: %v", err)
+						t.Fatalf("unmarshal errorCount field: %v", err)
 					}
 				}
 			}
 			if gotCount != tt.count {
-				t.Errorf("count field = %d, want %d", gotCount, tt.count)
+				t.Errorf("errorCount field = %d, want %d", gotCount, tt.count)
 			}
 		})
 	}

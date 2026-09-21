@@ -53,14 +53,22 @@ type CheckResult struct {
 // filter (a regex over "looks like a UUID" or "looks like owner/repo") both over- and
 // under-matches an arbitrary value, so the filter instead trusts a check's own field name: an
 // account id, a zone id, a worker name, a repository slug, a build UUID, and a full commit SHA are
-// each verbose-only, so a check that carries one names its field outside this set. The set here
-// literally enumerates the categories a non-verbose render is safe to carry, a count, an age, and
-// a state; a check that introduces a new non-verbose category adds its key here in the same
-// commit.
+// each verbose-only, so a check that carries one names its field outside this set.
+//
+// Every key names what it measures, never its category: "errorCount", not "count". A generic name
+// collides the moment one check reports two of the same category, and it leaves a reader of the
+// rendered field no way to tell what the number counts. A check that introduces a new
+// non-verbose-safe key adds it here in the same commit.
 var nonVerboseFieldKeys = map[string]bool{
-	"count": true,
-	"age":   true,
-	"state": true,
+	// errorsCheck's matched-record count over the log window.
+	"errorCount": true,
+	// publishPathCheck's open "cairn/*" branch count and each of those branches' age in days.
+	"openBranchCount": true,
+	"branchAgeDays":   true,
+	// engineCheck's published-versions-behind count and whether a skipped release asks anything
+	// of a consumer.
+	"releasesBehind": true,
+	"consumersMust":  true,
 	// deployCheck's own non-verbose-safe fields: a boolean, a build state word, a timestamp, and
 	// the two seven-character short SHAs. lastBuildSHA and mainSHA, the full commit SHAs they are
 	// shortened from, stay out of this set on purpose.

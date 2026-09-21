@@ -20,10 +20,9 @@ const publishStaleWindow = 14 * 24 * time.Hour
 // (`cairn/<concept>/<id>`), the prefix this check filters a repository's branch list by.
 const cairnBranchPrefix = "cairn/"
 
-// PublishDetail is publishPathCheck's own internal measurement, flattened into Fields as a
-// "count" entry (the number of open cairn/* branches) followed by one "age" entry per branch, in
-// the order Branches returned them: both keys are already in report.go's nonVerboseFieldKeys
-// allowlist, so no new key is introduced here.
+// PublishDetail is publishPathCheck's own internal measurement, flattened into Fields as an
+// "openBranchCount" entry followed by one "branchAgeDays" entry per branch, in the order Branches
+// returned them.
 type PublishDetail struct {
 	// BranchCount is how many "cairn/*" branches the repository currently carries.
 	BranchCount int
@@ -35,9 +34,9 @@ type PublishDetail struct {
 // fields flattens d into its ordered spine.OutcomeField entries.
 func (d PublishDetail) fields() []spine.OutcomeField {
 	fields := make([]spine.OutcomeField, 0, len(d.AgeDays)+1)
-	fields = append(fields, field("count", d.BranchCount))
+	fields = append(fields, field("openBranchCount", d.BranchCount))
 	for _, age := range d.AgeDays {
-		fields = append(fields, field("age", age))
+		fields = append(fields, field("branchAgeDays", age))
 	}
 	return fields
 }

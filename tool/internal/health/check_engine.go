@@ -34,10 +34,8 @@ var changelogHeading = regexp.MustCompile(`(?m)^##\s+([0-9][^\s]*)\s*$`)
 // requirement from a plain "nothing" the way engineRepo's own changelog writes one.
 var consumersMustLine = regexp.MustCompile(`(?i)\*{0,2}Consumers must:\*{0,2}\s*([^.\n]*)`)
 
-// EngineDetail is engineCheck's own internal measurement, flattened into Fields as a "count"
-// entry (releases behind) and a "state" entry (whether a skipped release carries an actionable
-// "Consumers must:" line): both keys are already in report.go's nonVerboseFieldKeys allowlist, so
-// no new key is introduced here.
+// EngineDetail is engineCheck's own internal measurement, flattened into Fields as a
+// "releasesBehind" entry and a "consumersMust" entry.
 type EngineDetail struct {
 	// ReleasesBehind is how many published versions of cairnPackageName the site's own dependency
 	// range has not yet taken, up to and including the latest.
@@ -50,8 +48,8 @@ type EngineDetail struct {
 // fields flattens d into its two ordered spine.OutcomeField entries.
 func (d EngineDetail) fields() []spine.OutcomeField {
 	return []spine.OutcomeField{
-		field("count", d.ReleasesBehind),
-		field("state", d.ConsumersMust),
+		field("releasesBehind", d.ReleasesBehind),
+		field("consumersMust", d.ConsumersMust),
 	}
 }
 

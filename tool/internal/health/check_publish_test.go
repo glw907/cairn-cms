@@ -205,7 +205,7 @@ func TestPublishPathCheckAPIRateLimitedIsUnknownNeverFailing(t *testing.T) {
 	}
 }
 
-func TestPublishPathCheckFieldsCarryCountAndAges(t *testing.T) {
+func TestPublishPathCheckFieldsCarryBranchCountAndAges(t *testing.T) {
 	old := fixedNow().Add(-20 * 24 * time.Hour)
 	laterBot := old.Add(24 * time.Hour)
 	rt := publishGHRoundTripper{
@@ -215,17 +215,17 @@ func TestPublishPathCheckFieldsCarryCountAndAges(t *testing.T) {
 	c := publishClients(rt)
 	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, publishOptions())
 
-	if count := fieldCount(t, got.Fields); count != 1 {
-		t.Errorf("count field = %d, want 1", count)
+	if count := fieldInt(t, got.Fields, "openBranchCount"); count != 1 {
+		t.Errorf("openBranchCount field = %d, want 1", count)
 	}
 	var ages int
 	for _, f := range got.Fields {
-		if f.Key == "age" {
+		if f.Key == "branchAgeDays" {
 			ages++
 		}
 	}
 	if ages != 1 {
-		t.Errorf("got %d age fields, want 1", ages)
+		t.Errorf("got %d branchAgeDays fields, want 1", ages)
 	}
 }
 
@@ -239,11 +239,9 @@ func (rateLimitedRoundTripper) RoundTrip(req *http.Request) (*http.Response, err
 	return &http.Response{StatusCode: http.StatusForbidden, Body: io.NopCloser(bytes.NewReader([]byte(`{"message":"rate limited"}`))), Header: header, Request: req}, nil
 }
 
-// fieldCount decodes fields' "count" entry as an int, failing the test if none exists: every
-// check in this package that carries a "count" field carries exactly one.
-func fieldCount(t *testing.T, fields []spine.OutcomeField) int {
+// fieldInt decodes fields' entry named key as an int, failing the test if none exists.
+func fieldInt(t *testing.T, fields []spine.OutcomeField, key string) int {
 	t.Helper()
-	const key = "count"
 	for _, f := range fields {
 		if f.Key != key {
 			continue

@@ -61,7 +61,7 @@ func (errorsCheck) Run(ctx context.Context, r record.Record, c Clients, o Option
 	}
 
 	count := len(entries)
-	fields := []spine.OutcomeField{field("count", count), field("topEvents", topEventNames(entries, 3))}
+	fields := []spine.OutcomeField{field("errorCount", count), field("topEvents", topEventNames(entries, 3))}
 
 	if count == 0 {
 		return spine.Outcome{State: spine.OK, Fields: fields}

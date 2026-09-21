@@ -112,7 +112,7 @@ func TestReportJSONFiltersFieldsByKey(t *testing.T) {
 			Outcome: spine.Outcome{
 				State: spine.OK,
 				Fields: []spine.OutcomeField{
-					{Key: "count", Value: json.RawMessage("3")},
+					{Key: "errorCount", Value: json.RawMessage("3")},
 					{Key: "lastBuildSHA", Value: json.RawMessage(`"9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"`)},
 				},
 			},
@@ -123,7 +123,7 @@ func TestReportJSONFiltersFieldsByKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("JSON(true): %v", err)
 	}
-	for _, want := range []string{"count", "lastBuildSHA", "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"} {
+	for _, want := range []string{"errorCount", "lastBuildSHA", "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"} {
 		if !strings.Contains(string(verbose), want) {
 			t.Errorf("verbose render dropped %q: %s", want, verbose)
 		}
@@ -133,8 +133,8 @@ func TestReportJSONFiltersFieldsByKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("JSON(false): %v", err)
 	}
-	if !strings.Contains(string(nonVerbose), `"count"`) {
-		t.Errorf("non-verbose render dropped the allowlisted field %q: %s", "count", nonVerbose)
+	if !strings.Contains(string(nonVerbose), `"errorCount"`) {
+		t.Errorf("non-verbose render dropped the allowlisted field %q: %s", "errorCount", nonVerbose)
 	}
 	for _, leaked := range []string{"lastBuildSHA", "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"} {
 		if strings.Contains(string(nonVerbose), leaked) {
@@ -170,5 +170,34 @@ func TestReportJSONEmptyFieldsRendersLikeFullyFiltered(t *testing.T) {
 	}
 	if string(noFieldsJSON) != string(allFilteredJSON) {
 		t.Errorf("no-fields render %s does not match fully-filtered render %s", noFieldsJSON, allFilteredJSON)
+	}
+}
+
+// TestReportJSONKeepsEveryNamedNonVerboseKey covers the named keys the count-, age-, and
+// state-carrying checks report: each one survives a non-verbose render with its value, and the
+// generic names they replaced carry no allowlist entry of their own, so a check cannot reach a
+// non-verbose render by reporting an unnamed category again.
+func TestReportJSONKeepsEveryNamedNonVerboseKey(t *testing.T) {
+	named := []string{"errorCount", "openBranchCount", "branchAgeDays", "releasesBehind", "consumersMust"}
+	for _, key := range named {
+		report := Report{
+			Checks: []CheckResult{{
+				ID:      "check",
+				Outcome: spine.Outcome{State: spine.OK, Fields: []spine.OutcomeField{{Key: key, Value: json.RawMessage("7")}}},
+			}},
+		}
+		data, err := report.JSON(false)
+		if err != nil {
+			t.Fatalf("JSON(false): %v", err)
+		}
+		if !strings.Contains(string(data), `"`+key+`"`) {
+			t.Errorf("non-verbose render dropped %q: %s", key, data)
+		}
+	}
+
+	for _, generic := range []string{"count", "age", "state"} {
+		if nonVerboseFieldKeys[generic] {
+			t.Errorf("the allowlist still carries the generic key %q", generic)
+		}
 	}
 }

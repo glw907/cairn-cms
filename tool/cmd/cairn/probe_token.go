@@ -20,15 +20,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// The three exit codes probe-token reports, the monitoring-plugin convention every aggregated
-// health check runner shares. WARNING (1) is the convention's fourth code, left unused here: no
-// check this command runs reports a soft warning, only ok, critical, or unknown.
-const (
-	exitOK       = 0
-	exitCritical = 2
-	exitUnknown  = 3
-)
-
 // engineOwner and engineRepo name the engine repository every registry, beyond its own sites,
 // must also grant read access to, for the Engine check's changelog read.
 const (
@@ -102,30 +93,6 @@ func providerVerdict(err error) verdict {
 		return verdict{status: pe.HTTPStatus(), reason: reason.String(), state: spine.ReasonToOutcome(reason).State}
 	}
 	return verdict{reason: "unreachable", state: spine.Unknown}
-}
-
-// combineState returns whichever of a and b outranks the other by spine.State.Severity, so a
-// later endpoint that merely could not be reached never silently downgrades an earlier rejected
-// credential.
-func combineState(a, b spine.State) spine.State {
-	if b.Severity() > a.Severity() {
-		return b
-	}
-	return a
-}
-
-// exitCodeFor maps the worst spine.State this run observed to one of the three exit codes:
-// acknowledgements and a Degraded flag enter at report level, which this command has none of, so
-// the mapping is the plain State order.
-func exitCodeFor(s spine.State) int {
-	switch s {
-	case spine.Failing:
-		return exitCritical
-	case spine.Unknown:
-		return exitUnknown
-	default:
-		return exitOK
-	}
 }
 
 // markerArray and markerNotJSON label a recordedBody whose top-level shape is not a plain
@@ -280,7 +247,7 @@ func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Prov
 
 	worst := spine.OK
 	raise := func(s spine.State) {
-		worst = combineState(worst, s)
+		worst = spine.CombineState(worst, s)
 	}
 
 	if isMissing(missing, "CAIRN_CF_ACCOUNT_ID") || isMissing(missing, "CAIRN_CF_READ_TOKEN") {
@@ -297,7 +264,7 @@ func runProbeToken(cmd *cobra.Command, envFn func(string) string, p secrets.Prov
 		raise(probeRegistryGitHub(ctx, out, errOut, providers.NewGitHub(resolved.ghToken(), rec), rec, registryDir))
 	}
 
-	exit(exitCodeFor(worst))
+	exit(int(spine.ExitCodeFor(worst)))
 	return nil
 }
 
@@ -342,7 +309,7 @@ func probeCloudflare(ctx context.Context, out io.Writer, cf *providers.Cloudflar
 
 	run := func(endpoint, method, path string, call func() error) {
 		v := providerVerdict(call())
-		worst = combineState(worst, v.state)
+		worst = spine.CombineState(worst, v.state)
 		printEndpoint(out, endpoint, v, rec.lookup(method, path))
 	}
 
@@ -387,7 +354,7 @@ func probeGitHub(ctx context.Context, out, errOut io.Writer, gh *providers.GitHu
 	_, _ = fmt.Fprintln(out, "GitHub:")
 	worst := spine.OK
 	raise := func(s spine.State) {
-		worst = combineState(worst, s)
+		worst = spine.CombineState(worst, s)
 	}
 
 	var repos []repoLine
@@ -466,7 +433,7 @@ func printRepoLines(out, errOut io.Writer, repos []repoLine) spine.State {
 			allPublic = false
 		}
 		_, _ = fmt.Fprintf(out, "  %-28s %3d  %-9s %s\n", r.label, r.v.status, r.v.reason, visibility)
-		worst = combineState(worst, r.v.state)
+		worst = spine.CombineState(worst, r.v.state)
 	}
 	if allPublic {
 		_, _ = fmt.Fprintln(errOut, "probe-token: every probed repository is public; the GitHub token's scope is unconfirmed")

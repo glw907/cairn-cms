@@ -212,3 +212,27 @@ func TestListWorkersFollowsPagination(t *testing.T) {
 		t.Errorf("ListWorkers: got %+v, want [one two]", workers)
 	}
 }
+
+// TestListZonesDecodesEveryPage asserts ListZones returns each zone's id and name, the pair
+// Worker discovery joins a custom domain's zone_id against.
+func TestListZonesDecodesEveryPage(t *testing.T) {
+	body := []byte(`{"success":true,"result":[{"id":"zone-1","name":"ecxc.ski","status":"active"},{"id":"zone-2","name":"907.life","status":"pending"}],"result_info":{"page":1,"total_pages":1}}`)
+	cf := NewCloudflare("account-id", NewCredential("token"), fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	zones, err := cf.ListZones(context.Background())
+	if err != nil {
+		t.Fatalf("ListZones: %v", err)
+	}
+	want := []Zone{
+		{ID: "zone-1", Name: "ecxc.ski", Status: "active"},
+		{ID: "zone-2", Name: "907.life", Status: "pending"},
+	}
+	if len(zones) != len(want) {
+		t.Fatalf("ListZones returned %d zones, want %d", len(zones), len(want))
+	}
+	for i := range want {
+		if zones[i] != want[i] {
+			t.Errorf("zone %d = %+v, want %+v", i, zones[i], want[i])
+		}
+	}
+}

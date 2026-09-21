@@ -158,8 +158,8 @@ func TestProbeTokenPrintsCredentialSourcesNeverValues(t *testing.T) {
 	if strings.Contains(got, "cf-token") || strings.Contains(got, "gh-token") || strings.Contains(got, "acct123") {
 		t.Errorf("output printed a credential value: %s", got)
 	}
-	if code != exitOK {
-		t.Errorf("exit code = %d, want %d", code, exitOK)
+	if code != int(spine.VerdictOK) {
+		t.Errorf("exit code = %d, want %d", code, int(spine.VerdictOK))
 	}
 }
 
@@ -219,8 +219,8 @@ func TestProbeTokenExitCriticalOnRejectedCloudflareToken(t *testing.T) {
 	if err := cmd.RunE(cmd, nil); err != nil {
 		t.Fatalf("RunE: %v", err)
 	}
-	if code != exitCritical {
-		t.Errorf("exit code = %d, want exitCritical (%d)", code, exitCritical)
+	if code != int(spine.VerdictCritical) {
+		t.Errorf("exit code = %d, want CRITICAL (%d)", code, int(spine.VerdictCritical))
 	}
 }
 
@@ -228,7 +228,7 @@ func TestProbeTokenExitUnknownOnUnreachableEndpoint(t *testing.T) {
 	env := testEnv()
 	dir := openTestRegistry(t, nil)
 	// No routes registered at all: every Cloudflare and GitHub call answers the fake's default
-	// 404, which classifies as ReasonNotFound, exitUnknown, never exitCritical.
+	// 404, which classifies as ReasonNotFound, UNKNOWN, never CRITICAL.
 	rt := routeRoundTripper{}
 
 	var code int
@@ -239,8 +239,8 @@ func TestProbeTokenExitUnknownOnUnreachableEndpoint(t *testing.T) {
 	if err := cmd.RunE(cmd, nil); err != nil {
 		t.Fatalf("RunE: %v", err)
 	}
-	if code != exitUnknown {
-		t.Errorf("exit code = %d, want exitUnknown (%d)", code, exitUnknown)
+	if code != int(spine.VerdictUnknown) {
+		t.Errorf("exit code = %d, want UNKNOWN (%d)", code, int(spine.VerdictUnknown))
 	}
 }
 
@@ -258,8 +258,8 @@ func TestProbeTokenSkipsCloudflareAndGitHubWhenCredentialsMissing(t *testing.T) 
 	if !strings.Contains(out.String(), "Cloudflare: skipped") || !strings.Contains(out.String(), "GitHub: skipped") {
 		t.Errorf("output = %s, want both providers reported as skipped", out.String())
 	}
-	if code != exitUnknown {
-		t.Errorf("exit code = %d, want exitUnknown (%d) for a missing credential", code, exitUnknown)
+	if code != int(spine.VerdictUnknown) {
+		t.Errorf("exit code = %d, want UNKNOWN (%d) for a missing credential", code, int(spine.VerdictUnknown))
 	}
 }
 
@@ -286,8 +286,8 @@ func TestProbeTokenDiscoversRepositoriesFromRegistryNoHardcodedList(t *testing.T
 	if err := cmd.RunE(cmd, nil); err != nil {
 		t.Fatalf("RunE: %v", err)
 	}
-	if code != exitOK {
-		t.Fatalf("exit code = %d, want exitOK; output:\n%s", code, out.String())
+	if code != int(spine.VerdictOK) {
+		t.Fatalf("exit code = %d, want OK; output:\n%s", code, out.String())
 	}
 
 	lines := 0
@@ -390,8 +390,8 @@ func TestProbeTokenExitCriticalOnMixedRepositoryResult(t *testing.T) {
 	if err := cmd.RunE(cmd, nil); err != nil {
 		t.Fatalf("RunE: %v", err)
 	}
-	if code != exitCritical {
-		t.Errorf("exit code = %d, want exitCritical (%d)", code, exitCritical)
+	if code != int(spine.VerdictCritical) {
+		t.Errorf("exit code = %d, want CRITICAL (%d)", code, int(spine.VerdictCritical))
 	}
 }
 
@@ -410,8 +410,8 @@ func TestProbeTokenExitUnknownWhenRegistryDirUnresolvable(t *testing.T) {
 	if err := cmd.RunE(cmd, nil); err != nil {
 		t.Fatalf("RunE: %v", err)
 	}
-	if code != exitUnknown {
-		t.Errorf("exit code = %d, want exitUnknown (%d) when the registry directory cannot be resolved", code, exitUnknown)
+	if code != int(spine.VerdictUnknown) {
+		t.Errorf("exit code = %d, want UNKNOWN (%d) when the registry directory cannot be resolved", code, int(spine.VerdictUnknown))
 	}
 	if !strings.Contains(errOut.String(), "boom") {
 		t.Errorf("stderr = %q, want the registry-dir error reason", errOut.String())
@@ -436,8 +436,8 @@ func TestProbeTokenExitUnknownWhenRegistryUnreadable(t *testing.T) {
 	if err := cmd.RunE(cmd, nil); err != nil {
 		t.Fatalf("RunE: %v", err)
 	}
-	if code != exitUnknown {
-		t.Errorf("exit code = %d, want exitUnknown (%d) when the registry cannot be opened", code, exitUnknown)
+	if code != int(spine.VerdictUnknown) {
+		t.Errorf("exit code = %d, want UNKNOWN (%d) when the registry cannot be opened", code, int(spine.VerdictUnknown))
 	}
 	if !strings.Contains(errOut.String(), "probe-token:") {
 		t.Errorf("stderr = %q, want a probe-token reason line", errOut.String())

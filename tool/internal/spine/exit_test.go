@@ -1,0 +1,293 @@
+package spine
+
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
+
+// TestVerdictCodesAndWords asserts the four verdicts carry the monitoring-plugin exit codes and
+// the monitoring words, so the constant a caller exits with and the word it prints cannot drift
+// apart.
+func TestVerdictCodesAndWords(t *testing.T) {
+	tests := []struct {
+		verdict Verdict
+		code    int
+		word    string
+	}{
+		{VerdictOK, 0, "OK"},
+		{VerdictWarning, 1, "WARNING"},
+		{VerdictCritical, 2, "CRITICAL"},
+		{VerdictUnknown, 3, "UNKNOWN"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.word, func(t *testing.T) {
+			if int(tt.verdict) != tt.code {
+				t.Errorf("code = %d, want %d", int(tt.verdict), tt.code)
+			}
+			if got := tt.verdict.String(); got != tt.word {
+				t.Errorf("String() = %q, want %q", got, tt.word)
+			}
+		})
+	}
+	if got := Verdict(9).String(); got != "Verdict(9)" {
+		t.Errorf("String() for an unknown value = %q, want %q", got, "Verdict(9)")
+	}
+}
+
+// TestVerdictPrecedence covers one row per pairing of the four verdicts, asserting CRITICAL
+// beats UNKNOWN, UNKNOWN beats WARNING, and WARNING beats OK. It is written as a pairing table
+// rather than a rank comparison so a reordered Severity switch fails on the pair it broke.
+func TestVerdictPrecedence(t *testing.T) {
+	tests := []struct {
+		name string
+		a, b Verdict
+		want Verdict
+	}{
+		{"critical beats unknown", VerdictCritical, VerdictUnknown, VerdictCritical},
+		{"critical beats warning", VerdictCritical, VerdictWarning, VerdictCritical},
+		{"critical beats ok", VerdictCritical, VerdictOK, VerdictCritical},
+		{"unknown beats warning", VerdictUnknown, VerdictWarning, VerdictUnknown},
+		{"unknown beats ok", VerdictUnknown, VerdictOK, VerdictUnknown},
+		{"warning beats ok", VerdictWarning, VerdictOK, VerdictWarning},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := worseVerdict(tt.a, tt.b); got != tt.want {
+				t.Errorf("worseVerdict(%v, %v) = %v, want %v", tt.a, tt.b, got, tt.want)
+			}
+			if got := worseVerdict(tt.b, tt.a); got != tt.want {
+				t.Errorf("worseVerdict(%v, %v) = %v, want %v", tt.b, tt.a, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestVerdictSeverityAgreesWithStateSeverity asserts the Verdict ordering and the State ordering
+// rank the three states they share the same way, so the module holds one severity order rather
+// than two that can drift.
+func TestVerdictSeverityAgreesWithStateSeverity(t *testing.T) {
+	states := []State{OK, Unknown, Failing}
+	for i, a := range states {
+		for _, b := range states[i+1:] {
+			stateWins := b.Severity() > a.Severity()
+			verdictWins := ExitCodeFor(b).Severity() > ExitCodeFor(a).Severity()
+			if stateWins != verdictWins {
+				t.Errorf("State %v vs %v: State.Severity ranks b higher = %v, Verdict.Severity ranks b higher = %v",
+					a, b, stateWins, verdictWins)
+			}
+		}
+	}
+}
+
+// TestExitCodeForState asserts the State-to-Verdict mapping a probe-style command exits with,
+// including that a State value this package does not know reports UNKNOWN rather than OK.
+func TestExitCodeForState(t *testing.T) {
+	tests := []struct {
+		state State
+		want  Verdict
+	}{
+		{OK, VerdictOK},
+		{Failing, VerdictCritical},
+		{Unknown, VerdictUnknown},
+		{State(42), VerdictUnknown},
+	}
+	for _, tt := range tests {
+		t.Run(tt.state.String(), func(t *testing.T) {
+			if got := ExitCodeFor(tt.state); got != tt.want {
+				t.Errorf("ExitCodeFor(%v) = %v, want %v", tt.state, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestCombineState asserts the moved fold keeps State.Severity's order and is order-independent.
+func TestCombineState(t *testing.T) {
+	tests := []struct {
+		name string
+		a, b State
+		want State
+	}{
+		{"failing beats unknown", Failing, Unknown, Failing},
+		{"failing beats ok", Failing, OK, Failing},
+		{"unknown beats ok", Unknown, OK, Unknown},
+		{"ok with ok", OK, OK, OK},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CombineState(tt.a, tt.b); got != tt.want {
+				t.Errorf("CombineState(%v, %v) = %v, want %v", tt.a, tt.b, got, tt.want)
+			}
+			if got := CombineState(tt.b, tt.a); got != tt.want {
+				t.Errorf("CombineState(%v, %v) = %v, want %v", tt.b, tt.a, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestCheckVerdict pins the per-check mapping in force while no per-check severity table exists:
+// every unheld failing check is CRITICAL, an unexpired hold softens a failure to WARNING, and an
+// expired hold (which reaches this type as Acknowledged false) stays CRITICAL. A later change
+// that ranks some failure WARNING has to edit these rows, which is what keeps that change a
+// visible diff rather than a silent reinterpretation.
+func TestCheckVerdict(t *testing.T) {
+	tests := []struct {
+		name  string
+		check CheckVerdict
+		want  Verdict
+	}{
+		{"passing check", CheckVerdict{ID: "creds", State: OK}, VerdictOK},
+		{"failing check", CheckVerdict{ID: "deploy", State: Failing}, VerdictCritical},
+		{"held failing check", CheckVerdict{ID: "deploy", State: Failing, Acknowledged: true}, VerdictWarning},
+		{"failing check whose hold expired", CheckVerdict{ID: "deploy", State: Failing}, VerdictCritical},
+		{"unrun check", CheckVerdict{ID: "email", State: Unknown, Reason: ReasonTimeout}, VerdictUnknown},
+		{"held unrun check", CheckVerdict{ID: "email", State: Unknown, Reason: ReasonTimeout, Acknowledged: true}, VerdictUnknown},
+		{"unrun check missing a credential", CheckVerdict{ID: "creds", State: Unknown, Reason: ReasonCredMissing}, VerdictUnknown},
+		{"passing check carrying a hold", CheckVerdict{ID: "creds", State: OK, Acknowledged: true}, VerdictOK},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.check.Verdict(); got != tt.want {
+				t.Errorf("Verdict() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestSiteWithNoChecksIsUnknown asserts a site whose check slice is empty reports UNKNOWN and
+// the UNKNOWN word, never OK. Folding an empty slice to OK is the false green the reference
+// program printed.
+func TestSiteWithNoChecksIsUnknown(t *testing.T) {
+	got := ExitCode([]SiteVerdicts{nil}, nil, 0)
+	if got != VerdictUnknown {
+		t.Errorf("ExitCode for one site with no checks = %v, want %v", got, VerdictUnknown)
+	}
+	if got.String() != "UNKNOWN" {
+		t.Errorf("String() = %q, want %q", got.String(), "UNKNOWN")
+	}
+	if int(got) != 3 {
+		t.Errorf("exit code = %d, want 3", int(got))
+	}
+}
+
+// TestStateWord asserts the four wire words and the one input that changes them.
+func TestStateWord(t *testing.T) {
+	tests := []struct {
+		name  string
+		state State
+		ack   bool
+		want  string
+	}{
+		{"passing", OK, false, "pass"},
+		{"passing under a hold", OK, true, "pass"},
+		{"failing", Failing, false, "fail"},
+		{"failing under a hold", Failing, true, "held"},
+		{"unrun", Unknown, false, "skip"},
+		{"unrun under a hold", Unknown, true, "skip"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StateWord(tt.state, tt.ack); got != tt.want {
+				t.Errorf("StateWord(%v, %v) = %q, want %q", tt.state, tt.ack, got, tt.want)
+			}
+		})
+	}
+}
+
+// pass, fail, held and unrun build the four check shapes the ExitCode table below combines. Each
+// bakes in one check id, since the arithmetic reads State and Acknowledged and never the id.
+func pass() CheckVerdict { return CheckVerdict{ID: "creds", State: OK} }
+func fail() CheckVerdict { return CheckVerdict{ID: "deploy", State: Failing} }
+func held() CheckVerdict { return CheckVerdict{ID: "deploy", State: Failing, Acknowledged: true} }
+func unrun() CheckVerdict {
+	return CheckVerdict{ID: "email", State: Unknown, Reason: ReasonOffline}
+}
+
+// TestExitCode covers the whole-run arithmetic: one site's mixed checks, the same precedence
+// applied across a sweep of three sites, the listing errors, and the expected site count.
+func TestExitCode(t *testing.T) {
+	tests := []struct {
+		name        string
+		sites       []SiteVerdicts
+		listErrs    []error
+		expectSites int
+		want        Verdict
+	}{
+		{"no sites and nothing wrong", nil, nil, 0, VerdictOK},
+		{"one site all passing", []SiteVerdicts{{pass(), pass()}}, nil, 0, VerdictOK},
+		{"one site with a held failure", []SiteVerdicts{{pass(), held()}}, nil, 0, VerdictWarning},
+		{"one site with an unrun check", []SiteVerdicts{{pass(), unrun()}}, nil, 0, VerdictUnknown},
+		{"one site with a failure", []SiteVerdicts{{pass(), fail()}}, nil, 0, VerdictCritical},
+		{
+			"a failure is not masked by an unknown in the same site",
+			[]SiteVerdicts{{fail(), unrun()}},
+			nil, 0, VerdictCritical,
+		},
+		{
+			"an unknown outranks a held failure in the same site",
+			[]SiteVerdicts{{held(), unrun()}},
+			nil, 0, VerdictUnknown,
+		},
+		{
+			"three sites: one passing, one unrun, one failing",
+			[]SiteVerdicts{{pass()}, {unrun()}, {fail()}},
+			nil, 0, VerdictCritical,
+		},
+		{
+			"three sites: one passing, one held, one unrun",
+			[]SiteVerdicts{{pass()}, {held()}, {unrun()}},
+			nil, 0, VerdictUnknown,
+		},
+		{
+			"three sites: one passing, one held, two passing",
+			[]SiteVerdicts{{pass()}, {held()}, {pass()}},
+			nil, 0, VerdictWarning,
+		},
+		{
+			"a site with no checks among passing sites",
+			[]SiteVerdicts{{pass()}, nil, {pass()}},
+			nil, 0, VerdictUnknown,
+		},
+		{
+			"a listing error over passing sites",
+			[]SiteVerdicts{{pass()}},
+			[]error{errors.New("store: parse record")}, 0, VerdictUnknown,
+		},
+		{
+			"a listing error does not mask a failure",
+			[]SiteVerdicts{{fail()}},
+			[]error{errors.New("store: parse record")}, 0, VerdictCritical,
+		},
+		{
+			"the expected site count sentinel",
+			nil,
+			[]error{fmt.Errorf("sites: %w", ErrExpectSites)}, 0, VerdictUnknown,
+		},
+		{
+			"the expected site count matches",
+			[]SiteVerdicts{{pass()}, {pass()}},
+			nil, 2, VerdictOK,
+		},
+		{
+			"the expected site count does not match",
+			[]SiteVerdicts{{pass()}},
+			nil, 2, VerdictUnknown,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExitCode(tt.sites, tt.listErrs, tt.expectSites); got != tt.want {
+				t.Errorf("ExitCode = %v (%d), want %v (%d)", got, int(got), tt.want, int(tt.want))
+			}
+		})
+	}
+}
+
+// TestErrExpectSitesIsMatchable asserts the sentinel survives wrapping, which is what lets a
+// caller return it from deeper in a listing and ExitCode still be the only place it is mapped.
+func TestErrExpectSitesIsMatchable(t *testing.T) {
+	wrapped := fmt.Errorf("sites: %w", ErrExpectSites)
+	if !errors.Is(wrapped, ErrExpectSites) {
+		t.Error("errors.Is did not match the wrapped sentinel")
+	}
+}

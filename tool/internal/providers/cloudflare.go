@@ -334,6 +334,14 @@ func (cf *Cloudflare) ZoneByName(ctx context.Context, name string) (*Zone, error
 	return &zones[0], nil
 }
 
+// ListZones returns every zone this client's credential can read, following every page of the
+// route's result_info. Worker discovery needs it to name a custom domain's zone: the Worker
+// domains route reports a zone id and no name, and one listing costs a single request where a
+// lookup per zone id costs one apiece.
+func (cf *Cloudflare) ListZones(ctx context.Context) ([]Zone, error) {
+	return getPaginated[Zone](ctx, cf, "/zones")
+}
+
 // ZoneSetting is one zone setting's id and current value, the shape every entry of
 // GET /zones/{id}/settings shares regardless of the setting.
 type ZoneSetting struct {

@@ -106,6 +106,19 @@ func TestAuthProbeStringsLiveInMessages(t *testing.T) {
 	}
 }
 
+// TestPrintRepoLinesAllPublicWarningLivesInMessages pins printRepoLines's own
+// all-repositories-public warning to messages.go's authProbeAllReposPublic constant, so
+// probe_github.go's whole-file exemption from TestNoLongProseLiteralOutsideMessages cannot again
+// shield a genuine operator-facing string reintroduced as a literal at its call site.
+func TestPrintRepoLinesAllPublicWarningLivesInMessages(t *testing.T) {
+	var out, errOut strings.Builder
+	repos := []repoLine{{label: "glw907/example", v: okVerdict(), private: false, known: true}}
+	printRepoLines(&out, &errOut, repos)
+	if got, want := errOut.String(), authProbeAllReposPublic+"\n"; got != want {
+		t.Errorf("printRepoLines all-public warning = %q, want messages.go's authProbeAllReposPublic %q", got, want)
+	}
+}
+
 // messageConstants parses messages.go and returns every string-valued package-level const it
 // declares, the same extraction cmd/copylist's cairnCatalogue performs for the golden. Reusing
 // the same technique here, rather than hand-listing every function's return value the way
@@ -284,6 +297,21 @@ func TestEveryEightSection38CaseHasATableEntry(t *testing.T) {
 // would reintroduce.
 func TestTranslateErrorPassesThroughATranslatedMessage(t *testing.T) {
 	err := unknownSiteError("example-a1b2c3")
+	got := translateError(err)
+	if got.Error() != err.Error() {
+		t.Errorf("translateError(%v) = %v, want it unchanged", err, got)
+	}
+	if strings.Count(got.Error(), "cairn: ") != 1 {
+		t.Errorf("translateError(%v) = %q, carries more than one \"cairn: \" prefix", err, got.Error())
+	}
+}
+
+// TestTranslateErrorAckFileUnreadableSinglePrefix asserts loadAckFile's read-permission failure
+// reaches translateError as a translatedError, so main's own boundary passes it through instead
+// of prefixing it a second time; this pins the regression an inline fmt.Errorf at ack.go's own
+// read call site reintroduced, "cairn: cairn: read <path>: <cause>".
+func TestTranslateErrorAckFileUnreadableSinglePrefix(t *testing.T) {
+	err := ackFileUnreadableError("/home/geoff/.config/cairn/acks.json", errRaw{"permission denied"})
 	got := translateError(err)
 	if got.Error() != err.Error() {
 		t.Errorf("translateError(%v) = %v, want it unchanged", err, got)

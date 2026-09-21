@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -76,7 +75,7 @@ func loadAckFile(path string, explicit bool) (health.Acks, error) {
 			}
 			return nil, nil
 		}
-		return nil, fmt.Errorf("cairn: read %s: %w", path, err)
+		return nil, ackFileUnreadableError(path, err)
 	}
 
 	var raw []ackFileEntry

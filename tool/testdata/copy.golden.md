@@ -99,6 +99,7 @@ Run the command again in %s
 
 auth probe's whole output is identifiers (endpoints, statuses, and repository names), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
 - acknowledge one check until an expiry date: <check-id>=<YYYY-MM-DD>, repeatable; applies to that check on every site in a sweep
+- auth probe: every probed repository is public; the GitHub token's scope is unconfirmed
 - auth probe: output is identifiers only; it is implicitly verbose
 - cairn adopt --worker ecxc-ski
 - cairn adopt list
@@ -140,6 +141,8 @@ Run `cairn health --help` for usage
 - cairn: could not reach the network.
 No check ran, so this run says nothing about the site.
 Check your connection, then run the command again
+- cairn: could not read %s: %v.
+Check the file's permissions, or drop --ack-file to use the registry's default
 - cairn: no Cloudflare credentials found.
 Run `cairn auth set %s` to store one
 - cairn: no Worker named %q on this account.

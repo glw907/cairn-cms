@@ -121,7 +121,7 @@ func printRepoLines(out, errOut io.Writer, repos []repoLine) spine.State {
 		worst = spine.CombineState(worst, r.v.state)
 	}
 	if allPublic {
-		_, _ = fmt.Fprintln(errOut, "auth probe: every probed repository is public; the GitHub token's scope is unconfirmed")
+		_, _ = fmt.Fprintln(errOut, authProbeAllReposPublic)
 	}
 	return worst
 }

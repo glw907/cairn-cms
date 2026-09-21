@@ -263,9 +263,14 @@ const (
 	authProbeVerboseNotice = "auth probe: output is identifiers only; it is implicitly verbose"
 	authProbeCFSkipped     = "Cloudflare: skipped, a credential is missing"
 	authProbeGHSkipped     = "GitHub: skipped, a credential is missing"
+
+	// authProbeAllReposPublic is printRepoLines's own warning when every probed repository came
+	// back confirmed-public, the condition that leaves a fine-grained token's own scope
+	// unconfirmed. New to this table, owed to Task 22a's editorial gate.
+	authProbeAllReposPublic = "auth probe: every probed repository is public; the GitHub token's scope is unconfirmed"
 )
 
-// ack.go's six refusals. The catalogue carries no row for an acknowledgement file or flag, since
+// ack.go's seven refusals. The catalogue carries no row for an acknowledgement file or flag, since
 // acknowledgements are new to 1.0's grammar; every one is new to this table, owed to Task 22a's
 // editorial gate.
 const (
@@ -275,6 +280,7 @@ const (
 	tmplAckFileMissingCheckID = "cairn: %s carries an entry with no checkId.\nName the check each entry acknowledges"
 	tmplAckFileMissingExpiry  = "cairn: %s's %q entry has no expires date.\nAdd an expires date so the acknowledgement does not outlive it"
 	tmplAckFileMalformedDate  = "cairn: %s's %q entry has a malformed expires date %q.\nUse YYYY-MM-DD"
+	tmplAckFileUnreadable     = "cairn: could not read %s: %v.\nCheck the file's permissions, or drop --ack-file to use the registry's default"
 )
 
 // ackFlagError is --ack's refusal of a value that is not <check-id>=<YYYY-MM-DD>.
@@ -309,6 +315,12 @@ func ackFileMissingExpiryError(path, checkID string) error {
 // does not parse as a calendar date.
 func ackFileMalformedDateError(path, checkID, value string) error {
 	return translated(fmt.Errorf(tmplAckFileMalformedDate, path, checkID, value))
+}
+
+// ackFileUnreadableError is the refusal of an acknowledgement file that exists but could not be
+// read (a permissions error, most often), distinct from ackFileNotFoundError's missing-path case.
+func ackFileUnreadableError(path string, cause error) error {
+	return translated(fmt.Errorf(tmplAckFileUnreadable, path, cause))
 }
 
 // The remaining four rows of copy-standard.md section 3.8 (no credentials, network down, rate

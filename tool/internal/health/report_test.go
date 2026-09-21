@@ -24,14 +24,12 @@ func TestReportDeclaresNoMarshalJSON(t *testing.T) {
 	}
 }
 
-// TestReportJSONRedactsVerboseOnlyValues covers the task's own fixture: a build UUID and a
-// repository slug embedded in a Detail string. A verbose render keeps both; a non-verbose render
-// carries neither.
-func TestReportJSONRedactsVerboseOnlyValues(t *testing.T) {
-	uuid := "1b2e3c4d-5f60-4a1b-9c2d-7e8f9a0b1c2d"
-	slug := "glw907/ecxc-ski"
-	fullSHA := "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"
-	detail := "build " + uuid + " for " + slug + " at " + fullSHA
+// TestReportJSONDetailPassesThroughUnredacted covers the ruling that Detail is never mangled by
+// the non-verbose render: a Detail carrying a slash (an "owner/repo"-shaped slug) survives byte
+// for byte in both renders, since a check keeps a verbose-only value out of Detail by contract
+// rather than relying on a rendering-time filter to catch it.
+func TestReportJSONDetailPassesThroughUnredacted(t *testing.T) {
+	detail := "build for glw907/ecxc-ski"
 	report := Report{
 		Checks: []CheckResult{{ID: "deploy", Outcome: spine.Outcome{State: spine.Failing, Detail: detail}}},
 	}
@@ -40,20 +38,16 @@ func TestReportJSONRedactsVerboseOnlyValues(t *testing.T) {
 	if err != nil {
 		t.Fatalf("JSON(true): %v", err)
 	}
-	for _, want := range []string{uuid, slug, fullSHA} {
-		if !strings.Contains(string(verbose), want) {
-			t.Errorf("verbose render dropped %q", want)
-		}
+	if !strings.Contains(string(verbose), detail) {
+		t.Errorf("verbose render mangled Detail %q: %s", detail, verbose)
 	}
 
 	nonVerbose, err := report.JSON(false)
 	if err != nil {
 		t.Fatalf("JSON(false): %v", err)
 	}
-	for _, leaked := range []string{uuid, slug, fullSHA} {
-		if strings.Contains(string(nonVerbose), leaked) {
-			t.Errorf("non-verbose render leaked verbose-only value %q", leaked)
-		}
+	if !strings.Contains(string(nonVerbose), detail) {
+		t.Errorf("non-verbose render mangled Detail %q: %s", detail, nonVerbose)
 	}
 }
 
@@ -107,33 +101,44 @@ func TestReportJSONFieldOrderRoundTrips(t *testing.T) {
 	}
 }
 
-// TestReportJSONRedactsFieldValues asserts a Fields entry carrying a verbose-only value is
-// redacted the same way Detail is, non-verbose only.
-func TestReportJSONRedactsFieldValues(t *testing.T) {
-	fullSHA := `"9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"`
+// TestReportJSONFiltersFieldsByKey covers the non-verbose render's key-based allowlist: a field
+// whose key is not in nonVerboseFieldKeys is dropped from the render entirely, key and value
+// both, while an allowlisted field survives with its value intact. Both fields are present in a
+// verbose render.
+func TestReportJSONFiltersFieldsByKey(t *testing.T) {
 	report := Report{
 		Checks: []CheckResult{{
 			ID: "deploy",
 			Outcome: spine.Outcome{
-				State:  spine.OK,
-				Fields: []spine.OutcomeField{{Key: "lastBuildSHA", Value: json.RawMessage(fullSHA)}},
+				State: spine.OK,
+				Fields: []spine.OutcomeField{
+					{Key: "count", Value: json.RawMessage("3")},
+					{Key: "lastBuildSHA", Value: json.RawMessage(`"9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"`)},
+				},
 			},
 		}},
-	}
-
-	nonVerbose, err := report.JSON(false)
-	if err != nil {
-		t.Fatalf("JSON(false): %v", err)
-	}
-	if strings.Contains(string(nonVerbose), "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e") {
-		t.Error("non-verbose render leaked a full SHA carried in a Fields entry")
 	}
 
 	verbose, err := report.JSON(true)
 	if err != nil {
 		t.Fatalf("JSON(true): %v", err)
 	}
-	if !strings.Contains(string(verbose), "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e") {
-		t.Error("verbose render dropped a full SHA carried in a Fields entry")
+	for _, want := range []string{"count", "lastBuildSHA", "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"} {
+		if !strings.Contains(string(verbose), want) {
+			t.Errorf("verbose render dropped %q: %s", want, verbose)
+		}
+	}
+
+	nonVerbose, err := report.JSON(false)
+	if err != nil {
+		t.Fatalf("JSON(false): %v", err)
+	}
+	if !strings.Contains(string(nonVerbose), `"count"`) {
+		t.Errorf("non-verbose render dropped the allowlisted field %q: %s", "count", nonVerbose)
+	}
+	for _, leaked := range []string{"lastBuildSHA", "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e"} {
+		if strings.Contains(string(nonVerbose), leaked) {
+			t.Errorf("non-verbose render kept the non-allowlisted field's %q: %s", leaked, nonVerbose)
+		}
 	}
 }

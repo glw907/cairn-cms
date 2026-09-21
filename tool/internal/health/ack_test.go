@@ -35,19 +35,22 @@ func TestAcksMatch(t *testing.T) {
 	}
 }
 
-// TestRunAppliesAcknowledgements covers the three shapes Run's acknowledgement handling must
-// tell apart: an unexpired ack over a Failing check (applied and reported), an expired one (no
-// effect, dropped from Report.Acknowledged), and an ack for a check id absent from this sweep
-// (still reported, since a stale acknowledgement pointing at nothing is a fact an operator wants
-// to see, not silently dropped).
+// TestRunAppliesAcknowledgements covers the four shapes Run's acknowledgement handling must tell
+// apart: active-and-matching (applied and reported, over a Failing check), expired-and-matching
+// (not acknowledged, but the covering CheckResult still names the expiry), active-and-absent
+// (still listed in Report.Acknowledged, since a check id with no matching check in this sweep is
+// still a fact an operator wants to see), and expired-and-absent (dropped from
+// Report.Acknowledged, following the same absent-id path unchanged).
 func TestRunAppliesAcknowledgements(t *testing.T) {
 	now := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
 	nowFn := func() time.Time { return now }
 	checks := []Check{
 		fixedOutcomeCheck{id: "deploy", outcome: spine.Outcome{State: spine.Failing, Detail: "known issue"}},
+		fixedOutcomeCheck{id: "logs", outcome: spine.Outcome{State: spine.OK}},
 	}
 	acks := Acks{
 		{CheckID: "deploy", Expires: now.Add(time.Hour)},
+		{CheckID: "logs", Expires: now.Add(-time.Hour)},
 		{CheckID: "email", Expires: now.Add(time.Hour)},
 		{CheckID: "expired", Expires: now.Add(-time.Hour)},
 	}
@@ -57,12 +60,23 @@ func TestRunAppliesAcknowledgements(t *testing.T) {
 		t.Fatalf("Run: %v", err)
 	}
 
-	cr := report.Checks[0]
-	if !cr.Acknowledged {
-		t.Error("Acknowledged = false, want true for an unexpired ack over a Failing check")
+	deploy := report.Checks[0]
+	if !deploy.Acknowledged {
+		t.Error("active-and-matching: Acknowledged = false, want true")
 	}
-	if !cr.AckExpires.Equal(now.Add(time.Hour)) {
-		t.Errorf("AckExpires = %v, want %v", cr.AckExpires, now.Add(time.Hour))
+	if !deploy.AckExpires.Equal(now.Add(time.Hour)) {
+		t.Errorf("active-and-matching: AckExpires = %v, want %v", deploy.AckExpires, now.Add(time.Hour))
+	}
+
+	logs := report.Checks[1]
+	if logs.Acknowledged {
+		t.Error("expired-and-matching: Acknowledged = true, want false")
+	}
+	if !logs.AckExpires.Equal(now.Add(-time.Hour)) {
+		t.Errorf("expired-and-matching: AckExpires = %v, want %v", logs.AckExpires, now.Add(-time.Hour))
+	}
+	if !logs.AckExpires.Before(now) {
+		t.Errorf("expired-and-matching: AckExpires = %v, want a past instant", logs.AckExpires)
 	}
 
 	want := []string{"deploy", "email"}

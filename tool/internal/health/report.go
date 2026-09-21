@@ -2,7 +2,6 @@ package health
 
 import (
 	"encoding/json"
-	"regexp"
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/spine"
@@ -44,70 +43,57 @@ type CheckResult struct {
 	Tier Tier
 	// Acknowledged reports whether an unexpired Ack covered this result.
 	Acknowledged bool
-	// AckExpires is the covering Ack's expiry. It is the zero time when Acknowledged is false.
+	// AckExpires is the matching Ack's expiry, set whenever one exists for this result's ID even
+	// if it has already expired, which is how a rendered report names an acknowledgement as
+	// expired rather than simply absent. It is the zero time when no Ack names this ID at all.
 	AckExpires time.Time
 }
 
-// verboseOnlyPatterns matches the identifier shapes the non-verbose render excludes: a build
-// UUID, a full (40-character) commit SHA, and an "owner/repo"-shaped repository slug. A
-// 7-character SHA is short enough to fall outside every pattern here, so it survives
-// unredacted, as the spec's allowlist requires. An account id, a zone id, and a worker name are
-// opaque strings this shape-based filter cannot recognize on its own; a check that carries one
-// puts it in a named Fields entry, which a later task's per-field rule (not this one) can also
-// filter by key.
-var verboseOnlyPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b`),
-	regexp.MustCompile(`\b[0-9a-fA-F]{40}\b`),
-	regexp.MustCompile(`\b[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*\b`),
+// nonVerboseFieldKeys is the enumerated allowlist of Outcome.Fields keys a non-verbose render
+// keeps; every other key is dropped from the render entirely, not merely its value. A shape-based
+// filter (a regex over "looks like a UUID" or "looks like owner/repo") both over- and
+// under-matches an arbitrary value, so the filter instead trusts a check's own field name: an
+// account id, a zone id, a worker name, a repository slug, a build UUID, and a full commit SHA
+// are each verbose-only by the plan's own rule, so a check that carries one names its field
+// something outside this set. The set here implements the plan's own value categories, a count,
+// an age, and a state, as literal keys; a check that introduces a new non-verbose category adds
+// its key here in the same commit.
+var nonVerboseFieldKeys = map[string]bool{
+	"count": true,
+	"age":   true,
+	"state": true,
 }
 
-// redactedPlaceholder replaces a verbose-only value's text in a non-verbose render.
-const redactedPlaceholder = "<redacted>"
-
-// redactText masks every verboseOnlyPatterns match in s.
-func redactText(s string) string {
-	for _, pattern := range verboseOnlyPatterns {
-		s = pattern.ReplaceAllString(s, redactedPlaceholder)
+// nonVerboseFields returns the subset of fields whose Key is in nonVerboseFieldKeys, in their
+// original order, or nil when fields is empty.
+func nonVerboseFields(fields []spine.OutcomeField) []spine.OutcomeField {
+	if len(fields) == 0 {
+		return nil
 	}
-	return s
+	kept := make([]spine.OutcomeField, 0, len(fields))
+	for _, f := range fields {
+		if nonVerboseFieldKeys[f.Key] {
+			kept = append(kept, f)
+		}
+	}
+	return kept
 }
 
-// redactField masks value's content the same way redactText does, when value decodes as a JSON
-// string. A non-string value (a bool, a number, a nested object) passes through unchanged: none
-// of the verbose-only shapes this filter recognizes can appear inside one.
-func redactField(value json.RawMessage) json.RawMessage {
-	var s string
-	if err := json.Unmarshal(value, &s); err != nil {
-		return value
-	}
-	redacted, err := json.Marshal(redactText(s))
-	if err != nil {
-		return value
-	}
-	return redacted
-}
-
-// redactOutcome returns a copy of o with Detail and every Fields entry passed through redactText
-// and redactField, for a non-verbose render.
+// redactOutcome returns a copy of o for a non-verbose render. Detail passes through unchanged:
+// Detail is free text, and a check that puts a verbose-only value there instead of a named
+// Fields entry is that check's own bug, not something a rendering-time filter can safely repair
+// by mangling arbitrary text. Fields is cut down to the allowlisted keys.
 func redactOutcome(o spine.Outcome) spine.Outcome {
-	o.Detail = redactText(o.Detail)
-	if len(o.Fields) == 0 {
-		return o
-	}
-	fields := make([]spine.OutcomeField, len(o.Fields))
-	for i, f := range o.Fields {
-		fields[i] = spine.OutcomeField{Key: f.Key, Value: redactField(f.Value)}
-	}
-	o.Fields = fields
+	o.Fields = nonVerboseFields(o.Fields)
 	return o
 }
 
 // JSON is Report's only marshal path. A verbose render carries every field as measured; a
-// non-verbose render redacts every verbose-only value from each check's Outcome.Detail and
-// Outcome.Fields, leaving the check id, condition, reason, counts, ages, and states untouched.
-// Report and CheckResult declare no MarshalJSON, so a bare json.Marshal on either one always
-// produces the raw, unredacted shape rather than silently reproducing this filter (correctly or
-// not); JSON is the one place a Report's bytes are meant to leave the process.
+// non-verbose render keeps every check's Outcome.Detail as written and drops every Outcome.Fields
+// entry whose key is not in nonVerboseFieldKeys. Report and CheckResult declare no MarshalJSON,
+// so a bare json.Marshal on either one always produces the raw, unredacted shape rather than
+// silently reproducing this filter (correctly or not); JSON is the one place a Report's bytes are
+// meant to leave the process.
 func (r Report) JSON(verbose bool) ([]byte, error) {
 	if verbose {
 		return json.Marshal(r)

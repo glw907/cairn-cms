@@ -148,16 +148,21 @@ func recoverRun(ctx context.Context, check Check, r record.Record, c Clients, o 
 	return check.Run(ctx, r, c, o)
 }
 
-// applyAck marks result acknowledged when acks carries an unexpired entry for its id. It never
-// changes result.Outcome: an acknowledgement is metadata about a verdict, never a softening of
-// the verdict itself.
+// applyAck marks result acknowledged when acks carries an unexpired entry for its id. An entry
+// that matches result.ID but has already expired has no softening effect on Acknowledged, but
+// its Expires still lands in result.AckExpires, which is how a rendered report names the
+// acknowledgement as expired rather than simply absent. An id with no entry in acks at all
+// leaves both fields at their zero value. applyAck never changes result.Outcome: an
+// acknowledgement is metadata about a verdict, never a softening of the verdict itself.
 func applyAck(result *CheckResult, acks Acks, now time.Time) {
-	ack, ok := acks.Match(result.ID, now)
+	ack, ok := acks.find(result.ID)
 	if !ok {
 		return
 	}
-	result.Acknowledged = true
 	result.AckExpires = ack.Expires
+	if now.Before(ack.Expires) {
+		result.Acknowledged = true
+	}
 }
 
 // activeAckIDs returns the CheckID of every unexpired entry in acks, in acks's own order,

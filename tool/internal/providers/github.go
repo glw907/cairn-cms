@@ -232,9 +232,10 @@ func (gh *GitHub) LatestBotCommit(ctx context.Context, owner, repo, branch strin
 }
 
 // TokenExpiry reads githubExpiryHeader off a lightweight authenticated request, returning the
-// zero time with no error when it is absent: an unauthenticated client, a classic PAT, and an
-// OAuth token all omit it, which is indistinguishable from a fine-grained PAT that never expires,
-// so the creds check reads a zero TokenExpiry as unknown rather than as "not expiring".
+// zero time with no error when it is absent. A classic PAT, an OAuth token, and a non-expiring
+// fine-grained PAT all omit the header, and GitHub gives a caller no way to tell those three
+// apart, so the zero value means only "GitHub reported no expiry for this token": a caller must
+// never read it as a date, and must not treat it as an unknown or unreadable expiry either.
 func (gh *GitHub) TokenExpiry(ctx context.Context) (time.Time, error) {
 	_, header, _, err := gh.client.rawGet(ctx, githubBase+"/rate_limit", githubHeader())
 	if err != nil {

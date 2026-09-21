@@ -97,6 +97,22 @@ func TestCredsCheckBothCredentialsValid(t *testing.T) {
 			t.Errorf("Detail = %q, leaked the credential value %q", outcome.Detail, secret)
 		}
 	}
+
+	report := Report{Checks: []CheckResult{{ID: c.ID(), Outcome: outcome}}}
+	nonVerbose, err := report.JSON(false)
+	if err != nil {
+		t.Fatalf("JSON(false): %v", err)
+	}
+	for _, provider := range []string{"environment", "keyring"} {
+		if !strings.Contains(string(nonVerbose), provider) {
+			t.Errorf("JSON(false) = %s, want it to name provider %q", nonVerbose, provider)
+		}
+	}
+	for _, secret := range []string{"cf-secret-value", "gh-secret-value"} {
+		if strings.Contains(string(nonVerbose), secret) {
+			t.Errorf("JSON(false) = %s, leaked the credential value %q", nonVerbose, secret)
+		}
+	}
 }
 
 func TestCredsCheckRevokedCredentialIsFailing(t *testing.T) {
@@ -138,6 +154,31 @@ func TestCredsCheckExpiringGitHubTokenIsFailing(t *testing.T) {
 	}
 	if !strings.Contains(outcome.Detail, string(spine.ReasonCredExpiring)) {
 		t.Errorf("Detail = %q, want it to name %s", outcome.Detail, spine.ReasonCredExpiring)
+	}
+	if err := outcome.Validate(); err != nil {
+		t.Errorf("Validate: %v", err)
+	}
+}
+
+// TestCredsCheckZeroExpiryIsOK asserts a GitHub token whose response carries no expiry header (a
+// classic PAT, an OAuth token, or a non-expiring fine-grained PAT) is OK, with Detail saying
+// plainly that GitHub reports no expiry, never Unknown: an Unknown here would turn every
+// scheduled run holding such a token into exit UNKNOWN.
+func TestCredsCheckZeroExpiryIsOK(t *testing.T) {
+	c := credsCheck{}
+	clients := Clients{
+		CF:     cfClient(credRoundTripper{status: http.StatusOK, body: []byte(cfVerifyOKBody)}),
+		GH:     ghClient(credRoundTripper{status: http.StatusOK, body: []byte("{}")}),
+		HaveCF: true, HaveGH: true,
+		CFFrom: "environment", GHFrom: "keyring",
+	}
+
+	outcome := c.Run(context.Background(), record.Record{}, clients, validOptions)
+	if outcome.State != spine.OK {
+		t.Errorf("State = %v, want OK", outcome.State)
+	}
+	if !strings.Contains(outcome.Detail, "no expiry") {
+		t.Errorf("Detail = %q, want it to say GitHub reports no expiry", outcome.Detail)
 	}
 	if err := outcome.Validate(); err != nil {
 		t.Errorf("Validate: %v", err)

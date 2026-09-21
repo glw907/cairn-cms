@@ -68,7 +68,11 @@ func checkCloudflareCredential(ctx context.Context, c Clients) credentialSide {
 // checkGitHubCredential verifies c's GitHub credential: an unreadable or revoked token
 // classifies the same way checkCloudflareCredential's does, and a readable one that expires
 // within credExpiryWindow is Failing on its own, since that is what this check exists to catch
-// before every tier-gated check starts losing its credential at once.
+// before every tier-gated check starts losing its credential at once. A zero TokenExpiry means
+// GitHub reported no expiry at all (a classic PAT, an OAuth token, or a non-expiring
+// fine-grained PAT), so the expiring-soon warning cannot apply; that is OK, with Detail saying so
+// plainly, never Unknown, since an Unknown here would turn every scheduled run holding such a
+// token into exit UNKNOWN.
 func checkGitHubCredential(ctx context.Context, c Clients) credentialSide {
 	if !c.HaveGH {
 		return credentialSide{outcome: spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}}
@@ -78,7 +82,10 @@ func checkGitHubCredential(ctx context.Context, c Clients) credentialSide {
 	if err != nil {
 		return credentialSide{outcome: credentialErrorOutcome(err), from: c.GHFrom}
 	}
-	if !expiry.IsZero() && time.Until(expiry) < credExpiryWindow {
+	if expiry.IsZero() {
+		return credentialSide{outcome: spine.Outcome{State: spine.OK, Detail: "github reports no expiry for this token"}, from: c.GHFrom}
+	}
+	if time.Until(expiry) < credExpiryWindow {
 		detail := fmt.Sprintf("%s: expires %s", spine.ReasonCredExpiring, expiry.Format(time.RFC3339))
 		return credentialSide{outcome: spine.Outcome{State: spine.Failing, Detail: detail}, from: c.GHFrom}
 	}

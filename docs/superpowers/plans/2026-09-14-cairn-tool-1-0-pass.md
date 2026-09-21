@@ -2067,9 +2067,9 @@ The segment cost about 3.9M.
 | 12 | 21 | The WARNING tier, usage errors, the error surface, `cairn help agents`, the scrub | 4 | no | done |
 | 13 | 22a | The 1.0 cut up to the tag, and the release candidate | 4 | no | done |
 | 14 | 24a | The scheduled run, documented for three schedulers | 4 | no | done |
-| 15 | 22a-ii | The editorial fixes and fixture truth | 5 | no | next |
-| 16 | 21b | The fifth wire word, hold expiry, the quiet sweep, and `--theme` | 5 | no | next |
-| 17 | 21c | `cairn auth check`, and the release candidate rebuilt | 5 | no | next |
+| 15 | 22a-ii | The editorial fixes and fixture truth | 5 | no | done |
+| 16 | 21b | The fifth wire word, hold expiry, the quiet sweep, and `--theme` | 5 | no | done |
+| 17 | 21c | `cairn auth check`, and the release candidate rebuilt | 5 | no | done |
 | 18 | 22b | The `tool/v1.0.0` tag | 6 | **yes** | |
 | 19 | 23 | Release artifacts, attestation, the man page, `go install` from a clean machine | 6 | **yes** | |
 | 20 | 24b | The owner's own timer, installed and fired | 7 | **yes** | |
@@ -2078,6 +2078,16 @@ The segment cost about 3.9M.
 **Segment 5 was cut on 2026-09-21** from Geoff's rulings on the owner list below, which changed
 three surfaces the 1.0 freeze would otherwise have locked. It is three tasks and no more, and it
 ends where segment 4 ended: a release candidate in the owner's hands and no tag.
+
+**Segment 5 run record (2026-09-21).** Task 22a-ii landed as `4e519d4e`. Task 21b's first
+implementer died on a network failure, and the runner then ran Task 21c out of order, as
+`4e0bd5cd`, `fccd0562`, and `48212894`; 21c's implementer found that dead run's uncommitted,
+non-compiling partial 21b work in the worktree and reverted it to HEAD rather than finish work
+outside its own task. Task 21b was then re-run alone, from HEAD, as `a7f6cba3`. One consolidated
+fix round followed, as `bb4773b0` and `0867ec8f`, carrying the reviewer findings on 22a-ii and
+21c plus the three fragments 21c could not write before 21b existed (the CHANGELOG's `--theme`
+and quiet-sweep lines, the regenerated man pages, and the verification checklist's `--theme
+light` item). All three tasks are done.
 
 **Task 19c-i runs first although its number sorts last among the 19s.** Every other task's
 operator-facing strings come from the tables it builds, and a task that ships a string before the
@@ -4876,13 +4886,15 @@ so what it needs has to be on `main` and not in a conversation.
     absent run as red, so this task confirms a run exists on that SHA rather than on the branch.
     The report records the SHA and the conclusion.
 18. **One `docs/STATUS.md` line under "Immediate next action"**: the tool's 1.0 is merged, tagged,
-    and released, naming the tag and the merge SHA, and stating that **the `0.97.0` cut is
-    unblocked**. STATUS's line is the real handoff, because the orchestrator session will likely
-    be closed by then.
-19. **Message the engine orchestrator after the merge**, that `main` carries the tool and the cut
-    is unblocked, and that the cut resumes from Task 6 of
-    `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`. The message is a courtesy on top of
-    criterion 18, never a substitute for it.
+    and released, naming the tag and the merge SHA, and stating that **the `0.97.0` cut waits on
+    the doctor-retirement pass and draft-docs pass A**. This close never writes that the cut is
+    unblocked: Geoff ruled after segment 5 that the cut carries those two predecessors, so the
+    tool's merge removes one of the cut's conditions rather than all of them. STATUS's line is
+    the real handoff, because the orchestrator session will likely be closed by then.
+19. **Message the engine orchestrator after the merge**, that `main` carries the tool, that the
+    cut's remaining predecessors are the doctor retirement and draft-docs pass A, and that the
+    cut resumes from Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`. The message
+    is a courtesy on top of criterion 18, never a substitute for it.
 20. **`main` stays quiet during the cut.** When the cut session asks, hold every edit on `main`
     until its publish verifies: a push between its CI verify and its tag forces a re-verify.
 21. **ROADMAP's "window after the cut" entry is rewritten and its MCP front end removed.** The

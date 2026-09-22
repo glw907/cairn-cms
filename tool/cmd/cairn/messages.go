@@ -238,6 +238,12 @@ cairn auth check confirms the credential permissions this tool itself needs,
 against your own environment or one registered site with cairn auth check
 <site>; --json writes the cairn-auth-check.schema.json payload.
 
+cairn doctor [<dir>] checks a site's own checked-in configuration: no credential
+and no adopted site needed. It exits 3 for a usage error, a run whose only
+non-passing results are unknown, or a directory that is not a cairn site. Run
+cairn health after deploying for the https and email checks that need a live,
+adopted site.
+
 To check every site cairn knows, run: cairn health --json`
 )
 
@@ -283,6 +289,41 @@ const tmplHealthTooManyArgs = "cairn: cairn health takes at most one site.\nRun 
 // healthTooManyArgsError renders tmplHealthTooManyArgs.
 func healthTooManyArgsError() error {
 	return translated(errors.New(tmplHealthTooManyArgs))
+}
+
+// doctor.go's own Short, Long, and Example. The Long names what cairn health does not, so an
+// operator reading either command's --help learns which one to reach for. New to this table,
+// drafted to section 2.4's grammar (what the command needs and what it never touches) rather
+// than copied, since the catalogue carries no row for a credential-less directory preflight.
+const (
+	shortDoctor = "Check a cairn-cms site's own configuration, no credential or deploy needed"
+	longDoctor  = "Check a cairn-cms site's checked-in configuration: bindings, CSRF wiring, the site config, " +
+		"and more, read straight off the directory. It needs no credential and no adopted site, and " +
+		"makes at most one network request, a GET of the declared origin's own /robots.txt.\n\n" +
+		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
+		"Run `cairn health` after deploying to reach the checks that need a live site."
+	exampleDoctor = "cairn doctor ./my-site"
+)
+
+// tmplDoctorTooManyArgs is cairn doctor's refusal of more than one positional directory
+// argument, catalogue section 3.8's arity example rewritten for this command's own noun.
+const tmplDoctorTooManyArgs = "cairn: cairn doctor takes at most one directory.\nRun `cairn doctor --help` for usage"
+
+// doctorTooManyArgsError renders tmplDoctorTooManyArgs.
+func doctorTooManyArgsError() error {
+	return translated(errors.New(tmplDoctorTooManyArgs))
+}
+
+// tmplNotACairnSite is cairn doctor's own one-line report when dir carries neither a wrangler
+// config nor a package.json declaring @glw907/cairn-cms: the predicate that stops a directory
+// that is not a cairn site at all from failing every one of the eleven checks in turn, which
+// would say nothing useful about it. Printed on stdout, not through translated: the run
+// completed and observed something, it did not refuse to start.
+const tmplNotACairnSite = "%s does not look like a cairn-cms site: no wrangler.jsonc, wrangler.toml, or @glw907/cairn-cms dependency in package.json"
+
+// notACairnSiteLine renders tmplNotACairnSite for the directory the operator named.
+func notACairnSiteLine(dir string) string {
+	return fmt.Sprintf(tmplNotACairnSite, dir)
 }
 
 // logs.go's own Short, Example, and flag help.

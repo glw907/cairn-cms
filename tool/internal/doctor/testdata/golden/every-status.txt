@@ -1,0 +1,18 @@
+PASS  Wrangler bindings are missing: EMAIL and AUTH_DB are declared
+SKIP  Media bucket binding is missing: no media assets configured
+FAIL  Workers Logs has no sink: observability.enabled is not true
+PASS  Framework CSRF check is not handed off: checkOrigin: false found (svelte.config.js or vite.config.ts) and the hooks file wires the cairn guard (heuristic text read)
+PASS  Site config does not validate: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
+PASS  PUBLIC_ORIGIN is missing or invalid: PUBLIC_ORIGIN is https://example.com (wrangler vars)
+PASS  Site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
+INFO  Custom /admin mount looks incomplete: no wired /admin mount detected; mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin({ runtime }).shellLoad, and the /admin/[...path] catch-all rendering CairnAdmin
+PASS  A framework dependency sits below the engine floor: @sveltejs/kit 2.70.0 and svelte 5.56.10 satisfy the engine peer ranges
+SKIP  Guard is missing the declared role vocabulary: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
+UNCHECKED  The stated AI posture is not the served one: could not reach the resolved origin's /robots.txt
+
+Workers Logs has no sink failed.
+  Why: observability.enabled is not true in the wrangler config, so the structured log records go nowhere and a runtime failure leaves nothing to read.
+  Fix: Set observability.enabled to true in wrangler.jsonc, then re-deploy.
+  Docs: https://cairn.pub/docs/admin/is-it-working#turn-on-observability
+
+6 passed, 1 failed, 2 skipped, 1 info, 1 unchecked

@@ -117,12 +117,14 @@ Run the command again in %s
 - %s and %s are not set
 - %s deleted from the keyring
 
+- %s does not look like a cairn-cms site: no wrangler.jsonc, wrangler.toml, or @glw907/cairn-cms dependency in package.json
 - %s is not set
 - %s stored in the keyring
 
 - %s was not stored in the keyring
 
 - Add a Cloudflare Worker to the registry as a site
+- Check a cairn-cms site's own configuration, no credential or deploy needed
 - Cloudflare: skip, %s
 - Confirm the credential permissions this tool itself needs
 - Confirm the credential permissions this tool itself needs, against Cloudflare and GitHub.
@@ -149,6 +151,7 @@ auth check's whole output is identifiers (permission labels, credential variable
 - cairn auth list
 - cairn auth set CAIRN_CF_READ_TOKEN
 - cairn auth unset CAIRN_CF_READ_TOKEN
+- cairn doctor ./my-site
 - cairn health ecxc-ski-a1b2c3
 - cairn health ecxc-ski-a1b2c3 --json
 - cairn help agents
@@ -195,6 +198,12 @@ cairn auth check confirms the credential permissions this tool itself needs,
 against your own environment or one registered site with cairn auth check
 <site>; --json writes the cairn-auth-check.schema.json payload.
 
+cairn doctor [<dir>] checks a site's own checked-in configuration: no credential
+and no adopted site needed. It exits 3 for a usage error, a run whose only
+non-passing results are unknown, or a directory that is not a cairn site. Run
+cairn health after deploying for the https and email checks that need a live,
+adopted site.
+
 To check every site cairn knows, run: cairn health --json
 - cairn logs ecxc-ski-a1b2c3 --since 24h
 - cairn sites
@@ -231,6 +240,8 @@ The checks that need Cloudflare could not run; the others are reported above
 Run `cairn adopt list` to see the Workers on the account
 - cairn: cairn auth names a subcommand.
 Run `cairn auth --help` for the subcommands
+- cairn: cairn doctor takes at most one directory.
+Run `cairn doctor --help` for usage
 - cairn: cairn health takes at most one site.
 Run `cairn health --help` for usage
 - cairn: could not reach the network.

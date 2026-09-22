@@ -103,6 +103,46 @@ recorded from a live call in the fixture corpus with a test that decodes it.
   `json-output.md` already promised, through a JSON Schema 2020-12 `if`/`then`. No
   `schemaVersion` increment.
 
+A second live run on 2026-09-21 found that no healthy site could ever read `OK`: every one of the
+owner's five carried three or four rows that were the tool's own gaps rather than facts about the
+site, so a scheduled run would have exited 3 forever.
+
+- **`delegation` read `unknown` on every adopted site.** It compares the domain's nameservers
+  against the pair recorded under `cloudflare.nameServers`, a key `cairn adopt` never wrote, so no
+  site the Go tool adopted could carry one. Adoption records the pair from the zone listing it
+  already reads, and the check falls back to the zone itself for a record written before that,
+  which is the same fact from its own authority.
+- **`deploy` skipped for a credential the run had.** `Clients.HaveBuilds` was set nowhere, so the
+  check never called Workers Builds on any site and told the operator to run `cairn auth set` with
+  both tokens set and all nine permissions passing. The check calls the triggers route and lets
+  the API answer.
+- **A Worker with no Workers Builds trigger is a `skip`, not a `fail`.** Deploying from a CI job
+  or a local `wrangler deploy` is a choice, not a broken pipeline, and the check has nothing it
+  could have read either way. It contributes `WARNING`, and its fix line names the connection
+  rather than a credential.
+- **`publish-path` reported the ordinary quiet state as unobservable.** A repository with no open
+  `cairn/*` branch has nothing waiting on an editor, which is where a site spends most of its
+  life. It passes and says so; `unknown` is now for a repository the run could not read.
+- **A record naming no repository says so.** Discovery learns a repository from a Builds trigger
+  alone, so a site deployed any other way is adopted without one, and `deploy`, `publish-path`,
+  and `engine` each asked GitHub for `/repos//` and reported the 404 as the site's own fault. All
+  three now skip with `reason.repo-not-recorded` and a fix naming `cairn adopt --repo`.
+- **`serving` told an operator a hostname does not answer when it answers.** A host whose home
+  page returns 200 and whose `/admin` is another site's now reads "the hostname answers, but
+  /admin is not cairn's sign-in page" under its own code; the older line keeps the case it is
+  true of.
+- **`cairn adopt list` defaulted `--json` to true**, so the bare command printed a wall of JSON in
+  a terminal. It defaults off, like every other `--json` in the tool.
+- **A bare `cairn sites list` on an empty registry exited 3.** Listing no sites is a complete
+  answer to which sites are registered, so it exits `0`; only `--expect-sites` makes the count a
+  claim, and `cairn health` still refuses an empty registry.
+- **`cairn adopt --worker X --domain Y`** clears the discovered zone when `Y` sits outside every
+  zone on the account, rather than leaving another zone's id on the record for the zone-scoped
+  checks to read as this site's.
+- **The fleet table clipped its last column at a narrow width.** At `--width 60` the "engine"
+  heading printed as "e" over a version cut to one character. The two leading columns always
+  draw; each one after them draws only if it fits whole.
+
 ### Not in 1.0
 
 The bubbletea terminal HUD, the concurrent multi-site sweep, and multi-site management beyond

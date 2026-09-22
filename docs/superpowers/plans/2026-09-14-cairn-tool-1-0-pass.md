@@ -1732,13 +1732,16 @@ Invoke `go-conventions` before writing any Go file.
 **Produces, as landed:** `type Query struct{ Worker string; Since time.Duration; Event string;
 Limit int }`. `type Entry struct{ At time.Time; Level string; Event string; Fields []Field }`,
 where `Field` is `struct{ Key string; Value json.RawMessage }`. `func Fetch(ctx, cf
-*providers.Cloudflare, q Query, now time.Time) ([]Entry, error)`. `func FetchLevel(ctx, cf,
-worker, level string, since time.Duration, now time.Time) ([]Entry, error)`, `Fetch`'s own
-level-filtered sibling and the health errors check's read path: it filters to `level` in Go
-after the query returns, since the request's own filter grammar is unverified against the live
-API. `func CountErrors(ctx, cf, worker string, since time.Duration, now time.Time) (int,
-error)`, built on `FetchLevel`. Every one of these three takes `now time.Time` explicitly rather
-than reading the system clock, per this pass's clock-free-package hygiene test. A sentinel
+*providers.Cloudflare, q Query, now time.Time) ([]Entry, error)`. `func FetchRecords(ctx, cf,
+worker, level string, since time.Duration, now time.Time) (Records, error)`, `Fetch`'s own
+level-filtered sibling and the health errors check's read path. The level-filtered read and the
+count it feeds were first landed as `FetchLevel` and `CountErrors`, filtering in Go after the
+query returned because the request's own filter grammar was unverified against the live API. The
+2026-09-21 live run settled that grammar and folded both into `FetchRecords`, which asks the API
+for cairn's own records and returns the count alongside them; the seams table names only `Query`,
+`Entry`, and `Fetch`, and neither retired name is restored. Both surviving functions take
+`now time.Time` explicitly rather than reading the system clock, per this pass's
+clock-free-package hygiene test. A sentinel
 `ErrObservabilityOff` mapped from the API's response when the Worker has no observability
 dataset: `fetch` classifies the underlying error as a `*providers.APIError` first, and only a
 not-found or unclassified reason maps to `ErrObservabilityOff`; every other classified reason
@@ -1897,9 +1900,11 @@ so the close and a later pass do not rediscover them from scratch.
 - `check_engine.go`'s releases-behind count reads the declared dependency range's base version
   from `package.json` rather than the resolved version a lockfile would carry, so a site pinned
   loosely reports behind-ness relative to its floor, not its installed version.
-- `logs.CountErrors` and `logs.Fetch` have no non-test caller as of B1's close: `health`'s errors
-  check reads `logs.FetchLevel` directly. Both remain 2.0 seams, per the seams table, exercised
-  only by their own package tests until a HUD or a `cairn logs --event` caller lands.
+- `logs.Fetch` has no non-test caller as of B1's close: `health`'s errors check reads
+  `logs.FetchRecords` directly. It remains a 2.0 seam, per the seams table, exercised only by its
+  own package tests until a HUD or a `cairn logs --event` caller lands. (`FetchLevel` and
+  `CountErrors`, named here before the 2026-09-21 live run, were folded into `FetchRecords` and
+  are not restored.)
 
 ## Pass B1 post-mortem (2026-09-20)
 
@@ -2119,6 +2124,40 @@ absent registry, the unknown-command usage line, the `deploy` skip's empty detai
 Windows CI failures (a built binary needs an `.exe` suffix, `cmd/cairn`'s testDeps left its
 Resolver nil and so queried live DNS, and one colour-detection row's right answer differs by
 platform).
+
+**The second live verification, and the fix round it forced (2026-09-21).** The candidate was run
+again against the owner's five real sites, this time reading every row rather than the verdict
+word. Every site carried three or four `unknown` or `skip` rows that were the tool's own gaps, so
+a correctly credentialed site with no genuine fault could never read `OK` and every scheduled run
+would have exited 3 forever.
+
+- **`delegation` read `unknown` on all five.** The check compares against the pair recorded under
+  `cloudflare.nameServers`, and `cairn adopt` never wrote that key, so no site the Go tool adopted
+  could carry one. The zone listing adoption already reads carries `name_servers`, confirmed
+  live.
+- **`deploy` read `skip` on all five** for a Workers Builds credential the run had: nothing
+  anywhere set `Clients.HaveBuilds`, so the check never called the route on any site. The fix line
+  it printed told an operator to run `cairn auth set` with both tokens set and all nine
+  permissions passing.
+- **A Worker with no Builds trigger was a `fail`.** Three of the five deploy from CI or a local
+  `wrangler deploy`, which is a choice rather than a broken pipeline. That case is now a `skip`
+  contributing `WARNING`, with a fix naming the connection.
+- **`publish-path` read `unknown` for the ordinary quiet state**, no open `cairn/*` branch, which
+  is where a site spends most of its life.
+- **Three checks asked GitHub for `/repos//`** on a record carrying no repository, which is how a
+  site Builds does not deploy is adopted, and reported the 404 as the site's own fault.
+- **`serving` said "the hostname does not answer"** for a host answering 200 whose `/admin` is
+  another site's.
+
+Four operator-surface defects came out of the same run: `adopt list` defaulted `--json` to true, a
+bare `sites list` on an empty registry exited 3, `adopt --domain` outside every account zone left
+the discovered zone id on the record, and the fleet table clipped its last column at `--width 60`.
+
+The lasting change is in the verification checklist rather than the code. `docs/release-candidate-notes.md`
+item 9 now makes the bar explicit: read every `skip` and `unknown` row and say whose fault each
+one names. Reading the verdict word alone passed a candidate on which no site could ever be well.
+Live proof after the fix: two of the five sites read zero could-not-run rows, and the other three
+carry only rows that are true of the site.
 
 **Task 19c-i runs first although its number sorts last among the 19s.** Every other task's
 operator-facing strings come from the tables it builds, and a task that ships a string before the

@@ -47,11 +47,14 @@ An acknowledged failing check contributes `WARNING`. An acknowledgement silences
 never status, so a held failure is never reported `OK`. An acknowledgement whose expiry has passed
 holds nothing, and the failure returns to `CRITICAL`.
 
-A check that could not run contributes `UNKNOWN`, with one exclusion: a check skipped because its
-credential is missing contributes `WARNING`. The operator disclosed that gap by not configuring
-the credential, and paging them for it every morning is what makes a routine ignorable. Every
-other unknown, a rate-limited run included, stays `UNKNOWN`, because the run did not observe the
-site and cannot say the site is merely imperfect.
+A check that could not run contributes `UNKNOWN`, with one exclusion: a check the site's own setup
+gives nothing to read contributes `WARNING`. Three reasons qualify. The credential is missing. The
+record names no repository, which is how a site adopted from a Worker that Workers Builds does not
+deploy is registered. Workers Builds holds no trigger for the Worker, which is how a site deployed
+from a CI job or a local `wrangler deploy` reads. Each is a disclosed fact about how the site is
+run, and paging an operator for it every morning is what makes a routine ignorable. Every other
+unknown, a rate-limited run included, stays `UNKNOWN`, because the run did not observe the site and
+cannot say the site is merely imperfect.
 
 The two read the same way in the output. A check that was not attempted, by configuration, reads
 `skip`; a check that was attempted and observed nothing reads `unknown`. The word beside a row
@@ -62,6 +65,12 @@ something is broken and accept it, which they cannot say about a check that neve
 
 A site with no checks at all is `UNKNOWN`, never `OK`. Folding an empty check list to `OK` prints
 a false green for a site nothing was measured against.
+
+A registry with no sites divides on the command. `cairn sites list` reports it and exits `0`:
+listing no sites is a complete and true answer to which sites are registered. Naming
+`--expect-sites N` turns the count into a claim the registry can contradict, and a mismatch,
+including zero against a positive `N`, exits `3`. `cairn health` on an empty registry exits `3`,
+because a sweep with nothing to sweep says nothing about any site's health.
 
 Acknowledgements come from `--ack <check-id>=<YYYY-MM-DD>`, repeatable, and from the
 acknowledgement file. `--ack-file` names that file; without it, cairn reads

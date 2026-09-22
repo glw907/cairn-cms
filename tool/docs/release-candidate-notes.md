@@ -2,7 +2,7 @@
 
 Release candidate verification is the conductor's work, not the owner's: this page is a checklist
 for whoever builds and runs the candidate before the `tool/v1.0.0` tag, run in a real terminal
-against the owner's own four production sites.
+against the owner's own five production sites.
 
 ## Build it
 
@@ -27,7 +27,7 @@ cairn adopt list
 `cairn adopt --worker <name>` adopts each one. The Workers below it serve their site through a
 Workers Route, which cairn does not provision and discovery therefore cannot read a domain from;
 adopt one of those by naming its domain, `cairn adopt --worker <name> --domain <domain>`. Adopt
-the four production sites, then confirm the registry holds them:
+the five production sites, then confirm the registry holds them:
 
 ```sh
 cairn sites list --json
@@ -36,7 +36,7 @@ cairn sites list --json
 ## What to run, in this order
 
 1. **The single-site body and the sweep's strip, in the real terminal, at its own width.** Run
-   `cairn health <one site>` and bare `cairn health` against all four sites, not a captured
+   `cairn health <one site>` and bare `cairn health` against every registered site, not a captured
    frame. This settles the standing "real-terminal evidence" item by the conductor's own eyes:
    does either body read cleanly at the terminal's actual width?
 2. **Both bodies at a narrow and a wide width.** Run each of the two again under `--width 60` and
@@ -71,7 +71,15 @@ cairn sites list --json
 8. **A usage error, exit 3 with empty stdout.** Run `cairn health --theme sideways` and pipe
    stdout to a file. Is the file empty, does the message go to stderr, and does `echo $?` report
    3?
-9. **The launchd and Windows Task Scheduler wrappers, reasoned rather than executed.** Neither
+9. **The honest-reading bar: a site with no genuine fault reads `OK`.** Run `cairn health <site>`
+   against every registered site and read every `skip` and every `unknown` row. Each one has to be
+   a fact about the site, not a gap in the tool: a credential the operator has not set, a Worker
+   Workers Builds does not deploy, a record naming no repository. A row that names something the
+   tool should have been able to read is a defect, and the tag waits on it. Then hold every
+   genuine failure on the healthiest site with `--ack` and run it again: the verdict reads
+   `WARNING` and the run exits 1, because a held failure is never `OK`. A site with no failure at
+   all and no skipped row reads `OK` and exits 0.
+10. **The launchd and Windows Task Scheduler wrappers, reasoned rather than executed.** Neither
    runs on this machine, so neither is executed here: read `docs/tripwire.md`'s launchd plist and
    Windows Task Scheduler sections and judge whether each is something a macOS or Windows
    operator could paste and adapt with no further cairn-specific knowledge. A "no" means the
@@ -88,12 +96,14 @@ cairn sites list --json
   a fix.
 - **Item 7's payload fails its schema, or item 8 writes to stdout**: the machine contract is
   broken, which is the one thing a published tag cannot take back. The tag waits on a fix.
-- **Item 9's wrapper prose is unusable as written**: `docs/tripwire.md` gets one more edit before
+- **Item 9 shows a row that is the tool's own gap**: a healthy site cannot read `OK`, so every
+  scheduled run exits non-zero forever. The tag waits on a fix.
+- **Item 10's wrapper prose is unusable as written**: `docs/tripwire.md` gets one more edit before
   the tag.
 
-A "yes" on all nine is what "go" for `tool/v1.0.0` means.
+A "yes" on all ten is what "go" for `tool/v1.0.0` means.
 
-## What the first live run found
+## What the live runs found
 
 The 2026-09-21 run of this checklist against the owner's account found two defects no
 fake-backed test could have caught, both now fixed and both recorded in `CHANGELOG.md`: the page
@@ -103,3 +113,9 @@ two patches. Every provider route the tool reads has a response recorded from a 
 `packages/create-cairn-site/fixtures/cloudflare/`, with a test that decodes it, and a pass
 touching a route records its response there in the same pass. A hand-written fixture proves only
 that the code agrees with whoever wrote the fixture.
+
+The second run, the same day, found the defect item 9 now exists for: all five sites carried three
+or four rows that were the tool's own gaps rather than facts about the site, so no site could ever
+read `OK` and every scheduled run would have exited 3. `CHANGELOG.md` lists each one. The lasting
+change is item 9 itself: reading the verdict word is not enough, and every `skip` and `unknown` row
+gets read for whose fault it names.

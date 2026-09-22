@@ -1802,6 +1802,23 @@
 
 ### Documentation
 
+- The `cairn` CLI's contract pages now ship inside the npm tarball, in the engine's own reference
+  arm. `docs/reference/cli-cairn-exit-codes.md` states the four exit codes and the precedence rule,
+  `docs/reference/cli-cairn-json-output.md` states every `--json` payload kind field by field, and
+  `docs/reference/cli-cairn-doctor.md` states what `cairn doctor` checks and how it reports. The
+  seven published JSON schemas moved with them, to `docs/reference/schema/`, so an installed
+  package carries each schema file and cairn.pub can serve it verbatim at the `$id` it already
+  froze under `https://cairn.pub/schema/`. `docs/reference/log-events.md` gained the CLI's own
+  reading of the event stream, and `docs/reference/README.md` indexes all three pages. The pages
+  are graded against a scripter-or-agent profile: someone automating against the binary can write
+  a wrapper and a parser from the pages alone.
+
+  The interim copies under `tool/docs/reference/` are deleted, and a stub in their place names the
+  new paths. Anyone who linked to an old path links instead to
+  `https://cairn.pub/docs/reference/<page>`, or, for a schema, to the `$id` the schema declares.
+  No consumer action. Nothing under `tool/` ships in the package, no export changed, and the
+  `cairn` binary keeps its published contracts exactly as `tool/v1.0.0` froze them.
+
 - The showcase config (`examples/showcase/src/theme/cairn.config.ts`) and the generated
   `templates/waymark` scaffold now hoist one `const media = { bucketBinding: 'MEDIA_BUCKET' }`,
   fed to both `normalizeAssets(media)` and the adapter's `media:` member, in place of the two

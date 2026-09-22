@@ -1,6 +1,7 @@
 # The `cairn doctor` command
 
-This page describes `cairn doctor` as it ships in cairn 1.1.0, the release that introduces it; 1.0.1 is the current release.
+This page describes `cairn doctor` as it ships in `cairn` 1.1.0, the release that introduces it;
+1.0.1 is the current release.
 
 `cairn doctor` checks a directory against the checked-in configuration a cairn-cms site depends
 on, running eleven checks over the wrangler config, CSRF wiring, the site config, the `/admin`

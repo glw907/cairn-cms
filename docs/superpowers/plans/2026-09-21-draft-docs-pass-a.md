@@ -455,3 +455,57 @@ read finds untraced sentences the drafter composed from the manifests' neighbour
 budget for a contract page is closer to 900K than the 300K assumed. Spend about 4.95M of 3.5M,
 continuing under Geoff's overnight grant. Next: segment 3, Task 8 (the tool-side move, Opus,
 both gates), Task 9 (the scripter test), Task 10 (the pass-end read), Task 11 (close).
+
+### 2026-09-22, segment 3 boundary and close (Tasks 8 to 11)
+
+Task 8 (`40ade507`, `74e41f7e`, `86b67cc7`, `17b83eea`, fix `3aced2fc`): the originals deleted
+behind a stub, every reader repointed through `providers.RepoRoot()`, `layout.go`'s `docsBase` and
+`fixAnchorBase`, help and README citing cairn.pub URLs and `$id`s, `contract_pages_test.go`
+deriving codes and words from `spine`, `version.Documented = "1.1.0"` with
+`TestThePagesDescribeTheDocumentedRelease`, `TestReadmeLinksCarryDescriptiveText` widened to
+`https://cairn.pub/docs/`, `tool.yml` paths, and `facts/admin.md`'s six schemas corrected to
+seven. Accepted. Task 9: the scripter wrapper branched seven ways, the parser carried several
+hundred assertions and 37 logged guesses, and the verifier returned 13 of 14 goldens passing with
+15 findings; the redraft `cca525b5` took 15 of its 16 sentences, the re-run closed 13 findings,
+and the one parser failure left was the parser's own retired assumption (all 14 goldens pass with
+it fixed). Three page items were fixed at `a66d3c98`: `worstFirst` ranks by severity class, the
+`degraded` sentence, a duplicate exit-3 paragraph, and the `snapshot.go` `Dir` comment. Task 10
+accepted over the whole branch. CI: the retire-1 merge commit `5e286a01` got no push-triggered
+runs although Actions was operational, so `tool` and `e2e` were dispatched by hand on it and are
+green (runs 35728484660, 35728487964), recorded as an addendum in HISTORY's retire-1 entry.
+Spend about 6.1M of 3.5M, under Geoff's overnight grant. Next: nothing in this pass.
+
+## Post-mortem
+
+**What landed.** The pass's goal held: the `cairn` CLI's exit-code, JSON, and `cairn doctor`
+contracts and its seven JSON schemas ship inside the npm tarball, under `docs/reference/`, with
+the tool side moved in the same branch so one PR carries the deletion and every reader of the
+deleted paths. The pages are drafted from mined, code-sourced manifests rather than from the
+originals, and a fresh agent can write a wrapper and a parser from them alone.
+
+**What the pass got wrong, in order of cost.**
+
+1. **The page-chain budget.** The plan assumed about 300K per page. A contract page cost about
+   900K over three rounds, and the chain alone spent 2.64M across 24 agents. The reason is
+   structural, not incidental: the register editor's bar rises on each read, and the fact read
+   finds sentences the drafter composed by joining neighbouring manifest entries. A later pass
+   plans three rounds and budgets for them, or it changes the chain.
+2. **The version line.** The plan's brief told every drafter to say the pages describe 1.0.1, the
+   current release. `cairn doctor` is absent from 1.0.1, so the claim was false for all three
+   pages, caught by a fact read rather than by the plan. A page's stated version is now derived
+   from `version.Documented` and pinned by a Go test.
+3. **Task 8's help text.** The plan asked for a repository path where
+   `TestHelpAgentsCitesNoRepositoryDirectory` forbids one. The pre-flight caught it and Amendment
+   1 corrected the task before it ran, which is the pre-flight working; it is still a planning
+   miss, since the plan was written against a committed test that says otherwise.
+
+**What worked.** The read-only pre-flight, which found seven disagreements with the plan and
+stopped the pass before any edit. Mining before drafting, which made every page sentence traceable
+to a bullet or a manifest entry and made the fact read mechanical. Moving the schemas first, since
+`check:symbols` verifies that a path a page names exists. And the scripter test, which found 15
+findings in pages three earlier reads had accepted; an adversarial reader that consumes only the
+artifact catches what a reader holding the source cannot.
+
+**Both budgets.** Ceiling 3.5M subagent tokens, spend about 6.1M, the overrun raised at the
+segment 2 boundary and taken to the end under Geoff's overnight grant to the release. Attended
+time: three planning misses, named above; zero execution sittings, the pass having run overnight.

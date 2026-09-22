@@ -81,3 +81,11 @@ same credential design. The docs conductor recommended the whole retirement befo
 said an additional pass is not a problem. Its gate includes `check:package`, `check:surface`, and
 `check:reference`; the `Consumers must:` line sits in the removal's own changelog entry; its
 close, landing last, is the ONLY writer of "the 0.97.0 cut is unblocked".
+
+**Note (draft docs pass A's close, 2026-09-22).** The cairn.pub link repointing this section
+stages into `tool/v1.1.0` has now been written, on `draft-docs-a`: the contract pages and the
+seven schemas live under `docs/reference/`, the interim `tool/docs/reference/` copies are deleted
+behind a stub, and `tool/internal/render/layout.go`, `cairn help`, and `tool/README.md` cite
+cairn.pub URLs and schema `$id`s. It ships when `tool/v1.1.0` is tagged from a commit carrying
+this pass, which is the next step after the merge. Nothing here is owed by the retirement's engine
+half.

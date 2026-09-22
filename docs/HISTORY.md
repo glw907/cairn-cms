@@ -7,6 +7,90 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Draft docs pass A, the tool's contract pages, eleven tasks, 2026-09-22
+
+Branch `draft-docs-a`, off `main` at `5e286a01` (retire-1's merge). Plan and post-mortem:
+`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`. Spec:
+`docs/superpowers/specs/2026-09-21-draft-docs-design.md`.
+
+**What landed.** The Go tool's exit-code, JSON, and `cairn doctor` contracts now live in the
+engine's reference arm, inside the npm tarball. Task 1 was a read-only pre-flight that found seven
+disagreements with the plan and stopped the pass; the conductor applied them as Amendment 1
+(`6aba21d0`). Task 2 wrote the scripter-or-agent profile (`a5f5bd1e`). Task 3 moved the seven JSON
+schemas to `docs/reference/schema/` as pure renames (`be2a5cc1`), then added the committed flag
+list `tool/testdata/flags.json` with its drift test and `make -C tool flags`, which
+`check-symbols.mjs` unions into its known-token set (`2049a0be`); the flag walk promoted
+`github.com/spf13/pflag` to a direct require, taking `otherDirectRequires` from 5 to 6. Task 4
+mined the three originals into manifests, dispositions, and 77 sourced bullets in
+`docs/internal/facts/reference.md` (`70650d13`). Tasks 5, 6, and 6b drafted
+`docs/reference/cli-cairn-exit-codes.md` (`29a03eff`), `docs/reference/cli-cairn-json-output.md`
+(`3bfaac37`), and `docs/reference/cli-cairn-doctor.md` (`3453668f`). Task 7 folded the tool's
+log-event content into `docs/reference/log-events.md` (`124d52c5`, `b544907a`). Task 8 did the
+tool-side move (`40ade507`, `74e41f7e`, `86b67cc7`, `17b83eea`, `3aced2fc`): the originals deleted
+behind a stub, every reader repointed through `providers.RepoRoot()`, `layout.go`'s `docsBase` and
+`fixAnchorBase`, help and README citing cairn.pub URLs and schema `$id`s, a new
+`contract_pages_test.go` deriving codes and words from `spine`, and
+`version.Documented = "1.1.0"` pinned by `TestThePagesDescribeTheDocumentedRelease`. Task 9 ran
+the scripter test and its redraft (`cca525b5`, `a66d3c98`).
+
+**What the gates caught.** The page chain escalated all three pages after two rounds, and each
+needed a conductor-directed third round: `cli-cairn-doctor.md` took three exact rewrites (an
+admin-arm link replaced by the URL shape, the version line, the `config.public-origin` SKIP cell),
+`cli-cairn-exit-codes.md` two (the site-scoped skip in `cairn auth check`, a setup-colon triad),
+`cli-cairn-json-output.md` one round of its own. Task 7 took one redraft over three unsourced
+statements, the CLI's sanctioned name, and a `--json` link. The scripter test's verifier returned
+15 findings against pages that had already passed a register editor, a profile grader, and a fact
+read; the redraft closed 13, and the one parser failure that remained was the parser's own retired
+assumption. A last page read then caught three more: `worstFirst` described as ranking by verdict
+where it ranks by severity class, a `degraded` sentence that overstated its trigger, and a
+duplicated exit-3 paragraph on the doctor page. Task 8 drew one comment fix on a stale `docsBase`
+reference and the `snapshot.go` `Dir` comment. Task 10's whole-branch read accepted.
+
+**What a later pass would be wrong to rediscover.**
+
+- **Drift tests dictate these pages' structure, and a rewrite that ignores them fails the Go
+  gate.** `usage_test.go:507-527` parses the requests-per-check table with the row regex
+  `` | `<check-id>` | <count> | `` over nine rows and checks the total against the budget, and
+  `:568-578` pins the literal `min(480 seconds x sites, 1920 seconds)`. `json_schema_test.go:502-564`
+  requires every golden key in backticks, the headings `## What freezes at 1.0` then
+  `## What does not freeze`, and every id, verdict word, state word, and reason code in the right
+  one of the two. `doctor/docs_test.go` names all eleven check ids and the three literals
+  `usage error`, `UNCHECKED`, and `not a cairn-cms site`. `contract_pages_test.go` derives the
+  codes and wire words from `spine` rather than repeating them, and
+  `TestThePagesDescribeTheDocumentedRelease` ties each page's version line to
+  `version.Documented`.
+- **`check:symbols` verifies that a repository path a page names exists**, resolving an installed
+  package path (`node_modules/@glw907/cairn-cms/<rest>`) against `<rest>` in the repo, so a page
+  citing a moved file fails the engine gate rather than shipping a dead path. Its known-flag set
+  is the union of the engine's own flags and `tool/testdata/flags.json`; the completion command's
+  `--no-descriptions` is deliberately absent from that file, so the check fails closed on it.
+- **The goldens carry the owner's real values**, so a verbatim example needs the substitution map
+  the task 4 manifests applied: `ecxc.ski` to `example.org`, `907.life` to `example.net`, the two
+  site ids to `example-org-a1b2c3` and `example-net-d4e5f6`, the worker `ecxc-ski` to
+  `example-org`, the repo `glw907/ecxc-ski` to `example-org/site`, and the account id to
+  `<account-id>`. `/srv/example-site`, `https://example.com`, and `someone@example.com` were
+  already generic, and a `cairn.pub` URL inside `doctor.json` is a fix link rather than a site
+  name. There is no
+  golden for the `authCheck` kind; it is checked against its schema alone.
+- **The mining measured the originals rather than trusting them**: 61 contract statements across
+  the three pages, 51 filed as sourced bullets and 10 cut with a reason, plus one interim-page
+  defect ratified (the `robots.txt` request rides `--timeout` and has no 15-second bound of its
+  own). A disposition marked CUT must not reappear on a page.
+- **A contract page costs about 900K tokens through the page chain, not the 300K the plan
+  assumed.** The register editor's bar rises on each read, and the fact read finds sentences the
+  drafter composed from neighbouring manifest entries rather than from one. Three rounds per page
+  was the shape that converged.
+- **The `cairn` pages describe 1.1.0, not the current release.** `cairn doctor` is absent from
+  `tool/v1.0.1`, so a page describing it cannot claim the current release; the plan's brief said
+  otherwise and was found false.
+
+**Both budgets.** Ceiling 3.5M subagent tokens; spend about 6.1M at the fold (segment 1 1.21M,
+segment 2 about 3.75M of which the page chain alone was 2.64M over 24 agents, segment 3 about
+1.15M), the overrun taken to the end under Geoff's overnight grant to the release. Attended time:
+three planning misses (Task 8's help text was asked for a repository path a committed test
+forbids; the brief's version line was false for pages carrying `cairn doctor`; the page-chain
+budget was assumed at about a third of its real cost), zero execution sittings.
+
 ## retire-1, `cairn doctor`, eleven tasks, 2026-09-22
 
 Branch `doctor-go`, merged without a tool tag. Plan and post-mortem:
@@ -81,6 +165,12 @@ the run failed there and the measurement ran on a copy; the rows and the prose n
 the segment 2 boundary and taken to the end under Geoff's overnight grant to the release. Attended
 time: one planning miss (Task 10 assumed `link:consumer` plus `cairn-manifest` works on a pinned
 production site), zero execution sittings.
+
+**Addendum (draft docs pass A's close, 2026-09-22).** GitHub created no push-triggered runs for the
+merge commit `5e286a01`, although Actions was operational, so retire-1's merge sat unproven until
+pass A's pre-flight noticed. The `tool` and `e2e` workflows were dispatched manually on that commit
+and both are green (runs 35728484660 and 35728487964). A merge whose checks never appear is a
+missing run, not a passing one; dispatch them by hand and record the run ids.
 
 ## The doctor-retirement pre-task, four tasks, 2026-09-21
 

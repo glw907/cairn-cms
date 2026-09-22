@@ -577,6 +577,13 @@ re-sourced to Go on this tree rather than to the page.
   the password prompt falls back to reading one piped line when stdin carries no terminal state,
   so a scripted `cairn auth set` does not hang. Source: `tool/cmd/cairn/env.go:36-38,199-212`,
   `tool/cmd/cairn/auth.go:73-109`. [verified]
+- A site payload's `degraded` is true when any check on that site ended with the reason
+  `reason.cred-missing`, the credential-shaped skip, and it is set nowhere else. Source:
+  `tool/internal/health/health.go:130-132`. [verified]
+- A summary payload's `worstFirst` ranks sites by the severity class of their worst
+  unacknowledged failing check, never by verdict word, and the sort is stable, so sites sharing a
+  class keep the registry's order. An acknowledged failure does not rank a site. Source:
+  `tool/internal/render/rank.go:99-122`. [verified]
 
 ## docs/reference/cli-cairn-manifest.md
 

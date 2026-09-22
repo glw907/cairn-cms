@@ -45,8 +45,10 @@ function r2EntriesFromJsonc(text: string): R2BucketEntry[] {
   const config = parseJsonc(text);
   const r2 = Array.isArray(config.r2_buckets) ? config.r2_buckets : [];
   return r2
-    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
-    .filter((entry): entry is Record<string, unknown> & { binding: string } => typeof entry.binding === 'string')
+    .filter(
+      (entry): entry is { binding: string; bucket_name?: unknown } =>
+        typeof entry === 'object' && entry !== null && typeof entry.binding === 'string'
+    )
     .map((entry) => ({
       binding: entry.binding,
       bucketName: typeof entry.bucket_name === 'string' ? entry.bucket_name : undefined,

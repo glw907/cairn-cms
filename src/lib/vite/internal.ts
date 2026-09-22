@@ -329,9 +329,7 @@ export interface AdapterFacts {
    *  media.
    */
   mediaBucketBinding?: string;
-  /**
-   * `cairn.roles`, the site's declared role vocabulary; undefined for a zero-config site.
-   */
+  /** `cairn.roles`, the site's declared role vocabulary; undefined for a zero-config site. */
   roles?: RolesDeclaration;
   /**
    * `cairn.aiPosture`, the site's stated stance toward AI training crawlers; undefined when the

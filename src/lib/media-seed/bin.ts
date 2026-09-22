@@ -37,6 +37,29 @@ function realpathNearestAncestor(path: string): string {
   }
 }
 
+/**
+ * Throw unless `path` lives under `boundary`, both nominally and after symlink resolution.
+ *  `join()` and `resolve()` do not contain, so a segment carrying enough `..` walks the nominal
+ *  path outside; the textual check catches that. A symlink planted under the boundary (or under
+ *  one of its ancestors) can still resolve outside at I/O time, so the real location is checked
+ *  too. `boundary` must exist.
+ */
+function assertContained(path: string, boundary: string, refusal: string): void {
+  if (!isWithin(path, boundary) || !isWithin(realpathNearestAncestor(path), realpathSync(boundary))) {
+    throw new Error(`cairn-media-seed: refusing to ${refusal}`);
+  }
+}
+
+/** Parse `text` as JSON, or null when it is absent or does not parse. */
+function parseJsonOrNull(text: string | null): unknown {
+  if (text === null) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 /** The real filesystem and subprocess deps: a fresh temp dir per run, and the local wrangler CLI. */
 export function realDeps(cwd: string): SeedDeps {
   const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-'));
@@ -44,18 +67,9 @@ export function realDeps(cwd: string): SeedDeps {
     fetch: globalThis.fetch,
     writeTempFile(name, bytes) {
       const file = join(dir, name);
-      // join() does not contain: a name built from a hostile manifest hash/ext (enough ".."
-      // segments) walks the result outside dir. normalizeManifest already screens the manifest
-      // before an item reaches here; this is defense in depth for a caller that does not.
-      if (!isWithin(file, dir)) {
-        throw new Error(`cairn-media-seed: refusing to write outside the temp directory: ${name}`);
-      }
-      // The textual check above trusts the nominal path; a symlink planted inside dir (or under
-      // one of its own ancestors) can still resolve outside it at write time, so the real,
-      // resolved location is checked too. dir was just created by mkdtempSync, so it exists.
-      if (!isWithin(realpathNearestAncestor(file), realpathSync(dir))) {
-        throw new Error(`cairn-media-seed: refusing to write outside the temp directory: ${name}`);
-      }
+      // normalizeManifest already screens the hash/ext a name is built from; this is defense in
+      // depth for a caller that does not.
+      assertContained(file, dir, `write outside the temp directory: ${name}`);
       writeFileSync(file, bytes);
       return file;
     },
@@ -100,17 +114,8 @@ async function main(): Promise<void> {
 
   const cwd = process.cwd();
   const readFileUnderCwd = async (relPath: string): Promise<string | null> => {
-    // resolve() does not contain: a relPath carrying enough ".." segments walks the result
-    // outside cwd, so every read is checked against cwd regardless of where relPath came from.
     const resolved = resolve(cwd, relPath);
-    if (!isWithin(resolved, cwd)) {
-      throw new Error(`cairn-media-seed: refusing to read outside the project directory: ${relPath}`);
-    }
-    // The textual check above trusts the nominal path; a symlink under cwd can still resolve
-    // outside it, so the real, resolved location is checked too. cwd always exists.
-    if (!isWithin(realpathNearestAncestor(resolved), realpathSync(cwd))) {
-      throw new Error(`cairn-media-seed: refusing to read outside the project directory: ${relPath}`);
-    }
+    assertContained(resolved, cwd, `read outside the project directory: ${relPath}`);
     try {
       return await readFile(resolved, 'utf8');
     } catch (err) {
@@ -128,15 +133,7 @@ async function main(): Promise<void> {
   }
 
   const manifestText = await readFileUnderCwd('src/content/.cairn/media.json');
-  let manifestJson: unknown = null;
-  if (manifestText !== null) {
-    try {
-      manifestJson = JSON.parse(manifestText);
-    } catch {
-      manifestJson = null;
-    }
-  }
-  const items = normalizeManifest(manifestJson);
+  const items = normalizeManifest(parseJsonOrNull(manifestText));
 
   const result = await seedMedia(items, args.from, args.headers, bucket.value, realDeps(cwd));
   for (const failure of result.failures) {

@@ -1079,34 +1079,32 @@ the named human gates only):**
 
 - **The B2 architecture reads, what retire-1 left (2026-09-21, updated 2026-09-22).** One read per
   touched Go package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen
-  sound with nits, none escalated. **retire-1's `code-simplifier` round cleared the parts that fell
-  in the packages it touched**: eleven unexports in `render` and `spine`, `spine`'s hand-retyped
-  test lists (which gained the missing `ReasonRepoNotRecorded` coverage), `health`'s catalogue
-  completed and gated by a test, and six process citations rewritten. The rest stands, the two with
-  teeth first:
-  - `internal/spine`'s `condition_test.go` retypes the package's code list by hand and **has
-    already drifted** (missing `ReasonRepoNotRecorded`). Read the backing lists instead;
-    `park_test.go` carries the same shape.
+  sound with nits, none escalated. **retire-1's `code-simplifier` round touched `doctor`, `spine`,
+  and `cmd/cairn`, and cleared only what fell there**: `spine`'s hand-retyped `condition_test.go`
+  list replaced by the package var (gaining the missing `ReasonRepoNotRecorded`), and `env.go`'s one
+  task citation removed. Every other B2 nit stands, since the round never reached `render` or
+  `health`. The two with teeth first:
+  - `internal/spine`'s `park_test.go:16` retypes the package's code list by hand as `allParkCodes`.
+    Read the backing list instead.
   - `internal/logs`'s `fixtureRoundTripper` discards the request, so no test ever observes the
     query body `Fetch` sends. **This is the seam that let the live 400 through.** Capture the
     sent body in the fixture and assert from it.
   - `store.Discover` and `store.Site` have no caller anywhere: the plan expected the auth probe
     to read through `Discover`, and it calls `st.Load` directly. An unwired deliverable, not in
     the seams table. Wire it or delete it.
-  - Exported surface with no outside caller, to unexport: about 25 names in `render` (`Sanitize`,
-    `Role` and its constants, `Verdict`, the width bounds, the six `*SchemaVersion` constants,
-    most `Theme` methods; only `Theme.Wrap` has one), `health`'s `FailSeverityOf`, `HasRepo`, and
-    `FixForCondition`, `spine`'s `CombineState` and `ExitCodeFor` and `ParkCodes`, and
-    `providers.RepoOwnership`, whose doc names a caller that does not exist.
+  - Exported surface with no outside caller, to unexport: `health`'s `FailSeverityOf`, `HasRepo`,
+    and `FixForCondition`, and `providers.RepoOwnership`, whose doc names a caller that does not
+    exist. `spine`'s and `render`'s callerless-export counts are folded into the retire-1 chores
+    entry below, not restated here.
   - Hand-kept parallel lists, the theme across packages: `spine`'s code lists, `health`'s
     `Catalogue` of about 35 functions restated in its own test, `providers`'s three parallel
     lists of the ten `Reason` values, `fixtures`'s hand copy of the nine check ids and its
     hand-recomputed `Degraded`/`Acknowledged`, and `mangen`'s build helper duplicating
     `usage_test.go`'s. Derive each from its source, as `cmd/copylist` does by AST.
   - Process citations in shipped comments: about thirty "reviewed at the 1.0 editorial gate"
-    notes in `cmd/cairn/messages.go`, task-name citations in `root.go`, `env.go`, and `deps.go`,
-    about 25 plan citations in `render` (one of them stale), and three in `health/fixes.go`. A
-    comment carries the reason the code is what it is, never which pass wrote it.
+    notes in `cmd/cairn/messages.go`, task-name citations in `root.go` and `deps.go`, about 25
+    plan citations in `render` (one of them stale), and three in `health/fixes.go`. A comment
+    carries the reason the code is what it is, never which pass wrote it.
   - **Not a defect, recorded so it is not re-filed:** `store`'s `perm_linux.go` and
     `perm_darwin.go` are byte-identical. That is deliberate. The `hygiene` package forbids build
     tags module-wide and asserts the pair's byte-identity instead, so a `//go:build linux ||
@@ -1126,10 +1124,9 @@ the named human gates only):**
     code vocabulary is restated in five places. **Trigger:** the next pass that adds a code or a
     state word, which pays for the drift.
   - **`render` holds roughly thirty callerless exports pinned by `purity_test.go`**, plus the
-    test-only `Height` and `FailingOnly` fields, the byte-identical `profile_linux.go` and
-    `profile_darwin.go` (deliberate, the `hygiene` rule, and their headers should say so), and 23
-    process citations in shipped comments. **Trigger:** draft docs pass A, which already renames
-    `layout.go`'s docs-URL constant, or the HUD, which imports this package wholesale.
+    test-only `Height` and `FailingOnly` fields, and 23 process citations in shipped comments.
+    **Trigger:** draft docs pass A, which already renames `layout.go`'s docs-URL constant, or the
+    HUD, which imports this package wholesale.
   - **`cmd/cairn` carries stale comments and duplicated printing.** `root.go:37-43,77-78` still
     claim `--color` and `--width` are inert when `cairn health` acts on both, `probe_token.go`
     names a retired command, eight `Fprintf(w, "%s\n", data)` copies want one helper, and

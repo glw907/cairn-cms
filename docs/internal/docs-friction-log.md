@@ -54,8 +54,9 @@ cannot measure a production site against unreleased engine work, because every s
 released version and calls the released export names. See Clearings.
 
 The doctor-retirement pre-task's close (2026-09-21) triaged the whole log again and found no
-finding left open by an earlier pass: every entry below was re-read against the code and each was already cleared by the pass named beside it. The pre-task's own three
-`contributor` findings were surfaced and routed in the same step, all to `ROADMAP.md`'s Next tier,
+finding left open by an earlier pass: every entry below was re-read against the code and each was
+already cleared by the pass named beside it. The pre-task's own three `contributor` findings were
+surfaced and routed in the same step, all to `ROADMAP.md`'s Next tier,
 since the next pass to change the public surface or read the facts container is the one that pays
 for each: `npm run check:surface -- --update` forwards the flag to `check-surface-leaks.mjs` only,
 so a surface regen takes `node scripts/checks/check-surface.mjs --update` by hand;

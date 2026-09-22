@@ -22,10 +22,9 @@ Live contracts from the pre-task: `tool/internal/spine/conditions.json` and
 
 ## Immediate next action
 
-**Draft docs pass A**, plan `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`, conducted by
-this session under Geoff's grant. It moves the tool's contract pages and schemas under
-`docs/reference/` and repoints the binary's help and tests. Its inventory is
-`docs/internal/record/2026-09-21-doctor-retire-1-pass-a-inventory.md`, refreshed with the merge SHA.
+**Draft docs pass A**, plan `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`, moves the
+tool's pages and schemas under `docs/reference/` and repoints its help and tests. Its inventory
+(`docs/internal/record/2026-09-21-doctor-retire-1-pass-a-inventory.md`) gets the merge SHA at the merge.
 
 **The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0 (DONE, with
 the pre-task behind it); retire-1 (DONE); draft docs pass A; one `tool/v1.1.0`, tagged from a commit
@@ -44,14 +43,15 @@ still say the two config checks share `config.bindings-missing`.
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026), and
   TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).
-- extend-1's two advisory audit rules go to error tier at `0.98.0`.
+- extend-1's two advisory audit rules go to error tier at `0.98.0`; `cairn-audit --rendered` counts
+  differently on identical runs (133 then 116), so stabilize before trusting either number.
 - Monthly routines: a Cloudflare capability review (`trig_01GnFPkfx7EjrWKAuTBrXVdx`); a Claude Code
   guidance-schema check (`trig_01UyjoYo9hbGqm7qTeb7HGVH`), emailing only on a mismatch.
+- `CAIRN_GH_READ_TOKEN` expires 2026-10-19; `cairn-tripwire` runs daily to catch it early.
 - A consumer `guard.rejected` with `detail: 'mismatch'`, `witness: 'field'` can be the known
   double-mint residual; the discriminator names any genuinely new one.
-- Three ASC staging harvest docs are folded into cairn, deletable once `email-announce` settles.
-- `cairn-audit --rendered` counts differently on identical runs (133 then 116); stabilize first.
-- The heavy gate runs the component project serially (`--no-file-parallelism`).
+- Three ASC staging harvest docs are folded into cairn, deletable once `email-announce` settles;
+  the heavy gate runs the component project serially (`--no-file-parallelism`).
 
 ## Resume prompt
 

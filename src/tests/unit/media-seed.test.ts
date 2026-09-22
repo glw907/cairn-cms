@@ -13,7 +13,7 @@ import {
 } from '../../lib/media-seed/index.js';
 import type { MediaSeedArgs, SeedDeps, SeedItem } from '../../lib/media-seed/index.js';
 import { stripControlChars } from '../../lib/media-seed/assemble.js';
-import { readR2Buckets } from '../../lib/doctor/wrangler-config.js';
+import { readR2Buckets } from '../../lib/media-seed/wrangler-config.js';
 
 /** Narrows `parseArgs`' union return, since the `--help` shape never carries `headers`/`from`. */
 function expectParsed(args: ReturnType<typeof parseArgs>): MediaSeedArgs {
@@ -322,7 +322,7 @@ describe('bin.ts readFileUnderCwd containment', () => {
     vi.resetModules();
     const originalArgv = process.argv;
     process.argv = [process.execPath, 'bin.js', '--from', 'https://example.com'];
-    vi.doMock('../../lib/doctor/wrangler-config.js', () => ({
+    vi.doMock('../../lib/media-seed/wrangler-config.js', () => ({
       readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
         await readFile('../outside.json');
         return null;
@@ -334,7 +334,7 @@ describe('bin.ts readFileUnderCwd containment', () => {
       );
     } finally {
       process.argv = originalArgv;
-      vi.doUnmock('../../lib/doctor/wrangler-config.js');
+      vi.doUnmock('../../lib/media-seed/wrangler-config.js');
       vi.resetModules();
     }
   });
@@ -355,7 +355,7 @@ describe('bin.ts readFileUnderCwd symlink escape', () => {
     const linkName = `cairn-media-seed-symlink-escape-${process.pid}`;
     const linkPath = join(cwd, linkName);
     symlinkSync(outside, linkPath, 'dir');
-    vi.doMock('../../lib/doctor/wrangler-config.js', () => ({
+    vi.doMock('../../lib/media-seed/wrangler-config.js', () => ({
       readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
         await readFile(`${linkName}/secret.txt`);
         return null;
@@ -367,7 +367,7 @@ describe('bin.ts readFileUnderCwd symlink escape', () => {
       );
     } finally {
       process.argv = originalArgv;
-      vi.doUnmock('../../lib/doctor/wrangler-config.js');
+      vi.doUnmock('../../lib/media-seed/wrangler-config.js');
       vi.resetModules();
       rmSync(linkPath, { force: true });
       rmSync(outside, { recursive: true, force: true });

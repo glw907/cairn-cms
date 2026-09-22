@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, basename, sep } from 'node:path';
-import { readR2Buckets } from '../doctor/wrangler-config.js';
+import { readR2Buckets } from './wrangler-config.js';
 import { normalizeManifest, parseArgs, resolveBucket, stripControlChars, USAGE } from './assemble.js';
 import { seedMedia } from './run.js';
 import type { SeedDeps } from './run.js';

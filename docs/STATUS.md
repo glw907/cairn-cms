@@ -128,6 +128,8 @@ container, then beta.
 
 Three tracks, one session each.
 
+**Pre-task ledger (2026-09-21, checkpoint at Task 3):** on worktree `.claude/worktrees/doctor-pretask` (branch `doctor-pretask`), Tasks 1 to 3 are accepted: `5a59c7dd` (the media-bucket condition id and the rewordings), `97b04eb5` (the conditions mirror, `check:tool-conditions`, the third workflow), `b3606010` (`site-facts.json`, its reference page, the surface snapshot). Decisions taken: `siteFactsPath` added to `CairnManifestOptions` as an additive optional field (reviewer-flagged, conductor-accepted); `checkSiteFacts` returns ok when the facts derivation throws, since the manifest verify before it fails the build on a broken adapter; the heavy gate runs the component project serialized on this workstation (`vitest-browser-parallel-pages-stall` memory). Spend about 855K subagent tokens against the 700K ceiling. Next: Task 4, the close, then the PR held until B2 (PR #71) merges. The retire-1 plan is on `main` (PR #76).
+
 **Doctor retirement:** In a fresh session, conduct the doctor retirement from
 `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` and the `doctor-retirement-pass`
 memory. Geoff approved the spec and three plans on 2026-09-21: `2026-09-21-doctor-pretask.md`,

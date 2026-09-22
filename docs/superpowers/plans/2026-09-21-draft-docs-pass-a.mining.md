@@ -820,6 +820,11 @@ Four statements to carry, each with where it is true in Go:
    `tool/cmd/cairn/logs.go:44,66`. A Worker with no observability dataset cannot answer either,
    and the check reports that as a skip.
 
+Ratified (redraft round, 2026-09-22): statement 4's second half is cut. `tool/internal/logs/logs.go:56-69`
+records that a Worker with observability off answers the same query 200 with zero events, the same
+as a Worker that simply logged nothing over the window, so the two are not distinguishable and the
+claim is not observable; it is not carried onto the page.
+
 Two notes for the implementer:
 
 - The original's last heading reads "The two events a health run reads" and then names no event.

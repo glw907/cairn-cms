@@ -1080,7 +1080,7 @@ the named human gates only):**
     `perm_darwin.go` are byte-identical. That is deliberate. The `hygiene` package forbids build
     tags module-wide and asserts the pair's byte-identity instead, so a `//go:build linux ||
     darwin` merge would break its own gate. The ruling belongs in the files' header.
-  Full text: `~/.cache/cairn-tool-b2/architecture-reads.md`.
+  Full text: `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
 
 - **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
   2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact

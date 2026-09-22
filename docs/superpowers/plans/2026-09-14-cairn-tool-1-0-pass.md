@@ -5756,7 +5756,7 @@ calls, the tool's single-source docs home, the go on the tag and the merge, prov
 [`docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`](../specs/2026-09-21-cairn-tool-after-1-0-framing.md).
 
 **Both budgets.** Tokens: the ceiling opened at 14M and was raised by Geoff six times, to 18, 20,
-23, 25, 27, and 28.5M; spend at the close was about 27.3M. Attended time: planning misses four
+23, 25, 27, and 28.5M; spend at the close was about 27.3M. Attended time: planning misses five
 (no live OK-path criterion, Task 23's mode misread as verification, no recorded-live-response
 rule for provider routes, the tool's docs home unruled at plan time, and Files lists that omitted
 the release job's neighbours); execution sittings about ten (six ceiling raises, the owner list

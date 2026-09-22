@@ -65,7 +65,7 @@ fixed and re-graded PASS.
   `logs`'s fixture that never sees the request body.
 
 **Both budgets.** Ceiling 14M at launch, raised six times to 28.5M; spend about 27.3M. Attended
-time: four planning misses, about ten execution sittings.
+time: five planning misses, about ten execution sittings.
 
 ## The pre-cut pass, five tasks, 2026-09-21
 

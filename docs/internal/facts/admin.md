@@ -140,13 +140,13 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
   - The whole "What it costs" framing device (three numbered cost items) in before-you-start.md is pedagogical structure; the underlying dollar figures were harvested individually above.
 
 - Pages covered: 8 (before-you-start, create-your-site, invite-editors, is-it-working, own-your-domain, setup-recovery, troubleshooting, what-to-run-and-when). README.md (the arm index) read for context only, not harvested as a fact source.
-- Tool harvest 2026-09-21: 21 bullets added for the `cairn` operator CLI, woven into the four
+- Tool harvest 2026-09-21: 20 bullets added for the `cairn` operator CLI, woven into the four
   sections whose job each one serves (install and credentials under before-you-start, health and
   adopt and the machine surface under is-it-working, holds and the errors check under
   troubleshooting, the scheduled run under what-to-run-and-when) rather than collected in a
   section of their own, since the container is sectioned by the reader's job, not by the
   component. Sources are the `tool/` module at `tool/v1.0.1`.
-- Total facts: 86 before that harvest, 107 after (the harvest's own original tally of 63 undercounted; a recount at the 2026-09-15
+- Total facts: 86 before that harvest, 106 after (the harvest's own original tally of 63 undercounted; a recount at the 2026-09-15
   tightening pass found 86 fact bullets across the eight pages).
 - As harvested: Verified: 61. Docs-drift: 1. Candidate: 24.
 

@@ -22,24 +22,17 @@ and schemas under `docs/reference/`; one `tool/v1.1.0`, tagged and released from
 both; the retirement's engine half (retire-2), which removes the `cairn-doctor` bin only once that
 release exists. Each close writes only its own line, and **ONLY retire-2's close, the last to
 land, writes the line releasing `0.97.0` from this hold**. A cut session finding no such line does
-not cut, and every mechanical gate in Task 6 must pass whatever any line says. The retirement track conducts the `tool/v1.1.0`
-tag in a short session between pass A's merge and retire-2a, following Tasks 22b and 23 of the Go
-tool's 1.0 plan as its runbook, re-verifying the binary after pass A's repoint, and stopping for
-Geoff's go before the tag. Retirement spec:
+not cut, and every mechanical gate in Task 6 must pass whatever any line says. The `tool/v1.1.0`
+tag session's runbook, scope, and Geoff's-go gate live in
 `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`.
 
 **The Go tool's 1.0 is merged, tagged, and released: `tool/v1.0.0` (commit `3110e875`) and
 `tool/v1.0.1` (commit `9b479e8d`, the full release page), merged to `main` as MERGE SHA RECORDED
 HERE AFTER THE MERGE. The cut still waits on the doctor-retirement track and draft-docs pass A.**
 
-**The cut includes the tool's 1.0 (Geoff, 2026-09-21):** `0.97.0`'s window carries `tool/`, so the
-changelog window, the release body, the docs naming the tool, and the site upgrade brief all
-present `cairn` 1.0 and its install line; the binary ships by `go install` and the tag's archives,
-never in the npm tarball. The cut is Task 6 of
-`docs/superpowers/plans/2026-09-21-pre-cut-pass.md` (`cairn-release`): the lockstep bump of
-`package.json` and `packages/cairn-cms-dev/package.json`, the SHA-pinned tag, and the `tool`
-workflow in the green CI set. `0.97.0` is verified free with `npm view` at the cut. extend-1's two
-advisory audit rules (`log-event-grammar`, `log-secret-field`) go to error tier at `0.98.0`.
+**The cut includes the tool's 1.0**, per Task 6 of
+`docs/superpowers/plans/2026-09-21-pre-cut-pass.md` and `ROADMAP.md`'s "The window after the cut"
+entry.
 
 What follows the cut is sequenced in `ROADMAP.md`'s "The window after the cut" entry: the docs
 chore, the docs-infra currency pass, the draft docs, the site round, the improvement release,
@@ -61,6 +54,8 @@ the docs rebuild, then beta.
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026).
 - TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).
+- extend-1's two advisory audit rules (`log-event-grammar`, `log-secret-field`) go to error tier
+  at `0.98.0`.
 
 ## Active watches
 
@@ -86,8 +81,9 @@ the docs rebuild, then beta.
 memory. Geoff approved the spec and four plans on 2026-09-21, under `docs/superpowers/plans/`:
 the pretask, `doctor-retire-1-go` (with its pass A inventory under `docs/internal/record/`),
 `doctor-retire-2-engine`, and `doctor-retire-2b-records`, whose close writes the cut's unblocked
-line. The pre-task is on worktree `.claude/worktrees/doctor-pretask`; merge its PR now that B2 is
-on `main`, then run the passes in the order the hold paragraph above sets.
+line. The pre-task is on worktree `.claude/worktrees/doctor-pretask`: Tasks 1 to 3 are accepted, at
+a Task 3 checkpoint; Task 4 and its close remain, and no pre-task PR exists yet. Finish it, open
+and merge its PR after B2 lands, then run the passes in the order the hold paragraph above sets.
 
 **One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once the
 tool's 1.0 is released AND `cairn-doctor` is retired on `main`; verify both first.

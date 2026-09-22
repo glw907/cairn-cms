@@ -266,26 +266,31 @@ func goldenLogEntries() []logs.Entry {
 	}
 }
 
-// goldenForeignLogEntries is a window of a Worker's own console lines, the excerpt a query
-// against a public site returns most of: a 404 logger writes far more lines than the engine
-// does, and none of them carries the event key only src/lib/log writes. The shapes are the ones
+// goldenMixedLogEntries is the window a query against a public site actually returns: the
+// Worker's own console lines, which a 404 logger writes by the hundred, and one engine record
+// among them. The shapes are the ones
 // packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.mixed-lines.200.json
-// recorded live, the escape-and-newline opening of the error line included, since that opening
-// is what puts a space after the `message=` a naive render prints.
-func goldenForeignLogEntries() []logs.Entry {
+// recorded live, the escape-and-newline opening of a 404 line included, since that opening is
+// what puts a space after the `message=` a naive render prints.
+func goldenMixedLogEntries() []logs.Entry {
 	at := func(second int) time.Time {
 		return time.Date(2026, 9, 20, 14, 28, second, 0, time.FixedZone("AKDT", -8*3600))
 	}
-	message := func(text string) []logs.Field {
+	value := func(text string) json.RawMessage {
 		raw, err := json.Marshal(text)
 		if err != nil {
 			panic(err)
 		}
-		return []logs.Field{{Key: "message", Value: raw}}
+		return raw
+	}
+	message := func(text string) []logs.Field {
+		return []logs.Field{{Key: "message", Value: value(text)}}
 	}
 	return []logs.Entry{
 		{At: at(42), Level: "error", Fields: message("\n\x1b[1;31m[404] GET /wordpress/\x1b[0m")},
 		{At: at(42), Level: "info", Fields: message("GET https://907.life/wordpress/?rest_route=%2Fwp%2Fv2%2Fusers")},
+		{At: at(20), Level: "warn", Event: "guard.rejected", Fields: []logs.Field{
+			{Key: "reason", Value: value("origin")}, {Key: "path", Value: value("/about")}}},
 		{At: at(6), Level: "error", Fields: message("\n\x1b[1;31m[404] POST /blog/\x1b[0m")},
 		{At: at(6), Level: "info", Fields: message("POST https://907.life/blog/?rest_route=%2Fbatch%2Fv1")},
 	}
@@ -322,7 +327,7 @@ func goldenCases() []goldenCase {
 			width: width, profile: ProfileTrueColor, dark: true,
 		})
 		out = append(out, goldenCase{
-			view: "logs", fixture: "foreign", entries: goldenForeignLogEntries(),
+			view: "logs", fixture: "mixed", entries: goldenMixedLogEntries(),
 			width: width, profile: ProfileTrueColor, dark: true,
 		})
 	}

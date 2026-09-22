@@ -1231,18 +1231,18 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 	}
 }
 
-// TestLogBodyDropsTheEventColumnForAWorkersOwnLines covers a window carrying no engine record:
-// no row has an event, so the event column is not drawn and the fields sit against the level
-// column, and a message that opened with a newline and a colour escape prints with no gap after
-// its own key. The excerpt carrying engine records keeps the column, so the collapse is the
-// query's answer rather than a rule that took the column away from every log frame.
-func TestLogBodyDropsTheEventColumnForAWorkersOwnLines(t *testing.T) {
+// TestLogRowWithNoEventDropsTheEventColumn covers the window a query against a public site
+// actually returns: hundreds of the Worker's own console lines with the odd engine record among
+// them. A line carrying no event starts its fields against the level rather than past a column
+// of blank cells, a line carrying one keeps the column, and a message that opened with a newline
+// and a colour escape prints with no gap after its own key.
+func TestLogRowWithNoEventDropsTheEventColumn(t *testing.T) {
 	for _, width := range []int{60, 80, 100, 120} {
-		foreign := plainLines(RenderInput{
+		lines := plainLines(RenderInput{
 			View: ViewLogs, Width: width, Dark: true, Profile: ProfileNoColor,
-			Site: "907.life", Entries: goldenForeignLogEntries(), Now: fixtures.Now(),
+			Site: "907.life", Entries: goldenMixedLogEntries(), Now: fixtures.Now(),
 		})
-		text := strings.Join(foreign, "\n")
+		text := strings.Join(lines, "\n")
 		if strings.Contains(text, "message= ") {
 			t.Errorf("width %d: a message prints a space after its key:\n%s", width, text)
 		}
@@ -1252,18 +1252,15 @@ func TestLogBodyDropsTheEventColumnForAWorkersOwnLines(t *testing.T) {
 		if width < Width100 {
 			continue
 		}
-		record := lineCarryingIn(t, foreign, "[404] POST /blog/")
-		if got, want := strings.Index(record, "message="), logIndent+logTime+logLevel; got != want {
-			t.Errorf("width %d: the fields start at column %d, want %d: %q", width, got, want, record)
+		console := lineCarryingIn(t, lines, "[404] POST /blog/")
+		if got, want := strings.Index(console, "message="), logIndent+logTime+logLevel; got != want {
+			t.Errorf("width %d: a console line starts its fields at column %d, want %d: %q",
+				width, got, want, console)
 		}
-		engine := plainLines(RenderInput{
-			View: ViewLogs, Width: width, Dark: true, Profile: ProfileNoColor,
-			Site: "ecxc.ski", Entries: goldenLogEntries(), Now: fixtures.Now(),
-		})
-		row := lineCarryingIn(t, engine, "commit.failed")
-		if got, want := strings.Index(row, "editor="), logIndent+logTime+logLevel+logEvent; got != want {
+		record := lineCarryingIn(t, lines, "guard.rejected")
+		if got, want := strings.Index(record, "reason="), logIndent+logTime+logLevel+logEvent; got != want {
 			t.Errorf("width %d: a record carrying an event starts its fields at column %d, want %d: %q",
-				width, got, want, row)
+				width, got, want, record)
 		}
 	}
 }

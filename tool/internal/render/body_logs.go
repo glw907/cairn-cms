@@ -2,7 +2,6 @@ package render
 
 import (
 	"encoding/json"
-	"slices"
 	"strings"
 	"time"
 
@@ -31,9 +30,11 @@ const logEmpty = "no records"
 // indent rather than being cut, so the field that carries the answer, a `reason` most of all, is
 // never truncated.
 //
-// The event column belongs to the query rather than to a row. Only the engine writes an "event"
-// key, so a window of a Worker's own console lines carries none at all, and reserving the column
-// there spends twenty-three cells of blank on every row of the excerpt.
+// The event column is a row's own, not the table's. Only the engine writes an "event" key, so a
+// window on a public site is almost entirely the Worker's own console lines, and a column
+// reserved for the whole excerpt spends twenty-three cells of blank on every one of them. A row
+// with no event starts its fields against the level instead, and the rows that do carry one
+// still line up with each other.
 func renderLogs(t Theme, in RenderInput) Frame {
 	width := in.width()
 	site := Sanitize(in.Site)
@@ -49,11 +50,6 @@ func renderLogs(t Theme, in RenderInput) Frame {
 	// line. Below that the record names itself on one line and its fields follow at the time
 	// column, which is a wrap the reader can follow rather than a token cut down the middle.
 	wide := width >= Width100
-	keepsEvent := slices.ContainsFunc(in.Entries, func(e logs.Entry) bool { return e.Event != "" })
-	fieldCol := logIndent + logTime + logLevel
-	if keepsEvent {
-		fieldCol += logEvent
-	}
 	var body []string
 	for _, e := range in.Entries {
 		cells := []string{
@@ -61,8 +57,10 @@ func renderLogs(t Theme, in RenderInput) Frame {
 			t.cell(RoleMuted, e.At.Format("15:04:05"), logTime),
 			t.cell(logLevelRole(e.Level), Sanitize(e.Level), logLevel),
 		}
-		if keepsEvent {
+		fieldCol := logIndent + logTime + logLevel
+		if e.Event != "" {
 			cells = append(cells, t.SizedStrong(RoleText, logEvent).Render(Sanitize(e.Event)))
+			fieldCol += logEvent
 		}
 		lead := row(cells...)
 		if wide {

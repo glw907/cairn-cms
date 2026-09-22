@@ -205,6 +205,19 @@ how the JSON payload writes them without adding a state word or a reason code.
 
 ---
 
+## Pre-flight re-verified against merged `main` (2026-09-21, before Task 1)
+
+Checked at `origin/main` `d041d1bf` (B2 merged as `5cbfbad0`, tool tree through `tool/v1.0.1` at
+`9b479e8d`; the pre-task merged as `d041d1bf`). Every precondition holds: `tool/v1.0.0` on origin,
+`tool/internal/spine/conditions.json` and `tool/internal/doctor/site-config-path.json` on `main`,
+this plan on `main`. No citation is wrong; two drifted: `tool/docs/reference/exit-codes.md:85` is
+now `:94`, and `tool/docs/reference/json-output.md:285` (`## What freezes at 1.0`) is `:286`. Three
+B2 changes since `3dc2520f` bear on tasks: `render/purity_test.go`'s `exportedThemeMethods` now
+includes `"Wrap"` (Task 9 must keep it); `tool/CHANGELOG.md` has a `## 1.0.1` section, so the new
+`## Unreleased` goes above it (Task 9); `tool/go.mod`'s `go` directive is `1.26.0` (Task 4 edits
+the require blocks only). `tool/Makefile` gained `install-check` and a `VERSION` `patsubst`; its
+`check` target is unchanged. The runner args carry these as leading notes per task.
+
 ## Verified facts, recorded so no task re-derives them
 
 - **The four regex heuristics are four checks, not four functions.** The tool-sizing record's

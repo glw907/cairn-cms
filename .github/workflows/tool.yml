@@ -51,7 +51,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
-          go-version-file: tool/go.mod
+          # The floor, not the patch. tool/go.mod's directive is 1.26.0, and setup-go
+          # pins GOTOOLCHAIN=local to whatever it installs, so reading the file directly
+          # would gate every run on the floor's own first patch release: govulncheck then
+          # reports every stdlib advisory fixed since. This installs the newest patch of
+          # the same minor, which is the oldest toolchain an operator should be running.
+          go-version: '1.26.x'
       - name: Install Vale (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -120,7 +125,12 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v6
         with:
-          go-version-file: tool/go.mod
+          # The floor, not the patch. tool/go.mod's directive is 1.26.0, and setup-go
+          # pins GOTOOLCHAIN=local to whatever it installs, so reading the file directly
+          # would gate every run on the floor's own first patch release: govulncheck then
+          # reports every stdlib advisory fixed since. This installs the newest patch of
+          # the same minor, which is the oldest toolchain an operator should be running.
+          go-version: '1.26.x'
       - name: Generate man pages
         # Every archive carries the generated pages beside the binary, so a packager and an
         # operator both get them without the repository. Man pages are platform-independent, so

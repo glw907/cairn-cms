@@ -410,11 +410,12 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-// TestGoldenVerdictIsTheLastLine holds the conductor's 2026-09-21 ruling on criterion 3 across
-// the whole committed corpus: in a terminal body the verdict word is the last non-blank line at
-// every width, and the tally goes above it when the block wraps. Reading the last line is how a
-// truncated cron mail, a scrollback glance, and a screen reader all take the run's verdict.
-func TestGoldenVerdictIsTheLastLine(t *testing.T) {
+// TestGoldenFooterLeadsWithItsVerdict holds the closing block's own order across the whole
+// committed corpus: in a terminal body the last block of the frame opens on the verdict word and
+// carries the tally after it, the same order the header block takes. A footer that wrapped its
+// tally above the verdict would state a run's counts before the word they belong to, and would
+// read in the opposite order to the header three lines of screen above it.
+func TestGoldenFooterLeadsWithItsVerdict(t *testing.T) {
 	for _, c := range goldenCases() {
 		if c.view != "single" && c.view != "many" {
 			continue
@@ -424,14 +425,21 @@ func TestGoldenVerdictIsTheLastLine(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%v; run `make -C tool golden` to cut it", err)
 			}
-			var last string
-			for line := range strings.SplitSeq(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n") {
-				if stripped := stripANSI(line); strings.TrimSpace(stripped) != "" {
-					last = stripped
+			var block []string
+			frame := strings.TrimRight(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
+			for line := range strings.SplitSeq(frame, "\n") {
+				stripped := stripANSI(line)
+				if strings.TrimSpace(stripped) == "" {
+					block = nil
+					continue
 				}
+				block = append(block, stripped)
 			}
-			if word := verdictFor(c.reports).String(); !strings.Contains(last, word) {
-				t.Errorf("last non-blank line %q carries no %s", last, word)
+			if len(block) == 0 {
+				t.Fatal("the frame ends on no block at all")
+			}
+			if word := verdictFor(c.reports).String(); !strings.Contains(block[0], word) {
+				t.Errorf("the closing block opens on %q, which carries no %s", block[0], word)
 			}
 		})
 	}

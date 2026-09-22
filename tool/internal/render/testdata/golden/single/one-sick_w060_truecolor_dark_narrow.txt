@@ -35,5 +35,5 @@
 
 [38;2;168;164;158m●[m [38;2;168;164;158m3 passing[m  [38;2;168;164;158mserving · delegation · publish-path[m
 
-[38;2;168;164;158m3 failing · 2 could not run · 1 held · 3 passing[m
 [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m907.life[m
+[38;2;168;164;158m3 failing · 2 could not run · 1 held · 3 passing[m

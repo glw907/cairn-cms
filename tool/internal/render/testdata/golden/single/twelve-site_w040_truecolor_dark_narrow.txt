@@ -21,5 +21,5 @@
              [38;2;168;164;158mdelegation · https-forced ·[m
              [38;2;168;164;158mdeploy · publish-path[m
 
-[38;2;168;164;158m3 could not run · 6 passing[m
 [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227mecxc.ski[m
+[38;2;168;164;158m3 could not run · 6 passing[m

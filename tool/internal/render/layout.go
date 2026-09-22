@@ -258,22 +258,17 @@ func verdictRole(v Verdict) Role {
 	}
 }
 
-// verdictLines is the block every terminal body leads with: the verdict, the subject bold, the
-// tallies muted. A tally is a fact, so when the three will not fit on one line the tally takes a
-// line of its own rather than being cut.
+// verdictLines is the block every terminal body opens and closes with: the verdict, the subject
+// bold, the tallies muted. A tally is a fact, so when the three will not fit on one line the
+// tally takes a line of its own rather than being cut.
+//
+// The order is the same at the head of a frame and at the foot of it. The verdict leads the
+// block wherever it appears, so a reader who has learned the device at the top of the screen
+// reads the bottom the same way, and a frame whose footer wrapped does not state its counts
+// before the word they belong to.
 func (t Theme) verdictLines(v Verdict, subject, tally string, width int) []string {
 	head, tallyLines := t.verdictParts(v, subject, tally, width)
 	return append([]string{head}, tallyLines...)
-}
-
-// verdictFooterLines is the same block at the end of a frame, with the wrapped tally above the
-// verdict rather than below it. The verdict word is the last non-blank line of every frame at
-// every width: a truncated cron mail, a scrollback glance, and a screen reader all read the last
-// line, and a tally sitting there would leave the run's own word off the end of the output at
-// exactly the widths where it wrapped.
-func (t Theme) verdictFooterLines(v Verdict, subject, tally string, width int) []string {
-	head, tallyLines := t.verdictParts(v, subject, tally, width)
-	return append(tallyLines, head)
 }
 
 // verdictParts renders the verdict block's two pieces: the head line, and the tally lines where

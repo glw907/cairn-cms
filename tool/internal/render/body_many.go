@@ -150,7 +150,7 @@ func renderMany(t Theme, in RenderInput) Frame {
 	}
 	f.Body = body
 
-	f.Footer = append([]string{""}, t.verdictFooterLines(in.Verdict, subject, tally, width)...)
+	f.Footer = append([]string{""}, t.verdictLines(in.Verdict, subject, tally, width)...)
 	return t.clampFrame(f, width)
 }
 

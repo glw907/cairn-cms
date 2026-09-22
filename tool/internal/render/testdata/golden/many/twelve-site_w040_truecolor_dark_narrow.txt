@@ -57,5 +57,5 @@
                [38;2;168;164;158mfive.example.org,[m
                [38;2;168;164;158msix.example.org[m
 
-[38;2;168;164;158m3 CRITICAL · 9 WARNING[m
 [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m12 sites[m
+[38;2;168;164;158m3 CRITICAL · 9 WARNING[m

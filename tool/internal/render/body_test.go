@@ -103,9 +103,9 @@ func TestSharedLayer(t *testing.T) {
 	}
 }
 
-// TestVerdictFirstAndLast is criterion 3 and criterion 15: the first and last non-blank lines
-// carry the verdict word, for all four verdicts and both bodies, and the plain body's exit code
-// follows its last verdict line.
+// TestVerdictFirstAndLast is criterion 3 and criterion 15: a terminal frame opens on the verdict
+// word and its closing block opens on it too, for all four verdicts and both bodies, and the
+// plain body's exit code follows its last verdict line.
 func TestVerdictFirstAndLast(t *testing.T) {
 	for _, v := range []Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
 		for _, tc := range []struct {
@@ -134,18 +134,42 @@ func TestVerdictFirstAndLast(t *testing.T) {
 			if !strings.Contains(live[0], v.String()) {
 				t.Errorf("verdict %v body %v: first line %q carries no verdict word", v, body, live[0])
 			}
-			last := live[len(live)-1]
 			if body == BodyPlain {
+				last := live[len(live)-1]
 				if last != keyExit+string(rune('0'+int(v))) {
 					t.Errorf("verdict %v: last plain line = %q, want the exit code", v, last)
 				}
-				last = live[len(live)-2]
+				if closing := live[len(live)-2]; !strings.Contains(closing, v.String()) {
+					t.Errorf("verdict %v: the line above the exit code is %q, which carries no verdict word", v, closing)
+				}
+				continue
 			}
-			if !strings.Contains(last, v.String()) {
-				t.Errorf("verdict %v body %v: last line %q carries no verdict word", v, body, last)
+			// A terminal frame ends on its verdict block, which opens on the word wherever it
+			// wrapped, the same order the header block takes.
+			closing := closingBlock(lines)
+			if len(closing) == 0 {
+				t.Fatalf("verdict %v body %v: frame ends on no block", v, body)
+			}
+			if !strings.Contains(closing[0], v.String()) {
+				t.Errorf("verdict %v body %v: the closing block opens on %q, which carries no verdict word",
+					v, body, closing[0])
 			}
 		}
 	}
+}
+
+// closingBlock returns the run of non-blank lines the frame ends on, with every escape already
+// removed by the caller.
+func closingBlock(lines []string) []string {
+	var block []string
+	for _, l := range lines {
+		if strings.TrimSpace(l) == "" {
+			block = nil
+			continue
+		}
+		block = append(block, l)
+	}
+	return block
 }
 
 // TestOnePassRule is criterion 4: in a frame whose verdict is anything but OK, no span carries

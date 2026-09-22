@@ -20,5 +20,5 @@
 
 [38;2;168;164;158m●[m [38;2;168;164;158m1 passing[m  [38;2;168;164;158mengine[m
 
-[38;2;168;164;158m3 failing · 1 could not run · 1 passing[m
 [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227ma-very-long-site-name-nobody-would-choose.example.org[m
+[38;2;168;164;158m3 failing · 1 could not run · 1 passing[m

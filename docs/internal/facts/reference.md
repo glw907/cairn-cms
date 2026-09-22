@@ -243,6 +243,309 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   points. [candidate: not independently traced into `src/lib/audit/bin.ts`'s norms subcommand
   branch in this harvest]
 
+## docs/reference/cli-cairn-doctor.md
+
+Filed by pass A task 4 from the mining of `tool/docs/reference/cli-cairn-doctor.md`, every bullet
+re-sourced to Go on this tree rather than to the page.
+
+- `cairn doctor` reads a site's checked-in configuration and needs no credential, no adopted site,
+  and no Cloudflare or GitHub access, so it runs in a fresh clone and in CI; `cairn health` is the
+  live-site counterpart. Source: `tool/cmd/cairn/messages.go:299-306`. [verified]
+- `cairn doctor [<dir>]` takes at most one positional argument; `<dir>` defaults to the working
+  directory, is a filesystem path and never a registered site id, and its shell completion offers
+  directories rather than site ids. Source: `tool/cmd/cairn/doctor.go:24-37,50-53`. [verified]
+- Everything the command reads is off disk under the resolved, symlink-free directory: the
+  wrangler config, `package.json` and a lockfile, the Svelte and Vite configs,
+  `src/hooks.server.ts`, `static/_headers`, the site-config YAML, the `/admin` route candidates,
+  and `src/content/.cairn/site-facts.json`. Source: `tool/internal/doctor/wrangler.go:36,48`,
+  `tool/internal/doctor/check_csrf.go:72,79`, `tool/internal/doctor/check_referrer.go:191-234`,
+  `tool/internal/doctor/check_floors.go:328,376,384,392`, `tool/internal/doctor/facts.go:11`.
+  [verified]
+- The `/admin` mount check probes six candidate route files by name, since a Snapshot offers no
+  directory listing and a route file can be `.ts` or `.js`. Source:
+  `tool/internal/doctor/check_mount.go:14-21`. [verified]
+- A path resolving outside the run's directory, even through a symlink, is refused rather than
+  followed. Source: `tool/internal/doctor/snapshot.go:75-87`. [verified]
+- The whole command makes one network request, a credential-free `GET` of the declared origin's
+  `/robots.txt` for `ai.posture-effective`, and nothing else touches the network. Source:
+  `tool/internal/doctor/fetchrobots.go:28-35`. [verified]
+- That one request carries no timeout of its own: its deadline is the command's own context, which
+  `--timeout` bounds, default 480 seconds. The 15-second per-request cap belongs to
+  `internal/providers`, whose clients this credential-free probe deliberately does not use.
+  Source: `tool/internal/doctor/fetchrobots.go:14-21,33-34`,
+  `tool/internal/providers/transport.go:12-16`, `tool/cmd/cairn/root.go:35`.
+  [docs-drift: the retired page said the one request "is bounded at 15 seconds inside it"]
+- A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency in
+  `package.json` is not a cairn-cms site: the run prints one line, exits 3, and settles no check.
+  Source: `tool/internal/doctor/fileread.go:89-104`, `tool/cmd/cairn/doctor.go:60-61,113-129`,
+  `tool/cmd/cairn/messages.go:322-330`. [verified]
+- `--json` is the command's own flag and writes the payload instead of the report; it beats
+  `--quiet`, so the payload always prints under `--json`. Source:
+  `tool/cmd/cairn/doctor.go:42,88-97`, `tool/cmd/cairn/messages.go:309`. [verified]
+- The root's `--color`, `--theme`, and `--width` are accepted and have no effect on this command,
+  whose report is plain text with no ANSI and no terminal query; `--quiet` and `--timeout` do
+  apply. Source: `tool/cmd/cairn/root.go:229-235` declares all five, and neither
+  `tool/cmd/cairn/doctor.go` nor `tool/internal/doctor/report.go` reads the three.
+  [verified: the declaration is sourced; the no-effect half is the absence of any read, confirmed
+  by grep over the command and package]
+- The eleven checks run in one fixed report order, the eight file-only checks followed by the
+  three facts-dependent ones: `config.bindings`, `config.media-bucket`, `config.observability`,
+  `config.csrf-disable`, `config.site-config`, `config.public-origin`,
+  `config.no-referrer-blanket`, `admin.mount-shape`, `config.dependency-floors`,
+  `auth.role-wiring`, `ai.posture-effective`. That slice is also the published check-id list the
+  page tests read. Source: `tool/internal/doctor/report.go:10-31`. [verified]
+- Each check names one engine condition id, which carries the check's severity: blocker for
+  `config.bindings-missing`, `config.site-config-invalid`, `config.public-origin-invalid`, and
+  `config.dependency-floors-unmet`, warning for `config.media-bucket-missing`,
+  `config.observability-off`, `config.csrf-disable-missing`, `config.no-referrer-blanket`,
+  `admin.mount-incomplete`, `auth.role-wiring-missing`, and `ai.posture-not-effective`. Source:
+  `tool/internal/doctor/check_bindings.go:31`, `check_media.go:29`, `check_observability.go:16`,
+  `check_csrf.go:70`, `check_siteconfig.go:26`, `check_origin.go:60`, `check_referrer.go:217`,
+  `check_mount.go:78`, `check_floors.go:366`, `check_roles.go:105`, `check_posture.go:291`, with
+  each severity at `tool/internal/spine/conditions.json:105-118`. [verified]
+- `config.site-config` reports presence and parsing only; the per-concept URL policy lives on the
+  adapter concepts and is not checkable from a directory preflight. Source:
+  `tool/internal/doctor/check_siteconfig.go:12-13`. [verified]
+- `config.media-bucket`, `auth.role-wiring`, and `ai.posture-effective` read
+  `src/content/.cairn/site-facts.json`, and when that file is absent each reports the literal
+  message "needs engine 0.97.0 or later, and one build". Source:
+  `tool/internal/doctor/facts.go:8-19`. [verified]
+- The seven check ids the doctor never reaches, because they need a live adopted site, are
+  `cairn health` ids and none is a doctor id: `serving`, `delegation`, `https-forced`, `email`,
+  `deploy`, `publish-path`, and `errors`. Source:
+  `tool/internal/health/check_serving.go:25`, `check_delegation.go:20`, `check_https.go:45`,
+  `check_email.go:32`, `check_deploy.go:132`, `check_publish.go:59`, `check_errors.go:26`, against
+  the doctor's own list at `tool/internal/doctor/report.go:19-31`. [verified]
+- The run's exit code is the worst severity among failing checks, 0 when every check passed,
+  skipped, or reported info, and 3 when an unchecked result is the only non-passing one. Source:
+  `tool/internal/doctor/status.go:58-82` folding through `tool/internal/spine/exit.go:133-167`;
+  all four cases exercised at `tool/cmd/cairn/doctor_test.go:76-159`. [verified]
+- Exit 3 covers three distinct cases, so a caller tests for a nonzero exit rather than switching
+  on 3: a usage error, a run whose only non-passing results could not observe their input, and a
+  directory that is not a cairn-cms site. Source: `tool/cmd/cairn/doctor_test.go:161-270`.
+  [verified]
+- Under `--json`, empty stdout means the invocation was wrong: a usage error is the one case that
+  writes no payload, and a directory that is not a cairn-cms site still writes one. Source:
+  `tool/cmd/cairn/doctor_json_test.go:26-55`, `tool/cmd/cairn/doctor.go:88-97`. [verified]
+- Each failing check's report block and its payload `fix.url` resolve against
+  `https://cairn.pub/docs/admin/`, built from the condition's own `docsAnchor` with the `.md`
+  removed. Source: `tool/internal/doctor/report.go:66-80`. [verified]
+
+## docs/reference/cli-cairn-exit-codes.md
+
+Filed by pass A task 4 from the mining of `tool/docs/reference/exit-codes.md`, every bullet
+re-sourced to Go on this tree rather than to the page.
+
+- The four exit codes are the monitoring-plugin convention, each constant's value being its own
+  code: 0 `OK`, 1 `WARNING`, 2 `CRITICAL`, 3 `UNKNOWN`. Source:
+  `tool/internal/spine/exit.go:14-36`. [verified]
+- Several verdicts combine by precedence and not by numeric order: `CRITICAL` outranks `UNKNOWN`
+  outranks `WARNING` outranks `OK`, so `UNKNOWN`'s 3 does not beat `CRITICAL`'s 2. The same order
+  applies within one site and across a sweep of many. Source:
+  `tool/internal/spine/exit.go:38-55,147-167`. [verified]
+- One check contributes `OK` when it passed and `CRITICAL` when it failed, softened to `WARNING`
+  either by the check's own declared severity or by an unexpired hold; a held failure is never
+  reported `OK`, and a hold that has already expired contributes the same code an unheld failure
+  does. Source: `tool/internal/spine/exit.go:89-92,98-128`. [verified]
+- `engine` is the only health check whose failure is warning-severity; every other check in the
+  set fails at critical weight, and an id the table does not name is reported at full weight.
+  Source: `tool/internal/health/severity.go:16-30`. [verified]
+- A check that could not run contributes `UNKNOWN`, with one exclusion: three reasons name a
+  check the run declined to attempt because the site's own setup gives it nothing to read, and
+  those contribute `WARNING`. They are `reason.cred-missing`, `reason.repo-not-recorded`, and
+  `reason.api.builds-not-connected`. Source: `tool/internal/spine/outcome.go:78-93`,
+  `tool/internal/spine/exit.go:104-128`. [verified]
+- The same fact decides the wire word and the exit code: those three reasons word a result `skip`,
+  and every other unknown words it `unknown`. Source: `tool/internal/spine/exit.go:202-216`.
+  [verified]
+- A hold has no effect on an unknown, since an operator can accept a known failure but not a check
+  that never ran. Source: `tool/internal/spine/exit.go:104-128`. [verified]
+- A site with no checks at all folds to `UNKNOWN`, never `OK`, so nothing was ever measured cannot
+  print a false green. Source: `tool/internal/spine/exit.go:133-145`. [verified]
+- A registry the tool could not read in full contributes `UNKNOWN`, and so does an `--expect-sites`
+  count the registry does not match; zero means the operator named no count and the length is not
+  checked. An empty registry reuses the same sentinel, which is why bare `cairn health` on an
+  empty registry exits 3. Source: `tool/internal/spine/exit.go:57-59,147-167`,
+  `tool/cmd/cairn/health_sweep.go:39-44`, `tool/cmd/cairn/sites.go:46`. [verified]
+- A hold is named either by a repeatable `--ack <check-id>=<YYYY-MM-DD>` or by an acknowledgement
+  file, which `--ack-file` names and which defaults to `acknowledgements.json` in the registry
+  directory; its absence is not an error. Source: `tool/cmd/cairn/ack.go:17-36`,
+  `tool/cmd/cairn/health.go:58`, `tool/cmd/cairn/root.go:235`. [verified]
+- An exit code is decided in exactly two ways, which cannot disagree: a run that produced reports
+  folds site verdicts, listing errors, and the expected site count; a run that produced no report
+  carries a typed error, and everything but a coded error reports `UNKNOWN`. A cancelled run, a
+  usage error, and a tool fault all say the same thing to a routine. Source:
+  `tool/cmd/cairn/main.go:133-167`, `tool/internal/spine/exit.go:147-167`. [verified]
+- `cairn auth check` is the one command carrying its own typed verdict, because it settles
+  provider states and holds no site verdicts. `cairn auth probe` is a hidden alias of it, kept
+  reachable for a script that already types the earlier name. Source:
+  `tool/cmd/cairn/main.go:133-141`, `tool/cmd/cairn/probe_token.go:20-29`. [verified]
+- A usage error exits 3 with byte-empty stdout, and its message goes to stderr, so stdout carries
+  payloads alone. Source: `tool/cmd/cairn/main.go:153-167`, test
+  `tool/cmd/cairn/usage_test.go:133-146`. [verified]
+- `--json` beats `--quiet`: the payload always prints, so empty stdout under `--json` means the
+  invocation was wrong rather than that the site is healthy. Source:
+  `tool/cmd/cairn/health_sweep.go:49-53`, `tool/cmd/cairn/doctor.go:88-97`. [verified]
+- A `--color` value outside auto, always, and never, a `--theme` value outside dark and light, and
+  an explicit `--width` outside its bounds are each usage errors. `--theme` has no auto: querying
+  a terminal for its background is a write-then-read the tool refuses, so the value is the one the
+  operator states, and dark when they state none. Source: `tool/cmd/cairn/root.go:37-53,98-115`.
+  [verified]
+- `--help` and `--version` exit 0, which is cobra's own behaviour rather than a cairn override;
+  cairn registers the `-V` shorthand explicitly before cobra would add an unshorthanded one.
+  Source: `tool/cmd/cairn/root.go:213-226`. [verified]
+- `cairn health <site>` takes the site as a positional operand, not a flag. Source:
+  `tool/cmd/cairn/health.go:44`. [verified]
+- Three nested bounds govern a run's duration: every provider request is capped at 15 seconds,
+  each check makes at most a published number of requests, and `--timeout` bounds the whole
+  command with a 480-second default. Source: `tool/internal/providers/transport.go:12-16`,
+  exported for the budget arithmetic at `tool/internal/providers/probe.go:31-35`, and
+  `tool/cmd/cairn/root.go:29-35`. [verified]
+- The per-check request counts live on the published page and in no Go table; a drift test reads
+  them back off the page, requires exactly the ids the sweep runs, and fails when the total times
+  the 15-second cap exceeds the single-site budget. Source:
+  `tool/cmd/cairn/usage_test.go:507-564`. [verified]
+- The nine published counts are `creds` 2, `serving` 6, `delegation` 2, `https-forced` 1, `email`
+  9, `deploy` 4, `publish-path` 2, `engine` 4, and `errors` 1, totalling 31, which at 15 seconds
+  each is 465 seconds and is what the 480-second default rounds up from. Source:
+  `tool/cmd/cairn/usage_test.go:507-527` reads and enforces these values. [candidate: no Go table
+  declares the nine counts, so the values themselves trace only to the page the drift test reads]
+- A multi-site sweep's default whole-run budget is the single-site budget times the site count,
+  capped at four times the single-site default, and each site gets the envelope's remaining time
+  divided by the sites still to run, never more than the per-site budget, recomputed after each
+  site settles. An explicit `--timeout` replaces the whole-run budget and the division works the
+  same inside it. Source: `tool/cmd/cairn/health_sweep.go:20-26,215-253`. [verified]
+- The formula the page publishes is pinned by a test that builds it from the two constants, so the
+  worked examples stay arithmetic rather than assertion. Source:
+  `tool/cmd/cairn/usage_test.go:566-576`. [verified]
+- A budget miss or a signal stops a sweep after the site already in flight settles; every site
+  still to come is counted toward the run's exit code as `UNKNOWN`, and under `--json` it is
+  omitted from the stream rather than emitted empty, since a plain-text line would corrupt the
+  newline-delimited JSON. Source: `tool/cmd/cairn/health_sweep.go:28-36`,
+  `tool/internal/render/json.go:369-371`. [verified]
+- A site cut short partway reports each unfinished check unknown with `reason.not-run`. Source:
+  `tool/internal/health/health.go:151,173`, `tool/internal/spine/outcome.go:64`. [verified]
+- A timeout is a ceiling and not a wait: a healthy site answers in a few seconds, and the earlier
+  120-second default was a budget one site could not finish inside, which made a run against a
+  stalled provider report `UNKNOWN` rather than the fault it was measuring. Source:
+  `tool/cmd/cairn/root.go:29-35`. [verified]
+- No shell profile reaches a scheduled run, so the three credential variables come from the
+  scheduler's own environment or from the OS keyring `cairn auth set` writes: `CAIRN_CF_ACCOUNT_ID`,
+  `CAIRN_CF_READ_TOKEN`, and `CAIRN_GH_READ_TOKEN`. The environment provider is tried before every
+  other provider in the chain. Source: `tool/cmd/cairn/env.go:36-38,199-212`,
+  `tool/cmd/cairn/auth.go:145`. [verified]
+
+## docs/reference/cli-cairn-json-output.md
+
+Filed by pass A task 4 from the mining of `tool/docs/reference/json-output.md`, every bullet
+re-sourced to Go on this tree rather than to the page.
+
+- Under `--json`, stdout carries the payload and stderr carries diagnostics; the two are never
+  merged. The payload prints even under `--quiet`, and a usage error writes nothing to stdout and
+  exits 3. Source: `tool/cmd/cairn/root.go:231,236`, `tool/cmd/cairn/health_sweep.go:49-53`,
+  `tool/cmd/cairn/main.go:153-167`. [verified]
+- Seven payload kinds are published, each declaring its own `kind` so a consumer reading a mixed
+  stream keys off a field rather than off the shape it sees: `site`, `summary`, `sites`, `logs`,
+  `adoptCandidates`, `authCheck`, and `doctor`. Source: `tool/internal/render/json.go:41-50`,
+  `tool/internal/doctor/json.go:11-13`. [verified]
+- Each kind carries its own schema version rather than one number across all seven, so a field
+  added to one payload does not make every other consumer re-read a schema. All seven stand at 1.
+  Source: `tool/internal/render/json.go:14-39`. [verified]
+- Every payload carries `schemaVersion`, `kind`, and `verdict` at top level, and every payload but
+  a per-site NDJSON line carries `exitCode`. Source: `tool/internal/render/json.go:55-70,116-126,
+  130-137,149-159,172-179`, `tool/internal/doctor/json.go:28-38`. [verified]
+- Bare `cairn health --json` writes newline-delimited JSON: one `site` object per site, flushed as
+  that site settles, each being the single-site payload less its `exitCode`, then one `summary`
+  line carrying the run's own `exitCode`. Source: `tool/cmd/cairn/health_json.go:16-69`,
+  `tool/internal/render/json.go:61-64,216-229`. [verified]
+- A stream carrying no summary line reads `UNKNOWN`, since a truncated stream and a complete one
+  are otherwise indistinguishable. Source: `tool/internal/render/json.go:114-116`,
+  `tool/cmd/cairn/health_json.go:51-53`. [verified]
+- A site the run's budget or a signal cut short is counted into the summary's `counts` as
+  `UNKNOWN` with no line of its own; `sites` is how many the run was meant to cover, which exceeds
+  the number of lines written. Source: `tool/internal/render/json.go:350-352,369-371`. [verified]
+- The check-level state vocabulary is a closed set of five wire words, computed at the boundary
+  rather than marshalled off the internal three-value state: `pass`, `fail`, `held`, `skip`, and
+  `unknown`. `held` is not a state at all but a failing check an unexpired hold covers, and the
+  division between `skip` and `unknown` is carried by the outcome's reason. Source:
+  `tool/internal/spine/exit.go:202-216`, `tool/internal/render/json.go:264-271`. [verified]
+- A check's `fix` object carries `summary`, `actor`, and `outward` always, `url` where the
+  condition has one, and `command` only for an operator's own fix, since that is the one actor
+  whose action is a command line the tool can name. Source:
+  `tool/internal/render/json.go:99-106,317-339`. [verified]
+- A check's `hold` object carries `until` and `expired`; an expired hold is reported rather than
+  dropped, and it arrives at the exit arithmetic as unacknowledged. Source:
+  `tool/internal/render/json.go:108-112,288-290`, `tool/internal/spine/exit.go:89-92`. [verified]
+- A check's measured values are split by where they came from: `fields` holds what cairn derived
+  itself and `observed` holds what was copied from a provider's response, each value beside the
+  `source` it was copied from. The boundary reads each field's declared source and infers nothing
+  from a key name or a value's shape. Source: `tool/internal/render/json.go:82-97,294-315`,
+  `tool/internal/spine/outcome.go:144-178`. [verified]
+- The `errors` check reports `errorCount` always and `errorCountTruncated` only when the fetch
+  filled its own page limit, which makes the count a floor rather than a total; the truncation key
+  is absent on an exact count. `topEvents` is verbose-only and marked as copied from Cloudflare.
+  Source: `tool/internal/health/check_errors.go:31-57`. [verified]
+- The sites listing carries one entry per registered site with `id`, `name`, `domain`, and `step`,
+  plus a top-level `errors` array naming every registry read the listing could not complete, which
+  is also what carried the verdict away from `OK`. Source:
+  `tool/internal/render/json.go:128-146,391-405`, `tool/cmd/cairn/sites.go:143`. [verified]
+- The logs payload carries `site`, `containsPersonalData`, and `entries`, each entry being `at`,
+  `level`, `event`, and the event's own `fields`. Under `--json` stderr is silent, so the
+  personal-data notice a plain run prints travels in the payload or it reaches nobody. Source:
+  `tool/internal/render/json.go:148-169,407-431`, `tool/cmd/cairn/logs.go:70-74`,
+  `tool/cmd/cairn/messages.go:152`. [verified]
+- An adopt candidate carries `worker`, `repo`, `zone`, `domain`, `accountId`, `connected`,
+  `adopted`, and `adoptable`. `adoptable` is true only where the Worker serves a Custom Domain,
+  since cairn provisions Workers Custom Domains and never Workers Routes, and it was added as an
+  optional field within schema version 1 so a reader written before it still reads every
+  candidate. Source: `tool/internal/render/json.go:181-195`, `tool/cmd/cairn/adopt.go:98`.
+  [verified]
+- The reason vocabulary is closed and built from three sets rather than written out, so a code
+  added to any of them joins the published vocabulary with no second list to keep in step: nine
+  fixed codes, one `reason.park.<code>` per park code, and one `reason.api.<reason>` per provider
+  reason, 32 in all. Source: `tool/internal/spine/outcome.go:56-76,95-119`,
+  `tool/internal/spine/park.go:13-25,45-47`, `tool/internal/providers/errors.go:17-58`.
+  [verified]
+- `reason.api.request-rejected` names cairn's own outgoing request being wrong, an HTTP 400 no
+  operator can fix, and is kept out of the catch-all for that reason. A rate limit never answers
+  failing either: the tool being throttled is not the site being broken. Source:
+  `tool/internal/providers/errors.go:32-37`, `tool/internal/spine/outcome.go:121-142`. [verified]
+- The condition ids a payload can carry are ported from the engine's own registry and are the same
+  vocabulary the engine emits. Source: `tool/internal/spine/condition.go:19-45`. [verified]
+- On the wire a site's `checks` sort by id and `acknowledged` sorts alphabetically, so two runs of
+  an unchanged site diff cleanly; the severity ranking belongs to the text bodies, not to the
+  payload. Source: `tool/internal/render/json.go:232-244`. [verified]
+- Every timestamp on the wire is RFC 3339 in UTC, and the zero time writes an empty string;
+  nothing on the wire is relative. Source: `tool/internal/render/json.go:501-508`. [verified]
+- `cairn doctor --json` writes its own kind rather than a site payload with different checks: a
+  directory run has no registry record, no credential tier, and no acknowledgements, so `site`,
+  `domain`, `tier`, `acknowledged`, and `hold` have nothing to hold. Its `dir` is the resolved,
+  symlink-free directory and never the argument as typed, and a non-site directory writes an empty
+  `checks` array rather than null. Source: `tool/internal/doctor/json.go:25-38,65-98`. [verified]
+- The doctor payload writes only the frozen state words and adds none of its own: an info result
+  is written `state: "pass"` with a `note` and no `detail`, a skip is written `state: "skip"` with
+  `reason: "reason.not-run"`, and an unchecked result is written `state: "unknown"` with
+  `reason: "reason.not-observable"`. `held` is never written, since a directory preflight has no
+  hold concept. Source: `tool/internal/doctor/json.go:15-23,44-55,100-129`. [verified]
+- A doctor check's `fix` carries only `summary` and `url`, with no actor and no outward flag,
+  since every doctor failure is fixed by the developer editing a checked-in file. Source:
+  `tool/internal/doctor/json.go:57-63`. [verified]
+- `cairn auth check`'s payload is the one kind with no golden fixture; its shape is one row per
+  permission, each carrying `label`, `credential`, `state`, and a `reason` beside anything other
+  than a pass, and a row never reads `held`. Source: `tool/internal/render/json.go:448-499`.
+  [verified]
+- A drift test holds the published `--json` page to the contract: it requires the heading
+  `## What freezes at 1.0` before `## What does not freeze`, every golden key in backticks, every
+  health and doctor check id, the four verdict words, the five state words, and every reason code,
+  and it requires `durationMs` and the glyph set to sit in the not-frozen section. Source:
+  `tool/internal/render/json_schema_test.go:502-564`. [verified]
+- `durationMs` is wall time and is excluded from any diff by design, since two runs of an
+  unchanged site differ in it. Source: `tool/internal/render/json.go:209-211`. [verified]
+- The credential variables resolve environment first, then every other provider in the chain, and
+  the password prompt falls back to reading one piped line when stdin carries no terminal state,
+  so a scripted `cairn auth set` does not hang. Source: `tool/cmd/cairn/env.go:36-38,199-212`,
+  `tool/cmd/cairn/auth.go:73-109`. [verified]
+
 ## docs/reference/cli-cairn-manifest.md
 
 - `cairn-manifest` reuses the `cairnManifest()` Vite plugin's own options (globs, config module,
@@ -713,6 +1016,29 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   the model, and the outcome. Source: `src/lib/sveltekit/content-routes-dictionary.ts:131,140,146`
   (`editor`, `wordCount`, `retried`) and `content-routes-tidy.ts:195-252` (every `tidy.*` call
   logs only `editor`, `model`, `reason`/`tokens`, never body text or a key). [verified]
+
+Filed by pass A task 4, for the tool-side section task 7 folds into this page.
+
+- The Go `cairn` tool carries its own copy of the engine's event-name list, for `--event`
+  completion only. It is a literal Go slice rather than a value generated from the TypeScript
+  source, because a `go install` build reaches no `src/lib` tree at all. Source:
+  `tool/internal/logs/events.go:3-7,92`. [verified]
+- A test keeps that copy in step with `src/lib/log/events.ts`, reading the union through
+  `providers.RepoRoot()` and failing when the two sets differ, so an event the engine adds fails
+  the tool's gate rather than drifting silently. Source:
+  `tool/internal/logs/events_test.go:33-58`. [verified]
+- `cairn logs` does nothing to a record: it prints what the endpoint returned and never rewrites,
+  truncates, or reinterprets a field's value. Source: `tool/internal/render/json.go:407-431`.
+  [verified]
+- A plain `cairn logs` run prints an unconditional stderr notice that its output carries
+  identifiers and is not safe to paste in public; under `--json` stderr carries nothing but an
+  error, so the same notice travels as the payload's own `containsPersonalData` field. Source:
+  `tool/cmd/cairn/messages.go:152`, `tool/cmd/cairn/logs.go:70-74`,
+  `tool/internal/render/json.go:155-157`. [verified]
+- `cairn health --since` and `cairn logs --since` share one grammar, a positive integer followed
+  by `m`, `h`, or `d`, which is Go's duration parsing narrowed rather than widened. A bare
+  integer, a negative value, a zero, a float, and any other unit each fail naming the grammar.
+  Source: `tool/internal/logs/logs.go:88-97`, `tool/cmd/cairn/logs.go:44,66`. [verified]
 
 ## docs/reference/media.md
 

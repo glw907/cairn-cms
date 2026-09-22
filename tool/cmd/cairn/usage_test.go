@@ -509,7 +509,7 @@ func readRegistryBytes(t *testing.T, dir string) string {
 // so the page an operator sizes a scheduler against and the budget the tool ships cannot drift.
 func requestsPerCheck(t *testing.T) map[string]int {
 	t.Helper()
-	body := readToolFile(t, "docs/reference/exit-codes.md")
+	body := readRepoFile(t, exitCodesPage)
 	row := regexp.MustCompile(`(?m)^\| ` + "`" + `([a-z-]+)` + "`" + ` \| (\d+) \|`)
 
 	counts := map[string]int{}
@@ -521,7 +521,7 @@ func requestsPerCheck(t *testing.T) map[string]int {
 		counts[m[1]] = n
 	}
 	if len(counts) == 0 {
-		t.Fatal("docs/reference/exit-codes.md publishes no per-check request counts")
+		t.Fatalf("%s publishes no per-check request counts", exitCodesPage)
 	}
 	return counts
 }
@@ -546,14 +546,14 @@ func TestTheSingleSiteBudgetFitsTheRequestArithmetic(t *testing.T) {
 	for _, id := range healthCheckIDs() {
 		n, ok := counts[id]
 		if !ok {
-			t.Errorf("docs/reference/exit-codes.md publishes no request count for the %s check", id)
+			t.Errorf("%s publishes no request count for the %s check", exitCodesPage, id)
 			continue
 		}
 		total += n
 	}
 	for id := range counts {
 		if !strings.Contains(strings.Join(healthCheckIDs(), " "), id) {
-			t.Errorf("docs/reference/exit-codes.md publishes a count for %q, which is not a check the sweep runs", id)
+			t.Errorf("%s publishes a count for %q, which is not a check the sweep runs", exitCodesPage, id)
 		}
 	}
 
@@ -563,15 +563,16 @@ func TestTheSingleSiteBudgetFitsTheRequestArithmetic(t *testing.T) {
 	}
 }
 
-// TestTheSweepCapIsThePublishedOne pins the two numbers the multi-site formula in exit-codes.md
-// is written from, so the worked examples on that page stay arithmetic rather than assertion.
+// TestTheSweepCapIsThePublishedOne pins the two numbers the multi-site formula on the
+// exit-codes page is written from, so the worked examples on that page stay arithmetic rather
+// than assertion.
 func TestTheSweepCapIsThePublishedOne(t *testing.T) {
-	body := readToolFile(t, "docs/reference/exit-codes.md")
+	body := readRepoFile(t, exitCodesPage)
 
 	formula := "min(" + strconv.Itoa(int(defaultTimeout.Seconds())) + " seconds x sites, " +
 		strconv.Itoa(int(maxSweepTimeout.Seconds())) + " seconds)"
 	if !strings.Contains(body, formula) {
-		t.Errorf("exit-codes.md does not carry the formula %q", formula)
+		t.Errorf("%s does not carry the formula %q", exitCodesPage, formula)
 	}
 }
 

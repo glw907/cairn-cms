@@ -40,8 +40,10 @@ func schemaDir(t *testing.T) string {
 	return filepath.Join(root, schemaDirName)
 }
 
-// docPath is the reference page every published key and both freeze lists are stated on.
-const docPath = "../../docs/reference/json-output.md"
+// docPathName is the reference page every published key and both freeze lists are stated on,
+// relative to the repository root. It sits in the engine's own reference arm, beside the
+// schemas it describes, so the npm tarball carries both.
+const docPathName = "docs/reference/cli-cairn-json-output.md"
 
 // jsonGoldenCase is one committed payload file, the schema it must validate against, and the
 // bytes it holds.
@@ -144,7 +146,7 @@ func jsonGoldens(t *testing.T) []jsonGoldenCase {
 // HTTP, and this package's contract is purity with its direct requires pinned by name, so it
 // never imports that package outside a test. internal/doctor's own TestGoldenDoctorPayload cuts
 // the file from the real checks; the cases here hold it to the published schema and to
-// json-output.md.
+// cli-cairn-json-output.md.
 const doctorGoldenFile = "doctor.json"
 
 // doctorGolden reads that payload as bytes.
@@ -509,7 +511,7 @@ func sameScalar(value, want any) bool {
 
 // dynamicKeyParents names the two objects whose keys are data rather than schema: a check's
 // derived fields and its copied ones are keyed by whatever the producing check measured, so
-// their children are not published field names and json-output.md does not list them.
+// their children are not published field names and cli-cairn-json-output.md does not list them.
 var dynamicKeyParents = []string{"fields", "observed"}
 
 // TestDocNamesEveryFieldTheGoldensCarry asserts the reference page and the committed corpus
@@ -528,7 +530,7 @@ func TestDocNamesEveryFieldTheGoldensCarry(t *testing.T) {
 	}
 	for key := range seen {
 		if !strings.Contains(doc, "`"+key+"`") {
-			t.Errorf("json-output.md does not name the key %q the goldens carry", key)
+			t.Errorf("cli-cairn-json-output.md does not name the key %q the goldens carry", key)
 		}
 	}
 }
@@ -567,7 +569,7 @@ func TestDocCarriesBothFreezeLists(t *testing.T) {
 	frozen, notFrozen := "## What freezes at 1.0", "## What does not freeze"
 	for _, heading := range []string{frozen, notFrozen} {
 		if !strings.Contains(doc, heading) {
-			t.Fatalf("json-output.md carries no %q section", heading)
+			t.Fatalf("cli-cairn-json-output.md carries no %q section", heading)
 		}
 	}
 	frozenSection := doc[strings.Index(doc, frozen):strings.Index(doc, notFrozen)]
@@ -602,15 +604,20 @@ func TestDocPublishesTheWholeReasonVocabulary(t *testing.T) {
 	doc := readDoc(t)
 	for _, reason := range spine.ReasonCodes() {
 		if !strings.Contains(doc, "`"+string(reason)+"`") {
-			t.Errorf("json-output.md does not publish the reason %q", reason)
+			t.Errorf("cli-cairn-json-output.md does not publish the reason %q", reason)
 		}
 	}
 }
 
-// readDoc reads the reference page.
+// readDoc reads the reference page, resolving it through providers.RepoRoot the same way
+// schemaDir resolves the schemas rather than climbing out of this package.
 func readDoc(t *testing.T) string {
 	t.Helper()
-	data, err := os.ReadFile(docPath)
+	root, err := providers.RepoRoot()
+	if err != nil {
+		t.Fatalf("providers.RepoRoot: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(docPathName)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -618,9 +625,9 @@ func readDoc(t *testing.T) string {
 }
 
 // TestSkipAndUnknownRequireAReason covers the conditional the health schema gained on
-// 2026-09-21 and the doctor schema was written with: json-output.md promises every skip and
-// every unknown carries a reason, and "required" alone cannot say so, because it applies to
-// every state. Both halves are asserted against both schemas, since a validator that ignored
+// 2026-09-21 and the doctor schema was written with: cli-cairn-json-output.md promises every
+// skip and every unknown carries a reason, and "required" alone cannot say so, because it
+// applies to every state. Both halves are asserted against both schemas, since a validator that ignored
 // the conditional would pass the whole golden corpus silently.
 //
 // The doctor payload rides this test rather than a sibling of its own: the rule is one promise

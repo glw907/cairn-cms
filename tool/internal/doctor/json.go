@@ -13,7 +13,7 @@ import (
 const kindDoctor = "doctor"
 
 // The wire state words this payload writes. They are five of the frozen vocabulary
-// tool/docs/reference/json-output.md publishes, and the doctor adds none of its own: its own
+// docs/reference/cli-cairn-json-output.md publishes, and the doctor adds none of its own: its own
 // info status has no wire word, and is written as a pass carrying a note.
 const (
 	stateWordPass    = "pass"

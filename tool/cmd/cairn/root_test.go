@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
+	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 	"github.com/glw907/cairn-cms/tool/internal/store"
@@ -149,10 +150,37 @@ func toolGoFiles(t *testing.T) []string {
 	return files
 }
 
-// readToolFile reads one module-relative path the walk returned.
+// repoRoot resolves the repository root, so a test reads a file by its path from there rather
+// than by climbing out of this package with a relative one. The pages cmd/cairn is held to now
+// live in the engine's own reference arm, outside this module, which no fixed climb reaches.
+func repoRoot(t *testing.T) string {
+	t.Helper()
+	root, err := providers.RepoRoot()
+	if err != nil {
+		t.Fatalf("providers.RepoRoot: %v", err)
+	}
+	return root
+}
+
+// readToolFile reads one path relative to this module's own root, the form the walk above
+// returns.
 func readToolFile(t *testing.T, rel string) string {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join("..", "..", filepath.FromSlash(rel)))
+	return readFileAt(t, filepath.Join(repoRoot(t), "tool", filepath.FromSlash(rel)), rel)
+}
+
+// readRepoFile reads one path relative to the repository root, the form a published page under
+// docs/ carries.
+func readRepoFile(t *testing.T, rel string) string {
+	t.Helper()
+	return readFileAt(t, filepath.Join(repoRoot(t), filepath.FromSlash(rel)), rel)
+}
+
+// readFileAt reads path, naming rel rather than the absolute path in its failure, since rel is
+// what a reader greps for.
+func readFileAt(t *testing.T, path, rel string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read %s: %v", rel, err)
 	}

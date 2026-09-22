@@ -8,14 +8,14 @@
   configuration: eleven checks over the wrangler config, the lockfile, the hooks file, the
   `/admin` routes, and the site config, with no credential, no adopted site, and one request.
   `cairn doctor --json` writes the seventh published payload,
-  `docs/reference/cairn-doctor.schema.json`, at `schemaVersion` 1. The command's page is
+  `docs/reference/schema/cairn-doctor.schema.json`, at `schemaVersion` 1. The command's page is
   `docs/reference/cli-cairn-doctor.md`.
 
 ### Changed
 
-- **A published check-id list is no longer frozen against additions.** `docs/reference/json-output.md`
-  froze every check id outright at 1.0. Adding an id to a published list is now a minor-version
-  event, and only renaming or removing one is major.
+- **A published check-id list is no longer frozen against additions.**
+  `docs/reference/cli-cairn-json-output.md` froze every check id outright at 1.0. Adding an id to
+  a published list is now a minor-version event, and only renaming or removing one is major.
 
   `Consumers must:` treat the check-id lists on that page as open to growth. A reader that
   rejects an id it does not know, rather than ignoring it, needs changing before the next minor.

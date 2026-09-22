@@ -111,9 +111,9 @@ Icinga, Sensu, and most alerting tools already read):
 | 2 | `CRITICAL` | A fault the operator is paged for. |
 | 3 | `UNKNOWN` | The run could not observe the site. |
 
-[The exit-code contract](docs/reference/exit-codes.md) states the precedence rule across many
-checks and many sites, what changes a code, and the timeout arithmetic you size a scheduler's cap
-against.
+[The exit-code contract](https://cairn.pub/docs/reference/cli-cairn-exit-codes) states the
+precedence rule across many checks and many sites, what changes a code, and the timeout
+arithmetic you size a scheduler's cap against.
 
 ## Running it unattended
 

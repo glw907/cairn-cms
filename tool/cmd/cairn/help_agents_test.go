@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -10,8 +11,10 @@ import (
 // raised from 40 to 44 for the five-word check-result vocabulary and the sentence dividing skip
 // from unknown, which an agent cannot read the state field without, and from 44 to 50 for cairn
 // doctor's own paragraph: what it checks, that it needs no credential and no adopted site, and
-// which exit-3 cases it adds to the ones cairn health already states.
-const agentsPageLineBound = 50
+// which exit-3 cases it adds to the ones cairn health already states. It was raised from 50 to
+// 55 for the three published addresses the page now ends with, which are what an agent follows
+// when this summary is not enough and the machine holds no cairn-cms checkout.
+const agentsPageLineBound = 55
 
 // TestHelpAgentsIsReachableAndExitsZero covers the surface itself: the topic resolves, it is not
 // hidden from `cairn --help`, and reaching it is a success.
@@ -100,20 +103,29 @@ func TestHelpAgentsStatesEveryPartOfTheContract(t *testing.T) {
 	}
 }
 
-// TestHelpAgentsCitesNoRepositoryDirectory keeps the page's schema citation durable. Every
-// released binary carries this text for the life of its tag, and a directory inside the
-// cairn-cms repository can be moved by any later docs pass, so the page names each schema's own
-// published $id URL and never a path in the repository.
+// TestHelpAgentsCitesNoRepositoryDirectory keeps the page's citations durable. Every released
+// binary carries this text for the life of its tag, and a directory inside the cairn-cms
+// repository can be moved by any later docs pass, so the page names each schema's own published
+// $id URL and each page's own published address, never a path in the repository.
+//
+// The published addresses contain "docs/reference" as a URL path segment, so the assertion
+// removes every cairn.pub address first and then looks for what is left: a bare repository
+// directory an agent would try to open on a machine that holds no checkout.
 func TestHelpAgentsCitesNoRepositoryDirectory(t *testing.T) {
 	d, _ := testDeps(t)
 	out, _, err := execTree(t, d, "help", "agents")
 	if err != nil {
 		t.Fatalf("cairn help agents: %v", err)
 	}
-	if strings.Contains(out, "docs/reference") {
-		t.Errorf("the page cites a repository directory for the schemas:\n%s", out)
+	bare := publishedURL.ReplaceAllString(out, "")
+	if strings.Contains(bare, "docs/reference") {
+		t.Errorf("the page cites a repository directory:\n%s", out)
 	}
 }
+
+// publishedURL matches one address under cairn.pub, the only form in which this page may name a
+// documentation path.
+var publishedURL = regexp.MustCompile(`https://cairn\.pub/\S+`)
 
 // TestHealthHelpCarriesTheExitCodeBlock covers the agent that reached only `cairn health --help`:
 // it still meets the codes it has to read, and is told where the rest of the contract is.

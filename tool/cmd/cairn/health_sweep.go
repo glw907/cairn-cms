@@ -22,7 +22,7 @@ import (
 // is the relationship that keeps the two numbers coherent: a registry of up to four sites, the
 // size the tool is built for, never reaches the cap at all, and a larger one shares this budget
 // by siteBudget's fair share rather than letting the sites at the top of the list spend it.
-// tool/docs/reference/exit-codes.md publishes both numbers.
+// docs/reference/cli-cairn-exit-codes.md publishes both numbers.
 const maxSweepTimeout = 4 * defaultTimeout
 
 // runHealthSweep runs health.Run over every registered site, in store.List order, printing each

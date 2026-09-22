@@ -627,8 +627,8 @@ func readDoc(t *testing.T) string {
 // TestSkipAndUnknownRequireAReason covers the conditional the health schema gained on
 // 2026-09-21 and the doctor schema was written with: cli-cairn-json-output.md promises every
 // skip and every unknown carries a reason, and "required" alone cannot say so, because it
-// applies to every state. Both halves are asserted against both schemas, since a validator that ignored
-// the conditional would pass the whole golden corpus silently.
+// applies to every state. Both halves are asserted against both schemas, since a validator
+// that ignored the conditional would pass the whole golden corpus silently.
 //
 // The doctor payload rides this test rather than a sibling of its own: the rule is one promise
 // the page makes about every published check, so a second copy would be the place the two

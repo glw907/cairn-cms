@@ -13,9 +13,9 @@ import (
 // Cloudflare and GitHub App chain) left out. It is a literal slice, never populated by init(),
 // the same shape health.All uses.
 //
-// It is also the published check-id list: the tests that hold docs/reference/cli-cairn-json-output.md
-// and docs/reference/cli-cairn-doctor.md to every id read it here rather than retyping the
-// eleven.
+// It is also the published check-id list: the tests that hold
+// docs/reference/cli-cairn-json-output.md and docs/reference/cli-cairn-doctor.md to every id
+// read it here rather than retyping the eleven.
 var checks = []Check{
 	ConfigBindings,
 	ConfigMediaBucket,
@@ -64,9 +64,9 @@ func Results(checked []CheckedResult) []Result {
 }
 
 // docsBaseAdmin is the admin docs directory a failure's docs URL resolves against, the same
-// shape internal/render/layout.go's own docsBase carries for the health report. It is not shared
-// with render: a doctor-to-render import would invert render's own dependency direction for one
-// string, so the constant is duplicated here instead.
+// shape internal/render/layout.go's own fixAnchorBase carries for the health report. It is not
+// shared with render: a doctor-to-render import would invert render's own dependency direction
+// for one string, so the constant is duplicated here instead.
 const docsBaseAdmin = "https://cairn.pub/docs/admin/"
 
 // docsURL builds a failure's docs URL from anchor, a condition's own docsAnchor field shaped

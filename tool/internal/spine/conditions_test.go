@@ -86,10 +86,10 @@ func TestDiffIDSets(t *testing.T) {
 // src/lib/diagnostics/conditions.ts. The mirror now carries the text, so the comparison is embed
 // against constant, not constant against a second repository's source.
 //
-// A failure here is a decision for a human, never an automatic follow. Condition ids are frozen
-// in the tool's own copy and published in docs/reference/cli-cairn-json-output.md, so renaming one
-// here to match the engine breaks every agent reading that contract. Renaming the id is a
-// major-version event carrying a "Consumers must:" line; adding one is not.
+// A failure here is a decision for a human, never an automatic follow. Condition ids are
+// frozen in the tool's own copy and published in docs/reference/cli-cairn-json-output.md, so
+// renaming one here to match the engine breaks every agent reading that contract. Renaming the
+// id is a major-version event carrying a "Consumers must:" line; adding one is not.
 func TestConditionsMatchEmbeddedMirror(t *testing.T) {
 	var constantIDs []string
 	for _, c := range Conditions() {

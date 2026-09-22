@@ -26,8 +26,8 @@ const (
 // It is sized so a single site can always finish inside it: the nine checks make at most
 // thirty-one requests between them, each bounded at 15 seconds, which is 465 seconds in the worst
 // case where every one runs to its own timeout. The per-check counts are published in
-// docs/reference/cli-cairn-exit-codes.md, and TestTheSingleSiteBudgetFitsTheRequestArithmetic reads
-// them from that page so the doc and this constant cannot drift.
+// docs/reference/cli-cairn-exit-codes.md, and TestTheSingleSiteBudgetFitsTheRequestArithmetic
+// reads them from that page so the doc and this constant cannot drift.
 //
 // A timeout is a ceiling and not a wait: a healthy site still answers in a few seconds. The
 // earlier 120-second default was a budget one site could not finish inside, so a run against a

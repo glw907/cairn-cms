@@ -358,14 +358,14 @@ func TestConditionIDPlacementByBand(t *testing.T) {
 	cond := string(spine.ConditionEdgeHTTPSNotForced)
 	for _, width := range []int{100, 120, 200} {
 		line := lineCarrying(t, width, cond)
-		if !strings.Contains(line, docsBase) {
+		if !strings.Contains(line, fixAnchorBase) {
 			t.Errorf("width %d: the id sits on %q, want the fix block's URL line", width, line)
 		}
 	}
 	const detail = "Always Use HTTPS is off for the zone"
 	for _, width := range []int{60, 80} {
 		line := lineCarrying(t, width, cond)
-		if strings.Contains(line, docsBase) {
+		if strings.Contains(line, fixAnchorBase) {
 			t.Errorf("width %d: the id sits on the URL line %q, want the detail line", width, line)
 		}
 		carrier := strings.TrimSpace(strings.TrimSuffix(line, "  "+cond))

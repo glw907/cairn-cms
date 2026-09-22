@@ -249,7 +249,7 @@ var exportedSurface = []string{
 // unchanged. Style and Sized are the only two ways out of palette.go, and every other entry is
 // one of them constrained.
 var exportedThemeMethods = []string{
-	"Clamp", "Link", "Rule", "Sized", "SizedLink", "SizedStrong", "Strong", "Style", "Width",
+	"Clamp", "Link", "Rule", "Sized", "SizedLink", "SizedStrong", "Strong", "Style", "Width", "Wrap",
 }
 
 // TestExportedSurfaceIsPinned falsifies criterion 16: the package's exported surface is exactly

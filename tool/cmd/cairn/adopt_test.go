@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/glw907/cairn-cms/tool/internal/render"
 )
@@ -84,6 +86,33 @@ func TestAdoptListPrintsCandidatesAsJSONAndWritesNothing(t *testing.T) {
 	}
 	if entries := readDirNames(t, dir); len(entries) != 0 {
 		t.Errorf("adopt list wrote %v into the registry; the listing path writes nothing", entries)
+	}
+}
+
+// TestAdoptListWrapsItsNoticesToTheWidth covers the width-aware rule on a command's own stderr.
+// Both notices adopt list prints are prose, and the route-only one is long enough to run past a
+// hundred columns, which left a terminal to fold it and drop two words onto a line of their own.
+// The whole notice still reaches the operator at every width.
+func TestAdoptListWrapsItsNoticesToTheWidth(t *testing.T) {
+	for _, width := range []int{60, 80, 100} {
+		d := credentialedDeps(t)
+		d.transport = adoptRoutes("ecxc-ski")
+
+		_, stderr, err := execTree(t, d, "adopt", "list", "--width", strconv.Itoa(width))
+		if err != nil {
+			t.Fatalf("width %d: adopt list: %v", width, err)
+		}
+		for _, line := range strings.Split(strings.TrimRight(stderr, "\n"), "\n") {
+			if n := utf8.RuneCountInString(line); n > width {
+				t.Errorf("width %d: the notice line %q is %d cells", width, line, n)
+			}
+		}
+		flat := strings.Join(strings.Fields(stderr), " ")
+		for _, notice := range []string{pasteNotice, adoptListRouteOnlyNotice()} {
+			if want := strings.Join(strings.Fields(notice), " "); !strings.Contains(flat, want) {
+				t.Errorf("width %d: stderr %q does not carry %q whole", width, stderr, want)
+			}
+		}
 	}
 }
 

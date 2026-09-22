@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/logx"
+	"github.com/glw907/cairn-cms/tool/internal/render"
 	"github.com/glw907/cairn-cms/tool/internal/version"
 	"github.com/spf13/cobra"
 )
@@ -122,6 +123,33 @@ func (f rootFlags) deadline(ctx context.Context) (context.Context, context.Cance
 	return context.WithTimeout(ctx, f.timeout)
 }
 
+// writeNotice writes one operator-facing notice to stderr, wrapped to the width the command's
+// own output composes into: the operator's --width, the terminal's measured columns, or the
+// budget a frame takes when nothing measured one. A notice is prose, so a line left for the
+// terminal to fold breaks at whatever column its own edge falls on and leaves a stray word
+// under it; every line cairn prints is width-aware, and this is the writer the bodies use.
+//
+// A notice carrying its own line breaks keeps them: each line is wrapped on its own, so a
+// two-sentence notice does not reflow into one paragraph.
+func writeNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error {
+	width := rf.width
+	if width <= 0 {
+		width = detectTerminal(d, rf).Columns
+	}
+	if width <= 0 {
+		width = render.Width80
+	}
+	theme := render.NewTheme(rf.theme != themeLight, render.ProfileNoColor)
+	for _, paragraph := range strings.Split(notice, "\n") {
+		for _, line := range theme.Wrap(paragraph, width) {
+			if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // commandContext returns cmd's context, or a background context when the command was run
 // without one. Only a test builds a command that way; main always executes with a context.
 func commandContext(cmd *cobra.Command) context.Context {
@@ -173,7 +201,7 @@ func newRootCmd(d deps) *cobra.Command {
 				return err
 			}
 			if f.verbose && d.scrubSkipped > 0 {
-				_, _ = fmt.Fprintln(c.ErrOrStderr(), scrubSkippedNotice(d.scrubSkipped, logx.MinLength))
+				_ = writeNotice(c, d, f, scrubSkippedNotice(d.scrubSkipped, logx.MinLength))
 			}
 			return nil
 		},

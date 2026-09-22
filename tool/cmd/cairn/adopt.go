@@ -107,7 +107,7 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 	// Under --json stderr carries nothing but an error, so the notice travels as the payload's
 	// own containsPersonalData field instead of a line no agent reading stdout would see.
 	if !lf.asJSON {
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), pasteNotice); err != nil {
+		if err := writeNotice(cmd, d, rf, pasteNotice); err != nil {
 			return err
 		}
 	}
@@ -120,7 +120,7 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 		return err
 	}
 	if !lf.asJSON {
-		return writeAdoptListPlain(cmd, lines)
+		return writeAdoptListPlain(cmd, d, rf, lines)
 	}
 	data, err := render.MarshalAdoptList(lines)
 	if err != nil {
@@ -134,7 +134,7 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 // adopt, then a blank line, then the Workers with no Custom Domain. stdout stays records only,
 // one tab-separated line each, so a shell reading it keeps working; the blank line is the group
 // boundary and the notice explaining it goes to stderr, beside the paste notice already there.
-func writeAdoptListPlain(cmd *cobra.Command, lines []render.AdoptCandidate) error {
+func writeAdoptListPlain(cmd *cobra.Command, d deps, rf *rootFlags, lines []render.AdoptCandidate) error {
 	write := func(c render.AdoptCandidate) error {
 		_, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%s\n", c.Worker, c.Domain, c.Repo)
 		return err
@@ -152,7 +152,7 @@ func writeAdoptListPlain(cmd *cobra.Command, lines []render.AdoptCandidate) erro
 	if len(routeOnly) == 0 {
 		return nil
 	}
-	if _, err := fmt.Fprintln(cmd.ErrOrStderr(), adoptListRouteOnlyNotice()); err != nil {
+	if err := writeNotice(cmd, d, rf, adoptListRouteOnlyNotice()); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {

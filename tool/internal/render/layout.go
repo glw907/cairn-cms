@@ -350,6 +350,14 @@ func (t Theme) wrap(text string, width int) []string {
 	return out
 }
 
+// Wrap word-wraps text to width and returns the lines, the writer every body composes its own
+// prose with. A caller printing an operator-facing line outside a frame, a command's stderr
+// notice above all, reaches it here rather than leaving the terminal to fold the line wherever
+// its own edge falls.
+func (t Theme) Wrap(text string, width int) []string {
+	return t.wrap(text, content(width))
+}
+
 // wrapNoOrphan wraps text to width and then pulls one word down from the line above whenever the
 // last line is a single word, so a sentence never ends on a stray verb sitting alone. It gives
 // up where the line above has nothing to spare, which is the only shape where an orphan is the

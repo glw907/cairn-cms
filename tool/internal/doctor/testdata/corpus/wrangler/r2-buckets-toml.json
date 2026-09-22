@@ -1,0 +1,16 @@
+{
+  "name": "parses the r2_buckets binding names from toml",
+  "sourceTest": "src/tests/unit/doctor-checks-local.test.ts:162-166",
+  "files": {
+    "wrangler.toml": "[[r2_buckets]]\nbinding = \"MEDIA_BUCKET\"\nbucket_name = \"m\"\n\n[[r2_buckets]]\nbinding = \"OTHER\"\nbucket_name = \"o\"\n"
+  },
+  "found": true,
+  "facts": {
+    "hasEmailBinding": false,
+    "hasAuthDb": false,
+    "observabilityEnabled": false,
+    "hasPublicOrigin": false,
+    "publicOrigin": "",
+    "r2Buckets": ["MEDIA_BUCKET", "OTHER"]
+  }
+}

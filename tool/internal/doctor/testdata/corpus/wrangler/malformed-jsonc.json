@@ -1,0 +1,8 @@
+{
+  "name": "throws a clean error on malformed jsonc, echoing none of the content",
+  "sourceTest": "src/tests/unit/doctor-checks-local.test.ts:186-194",
+  "files": {
+    "wrangler.jsonc": "{ \"name\": \"site\", \"send_email\": [ { SECRET-LOOKING-GARBAGE"
+  },
+  "wantError": "wrangler.jsonc did not parse"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "neither wrangler file exists",
+  "sourceTest": "src/tests/unit/doctor-checks-local.test.ts:89-91",
+  "files": {},
+  "found": false
+}

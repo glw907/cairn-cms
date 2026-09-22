@@ -52,7 +52,7 @@ share `config.bindings-missing`.
 - `cairn-audit --rendered` counts differently on identical runs (133 then 116); stabilize first.
 - The heavy gate runs the component project serially (`--no-file-parallelism`); the parallel run stalls here.
 
-**retire-1 ledger (2026-09-22 00:35, segment 1 boundary):** on worktree `.claude/worktrees/doctor-go`, Tasks 1 to 3 are accepted and committed (`56803baa`..`5f3ee04f`; Tasks 1 and 3 each cleared one fix round). Segment 1 ran as `wf_b28a7d1b-a03`, 1.08M subagent tokens of the 2.4M ceiling; at this rate the ceiling is crossed inside segment 2, which continues under Geoff's overnight grant to the release (`retirement-to-release-grant` memory) with the overrun logged here and in the post-mortem. Next: segment 2, Tasks 4 to 7, same runner and args (`retire-1-args.compact.json` in the session scratchpad).
+**retire-1 ledger (2026-09-22 02:05, segment 2 boundary):** on worktree `.claude/worktrees/doctor-go`, Tasks 1 to 7 are accepted and committed (`56803baa`..`79dc4dfd`). Segment 1 ran as `wf_b28a7d1b-a03` (1.08M), segment 2 as `wf_d953b20e-cb0` (1.64M); Tasks 1, 3, 5, and 6 each cleared one fix round, and Task 5's second verdict was a procedural `escalate` (the relative-versus-absolute gate string, verified the same target and run green by the reviewer), accepted by the conductor. Spend 2.72M against the 2.4M ceiling; the run continues under Geoff's overnight grant to the release (`retirement-to-release-grant` memory), overrun logged here and in the post-mortem. Next: segment 3, Tasks 8 and 9, then Task 10 (the agreement study, a conductor dispatch) and Task 11 (the close).
 
 ## Resume prompt
 

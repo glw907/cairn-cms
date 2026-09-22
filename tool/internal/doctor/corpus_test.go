@@ -65,12 +65,17 @@ func loadWranglerCorpus(t *testing.T) []wranglerCorpusCase {
 }
 
 // snapshotWithFiles builds a resolved temp directory holding files, and returns the Snapshot a
-// check would read it through.
+// check would read it through. A name carrying a directory separator gets its parent directory
+// created first, so a case can write a nested path like "src/theme/site.config.yaml".
 func snapshotWithFiles(t *testing.T, files map[string]string) Snapshot {
 	t.Helper()
 	dir := resolvedTempDir(t)
 	for name, body := range files {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+		target := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			t.Fatalf("mkdir for %s: %v", name, err)
+		}
+		if err := os.WriteFile(target, []byte(body), 0o644); err != nil {
 			t.Fatalf("write %s: %v", name, err)
 		}
 	}

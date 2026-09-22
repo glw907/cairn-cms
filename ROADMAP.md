@@ -1003,11 +1003,17 @@ the named human gates only):**
   Carbon's chart guidance is a recipe reference only.
 
 - **The window after the cut, sequenced (Geoff, 2026-09-13, re-ruled 2026-09-21).** The order
-  after the `tool/v1.0.0` tag: the one release cut; a docs chore lifting the narrative-arm freeze
-  and the site-pass no-edit rule; the docs-infra currency pass; the draft docs; the site round;
-  the improvement release. The original entry sequenced the Go tool first against extend-1, the
-  docs rewrite, and site migration, and that sequencing is spent: the tool, both extend passes,
-  and the pre-cut pass have all landed.
+  after the `tool/v1.0.0` tag: the one release cut; a docs chore moving two overturned rules to
+  their execution paths (the narrative-arm freeze and the site-pass no-edit rule), which touches
+  the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
+  the docs-infra currency pass
+  (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`, its order against
+  the draft docs unruled); the draft docs; the site round, upgrading aksailingclub-org, ecxc-ski,
+  and 907-life into model cairn sites, each filing container bullets through
+  `site-docs/<site>-<pass>`; one improvement release; the docs rebuild from the facts container;
+  then beta. The original entry sequenced the Go tool first against extend-1, the docs rewrite,
+  and site migration, and that sequencing is spent: the tool, both extend passes, and the pre-cut
+  pass have all landed.
 
   **The Go `cairn` tool's 1.0 is shipped.** `tool/v1.0.0` (commit `3110e875`) is the complete
   single-site CLI: adopt, health over nine checks, logs, holds, `auth check`, the scheduled run,

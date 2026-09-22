@@ -80,7 +80,7 @@ failed, of <total> manifest entries`.
 - [Design your site](../extend/design-your-site.md#local-iteration) for
   the loop this tool unblocks: seed once, then edit against `vite dev` with no deploy per
   change.
-- [The `cairn-doctor` CLI](./doctor.md), which reads the same wrangler config for its own
-  R2-binding check.
+- [The `cairn doctor` command](./cli-cairn-doctor.md), which reads the same wrangler config for
+  its own R2-binding check.
 - [Media (`/media`)](./media.md) for the manifest shape and the content-addressed naming scheme
   this command relies on.

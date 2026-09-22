@@ -143,9 +143,9 @@ re-requesting is a cheap escape hatch and a hijacked editor session isn't.
 
 The engine writes the nonce hash to `magic_token.nonce_hash`, added by
 `migrations/0004_login_nonce.sql`. Apply that migration before deploying an engine that carries
-this behavior; `npx cairn-doctor` fails the `auth.store` check when the column is absent. The
-column is nullable, and a row without a binding still confirms, so a link already in an inbox
-survives the migration itself.
+this behavior; no command checks the column until the `cairn` CLI's 1.x, so a missed migration
+fails the first sign-in attempt at runtime instead. The column is nullable, and a row without a
+binding still confirms, so a link already in an inbox survives the migration itself.
 
 ## The session cookie
 
@@ -276,18 +276,16 @@ bullet](./sign-in-through-your-organization.md#operating-instructions) covers th
 `workers_dev: false`, `preview_urls: false`, and confirming every custom hostname sits behind the
 application.
 
-**The doctor arms.** `npx cairn-doctor --probe` gates on this too, in two arms. `admin.login-probe`
-fetches `/admin/login` from outside the site with redirects disabled: a 30x to the gate's own
-hostname passes, a 200 that answers with cairn's page directly fails, since the gate isn't in the
-request's path at all, the misconfiguration the check exists to catch. The second arm targets the
-residual above directly: it resolves the account's `workers.dev` hostname and probes its `/admin`
-with no credentials, treating any response the Worker itself serves there, a 200, an unguarded
-redirect, or a marked branded page (identity mode's own refusal page, whatever status it carries)
-on an uncovered hostname, as a fail. Exactly three cases count as not exposed: a redirect naming
-the gate's own hostname, an unmarked non-200 response, or a connection failure (see [the doctor's
-live probe](../reference/doctor.md#the-opt-in-live-probe)). The `auth.store` check separately fails
-when the roster holds no owner-capability row, since the guard performs no bootstrap write under
-`identity`; seed the first owner out of band, before enabling `identity`, never after.
+**No tool checks the workers.dev exposure gap yet.** The npm-era doctor's `--probe` flag, and the
+two live arms it ran, are retired along with the rest of that bin; no tool checks either arm until
+the `cairn` CLI's 1.x. Check both by hand: an unauthenticated `GET` of your primary hostname's
+`/admin/login`, confirming a redirect lands on your gate's own hostname rather than answering with
+cairn's page directly, and the same unauthenticated `GET` against
+`<worker-name>.<subdomain>.workers.dev/admin`, plus the same against your preview alias, watching
+for any response the Worker itself serves there, a 200, an unguarded redirect, or a marked branded
+page (identity mode's own refusal page, whatever status it carries). Seed the site's first owner
+out of band, before enabling `identity`, never after: the guard performs no bootstrap write under
+`identity`, so nothing else creates that owner-capability row for you.
 
 ## CSRF: cairn owns it, not the framework
 
@@ -512,7 +510,7 @@ strips the `Origin` header from a plain same-origin top-level form POST, so the 
 `Origin: null`. `originMatches` (`src/lib/sveltekit/csrf.ts`) stays a strict equality compare on
 purpose, since some routes outside `/admin` have no second CSRF layer to fall back on, so it
 rejects that request rather than loosening for a policy it does not control. The result is a
-403 for a non-admin form even though the visitor never left the site. `cairn-doctor`'s
+403 for a non-admin form even though the visitor never left the site. `cairn doctor`'s
 `config.no-referrer-blanket` check flags this heuristically.
 
 `no-referrer` is safe on `/admin` specifically because `/admin`'s CSRF protection is the

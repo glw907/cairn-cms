@@ -129,7 +129,7 @@ they appear:
 
 ## For site admins too
 
-Three reference pages serve the admin track as much as this one: [`doctor`](../reference/doctor.md)
+Three reference pages serve the admin track as much as this one: [`cairn doctor`](../reference/cli-cairn-doctor.md)
 (what `create-cairn-site` runs to verify a deploy), [`log-events`](../reference/log-events.md) (the
 vocabulary [debug your site](./debug-your-site.md) and [the admin's own
 troubleshooting](../admin/troubleshooting.md) both key on), and

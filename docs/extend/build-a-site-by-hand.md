@@ -458,8 +458,7 @@ export const ORIGIN = 'http://localhost:5173';
 
 Add the [`cairnManifest`](../reference/vite.md) plugin to `vite.config.ts`, alongside the keys
 from Milestone 2. It evaluates your content corpus at build time and fails the build if the
-committed manifest has drifted from the markdown files on disk, the same check `cairn-doctor`
-reads when it reports on your manifest:
+committed manifest has drifted from the markdown files on disk:
 
 <!-- snippet-check-skip: elides the sveltekit() plugin and other vite.config.ts keys from Milestone 2 (defineConfig and sveltekit are already imported there) to focus on adding the manifest plugin -->
 ```ts
@@ -655,12 +654,15 @@ walks through that write path in full, from holding branch to publish to deploy.
 Before you trust this deploy, run the doctor:
 
 ```bash
-npx cairn-doctor --from cms@your-domain.example --repo your-github-username/my-cairn-site
+cairn doctor
 ```
 
-It checks the bindings, the auth store, the GitHub App, and more, and names what's still missing
-for most of what it covers. [Is it working?](../admin/is-it-working.md) explains every condition
-it can report.
+It checks the bindings and more, and names what's still missing for most of what it covers. No
+command checks the GitHub App or the auth store yet, so prove those with the save you just made:
+a real publish that produces a commit authored by `cairn-cms[bot]` on `main` is the positive
+proof, since an empty error log proves nothing unless `observability.enabled` is on in your
+`wrangler.jsonc`. [Is it working?](../admin/is-it-working.md) explains every condition either
+check can report.
 
 One thing to know about: the `config.csrf-disable-missing` check reads both `svelte.config.js`
 and `vite.config.ts` for the `csrf`/`checkOrigin` pair, precisely because a bare `sv create`

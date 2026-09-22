@@ -34,7 +34,7 @@ see one of these:
 
 - **A `Consumers must:` line in cairn's changelog** naming an action for your version range.
   [Upgrade cairn](../extend/upgrade-cairn.md) walks a developer through it.
-- **A `Dependency floors` FAIL from `cairn-doctor`**, meaning your site's Svelte or SvelteKit is
+- **A `Dependency floors` FAIL from `cairn doctor`**, meaning your site's Svelte or SvelteKit is
   below the floor cairn declares. See [Meet the dependency
   floors](./is-it-working.md#meet-the-dependency-floors).
 - **A deploy failure that names an old version**, printed by Cloudflare or during install. That

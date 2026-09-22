@@ -32,15 +32,6 @@ export const ALLOWLIST = new Set([
   'env-var:MY_RATE_LIMITER', // docs/reference/cloudflare.md's illustrative Rate Limiting binding
   'env-var:SECTION_RATE_LIMIT', // docs/reference/sveltekit.md's illustrative SectionEnv binding
   'env-var:TURNSTILE_SECRET', // docs/reference/auth-channel.md's illustrative Turnstile secret binding
-  'env-var:CAIRN_GITHUB_APP_ID', // docs/reference/doctor.md's illustrative repo-secret name in a CI workflow
-  'env-var:CAIRN_GITHUB_APP_INSTALLATION_ID', // same CI workflow, the installation id secret
-  'env-var:CAIRN_GITHUB_APP_PRIVATE_KEY_B64', // same CI workflow, the private key secret
-  // docs/reference/doctor.md's env-fallback table, describing the removed TypeScript doctor
-  // bin's own flag-to-env-var mapping, deleted along with the rest of that bin's source. No
-  // engine or Go-tool source carries these names now; the table awaits the docs pass that
-  // rewrites this page against the Go tool's own env fallbacks (or drops the row).
-  'env-var:CAIRN_FROM',
-  'env-var:GITHUB_REPO',
   'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
   'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
   'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
@@ -118,6 +109,11 @@ export const ALLOWLIST = new Set([
   // reference page and facts/reference.md; cairn doctor looks there by convention, so no repo
   // carries the path and nothing can resolve it.
   'file-path:src/site.config.yaml',
+  // docs/extend/migration-notes.md's own past-version record of the 0.68.0 release, citing the
+  // reference page's path as it was named then. The page is retired (docs/reference/doctor.md
+  // is gone; docs/reference/cli-cairn-doctor.md is its Go-tool successor); the citation stays
+  // unedited, since a release record is immutable and does not chase a later reorganization.
+  'file-path:docs/reference/doctor.md',
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
   'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
   'file-path:src/content/.cairn/index.json', // a site's own generated manifest, by convention

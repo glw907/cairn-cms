@@ -77,43 +77,28 @@ own half, the encode-and-install step and the verification.
    dev reads that file, never the deployed secret, so skipping this leaves your local site signing
    with the retired key even after the deployed Worker has moved on.
 
-4. **Confirm the new key parses and signs, locally.**
+4. **Confirm the new key with a real publish, before you touch the old one.** No command checks
+   the App's credentials on their own; the only proof that counts is a positive artifact from the
+   deployed Worker. Sign in to the live admin and publish an edit. A commit authored by
+   `cairn-cms[bot]` landing on `main` is that proof. An absence of error logs is not evidence: an
+   empty log proves nothing unless `observability.enabled` is `true` in your site's
+   `wrangler.jsonc`. A key that fails on the publish path logs `publish.failed` or `commit.failed`
+   (Workers Logs, filtered by event), never `github.unreachable`, which fires only on a best-effort
+   read elsewhere (`cairn adopt`, `--help`, or a publish-advisories fetch), not here.
 
-   `cairn-doctor`'s `github.app` check assembles its credentials from `GITHUB_APP_ID`,
-   `GITHUB_APP_INSTALLATION_ID`, and `GITHUB_APP_PRIVATE_KEY_B64` in the *local* shell environment,
-   not from the Worker secret you just pushed. Without all three, it skips rather than running.
-   Export the same trio, using the new base64 value, before running it:
+5. **Delete the old key**, once step 4 produces that commit. Back on the App's settings page,
+   delete the previous private key. GitHub requires at least one key to exist, so this only works
+   after the new one is already active.
 
-   ```bash
-   export GITHUB_APP_ID=123456
-   export GITHUB_APP_INSTALLATION_ID=78901234
-   export GITHUB_APP_PRIVATE_KEY_B64="$(cat new-key.b64)"
-   npx cairn-doctor --repo you/your-site
-   ```
-
-   The check runs the exact chain a save does: the key parses and signs, an installation token
-   mints, and the repository answers a read. A pass here proves the new key itself is valid. It
-   says nothing about the deployed Worker, which reads its own copy of the secret independently.
-   See [`cairn-doctor`](../reference/doctor.md#the-checks) for the full check list and the
-   credentials it reads from your environment.
-
-5. **Confirm the deployed Worker, with a real save.** Sign in to the live admin and save or
-   publish an entry. This is the gate that actually proves the key you pushed in step 3 is the one
-   the running site is using, since step 4 only proved the key's own validity, not the deployment.
-
-6. **Delete the old key**, once step 5 succeeds. Back on the App's settings page, delete the
-   previous private key. GitHub requires at least one key to exist, so this only works after the
-   new one is already active.
-
-7. **Delete the local `.pem` and `.b64` files.** Neither needs to survive on disk once the secret
+6. **Delete the local `.pem` and `.b64` files.** Neither needs to survive on disk once the secret
    is pushed; the Worker is the one place the key should live from here on.
 
 ## You know it worked when
 
-A save or publish from the deployed admin succeeds. If step 4's local doctor run still fails, the
-new key or the encoding is wrong. Re-run step 2 and step 3 before touching anything on GitHub's
-side. If step 4 passes but step 5's real save still fails, the Worker secret from step 3 didn't
-take. Re-push it and redeploy.
+A publish from the deployed admin produces a commit authored by `cairn-cms[bot]` on `main`. If
+step 4 doesn't produce that commit, check Workers Logs for `publish.failed` or `commit.failed`
+first; if the Worker secret from step 3 didn't take, re-push it and redeploy, otherwise re-check
+the new key and the encoding from step 2.
 
 ## If something goes wrong
 

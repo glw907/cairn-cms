@@ -47,21 +47,21 @@ minor can break a documented seam, so an upgrade is never a blind bump.
 5. **Run the doctor:**
 
    ```bash
-   npx cairn-doctor --from editor@your-site.com --repo you/your-site
+   cairn doctor
    ```
 
-   A clean run confirms your bindings, your GitHub App, and your site config still resolve the way
-   the new version expects. See [`cairn-doctor`](../reference/doctor.md) for what each check
-   verifies.
+   A clean run confirms your bindings and your site config still resolve the way the new version
+   expects. It doesn't reach the GitHub App or the auth store; publish an edit and confirm a
+   `cairn-cms[bot]` commit lands on `main` to prove those. See [`cairn
+   doctor`](../reference/cli-cairn-doctor.md) for what each check verifies.
 
-6. **Typecheck and test your own site** before deploying. The doctor checks configuration and
-   credentials; it does not typecheck your adapter or your custom routes against the new version's
-   types.
+6. **Typecheck and test your own site** before deploying. The doctor checks configuration; it does
+   not typecheck your adapter or your custom routes against the new version's types.
 
 ## You know it worked when
 
-`npm run check` (or your site's own type-check script) passes, `npx cairn-doctor` reports every
-check passed or skipped, and the admin loads and saves an entry without a new error.
+`npm run check` (or your site's own type-check script) passes, `cairn doctor` reports every check
+passed or skipped, and the admin loads and saves an entry without a new error.
 
 ## If something goes wrong
 

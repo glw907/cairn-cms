@@ -179,20 +179,18 @@ binding surface this page just wired.
 
 ## Verify
 
-The `github.app` check reads its credentials from the local shell environment, not from the
-Worker secret you just pushed, so export the same three values before running it:
+Run `cairn doctor` from your site's directory:
 
 ```bash
-export GITHUB_APP_ID=123456
-export GITHUB_APP_INSTALLATION_ID=78901234
-export GITHUB_APP_PRIVATE_KEY_B64="$(base64 -w0 your-key.pem)"
-npx cairn-doctor --from cms@your-domain.example --repo your-github-username/your-repo
+cairn doctor
 ```
 
-Without all three set, the check reports a skip rather than a result, which is not the same as a
-pass. The doctor's `github.app` check walks the exact chain a save walks: the key parses and
-signs, an installation token mints, and the repository answers a read. Its `config.bindings`
-check confirms `AUTH_DB` and `EMAIL` are both wired. [Is it working?](../admin/is-it-working.md)
-reads every condition the doctor can report, in plain terms.
+Its `config.bindings` check confirms `AUTH_DB` and `EMAIL` are both wired. No command checks the
+GitHub App itself: deploy, then publish an edit from the admin, and confirm a commit authored by
+`cairn-cms[bot]` lands on `main`. An empty error log proves nothing unless `observability.enabled`
+is on in `wrangler.jsonc`; a failing App instead logs `publish.failed` or `commit.failed`.
+[Is it working?](../admin/is-it-working.md) reads every condition either check can report, in
+plain terms.
 
-**You know it worked when:** both `github.app` and `config.bindings` report a pass, not a skip.
+**You know it worked when:** `config.bindings` reports a pass, and a real publish produces a
+`cairn-cms[bot]` commit on `main`.

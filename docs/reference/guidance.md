@@ -15,7 +15,7 @@ npx cairn-guidance check --strict
 ```
 
 Both commands read and write relative to the working directory, so run them from the site's root,
-the same directory `cairn-doctor` runs in.
+the same directory `cairn doctor` runs in.
 
 ## `install`
 
@@ -152,5 +152,5 @@ machine.
 
 ## See also
 
-- [The `cairn-doctor` CLI](./doctor.md) for the setup preflight, a separate concern from guidance.
+- [The `cairn doctor` command](./cli-cairn-doctor.md) for the setup preflight, a separate concern from guidance.
 - [Is it working?](../admin/is-it-working.md) for the manual walkthrough the doctor's checks follow.

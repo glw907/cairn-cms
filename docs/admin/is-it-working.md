@@ -2,7 +2,7 @@
 
 A check failed; here is exactly what it means and what fixes it.
 
-- A `cairn-doctor` check named a problem by name: this page covers it, below.
+- A `cairn doctor` check named a problem by name: this page covers it, below.
 - A setup step failed, parked, or got interrupted before your site went live:
   [Setup recovery](./setup-recovery.md).
 - The site is live and doing something wrong, with no doctor check naming it:
@@ -13,11 +13,14 @@ A check failed; here is exactly what it means and what fixes it.
 From your site's directory, run:
 
 ```
-npx cairn-doctor
+cairn doctor
 ```
 
-It reads your local config, your Cloudflare account, and your GitHub App, and prints one line per
-check. The full command reference is [`cairn-doctor`](../reference/doctor.md).
+Install it first with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest`, or download
+it from the [release page](https://github.com/glw907/cairn-cms/releases), if you haven't already.
+
+It reads your local config and prints one line per check. The full command reference is
+[`cairn doctor`](../reference/cli-cairn-doctor.md).
 
 This report is a real run of `cairn doctor`, against this repo's own worked example site, taken
 right after building it. `cairn doctor` reads no credential: it checks your local configuration
@@ -53,59 +56,32 @@ refuses to follow a symlink that leaves the directory it started from, by design
 installed the ordinary way, with a real copy of `@glw907/cairn-cms` under its own `node_modules`,
 reads `PASS` or `FAIL` there instead, never this line.
 
-Every `create-cairn-site` scaffold ships the placeholder sign-in address `cms@showcase.test`, and
-this site hadn't connected a domain yet, so no Cloudflare zone named `showcase.test` exists for the
-token to check. A workers.dev-only site fails those three zone-derived checks until you connect
-one; see [Own your domain](./own-your-domain.md). Two of the three failures here, the
-sending-domain and HTTPS checks, are blockers as the next paragraph defines it: they bind at the
-point a second person needs their own sign-in, which is also when connecting a domain becomes
-necessary.
+`cairn doctor` reads only your working directory, so it never runs the sending-domain, HTTPS,
+GitHub App, or auth-store checks at all: each needs a deployed, adopted site or a credential a
+directory-only preflight can't see. [Force HTTPS at the edge](#force-https-at-the-edge) and
+[Onboard the sending domain](#onboard-the-sending-domain) below name `cairn health` as the command
+that reaches each, once you've adopted your site with the `cairn` CLI. [Install the GitHub
+App](#install-the-github-app) and [Provision the auth store](#provision-the-auth-store) name the
+manual proof to use instead, since no command checks either yet.
 
-Each check in the report above carries a **title**, like `Email sending domain`. The report itself
+Each check in the report above carries a **title**, like `Wrangler bindings`. The report itself
 never prints a condition id. This page files the same checks by **condition id** instead,
-something like `email.sender-not-onboarded`, the name cairn's own diagnostics and the reference
+something like `config.bindings-missing`, the name cairn's own diagnostics and the reference
 page use for the same problem. The jump list below maps each report title to the section and
 condition id that cover it. A **blocker** stops someone from signing in or your site from working
 correctly; a **warning** is real but doesn't block anyone today.
 
-A **skip** is neither, and the report above shows why that's easy to miss: eight of its lines read
-SKIP, printed no differently from the PASS and FAIL lines beside them. A skip means the check
-didn't run at all, for one of two reasons: it needs a credential the shell doesn't have, or it
-found nothing local to read, like a `site.config.yaml` in none of the spots it looked, or an
-`AUTH_DB` database id missing from `wrangler.jsonc`. Only the GitHub App check above is the
-credential kind, needing your GitHub App's private key, which setup moved into your deployed
-Worker and nowhere else; the other seven skip because there was nothing local for them to read. A
-skip isn't a pass either way; it's the check telling you it had nothing to check.
+A **skip** is neither. The report above carries exactly one, `Guard role wiring`: it means the
+check didn't run because there was nothing local to read, here because this site declares no
+custom roles, so the guard's built-in owner/editor fallback already matches its vocabulary. A skip
+isn't a pass either way; it's the check telling you it had nothing to check.
 
-**Making the Cloudflare zone checks run.** You can supply that credential yourself, since it's
-just a token you create on Cloudflare's own site: open Cloudflare's
-[create API token](https://dash.cloudflare.com/profile/api-tokens) page, the same kind of page
-`create-cairn-site` opened for you during
-[Own your domain](./own-your-domain.md#connect-your-domain), and give the new token read access to
-Zone, Email Sending, and D1. Then, from your site's directory:
-
-```
-CLOUDFLARE_API_TOKEN=<the token you just created> npx cairn-doctor
-```
-
-If `wrangler.jsonc` doesn't already carry an `account_id` (it doesn't on a fresh
-`create-cairn-site` site), also set `CLOUDFLARE_ACCOUNT_ID`, which Cloudflare's
-[Workers & Pages overview](https://dash.cloudflare.com/?to=/:account/workers-and-pages) page
-shows in its sidebar. Delete the token from that same create-API-token page once you're done with
-it; nothing deletes it for you the way setup does.
-
-That token makes the three zone checks run, and nothing else. It doesn't reach the sign-in
-database: on a site `create-cairn-site` built for you, those checks skip whether or not you have a
-token, since wrangler resolves `AUTH_DB` by binding name rather than by an id they can read. See
-[Provision the auth store](#provision-the-auth-store).
-
-**The GitHub App check is different: you can't make it run yourself.** `create-cairn-site`
-deliberately moves the App's private key off your machine and into your Worker's secret store
-during setup, and keeps no copy anywhere you can get back to; not even the tool that put it there
-can read it back out, since Cloudflare secrets are write-only. If you need this check to actually
-run, that's a developer's job: send them
-[Rotate the GitHub App key](../extend/rotate-the-github-app-key.md), which mints a fresh key
-either of you can then run the check with.
+**Confirming the GitHub App yourself isn't possible.** `create-cairn-site` deliberately moves the
+App's private key off your machine and into your Worker's secret store during setup, and keeps no
+copy anywhere you can get back to; not even the tool that put it there can read it back out, since
+Cloudflare secrets are write-only. If a publish keeps failing, that's a developer's job: send them
+[Rotate the GitHub App key](../extend/rotate-the-github-app-key.md), which mints a fresh key and
+proves it with a real publish.
 
 A site `create-cairn-site` built for you ships already wired for the binding, observability,
 origin, and admin-mount conditions below, so those only show up if your site's code has changed
@@ -118,15 +94,17 @@ a clean pass.
 Match what your doctor printed to the section that explains it:
 
 - `Always Use HTTPS`—[Force HTTPS at the edge](#force-https-at-the-edge),
-  `edge.https-not-forced`
-- `Email sending domain`, `Live test send`—[Onboard the sending domain](#onboard-the-sending-domain), `email.sender-not-onboarded`,
-  `email.send-failed`
+  `edge.https-not-forced` (checked by `cairn health`, not `cairn doctor`, once your site is adopted)
+- `Email sending domain`—[Onboard the sending domain](#onboard-the-sending-domain),
+  `email.sender-not-onboarded` (checked by `cairn health`, not `cairn doctor`, once your site is
+  adopted), `email.send-failed` (no doctor or health check; diagnosed from the
+  `auth.link.send_failed` log record)
 - `Wrangler bindings`—[Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings),
   `config.bindings-missing`
 - `Media bucket binding`—[Declare the media bucket binding](#declare-the-media-bucket-binding),
   `config.media-bucket-missing`
 - `Tidy API key`—[Configure the Tidy API key](#configure-the-tidy-api-key),
-  `config.tidy-key-missing`
+  `config.tidy-key-missing` (no command checks this until the `cairn` CLI's 1.x; run one tidy instead)
 - `Workers Logs sink`—[Turn on observability](#turn-on-observability),
   `config.observability-off`
 - `Framework CSRF handoff`—[Wire cairn's CSRF guard](#wire-cairns-csrf-guard),
@@ -141,17 +119,21 @@ Match what your doctor printed to the section that explains it:
   `config.dependency-floors-unmet`
 - `AI posture, effective`—[Make the stated AI posture effective](#make-the-stated-ai-posture-effective),
   `ai.posture-not-effective`
-- `Auth store (D1)`, `Editor role vocabulary`, `Guard role wiring`,
+- `Auth store (D1)`, `Editor role vocabulary`,
   `Editor email normalization`—[Provision the auth store](#provision-the-auth-store),
-  `auth.store-unreachable`, `auth.unknown-role`, `auth.role-wiring-missing`,
-  `auth.email-not-normalized`
+  `auth.store-unreachable`, `auth.unknown-role`,
+  `auth.email-not-normalized` (no command checks these until the `cairn` CLI's 1.x)
+- `Guard role wiring`—[Provision the auth store](#provision-the-auth-store),
+  `auth.role-wiring-missing`
 - `GitHub App`—[Install the GitHub App](#install-the-github-app), `github.app-unreachable`
+  (no command checks this; publish an edit and confirm a `cairn-cms[bot]` commit lands on `main`)
 - `Custom /admin mount`—[Wire the admin mount](#wire-the-admin-mount),
   `admin.mount-incomplete`
 - `Live admin login probe`—[Probe the deployed admin](#probe-the-deployed-admin),
-  `admin.login-probe-failed`
+  `admin.login-probe-failed` (no command checks this; the manual workers.dev check below is the
+  substitute)
 
-Two more sections below cover a real blocker, but `cairn-doctor` never reports either one; your
+Two more sections below cover a real blocker, but `cairn doctor` never reports either one; your
 site answers with the refusal itself, the moment it happens:
 
 - [Admin CSRF token rejected](#admin-csrf-token-rejected)—`auth.csrf-token-invalid`
@@ -159,8 +141,9 @@ site answers with the refusal itself, the moment it happens:
 
 ## Force HTTPS at the edge
 
-**`edge.https-not-forced`, a blocker.** The check confirms your Cloudflare zone forces every
-visit onto HTTPS. The admin's sign-in page posts a plain form with no JavaScript, and cairn's CSRF
+**`edge.https-not-forced`, a blocker.** `cairn doctor` never runs this check; `cairn health`
+confirms your Cloudflare zone forces every visit onto HTTPS, once you've adopted your site with
+the `cairn` CLI. The admin's sign-in page posts a plain form with no JavaScript, and cairn's CSRF
 guard rejects a form submitted over plain HTTP, so an admin reached over `http://` hits an opaque
 403 with no way to sign in.
 
@@ -170,7 +153,7 @@ page names where the setting lives.
 
 ## Admin CSRF token rejected
 
-**`auth.csrf-token-invalid`, a blocker.** `cairn-doctor` never reports this one: it's your site's
+**`auth.csrf-token-invalid`, a blocker.** `cairn doctor` never reports this one: it's your site's
 own guard refusing a request outright, on the spot, logged as `guard.refused` with
 `reason: csrf`. An admin form submission carried no valid CSRF token, or one that didn't match.
 This is almost always a stale browser tab or a browser blocking cookies for the site, not a
@@ -181,7 +164,7 @@ link.
 
 ## Non-admin origin rejected
 
-**`auth.csrf-origin-mismatch`, a blocker.** `cairn-doctor` never reports this one either: it's
+**`auth.csrf-origin-mismatch`, a blocker.** `cairn doctor` never reports this one either: it's
 your site's own guard refusing the request, logged as `guard.refused` with `reason: origin`. A
 form submission outside the admin carried an `Origin` header that didn't match your site, so
 cairn's own origin check refused it.
@@ -211,22 +194,17 @@ still can't sign in to the admin. Logged as `auth.identity.unknown`.
 
 ## Onboard the sending domain
 
-**`email.sender-not-onboarded`, a blocker.** Your site's from-address domain has no enabled
-Cloudflare sending subdomain, so it has no way to send a sign-in email at all, and nobody besides
-you can sign in. If you set this domain up through
+**`email.sender-not-onboarded`, a blocker.** `cairn doctor` never runs this check; `cairn health`
+confirms your site's from-address domain has an enabled Cloudflare sending subdomain, once you've
+adopted your site with the `cairn` CLI. Without it, your site has no way to send a sign-in email
+at all, and nobody besides you can sign in. If you set this domain up through
 [Own your domain](./own-your-domain.md#turn-on-sign-in-email), that page already carries this;
-this check is what confirms it stuck.
+`cairn health` is what confirms it stuck.
 
 **Act:** onboard the sending domain with `npx wrangler email sending enable <domain>`, then
 redeploy with `npx wrangler deploy`. The domain has to match your site's configured sign-in
 sender. Both commands use the same Cloudflare sign-in `create-cairn-site` set up on this machine
 when it first deployed your site, so there's no separate `wrangler login` to do first.
-
-**`email.send-failed`, also a blocker.** The sending domain is onboarded, but a real send attempt
-failed for some other reason: a delivery error, a misconfigured binding, or a problem with the
-sender address itself. This check only runs when you pass `--send-test <address>`; a bare
-`npx cairn-doctor` never tries a real send, and won't even print a skip line for it. Running it is
-the fastest way to prove sending actually works without waiting on a real editor to try.
 
 **Act, or ask a developer:** find the matching `auth.link.send_failed` record in your logs (see
 [Troubleshooting](./troubleshooting.md#reading-your-sites-logs)) and read its `code` and `error`
@@ -344,10 +322,11 @@ declares, then reinstall so your lockfile re-resolves; for example,
 
 ## Configure the Tidy API key
 
-**`config.tidy-key-missing`, a warning.** Your site config has `tidy.enabled: true`, but no
-`ANTHROPIC_API_KEY` is set anywhere the check can read, or the key it found is no longer valid.
-Tidy's suggestions are unavailable until this is fixed; nothing else on your site is affected,
-since Tidy is opt-in.
+**`config.tidy-key-missing`, a warning.** No command checks this until the `cairn` CLI's 1.x;
+run one tidy suggestion in the admin instead and see whether it works. Your site config has
+`tidy.enabled: true`, but no `ANTHROPIC_API_KEY` is set anywhere reachable, or the key set is no
+longer valid. Tidy's suggestions are unavailable until this is fixed; nothing else on your site is
+affected, since Tidy is opt-in.
 
 **Ask a developer:** set `ANTHROPIC_API_KEY` with `wrangler secret put ANTHROPIC_API_KEY` for a
 deployed site, or in `.dev.vars` for local development, and confirm the key is current.
@@ -368,7 +347,10 @@ declares it.
 
 ## Provision the auth store
 
-Five related conditions, all about the database that tracks who can sign in.
+Five related conditions, all about the database that tracks who can sign in. No command checks
+`auth.store-unreachable`, `auth.store-unmigrated`, `auth.unknown-role`, or
+`auth.email-not-normalized` until the `cairn` CLI's 1.x; `auth.role-wiring-missing` is the
+exception, still covered by `cairn doctor` today.
 
 **`auth.store-unreachable`, a blocker.** Your `AUTH_DB` database is missing, doesn't carry the
 sign-in tables, or holds no owner row at all, so no sign-in link can be minted for anyone. A site
@@ -384,9 +366,8 @@ confirm the `AUTH_DB` binding in `wrangler.jsonc` points at the right database. 
 
 **`auth.store-unmigrated`, a blocker.** Your `AUTH_DB` is missing
 `migrations/0004_login_nonce.sql`, which adds the column every sign-in link binds itself to, so
-each attempt to sign in fails outright. Unlike the four others, `cairn-doctor` never reports this
-one by name at run time: the `Auth store (D1)` check catches the same gap before you deploy, and
-after a deploy the site answers with the condition itself the first time somebody tries to sign in.
+each attempt to sign in fails outright. No command catches this before you deploy; after a deploy
+the site answers with the condition itself the first time somebody tries to sign in.
 
 **Ask a developer:** copy `migrations/0004_login_nonce.sql` out of the package into the site's own
 `migrations` directory and run `wrangler d1 migrations apply <db> --remote`.
@@ -414,9 +395,11 @@ editors through [Invite your editors](./invite-editors.md) always writes it that
 
 ## Install the GitHub App
 
-**`github.app-unreachable`, a blocker.** The GitHub App's key fails to parse, the App fails to
-authenticate, its installation token fails to mint, or your repository refuses a read. Saves and
-publishes can't commit while this is failing.
+**`github.app-unreachable`, a blocker.** No command checks this: publish an edit and confirm a
+commit authored by `cairn-cms[bot]` lands on `main`, since an empty error log proves nothing
+unless `observability.enabled` is on in your `wrangler.jsonc`. The GitHub App's key fails to
+parse, the App fails to authenticate, its installation token fails to mint, or your repository
+refuses a read. Saves and publishes can't commit while this is failing.
 
 **Act, or ask a developer:** confirm the App is actually installed on your repository at
 [github.com/settings/installations](https://github.com/settings/installations); if that looks
@@ -438,15 +421,13 @@ without actually being broken, so treat it as a prompt to check, not a certainty
 
 ## Probe the deployed admin
 
-**`admin.login-probe-failed`, a blocker.** This check makes a real request to your deployed
-admin and confirms it answers with a working sign-in page: the login form itself, its CSRF
-cookie, and the hidden field the form needs to submit. A failure here means a real editor hits the
-same failure trying to sign in.
+**`admin.login-probe-failed`, a blocker.** No command checks this: the live login probe was
+retired along with the rest of the npm-era doctor's `--probe` flag, and no tool checks the
+workers.dev exposure gap it used to cover until the `cairn` CLI's 1.x. Do the manual check
+instead: an unauthenticated `GET` of `<worker-name>.<subdomain>.workers.dev/admin`, and the same
+against your preview alias. A 200 there means your deployed admin is reachable with no gate in
+front of it, whatever your primary hostname's own access setup looks like.
 
-**Act:** read the detail line this check prints; it names exactly which part of the sign-in
-envelope was missing or wrong. Run the full `cairn-doctor` check against the same site and work
-through whichever of the checks above it also flags, since this probe usually fails alongside a
-more specific one.
-
-This check only runs when you pass `--probe`; a bare `npx cairn-doctor` never makes this request
-on its own.
+**Act:** if the workers.dev address answers 200, put it behind the same access gate as your
+primary hostname, or set `workers_dev: false` (and `preview_urls: false`, since the two settings
+are independent) in `wrangler.jsonc`.

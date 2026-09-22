@@ -870,17 +870,17 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   [verified]
 - An absent `site-facts.json` is not drift: `checkSiteFacts` returns `{ status: 'absent' }` and the
   `cairnManifest` plugin's `buildStart` reports exactly one build-log warning naming
-  `npx cairn-manifest`, never failing the build. Source: `src/lib/vite/internal.ts:476-480,185-188`
+  `npx cairn-manifest`, never failing the build. Source: `src/lib/vite/internal.ts:477-481,182-186`
   (`checkSiteFacts` returns early on a missing committed file; `buildStart` calls `this.warn` once
-  with `SITE_FACTS_ABSENT_WARNING`). [verified]
+  with `siteFactsAbsentWarning(...)`). [verified]
 - A present `site-facts.json` that no longer matches the adapter fails the build through the same
   `this.error(...)` path the content manifest uses, naming the file and the fix. Source:
-  `src/lib/vite/internal.ts:483-491,189-190` (`checkSiteFacts` compares the derived facts against
+  `src/lib/vite/internal.ts:484-493,186-187` (`checkSiteFacts` compares the derived facts against
   the committed bytes and returns `{ status: 'stale', message }`; `buildStart` calls `this.error`
   with that message). [verified]
 - The `cairn-manifest` CLI writes `site-facts.json` in the same run that writes the content
-  manifest. Source: `src/lib/vite/bin.ts` (`main` calls `writeManifest` then `writeSiteFacts`).
-  [verified]
+  manifest. Source: `src/lib/vite/bin.ts:28-29` (`main` calls `writeManifest` then
+  `writeSiteFacts`). [verified]
 
 ## docs/reference/supported-toolchain.md
 

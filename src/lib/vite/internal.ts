@@ -37,10 +37,7 @@ export interface CairnManifestOptions {
   content: Record<string, string>;
   /** The committed manifest path, app-root-absolute. Defaults to `/src/content/.cairn/index.json`. */
   manifestPath?: string;
-  /**
-   * The committed site-facts path, app-root-absolute. Defaults to
-   *  `/src/content/.cairn/site-facts.json`. See {@link checkSiteFacts}.
-   */
+  /** The committed site-facts path, app-root-absolute. Defaults to `/src/content/.cairn/site-facts.json`. */
   siteFactsPath?: string;
 }
 
@@ -184,7 +181,7 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       }
       const siteFacts = await checkSiteFacts(opts, root);
       if (siteFacts.status === 'absent') {
-        this.warn(SITE_FACTS_ABSENT_WARNING);
+        this.warn(siteFactsAbsentWarning((opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH).replace(/^\//, '')));
       } else if (siteFacts.status === 'stale') {
         this.error(siteFacts.message);
       }
@@ -453,9 +450,13 @@ export async function buildSiteFactsFromVite(opts: CairnManifestOptions, root: s
   return formatSiteFacts(facts);
 }
 
-/** The build-log warning `checkSiteFacts` reports once when the committed file does not exist yet. */
-export const SITE_FACTS_ABSENT_WARNING =
-  'cairn-cms: src/content/.cairn/site-facts.json is missing. Run `npx cairn-manifest` to create it.';
+/**
+ * Build the build-log warning `checkSiteFacts` reports once when the committed file at `path` (the
+ *  configured `siteFactsPath`, app-root-relative for display) does not exist yet.
+ */
+export function siteFactsAbsentWarning(path: string): string {
+  return `cairn-cms: ${path} is missing. Run \`npx cairn-manifest\` to create it.`;
+}
 
 /** The three outcomes {@link checkSiteFacts} distinguishes: current, not yet created, or drifted. */
 export type SiteFactsCheck = { status: 'ok' } | { status: 'absent' } | { status: 'stale'; message: string };
@@ -488,7 +489,7 @@ export async function checkSiteFacts(opts: CairnManifestOptions, root: string): 
   return {
     status: 'stale',
     message:
-      'cairn-cms: src/content/.cairn/site-facts.json is stale: the committed file does not match the adapter.\n' +
+      `cairn-cms: ${siteFactsPath.replace(/^\//, '')} is stale: the committed file does not match the adapter.\n` +
       'Run `npx cairn-manifest` and commit the result.',
   };
 }

@@ -18,7 +18,7 @@ import {
   checkSiteFacts,
   formatSiteFacts,
   writeSiteFacts,
-  SITE_FACTS_ABSENT_WARNING,
+  siteFactsAbsentWarning,
 } from '../../lib/vite/internal.js';
 
 const WORKTREE = process.cwd();
@@ -199,7 +199,7 @@ describe('cairnManifest buildStart, the site-facts arms', () => {
     const ctx = fakeContext();
     await expect((plugin.buildStart as (this: unknown) => Promise<void>).call(ctx)).resolves.toBeUndefined();
     expect(ctx.warnings).toHaveLength(1);
-    expect(ctx.warnings[0]).toBe(SITE_FACTS_ABSENT_WARNING);
+    expect(ctx.warnings[0]).toBe(siteFactsAbsentWarning('src/content/.cairn/site-facts.json'));
     expect(ctx.warnings[0]).toMatch(/cairn-manifest/);
   }, 30000);
 

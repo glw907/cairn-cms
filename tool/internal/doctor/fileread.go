@@ -14,7 +14,7 @@ import (
 // recognize it without a wrangler config.
 const cairnModule = "@glw907/cairn-cms"
 
-// ReadUnder reads the file at relPath inside dir, refusing any path, including one that escapes
+// readUnder reads the file at relPath inside dir, refusing any path, including one that escapes
 // only through a symlink, that resolves outside dir. dir must already be a resolved, existing
 // directory (Snapshot's own Dir, produced by NewSnapshot). ok is false when the file does not
 // exist or is a dangling symlink; err is non-nil for a containment refusal or any other read
@@ -23,7 +23,7 @@ const cairnModule = "@glw907/cairn-cms"
 // Ported whole from the stronger containment form in src/lib/media-seed/bin.ts (isWithin,
 // realpathNearestAncestor, and the two checks their caller makes), not the doctor's own weaker
 // textual-prefix form.
-func ReadUnder(dir, relPath string) (body []byte, ok bool, err error) {
+func readUnder(dir, relPath string) (body []byte, ok bool, err error) {
 	candidate := filepath.Join(dir, relPath)
 	if !contains(dir, candidate) {
 		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
@@ -85,15 +85,15 @@ func realpathNearestAncestor(path string) (string, error) {
 
 // IsCairnSite reports whether dir looks like a cairn site: a wrangler.jsonc or wrangler.toml
 // file, or a package.json naming cairnModule as a dependency or a devDependency. dir must
-// already be resolved, the same precondition ReadUnder carries.
+// already be resolved, the same precondition readUnder carries.
 func IsCairnSite(dir string) bool {
 	for _, name := range []string{"wrangler.jsonc", "wrangler.toml"} {
-		if _, ok, err := ReadUnder(dir, name); err == nil && ok {
+		if _, ok, err := readUnder(dir, name); err == nil && ok {
 			return true
 		}
 	}
 
-	body, ok, err := ReadUnder(dir, "package.json")
+	body, ok, err := readUnder(dir, "package.json")
 	if err != nil || !ok {
 		return false
 	}

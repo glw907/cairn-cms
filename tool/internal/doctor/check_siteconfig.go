@@ -25,17 +25,17 @@ var ConfigSiteConfig = Check{
 	ID:        "config.site-config",
 	Condition: spine.ConditionConfigSiteConfigInvalid,
 	Run: func(s Snapshot) Result {
-		outcome, err := s.SiteConfig()
+		outcome, err := s.siteConfig()
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
 		switch outcome.Status {
-		case SiteConfigValid:
+		case siteConfigValid:
 			return passResult(detailSiteConfigPass)
-		case SiteConfigInvalid:
+		case siteConfigInvalid:
 			return failResult(spine.ConditionConfigSiteConfigInvalid, outcome.Reason)
-		default: // SiteConfigNotFound
-			return uncheckedResult(fmt.Sprintf(tmplSiteConfigNotFound, strings.Join(SiteConfigPaths(), ", ")))
+		default: // siteConfigNotFound
+			return uncheckedResult(fmt.Sprintf(tmplSiteConfigNotFound, strings.Join(siteConfigPaths(), ", ")))
 		}
 	},
 }

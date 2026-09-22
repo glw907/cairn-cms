@@ -98,13 +98,13 @@ func guardRoleWiring(text string) guardWiring {
 
 // AuthRoleWiring ports checks-local.ts's roleWiring (:430-462): a site declaring custom roles
 // must pass createAuthGuard the same vocabulary, or every editor whose role sits outside the
-// implicit owner/editor pair resolves to none capability. It reads SiteFacts for the declared
+// implicit owner/editor pair resolves to none capability. It reads siteFacts for the declared
 // vocabulary, so it reports unchecked with factsAbsentDetail when site-facts.json is absent.
 var AuthRoleWiring = Check{
 	ID:        "auth.role-wiring",
 	Condition: spine.ConditionAuthRoleWiringMissing,
 	Run: func(s Snapshot) Result {
-		facts, found, err := ReadSiteFacts(s)
+		facts, found, err := readSiteFacts(s)
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}

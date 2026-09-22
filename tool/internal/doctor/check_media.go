@@ -22,13 +22,13 @@ const (
 
 // ConfigMediaBucket ports checks-local.ts's configMediaBucket (:42-58): the adapter's declared
 // media bucket binding must have a matching r2_buckets entry in the wrangler config. It reads
-// SiteFacts for the declared binding, so it reports unchecked with factsAbsentDetail when
+// siteFacts for the declared binding, so it reports unchecked with factsAbsentDetail when
 // site-facts.json is absent, before it ever reads wrangler.
 var ConfigMediaBucket = Check{
 	ID:        "config.media-bucket",
 	Condition: spine.ConditionConfigMediaBucketMissing,
 	Run: func(s Snapshot) Result {
-		facts, found, err := ReadSiteFacts(s)
+		facts, found, err := readSiteFacts(s)
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}

@@ -23,7 +23,7 @@ func readPage(t *testing.T, name string) string {
 // TestBothPublishedPagesNameEveryCheckID holds the two pages that publish cairn doctor's check
 // ids to the registry itself: json-output.md's frozen list, where an id is a promise a consumer
 // reads, and cli-cairn-doctor.md, where an operator reads what each id observes. Both are read
-// from Checks rather than from a literal list, so a check added or renamed without its docs
+// from checks rather than from a literal list, so a check added or renamed without its docs
 // fails here.
 //
 // It lives in this package rather than beside internal/render's own freeze-list test because
@@ -33,7 +33,7 @@ func TestBothPublishedPagesNameEveryCheckID(t *testing.T) {
 	frozen := frozenSection(t, readPage(t, "json-output.md"))
 	page := readPage(t, "cli-cairn-doctor.md")
 
-	for _, c := range Checks {
+	for _, c := range checks {
 		t.Run(c.ID, func(t *testing.T) {
 			if !strings.Contains(frozen, "`"+c.ID+"`") {
 				t.Errorf("json-output.md's frozen list does not name %q", c.ID)

@@ -11,12 +11,12 @@ import (
 //go:embed site-config-path.json
 var siteConfigPathJSON []byte
 
-// SiteConfigPath returns the canonical site-config path baked into the shipped mirror
+// siteConfigPath returns the canonical site-config path baked into the shipped mirror
 // (site-config-path.json), the same value packages/create-cairn-site/src/substitute.mjs bakes
 // into a scaffolded site. It panics if the embedded file fails to parse or fails the four shape
 // rules substitute.mjs's verifySiteConfigPath enforces: a bad shipped file is a build-time
 // defect, so this fails loudly on first use rather than degrading a single check.
-func SiteConfigPath() string {
+func siteConfigPath() string {
 	var payload struct {
 		Path string `json:"path"`
 	}

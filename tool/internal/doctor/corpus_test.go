@@ -112,8 +112,8 @@ func TestBuildSymlinkedNodeModulesDirEscapesContainment(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(filepath.Dir(site), "real-node-modules", "package.json"), []byte("{}"), 0o644); err != nil {
 		t.Fatalf("write package.json: %v", err)
 	}
-	_, _, err := ReadUnder(site, "node_modules/package.json")
+	_, _, err := readUnder(site, "node_modules/package.json")
 	if err == nil {
-		t.Fatal("ReadUnder through the symlinked node_modules did not refuse containment")
+		t.Fatal("readUnder through the symlinked node_modules did not refuse containment")
 	}
 }

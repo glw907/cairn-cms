@@ -7,16 +7,16 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// Checks is the complete doctor check set cairn doctor runs, in report order: the eight
+// checks is the complete doctor check set cairn doctor runs, in report order: the eight
 // file-only checks followed by the three facts-dependent checks, the same relative order the
 // engine's own doctor registers them in, with the checks this port does not carry (the
 // Cloudflare and GitHub App chain) left out. It is a literal slice, never populated by init(),
 // the same shape health.All uses.
 //
-// It is exported because it is the published check-id list: the tests that hold
+// It is also the published check-id list: the tests that hold
 // tool/docs/reference/json-output.md and tool/docs/reference/cli-cairn-doctor.md to every id
 // read it here rather than retyping the eleven.
-var Checks = []Check{
+var checks = []Check{
 	ConfigBindings,
 	ConfigMediaBucket,
 	ConfigObservability,
@@ -41,11 +41,11 @@ type CheckedResult struct {
 	Result Result
 }
 
-// Run executes every check in Checks against s, in report order, stamps each Result with its
+// Run executes every check in checks against s, in report order, stamps each Result with its
 // own check's ID, and pairs the two.
 func Run(s Snapshot) []CheckedResult {
-	out := make([]CheckedResult, len(Checks))
-	for i, c := range Checks {
+	out := make([]CheckedResult, len(checks))
+	for i, c := range checks {
 		result := c.Run(s)
 		result.ID = c.ID
 		out[i] = CheckedResult{Check: c, Result: result}

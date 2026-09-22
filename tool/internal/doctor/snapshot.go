@@ -84,7 +84,7 @@ func NewSnapshot(dir string) (Snapshot, error) {
 }
 
 // ReadFile reads the file at relPath inside s.Dir, refusing any path that resolves outside it,
-// even through a symlink. See ReadUnder for the exact contract.
+// even through a symlink. See readUnder for the exact contract.
 func (s Snapshot) ReadFile(relPath string) (body []byte, ok bool, err error) {
-	return ReadUnder(s.Dir, relPath)
+	return readUnder(s.Dir, relPath)
 }

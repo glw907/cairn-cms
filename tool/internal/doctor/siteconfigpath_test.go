@@ -4,10 +4,10 @@ import "testing"
 
 // TestSiteConfigPath asserts the accessor returns the committed mirror's value.
 func TestSiteConfigPath(t *testing.T) {
-	got := SiteConfigPath()
+	got := siteConfigPath()
 	want := "src/theme/site.config.yaml"
 	if got != want {
-		t.Errorf("SiteConfigPath() = %q, want %q", got, want)
+		t.Errorf("siteConfigPath() = %q, want %q", got, want)
 	}
 }
 

@@ -282,7 +282,7 @@ func robotsURL(origin string) (target *url.URL, ok bool) {
 
 // AIPostureEffective ports check-posture.ts's postureEffective (:45-73): a live probe of the
 // deployed origin's /robots.txt, compared against the adapter's declared aiPosture. It reads
-// SiteFacts for the declared posture, so it reports unchecked with factsAbsentDetail when
+// siteFacts for the declared posture, so it reports unchecked with factsAbsentDetail when
 // site-facts.json is absent, and it reads Snapshot.Robots for the served body, so it reports
 // unchecked with the fetch's own reason when the command layer's GET did not produce one; it
 // never dials itself.
@@ -290,7 +290,7 @@ var AIPostureEffective = Check{
 	ID:        "ai.posture-effective",
 	Condition: spine.ConditionAIPostureNotEffective,
 	Run: func(s Snapshot) Result {
-		facts, found, err := ReadSiteFacts(s)
+		facts, found, err := readSiteFacts(s)
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}

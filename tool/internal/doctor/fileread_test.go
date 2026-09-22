@@ -10,7 +10,7 @@ import (
 )
 
 // resolvedTempDir returns a fresh temp directory, resolved via filepath.EvalSymlinks the same
-// way NewSnapshot resolves its own Dir, so a test's boundary matches what ReadUnder expects.
+// way NewSnapshot resolves its own Dir, so a test's boundary matches what readUnder expects.
 func resolvedTempDir(t *testing.T) string {
 	t.Helper()
 	dir, err := filepath.EvalSymlinks(t.TempDir())
@@ -41,7 +41,7 @@ func TestReadUnderRefusesSymlinkEscape(t *testing.T) {
 		t.Fatalf("symlink: %v", err)
 	}
 
-	_, ok, err := ReadUnder(site, "link.txt")
+	_, ok, err := readUnder(site, "link.txt")
 	if err == nil {
 		t.Fatal("expected a containment refusal, got nil error")
 	}
@@ -69,7 +69,7 @@ func TestReadUnderRefusesTextualDotDot(t *testing.T) {
 		t.Fatalf("write secret: %v", err)
 	}
 
-	_, ok, err := ReadUnder(site, "../outside/secret.txt")
+	_, ok, err := readUnder(site, "../outside/secret.txt")
 	if err == nil {
 		t.Fatal("expected a containment refusal, got nil error")
 	}
@@ -85,7 +85,7 @@ func TestReadUnderRefusesTextualDotDot(t *testing.T) {
 // (nil, false, nil): absent, not an error.
 func TestReadUnderAbsentFile(t *testing.T) {
 	dir := resolvedTempDir(t)
-	body, ok, err := ReadUnder(dir, "missing.txt")
+	body, ok, err := readUnder(dir, "missing.txt")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestReadUnderDanglingSymlinkReadsAsAbsent(t *testing.T) {
 		t.Fatalf("symlink: %v", err)
 	}
 
-	body, ok, err := ReadUnder(dir, "dangling.txt")
+	body, ok, err := readUnder(dir, "dangling.txt")
 	if err != nil {
 		t.Fatalf("expected a dangling symlink to read as absent, got error: %v", err)
 	}
@@ -136,7 +136,7 @@ func TestReadUnderPermissionDeniedIsAnError(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
 
-	body, ok, err := ReadUnder(dir, "secret.txt")
+	body, ok, err := readUnder(dir, "secret.txt")
 	if err == nil {
 		t.Fatal("expected a permission error")
 	}

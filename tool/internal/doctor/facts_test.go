@@ -37,14 +37,14 @@ func TestAbsentSiteFactsMakesAllThreeChecksUnknown(t *testing.T) {
 }
 
 // TestSiteFactsVersionMismatch asserts a site-facts.json carrying a version other than 1 fails
-// ReadSiteFacts with a message naming the file and the version found, rather than guessing at
+// readSiteFacts with a message naming the file and the version found, rather than guessing at
 // its shape.
 func TestSiteFactsVersionMismatch(t *testing.T) {
 	s := snapshotWithFiles(t, map[string]string{
 		"src/content/.cairn/site-facts.json": `{"version": 2, "mediaBucketBinding": "MEDIA"}`,
 	})
 
-	_, found, err := ReadSiteFacts(s)
+	_, found, err := readSiteFacts(s)
 	if found {
 		t.Fatal("found = true, want false on a version mismatch")
 	}
@@ -76,7 +76,7 @@ func TestSiteFactsVersionMismatchPropagatesAsUnchecked(t *testing.T) {
 	}
 }
 
-// TestReadSiteFactsParsesEveryField asserts ReadSiteFacts fills every optional field when present
+// TestReadSiteFactsParsesEveryField asserts readSiteFacts fills every optional field when present
 // and leaves each Has flag false when the corresponding key is omitted, the same
 // declared/omitted distinction the engine's own writer makes.
 func TestReadSiteFactsParsesEveryField(t *testing.T) {
@@ -89,9 +89,9 @@ func TestReadSiteFactsParsesEveryField(t *testing.T) {
 		}`,
 	})
 
-	facts, found, err := ReadSiteFacts(s)
+	facts, found, err := readSiteFacts(s)
 	if err != nil {
-		t.Fatalf("ReadSiteFacts: %v", err)
+		t.Fatalf("readSiteFacts: %v", err)
 	}
 	if !found {
 		t.Fatal("found = false, want true")
@@ -115,9 +115,9 @@ func TestReadSiteFactsOmittedFields(t *testing.T) {
 		"src/content/.cairn/site-facts.json": `{"version": 1, "mediaBucketBinding": "MEDIA_BUCKET"}`,
 	})
 
-	facts, found, err := ReadSiteFacts(s)
+	facts, found, err := readSiteFacts(s)
 	if err != nil {
-		t.Fatalf("ReadSiteFacts: %v", err)
+		t.Fatalf("readSiteFacts: %v", err)
 	}
 	if !found {
 		t.Fatal("found = false, want true")

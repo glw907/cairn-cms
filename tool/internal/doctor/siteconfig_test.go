@@ -33,7 +33,7 @@ func TestSiteConfigFindsAtEveryCandidatePath(t *testing.T) {
 		path string
 		body []byte
 	}{
-		{name: "the showcase's committed config at the canonical path", path: SiteConfigPath(), body: showcase},
+		{name: "the showcase's committed config at the canonical path", path: siteConfigPath(), body: showcase},
 		{name: "legacy path: site.config.yaml", path: "site.config.yaml", body: []byte("siteName: Legacy Root\n")},
 		{name: "legacy path: src/lib/site.config.yaml", path: "src/lib/site.config.yaml", body: []byte("siteName: Legacy Lib\n")},
 		{name: "legacy path: src/site.config.yaml", path: "src/site.config.yaml", body: []byte("siteName: Legacy Src\n")},
@@ -41,12 +41,12 @@ func TestSiteConfigFindsAtEveryCandidatePath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, map[string]string{tt.path: string(tt.body)})
-			outcome, err := s.SiteConfig()
+			outcome, err := s.siteConfig()
 			if err != nil {
 				t.Fatalf("SiteConfig: %v", err)
 			}
-			if outcome.Status != SiteConfigValid {
-				t.Fatalf("Status = %v, want SiteConfigValid (reason %q)", outcome.Status, outcome.Reason)
+			if outcome.Status != siteConfigValid {
+				t.Fatalf("Status = %v, want siteConfigValid (reason %q)", outcome.Status, outcome.Reason)
 			}
 			if outcome.Path != tt.path {
 				t.Errorf("Path = %q, want %q", outcome.Path, tt.path)
@@ -69,13 +69,13 @@ func TestSiteConfigInvalidCases(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := snapshotWithFiles(t, map[string]string{SiteConfigPath(): tt.body})
-			outcome, err := s.SiteConfig()
+			s := snapshotWithFiles(t, map[string]string{siteConfigPath(): tt.body})
+			outcome, err := s.siteConfig()
 			if err != nil {
 				t.Fatalf("SiteConfig: %v", err)
 			}
-			if outcome.Status != SiteConfigInvalid {
-				t.Fatalf("Status = %v, want SiteConfigInvalid", outcome.Status)
+			if outcome.Status != siteConfigInvalid {
+				t.Fatalf("Status = %v, want siteConfigInvalid", outcome.Status)
 			}
 			if outcome.Reason == "" {
 				t.Error("Reason is empty for an invalid outcome")
@@ -88,12 +88,12 @@ func TestSiteConfigInvalidCases(t *testing.T) {
 // four candidate paths.
 func TestSiteConfigNotFound(t *testing.T) {
 	s := snapshotWithFiles(t, nil)
-	outcome, err := s.SiteConfig()
+	outcome, err := s.siteConfig()
 	if err != nil {
 		t.Fatalf("SiteConfig: %v", err)
 	}
-	if outcome.Status != SiteConfigNotFound {
-		t.Fatalf("Status = %v, want SiteConfigNotFound", outcome.Status)
+	if outcome.Status != siteConfigNotFound {
+		t.Fatalf("Status = %v, want siteConfigNotFound", outcome.Status)
 	}
 	if outcome.Path != "" {
 		t.Errorf("Path = %q, want empty", outcome.Path)

@@ -56,6 +56,19 @@ func verboseObservedField(key string, value any, source spine.FieldSource) spine
 	return f
 }
 
+// credMissingOutcome is the outcome a check reports when the credential it reads through was
+// never resolved. The run disclosed the gap before the check ran, so there is nothing to detail
+// beyond the reason.
+func credMissingOutcome() spine.Outcome {
+	return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}
+}
+
+// noZoneIDOutcome is the outcome a zone-scoped check reports for a site whose record carries no
+// zone id. The check has nothing to read rather than something it failed to read.
+func noZoneIDOutcome() spine.Outcome {
+	return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no zone id recorded for this site"}
+}
+
 // apiErrorOutcome classifies a Cloudflare or GitHub API failure, shared by every check that
 // reads one of those APIs but does not itself measure the credential (delegation,
 // HTTPS-forced, HSTS, email, deploy). Unlike credsCheck, a 401 or 403 here is Unknown with its

@@ -83,7 +83,7 @@ func (gh *GitHub) getJSON(ctx context.Context, path string, out any) error {
 	if err != nil {
 		return err
 	}
-	if status < 200 || status >= 300 {
+	if isErrorStatus(status) {
 		var body struct {
 			Message string `json:"message"`
 		}

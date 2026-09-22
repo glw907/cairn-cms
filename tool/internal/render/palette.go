@@ -143,9 +143,7 @@ func (t Theme) Strong(role Role) lipgloss.Style {
 // SizedStrong returns Strong's style constrained to a fixed-width cell, the pairing a bold
 // column field needs.
 func (t Theme) SizedStrong(role Role, w int) lipgloss.Style {
-	if w < 0 {
-		w = 0
-	}
+	w = max(w, 0)
 	return t.Strong(role).Width(w).MaxWidth(w)
 }
 
@@ -162,9 +160,7 @@ func (t Theme) Link(role Role, url string) lipgloss.Style {
 // because Style and Sized are the only two ways out of this file, and a column that links has to
 // take its width from the same place every other column does.
 func (t Theme) SizedLink(role Role, url string, w int) lipgloss.Style {
-	if w < 0 {
-		w = 0
-	}
+	w = max(w, 0)
 	return t.Link(role, url).Width(w).MaxWidth(w)
 }
 
@@ -172,8 +168,6 @@ func (t Theme) SizedLink(role Role, url string, w int) lipgloss.Style {
 // construction go-conventions names for this package and Task 20b's bodies (padding inside the
 // styled block, cut at the same width, so a selected row can later take a full-width ground).
 func (t Theme) Sized(role Role, w int) lipgloss.Style {
-	if w < 0 {
-		w = 0
-	}
+	w = max(w, 0)
 	return t.Style(role).Width(w).MaxWidth(w)
 }

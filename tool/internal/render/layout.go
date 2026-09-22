@@ -325,9 +325,7 @@ func row(cells ...string) string {
 // The break is the space and nothing else. A library word wrap also breaks after a hyphen, which
 // turns 2026-09-25 into two dates and a stray dash.
 func (t Theme) wrap(text string, width int) []string {
-	if width < 1 {
-		width = 1
-	}
+	width = max(width, 1)
 	if text == "" {
 		return nil
 	}
@@ -407,7 +405,13 @@ func (t Theme) cutAt(s string, width int) (head, tail string) {
 // hangingAt wraps text into the column at col, with lead printed before the first line, so a fix
 // wraps under itself and is never truncated.
 func (t Theme) hangingAt(st lipgloss.Style, lead string, col int, text string, width int) []string {
-	body := t.wrap(text, width-col)
+	return hangingLines(st, lead, col, t.wrap(text, width-col))
+}
+
+// hangingLines lays already-wrapped body lines into the column at col, with lead before the first
+// and that column's padding before every line after it. It takes the wrapped lines rather than the
+// text so a caller can choose which wrap produced them.
+func hangingLines(st lipgloss.Style, lead string, col int, body []string) []string {
 	pad := strings.Repeat(" ", col)
 	out := make([]string, 0, len(body))
 	for i, l := range body {

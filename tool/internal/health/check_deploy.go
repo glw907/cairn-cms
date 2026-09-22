@@ -1,6 +1,7 @@
 package health
 
 import (
+	"cmp"
 	"context"
 	"time"
 
@@ -161,10 +162,7 @@ func HasRepo(r record.Record) bool {
 // record carries none: an unadopted or freshly created repository's record can predate the
 // default-branch read, and "main" is what every site this tool provisions is created with.
 func DefaultBranch(r record.Record) string {
-	if r.GitHub.Repo.DefaultBranch != "" {
-		return r.GitHub.Repo.DefaultBranch
-	}
-	return "main"
+	return cmp.Or(r.GitHub.Repo.DefaultBranch, "main")
 }
 
 // Run implements Check. Worker absence and an unreachable or misclassified API call return

@@ -1,6 +1,7 @@
 package render
 
 import (
+	"cmp"
 	"strings"
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
@@ -232,10 +233,7 @@ func (t Theme) detailLines(detail, tail string, col, width int) (lines []string,
 // report against, which --json carries at every width, and a row on the screen owes the operator
 // a sentence about what happened instead.
 func checkDetail(c health.CheckResult) string {
-	if c.Outcome.Detail != "" {
-		return c.Outcome.Detail
-	}
-	return health.ReasonPhrase(c.Outcome.Reason)
+	return cmp.Or(c.Outcome.Detail, health.ReasonPhrase(c.Outcome.Reason))
 }
 
 // fixBlock renders one fix under the row it repairs: the imperative sentence wrapped with a

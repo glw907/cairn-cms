@@ -65,7 +65,7 @@ func (n *NPM) packument(ctx context.Context, name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if status < 200 || status >= 300 {
+	if isErrorStatus(status) {
 		return nil, &NPMError{Status: status, Reason: reasonForStatus(status, header)}
 	}
 	return data, nil

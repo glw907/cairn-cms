@@ -54,7 +54,7 @@ func (httpsForcedCheck) Needs() Tier { return TierCF }
 // rather than borrowing an id for a setting it does not describe.
 func (httpsForcedCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	if r.Cloudflare.ZoneID == "" {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no zone id recorded for this site"}
+		return noZoneIDOutcome()
 	}
 	settings, err := c.CF.ZoneSettings(ctx, r.Cloudflare.ZoneID)
 	if err != nil {

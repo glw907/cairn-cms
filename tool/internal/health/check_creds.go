@@ -65,7 +65,7 @@ type credentialSide struct {
 // classifies every other credential check.
 func checkCloudflareCredential(ctx context.Context, c Clients) credentialSide {
 	if !c.HaveCF {
-		return credentialSide{outcome: spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}}
+		return credentialSide{outcome: credMissingOutcome()}
 	}
 	if _, err := c.CF.VerifyToken(ctx); err != nil {
 		return credentialSide{outcome: credentialErrorOutcome(err), from: c.CFFrom}
@@ -83,7 +83,7 @@ func checkCloudflareCredential(ctx context.Context, c Clients) credentialSide {
 // token into exit UNKNOWN.
 func checkGitHubCredential(ctx context.Context, c Clients, now time.Time) credentialSide {
 	if !c.HaveGH {
-		return credentialSide{outcome: spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}}
+		return credentialSide{outcome: credMissingOutcome()}
 	}
 
 	expiry, err := c.GH.TokenExpiry(ctx)

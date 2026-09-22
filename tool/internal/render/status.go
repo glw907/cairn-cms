@@ -131,10 +131,7 @@ const credsRowID = "creds"
 // remainingDays spells a token's remaining life, whole days at a distance and whole hours once a
 // day count would round the warning away, the same two units a hold's own field spells.
 func remainingDays(d time.Duration) string {
-	if d < 0 {
-		d = 0
-	}
-	return remaining(d)
+	return remaining(max(d, 0))
 }
 
 // sanitizeAll returns every string in ss through the render seam.

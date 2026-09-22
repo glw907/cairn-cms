@@ -241,19 +241,17 @@ func FixFor(o spine.Outcome) (Fix, bool) {
 // either map's own iteration order (the caller sorts).
 func FixLines() []string {
 	lines := make([]string, 0, 2*(len(fixesByCondition)+len(fixesByCode)))
-	for _, fix := range fixesByCondition {
-		lines = append(lines, fix.Text)
-		if fix.Command != "" {
-			lines = append(lines, fix.Command)
-		}
-	}
-	for _, fix := range fixesByCode {
-		lines = append(lines, fix.Text)
-		if fix.Command != "" {
-			lines = append(lines, fix.Command)
-		}
-	}
-	for _, fix := range fixesByReason {
+	lines = appendFixLines(lines, fixesByCondition)
+	lines = appendFixLines(lines, fixesByCode)
+	lines = appendFixLines(lines, fixesByReason)
+	return lines
+}
+
+// appendFixLines appends every fix in fixes to lines, Text first and Command after it where the
+// fix carries one. It is generic over the key because the three fix tables are keyed by three
+// different types and FixLines reads all three the same way.
+func appendFixLines[K comparable](lines []string, fixes map[K]Fix) []string {
+	for _, fix := range fixes {
 		lines = append(lines, fix.Text)
 		if fix.Command != "" {
 			lines = append(lines, fix.Command)

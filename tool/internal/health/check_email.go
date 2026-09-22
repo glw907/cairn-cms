@@ -55,7 +55,7 @@ func (emailCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options
 		return outcome
 	}
 	if !c.HaveCF {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}
+		return credMissingOutcome()
 	}
 	return checkSendingSubdomain(ctx, r, c)
 }
@@ -148,7 +148,7 @@ func checkDKIM(ctx context.Context, probe *providers.Probe, domain string) (spin
 // entry named after r.Domain, the apex a site's `wrangler email sending enable` onboards.
 func checkSendingSubdomain(ctx context.Context, r record.Record, c Clients) spine.Outcome {
 	if r.Cloudflare.ZoneID == "" {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no zone id recorded for this site"}
+		return noZoneIDOutcome()
 	}
 	subdomains, err := c.CF.EmailSendingSubdomains(ctx, r.Cloudflare.ZoneID)
 	if err != nil {

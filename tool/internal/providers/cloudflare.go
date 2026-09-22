@@ -223,7 +223,7 @@ func (cf *Cloudflare) do(req *http.Request, out any, info *resultInfo) error {
 	var env v4Envelope
 	envErr := json.Unmarshal(data, &env)
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 || (envErr == nil && !env.Success) {
+	if isErrorStatus(resp.StatusCode) || (envErr == nil && !env.Success) {
 		var errs []v4Error
 		if envErr == nil {
 			errs = env.Errors

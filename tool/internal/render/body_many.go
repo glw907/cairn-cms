@@ -757,15 +757,5 @@ func (t Theme) fittedEach(ascii bool, names []string, n int) []string {
 // "also on:" list is exactly the comma-joined shape a naive break can leave one site name
 // dangling on, which wrapNoOrphan already exists to prevent for the sentence above it.
 func (t Theme) hangingAtNoOrphan(st lipgloss.Style, lead string, col int, text string, width int) []string {
-	body := t.wrapNoOrphan(text, width-col)
-	pad := strings.Repeat(" ", col)
-	out := make([]string, 0, len(body))
-	for i, l := range body {
-		if i == 0 {
-			out = append(out, lead+st.Render(l))
-			continue
-		}
-		out = append(out, pad+st.Render(l))
-	}
-	return out
+	return hangingLines(st, lead, col, t.wrapNoOrphan(text, width-col))
 }

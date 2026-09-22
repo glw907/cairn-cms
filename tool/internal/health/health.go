@@ -154,7 +154,7 @@ func settle(ctx context.Context, check Check, r record.Record, c Clients, o Opti
 	}
 
 	if !needsClient(result.Tier, c) {
-		result.Outcome = spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}
+		result.Outcome = credMissingOutcome()
 		return result
 	}
 

@@ -29,14 +29,7 @@ const (
 // content clamps w to the range a frame composes into: never wider than WidthCap, never
 // narrower than one cell.
 func content(w int) int {
-	switch {
-	case w > WidthCap:
-		return WidthCap
-	case w < 1:
-		return 1
-	default:
-		return w
-	}
+	return min(max(w, 1), WidthCap)
 }
 
 // widthTable is one East Asian Width reading of the Unicode width data, the two a Theme
@@ -82,9 +75,7 @@ func (t Theme) Width(s string) int {
 // already within budget, so Clamp only ever fires on data a site handed us. A width below 1 is
 // treated as 1, so a degenerate width never panics and never returns text wider than requested.
 func (t Theme) Clamp(s string, width int) string {
-	if width < 1 {
-		width = 1
-	}
+	width = max(width, 1)
 	if t.Width(s) <= width {
 		return s
 	}

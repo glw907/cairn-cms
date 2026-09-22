@@ -21,28 +21,31 @@ func NewCredential(v string) Credential {
 	return Credential{v: v}
 }
 
+// redacted is the one text every Credential renders as, whichever encoder asks for it.
+const redacted = "<redacted>"
+
 // String implements fmt.Stringer. fmt's %v, %+v, and %s verbs all call this for a type that
 // implements it, so none of them can print the wrapped value by accident.
 func (c Credential) String() string {
-	return "<redacted>"
+	return redacted
 }
 
 // GoString implements fmt.GoStringer, redacting the %#v representation the same way; without
 // it, %#v falls back to reflection and prints the unexported field's value regardless.
 func (c Credential) GoString() string {
-	return "<redacted>"
+	return redacted
 }
 
 // MarshalJSON redacts the value written into an encoded struct that embeds a Credential field,
 // since json.Marshal ignores fmt.Stringer entirely.
 func (c Credential) MarshalJSON() ([]byte, error) {
-	return []byte(`"<redacted>"`), nil
+	return []byte(`"` + redacted + `"`), nil
 }
 
 // MarshalText redacts the value for an encoding.TextMarshaler consumer, the same reasoning as
 // MarshalJSON.
 func (c Credential) MarshalText() ([]byte, error) {
-	return []byte("<redacted>"), nil
+	return []byte(redacted), nil
 }
 
 // Reveal returns the wrapped value in plaintext. It exists for one caller, internal/logx, which

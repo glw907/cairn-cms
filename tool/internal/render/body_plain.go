@@ -1,6 +1,7 @@
 package render
 
 import (
+	"cmp"
 	"strconv"
 	"strings"
 	"time"
@@ -131,10 +132,7 @@ func plainCheck(c health.CheckResult, now time.Time) []string {
 // plainValue returns v with an empty value replaced by the one word that is still true about it,
 // so no key is ever printed with nothing after it.
 func plainValue(v string) string {
-	if v == "" {
-		return "unstated"
-	}
-	return v
+	return cmp.Or(v, "unstated")
 }
 
 // plainFix renders the fix a check's own verdict resolves to, and nothing when the fix table
@@ -170,28 +168,13 @@ type fixGroup struct {
 // naming every check it covers. Where one missing input caused several skips, the group carries
 // one fix under its own key rather than letting the last skipped row appear to own a fix that
 // covers two: ambiguity costs more than duplication.
+// It groups exactly as groupBlockedFixes does, and drops the two fields only the fleet body's
+// head line reads.
 func groupFixes(skipped []health.CheckResult) []fixGroup {
-	var out []fixGroup
-	for _, c := range skipped {
-		fix, ok := health.FixFor(c.Outcome)
-		if !ok {
-			fix, ok = health.FixForReason(c.Outcome.Reason)
-		}
-		if !ok || fix.Text == "" {
-			continue
-		}
-		id := Sanitize(c.ID)
-		found := false
-		for i := range out {
-			if out[i].fix == fix {
-				out[i].ids = append(out[i].ids, id)
-				found = true
-				break
-			}
-		}
-		if !found {
-			out = append(out, fixGroup{ids: []string{id}, fix: fix})
-		}
+	blocked := groupBlockedFixes(skipped)
+	out := make([]fixGroup, 0, len(blocked))
+	for _, g := range blocked {
+		out = append(out, fixGroup{ids: g.ids, fix: g.fix})
 	}
 	return out
 }

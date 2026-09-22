@@ -220,11 +220,7 @@ func sweepDeadline(ctx context.Context, rf *rootFlags, siteCount int) (context.C
 	if rf.timeoutSet {
 		return rf.deadline(ctx)
 	}
-	perSite := rf.timeout
-	if perSite <= 0 {
-		perSite = defaultTimeout
-	}
-	whole := perSite * time.Duration(max(siteCount, 1))
+	whole := perSiteTimeout(rf) * time.Duration(max(siteCount, 1))
 	if whole <= 0 || whole > maxSweepTimeout {
 		whole = maxSweepTimeout
 	}
@@ -239,14 +235,19 @@ func sweepDeadline(ctx context.Context, rf *rootFlags, siteCount int) (context.C
 // sites behind it. Sites run one after another, which is what makes the division the whole
 // protection: without it the first site could spend an envelope eleven others are waiting on.
 func siteBudget(envelope context.Context, rf *rootFlags, remaining int) (context.Context, context.CancelFunc) {
-	perSite := rf.timeout
-	if perSite <= 0 {
-		perSite = defaultTimeout
-	}
 	deadline, ok := envelope.Deadline()
 	if !ok {
 		return context.WithCancel(envelope)
 	}
 	share := time.Until(deadline) / time.Duration(max(remaining, 1))
-	return context.WithTimeout(envelope, min(share, perSite))
+	return context.WithTimeout(envelope, min(share, perSiteTimeout(rf)))
+}
+
+// perSiteTimeout is the budget one site's health run gets, the explicit --timeout where the
+// operator set one and defaultTimeout otherwise.
+func perSiteTimeout(rf *rootFlags) time.Duration {
+	if rf.timeout <= 0 {
+		return defaultTimeout
+	}
+	return rf.timeout
 }

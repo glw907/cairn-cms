@@ -27,8 +27,7 @@ tag session's runbook, scope, and Geoff's-go gate live in
 `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`.
 
 **The Go tool's 1.0 is merged, tagged, and released: `tool/v1.0.0` (commit `3110e875`) and
-`tool/v1.0.1` (commit `9b479e8d`, the full release page), merged to `main` as MERGE SHA RECORDED
-HERE AFTER THE MERGE. The cut still waits on the doctor-retirement track and draft-docs pass A.**
+`tool/v1.0.1` (commit `9b479e8d`, the full release page), merged to `main` as `5cbfbad0` (a true merge commit; both tags are reachable from `main`). The cut still waits on the doctor-retirement track and draft-docs pass A.**
 
 **The cut includes the tool's 1.0**, per Task 6 of
 `docs/superpowers/plans/2026-09-21-pre-cut-pass.md` and `ROADMAP.md`'s "The window after the cut"

@@ -72,8 +72,8 @@ type parsedRobots struct {
 
 // parseRobots ports check-posture.ts's own parseRobots (:93-132). Consecutive User-agent lines
 // share one rule set (RFC 9309 section 2.2.1), so a file naming seven agents above a single
-// Disallow: / declines all seven; crediting only the last would report a genuinely declining
-// site as contradicting itself. Product tokens match case-insensitively, as that same section
+// Disallow: / declines all seven; crediting only the last would report a declining site as
+// contradicting itself. Product tokens match case-insensitively, as that same section
 // requires.
 func parseRobots(text string) parsedRobots {
 	var parsed parsedRobots

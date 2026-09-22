@@ -17,7 +17,10 @@ The pre-task's contracts are live: `tool/internal/spine/conditions.json` and
 `buildStart` (`docs/reference/site-facts.md`). Beside the engine: the tool's post-1.0 course is
 `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md` (`cairn-tripwire` runs daily
 here, `CAIRN_GH_READ_TOKEN` expiring 2026-10-19); `cairn-pub`, on `pass-d-docs-tracks`, stays
-un-pinnable against the registry since `0.95.0`.
+un-pinnable against the registry since `0.95.0`. Draft docs pass B's plan
+(`docs/superpowers/plans/2026-09-21-draft-docs-pass-b.md`) and pass C's stub are on `main`,
+three-lens reviewed; pass B starts only when its nine preconditions hold (after the cut, the docs
+chore, and docs-infra).
 
 ## Immediate next action
 

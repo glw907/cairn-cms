@@ -48,7 +48,7 @@ func TestAdoptListNamesTheWorkersDiscoveryCannotAdopt(t *testing.T) {
 	d := credentialedDeps(t)
 	d.transport = twoGroupRoutes()
 
-	stdout, _, err := execTree(t, d, "adopt", "list")
+	stdout, _, err := execTree(t, d, "adopt", "list", "--json")
 	if err != nil {
 		t.Fatalf("adopt list: %v", err)
 	}

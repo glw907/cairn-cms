@@ -43,19 +43,21 @@ func credentialedDeps(t *testing.T) deps {
 }
 
 // TestAdoptListPrintsCandidatesAsJSONAndWritesNothing covers the listing half of the grammar
-// cleanup: a separate non-writing subcommand over the same Discover the adopt path calls.
+// cleanup: a separate non-writing subcommand over the same Discover the adopt path calls. The
+// JSON form is asked for, never a default: --json off is what every other command's flag does,
+// and a default frozen at 1.0 is one no later release can move.
 func TestAdoptListPrintsCandidatesAsJSONAndWritesNothing(t *testing.T) {
 	d := credentialedDeps(t)
 	d.transport = adoptRoutes("ecxc-ski")
 
-	stdout, stderr, err := execTree(t, d, "adopt", "list")
+	stdout, stderr, err := execTree(t, d, "adopt", "list", "--json")
 	if err != nil {
 		t.Fatalf("adopt list: %v", err)
 	}
-	// The listing defaults to --json, where stderr carries nothing but an error and the
-	// sensitive-data notice travels inside the payload instead.
+	// Under --json stderr carries nothing but an error, and the sensitive-data notice travels
+	// inside the payload instead.
 	if stderr != "" {
-		t.Errorf("stderr = %q, want empty under the listing's default --json", stderr)
+		t.Errorf("stderr = %q, want empty under --json", stderr)
 	}
 
 	var payload struct {

@@ -62,8 +62,9 @@ func TestSitesListJSONCarriesEachSiteID(t *testing.T) {
 }
 
 // TestSitesListExitCodes covers what a listing can say about the registry: a readable registry
-// is OK, and a count the operator's --expect-sites disagrees with is UNKNOWN, because the tool
-// cannot then say whether it is looking at every site.
+// is OK, an empty one included, since listing nothing is a complete answer to which sites are
+// registered. Only --expect-sites makes the count a claim, and a count it disagrees with is
+// UNKNOWN, because the tool cannot then say whether it is looking at every site.
 func TestSitesListExitCodes(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -74,7 +75,8 @@ func TestSitesListExitCodes(t *testing.T) {
 		{"a site the registry holds is OK", 1, nil, spine.VerdictOK},
 		{"an expected count that matches is OK", 2, []string{"--expect-sites", "2"}, spine.VerdictOK},
 		{"an expected count that does not match is UNKNOWN", 2, []string{"--expect-sites", "3"}, spine.VerdictUnknown},
-		{"an empty registry with no --expect-sites is UNKNOWN", 0, nil, spine.VerdictUnknown},
+		{"an empty registry with no --expect-sites is OK", 0, nil, spine.VerdictOK},
+		{"an empty registry under --expect-sites is UNKNOWN", 0, []string{"--expect-sites", "1"}, spine.VerdictUnknown},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

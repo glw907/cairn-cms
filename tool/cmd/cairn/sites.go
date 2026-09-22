@@ -50,8 +50,8 @@ func newSitesCmd(d deps, rf *rootFlags) *cobra.Command {
 
 // runSitesList prints the registry's sites and exits on the verdict spine.ExitCode gives the
 // listing. A listing carries no health, so every site contributes nothing and the verdict comes
-// from the read itself: an empty registry, an unreadable record, or a count the operator's
-// --expect-sites disagrees with all leave the tool unable to say whether the sites are healthy.
+// from the read itself: an unreadable record, or a count the operator's --expect-sites disagrees
+// with, leaves the tool unable to say whether the sites are healthy.
 func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error {
 	dir, err := d.registryDir()
 	if err != nil {
@@ -72,10 +72,12 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 		}
 	}
 
-	// An empty registry reuses spine.ErrExpectSites too, even with no --expect-sites: the tool
-	// cannot say whether zero is every site or none of them were ever registered, the same
-	// reason a count mismatch is UNKNOWN rather than OK.
-	if len(entries) == 0 || (f.expectSites > 0 && len(entries) != f.expectSites) {
+	// An empty registry is a true and complete answer to "which sites are registered", so a
+	// bare listing reports it and exits OK. Only --expect-sites turns a count into a claim the
+	// registry can contradict, and only then is a mismatch UNKNOWN. `cairn health` still refuses
+	// an empty registry: a sweep with nothing to sweep says nothing about any site's health,
+	// where a listing of nothing is the listing.
+	if f.expectSites > 0 && len(entries) != f.expectSites {
 		listErrs = append(listErrs, spine.ErrExpectSites)
 	}
 

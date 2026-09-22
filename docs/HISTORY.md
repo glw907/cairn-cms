@@ -7,6 +7,66 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## The Go tool's Pass B2, twenty-one tasks, 2026-09-21
+
+Branch `cairn-tool-b2`, PR #71. Plan and post-mortem:
+`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, B2 section. Owner rulings:
+`docs/internal/record/2026-09-21-go-tool-b2-owner-rulings.md`.
+
+**What landed.** The `cairn` operator CLI's 1.0: the cobra command tree and grammar, `adopt`,
+`auth set`/`unset`/`check`, the registry query and the multi-site sweep, acknowledgements,
+completions, the `render` package (palette, glyphs, width rungs, sanitizer, theme, the
+single-site and plain bodies, the status strip, the log body, the fleet fix list, and a golden
+corpus), six `--json` schemas with their own `schemaVersion`, the WARNING tier, usage errors at
+exit 3, `cairn help agents`, the secret scrub, `--theme dark|light`, the quiet sweep, and the
+scheduled run documented for systemd, launchd, and Task Scheduler. Two tags followed:
+`tool/v1.0.0` (object `25f1e446`, commit `3110e875`) and `tool/v1.0.1` (object `5d36e148`,
+commit `9b479e8d`), the second carrying the full release page, six archives with man pages,
+`SHA256SUMS`, an attestation verified in-job, and the measured `go 1.26` floor. The owner's own
+`cairn-tripwire` systemd timer is installed from a dotfiles stow package and fires daily.
+
+**What the gates and the live runs caught.** Every task cleared the Go gate and an independent
+diff review, and CI was green on all eleven checks at both tagged commits. What that did not
+catch, three live release-candidate runs against four production sites did. Run 1: `adopt`
+discovered one of seven custom domains, because `getPaginated` stopped when `total_pages` was 0
+and the live `workers/domains` endpoint returns only `total_count`; and the Workers
+Observability query was malformed (no per-filter `type`, no `group`/`filterCombination`
+wrapper), answered 400, and was reported to the operator as "observability is off". Run 2: a
+healthy adopted site could never read OK, because adopt never recorded nameservers, `HaveBuilds`
+was never set, and "nothing waiting to publish" read as could-not-run, so three checks reported
+could-not-run on every site and every site read UNKNOWN forever. Run 3 was clean. A
+fresh-context visual grader then failed the frames on four render defects (a blank event column,
+a condition id cut mid-word at width 40, an inverted width-60 footer, an over-width notice), all
+fixed and re-graded PASS.
+
+**What a later pass would be wrong to rediscover.**
+
+- An owner-gated task with a Files list is work, not a check. Task 23 modifies the release job,
+  `go.mod`, the README, and the changelog; dispatching it after the tag as a verification is why
+  `tool/v1.0.0` fired a stub release job and why a `1.0.1` was needed. A tag's release page must
+  exist before the tag: dry-run the release job on the branch first.
+- A pass that talks to a provider needs a recorded live response per route, in its gate. Every
+  provider test ran on fakes ported from the Node side, so two contract bugs survived seventeen
+  tasks and every review.
+- A fake corpus proves the renderer, never the checks' judgement of a real site. The fixtures
+  were all built from reports the code could produce, so none could show a healthy site reading
+  UNKNOWN. A plan whose goal is "honest against every site" needs a live OK-path criterion.
+- Open the draft PR at a pass's first segment. The `tool` workflow runs on pushes to `main` and
+  on pull requests only, so the Windows and macOS legs never ran until the PR opened at the end,
+  and Windows was red with ten failing tests.
+- Capture terminal frames headlessly. No screenshot path works on this desktop, and one kitty
+  window per capture is not acceptable.
+- Cloudflare, learned live: `workers/domains` returns `total_count` and `per_page` with no
+  `total_pages`, so a pager keyed on `total_pages` stops at page 1; a Worker with observability
+  off answers 200 with zero events rather than an error; and cairn's own error records are the
+  ones carrying the log envelope's `event` field, which is what the `errors` check counts.
+- The B2 architecture reads (one per touched Go package) are filed as retire-1's opening inputs
+  in `ROADMAP.md`; the two with teeth are `spine`'s already-drifted hand-kept test list and
+  `logs`'s fixture that never sees the request body.
+
+**Both budgets.** Ceiling 14M at launch, raised six times to 28.5M; spend about 27.3M. Attended
+time: four planning misses, about ten execution sittings.
+
 ## The pre-cut pass, five tasks, 2026-09-21
 
 Branch `pre-cut`, PR #69. Plan and post-mortem: `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`.

@@ -37,6 +37,11 @@ export interface CairnManifestOptions {
   content: Record<string, string>;
   /** The committed manifest path, app-root-absolute. Defaults to `/src/content/.cairn/index.json`. */
   manifestPath?: string;
+  /**
+   * The committed site-facts path, app-root-absolute. Defaults to
+   *  `/src/content/.cairn/site-facts.json`. See {@link checkSiteFacts}.
+   */
+  siteFactsPath?: string;
 }
 
 const VIRTUAL_ID = 'virtual:cairn-manifest';
@@ -44,6 +49,9 @@ const RESOLVED_ID = '\0' + VIRTUAL_ID;
 
 /** The default committed manifest path, app-root-absolute. */
 const DEFAULT_MANIFEST_PATH = '/src/content/.cairn/index.json';
+
+/** The default committed site-facts path, app-root-absolute. */
+const DEFAULT_SITE_FACTS_PATH = '/src/content/.cairn/site-facts.json';
 
 /**
  * Build the virtual module source. In verify mode it throws on drift; in write mode it exports the
@@ -174,6 +182,12 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       } catch (err) {
         this.error(err instanceof Error ? err.message : String(err));
       }
+      const siteFacts = await checkSiteFacts(opts, root);
+      if (siteFacts.status === 'absent') {
+        this.warn(SITE_FACTS_ABSENT_WARNING);
+      } else if (siteFacts.status === 'stale') {
+        this.error(siteFacts.message);
+      }
     },
   };
   // Stash the options on the instance so the cairn-manifest bin's writeManifest can read the content
@@ -215,6 +229,31 @@ export async function writeManifest(cwd: string = process.cwd()): Promise<void> 
   const committed = await readFile(outPath, 'utf8').catch(() => null);
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, carryPublishStamps(serialized, committed));
+}
+
+/**
+ * Regenerate the committed `site-facts.json` from the consumer's adapter and write it to the
+ *  configured siteFactsPath, sharing the manifest bin's config discovery and root derivation so
+ *  the file always tracks the exact adapter the build verifies against.
+ */
+export async function writeSiteFacts(cwd: string = process.cwd()): Promise<void> {
+  const { loadConfigFromFile } = await import('vite');
+  const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, cwd);
+  if (!loaded) {
+    throw new Error(`cairn-manifest: no Vite config found in ${cwd}`);
+  }
+  const opts = findCairnOptions(loaded.config.plugins);
+  if (!opts) {
+    throw new Error(
+      'cairn-manifest: the Vite config has no cairnManifest() plugin. Add it so the bin shares the build options.',
+    );
+  }
+  const root = resolveViteRoot(loaded, cwd);
+  const serialized = await buildSiteFactsFromVite(opts, root);
+  const siteFactsPath = opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH;
+  const outPath = join(root, siteFactsPath.replace(/^\//, ''));
+  await mkdir(dirname(outPath), { recursive: true });
+  await writeFile(outPath, serialized);
 }
 
 /**
@@ -340,6 +379,28 @@ export const result = JSON.stringify(facts);
 }
 
 /**
+ * Validate the JSON an evaluated `adapterFactsSource` module exports into the typed
+ *  {@link AdapterFacts} shape, dropping any field of the wrong runtime type. Shared by
+ *  {@link readAdapterFacts} and {@link buildSiteFactsFromVite}, so the two callers never
+ *  re-derive the same field-by-field validation.
+ */
+function parseAdapterFacts(raw: string): AdapterFacts {
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  const facts: AdapterFacts = {};
+  if (typeof parsed.owner === 'string') facts.owner = parsed.owner;
+  if (typeof parsed.repo === 'string') facts.repo = parsed.repo;
+  if (typeof parsed.from === 'string') facts.from = parsed.from;
+  if (typeof parsed.mediaBucketBinding === 'string') facts.mediaBucketBinding = parsed.mediaBucketBinding;
+  if (parsed.roles !== undefined && typeof parsed.roles === 'object' && parsed.roles !== null) {
+    facts.roles = parsed.roles as RolesDeclaration;
+  }
+  if (parsed.aiPosture === 'invite' || parsed.aiPosture === 'decline') {
+    facts.aiPosture = parsed.aiPosture;
+  }
+  return facts;
+}
+
+/**
  * Read `{ owner, repo, from }` off the consumer's adapter by evaluating a tiny virtual module
  *  through the consumer's own Vite resolution, the same machinery the cairn-manifest bin uses.
  *  cairn-doctor calls this to fill inputs the operator did not pass. Derivation is best-effort:
@@ -359,23 +420,75 @@ export async function readAdapterFacts(cwd: string = process.cwd()): Promise<Ada
     if (!loaded) return null;
     const opts = findCairnOptions(loaded.config.plugins);
     if (!opts) return null;
-    const parsed = JSON.parse(await evalVirtual(adapterFactsSource(opts), cwd)) as Record<
-      string,
-      unknown
-    >;
-    const facts: AdapterFacts = {};
-    if (typeof parsed.owner === 'string') facts.owner = parsed.owner;
-    if (typeof parsed.repo === 'string') facts.repo = parsed.repo;
-    if (typeof parsed.from === 'string') facts.from = parsed.from;
-    if (typeof parsed.mediaBucketBinding === 'string') facts.mediaBucketBinding = parsed.mediaBucketBinding;
-    if (parsed.roles !== undefined && typeof parsed.roles === 'object' && parsed.roles !== null) {
-      facts.roles = parsed.roles as RolesDeclaration;
-    }
-    if (parsed.aiPosture === 'invite' || parsed.aiPosture === 'decline') {
-      facts.aiPosture = parsed.aiPosture;
-    }
-    return facts;
+    return parseAdapterFacts(await evalVirtual(adapterFactsSource(opts), cwd));
   } catch {
     return null;
   }
+}
+
+/**
+ * Serialize the `site-facts.json` contract deterministically: `version` first, each of the three
+ *  adapter-derived fields omitted when the adapter declares none rather than written as null, one
+ *  stable key order, one trailing newline, so the build-time verify compares byte-for-byte with no
+ *  normalization. `owner`, `repo`, and `from` are never accepted here: the file carries only what a
+ *  Go process (which cannot evaluate a site's adapter) needs.
+ */
+export function formatSiteFacts(facts: Pick<AdapterFacts, 'mediaBucketBinding' | 'roles' | 'aiPosture'>): string {
+  const out: { version: 1; mediaBucketBinding?: string; roles?: RolesDeclaration; aiPosture?: AiPosture } = {
+    version: 1,
+  };
+  if (facts.mediaBucketBinding !== undefined) out.mediaBucketBinding = facts.mediaBucketBinding;
+  if (facts.roles !== undefined) out.roles = facts.roles;
+  if (facts.aiPosture !== undefined) out.aiPosture = facts.aiPosture;
+  return `${JSON.stringify(out, null, 2)}\n`;
+}
+
+/**
+ * Derive the current `site-facts.json` contents from the consumer's adapter, evaluated through the
+ *  build's own Vite resolution. Shares `adapterFactsSource` and its validation with
+ *  {@link readAdapterFacts}; never re-derives the three fields independently.
+ */
+export async function buildSiteFactsFromVite(opts: CairnManifestOptions, root: string): Promise<string> {
+  const facts = parseAdapterFacts(await evalVirtual(adapterFactsSource(opts), root));
+  return formatSiteFacts(facts);
+}
+
+/** The build-log warning `checkSiteFacts` reports once when the committed file does not exist yet. */
+export const SITE_FACTS_ABSENT_WARNING =
+  'cairn-cms: src/content/.cairn/site-facts.json is missing. Run `npx cairn-manifest` to create it.';
+
+/** The three outcomes {@link checkSiteFacts} distinguishes: current, not yet created, or drifted. */
+export type SiteFactsCheck = { status: 'ok' } | { status: 'absent' } | { status: 'stale'; message: string };
+
+/**
+ * Check the committed `site-facts.json` against the adapter, without importing the committed file
+ *  into the app graph (unlike the manifest's `?raw` import, which would throw at buildStart on
+ *  every site that has not yet run the bin). An absent file is not drift: no site commits one until
+ *  it runs `cairn-manifest`, and no site's `build` script runs that bin, so a fresh install or an
+ *  upgrading consumer must still build. A present file that no longer matches the adapter is drift
+ *  and fails the build in the manifest's own shape. A derivation failure (the adapter throwing for a
+ *  reason unrelated to these three fields) degrades to `ok` rather than reporting stale, the same
+ *  best-effort contract `readAdapterFacts` already keeps: the manifest verify immediately before this
+ *  check already evaluates the same config module and is the build's real gate on an adapter that
+ *  cannot load at all, so failing this specific comparison for an unrelated reason would be a false
+ *  positive, not a real site-facts drift.
+ */
+export async function checkSiteFacts(opts: CairnManifestOptions, root: string): Promise<SiteFactsCheck> {
+  const siteFactsPath = opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH;
+  const outPath = join(root, siteFactsPath.replace(/^\//, ''));
+  const committed = await readFile(outPath, 'utf8').catch(() => null);
+  if (committed === null) return { status: 'absent' };
+  let expected: string;
+  try {
+    expected = await buildSiteFactsFromVite(opts, root);
+  } catch {
+    return { status: 'ok' };
+  }
+  if (expected === committed) return { status: 'ok' };
+  return {
+    status: 'stale',
+    message:
+      'cairn-cms: src/content/.cairn/site-facts.json is stale: the committed file does not match the adapter.\n' +
+      'Run `npx cairn-manifest` and commit the result.',
+  };
 }

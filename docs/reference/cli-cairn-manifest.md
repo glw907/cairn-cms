@@ -26,6 +26,9 @@ Run it after you edit content outside the admin, so the committed manifest track
 [`cairnManifest`](./vite.md) plugin verifies the manifest on every build and fails the build on
 drift, and this command regenerates the manifest to clear that drift.
 
+The command also writes [`site-facts.json`](./site-facts.md), the adapter-derived contract a Go
+process reads, in the same run.
+
 ## How to run it
 
 Wire it as a package script and run it from the project root. The showcase wires it as `cairn:manifest`:

@@ -56,6 +56,12 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [The `cairn-doctor` CLI](./doctor.md): the setup preflight that checks a site's local config, Cloudflare account, and GitHub App.
 - [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.
 - [The `cairn-audit` CLI](./cairn-audit.md): the design-language audit, and the norms query that answers a measured norm from the shipped manifest.
+- [The `cairn` CLI's exit codes](./cli-cairn-exit-codes.md): the four codes, the precedence rule
+  that combines them, and the timeout arithmetic a scheduler is sized against.
+- [The `cairn` CLI's JSON output](./cli-cairn-json-output.md): every `--json` payload, the schema
+  it validates against, the stream rules, and the two freeze lists.
+- [The `cairn doctor` command](./cli-cairn-doctor.md): the credential-free directory preflight,
+  what each of its checks reads, and the payload it writes.
 - [Log (`/log`)](./log.md): `createLogger`, `CAIRN_LOG_EVENTS`, and `REDACTED_LOG_KEYS`, for a
   site that wants its own structured logs in the engine's own record shape.
 - [Admin sources (`/admin-sources.css`)](./cairn-audit.md#configuration): the engine-owned
@@ -90,9 +96,11 @@ pages back to the underlying contract rather than a page that repeats it.
 
 ## Pages that document no subpath
 
-Nine of the preceding pages are not export-keyed, since they document a CLI command or an
-internal contract rather than a package subpath: the five CLI pages (`cairn-manifest`,
-`cairn-guidance`, `cairn-doctor`, `cairn-media-seed`, `cairn-audit`),
+Twelve of the preceding pages are not export-keyed, since they document a CLI command or an
+internal contract rather than a package subpath: the five npm CLI pages (`cairn-manifest`,
+`cairn-guidance`, `cairn-doctor`, `cairn-media-seed`, `cairn-audit`), the three `cairn` CLI
+contract pages ([exit codes](./cli-cairn-exit-codes.md),
+[JSON output](./cli-cairn-json-output.md), [`cairn doctor`](./cli-cairn-doctor.md)),
 [the canonical admin mount](./admin-routes.md), [log events](./log-events.md),
 [admin grammar tokens](./admin-grammar-tokens.md), and
 [supported toolchain](./supported-toolchain.md).

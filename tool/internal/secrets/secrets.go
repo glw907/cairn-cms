@@ -25,6 +25,13 @@ type Writer interface {
 	Set(name, value string) error
 }
 
+// Deleter removes one named credential from a backend. It is kept separate from Writer, rather
+// than widening Writer with a second method, so a future write-only backend never has to
+// implement a delete it may not support.
+type Deleter interface {
+	Delete(name string) error
+}
+
 // ResolveError reports that a Provider's own Get call failed while Resolve
 // tried name.
 type ResolveError struct {

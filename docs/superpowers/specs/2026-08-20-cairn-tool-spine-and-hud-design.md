@@ -515,3 +515,19 @@ one severity table exists under `tool/`. `context.Context` is threaded through e
 `providers` method, which is the HUD's only cancellation lever: bubbletea gives a `Cmd` no per-Cmd
 cancellation, so a stale generation's in-flight requests can be stopped only through a context the
 sweep owns.
+
+### Correction to this addendum, 2026-09-20 (evening)
+
+Appended, not merged: the addendum above stands as its own record and this paragraph corrects one
+line in it.
+
+**`Frame` does not gain `Cursor *tea.Cursor`.** The addendum's "Module paths and the v2 API"
+paragraph says it does. That is wrong, and Pass B2's Task 20a rules against it. `render` is a pure
+package whose own test forbids every terminal and program import by name, and a `tea.Cursor` field
+would put a bubbletea type inside it, which breaks both the test and the seam the HUD mounts on.
+`render.Frame` instead returns `Header`, `Body`, and `Footer` sections, joined by `Lines()` for the
+CLI, which is what lets the HUD pin a header, scroll the body in a `viewport`, and pin a
+`bubbles/help` footer without re-layering what `render` already laid out. The HUD composes its
+`tea.View` from a `render.Frame` plus its own cursor state, hoisted at the root the way every other
+piece of global chrome is. The hoisting the addendum asked for is kept; only its location moves.
+Source: `tool/docs/design/charm-v2-capabilities.md`, section D.2.

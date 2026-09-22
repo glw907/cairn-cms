@@ -1,0 +1,32 @@
+verdict: [1;38;2;247;172;77mUNKNOWN[m - 907.life, 9 could not run, 0 passing
+checked: 4m ago (2026-09-20 22:28 UTC), in 16.3s
+
+delegation: unknown
+reason: the provider could not be reached
+
+serving: unknown
+reason: the provider could not be reached
+
+deploy: unknown
+reason: the provider could not be reached
+
+publish-path: unknown
+reason: the provider could not be reached
+
+email: unknown
+reason: the provider could not be reached
+
+errors: unknown
+reason: the provider could not be reached
+
+https-forced: unknown
+reason: the provider could not be reached
+
+creds: unknown
+reason: the provider could not be reached
+
+engine: unknown
+reason: the provider could not be reached
+
+verdict: [1;38;2;247;172;77mUNKNOWN[m - 907.life, 9 could not run, 0 passing
+exit: 3

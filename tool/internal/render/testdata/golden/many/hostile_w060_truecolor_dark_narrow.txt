@@ -1,0 +1,22 @@
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 CRITICAL[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
+
+[38;2;168;164;158msite[m                          [38;2;168;164;158mverdict[m   [38;2;168;164;158mfailing[m
+[1;38;2;234;231;227ma-very-long-site-name-nobod…[m  [1;38;2;255;142;134mCRITICAL[m  [38;2;255;142;134m3[m
+
+[38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the keyring[m
+[38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────────────────────────[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227ma-very-long-site-name-nobod…[m  [38;2;168;164;158mserving[m[38;2;168;164;158m[m
+      [38;2;193;189;184mConfirm the Worker route and the zone's DNS record[m
+      [38;2;193;189;184mpoint at this site.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227ma-very-long-site-name-nobod…[m  [38;2;168;164;158mdeploy[m[38;2;168;164;158m[m
+      [38;2;193;189;184mRead the build log in the Cloudflare dashboard, then[m
+      [38;2;193;189;184mpush a fix.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227ma-very-long-site-name-nobod…[m  ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;168;164;158mhttps-forced[m]8;;[38;2;168;164;158m[m
+      [38;2;168;164;158medge.https-not-forced[m
+      [38;2;193;189;184mTurn on Always Use HTTPS for the zone under SSL/TLS,[m
+      [38;2;193;189;184mEdge Certificates.[m
+
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 CRITICAL[m

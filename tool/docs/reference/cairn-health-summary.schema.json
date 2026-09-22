@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schema/cairn-health-summary.schema.json",
+  "title": "cairn health summary line",
+  "description": "The final line of the newline-delimited stream `cairn health --json` writes. A stream carrying no summary line is UNKNOWN: a truncated stream and a complete one are otherwise indistinguishable.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "verdict",
+    "exitCode",
+    "checkedAt",
+    "durationMs",
+    "sites",
+    "counts",
+    "worstFirst"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "summary" },
+    "verdict": { "type": "string", "enum": ["OK", "WARNING", "CRITICAL", "UNKNOWN"] },
+    "exitCode": { "type": "integer", "enum": [0, 1, 2, 3] },
+    "checkedAt": { "type": "string" },
+    "durationMs": { "type": "integer" },
+    "sites": { "type": "integer" },
+    "counts": { "type": "object", "additionalProperties": { "type": "integer" } },
+    "worstFirst": { "type": "array", "items": { "type": "string" } }
+  }
+}

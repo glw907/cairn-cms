@@ -1,0 +1,27 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "GET /zones/{zone_id}/email/sending/subdomains?page=1",
+    "status": 200,
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes; every key set, result_info value, and count below is the live one. The live body carried one subdomain and no result_info."
+  },
+  "body": {
+    "result": [
+      {
+        "id": "24c3a90ac2026c6826fae262b1a4cf3c",
+        "tag": "24c3a90ac2026c6826fae262b1a4cf3c",
+        "name": "carin-test-5.org",
+        "enabled": true,
+        "preview_enabled": false,
+        "return_path_domain": "cf-bounce.carin-test-5.org",
+        "dkim_selector": "cf-bounce",
+        "drop_suppressed_recipients": false,
+        "created": "2026-05-25T18:03:15.874675Z",
+        "modified": "2026-05-25T18:03:15.874675Z"
+      }
+    ],
+    "success": true,
+    "errors": [],
+    "messages": []
+  }
+}

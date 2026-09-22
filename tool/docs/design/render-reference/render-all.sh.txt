@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# render-all.sh draws every frame offscreen: no terminal window is opened. Each frame goes through
+# offscreen.py, which converts the program's ANSI output to HTML on the Warm Stone grounds in the
+# workstation's terminal font and screenshots it with headless Chromium.
+set -euo pipefail
+cd "$(dirname "$0")"
+go build -o cairnmock ./...
+rm -f ./*.png ./*.ansi
+
+r() { python3 offscreen.py "$@"; }
+
+# The four decisions, drawn as pairs.
+r s2-rail-off   dark 100 -scenario 2 -variant a -width 100
+r s2-rail-on    dark 100 -scenario 2 -variant b -width 100
+r s2-word       dark 100 -scenario 2 -variant a -width 100
+r s2-noword     dark 100 -scenario 2 -variant a -width 100 -word=false
+r s3-strip      dark 100 -scenario 3 -variant a -width 100
+r s3-table      dark 100 -scenario 3 -variant b -width 100
+r s3-sev-one    dark 100 -scenario 3 -variant a -width 100 -sev one
+r s3-sev-two    dark 100 -scenario 3 -variant a -width 100 -sev two
+
+# Every scenario, dark, 100 columns, truecolor.
+r s1-healthy       dark 100 -scenario 1 -variant a -width 100
+r s1-healthy-noword dark 100 -scenario 1 -variant a -width 100 -word=false
+r s4-sites         dark 100 -scenario 4 -width 100
+r s5-logs          dark 100 -scenario 5 -width 100
+r s6-warning       dark 100 -scenario 6 -variant a -width 100
+r s6-warning-noword dark 100 -scenario 6 -variant a -width 100 -word=false
+r s7-twelve-strip  dark 100 -scenario 7 -variant a -width 100
+r s7-twelve-sev2   dark 100 -scenario 7 -variant a -width 100 -sev two
+r s7-twelve-table  dark 100 -scenario 7 -variant b -width 100
+r s9-hostile       dark 100 -scenario 9 -variant a -width 100
+r s9-hostile-noword dark 100 -scenario 9 -variant a -width 100 -word=false
+
+# Scenario 2 across every tier the design has to survive.
+r s2-light       light 100 -scenario 2 -variant a -width 100 -light
+r s2-80          dark  80 -scenario 2 -variant a -width 80
+r s2-60          dark  60 -scenario 2 -variant a -width 60
+r s2-ansi16-dark dark 100 -scenario 2 -variant a -width 100 -profile ansi16
+r s2-ansi16-light light 100 -scenario 2 -variant a -width 100 -light -profile ansi16
+r s2-ascii       dark 100 -scenario 2 -variant a -width 100 -profile none -glyphs ascii
+r s2-ascii-rail  dark 100 -scenario 2 -variant b -width 100 -profile none -glyphs ascii
+
+# The ASCII tier has to carry the second severity as its own character, not as a colour.
+r s3-ascii-sev-one dark 100 -scenario 3 -variant a -width 100 -profile none -glyphs ascii -sev one
+r s3-ascii-sev-two dark 100 -scenario 3 -variant a -width 100 -profile none -glyphs ascii -sev two
+
+# The non-terminal body, kept as text for the index rather than drawn as a frame.
+./cairnmock -scenario 8 >s8-plain.txt
+echo "  s8-plain.txt"

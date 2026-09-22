@@ -1,0 +1,213 @@
+"""Width, hostile-data, and token measurements for the iteration-3 mockup.
+
+Every terminal line is measured independently of the program's own width helper, at both East
+Asian Ambiguous tables, and every dynamic-string attack is checked for an escape, a control, or an
+extra line. Scenario 8 is excluded from the width sweep: it is the non-terminal render and is
+defined to have no column budget at all. The token section runs iteration 2's binary read-only
+alongside this one, so the plain body's cost is a measured comparison rather than a claim.
+"""
+import os
+import re
+import subprocess
+import sys
+import unicodedata
+
+OSC = re.compile(r'\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)')
+CSI = re.compile(r'\x1b\[[0-9;:?]*[a-zA-Z]')
+I2 = os.path.expanduser('~/.cache/cairn-tool-b2/mockups-2/cairnmock')
+
+
+def strip(s):
+    return CSI.sub('', OSC.sub('', s))
+
+
+def dw(s, amb=1):
+    s = strip(s)
+    n = 0
+    for ch in s:
+        # A combining mark and a format character (zero-width joiner, variation selector) occupy
+        # no cell in any terminal.
+        if unicodedata.combining(ch) or unicodedata.category(ch) in ('Cf', 'Mn', 'Me'):
+            continue
+        ea = unicodedata.east_asian_width(ch)
+        n += 2 if ea in ('W', 'F') else (amb if ea == 'A' else 1)
+    return n
+
+
+def run(args, binary='./cairnmock'):
+    return subprocess.run([binary] + args, capture_output=True, text=True)
+
+
+WIDTHS = [20, 30, 40, 50, 60, 72, 79, 80, 81, 100, 110, 120, 160, 200, 300, 400]
+SCEN = [1, 2, 3, 4, 5, 6, 7, 9]
+VARIANTS = ['a', 'b']
+WORDS = ['true', 'false']
+SEVS = ['one', 'two']
+PROFILES = ['truecolor', 'ansi256', 'ansi16', 'none']
+
+
+def sweep(amb, label, glyphs='unicode'):
+    over = []
+    runs = 0
+    for sc in SCEN:
+        for v in VARIANTS:
+            for word in WORDS:
+                for sev in SEVS:
+                    for wd in WIDTHS:
+                        runs += 1
+                        p = run(['-scenario', str(sc), '-variant', v, '-width', str(wd),
+                                 '-word=' + word, '-sev', sev, '-glyphs', glyphs])
+                        if p.returncode != 0:
+                            over.append((sc, v, wd, 'EXIT %d' % p.returncode, p.stderr.strip()[:120]))
+                            continue
+                        for i, l in enumerate(p.stdout.rstrip('\n').split('\n')):
+                            if dw(l, amb) > wd:
+                                over.append((sc, v, wd, 'line %d = %d cells' % (i, dw(l, amb)),
+                                             strip(l)[:100]))
+    print('%s: %d lines over width across %d renders' % (label, len(over), runs))
+    for o in over[:12]:
+        print('   ', o)
+    return len(over)
+
+
+def hostile():
+    bad = []
+    for v in VARIANTS:
+        for pr in PROFILES:
+            for wd in [40, 60, 80, 100, 400]:
+                p = run(['-scenario', '9', '-variant', v, '-width', str(wd), '-profile', pr])
+                if p.returncode != 0:
+                    bad.append(('exit', v, pr, wd, p.stderr[:120]))
+                    continue
+                out = p.stdout
+                body = CSI.sub('', OSC.sub('', out))
+                for ch in body:
+                    o = ord(ch)
+                    if (o < 0x20 and ch != '\n') or o == 0x7f or 0x80 <= o <= 0x9f:
+                        bad.append(('control U+%04X' % o, v, pr, wd, ''))
+                        break
+                if pr == 'none' and '\x1b' in out:
+                    bad.append(('escape at no-colour', v, pr, wd, ''))
+                for l in out.rstrip('\n').split('\n'):
+                    if dw(l, 1) > wd:
+                        bad.append(('over width', v, pr, wd, strip(l)[:90]))
+    # The forged verdict must never begin a line of its own.
+    p = run(['-scenario', '9', '-width', '100', '-profile', 'none'])
+    for l in strip(p.stdout).split('\n'):
+        if l.startswith('CRITICAL 907.life'):
+            bad.append(('forged verdict reached column zero', '', '', '', l[:90]))
+    print('hostile data: %d findings' % len(bad))
+    for b in bad[:12]:
+        print('   ', b)
+    return len(bad)
+
+
+def degenerate():
+    bad = []
+    for wd in [0, 1, 2, 5, 19, 20]:
+        for sc in SCEN:
+            p = run(['-scenario', str(sc), '-width', str(wd)])
+            if p.returncode != 0:
+                bad.append((sc, wd, p.stderr.strip()[:120]))
+    print('degenerate widths (0,1,2,5,19,20): %d panics' % len(bad))
+    for b in bad[:6]:
+        print('   ', b)
+    return len(bad)
+
+
+def determinism():
+    envs = [{}, {'TZ': 'America/Anchorage'}, {'LANG': 'ja_JP.UTF-8'}, {'TERM': 'dumb'},
+            {'NO_COLOR': '1'}, {'LC_CTYPE': 'zh_CN.UTF-8'}]
+    base = None
+    bad = 0
+    for e in envs:
+        env = dict(os.environ)
+        env.update(e)
+        p = subprocess.run(['./cairnmock', '-scenario', '2', '-width', '100', '-profile', 'none'],
+                           capture_output=True, text=True, env=env)
+        if base is None:
+            base = p.stdout
+        elif p.stdout != base:
+            bad += 1
+            print('    differs under', e)
+    print('byte-identical across TZ/LANG/TERM/NO_COLOR/LC_CTYPE: %s' % ('yes' if bad == 0 else 'NO'))
+    return bad
+
+
+def condition_ids():
+    """No id may appear that the shipped checks do not declare on that verdict."""
+    allowed = {'edge.https-not-forced', 'email.sender-not-onboarded', 'config.observability-off'}
+    found = set()
+    # Scenario 9's hostile domain contains a dotted token by construction, so the scan reads
+    # the scenarios whose strings the design wrote.
+    for sc in [1, 2, 3, 4, 5, 6, 7, 8]:
+        p = run(['-scenario', str(sc), '-width', '160', '-profile', 'none'])
+        for m in re.finditer(r'\b[a-z]+\.[a-z]+(?:-[a-z]+)+\b', strip(p.stdout)):
+            tok = m.group(0)
+            if tok.startswith(('https://', 'cairn.pub')) or '/' in tok:
+                continue
+            found.add(tok)
+    # publish.commit-failed is a log event named inside a detail sentence, not a condition id.
+    found -= {'publish.commit-failed', 'signin.link-sent', 'entry.saved', 'publish.conflict',
+              'publish.committed', 'signin.consumed'}
+    bad = sorted(found - allowed)
+    print('condition ids printed anywhere: %s' % sorted(found))
+    print('ids outside the shipped three: %d %s' % (len(bad), bad if bad else ''))
+    return len(bad)
+
+
+def tokens(text):
+    """Two estimates: raw at four characters per token, and the same with runs of spaces and
+    rule glyphs collapsed, which separates layout cost from content cost."""
+    raw = len(text)
+    collapsed = re.sub(r'[─-]{2,}', '-', re.sub(r' {2,}', ' ', text))
+    return round(raw / 4), round(len(collapsed) / 4)
+
+
+def token_table():
+    rows = []
+    for name, binary, args in [
+        ('i2 single-A, 1 site', I2, ['-scenario', '2', '-variant', 'a', '-width', '100']),
+        ('i3 single-A, 1 site', './cairnmock', ['-scenario', '2', '-variant', 'a', '-width', '100']),
+        ('i3 single glyph-only', './cairnmock', ['-scenario', '2', '-word=false', '-width', '100']),
+        ('i2 plain (scenario 8)', I2, ['-scenario', '8']),
+        ('i3 plain (scenario 8)', './cairnmock', ['-scenario', '8']),
+        ('i2 many-A, 12 sites', I2, ['-scenario', '7', '-variant', 'a', '-width', '100']),
+        ('i3 many-A, 12 sites', './cairnmock', ['-scenario', '7', '-variant', 'a', '-width', '100']),
+        ('i2 many-B, 12 sites', I2, ['-scenario', '7', '-variant', 'b', '-width', '100']),
+        ('i3 many-B, 12 sites', './cairnmock', ['-scenario', '7', '-variant', 'b', '-width', '100']),
+    ]:
+        if not os.path.exists(binary):
+            continue
+        out = strip(run(args + ['-profile', 'ansi16'], binary).stdout)
+        raw, coll = tokens(out)
+        rows.append((name, raw, coll, 0 if raw == 0 else round(100 * (raw - coll) / raw)))
+    print('approximate tokens (4 chars per token), no colour, width 100:')
+    print('    %-24s %6s %10s %6s' % ('body', 'raw', 'collapsed', 'layout'))
+    for name, raw, coll, waste in rows:
+        print('    %-24s %6d %10d %5d%%' % (name, raw, coll, waste))
+
+
+def glyph_table():
+    print('glyph East Asian Width classes:')
+    for name, g in [('pass', '●'), ('fail', '■'), ('fail (warning)', '□'), ('skip', '?'),
+                    ('held', '○'), ('remedy', '→'), ('rule', '─'), ('rail', '▌'),
+                    ('separator', '·'), ('ellipsis', '…')]:
+        print('    %-16s %r U+%04X EAW=%s' % (name, g, ord(g), unicodedata.east_asian_width(g)))
+
+
+if __name__ == '__main__':
+    glyph_table()
+    n = 0
+    n += sweep(1, 'unicode tier, Ambiguous=narrow, 20 to 400')
+    n += sweep(2, 'ASCII tier, Ambiguous=WIDE, 20 to 400', glyphs='ascii')
+    sweep(2, 'unicode tier, Ambiguous=WIDE (known, see the index), 20 to 400')
+    print('    (the unicode tier targets Ambiguous=narrow; a terminal set the other way takes '
+          'the ASCII tier, which is exact on both tables)')
+    n += hostile()
+    n += degenerate()
+    n += determinism()
+    n += condition_ids()
+    token_table()
+    print('TOTAL FINDINGS', n)
+    sys.exit(0)

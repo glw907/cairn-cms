@@ -1,0 +1,84 @@
+// Command cairnmock renders the cairn CLI's health, sites, and logs surfaces as one design system
+// with three bodies, so the shape can be chosen from a real rendering rather than a description.
+// It is a throwaway: nothing here is the render package, and no file outside this directory is
+// touched.
+package main
+
+import (
+	"flag"
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/charmbracelet/colorprofile"
+)
+
+func main() {
+	scenario := flag.Int("scenario", 1, "1 healthy, 2 failing, 3 fleet, 4 sites list, 5 logs, "+
+		"6 warning, 7 twelve sites, 8 plain text, 9 hostile data")
+	variant := flag.String("variant", "a", "a or b: single-site rail off or on, many-sites strip or table")
+	word := flag.Bool("word", true, "single-site rows repeat the state as a word beside the glyph")
+	sev := flag.String("sev", "one", "many-sites fail mark: one red square, or two severities")
+	width := flag.Int("width", 100, "render width in columns")
+	light := flag.Bool("light", false, "render for a light terminal")
+	profile := flag.String("profile", "truecolor", "truecolor, ansi256, ansi16, or none")
+	glyphs := flag.String("glyphs", "unicode", "unicode or ascii")
+	flag.Parse()
+
+	p := colorprofile.TrueColor
+	switch *profile {
+	case "ansi256":
+		p = colorprofile.ANSI256
+	case "ansi16":
+		p = colorprofile.ANSI
+	case "none":
+		p = colorprofile.NoTTY
+	}
+	ambiguousWide = *glyphs == "ascii"
+	t := NewTheme(!*light, p, *glyphs == "ascii")
+	t.TwoSeverity = *sev == "two"
+	b := *variant == "b"
+	// The no-colour ASCII tier and the plain body always keep the state word: with no hue and no
+	// filled glyph, the word is the only carrier the state has left.
+	one := Single{Rail: b, Word: *word || p == colorprofile.NoTTY}
+
+	var lines []string
+	switch *scenario {
+	case 1:
+		lines = clampAll(renderSingle(t, healthy(), *width, one).Lines(), *width)
+	case 2:
+		lines = clampAll(renderSingle(t, sick(), *width, one).Lines(), *width)
+	case 3:
+		lines = clampAll(renderMany(t, fleet(), *width, !b).Lines(), *width)
+	case 4:
+		lines = clampAll(renderMany(t, fleet(), *width, false).Lines(), *width)
+	case 5:
+		lines = clampAll(renderLogs(t, "ecxc.ski", logs(), *width).Lines(), *width)
+	case 6:
+		lines = clampAll(renderSingle(t, drifting(), *width, one).Lines(), *width)
+	case 7:
+		lines = clampAll(renderMany(t, twelve(), *width, !b).Lines(), *width)
+	case 8:
+		lines = renderPlain(sick())
+	case 9:
+		lines = clampAll(renderSingle(t, hostile(), *width, one).Lines(), *width)
+	default:
+		fmt.Fprintln(os.Stderr, "no such scenario")
+		os.Exit(2)
+	}
+
+	// The one downsample pass, at the end and explicit, the way the pure seam would do it.
+	out := colorprofile.NewWriter(os.Stdout, os.Environ())
+	out.Profile = p
+	fmt.Fprintln(out, strings.Join(lines, "\n"))
+}
+
+// clampAll is the render's last act: every line cut to the requested width, measured with East
+// Asian Ambiguous WIDE, so no terminal on any width table ever receives a wrapped line.
+func clampAll(lines []string, width int) []string {
+	out := make([]string, len(lines))
+	for i, l := range lines {
+		out[i] = strings.TrimRight(clamp(l, width), " ")
+	}
+	return out
+}

@@ -2,6 +2,7 @@ package health
 
 import (
 	"encoding/json"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -9,10 +10,22 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
+// reportJSON marshals r the way a marshal boundary does: through ForRender, the one visibility
+// filter, and then json.Marshal, since neither type declares a marshaller of its own.
+func reportJSON(r Report, verbose bool) ([]byte, error) {
+	return json.Marshal(r.ForRender(verbose))
+}
+
 // TestReportDeclaresNoMarshalJSON asserts Report, CheckResult, and spine.Outcome implement no
-// json.Marshaler: Report.JSON must be the only path bytes leave through, so a bare
+// json.Marshaler: ForRender must be the only path a shown Report is built through, so a bare
 // json.Marshal(report) elsewhere in the codebase can never silently reproduce (or fail to
 // reproduce) this file's redaction.
+//
+// Tier is the one type in this package that does carry a marshaller, and it is not an exception
+// to that rule: a Tier is a four-value enum with no redaction to reproduce, and its marshaller
+// writes the same word its String does. spine.State deliberately has none, because its three
+// values answer five wire words, and two of them, "held" and "skip", are not states at all:
+// spine.StateWord reads an acknowledgement and a reason code to reach them.
 func TestReportDeclaresNoMarshalJSON(t *testing.T) {
 	if _, ok := any(Report{}).(json.Marshaler); ok {
 		t.Error("Report implements json.Marshaler")
@@ -35,24 +48,24 @@ func TestReportJSONDetailPassesThroughUnredacted(t *testing.T) {
 		Checks: []CheckResult{{ID: "deploy", Outcome: spine.Outcome{State: spine.Failing, Detail: detail}}},
 	}
 
-	verbose, err := report.JSON(true)
+	verbose, err := reportJSON(report, true)
 	if err != nil {
-		t.Fatalf("JSON(true): %v", err)
+		t.Fatalf("reportJSON(verbose): %v", err)
 	}
 	if !strings.Contains(string(verbose), detail) {
 		t.Errorf("verbose render mangled Detail %q: %s", detail, verbose)
 	}
 
-	nonVerbose, err := report.JSON(false)
+	nonVerbose, err := reportJSON(report, false)
 	if err != nil {
-		t.Fatalf("JSON(false): %v", err)
+		t.Fatalf("reportJSON(non-verbose): %v", err)
 	}
 	if !strings.Contains(string(nonVerbose), detail) {
 		t.Errorf("non-verbose render mangled Detail %q: %s", detail, nonVerbose)
 	}
 }
 
-// TestReportJSONFieldOrderRoundTrips asserts an Outcome's Fields survive Report.JSON in the
+// TestReportJSONFieldOrderRoundTrips asserts an Outcome's Fields survive the marshal boundary in the
 // order they were appended, the reason Fields is a slice rather than a map.
 func TestReportJSONFieldOrderRoundTrips(t *testing.T) {
 	report := Report{
@@ -69,9 +82,9 @@ func TestReportJSONFieldOrderRoundTrips(t *testing.T) {
 		}},
 	}
 
-	data, err := report.JSON(true)
+	data, err := reportJSON(report, true)
 	if err != nil {
-		t.Fatalf("JSON(true): %v", err)
+		t.Fatalf("reportJSON(verbose): %v", err)
 	}
 
 	var decoded struct {
@@ -120,9 +133,9 @@ func TestReportJSONDropsVerboseFields(t *testing.T) {
 		}},
 	}
 
-	verbose, err := report.JSON(true)
+	verbose, err := reportJSON(report, true)
 	if err != nil {
-		t.Fatalf("JSON(true): %v", err)
+		t.Fatalf("reportJSON(verbose): %v", err)
 	}
 	for _, want := range []string{"errorCount", "lastBuildSHA", sha} {
 		if !strings.Contains(string(verbose), want) {
@@ -130,9 +143,9 @@ func TestReportJSONDropsVerboseFields(t *testing.T) {
 		}
 	}
 
-	nonVerbose, err := report.JSON(false)
+	nonVerbose, err := reportJSON(report, false)
 	if err != nil {
-		t.Fatalf("JSON(false): %v", err)
+		t.Fatalf("reportJSON(non-verbose): %v", err)
 	}
 	if !strings.Contains(string(nonVerbose), `"errorCount"`) {
 		t.Errorf("non-verbose render dropped the non-verbose field %q: %s", "errorCount", nonVerbose)
@@ -158,9 +171,9 @@ func TestReportJSONNeverEmitsVerboseKey(t *testing.T) {
 		}},
 	}
 	for _, verbose := range []bool{true, false} {
-		data, err := report.JSON(verbose)
+		data, err := reportJSON(report, verbose)
 		if err != nil {
-			t.Fatalf("JSON(%v): %v", verbose, err)
+			t.Fatalf("reportJSON(%v): %v", verbose, err)
 		}
 		if strings.Contains(string(data), "Verbose") {
 			t.Errorf("JSON(%v) emitted a Verbose key: %s", verbose, data)
@@ -185,13 +198,13 @@ func TestReportJSONEmptyFieldsRendersLikeFullyFiltered(t *testing.T) {
 		}},
 	}
 
-	noFieldsJSON, err := noFields.JSON(false)
+	noFieldsJSON, err := reportJSON(noFields, false)
 	if err != nil {
-		t.Fatalf("JSON(false) with no fields: %v", err)
+		t.Fatalf("reportJSON(non-verbose) with no fields: %v", err)
 	}
-	allFilteredJSON, err := allFiltered.JSON(false)
+	allFilteredJSON, err := reportJSON(allFiltered, false)
 	if err != nil {
-		t.Fatalf("JSON(false) with all fields filtered: %v", err)
+		t.Fatalf("reportJSON(non-verbose) with all fields filtered: %v", err)
 	}
 	if string(noFieldsJSON) != string(allFilteredJSON) {
 		t.Errorf("no-fields render %s does not match fully-filtered render %s", noFieldsJSON, allFilteredJSON)
@@ -224,7 +237,7 @@ func TestCheckDetailFieldVisibility(t *testing.T) {
 		{
 			name:   "engine",
 			fields: engineDetail{}.fields(),
-			want:   []string{"releasesBehind", "consumersMust"},
+			want:   []string{"installedVersion", "releasesBehind", "consumersMust"},
 		},
 		{
 			name:   "errors",
@@ -240,6 +253,61 @@ func TestCheckDetailFieldVisibility(t *testing.T) {
 			}
 			if !slices.Equal(got, tt.want) {
 				t.Errorf("non-verbose keys = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestCheckFieldSources pins which of each flattening check's keys carry a value copied out of
+// a provider's response, and which provider each came from. A copied value is a string the site
+// controls the bytes of, so the marshal boundary marks it; a count, a comparison, or a word from
+// cairn's own vocabulary is not copied even when a provider response is what it was computed
+// from. A check that starts copying a new value without declaring the source goes red here
+// rather than landing unmarked in a payload.
+func TestCheckFieldSources(t *testing.T) {
+	tests := []struct {
+		name   string
+		fields []spine.OutcomeField
+		want   map[string]spine.FieldSource
+	}{
+		{
+			name:   "deploy",
+			fields: deployDetail{}.fields(),
+			want: map[string]spine.FieldSource{
+				"lastBuildSHA":      spine.SourceCloudflare,
+				"lastBuildShortSHA": spine.SourceCloudflare,
+				"lastBuildAt":       spine.SourceCloudflare,
+				"buildId":           spine.SourceCloudflare,
+				"mainSHA":           spine.SourceGitHub,
+				"mainShortSHA":      spine.SourceGitHub,
+			},
+		},
+		{
+			name:   "engine",
+			fields: engineDetail{}.fields(),
+			want:   map[string]spine.FieldSource{FieldEngineInstalledVersion: spine.SourceGitHub},
+		},
+		{
+			name:   "errors",
+			fields: errorsDetail{}.fields(),
+			want:   map[string]spine.FieldSource{"topEvents": spine.SourceCloudflare},
+		},
+		{
+			name:   "publish path",
+			fields: publishDetail{}.fields(),
+			want:   map[string]spine.FieldSource{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := make(map[string]spine.FieldSource)
+			for _, f := range tt.fields {
+				if f.Source != "" {
+					got[f.Key] = f.Source
+				}
+			}
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("copied fields = %v, want %v", got, tt.want)
 			}
 		})
 	}

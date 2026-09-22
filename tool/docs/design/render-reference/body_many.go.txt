@@ -1,0 +1,327 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/table"
+)
+
+// stripCols are the strip's columns, in the order the engine runs the checks. Each label is the
+// check's own shipped id, so the strip needs no legend under it and no second name for a check
+// the rest of the design already named.
+var stripCols = []string{"creds", "serving", "delegation", "https-forced", "email", "deploy",
+	"publish-path", "engine", "errors"}
+
+// stripLabel is the one abbreviation the strip takes. `https-forced` is twelve cells of heading
+// over a one-cell mark, and the nine full ids plus the site and verdict columns do not fit in a
+// hundred. The truncation is one a reader can undo, which is the only kind the copy standard
+// allows; every other body prints the id whole.
+var stripLabel = map[string]string{"https-forced": "https"}
+
+func label(id string) string {
+	if l, found := stripLabel[id]; found {
+		return l
+	}
+	return id
+}
+
+// stripWidth is the strip's own width, each column one label plus a gutter.
+func stripWidth() int {
+	total := 0
+	for _, c := range stripCols {
+		total += len(label(c)) + 1
+	}
+	return total
+}
+
+// verdictColWidth is the strip's trailing verdict cell: one leading space and the longest word.
+const verdictColWidth = 9
+
+// fleetVerdict combines a fleet into one verdict and one tally of sites by verdict.
+func fleetVerdict(t Theme, rs []Report) (Verdict, string) {
+	worst := VerdictOK
+	byVerdict := map[Verdict]int{}
+	for _, r := range rs {
+		v := r.Verdict()
+		byVerdict[v]++
+		if v.Rank() > worst.Rank() {
+			worst = v
+		}
+	}
+	if len(rs) == 0 {
+		return VerdictUnknown, "no sites"
+	}
+	var parts []string
+	for _, v := range []Verdict{VerdictCritical, VerdictUnknown, VerdictWarning, VerdictOK} {
+		if byVerdict[v] > 0 {
+			parts = append(parts, fmt.Sprintf("%d %s", byVerdict[v], v.Word()))
+		}
+	}
+	return worst, strings.Join(parts, " "+t.Glyphs.Sep+" ")
+}
+
+// rankReports orders a fleet worst first: by verdict, then by the worst check inside it, then by
+// name, so the site that is not serving is the first row every time.
+func rankReports(rs []Report) []Report {
+	out := append([]Report{}, rs...)
+	for i := 1; i < len(out); i++ {
+		for j := i; j > 0; j-- {
+			a, b := out[j-1], out[j]
+			ka := [3]int{a.Verdict().Rank(), a.Rank(), 0}
+			kb := [3]int{b.Verdict().Rank(), b.Rank(), 0}
+			if ka[0] > kb[0] || (ka[0] == kb[0] && ka[1] > kb[1]) ||
+				(ka[0] == kb[0] && ka[1] == kb[1] && a.Site <= b.Site) {
+				break
+			}
+			out[j-1], out[j] = b, a
+		}
+	}
+	return out
+}
+
+// renderMany draws a fleet. Variant A gives every site a labelled status strip; variant B gives
+// every site one row of a plain ruleless table. Both carry the same ranked fix list beneath, and
+// neither prints a fix twice.
+func renderMany(t Theme, rs []Report, termWidth int, strip bool) Frame {
+	width := content(termWidth)
+	ranked := rankReports(rs)
+	worst, tally := fleetVerdict(t, ranked)
+	t.OKRun = worst == VerdictOK
+	subject := plural(len(ranked), "sites")
+	if len(ranked) == 1 {
+		subject = "1 site"
+	}
+
+	f := Frame{}
+	f.Header = append(verdictLines(t, worst, subject, tally, width),
+		t.Style(RoleMuted).Render(clamp("checked "+age(freshest(ranked))+" ago ("+
+			stamp(now)+"), in "+elapsed(sweep(ranked)), width)))
+	if len(ranked) == 0 {
+		f.Body = []string{"", t.Style(RoleMuted).Render("No sites yet. Run `cairn add <domain>` to add one.")}
+		f.Footer = append([]string{""}, verdictLines(t, VerdictUnknown, subject, tally, width)...)
+		return f
+	}
+
+	body := []string{""}
+	// The strip needs room for its labels. Below that it is not compressed into a cipher; the
+	// plain table takes over, which is the same information without the grid.
+	if strip && width >= siteColWidth(ranked)+stripWidth()+verdictColWidth {
+		body = append(body, stripBlock(t, ranked, width)...)
+	} else {
+		body = append(body, tableBlock(t, ranked, width)...)
+	}
+
+	var all, blocked []Fix
+	for _, r := range ranked {
+		f, bl := r.Fixes()
+		all = append(all, f...)
+		blocked = append(blocked, bl...)
+	}
+	all = append(rankFixes(all), rankFixes(blocked)...)
+	if len(all) > 0 {
+		body = append(body, "", insetRule(t, "what to fix", width))
+		body = append(body, fixList(t, all, ranked, width)...)
+	}
+	f.Body = body
+	f.Footer = append([]string{""}, verdictLines(t, worst, subject, tally, width)...)
+	return f
+}
+
+// freshest returns the age of the most recently checked site.
+func freshest(rs []Report) (d time.Duration) {
+	for i, r := range rs {
+		if i == 0 || r.Age < d {
+			d = r.Age
+		}
+	}
+	return d
+}
+
+// sweep returns the whole run's wall time.
+func sweep(rs []Report) (d time.Duration) {
+	for _, r := range rs {
+		d += r.Elapsed
+	}
+	return d
+}
+
+// siteColWidth sizes the site column to the longest name it must hold.
+func siteColWidth(rs []Report) int {
+	n := 4
+	for _, r := range rs {
+		if l := w(san(r.Site)); l > n {
+			n = l
+		}
+	}
+	return n + 2
+}
+
+// centerCell centres one mark inside a column measured by the layout's own width table, so the
+// marks form a grid under their headings rather than hugging the left of each one.
+func centerCell(st lipgloss.Style, text string, n int) string {
+	tw := w(text)
+	if tw >= n {
+		return cell(st, text, n)
+	}
+	left := (n - tw) / 2
+	return strings.Repeat(" ", left) + st.Render(text) + strings.Repeat(" ", n-tw-left)
+}
+
+// stripBlock draws the labelled status strip: one row per site, one real column label per check,
+// and the verdict at the end of the row it belongs to.
+func stripBlock(t Theme, rs []Report, width int) []string {
+	siteW := siteColWidth(rs)
+	base := lipgloss.NewStyle()
+
+	head := []string{cell(t.Style(RoleMuted), "", siteW)}
+	for _, c := range stripCols {
+		head = append(head, cell(t.Style(RoleMuted), label(c), len(label(c))+1))
+	}
+	out := []string{clamp(strings.TrimRight(joinRow(base, head...), " "), width)}
+
+	for _, r := range rs {
+		byID := map[string]Check{}
+		for _, c := range r.Checks {
+			byID[c.ID] = c
+		}
+		cells := []string{cell(t.Bold(RoleFg), san(r.Site), siteW)}
+		for _, col := range stripCols {
+			n := len(label(col)) + 1
+			c, found := byID[col]
+			if !found {
+				cells = append(cells, centerCell(t.Style(RoleMuted), t.Glyphs.Sep, n))
+				continue
+			}
+			holding, left := c.Holding(r.Now)
+			glyph, role := t.glyphFor(c, holding, left.Hours())
+			cells = append(cells, centerCell(t.Style(role), glyph, n))
+		}
+		v := r.Verdict()
+		cells = append(cells, cell(t.Bold(t.verdictRole(v)), " "+v.Word(), verdictColWidth))
+		out = append(out, clamp(strings.TrimRight(joinRow(base, cells...), " "), width))
+	}
+	return out
+}
+
+// tableBlock draws the plain ruleless table: one row per site, verdict and counts by state, the
+// engine version, and how old the data is. No rules, no boxes, no glyph carrying a fact alone.
+func tableBlock(t Theme, rs []Report, width int) []string {
+	cols := []string{"site", "verdict", "failing", "could not run", "held", "engine", "checked"}
+	widths := []int{siteColWidth(rs), 10, 9, 15, 6, 9, 9}
+	keep := []int{0, 1, 2, 3, 4, 5, 6}
+	total := 0
+	for _, x := range widths {
+		total += x
+	}
+	if total > width {
+		keep = []int{0, 1, 2, 5, 6}
+	}
+	if widths[0]+10+9+9 > width {
+		keep = []int{0, 1, 6}
+	}
+
+	var rows [][]string
+	var verdicts []Verdict
+	for _, r := range rs {
+		fl, cn, hd, _ := r.Counts()
+		full := []string{san(r.Site), r.Verdict().Word(), num(fl), num(cn), num(hd),
+			san(r.Engine), age(r.Age) + " ago"}
+		var picked []string
+		for _, i := range keep {
+			picked = append(picked, full[i])
+		}
+		rows = append(rows, picked)
+		verdicts = append(verdicts, r.Verdict())
+	}
+	var heads []string
+	for _, i := range keep {
+		heads = append(heads, cols[i])
+	}
+
+	tb := table.New().
+		Headers(heads...).
+		Rows(rows...).
+		Border(lipgloss.HiddenBorder()).
+		BorderTop(false).BorderBottom(false).BorderLeft(false).BorderRight(false).
+		BorderRow(false).BorderColumn(false).
+		Wrap(false).
+		StyleFunc(func(r, c int) lipgloss.Style {
+			colW := widths[keep[c]]
+			st := lipgloss.NewStyle().Width(colW).MaxWidth(colW)
+			if r == table.HeaderRow {
+				return st.Inherit(t.Style(RoleMuted))
+			}
+			switch keep[c] {
+			case 0:
+				return st.Inherit(t.Bold(RoleFg))
+			case 1:
+				return st.Inherit(t.Bold(t.verdictRole(verdicts[r])))
+			case 2:
+				if rows[r][c] != "" {
+					return st.Inherit(t.Style(RoleFail))
+				}
+			case 3:
+				if rows[r][c] != "" {
+					return st.Inherit(t.Style(RoleSkip))
+				}
+			}
+			return st.Inherit(t.Style(RoleMuted))
+		})
+
+	var out []string
+	for _, l := range strings.Split(tb.String(), "\n") {
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		out = append(out, clamp(strings.TrimRight(l, " "), width))
+	}
+	return out
+}
+
+// num renders a count, and renders a zero as nothing at all: an empty cell is the calmest way to
+// say a site has none of that state.
+func num(n int) string {
+	if n == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", n)
+}
+
+// fixList prints each repair exactly once, worst first. The site and the check name the repair on
+// one line and the sentence sits beneath them with a hanging indent, so the sentence has the whole
+// width and never leaves an orphan word on a line of its own.
+//
+// Every fix is printed. A count of repairs the screen did not show is a fact an operator cannot
+// act on, and the list is already ranked, so the honest choices are all of them or a named cap;
+// with a fleet this size, all of them.
+func fixList(t Theme, rs []Fix, reports []Report, width int) []string {
+	base := lipgloss.NewStyle()
+	siteW := siteColWidth(reports)
+	const checkW = 14
+	const sentenceCol = 6
+	var out []string
+	for _, r := range rs {
+		// The check name carries the documentation link here rather than a printed URL: a fleet
+		// list is an index, and `cairn health <site>` is where the full fix with its URL lives.
+		nameStyle := t.Style(RoleMuted)
+		if u := docURL(r.Anchor); u != "" {
+			nameStyle = t.Link(RoleMuted, u)
+		}
+		head := joinRow(base,
+			"  ",
+			cell(t.Style(RoleAccent), t.Glyphs.Arrow, 2),
+			cell(t.Bold(RoleFg), san(r.Site), siteW),
+			cell(nameStyle, san(r.Check), checkW),
+			t.Style(RoleMuted).Render(san(r.Condition)),
+		)
+		out = append(out, clamp(strings.TrimRight(head, " "), width))
+		for _, l := range wrapLines(san(r.Text), width-sentenceCol) {
+			out = append(out, clamp(strings.Repeat(" ", sentenceCol)+
+				t.Style(RoleSubtle).Render(l), width))
+		}
+	}
+	return out
+}

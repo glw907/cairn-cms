@@ -14,6 +14,11 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - Rotating the GitHub App's private key requires a developer with a terminal, `wrangler secret put`, and access to the App's GitHub settings page (no downtime: the App can hold two keys at once). Source: `docs/extend/rotate-the-github-app-key.md` ("You also need a way to run `wrangler secret put`... A GitHub App can hold more than one private key at once"). [candidate: sourced to the page only, not traced to code]
 - Two accounts, GitHub and Cloudflare, hold everything needed to hand off or leave; adding a successor is done through GitHub collaborator access and Cloudflare account access plus `/admin/editors`. Source: `docs/admin/invite-editors.md` (same arm). [candidate: sourced to the page only, not traced to code]
 
+- The `cairn` operator CLI is part of cairn but not part of the npm package: it is a separate Go module under `tool/`, installed once per operator machine with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from a release archive, never by installing `@glw907/cairn-cms`. Source: `tool/go.mod` (module `github.com/glw907/cairn-cms/tool`), `tool/README.md`. [verified]
+- `cairn` needs three read credentials to reach a site: `CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, and `CAIRN_GH_READ_TOKEN`. It resolves the environment first and the OS keyring second, and `cairn auth set` is what writes a value to the keyring. Source: `tool/docs/credentials.md`, `tool/cmd/cairn/auth.go`. [verified]
+- Both read tokens are account-scoped rather than confined to one zone or one repository, so adopting a second site needs no new token. Source: `tool/docs/credentials.md` ("Token scopes"). [verified]
+- `cairn auth check` proves the tokens carry all nine required permissions, one row per permission, named by the label the provider's own token page uses; `cairn auth check <site>` additionally probes the zone-scoped and repository-scoped permissions against that one site. Source: `tool/cmd/cairn/permissions.go` (the nine labels, cairn's single source), `tool/cmd/cairn/probe_token.go`. [verified]
+
 ## docs/admin/create-your-site.md
 - Setup requires Node.js 24 or later on Mac or Linux; the tool checks the Node version itself and errors before asking any questions. Source: `packages/create-cairn-site/src/preflight.mjs:22,63` ("The floor is a range (`>=24`)"). [verified]
 - Windows (including Git Bash and PowerShell) is not supported; a run on Windows gets partway through and fails with an unclear error rather than a clean refusal, so WSL is the workaround. Source: `packages/create-cairn-site/src/preflight.mjs` (no platform-gating check exists; the only `win32` handling is an informational PowerShell-execution-policy note, `checkPowerShellExecutionPolicy`, which returns `ok: true`); matches `docs/admin/create-your-site.md`'s own wording ("gets partway through and then fails with an unclear error"). [verified]
@@ -68,6 +73,15 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - The dependency-floor check example in the page (`@sveltejs/kit 2.70.2`, `svelte 5.56.9`) is from an earlier engine release; current floors are newer (`svelte ^5.56.10`). Source: `package.json:197-198` (`"@sveltejs/kit": "^2.70", "svelte": "^5.56.10"`). [verified]
 - `wrangler d1 migrations apply <db> --remote` is the command to apply pending D1 migrations. Source: standard wrangler CLI usage referenced by `migrations/` directory structure. [vendor: link, not a repo fact]
 
+- `cairn health` is the tool's answer to "is my site working": it runs the same nine checks per site (`creds`, `serving`, `delegation`, `https-forced`, `email`, `deploy`, `publish-path`, `engine`, `errors`), bare for the whole registry or named for one site. Source: `tool/internal/health/` (one `check_*.go` per check), `tool/cmd/cairn/health.go`. [verified]
+- A site's verdict is one of four words, OK, WARNING, CRITICAL, or UNKNOWN, and a run's exit code is that verdict: 0, 1, 2, 3. CRITICAL outranks UNKNOWN outranks WARNING outranks OK when several verdicts combine, which is not the numeric order of the codes. Source: `tool/internal/spine/exit.go` (`VerdictOK`, `Severity`), `tool/docs/reference/exit-codes.md`. [verified]
+- Each check reports one of five result words: `pass`, `fail`, `held`, `skip`, or `unknown`. `skip` means the check was not attempted, by configuration (a credential the operator never set, a record with no repository, a Worker with no Workers Builds connection); `unknown` means it was attempted and observed nothing (a timeout, a transport failure, a rate limit). Source: `tool/internal/spine/exit.go` (`StateWord`), `tool/internal/spine/outcome.go` (`NotAttempted`). [verified]
+- Every `skip` and every `unknown` carries a `reason` code from a closed vocabulary: nine fixed codes, plus a `reason.park.<code>` family and a `reason.api.<reason>` family. Source: `tool/internal/spine/outcome.go` (`ReasonCodes`), `tool/docs/reference/json-output.md`. [verified]
+- A site is known to `cairn` only after `cairn adopt` records it. Discovery finds Workers attached by a Cloudflare Custom Domain and no others, because cairn provisions Custom Domains and never Workers Routes; a route-served Worker is adoptable only with an explicit `--domain`. Source: `tool/cmd/cairn/adopt.go` (the `--domain` override and its zone re-resolution), `packages/create-cairn-site/src/cloudflare/hostname.mjs`. [verified]
+- `cairn logs <site>` reads that site's structured records from Cloudflare Workers Observability. A Worker with observability turned off answers the query with zero entries rather than an error, so an empty result is not by itself proof the site is quiet. Source: `tool/internal/logs/logs.go`. [verified]
+- Every command takes `--json`, each with its own published schema carrying a `schemaVersion`: six in all (health, the health summary, logs, sites list, adopt list, auth check). Source: `tool/docs/reference/cairn-health.schema.json` and the five sibling schema files in the same directory. [verified]
+- `--theme dark|light` selects the ground the palette is resolved against, defaulting to dark; there is no background detection in 1.0. Source: `tool/cmd/cairn/root.go` (`themeDark`, `themeLight`, the `--theme` flag registration). [verified]
+
 ## docs/admin/own-your-domain.md
 - Connecting a domain and turning on sign-in email share one Cloudflare API token with five permissions: Zone, DNS, Workers Scripts, SSL and Certificates, and Email Sending. Source: `packages/create-cairn-site/src/cloudflare/prefill.mjs:31-37` (`PREFILL_PERMISSION_KEYS = [{key:'zone'},{key:'dns'},{key:'workers_scripts'},{key:'ssl_and_certificates'},{key:'email_sending'}]`, each `type: 'edit'`). [verified]
 - Connecting to Workers Builds uses a second, separate token with eight permissions (the same five plus three more Workers-Builds-specific ones: Workers CI, D1, and Workers R2). Source: `packages/create-cairn-site/src/cloudflare/prefill.mjs:64-68,74` (`BUILDS_PERMISSION_KEYS = [{key:'workers_ci'},{key:'d1'},{key:'workers_r2'}]`; `CHAPTER3_PERMISSION_KEYS = [...PREFILL_PERMISSION_KEYS, ...BUILDS_PERMISSION_KEYS]` = 5 + 3 = 8). [verified]
@@ -99,12 +113,22 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - A sign-in link only works in the browser that requested it; opening it in a different browser shows "This browser has no pending sign-in." Source: `docs/reference/log-events.md` `auth.link.refused` row (`no_pending_cookie` reason, bound-to-another-browser's-nonce). [candidate: sourced to the page only, not traced to code]
 - A locked-out sole owner can be recovered by a developer inserting a `magic_token` row directly with `nonce_hash` left `NULL`, which any browser can confirm; this is by design and should expire quickly. Source: `docs/reference/log-events.md`/extend security-model cross-reference: "the security model" section on "An unbound token row is scanner-confirmable by design"; `src/lib/auth/store.ts` (`nonce_hash` column semantics). [verified]
 
+- `--ack <check-id>=<YYYY-MM-DD>` holds a known failing check so a run stops paging on it. A held failure reports `held` and contributes WARNING, never OK, and an expired hold returns the check to its own severity. Source: `tool/internal/health/ack.go`, `tool/internal/spine/exit.go` (the hold arm of the verdict mapping). [verified]
+- A hold is fleet-wide, not per site: an acknowledgement matches on check id alone, so holding `email` silences a real email failure on every other site in the registry too. A per-site hold is a post-1.0 item. Source: `tool/internal/health/ack.go` (`Acks.find`, matching on `CheckID` alone). [verified]
+- Acknowledgements can also live in a file the registry directory holds, `acknowledgements.json` by default, or one named with `--ack-file`. Source: `tool/cmd/cairn/ack.go` (`defaultAckFileName`, `ackFilePath`). [verified]
+- The `errors` check counts only cairn's own structured error records, identified by the log envelope's `event` field, never every error line a Worker emits; a count the query truncated reads "at least N". Source: `tool/internal/health/check_errors.go`. [verified]
+
 ## docs/admin/what-to-run-and-when.md
 - cairn has not reached its 1.0 release; any release can in principle change something, but most releases touch nothing a site admin would notice. Source: `package.json` version field (pre-1.0 at time of writing); CLAUDE.md release-process section. [verified]
 - The one signal that an engine upgrade needs a developer's attention is a `Consumers must:` line in the changelog, not the version number itself. Source: `CHANGELOG.md` format convention (per repo-wide changelog practice); CLAUDE.md Releases section. [candidate: sourced to the page only, not traced to code]
 - Node.js version target is set by cairn (the site creator refuses an older Node; a plain install only warns). Source: `packages/create-cairn-site/src/preflight.mjs:22,63`. [verified]
 - The GitHub App private key has no version; it rotates on demand, lives only in the Worker's secret store, and is never tracked as a file. Source: `packages/create-cairn-site/src/cloudflare/secret.mjs` (write-only Worker secret); `docs/admin/is-it-working.md` "Install the GitHub App" section (same arm, cross-verified). [verified]
 - A `Dependency floors` FAIL from `cairn-doctor` means the site's Svelte or SvelteKit resolves below the engine's declared floor. Source: `src/lib/doctor/check-floors.ts:251-253,84-86`. [verified]
+
+- `cairn health --quiet` is the form a scheduled run uses: it prints nothing at all when every site is OK, and the normal body otherwise, so a green run leaves an empty log. Source: `tool/cmd/cairn/health_quiet_test.go`, `tool/cmd/cairn/root.go` (the `--quiet` flag, mutually exclusive with `--verbose`). [verified]
+- The alert threshold is the operator's choice, and the exit codes are what express it: page on exit 2 and above, notify on any non-zero. Source: `tool/docs/tripwire.md` ("Credentials: a scheduler starts with no shell profile" and the three scheduler examples), `tool/docs/reference/exit-codes.md`. [verified]
+- A scheduler launches a job directly and sources no shell profile, so a credential exported only from `~/.bashrc` is invisible to the scheduled run even though an interactive `cairn` works. The three documented routes are an environment file the scheduler reads, a wrapper that sources an existing store, or the OS keyring. Source: `tool/docs/tripwire.md`. [verified]
+- A run cairn's own timeout did not bound exits however the scheduler's kill left it, never one of cairn's four codes, so a scheduler's own cap belongs above `--timeout`. Source: `tool/docs/tripwire.md` (the `TimeoutStartSec` comment in the systemd example), `tool/docs/reference/exit-codes.md`. [verified]
 
 ## Harvest record
 - Pages whose facts are entirely covered by another page: none outright duplicated end-to-end; `what-to-run-and-when.md`'s dependency-floor and GitHub-key-rotation facts are subsets already stated more fully in `is-it-working.md` and `before-you-start.md`, but the page adds its own framing (the target-stack table) not present elsewhere, so it is not fully subsumed.
@@ -116,11 +140,21 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
   - The whole "What it costs" framing device (three numbered cost items) in before-you-start.md is pedagogical structure; the underlying dollar figures were harvested individually above.
 
 - Pages covered: 8 (before-you-start, create-your-site, invite-editors, is-it-working, own-your-domain, setup-recovery, troubleshooting, what-to-run-and-when). README.md (the arm index) read for context only, not harvested as a fact source.
-- Total facts: 86 (the harvest's own original tally of 63 undercounted; a recount at the 2026-09-15
+- Tool harvest 2026-09-21: 20 bullets added for the `cairn` operator CLI, woven into the four
+  sections whose job each one serves (install and credentials under before-you-start, health and
+  adopt and the machine surface under is-it-working, holds and the errors check under
+  troubleshooting, the scheduled run under what-to-run-and-when) rather than collected in a
+  section of their own, since the container is sectioned by the reader's job, not by the
+  component. Sources are the `tool/` module at `tool/v1.0.1`.
+- Total facts: 86 before that harvest, 106 after (the harvest's own original tally of 63 undercounted; a recount at the 2026-09-15
   tightening pass found 86 fact bullets across the eight pages).
 - As harvested: Verified: 61. Docs-drift: 1. Candidate: 24.
 
 ## Provenance
+
+Extended 2026-09-21 with the `cairn` operator CLI's facts, sourced to the `tool/` module at
+`tool/v1.0.1` rather than to a docs page: the tool's public pages ship at `tool/docs/` for 1.0
+only, and the draft-docs pass writes the `docs/` pages from these bullets.
 
 Harvested 2026-09-15 from docs/admin/*. Tightened 2026-09-15 (every `[candidate: ...]` tag
 resolved against the code or retagged `[vendor: link, not a repo fact]`).

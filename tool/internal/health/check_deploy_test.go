@@ -109,18 +109,11 @@ func deployRecord() record.Record {
 	}
 }
 
-// deployClients builds the Clients a deployCheck test runs against: haveBuilds governs
-// Clients.HaveBuilds, and both provider clients share one deployRoundTripper since their request
-// paths never collide.
-func deployClients(haveBuilds bool, routes ...deployRoute) Clients {
+// deployClients builds the Clients a deployCheck test runs against: both provider clients share
+// one deployRoundTripper since their request paths never collide.
+func deployClients(routes ...deployRoute) Clients {
 	rt := deployRoundTripper{routes: routes}
-	return Clients{
-		CF:         cfClient(rt),
-		GH:         ghClient(rt),
-		HaveCF:     true,
-		HaveGH:     true,
-		HaveBuilds: haveBuilds,
-	}
+	return Clients{CF: cfClient(rt), GH: ghClient(rt), HaveCF: true, HaveGH: true}
 }
 
 func TestDeployCheckDeclaresIDAndTierBoth(t *testing.T) {
@@ -134,7 +127,7 @@ func TestDeployCheckDeclaresIDAndTierBoth(t *testing.T) {
 }
 
 func TestDeployCheckWorkerAbsentIsFailing(t *testing.T) {
-	c := deployClients(true, deployNoWorkerRoute)
+	c := deployClients(deployNoWorkerRoute)
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 	if got.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", got.State)
@@ -144,31 +137,48 @@ func TestDeployCheckWorkerAbsentIsFailing(t *testing.T) {
 	}
 }
 
-func TestDeployCheckBuildsNotConnectedIsFailing(t *testing.T) {
-	c := deployClients(true, deployWorkerRoute, deployNoTriggersRoute)
+// TestDeployCheckBuildsNotConnectedIsSkippedNotFailing asserts a Worker Cloudflare holds no
+// Builds trigger for is skipped rather than failed, and that the skip carries the reason whose
+// verdict is WARNING and whose wire word is "skip": deploying with wrangler or from a CI job is
+// a choice, not a broken pipeline, and the check has nothing it could have read either way.
+func TestDeployCheckBuildsNotConnectedIsSkippedNotFailing(t *testing.T) {
+	c := deployClients(deployWorkerRoute, deployNoTriggersRoute)
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
-	if got.State != spine.Failing {
-		t.Errorf("State = %v, want Failing", got.State)
+	wantReason := spine.APIReason(providers.ReasonBuildsNotConnected)
+	if got.State != spine.Unknown || got.Reason != wantReason {
+		t.Errorf("Outcome = %+v, want Unknown/%s", got, wantReason)
 	}
-	want := string(spine.APIReason(providers.ReasonBuildsNotConnected))
+	if word := spine.StateWord(got.State, got.Reason, false); word != "skip" {
+		t.Errorf("state word = %q, want %q", word, "skip")
+	}
+	want := "Workers Builds is not connected to this Worker, so there is no deployment to read"
 	if got.Detail != want {
 		t.Errorf("Detail = %q, want %q", got.Detail, want)
-	}
-}
-
-func TestDeployCheckHaveBuildsFalseDegradesToWorkerExists(t *testing.T) {
-	c := deployClients(false, deployWorkerRoute)
-	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
-	if got.State != spine.Unknown || got.Reason != spine.ReasonCredMissing {
-		t.Errorf("Outcome = %+v, want Unknown/reason.cred-missing", got)
 	}
 	if !fieldValue[bool](t, got.Fields, "workerExists") {
 		t.Error("workerExists field is false, want true")
 	}
 }
 
+// TestDeployCheckNoRecordedRepoIsSkipped asserts a record naming no repository skips the
+// branch-position half rather than querying GitHub for an empty owner and repo and reporting the
+// 404 that answers as the site's own fault.
+func TestDeployCheckNoRecordedRepoIsSkipped(t *testing.T) {
+	r := deployRecord()
+	r.GitHub.Repo.Owner, r.GitHub.Repo.Repo = "", ""
+	c := deployClients(deployWorkerRoute, deployTriggersRoute,
+		deployBuildRoute(buildStoppedStatus, buildOutcomeSuccess, "abc1234def"))
+	got := (deployCheck{}).Run(context.Background(), r, c, Options{})
+	if got.State != spine.Unknown || got.Reason != spine.ReasonRepoNotRecorded {
+		t.Errorf("Outcome = %+v, want Unknown/%s", got, spine.ReasonRepoNotRecorded)
+	}
+	if got.Detail != "no GitHub repository recorded for this site" {
+		t.Errorf("Detail = %q", got.Detail)
+	}
+}
+
 func TestDeployCheckNoBuildYetIsUnknownParkBuildNotStarted(t *testing.T) {
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute, deployNoBuildsRoute)
+	c := deployClients(deployWorkerRoute, deployTriggersRoute, deployNoBuildsRoute)
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 	want := spine.ParkReason(spine.ParkBuildNotStarted)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -177,7 +187,7 @@ func TestDeployCheckNoBuildYetIsUnknownParkBuildNotStarted(t *testing.T) {
 }
 
 func TestDeployCheckRunningBuildIsUnknown(t *testing.T) {
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute, deployBuildRoute("running", "", "abc1234def"))
+	c := deployClients(deployWorkerRoute, deployTriggersRoute, deployBuildRoute("running", "", "abc1234def"))
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 	want := spine.ParkReason(spine.ParkBuildRunning)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -186,7 +196,7 @@ func TestDeployCheckRunningBuildIsUnknown(t *testing.T) {
 }
 
 func TestDeployCheckStoppedWithNoOutcomeYetIsUnknown(t *testing.T) {
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+	c := deployClients(deployWorkerRoute, deployTriggersRoute,
 		deployBuildRoute(buildStoppedStatus, "", "abc1234def5678"))
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 	want := spine.ParkReason(spine.ParkBuildRunning)
@@ -199,7 +209,7 @@ func TestDeployCheckStoppedWithNoOutcomeYetIsUnknown(t *testing.T) {
 }
 
 func TestDeployCheckFailedBuildIsFailing(t *testing.T) {
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+	c := deployClients(deployWorkerRoute, deployTriggersRoute,
 		deployBuildRoute(buildStoppedStatus, "fail", "abc1234def5678"), deployHeadSHARoute("abc1234def5678"))
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 	if got.State != spine.Failing {
@@ -218,7 +228,7 @@ func TestDeployCheckFailedBuildIsFailing(t *testing.T) {
 // because GitHub is unreachable, since GitHub tells this check nothing about whether the build
 // itself succeeded.
 func TestDeployCheckFailedBuildIsFailingDespiteGitHubOutage(t *testing.T) {
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+	c := deployClients(deployWorkerRoute, deployTriggersRoute,
 		deployBuildRoute(buildStoppedStatus, "fail", "abc1234def5678"), deployHeadSHAErrorRoute)
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 	if got.State != spine.Failing {
@@ -231,7 +241,7 @@ func TestDeployCheckFailedBuildIsFailingDespiteGitHubOutage(t *testing.T) {
 
 func TestDeployCheckOKEqualSHAsIsOKNotBehind(t *testing.T) {
 	sha := "abc1234def5678"
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+	c := deployClients(deployWorkerRoute, deployTriggersRoute,
 		deployBuildRoute(buildStoppedStatus, buildOutcomeSuccess, sha), deployHeadSHARoute(sha))
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 	if got.State != spine.OK {
@@ -243,7 +253,7 @@ func TestDeployCheckOKEqualSHAsIsOKNotBehind(t *testing.T) {
 }
 
 func TestDeployCheckOKDifferingSHAsIsOKAndBehind(t *testing.T) {
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+	c := deployClients(deployWorkerRoute, deployTriggersRoute,
 		deployBuildRoute(buildStoppedStatus, buildOutcomeSuccess, "abc1234def5678"), deployHeadSHARoute("9999999999999"))
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 	if got.State != spine.OK {
@@ -258,7 +268,7 @@ func TestDeployCheckOKDifferingSHAsIsOKAndBehind(t *testing.T) {
 // lists appear, in that order, on a fully-populated outcome.
 func TestDeployCheckFieldOrderMatchesProduces(t *testing.T) {
 	sha := "abc1234def5678"
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+	c := deployClients(deployWorkerRoute, deployTriggersRoute,
 		deployBuildRoute(buildStoppedStatus, buildOutcomeSuccess, sha), deployHeadSHARoute(sha))
 	got := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 
@@ -281,14 +291,14 @@ func TestDeployCheckFieldOrderMatchesProduces(t *testing.T) {
 // SHAs, the build id, or the repository slug.
 func TestDeployCheckNonVerboseRenderDropsVerboseOnlyValues(t *testing.T) {
 	fullSHA := "abc1234def5678deadbeef"
-	c := deployClients(true, deployWorkerRoute, deployTriggersRoute,
+	c := deployClients(deployWorkerRoute, deployTriggersRoute,
 		deployBuildRoute(buildStoppedStatus, "fail", fullSHA), deployHeadSHARoute(fullSHA))
 	outcome := (deployCheck{}).Run(context.Background(), deployRecord(), c, Options{})
 
 	report := Report{Checks: []CheckResult{{ID: "deploy", Outcome: outcome}}}
-	nonVerbose, err := report.JSON(false)
+	nonVerbose, err := reportJSON(report, false)
 	if err != nil {
-		t.Fatalf("JSON(false): %v", err)
+		t.Fatalf("reportJSON(non-verbose): %v", err)
 	}
 	rendered := string(nonVerbose)
 
@@ -306,11 +316,11 @@ func TestDeployCheckNonVerboseRenderDropsVerboseOnlyValues(t *testing.T) {
 		t.Errorf("non-verbose render carries the buildId key: %s", rendered)
 	}
 
-	verbose, err := report.JSON(true)
+	verbose, err := reportJSON(report, true)
 	if err != nil {
-		t.Fatalf("JSON(true): %v", err)
+		t.Fatalf("reportJSON(verbose): %v", err)
 	}
-	if !strings.Contains(string(verbose), `"Key":"buildId","Value":"build-uuid"`) {
+	if !strings.Contains(string(verbose), `"key":"buildId","value":"build-uuid"`) {
 		t.Errorf("verbose render dropped buildId: %s", verbose)
 	}
 }

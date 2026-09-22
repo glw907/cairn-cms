@@ -1,0 +1,56 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "GET /zones/{zone_id}/dns_records?page=1",
+    "status": 200,
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes; every key set, result_info value, and count below is the live one. The live body carried 18 records on one page; two are kept and result_info is verbatim."
+  },
+  "body": {
+    "result": [
+      {
+        "id": "3c13a716c3f1a341ca9a25dedf0c171d",
+        "name": "fm1._domainkey.carin-test-5.org",
+        "type": "CNAME",
+        "content": "fm1.carin-test-5.org.dkim.fmhosted.com",
+        "proxiable": true,
+        "proxied": false,
+        "ttl": 1,
+        "settings": {
+          "flatten_cname": false
+        },
+        "meta": {},
+        "comment": null,
+        "tags": [],
+        "created_on": "2026-01-30T07:32:48.595511Z",
+        "modified_on": "2026-02-04T17:29:51.308199Z"
+      },
+      {
+        "id": "a18ba47e1f5778ee91345af62db560f7",
+        "name": "fm2._domainkey.carin-test-5.org",
+        "type": "CNAME",
+        "content": "fm2.carin-test-5.org.dkim.fmhosted.com",
+        "proxiable": true,
+        "proxied": false,
+        "ttl": 1,
+        "settings": {
+          "flatten_cname": false
+        },
+        "meta": {},
+        "comment": null,
+        "tags": [],
+        "created_on": "2026-01-30T07:32:48.606766Z",
+        "modified_on": "2026-02-04T17:30:02.495724Z"
+      }
+    ],
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result_info": {
+      "page": 1,
+      "per_page": 100,
+      "count": 18,
+      "total_count": 18,
+      "total_pages": 1
+    }
+  }
+}

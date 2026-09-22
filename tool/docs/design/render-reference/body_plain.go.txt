@@ -1,0 +1,155 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+// remedyActor is who can carry a fix out, and whether carrying it out changes what the public
+// sees. It is keyed by the fix line itself so the two facts cannot drift apart from the sentence
+// they describe. The four actor words are the agent review's enum; an agent's rule is to run a
+// fix only when the actor is `operator` and the change is not outward, and to hand every other
+// one to a person with its docs line.
+var remedyActor = map[string]struct {
+	Actor   string
+	Outward bool
+}{
+	fixKeyring:       {"operator", false},
+	fixGHToken:       {"operator", false},
+	fixErrors:        {"operator", false},
+	fixEmail:         {"operator", true},
+	fixBuild:         {"developer", true},
+	fixEngine:        {"developer", true},
+	fixObservability: {"developer", true},
+	fixGitHubApp:     {"developer", false},
+	fixRoute:         {"provider-console", false},
+	fixHTTPS:         {"provider-console", true},
+}
+
+// renderPlain is what a pipe, a cron mail, a CI log, and an agent receive. It has two readers and
+// one shape that serves both. For the person: whole sentences, no glyphs, no rules, no alignment,
+// so it reads correctly in a proportional font. For the agent: one fact per line, each line whole
+// behind a stable lowercase `key: ` prefix it can grep, no continuation lines, the check id and
+// the condition id as literal tokens, and the verdict first and last so a truncated cron mail
+// still carries it.
+func renderPlain(r Report) []string {
+	failing, couldNotRun, held, passing := r.Live()
+	v := r.Verdict()
+	verdict := fmt.Sprintf("verdict: %s - %s, %s", v.Word(), san(r.Site),
+		counts(", ", len(failing), len(couldNotRun), len(held), len(passing)))
+
+	out := []string{
+		verdict,
+		fmt.Sprintf("checked: %s (%s ago), in %s", stamp(r.Now), age(r.Age), elapsed(r.Elapsed)),
+	}
+
+	check := func(c Check, state, suffix string) []string {
+		line := fmt.Sprintf("%s: %s", san(c.ID), state)
+		if d := san(c.Detail); d != "" {
+			line += " - " + d
+		}
+		if suffix != "" {
+			line += ", " + suffix
+		}
+		o := []string{line}
+		if c.Condition != "" {
+			o = append(o, "condition: "+san(c.Condition))
+		}
+		return o
+	}
+	repair := func(text, anchor string) []string {
+		var o []string
+		if text == "" {
+			return nil
+		}
+		o = append(o, "remedy: "+san(text))
+		if a, found := remedyActor[text]; found {
+			line := "remedy actor: " + a.Actor
+			if a.Outward {
+				line += " (changes the live site)"
+			}
+			o = append(o, line)
+		}
+		if u := docURL(anchor); u != "" {
+			o = append(o, "docs: "+u)
+		}
+		return o
+	}
+
+	for _, c := range failing {
+		out = append(out, "")
+		out = append(out, check(c, "fail", "")...)
+		out = append(out, repair(c.Remedy, c.Anchor)...)
+	}
+	if len(couldNotRun) > 0 {
+		out = append(out, "")
+		var names []string
+		for _, c := range couldNotRun {
+			out = append(out, check(c, "skip", "")...)
+			names = append(names, san(c.ID))
+		}
+		// One missing input caused this whole group, so the group carries one fix. Naming the
+		// checks it covers is what keeps a parser from reading the fix as the last row's alone.
+		if fix, anchor, ok := sharedFix(couldNotRun); ok {
+			out = append(out, "remedy for: "+strings.Join(names, ", "))
+			out = append(out, repair(fix, anchor)...)
+		} else {
+			for _, c := range couldNotRun {
+				if c.Remedy == "" {
+					continue
+				}
+				out = append(out, "remedy for: "+san(c.ID))
+				out = append(out, repair(c.Remedy, c.Anchor)...)
+			}
+		}
+	}
+	for _, c := range held {
+		phrase, _ := holdPhrase(c, r.Now)
+		out = append(out, "")
+		out = append(out, check(c, "held", phrase)...)
+		out = append(out, repair(c.Remedy, c.Anchor)...)
+	}
+	if len(passing) > 0 {
+		out = append(out, "")
+		for _, c := range passing {
+			out = append(out, check(c, "pass", "")...)
+		}
+	}
+
+	out = append(out, "",
+		"machine-readable: cairn health "+san(r.Site)+" --json",
+		verdict,
+		fmt.Sprintf("exit: %d", v.Exit()))
+	for i, l := range out {
+		out[i] = strings.TrimRight(l, " ")
+	}
+	return out
+}
+
+// sharedFix reports the one fix a whole group of skipped checks shares, and nothing when they do
+// not share one. A group of skips usually has a single missing input behind it, and repeating its
+// fix under every row is the noise the plain body exists to avoid.
+func sharedFix(cs []Check) (text, anchor string, ok bool) {
+	var missing []string
+	for _, c := range cs {
+		if c.Detail != "" {
+			missing = append(missing, c.Detail)
+		}
+	}
+	for _, m := range missing {
+		if m != missing[0] {
+			return "", "", false
+		}
+	}
+	if len(missing) == 0 || missing[0] != "no Cloudflare token" {
+		// The skip group's fix is derived from the one missing input every row names, so the
+		// only group with a fix is the one whose rows all name the same one.
+		for _, c := range cs {
+			if c.Remedy != "" {
+				return c.Remedy, c.Anchor, len(cs) == 1
+			}
+		}
+		return "", "", false
+	}
+	return fixKeyring, "", true
+}

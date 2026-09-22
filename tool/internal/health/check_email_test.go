@@ -103,7 +103,7 @@ func TestEmailCheckFailingWhenDMARCMissing(t *testing.T) {
 	delete(records, "_dmarc.example.test")
 	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "no _dmarc TXT record published" {
+	if got.State != spine.Failing || got.Detail != detailEmailDMARCMissing() {
 		t.Errorf("Outcome = %+v, want Failing no _dmarc TXT record published", got)
 	}
 }
@@ -113,7 +113,7 @@ func TestEmailCheckFailingWhenDMARCPolicyIsNone(t *testing.T) {
 	records["_dmarc.example.test"] = []string{"v=DMARC1; p=none"}
 	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "dmarc policy is p=none" {
+	if got.State != spine.Failing || got.Detail != detailEmailDMARCPolicyNone() {
 		t.Errorf("Outcome = %+v, want Failing dmarc policy is p=none", got)
 	}
 }
@@ -123,7 +123,7 @@ func TestEmailCheckFailingWhenDMARCPolicyIsMixedCaseNone(t *testing.T) {
 	records["_dmarc.example.test"] = []string{"v=DMARC1; p=None"}
 	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "dmarc policy is p=none" {
+	if got.State != spine.Failing || got.Detail != detailEmailDMARCPolicyNone() {
 		t.Errorf("Outcome = %+v, want Failing dmarc policy is p=none", got)
 	}
 }
@@ -133,7 +133,7 @@ func TestEmailCheckFailingWhenDMARCRecordCarriesNoPolicyTag(t *testing.T) {
 	records["_dmarc.example.test"] = []string{"v=DMARC1; rua=mailto:reports@example.test"}
 	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "dmarc record carries no p= policy" {
+	if got.State != spine.Failing || got.Detail != detailEmailDMARCNoPolicy() {
 		t.Errorf("Outcome = %+v, want Failing dmarc record carries no p= policy", got)
 	}
 }
@@ -161,7 +161,7 @@ func TestEmailCheckFailingWhenSPFIncludeMissing(t *testing.T) {
 	records["example.test"] = []string{"v=spf1 include:_spf.example.com ~all"}
 	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "sending subdomain SPF record missing "+cloudflareSPFInclude {
+	if got.State != spine.Failing || got.Detail != detailEmailSPFMissing(cloudflareSPFInclude) {
 		t.Errorf("Outcome = %+v, want Failing SPF include missing", got)
 	}
 }
@@ -197,7 +197,7 @@ func TestEmailCheckFailingWhenNoDKIMSelectorResolves(t *testing.T) {
 	delete(records, "google._domainkey.example.test")
 	c := emailClients(records, settingsRoundTripper{status: http.StatusOK, body: sendingSubdomainsBody(true)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "no dkim selector txt resolved" {
+	if got.State != spine.Failing || got.Detail != detailEmailDKIMMissing() {
 		t.Errorf("Outcome = %+v, want Failing no dkim selector txt resolved", got)
 	}
 }
@@ -216,7 +216,7 @@ func TestEmailCheckOKWhenAnyKnownDKIMSelectorResolves(t *testing.T) {
 func TestEmailCheckFailingWhenSendingSubdomainNotOnboarded(t *testing.T) {
 	c := emailClients(fullyCompliantRecords(), settingsRoundTripper{status: http.StatusOK, body: []byte(`{"success":true,"result":[]}`)})
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "sending subdomain not onboarded" {
+	if got.State != spine.Failing || got.Detail != detailEmailSenderNotOnboarded() {
 		t.Errorf("Outcome = %+v, want Failing sending subdomain not onboarded", got)
 	}
 }
@@ -261,7 +261,7 @@ func TestEmailCheckNoCFCredentialFailingDNSReportsTheDNSFault(t *testing.T) {
 	delete(records, "_dmarc.example.test")
 	c := noCFClients(records)
 	got := (emailCheck{}).Run(context.Background(), zonedRecord(), c, Options{})
-	if got.State != spine.Failing || got.Detail != "no _dmarc TXT record published" {
+	if got.State != spine.Failing || got.Detail != detailEmailDMARCMissing() {
 		t.Errorf("Outcome = %+v, want Failing no _dmarc TXT record published", got)
 	}
 }

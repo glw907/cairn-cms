@@ -113,11 +113,32 @@ func TestPublishPathCheckDeclaresIDAndTierGH(t *testing.T) {
 	}
 }
 
-func TestPublishPathCheckNoDataIsUnknownNotObservable(t *testing.T) {
+// TestPublishPathCheckNothingWaitingIsOK asserts the quiet state passes: a repository with no
+// open cairn branch has nothing waiting on an editor, which is where a site spends most of its
+// life, and reporting it unobservable left every healthy site unable to read OK.
+func TestPublishPathCheckNothingWaitingIsOK(t *testing.T) {
 	c := publishClients(publishGHRoundTripper{})
 	got := (publishPathCheck{}).Run(context.Background(), publishRecord(), c, validOptions)
-	if got.State != spine.Unknown || got.Reason != spine.ReasonNotObservable {
-		t.Errorf("Outcome = %+v, want Unknown/reason.not-observable", got)
+	if got.State != spine.OK {
+		t.Errorf("Outcome = %+v, want OK", got)
+	}
+	if got.Detail != detailPublishNothingWaiting() {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailPublishNothingWaiting())
+	}
+}
+
+// TestPublishPathCheckNoRecordedRepoIsSkipped asserts the unobservable verdict is now reserved
+// for a repository the run cannot read, which a record naming none is.
+func TestPublishPathCheckNoRecordedRepoIsSkipped(t *testing.T) {
+	r := publishRecord()
+	r.GitHub.Repo.Owner, r.GitHub.Repo.Repo = "", ""
+	c := publishClients(publishGHRoundTripper{})
+	got := (publishPathCheck{}).Run(context.Background(), r, c, validOptions)
+	if got.State != spine.Unknown || got.Reason != spine.ReasonRepoNotRecorded {
+		t.Errorf("Outcome = %+v, want Unknown/%s", got, spine.ReasonRepoNotRecorded)
+	}
+	if word := spine.StateWord(got.State, got.Reason, false); word != "skip" {
+		t.Errorf("state word = %q, want %q", word, "skip")
 	}
 }
 

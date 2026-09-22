@@ -1,0 +1,274 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+	"time"
+)
+
+// Every operator-facing string in this file is the cairn CLI copy standard's catalogue entry for
+// that string (reviews/copy.md, sections 2 and 3). A detail line states what the check measured,
+// in the operator's terms, with the number. A fix line is one imperative clause naming the action
+// and where to take it, capital initial, final period. Nothing here carries an internal enum.
+//
+// A Condition is set on exactly the verdicts the shipped checks set one on, and on no others:
+// https-forced when Always Use HTTPS is off (edge.https-not-forced), email when the sending
+// domain was never onboarded (email.sender-not-onboarded), and errors when the Worker has no
+// observability dataset (config.observability-off, which the shipped check declares on a skip).
+// Every other failure carries no id, because the shipped check declares none.
+
+// now is the fixed render clock every fixture is dated against, so a capture is reproducible.
+var now = time.Date(2026, 9, 20, 14, 32, 0, 0, time.UTC)
+
+// checkOrder is the order the engine runs its checks in, which is the order the folded passing
+// line lists them; every other list in the design is ordered by severity instead. The ids are the
+// shipped ones, https-forced included.
+var checkOrder = []string{"creds", "serving", "delegation", "https-forced", "email", "deploy",
+	"publish-path", "engine", "errors"}
+
+// The fix lines, one per condition, written once and shared by every scenario so no two renders
+// can drift apart. A fix a person has to carry out is marked, so the plain body can say so.
+const (
+	fixKeyring       = "Run `cairn auth set CAIRN_CF_READ_TOKEN`, then run the command again."
+	fixGHToken       = "Create a new token, then run `cairn auth set CAIRN_GH_TOKEN`."
+	fixBuild         = "Read the build log in the Cloudflare dashboard, then push a fix."
+	fixEngine        = "Raise the @glw907/cairn-cms range in package.json, then deploy again."
+	fixEmail         = "Run `wrangler email sending enable <domain>` for the apex domain, then deploy again."
+	fixErrors        = "Read the publish.commit-failed records in Workers Logs."
+	fixObservability = "Set observability.enabled to true in wrangler.jsonc, then deploy again."
+	fixRoute         = "Confirm the Worker route and the zone's DNS record point at this site."
+	fixHTTPS         = "Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates."
+	fixGitHubApp     = "Install the GitHub App on the repository."
+)
+
+// healthy is scenario 1: one site, every check passing, and the calmest frame the tool draws. No
+// passing row carries a condition id, because a check that passed declared no condition.
+func healthy() Report {
+	return Report{
+		Site: "ecxc.ski", Now: now, Elapsed: 2900 * time.Millisecond, Age: 4 * time.Minute,
+		Engine: "0.78.0", Adopted: now.AddDate(0, -7, 0),
+		Checks: []Check{
+			{ID: "creds", State: Pass, Detail: "Cloudflare and GitHub tokens read from the keyring"},
+			{ID: "serving", State: Pass, Detail: "200 in 84ms"},
+			{ID: "delegation", State: Pass, Detail: "nameservers match the zone"},
+			{ID: "https-forced", State: Pass, Detail: "forced at the edge, HSTS 1 year"},
+			{ID: "email", State: Pass, Detail: "sending domain onboarded 41 days ago"},
+			{ID: "deploy", State: Pass, Detail: "built 4h ago (a91f2c7), main is level"},
+			{ID: "publish-path", State: Pass, Detail: "App installed, branch writable"},
+			{ID: "engine", State: Pass, Detail: "0.78.0 is current"},
+			{ID: "errors", State: Pass, Detail: "0 errors in 24h"},
+		},
+	}
+}
+
+// sick is scenario 2: three failures ranked against each other, two checks that could not run for
+// the reason the first failure names, and one held failure five days from expiry. One condition id
+// appears on the whole screen, on the one row whose shipped check declares one.
+func sick() Report {
+	return Report{
+		Site: "907.life", Now: now, Elapsed: 3200 * time.Millisecond, Age: 4 * time.Minute,
+		Engine: "0.71.0", Adopted: now.AddDate(0, -7, 0),
+		Checks: []Check{
+			{ID: "creds", State: Fail,
+				Detail: "Cloudflare token not found; GitHub token read from the keyring",
+				Remedy: fixKeyring},
+			{ID: "serving", State: Pass, Detail: "200 in 132ms"},
+			{ID: "delegation", State: Pass, Detail: "nameservers match the zone"},
+			{ID: "https-forced", State: Fail, Condition: "edge.https-not-forced",
+				Detail: "Always Use HTTPS is off for the zone",
+				Remedy: fixHTTPS,
+				Anchor: "force-https-at-the-edge",
+				Held:   true, HoldExpiry: now.AddDate(0, 0, 5)},
+			{ID: "email", State: Skip, Detail: "no Cloudflare token"},
+			{ID: "deploy", State: Fail,
+				Detail: "build failed 26m ago (3f0ba18), main is 2 commits ahead",
+				Remedy: fixBuild,
+				Anchor: "deploy-the-worker-with-its-bindings"},
+			{ID: "publish-path", State: Pass, Detail: "App installed, branch writable"},
+			{ID: "engine", State: Fail,
+				Detail: "0.71.0 installed, 0.78.0 latest, 7 releases behind",
+				Remedy: fixEngine,
+				Anchor: "meet-the-dependency-floors"},
+			{ID: "errors", State: Skip, Detail: "no Cloudflare token"},
+		},
+	}
+}
+
+// drifting is scenario 6: the WARNING case. Nothing is broken; the engine version is two releases
+// behind and the Worker logs nowhere, which are both real and neither is a reason to page anyone.
+// The errors row is the one skip in the set that legitimately carries a condition id, because the
+// shipped check declares config.observability-off on exactly that skip and gives it a fix.
+func drifting() Report {
+	r := healthy()
+	r.Site = "xcathletes.org"
+	r.Engine = "0.76.0"
+	r.Age = 12 * time.Minute
+	r.Elapsed = 2400 * time.Millisecond
+	r.Adopted = now.AddDate(0, -2, 0)
+	for i := range r.Checks {
+		switch r.Checks[i].ID {
+		case "engine":
+			r.Checks[i] = Check{ID: "engine", State: Fail,
+				Detail: "0.76.0 installed, 0.78.0 latest, 2 releases behind",
+				Remedy: fixEngine,
+				Anchor: "meet-the-dependency-floors"}
+		case "errors":
+			r.Checks[i] = Check{ID: "errors", State: Skip,
+				Condition: "config.observability-off",
+				Detail:    "the Worker has no observability dataset",
+				Remedy:    fixObservability,
+				Anchor:    "turn-on-observability"}
+		}
+	}
+	return r
+}
+
+// site builds one fleet member from a sparse map of the checks that are not passing.
+func site(name, engine string, ageOf time.Duration, over map[string]Check) Report {
+	r := Report{Site: name, Now: now, Engine: engine, Age: ageOf,
+		Elapsed: 2600 * time.Millisecond, Adopted: now.AddDate(0, -2, 0)}
+	base := map[string]string{
+		"creds":        "Cloudflare and GitHub tokens read from the keyring",
+		"serving":      "200 in 96ms",
+		"delegation":   "nameservers match the zone",
+		"https-forced": "forced at the edge, HSTS 1 year",
+		"email":        "sending domain onboarded 118 days ago",
+		"deploy":       "built 6h ago (4c7d0b1), main is level",
+		"publish-path": "App installed, branch writable",
+		"engine":       engine + " is current",
+		"errors":       "0 errors in 24h",
+	}
+	for _, id := range checkOrder {
+		if c, found := over[id]; found {
+			c.ID = id
+			r.Checks = append(r.Checks, c)
+			continue
+		}
+		r.Checks = append(r.Checks, Check{ID: id, State: Pass, Detail: base[id]})
+	}
+	return r
+}
+
+// fleet is scenario 3: six sites, mixed verdicts, with the unreachable one worst.
+func fleet() []Report {
+	return []Report{
+		healthy(),
+		sick(),
+		site("aksailingclub.org", "0.78.0", 12*time.Minute, map[string]Check{
+			"email": {State: Fail, Condition: "email.sender-not-onboarded",
+				Detail: "the sending subdomain is not onboarded",
+				Remedy: fixEmail,
+				Anchor: "onboard-the-sending-domain"},
+			"errors": {State: Fail,
+				Detail: "7 errors in 24h, all publish.commit-failed",
+				Remedy: fixErrors,
+				Anchor: "turn-on-observability"},
+		}),
+		drifting(),
+		site("cairn.pub", "0.78.0", 31*time.Hour, nil),
+		site("topo.907.life", "0.78.0", 9*24*time.Hour, map[string]Check{
+			"serving": {State: Fail,
+				Detail: "connection refused at the origin",
+				Remedy: fixRoute,
+				Anchor: "deploy-the-worker-with-its-bindings"},
+			"delegation":   {State: Skip, Detail: "no Cloudflare token"},
+			"https-forced": {State: Skip, Detail: "no Cloudflare token"},
+			"email":        {State: Skip, Detail: "no Cloudflare token"},
+			"deploy":       {State: Skip, Detail: "the site did not answer"},
+			"publish-path": {State: Skip, Detail: "the site did not answer"},
+			"errors":       {State: Skip, Detail: "no Cloudflare token"},
+		}),
+	}
+}
+
+// twelve is scenario 7: the sites grown past one screen, with the unreachable one still first.
+func twelve() []Report {
+	extra := []Report{
+		site("nordicskiclub.org", "0.78.0", 6*time.Minute, nil),
+		site("alpinehut.example", "0.77.0", 8*time.Minute, map[string]Check{
+			"engine": {State: Fail,
+				Detail: "0.77.0 installed, 0.78.0 latest, 1 release behind",
+				Remedy: fixEngine,
+				Anchor: "meet-the-dependency-floors"},
+		}),
+		site("glacierbay.example", "0.78.0", 14*time.Minute, nil),
+		site("tidelinepress.org", "0.78.0", 21*time.Minute, map[string]Check{
+			"publish-path": {State: Fail,
+				Detail: "the App is not installed on this repository",
+				Remedy: fixGitHubApp,
+				Anchor: "install-the-github-app"},
+		}),
+		site("fjordlight.example", "0.78.0", 27*time.Minute, nil),
+		site("kenaiworks.example", "0.78.0", 44*time.Minute, map[string]Check{
+			"creds": {State: Fail,
+				Detail: "the GitHub token expires 2026-09-26, in 6 days",
+				Remedy: fixGHToken,
+				Anchor: "install-the-github-app"},
+		}),
+	}
+	return append(fleet(), extra...)
+}
+
+// hostile is scenario 9: a report whose every dynamic string is something an operator never typed
+// and an attacker might have. A 57-character domain, CJK, an injected newline carrying a forged
+// verdict, an ANSI clear-screen, a 300-character fix line, and a hold that lapsed 40 days ago and
+// therefore holds nothing.
+func hostile() Report {
+	r := sick()
+	r.Site = "a-very-long-subdomain-name-for-a-client.example-corp.co.uk"
+	for i := range r.Checks {
+		switch r.Checks[i].ID {
+		case "deploy":
+			r.Checks[i].Detail = "build failed\nCRITICAL 907.life  0 failing · 9 passing" +
+				"\x1b[2J\x1b[H\x1b[42;30m OK: everything is fine \x1b[0m\rall clear\tnow"
+			r.Checks[i].Remedy = strings.TrimSpace(strings.Repeat("Read the build log and push a fix. ", 9))
+		case "errors":
+			r.Checks[i].Detail = "ビルド失敗 26分前 (3f0ba18)、mainは2コミット先行しています"
+		case "email":
+			r.Checks[i].Detail = "bücher-über-älpler.münchen.example did not answer \U0001f9d1‍\U0001f9d1‍\U0001f9d2"
+		case "https-forced":
+			r.Checks[i].HoldExpiry = now.AddDate(0, 0, -40)
+		}
+	}
+	return r
+}
+
+// logs is scenario 5: one log excerpt whose error record carries the reason that must never be
+// cut. A record's field values are the engine's own words, printed verbatim; the CLI never
+// rewrites a record.
+func logs() []Entry {
+	base := now.Add(-18 * time.Minute)
+	return []Entry{
+		{base, "info", "signin.link-sent", []Field{{"editor", "kari@ecxc.ski"}, {"ttl", "15m"}}},
+		{base.Add(42 * time.Second), "info", "signin.consumed", []Field{{"editor", "kari@ecxc.ski"}}},
+		{base.Add(3 * time.Minute), "info", "entry.saved", []Field{{"editor", "kari@ecxc.ski"},
+			{"branch", "cairn/post/spring-relay"}, {"sha", "5b1c9ae"}}},
+		{base.Add(6 * time.Minute), "warn", "publish.conflict", []Field{{"editor", "kari@ecxc.ski"},
+			{"branch", "cairn/post/spring-relay"}, {"reason", "stale-edit"}}},
+		{base.Add(7 * time.Minute), "error", "publish.commit-failed", []Field{{"editor", "kari@ecxc.ski"},
+			{"status", "422"}, {"reason", "the branch is behind main by 2 commits"}}},
+		{base.Add(11 * time.Minute), "info", "entry.saved", []Field{{"editor", "dana@ecxc.ski"},
+			{"branch", "cairn/page/about"}, {"sha", "c02e17f"}}},
+		{base.Add(14 * time.Minute), "info", "publish.committed", []Field{{"editor", "dana@ecxc.ski"},
+			{"sha", "c02e17f"}, {"target", "main"}}},
+	}
+}
+
+// holdPhrase is the held row's trailing field. The failure and the hold are two facts, so the
+// detail column keeps the failure and this keeps the hold. A lapsed hold says so plainly and the
+// check renders as failing.
+func holdPhrase(c Check, clock time.Time) (string, bool) {
+	holding, left := c.Holding(clock)
+	if !holding {
+		return "hold expired " + isoDate(c.HoldExpiry), false
+	}
+	days := int(left.Hours() / 24)
+	unit := fmt.Sprintf("%d days left", days)
+	switch {
+	case days == 1:
+		unit = "1 day left"
+	case days == 0:
+		unit = fmt.Sprintf("%d hours left", int(left.Hours()))
+	}
+	return fmt.Sprintf("held until %s, %s", isoDate(c.HoldExpiry), unit), true
+}

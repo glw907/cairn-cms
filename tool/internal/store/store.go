@@ -40,8 +40,14 @@ type Store struct {
 // permission-bit check: a loosely permissioned directory is caught
 // per-operation by List and Load, since a directory's mode can loosen
 // after Open returns.
+//
+// A directory that does not exist yet is not a refusal. An operator's first
+// run has no registry, and reporting "no such file or directory" to a
+// `cairn sites list` or a `cairn adopt list` says nothing they can act on;
+// an absent registry is an empty registry, and Save creates the directory
+// when the first record is written.
 func Open(dir string) (*Store, error) {
-	if err := openChecks(dir); err != nil {
+	if err := openChecks(dir); err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("store: open %s: %w", dir, err)
 	}
 	return &Store{dir: dir}, nil
@@ -69,9 +75,13 @@ func openChecks(dir string) error {
 // stem that record.ValidateSiteID rejects, a retired record's dotted stem
 // among them, is skipped silently. A stem that validates but fails to open
 // or parse is skipped and reported in the returned error slice instead of
-// failing the whole list.
+// failing the whole list. A registry directory that does not exist lists
+// nothing and reports no error, the same reading Open takes of it.
 func (s *Store) List() ([]Entry, []error) {
 	if err := checkPath(s.dir); err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
 		return nil, []error{fmt.Errorf("store: list %s: %w", s.dir, err)}
 	}
 

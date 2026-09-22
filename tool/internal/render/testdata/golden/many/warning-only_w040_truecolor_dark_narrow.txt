@@ -1,0 +1,24 @@
+[1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 UNKNOWN[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 22:28 UTC),[m
+[38;2;168;164;158min 16.3s[m
+
+[38;2;168;164;158msite[m       [38;2;168;164;158mverdict[m   [38;2;168;164;158mfailing[m
+[1;38;2;234;231;227mcairn.pub[m  [1;38;2;247;172;77mUNKNOWN[m   [38;2;255;142;134m1[m
+
+[38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the[m
+[38;2;168;164;158mkeyring[m
+[38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the[m
+[38;2;168;164;158mkeyring[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mcairn.pub[m  [38;2;168;164;158mengine[m[38;2;168;164;158m[m
+      [38;2;193;189;184mRaise the @glw907/cairn-cms range[m
+      [38;2;193;189;184min package.json, then[m
+      [38;2;193;189;184mdeploy again.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mcairn.pub[m  ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158merrors[m]8;;[38;2;168;164;158m[m
+      [38;2;168;164;158mconfig.observability-off[m
+      [38;2;193;189;184mTurn on observability for the[m
+      [38;2;193;189;184mWorker in wrangler.jsonc, then[m
+      [38;2;193;189;184mdeploy again.[m
+
+[1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 UNKNOWN[m

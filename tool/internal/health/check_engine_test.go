@@ -100,6 +100,11 @@ func TestEngineCheckCurrentVersionIsOK(t *testing.T) {
 	if behind := fieldValue[int](t, got.Fields, "releasesBehind"); behind != 0 {
 		t.Errorf("releasesBehind field = %d, want 0", behind)
 	}
+	// The installed version reaches a renderer as a field. The fleet table's engine column reads
+	// it by key rather than parsing the sentence Detail carries it in.
+	if v := fieldValue[string](t, got.Fields, FieldEngineInstalledVersion); v != "0.97.0" {
+		t.Errorf("%s field = %q, want %q", FieldEngineInstalledVersion, v, "0.97.0")
+	}
 }
 
 func TestEngineCheckBehindWithNoConsumersMustIsOK(t *testing.T) {
@@ -114,6 +119,9 @@ func TestEngineCheckBehindWithNoConsumersMustIsOK(t *testing.T) {
 	}
 	if behind := fieldValue[int](t, got.Fields, "releasesBehind"); behind != 2 {
 		t.Errorf("releasesBehind field = %d, want 2", behind)
+	}
+	if v := fieldValue[string](t, got.Fields, FieldEngineInstalledVersion); v != "0.95.0" {
+		t.Errorf("%s field = %q, want %q", FieldEngineInstalledVersion, v, "0.95.0")
 	}
 	if state := fieldValue[bool](t, got.Fields, "consumersMust"); state {
 		t.Error("consumersMust field is true, want false: no skipped release carries an actionable Consumers must: line")

@@ -1,0 +1,14 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "GET /accounts/{account_id}/builds/workers/{worker_tag}/triggers",
+    "status": 200,
+    "note": "recorded from a live GET against a Worker in the verification account that Workers Builds holds no trigger for, response headers discarded except content-type (application/json) and no authorization header recorded. The body is verbatim: the route answers 200 with an empty result rather than a 404, which is why the empty list, not an error code, is what says Builds is not connected."
+  },
+  "body": {
+    "result": [],
+    "success": true,
+    "errors": [],
+    "messages": []
+  }
+}

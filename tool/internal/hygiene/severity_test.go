@@ -83,6 +83,56 @@ func TestOneSeverityTable(t *testing.T) {
 	}
 }
 
+// TestNoExitArithmeticInCommands asserts no file under cmd/cairn holds its own state-to-exit-code
+// mapping. It greps for the four names the mapping has carried, the private exit-code constants
+// and the two functions that read them, so a command reintroducing any of them goes red rather
+// than quietly owning a rule the whole module needs. It is a name grep and so does not catch a
+// mapping written under fresh names; spine.ExitCode and spine.ExitCodeFor are the only exported
+// mappings, and a second one is what code review looks for.
+func TestNoExitArithmeticInCommands(t *testing.T) {
+	root := moduleRoot(t)
+	cmdDir := filepath.Join(root, "cmd", "cairn")
+	if _, err := os.Stat(cmdDir); err != nil {
+		t.Fatalf("stat %s: %v", cmdDir, err)
+	}
+	for _, needle := range []string{"exitOK", "exitCritical", "exitUnknown", "exitCodeFor", "combineState"} {
+		for _, rel := range grepDir(t, root, cmdDir, needle) {
+			t.Errorf("found %q in %s, exit arithmetic belongs to internal/spine", needle, rel)
+		}
+	}
+}
+
+// grepDir walks every .go file under dir and reports the paths, relative to root, of those whose
+// content contains needle.
+func grepDir(t *testing.T, root, dir, needle string) []string {
+	t.Helper()
+	var offenders []string
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || !strings.HasSuffix(path, ".go") {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		if strings.Contains(string(data), needle) {
+			rel, relErr := filepath.Rel(root, path)
+			if relErr != nil {
+				rel = path
+			}
+			offenders = append(offenders, filepath.ToSlash(rel))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk %s: %v", dir, err)
+	}
+	return offenders
+}
+
 // TestOneReasonToOutcomeTranslation asserts exactly one translation from a classified
 // providers.Reason to a verdict exists under tool/: spine.ReasonToOutcome. It goes red the moment
 // another file switches on a providers.Reason value, or reintroduces a reasonLevel-shaped

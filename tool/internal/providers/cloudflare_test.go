@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"reflect"
 	"testing"
 )
 
@@ -210,5 +211,175 @@ func TestListWorkersFollowsPagination(t *testing.T) {
 	}
 	if workers[0].Name != "one" || workers[1].Name != "two" {
 		t.Errorf("ListWorkers: got %+v, want [one two]", workers)
+	}
+}
+
+// TestListZonesDecodesEveryPage asserts ListZones returns each zone's id and name, the pair
+// Worker discovery joins a custom domain's zone_id against.
+func TestListZonesDecodesEveryPage(t *testing.T) {
+	body := []byte(`{"success":true,"result":[{"id":"zone-1","name":"ecxc.ski","status":"active"},{"id":"zone-2","name":"907.life","status":"pending"}],"result_info":{"page":1,"total_pages":1}}`)
+	cf := NewCloudflare("account-id", NewCredential("token"), fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	zones, err := cf.ListZones(context.Background())
+	if err != nil {
+		t.Fatalf("ListZones: %v", err)
+	}
+	want := []Zone{
+		{ID: "zone-1", Name: "ecxc.ski", Status: "active"},
+		{ID: "zone-2", Name: "907.life", Status: "pending"},
+	}
+	if len(zones) != len(want) {
+		t.Fatalf("ListZones returned %d zones, want %d", len(zones), len(want))
+	}
+	for i := range want {
+		if !reflect.DeepEqual(zones[i], want[i]) {
+			t.Errorf("zone %d = %+v, want %+v", i, zones[i], want[i])
+		}
+	}
+}
+
+// TestBuildsTokensSucceedsWithNoWorkerTag asserts BuildsTokens confirms Workers Builds
+// Configuration read access with no worker tag in the request path, unlike BuildsConnections and
+// BuildsLatest.
+func TestBuildsTokensSucceedsWithNoWorkerTag(t *testing.T) {
+	body := []byte(`{"success":true,"errors":[],"result":[]}`)
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	if err := cf.BuildsTokens(context.Background()); err != nil {
+		t.Fatalf("BuildsTokens: %v", err)
+	}
+}
+
+// TestBuildsTokensClassifiesFailure asserts a rejected token still reaches BuildsTokens' caller
+// as a classified *APIError, the same as every other read route.
+func TestBuildsTokensClassifiesFailure(t *testing.T) {
+	body := []byte(`{"success":false,"errors":[{"code":10000,"message":"Invalid API Token"}]}`)
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: http.StatusUnauthorized, body: body})
+
+	err := cf.BuildsTokens(context.Background())
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("BuildsTokens: got %v, want an *APIError", err)
+	}
+	if apiErr.Reason != ReasonUnauthorized {
+		t.Errorf("Reason = %v, want %v", apiErr.Reason, ReasonUnauthorized)
+	}
+}
+
+// TestDNSRecordsDecodesEveryPage asserts DNSRecords returns each record's name and type,
+// following the route's own result_info like every other paginated list.
+func TestDNSRecordsDecodesEveryPage(t *testing.T) {
+	body := []byte(`{"success":true,"result":[{"name":"ecxc.ski","type":"A"},{"name":"www.ecxc.ski","type":"CNAME"}],"result_info":{"page":1,"total_pages":1}}`)
+	cf := NewCloudflare("account-id", NewCredential("token"), fixtureRoundTripper{status: http.StatusOK, body: body})
+
+	records, err := cf.DNSRecords(context.Background(), "zone-1")
+	if err != nil {
+		t.Fatalf("DNSRecords: %v", err)
+	}
+	want := []DNSRecord{
+		{Name: "ecxc.ski", Type: "A"},
+		{Name: "www.ecxc.ski", Type: "CNAME"},
+	}
+	if len(records) != len(want) {
+		t.Fatalf("DNSRecords returned %d records, want %d", len(records), len(want))
+	}
+	for i := range want {
+		if records[i] != want[i] {
+			t.Errorf("record %d = %+v, want %+v", i, records[i], want[i])
+		}
+	}
+}
+
+// TestBuildsConnectionsDecodesTheRecordedTriggers drives BuildsConnections over the corpus's own
+// live-captured trigger body. The live route names a trigger's id "trigger_uuid" and nests the
+// repository under "repo_connection", so the decode is what proves this client reads the shape
+// Cloudflare actually sends rather than the one the Node fake once synthesized.
+func TestBuildsConnectionsDecodesTheRecordedTriggers(t *testing.T) {
+	status, body, err := Corpus("cloudflare", "builds_triggers.connected.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	triggers, err := cf.BuildsConnections(context.Background(), "worker-tag")
+	if err != nil {
+		t.Fatalf("BuildsConnections: %v", err)
+	}
+	if len(triggers) != 1 {
+		t.Fatalf("got %d triggers, want 1", len(triggers))
+	}
+	if triggers[0].RepoConnection == nil {
+		t.Fatal("the trigger carries no repo connection")
+	}
+	if got := triggers[0].RepoConnection.ProviderAccountName + "/" + triggers[0].RepoConnection.RepoName; got != "carin-test/carin-test-5-site" {
+		t.Errorf("repository = %q, want %q", got, "carin-test/carin-test-5-site")
+	}
+}
+
+// TestBuildsConnectionsDecodesAnUnconnectedWorker asserts the recorded body for a Worker Builds
+// holds no trigger for decodes to an empty list and no error. The distinction carries the deploy
+// check's whole skip branch: the route answers 200 with an empty result rather than a 404, so
+// the list length is the only signal that Builds is not connected.
+func TestBuildsConnectionsDecodesAnUnconnectedWorker(t *testing.T) {
+	status, body, err := Corpus("cloudflare", "builds_triggers.not-connected.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	triggers, err := cf.BuildsConnections(context.Background(), "worker-tag")
+	if err != nil {
+		t.Fatalf("BuildsConnections: %v", err)
+	}
+	if len(triggers) != 0 {
+		t.Errorf("got %d triggers, want none", len(triggers))
+	}
+}
+
+// TestBuildsLatestDecodesTheRecordedBuild drives BuildsLatest over the corpus's own
+// live-captured build list, proving the commit hash is read from the nested
+// "build_trigger_metadata" object and the settled outcome from "build_outcome".
+func TestBuildsLatestDecodesTheRecordedBuild(t *testing.T) {
+	status, body, err := Corpus("cloudflare", "builds_list.latest-success.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	build, err := cf.BuildsLatest(context.Background(), "worker-tag")
+	if err != nil {
+		t.Fatalf("BuildsLatest: %v", err)
+	}
+	if build == nil {
+		t.Fatal("BuildsLatest returned no build")
+	}
+	if build.Status != "stopped" || build.Outcome != "success" {
+		t.Errorf("status/outcome = %q/%q, want stopped/success", build.Status, build.Outcome)
+	}
+	if build.TriggerMetadata.CommitHash != "959643ad533b660ef7e8fe529a5c37257affaa0c" {
+		t.Errorf("commit hash = %q", build.TriggerMetadata.CommitHash)
+	}
+}
+
+// TestListZonesDecodesTheAssignedNameServers asserts the zone listing's own "name_servers" key
+// decodes, which is the pair adoption records and the pair the delegation check falls back to
+// when a record carries none.
+func TestListZonesDecodesTheAssignedNameServers(t *testing.T) {
+	status, body, err := Corpus("cloudflare", "zones.list.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	zones, err := cf.ListZones(context.Background())
+	if err != nil {
+		t.Fatalf("ListZones: %v", err)
+	}
+	if len(zones) == 0 {
+		t.Fatal("ListZones returned no zones")
+	}
+	want := []string{"burt.ns.cloudflare.com", "carlane.ns.cloudflare.com"}
+	if !reflect.DeepEqual(zones[0].NameServers, want) {
+		t.Errorf("name servers = %v, want %v", zones[0].NameServers, want)
 	}
 }

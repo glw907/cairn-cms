@@ -139,7 +139,7 @@ func TestLoadEnvBlankExportedVariableIsMissing(t *testing.T) {
 		t.Error("missing does not list CAIRN_CF_READ_TOKEN, which was exported blank")
 	}
 
-	cmd := newAuthListCmd(envFn)
+	cmd := newAuthListCmd(deps{env: envFn})
 	var out strings.Builder
 	cmd.SetOut(&out)
 	if err := cmd.RunE(cmd, nil); err != nil {
@@ -176,6 +176,26 @@ func TestLoadEnvRecordsProviderError(t *testing.T) {
 	}
 }
 
+// TestLoadEnvReadsNoColorAndTerm is criterion 16 (Task 20a): loadEnv resolves NO_COLOR and TERM
+// straight from envFn, carrying no Missing entry for either since neither is a credential.
+func TestLoadEnvReadsNoColorAndTerm(t *testing.T) {
+	envFn := fakeEnv(map[string]string{"NO_COLOR": "1", "TERM": "xterm-256color"})
+
+	got, missing := loadEnv(envFn)
+
+	if got.noColorValue() != "1" {
+		t.Errorf("noColorValue() = %q, want %q", got.noColorValue(), "1")
+	}
+	if got.termValue() != "xterm-256color" {
+		t.Errorf("termValue() = %q, want %q", got.termValue(), "xterm-256color")
+	}
+	for _, m := range missing {
+		if m.Var == "NO_COLOR" || m.Var == "TERM" {
+			t.Errorf("missing lists %s, which carries no Missing entry", m.Var)
+		}
+	}
+}
+
 // TestOSGetenvOnlyInEnvGo asserts no other file under cmd/cairn calls
 // os.Getenv directly. loadEnv's envFn parameter is the one chokepoint every
 // command reads the environment through.
@@ -204,3 +224,34 @@ func TestOSGetenvOnlyInEnvGo(t *testing.T) {
 
 var _ secrets.Provider = fakeProvider{}
 var _ secrets.Provider = fakeFailingProvider{}
+
+// TestCredentialVariableNamesAreSpelledOnlyInEnvGo asserts credentialVars is the only place a
+// CAIRN_CF_ or CAIRN_GH_ variable name is spelled. It is scoped narrowly, per the 2026-09-21
+// ratification: non-test .go files under cmd/cairn only (a bare CAIRN_ grep also matches
+// store/paths.go's CAIRN_STATE_DIR and providers/cloudflare.go's CAIRN_CLOUDFLARE_API_BASE,
+// neither a credential), the CAIRN_CF_/CAIRN_GH_ prefixes only, and env.go and messages.go
+// (created by Task 19c-ii, and exempted here by name in advance) are the two allowed files.
+func TestCredentialVariableNamesAreSpelledOnlyInEnvGo(t *testing.T) {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		if name == "env.go" || name == "messages.go" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(".", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, prefix := range []string{"CAIRN_CF_", "CAIRN_GH_"} {
+			if strings.Contains(string(data), prefix) {
+				t.Errorf("%s spells a %s variable name; read it from credentialVars, authVariables, or one of env's own accessors instead", name, prefix)
+			}
+		}
+	}
+}

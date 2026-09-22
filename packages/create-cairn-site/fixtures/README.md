@@ -43,9 +43,26 @@ production account. `test/fixtures-hygiene.test.mjs` gates this: it walks every 
 fails on an email-shaped string or the estate account id.
 
 One file is the exception to "a real captured API response":
-`cloudflare/observability-telemetry-query.ok.json` is synthesized from a live response's key set
-with no body captured, as its own `provenance.note` says; its `captured` date marks when that key
-set was recorded, not when the body itself came back from a live call.
+`cloudflare/observability-telemetry-query.ok.json` carries a live-recorded envelope around three
+synthesized records, so one fixture covers three engine events and two levels. Its own
+`provenance.note` says which half is which, and
+`cloudflare/observability-telemetry-query.events.200.json` beside it is live all the way down, and
+so is `cloudflare/observability-telemetry-query.mixed-lines.200.json`, which carries both kinds of
+line a Worker writes: one cairn engine record and one bare `console.error` line.
+
+## One recorded response per route
+
+Every provider route the Go tool reads has a body here recorded from a live call, and a test that
+decodes it. The rule is the 2026-09-21 live verification's own finding: a hand-written fixture
+proves only that the code agrees with whoever wrote the fixture. Two defects shipped behind one.
+The pagination walk read `result_info.total_pages`, which every hand-written fixture carried and
+three of the six real list routes never send, so Worker discovery saw one of an account's seven
+custom domains. The telemetry query's decoder read `result.events` as an array, which the
+synthesized fixture made it, and the live API answers with an object.
+
+A pass that adds or changes a provider route records its response here in the same pass. Scrub
+the identifiers as above; every key set, count, and `result_info` value stays exactly as the API
+sent it, because those are the parts a fixture exists to pin.
 
 ## When this corpus moves
 

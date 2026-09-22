@@ -4,6 +4,30 @@
 
 ### Added
 
+- The `cairn` operator CLI reaches 1.0. It is a Go binary that watches a site from outside the
+  browser: `cairn health` runs nine checks over each adopted site and reports one of four
+  verdicts (OK, WARNING, CRITICAL, UNKNOWN) built from five per-check result words (`pass`,
+  `fail`, `skip`, `unknown`, `held`); `cairn logs` reads a site's structured records from
+  Workers Logs; `cairn adopt` registers a deployed site; `cairn auth set` and `cairn auth check`
+  hold and prove the three read credentials it needs; and `--ack` holds a known failing check so
+  a scheduled run stops paging on it. Every command takes `--json` (six published schemas, each
+  carrying its own `schemaVersion`) and exits 0, 1, 2, or 3 by the monitoring-plugin convention,
+  so a scheduler can page on exit 2 and above and notify on any non-zero. `cairn help agents` is
+  the agent-facing page.
+
+  Install it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest`, or download a
+  prebuilt archive from the `tool/v1.0.1` release (linux, macOS, and Windows on amd64 and arm64,
+  each carrying the man page beside the binary, with `SHA256SUMS` and a build-provenance
+  attestation). **The binary is not in the npm tarball** and never has been: `tool/` is a
+  separate Go module, outside the published package. Installing or upgrading
+  `@glw907/cairn-cms` neither installs nor updates it.
+
+  No consumer action. A site that never installs the CLI behaves exactly as before. A site that
+  does needs three read credentials in its environment or keyring
+  (`CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, `CAIRN_GH_READ_TOKEN`); `cairn auth check`
+  confirms all nine permissions they carry, and both tokens are account-scoped rather than
+  confined to one zone or one repository, so adopting a second site needs no new token.
+
 - Every site's `cairn-manifest` command now also writes `src/content/.cairn/site-facts.json`, a
   committed contract carrying the three adapter-derived values (the media bucket binding, the role
   vocabulary, the AI-crawler posture) a Go program cannot read on its own. The `cairnManifest` Vite

@@ -1,0 +1,44 @@
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227ma-very-long-site-name-nobody-w[m
+[38;2;168;164;158m3 failing · 1 could not run · 1 passing[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 22:28 UTC),[m
+[38;2;168;164;158min 16.3s[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mfailing[m [38;2;74;68;59m─────────────────────────────[m
+  [38;2;255;142;134m■[m [1;38;2;234;231;227mserving[m       
+    [38;2;193;189;184mthe hostname does not answer[m
+    [38;2;193;189;184mCRITICAL  example.org  0 failing OK[m[38;2;168;164;158m[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mConfirm the Worker route and the[m
+      [38;2;193;189;184mzone's DNS record point at this[m
+      [38;2;193;189;184msite.[m
+  [38;2;255;142;134m■[m [1;38;2;234;231;227mdeploy[m        
+    [38;2;193;189;184mbuild failed 26m ago (3f0ba18)[m
+    [38;2;193;189;184m日本語のテキスト 👨‍👩‍👧‍👦[m[38;2;168;164;158m[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mRead the build log in the[m
+      [38;2;193;189;184mCloudflare dashboard, then push a[m
+      [38;2;193;189;184mfix.[m
+  [38;2;255;142;134m■[m [1;38;2;234;231;227mhttps-forced[m  
+    [38;2;193;189;184mAlways Use HTTPS is off for the[m
+    [38;2;193;189;184mzone[m[38;2;168;164;158m  edge.https-not-forced[m
+    [38;2;168;164;158mhold expired 2026-08-11[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mTurn on Always Use HTTPS for the[m
+      [38;2;193;189;184mzone under SSL/TLS, Edge[m
+      [38;2;193;189;184mCertificates.[m
+      ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;168;164;158mhttps://cairn.pub/docs/admin/is-it[m]8;;
+      ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;168;164;158m-working#force-https-at-the-edge[m]8;;
+
+[38;2;74;68;59m──[m [38;2;234;231;227mcould not run[m [38;2;74;68;59m───────────────────────[m
+  [38;2;247;172;77m?[m [1;38;2;234;231;227memail[m         
+    [38;2;193;189;184mlong long long long long long long[m
+    [38;2;193;189;184mlong long long long long long long[m
+    [38;2;193;189;184mlong long long long long long long[m
+    [38;2;193;189;184mlong long long long long long long[m
+    [38;2;193;189;184mlong long long long long long long[m
+    [38;2;193;189;184mlong long long long long long long[m
+    [38;2;193;189;184mlong long long long long long long[m
+    [38;2;193;189;184mlong long long long long long long[m
+    [38;2;193;189;184mlong long long long[m[38;2;168;164;158m[m
+
+[38;2;168;164;158m●[m [38;2;168;164;158m1 passing[m  [38;2;168;164;158mengine[m
+
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227ma-very-long-site-name-nobody-w[m
+[38;2;168;164;158m3 failing · 1 could not run · 1 passing[m

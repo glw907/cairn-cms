@@ -67,6 +67,23 @@ cairn auth set CAIRN_GH_READ_TOKEN
 `cairn auth list` reports which provider answers each of the three
 variables, environment, keyring, or neither, and never prints a value.
 
+### Piping a value with no terminal at all
+
+`cairn auth set <name>` also reads from stdin when the echo-off prompt has
+no terminal to read from, which is what a script or a scheduled setup step
+needs:
+
+```sh
+printf %s "$v" | cairn auth set CAIRN_GH_READ_TOKEN
+```
+
+A trailing `\r\n` is stripped the same as a bare `\n`, so a value piped
+from a Windows shell or a PowerShell pipeline arrives clean. A value typed
+at an interactive prompt can still reach shell history; a value in a
+pipeline can still reach a process listing on some platforms. Neither
+risk is eliminated by either form; a file the shell reads on login, as
+the earlier sections describe, keeps a credential out of both.
+
 ## Where the keyring stores it
 
 - macOS: Keychain.
@@ -99,6 +116,13 @@ resolves in this order:
 
 ## Token scopes
 
+`cairn auth check` confirms the permissions below against your own two
+tokens: every account-scoped permission with credentials alone, and every
+zone-scoped or repository-scoped permission against one registered site
+with `cairn auth check <site>`. The nine labels below are cairn's own
+single source (`tool/cmd/cairn/permissions.go`); a permission added to one
+without the other fails the tool's own test suite.
+
 ### Cloudflare
 
 `CAIRN_CF_READ_TOKEN` is a Cloudflare API token carrying read permission in
@@ -123,38 +147,37 @@ since a 403 there reports UNKNOWN rather than a scope error.
 ### GitHub
 
 `CAIRN_GH_READ_TOKEN` is a fine-grained personal access token with Contents
-and Metadata read on the repository of every site in the operator's
-registry, plus `glw907/cairn-cms` for the Engine check's own changelog read,
-at the shortest expiry the operator can live with. A narrower scope is a
-silent failure: a check that cannot read a repository returns UNKNOWN on
-403 forever, never CRITICAL, so nothing calls the gap out.
+and Metadata read, at the shortest expiry the operator can live with. Mint
+it over all repositories the account owns rather than a hand-picked list,
+so adopting a second site needs no new token: the tool reads only the
+repositories its own registry names. It also reads `glw907/cairn-cms` for
+the Engine check's changelog, which a token confined to your own
+repositories still reaches, since that repository is public. A narrower
+scope is a silent failure: a check that cannot read a repository returns
+UNKNOWN on 403 forever, never CRITICAL, so nothing calls the gap out.
 
-**A probe over public repositories cannot confirm this scope.** GitHub
-serves a public repository's contents and commits with no token at all, so
-a 200 from `cairn probe-token` on a public repository proves only that the
+**A probe over a public repository cannot confirm Contents.** GitHub serves
+a public repository's contents with no token at all, so a pass from
+`cairn auth check <site>` against a public repository proves only that the
 token is not actively rejected, not that its Contents permission is doing
-any work. `probe-token` reports each probed repository's visibility (the
-repos endpoint's own `private` field, read from its own `repos` check for
-that repository) and prints a warning on stderr when every probed
-repository came back public, since that run has confirmed nothing about
-the token's own scope.
-An operator whose registry names at least one private repository gets a
-real confirmation the first time `probe-token` reaches it.
+any work. A real confirmation needs a site whose repository is private.
 
 A private repository the token cannot see answers 404, not 403, on every
 GitHub REST route this tool calls (commits, contents, and the repos
-route). `probe-token` and every 1.0 check that reads a repository classify
-a 404 as `not-found`, never `forbidden`; an operator who sees `not-found`
-on a repository they expect the token to reach should re-check the
-token's repository list before assuming the repository itself moved.
+route). `cairn auth check` and every 1.0 check that reads a repository
+classify a 404 as `not-found`, never `forbidden`; an operator who sees
+`not-found` on a repository they expect the token to reach should
+re-check the token's repository list before assuming the repository
+itself moved.
 
-### The repository scope is discovered, never hardcoded
+### Confirming one site's own scope
 
-`cairn probe-token` reads the operator's registry, then verifies a
-contents read against every repository the registry names plus
-`glw907/cairn-cms`; no repository list is compiled into the binary. It
-prints one line per repository with the status and reason, and exits
-non-zero if any of them is not 200.
+`cairn auth check <site>` reads that site's own record from the registry
+and probes Zone Settings, DNS, and Email Sending against its zone, and
+Contents against its repository, all read-only; no site's zone id or
+repository is compiled into the binary. With no site named, those four
+rows report `skip`, each naming `cairn auth check <site>` as the way to
+confirm them.
 
 ## The credential mint-and-probe run (2026-09-19/20)
 
@@ -162,7 +185,7 @@ Geoff minted both tokens for his own five repositories
 (`glw907/ecxc-ski`, `glw907/907-life`, `glw907/aksailingclub-org`,
 `glw907/xcathletes-org`, and `glw907/cairn-cms`) and stored the values
 through the workstation age store, per his own deployment's rules (not
-this product's storage path). `cairn probe-token` reached the following
+this product's storage path). `cairn auth probe` reached the following
 endpoints against the live tokens, with `xcathletes-org` private and the
 other four public:
 
@@ -177,7 +200,7 @@ other four public:
 | `contents/CHANGELOG.md` (`glw907/cairn-cms`) | 200 | ok | same key set as `contents/package.json` |
 | `repos` (each of the five repositories) | 200 | ok | the full GitHub repository object, including `private` and `visibility` |
 
-`probe-token` prints these key sets itself, by names only, through a
+`auth probe` prints these key sets itself, by names only, through a
 recording `http.RoundTripper` that reads each 200 response body once,
 records its top-level key names (and, for the Cloudflare v4 envelope, the
 `result` field's own key names, since the envelope's own four keys carry
@@ -192,8 +215,8 @@ The zone-scoped Zone Settings endpoints
 (`zones/{id}/settings/always_use_https`,
 `zones/{id}/settings/security_header`) were verified separately, by a
 direct API call against one of the operator's own zones rather than
-through `probe-token`: 1.0 has no `adopt` yet (Task 18), so no registry
-record before this pass carries a zone id `probe-token` could target
+through `auth probe`: 1.0 has no `adopt` yet (Task 18), so no registry
+record before this pass carries a zone id `auth probe` could target
 generically. Both answered 403 before the Zone Settings group was added
 to the token and 200 after, which is the evidence behind the seven-group
 scope above.
@@ -210,7 +233,7 @@ Cloudflare client calls the user path for this reason.
 
 ### Workers Logs retention
 
-`cairn probe-token`'s Observability query answered 200 for a one-hour
+`cairn auth probe`'s Observability query answered 200 for a one-hour
 window anywhere in the trailing 7 days, and 0 events (with no error) for
 the same one-hour window 8 or more days back, measured by narrowing the
 boundary directly: every window fully inside 7 days returned events, and

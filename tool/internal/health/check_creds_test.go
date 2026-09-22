@@ -3,6 +3,7 @@ package health
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -96,18 +97,18 @@ func TestCredsCheckBothCredentialsValid(t *testing.T) {
 	}
 
 	report := Report{Checks: []CheckResult{{ID: c.ID(), Outcome: outcome}}}
-	nonVerbose, err := report.JSON(false)
+	nonVerbose, err := reportJSON(report, false)
 	if err != nil {
-		t.Fatalf("JSON(false): %v", err)
+		t.Fatalf("reportJSON(non-verbose): %v", err)
 	}
 	for _, provider := range []string{"environment", "keyring"} {
 		if !strings.Contains(string(nonVerbose), provider) {
-			t.Errorf("JSON(false) = %s, want it to name provider %q", nonVerbose, provider)
+			t.Errorf("the non-verbose render = %s, want it to name provider %q", nonVerbose, provider)
 		}
 	}
 	for _, secret := range []string{"cf-secret-value", "gh-secret-value"} {
 		if strings.Contains(string(nonVerbose), secret) {
-			t.Errorf("JSON(false) = %s, leaked the credential value %q", nonVerbose, secret)
+			t.Errorf("the non-verbose render = %s, leaked the credential value %q", nonVerbose, secret)
 		}
 	}
 }
@@ -125,8 +126,8 @@ func TestCredsCheckRevokedCredentialIsFailing(t *testing.T) {
 	if outcome.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", outcome.State)
 	}
-	if !strings.Contains(outcome.Detail, string(spine.ReasonCredRevoked)) {
-		t.Errorf("Detail = %q, want it to name %s", outcome.Detail, spine.ReasonCredRevoked)
+	if outcome.Code != spine.CodeCredsUnauthorized {
+		t.Errorf("Code = %v, want %v", outcome.Code, spine.CodeCredsUnauthorized)
 	}
 	if err := outcome.Validate(); err != nil {
 		t.Errorf("Validate: %v", err)
@@ -149,8 +150,8 @@ func TestCredsCheckExpiringGitHubTokenIsFailing(t *testing.T) {
 	if outcome.State != spine.Failing {
 		t.Errorf("State = %v, want Failing", outcome.State)
 	}
-	if !strings.Contains(outcome.Detail, string(spine.ReasonCredExpiring)) {
-		t.Errorf("Detail = %q, want it to name %s", outcome.Detail, spine.ReasonCredExpiring)
+	if outcome.Code != spine.CodeCredsExpiringSoon {
+		t.Errorf("Code = %v, want %v", outcome.Code, spine.CodeCredsExpiringSoon)
 	}
 	if err := outcome.Validate(); err != nil {
 		t.Errorf("Validate: %v", err)
@@ -186,8 +187,52 @@ func TestCredsCheckExpiryVerdictFollowsOptionsNow(t *testing.T) {
 	if outcome.State != spine.Failing {
 		t.Errorf("with Now 10 days before expiry: State = %v, want Failing", outcome.State)
 	}
-	if !strings.Contains(outcome.Detail, string(spine.ReasonCredExpiring)) {
-		t.Errorf("Detail = %q, want it to name %s", outcome.Detail, spine.ReasonCredExpiring)
+	if outcome.Code != spine.CodeCredsExpiringSoon {
+		t.Errorf("Code = %v, want %v", outcome.Code, spine.CodeCredsExpiringSoon)
+	}
+}
+
+// TestCredsCheckHealthyTokenAttachesGitHubExpiry asserts a GitHub token that verifies clean and
+// is not within credExpiryWindow still carries its own expiry on the combined outcome's Fields,
+// so the command layer can put the date on the run's status line without a second request. The
+// field is a date copied out of GitHub's own response, so the outcome must also declare GitHub as
+// its source: that declaration is what moves the value under observedValue at the marshal
+// boundary, and nothing else in the suite reaches this check's Run to prove it.
+func TestCredsCheckHealthyTokenAttachesGitHubExpiry(t *testing.T) {
+	c := credsCheck{}
+	expiry := fixedNow().Add(20 * 24 * time.Hour)
+	header := make(http.Header)
+	header.Set("Github-Authentication-Token-Expiration", expiry.Format("2006-01-02 15:04:05 MST"))
+	clients := Clients{
+		CF:     cfClient(credRoundTripper{status: http.StatusOK, body: []byte(cfVerifyOKBody)}),
+		GH:     ghClient(credRoundTripper{status: http.StatusOK, body: []byte("{}"), header: header}),
+		HaveCF: true, HaveGH: true,
+		CFFrom: "environment", GHFrom: "keyring",
+	}
+
+	outcome := c.Run(context.Background(), record.Record{}, clients, validOptions)
+	if outcome.State != spine.OK {
+		t.Fatalf("State = %v, want OK", outcome.State)
+	}
+	var found bool
+	for _, f := range outcome.Fields {
+		if f.Key != FieldGitHubTokenExpiry {
+			continue
+		}
+		found = true
+		if f.Source != spine.SourceGitHub {
+			t.Errorf("%s declares source %q, want %q", FieldGitHubTokenExpiry, f.Source, spine.SourceGitHub)
+		}
+		var got time.Time
+		if err := json.Unmarshal(f.Value, &got); err != nil {
+			t.Fatalf("unmarshal %s: %v", FieldGitHubTokenExpiry, err)
+		}
+		if !got.Equal(expiry) {
+			t.Errorf("%s = %v, want %v", FieldGitHubTokenExpiry, got, expiry)
+		}
+	}
+	if !found {
+		t.Errorf("outcome carries no %s field: %+v", FieldGitHubTokenExpiry, outcome.Fields)
 	}
 }
 

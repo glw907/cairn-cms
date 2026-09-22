@@ -54,6 +54,10 @@ unchecked check with no failure exits 3, a clean run exits 0). A site upgrade ru
 after bumping the `@glw907/cairn-cms` pin to confirm the site's own configuration still matches
 what the new version expects.
 
+**This command is retiring before the `0.97.0` release**, into the `cairn` CLI below. Do not
+write an upgrade procedure around it as a lasting step; check what the retirement pass left in
+its place before the site round starts.
+
 ### `npx cairn-audit`
 
 Bin target: `./dist/audit/bin.js`. The design-language audit: static rules over the admin
@@ -73,7 +77,37 @@ media-library object from a deployed cairn site, so `vite dev` serves real media
 (`docs/reference/cli-cairn-media-seed.md:3-13`). Requires `--from <base-url>`
 (`src/lib/media-seed/assemble.ts:9-10`).
 
-### Out of scope
+### `cairn` (the operator CLI)
 
-The Go `cairn` operator CLI under `tool/` is not part of the npm package a site installs. It
-ships no operator-facing command yet and has no released binary, so it carries no row here.
+`cairn` is part of cairn, packaged apart from the npm library only because its installation
+targets vary: it is a Go binary, not a `bin` in the tarball, so it installs once per operator
+machine rather than once per site.
+
+```sh
+go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
+```
+
+Prebuilt archives for linux, macOS, and Windows on amd64 and arm64 are on the `tool/v1.0.1`
+release, each with the man page beside the binary.
+
+It needs three read credentials, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, and
+`CAIRN_GH_READ_TOKEN`, held in the environment or the OS keyring (`cairn auth set`);
+`cairn auth check` proves all nine permissions before an upgrade leans on them. Both tokens are
+account-scoped, so a second site needs no new token.
+
+What the site round uses it for: `cairn adopt <site>` registers each upgraded site,
+`cairn health <site>` gives the before-and-after verdict on that site's own nine checks, and
+`cairn logs <site>` reads the site's structured records straight from Workers Logs when an
+upgrade step misbehaves.
+
+**A model cairn site is attached by a Workers Custom Domain, and the upgrade checks it.** cairn
+provisions Custom Domains and never Workers Routes, and `cairn adopt` discovers Custom Domains
+only. aksailingclub.org is served by a route, a holdover from before cairn; moving it to a
+Custom Domain is part of its own upgrade, and until it moves it adopts with an explicit
+`--domain`.
+
+Where its documentation lives is in motion. `tool/docs/` is the interim copy that ships with
+1.0; the draft-docs pass moves the public pages under `docs/` with every other page, and a
+`tool/v1.1.0` repoints the binary's own links. Read the current page from the installed
+version, never from a remembered path.
+

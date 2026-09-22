@@ -1,0 +1,44 @@
+glyph East Asian Width classes:
+    pass             '●' U+25CF EAW=A
+    fail             '■' U+25A0 EAW=A
+    fail (warning)   '□' U+25A1 EAW=A
+    skip             '?' U+003F EAW=Na
+    held             '○' U+25CB EAW=A
+    remedy           '→' U+2192 EAW=A
+    rule             '─' U+2500 EAW=A
+    rail             '▌' U+258C EAW=A
+    separator        '·' U+00B7 EAW=A
+    ellipsis         '…' U+2026 EAW=A
+unicode tier, Ambiguous=narrow, 20 to 400: 0 lines over width across 1024 renders
+ASCII tier, Ambiguous=WIDE, 20 to 400: 0 lines over width across 1024 renders
+unicode tier, Ambiguous=WIDE (known, see the index), 20 to 400: 2980 lines over width across 1024 renders
+    (1, 'a', 20, 'line 6 = 31 cells', '── passing ─────────')
+    (1, 'a', 20, 'line 14 = 21 cells', '  ● pass  delegation')
+    (1, 'a', 20, 'line 17 = 21 cells', '  ● pass  https-forc')
+    (1, 'a', 20, 'line 29 = 21 cells', '  ● pass  publish-pa')
+    (1, 'a', 30, 'line 4 = 51 cells', '── passing ───────────────────')
+    (1, 'a', 40, 'line 4 = 71 cells', '── passing ─────────────────────────────')
+    (1, 'a', 50, 'line 3 = 91 cells', '── passing ───────────────────────────────────────')
+    (1, 'a', 60, 'line 3 = 111 cells', '── passing ─────────────────────────────────────────────────')
+    (1, 'a', 72, 'line 3 = 135 cells', '── passing ─────────────────────────────────────────────────────────────')
+    (1, 'a', 79, 'line 3 = 149 cells', '── passing ────────────────────────────────────────────────────────────────────')
+    (1, 'a', 80, 'line 3 = 151 cells', '── passing ─────────────────────────────────────────────────────────────────────')
+    (1, 'a', 81, 'line 3 = 153 cells', '── passing ──────────────────────────────────────────────────────────────────────')
+    (the unicode tier targets Ambiguous=narrow; a terminal set the other way takes the ASCII tier, which is exact on both tables)
+hostile data: 0 findings
+degenerate widths (0,1,2,5,19,20): 0 panics
+byte-identical across TZ/LANG/TERM/NO_COLOR/LC_CTYPE: yes
+condition ids printed anywhere: ['config.observability-off', 'edge.https-not-forced', 'email.sender-not-onboarded']
+ids outside the shipped three: 0 
+approximate tokens (4 chars per token), no colour, width 100:
+    body                        raw  collapsed layout
+    i2 single-A, 1 site         426        320    25%
+    i3 single-A, 1 site         388        295    24%
+    i3 single glyph-only        377        288    24%
+    i2 plain (scenario 8)       390        390     0%
+    i3 plain (scenario 8)       411        410     0%
+    i2 many-A, 12 sites         581        322    45%
+    i3 many-A, 12 sites         683        446    35%
+    i2 many-B, 12 sites         512        312    39%
+    i3 many-B, 12 sites         615        437    29%
+TOTAL FINDINGS 0

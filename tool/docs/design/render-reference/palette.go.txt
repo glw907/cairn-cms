@@ -1,0 +1,174 @@
+package main
+
+import (
+	"image/color"
+
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/colorprofile"
+)
+
+// Role is a semantic ink role. Every style a body paints resolves through one of these, so no
+// body writes a colour value of its own.
+type Role int
+
+// The roles the CLI has. There is no ground role: the terminal owns the background, and the
+// reference grounds appear only in the contrast test.
+const (
+	RoleFg Role = iota
+	RoleMuted
+	RoleSubtle
+	RolePass
+	RoleFail
+	RoleSkip
+	RoleAccent
+	RoleRule
+	RoleRail
+)
+
+// ink carries one role's value at every rung a terminal can offer, light branch first, so a
+// downsample never has to guess and ANSI-16 never collapses two states onto one slot.
+type ink struct {
+	lightHex, darkHex   string
+	light256, dark256   string
+	lightANSI, darkANSI string
+}
+
+// warmStone is the admin design system's Warm Stone ink tokens carried to the terminal. Pass is
+// deliberately the muted green rather than the admin's positive ink: on a status board a pass
+// should recede, and full saturation is reserved for a failure.
+var warmStone = map[Role]ink{
+	RoleFg:     {"#28231d", "#eae7e3", "235", "255", "0", "15"},
+	RoleMuted:  {"#615d57", "#a8a49e", "243", "246", "", ""},
+	RoleSubtle: {"#504c47", "#c1bdb8", "240", "250", "", ""},
+	RolePass:   {"#2f7d5a", "#679371", "29", "71", "2", "2"},
+	RoleFail:   {"#b71824", "#ff8e86", "160", "210", "1", "9"},
+	RoleSkip:   {"#915200", "#f7ac4d", "130", "215", "3", "3"},
+	RoleAccent: {"#7246cf", "#9d84ec", "97", "141", "5", "13"},
+	RoleRule:   {"#c9c3bb", "#4a443b", "251", "238", "8", "8"},
+	RoleRail:   {"#c08480", "#9a5651", "174", "95", "1", "1"},
+}
+
+// Theme resolves a role to a style for one background, one colour profile, and one glyph tier.
+type Theme struct {
+	Dark    bool
+	Profile colorprofile.Profile
+	Glyphs  GlyphSet
+	// OKRun carries the frame's own verdict down to the glyph. It is the whole of the one pass
+	// rule: green means this run is OK. In a frame whose verdict is anything else every passing
+	// mark, in every body, is muted, so the only saturated ink on screen belongs to what failed.
+	OKRun bool
+	// TwoSeverity draws a failure that only warrants WARNING with its own lower-severity mark,
+	// so a version drift and a site that is down stop looking identical in a status strip.
+	TwoSeverity bool
+}
+
+// NewTheme returns the theme for a background, a profile, and an explicit glyph tier.
+func NewTheme(dark bool, p colorprofile.Profile, ascii bool) Theme {
+	g := unicodeGlyphs
+	if ascii {
+		g = asciiGlyphs
+	}
+	return Theme{Dark: dark, Profile: p, Glyphs: g}
+}
+
+// color resolves a role through lipgloss's own light/dark and per-profile seams, so the value the
+// terminal receives is named at every rung rather than nearest-matched down from 24 bits.
+func (t Theme) color(role Role) color.Color {
+	v := warmStone[role]
+	ld := lipgloss.LightDark(t.Dark)
+	return lipgloss.Complete(t.Profile)(
+		ld(lipgloss.Color(v.lightANSI), lipgloss.Color(v.darkANSI)),
+		ld(lipgloss.Color(v.light256), lipgloss.Color(v.dark256)),
+		ld(lipgloss.Color(v.lightHex), lipgloss.Color(v.darkHex)),
+	)
+}
+
+// Style returns role's style. Muted and subtle carry no ANSI-16 colour at all: they are the
+// terminal's own foreground, because slot 8 is the background on a Solarized theme and faint on
+// slot 8 measures 1.29:1. At no colour every role returns the zero style, so a body that leans on
+// colour alone fails here rather than in production.
+func (t Theme) Style(role Role) lipgloss.Style {
+	s := lipgloss.NewStyle()
+	switch {
+	case t.Profile == colorprofile.NoTTY || t.Profile == colorprofile.Ascii:
+		return s
+	case t.Profile == colorprofile.ANSI && (role == RoleMuted || role == RoleSubtle):
+		return s
+	}
+	return s.Foreground(t.color(role))
+}
+
+// Bold returns role's style with bold set, the one emphasis channel that survives no colour.
+func (t Theme) Bold(role Role) lipgloss.Style {
+	return t.Style(role).Bold(true)
+}
+
+// PassRole is the one place the pass rule is written down. Every body asks here rather than
+// choosing its own green.
+func (t Theme) PassRole() Role {
+	if t.OKRun {
+		return RolePass
+	}
+	return RoleMuted
+}
+
+// Link returns a style that makes text a clickable OSC 8 hyperlink where the terminal supports
+// one. It is inert text everywhere else, and stripped entirely with no TTY, which is why the
+// visible text is always the URL itself and never a word standing in for it.
+func (t Theme) Link(role Role, url string) lipgloss.Style {
+	s := t.Style(role)
+	if t.Profile == colorprofile.NoTTY || t.Profile == colorprofile.Ascii {
+		return s
+	}
+	return s.Hyperlink(url)
+}
+
+// GlyphSet is one tier's glyph tokens. The failing square carries the same ink weight as the
+// passing dot on purpose: a row of passes must never out-shout two failures.
+type GlyphSet struct {
+	Pass string
+	Fail string
+	// FailWarn is the lower-severity failure mark, used only where the theme asks for two. It is
+	// outlined against the filled Fail square, and its ASCII form is a different character, so
+	// the distinction never rides on colour alone.
+	FailWarn string
+	Skip     string
+	Held     string
+	Arrow    string
+	Rule     string
+	Rail     string
+	Sep      string
+	Ellipsis string
+}
+
+var unicodeGlyphs = GlyphSet{
+	Pass: "●", Fail: "■", FailWarn: "□", Skip: "?", Held: "○",
+	Arrow: "→", Rule: "─", Rail: "▌", Sep: "·", Ellipsis: "…",
+}
+
+var asciiGlyphs = GlyphSet{
+	Pass: "+", Fail: "!", FailWarn: "*", Skip: "?", Held: "o",
+	Arrow: ">", Rule: "-", Rail: "|", Sep: "-", Ellipsis: "...",
+}
+
+// glyphFor returns the glyph and the ink role for a check as the operator must read it. A held
+// failure is its own open circle, and a hold inside 48 hours of expiry takes the attention ink so
+// it stops being the quietest thing on the screen. A pass takes the frame's pass ink, which is
+// green only in a run whose verdict is OK. hoursLeft is meaningful only when held is set.
+func (t Theme) glyphFor(c Check, held bool, hoursLeft float64) (string, Role) {
+	g := t.Glyphs
+	switch {
+	case held && hoursLeft <= 48:
+		return g.Held, RoleSkip
+	case held:
+		return g.Held, RoleSubtle
+	case c.State == Fail && t.TwoSeverity && !c.Critical():
+		return g.FailWarn, RoleSkip
+	case c.State == Fail:
+		return g.Fail, RoleFail
+	case c.State == Pass:
+		return g.Pass, t.PassRole()
+	default:
+		return g.Skip, RoleSkip
+	}
+}

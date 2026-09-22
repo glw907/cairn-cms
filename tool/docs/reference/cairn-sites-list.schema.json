@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schema/cairn-sites-list.schema.json",
+  "title": "cairn sites list payload",
+  "description": "The registry listing `cairn sites list --json` writes. Each site carries the id a later command takes, its display name, its domain, and its last known step, so a consumer acts without a second call.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "verdict", "exitCode", "sites"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "sites" },
+    "verdict": { "type": "string", "enum": ["OK", "WARNING", "CRITICAL", "UNKNOWN"] },
+    "exitCode": { "type": "integer", "enum": [0, 1, 2, 3] },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "sites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "domain", "step"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "domain": { "type": "string" },
+          "step": { "type": "string" }
+        }
+      }
+    }
+  }
+}

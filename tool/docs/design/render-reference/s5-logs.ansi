@@ -1,0 +1,13 @@
+[38;2;74;68;59m──[m [38;2;234;231;227mlogs  ecxc.ski  2026-09-20 UTC[m [38;2;74;68;59m──────────────────────────────────────────────────────────────────[m
+  [38;2;168;164;158m14:14:00[m  [38;2;168;164;158minfo[m   [1;38;2;234;231;227msignin.link-sent[m       [38;2;193;189;184meditor=kari@ecxc.ski  ttl=15m[m
+  [38;2;168;164;158m14:14:42[m  [38;2;168;164;158minfo[m   [1;38;2;234;231;227msignin.consumed[m        [38;2;193;189;184meditor=kari@ecxc.ski[m
+  [38;2;168;164;158m14:17:00[m  [38;2;168;164;158minfo[m   [1;38;2;234;231;227mentry.saved[m            [38;2;193;189;184meditor=kari@ecxc.ski  branch=cairn/post/spring-relay[m
+                                          [38;2;193;189;184msha=5b1c9ae[m
+  [38;2;168;164;158m14:20:00[m  [38;2;247;172;77mwarn[m   [1;38;2;234;231;227mpublish.conflict[m       [38;2;193;189;184meditor=kari@ecxc.ski  branch=cairn/post/spring-relay[m
+                                          [38;2;193;189;184mreason=stale-edit[m
+  [38;2;168;164;158m14:21:00[m  [38;2;255;142;134merror[m  [1;38;2;234;231;227mpublish.commit-failed[m  [38;2;193;189;184meditor=kari@ecxc.ski  status=422  reason=the branch is[m
+                                          [38;2;193;189;184mbehind main by 2 commits[m
+  [38;2;168;164;158m14:25:00[m  [38;2;168;164;158minfo[m   [1;38;2;234;231;227mentry.saved[m            [38;2;193;189;184meditor=dana@ecxc.ski  branch=cairn/page/about  sha=c02e17f[m
+  [38;2;168;164;158m14:28:00[m  [38;2;168;164;158minfo[m   [1;38;2;234;231;227mpublish.committed[m      [38;2;193;189;184meditor=dana@ecxc.ski  sha=c02e17f  target=main[m
+
+[38;2;168;164;158m7 records · 14:14 to 14:28 UTC[m

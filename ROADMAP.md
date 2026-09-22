@@ -1002,61 +1002,107 @@ the named human gates only):**
   Microsoft), and Carbon Charts is rejected outright (its stylesheet force-loads IBM Plex);
   Carbon's chart guidance is a recipe reference only.
 
-- **The window after the cut, sequenced (Geoff, 2026-09-13).** After the release cut: (1) the Go
-  `cairn` tool (plan `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, re-cut from
-  `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md` at the CLI-versus-HUD
-  boundary): Pass A ships the registry, the health checks, the cobra
-  subcommands, and the scheduled tripwire with every action usable from the shell; the
-  tool's 1.0 is that complete single-site CLI, in which a user can do everything without the
-  TUI; its 2.0 adds the bubbletea HUD and multi-site management. **Superseded in part
-  (Geoff, 2026-09-21):
-  [`the after-1.0 framing`](docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md)
-  governs what follows the tag. Use through the site round, then 1.1 headed by the
-  agent-permission check, then the HUD as a 1.x minor under `cairn hud`; 2.0 is reserved for a
-  break of a frozen surface; the MCP front end named below is declined (2026-09-20). B2's close
-  rewrites this entry.** The 1.0 architecture must
-  carry both: keep the registry's shape and site record (the 2026-08-20 plan's registry adopts
-  several sites; 1.0's commands operate on one at a time), keep checks as pure functions over a
-  site record, and keep the pure render seam the HUD later mounts on, so 2.0 adds a view and a
-  loop over sites without reshaping anything beneath. The rule generalizes: the spine's API is
-  the product and every front end is a view over it, the CLI first, the HUD second, a local
-  web interface if wanted, and an MCP front end (Geoff, 2026-09-13: a server over the spine
-  gives a developer's Claude Code the live operational surface, health, deploy and build
-  state, the auth store, content operations, log queries; a docs-only server is not wanted, since
-  the tarball docs reach every agent; the agent-facing docs form is layered instead: the
-  docs rewrite adds a short docs index to the tarball that the shipped Claude fragment and
-  skill point at (not `llms.txt`: that format is for crawlers, which ignore it; this is a
-  file an agent is sent to), the Go tool gains a `docs`
-  search subcommand over the installed version so any agent reaches retrieval from Bash,
-  and the MCP front end exposes that same search as a tool), each calling the same actions and reading the same records and
-  results, with no logic held in a view (Geoff, 2026-09-13)) runs in parallel with the
-  extend spec and plan, since the tool lives under its own module; (2) extend-1; (3)
-  the docs rewrite, covering the tool as the operator's front door and the per-pattern recipes;
-  (4) extend-2; (5) site migration, once all the extend work has landed. The tool precedes the
-  docs because it changes what the admin track describes and because building its checks
-  surfaces what the operational contract leaves unsaid.
+- **The window after the cut, sequenced (Geoff, 2026-09-13, re-ruled 2026-09-21).** The order
+  after the `tool/v1.0.0` tag: the one release cut; a docs chore moving two overturned rules to
+  their execution paths (the narrative-arm freeze and the site-pass no-edit rule), which touches
+  the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
+  the docs-infra currency pass
+  (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`, its order against
+  the draft docs unruled); the draft docs; the site round, upgrading aksailingclub-org, ecxc-ski,
+  and 907-life into model cairn sites, each filing container bullets through
+  `site-docs/<site>-<pass>`; one improvement release; the docs rebuild from the facts container;
+  then beta. The original entry sequenced the Go tool first against extend-1, the docs rewrite,
+  and site migration, and that sequencing is spent: the tool, both extend passes, and the pre-cut
+  pass have all landed.
 
-  **Status (2026-09-20).** Pass A (Tasks 1 to 11) landed on the `cairn-tool-a` worktree. Pass B1
-  (Tasks 11b-i, 11b-ii, 12 to 17, 17b) shipped the `health` package's nine checks (`creds`,
-  `serving`, `delegation`, `https-forced`, `email`, `deploy`, `publish-path`, `engine`, `errors`),
-  the `logs` package, `context.Context` threaded through every `providers` call, an authoritative
-  DNS lookup in `providers`, and the `spine`/`record` refactors (one severity table, single-source
-  record field tables). No command exposes the health checks yet; Pass B2 (old Tasks 18 to 25,
-  with grammar amendments per the recut brief) adds the CLI surface, the `render` package, exit
-  codes, and the 1.0 cut. The recut brief is
-  `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, pre-approved by Geoff
-  within that brief's bounds.
+  **The Go `cairn` tool's 1.0 is shipped.** `tool/v1.0.0` (commit `3110e875`) is the complete
+  single-site CLI: adopt, health over nine checks, logs, holds, `auth check`, the scheduled run,
+  `--json` on every command with six published schemas, and exit codes 0 to 3.
+  `tool/v1.0.1` (commit `9b479e8d`) is its full release page: six archives with man pages,
+  `SHA256SUMS`, and a build-provenance attestation, plus the honest `go 1.26` floor. The plan is
+  [`2026-09-14-cairn-tool-1-0-pass.md`](docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md),
+  whose Tasks 22b and 23 are now the runbook for the next tag, and the owner rulings behind it
+  are
+  [`2026-09-21-go-tool-b2-owner-rulings.md`](docs/internal/record/2026-09-21-go-tool-b2-owner-rulings.md).
 
-- **The Go-tool CI gate-tier gap found closing Pass A (2026-09-20).** `scripts/checks/gate-tier.mjs`
-  had no rule for `tool/` paths, so a Go-only diff resolved to the full Node gate instead of the
-  light Go-only lane. PR #68 implements the fix (a sixth `tool` gate tier, plus a `<npm
-  tier>+tool` shape for a mixed diff) and merged as `122f241d`.
+  **What follows is governed by
+  [the after-1.0 framing](docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md)**
+  (Geoff, 2026-09-21): use it through the site round before building on it; 1.1 is headed by the
+  agent-permission check; a terminal HUD is a 1.x minor under `cairn hud`, not a 2.0; 2.0 is
+  reserved for a break of a frozen surface, and its goal is provisioning, with the second site
+  as the credential design test. The HUD imports the render package's theme
+  (`NewTheme(dark, profile)`), its glyph set, its named width rungs, and its sectioned `Frame`
+  unchanged, and adds only the cursor, the selection channel, the viewport, and the
+  generation-counted refresh. An MCP front end is declined (2026-09-20): a skill on disk reaches
+  every agent while an MCP server reaches only the main loop, and `cairn help agents` already
+  covers the same ground. The architectural rule stands whatever the front end: the spine's API
+  is the product, every front end is a view over it, and no logic lives in a view.
+
+- **Go tool 1.1 items, filed at B2's close (2026-09-21).**
+  - **A per-site hold.** `--ack` matches on check id alone, so holding one site's `email`
+    silences real email failures on every other site in the registry. Filed from the owner's
+    tripwire on its first day of use. The shape: `--ack <site>:<check>=<date>`, or acks scoped in
+    the acknowledgement file.
+  - **`--theme auto`,** an OSC 11 background query behind the flag `1.0` shipped as
+    `--theme dark|light`. 1.0 performs no detection at all and defaults to dark.
+  - **Two release-job nits** the Task 23 review raised and did not block on: the verify step
+    prints nothing on success (echo the archive name), and `install-check.sh` prints `--version`
+    without asserting it.
+
+- **Retire-1's opening inputs: the B2 architecture reads (2026-09-21).** One read per touched Go
+  package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen sound with
+  nits, none escalated. Nothing was fixed at the close, so these are the retirement track's
+  opening inputs, the two with teeth first:
+  - `internal/spine`'s `condition_test.go` retypes the package's code list by hand and **has
+    already drifted** (missing `ReasonRepoNotRecorded`). Read the backing lists instead;
+    `park_test.go` carries the same shape.
+  - `internal/logs`'s `fixtureRoundTripper` discards the request, so no test ever observes the
+    query body `Fetch` sends. **This is the seam that let the live 400 through.** Capture the
+    sent body in the fixture and assert from it.
+  - `store.Discover` and `store.Site` have no caller anywhere: the plan expected the auth probe
+    to read through `Discover`, and it calls `st.Load` directly. An unwired deliverable, not in
+    the seams table. Wire it or delete it.
+  - Exported surface with no outside caller, to unexport: about 25 names in `render` (`Sanitize`,
+    `Role` and its constants, `Verdict`, the width bounds, the six `*SchemaVersion` constants,
+    most `Theme` methods; only `Theme.Wrap` has one), `health`'s `FailSeverityOf`, `HasRepo`, and
+    `FixForCondition`, `spine`'s `CombineState` and `ExitCodeFor` and `ParkCodes`, and
+    `providers.RepoOwnership`, whose doc names a caller that does not exist.
+  - Hand-kept parallel lists, the theme across packages: `spine`'s code lists, `health`'s
+    `Catalogue` of about 35 functions restated in its own test, `providers`'s three parallel
+    lists of the ten `Reason` values, `fixtures`'s hand copy of the nine check ids and its
+    hand-recomputed `Degraded`/`Acknowledged`, and `mangen`'s build helper duplicating
+    `usage_test.go`'s. Derive each from its source, as `cmd/copylist` does by AST.
+  - Process citations in shipped comments: about thirty "reviewed at the 1.0 editorial gate"
+    notes in `cmd/cairn/messages.go`, task-name citations in `root.go`, `env.go`, and `deps.go`,
+    about 25 plan citations in `render` (one of them stale), and three in `health/fixes.go`. A
+    comment carries the reason the code is what it is, never which pass wrote it.
+  - **Not a defect, recorded so it is not re-filed:** `store`'s `perm_linux.go` and
+    `perm_darwin.go` are byte-identical. That is deliberate. The `hygiene` package forbids build
+    tags module-wide and asserts the pair's byte-identity instead, so a `//go:build linux ||
+    darwin` merge would break its own gate. The ruling belongs in the files' header.
+  Full text: `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
 
 - **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
   2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact
   upload on failure so a CI-only visual diff is viewable without one.
 
-- **Items filed at Pass B1's close (2026-09-20), for Pass B2 or a later pass.**
+- **Three docs items for the draft-docs pass, filed at B2's close (2026-09-21).** Promoted here
+  from `docs/internal/docs-friction-log.md` because the pass that leans on them is the draft-docs
+  pass, not this one.
+  - The tool's four public pages (`credentials.md`, `tripwire.md`, and the two under
+    `tool/docs/reference/`) move under `docs/` in that pass: the exit-code and JSON contracts to
+    `docs/reference/`, credentials and the scheduled run to `docs/admin/`. `tool/docs/` is the
+    interim copy 1.0 shipped, and a small `tool/v1.1.0` repoints the README, `cairn help`, and
+    the fix-line links afterwards.
+  - **The drafts must not hard-wire a scaffold-first order.** 2.0's goal is provisioning, which
+    makes installing `cairn` the first step, ahead of `npm create`. A getting-started page
+    written around `npx create-cairn-site` as step one has to be rewritten rather than amended
+    when that lands.
+  - The admin track gains the tool as part of "is my site working", woven into the existing jobs
+    rather than given a page of its own. The facts are already harvested into
+    `docs/internal/facts/admin.md` under the four sections whose job each one serves.
+
+- **Items filed at Pass B1's close (2026-09-20), still open after B2.**
   - The engine's condition registry (`tool/internal/spine/condition.go`, ported from
     `src/lib/diagnostics/conditions.ts`) has no condition id for an HSTS-off finding (the
     `https-forced` check reports it under `ConditionNone`) and none for a stale publish-path
@@ -1071,9 +1117,6 @@ the named human gates only):**
   - The engine check's releases-behind count reads the declared dependency range's base version
     from `package.json` rather than the resolved version a lockfile would carry, so a site pinned
     loosely reports behind-ness relative to its floor, not its installed version.
-  - `logs.ErrObservabilityOff`'s trigger is unconfirmed against a live Worker that never enabled
-    observability; it needs a real-Worker check before the errors check's classification can be
-    trusted.
 
 - **A motion language for the admin (Geoff, 2026-09-13, on reviewing polish-11b-i in the
   browser).** The admin animates in places (the drawer's width, the palette's opacity, the

@@ -1,0 +1,26 @@
+verdict: [1;38;2;247;172;77mUNKNOWN[m - cairn.pub, 1 failing, 1 could not run, 7 passing
+checked: 4m ago (2026-09-20 22:28 UTC), in 16.3s
+
+engine: fail - 0.76.0 installed, 0.78.0 latest, 2 releases behind
+fix: Raise the @glw907/cairn-cms range in package.json, then deploy again.
+fix actor: developer (changes the live site)
+
+errors: unknown
+reason: the Worker has no observability dataset
+condition: config.observability-off
+
+fix for: errors
+fix: Turn on observability for the Worker in wrangler.jsonc, then deploy again.
+fix actor: developer
+docs: https://cairn.pub/docs/admin/is-it-working#turn-on-observability
+
+creds: pass - Cloudflare and GitHub tokens read from the keyring
+serving: pass - 200 in 96ms
+delegation: pass - nameservers match the zone
+https-forced: pass - forced at the edge, HSTS 1 year
+email: pass - sending domain onboarded 41 days ago
+deploy: pass - built 9h ago (5c1d0b2), main is level
+publish-path: pass - App installed, branch writable
+
+verdict: [1;38;2;247;172;77mUNKNOWN[m - cairn.pub, 1 failing, 1 could not run, 7 passing
+exit: 3

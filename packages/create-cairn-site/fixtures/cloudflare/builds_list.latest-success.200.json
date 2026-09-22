@@ -1,0 +1,86 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "GET /accounts/{account_id}/builds/workers/{worker_tag}/builds",
+    "status": 200,
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes (worker tag, uuids, commit hash and message, repository, commands, token name); every key set and every result_info value below is the live one. The live body carried the newest 50 of 52 builds on page 1; the newest is kept and result_info is verbatim, so it still reports two pages against a trimmed result."
+  },
+  "body": {
+    "result": [
+      {
+        "build_uuid": "9b4c7d20-1e35-4a68-b0f9-5c2d8e6a3f41",
+        "status": "stopped",
+        "build_outcome": "success",
+        "initializing_on": "2026-08-30T20:29:16.981Z",
+        "running_on": "2026-08-30T20:29:19.234Z",
+        "stopped_on": "2026-08-30T20:31:05.788Z",
+        "created_on": "2026-08-30T20:29:15.922Z",
+        "modified_on": "2026-08-30T20:31:05.788Z",
+        "trigger": {
+          "trigger_uuid": "3f0ba18c-5d41-4a6e-9c07-1b2d3e4f5a6b",
+          "external_script_id": "5f3a1c94b2e84d07a9c6182f3b7d4e60",
+          "build_token_name": "build token",
+          "trigger_name": "Production Deploy",
+          "build_command": "npm run build",
+          "deploy_command": "npx wrangler deploy",
+          "root_directory": "/",
+          "branch_includes": ["main"],
+          "branch_excludes": [],
+          "path_includes": ["*"],
+          "path_excludes": [],
+          "build_caching_enabled": true,
+          "created_on": "2026-08-22T21:55:06.012Z",
+          "modified_on": "2026-08-23T01:09:26.533Z",
+          "deleted_on": null,
+          "repo_connection": {
+            "repo_connection_uuid": "2d9f4e71-6b08-4c3a-a5d2-9e7f1c3b5a80",
+            "repo_id": "1000000001",
+            "repo_name": "carin-test-5-site",
+            "provider_type": "github",
+            "provider_account_id": "10000001",
+            "provider_account_name": "carin-test",
+            "grant_id": null,
+            "created_on": "2026-08-22T21:54:46.871Z",
+            "modified_on": "2026-08-22T21:54:46.871Z",
+            "deleted_on": null
+          }
+        },
+        "build_trigger_metadata": {
+          "build_trigger_source": "push_event",
+          "branch": "main",
+          "commit_hash": "959643ad533b660ef7e8fe529a5c37257affaa0c",
+          "commit_message": "Add the archive page",
+          "author": "carin-test",
+          "build_command": "npm run build",
+          "deploy_command": "npx wrangler deploy",
+          "root_directory": "/",
+          "build_token_uuid": "7c1e8b02-9a3d-4f51-8e6c-0d2a4b6c8e10",
+          "build_token_name": "build token",
+          "environment_variables": {
+            "NODE_VERSION": {
+              "is_secret": false,
+              "created_on": "2026-08-22T21:55:16.293Z",
+              "value": "24"
+            }
+          },
+          "repo_name": "carin-test-5-site",
+          "provider_account_name": "carin-test",
+          "provider_type": "github"
+        },
+        "pull_request": null,
+        "deploy_hook": null
+      }
+    ],
+    "result_info": {
+      "next_page": true,
+      "page": 1,
+      "per_page": 50,
+      "count": 50,
+      "total_count": 52,
+      "total_pages": 2
+    },
+    "success": true,
+    "errors": [],
+    "messages": []
+  }
+}

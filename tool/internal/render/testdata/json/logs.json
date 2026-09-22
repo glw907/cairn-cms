@@ -1,0 +1,1 @@
+{"schemaVersion":1,"kind":"logs","verdict":"OK","exitCode":0,"site":"ecxc.ski","containsPersonalData":true,"entries":[{"at":"2026-09-20T20:32:00Z","level":"error","event":"publish.commit.failed","fields":{"editor":"someone@example.com","reason":"conflict"}}]}

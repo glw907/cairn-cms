@@ -9,6 +9,11 @@ import "os"
 // exported but left blank is a miss, the same as one never set: an empty
 // credential is never a distinct configuration another Provider should
 // lose to.
+//
+// Env implements Provider only, never Writer or Deleter: a value this process reads out of its
+// own environment cannot be written back into the parent shell that exported it, so a set or an
+// unset would silently do nothing observable and cairn auth set and cairn auth unset both refuse
+// the environment as a target rather than expressing a seam with no working backend.
 type Env struct {
 	// lookup is nil for a zero Env, which falls back to os.LookupEnv.
 	lookup func(string) (string, bool)

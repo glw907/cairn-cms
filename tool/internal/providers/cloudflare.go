@@ -41,10 +41,16 @@ type v4Error struct {
 }
 
 // resultInfo is a v4 list route's pagination metadata, present on the envelope's "result_info"
-// field whenever the route paginates. A route that never paginates (or that returned only one
-// page) leaves this nil, which getPaginated reads as "no further pages."
+// field whenever the route paginates. Cloudflare does not fill the same fields on every route:
+// a live capture on 2026-09-21 found /zones and /zones/{id}/dns_records carrying total_pages,
+// /accounts/{id}/workers/domains carrying per_page and total_count and no total_pages at all,
+// and /accounts/{id}/workers/scripts, /zones/{id}/settings, and the Email Sending subdomains
+// route carrying no result_info whatsoever. morePages reads whichever of them arrived; the
+// recorded bodies are in packages/create-cairn-site/fixtures/cloudflare.
 type resultInfo struct {
 	TotalPages int `json:"total_pages"`
+	TotalCount int `json:"total_count"`
+	PerPage    int `json:"per_page"`
 }
 
 // v4Envelope is the Cloudflare API v4 response shape every route below returns.
@@ -128,10 +134,9 @@ func (cf *Cloudflare) getPage(ctx context.Context, path string, out any, info *r
 }
 
 // getPaginated walks every page of a v4 list route via its "result_info", appending "page=N" to
-// path, and returns the concatenated result arrays, the way the Node client's listPaginated
-// does (api.mjs). A route that returns no result_info at all, or only one page, stops after the
-// first request. Type parameter T is one page's element type, so a caller reads a typed slice
-// straight out rather than a []any it would have to re-decode.
+// path, and returns the concatenated result arrays. Type parameter T is one page's element type,
+// so a caller reads a typed slice straight out rather than a []any it would have to re-decode.
+// The walk stops after maxPaginatedPages pages whatever the metadata claims.
 func getPaginated[T any](ctx context.Context, cf *Cloudflare, path string) ([]T, error) {
 	sep := "?"
 	if strings.Contains(path, "?") {
@@ -146,11 +151,39 @@ func getPaginated[T any](ctx context.Context, cf *Cloudflare, path string) ([]T,
 			return nil, err
 		}
 		results = append(results, items...)
-		if info.TotalPages == 0 || page >= info.TotalPages {
+		if !morePages(info, page, len(items)) {
 			break
 		}
 	}
 	return results, nil
+}
+
+// morePages reports whether the route has a page after the one just read, from whichever
+// pagination fields the route filled in. Reading total_pages alone is what made discovery see
+// one of the account's seven Worker custom domains: that route reports per_page and total_count
+// and no total_pages, so a total_pages of zero has to mean "this route does not report it",
+// never "there is one page". The clauses are in order of how much they prove:
+//
+//   - An empty page ends the walk whatever the metadata says. Cloudflare answers the page after
+//     the last with an empty result rather than an error, so this alone terminates the walk even
+//     if every count were wrong.
+//   - total_pages, when the route reports it, is exact.
+//   - total_count with per_page gives the same answer by arithmetic.
+//   - per_page alone means a full page might have a successor and a short one cannot.
+//   - No result_info at all means the route returned everything it has in one body.
+func morePages(info resultInfo, page, got int) bool {
+	switch {
+	case got == 0:
+		return false
+	case info.TotalPages > 0:
+		return page < info.TotalPages
+	case info.TotalCount > 0 && info.PerPage > 0:
+		return page*info.PerPage < info.TotalCount
+	case info.PerPage > 0:
+		return got >= info.PerPage
+	default:
+		return false
+	}
 }
 
 // post performs a POST against path with body marshaled as JSON, decoding a successful
@@ -190,7 +223,7 @@ func (cf *Cloudflare) do(req *http.Request, out any, info *resultInfo) error {
 	var env v4Envelope
 	envErr := json.Unmarshal(data, &env)
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 || (envErr == nil && !env.Success) {
+	if isErrorStatus(resp.StatusCode) || (envErr == nil && !env.Success) {
 		var errs []v4Error
 		if envErr == nil {
 			errs = env.Errors
@@ -318,6 +351,11 @@ type Zone struct {
 	// Status is the zone's own activation state ("active" once Cloudflare has finished taking
 	// over the domain's DNS, "pending" or "initializing" while that is still in progress).
 	Status string `json:"status"`
+	// NameServers is the nameserver pair Cloudflare assigned this zone, the pair the domain's
+	// registrar has to delegate to. Both the single-zone and the list route carry it, confirmed
+	// against a live GET on 2026-09-21; a zone using vanity nameservers reports those under a
+	// separate key this client does not read.
+	NameServers []string `json:"name_servers"`
 }
 
 // ZoneByName returns the zone named name, or a nil Zone with no error when the account has none
@@ -332,6 +370,38 @@ func (cf *Cloudflare) ZoneByName(ctx context.Context, name string) (*Zone, error
 		return nil, nil
 	}
 	return &zones[0], nil
+}
+
+// ListZones returns every zone this client's credential can read, following every page of the
+// route's result_info. Worker discovery needs it to name a custom domain's zone: the Worker
+// domains route reports a zone id and no name, and one listing costs a single request where a
+// lookup per zone id costs one apiece.
+func (cf *Cloudflare) ListZones(ctx context.Context) ([]Zone, error) {
+	return getPaginated[Zone](ctx, cf, "/zones")
+}
+
+// BuildsTokens confirms this client's read access to Workers Builds Configuration with no
+// worker tag needed: GET /accounts/{id}/builds/tokens is account-scoped, unlike
+// BuildsConnections and BuildsLatest, which both need a worker already registered for Builds.
+// The route's own body carries no field a caller reads; only whether the call succeeded matters
+// here.
+func (cf *Cloudflare) BuildsTokens(ctx context.Context) error {
+	return cf.get(ctx, fmt.Sprintf("/accounts/%s/builds/tokens", cf.accountID), nil)
+}
+
+// DNSRecord is one zone DNS record's name and type, the shape GET /zones/{id}/dns_records
+// returns.
+type DNSRecord struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// DNSRecords returns every DNS record Cloudflare reports for zoneID, following every page of the
+// route's result_info, confirming this client's read access to the DNS permission group against
+// one zone.
+func (cf *Cloudflare) DNSRecords(ctx context.Context, zoneID string) ([]DNSRecord, error) {
+	path := fmt.Sprintf("/zones/%s/dns_records", zoneID)
+	return getPaginated[DNSRecord](ctx, cf, path)
 }
 
 // ZoneSetting is one zone setting's id and current value, the shape every entry of
@@ -362,11 +432,35 @@ func (cf *Cloudflare) EmailSendingSubdomains(ctx context.Context, zoneID string)
 	return getPaginated[SendingSubdomain](ctx, cf, path)
 }
 
-// ObservabilityResult is a Workers Logs telemetry query's "result" object: the matching log
-// events, each kept as raw JSON so a caller decodes only the keys it recognizes.
+// ObservabilityResult is a Workers Logs telemetry query's "result" object. Its "events" member
+// is an object rather than an array, which a live capture on 2026-09-21 established and the
+// synthesized fixture this package used to decode did not
+// (packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.events.200.json).
+// "run" and "statistics" sit beside it and carry nothing a caller here reads.
 type ObservabilityResult struct {
+	// Events is the result's "events" object.
+	Events ObservabilityEvents `json:"events"`
+}
+
+// ObservabilityEvents is a telemetry query's matching events and their count.
+type ObservabilityEvents struct {
 	// Events is every matching event, in the order the API returned them.
-	Events []json.RawMessage `json:"events"`
+	Events []ObservabilityEvent `json:"events"`
+	// Count is how many events the query matched.
+	Count int `json:"count"`
+}
+
+// ObservabilityEvent is one matching telemetry event: the platform's own envelope around the
+// record a Worker logged.
+type ObservabilityEvent struct {
+	// Source is the record the Worker itself logged, kept as raw JSON so a caller decodes only
+	// the keys it recognizes. For a cairn engine record this is the whole log record, envelope
+	// and fields together; for a bare console call it is the platform's own {level, message}.
+	Source json.RawMessage `json:"source"`
+	// Timestamp is when the platform recorded the event, in milliseconds since the Unix epoch.
+	// It is the platform's own clock, not the record's, so it is present even on a record that
+	// carries no timestamp of its own.
+	Timestamp int64 `json:"timestamp"`
 }
 
 // ObservabilityQuery runs a Workers Logs telemetry query against this client's account and

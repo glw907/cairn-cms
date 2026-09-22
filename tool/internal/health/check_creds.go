@@ -2,7 +2,6 @@ package health
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -36,8 +35,20 @@ func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, o Options
 
 	combined := worseCredentialOutcome(cf.outcome, gh.outcome)
 	combined.Detail = credentialLine("cloudflare", cf) + "; " + credentialLine("github", gh)
+	// The expiry travels as a field whatever the verdict. A healthy token's own OK outcome
+	// carries no Detail at all, so without this the date the check already measured is reachable
+	// nowhere but inside the fourteen-day warning, and the command layer would have to spend a
+	// second request on a fact this one already holds.
+	combined.Fields = nil
+	if !gh.expiry.IsZero() {
+		combined.Fields = []spine.OutcomeField{observedField(FieldGitHubTokenExpiry, gh.expiry, spine.SourceGitHub)}
+	}
 	return combined
 }
+
+// FieldGitHubTokenExpiry names the GitHub token's own expiry on the creds check's Outcome. The
+// command layer reads it by key to put the date on the run's status line.
+const FieldGitHubTokenExpiry = "githubTokenExpiry"
 
 // credentialSide is the outcome of measuring one provider's credential, paired with the provider
 // name it resolved through, so Run can name that provider in the combined check's Detail without
@@ -45,13 +56,16 @@ func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, o Options
 type credentialSide struct {
 	outcome spine.Outcome
 	from    string
+	// expiry is the token's own expiry where the provider publishes one, and the zero time
+	// otherwise. Only the GitHub side ever sets it.
+	expiry time.Time
 }
 
 // checkCloudflareCredential verifies c's Cloudflare credential, the way credentialErrorOutcome
 // classifies every other credential check.
 func checkCloudflareCredential(ctx context.Context, c Clients) credentialSide {
 	if !c.HaveCF {
-		return credentialSide{outcome: spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}}
+		return credentialSide{outcome: credMissingOutcome()}
 	}
 	if _, err := c.CF.VerifyToken(ctx); err != nil {
 		return credentialSide{outcome: credentialErrorOutcome(err), from: c.CFFrom}
@@ -69,7 +83,7 @@ func checkCloudflareCredential(ctx context.Context, c Clients) credentialSide {
 // token into exit UNKNOWN.
 func checkGitHubCredential(ctx context.Context, c Clients, now time.Time) credentialSide {
 	if !c.HaveGH {
-		return credentialSide{outcome: spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}}
+		return credentialSide{outcome: credMissingOutcome()}
 	}
 
 	expiry, err := c.GH.TokenExpiry(ctx)
@@ -77,13 +91,13 @@ func checkGitHubCredential(ctx context.Context, c Clients, now time.Time) creden
 		return credentialSide{outcome: credentialErrorOutcome(err), from: c.GHFrom}
 	}
 	if expiry.IsZero() {
-		return credentialSide{outcome: spine.Outcome{State: spine.OK, Detail: "github reports no expiry for this token"}, from: c.GHFrom}
+		return credentialSide{outcome: spine.Outcome{State: spine.OK, Detail: detailCredsGitHubNoExpiry()}, from: c.GHFrom}
 	}
 	if expiry.Sub(now) < credExpiryWindow {
-		detail := fmt.Sprintf("%s: expires %s", spine.ReasonCredExpiring, expiry.Format(time.RFC3339))
-		return credentialSide{outcome: spine.Outcome{State: spine.Failing, Detail: detail}, from: c.GHFrom}
+		outcome := spine.Outcome{State: spine.Failing, Code: spine.CodeCredsExpiringSoon, Detail: detailCredsGitHubExpiring(expiry, now)}
+		return credentialSide{outcome: outcome, from: c.GHFrom, expiry: expiry}
 	}
-	return credentialSide{outcome: spine.Outcome{State: spine.OK}, from: c.GHFrom}
+	return credentialSide{outcome: spine.Outcome{State: spine.OK}, from: c.GHFrom, expiry: expiry}
 }
 
 // credentialRank orders an Unknown credentialSide's Reason for worseCredentialOutcome's tie
@@ -112,17 +126,35 @@ func worseCredentialOutcome(a, b spine.Outcome) spine.Outcome {
 }
 
 // credentialLine renders one side's verdict for the combined check's Detail: the provider name,
-// which secret store it resolved through (never the value), and its own Detail or Reason text.
+// which secret store it resolved through (never the value), and its own prose. A side whose
+// Detail is empty because ReasonToOutcome (via credentialErrorOutcome) set Code instead renders
+// through detailForCredCode, so the joined line never falls back to a bare Reason token for a
+// rejected credential.
 func credentialLine(name string, side credentialSide) string {
 	parts := []string{name}
 	if side.from != "" {
 		parts = append(parts, "via "+side.from)
 	}
-	if side.outcome.Detail != "" {
+	switch {
+	case side.outcome.Detail != "":
 		parts = append(parts, side.outcome.Detail)
-	}
-	if side.outcome.Reason != "" {
+	case side.outcome.Code != spine.CodeNone:
+		parts = append(parts, detailForCredCode(side.outcome.Code))
+	case side.outcome.Reason != "":
 		parts = append(parts, string(side.outcome.Reason))
 	}
 	return strings.Join(parts, ", ")
+}
+
+// detailForCredCode renders the two credential-rejection codes ReasonToOutcome can set, in the
+// generic form catalogue section 3.4 calls for: ReasonToOutcome carries no provider name of its
+// own, so this stays provider-neutral and credentialLine supplies the provider as the line's own
+// leading word.
+func detailForCredCode(code spine.Code) string {
+	switch code {
+	case spine.CodeCredsForbidden:
+		return detailCredsForbidden()
+	default:
+		return detailCredsUnauthorized()
+	}
 }

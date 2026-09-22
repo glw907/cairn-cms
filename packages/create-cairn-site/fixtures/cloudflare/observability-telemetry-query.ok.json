@@ -1,57 +1,288 @@
 {
   "provenance": {
-    "captured": "2026-09-20",
-    "source": "tool/docs/credentials.md, \"Workers Logs retention\" (Task 10's probe recorded only the response's top-level key set: errors, messages, result, success, and result: events, run, statistics)",
+    "captured": "2026-09-21",
+    "source": "POST /accounts/{account_id}/workers/observability/telemetry/query",
     "status": 200,
-    "note": "synthesized from a live response's key set, no body captured. The ray id, account id, zone id, worker name, and every editor value below are placeholders, and no editor value is email-shaped: the fixture corpus bans any email-shaped string regardless of realism (packages/create-cairn-site/test/fixtures-hygiene.test.mjs)."
+    "note": "the envelope is recorded live on 2026-09-21 (result.events is an object carrying events, fields, count, and series, and each event carries the Worker's own record under \"source\"); the three records under \"source\" are synthesized, so one fixture covers three engine events, two levels, and a field a live window did not happen to hold. observability-telemetry-query.events.200.json beside it is live all the way down. Before 2026-09-21 this file's envelope was synthesized too, with result.events as a flat array, and that is what hid the decode defect the live verification found. The ray id, account id, worker name, and every editor value are placeholders, and no editor value is email-shaped."
   },
   "body": {
     "success": true,
     "errors": [],
-    "messages": [],
+    "messages": [
+      {
+        "message": "Successful request"
+      }
+    ],
     "result": {
-      "events": [
-        {
-          "$workers.scriptName": "example-site",
-          "$metadata.accountId": "0000000000000000000000000000ex01",
-          "level": "error",
-          "event": "auth.link.send_failed",
-          "timestamp": "2026-09-14T09:32:11.000Z",
-          "email": "example-editor-placeholder",
-          "error": "send failed: upstream 500",
-          "code": "E_SEND_FAILED",
-          "conditionId": "email.send-failed"
-        },
-        {
-          "$workers.scriptName": "example-site",
-          "$metadata.accountId": "0000000000000000000000000000ex01",
-          "level": "warn",
-          "event": "commit.failed",
-          "timestamp": "2026-09-14T09:12:44.000Z",
-          "concept": "posts",
-          "id": "example-post-id",
-          "editor": "example-editor-placeholder",
-          "reason": "conflict",
-          "branch": "cairn/posts/example-post-id"
-        },
-        {
-          "$workers.scriptName": "example-site",
-          "$metadata.accountId": "0000000000000000000000000000ex01",
-          "level": "info",
-          "event": "entry.published",
-          "timestamp": "2026-09-14T08:55:02.000Z",
-          "concept": "posts",
-          "id": "example-post-id",
-          "editor": "example-editor-placeholder",
-          "batch": false
-        }
-      ],
       "run": {
-        "queryId": "cairn-logs",
-        "rayId": "example-ray-id-0000000000000000"
+        "id": "ffo0udx44rv2mcvcrrd4xh60",
+        "query": {
+          "id": "cairn-logs",
+          "description": "",
+          "name": "",
+          "generated": false,
+          "parameters": {
+            "datasets": [
+              "cloudflare-workers"
+            ],
+            "filters": [
+              {
+                "key": "$metadata.service",
+                "operation": "eq",
+                "value": "example-site",
+                "type": "string"
+              },
+              {
+                "key": "event",
+                "operation": "exists",
+                "type": "string"
+              }
+            ]
+          },
+          "workspaceId": "0000000000000000000000000000ex01",
+          "environmentId": "cloudflare",
+          "userId": "2226c21721211fbd01e997f1f4446572",
+          "created": "2026-09-21T22:26:40.141Z",
+          "updated": "2026-09-21T22:26:40.141Z"
+        },
+        "accountId": "0000000000000000000000000000ex01",
+        "timeframe": {
+          "from": 1789424800088,
+          "to": 1790029599000
+        },
+        "userId": "2226c21721211fbd01e997f1f4446572",
+        "status": "COMPLETED",
+        "granularity": 10080000,
+        "dry": false,
+        "statistics": {
+          "elapsed": 3.597390099,
+          "rows_read": 3114105,
+          "bytes_read": 2099557671,
+          "abr_level": 10
+        }
+      },
+      "events": {
+        "events": [
+          {
+            "source": {
+              "$workers.scriptName": "example-site",
+              "$metadata.accountId": "0000000000000000000000000000ex01",
+              "level": "error",
+              "event": "auth.link.send_failed",
+              "timestamp": "2026-09-14T09:32:11.000Z",
+              "email": "example-editor-placeholder",
+              "error": "send failed: upstream 500",
+              "code": "E_SEND_FAILED",
+              "conditionId": "email.send-failed"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931462614,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless"
+            },
+            "$metadata": {
+              "id": "01M303N7YP0000000000000004",
+              "requestId": "1583f1016be54b87c2ad20eef176a734",
+              "rayId": "26ede3e969ee1bc3",
+              "traceId": "c47f4f1653bc507453602f9d4f932e95",
+              "spanId": "0d8117b70bacf700",
+              "trigger": "GET /",
+              "service": "example-site",
+              "level": "error",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker",
+              "origin": "fetch"
+            }
+          },
+          {
+            "source": {
+              "$workers.scriptName": "example-site",
+              "$metadata.accountId": "0000000000000000000000000000ex01",
+              "level": "warn",
+              "event": "commit.failed",
+              "timestamp": "2026-09-14T09:12:44.000Z",
+              "concept": "posts",
+              "id": "example-post-id",
+              "editor": "example-editor-placeholder",
+              "reason": "conflict",
+              "branch": "cairn/posts/example-post-id"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931402614,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless"
+            },
+            "$metadata": {
+              "id": "01M303N7YP0000000000000004",
+              "requestId": "1583f1016be54b87c2ad20eef176a734",
+              "rayId": "26ede3e969ee1bc3",
+              "traceId": "c47f4f1653bc507453602f9d4f932e95",
+              "spanId": "0d8117b70bacf700",
+              "trigger": "GET /",
+              "service": "example-site",
+              "level": "warn",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker",
+              "origin": "fetch"
+            }
+          },
+          {
+            "source": {
+              "$workers.scriptName": "example-site",
+              "$metadata.accountId": "0000000000000000000000000000ex01",
+              "level": "info",
+              "event": "entry.published",
+              "timestamp": "2026-09-14T08:55:02.000Z",
+              "concept": "posts",
+              "id": "example-post-id",
+              "editor": "example-editor-placeholder",
+              "batch": false
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931342614,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless"
+            },
+            "$metadata": {
+              "id": "01M303N7YP0000000000000004",
+              "requestId": "1583f1016be54b87c2ad20eef176a734",
+              "rayId": "26ede3e969ee1bc3",
+              "traceId": "c47f4f1653bc507453602f9d4f932e95",
+              "spanId": "0d8117b70bacf700",
+              "trigger": "GET /",
+              "service": "example-site",
+              "level": "info",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker",
+              "origin": "fetch"
+            }
+          }
+        ],
+        "fields": [
+          {
+            "type": "string",
+            "key": "level"
+          },
+          {
+            "type": "string",
+            "key": "$workers.scriptName"
+          },
+          {
+            "type": "string",
+            "key": "$workers.scriptVersion.id"
+          },
+          {
+            "type": "string",
+            "key": "$workers.eventType"
+          },
+          {
+            "type": "string",
+            "key": "$workers.executionModel"
+          },
+          {
+            "type": "string",
+            "key": "$workers.event.request.method"
+          },
+          {
+            "type": "string",
+            "key": "$workers.event.request.url"
+          },
+          {
+            "type": "string",
+            "key": "$workers.event.request.path"
+          },
+          {
+            "type": "string",
+            "key": "reason"
+          },
+          {
+            "type": "string",
+            "key": "path"
+          },
+          {
+            "type": "string",
+            "key": "event"
+          },
+          {
+            "type": "string",
+            "key": "timestamp"
+          },
+          {
+            "type": "string",
+            "key": "$workers.requestId"
+          },
+          {
+            "type": "string",
+            "key": "$workers.traceId"
+          },
+          {
+            "type": "string",
+            "key": "$workers.spanId"
+          },
+          {
+            "type": "boolean",
+            "key": "$workers.truncated"
+          }
+        ],
+        "count": 3,
+        "series": [
+          {
+            "time": "2026-09-15 00:24:00",
+            "data": [
+              {
+                "aggregates": {
+                  "_count": 1,
+                  "_countErrors": 0,
+                  "_interval": 1
+                },
+                "count": 1,
+                "errors": 0,
+                "interval": 1,
+                "sampleInterval": 1
+              }
+            ]
+          },
+          {
+            "time": "2026-09-15 03:12:00",
+            "data": [
+              {
+                "aggregates": {
+                  "_count": 1,
+                  "_countErrors": 0,
+                  "_interval": 1
+                },
+                "count": 1,
+                "errors": 0,
+                "interval": 1,
+                "sampleInterval": 1
+              }
+            ]
+          }
+        ]
       },
       "statistics": {
-        "elapsedMs": 42
+        "elapsed": 3.597390099,
+        "rows_read": 3114105,
+        "bytes_read": 2099557671,
+        "abr_level": 10
       }
     }
   }

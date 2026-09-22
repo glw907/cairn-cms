@@ -1,0 +1,201 @@
+package main
+
+import (
+	"strings"
+
+	"charm.land/lipgloss/v2"
+)
+
+// The single-site column budget. The glyph never sets a column: it sits in a measured field, so a
+// terminal that renders Ambiguous glyphs wide shifts nothing downstream of it.
+const (
+	colIndent = 2
+	colGlyph  = 2
+	colWord   = 6
+	colName   = 14
+)
+
+// Single is the pair of choices the single-site body offers, both of them independent of the
+// scenario: whether the failing group carries a dim rail, and whether each row repeats its state
+// as a word beside the glyph.
+type Single struct {
+	Rail bool
+	Word bool
+}
+
+// detailCol is where the detail column starts under this pair of choices. Dropping the word moves
+// the name and everything after it six cells left.
+func (s Single) detailCol() int {
+	if s.Word {
+		return colIndent + colGlyph + colWord + colName
+	}
+	return colIndent + colGlyph + colName
+}
+
+// renderSingle draws one site's health: the rows grouped by what the operator must do, in the
+// order they must do it, under lowercase inset rules.
+func renderSingle(t Theme, r Report, termWidth int, opt Single) Frame {
+	width := content(termWidth)
+	failing, couldNotRun, held, passing := r.Live()
+	v := r.Verdict()
+	t.OKRun = v == VerdictOK
+	tally := counts(" "+t.Glyphs.Sep+" ", len(failing), len(couldNotRun), len(held), len(passing))
+	f := Frame{Header: header(t, v, san(r.Site), tally, r, width)}
+
+	narrow := width < WidthNarrow
+	body := []string{}
+	section := func(label string, cs []Check, railed bool) {
+		if len(cs) == 0 {
+			return
+		}
+		var group []string
+		for _, c := range cs {
+			group = append(group, checkRows(t, r, c, width, narrow, opt)...)
+		}
+		// The rail runs the whole height of the group, rows and fixes alike. A mark that appears
+		// only beside the check rows reads as two ticks, not as one group.
+		if opt.Rail && railed {
+			bar := t.Style(RoleRail).Render(t.Glyphs.Rail) + " "
+			for i, l := range group {
+				if strings.HasPrefix(l, "  ") {
+					group[i] = bar + l[2:]
+				}
+			}
+		}
+		body = append(body, "", insetRule(t, label, width))
+		body = append(body, group...)
+	}
+
+	section("failing", failing, true)
+	section("could not run", couldNotRun, false)
+	section("held", held, false)
+
+	// A run with nothing to do is the one frame that can afford to show its work: every check
+	// listed, calmly, in the order the engine ran them. Anywhere a failure is on screen the same
+	// checks fold into one muted line instead, because nothing green belongs below a failure.
+	switch {
+	case v == VerdictOK && len(passing) > 0:
+		section("passing", passing, false)
+	case len(passing) > 0:
+		body = append(body, "")
+		body = append(body, foldLine(t, passing, width)...)
+	}
+	f.Body = body
+	f.Footer = append([]string{""}, verdictLines(t, v, san(r.Site), tally, width)...)
+	return f
+}
+
+// checkRows draws one check: the glyph, the state word where the variant keeps it, the check id,
+// the detail wrapped into its own column, and the fix beneath with the condition id on its tail.
+func checkRows(t Theme, r Report, c Check, width int, narrow bool, opt Single) []string {
+	holding, left := c.Holding(r.Now)
+	hours := left.Hours()
+	glyph, gRole := t.glyphFor(c, holding, hours)
+
+	word := c.State.Word()
+	wordRole := RoleMuted
+	switch {
+	case holding:
+		// A held failure is quiet, never invisible: it keeps the full-strength ink on its word
+		// while spending no hue at all, and takes the attention hue once expiry is two days out.
+		word, wordRole = "held", RoleFg
+		if hours <= 48 {
+			wordRole = RoleSkip
+		}
+	case c.State == Fail:
+		wordRole = RoleFail
+		if t.TwoSeverity && !c.Critical() {
+			wordRole = RoleSkip
+		}
+	}
+
+	lead := strings.Repeat(" ", colIndent)
+
+	// The failure and the hold are two facts, so the detail column keeps the failure and the hold
+	// takes a field of its own on the line beneath it.
+	hold, holdRole := "", RoleMuted
+	if c.Held {
+		phrase, still := holdPhrase(c, r.Now)
+		hold = phrase
+		if still && hours <= 48 {
+			holdRole = RoleSkip
+		}
+	}
+	detail := san(c.Detail)
+
+	base := lipgloss.NewStyle()
+	cells := []string{lead, cell(t.Style(gRole), glyph, colGlyph)}
+	if opt.Word {
+		cells = append(cells, cell(t.Style(wordRole), word, colWord))
+	}
+	cells = append(cells, cell(t.Bold(RoleFg), san(c.ID), colName))
+	row := joinRow(base, cells...)
+
+	fixCol := colIndent + colGlyph
+	if narrow {
+		out := []string{clampRow(row, width)}
+		out = append(out, detailLines(t, detail, colIndent+2, width)...)
+		out = append(out, extraField(t, hold, holdRole, colIndent+2, width)...)
+		return append(out, fixBlock(t, fixCol, c.Remedy, c.Anchor, c.Condition, width)...)
+	}
+
+	col := opt.detailCol()
+	dl := detailLines(t, detail, col, width)
+	out := []string{}
+	if len(dl) == 0 {
+		out = append(out, row)
+	} else {
+		out = append(out, row+strings.TrimLeft(dl[0], " "))
+		out = append(out, dl[1:]...)
+	}
+	out = append(out, extraField(t, hold, holdRole, col, width)...)
+	return append(out, fixBlock(t, fixCol, c.Remedy, c.Anchor, c.Condition, width)...)
+}
+
+// extraField prints one more fact about a row in the detail column, on its own line.
+func extraField(t Theme, text string, role Role, col, width int) []string {
+	if text == "" {
+		return nil
+	}
+	pad := strings.Repeat(" ", col)
+	var out []string
+	for _, l := range wrapLines(san(text), width-col) {
+		out = append(out, pad+t.Style(role).Render(l))
+	}
+	return out
+}
+
+// detailLines wraps the detail into the detail column. It carries no machine token: the condition
+// id, where one exists, rides the fix block's last line instead.
+func detailLines(t Theme, detail string, col, width int) []string {
+	pad := strings.Repeat(" ", col)
+	avail := width - col - 1
+	if avail < 8 {
+		avail = 8
+	}
+	if detail == "" {
+		return nil
+	}
+	var out []string
+	for _, l := range wrapLines(detail, avail) {
+		out = append(out, pad+t.Style(RoleSubtle).Render(l))
+	}
+	return out
+}
+
+// foldLine folds every passing check into one line. Its dot takes the frame's own pass ink, which
+// is the same rule the strip's dots follow: green only in a run whose verdict is OK.
+func foldLine(t Theme, passing []Check, width int) []string {
+	names := make([]string, 0, len(passing))
+	for _, c := range passing {
+		names = append(names, san(c.ID))
+	}
+	lead := t.Style(t.PassRole()).Render(t.Glyphs.Pass) + " " +
+		t.Style(RoleMuted).Render(plural(len(passing), "passing")) + "  "
+	col := w(t.Glyphs.Pass) + 1 + w(plural(len(passing), "passing")) + 2
+	joined := strings.Join(names, " "+t.Glyphs.Sep+" ")
+	return hangingAt(t.Style(RoleMuted), lead, col, joined, width)
+}
+
+// clampRow is the per-line cut every emitted line takes, measured with Ambiguous wide.
+func clampRow(s string, width int) string { return clamp(s, width) }

@@ -1,0 +1,96 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "POST /accounts/{account_id}/workers/observability/telemetry/query",
+    "status": 400,
+    "note": "recorded live from the query body cairn sent before this round: a leaf filter carrying no \"type\". The response is not a v4 envelope: it carries success, _e, _i, and _c, and no errors array, so a classifier reads the status alone."
+  },
+  "body": {
+    "success": false,
+    "_e": null,
+    "_i": {
+      "queryId": "cairn-logs",
+      "timeframe": {
+        "from": 1789424799000,
+        "to": 1790029599000
+      },
+      "view": "events",
+      "limit": 5,
+      "parameters": {
+        "datasets": [
+          "cloudflare-workers"
+        ],
+        "filters": [
+          {
+            "key": "$metadata.service",
+            "operation": "eq",
+            "value": "example-site"
+          }
+        ]
+      }
+    },
+    "_c": {
+      "issues": [
+        {
+          "code": "invalid_union",
+          "errors": [
+            [
+              {
+                "code": "invalid_value",
+                "values": [
+                  "group"
+                ],
+                "path": [
+                  "kind"
+                ],
+                "message": "Invalid input"
+              },
+              {
+                "code": "invalid_value",
+                "values": [
+                  "and",
+                  "or",
+                  "AND",
+                  "OR"
+                ],
+                "path": [
+                  "filterCombination"
+                ],
+                "message": "Invalid input"
+              },
+              {
+                "expected": "array",
+                "code": "invalid_type",
+                "path": [
+                  "filters"
+                ],
+                "message": "Invalid input"
+              }
+            ],
+            [
+              {
+                "code": "invalid_value",
+                "values": [
+                  "string",
+                  "number",
+                  "boolean"
+                ],
+                "path": [
+                  "type"
+                ],
+                "message": "Invalid input"
+              }
+            ]
+          ],
+          "path": [
+            "parameters",
+            "filters",
+            0
+          ],
+          "message": "Invalid input"
+        }
+      ],
+      "name": "ZodError"
+    }
+  }
+}

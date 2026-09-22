@@ -2,7 +2,6 @@ package health
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -46,8 +45,8 @@ func (d publishDetail) fields() []spine.OutcomeField {
 
 // outcome builds the spine.Outcome publishPathCheck.Run returns for state and detail, always
 // flattening d into its Fields entries regardless of which branch of Run reached it.
-func (d publishDetail) outcome(state spine.State, reason spine.ReasonCode, detail string) spine.Outcome {
-	return spine.Outcome{State: state, Reason: reason, Detail: detail, Fields: d.fields()}
+func (d publishDetail) outcome(state spine.State, reason spine.ReasonCode, code spine.Code, detail string) spine.Outcome {
+	return spine.Outcome{State: state, Reason: reason, Code: code, Detail: detail, Fields: d.fields()}
 }
 
 // publishPathCheck ports the engine's publish path: every open "cairn/*" edit branch a site's
@@ -87,14 +86,19 @@ func staleBranchCount(branches []providers.Branch, botCommitAt, now time.Time) i
 	return stale
 }
 
-// Run implements Check. A repository with neither an open "cairn/*" branch nor any bot commit at
-// all has never been observed publishing anything, so it is Unknown rather than a vacuous OK.
-// Every branch age is measured against o.Now, the sweep's clock, so the same branch list replays
-// to the same ages. A stale branch declares spine.ConditionNone rather than an App-unreachable
+// Run implements Check. A repository with no open "cairn/*" branch has nothing waiting to
+// publish, which is the state a site spends most of its life in, so it passes and says so. The
+// absence of any bot commit does not change that: a site whose editors have not published yet is
+// quiet, not unobservable, and Unknown here is reserved for the repository the run could not
+// read at all. Every branch age is measured against o.Now, the sweep's clock, so the same branch
+// list replays to the same ages. A stale branch declares spine.ConditionNone rather than an App-unreachable
 // remedy: a stale edit branch most often means an editor simply never opened Publish, and the
 // same verdict also fires when the repository already carries a bot commit, which proves the App
 // did reach and write it, so blaming the App would mislead.
 func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
+	if !HasRepo(r) {
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonRepoNotRecorded, Detail: detailNoRepoRecorded()}
+	}
 	owner, repo := r.GitHub.Repo.Owner, r.GitHub.Repo.Repo
 
 	branches, err := c.GH.Branches(ctx, owner, repo)
@@ -103,13 +107,9 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 	}
 	open := cairnBranches(branches)
 
-	botCommitAt, err := c.GH.LatestBotCommit(ctx, owner, repo, defaultBranch(r))
+	botCommitAt, err := c.GH.LatestBotCommit(ctx, owner, repo, DefaultBranch(r))
 	if err != nil {
 		return apiErrorOutcome(err)
-	}
-
-	if len(open) == 0 && botCommitAt.IsZero() {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no cairn branches or publish commits observed"}
 	}
 
 	now := o.Now()
@@ -122,7 +122,10 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 	}
 
 	if stale := staleBranchCount(open, botCommitAt, now); stale > 0 {
-		return detail.outcome(spine.Failing, "", fmt.Sprintf("%d cairn branch(es) older than 14 days with no later publish", stale))
+		return detail.outcome(spine.Failing, "", spine.CodePublishStaleBranch, detailPublishStaleBranches(stale))
 	}
-	return detail.outcome(spine.OK, "", "")
+	if len(open) == 0 {
+		return detail.outcome(spine.OK, "", "", detailPublishNothingWaiting())
+	}
+	return detail.outcome(spine.OK, "", "", "")
 }

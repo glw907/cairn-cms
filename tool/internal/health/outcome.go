@@ -33,35 +33,78 @@ func verboseField(key string, value any) spine.OutcomeField {
 	return f
 }
 
+// observedField wraps value as a spine.OutcomeField named key whose value was copied out of a
+// provider's response rather than derived by cairn. The marshal boundary carries such a field
+// under its own key with the source beside it, so an agent's rule about untrusted data has
+// something to key on; it never infers the source, which is why every copying check declares it
+// here at the point the value is lifted.
+//
+// A count, a comparison, or a word from cairn's own vocabulary is not copied, even when a
+// provider's response is what it was computed from: what the mark names is a string a site
+// controls the bytes of.
+func observedField(key string, value any, source spine.FieldSource) spine.OutcomeField {
+	f := field(key, value)
+	f.Source = source
+	return f
+}
+
+// verboseObservedField wraps value as a copied field only a verbose render carries, the
+// intersection of verboseField and observedField.
+func verboseObservedField(key string, value any, source spine.FieldSource) spine.OutcomeField {
+	f := observedField(key, value, source)
+	f.Verbose = true
+	return f
+}
+
+// credMissingOutcome is the outcome a check reports when the credential it reads through was
+// never resolved. The run disclosed the gap before the check ran, so there is nothing to detail
+// beyond the reason.
+func credMissingOutcome() spine.Outcome {
+	return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}
+}
+
+// noZoneIDOutcome is the outcome a zone-scoped check reports for a site whose record carries no
+// zone id. The check has nothing to read rather than something it failed to read.
+func noZoneIDOutcome() spine.Outcome {
+	return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no zone id recorded for this site"}
+}
+
 // apiErrorOutcome classifies a Cloudflare or GitHub API failure, shared by every check that
 // reads one of those APIs but does not itself measure the credential (delegation,
 // HTTPS-forced, HSTS, email, deploy). Unlike credsCheck, a 401 or 403 here is Unknown with its
 // own reason.api.<Reason> code rather than Failing: only the creds check treats a rejected
 // credential as the fault under test. An error this package cannot classify at all (a dial
 // failure, a context deadline) is Unknown with reason.timeout.
+//
+// A rejected request is the one reason that carries a Detail. Every other reason names something
+// about the site or the credential, which the reason code alone already says; a 400 says cairn
+// sent a body the provider would not parse, and an operator reading a bare
+// reason.api.request-rejected has no way to know the fault is not theirs.
 func apiErrorOutcome(err error) spine.Outcome {
 	var pe providers.ProviderError
 	if !errors.As(err, &pe) {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonTimeout}
 	}
-	return spine.Outcome{State: spine.Unknown, Reason: spine.APIReason(pe.ClassifiedReason())}
+	reason := pe.ClassifiedReason()
+	outcome := spine.Outcome{State: spine.Unknown, Reason: spine.APIReason(reason)}
+	if reason == providers.ReasonRequestRejected {
+		outcome.Detail = detailAPIRequestRejected()
+	}
+	return outcome
 }
 
 // credentialErrorOutcome classifies err through spine.ReasonToOutcome, the module's one
-// translation from a classified provider Reason to a verdict, then relabels a Failing verdict's
-// Detail as reason.cred-revoked: a bad credential is exactly what the creds check measures, the
-// one place a 401 or 403 answers Failing rather than the Unknown every other check reports for
-// the same pair. An error this package cannot classify at all, a dial failure or a context
-// deadline, is Unknown with reason.timeout: the endpoint itself could not be reached, not merely
-// rejected.
+// translation from a classified provider Reason to a verdict: a bad credential is exactly what
+// the creds check measures, the one place a 401 or 403 answers Failing rather than the Unknown
+// every other check reports for the same pair. ReasonToOutcome already sets a typed Code for
+// that Failing case (CodeCredsUnauthorized or CodeCredsForbidden), which credentialLine renders
+// through health's own messages table, so no relabeling happens here. An error this package
+// cannot classify at all, a dial failure or a context deadline, is Unknown with reason.timeout:
+// the endpoint itself could not be reached, not merely rejected.
 func credentialErrorOutcome(err error) spine.Outcome {
 	var pe providers.ProviderError
 	if !errors.As(err, &pe) {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonTimeout}
 	}
-	outcome := spine.ReasonToOutcome(pe.ClassifiedReason())
-	if outcome.State == spine.Failing {
-		outcome.Detail = string(spine.ReasonCredRevoked)
-	}
-	return outcome
+	return spine.ReasonToOutcome(pe.ClassifiedReason())
 }

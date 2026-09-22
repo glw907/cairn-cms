@@ -128,6 +128,8 @@ container, then beta.
 
 Three tracks, one session each.
 
+**Doctor retirement ledger (2026-09-21 evening, the retirement session):** the pre-task is executing on worktree `.claude/worktrees/doctor-pretask` (branch `doctor-pretask`): Task 1 accepted at `5a59c7dd`, Task 2 in flight, Tasks 3 and 4 next; its PR holds until B2 (PR #71) merges, since `tool/v1.0.0` is already on origin. The retire-1 plan is drafted, three-lens reviewed, and folded on branch `doctor-retire-1-plan` (`docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, with `docs/internal/record/2026-09-21-doctor-retire-1-pass-a-inventory.md`), APPROVED by Geoff on 2026-09-21 together with the spec's ruling 5 amendment (a usage error exits 3, the tool's frozen behaviour, never 1); it lands on `main` by PR and retire-1 executes only once B2 and the pre-task are both merged. The workstation's heavy gate runs the component project serialized today (`vitest-browser-parallel-pages-stall` memory).
+
 **Doctor retirement:** In a fresh session, conduct the doctor retirement from
 `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` and the `doctor-retirement-pass`
 memory. Geoff approved the spec and three plans on 2026-09-21: `2026-09-21-doctor-pretask.md`,

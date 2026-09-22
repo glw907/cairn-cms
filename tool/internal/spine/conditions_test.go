@@ -81,7 +81,7 @@ func TestDiffIDSets(t *testing.T) {
 }
 
 // TestConditionsMatchEmbeddedMirror asserts the typed Conditions() constants and conditions.json's
-// own id set are identical, replacing the former TestConditionsMatchRegistry, which walked up to
+// own parsed id set are identical, replacing the former TestConditionsMatchRegistry, which walked up to
 // the repository root to read src/lib/diagnostics/conditions.ts. The mirror now carries the text,
 // so the comparison is embed against constant, not constant against a second repository's source.
 //
@@ -94,7 +94,10 @@ func TestConditionsMatchEmbeddedMirror(t *testing.T) {
 	for _, c := range Conditions() {
 		constantIDs = append(constantIDs, string(c))
 	}
-	mirrorIDs := embeddedConditionIDs()
+	var mirrorIDs []string
+	for id := range conditionTexts {
+		mirrorIDs = append(mirrorIDs, string(id))
+	}
 
 	onlyInConstants, onlyInMirror := diffIDSets(constantIDs, mirrorIDs)
 	if len(onlyInConstants) > 0 || len(onlyInMirror) > 0 {

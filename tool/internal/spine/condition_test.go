@@ -5,13 +5,6 @@ import (
 	"testing"
 )
 
-// allReasonCodes enumerates every fixed ReasonCode constant, so a test that needs the whole set
-// does not retype it.
-var allReasonCodes = []ReasonCode{
-	ReasonCredMissing, ReasonCredForbidden, ReasonCredRevoked, ReasonCredExpiring,
-	ReasonTimeout, ReasonOffline, ReasonNotRun, ReasonNotObservable,
-}
-
 // TestConditionNoneIsTheOnlyUndotted asserts every declared Condition other than ConditionNone
 // carries a dotted id, and ConditionNone is the package's only undotted value.
 func TestConditionNoneIsTheOnlyUndotted(t *testing.T) {
@@ -36,7 +29,7 @@ func TestConditionsNeverCollideWithReasonOrParkCodes(t *testing.T) {
 		conditionSet[string(c)] = true
 	}
 
-	for _, r := range allReasonCodes {
+	for _, r := range fixedReasonCodes {
 		if conditionSet[string(r)] {
 			t.Errorf("ReasonCode %q collides with a Condition constant", r)
 		}

@@ -71,14 +71,3 @@ func TextFor(id Condition) (ConditionText, bool) {
 	t, ok := conditionTexts[id]
 	return t, ok
 }
-
-// embeddedConditionIDs returns every id conditions.json carries. It exists for
-// conditions_test.go's set-equality drift test, which reads the mirror directly rather than
-// through TextFor so a corrupted or truncated embed still surfaces as a set mismatch.
-func embeddedConditionIDs() []string {
-	ids := make([]string, 0, len(conditionTexts))
-	for id := range conditionTexts {
-		ids = append(ids, string(id))
-	}
-	return ids
-}

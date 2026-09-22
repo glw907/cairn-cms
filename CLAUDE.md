@@ -274,15 +274,15 @@ Five recurring traps, one line each; full detail per anchor in
 [`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md).
 
 - **Cloudflare email:** `E_SENDER_NOT_VERIFIED` is also Routing's string for an unverified
-  destination, how the ecxc outage hid (`#cloudflare-email`).
+  destination, how the ecxc outage hid ([detail](docs/internal/durable-gotchas.md#cloudflare-email)).
 - **Consumer engine pin** (`link:consumer`): guards `npm pack`'s stale-cache trap
-  (`#pointing-a-consumer-at-unreleased-engine-work`).
+  ([detail](docs/internal/durable-gotchas.md#pointing-a-consumer-at-unreleased-engine-work)).
 - **Worktree e2e:** a worktree showcase silently proves MAIN's engine until reinstalled
-  (`#a-worktree-showcase-e2e-proves-mains-engine`).
+  ([detail](docs/internal/durable-gotchas.md#a-worktree-showcase-e2e-proves-mains-engine)).
 - **CI baselines:** this workstation's Chromium renders them slightly off
-  (`#ci-canonical-baselines-this-workstation-cannot-reproduce`).
+  ([detail](docs/internal/durable-gotchas.md#ci-canonical-baselines-this-workstation-cannot-reproduce)).
 - **Vite 8 dist TypeScript:** parses dist `.svelte` TypeScript as JS; keep the transpile step
-  (`#vite-8-ships-typescript-in-dist-svelte`).
+  ([detail](docs/internal/durable-gotchas.md#vite-8-ships-typescript-in-dist-svelte)).
 
 ## Credentials (machine-local, intentionally not in git)
 

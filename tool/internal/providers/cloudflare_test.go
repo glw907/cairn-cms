@@ -289,3 +289,97 @@ func TestDNSRecordsDecodesEveryPage(t *testing.T) {
 		}
 	}
 }
+
+// TestBuildsConnectionsDecodesTheRecordedTriggers drives BuildsConnections over the corpus's own
+// live-captured trigger body. The live route names a trigger's id "trigger_uuid" and nests the
+// repository under "repo_connection", so the decode is what proves this client reads the shape
+// Cloudflare actually sends rather than the one the Node fake once synthesized.
+func TestBuildsConnectionsDecodesTheRecordedTriggers(t *testing.T) {
+	status, body, err := Corpus("cloudflare", "builds_triggers.connected.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	triggers, err := cf.BuildsConnections(context.Background(), "worker-tag")
+	if err != nil {
+		t.Fatalf("BuildsConnections: %v", err)
+	}
+	if len(triggers) != 1 {
+		t.Fatalf("got %d triggers, want 1", len(triggers))
+	}
+	if triggers[0].RepoConnection == nil {
+		t.Fatal("the trigger carries no repo connection")
+	}
+	if got := triggers[0].RepoConnection.ProviderAccountName + "/" + triggers[0].RepoConnection.RepoName; got != "carin-test/carin-test-5-site" {
+		t.Errorf("repository = %q, want %q", got, "carin-test/carin-test-5-site")
+	}
+}
+
+// TestBuildsConnectionsDecodesAnUnconnectedWorker asserts the recorded body for a Worker Builds
+// holds no trigger for decodes to an empty list and no error. The distinction carries the deploy
+// check's whole skip branch: the route answers 200 with an empty result rather than a 404, so
+// the list length is the only signal that Builds is not connected.
+func TestBuildsConnectionsDecodesAnUnconnectedWorker(t *testing.T) {
+	status, body, err := Corpus("cloudflare", "builds_triggers.not-connected.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	triggers, err := cf.BuildsConnections(context.Background(), "worker-tag")
+	if err != nil {
+		t.Fatalf("BuildsConnections: %v", err)
+	}
+	if len(triggers) != 0 {
+		t.Errorf("got %d triggers, want none", len(triggers))
+	}
+}
+
+// TestBuildsLatestDecodesTheRecordedBuild drives BuildsLatest over the corpus's own
+// live-captured build list, proving the commit hash is read from the nested
+// "build_trigger_metadata" object and the settled outcome from "build_outcome".
+func TestBuildsLatestDecodesTheRecordedBuild(t *testing.T) {
+	status, body, err := Corpus("cloudflare", "builds_list.latest-success.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	build, err := cf.BuildsLatest(context.Background(), "worker-tag")
+	if err != nil {
+		t.Fatalf("BuildsLatest: %v", err)
+	}
+	if build == nil {
+		t.Fatal("BuildsLatest returned no build")
+	}
+	if build.Status != "stopped" || build.Outcome != "success" {
+		t.Errorf("status/outcome = %q/%q, want stopped/success", build.Status, build.Outcome)
+	}
+	if build.TriggerMetadata.CommitHash != "959643ad533b660ef7e8fe529a5c37257affaa0c" {
+		t.Errorf("commit hash = %q", build.TriggerMetadata.CommitHash)
+	}
+}
+
+// TestListZonesDecodesTheAssignedNameServers asserts the zone listing's own "name_servers" key
+// decodes, which is the pair adoption records and the pair the delegation check falls back to
+// when a record carries none.
+func TestListZonesDecodesTheAssignedNameServers(t *testing.T) {
+	status, body, err := Corpus("cloudflare", "zones.list.200.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf := NewCloudflare("acct123", Credential{}, fixtureRoundTripper{status: status, body: body})
+
+	zones, err := cf.ListZones(context.Background())
+	if err != nil {
+		t.Fatalf("ListZones: %v", err)
+	}
+	if len(zones) == 0 {
+		t.Fatal("ListZones returned no zones")
+	}
+	want := []string{"burt.ns.cloudflare.com", "carlane.ns.cloudflare.com"}
+	if !reflect.DeepEqual(zones[0].NameServers, want) {
+		t.Errorf("name servers = %v, want %v", zones[0].NameServers, want)
+	}
+}

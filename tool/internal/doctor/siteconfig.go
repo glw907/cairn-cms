@@ -8,8 +8,9 @@ import (
 
 // siteConfigStatus enumerates what SiteConfig found: whether a candidate path held a file and,
 // if so, whether that file satisfied the parse predicate this package narrows to. It carries no
-// status word of its own; Task 5's check_siteconfig.go maps it onto config.site-config's status
-// words (pass, fail, unchecked).
+// status word of its own: check_siteconfig.go maps it onto config.site-config's status words
+// (pass, fail, unchecked), which keeps the file read and the status decision in separate
+// files.
 type siteConfigStatus int
 
 const (

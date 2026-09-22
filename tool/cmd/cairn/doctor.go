@@ -140,7 +140,8 @@ func writeOutsideCairnSite(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFl
 
 // resolvePublicOrigin resolves a directory run's public origin the way ai.posture-effective and
 // config.public-origin both expect: the wrangler config's own vars.PUBLIC_ORIGIN first, then the
-// process environment, the same precedence check-posture.ts:52 states. A wrangler.jsonc that
+// process environment. The config wins because it is what the deployed Worker actually runs
+// with; the environment is the local fallback for a site that has not declared one. A wrangler.jsonc that
 // fails to parse resolves no origin here; the read that matters for the operator, config.bindings
 // and its siblings, reports its own unchecked result independently the next time a check reads
 // the same file.

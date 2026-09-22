@@ -9,8 +9,10 @@ import (
 )
 
 // TestFourEngineSymbolsAppearInDocComments proves the package's doc comments name the four
-// engine symbols retire-2's check:tool-heuristics will scan for as its own tripwire (plan
-// constraint, Task 6): CairnAdminShell and .shellLoad from admin.mount-shape's heuristic,
+// engine symbols the check:tool-heuristics tripwire scans for. That scanner is written by the
+// doctor-retirement pass that removes the engine's own cairn-doctor; this test is what keeps
+// the four names findable here until it lands. The four: CairnAdminShell and .shellLoad from
+// admin.mount-shape's heuristic,
 // createAuthGuard and checkOrigin: false from config.csrf-disable's. Reads every non-test .go
 // file's comments directly with go/parser, rather than trusting a single hand-picked doc
 // comment, so the assertion survives a symbol moving to a different file's comment.

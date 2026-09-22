@@ -2,6 +2,7 @@ package doctor
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"regexp"
@@ -15,7 +16,7 @@ import (
 )
 
 // enginePackageJSONPath is where a resolved npm, pnpm, or yarn install places the engine's own
-// package.json, the source of truth for its declared peer ranges (spec :162-164).
+// package.json, the source of truth for the peer ranges this check judges a site against.
 const enginePackageJSONPath = "node_modules/@glw907/cairn-cms/package.json"
 
 const (
@@ -315,13 +316,13 @@ type enginePackageJSON struct {
 }
 
 // readEnginePeers ports check-floors.ts's readEnginePeers (:238-248), reading
-// node_modules/@glw907/cairn-cms/package.json as a plain file under s (spec :162-164) rather
-// than through Node's module resolution. found is false when the file does not exist; err is
+// node_modules/@glw907/cairn-cms/package.json as a plain file under s, rather than through
+// Node's module resolution, which would need a Node runtime this tool does not assume. found is false when the file does not exist; err is
 // non-nil for a containment refusal (a symlinked node_modules escaping s.Dir) or a parse
 // failure, both of which the caller reports as unchecked rather than a crash. A peer marked
 // optional in peerDependenciesMeta is filtered out: a site that never uses the feature behind
 // one (@anthropic-ai/sdk, the tidy action) legitimately does not install it, and counting it
-// would read as a skip that masks the framework verdict this check exists to give (finding 6).
+// would read as a skip that masks the framework verdict this check exists to give.
 func readEnginePeers(s Snapshot) (peers map[string]string, found bool, err error) {
 	body, ok, err := s.ReadFile(enginePackageJSONPath)
 	if err != nil {
@@ -332,7 +333,7 @@ func readEnginePeers(s Snapshot) (peers map[string]string, found bool, err error
 	}
 	var pkg enginePackageJSON
 	if err := json.Unmarshal(body, &pkg); err != nil {
-		return nil, false, fmt.Errorf("%s", detailEnginePackageJSONInvalid)
+		return nil, false, errors.New(detailEnginePackageJSONInvalid)
 	}
 	out := make(map[string]string, len(pkg.PeerDependencies))
 	for dep, rng := range pkg.PeerDependencies {

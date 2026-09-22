@@ -68,8 +68,9 @@ var (
 
 // factsFromToml is a shallow, line-anchored read, not a TOML parser: a table header opens a
 // section, and the relevant key lines are matched within it. Ported whole from factsFromToml
-// (src/lib/doctor/wrangler-config.ts:213-282); porting a real TOML library would give different
-// verdicts on real sites (Task 3's own halt condition) and is not done here.
+// (src/lib/doctor/wrangler-config.ts:213-282). A real TOML parser would accept files this
+// reader rejects and reject files it accepts, so the two surfaces would disagree on real sites;
+// matching the engine's own verdicts matters more here than parsing TOML correctly.
 func factsFromToml(text string) WranglerFacts {
 	facts := WranglerFacts{}
 	section := ""

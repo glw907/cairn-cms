@@ -27,7 +27,7 @@ func snapshotForPosture(t *testing.T, factsJSON string, origin PublicOrigin) Sna
 // carries passes.
 func TestAIPostureEffectiveDeclaredMatchesServed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User-agent: *\nAllow: /\nContent-Signal: ai-train=no\n"))
+		_, _ = w.Write([]byte("User-agent: *\nAllow: /\nContent-Signal: ai-train=no\n"))
 	}))
 	defer srv.Close()
 
@@ -42,7 +42,7 @@ func TestAIPostureEffectiveDeclaredMatchesServed(t *testing.T) {
 // does not carry fails: the one case checks-local's port fails on.
 func TestAIPostureEffectiveDeclaredDoesNotMatchServed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User-agent: *\nAllow: /\nContent-Signal: ai-train=no\n"))
+		_, _ = w.Write([]byte("User-agent: *\nAllow: /\nContent-Signal: ai-train=no\n"))
 	}))
 	defer srv.Close()
 
@@ -60,7 +60,7 @@ func TestAIPostureEffectiveDeclaredDoesNotMatchServed(t *testing.T) {
 // file carries no AI-crawler directives, passes: absence is honest.
 func TestAIPostureEffectiveNoDeclaredNoDirectives(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User-agent: *\nAllow: /\n"))
+		_, _ = w.Write([]byte("User-agent: *\nAllow: /\n"))
 	}))
 	defer srv.Close()
 
@@ -76,7 +76,7 @@ func TestAIPostureEffectiveNoDeclaredNoDirectives(t *testing.T) {
 // own file, passes and names the managed layer in its note rather than asserting a cause.
 func TestAIPostureEffectiveManagedLayerTwoUserAgentStarGroups(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User-agent: *\nDisallow: /private\n\nUser-agent: *\nAllow: /\n"))
+		_, _ = w.Write([]byte("User-agent: *\nDisallow: /private\n\nUser-agent: *\nAllow: /\n"))
 	}))
 	defer srv.Close()
 
@@ -94,7 +94,7 @@ func TestAIPostureEffectiveManagedLayerTwoUserAgentStarGroups(t *testing.T) {
 // value cairn did not write passes and names it, without asserting the outside layer's cause.
 func TestAIPostureEffectiveForeignContentSignal(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User-agent: *\nContent-Signal: search=no\nAllow: /\n"))
+		_, _ = w.Write([]byte("User-agent: *\nContent-Signal: search=no\nAllow: /\n"))
 	}))
 	defer srv.Close()
 
@@ -201,7 +201,7 @@ func TestFetchRobotsFileSchemeIsUnknown(t *testing.T) {
 func TestFetchRobotsBodyIsCapped(t *testing.T) {
 	oversized := strings.Repeat("a", robotsBodyCap*2)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(oversized))
+		_, _ = w.Write([]byte(oversized))
 	}))
 	defer srv.Close()
 
@@ -222,7 +222,7 @@ func TestFetchRobotsCarriesNoCredential(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotAuth = r.Header.Get("Authorization")
 		gotCookies = len(r.Cookies())
-		w.Write([]byte("User-agent: *\nAllow: /\n"))
+		_, _ = w.Write([]byte("User-agent: *\nAllow: /\n"))
 	}))
 	defer srv.Close()
 

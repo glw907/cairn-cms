@@ -49,7 +49,7 @@ func FetchRobots(ctx context.Context, origin PublicOrigin) Robots {
 	if err != nil {
 		return Robots{Present: false, Reason: RobotsAbsentTransportFailure}
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		return Robots{Present: false, Reason: RobotsAbsentNonOK}
 	}

@@ -276,6 +276,12 @@ func (t Theme) centredCell(role Role, text string, n int) string {
 // The plain table's headings and their columns: the counts by state, the engine version each
 // site is running, and how old the data is. A state a site does not have is left blank rather
 // than zero: an empty cell is the calmest way to say a site has none of it.
+//
+// Declaration order is also the order the columns are given up in at a narrow width, from the
+// right: the two leading columns always draw, and each one after them draws only if it fits
+// whole. A column that cannot be drawn whole is dropped rather than squeezed, because the table
+// is already the strip's own fallback and a second fallback that shortens "errors" to "e" and
+// pushes a count off the edge prints a fact no reader can use.
 var tableColumns = []struct {
 	heading string
 	width   int
@@ -287,6 +293,41 @@ var tableColumns = []struct {
 	{labelHeld, 6},
 	{"engine", 9},
 	{"checked", 9},
+}
+
+// tableMandatoryColumns is how many leading tableColumns entries draw at every width: the site
+// and its verdict, the two a row means nothing without.
+const tableMandatoryColumns = 2
+
+// tableFit returns the column widths the table draws at width, and how many columns that is.
+// The site column takes siteCol, shrunk toward siteColFloor only when the two mandatory columns
+// alone do not fit, since a site column narrow enough to ellipsize every name buys nothing.
+func tableFit(siteCol, width int) (widths []int, columns int) {
+	widths = make([]int, len(tableColumns))
+	for i, c := range tableColumns {
+		widths[i] = c.width
+	}
+	widths[0] = siteCol + 2
+
+	mandatory := 0
+	for i := range tableMandatoryColumns {
+		mandatory += widths[i]
+	}
+	if mandatory > width {
+		widths[0] = max(widths[0]-(mandatory-width), siteColFloor+2)
+		mandatory = widths[0] + widths[1]
+	}
+
+	total := mandatory
+	columns = tableMandatoryColumns
+	for i := tableMandatoryColumns; i < len(widths); i++ {
+		if total+widths[i] > width {
+			break
+		}
+		total += widths[i]
+		columns++
+	}
+	return widths[:columns], columns
 }
 
 // engineCheckID is the check whose outcome carries the installed engine version.
@@ -319,13 +360,11 @@ func engineVersion(r health.Report) string {
 // headings need: one row per site, the verdict, the counts by state, and how old the data is. No
 // rules, no boxes, and no glyph carrying a fact alone.
 func (t Theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int) []string {
-	widths := make([]int, len(tableColumns))
-	headings := make([]string, len(tableColumns))
-	for i, c := range tableColumns {
-		widths[i], headings[i] = c.width, c.heading
-		if i == 0 {
-			widths[i] = siteCol + 2
-		}
+	widths, columns := tableFit(siteCol, width)
+	siteCol = widths[0] - 2
+	headings := make([]string, columns)
+	for i := range widths {
+		headings[i] = tableColumns[i].heading
 	}
 
 	verdicts := make([]Verdict, 0, len(rs))
@@ -334,10 +373,11 @@ func (t Theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 		s := split(r)
 		v := siteVerdict(r)
 		verdicts = append(verdicts, v)
-		rows = append(rows, []string{
+		row := []string{
 			t.fitted(in.ASCII, r.Site, siteCol), v.String(), blankZero(len(s.Failing)), blankZero(len(s.CouldNotRun)),
 			blankZero(len(s.Held)), engineVersion(r), relative(in.Now.Sub(checkedAt(r, in.Now))) + " ago",
-		})
+		}
+		rows = append(rows, row[:columns])
 	}
 
 	total := 0

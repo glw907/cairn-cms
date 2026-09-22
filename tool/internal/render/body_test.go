@@ -1166,3 +1166,64 @@ func TestFleetOnePassRule(t *testing.T) {
 		}
 	}
 }
+
+// tableHeadingLine returns the plain table's own heading row, or "" when the frame drew the
+// labelled strip instead. The strip's heading row leads with blanks and a check id, so the
+// leading "site" is what tells the two apart.
+func tableHeadingLine(lines []string) string {
+	for _, l := range lines {
+		if strings.HasPrefix(l, "site ") {
+			return l
+		}
+	}
+	return ""
+}
+
+// TestManyTableDrawsEveryColumnWholeAtEveryWidth walks the whole supported width range and
+// asserts the plain table prints each column it draws in full: every heading as its own whole
+// word, and every engine version as the version rather than its first character. It is the
+// assertion the width-60 golden did not make. Before the column budget dropped a column it
+// could not fit, lipgloss squeezed the last ones instead, and a real run at --width 60 printed
+// the "engine" heading as "e" over a "0" that was once "0.84.4".
+func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
+	reports := fixtures.TwelveSites()
+	theme := NewTheme(true, ProfileNoColor)
+	tables := 0
+
+	for w := 20; w <= 1000; w++ {
+		lines := plainLines(input(reports, BodyMany, w, ProfileNoColor, false, verdictFor(reports)))
+		head := tableHeadingLine(lines)
+		if head == "" {
+			continue
+		}
+		tables++
+
+		_, columns := tableFit(theme.siteColWidth(reports), content(w))
+		for i := range columns {
+			if !strings.Contains(head, tableColumns[i].heading) {
+				t.Fatalf("width %d: heading row %q is missing the %q column", w, head, tableColumns[i].heading)
+			}
+		}
+		if columns < len(tableColumns) && strings.Contains(head, tableColumns[columns].heading) {
+			t.Fatalf("width %d: heading row %q carries the %q column the budget dropped",
+				w, head, tableColumns[columns].heading)
+		}
+
+		version := engineVersion(reports[0])
+		drawsEngine := slices.IndexFunc(tableColumns[:columns], func(c struct {
+			heading string
+			width   int
+		}) bool {
+			return c.heading == "engine"
+		}) >= 0
+		if drawsEngine && version != "" && !slices.ContainsFunc(lines, func(l string) bool {
+			return strings.Contains(l, version)
+		}) {
+			t.Fatalf("width %d: no row carries the engine version %q whole", w, version)
+		}
+	}
+
+	if tables == 0 {
+		t.Fatal("no width in the supported range drew the plain table, so nothing was asserted")
+	}
+}

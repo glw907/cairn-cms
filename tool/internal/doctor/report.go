@@ -28,7 +28,7 @@ var checksInOrder = []Check{
 // CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and
 // its failure block both need the check's own Label, which lives on Check (its Condition) and
 // not on every Result, so the pair travels together the way report.ts's own
-// { check, result }[] does (retire-1 plan decision 3).
+// { check, result }[] does.
 type CheckedResult struct {
 	// Check is the check that ran.
 	Check Check
@@ -57,9 +57,9 @@ func Results(checked []CheckedResult) []Result {
 }
 
 // docsBaseAdmin is the admin docs directory a failure's docs URL resolves against, the same
-// shape internal/render/layout.go's own docsBase carries for the health report (retire-1 plan
-// decision 6). It is not shared with render: a doctor-to-render import would invert render's own
-// dependency direction for one string, so the constant is duplicated here instead.
+// shape internal/render/layout.go's own docsBase carries for the health report. It is not shared
+// with render: a doctor-to-render import would invert render's own dependency direction for one
+// string, so the constant is duplicated here instead.
 const docsBaseAdmin = "https://cairn.pub/docs/admin/"
 
 // docsURL builds a failure's docs URL from anchor, a condition's own docsAnchor field shaped

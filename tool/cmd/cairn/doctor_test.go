@@ -70,9 +70,9 @@ func writeDoctorFixture(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// TestDoctorExitCodes proves the four exit codes spec :399-400 promises, each over the real
-// command tree (cmd.SetArgs, through execTree) against a fixture directory, never a unit call
-// straight into the doctor package.
+// TestDoctorExitCodes proves the four exit codes the tool's monitoring-plugin convention
+// promises, each over the real command tree (cmd.SetArgs, through execTree) against a fixture
+// directory, never a unit call straight into the doctor package.
 func TestDoctorExitCodes(t *testing.T) {
 	origin := startDoctorRobotsServer(t)
 
@@ -181,8 +181,9 @@ func TestDoctorOutsideACairnSitePrintsOneLineAndExitsUnknown(t *testing.T) {
 	}
 }
 
-// TestDoctorQuietDoesNotSuppressOutsideACairnSite covers decision 3's own carve-out: --quiet
-// silences only an OK run, and the outside-a-cairn-site verdict is UNKNOWN, never OK.
+// TestDoctorQuietDoesNotSuppressOutsideACairnSite covers the one carve-out to --quiet
+// suppressing a whole report: it silences only an OK run, and the outside-a-cairn-site verdict
+// is UNKNOWN, never OK.
 func TestDoctorQuietDoesNotSuppressOutsideACairnSite(t *testing.T) {
 	dir := t.TempDir()
 
@@ -243,9 +244,10 @@ func TestDoctorQuietPrintsTheWholeReportOnAFailingRun(t *testing.T) {
 }
 
 // TestADoctorUsageErrorExitsUnknownWithEmptyStdout runs cairn doctor's own usage errors against
-// the real built binary (usage_test.go's runBinary), the frozen rule finding 1 states generically
-// for the whole tree, asserted here for this command specifically: a second positional directory
-// and an unknown flag both refuse before any check runs, with byte-empty stdout.
+// the real built binary (usage_test.go's runBinary), the byte-empty-stdout rule
+// TestAUsageErrorExitsUnknownWithEmptyStdout already proves for the whole tree, asserted here for
+// this command specifically: a second positional directory and an unknown flag both refuse
+// before any check runs.
 func TestADoctorUsageErrorExitsUnknownWithEmptyStdout(t *testing.T) {
 	for _, args := range [][]string{
 		{"doctor", "one-dir", "two-dir"},

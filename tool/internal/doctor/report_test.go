@@ -10,8 +10,8 @@ import (
 )
 
 // updateGolden regenerates every golden text report from the current checks. `make -C tool
-// golden` does not cover this package (retire-1 plan decision 3: the report never enters
-// internal/render, so render's own golden target does not reach it); run
+// golden` does not cover this package: the report is plain text built here, never a render
+// package body, so that target does not reach it; run
 // `go test ./internal/doctor -run TestGolden -update` and read the diff instead.
 var updateGolden = flag.Bool("update", false, "rewrite the golden text reports from this package's checks")
 
@@ -114,8 +114,7 @@ type goldenReportCase struct {
 }
 
 // goldenReportCases is the committed corpus: an all-clean run, one blocker failure, one warning
-// failure, an unchecked result, and a run carrying every status at once. Acceptance criterion of
-// retire-1 plan Task 8.
+// failure, an unchecked result, and a run carrying every status at once.
 func goldenReportCases() []goldenReportCase {
 	return []goldenReportCase{
 		{
@@ -224,8 +223,8 @@ func TestGoldenFailureBlockCarriesDocsURL(t *testing.T) {
 	}
 }
 
-// TestDocsURLDropsTheMdExtension pins decision 6's exact shape: the mirror's basename without
-// .md, joined to its fragment.
+// TestDocsURLDropsTheMdExtension pins the published docs URL's exact shape: the mirror's
+// basename without .md, joined to its fragment.
 func TestDocsURLDropsTheMdExtension(t *testing.T) {
 	got := docsURL("is-it-working.md#deploy-the-worker-with-its-bindings")
 	want := "https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings"

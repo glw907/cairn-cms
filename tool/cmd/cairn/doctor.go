@@ -29,7 +29,7 @@ func newDoctorCmd(d deps, rf *rootFlags) *cobra.Command {
 			return nil
 		},
 		// The argument is a directory, never a registered site id, so this never calls
-		// completeSiteIDs (retire-1 plan decision 4).
+		// completeSiteIDs.
 		ValidArgsFunction: func(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 			if len(args) > 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp

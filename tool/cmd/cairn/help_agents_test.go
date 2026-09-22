@@ -9,8 +9,8 @@ import (
 // for every line of it, so the contract has to stay a page rather than becoming a manual. It was
 // raised from 40 to 44 for the five-word check-result vocabulary and the sentence dividing skip
 // from unknown, which an agent cannot read the state field without, and from 44 to 50 for cairn
-// doctor's own paragraph (retire-1 plan Task 8): what it checks, that it needs no credential and
-// no adopted site, and which exit-3 cases it adds to the ones cairn health already states.
+// doctor's own paragraph: what it checks, that it needs no credential and no adopted site, and
+// which exit-3 cases it adds to the ones cairn health already states.
 const agentsPageLineBound = 50
 
 // TestHelpAgentsIsReachableAndExitsZero covers the surface itself: the topic resolves, it is not

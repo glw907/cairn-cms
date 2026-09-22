@@ -101,11 +101,12 @@ type CheckVerdict struct {
 // declared Severity or by an unexpired hold: a hold silences notification, never status, so a
 // held failure is never reported OK.
 //
-// A check that could not run is UNKNOWN, with one exclusion. An Unknown whose Reason is
-// ReasonCredMissing is WARNING: the operator has not configured that credential, which is a gap
-// they disclosed rather than a measurement that failed, and paging them for it every morning is
-// what turns a routine into noise. Every other Unknown, a rate limit included, stays UNKNOWN,
-// because the run did not observe the site and cannot say it is merely imperfect.
+// A check that could not run is UNKNOWN, with one exclusion. An Unknown whose Reason answers
+// ReasonCode.NotAttempted is WARNING: the site or the operator is set up in a way that gives the
+// check nothing to read, which is a gap they disclosed rather than a measurement that failed,
+// and paging them for it every morning is what turns a routine into noise. Every other Unknown,
+// a rate limit included, stays UNKNOWN, because the run did not observe the site and cannot say
+// it is merely imperfect.
 //
 // Acknowledged has no effect on an Unknown. A hold is an operator saying they accept a known
 // failure, which they cannot say about a check that never ran.
@@ -119,7 +120,7 @@ func (c CheckVerdict) Verdict() Verdict {
 		}
 		return VerdictCritical
 	default:
-		if c.Reason == ReasonCredMissing {
+		if c.Reason.NotAttempted() {
 			return VerdictWarning
 		}
 		return VerdictUnknown
@@ -202,10 +203,10 @@ func ExitCodeFor(s State) Verdict {
 // "unknown".
 //
 // A check that did not settle divides on reason. "skip" is a check that was not attempted, by
-// configuration: ReasonCredMissing, a credential the operator has not set. "unknown" is a check
-// that was attempted and observed nothing: a timeout, a transport failure, or a rate limit. One
-// is a gap the operator disclosed and the other is a measurement that failed, and one word for
-// both leaves a reader unable to tell a deliberate omission from a blind run.
+// configuration: whatever ReasonCode.NotAttempted names. "unknown" is a check that was attempted
+// and observed nothing: a timeout, a transport failure, or a rate limit. One is a gap the
+// operator disclosed and the other is a measurement that failed, and one word for both leaves a
+// reader unable to tell a deliberate omission from a blind run.
 //
 // ack means an unexpired hold and softens "fail" to "held". It has no effect on a passing check
 // or on one that did not run, since a hold is an operator accepting a known failure, which they
@@ -220,7 +221,7 @@ func StateWord(s State, reason ReasonCode, ack bool) string {
 		}
 		return "fail"
 	default:
-		if reason == ReasonCredMissing {
+		if reason.NotAttempted() {
 			return "skip"
 		}
 		return "unknown"

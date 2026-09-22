@@ -105,10 +105,11 @@ whole pre-tag window is one schema and each payload's first published version is
 unexpired hold covers, and a hold silences notification, never status.
 
 The two unrun words divide on what the run did, not on how bad the result is. `skip` is a check
-that was **not attempted**, by configuration: a credential the operator has not set. `unknown` is
-a check that **was attempted and observed nothing**: a timeout, a transport failure, a rate
-limit, or a site the sweep never reached. Only `skip` softens a site's verdict to `WARNING`;
-every `unknown` carries `UNKNOWN`.
+that was **not attempted**, by configuration: a credential the operator has not set, a record
+naming no repository, or a Worker with no Workers Builds connection. `unknown` is a check that
+**was attempted and observed nothing**: a timeout, a transport failure, a rate limit, or a site
+the sweep never reached. Only `skip` softens a site's verdict to `WARNING`; every `unknown`
+carries `UNKNOWN`.
 
 ### `fix`
 
@@ -228,10 +229,15 @@ Every `skip` and every `unknown` carries a `reason`. The state words say whether
 attempted; the reason says what stopped it, which is what tells a timeout from an unreachable
 network. The set is closed and frozen at 1.0.
 
-Eight fixed codes:
+Nine fixed codes:
 
 `reason.cred-missing`, `reason.cred-forbidden`, `reason.cred-revoked`, `reason.cred-expiring`,
-`reason.timeout`, `reason.offline`, `reason.not-run`, `reason.not-observable`.
+`reason.timeout`, `reason.offline`, `reason.not-run`, `reason.not-observable`,
+`reason.repo-not-recorded`.
+
+Three of them are `skip` rather than `unknown`: `reason.cred-missing`,
+`reason.repo-not-recorded`, and `reason.api.builds-not-connected`. Each names a way the site is
+set up rather than a measurement that failed.
 
 Thirteen park codes, each `reason.park.<code>`:
 

@@ -63,12 +63,33 @@ const (
 	ReasonOffline       ReasonCode = "reason.offline"
 	ReasonNotRun        ReasonCode = "reason.not-run"
 	ReasonNotObservable ReasonCode = "reason.not-observable"
+	// ReasonRepoNotRecorded is a check that reads the site's own repository against a record
+	// carrying none. Discovery learns a repository from a Workers Builds trigger, so a site that
+	// deploys any other way is adopted without one until an operator names it.
+	ReasonRepoNotRecorded ReasonCode = "reason.repo-not-recorded"
 )
 
 // fixedReasonCodes is every ReasonCode constant above, in declaration order.
 var fixedReasonCodes = []ReasonCode{
 	ReasonCredMissing, ReasonCredForbidden, ReasonCredRevoked, ReasonCredExpiring,
-	ReasonTimeout, ReasonOffline, ReasonNotRun, ReasonNotObservable,
+	ReasonTimeout, ReasonOffline, ReasonNotRun, ReasonNotObservable, ReasonRepoNotRecorded,
+}
+
+// notAttemptedReasons is every ReasonCode NotAttempted answers true for.
+var notAttemptedReasons = []ReasonCode{
+	ReasonCredMissing,
+	ReasonRepoNotRecorded,
+	APIReason(providers.ReasonBuildsNotConnected),
+}
+
+// NotAttempted reports whether r names a check the run declined to attempt because the site's
+// own setup gives it nothing to read, rather than one that was attempted and observed nothing.
+// Three reasons qualify: a credential the operator never set, a record carrying no repository,
+// and a Worker with no Workers Builds connection. Each is a disclosed fact about how the site is
+// run, which is why a run words them "skip" and reports WARNING, where a measurement that failed
+// reports UNKNOWN and leaves an operator unable to say the site is well.
+func (r ReasonCode) NotAttempted() bool {
+	return slices.Contains(notAttemptedReasons, r)
 }
 
 // ReasonCodes is the closed reason vocabulary a run can emit: the eight fixed constants, then

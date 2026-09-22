@@ -1,0 +1,13 @@
+# Vale gotcha: multiple `raw:` entries in an `existence` rule concatenate into one pattern
+# (`['\bfoo\b', '\bCairn\b']` becomes `\bfoo\b\bCairn\b` and matches nothing); a token list uses
+# `tokens:` instead, and `raw:` is reserved for a single pattern.
+extends: existence
+message: "Possibly retired name ('%s'): see 'Names' in docs/internal/docs-register.md. Say the engine for the npm library a site imports, `@glw907/cairn-cms` for the artifact, or the `cairn` CLI with its verb for the Go tool. 'The package' still fits for a fact about the tarball, its files, or install; 'the binary' still fits for the install artifact itself; otherwise use the sanctioned name."
+level: warning
+scope: text
+ignorecase: true
+tokens:
+  - the tool
+  - the package
+  - the binary
+  - the CLI

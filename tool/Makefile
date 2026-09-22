@@ -8,11 +8,15 @@ MODULE := github.com/glw907/cairn-cms/tool
 GOLANGCI := tools/bin/golangci-lint
 GOVULNCHECK := tools/bin/govulncheck
 
-VERSION := $(shell git describe --tags --match 'tool/v*' --dirty --always 2>/dev/null || echo dev)
+# The tag namespace prefix comes off the described version: `tool/v` is how this monorepo
+# separates the CLI's tags from the package's, and it is not part of the version an operator
+# reads out of `cairn --version`. The release workflow strips it the same way.
+DESCRIBED := $(shell git describe --tags --match 'tool/v*' --dirty --always 2>/dev/null || echo dev)
+VERSION := $(patsubst tool/v%,%,$(DESCRIBED))
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 LDFLAGS := -X '$(MODULE)/internal/version.Version=$(VERSION)' -X '$(MODULE)/internal/version.Commit=$(COMMIT)'
 
-.PHONY: all build test vet install check clean golden man \
+.PHONY: all build test vet install install-check check clean golden man \
 	tidy-check fmt-check lint vulncheck vale-comments \
 	copy-list check-copy copy-review \
 	build-golangci-lint build-govulncheck
@@ -41,6 +45,13 @@ install: build man
 	install -m 0755 $(BINARY) "$(HOME)/.local/bin/$(BINARY)"
 	install -d "$(HOME)/.local/share/man/man1"
 	install -m 0644 man/*.1 "$(HOME)/.local/share/man/man1/"
+
+# install-check is local-only and never part of `check`: it needs podman and the network, and it
+# reads the module proxy rather than this working tree, so it can only run after a tag is
+# published. Pass the tag: `make install-check VERSION=v1.0.1`. Read scripts/install-check.sh for
+# what each of its two containers proves.
+install-check:
+	./scripts/install-check.sh "$(VERSION)"
 
 check: tidy-check fmt-check vet lint vulncheck vale-comments check-copy test
 

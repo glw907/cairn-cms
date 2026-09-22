@@ -108,21 +108,45 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Attestation mints a Sigstore identity token and writes to the repository's attestations
+      # store, so the attest step below fails naming whichever of the two is absent.
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          # git describe reads the tool's own tags, and the default shallow checkout fetches
+          # none, so a workflow_dispatch run would otherwise stamp every artifact "dev".
+          fetch-depth: 0
       - uses: actions/setup-go@v6
         with:
           go-version-file: tool/go.mod
-      - name: Cross-compile release binaries
+      - name: Generate man pages
+        # Every archive carries the generated pages beside the binary, so a packager and an
+        # operator both get them without the repository. Man pages are platform-independent, so
+        # one generation on this runner serves all six targets.
+        working-directory: tool
+        run: make man
+      - name: Cross-compile release archives
+        id: build
         working-directory: tool
         run: |
           set -euo pipefail
-          # Scoped to the tool's own tags and matching the Makefile's build target exactly, so
-          # a release binary reports the same version a local `make -C tool build` would.
-          version="$(git describe --tags --match 'tool/v*' --dirty --always 2>/dev/null || echo dev)"
-          commit="$(git rev-parse --short HEAD 2>/dev/null || echo none)"
+          # A tag names its own version; a dry run has no tag, so it describes from the nearest
+          # one. Either way the `tool/v` prefix comes off: it is the monorepo's tag namespace,
+          # not part of the version an operator reads out of `cairn --version`.
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#tool/v}"
+          else
+            version="$(git describe --tags --match 'tool/v*' --always | sed 's|^tool/v||')"
+          fi
+          commit="$(git rev-parse --short HEAD)"
           module="github.com/glw907/cairn-cms/tool"
+          # Matching the Makefile's build target exactly, so a release binary reports the same
+          # version a local `make -C tool build` would.
           ldflags="-X '${module}/internal/version.Version=${version}' -X '${module}/internal/version.Commit=${commit}'"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          rm -rf dist
           mkdir -p dist
           targets=(
             "linux amd64"
@@ -134,16 +158,86 @@ jobs:
           )
           for target in "${targets[@]}"; do
             read -r goos goarch <<<"$target"
-            ext=""
-            [ "$goos" = "windows" ] && ext=".exe"
-            out="dist/cairn-${goos}-${goarch}${ext}"
-            echo "building ${out}"
-            GOOS="$goos" GOARCH="$goarch" go build -trimpath -ldflags "$ldflags" -o "$out" ./cmd/cairn
+            name="cairn_${version}_${goos}_${goarch}"
+            stage="dist/${name}"
+            mkdir -p "${stage}/man"
+            binary="cairn"
+            [ "$goos" = "windows" ] && binary="cairn.exe"
+            echo "building ${name}"
+            GOOS="$goos" GOARCH="$goarch" go build -trimpath -ldflags "$ldflags" -o "${stage}/${binary}" ./cmd/cairn
+            cp man/*.1 "${stage}/man/"
+            if [ "$goos" = "windows" ]; then
+              (cd "$stage" && zip -qr "../${name}.zip" "$binary" man)
+            else
+              tar -czf "dist/${name}.tar.gz" -C "$stage" "$binary" man
+            fi
+            rm -rf "$stage"
           done
-          (cd dist && sha256sum cairn-* > SHA256SUMS)
+          (cd dist && sha256sum cairn_* > SHA256SUMS)
           ls -la dist
+          cat dist/SHA256SUMS
+      - name: Assert each archive's file list
+        working-directory: tool
+        run: |
+          set -euo pipefail
+          count=0
+          check() {
+            # $1 archive, $2 its listing, $3 the binary name it must carry
+            printf '== %s\n%s\n' "$1" "$2"
+            grep -qx "$3" <<<"$2" || { echo "$1: no $3 at the archive root"; exit 1; }
+            grep -qx 'man/cairn.1' <<<"$2" || { echo "$1: no man/cairn.1"; exit 1; }
+          }
+          for archive in dist/*.tar.gz; do
+            check "$archive" "$(tar -tzf "$archive")" cairn
+            count=$((count + 1))
+          done
+          for archive in dist/*.zip; do
+            check "$archive" "$(unzip -Z1 "$archive")" cairn.exe
+            count=$((count + 1))
+          done
+          [ "$count" -eq 6 ] || { echo "built ${count} archives, want 6"; exit 1; }
+      - name: Run the runner-native artifact
+        # Linking a binary is not running one, so the artifact this runner can execute is
+        # unpacked and asked for its own version. A tag run holds it to the tag; a dry run has
+        # no tag to compare against and asserts only that the stamping happened at all.
+        working-directory: tool
+        env:
+          VERSION: ${{ steps.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p native
+          tar -xzf "dist/cairn_${VERSION}_linux_amd64.tar.gz" -C native
+          out="$(./native/cairn --version)"
+          echo "$out"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            want="${GITHUB_REF_NAME#tool/v}"
+            case "$out" in
+              "$want ("*) ;;
+              *) echo "--version does not open with ${want} and a commit"; exit 1 ;;
+            esac
+          else
+            case "$out" in
+              dev*|"") echo "--version reports an unstamped build"; exit 1 ;;
+              *" ("*")"*) ;;
+              *) echo "--version carries no commit"; exit 1 ;;
+            esac
+          fi
+          rm -rf native
+      - name: Attest build provenance
+        # A SHA256SUMS file published in the same release as the binaries it covers proves
+        # integrity, not authenticity: whoever could replace a binary could replace the checksum
+        # beside it. Attestation binds each archive to this workflow and this commit. It runs on
+        # a dry run too, so the two permissions above are exercised before any tag.
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            tool/dist/*.tar.gz
+            tool/dist/*.zip
       - name: Publish release
-        if: ${{ startsWith(github.ref, 'refs/tags/tool/v') }}
-        run: gh release create "${{ github.ref_name }}" tool/dist/* --title "${{ github.ref_name }}" --generate-notes
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            tool/dist/*.tar.gz tool/dist/*.zip tool/dist/SHA256SUMS \
+            --title "${{ github.ref_name }}" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}

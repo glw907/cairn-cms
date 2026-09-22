@@ -454,8 +454,9 @@ From the second half of the arm (pages enable-tidy through wire-the-delivery-sur
   - wire-the-delivery-surface.md's own content-type investigation explicitly flags itself as "measured locally... not verified against a live deployed zone" and generalizes to no other extension; treat its narrow, dated, self-scoped conclusion as evidence rather than a settled cross-version fact.
 
 - Facts-container HEAD repair 2026-09-22: 8 bullets sourced to the now-removed legacy JS doctor
-  package deleted (the `github.app`/`config.csrf-disable-missing`/`config.tidy-key-missing`
-  implementation-behavior bullets in wire-the-delivery-surface.md and choose-an-ai-posture.md, the
+  package deleted (the `github.app` save-chain bullet in add-cairn-to-a-sveltekit-app.md, the
+  `config.csrf-disable-missing` both-files bullet in build-a-site-by-hand.md, the
+  `config.tidy-key-missing` `ANTHROPIC_API_KEY`-probing bullet in enable-tidy.md, the
   rotation-order runbook and its two `github.app` bullets in rotate-the-github-app-key.md, and the
   `npx cairn-doctor --from/--repo` upgrade step and its typecheck-scope bullet in
   upgrade-cairn.md), since the claims describe the removed JS CLI's implementation details

@@ -52,6 +52,7 @@ links the deleted `doctor.md`, and `doctor.md:79-86`/`facts/reference.md` share 
 ## Resume prompt
 
 In a fresh session (after `brew upgrade --cask claude-code@latest` and the `opus-5-5-adoption` chore),
-resume retire-2a at Segment C on the `doctor-engine` worktree, then retire-2b,
+resume retire-2a at Segment C on the `doctor-engine` worktree, then retire-2b (its executing session
+starts on `claude-opus-5-5`, the first pass under the phase-split conducting rule),
 each on its own branch and worktree. Cut `0.97.0` last;
 `ROADMAP.md` sequences what follows.

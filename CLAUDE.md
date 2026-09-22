@@ -80,9 +80,10 @@ durable orientation only.
   Upshift a single correctness-critical task with `model: opus`; `model: fable` only when an Opus
   verdict itself hedges on something that matters. Sonnet implements, Opus 5.5 reviews, and model
   diversity is part of the
-  gate; the `code-simplifier` plugin agent pins Opus. The conductor (Fable) runs plan and
-  execution in one session and never reads diffs itself; the `diff-reviewer` agent does, per the
-  global "Conducting a pass" rule.
+  gate; the `code-simplifier` plugin agent pins Opus. Fable plans and adjudicates; Opus 5.5
+  conducts execution (Geoff, 2026-09-22): a pass's executing session runs on `claude-opus-5-5`
+  and never reads diffs itself; the `diff-reviewer` agent does, per the global "Conducting a
+  pass" rule.
 - **Claude tooling for this stack** lives at user scope, not in this repo: the official DaisyUI
   skill (the component reference every implementer and reviewer reads; prefer a stock DaisyUI
   component over a home-grown one unless `docs/internal/engine-rulings.md` records the defect

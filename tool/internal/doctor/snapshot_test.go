@@ -29,15 +29,22 @@ func TestNewSnapshotResolvesSymlinks(t *testing.T) {
 	}
 }
 
+// netClientExemptFiles names the one non-test file allowed to import net/http:
+// ai.posture-effective's own network request (fetchrobots.go's FetchRobots) is the single GET
+// this whole command makes (retire-1 plan decision 9), isolated in its own file and never
+// called from inside a Check.Run, so the exception this scan grants stays narrow rather than
+// opening the whole package to a client.
+var netClientExemptFiles = map[string]bool{"fetchrobots.go": true}
+
 // TestNoCheckFunctionReadsClockOrHoldsClient is a source scan over this package's own non-test
-// files: it asserts none names time.Now or imports net/http, the two capabilities decision 2
-// reserves for the command layer so a Check stays a pure function over its Snapshot.
+// files: it asserts none names time.Now, and none but netClientExemptFiles imports net/http,
+// the two capabilities decision 2 reserves for the command layer so a Check stays a pure
+// function over its Snapshot.
 func TestNoCheckFunctionReadsClockOrHoldsClient(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatalf("read dir: %v", err)
 	}
-	forbidden := []string{"time.Now(", `"net/http"`}
 	for _, e := range entries {
 		name := e.Name()
 		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
@@ -47,10 +54,11 @@ func TestNoCheckFunctionReadsClockOrHoldsClient(t *testing.T) {
 		if err != nil {
 			t.Fatalf("read %s: %v", name, err)
 		}
-		for _, f := range forbidden {
-			if strings.Contains(string(body), f) {
-				t.Errorf("%s names %q; a doctor check must hold no client and read no clock", name, f)
-			}
+		if strings.Contains(string(body), "time.Now(") {
+			t.Errorf("%s names %q; a doctor check must read no clock", name, "time.Now(")
+		}
+		if !netClientExemptFiles[name] && strings.Contains(string(body), `"net/http"`) {
+			t.Errorf("%s names %q; a doctor check must hold no client", name, `"net/http"`)
 		}
 	}
 }

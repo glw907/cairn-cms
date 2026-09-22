@@ -19,17 +19,20 @@ clear. CI on `main` is green.
 
 ## Immediate next action
 
-**The `0.97.0` cut HOLDS on the Go tool's 1.0, the retirement of `cairn-doctor` into `cairn`, draft
-docs pass A (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`, which moves the tool's
-contract pages and schemas under `docs/reference/` so the `0.97.0` tarball carries them), and a
-`tool/v1.1.0` tag (Geoff, 2026-09-21).** THE ORDER AMONG THE LAST THREE IS BEING SETTLED between
-Geoff, the retirement conductor, and the docs conductor (the retirement's approved spec splits it
-into a Go half and an engine half, and the engine half removes the bin only after `tool/v1.1.0`
-is released). Until that lands here: B2's close writes only that 1.0 is released; "the `0.97.0`
-cut is unblocked" is written ONLY by the close of whichever of those lands LAST, and by no other
-close; and every mechanical gate in Task 6 of the pre-cut plan must pass whatever any line says.
-A cut session that finds no such line does not cut. No publish,
-no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff gave the B2
+**The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the Go tool's 1.0 (B2); the
+doctor retirement's Go half (pass retire-1), merged WITHOUT a tool tag; draft docs pass A
+(`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`), which moves the tool's contract pages
+and schemas under `docs/reference/`; one `tool/v1.1.0`, tagged and released from a commit carrying
+both; the retirement's engine half (pass retire-2), which removes the `cairn-doctor` bin only once
+that release exists. B2's close writes that 1.0 is released; retire-1's close writes that `cairn
+doctor` is merged; pass A's close writes that the pages are merged; ONLY retire-2's close writes
+"the `0.97.0` cut is unblocked", since it lands last. A cut session that finds no such line does
+not cut, and every mechanical gate in Task 6 must pass whatever any line says. The retirement
+track conducts the `tool/v1.1.0` tag (Geoff, 2026-09-21), as a short session of its own between
+pass A's merge and retire-2a: it follows Tasks 22b and 23 of the Go tool's 1.0 plan as its
+runbook, re-verifies the final binary after pass A's repoint, stops for Geoff's go before the
+tag, and its close writes only that `v1.1.0` is released, naming the tag and the SHA. The
+retirement's spec is `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`. No publish, no pin bump, and no site round before the `tool/v1.0.0` tag and its release land. Geoff gave the B2
 conductor the go for the tag, the release, his timer, and B2's close and merge, on the
 conditions in the Go tool entry below. **The engine cut includes the tool's
 1.0 (Geoff, 2026-09-21):** B2 merges to `main` before the cut, so `0.97.0`'s window carries
@@ -90,7 +93,7 @@ container, then beta.
   `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`. **The cairn CLI is an
   assumed part of the system, and all docs are single-source on cairn.pub (Geoff,
   2026-09-21):** `tool/docs/` is the interim copy for 1.0; the draft-docs pass moves its four
-  public pages under `docs/` and a `tool/v1.0.1` repoints the links. A docs conductor session
+  public pages under `docs/` and `tool/v1.1.0` repoints the links. A docs conductor session
   plans that pass in parallel. Credentials are stored (`CAIRN_CF_READ_TOKEN`,
   `CAIRN_CF_ACCOUNT_ID`, `CAIRN_GH_READ_TOKEN`; the GitHub token expires 2026-10-19).
 - **The cairn case (front-door argument): DEAD (Geoff, 2026-09-12).** Frozen record only,
@@ -125,11 +128,23 @@ container, then beta.
 
 Three tracks, one session each.
 
-**Doctor retirement:** In a fresh tool session, brainstorm, spec, and plan the doctor-retirement
-pass, starting from `docs/internal/record/2026-09-21-doctor-retirement-inventory.md` and
-`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`; read the
-hold paragraph under "Immediate next action" for the order and for which close may write the
-unblocked line.
+**Doctor retirement ledger (2026-09-21 evening, the retirement session):** the pre-task is executing on worktree `.claude/worktrees/doctor-pretask` (branch `doctor-pretask`): Task 1 accepted at `5a59c7dd`, Task 2 in flight, Tasks 3 and 4 next; its PR holds until B2 (PR #71) merges, since `tool/v1.0.0` is already on origin. The retire-1 plan is drafted, three-lens reviewed, and folded on branch `doctor-retire-1-plan` (`docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, with `docs/internal/record/2026-09-21-doctor-retire-1-pass-a-inventory.md`), APPROVED by Geoff on 2026-09-21 together with the spec's ruling 5 amendment (a usage error exits 3, the tool's frozen behaviour, never 1); it lands on `main` by PR and retire-1 executes only once B2 and the pre-task are both merged. The workstation's heavy gate runs the component project serialized today (`vitest-browser-parallel-pages-stall` memory).
+
+**Doctor retirement:** In a fresh session, conduct the doctor retirement from
+`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` and the `doctor-retirement-pass`
+memory. Geoff approved the spec and three plans on 2026-09-21: `2026-09-21-doctor-pretask.md`,
+`2026-09-21-doctor-retire-2-engine.md` (retire-2a, the removal), and
+`2026-09-21-doctor-retire-2b-records.md` (retire-2b, whose close writes the cut's unblocked line),
+all under `docs/superpowers/plans/`. Two things start NOW, before B2 merges (Geoff, 2026-09-21; B2's
+branch touches none of the pre-task's files): execute the pre-task in its own worktree and hold its
+PR open, merging only after B2's close line and the `tool/v1.0.0` tag are on `origin/main`; and
+draft retire-1's plan (the Go half, `cairn doctor`) against B2's COMMITTED branch head, read with
+`git show` and never from its live worktree, with a pre-flight that re-verifies every cited surface
+against merged `main`, three review lenses, then Geoff's approval. With that plan, write the pass A
+inventory file under `docs/internal/record/` (the `cairn doctor` page path, the seventh schema's
+file name, every test naming either), since pass A's pre-flight stops without it. retire-1 EXECUTES
+only once B2 and the pre-task are both on `main`, and merges WITHOUT a tag. Pass A and the `tool/v1.1.0` tag follow (the retirement track conducts the tag, in its own short session, with Geoff's go), then
+retire-2a, then retire-2b. Read the hold paragraph under "Immediate next action" for the order.
 
 **One cut:** Cut `0.97.0` (Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`) once the
 Go tool's 1.0 is released AND `cairn-doctor` is retired on `main`; verify both first.

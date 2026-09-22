@@ -13,6 +13,8 @@ import {
   conditionIds,
   doctorCheckIds,
   createCairnSiteFlags,
+  cairnToolFlags,
+  cliFlagNames,
   parseApiSurface,
   findUnresolvedSymbols,
 } from '../../../scripts/checks/check-symbols.mjs';
@@ -213,6 +215,22 @@ describe('the registry parsers', () => {
     const flags = createCairnSiteFlags();
     expect(flags.size).toBeGreaterThan(0);
     expect(flags.has('dry-run')).toBe(true);
+  });
+
+  it('cairnToolFlags returns the Go tool\'s committed flag list, dashes stripped', () => {
+    const flags = cairnToolFlags();
+    expect(flags.size).toBeGreaterThan(0);
+    expect(flags.has('expect-sites')).toBe(true);
+    expect(flags.has('--expect-sites')).toBe(false);
+  });
+
+  it('cliFlagNames unions both CLIs and carries neither an invented flag', () => {
+    const flags = cliFlagNames();
+    expect(createCairnSiteFlags().has('expect-sites')).toBe(false);
+    expect(cairnToolFlags().has('dry-run')).toBe(false);
+    expect(flags.has('dry-run')).toBe(true);
+    expect(flags.has('expect-sites')).toBe(true);
+    expect(flags.has('no-such-flag')).toBe(false);
   });
 
   it('parseApiSurface returns a non-empty map containing a known export under the bare subpath', () => {

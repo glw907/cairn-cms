@@ -13,6 +13,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/logs"
+	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
@@ -21,10 +22,23 @@ import (
 // is recut by the same `make -C tool golden` target, since both tests match `-run TestGolden`.
 const jsonGoldenDir = "testdata/json"
 
-// schemaDir is where the published schemas live, relative to this package. They ship in the
-// repository rather than in the binary: a consumer validating a payload reads the file, and a
-// schema in the binary would be unreachable to every tool that does that.
-const schemaDir = "../../docs/reference"
+// schemaDirName is where the published schemas live, relative to the repository root. They ship
+// in the repository rather than in the binary: a consumer validating a payload reads the file,
+// and a schema in the binary would be unreachable to every tool that does that. They sit under
+// the engine's own reference arm because that arm is what the npm tarball carries, so an
+// installed package puts every schema in a consumer's tree.
+const schemaDirName = "docs/reference/schema"
+
+// schemaDir resolves schemaDirName through providers.RepoRoot, so the directory is found from
+// the repository root rather than by climbing out of this package with a relative path.
+func schemaDir(t *testing.T) string {
+	t.Helper()
+	root, err := providers.RepoRoot()
+	if err != nil {
+		t.Fatalf("providers.RepoRoot: %v", err)
+	}
+	return filepath.Join(root, schemaDirName)
+}
 
 // docPath is the reference page every published key and both freeze lists are stated on.
 const docPath = "../../docs/reference/json-output.md"
@@ -245,7 +259,7 @@ func TestEveryGoldenValidatesAgainstItsSchema(t *testing.T) {
 // loadSchema reads one published schema.
 func loadSchema(t *testing.T, name string) map[string]any {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(schemaDir, name))
+	data, err := os.ReadFile(filepath.Join(schemaDir(t), name))
 	if err != nil {
 		t.Fatal(err)
 	}

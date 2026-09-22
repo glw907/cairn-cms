@@ -255,7 +255,7 @@ var yarnVersionLinePattern = regexp.MustCompile(`^\s+version:?\s+"?([^"\s]+)"?`)
 // that follows.
 func yarnLockedVersion(lockText, dep string) (string, bool) {
 	lines := strings.Split(lockText, "\n")
-	for i := 0; i < len(lines); i++ {
+	for i := range len(lines) {
 		line := lines[i]
 		if strings.TrimSpace(line) == "" || strings.HasPrefix(line, "#") || startsWithSpace(line) {
 			continue

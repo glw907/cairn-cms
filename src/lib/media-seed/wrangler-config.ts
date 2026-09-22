@@ -6,8 +6,8 @@
 // the two.
 /**
  * One declared `r2_buckets` entry: the Worker binding name and, when declared, the bucket's
- *  real name. `resolveBucket` (assemble.ts) reads this to find the bucket `wrangler r2 object
- *  put` should target.
+ *  real name. `resolveBucket` (assemble.ts) reads this to find the bucket the `wrangler r2`
+ *  upload should target.
  */
 export interface R2BucketEntry {
   binding: string;

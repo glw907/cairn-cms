@@ -1087,9 +1087,9 @@ comments. The fold's full heavy-lane gate, re-run after the merge from `origin/m
   past-version entries.
 - The security verdict is `behavior-unchanged`; no halt.
 - Both lockfiles, root `package-lock.json` and `examples/showcase/package-lock.json`, still
-  map `"cairn-doctor": "dist/doctor/bin.js"`
-  after Task 4 trimmed the `bin` field from both `package.json` manifests but never
-  regenerated either lockfile. The fold regenerated both and reverted both, because
+  map `"cairn-doctor": "dist/doctor/bin.js"`. Task 4 trimmed the engine's `package.json`
+  `bin` field, which both lockfiles mirror, and never regenerated either lockfile. The fold
+  regenerated both and reverted both, because
   regeneration pulled in unrelated upstream version drift (`workerd`, `wrangler`, `daisyui`,
   `miniflare`, `@cloudflare/*`) alongside the bin-mapping fix. They clear in the next
   dependency-upgrade sweep (the `dependency-upgrade` skill), which 2b's friction log carries

@@ -52,8 +52,8 @@ retargets pointed at. Task 6's first review round found six false statements in 
 doctor-drift docs replacements that no automated checker catches; the second round confirmed
 all six fixed against source.
 
-**What a later pass would be wrong to rediscover.** Task 5's own `02-doctor-bare.txt`
-transcript and its citing bullet in
+**What a later pass would be wrong to rediscover.** The `02-doctor-bare.txt` transcript
+Task 5 deleted and its citing bullet in
 `packages/create-cairn-site/test/fixtures/transcripts/README.md` were both deleted in the
 same commit (`28eeacc2`), so the citation no longer exists to be found; the general lesson
 survives the specific fixture: a fixture's citation can sit in the transcripts README

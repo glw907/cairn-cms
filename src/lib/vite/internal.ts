@@ -155,6 +155,11 @@ export async function buildManifestFromVite(opts: CairnManifestOptions, root: st
   return evalVirtual(virtualSource(opts, 'write'), root);
 }
 
+/** The configured site-facts path, app-root-relative (no leading slash), for joining and display. */
+function siteFactsRelPath(opts: CairnManifestOptions): string {
+  return (opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH).replace(/^\//, '');
+}
+
 /**
  * The cairnManifest plugin. It serves the verify virtual module to the app graph and, in
  *  buildStart, evaluates it through a nested Vite SSR load so a manifest drift fails the build.
@@ -181,7 +186,7 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       }
       const siteFacts = await checkSiteFacts(opts, root);
       if (siteFacts.status === 'absent') {
-        this.warn(siteFactsAbsentWarning((opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH).replace(/^\//, '')));
+        this.warn(siteFactsAbsentWarning(siteFactsRelPath(opts)));
       } else if (siteFacts.status === 'stale') {
         this.error(siteFacts.message);
       }
@@ -195,15 +200,12 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
 }
 
 /**
- * Regenerate the committed manifest from the consumer's corpus and write it to the configured
- *  manifestPath. It searches for the consumer's Vite config from `cwd`, derives the authoritative
- *  Vite root from the loaded config (so a configured `root` or a non-root cwd resolves correctly),
- *  reads the cairnManifest plugin's options off the instance, evaluates the write-mode virtual
- *  module through the build's own resolution, and writes the serialized manifest under the Vite
- *  root. The cairn-manifest bin calls this; it is exported so the write logic is testable apart
- *  from the CLI shell.
+ * Locate the consumer's Vite config from `cwd` and pair the cairnManifest options it wires with the
+ *  authoritative Vite root, so a configured `root` or a non-root cwd resolves identically for every
+ *  bin write.
+ * @throws When no Vite config is found, or the one found wires no cairnManifest plugin.
  */
-export async function writeManifest(cwd: string = process.cwd()): Promise<void> {
+async function loadCairnBuild(cwd: string): Promise<{ opts: CairnManifestOptions; root: string }> {
   const { loadConfigFromFile } = await import('vite');
   const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, cwd);
   if (!loaded) {
@@ -215,7 +217,17 @@ export async function writeManifest(cwd: string = process.cwd()): Promise<void> 
       'cairn-manifest: the Vite config has no cairnManifest() plugin. Add it so the bin shares the build options.',
     );
   }
-  const root = resolveViteRoot(loaded, cwd);
+  return { opts, root: resolveViteRoot(loaded, cwd) };
+}
+
+/**
+ * Regenerate the committed manifest from the consumer's corpus and write it to the configured
+ *  manifestPath under the Vite root {@link loadCairnBuild} derives, evaluating the write-mode
+ *  virtual module through the build's own resolution. The cairn-manifest bin calls this; it is
+ *  exported so the write logic is testable apart from the CLI shell.
+ */
+export async function writeManifest(cwd: string = process.cwd()): Promise<void> {
+  const { opts, root } = await loadCairnBuild(cwd);
   const serialized = await buildManifestFromVite(opts, root);
   const manifestPath = opts.manifestPath ?? DEFAULT_MANIFEST_PATH;
   // The manifest path is app-root-absolute (a leading slash relative to the project), so resolve it
@@ -234,21 +246,9 @@ export async function writeManifest(cwd: string = process.cwd()): Promise<void> 
  *  the file always tracks the exact adapter the build verifies against.
  */
 export async function writeSiteFacts(cwd: string = process.cwd()): Promise<void> {
-  const { loadConfigFromFile } = await import('vite');
-  const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, cwd);
-  if (!loaded) {
-    throw new Error(`cairn-manifest: no Vite config found in ${cwd}`);
-  }
-  const opts = findCairnOptions(loaded.config.plugins);
-  if (!opts) {
-    throw new Error(
-      'cairn-manifest: the Vite config has no cairnManifest() plugin. Add it so the bin shares the build options.',
-    );
-  }
-  const root = resolveViteRoot(loaded, cwd);
+  const { opts, root } = await loadCairnBuild(cwd);
   const serialized = await buildSiteFactsFromVite(opts, root);
-  const siteFactsPath = opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH;
-  const outPath = join(root, siteFactsPath.replace(/^\//, ''));
+  const outPath = join(root, siteFactsRelPath(opts));
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, serialized);
 }
@@ -475,9 +475,8 @@ export type SiteFactsCheck = { status: 'ok' } | { status: 'absent' } | { status:
  *  positive, not a real site-facts drift.
  */
 export async function checkSiteFacts(opts: CairnManifestOptions, root: string): Promise<SiteFactsCheck> {
-  const siteFactsPath = opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH;
-  const outPath = join(root, siteFactsPath.replace(/^\//, ''));
-  const committed = await readFile(outPath, 'utf8').catch(() => null);
+  const relPath = siteFactsRelPath(opts);
+  const committed = await readFile(join(root, relPath), 'utf8').catch(() => null);
   if (committed === null) return { status: 'absent' };
   let expected: string;
   try {
@@ -489,7 +488,7 @@ export async function checkSiteFacts(opts: CairnManifestOptions, root: string): 
   return {
     status: 'stale',
     message:
-      `cairn-cms: ${siteFactsPath.replace(/^\//, '')} is stale: the committed file does not match the adapter.\n` +
+      `cairn-cms: ${relPath} is stale: the committed file does not match the adapter.\n` +
       'Run `npx cairn-manifest` and commit the result.',
   };
 }

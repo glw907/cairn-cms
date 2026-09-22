@@ -22,7 +22,7 @@ import {
 } from '../../lib/vite/internal.js';
 
 const WORKTREE = process.cwd();
-const VITE_ARM = resolve(process.cwd(), 'src/lib/vite/index.ts');
+const VITE_ARM = resolve(WORKTREE, 'src/lib/vite/index.ts');
 
 const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
@@ -31,15 +31,13 @@ const OPTS = {
   siteFactsPath: '/src/content/.cairn/site-facts.json',
 };
 
-function pluginConfig(): string {
-  return `import { cairnManifest } from ${JSON.stringify(VITE_ARM)};
+const VITE_CONFIG = `import { cairnManifest } from ${JSON.stringify(VITE_ARM)};
 export default {
   plugins: [
     cairnManifest(${JSON.stringify(OPTS)}),
   ],
 };
 `;
-}
 
 const ADAPTER_NO_FACTS = `import { defineAdapter, defineFieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
 export const cairn = defineAdapter({
@@ -73,10 +71,14 @@ const ADAPTER_FULL_DRIFTED = ADAPTER_FULL.replace("bucketBinding: 'MEDIA_BUCKET'
 
 const made: string[] = [];
 
-function tempProject(files: Record<string, string>): string {
+/** Write a throwaway site wiring the plugin under test around `adapter`, cleaned up in afterAll. */
+function tempProject(adapter: string): string {
   const dir = mkdtempSync(join(WORKTREE, '.cairn-vite-test-'));
   made.push(dir);
-  for (const [rel, content] of Object.entries(files)) {
+  for (const [rel, content] of [
+    ['vite.config.ts', VITE_CONFIG],
+    ['src/lib/cairn.config.ts', adapter],
+  ]) {
     const path = join(dir, rel);
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, content);
@@ -98,13 +100,16 @@ async function seedManifest(dir: string): Promise<void> {
 /** A fake Rollup plugin context recording warn/error calls, error rethrown as buildStart itself does. */
 function fakeContext(): { warn: (m: unknown) => void; error: (m: unknown) => never; warnings: string[] } {
   const warnings: string[] = [];
+  // Rollup hands warn and error either a string or an object carrying the text on `message`.
+  const text = (m: unknown): string =>
+    typeof m === 'string' ? m : String((m as { message?: string }).message ?? m);
   return {
     warnings,
     warn: (m: unknown) => {
-      warnings.push(typeof m === 'string' ? m : String((m as { message?: string }).message ?? m));
+      warnings.push(text(m));
     },
     error: (m: unknown) => {
-      throw new Error(typeof m === 'string' ? m : String((m as { message?: string }).message ?? m));
+      throw new Error(text(m));
     },
   };
 }
@@ -128,19 +133,13 @@ describe('formatSiteFacts', () => {
 
 describe('buildSiteFactsFromVite', () => {
   it('produces {"version": 1} only for an adapter with no media, roles, or posture', async () => {
-    const dir = tempProject({
-      'vite.config.ts': pluginConfig(),
-      'src/lib/cairn.config.ts': ADAPTER_NO_FACTS,
-    });
+    const dir = tempProject(ADAPTER_NO_FACTS);
     const raw = await buildSiteFactsFromVite(OPTS, dir);
     expect(JSON.parse(raw)).toEqual({ version: 1 });
   }, 30000);
 
   it('never writes owner, repo, or from, even though the adapter declares them', async () => {
-    const dir = tempProject({
-      'vite.config.ts': pluginConfig(),
-      'src/lib/cairn.config.ts': ADAPTER_FULL,
-    });
+    const dir = tempProject(ADAPTER_FULL);
     const raw = await buildSiteFactsFromVite(OPTS, dir);
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     expect(Object.keys(parsed).sort()).toEqual(['aiPosture', 'mediaBucketBinding', 'roles', 'version']);
@@ -155,18 +154,12 @@ describe('buildSiteFactsFromVite', () => {
 
 describe('checkSiteFacts', () => {
   it('reports absent, never stale, when no file has been committed yet', async () => {
-    const dir = tempProject({
-      'vite.config.ts': pluginConfig(),
-      'src/lib/cairn.config.ts': ADAPTER_FULL,
-    });
+    const dir = tempProject(ADAPTER_FULL);
     await expect(checkSiteFacts(OPTS, dir)).resolves.toEqual({ status: 'absent' });
   }, 30000);
 
   it('reports stale, naming the fix, when the committed file no longer matches the adapter', async () => {
-    const dir = tempProject({
-      'vite.config.ts': pluginConfig(),
-      'src/lib/cairn.config.ts': ADAPTER_FULL,
-    });
+    const dir = tempProject(ADAPTER_FULL);
     await writeSiteFacts(dir);
     writeFileSync(join(dir, 'src/lib/cairn.config.ts'), ADAPTER_FULL_DRIFTED);
     const result = await checkSiteFacts(OPTS, dir);
@@ -178,10 +171,7 @@ describe('checkSiteFacts', () => {
   }, 30000);
 
   it('reports ok when the committed file matches the adapter, including right after a regenerate', async () => {
-    const dir = tempProject({
-      'vite.config.ts': pluginConfig(),
-      'src/lib/cairn.config.ts': ADAPTER_FULL,
-    });
+    const dir = tempProject(ADAPTER_FULL);
     await writeSiteFacts(dir);
     await expect(checkSiteFacts(OPTS, dir)).resolves.toEqual({ status: 'ok' });
   }, 30000);
@@ -189,10 +179,7 @@ describe('checkSiteFacts', () => {
 
 describe('cairnManifest buildStart, the site-facts arms', () => {
   it('the absent arm: the build succeeds with exactly one warning naming cairn-manifest', async () => {
-    const dir = tempProject({
-      'vite.config.ts': pluginConfig(),
-      'src/lib/cairn.config.ts': ADAPTER_FULL,
-    });
+    const dir = tempProject(ADAPTER_FULL);
     await seedManifest(dir);
     const plugin = cairnManifest(OPTS);
     (plugin.configResolved as (c: { root: string }) => void)({ root: dir });
@@ -204,10 +191,7 @@ describe('cairnManifest buildStart, the site-facts arms', () => {
   }, 30000);
 
   it('the stale arm: the build fails through the same this.error path as the manifest', async () => {
-    const dir = tempProject({
-      'vite.config.ts': pluginConfig(),
-      'src/lib/cairn.config.ts': ADAPTER_FULL,
-    });
+    const dir = tempProject(ADAPTER_FULL);
     await seedManifest(dir);
     await writeSiteFacts(dir);
     writeFileSync(join(dir, 'src/lib/cairn.config.ts'), ADAPTER_FULL_DRIFTED);

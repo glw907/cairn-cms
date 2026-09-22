@@ -10,7 +10,7 @@
 // Reads the registry the way check-readiness.mjs does: resolve the built dist, never a regex over
 // the .ts source, so the mirror always reflects what the engine actually exports, not a
 // source-text approximation that could drift from a build-time transform.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -50,6 +50,8 @@ export function serializeConditions(conditions) {
 async function loadConditions() {
   const distPath = resolve(ROOT, CONDITIONS_JS);
   if (!existsSync(distPath)) {
+    // main() checks this first and exits 2; this throw is the guard for check-tool-conditions.mjs,
+    // which imports buildMirrors rather than running this script.
     throw new Error(`missing ${CONDITIONS_JS}; run "npm run package" first`);
   }
   const { allConditions } = await import(pathToFileURL(distPath).href);
@@ -67,9 +69,20 @@ export async function buildMirrors() {
 }
 
 async function main() {
+  // A precondition failure, not a bad mirror: exit 2 like check-readiness.mjs, so a caller can tell
+  // "the build has not run" from a real problem with the generated output.
+  if (!existsSync(resolve(ROOT, CONDITIONS_JS))) {
+    console.error(`missing ${CONDITIONS_JS}; run "npm run package" first`);
+    process.exitCode = 2;
+    return;
+  }
   const mirrors = await buildMirrors();
   for (const [path, contents] of Object.entries(mirrors)) {
-    writeFileSync(resolve(ROOT, path), contents);
+    const absPath = resolve(ROOT, path);
+    // The mirror directories are committed, so this only matters on a fresh or pruned checkout,
+    // where a plain write would fail on the missing parent instead of creating it.
+    mkdirSync(dirname(absPath), { recursive: true });
+    writeFileSync(absPath, contents);
     console.log(`emit-tool-conditions: wrote ${path}`);
   }
 }

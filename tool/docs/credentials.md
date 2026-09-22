@@ -147,11 +147,14 @@ since a 403 there reports UNKNOWN rather than a scope error.
 ### GitHub
 
 `CAIRN_GH_READ_TOKEN` is a fine-grained personal access token with Contents
-and Metadata read on the repository of every site in the operator's
-registry, plus `glw907/cairn-cms` for the Engine check's own changelog read,
-at the shortest expiry the operator can live with. A narrower scope is a
-silent failure: a check that cannot read a repository returns UNKNOWN on
-403 forever, never CRITICAL, so nothing calls the gap out.
+and Metadata read, at the shortest expiry the operator can live with. Mint
+it over all repositories the account owns rather than a hand-picked list,
+so adopting a second site needs no new token: the tool reads only the
+repositories its own registry names. It also reads `glw907/cairn-cms` for
+the Engine check's changelog, which a token confined to your own
+repositories still reaches, since that repository is public. A narrower
+scope is a silent failure: a check that cannot read a repository returns
+UNKNOWN on 403 forever, never CRITICAL, so nothing calls the gap out.
 
 **A probe over a public repository cannot confirm Contents.** GitHub serves
 a public repository's contents with no token at all, so a pass from

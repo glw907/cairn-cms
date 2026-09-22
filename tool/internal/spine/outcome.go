@@ -92,7 +92,7 @@ func (r ReasonCode) NotAttempted() bool {
 	return slices.Contains(notAttemptedReasons, r)
 }
 
-// ReasonCodes is the closed reason vocabulary a run can emit: the eight fixed constants, then
+// ReasonCodes is the closed reason vocabulary a run can emit: the nine fixed constants, then
 // the reason.park.<code> family over every ParkCode, then the reason.api.<reason> family over
 // every providers.Reason. It is built from those three sets rather than written out, so a code
 // added to any of them joins the published vocabulary without a second list to keep in step.

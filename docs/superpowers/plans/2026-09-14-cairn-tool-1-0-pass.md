@@ -4633,7 +4633,77 @@ task**; it heads 1.1
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C <absolute worktree path>/tool check'`.
   Commit.
 
-### Task 22b: The `tool/v1.0.0` tag. **OWNER-GATED.**
+### Task 22b: The `tool/v1.0.0` tag. **OWNER-GATED.** Also the RUNBOOK for `tool/v1.1.0`.
+
+**RUNBOOK (recorded at B2's close, 2026-09-21).** Geoff ruled that the doctor-retirement track
+conducts the `tool/v1.1.0` tag after draft-docs pass A, following this task and Task 23 as its
+runbook. What B2 actually ran, in order, with the acceptance criteria above as the contract each
+step satisfies:
+
+1. Confirm the number is free, and never promise one before this returns nothing:
+
+   ```sh
+   git ls-remote --tags origin 'tool/v*'
+   ```
+
+2. Confirm the `tool` workflow is green on the exact commit about to be tagged, not on the
+   branch:
+
+   ```sh
+   gh run list --commit <sha> --workflow tool.yml
+   ```
+
+   An absent run counts as red. B2 tagged `3110e875` with all eleven checks green.
+
+3. Cut the annotated tag on that commit and push the tag alone:
+
+   ```sh
+   git tag -a tool/v1.0.0 <sha> -m 'cairn 1.0.0'
+   git push origin tool/v1.0.0
+   ```
+
+   `tool/v1.0.0` is tag object `25f1e446` on commit `3110e875`, pushed at 19:20 AKDT on
+   2026-09-21. `tool/v1.0.1` is tag object `5d36e148` on commit `9b479e8d`.
+
+4. Watch the tag's own workflow run and read the release page's assets, since the tag run is what
+   builds them:
+
+   ```sh
+   gh run watch <run-id>
+   gh release view tool/v1.0.1 --json assets
+   ```
+
+   `v1.0.1`'s run (`35687026101`) produced six archives named
+   `cairn_1.0.1_<os>_<arch>.{tar.gz,zip}`, each carrying the man page beside the binary, plus
+   `SHA256SUMS`, attested and verified inside the job.
+
+5. Prove the published module installs from a clean environment, against the tag and not the
+   working tree:
+
+   ```sh
+   make -C tool install-check VERSION=v1.0.1
+   ```
+
+   Both containers passed for `v1.0.1`; the minimum one (`golang:1.26`, `GOTOOLCHAIN=local`)
+   printed `v1.0.1 (none), go1.26.8, linux/amd64`, which is the proof of the `go 1.26` floor.
+   `(none)` for the commit is by design: `go install module@version` records no `vcs.revision`.
+
+6. Verify the attestation against a real downloaded artifact:
+
+   ```sh
+   gh attestation verify <archive> --repo glw907/cairn-cms
+   ```
+
+**What went wrong, and the rule it produced.** `tool/v1.0.0` was tagged while Task 23 was still
+unimplemented, so the tag fired Pass A's stub release job and produced six bare binaries with no
+archives, no man pages, no attestation, and a `go` directive frozen at `1.27.1` rather than the
+measured `1.26` floor. The cause was a mode error, not a gate gap: Task 23 carries a Files list
+that modifies the release job, `go.mod`, the README, and the changelog, and it was dispatched
+after the tag as a verification. The rule: **a tag's release page must exist before the tag.**
+Dry-run the release job on the branch first (`gh workflow run tool.yml` with the release inputs,
+or a throwaway tag on the branch), read its artifacts, and only then cut the real tag. The
+correction cost a second tag: `1.0.0` stays installable and is not retracted, because it is
+incomplete rather than broken, and `tool/v1.0.1` carries the full release page.
 
 **Geoff gave the go on 2026-09-21 at about 11:50 AKDT for Tasks 22b, 23, 24b, and 25, and ruled
 that release candidate verification is the conductor's work. The conductor's own conditions before
@@ -4681,7 +4751,26 @@ commit.
    reinstalled, and a `tool/v1.0.1` tag is cut only if the change is behavioral.
 - Gate: the tag's own CI run green on all three legs.
 
-### Task 23: Release artifacts, attestation, the man page, and `go install` from a clean machine. **OWNER-GATED.**
+### Task 23: Release artifacts, attestation, the man page, and `go install` from a clean machine. **OWNER-GATED.** Also the RUNBOOK for `tool/v1.1.0`.
+
+**RUNBOOK (recorded at B2's close, 2026-09-21).** This task is implementation, not verification:
+its Files list modifies `.github/workflows/tool.yml`, `tool/go.mod`, `tool/README.md`, and
+`tool/CHANGELOG.md`, and adds a test. The `v1.1.0` tag inherits the release job this task built,
+so its own work is to re-verify rather than rebuild. What B2 ran:
+
+- The release job was dry-run on the branch before any tag: run `35685333184` proved six archives
+  with man pages, `SHA256SUMS`, attestation `49117551` in Rekor, and an in-job verify step.
+- The permissions half was falsified once: run `35684535269` failed naming the missing
+  permission with `id-token: write` removed, and run `35684542787` passed with it restored.
+- The `go` directive was re-measured rather than copied, and set to the maximum of the dependency
+  floors: `go 1.26.0`. `go mod tidy`'s canonical form writes the patch component, so
+  `go 1.26.0` is the form that survives the tidy gate, not `go 1.26`.
+- `make -C tool install-check VERSION=<tag>` ran against the published tag, with both containers
+  passing. Against `v1.0.0` the minimum container failed on the `1.27.1` directive, which is the
+  measurement that justified `v1.0.1`.
+
+Reviewer nits recorded and not taken before the tag, carried to ROADMAP as 1.1 items: the verify
+step prints nothing on success, and `install-check.sh` prints `--version` without asserting it.
 
 **Geoff gave the go on 2026-09-21 at about 11:50 AKDT for Tasks 22b, 23, 24b, and 25, and ruled
 that release candidate verification is the conductor's work. The conductor's own conditions before
@@ -5610,3 +5699,90 @@ a conductor runs a factual pre-flight over a segment's tasks before dispatch.
 **The friction log.** This pass touched no published docs arm and is a Go-module pass, so it did
 not run the friction log's whole-log triage; the extend-1 pass closed on 2026-09-20 and ran that
 triage hours earlier.
+
+---
+
+## Pass cairn-tool-B2 post-mortem (2026-09-21)
+
+**What was built.** Twenty-one tasks across six segments, ending with `cairn` 1.0 released and
+the owner's tripwire firing on a timer. The CLI surface (Tasks 18, 19a-i, 19a-ii, 19b, 19c-i,
+19c-ii): the cobra tree and the command grammar, `adopt`, `auth unset`, the registry query and
+the multi-site sweep, acknowledgements, the non-interactive credential path, completions, and
+the three messages tables behind the copy gate. The `render` package (20a, 20b-i, 20b-ii,
+20b-iii): palette, glyphs, width rungs, sanitizer, theme, the single-site body, the plain body,
+the status strip, the log body, the many-sites fix list, and the golden corpus. The machine
+surface (20c, 21): six `--json` schemas with their own `schemaVersion`, the published schema
+files, the WARNING tier, usage errors at exit 3, the error surface, `cairn help agents`, and the
+secret scrub. The cut and what followed (22a, 22a-ii, 21b, 21c, 24a, 22b, 23, 24b): the release
+candidate, the editorial fixes, the fifth wire word `unknown` with `--theme` and the quiet
+sweep, a visible `cairn auth check`, the scheduled run documented for three schedulers, the two
+tags, the full release page, and the owner's own systemd timer.
+
+**What was verified, with evidence.** Every task cleared
+`CAIRN_GATE_LANE=light cairn-run-gate 'make -C <abs>/tool check'` and an independent
+`diff-reviewer` read. CI ran green on all eleven checks at `3110e875` and again at `9b479e8d`.
+`tool/v1.0.0` is tag object `25f1e446` on commit `3110e875`, pushed 19:20 AKDT; `tool/v1.0.1` is
+tag object `5d36e148` on commit `9b479e8d`, whose release carries six
+`cairn_1.0.1_<os>_<arch>` archives with man pages, `SHA256SUMS`, and an attestation verified
+inside the job. `make -C tool install-check VERSION=v1.0.1` passed both containers, the minimum
+one printing `v1.0.1 (none), go1.26.8, linux/amd64`. The release job was dry-run
+(`35685333184`) and its permissions falsified once (`35684535269` red, `35684542787` green)
+before either tag.
+
+**The three live runs and the grader.** The pass's real verification was three release-candidate
+runs against Geoff's own production sites, not the fixture corpus. Evidence:
+`~/.cache/cairn-tool-b2/rc-verify/` (run 1), `rc-verify-2/`, `rc-verify-3/`, and
+`rc-verify-4/frames` (the re-graded render frames). Run 1 found two criticals no fake-backed test
+could see: `getPaginated` stopped at page 1 because the live `workers/domains` endpoint returns
+`total_count` with no `total_pages`, so `adopt` discovered one of seven custom domains; and the
+Workers Observability query was malformed (no per-filter `type`, no `group`/`filterCombination`
+wrapper), which the API answered 400 and the tool misreported as "observability is off". Run 2
+found that a healthy adopted site could never read OK: three checks reported could-not-run on
+every site, because adopt never recorded nameservers, `HaveBuilds` was never set, and
+"nothing waiting to publish" was read as unknown; it also found `adopt list --json` defaulting
+true and `--quiet` silent only on the fleet TTY path. Run 3 was clean, with the held path reading
+WARNING at exit 1. A fresh-context `visual-verifier` then graded every frame and returned four
+render defects: a blank event column on foreign Worker log lines, a condition id cut mid-word at
+width 40, an inverted verdict and counts in the width-60 footer, and an over-width stderr notice
+on `adopt list`. All four were fixed and the four frames re-graded PASS. The errors check was
+also corrected by ruling: count only cairn's own structured error records, never every error
+line.
+
+**Decisions locked.** The day's owner rulings are recorded at
+[`docs/internal/record/2026-09-21-go-tool-b2-owner-rulings.md`](../../internal/record/2026-09-21-go-tool-b2-owner-rulings.md):
+the twelve-item owner list, Custom Domains only, the errors check's counting rule, the copy
+calls, the tool's single-source docs home, the go on the tag and the merge, provisioning as
+2.0's goal, and the second site as the credential design test. What follows 1.0 is
+[`docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`](../specs/2026-09-21-cairn-tool-after-1-0-framing.md).
+
+**Both budgets.** Tokens: the ceiling opened at 14M and was raised by Geoff six times, to 18, 20,
+23, 25, 27, and 28.5M; spend at the close was about 27.3M. Attended time: planning misses four
+(no live OK-path criterion, Task 23's mode misread as verification, no recorded-live-response
+rule for provider routes, the tool's docs home unruled at plan time, and Files lists that omitted
+the release job's neighbours); execution sittings about ten (six ceiling raises, the owner list
+and the copy read, the routes ruling, the errors-check ruling, the Task 23 ruling, and the close
+budget).
+
+**Lessons a later pass would be wrong to rediscover.**
+
+- An owner-gated task with a Files list is work, not a check. Read the Files list before deciding
+  a task's mode; reading Task 23 as a verification is what cost a second tag.
+- A pass that talks to a provider needs a recorded live response per route, in the gate. Every
+  provider test ran on fakes ported from the Node side, so two contract bugs survived seventeen
+  tasks and every review.
+- The plan needed a live OK-path criterion from the start. A fake corpus proves the renderer,
+  never the checks' judgement of a real site: every fixture was built from reports the code could
+  produce, so no fixture could show that a healthy site reads UNKNOWN forever.
+- Open the draft PR at the pass's first segment. The `tool` workflow runs on pushes to `main` and
+  on pull requests only, so the Windows and macOS legs never ran until the PR opened at the end,
+  and the Windows leg was red with ten failing tests.
+- Capture terminal frames headlessly by default. No screenshot path works on this desktop, and
+  one kitty window per capture is not acceptable; the offscreen ANSI-to-HTML-to-Chromium harness
+  is what produced every graded frame.
+- Cloudflare facts learned live: `workers/domains` returns `total_count` and `per_page` with no
+  `total_pages`, so a pager keyed on `total_pages` stops at page 1; a Worker with observability
+  off answers 200 with zero events rather than an error; and cairn's own error records are the
+  ones whose `source` carries the log envelope's `event` field.
+
+**The friction log.** Triaged whole at this close, with the pass's own docs findings appended
+first.

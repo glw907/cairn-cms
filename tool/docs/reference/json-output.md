@@ -235,9 +235,10 @@ Nine fixed codes:
 `reason.timeout`, `reason.offline`, `reason.not-run`, `reason.not-observable`,
 `reason.repo-not-recorded`.
 
-Three of them are `skip` rather than `unknown`: `reason.cred-missing`,
-`reason.repo-not-recorded`, and `reason.api.builds-not-connected`. Each names a way the site is
-set up rather than a measurement that failed.
+Three codes in the whole vocabulary mean `skip` rather than `unknown`, two of them fixed and one
+from the API family below: `reason.cred-missing`, `reason.repo-not-recorded`, and
+`reason.api.builds-not-connected`. Each names a way the site is set up rather than a measurement
+that failed.
 
 Thirteen park codes, each `reason.park.<code>`:
 

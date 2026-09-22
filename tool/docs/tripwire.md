@@ -102,6 +102,32 @@ systemctl --user daemon-reload
 systemctl --user enable --now cairn-health.timer
 ```
 
+### If you already keep the credentials somewhere else
+
+`EnvironmentFile` wants a file of bare `KEY=value` lines and nothing else. An operator who
+already keeps these values in a shell-sourced secrets file usually cannot point
+`EnvironmentFile` at it, because that file holds `export` lines, comments, or variables for
+other tools. Use a wrapper instead, the same shape the launchd example below uses, and drop
+`EnvironmentFile` from the unit:
+
+```sh
+#!/bin/sh
+# Sourced, not read as an EnvironmentFile, because the store is a shell file. The guard turns a
+# missing credential into a refusal here rather than a run of UNKNOWN checks that reads like a
+# broken site.
+set -eu
+. "$HOME/.local/secrets"
+for v in CAIRN_CF_ACCOUNT_ID CAIRN_CF_READ_TOKEN CAIRN_GH_READ_TOKEN; do
+  eval "value=\${$v:-}"
+  [ -n "$value" ] || { echo "$v is empty or unset" >&2; exit 3; }
+done
+exec cairn health --quiet
+```
+
+Point `ExecStart` at the wrapper. The store keeps its own permissions, so there is no second
+copy of the credentials to protect. The keyring route works here too: `cairn auth set` writes
+the three values once and the unit then needs neither `EnvironmentFile` nor a wrapper.
+
 ## launchd (macOS)
 
 A `LaunchAgent` plist plus a small wrapper script. launchd has no `OnFailure` hook of its own, so

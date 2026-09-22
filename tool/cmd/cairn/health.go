@@ -41,17 +41,12 @@ func newHealthCmd(d deps, rf *rootFlags) *cobra.Command {
 	var f healthFlags
 
 	cmd := &cobra.Command{
-		Use:     "health [<site>]",
-		Short:   shortHealth,
-		Long:    longHealth,
-		Example: exampleHealth,
-		GroupID: groupSite,
-		Args: func(_ *cobra.Command, args []string) error {
-			if len(args) > 1 {
-				return healthTooManyArgsError()
-			}
-			return nil
-		},
+		Use:               "health [<site>]",
+		Short:             shortHealth,
+		Long:              longHealth,
+		Example:           exampleHealth,
+		GroupID:           groupSite,
+		Args:              maxOneArg(healthTooManyArgsError),
 		ValidArgsFunction: completeSiteIDs(d),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runHealth(cmd, d, rf, f, args)

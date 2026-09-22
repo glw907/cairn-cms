@@ -1,0 +1,16 @@
+{
+  "name": "parses the r2_buckets binding names from jsonc",
+  "sourceTest": "src/tests/unit/doctor-checks-local.test.ts:151-160",
+  "files": {
+    "wrangler.jsonc": "{\n      \"r2_buckets\": [\n        { \"binding\": \"MEDIA_BUCKET\", \"bucket_name\": \"m\" },\n        { \"binding\": \"OTHER\", \"bucket_name\": \"o\" },\n      ],\n    }"
+  },
+  "found": true,
+  "facts": {
+    "hasEmailBinding": false,
+    "hasAuthDb": false,
+    "observabilityEnabled": false,
+    "hasPublicOrigin": false,
+    "publicOrigin": "",
+    "r2Buckets": ["MEDIA_BUCKET", "OTHER"]
+  }
+}

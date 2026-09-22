@@ -6,7 +6,18 @@ Accepted, 2026-09-21 (Task 20a); amended the same day at the segment 3 review,
 which took the fourth dependency and built the second width table; amended
 again by Task 22a (segment 4 conductor ruling, 2026-09-21) to record the man
 generator's own indirect requires below, in this file rather than a third ADR,
-per that ruling.
+per that ruling; amended a third time on 2026-09-22 to record `go.yaml.in/yaml/v3`'s
+own promotion to direct, below.
+
+## Addendum: YAML promoted to a direct require
+
+`internal/doctor/siteconfig.go` parses `site.config.yaml` for `config.site-config`, and needs a
+YAML decoder. `go.yaml.in/yaml/v3` was already an indirect require at `v3.0.4`, pulled in by
+`github.com/spf13/cobra/doc` per the addendum below, so promoting it to direct adds no module to
+the build graph: the same shape `displaywidth`'s own promotion took at the segment 3 review. It
+belongs to the module rather than to `internal/render`, since `render` never imports it; this is
+why `internal/render/purity_test.go`'s `otherDirectRequires` carries it, and not
+`renderDirectRequires`.
 
 ## Addendum: the man generator's indirect requires (Task 22a)
 

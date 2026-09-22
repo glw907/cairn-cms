@@ -1,0 +1,16 @@
+{
+  "name": "misses an AUTH_DB declared under a differently named binding",
+  "sourceTest": "src/tests/unit/doctor-checks-local.test.ts:144-149",
+  "files": {
+    "wrangler.toml": "[[d1_databases]]\nbinding = \"OTHER_DB\"\ndatabase_id = \"x\"\n"
+  },
+  "found": true,
+  "facts": {
+    "hasEmailBinding": false,
+    "hasAuthDb": false,
+    "observabilityEnabled": false,
+    "hasPublicOrigin": false,
+    "publicOrigin": "",
+    "r2Buckets": []
+  }
+}

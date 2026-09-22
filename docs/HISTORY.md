@@ -7,6 +7,81 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## retire-1, `cairn doctor`, eleven tasks, 2026-09-22
+
+Branch `doctor-go`, merged without a tool tag. Plan and post-mortem:
+`docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`. Spec:
+`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, the "retire-1" section.
+
+**What landed.** The Go half of the doctor retirement: `cairn doctor [<dir>]`, eleven checks over a
+directory, in a new `tool/internal/doctor` package with its own check contract. Task 1 built that
+contract, the one-per-run snapshot, and the containment, ported whole from `media-seed/bin.ts`'s
+symlink-resolving form (`56803baa`, `c29cd716`, `5f9713fe`). Task 2 embedded the conditions mirror
+in `spine`, added its text accessor, and replaced the regex drift test with a constant-against-embed
+comparison (`8b0f2958`). Task 3 added the JSONC and TOML-ish wrangler readers and lifted the
+regex corpus under `tool/testdata` (`0c2e856a`, `5a762721`, `5f3ee04f`). Task 4 promoted YAML to a
+direct require, amending ADR 0002 and `purity_test.go` (`fa1cce36`). Tasks 5, 6, and 7 built the
+eleven checks: the five config checks including the hand-rolled dependency floors (`ca0635c8`,
+`fd5f8f8d`, `19e16d9f`), the three heuristic checks keyed on `CairnAdminShell`, `.shellLoad`,
+`createAuthGuard`, and `checkOrigin: false` (`64a43097`, `5d69c6f8`), and the three facts-dependent
+checks reading `.cairn/site-facts.json` (`ac31f343`, `2da7cf6e`, `fec5a96a`, `1e5e0146`,
+`79dc4dfd`). Task 8 added the command, the plain text report with its goldens, and the help
+(`ba351499`, `481ade6d`, `8c0872ef`). Task 9 added the JSON payload, the seventh schema
+(`cairn-doctor.schema.json`), and the frozen-surface amendments to `json-output.md` (`884efadb`,
+`d426017a`). Task 10 is the agreement study, committed as `tool/testdata/doctor-agreement.md`
+(`818ea8a4`). The `code-simplifier` round landed `aaa405d8` through `2fe66d1e`, its review fix
+`fcbf415e`. Five ledger entries went into `docs/internal/engine-rulings.md`; the retirement itself,
+the dropped and deferred checks, and `site-facts.json` as engine surface stay with retire-2b.
+
+**What the gates caught.** Every task ran implementer, then `diff-reviewer`, then the light-lane Go
+gate. Tasks 1, 3, 5, and 6 each cleared one fix round. Task 5's second verdict was a procedural
+`escalate` on the relative-versus-absolute gate string, which the reviewer itself ran green against
+the same target, accepted by the conductor. Four `go-architecture-reader` reads at the merge graded
+`doctor`, `render`, and `cmd/cairn` sound with nits and `spine` workmanlike, none escalated. The
+`code-simplifier` round's own review returned a `fix`: stale `SiteConfig` names in comments, an
+undocumented `env` struct, and a catalogue test that missed a concatenated const, all cleared and
+proven red-then-green. The agreement record's reviewer caught the document contradicting itself,
+saying the linked production site "had `cairn-manifest` run in it" where the deviation section says
+the run failed there and the measurement ran on a copy; the rows and the prose now say copy.
+
+**What a later pass would be wrong to rediscover.**
+
+- **The plan's pre-flight found six spec claims wrong, and the plan was written against the truth.**
+  The one with teeth: **a usage error in the Go tool exits 3, not 1**, and the collision is with
+  UNKNOWN, never WARNING. `cmd/cairn/main.go`'s `exitVerdict` returns `VerdictUnknown` for every
+  error that is not a coded error, `usage_test.go` pins it, and both `exit-codes.md` and
+  `json-output.md` froze it at 1.0, so taking the spec's 1 would have been a major-version event.
+  The other five: neither `spine.StateWord` nor `spine.CheckVerdict` can express the doctor's
+  `skip` or `info`; the spec's containment citation names the call site, not the two helpers that
+  do the work; its `substitute.mjs` and `check-floors.ts` line ranges both open inside a comment
+  and stop short; and the floors port needs `judgePeers`, the three lockfile resolvers, and the
+  optional-peer filter, not only the three version functions. The optional-peer filter is the one
+  behaviour a naive port loses silently.
+- **A production site pinned to a released engine cannot be linked and measured while `main`'s
+  unreleased window renames exports.** Task 10's `npx cairn-manifest` failed in xcathletes-org with
+  `extractMenu is not a function`, because `main` renames `extractMenu`, `buildMediaResolver`,
+  `fieldset`, and `githubApp`, and every production site calls the old names. The study measured on
+  a scratch copy with those four call sites edited and restored the real tree. Any future
+  link-and-measure task needs a pre-flight against the site's pinned version, or it has to
+  release first.
+- **The `info` and `skip` wire mapping.** The doctor's five status words do not fit the five frozen
+  wire states. `info` is written `state: pass` with its text in a doctor-only `note` key; `skip` is
+  written `state: skip` with `reason.not-run`, which for `cairn doctor` means the check's
+  precondition did not apply. No state word and no reason code was added. The ledger entry
+  `doctor-go-wire-mapping-info-skip` carries the reopen triggers.
+- **Two `code-simplifier` findings were deliberately skipped.** Building the checks' `conditions`
+  list from the embedded map would collapse the const-versus-mirror drift gate, which is the whole
+  point of Task 2. Printing `snap.Dir` in plain text would break the `tool.yml` matrix on macOS,
+  whose temp paths resolve under `/private`.
+- **`cairn doctor` queries no terminal at all**, so `--color`, `--theme`, and `--width` are inert
+  on it, stated in the command's `Long` text. That is the narrowed form of the spec's "single TTY
+  predicate", and it keeps the command out of `internal/render`'s golden matrix.
+
+**Both budgets.** Ceiling 2.4M subagent tokens; spend about 4.7M at the close, the overrun raised at
+the segment 2 boundary and taken to the end under Geoff's overnight grant to the release. Attended
+time: one planning miss (Task 10 assumed `link:consumer` plus `cairn-manifest` works on a pinned
+production site), zero execution sittings.
+
 ## The doctor-retirement pre-task, four tasks, 2026-09-21
 
 Branch `doctor-pretask`. Plan and post-mortem:
@@ -67,6 +142,9 @@ failure gets the grace-window tests' mock-timer deflake. And the monthly Claude 
 guidance-schema check (`trig_01UyjoYo9hbGqm7qTeb7HGVH`), emailing only on a mismatch, whose fix
 moves the bake's line, `cairn-guidance check`'s line, the agent frontmatter, and
 `docs/reference/guidance.md` together with a `Consumers must:` line.
+
+**CI on the merge SHA.** The pre-task merged as `d041d1bf`, and all seven workflows ran green
+there, `tool-conditions` included; this addendum replaces the placeholder that close left.
 
 **Both budgets.** Ceiling 700K subagent tokens; spend about 1.15M at the close, an overrun raised
 at the Task 3 checkpoint and taken to the end on Geoff's call. Attended time: one planning miss

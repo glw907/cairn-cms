@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **`cairn doctor`** runs the engine's own directory preflight against a site's checked-in
+  configuration: eleven checks over the wrangler config, the lockfile, the hooks file, the
+  `/admin` routes, and the site config, with no credential, no adopted site, and one request.
+  `cairn doctor --json` writes the seventh published payload,
+  `docs/reference/cairn-doctor.schema.json`, at `schemaVersion` 1. The command's page is
+  `docs/reference/cli-cairn-doctor.md`.
+
+### Changed
+
+- **A published check-id list is no longer frozen against additions.** `docs/reference/json-output.md`
+  froze every check id outright at 1.0. Adding an id to a published list is now a minor-version
+  event, and only renaming or removing one is major.
+
+  `Consumers must:` treat the check-id lists on that page as open to growth. A reader that
+  rejects an id it does not know, rather than ignoring it, needs changing before the next minor.
+  The doctor payload also writes `reason.not-run` for a check whose precondition did not apply,
+  which widens what that code means without adding a code to the vocabulary.
+
 ## 1.0.1
 
 The release page, corrected. Nothing the tool does changed: a 1.0.0 binary and a 1.0.1 binary run

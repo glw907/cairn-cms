@@ -1,0 +1,17 @@
+{
+  "name": "prefers jsonc when both files exist",
+  "sourceTest": "src/tests/unit/doctor-checks-local.test.ts:137-142 (jsonc preference); src/tests/unit/doctor-checks-local.test.ts:93-105 (the lifted facts for this same GOOD_JSONC input)",
+  "files": {
+    "wrangler.jsonc": "{\n  // the worker name\n  \"name\": \"site\",\n  \"account_id\": \"cf-acct-1\",\n  /* bindings the engine needs */\n  \"send_email\": [\n    { \"name\": \"EMAIL\" },\n  ],\n  \"d1_databases\": [\n    { \"binding\": \"AUTH_DB\", \"database_name\": \"auth\", \"database_id\": \"abc-123\" },\n  ],\n  \"r2_buckets\": [\n    { \"binding\": \"MEDIA_BUCKET\", \"bucket_name\": \"site-media\" },\n  ],\n  \"observability\": { \"enabled\": true },\n  \"vars\": { \"PUBLIC_ORIGIN\": \"https://example.com\" },\n}",
+    "wrangler.toml": "name = \"other\""
+  },
+  "found": true,
+  "facts": {
+    "hasEmailBinding": true,
+    "hasAuthDb": true,
+    "observabilityEnabled": true,
+    "hasPublicOrigin": true,
+    "publicOrigin": "https://example.com",
+    "r2Buckets": ["MEDIA_BUCKET"]
+  }
+}

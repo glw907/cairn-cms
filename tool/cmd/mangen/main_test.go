@@ -18,6 +18,7 @@ var wantPages = []string{
 	"cairn-sites.1",
 	"cairn-sites-list.1",
 	"cairn-health.1",
+	"cairn-doctor.1",
 	"cairn-logs.1",
 	"cairn-adopt.1",
 	"cairn-adopt-list.1",

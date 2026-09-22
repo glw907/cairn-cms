@@ -1,0 +1,16 @@
+{
+  "name": "leaves r2Buckets an empty array when the jsonc config declares no r2_buckets",
+  "sourceTest": "src/tests/unit/doctor-checks-local.test.ts:168-173",
+  "files": {
+    "wrangler.jsonc": "{ \"name\": \"site\" }"
+  },
+  "found": true,
+  "facts": {
+    "hasEmailBinding": false,
+    "hasAuthDb": false,
+    "observabilityEnabled": false,
+    "hasPublicOrigin": false,
+    "publicOrigin": "",
+    "r2Buckets": []
+  }
+}

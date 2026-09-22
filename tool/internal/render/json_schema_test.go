@@ -3,6 +3,7 @@ package render
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -124,6 +125,31 @@ func jsonGoldens(t *testing.T) []jsonGoldenCase {
 	return out
 }
 
+// doctorGoldenFile is cairn doctor's committed payload, the one golden this package validates
+// without producing: its marshaller lives in internal/doctor, whose posture check dials over
+// HTTP, and this package's contract is purity with its direct requires pinned by name, so it
+// never imports that package outside a test. internal/doctor's own TestGoldenDoctorPayload cuts
+// the file from the real checks; the cases here hold it to the published schema and to
+// json-output.md.
+const doctorGoldenFile = "doctor.json"
+
+// doctorGolden reads that payload as bytes.
+func doctorGolden(t *testing.T) jsonGoldenCase {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(jsonGoldenDir, doctorGoldenFile))
+	if err != nil {
+		t.Fatalf("%v; run `go test ./internal/doctor -run TestGolden -update` to cut it", err)
+	}
+	return jsonGoldenCase{name: "doctor", schema: "cairn-doctor.schema.json", data: data}
+}
+
+// publishedGoldens is every committed payload this package validates: the six it produces and
+// the doctor payload it only reads.
+func publishedGoldens(t *testing.T) []jsonGoldenCase {
+	t.Helper()
+	return append(jsonGoldens(t), doctorGolden(t))
+}
+
 // reportVerdict folds one fixture report into the verdict its own checks produce, through
 // health.Verdicts and spine.ExitCode, the same pair the command layer runs. Any other
 // conversion here would publish a payload whose verdict disagrees with the exit code a routine
@@ -163,7 +189,9 @@ func TestGoldenJSONPayloads(t *testing.T) {
 		}
 	}
 
-	committed := make(map[string]bool)
+	// doctor.json has no case here and is not an orphan: internal/doctor cuts it, for the
+	// reason doctorGolden states.
+	committed := map[string]bool{doctorGoldenFile: true}
 	for _, c := range cases {
 		path := filepath.Join(jsonGoldenDir, c.name+".json")
 		committed[c.name+".json"] = true
@@ -194,7 +222,7 @@ func TestGoldenJSONPayloads(t *testing.T) {
 // required key present, every value's JSON type matching the schema, every enum and const
 // honoured, and no key the schema does not declare.
 func TestEveryGoldenValidatesAgainstItsSchema(t *testing.T) {
-	for _, c := range jsonGoldens(t) {
+	for _, c := range publishedGoldens(t) {
 		t.Run(c.name, func(t *testing.T) {
 			for i, line := range slices.All(strings.Split(strings.TrimRight(string(c.data), "\n"), "\n")) {
 				var value any
@@ -395,7 +423,9 @@ func TestAuthCheckPayloadValidatesAgainstSchema(t *testing.T) {
 // A schema version counts a change a consumer has to re-read a schema for. No consumer exists
 // before tool/v1.0.0 is pushed, so the whole pre-tag window is one schema and the first
 // published version of each payload is 1: an increment inside the window would publish a
-// revision nobody could have read the previous form of.
+// revision nobody could have read the previous form of. The same reasoning covers a payload
+// published after the tag, cairn doctor's own: no consumer read an earlier form of that payload
+// either, so its first published version is 1 too.
 func TestEverySchemaVersionIsOneBeforeTheTag(t *testing.T) {
 	for _, tt := range []struct {
 		schema   string
@@ -407,6 +437,7 @@ func TestEverySchemaVersionIsOneBeforeTheTag(t *testing.T) {
 		{"cairn-logs.schema.json", LogsSchemaVersion},
 		{"cairn-adopt-list.schema.json", AdoptListSchemaVersion},
 		{"cairn-auth-check.schema.json", AuthCheckSchemaVersion},
+		{"cairn-doctor.schema.json", DoctorSchemaVersion},
 	} {
 		t.Run(tt.schema, func(t *testing.T) {
 			if tt.constant != 1 {
@@ -472,7 +503,7 @@ var dynamicKeyParents = []string{"fields", "observed"}
 func TestDocNamesEveryFieldTheGoldensCarry(t *testing.T) {
 	doc := readDoc(t)
 	seen := make(map[string]bool)
-	for _, c := range jsonGoldens(t) {
+	for _, c := range publishedGoldens(t) {
 		for line := range strings.SplitSeq(strings.TrimRight(string(c.data), "\n"), "\n") {
 			var value any
 			if err := json.Unmarshal([]byte(line), &value); err != nil {
@@ -511,6 +542,11 @@ func collectKeys(node any, parent string, seen map[string]bool) {
 // TestDocCarriesBothFreezeLists asserts the page states what a major version is needed to change
 // and what stays free to move, and that every check id and verdict word in the frozen list
 // matches the code rather than a copy of it that has since drifted.
+//
+// cairn doctor's own eleven ids are held to the same section by internal/doctor's
+// TestBothPublishedPagesNameEveryCheckID. They cannot be checked from here: internal/doctor
+// imports this package for DoctorSchemaVersion, so a test file here importing it back is an
+// import cycle Go rejects even across the test boundary.
 func TestDocCarriesBothFreezeLists(t *testing.T) {
 	doc := readDoc(t)
 
@@ -568,12 +604,33 @@ func readDoc(t *testing.T) string {
 }
 
 // TestSkipAndUnknownRequireAReason covers the conditional the health schema gained on
-// 2026-09-21: json-output.md promises every skip and every unknown carries a reason, and
-// "required" alone cannot say so, because it applies to every state. Both halves are asserted,
-// since a validator that ignored the conditional would pass the whole golden corpus silently.
+// 2026-09-21 and the doctor schema was written with: json-output.md promises every skip and
+// every unknown carries a reason, and "required" alone cannot say so, because it applies to
+// every state. Both halves are asserted against both schemas, since a validator that ignored
+// the conditional would pass the whole golden corpus silently.
+//
+// The doctor payload rides this test rather than a sibling of its own: the rule is one promise
+// the page makes about every published check, so a second copy would be the place the two
+// schemas drift apart.
 func TestSkipAndUnknownRequireAReason(t *testing.T) {
-	schema := loadSchema(t, "cairn-health.schema.json")
-	check := resolveRef(schema, "#/$defs/check")
+	schemas := []struct {
+		name string
+		// base is the smallest check object that schema declares valid, which differs by
+		// payload: a health check names a tier and its own instant, and a directory preflight
+		// has neither.
+		base map[string]any
+	}{
+		{"cairn-health.schema.json", map[string]any{
+			"checkId":   "errors",
+			"state":     "pass",
+			"tier":      "cloudflare",
+			"checkedAt": "2026-09-20T12:00:00Z",
+		}},
+		{"cairn-doctor.schema.json", map[string]any{
+			"checkId": "config.bindings",
+			"state":   "pass",
+		}},
+	}
 
 	tests := []struct {
 		name  string
@@ -589,20 +646,22 @@ func TestSkipAndUnknownRequireAReason(t *testing.T) {
 		{"a fail with no reason", "fail", false, false},
 		{"a held check with no reason", "held", false, false},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			value := map[string]any{
-				"checkId":   "errors",
-				"state":     tt.state,
-				"tier":      "cloudflare",
-				"checkedAt": "2026-09-20T12:00:00Z",
-			}
-			if tt.with {
-				value["reason"] = "reason.cred-missing"
-			}
-			problems := validate(value, check, schema, "$")
-			if got := len(problems) > 0; got != tt.want {
-				t.Errorf("problems = %v, want a complaint: %v", problems, tt.want)
+	for _, s := range schemas {
+		t.Run(s.name, func(t *testing.T) {
+			schema := loadSchema(t, s.name)
+			check := resolveRef(schema, "#/$defs/check")
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					value := maps.Clone(s.base)
+					value["state"] = tt.state
+					if tt.with {
+						value["reason"] = "reason.cred-missing"
+					}
+					problems := validate(value, check, schema, "$")
+					if got := len(problems) > 0; got != tt.want {
+						t.Errorf("problems = %v, want a complaint: %v", problems, tt.want)
+					}
+				})
 			}
 		})
 	}

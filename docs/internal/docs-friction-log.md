@@ -46,11 +46,17 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-This section holds one open finding, the Names one below (filed 2026-09-21, after the pre-task's
-triage). The doctor-retirement pre-task's close (2026-09-21) triaged the whole log
-again and found no finding left open by an earlier pass: every entry below was re-read against the
-code and each was already cleared by the pass named beside it. The pre-task's own three
-`contributor` findings were surfaced and routed in the same step, all to `ROADMAP.md`'s Next tier,
+This section holds no open finding. retire-1's close (2026-09-22) triaged the whole log and
+routed the one entry it carried, the Names one (filed 2026-09-21), to `ROADMAP.md`'s Next tier
+with its trigger, since the draft-docs pass that writes those strings is the one that pays for it.
+retire-1's own `contributor` finding was filed in the same step, also to Next: `link:consumer`
+cannot measure a production site against unreleased engine work, because every site is pinned to a
+released version and calls the released export names. See Clearings.
+
+The doctor-retirement pre-task's close (2026-09-21) triaged the whole log again and found no
+finding left open by an earlier pass: every entry below was re-read against the code and each was
+already cleared by the pass named beside it. The pre-task's own three `contributor` findings were
+surfaced and routed in the same step, all to `ROADMAP.md`'s Next tier,
 since the next pass to change the public surface or read the facts container is the one that pays
 for each: `npm run check:surface -- --update` forwards the flag to `check-surface-leaks.mjs` only,
 so a surface regen takes `node scripts/checks/check-surface.mjs --update` by hand;
@@ -76,16 +82,6 @@ page, and `docs/reference/guidance.md` had no section in `docs/internal/facts/re
 the `cairn-guidance install` symlink-containment bullet sat under `docs/extend/what-the-scaffold-wrote.md`
 instead, fixed by moving the bullet to a new `## docs/reference/guidance.md` section in
 `facts/reference.md`. See Clearings.
-
-(`extender`) The font-carries-the-rule design in the "Names" section (`docs-register.md`) and
-the `Cairn.Names`/`Cairn.NamesRetired` Vale rules only reach prose Vale lints. Mermaid
-`accDescr:`/`accTitle:` text, image alt text, and nav labels are voiced without code font (for
-example `docs/admin/create-your-site.md:106`, "The tool moves through four stages"), so the
-same naming convention fails there with no linter to catch it: alt text and directive strings
-sit inside a fence or an attribute, and nav labels are plain strings in config, none of them
-prose Vale reads. Proposed home: a small text-scan check in `scripts/checks/` that greps alt
-attributes, `accDescr:`/`accTitle:` directives, and nav-label strings for the retired tokens,
-or folded into the admin rebuild's brief for pass B as a manual sweep item.
 
 The extend-1 pass's whole-log triage (2026-09-20) cleared every open
 finding: the three 2026-09-15 facts-harvest verification-debt entries folded into `ROADMAP.md`'s
@@ -145,6 +141,7 @@ history holds every pruned entry in full.
 | 2026-09-21 | the Go tool Pass B2 close | its own three `admin` findings, all promoted whole to `ROADMAP.md`'s "Three docs items for the draft-docs pass" entry: the tool's public pages moving under `docs/`, the drafts' scaffold-first order against 2.0's provisioning, and the admin track carrying the tool inside "is my site working". The whole-log sweep found no other open finding to resolve |
 | 2026-09-20 | the extend-2 pass's close | its own two findings, discovered and cleared in the same step: the `./admin-sources.css` subpath's missing dedicated reference page promoted whole to `ROADMAP.md`'s Later tier; the misplaced `cairn-guidance install` symlink-containment fact bullet moved from `docs/internal/facts/extend.md` into a new `## docs/reference/guidance.md` section in `facts/reference.md` |
 | 2026-09-21 | the doctor-retirement pre-task's close | its own three `contributor` findings, all promoted whole to `ROADMAP.md`'s Next tier with their triggers: the `check:surface -- --update` argument-forwarding quirk, `check:facts`'s blindness to an off-by-one `Source:` pointer, and the missing `cairn-run-gate` silence watchdog (a dotfiles chore, filed in the roadmap because cairn passes are what hit it). The whole-log sweep found no open finding left by an earlier pass |
+| 2026-09-22 | retire-1's close | the Names finding (mermaid `accDescr:`/`accTitle:` text, image alt text, and nav labels carrying no code font for Vale to read) promoted whole to `ROADMAP.md`'s Next tier with its trigger; retire-1's own `contributor` finding, the pinned-site limit on `link:consumer` plus `cairn-manifest`, filed beside it. The whole-log sweep found no other open finding |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

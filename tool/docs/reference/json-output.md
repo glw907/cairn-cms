@@ -4,7 +4,8 @@
 contract for that output: the payload each command writes, the vocabulary each field can hold,
 what freezes at 1.0, and what stays free to move. The schemas beside this page are normative:
 `cairn-health.schema.json`, `cairn-health-summary.schema.json`, `cairn-sites-list.schema.json`,
-`cairn-logs.schema.json`, `cairn-adopt-list.schema.json`, and `cairn-auth-check.schema.json`.
+`cairn-logs.schema.json`, `cairn-adopt-list.schema.json`, `cairn-auth-check.schema.json`, and
+`cairn-doctor.schema.json`.
 
 Two rules hold for every command:
 
@@ -13,7 +14,7 @@ Two rules hold for every command:
   stdout and exits 3, so an empty stdout means the invocation was wrong, never that the site is
   healthy.
 
-## The six payloads
+## The seven payloads
 
 | Command | Payload | Schema |
 | --- | --- | --- |
@@ -23,14 +24,17 @@ Two rules hold for every command:
 | `cairn logs <site> --json` | One logs object | `cairn-logs.schema.json` |
 | `cairn adopt list` | One candidate-list object | `cairn-adopt-list.schema.json` |
 | `cairn auth check --json` | One permission-report object | `cairn-auth-check.schema.json` |
+| `cairn doctor --json` | One directory-preflight object | `cairn-doctor.schema.json` |
 
 Every payload carries `schemaVersion` and `verdict` at its top level, and declares its own shape
-in `kind`. The six schema versions are independent integers, one per payload type, so a field
+in `kind`. The seven schema versions are independent integers, one per payload type, so a field
 added to the logs payload never makes a health consumer re-read a schema.
 
-Every one of the six is `1`, and stays `1` until `tool/v1.0.0` is tagged. A schema version counts
-a change a consumer has to re-read its schema for, and no consumer exists before the tag, so the
-whole pre-tag window is one schema and each payload's first published version is `1`.
+Every one of the seven is `1`. A schema version counts a change a consumer has to re-read its
+schema for, and no consumer existed before `tool/v1.0.0` was tagged, so the whole pre-tag window
+is one schema and each of the six payloads published in it starts at `1`. The doctor payload was
+published after the tag and starts at `1` for the same reason: no consumer read an earlier form
+of it.
 
 ## The site payload
 
@@ -223,6 +227,67 @@ $ cairn adopt --worker <name> --domain <domain>
 `adoptable` was added within schemaVersion 1, so a reader written before it still reads every
 candidate it used to.
 
+## The doctor payload
+
+`cairn doctor --json` writes one object for a directory preflight. It is its own kind, not a site
+payload with different checks: the run reads a directory on disk, so it has no registry record, no
+credential tier, and no acknowledgements, and it carries no `site`, `domain`, `tier`,
+`acknowledged`, or `hold`.
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "doctor",
+  "verdict": "CRITICAL",
+  "exitCode": 2,
+  "dir": "/srv/example-site",
+  "checkedAt": "2026-09-21T12:00:00Z",
+  "checks": [
+    {
+      "checkId": "config.observability",
+      "state": "fail",
+      "condition": "config.observability-off",
+      "detail": "observability.enabled is not true",
+      "fix": {
+        "summary": "Set observability.enabled to true in wrangler.jsonc, then re-deploy.",
+        "url": "https://cairn.pub/docs/admin/is-it-working#turn-on-observability"
+      }
+    }
+  ]
+}
+```
+
+| Key | Type | Meaning |
+| --- | --- | --- |
+| `schemaVersion` | integer | This payload type's schema version. |
+| `kind` | string | `doctor` for a directory preflight. |
+| `verdict` | string | The run's verdict: `OK`, `WARNING`, `CRITICAL`, or `UNKNOWN`. |
+| `exitCode` | integer | The run's own exit code. |
+| `dir` | string | The resolved directory the checks read, never the argument as typed. |
+| `checkedAt` | string | When the run stamped the payload, RFC 3339. |
+| `checks` | array | Every check's settled result, in report order. `[]` for a directory that is not a cairn-cms site. |
+
+Each check carries `checkId`, `state`, and the `reason`, `condition`, `detail`, `note`, and `fix`
+it has. The `fix` here carries `summary` and `url` alone: every doctor failure is fixed by a
+developer editing a checked-in file, so the health payload's `actor` and `outward` could hold no
+second value.
+
+The printed report and the payload diverge in two places, and neither adds a word to the frozen
+vocabulary:
+
+- **An `INFO` check is written `state: "pass"` with its sentence under `note`.** `info` is not one
+  of the five state words, and `note` is how a reader still tells an info from a bare pass. A check
+  carrying a `note` carries no `detail`.
+- **A `SKIP` check is written `state: "skip"` with `reason: "reason.not-run"`.** For `cairn doctor`
+  that code means the check's precondition did not apply, so there was nothing to measure.
+  `reason.not-observable` stays what it is elsewhere, a check that tried and observed nothing, and
+  is what an `UNCHECKED` result is written with.
+
+`held` is never written. A hold is an operator accepting a known failure on an adopted site, which
+a directory preflight has no concept of.
+
+The command's own page is [`cli-cairn-doctor.md`](cli-cairn-doctor.md).
+
 ## The reason vocabulary
 
 Every `skip` and every `unknown` carries a `reason`. The state words say whether a check was
@@ -291,8 +356,14 @@ Changing any of these is a major-version event with a `Consumers must:` line.
 - The precedence rule. It is not numeric order, and 3 does not beat 2.
 - A usage error means exit 3 with empty stdout.
 - `--json` beats `--quiet`.
-- Every check id: `creds`, `serving`, `delegation`, `https-forced`, `email`, `deploy`,
-  `publish-path`, `engine`, `errors`.
+- Every published check id. Adding one to a list below is a minor-version event; renaming or
+  removing one is major.
+  - `cairn health`: `creds`, `serving`, `delegation`, `https-forced`, `email`, `deploy`,
+    `publish-path`, `engine`, `errors`.
+  - `cairn doctor`: `config.bindings`, `config.media-bucket`, `config.observability`,
+    `config.csrf-disable`, `config.site-config`, `config.public-origin`,
+    `config.no-referrer-blanket`, `admin.mount-shape`, `config.dependency-floors`,
+    `auth.role-wiring`, `ai.posture-effective`.
 - Every condition id, the reason vocabulary above, and the four `actor` values.
 - The state vocabulary: `pass`, `fail`, `held`, `skip`, `unknown`.
 - The `--json` key names and their types, under the schema-version promise: a key is added within

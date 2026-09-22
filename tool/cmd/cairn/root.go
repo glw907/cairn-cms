@@ -251,6 +251,7 @@ func newRootCmd(d deps) *cobra.Command {
 	cmd.AddCommand(
 		newSitesCmd(d, f),
 		newHealthCmd(d, f),
+		newDoctorCmd(d, f),
 		newLogsCmd(d, f),
 		newAdoptCmd(d, f),
 		newAuthCmd(d),

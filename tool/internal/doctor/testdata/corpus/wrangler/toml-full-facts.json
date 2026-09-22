@@ -1,0 +1,16 @@
+{
+  "name": "reads the facts from toml",
+  "sourceTest": "src/tests/unit/doctor-checks-local.test.ts:107-119",
+  "files": {
+    "wrangler.toml": "name = \"site\"\naccount_id = \"cf-acct-2\"\n\n[[send_email]]\nname = \"EMAIL\"\n\n[[d1_databases]]\nbinding = \"AUTH_DB\"\ndatabase_name = \"auth\"\ndatabase_id = \"toml-456\"\n\n[[r2_buckets]]\nbinding = \"MEDIA_BUCKET\"\nbucket_name = \"site-media\"\n\n[observability]\nenabled = true\n\n[vars]\nPUBLIC_ORIGIN = \"https://example.org\"\n"
+  },
+  "found": true,
+  "facts": {
+    "hasEmailBinding": true,
+    "hasAuthDb": true,
+    "observabilityEnabled": true,
+    "hasPublicOrigin": true,
+    "publicOrigin": "https://example.org",
+    "r2Buckets": ["MEDIA_BUCKET"]
+  }
+}

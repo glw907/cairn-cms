@@ -19,6 +19,12 @@ page tasks, three pages in flight, as pass B ran it; Agent-tool chains for every
 **Token ceiling:** set at pass B's close from pass B's measured per-page cost times the page
 count below, plus the readiness and close tasks. **Filled at pass B's close.**
 
+**Models:** as pass B ran them, unless pass B's close rules otherwise. **Filled at pass B's
+close.**
+
+**Segments and checkpoints:** the task count, the segment boundaries, and the checkpoint at each
+one, sized as pass B's were. **Filled at pass B's close.**
+
 **Worktree:** `.claude/worktrees/draft-docs-c`, branch `draft-docs-c`, off `main`. One
 executor. Merged by one PR before the site round starts.
 
@@ -32,9 +38,9 @@ executor. Merged by one PR before the site round starts.
 
 ## Page inventory (as of 2026-09-21; recount on the day)
 
-Thirty-two files under `docs/extend/`. Two are per-version records maintained in place and are
+Thirty-three files under `docs/extend/`. Two are per-version records maintained in place and are
 not drafted: `migration-notes.md` and `upgrade-cairn.md`. `README.md` is the arm's index, read
-by `check:arm-indexes`, and is drafted last. The remaining twenty-nine are drafted fresh:
+by `check:arm-indexes`, and is drafted last. The remaining thirty are drafted fresh:
 
 `add-a-custom-admin-screen.md`, `add-an-island.md`, `add-a-second-audience.md`,
 `add-cairn-to-a-sveltekit-app.md`, `animate-a-custom-screen.md`, `announce-on-publish.md`,
@@ -83,7 +89,10 @@ against the built package and proved by `check:snippets`.
    last), three in flight. **Filled at pass B's close:** the groups and each page's brief.
 N+1. The pass-end read.
 N+2. Close: changelog, friction triage, ROADMAP, HISTORY, STATUS naming the site round as the
-   next step, the cairn-pub handoff, and the score.
+   next step, the cairn-pub handoff, and the score. The close also states the go or no-go on the
+   spec's "good enough to start the site round" bar, in one sentence with its evidence, over the
+   extend half and pass B's recorded admin half together. A no-go names what is missing and what
+   would close it, and the site round does not start on it.
 
 ## What pass B's close must write here
 

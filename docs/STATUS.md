@@ -20,9 +20,9 @@ DONE); the doctor retirement's Go half (retire-1), merged WITHOUT a tool tag; dr
 (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`), which moves the tool's contract pages
 and schemas under `docs/reference/`; one `tool/v1.1.0`, tagged and released from a commit carrying
 both; the retirement's engine half (retire-2), which removes the `cairn-doctor` bin only once that
-release exists. Each close writes only its own line, and **ONLY retire-2's close writes "the
-`0.97.0` cut is unblocked"**. A cut session finding no such line does not cut, and every mechanical
-gate in Task 6 must pass whatever any line says. The retirement track conducts the `tool/v1.1.0`
+release exists. Each close writes only its own line, and **ONLY retire-2's close, the last to
+land, writes the line releasing `0.97.0` from this hold**. A cut session finding no such line does
+not cut, and every mechanical gate in Task 6 must pass whatever any line says. The retirement track conducts the `tool/v1.1.0`
 tag in a short session between pass A's merge and retire-2a, following Tasks 22b and 23 of the Go
 tool's 1.0 plan as its runbook, re-verifying the binary after pass A's repoint, and stopping for
 Geoff's go before the tag. Retirement spec:

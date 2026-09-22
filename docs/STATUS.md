@@ -14,17 +14,18 @@ for one cut and includes the tool's 1.0, released as `tool/v1.0.0` and `tool/v1.
 The pre-task's contracts are live: `tool/internal/spine/conditions.json` and
 `tool/internal/doctor/site-config-path.json`, generated and held by `check:tool-conditions`; and
 `.cairn/site-facts.json`, written by the `cairn-manifest` bin and verified in the plugin's
-`buildStart` (`docs/reference/site-facts.md`).
-Beside the engine: the tool's post-1.0 course is
+`buildStart` (`docs/reference/site-facts.md`). Beside the engine: the tool's post-1.0 course is
 `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md` (`cairn-tripwire` runs daily
-here, `CAIRN_GH_READ_TOKEN` expiring 2026-10-19); `cairn-pub` sits on `pass-d-docs-tracks`.
+here, `CAIRN_GH_READ_TOKEN` expiring 2026-10-19); `cairn-pub`, on `pass-d-docs-tracks`, stays
+un-pinnable against the registry since `0.95.0`.
 
 ## Immediate next action
 
 **retire-1, the retirement's Go half.** Branch `doctor-go` off `main`, plan on `main` at
 `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md` (PR #76), workflow mode, light gate lane,
-merged WITHOUT a tool tag. Its pre-flight re-verifies every pinned line against merged `main`, whose
-head has moved past B2's `3dc2520f` to `9b479e8d` (`tool/v1.0.1`).
+merged WITHOUT a tool tag. The plan's tool-side citations were pinned on branch `cairn-tool-b2` at
+`3dc2520f`; its pre-flight re-verifies them against merged `main`, which carries the tool tree
+through `tool/v1.0.1` (`9b479e8d`).
 
 **The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0 (DONE, with
 the pre-task merged behind it); retire-1; draft docs pass A (`2026-09-21-draft-docs-pass-a.md`),
@@ -34,7 +35,7 @@ Each close writes only its own line, and **ONLY retire-2b's close, the last to l
 line releasing `0.97.0` from this hold**. A cut session finding no such line does not cut, and
 every mechanical gate in Task 6 of the pre-cut plan must pass whatever any line says.
 
-Two carry-forwards are retire-2a's: `site-facts.md:38` links `doctor.md`, which retire-2a deletes;
+Two carry-forwards are retire-2a's: `site-facts.md:36` links `doctor.md`, which retire-2a deletes;
 and `doctor.md:79-86` plus `facts/reference.md`'s doctor section still say the two config checks
 share `config.bindings-missing`.
 
@@ -49,8 +50,7 @@ share `config.bindings-missing`.
   double-mint residual; the discriminator names any genuinely new one.
 - Three ASC staging harvest docs are folded into cairn, deletable there once `email-announce` settles.
 - `cairn-audit --rendered` counts differently on identical runs (133 then 116); stabilize first.
-- The heavy gate runs the component project serially (`--no-file-parallelism`); the parallel run
-  stalls here.
+- The heavy gate runs the component project serially (`--no-file-parallelism`); the parallel run stalls here.
 
 ## Resume prompt
 

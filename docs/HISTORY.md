@@ -61,6 +61,13 @@ from a 2026-09-19 leak check had filled to 6168M, and the Go linker builds in `/
   because npm appends run arguments to the end of a three-command script. Regenerating the
   surface snapshot takes `node scripts/checks/check-surface.mjs --update` directly.
 
+**Moved out of STATUS.** The close's rewrite dropped two active watches rather than moving them:
+`install.test.mjs`'s concurrent-poll test flaked once in a 30x loop (2026-08-29); its next CI
+failure gets the grace-window tests' mock-timer deflake. And the monthly Claude Code
+guidance-schema check (`trig_01UyjoYo9hbGqm7qTeb7HGVH`), emailing only on a mismatch, whose fix
+moves the bake's line, `cairn-guidance check`'s line, the agent frontmatter, and
+`docs/reference/guidance.md` together with a `Consumers must:` line.
+
 **Both budgets.** Ceiling 700K subagent tokens; spend about 1.15M at the close, an overrun raised
 at the Task 3 checkpoint and taken to the end on Geoff's call. Attended time: one planning miss
 (the `siteFactsPath` option, which the plan's Halts list would have caught had the plan named it),

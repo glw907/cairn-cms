@@ -800,8 +800,11 @@ markup, no Worker code, and nothing touching auth, sessions, or the write path c
 `svelte-reviewer`, `daisyui-a11y-reviewer`, `cloudflare-workers-reviewer`, and
 `web-auth-security-reviewer` were all unmatched.
 
-`gh run list --branch doctor-pretask --workflow tool-conditions.yml`: **collected by the conductor
-once the PR is open; recorded here at that point.**
+`gh run list --branch doctor-pretask --workflow tool-conditions.yml`: one run on this branch,
+`headSha` `39c373b1`, workflow `tool-conditions`, completed, conclusion success
+(`https://github.com/glw907/cairn-cms/actions/runs/35697219192`). PR #77's full check set was
+green on that head: `create-site`, `design`, `e2e`, `norms`, `scaffold`, `test`, `tool`, and
+`tool-conditions`.
 
 ### Decisions locked
 
@@ -837,7 +840,7 @@ No plan halt fired. Two machine-level incidents cost more than the work did.
 
 ### Carry-forwards filed
 
-- `docs/reference/site-facts.md:38` links `doctor.md`, which retire-2a deletes: recorded in
+- `docs/reference/site-facts.md:36` links `doctor.md`, which retire-2a deletes: recorded in
   `docs/STATUS.md` as retire-2a's to repoint.
 - `docs/reference/doctor.md:79-86` and the doctor section of `docs/internal/facts/reference.md`
   still say the two config checks share `config.bindings-missing`: interim drift retire-2a's
@@ -845,6 +848,13 @@ No plan halt fired. Two machine-level incidents cost more than the work did.
 - Three `contributor` findings promoted to `ROADMAP.md`'s Next tier with their triggers: the
   `npm run check:surface -- --update` forwarding quirk, `check:facts`'s blindness to an off-by-one
   `Source:` pointer, and the missing `cairn-run-gate` silence watchdog.
+- **Handed to retire-1:** its plan's tool-side citations were pinned on branch `cairn-tool-b2` at
+  `3dc2520f`, and its pre-flight re-verifies them against merged `main`, which carries the tool
+  tree through `tool/v1.0.1` (`9b479e8d`). That pre-flight already ran here and found only two
+  line drifts (`exit-codes.md:85` is now `:94`, `json-output.md:285` is now `:286`) and three B2
+  changes Task 9 and Task 4 must respect: `Theme.Wrap` in `purity_test.go`'s pinned list,
+  `tool/CHANGELOG.md`'s new `## 1.0.1` section above which `## Unreleased` goes, and `go.mod`'s
+  `go 1.26.0`.
 
 ### Both budgets
 

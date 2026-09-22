@@ -26,7 +26,7 @@ const (
 	infoRoleWiringIndirect = "createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles"
 	// tmplRoleWiringUnwired is auth.role-wiring's fail detail template, filled with the joined
 	// custom role names.
-	tmplRoleWiringUnwired = "the adapter declares custom role(s) %s but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
+	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
 	// passRoleWiringWired is auth.role-wiring's pass detail.
 	passRoleWiringWired = "createAuthGuard is passed the declared role vocabulary (heuristic text read)"
 )

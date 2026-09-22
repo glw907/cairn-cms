@@ -56,7 +56,7 @@ func TestAuthRoleWiring(t *testing.T) {
 				"src/hooks.server.ts":                `export const handle = createAuthGuard({ from: 'x' });`,
 			},
 			wantStatus: StatusFail,
-			wantDetail: "the adapter declares custom role(s) contributor but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)",
+			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)",
 		},
 		{
 			name: "pass: wired, called with a roles argument",

@@ -296,9 +296,9 @@ Name the check that entry holds
 - %s resolves to %s, outside the engine peer range %s
 - %s satisfy the engine peer ranges
 - %s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; %s (heuristic text read)
-- %s, and %s carries no AI-crawler directives, consistent with stating nothing.
 - %s, but %s carries directives consistent with '%s'. Set aiPosture explicitly if that is deliberate.
 - %s. %s
+- %s. %s carries no AI-crawler directives, consistent with stating nothing.
 - %s: no entry for it in pnpm-lock.yaml
 - %s: no entry for it in yarn.lock
 - %s: no node_modules/%s entry in package-lock.json
@@ -351,6 +351,6 @@ Name the check that entry holds
 - serve strict-origin-when-cross-origin (or same-origin) as the site default; no-referrer is safe only on a route protected by a double-submit CSRF token (the way /admin is), and a route guarded instead by the origin compare needs same-origin in its place
 - src/hooks.server.ts not found, so the guard role wiring cannot be checked
 - the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
-- the adapter declares custom role(s) %s but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
+- the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
 - the resolved origin's /robots.txt did not return 200
 - the resolved public origin does not parse as an http or https URL

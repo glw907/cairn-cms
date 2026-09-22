@@ -197,7 +197,7 @@ const (
 	tmplPostureUnsetWithOutside = "%s. %s"
 	// tmplPostureUnsetNoDirectives is evaluatePosture's pass detail when nothing is declared and
 	// the served file carries no AI-crawler directives either.
-	tmplPostureUnsetNoDirectives = "%s, and %s carries no AI-crawler directives, consistent with stating nothing."
+	tmplPostureUnsetNoDirectives = "%s. %s carries no AI-crawler directives, consistent with stating nothing."
 	// tmplPostureUnsetObserved is evaluatePosture's pass detail when nothing is declared but the
 	// served file nonetheless carries directives consistent with one posture.
 	tmplPostureUnsetObserved = "%s, but %s carries directives consistent with '%s'. Set aiPosture explicitly if that is deliberate."

@@ -65,7 +65,7 @@ cairn sites list --json
    now settles on what the live route answers.
 7. **`--json`, validated against the published schemas.** Run `cairn health <site> --json`, `cairn
    health --json`, and `cairn auth check --json`, and validate each payload against its schema in
-   `docs/reference/` (`cairn-health.schema.json`, `cairn-health-summary.schema.json`,
+   `docs/reference/schema/` (`cairn-health.schema.json`, `cairn-health-summary.schema.json`,
    `cairn-auth-check.schema.json`). Does every payload validate, and does each carry
    `schemaVersion`, `kind`, `verdict`, and `exitCode`?
 8. **A usage error, exit 3 with empty stdout.** Run `cairn health --theme sideways` and pipe

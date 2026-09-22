@@ -7,7 +7,8 @@ which took the fourth dependency and built the second width table; amended
 again by Task 22a (segment 4 conductor ruling, 2026-09-21) to record the man
 generator's own indirect requires below, in this file rather than a third ADR,
 per that ruling; amended a third time on 2026-09-22 to record `go.yaml.in/yaml/v3`'s
-own promotion to direct, below.
+own promotion to direct, below; amended a fourth time on 2026-09-22 to record
+`github.com/spf13/pflag`'s own promotion to direct, below.
 
 ## Addendum: YAML promoted to a direct require
 
@@ -18,6 +19,16 @@ the build graph: the same shape `displaywidth`'s own promotion took at the segme
 belongs to the module rather than to `internal/render`, since `render` never imports it; this is
 why `internal/render/purity_test.go`'s `otherDirectRequires` carries it, and not
 `renderDirectRequires`.
+
+## Addendum: pflag promoted to a direct require
+
+`cmd/cairn/flags_test.go`'s `TestCommittedFlagListMatchesTheCommandTree` walks the command
+tree's own flag sets to build the committed flag list, and those sets are
+`github.com/spf13/pflag` values cobra hands back, so the test names the `pflag.FlagSet` and
+`pflag.Flag` types directly. `pflag` was already an indirect require, pulled in by
+`github.com/spf13/cobra`, so promoting it to direct adds no module to the build graph. It
+belongs to the module rather than to `internal/render`, since `render` never imports it; this is
+why `internal/render/purity_test.go`'s `otherDirectRequires` carries it, now 6.
 
 ## Addendum: the man generator's indirect requires (Task 22a)
 

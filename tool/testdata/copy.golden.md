@@ -333,6 +333,7 @@ Name the check that entry holds
 - createAuthGuard is passed the declared role vocabulary (heuristic text read)
 - directives consistent with '%s' instead
 - docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy
+- environment
 - media bucket %s is declared
 - missing %s
 - needs engine 0.97.0 or later, and one build
@@ -365,3 +366,4 @@ Name the check that entry holds
 - the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
 - the resolved origin's /robots.txt did not return 200
 - the resolved public origin does not parse as an http or https URL
+- wrangler vars

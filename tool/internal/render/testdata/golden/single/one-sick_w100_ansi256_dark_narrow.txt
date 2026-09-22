@@ -1,5 +1,5 @@
 [1;38;5;210mCRITICAL[m  [1;38;5;255m907.life[m  [38;5;246m3 failing · 2 could not run · 1 held · 3 passing[m
-[38;5;246mchecked 4m ago (2026-09-20 14:28-08:00), in 16.3s[m
+[38;5;246mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
 
 [38;5;238m──[m [38;5;255mfailing[m [38;5;238m─────────────────────────────────────────────────────────────────────────────────────────[m
   [38;5;210m■[m [1;38;5;255mdeploy[m        [38;5;250mbuild failed 26m ago (3f0ba18), main is 2 commits ahead[m

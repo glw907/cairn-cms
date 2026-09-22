@@ -1,5 +1,5 @@
 verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 1 failing, 3 could not run, 5 passing
-checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
+checked: 4m ago (2026-09-20 22:28 UTC), in 16.3s
 
 creds: fail - the token was rejected
 fix: Create a new token, then run `cairn auth set` naming the credential.

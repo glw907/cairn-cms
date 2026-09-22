@@ -676,7 +676,8 @@ func TestEveryFixtureRendersInEveryBody(t *testing.T) {
 }
 
 // TestDeterminismAcrossTheEnvironment asserts two renders of one input are byte-identical and
-// that the zone offset printed comes from the value rather than from the machine's own clock.
+// that the stamp printed is the input's own instant in UTC, which is the same bytes under every
+// TZ the machine might be set to.
 func TestDeterminismAcrossTheEnvironment(t *testing.T) {
 	for _, tz := range []string{"UTC", "America/Anchorage", "Asia/Tokyo"} {
 		t.Setenv("TZ", tz)
@@ -686,8 +687,8 @@ func TestDeterminismAcrossTheEnvironment(t *testing.T) {
 		if first != second {
 			t.Fatalf("TZ=%s: two renders of one input differ", tz)
 		}
-		if !strings.Contains(stripANSI(first), "2026-09-20 14:28-08:00") {
-			t.Errorf("TZ=%s: the frame does not carry the input's own zone offset", tz)
+		if !strings.Contains(stripANSI(first), "2026-09-20 22:28 UTC") {
+			t.Errorf("TZ=%s: the frame does not carry the input's own instant in UTC", tz)
 		}
 	}
 }
@@ -1065,6 +1066,37 @@ func TestFixListLeavesNoOrphanWord(t *testing.T) {
 				t.Errorf("width %d: the fix list leaves %q alone on a line", width, strings.TrimSpace(l))
 			}
 		}
+	}
+}
+
+// TestCheckedPhraseLeadsWithTheAge pins the header's recency device: how old the data is, then
+// the instant in parentheses in UTC, then the run's own measured time. A stamp carrying a zone
+// offset prints in UTC like every other, so two operators reading the same run read the same
+// instant. A run settled within the last second, or one stamped ahead of the clock rendering it,
+// has no age to state and prints the stamp alone.
+func TestCheckedPhraseLeadsWithTheAge(t *testing.T) {
+	at := time.Date(2026, 9, 20, 22, 32, 0, 0, time.UTC)
+	offset := at.In(time.FixedZone("AKDT", -8*3600))
+	for _, tt := range []struct {
+		name    string
+		at, now time.Time
+		elapsed time.Duration
+		want    string
+	}{
+		{"minutes old", at, at.Add(4 * time.Minute), 16300 * time.Millisecond,
+			"checked 4m ago (2026-09-20 22:32 UTC), in 16.3s"},
+		{"seconds old", at, at.Add(22 * time.Second), 21700 * time.Millisecond,
+			"checked 22s ago (2026-09-20 22:32 UTC), in 21.7s"},
+		{"stamped in another zone", offset, offset.Add(4 * time.Minute), 0,
+			"checked 4m ago (2026-09-20 22:32 UTC)"},
+		{"just settled", at, at, 0, "checked 2026-09-20 22:32 UTC"},
+		{"stamped ahead of the clock", at, at.Add(-time.Minute), 0, "checked 2026-09-20 22:32 UTC"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := checkedPhrase(tt.at, tt.now, tt.elapsed); got != tt.want {
+				t.Errorf("checkedPhrase = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

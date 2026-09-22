@@ -1,6 +1,6 @@
 [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227ma-very-long-site-name-nobody-would-choose.example.org[m
 [38;2;168;164;158m3 failing · 1 could not run · 1 passing[m
-[38;2;168;164;158mchecked 4m ago (2026-09-20 14:28-08:00), in 16.3s[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
 
 [38;2;74;68;59m──[m [38;2;234;231;227mfailing[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────────────────────────────[m
   [38;2;255;142;134m■[m [1;38;2;234;231;227mserving[m       [38;2;193;189;184mthe hostname does not answer CRITICAL  example.org  0 failing OK[m

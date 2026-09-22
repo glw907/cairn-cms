@@ -113,13 +113,16 @@ func checkedAt(r health.Report, fallback time.Time) time.Time {
 }
 
 // checkedPhrase renders when a report was gathered and, where the caller measured one, how long
-// the run itself took. Recency is relative with the absolute in parentheses, except for a run
-// settled within the last minute, where a relative reading adds nothing to the stamp beside it.
-// The three facts are separated by commas, so a reader does not take the elapsed time for part
-// of the stamp.
+// the run itself took. The age leads, since how old the data is decides whether an operator
+// trusts it, and the stamp follows in parentheses for the reader who wants the instant. The
+// three facts are separated by commas, so a reader does not take the elapsed time for part of
+// the stamp.
+//
+// A stamp from the future, which a clock skew between this machine and a provider's own
+// timestamps can produce, has no age to state and prints alone.
 func checkedPhrase(at, now time.Time, elapsed time.Duration) string {
 	out := "checked " + stamp(at)
-	if d := now.Sub(at); d >= time.Minute {
+	if d := now.Sub(at); d >= time.Second {
 		out = "checked " + relative(d) + " ago (" + stamp(at) + ")"
 	}
 	if elapsed > 0 {
@@ -137,11 +140,13 @@ func latency(d time.Duration) string {
 	return strconv.FormatFloat(d.Seconds(), 'f', 1, 64) + "s"
 }
 
-// stamp writes an instant in ISO order carrying its own real zone offset. The value's own
-// location is the one it prints in: render never calls time.Now, Local, or LoadLocation, so the
-// same input renders the same bytes under any TZ.
+// stamp writes an instant in ISO order in UTC, named. One zone for every stamp is what lets two
+// operators on two continents compare the same run, and the relative age beside it is what a
+// reader takes the recency from. UTC is a conversion of the value, never a location lookup:
+// render never calls time.Now, Local, or LoadLocation, so the same input renders the same bytes
+// under any TZ.
 func stamp(t time.Time) string {
-	return t.Format("2006-01-02 15:04Z07:00")
+	return t.UTC().Format("2006-01-02 15:04") + " UTC"
 }
 
 // isoDate writes a civil date, the form every hold expiry prints in.

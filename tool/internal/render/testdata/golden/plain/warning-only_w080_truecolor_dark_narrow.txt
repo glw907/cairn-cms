@@ -1,5 +1,5 @@
 verdict: [1;38;2;247;172;77mUNKNOWN[m - cairn.pub, 1 failing, 1 could not run, 7 passing
-checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
+checked: 4m ago (2026-09-20 22:28 UTC), in 16.3s
 
 engine: fail - 0.76.0 installed, 0.78.0 latest, 2 releases behind
 fix: Raise the @glw907/cairn-cms range in package.json, then deploy again.

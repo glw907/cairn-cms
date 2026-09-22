@@ -1,5 +1,5 @@
 verdict: [1;38;2;255;142;134mCRITICAL[m - a-very-long-site-name-nobody-would-choose.example.org, 3 failing, 1 could not run, 1 passing
-checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
+checked: 4m ago (2026-09-20 22:28 UTC), in 16.3s
 
 serving: fail - the hostname does not answer CRITICAL  example.org  0 failing OK
 fix: Confirm the Worker route and the zone's DNS record point at this site.

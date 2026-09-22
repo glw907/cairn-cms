@@ -10,7 +10,7 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - A domain costs money per year at common registrars; Cloudflare sells domains at cost. Source: none found in repo. [vendor: link, not a repo fact]
 - The Cloudflare API token step happens at the domain-connection step (`Own your domain`), not during first run; a token missing a permission is accepted but fails later at the step needing it. Source: `packages/create-cairn-site/src/cloudflare/prefill.mjs` (module header: "It cannot prove a WRITE permission... A token missing zone create or DNS edit therefore still passes here and fails later at the call that needs it"). [verified]
 - Whether a custom-domain TLS certificate is a plan inclusion or a billed add-on was unconfirmed as of 2026-08-11. Source: none found (vendor-uncertain claim, not code-checkable). [vendor: link, not a repo fact]
-- Adding a second editor requires a connected custom domain plus Cloudflare Email Sending turned on for it; a `workers.dev`-only site cannot send sign-in mail to anyone but the address the tool already knows locally. Source: `docs/admin/own-your-domain.md` "Turn on sign-in email"; `src/lib/doctor/checks-cloudflare.ts` condition `email.sender-not-onboarded`. [verified]
+- Adding a second editor requires a connected custom domain plus Cloudflare Email Sending turned on for it; a `workers.dev`-only site cannot send sign-in mail to anyone but the address the tool already knows locally. Source: `docs/admin/own-your-domain.md` "Turn on sign-in email"; `src/lib/diagnostics/conditions.ts:61-69` (`email.sender-not-onboarded`). [verified]
 - Rotating the GitHub App's private key requires a developer with a terminal, `wrangler secret put`, and access to the App's GitHub settings page (no downtime: the App can hold two keys at once). Source: `docs/extend/rotate-the-github-app-key.md` ("You also need a way to run `wrangler secret put`... A GitHub App can hold more than one private key at once"). [candidate: sourced to the page only, not traced to code]
 - Two accounts, GitHub and Cloudflare, hold everything needed to hand off or leave; adding a successor is done through GitHub collaborator access and Cloudflare account access plus `/admin/editors`. Source: `docs/admin/invite-editors.md` (same arm). [candidate: sourced to the page only, not traced to code]
 
@@ -34,7 +34,7 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - The three fixed-transcript blocks this page quotes (the cost preamble, the GitHub App confirmation prompt, and the closing live-summary) come from two fixture files, not three: the first two blocks both quote `01-create-cairn-site.txt` and the third quotes `01d-resume.txt`. All three are unchanged by the scaffold's new CI workflow and `check:cairn` script, since none of them prints anything about either; the printed hand-over text the tool shows right after scaffolding (not one of the three quoted blocks) is where that information now appears. Source: `docs/admin/create-your-site.md` (three `<!-- transcript: ... -->` markers naming two fixture paths); `packages/create-cairn-site/src/scaffold.mjs` `handoverText` (names `.github/workflows/check.yml` and `npm run check:cairn`); both quoted fixtures carry none of that text. [verified]
 
 ## docs/admin/invite-editors.md
-- Every signed-in person on a `create-cairn-site` site is either an **owner** or an **editor**; a developer can add other roles. Source: `src/lib/diagnostics/conditions.ts` (`auth.unknown-role` handles roles outside the declared vocabulary, implying owner/editor is the built-in pair); `src/lib/doctor/checks-cloudflare.ts:219` (`auth.unknown-role`). [verified]
+- Every signed-in person on a `create-cairn-site` site is either an **owner** or an **editor**; a developer can add other roles. Source: `src/lib/diagnostics/conditions.ts:168-176` (`auth.unknown-role` handles roles outside the declared vocabulary, implying owner/editor is the built-in pair). [verified]
 - An owner can do everything an editor can, plus manage the roster (add, remove, change roles); an editor cannot touch access. Source: `src/lib/sveltekit/editors-routes.ts:67,81` (`editorsLoad`, `ownerAction`, called by every editor-management action, each call `requireOwner(event)` from `./guard.js`). [verified]
 - A site always keeps at least one owner; the last owner cannot be removed or demoted through `/admin/editors`. Source: `src/lib/auth/store.ts:276-290` (`removeOwnerIfNotLast`, `demoteOwnerIfNotLast`, "refused because this is the last owner-capability row"); `src/lib/auth-store/index.ts:15-16`. [verified]
 - Adding an editor is done at `/admin/editors`: name, email, role, then "Add editor"; no separate invitation email is sent from that action. Source: `src/lib/log/` event `editor.added` (`docs/reference/log-events.md`: "An owner adds an editor to the D1 allowlist"). [verified]
@@ -43,28 +43,6 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - On a site with only owner/editor roles, the per-row control reads "Make owner" or "Make editor"; a site with custom roles shows a dropdown and "Change" instead. Source: `src/lib/components/ManageEditors.svelte:40-44,118-143` (`isDefaultVocabulary` gates the toggle-button branch vs. the `<select>` + "Change" branch). [verified]
 
 ## docs/admin/is-it-working.md
-- `npx cairn-doctor` reads local config, the Cloudflare account, and the GitHub App, printing one line per check. Source: `src/lib/doctor/run.ts`, `src/lib/doctor/assemble.ts`. [verified]
-- Check statuses are PASS, FAIL, SKIP, INFO, and UNCHECKED; SKIP means the check does not apply at all (an opt-in feature that's off) or a needed credential/id is absent (e.g. no `AUTH_DB` database_id), UNCHECKED means the check IS applicable but a needed local input (lockfile/config file) could not be read, which drives a nonzero exit rather than passing silently. Source: `src/lib/doctor/types.ts` (`skip()`, `unchecked()` doc comments); `src/lib/doctor/checks-cloudflare.ts:163,225,251` (`skip('no AUTH_DB database_id in wrangler.jsonc or wrangler.toml')`). [verified]
-- Condition id `email.sender-not-onboarded` (blocker): no Cloudflare sending subdomain enabled for the site's from-address domain. Source: `src/lib/doctor/checks-cloudflare.ts:80`. [verified]
-- Condition id `edge.https-not-forced` (blocker): the zone does not force HTTPS; the admin sign-in page posts a plain form with no JS, so the CSRF guard rejects a plain-HTTP submission with an opaque 403. Source: `src/lib/doctor/checks-cloudflare.ts:113`. [verified]
-- Condition id `auth.store-unreachable` (blocker): `AUTH_DB` is missing, lacks sign-in tables, or has no owner row. A `create-cairn-site` site usually SKIPs this check rather than failing it, since wrangler resolves `AUTH_DB` by binding name, not by a readable id. Source: `src/lib/doctor/checks-cloudflare.ts:157`. [verified]
-- Condition id `auth.unknown-role` (warning): an editor's role is outside the site's declared vocabulary; resolves to no access. Source: `src/lib/doctor/checks-cloudflare.ts:219`. [verified]
-- Condition id `auth.email-not-normalized` (warning): a stored editor email has capital letters or stray spaces. Source: `src/lib/doctor/checks-cloudflare.ts:245`. [verified]
-- Condition id `config.bindings-missing` (blocker): the wrangler config is missing the `send_email` binding `EMAIL` or the D1 binding `AUTH_DB`. Source: `src/lib/doctor/checks-local.ts:25`. [verified]
-- Condition id `config.media-bucket-missing` (warning): the adapter declares a media bucket, but wrangler declares no matching `r2_buckets` binding; only raised on a site with an image library configured. Source: `src/lib/doctor/checks-local.ts:45`. [verified]
-- Condition id `config.observability-off` (warning): `observability.enabled` is not `true`, so structured logs go nowhere readable. Source: `src/lib/doctor/checks-local.ts:63`. [verified]
-- Condition id `config.csrf-disable-missing` (warning): checks for `csrf: { checkOrigin: false }` in `svelte.config.js` plus cairn's guard wired into `src/hooks.server.ts`. Source: `src/lib/doctor/checks-local.ts:97`. [verified]
-- Condition id `config.public-origin-invalid` (blocker): `PUBLIC_ORIGIN` is unset, unparseable, or uses plain `http` on a non-local host; sign-in links and feed URLs depend on it. Source: `src/lib/doctor/checks-local.ts:132`. [verified]
-- Condition id `config.site-config-invalid` (blocker): `site.config.yaml` fails to parse or validate. Source: `src/lib/doctor/checks-local.ts:222`. [verified]
-- Condition id `config.tidy-key-missing` (warning): `tidy.enabled: true` is set but no valid `ANTHROPIC_API_KEY` is reachable. Source: `src/lib/doctor/checks-local.ts:300`. [verified]
-- Condition id `admin.mount-incomplete` (warning): a best-effort text check for whether `/admin`'s shared layout and catch-all route are wired. Source: `src/lib/doctor/checks-local.ts:379`. [verified]
-- Condition id `auth.role-wiring-missing` (warning): custom roles are declared but the guard was never told about them, falling back to owner/editor. Source: `src/lib/doctor/checks-local.ts:433`. [verified]
-- Condition id `config.no-referrer-blanket` (warning): checks `src/hooks.server.ts`/`.js` and `static/_headers` for a site-wide `Referrer-Policy: no-referrer`, which strips `Origin` from same-origin form submissions and trips cairn's origin check outside `/admin`. Source: `src/lib/doctor/checks-local.ts:641`. [verified]
-- Condition id `config.dependency-floors-unmet` (blocker): the lockfile resolves `svelte` or `@sveltejs/kit` below the engine's declared peer floor. Source: `src/lib/doctor/check-floors.ts:251-253`. [verified]
-- Condition id `ai.posture-not-effective` (warning): the site declares an AI-crawler posture but the served `robots.txt` doesn't match it. Source: `src/lib/doctor/check-posture.ts:47`. [verified]
-- Condition id `email.send-failed` (blocker): a real test send fails after the domain is onboarded; only runs with `--send-test <address>`, never on a bare `npx cairn-doctor`. Source: `src/lib/doctor/check-send.ts:24`. [verified]
-- Condition id `admin.login-probe-failed` (blocker): a live request to the deployed admin confirms the sign-in page, its CSRF cookie, and hidden field; only runs with `--probe`. Source: `src/lib/doctor/check-probe.ts:35`. [verified]
-- Condition id `github.app-unreachable` (blocker): the GitHub App's key fails to parse, fails to authenticate, its installation token fails to mint, or the repo read is refused. Source: `src/lib/doctor/checks-github.ts:16`. [verified]
 - Condition id `auth.csrf-token-invalid` (blocker): the site's own guard refuses a request whose CSRF token is missing or mismatched; logged as `guard.refused` with `reason: csrf`; `cairn-doctor` never reports this by name. Source: `src/lib/sveltekit/guard.ts:281`, `src/lib/sveltekit/condition-response.ts:16`. [verified]
 - Condition id `auth.csrf-origin-mismatch` (blocker): the guard refuses a request whose `Origin` header doesn't match the site, logged as `guard.refused` with `reason: origin`; `cairn-doctor` never reports this by name. Source: `src/lib/sveltekit/guard.ts:206`, `src/lib/sveltekit/condition-response.ts:17`. [verified]
 - Condition id `auth.identity-unresolved` (blocker): only reachable on a site configured with `identity` on the guard (replacing magic-link sign-in); the identity gate refused or threw, logged as `guard.refused` with `reason: identity`. Source: `src/lib/sveltekit/condition-response.ts:19`, `src/lib/diagnostics/conditions.ts:220-221`. [verified]
@@ -102,7 +80,6 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - A local web address like `http://127.0.0.1:...` printed during setup is served only for that run, only to the local machine, and carries no secret. Source: `packages/create-cairn-site/src/console/server.mjs`. [verified]
 
 ## docs/admin/troubleshooting.md
-- Confirming logging is on requires checking the `config.observability-off` row from `npx cairn-doctor`. Source: `src/lib/doctor/checks-local.ts:62`. [verified]
 - Every structured log record carries the signed-in editor's email when one is involved, and never a sign-in token or session id. Source: `docs/reference/log-events.md` header ("No record ever carries a magic-link token, a session ID..."). [candidate: sourced to the page only, not traced to code]
 - `guard.refused`'s `reason` field discriminates `https`, `csrf`, `origin`, and `bindings` (missing-database) failure modes. Source: `docs/reference/log-events.md` `guard.refused` row; `src/lib/sveltekit/guard.ts`. [verified]
 - A save/publish conflict means the entry changed on GitHub since the editor opened it (most often concurrent edits); resaving after reviewing the current version resolves it. Source: `docs/reference/log-events.md` `commit.failed` row (`reason: conflict` on a 409). [candidate: sourced to the page only, not traced to code]
@@ -124,7 +101,6 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - The one signal that an engine upgrade needs a developer's attention is a `Consumers must:` line in the changelog, not the version number itself. Source: `CHANGELOG.md` format convention (per repo-wide changelog practice); CLAUDE.md Releases section. [candidate: sourced to the page only, not traced to code]
 - Node.js version target is set by cairn (the site creator refuses an older Node; a plain install only warns). Source: `packages/create-cairn-site/src/preflight.mjs:22,63`. [verified]
 - The GitHub App private key has no version; it rotates on demand, lives only in the Worker's secret store, and is never tracked as a file. Source: `packages/create-cairn-site/src/cloudflare/secret.mjs` (write-only Worker secret); `docs/admin/is-it-working.md` "Install the GitHub App" section (same arm, cross-verified). [verified]
-- A `Dependency floors` FAIL from `cairn-doctor` means the site's Svelte or SvelteKit resolves below the engine's declared floor. Source: `src/lib/doctor/check-floors.ts:251-253,84-86`. [verified]
 
 - `cairn health --quiet` is the form a scheduled run uses: it prints nothing at all when every site is OK, and the normal body otherwise, so a green run leaves an empty log. Source: `tool/cmd/cairn/health_quiet_test.go`, `tool/cmd/cairn/root.go` (the `--quiet` flag, mutually exclusive with `--verbose`). [verified]
 - The alert threshold is the operator's choice, and the exit codes are what express it: page on exit 2 and above, notify on any non-zero. Source: `tool/docs/tripwire.md` ("Credentials: a scheduler starts with no shell profile" and the three scheduler examples), `docs/reference/cli-cairn-exit-codes.md`. [verified]
@@ -147,9 +123,17 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
   troubleshooting, the scheduled run under what-to-run-and-when) rather than collected in a
   section of their own, since the container is sectioned by the reader's job, not by the
   component. Sources are the `tool/` module at `tool/v1.0.1`.
-- Total facts: 86 before that harvest, 106 after (the harvest's own original tally of 63 undercounted; a recount at the 2026-09-15
+- Total facts: 86 before that harvest, 108 after (the harvest's own original tally of 63 undercounted; a recount at the 2026-09-15
   tightening pass found 86 fact bullets across the eight pages).
 - As harvested: Verified: 61. Docs-drift: 1. Candidate: 24.
+- Facts-container HEAD repair 2026-09-22: 24 bullets sourced to the now-removed legacy JS doctor
+  package (the `npx cairn-doctor` condition-id list under is-it-working.md, and its two
+  restatements under troubleshooting.md and what-to-run-and-when.md) deleted, since the `cairn
+  doctor` Go command's own condition list is a different, code-verified surface the tool harvest
+  and `docs/internal/facts/reference.md`'s `docs/reference/cli-cairn-doctor.md` section already
+  cover. 2 bullets (`email.sender-not-onboarded`, `auth.unknown-role`) re-sourced from the removed
+  package to `src/lib/diagnostics/conditions.ts`, the condition registry both the old and new
+  doctor read. Total facts after repair: 84.
 
 ## Provenance
 

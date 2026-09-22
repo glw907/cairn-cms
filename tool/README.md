@@ -23,6 +23,10 @@ go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
 `cairn` makes no update check and never contacts a release feed on its own. Check the releases
 page when you want a newer version.
 
+A published `tool/vX.Y.Z` tag is permanent: the Go module proxy caches it, so it is never moved
+or deleted. A broken release is corrected by a `retract` directive for that version in the next
+version's `go.mod` and a new patch tag, never by deleting the tag.
+
 ## Credentials
 
 `cairn` needs three values to reach a site's Cloudflare zone and its GitHub repository:

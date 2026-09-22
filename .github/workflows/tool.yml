@@ -243,6 +243,19 @@ jobs:
           subject-path: |
             tool/dist/*.tar.gz
             tool/dist/*.zip
+      - name: Verify the attestation
+        # The same command tool/README.md gives an operator, run here against the archives this
+        # job just built, so the documented verification path is exercised by every release
+        # rather than only written down.
+        working-directory: tool
+        run: |
+          set -euo pipefail
+          # The command takes one artifact, so the six are verified one at a time.
+          for archive in dist/*.tar.gz dist/*.zip; do
+            gh attestation verify "$archive" --repo "${{ github.repository }}"
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Publish release
         if: ${{ github.ref_type == 'tag' }}
         run: |

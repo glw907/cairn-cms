@@ -1,11 +1,13 @@
 # The `cairn` CLI's exit codes
 
-This page describes cairn 1.0.1, the current release; cairn 1.1.0 will carry these pages.
+This page describes `cairn` 1.0.1, the current release.
 
 Every `cairn` command exits with one of four codes, following the Monitoring Plugins (Nagios)
-convention. `cairn health`, `cairn sites list`, `cairn doctor`, and `cairn auth check` decide
-theirs by the rules below; every other command exits 0 on success and 3 on any failure, including
-a usage error, a cancelled run, and a tool fault.
+convention. `cairn health`, `cairn doctor`, and `cairn auth check` decide theirs by the rules
+below. `cairn sites list` exits 0 or 3 only: 3 when a site record cannot be read or an
+`--expect-sites` count disagrees with the registry, and 0 otherwise, including on an empty
+registry. Every other command exits 0 on success and 3 on any failure, including a usage error, a
+cancelled run, and a tool fault.
 
 ## The four codes
 
@@ -33,8 +35,7 @@ A check that ran reports `OK` when it passed and `CRITICAL` when it failed, with
 
 - A check's own declared severity can rank its failure `WARNING` instead of `CRITICAL`. `engine`
   is the only health check at warning severity; every other check in the set fails at critical
-  weight, and a check id the requests-per-check table below does not name is reported at full,
-  critical weight.
+  weight, and a check id with no declared severity is reported at full, critical weight.
 - An unexpired hold softens a failure to `WARNING`, never to `OK`. A hold that has already expired
   contributes the same code an unheld failure does.
 
@@ -70,31 +71,32 @@ error. An `--ack-file` path that does not exist or cannot be read is a usage err
 
 ## How a code is decided
 
-An exit code is decided in exactly two ways, and the two cannot disagree, because each handles a
-case the other cannot express:
+An exit code is decided in one of two ways, by which kind of run produced it:
 
 - A run that produced reports folds each site's verdict, any listing error, and the
   `--expect-sites` count into one code by the precedence above.
-- A run that produced no report exits 3 with one exception. A cancelled run, a usage error, and a
-  tool fault all report `UNKNOWN`, because each says the same thing to a routine: the checks did
-  not run, so the invocation says nothing about the site. `cairn auth check [<site>]` is the one
-  command carrying its own typed verdict, so it can exit 0, 1, 2, or 3; it settles provider states
-  and holds no site verdicts.
+- A run that produced no report exits 3. A cancelled run, a usage error, and a tool fault each
+  report `UNKNOWN`, because the checks did not run and the invocation says nothing about the
+  site. `cairn auth check [<site>]` is the one exception: it folds one row per permission rather
+  than a site report. A permission the run confirmed contributes `OK`, a permission it refuted
+  contributes `CRITICAL`, a permission whose credential is missing contributes `WARNING` with
+  `reason.cred-missing`, and a permission it could not observe contributes `UNKNOWN`. The run
+  exits on the precedence fold of those rows, so it can exit 0, 1, 2, or 3.
 
 ## Usage errors
 
 A usage error exits 3 with byte-empty stdout; its message goes to stderr, so stdout carries
 payloads alone. `--json` beats `--quiet`, so empty stdout under `--json` means the invocation was
-wrong, never that the site is healthy. An out-of-set `--color`, `--theme`, or `--width` value is a
-usage error too.
+wrong, never that the site is healthy. `--color` takes `auto`, `always`, or `never`; `--theme`
+takes `dark` or `light`; `--width` takes a whole number from 20 to 1000. Any other value is a
+usage error and exits 3.
+
+`cairn health <site>` takes the site as a positional operand. A site id the registry does not
+hold is a usage error: exit 3, byte-empty stdout.
 
 ## `--help` and `--version`
 
 `--help` and `--version` exit 0 rather than the monitoring guideline's 3.
-
-## The site operand
-
-`cairn health <site>` takes the site as a positional operand.
 
 ## Timeout bounds
 

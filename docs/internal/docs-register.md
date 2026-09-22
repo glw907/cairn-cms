@@ -184,6 +184,46 @@ span, real or not, and is never the fix. Confirm a suppression actually takes ef
 the gate with and without it, the same falsifiability standard every gate in this repo is held
 to, rather than trusting the syntax on sight.
 
+## Names
+
+Every part of the system has one sanctioned name, ruled by Geoff after an adversarial review
+and a precedent survey (2026-09-21). This section is the record; the `Cairn.Names` and
+`Cairn.NamesRetired` Vale rules (`.vale/styles/Cairn/`) enforce what a regex can reach, at
+error and warning level respectively, and a writer still checks this table for what a regex
+cannot: which sense of "the package" or "the tool" is meant.
+
+| Thing | Name | Rule |
+|---|---|---|
+| The system | cairn, lowercase, in prose | At a sentence start it stays lowercase, and the sentence is rewritten to avoid that where possible (Google's capitalization guide: "If an official name begins with a lowercase letter, then put it in lowercase even at the start of a sentence. But it's better to revise the sentence to avoid putting a lowercase word at the start, if possible."). "Cairn" capitalized appears only inside a quoted UI string, because the admin's wordmark, "Powered by Cairn", and the `Sign in · Cairn` title are capitalized on screen, and a doc quoting the screen keeps the screen's case. |
+| The npm library a site imports from | the engine, in prose | Never the compound "cairn engine". The CLI's copy standard (`tool/docs/design/copy-standard.md`) fixes the same word for operators. |
+| The same, as an artifact | `@glw907/cairn-cms` where the reader types or reads it; the package for facts about the tarball, its files, install, and module resolution | "The package is ESM-only" is a package fact; "the engine renders the preview" is an engine fact. |
+| The Go CLI | the `cairn` CLI; a command always carries its verb: `cairn health`, `cairn doctor` | No bare "the CLI" (Google's word list: "Don't use CLI generically"; the docs name five CLIs). A bare `` `cairn` `` code span is an identifier prefix (the ambient `cairn` namespace, the `cairn/<concept>/<id>` holding branch), never the command. Google's code-in-text guidance: "use code font for the command and ordinary font for the name of the project or product." |
+| The scaffolder | `create-cairn-site` on first mention on a page, then the setup command | A code identifier is not a sentence subject twenty times on a non-developer page. |
+| Other npm bins | `cairn-audit`, `cairn-guidance`, `cairn-doctor`, always by name | |
+| The editing surface | the admin; `/admin` for the path | |
+| The docs | the docs for the content; cairn.pub for the rendered site; the shipped docs for the copy in the tarball | |
+| The consumer's site | your site, or a cairn site | |
+| Also named | the GitHub App; the Worker | |
+| Retired as names | the library (the word stays for the media library and the content library); the Go tool; the binary, except for the install artifact itself; a bare "the tool" | |
+
+**The precedent this expresses by font instead of case.** Git's own contributor guide draws the
+same line by sense, not by regex: "Use 'git' (all lowercase) when talking about commands ...
+and 'Git' when talking about the version control system" (`Documentation/CodingGuidelines`).
+cairn's brand is lowercase even as a proper noun, so it cannot split the same way by
+capitalization; it splits by font instead, a bare code span for the identifier prefix and
+plain lowercase prose for the system.
+
+**Enforcement and scope.** `Cairn.Names` (error) catches "the Go tool" and a stray capital
+"Cairn" in prose. `Cairn.NamesRetired` (warning) flags "the tool," "the package," "the
+binary," and "the CLI" for a second look, since each is still the right word in the sense the
+table above carves out; a warning is a prompt to check the sense, not an automatic rewrite.
+Existing pages on the three frozen narrative arms (`docs/admin/`, `docs/editors/`,
+`docs/extend/`) are swept at the docs rebuild, never before; a pass touching a frozen page for
+an unrelated reason does not take on a naming sweep of the whole page. A new page, or a page
+already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
+`.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
+the Names rule reaches them once they do.
+
 ## The page anatomies
 
 Each track builds its pages from a small set of reproducible shapes. A page states which

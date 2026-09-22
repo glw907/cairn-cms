@@ -35,6 +35,9 @@ subdirectories, each of which keeps its own filing rule and its own index.
   admin idiomatic re-expression sweep.
 - [`code-idioms.md`](code-idioms.md): the agent-facing idiom charter, one obvious way per
   pattern; a standing pass dimension.
+- [`credentials.md`](credentials.md): machine-local credential locations (the GitHub App id,
+  installation id, private key, and per-site D1 `AUTH_DB` bindings), moved out of `CLAUDE.md`
+  to keep that file inside its context budget.
 - [`daisy-absorption-ritual.md`](daisy-absorption-ritual.md): the maintainer's routine check
   against a daisyUI release renaming or dropping a class the admin's blessed set depends on. Run
   it against every daisy release Dependabot opens a PR for.
@@ -48,6 +51,9 @@ subdirectories, each of which keeps its own filing rule and its own index.
   page anatomies, the four track registers with their audience profiles folded in as grading
   rubrics, the front-door register, the calibration specimens). Read it before writing or
   reviewing any published docs page.
+- [`durable-gotchas.md`](durable-gotchas.md): non-obvious operational traps (Cloudflare email's
+  two error vocabularies, the CI-canonical visual baselines, Vite 8 shipping TypeScript in dist
+  `.svelte`), moved out of `CLAUDE.md` to keep that file inside its context budget.
 - [`dx-backlog-ecnordic-migration.md`](dx-backlog-ecnordic-migration.md): the DX backlog from
   the ecnordic migration.
 - [`engine-harvest-candidates.md`](engine-harvest-candidates.md): engine harvest candidates

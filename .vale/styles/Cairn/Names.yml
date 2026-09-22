@@ -1,0 +1,7 @@
+extends: existence
+message: "Naming convention ('%s'): see 'Names' in docs/internal/docs-register.md. 'The Go tool' is retired; write the `cairn` CLI and name its verb ('cairn health'). Capital 'Cairn' in prose is retired too, except inside a quoted UI string (the wordmark, a rendered title); use lowercase cairn."
+level: error
+scope: text
+tokens:
+  - the Go tool
+  - Cairn

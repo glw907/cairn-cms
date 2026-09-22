@@ -155,26 +155,21 @@ version`, no `gh release create`, no publish, unless a release is independently 
 versions are meaningful, not a per-pass reflex.
 
 **Publishing is a separate, deliberate act with two triggers, never a calendar or a finished
-pass.** Cut a release only when (1) a consumer site needs the change now (which also resolves the
-publish-before-push ordering), or (2) a coherent
-capability or initiative has landed and is worth making available, at its natural boundary.
-Default to holding: `main` is always releasable, so completed passes accumulate unpublished, and
-breaking changes batch so a site upgrades across one `Consumers must:` list, not five. The
-admin re-expression sweep is the live example: it changes the admin's internal CSS and
-components, which a consumer never imports, so it holds unpublished until consumer-facing
-work accumulates with it, and may warrant no release of its own.
+pass.** Cut a release only when (1) a consumer site needs the change now (which also resolves
+the publish-before-push ordering), or (2) a coherent capability or initiative has landed and is
+worth making available, at its natural boundary. Default to holding: `main` is always
+releasable, so completed passes accumulate unpublished, and breaking changes batch so a site
+upgrades across one `Consumers must:` list, not five.
 
 **When a release is cut, the number tracks the publish, not the passes.** One publish, one
-increment, sized to what the window contains. Keep the work under `## Unreleased` and set the
-number only at the cut (pre-numbering a held pass produces phantoms, as `0.77.0` did when it
-rolled into `0.78.0`). The scheme is SemVer, not CalVer; in `0.x` a minor is a new subsystem or
-public surface and everything else is a patch, and the number signals scale, not compatibility
-(the changelog carries compatibility via `Consumers must:`). Published numbers are immutable and
-every sub-`0.68` number is taken, so verify the next number is free with
-`npm view @glw907/cairn-cms versions --json` before promising it. The release body is the
-changelog window since the last published tag, carrying every
-`Consumers must:` line, cut with `gh release create v<x.y.z> --target main` (fires the OIDC
-publish workflow).
+increment, sized to what the window contains. Set the number only at the cut (pre-numbering a
+held pass produces phantoms, as `0.77.0` did when it rolled into `0.78.0`). SemVer, not CalVer;
+in `0.x` a minor is a new subsystem or public surface, everything else a patch, and the number
+signals scale, not compatibility (the changelog carries compatibility via `Consumers must:`).
+Published numbers are immutable, so verify the next is free with `npm view @glw907/cairn-cms
+versions --json` before promising it. The release body is the changelog window since the last
+published tag, cut with `gh release create v<x.y.z> --target main` (fires the OIDC publish
+workflow).
 
 The path to `1.0` and its readiness checklist live in [`ROADMAP.md`](ROADMAP.md) ("Toward 1.0");
 the full scheme is in the `cairn-release-process-and-versioning` memory.
@@ -193,10 +188,10 @@ readiness in [`ROADMAP.md`](ROADMAP.md).
 
 ## Watch items (conditional follow-ups)
 
-A watch item is a follow-up defined by its trigger, not its action, so manage it by what can detect that
-trigger, and promote it to an automated tripwire whenever the trigger is machine-detectable. Claude cannot
-self-trigger between sessions; only a gate, a hook, or a scheduled routine can, so prose in a backlog is the
-weakest form and the fallback, never the default. Match the mechanism to the trigger:
+A watch item is a follow-up defined by its trigger, not its action: manage it by what can detect
+that trigger, and promote it to an automated tripwire whenever the trigger is machine-detectable.
+Claude cannot self-trigger between sessions; only a gate, a hook, or a scheduled routine can, so
+prose in a backlog is the weakest form, never the default. Match the mechanism to the trigger:
 
 - A **code condition** ("a banned API reappears", "a structure grows past a bound") becomes a gate
   or test (`check:reference`, `check:version`, ...) or a `settings.json` hook; a failing test is
@@ -223,21 +218,17 @@ The official frontend-design skill is for ORIGINAL aesthetics, no reference comp
 it alone for a port. What is cairn-specific, not in the skill:
 
 - **Fidelity tiers:** SITE REBUILDS (ecxc.ski, 907.life) are quite-close-and-improved; THEME
-  PORTS are GLANCE-INDISTINGUISHABLE, the licensed differences behavioral (the responsive
-  standard at the extremes) and structural (cairn underneath), never the visible design language.
-  Typography-forward work verifies at the detail level (wordmark, flow spacing, blockquote scale,
-  link conventions) with side-by-side crops.
+  PORTS are GLANCE-INDISTINGUISHABLE, licensed differences behavioral and structural (cairn
+  underneath), never the visible design language. Typography-forward work verifies at the
+  detail level (wordmark, flow spacing, blockquote scale, link conventions) with side-by-side crops.
 - **The one-check rule:** nothing deploys without a full-page render READ by the main loop's own
   eyes; a member-facing site additionally gets Geoff's before/after.
-- **The responsive standard:** every family artifact (themes, showcase, consumer sites, cairn.pub,
-  Topo) meets the five-viewport bar (320, 390, 768, 1440, 2560), composed at the extremes, never
-  merely unbroken. Gated by the showcase's CI width matrix (baselines regenerate on CI, the
-  canonical renderer); a ported
-  theme beats its original at 320 and 2560. Authored docs diagrams are exempt: containment plus a
-  text alternative (docs-register.md, Visuals; reasoning docs/internal/public-design-system.md).
+- **The responsive standard:** every family artifact meets the five-viewport bar (320, 390,
+  768, 1440, 2560), composed at the extremes, never merely unbroken. Gated by the showcase's CI
+  width matrix; a ported theme beats its original at 320 and 2560. Authored docs diagrams are
+  exempt: containment plus a text alternative (docs-register.md, Visuals).
 - **The harvest:** every theme or site built on the chassis banks its harvest before the pass
-  closes, in the CHASSIS first (the showcase copy is the starting chassis every next theme
-  receives), the engine where deeper. Not done until the harvest is banked.
+  closes, in the CHASSIS first, the engine where deeper. Not done until the harvest is banked.
 
 ## Admin interface design
 
@@ -270,17 +261,10 @@ subpath; `docs/reference/log.md` states its narrowed promise.
 
 ## Durable gotcha (Cloudflare email)
 
-Two surfaces, two error vocabularies; the `E_` table does not cross between them. The binding
-`env.EMAIL.send({...})` throws `E_SENDER_NOT_VERIFIED`, the same string Routing uses for an
-unverified destination, which is how the ecxc outage hid; `src/lib/email.ts` parses that. The
-REST send (`POST /accounts/{id}/email/sending/send`) throws no `E_` codes: `10203` and `10204`
-(both HTTP 403) cover an unready sender, never onboarded or still propagating. Elapsed time since
-onboarding is the only discriminator.
-
-Onboarding is `wrangler email sending enable <domain>` with the zone's apex name; arbitrary
-recipients need Workers Paid. It writes DNS records including an apex DMARC at `p=reject`, and
-deleting the subdomain leaves that record behind. Full detail, measured propagation, and every
-captured body: `docs/internal/record/2026-08-11-t4b-email-spike.md`.
+Two surfaces, two error vocabularies for the same sender-not-ready condition; the binding
+throws `E_SENDER_NOT_VERIFIED` (how the ecxc outage hid), the REST send throws `10203`/`10204`
+with no `E_` code. Full detail, the DNS side effects, and the fix:
+[`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md#cloudflare-email).
 
 ## Pointing a consumer at unreleased engine work
 
@@ -295,44 +279,33 @@ against it.
 
 ## Durable gotcha (a worktree showcase e2e proves MAIN's engine)
 
-In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so the
-showcase resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` to MAIN's build, not the
-worktree's, and silently proves the wrong engine until a from-scratch `npm install` in the
+In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so
+the showcase resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` to MAIN's build, not the
+worktree's, silently proving the wrong engine until a from-scratch `npm install` in the
 worktree's showcase repoints both `file:` deps. The adjacent stale-`dist` trap is closed
-structurally by the showcase's `pretest:e2e` repackage hook. The symlink half is not: reinstall
+structurally by the showcase's `pretest:e2e` repackage hook; the symlink half is not. Reinstall
 before trusting a worktree e2e, or rely on CI's real checkout.
 
 ## Durable gotcha (CI-canonical baselines this workstation cannot reproduce)
 
-The visual baselines are CI-canonical (`e2e.yml`'s `update_snapshots` regen commits them). After
-a regen, this workstation's Chromium renders a few surfaces a few pixels differently (chassis-B2:
-the 20 home and archive2 files from `4de378ec`), so a local `CI=1 test:e2e` fails on exactly
-those files and cannot be made green without committing a locally biased baseline, which is
-forbidden. A local gate is green when its only visual failures are exactly the files the latest
-regen commit rewrote; anything else is a real red. The lasting fix is a ROADMAP chore: pin the
-local e2e to the runner's Chromium build and fonts, or run it in a matching container.
+The visual baselines are CI-canonical; this workstation's Chromium renders a few surfaces a few
+pixels differently, so a local gate is green only when its visual failures are exactly the files
+the latest regen commit rewrote. Full detail and the lasting-fix ROADMAP chore:
+[`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md#ci-canonical-baselines-this-workstation-cannot-reproduce).
 
 ## Durable gotcha (Vite 8 ships TypeScript in dist `.svelte`)
 
 Vite 8 / Rolldown parses dist `.svelte` `<script lang="ts">` as JavaScript before the consumer's
-Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-package step
-`scripts/build/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>`
-body and KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse).
-Do not remove the step or strip `lang="ts"`. Full post-mortem:
-[`docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md).
+Svelte plugin runs. The post-package step `scripts/build/transpile-dist-svelte.mjs` transpiles
+each dist `<script>` body and KEEPS the `lang="ts"` tag; do not remove the step or strip
+`lang="ts"`. Full post-mortem:
+[`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md#vite-8-ships-typescript-in-dist-svelte).
 
 ## Credentials (machine-local, intentionally not in git)
 
-- **GITHUB_APP_ID:** `3847496`, in the encrypted registry (`~/.dotfiles/secrets/values.age`) and
-  `~/.local/secrets` as `GITHUB_APP_ID`.
-- **GITHUB_APP_INSTALLATION_ID:** `135372268`, a single installation on glw907 covering ecxc-ski
-  and 907-life. In `values.age` and `~/.local/secrets`.
-- **Private key:** `GITHUB_APP_PRIVATE_KEY_B64` (base64 of the PEM, single-line) in `values.age`
-  and `~/.local/secrets`. A consumer site pushes it to its Worker via `sync.sh` (`atob()`
-  in-Worker before `@octokit/auth-app`).
-- **D1 AUTH_DB (self-owned magic-link auth store):** ecxc = `cairn-ecxc-auth`
-  `a47c56d2-25ef-4131-a505-8c9fd5a92f1f`; 907 = `cairn-907-auth`
-  `93aa929d-0228-4f8b-8d1e-5e7e0d755617`. Bound as `AUTH_DB` per site.
+The GitHub App id, installation id, private key location, and the per-site D1 `AUTH_DB`
+bindings live in [`docs/internal/credentials.md`](docs/internal/credentials.md), out of this
+context-loaded file since they are reference data, not orientation.
 
 ## Authoring
 
@@ -364,3 +337,8 @@ sources (`src/lib/components/**/*.svelte`), gated by the same four comment rules
 One calibration holds: `check:reference` and `jsdoc/require-jsdoc` want every export documented,
 so an exported symbol keeps its minimal one-line doc even when self-evident; write-only-when-it-helps
 applies to internal symbols.
+
+Every part of the system has one sanctioned name: the "Names" section of
+[`docs/internal/docs-register.md`](docs/internal/docs-register.md#names) (the engine, the
+`cairn` CLI with its verb, `create-cairn-site` then "the setup command," lowercase cairn except
+in a quoted UI string), enforced by the `Cairn.Names`/`Cairn.NamesRetired` Vale rules.

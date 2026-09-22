@@ -46,7 +46,17 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-This section is empty. The extend-2 pass's close (2026-09-20) surfaced and cleared two findings
+(`extender`) The font-carries-the-rule design in the "Names" section (`docs-register.md`) and
+the `Cairn.Names`/`Cairn.NamesRetired` Vale rules only reach prose Vale lints. Mermaid
+`accDescr:`/`accTitle:` text, image alt text, and nav labels are voiced without code font (for
+example `docs/admin/create-your-site.md:106`, "The tool moves through four stages"), so the
+same naming convention fails there with no linter to catch it: alt text and directive strings
+sit inside a fence or an attribute, and nav labels are plain strings in config, none of them
+prose Vale reads. Proposed home: a small text-scan check in `scripts/checks/` that greps alt
+attributes, `accDescr:`/`accTitle:` directives, and nav-label strings for the retired tokens, or
+folded into the admin rebuild's brief for pass B as a manual sweep item.
+
+This section is otherwise empty. The extend-2 pass's close (2026-09-20) surfaced and cleared two findings
 in the same step: (`contributor`) `docs/reference` has no dedicated page for the
 `./admin-sources.css` subpath export, only a section inside `cairn-audit.md`, promoted whole to
 `ROADMAP.md`'s Later tier; (`contributor`) the facts container is sectioned one file per docs

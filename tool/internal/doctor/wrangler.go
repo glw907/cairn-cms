@@ -22,8 +22,8 @@ type WranglerFacts struct {
 	HasPublicOrigin bool
 	// PublicOrigin is vars.PUBLIC_ORIGIN's value. Meaningful only when HasPublicOrigin is true.
 	PublicOrigin string
-	// R2Buckets is the declared r2_buckets binding names, in file order. Empty, never nil, when
-	// the config declares none.
+	// R2Buckets is the declared r2_buckets binding names, in file order. Nil when the config
+	// declares none; callers read it through len, not a nil check.
 	R2Buckets []string
 }
 

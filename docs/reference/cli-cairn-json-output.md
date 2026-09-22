@@ -16,6 +16,7 @@ error, an unrecognized flag or a bad positional argument, writes nothing to stdo
 
 A payload's `exitCode` is the process exit code the run will use. [The `cairn` CLI's exit
 codes](./cli-cairn-exit-codes.md) gives the four codes and how several verdicts combine.
+A payload's `verdict` and `exitCode` are one result in two forms and never disagree.
 
 ## Payload kinds
 
@@ -37,6 +38,9 @@ per-site NDJSON line also carries `exitCode`.
 Every kind's `schemaVersion` stands at `1`. Each schema is the normative source where this page
 and the schema differ. A schema's `$id` sits under `https://cairn.pub/schema/`, a stable
 identifier that does not need to resolve as a URL.
+
+Every payload is written as one compact line with no interior newlines; the examples on this
+page are re-indented for reading.
 
 ## Streaming `cairn health --json`
 
@@ -87,23 +91,27 @@ fix out changes what a visitor sees, a DNS record or a zone setting, as opposed 
 credential-only change.
 
 A check's `hold` object carries `until` and `expired`. An expired hold is still reported rather
-than dropped, and it arrives at the run's own exit arithmetic as unacknowledged.
+than dropped, and it arrives at the run's own exit arithmetic as unacknowledged. A check reads
+`held` only while its hold has not expired. Once `hold.expired` is true it reads `fail` again.
 
 A check's measured values split by where they came from. `fields` holds what cairn derived
 itself, each key mapping straight to its value. `observed` holds what was copied from a
 provider's own response, each key mapping to an object carrying a `value` and the `source` it
 was read from, `cloudflare` or `github`. The boundary never infers a source from a key's name or
-a value's shape; it reads the source a check declared.
+a value's shape; it reads the source a check declared. `errorCount` and `errorCountTruncated` are
+keys inside that check's own `fields`, and `topEvents` a key inside `observed`; no schema names
+them, because both objects are open.
 
-The `errors` check carries `errorCount` always, and `errorCountTruncated` only when its own fetch
-filled the provider's page limit, which makes the count a floor rather than an exact total; the
-truncation key is absent when the count is exact. A verbose run also carries `topEvents`, marked
-as copied straight from the provider.
+The `errors` check carries `errorCount` when it produced a count, and `errorCountTruncated`
+beside it only when its own fetch filled the provider's page limit, which makes the count a floor
+rather than an exact total; the truncation key is absent when the count is exact. A verbose run
+also carries `topEvents`, marked as copied straight from the provider.
 
 On the wire, a site's `checks` sort by their own `checkId`, and its `acknowledged` array, naming
 which held checks the run currently counts as acknowledged, sorts alphabetically, so two runs of
 an unchanged site diff cleanly; the severity ranking belongs to the text report, never to the
-payload. `durationMs` is wall time, excluded from that comparison by design, since two runs of an
+payload. Every held check is named in `acknowledged`, and both arrays sort byte-wise, not by
+locale. `durationMs` is wall time, excluded from that comparison by design, since two runs of an
 unchanged site differ in it even when nothing else has. Every timestamp on the wire, including
 `checkedAt`, is RFC 3339 in UTC; the zero time writes an empty string, and nothing on the wire is
 relative.
@@ -267,8 +275,9 @@ The final line of `cairn health --json` is one `summary` payload, folding every 
 into the run's own. A stream carrying no sites at all writes the same shape a run against zero
 registered sites writes. `sites` is how many sites the run meant to cover. `counts` maps each
 verdict word to the number of sites that reported it. `worstFirst` lists the sites by verdict,
-worst first, each entry the site's own `site` value. The example below is a run against an empty
-registry, so `worstFirst` is empty.
+worst first, each entry the site's own `site` value. Within one verdict band `worstFirst` keeps
+the run's own sweep order. The example below is a run against an empty registry, so `worstFirst`
+is empty.
 
 ```json
 {
@@ -367,6 +376,10 @@ can hold, plus `site` when the run named one. Each row carries `label`, `credent
 person, not a code from the reason vocabulary above; a row never reads `held`. No example ships
 for this kind; read the schema for the row shape.
 
+A row's `pass` contributes `OK`, `fail` `CRITICAL`, `skip` `WARNING`, and `unknown` `UNKNOWN`; a
+credential the operator never set, and a site-scoped row on a run given no site, both read
+`skip`.
+
 cairn resolves three credential variables: `CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, and
 `CAIRN_GH_READ_TOKEN`. Each is read from the process environment first, then from the other
 configured providers in turn. A password prompt (`cairn auth set`, not `--json`) falls back to
@@ -379,7 +392,8 @@ waiting on a terminal that is not there.
 directory run has no registry record, no credential tier, and no acknowledgements, so `site`,
 `domain`, `tier`, `acknowledged`, and `hold` are absent. Its `dir` is the resolved, symlink-free
 directory, never the argument as typed, and a directory that is not a cairn site writes an empty
-`checks` array rather than null.
+`checks` array rather than null. `dir` is symlink-resolved but not made absolute: a relative
+argument stays relative, and a bare run writes `.`.
 
 The doctor payload writes only the frozen state words and adds none of its own: an info result is
 written `state: "pass"` with a `note` and no `detail`; a skip is written `state: "skip"` with
@@ -387,8 +401,9 @@ written `state: "pass"` with a `note` and no `detail`; a skip is written `state:
 `reason: "reason.not-observable"`. `held` is never written, since a directory preflight has no
 hold concept.
 
-A doctor check's `fix` carries only `summary` and `url`, with no `actor` and no `outward`, since
-every doctor failure is fixed by a developer editing a checked-in file.
+A doctor check's `fix` carries `summary` always, with no `actor` and no `outward`, since every
+doctor failure is fixed by a developer editing a checked-in file. `url` is present when the
+condition has a docs anchor.
 
 ```json
 {
@@ -492,6 +507,9 @@ is major.
 - The state words: `pass`, `fail`, `held`, `skip`, `unknown`.
 - Every condition id a payload can carry, ported from the engine's own registry, and the reason
   vocabulary above.
+
+Every condition id is the engine's own `src/lib/diagnostics/conditions.ts` registry, mirrored in
+the command-line tool's embedded `conditions.json`.
 
 ## What does not freeze
 

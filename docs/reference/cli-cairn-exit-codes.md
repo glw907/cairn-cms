@@ -93,10 +93,12 @@ A usage error exits 3 with byte-empty stdout; its message goes to stderr, so std
 payloads alone. `--json` beats `--quiet`, so empty stdout under `--json` means the invocation was
 wrong, never that the site is healthy. `--color` takes `auto`, `always`, or `never`; `--theme`
 takes `dark` or `light`; `--width` takes a whole number from 20 to 1000. Any other value is a
-usage error and exits 3.
+usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a
+usage error, a cancelled run, or a tool fault, each reporting `UNKNOWN`.
 
 `cairn health <site>` takes the site as a positional operand. A site id the registry does not
-hold is a usage error: exit 3, byte-empty stdout.
+hold is a usage error: exit 3, byte-empty stdout. `--quiet`, `--timeout`, `--color`, `--theme`,
+and `--width` are root flags every `cairn` command accepts.
 
 ## `--help` and `--version`
 

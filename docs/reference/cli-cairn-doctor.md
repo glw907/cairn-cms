@@ -107,7 +107,8 @@ Those five words appear in the printed report. Under `--json` a check carries on
 states. `PASS` and `INFO` both write `"state": "pass"`, and an info check is told apart by its
 `note` field. `FAIL` writes `"state": "fail"` with a `fix`. `SKIP` writes `"state": "skip"` with
 `"reason": "reason.not-run"`. `UNCHECKED` writes `"state": "unknown"` with
-`"reason": "reason.not-observable"`.
+`"reason": "reason.not-observable"`. The payload carries no severity field, so a consumer folding
+a `fail` reads the severity column above, keyed on `checkId`.
 
 ## Exit codes
 
@@ -119,6 +120,9 @@ directory that is not a cairn-cms site. Read the `--json` payload to tell them a
 Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that
 writes no payload; a directory that is not a cairn-cms site still writes one, carrying the
 `UNKNOWN` verdict and an empty checks array.
+
+A usage error writes no payload; a directory that is not a cairn-cms site writes one with an
+empty `checks` array; any other exit 3 is a run whose only non-passing results are `UNCHECKED`.
 
 ## Checks that need a live site
 

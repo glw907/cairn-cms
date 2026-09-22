@@ -62,7 +62,10 @@ func TestCatalogueCarriesEveryCheckString(t *testing.T) {
 	}
 }
 
-// stringConsts returns every package-level string const f declares, keyed by name.
+// stringConsts returns every package-level string const f declares, keyed by name. A const built
+// from a chain of string literals joined by + (the multi-line style check_posture.go's
+// tmplPostureManagedLayerNote and tmplPostureForeignSignalNote use) is folded into one value, so
+// a concatenated const is checked the same as a plain one.
 func stringConsts(t *testing.T, f *ast.File) map[string]string {
 	t.Helper()
 	out := map[string]string{}
@@ -77,17 +80,46 @@ func stringConsts(t *testing.T, f *ast.File) map[string]string {
 				continue
 			}
 			for i, val := range vs.Values {
-				lit, ok := val.(*ast.BasicLit)
-				if !ok || lit.Kind != token.STRING {
+				value, ok := stringLiteralValue(t, val)
+				if !ok {
 					continue
-				}
-				value, err := strconv.Unquote(lit.Value)
-				if err != nil {
-					t.Fatalf("unquote %s: %v", vs.Names[i].Name, err)
 				}
 				out[vs.Names[i].Name] = value
 			}
 		}
 	}
 	return out
+}
+
+// stringLiteralValue returns the string value of val, unquoting a plain string literal and
+// concatenating a chain of + expressions whose leaves are all string literals. ok is false for
+// any other expression shape, which the caller skips the same as it always skipped a non-literal.
+func stringLiteralValue(t *testing.T, val ast.Expr) (string, bool) {
+	t.Helper()
+	switch v := val.(type) {
+	case *ast.BasicLit:
+		if v.Kind != token.STRING {
+			return "", false
+		}
+		value, err := strconv.Unquote(v.Value)
+		if err != nil {
+			t.Fatalf("unquote %s: %v", v.Value, err)
+		}
+		return value, true
+	case *ast.BinaryExpr:
+		if v.Op != token.ADD {
+			return "", false
+		}
+		left, ok := stringLiteralValue(t, v.X)
+		if !ok {
+			return "", false
+		}
+		right, ok := stringLiteralValue(t, v.Y)
+		if !ok {
+			return "", false
+		}
+		return left + right, true
+	default:
+		return "", false
+	}
 }

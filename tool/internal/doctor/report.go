@@ -13,9 +13,9 @@ import (
 // Cloudflare and GitHub App chain) left out. It is a literal slice, never populated by init(),
 // the same shape health.All uses.
 //
-// It is also the published check-id list: the tests that hold
-// tool/docs/reference/json-output.md and tool/docs/reference/cli-cairn-doctor.md to every id
-// read it here rather than retyping the eleven.
+// It is also the published check-id list: the tests that hold tool/docs/reference/json-output.md
+// and tool/docs/reference/cli-cairn-doctor.md to every id read it here rather than retyping the
+// eleven.
 var checks = []Check{
 	ConfigBindings,
 	ConfigMediaBucket,

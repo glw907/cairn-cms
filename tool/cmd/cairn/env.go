@@ -88,9 +88,11 @@ type resolution struct {
 	display    string
 }
 
-// env holds every variable loadEnv resolved, keyed by name, plus the two plain environment
-// reads render.DetectProfile takes (Task 20a): noColor and term. Both come straight from envFn,
-// never from a secrets.Provider, since neither is a credential.
+// env holds every variable loadEnv resolved, keyed by name, plus three plain environment reads
+// no secrets.Provider ever sees: noColor and term, the pair render.DetectProfile takes to pick a
+// color profile, and publicOrigin, which the doctor's config.public-origin check reads straight
+// instead of through a Provider since it names no credential. All three come straight from
+// envFn.
 type env struct {
 	resolutions  []resolution
 	noColor      string

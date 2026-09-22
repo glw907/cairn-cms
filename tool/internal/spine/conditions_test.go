@@ -80,20 +80,25 @@ func TestDiffIDSets(t *testing.T) {
 	}
 }
 
-// TestConditionsMatchEmbeddedMirror asserts the typed Conditions() constants and conditions.json's
-// own parsed id set are identical, replacing the former TestConditionsMatchRegistry, which walked up to
-// the repository root to read src/lib/diagnostics/conditions.ts. The mirror now carries the text,
-// so the comparison is embed against constant, not constant against a second repository's source.
+// TestConditionsMatchEmbeddedMirror asserts the typed Conditions() constants and
+// conditions.json's own parsed id set are identical, replacing the former
+// TestConditionsMatchRegistry, which walked up to the repository root to read
+// src/lib/diagnostics/conditions.ts. The mirror now carries the text, so the comparison is embed
+// against constant, not constant against a second repository's source.
 //
-// A failure here is a decision for a human, never an automatic follow. Condition ids are frozen in
-// the tool's own copy and published in tool/docs/reference/json-output.md, so renaming one here to
-// match the engine breaks every agent reading that contract. Renaming the id is a major-version
-// event carrying a "Consumers must:" line; adding one is not.
+// A failure here is a decision for a human, never an automatic follow. Condition ids are frozen
+// in the tool's own copy and published in tool/docs/reference/json-output.md, so renaming one
+// here to match the engine breaks every agent reading that contract. Renaming the id is a
+// major-version event carrying a "Consumers must:" line; adding one is not.
 func TestConditionsMatchEmbeddedMirror(t *testing.T) {
 	var constantIDs []string
 	for _, c := range Conditions() {
 		constantIDs = append(constantIDs, string(c))
 	}
+	// Reads conditionTexts's keys directly rather than going through TextFor: TextFor's
+	// contract is one id in, one string out, and gives no way to enumerate the ids it knows. A
+	// corrupted or truncated embed still has to surface here as a set mismatch, which needs
+	// every key conditionTexts actually parsed, not a lookup per already-known id.
 	var mirrorIDs []string
 	for id := range conditionTexts {
 		mirrorIDs = append(mirrorIDs, string(id))

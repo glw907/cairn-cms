@@ -6,7 +6,7 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-// siteConfigStatus enumerates what SiteConfig found: whether a candidate path held a file and,
+// siteConfigStatus enumerates what siteConfig found: whether a candidate path held a file and,
 // if so, whether that file satisfied the parse predicate this package narrows to. It carries no
 // status word of its own: check_siteconfig.go maps it onto config.site-config's status words
 // (pass, fail, unchecked), which keeps the file read and the status decision in separate
@@ -25,9 +25,9 @@ const (
 	siteConfigValid
 )
 
-// siteConfigOutcome is one SiteConfig call's result.
+// siteConfigOutcome is one siteConfig call's result.
 type siteConfigOutcome struct {
-	// Status is what SiteConfig found.
+	// Status is what siteConfig found.
 	Status siteConfigStatus
 	// Path is the candidate path the file was read from. Empty when Status is
 	// siteConfigNotFound.
@@ -49,7 +49,7 @@ func siteConfigPaths() []string {
 	}
 }
 
-// SiteConfig reads the first site.config.yaml found at one of siteConfigPaths inside s.Dir and
+// siteConfig reads the first site.config.yaml found at one of siteConfigPaths inside s.Dir and
 // reports whether it satisfies this package's narrowed parse predicate: valid YAML, a mapping
 // root, and a non-empty siteName. It reads no other field of the file: the per-concept URL
 // policy and every other site-config value are out of this check's narrowed scope.

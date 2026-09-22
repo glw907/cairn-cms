@@ -1,7 +1,7 @@
 // cairn-cms: the cairnManifest Vite plugin and its shared write/verify/derive machinery. This
 // module is NOT the public `/vite` entry (that is `./index.ts`, which re-exports only `cairnManifest`
 // and `CairnManifestOptions`); it is the plugin's own implementation plus the lower-level functions
-// the cairn-manifest and cairn-doctor bins and their unit tests import by relative path, unreachable
+// the cairn-manifest bin and its unit tests import by relative path, unreachable
 // from the package's `@glw907/cairn-cms/vite` subpath. It owns a virtual module that runs
 // import.meta.glob over the content dirs inside the app's own Vite graph, builds the manifest with
 // the engine builder, and verifies it against the committed file. The verify runs in the plugin's
@@ -322,52 +322,37 @@ function cairnVirtualOnly(source: string): Plugin {
   };
 }
 
-/** The repo and sender facts cairn-doctor derives off the consumer's adapter. */
+/** The facts the site-facts writer derives off the consumer's adapter. */
 export interface AdapterFacts {
-  /** `cairn.backend.owner`. */
-  owner?: string;
-  /** `cairn.backend.repo`. */
-  repo?: string;
-  /** `cairn.email.from`. */
-  from?: string;
   /**
    * `cairn.media.bucketBinding`, the media R2 binding name; undefined when the adapter declares no
-   *  media. The doctor's conditional media-bucket check reads it.
+   *  media.
    */
   mediaBucketBinding?: string;
   /**
-   * `cairn.roles`, the site's declared role vocabulary; undefined for a zero-config site. The
-   *  doctor's vocabulary-aware checks read it, falling back to the implicit owner/editor pair.
+   * `cairn.roles`, the site's declared role vocabulary; undefined for a zero-config site.
    */
   roles?: RolesDeclaration;
   /**
    * `cairn.aiPosture`, the site's stated stance toward AI training crawlers; undefined when the
-   *  site states no posture. The doctor's live posture check reads it.
+   *  site states no posture.
    */
   aiPosture?: AiPosture;
 }
 
 /**
- * Build the virtual module that reads only the adapter facts the doctor derives. It imports the
- *  configured config module and exports the string-typed `owner`, `repo`, `from`, and the media
- *  `bucketBinding` as JSON, so nothing else of the adapter (least of all a secret) crosses the
+ * Build the virtual module that reads only the adapter facts {@link AdapterFacts} carries. It
+ *  imports the configured config module and exports the media `bucketBinding`, `roles`, and
+ *  `aiPosture` as JSON, so nothing else of the adapter (least of all a secret) crosses the
  *  boundary.
  */
 function adapterFactsSource(opts: CairnManifestOptions): string {
   return `
 import { cairn } from ${JSON.stringify(opts.configModule)};
-const backend = cairn?.backend ?? {};
-const email = cairn?.email ?? {};
 const media = cairn?.media ?? {};
 const roles = cairn?.roles;
 const aiPosture = cairn?.aiPosture;
 const facts = {};
-// The owner/repo identity is GitHub-specific, so it is read only off the github-app provider.
-if (backend.kind === 'github-app') {
-  if (typeof backend.owner === 'string') facts.owner = backend.owner;
-  if (typeof backend.repo === 'string') facts.repo = backend.repo;
-}
-if (typeof email.from === 'string') facts.from = email.from;
 if (typeof media.bucketBinding === 'string') facts.mediaBucketBinding = media.bucketBinding;
 if (roles && typeof roles === 'object') facts.roles = roles;
 if (typeof aiPosture === 'string') facts.aiPosture = aiPosture;
@@ -384,9 +369,6 @@ export const result = JSON.stringify(facts);
 function parseAdapterFacts(raw: string): AdapterFacts {
   const parsed = JSON.parse(raw) as Record<string, unknown>;
   const facts: AdapterFacts = {};
-  if (typeof parsed.owner === 'string') facts.owner = parsed.owner;
-  if (typeof parsed.repo === 'string') facts.repo = parsed.repo;
-  if (typeof parsed.from === 'string') facts.from = parsed.from;
   if (typeof parsed.mediaBucketBinding === 'string') facts.mediaBucketBinding = parsed.mediaBucketBinding;
   if (parsed.roles !== undefined && typeof parsed.roles === 'object' && parsed.roles !== null) {
     facts.roles = parsed.roles as RolesDeclaration;
@@ -398,12 +380,13 @@ function parseAdapterFacts(raw: string): AdapterFacts {
 }
 
 /**
- * Read `{ owner, repo, from }` off the consumer's adapter by evaluating a tiny virtual module
- *  through the consumer's own Vite resolution, the same machinery the cairn-manifest bin uses.
- *  cairn-doctor calls this to fill inputs the operator did not pass. Derivation is best-effort:
- *  any failure (no Vite config, no cairnManifest plugin, a config module that throws) returns
- *  null, so the doctor degrades to flags instead of crashing. This runs only on the bin path,
- *  never in a Worker.
+ * Read the media bucket binding, role vocabulary, and AI posture off the consumer's adapter by
+ *  evaluating a tiny virtual module through the consumer's own Vite resolution, the same
+ *  machinery the cairn-manifest bin uses. Kept as an `internal.js`-only entry point for tooling
+ *  built directly against this module; the site-facts write path (`buildSiteFactsFromVite`)
+ *  shares its evaluation machinery but calls it independently. Derivation is best-effort: any
+ *  failure (no Vite config, no cairnManifest plugin, a config module that throws) returns null.
+ *  This runs only on the bin path, never in a Worker.
  */
 export async function readAdapterFacts(cwd: string = process.cwd()): Promise<AdapterFacts | null> {
   try {

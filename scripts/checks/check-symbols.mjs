@@ -27,8 +27,9 @@
 //   - a log event name, a doctor condition id, or a doctor check id (dotted lowercase, hyphens
 //     allowed), resolved against the union of three registries: `src/lib/log/`'s event union,
 //     `src/lib/diagnostics/conditions.ts`'s condition-id registry (the same one
-//     `check-readiness.mjs` already loads), and every `DoctorCheck.id` across `src/lib/doctor/`'s
-//     check modules. All three share the exact dotted-lowercase shape and often the same area
+//     `check-readiness.mjs` already loads), and the committed `tool-check-ids.mjs` vocabulary of
+//     every check id the Go tool's `cairn doctor` raises. All three share the exact
+//     dotted-lowercase shape and often the same area
 //     (`auth`, `config`, `admin`, `github`), and `docs/reference/doctor.md`'s own table cites a
 //     check id and its condition id side by side (`config.bindings` fails as
 //     `config.bindings-missing`, a different string), so resolving against only one or two of
@@ -47,6 +48,7 @@ import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { ALLOWLIST } from './check-symbols-allowlist.mjs';
+import { TOOL_CHECK_IDS, RETIRED_TOOL_CHECK_IDS } from './tool-check-ids.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -259,8 +261,9 @@ export function extractFilePaths(segments) {
  *
  * Resolved against the union of three registries (`findUnresolvedSymbols` resolves against all
  * three and passes their combined area set in here): `src/lib/log/`'s event union,
- * `src/lib/diagnostics/conditions.ts`'s condition-id registry, and every `DoctorCheck.id` across
- * `src/lib/doctor/`. All three share the exact dotted-lowercase shape and, often, the same area
+ * `src/lib/diagnostics/conditions.ts`'s condition-id registry, and the committed
+ * `tool-check-ids.mjs` check-id vocabulary. All three share the exact dotted-lowercase shape and,
+ * often, the same area
  * (`auth`, `config`, `admin`, `github`), which is why an earlier version of this extractor that
  * resolved against log events alone produced roughly ninety false positives across fifteen pages,
  * overwhelmingly real condition and check ids it had no way to recognize. An earlier attempt to
@@ -379,27 +382,16 @@ export function conditionIds(root = ROOT) {
 }
 
 /**
- * Parse every `DoctorCheck.id` field (`id: 'config.bindings'`) across `src/lib/doctor/`'s check
- * modules, the same `id: '...'` shape `conditionIds` reads, into its literal set. A doctor check
- * id and the condition id it maps to (its `conditionId` field, already covered by
- * `conditionIds`) are two different values in the same dotted-lowercase shape,
- * `docs/reference/doctor.md`'s own "Check" / "Condition" table columns: `config.bindings` (the
- * check) fails as `config.bindings-missing` (the condition), not as itself.
- * @param {string} root
+ * The committed check-id vocabulary from `tool-check-ids.mjs`: every id the Go tool's
+ * `cairn doctor` currently raises, plus every id a published doc still cites that no live check
+ * raises (deferred or dropped), so a page quoting one of those resolves as history rather than a
+ * hallucination. A check id and the condition id it maps to are two different values in the same
+ * dotted-lowercase shape, `docs/reference/doctor.md`'s own "Check" / "Condition" table columns:
+ * `config.bindings` (the check) fails as `config.bindings-missing` (the condition), not as
+ * itself.
  */
-export function doctorCheckIds(root = ROOT) {
-  const dir = join(root, 'src/lib/doctor');
-  const ids = new Set();
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    // The check modules only (`check-*.ts` and `checks-*.ts`), never every file in the
-    // directory. A resolution set that silently widens is the failure this gate exists to
-    // catch: an unrelated `id:` field added to `assemble.ts` or `report.ts` would start
-    // resolving a hallucinated dotted name and quietly retire a true positive.
-    if (!entry.isFile() || !entry.name.startsWith('check') || !entry.name.endsWith('.ts')) continue;
-    const text = readFileSync(join(dir, entry.name), 'utf8');
-    for (const m of text.matchAll(/\bid:\s*'([a-z][a-z0-9_.-]*)'/g)) ids.add(m[1]);
-  }
-  return ids;
+export function toolCheckIds() {
+  return new Set([...TOOL_CHECK_IDS, ...RETIRED_TOOL_CHECK_IDS]);
 }
 
 // A published tarball ships a subset of the repo verbatim (`package.json`'s own `files`), so a
@@ -467,7 +459,7 @@ export function findUnresolvedSymbols(root = ROOT) {
   const cliFlags = cliFlagNames(root);
   const logEvents = logEventNames(root);
   const conditions = conditionIds(root);
-  const checkIds = doctorCheckIds(root);
+  const checkIds = toolCheckIds();
   const eventOrConditionAreas = new Set(
     [...logEvents, ...conditions, ...checkIds].map((e) => e.slice(0, e.indexOf('.'))),
   );

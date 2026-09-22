@@ -1,5 +1,5 @@
 // cairn-manifest's assembly: the argv parser, the bin's only knob beyond the write itself. A thin
-// split so the bin stays a shell, mirroring cairn-doctor's own assemble.ts.
+// split so the bin stays a shell, mirroring cairn-media-seed's own assemble.ts.
 
 /** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
 export const USAGE = 'Usage: cairn-manifest [--help]';

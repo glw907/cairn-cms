@@ -319,9 +319,9 @@ const HOSTNAME_ALLOWED_HOSTS = new Set([
 ]);
 
 // Not hostnames: dotted identifiers or ids that happen to collide with the HOSTNAME_SHAPE_PATTERN
-// TLD list. `github.app` is the doctor check id / diagnostic condition id declared at
-// src/lib/diagnostics/conditions.ts and src/lib/doctor/checks-github.ts (`id: 'github.app'`), not
-// a URL cairn's code or docs ever dereference.
+// TLD list. `github.app` is the diagnostic condition id declared at
+// src/lib/diagnostics/conditions.ts (`id: 'github.app'`), not a URL cairn's code or docs ever
+// dereference.
 const DOTTED_IDENTIFIER_ALLOWANCES = new Set(['github.app']);
 
 /**

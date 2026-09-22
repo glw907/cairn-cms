@@ -100,6 +100,9 @@ export const REGISTRY: Record<string, CairnCondition> = {
     remediation: 'Set observability.enabled to true in wrangler.jsonc, then re-deploy.',
     docsAnchor: 'is-it-working.md#turn-on-observability',
   },
+  // WATCH: check:tool-heuristics greps the checkOrigin: false literal below (twice, in why and
+  // remediation) for the Go tool's config.csrf-disable heuristic, which has no engine symbol of
+  // its own to watch and instead relies on the engine telling every site to write this string.
   'config.csrf-disable-missing': {
     id: 'config.csrf-disable-missing',
     severity: 'warning',

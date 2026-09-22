@@ -60,11 +60,11 @@ export function isLocalHost(hostname: string): boolean {
  *   header is most freely forged, so it is not an optional convenience.
  * - `{ depth: 'platform-only' }` reads `platform.env` alone and never falls through, no matter what
  *   `process.env` carries. `csrfSecure` (`sveltekit/csrf.ts`) is the one platform-only consumer,
- *   for four reasons recorded on that function's own doc comment: the doctor probe's external
- *   cross-check invariant, the csrf unit suite's determinism against the runner's own shell, a LAN
- *   http host that a process-env https origin would otherwise mint an unusable Secure cookie for,
- *   and a TLS-terminated deploy's shared `secure` input, which renames both the csrf and session
- *   cookies together.
+ *   for four reasons recorded on that function's own doc comment: the admin.login-probe-failed
+ *   condition's external cross-check invariant, the csrf unit suite's determinism against the
+ *   runner's own shell, a LAN http host that a process-env https origin would otherwise mint an
+ *   unusable Secure cookie for, and a TLS-terminated deploy's shared `secure` input, which
+ *   renames both the csrf and session cookies together.
  *
  * Both depths are monotonic toward Secure and neither can downgrade it: an https request
  * short-circuits `true` in `csrfSecure` before either depth is ever consulted, so no fallback

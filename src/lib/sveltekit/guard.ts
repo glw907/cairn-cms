@@ -71,7 +71,7 @@ export interface AuthGuardConfig {
 /**
  * A site's own identity gate, replacing the guard's session-cookie resolution. `resolve` proves
  * who is making the request, or says why it could not; `logoutUrl` and `label` back the hand-off
- * page and the doctor's probe.
+ * page and the admin.login-probe-failed condition.
  */
 export interface IdentityResolver {
   /** Prove who is making this request, or say why it could not be proven. */
@@ -82,7 +82,7 @@ export interface IdentityResolver {
    * redirects.
    */
   logoutUrl: string;
-  /** The gate's name for the hand-off page and the doctor probe (default "your organization's sign-in"). */
+  /** The gate's name for the hand-off page and the admin.login-probe-failed condition (default "your organization's sign-in"). */
   label?: string;
 }
 
@@ -161,6 +161,8 @@ function isSafeLogoutUrl(logoutUrl: string): boolean {
  * contract-first-returns rule on its own, since the host ecosystem's convention wins over
  * cairn's `*Routes` grammar on a `Handle`-shaped return.
  */
+// WATCH: check:tool-heuristics greps this exact signature for the Go tool's auth.role-wiring
+// heuristic, which reads a site's own createAuthGuard call for its argument shape.
 export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
   const { access, includeSubDomains, identity } = config;
   const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;

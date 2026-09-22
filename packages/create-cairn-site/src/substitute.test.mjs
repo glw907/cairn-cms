@@ -171,21 +171,15 @@ test('verifySiteConfigPath rejects a non-string or empty value', () => {
   assert.throws(() => verifySiteConfigPath(''), /non-empty string/);
 });
 
-// The DEFAULT shape ruling 5 sanctions: a generated data file both the doctor and the bake read
-// as data, never a cross-package import (the bake never import()s engine code). One source of
-// truth is proved here, not by a shared module: a synthetic doctor/bake divergence fails this
-// test rather than shipping silently.
-test('the committed site-config-path.json matches the engine doctor\'s own copy', () => {
+// The DEFAULT shape ruling 5 sanctions: a generated data file the bake reads as data, never a
+// cross-package import (the bake never import()s engine code). This package's own copy is the
+// one source; the Go tool's mirror (`tool/internal/doctor/site-config-path.json`) is kept in
+// sync with it by hand.
+test('the committed site-config-path.json parses to the value verifySiteConfigPath accepts', () => {
   const bakeCopy = JSON.parse(
     readFileSync(fileURLToPath(new URL('./site-config-path.json', import.meta.url)), 'utf8'),
   );
-  const engineCopy = JSON.parse(
-    readFileSync(
-      fileURLToPath(new URL('../../../src/lib/doctor/site-config-path.json', import.meta.url)),
-      'utf8',
-    ),
-  );
-  assert.deepEqual(bakeCopy, engineCopy);
+  assert.deepEqual(bakeCopy, { path: verifySiteConfigPath(bakeCopy.path) });
 });
 
 // Regression: the pass wrote its own `description:` line without touching the template's, so a

@@ -626,7 +626,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       </div>
       <div class="w-full max-w-md text-left">
         <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
-        <div class="mt-1 type-meta leading-relaxed text-muted">Verify or rotate the secret with <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">wrangler secret put ANTHROPIC_API_KEY</code>, then reload this page or run <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">cairn-doctor</code> to confirm it again.</div>
+        <div class="mt-1 type-meta leading-relaxed text-muted">Verify or rotate the secret with <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">wrangler secret put ANTHROPIC_API_KEY</code>, then reload this page.</div>
       </div>
     </div>
   {:else}

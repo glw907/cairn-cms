@@ -532,9 +532,9 @@ describe('seedMedia', () => {
   });
 });
 
-// The packaging lesson from cairn-doctor: prove the emitted bin runs under plain Node from
-// dist. The unit suite must pass without a prior `npm run package`, so this spawns only when
-// the built bin exists and skips (via skipIf) otherwise.
+// A packaging lesson this repo's other bins already learned: prove the emitted bin runs under
+// plain Node from dist. The unit suite must pass without a prior `npm run package`, so this
+// spawns only when the built bin exists and skips (via skipIf) otherwise.
 const BIN = resolve(process.cwd(), 'dist/media-seed/bin.js');
 const built = existsSync(BIN);
 

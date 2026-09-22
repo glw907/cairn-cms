@@ -19,6 +19,7 @@ import {
   formatSiteFacts,
   writeSiteFacts,
   siteFactsAbsentWarning,
+  readAdapterFacts,
 } from '../../lib/vite/internal.js';
 
 const WORKTREE = process.cwd();
@@ -149,6 +150,28 @@ describe('buildSiteFactsFromVite', () => {
     expect(parsed).not.toHaveProperty('owner');
     expect(parsed).not.toHaveProperty('repo');
     expect(parsed).not.toHaveProperty('from');
+  }, 30000);
+});
+
+describe('readAdapterFacts', () => {
+  it('returns null when the directory has no Vite config', async () => {
+    const dir = mkdtempSync(join(WORKTREE, '.cairn-vite-test-'));
+    made.push(dir);
+    expect(await readAdapterFacts(dir)).toBeNull();
+  });
+
+  it('reads the media bucket binding, roles, and AI posture off the adapter', async () => {
+    const dir = tempProject(ADAPTER_FULL);
+    expect(await readAdapterFacts(dir)).toEqual({
+      mediaBucketBinding: 'MEDIA_BUCKET',
+      roles: { owner: 'owner', instructor: { capability: 'editor', home: '/admin/schedule' } },
+      aiPosture: 'decline',
+    });
+  }, 30000);
+
+  it('omits every field an adapter with no facts declares', async () => {
+    const dir = tempProject(ADAPTER_NO_FACTS);
+    expect(await readAdapterFacts(dir)).toEqual({});
   }, 30000);
 });
 

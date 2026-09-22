@@ -15,11 +15,10 @@ import { AI_CRAWLERS } from './ai-crawlers.js';
 
 /**
  * The `Content-Signal` value this builder emits per posture. Internal, and deliberately the one
- * definition: the doctor's live probe recognizes cairn's own output by comparing against these,
- * so a transcribed copy that drifted would make the engine's own robots.txt read to that check as
- * a file some other layer wrote.
+ * definition: {@link buildRobots} is its only caller, so a transcribed copy elsewhere could drift
+ * from what the engine actually emits.
  */
-export const CONTENT_SIGNAL = {
+const CONTENT_SIGNAL = {
   decline: 'ai-train=no',
   invite: 'search=yes, ai-train=yes',
 } as const;

@@ -287,3 +287,6 @@ Name the check that entry holds
 - the repository the Worker deploys from, as owner/name
 - wall-clock budget for the whole run
 - when to colour the output: auto, always, or never
+
+## doctor
+

@@ -155,21 +155,26 @@ version`, no `gh release create`, no publish, unless a release is independently 
 versions are meaningful, not a per-pass reflex.
 
 **Publishing is a separate, deliberate act with two triggers, never a calendar or a finished
-pass.** Cut a release only when (1) a consumer site needs the change now (which also resolves
-the publish-before-push ordering), or (2) a coherent capability or initiative has landed and is
-worth making available, at its natural boundary. Default to holding: `main` is always
-releasable, so completed passes accumulate unpublished, and breaking changes batch so a site
-upgrades across one `Consumers must:` list, not five.
+pass.** Cut a release only when (1) a consumer site needs the change now (which also resolves the
+publish-before-push ordering), or (2) a coherent
+capability or initiative has landed and is worth making available, at its natural boundary.
+Default to holding: `main` is always releasable, so completed passes accumulate unpublished, and
+breaking changes batch so a site upgrades across one `Consumers must:` list, not five. The
+admin re-expression sweep is the live example: it changes the admin's internal CSS and
+components, which a consumer never imports, so it holds unpublished until consumer-facing
+work accumulates with it, and may warrant no release of its own.
 
 **When a release is cut, the number tracks the publish, not the passes.** One publish, one
-increment, sized to what the window contains. Set the number only at the cut (pre-numbering a
-held pass produces phantoms, as `0.77.0` did when it rolled into `0.78.0`). SemVer, not CalVer;
-in `0.x` a minor is a new subsystem or public surface, everything else a patch, and the number
-signals scale, not compatibility (the changelog carries compatibility via `Consumers must:`).
-Published numbers are immutable, so verify the next is free with `npm view @glw907/cairn-cms
-versions --json` before promising it. The release body is the changelog window since the last
-published tag, cut with `gh release create v<x.y.z> --target main` (fires the OIDC publish
-workflow).
+increment, sized to what the window contains. Keep the work under `## Unreleased` and set the
+number only at the cut (pre-numbering a held pass produces phantoms, as `0.77.0` did when it
+rolled into `0.78.0`). The scheme is SemVer, not CalVer; in `0.x` a minor is a new subsystem or
+public surface and everything else is a patch, and the number signals scale, not compatibility
+(the changelog carries compatibility via `Consumers must:`). Published numbers are immutable and
+every sub-`0.68` number is taken, so verify the next number is free with
+`npm view @glw907/cairn-cms versions --json` before promising it. The release body is the
+changelog window since the last published tag, carrying every
+`Consumers must:` line, cut with `gh release create v<x.y.z> --target main` (fires the OIDC
+publish workflow).
 
 The path to `1.0` and its readiness checklist live in [`ROADMAP.md`](ROADMAP.md) ("Toward 1.0");
 the full scheme is in the `cairn-release-process-and-versioning` memory.
@@ -188,10 +193,10 @@ readiness in [`ROADMAP.md`](ROADMAP.md).
 
 ## Watch items (conditional follow-ups)
 
-A watch item is a follow-up defined by its trigger, not its action: manage it by what can detect
-that trigger, and promote it to an automated tripwire whenever the trigger is machine-detectable.
-Claude cannot self-trigger between sessions; only a gate, a hook, or a scheduled routine can, so
-prose in a backlog is the weakest form, never the default. Match the mechanism to the trigger:
+A watch item is a follow-up defined by its trigger, not its action, so manage it by what can detect that
+trigger, and promote it to an automated tripwire whenever the trigger is machine-detectable. Claude cannot
+self-trigger between sessions; only a gate, a hook, or a scheduled routine can, so prose in a backlog is the
+weakest form and the fallback, never the default. Match the mechanism to the trigger:
 
 - A **code condition** ("a banned API reappears", "a structure grows past a bound") becomes a gate
   or test (`check:reference`, `check:version`, ...) or a `settings.json` hook; a failing test is
@@ -218,17 +223,21 @@ The official frontend-design skill is for ORIGINAL aesthetics, no reference comp
 it alone for a port. What is cairn-specific, not in the skill:
 
 - **Fidelity tiers:** SITE REBUILDS (ecxc.ski, 907.life) are quite-close-and-improved; THEME
-  PORTS are GLANCE-INDISTINGUISHABLE, licensed differences behavioral and structural (cairn
-  underneath), never the visible design language. Typography-forward work verifies at the
-  detail level (wordmark, flow spacing, blockquote scale, link conventions) with side-by-side crops.
+  PORTS are GLANCE-INDISTINGUISHABLE, the licensed differences behavioral (the responsive
+  standard at the extremes) and structural (cairn underneath), never the visible design language.
+  Typography-forward work verifies at the detail level (wordmark, flow spacing, blockquote scale,
+  link conventions) with side-by-side crops.
 - **The one-check rule:** nothing deploys without a full-page render READ by the main loop's own
   eyes; a member-facing site additionally gets Geoff's before/after.
-- **The responsive standard:** every family artifact meets the five-viewport bar (320, 390,
-  768, 1440, 2560), composed at the extremes, never merely unbroken. Gated by the showcase's CI
-  width matrix; a ported theme beats its original at 320 and 2560. Authored docs diagrams are
-  exempt: containment plus a text alternative (docs-register.md, Visuals).
+- **The responsive standard:** every family artifact (themes, showcase, consumer sites, cairn.pub,
+  Topo) meets the five-viewport bar (320, 390, 768, 1440, 2560), composed at the extremes, never
+  merely unbroken. Gated by the showcase's CI width matrix (baselines regenerate on CI, the
+  canonical renderer); a ported
+  theme beats its original at 320 and 2560. Authored docs diagrams are exempt: containment plus a
+  text alternative (docs-register.md, Visuals; reasoning docs/internal/public-design-system.md).
 - **The harvest:** every theme or site built on the chassis banks its harvest before the pass
-  closes, in the CHASSIS first, the engine where deeper. Not done until the harvest is banked.
+  closes, in the CHASSIS first (the showcase copy is the starting chassis every next theme
+  receives), the engine where deeper. Not done until the harvest is banked.
 
 ## Admin interface design
 
@@ -259,53 +268,26 @@ A pass adding a diagnosable code path gives it an event in the vocabulary, not a
 call, and updates the reference table in the same pass. `createLogger` is public from the `/log`
 subpath; `docs/reference/log.md` states its narrowed promise.
 
-## Durable gotcha (Cloudflare email)
+## Durable gotchas (quick index)
 
-Two surfaces, two error vocabularies for the same sender-not-ready condition; the binding
-throws `E_SENDER_NOT_VERIFIED` (how the ecxc outage hid), the REST send throws `10203`/`10204`
-with no `E_` code. Full detail, the DNS side effects, and the fix:
-[`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md#cloudflare-email).
+Five recurring traps, one line each; full detail per anchor in
+[`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md).
 
-## Pointing a consumer at unreleased engine work
-
-`npm run link:consumer -- <site-dir>` builds, packs, installs, and verifies; `--restore` puts the
-site back on `^<version>` from the registry. A `file:` path cannot merge, so the un-pin has to be
-as cheap as the pin.
-
-It exists because `npm pack` derives the tarball name from the version, so re-packing changed code
-reuses the filename, and a later plain `npm install` can serve the OLD build from npm's cache while
-printing "up to date." The script content-hashes each pack and verifies every installed file
-against it.
-
-## Durable gotcha (a worktree showcase e2e proves MAIN's engine)
-
-In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so
-the showcase resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` to MAIN's build, not the
-worktree's, silently proving the wrong engine until a from-scratch `npm install` in the
-worktree's showcase repoints both `file:` deps. The adjacent stale-`dist` trap is closed
-structurally by the showcase's `pretest:e2e` repackage hook; the symlink half is not. Reinstall
-before trusting a worktree e2e, or rely on CI's real checkout.
-
-## Durable gotcha (CI-canonical baselines this workstation cannot reproduce)
-
-The visual baselines are CI-canonical; this workstation's Chromium renders a few surfaces a few
-pixels differently, so a local gate is green only when its visual failures are exactly the files
-the latest regen commit rewrote. Full detail and the lasting-fix ROADMAP chore:
-[`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md#ci-canonical-baselines-this-workstation-cannot-reproduce).
-
-## Durable gotcha (Vite 8 ships TypeScript in dist `.svelte`)
-
-Vite 8 / Rolldown parses dist `.svelte` `<script lang="ts">` as JavaScript before the consumer's
-Svelte plugin runs. The post-package step `scripts/build/transpile-dist-svelte.mjs` transpiles
-each dist `<script>` body and KEEPS the `lang="ts"` tag; do not remove the step or strip
-`lang="ts"`. Full post-mortem:
-[`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md#vite-8-ships-typescript-in-dist-svelte).
+- **Cloudflare email:** `E_SENDER_NOT_VERIFIED` is also Routing's string for an unverified
+  destination, how the ecxc outage hid (`#cloudflare-email`).
+- **Consumer engine pin** (`link:consumer`): guards `npm pack`'s stale-cache trap
+  (`#pointing-a-consumer-at-unreleased-engine-work`).
+- **Worktree e2e:** a worktree showcase silently proves MAIN's engine until reinstalled
+  (`#a-worktree-showcase-e2e-proves-mains-engine`).
+- **CI baselines:** this workstation's Chromium renders them slightly off
+  (`#ci-canonical-baselines-this-workstation-cannot-reproduce`).
+- **Vite 8 dist TypeScript:** parses dist `.svelte` TypeScript as JS; keep the transpile step
+  (`#vite-8-ships-typescript-in-dist-svelte`).
 
 ## Credentials (machine-local, intentionally not in git)
 
-The GitHub App id, installation id, private key location, and the per-site D1 `AUTH_DB`
-bindings live in [`docs/internal/credentials.md`](docs/internal/credentials.md), out of this
-context-loaded file since they are reference data, not orientation.
+GitHub App and D1 `AUTH_DB` credentials:
+[`docs/internal/credentials.md`](docs/internal/credentials.md), reference data, not orientation.
 
 ## Authoring
 

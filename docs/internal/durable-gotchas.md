@@ -17,6 +17,26 @@ recipients need Workers Paid); it writes DNS records including an apex DMARC at 
 which deleting the subdomain leaves behind. Full detail, measured propagation, and every
 captured body: `docs/internal/record/2026-08-11-t4b-email-spike.md`.
 
+## Pointing a consumer at unreleased engine work
+
+`npm run link:consumer -- <site-dir>` builds, packs, installs, and verifies; `--restore` puts the
+site back on `^<version>` from the registry. A `file:` path cannot merge, so the un-pin has to be
+as cheap as the pin.
+
+It exists because `npm pack` derives the tarball name from the version, so re-packing changed code
+reuses the filename, and a later plain `npm install` can serve the OLD build from npm's cache while
+printing "up to date." The script content-hashes each pack and verifies every installed file
+against it.
+
+## A worktree showcase e2e proves MAIN's engine
+
+In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so
+the showcase resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` to MAIN's build, not the
+worktree's, silently proving the wrong engine until a from-scratch `npm install` in the
+worktree's showcase repoints both `file:` deps. The adjacent stale-`dist` trap is closed
+structurally by the showcase's `pretest:e2e` repackage hook; the symlink half is not. Reinstall
+before trusting a worktree e2e, or rely on CI's real checkout.
+
 ## CI-canonical baselines this workstation cannot reproduce
 
 The visual baselines are CI-canonical (`e2e.yml`'s `update_snapshots` regen commits them). After

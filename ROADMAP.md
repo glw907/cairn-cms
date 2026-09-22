@@ -842,6 +842,32 @@ the named human gates only):**
 
 ## Next
 
+- **`check:facts` cannot catch an off-by-one `Source:` pointer (doctor-retirement pre-task,
+  2026-09-21).** `validatePointer` (`scripts/checks/check-facts.mjs:309`) resolves the path and
+  checks that every cited line is in range; an anchored pointer then passes when its tokens appear
+  anywhere within ten lines of the cited range, and an anchor-less pointer is range-checked only.
+  A pointer one or two lines off therefore stays green, which is how the stale pointer at
+  `docs/internal/facts/admin.md:57` survived until a task edited the file beside it, and how a
+  second one landed in this pass's own first draft. Both were caught by a reviewer reading the
+  cited line, not by the gate. The docs rebuild reads these pointers as its raw material, so the
+  cost lands there. Trigger: a third stale pointer, or the docs rebuild's first harvest pass.
+
+- **`npm run check:surface -- --update` cannot regenerate the surface snapshot (doctor-retirement
+  pre-task, 2026-09-21).** The script is three commands joined by `&&`, and npm appends run
+  arguments to the end of the whole string, so `--update` reaches `check-surface-leaks.mjs` only
+  and `check-surface.mjs` never sees it. A regen therefore takes
+  `node scripts/checks/check-surface.mjs --update` by hand, which Task 3 had to discover after a
+  reviewer flagged a stale `docs/internal/api-surface.md`. The fix is a second npm script that
+  calls the generator alone. Trigger: the next pass that changes the public surface, or the next
+  reviewer finding of a stale surface snapshot.
+
+- **`cairn-run-gate` needs a silence watchdog for browser gates (doctor-retirement pre-task,
+  2026-09-21; a dotfiles chore, filed here because cairn passes are what hit it).** This pass lost
+  over an hour to a stock `npm test` that held the heavy lock while producing no output, because
+  the gate runner waits on exit and nothing watches for a run that has stopped making progress.
+  A watchdog that fails a browser-lane gate after a bounded silence would have surfaced it in
+  minutes. Trigger: the next gate run that has to be killed by hand.
+
 - **Report the drawer `:where()` specificity defect upstream to daisyUI (pre-cut, 2026-09-21).**
   `components/drawer.css` releases its open panel's `will-change` through a rule whose prelude is
   wrapped in `:where()`, which zeroes the prelude, so the release measures (0,1,0) against its own
@@ -1003,7 +1029,9 @@ the named human gates only):**
   Carbon's chart guidance is a recipe reference only.
 
 - **The window after the cut, sequenced (Geoff, 2026-09-13, re-ruled 2026-09-21).** The order
-  after the `tool/v1.0.0` tag: the one release cut; a docs chore moving two overturned rules to
+  after the `tool/v1.0.0` tag, with the cut itself now held behind the doctor-retirement track
+  (retire-1, draft docs pass A, a `tool/v1.1.0` release, then retire-2a and retire-2b; see
+  `docs/STATUS.md`): the one release cut; a docs chore moving two overturned rules to
   their execution paths (the narrative-arm freeze and the site-pass no-edit rule), which touches
   the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
   the docs-infra currency pass

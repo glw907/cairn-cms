@@ -56,6 +56,10 @@ export default defineConfig({
 To regenerate the manifest after editing content, run the [`cairn-manifest`](./cli-cairn-manifest.md)
 CLI, which pairs with this plugin.
 
+The same `buildStart` hook also verifies [`site-facts.json`](./site-facts.md), the adapter-derived
+contract a Go process reads. A missing file only warns; a stale one fails the build the same way a
+drifted manifest does.
+
 ## `CairnManifestOptions`
 
 Stability tier: Extension API.
@@ -65,6 +69,7 @@ interface CairnManifestOptions {
   configModule: string;
   content: Record<string, string>;
   manifestPath?: string;
+  siteFactsPath?: string;
 }
 ```
 
@@ -75,3 +80,5 @@ matches the build's own resolution.
 - `content` maps each concept id to its content glob.
 - `manifestPath` is where the committed manifest lives. It defaults to
   `/src/content/.cairn/index.json`.
+- `siteFactsPath` is where the committed [`site-facts.json`](./site-facts.md) lives. It defaults
+  to `/src/content/.cairn/site-facts.json`.

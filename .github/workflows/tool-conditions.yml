@@ -1,0 +1,39 @@
+name: tool-conditions
+
+# check:tool-conditions runs inside test.yml too, but test.yml ignores tool/** and this gate's own
+# committed artifacts live under tool/. A commit that touches only those generated files (no other
+# path test.yml watches) would otherwise run no check at all; this workflow is the one that sees
+# it. It needs Node, not Go, since the generator and the gate are both plain Node scripts reading
+# the built dist/.
+on:
+  push:
+    branches: [main, rebuild]
+    paths:
+      - 'src/lib/diagnostics/conditions.ts'
+      - 'packages/create-cairn-site/src/site-config-path.json'
+      - 'tool/internal/spine/conditions.json'
+      - 'tool/internal/doctor/site-config-path.json'
+      - 'scripts/build/emit-tool-conditions.mjs'
+      - 'scripts/checks/check-tool-conditions.mjs'
+      - '.github/workflows/tool-conditions.yml'
+  pull_request:
+    paths:
+      - 'src/lib/diagnostics/conditions.ts'
+      - 'packages/create-cairn-site/src/site-config-path.json'
+      - 'tool/internal/spine/conditions.json'
+      - 'tool/internal/doctor/site-config-path.json'
+      - 'scripts/build/emit-tool-conditions.mjs'
+      - 'scripts/checks/check-tool-conditions.mjs'
+      - '.github/workflows/tool-conditions.yml'
+
+jobs:
+  tool-conditions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check:tool-conditions

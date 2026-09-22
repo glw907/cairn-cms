@@ -860,6 +860,28 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `Object.keys(heights).filter(...)`; `if (!pinnedWidths.includes(width)) issues.push('width ...
   is not a declared height for this story ...')`). [verified]
 
+## docs/reference/site-facts.md
+
+- `site-facts.json` carries exactly `version`, `mediaBucketBinding`, `roles`, and `aiPosture`;
+  `owner`, `repo`, and `from` are never written, even when the adapter declares them.
+  Source: `src/lib/vite/internal.ts:436-455` (`formatSiteFacts` accepts only
+  `Pick<AdapterFacts, 'mediaBucketBinding' | 'roles' | 'aiPosture'>`; `buildSiteFactsFromVite`
+  passes it the result of the shared `parseAdapterFacts` validation, never the raw parsed object).
+  [verified]
+- An absent `site-facts.json` is not drift: `checkSiteFacts` returns `{ status: 'absent' }` and the
+  `cairnManifest` plugin's `buildStart` reports exactly one build-log warning naming
+  `npx cairn-manifest`, never failing the build. Source: `src/lib/vite/internal.ts:477-481,182-186`
+  (`checkSiteFacts` returns early on a missing committed file; `buildStart` calls `this.warn` once
+  with `siteFactsAbsentWarning(...)`). [verified]
+- A present `site-facts.json` that no longer matches the adapter fails the build through the same
+  `this.error(...)` path the content manifest uses, naming the file and the fix. Source:
+  `src/lib/vite/internal.ts:484-493,186-187` (`checkSiteFacts` compares the derived facts against
+  the committed bytes and returns `{ status: 'stale', message }`; `buildStart` calls `this.error`
+  with that message). [verified]
+- The `cairn-manifest` CLI writes `site-facts.json` in the same run that writes the content
+  manifest. Source: `src/lib/vite/bin.ts:28-29` (`main` calls `writeManifest` then
+  `writeSiteFacts`). [verified]
+
 ## docs/reference/supported-toolchain.md
 
 - `check:target-stack` derives every "Target today" cell from the root `package.json` version,
@@ -1143,6 +1165,24 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `buildStart`, so a manifest drifted from the corpus fails the build. Source:
   `src/lib/vite/internal.ts:154-173` (`buildStart` calls `verifyManifestFromVite`, which
   `evalVirtual`s the verify-mode virtual module via `server.ssrLoadModule`). [verified]
+
+## tool/internal/spine/conditions.json
+
+- `tool/internal/spine/conditions.json` and `tool/internal/doctor/site-config-path.json` are
+  committed, generated artifacts, never hand-edited. Source:
+  `scripts/checks/check-tool-conditions.mjs:1-2`. [verified]
+- `scripts/build/emit-tool-conditions.mjs` regenerates both mirrors from the built condition
+  registry (`dist/diagnostics/conditions.js`) and the scaffolder's own site-config-path file.
+  Source: `scripts/build/emit-tool-conditions.mjs:18-19,50-66` (`CONDITIONS_JS`,
+  `SITE_CONFIG_PATH_SOURCE`, `loadConditions`, `buildMirrors`). [verified]
+- `check:tool-conditions` regenerates both mirrors into memory and fails on the first byte that
+  differs from the committed file. Source: `scripts/checks/check-tool-conditions.mjs:19-27`
+  (`compareMirror`). [verified]
+- The conditions mirror carries exactly seven fields per entry (`id`, `severity`, `title`, `why`,
+  `remediation`, `docsAnchor`, `logEvent`), omitting `docsAnchor` or `logEvent` when a condition
+  carries none rather than writing `null`, and orders entries by `id` for a deterministic diff.
+  Source: `scripts/build/emit-tool-conditions.mjs:25,32-38,45-47` (`FIELDS`, `projectCondition`,
+  `serializeConditions`). [verified]
 
 ## Harvest record
 

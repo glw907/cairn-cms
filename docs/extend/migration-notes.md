@@ -13,6 +13,10 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **Run `npx cairn-manifest` once and commit the new `src/content/.cairn/site-facts.json`.**
+  The `cairnManifest` build plugin now also verifies this file, and a missing one only warns, so
+  your build keeps working until you run the command. A stale one (edited by hand, or left behind
+  after an adapter change) fails the build the same way a stale content manifest does.
 - **`createLogger` (`/log`) takes an optional options bag.** Nothing to change: a
   `createLogger<MyEvent>()` call is unaffected. `createLogger<MyEvent>({ redactKeys: ['memberNumber']
   })` adds your own field names to the redaction, unioned with `REDACTED_LOG_KEYS` rather than

@@ -133,8 +133,10 @@ Match what your doctor printed to the section that explains it:
   `edge.https-not-forced`
 - `Email sending domain`, `Live test send`—[Onboard the sending domain](#onboard-the-sending-domain), `email.sender-not-onboarded`,
   `email.send-failed`
-- `Wrangler bindings`, `Media bucket binding`—[Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings),
+- `Wrangler bindings`—[Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings),
   `config.bindings-missing`
+- `Media bucket binding`—[Declare the media bucket binding](#declare-the-media-bucket-binding),
+  `config.media-bucket-missing`
 - `Tidy API key`—[Configure the Tidy API key](#configure-the-tidy-api-key),
   `config.tidy-key-missing`
 - `Workers Logs sink`—[Turn on observability](#turn-on-observability),
@@ -254,10 +256,16 @@ named `AUTH_DB` in your `wrangler.jsonc` (or `wrangler.toml`), then redeploy; se
 [Wire the delivery surface](../extend/wire-the-delivery-surface.md) and
 [Cloudflare](../reference/cloudflare.md) for the shape.
 
-This same condition id also covers one other check: a storage bucket your site expects for images
-but `wrangler.jsonc` doesn't declare (only on a site with an image library). The check's own
-detail line names which of the two actually failed, so read that rather than assuming it's always
-the `EMAIL`/`AUTH_DB` pair.
+## Declare the media bucket binding
+
+**`config.media-bucket-missing`, a warning.** Your site's adapter declares a media bucket for
+uploaded images, but `wrangler.jsonc` (or `wrangler.toml`) declares no matching `r2_buckets`
+binding, so uploaded media has nowhere to write to. This check only runs on a site that configures
+a media bucket at all; a site with no image library never sees it.
+
+**Ask a developer:** declare an `r2_buckets` binding in `wrangler.jsonc` (or `wrangler.toml`)
+whose name matches the adapter's `bucketBinding`, then redeploy; see
+[Cloudflare](../reference/cloudflare.md) for the shape.
 
 ## Turn on observability
 

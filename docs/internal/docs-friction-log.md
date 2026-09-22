@@ -46,7 +46,19 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-This section is empty. The Go tool's Pass B2 close (2026-09-21) surfaced three `admin` findings
+This section is empty. The doctor-retirement pre-task's close (2026-09-21) triaged the whole log
+again and found no finding left open by an earlier pass: every entry below was re-read against the
+code and each was already cleared by the pass named beside it. The pre-task's own three
+`contributor` findings were surfaced and routed in the same step, all to `ROADMAP.md`'s Next tier,
+since the next pass to change the public surface or read the facts container is the one that pays
+for each: `npm run check:surface -- --update` forwards the flag to `check-surface-leaks.mjs` only,
+so a surface regen takes `node scripts/checks/check-surface.mjs --update` by hand;
+`check:facts` range-checks a `Source:` pointer and matches an anchor within ten lines, so an
+off-by-one pointer stays green, which is how two stale pointers survived into this pass; and
+`cairn-run-gate` has no silence watchdog, so a browser-lane gate that stops making progress holds
+the heavy lock until someone kills it. See Clearings.
+
+The Go tool's Pass B2 close (2026-09-21) surfaced three `admin` findings
 and routed all three in the same step, to `ROADMAP.md`'s "Three docs items for the draft-docs
 pass" entry, since that pass is the one that leans on them: the tool's four public pages moving
 from `tool/docs/` under `docs/`; the drafts needing to avoid a hard-wired scaffold-first order,
@@ -121,6 +133,7 @@ history holds every pruned entry in full.
 | 2026-09-20 | the extend-1 pass's whole-log triage | the three 2026-09-15 facts-harvest entries (the untraced `sveltekit.md` sections, the `migrate-existing-content.md` validation workflow, and the candidate-tagged `sveltekit.md`/`delivery.md`/`delivery-data.md` group) folded whole into `ROADMAP.md`'s Next-tier `[candidate]` re-sourcing entry; extend-1's own three findings filed to `ROADMAP.md`, two in Next (the line-pinned container anchors a pass's own edits invalidate, the showcase `dev` script compiling the admin sheet without watching it) and one in Later (the showcase's public route map, which extend-1's seam proof assumed wrongly) |
 | 2026-09-21 | the Go tool Pass B2 close | its own three `admin` findings, all promoted whole to `ROADMAP.md`'s "Three docs items for the draft-docs pass" entry: the tool's public pages moving under `docs/`, the drafts' scaffold-first order against 2.0's provisioning, and the admin track carrying the tool inside "is my site working". The whole-log sweep found no other open finding to resolve |
 | 2026-09-20 | the extend-2 pass's close | its own two findings, discovered and cleared in the same step: the `./admin-sources.css` subpath's missing dedicated reference page promoted whole to `ROADMAP.md`'s Later tier; the misplaced `cairn-guidance install` symlink-containment fact bullet moved from `docs/internal/facts/extend.md` into a new `## docs/reference/guidance.md` section in `facts/reference.md` |
+| 2026-09-21 | the doctor-retirement pre-task's close | its own three `contributor` findings, all promoted whole to `ROADMAP.md`'s Next tier with their triggers: the `check:surface -- --update` argument-forwarding quirk, `check:facts`'s blindness to an off-by-one `Source:` pointer, and the missing `cairn-run-gate` silence watchdog (a dotfiles chore, filed in the roadmap because cairn passes are what hit it). The whole-log sweep found no open finding left by an earlier pass |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

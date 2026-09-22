@@ -1,5 +1,5 @@
 // The cairn condition registry: one entry per known environment or operational failure mode. It is
-// the shared identity the readiness checklist, the doctor probe, and the runtime renderer all draw
+// the shared identity the readiness checklist, the cairn CLI, and the runtime renderer all draw
 // from, so the three surfaces agree (the 1:1:1). Internal: exported from no public package subpath,
 // so the shape stays free to grow, the same stance as src/lib/log/. Renaming an id is a breaking
 // change to the observable contract.
@@ -84,6 +84,14 @@ export const REGISTRY: Record<string, CairnCondition> = {
     remediation: 'Declare the send_email binding as EMAIL and the d1_databases binding as AUTH_DB in wrangler.jsonc (or wrangler.toml), then re-deploy.',
     docsAnchor: 'is-it-working.md#deploy-the-worker-with-its-bindings',
   },
+  'config.media-bucket-missing': {
+    id: 'config.media-bucket-missing',
+    severity: 'warning',
+    title: 'Media bucket binding is missing',
+    why: 'The adapter declares a media bucket binding, but wrangler declares no matching r2_buckets binding, so uploaded media has no bucket to write to. A site with no media assets configured never raises this.',
+    remediation: 'Declare an r2_buckets binding in wrangler.jsonc (or wrangler.toml) matching the name the adapter configures as its bucketBinding, then re-deploy.',
+    docsAnchor: 'is-it-working.md#declare-the-media-bucket-binding',
+  },
   'config.observability-off': {
     id: 'config.observability-off',
     severity: 'warning',
@@ -128,7 +136,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     id: 'config.tidy-key-missing',
     severity: 'warning',
     title: 'The Tidy Anthropic key is missing or invalid',
-    why: "Tidy is enabled in site.config.yaml, but no ANTHROPIC_API_KEY is set anywhere the doctor can read (neither the wrangler vars nor .dev.vars), or Anthropic rejected a literal key value the doctor could read locally. Tidy's suggestions are unavailable until this is fixed; nothing else on the site is affected, since tidy is an opt-in feature.",
+    why: "Tidy is enabled in site.config.yaml, but no ANTHROPIC_API_KEY is set anywhere the check can read (neither the wrangler vars nor .dev.vars), or Anthropic rejected a literal key value the check could read locally. Tidy's suggestions are unavailable until this is fixed; nothing else on the site is affected, since tidy is an opt-in feature.",
     remediation: 'Set ANTHROPIC_API_KEY with `wrangler secret put ANTHROPIC_API_KEY` for a deployed site (or in .dev.vars for local development), and confirm the key is current.',
     docsAnchor: 'is-it-working.md#configure-the-tidy-api-key',
   },
@@ -232,7 +240,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     severity: 'blocker',
     title: 'Live admin login probe failed',
     why: 'A live request to the deployed admin did not answer with the working sign-in envelope (the login page, its CSRF cookie and hidden field, and the request action), so a real editor cannot sign in either. A probe failure has many possible causes; the detail line names the assertion that failed.',
-    remediation: 'Read the failed assertion in the detail line, run the full doctor against the same site, and work through the deploy guide; the other checks narrow the cause.',
+    remediation: 'Read the failed assertion in the detail line, run cairn doctor against the same site, and work through the deploy guide; the other checks narrow the cause.',
     docsAnchor: 'is-it-working.md#probe-the-deployed-admin',
   },
 };

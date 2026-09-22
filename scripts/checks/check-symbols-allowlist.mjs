@@ -111,6 +111,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
   'file-path:src/content/.cairn/index.json', // a site's own generated manifest, by convention
   'file-path:src/content/.cairn/media.json', // a site's own generated media manifest, by convention
+  'file-path:src/content/.cairn/site-facts.json', // a site's own generated site-facts contract, by convention
   'file-path:src/content/.cairn/dictionary.txt', // a site's own spellcheck dictionary, by convention
   'file-path:src/lib/club/section.ts', // docs/extend/add-a-custom-admin-screen.md's illustrative section module
   'file-path:src/routes/admin/club/events/ApproveDialog.svelte', // docs/extend/add-a-custom-admin-screen.md's illustrative dialog-form recipe component

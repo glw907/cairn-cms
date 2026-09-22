@@ -104,7 +104,7 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at twenty-four entries', () => {
+  it('pins the registry at twenty-five entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
     // auth.role-wiring-missing for the double-wiring doctor check, plus
@@ -113,8 +113,19 @@ describe('condition registry', () => {
     // config.bindings-missing), plus auth.store-unmigrated for the missing-0004 login fault the
     // store now names, plus auth.identity-unresolved and auth.identity-unknown for the identity
     // seam, minus the retired skill-freshness condition (its install moved to cairn-guidance,
-    // which carries no condition of its own). Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(24);
+    // which carries no condition of its own), plus config.media-bucket-missing (its own condition
+    // id, no longer borrowing config.bindings-missing, so the media-bucket check can print its
+    // own remediation). Grow this count only with a registry change.
+    expect(allConditions()).toHaveLength(25);
+  });
+
+  it('resolves the media-bucket condition (its own id, no longer borrowing config.bindings-missing)', () => {
+    const c = condition('config.media-bucket-missing');
+    expect(c.severity).toBe('warning');
+    expect(c.why).toMatch(/media bucket/i);
+    expect(c.remediation).toMatch(/r2_buckets/);
+    expect(c.docsAnchor).toBe('is-it-working.md#declare-the-media-bucket-binding');
+    expect(c.logEvent).toBeUndefined();
   });
 
   it('resolves the tidy-key condition (its own id, no longer borrowing config.bindings-missing)', () => {

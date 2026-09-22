@@ -259,8 +259,9 @@ reviewer can check a page against a checklist rather than a feeling.
 
 ## The four tracks
 
-Every published page belongs to exactly one track, every track serves exactly one profile
-(the full profiles: [`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)),
+Every published page belongs to exactly one track, every track serves exactly one profile,
+with the one exception the scripter-or-agent profile below carves out of the reference arm
+(the full track profiles: [`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)),
 and a page review grades the page against its profile. The five elements below are what a
 reviewer needs without opening the profile document: which reader the track claims, the
 vocabulary contract, how the reader arrives, the success criterion, and the question that
@@ -363,12 +364,36 @@ surfaces?
 
 Dry contract prose, third person: signature, parameters, defaults, failure modes, now with a
 short narrative lede (the reference-entry anatomy, above). No arrival state or vocabulary
-contract of its own; it is the extend track's and the admin track's shared lookup surface (the
-index's "also for site admins" grouping names `doctor`, `log-events`, and
-`supported-toolchain`), and the one place the engine contributor's zone points a reader
-outward to rather than restating. Reference stays rigid and gated: the four existing gates
-(`check:reference`, `check:reference:signatures`, `check:snippets`, `check:readiness`) are the
-structural answer to reference drift, the category's loudest documented complaint.
+contract of its own except for the three pages named below; it is the extend track's and the
+admin track's shared lookup surface (the index's "also for site admins" grouping names
+`doctor`, `log-events`, and `supported-toolchain`), and the one place the engine contributor's
+zone points a reader outward to rather than restating. Reference stays rigid and gated: the
+four existing gates (`check:reference`, `check:reference:signatures`, `check:snippets`,
+`check:readiness`) are the structural answer to reference drift, the category's loudest
+documented complaint.
+
+### The scripter-or-agent profile
+
+This overturns the 2026-08-14 ruling, above and in
+[`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md), that every track
+serves exactly one profile and the reference arm has none (Geoff, 2026-09-21). Three pages
+carry this profile and no others do: `docs/reference/cli-cairn-exit-codes.md`,
+`docs/reference/cli-cairn-json-output.md`, and `docs/reference/cli-cairn-doctor.md`. No agent
+track is added, and `cairn help agents` stays the agent's primary surface; these pages are
+what a `--json` help line, that command, or an admin page's link sends a reader to next.
+
+**Profile:** anyone automating against `cairn`, a person writing a script or an agent.
+
+**Vocabulary contract.** Fully technical. Nothing is banned; imprecision is the defect.
+
+**Arrival state.** From `cairn help agents`, a `--json` help line, an admin page's link, or a
+failed run with an exit code or a parse error already in hand.
+
+**Success criterion.** They can branch on every exit code and parse every payload without
+running the tool.
+
+**Counterpart question:** could a reader write a correct wrapper and parser from this page
+alone, and does any behavior require running the tool to learn?
 
 ## The front door (`docs/README.md`, `docs/why-cairn.md`, and the root `README.md`)
 

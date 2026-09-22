@@ -7,12 +7,15 @@ A finding here does not block the doc that found it. A hole in `docs/internal/fa
 pass needed and didn't find, found wrong, or found only as an unverified `[candidate]`) is filed
 here too, the same as any other finding.
 
-Record each finding with its perspective and a short note. The perspective is one of the four
-audience tracks ([`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)): `editor`
+Record each finding with its perspective and a short note. The perspective is one of the five
+audience profiles ([`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)): `editor`
 (the non-technical author working in `/admin`), `admin` (the technical non-developer who sets up
 and runs the default site; `operator` retired into this tag 2026-08-14), `extender` (the
-Svelte-fluent developer building on cairn's seams; formerly tagged `developer`), or `contributor`
-(the engine contributor working on cairn itself; formerly tagged `maintainer`).
+Svelte-fluent developer building on cairn's seams; formerly tagged `developer`), `contributor`
+(the engine contributor working on cairn itself; formerly tagged `maintainer`), or `scripter`
+(anyone automating against `cairn`, a person writing a script or an agent; the profile the
+2026-08-14 record's dated note added for the three tool contract pages under
+`docs/reference/`).
 
 This log holds only live findings and the tombstones below. Resolved findings are pruned here once
 shipped; their detail lives in the per-plan post-mortems and `docs/STATUS.md`, the homes for shipped

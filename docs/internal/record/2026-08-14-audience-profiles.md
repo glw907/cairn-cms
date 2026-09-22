@@ -194,3 +194,15 @@ boundary docs alone.
 **Counterpart question (grading):** does the zone separate the living standard from the
 record, and is every invariant the contributor could violate either a gate or a written
 rule the index surfaces?
+
+---
+
+## Note (2026-09-21): the reference arm gains a fifth profile
+
+Draft docs pass A overturns this document's ruling that every track serves exactly one
+profile and the reference arm has none. Three reference pages,
+`docs/reference/cli-cairn-exit-codes.md`, `docs/reference/cli-cairn-json-output.md`, and
+`docs/reference/cli-cairn-doctor.md`, are graded against a scripter-or-agent profile: the
+reader is anyone automating against `cairn`, a person writing a script or an agent. The full
+profile lives in `docs/internal/docs-register.md`, "The reference" section. No other
+reference page gains a profile, and no agent track is added.

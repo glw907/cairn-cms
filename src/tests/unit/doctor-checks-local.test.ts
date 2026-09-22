@@ -294,8 +294,8 @@ describe('config.media-bucket', () => {
     expect(result.detail).toContain('r2_buckets');
   });
 
-  it('reuses the config.bindings-missing condition (no new registry entry)', () => {
-    expect(configMediaBucket.conditionId).toBe('config.bindings-missing');
+  it('ties to its own config.media-bucket-missing condition', () => {
+    expect(configMediaBucket.conditionId).toBe('config.media-bucket-missing');
   });
 });
 

@@ -585,5 +585,5 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/vite`
 
 - `cairnManifest`: (opts: CairnManifestOptions) => Plugin<any>
-- `CairnManifestOptions`: { configModule: string; content: { [x: string]: string }; manifestPath?: string }
+- `CairnManifestOptions`: { configModule: string; content: { [x: string]: string }; manifestPath?: string; siteFactsPath?: string }
 

@@ -55,7 +55,7 @@ func (emailCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options
 		return outcome
 	}
 	if !c.HaveCF {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonCredMissing}
+		return credMissingOutcome()
 	}
 	return checkSendingSubdomain(ctx, r, c)
 }
@@ -99,14 +99,14 @@ func checkDMARC(ctx context.Context, probe *providers.Probe, domain string) (spi
 		policy := dmarcPolicy(lower)
 		switch policy {
 		case "none":
-			return spine.Outcome{State: spine.Failing, Detail: "dmarc policy is p=none"}, false
+			return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCPolicyNone, Detail: detailEmailDMARCPolicyNone()}, false
 		case "":
-			return spine.Outcome{State: spine.Failing, Detail: "dmarc record carries no p= policy"}, false
+			return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCNoPolicy, Detail: detailEmailDMARCNoPolicy()}, false
 		default:
 			return spine.Outcome{}, true
 		}
 	}
-	return spine.Outcome{State: spine.Failing, Detail: "no _dmarc TXT record published"}, false
+	return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCMissing, Detail: detailEmailDMARCMissing()}, false
 }
 
 // checkSPF reads domain's own TXT records, the sending subdomain Cloudflare's Email Sending
@@ -124,7 +124,7 @@ func checkSPF(ctx context.Context, probe *providers.Probe, domain string) (spine
 			return spine.Outcome{}, true
 		}
 	}
-	return spine.Outcome{State: spine.Failing, Detail: "sending subdomain SPF record missing " + cloudflareSPFInclude}, false
+	return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailSPFMissing, Detail: detailEmailSPFMissing(cloudflareSPFInclude)}, false
 }
 
 // checkDKIM reports Failing unless at least one of dkimSelectors resolves a TXT record under
@@ -141,14 +141,14 @@ func checkDKIM(ctx context.Context, probe *providers.Probe, domain string) (spin
 			return spine.Outcome{}, true
 		}
 	}
-	return spine.Outcome{State: spine.Failing, Detail: "no dkim selector txt resolved"}, false
+	return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDKIMMissing, Detail: detailEmailDKIMMissing()}, false
 }
 
 // checkSendingSubdomain reads the zone's Cloudflare Email Sending subdomains and reports on the
 // entry named after r.Domain, the apex a site's `wrangler email sending enable` onboards.
 func checkSendingSubdomain(ctx context.Context, r record.Record, c Clients) spine.Outcome {
 	if r.Cloudflare.ZoneID == "" {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: "no zone id recorded for this site"}
+		return noZoneIDOutcome()
 	}
 	subdomains, err := c.CF.EmailSendingSubdomains(ctx, r.Cloudflare.ZoneID)
 	if err != nil {
@@ -163,5 +163,5 @@ func checkSendingSubdomain(ctx context.Context, r record.Record, c Clients) spin
 		}
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkEmailNotReady)}
 	}
-	return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEmailSenderNotOnboarded, Detail: "sending subdomain not onboarded"}
+	return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEmailSenderNotOnboarded, Detail: detailEmailSenderNotOnboarded()}
 }

@@ -1,0 +1,88 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "GET /accounts/{account_id}/workers/scripts?page=1",
+    "status": 200,
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes; every key set, result_info value, and count below is the live one. The live body carried 14 scripts and no result_info; two are kept here and the absent result_info is the property under test."
+  },
+  "body": {
+    "result": [
+      {
+        "created_on": "2026-01-25T18:00:10.112994Z",
+        "modified_on": "2026-08-30T20:25:54.280296Z",
+        "id": "example-site",
+        "tag": "c918794033c69ddc9b1eeeaf503248b0",
+        "tags": [],
+        "deployment_id": "",
+        "tail_consumers": null,
+        "logpush": false,
+        "observability": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "redact_query_string": false,
+          "logs": {
+            "enabled": true,
+            "head_sampling_rate": 1,
+            "persist": true,
+            "invocation_logs": true
+          },
+          "traces": {
+            "enabled": false,
+            "persist": true,
+            "head_sampling_rate": 1
+          }
+        },
+        "has_assets": true,
+        "has_modules": true,
+        "etag": "43de32a69ad011589795caefa417e3e4b6c74997daa2f1177f8f9ad31b754cc9",
+        "handlers": [
+          "fetch"
+        ],
+        "last_deployed_from": "wrangler",
+        "compatibility_date": "2025-05-05",
+        "compatibility_flags": [
+          "nodejs_compat"
+        ],
+        "usage_model": "standard",
+        "routes": null
+      },
+      {
+        "created_on": "2026-02-08T23:12:06.330312Z",
+        "modified_on": "2026-08-30T02:54:01.582932Z",
+        "id": "example-worker-1",
+        "tag": "f48cdde8c2df3f0f35d99c3885813ff4",
+        "tags": [],
+        "deployment_id": "",
+        "tail_consumers": null,
+        "logpush": false,
+        "has_assets": true,
+        "has_modules": true,
+        "etag": "af3f6b4aeff73c2509c2e833c13a8382702c70d6ace0b42327f2240abf1cce7a",
+        "handlers": [
+          "fetch",
+          "email"
+        ],
+        "last_deployed_from": "wrangler",
+        "compatibility_date": "2025-04-01",
+        "usage_model": "standard",
+        "routes": [
+          {
+            "id": "5f90c0ab40234dc3168bfbb385173d32",
+            "pattern": "www.carin-test-2.org/*",
+            "script": "example-worker-1",
+            "request_limit_fail_open": false
+          },
+          {
+            "id": "0ac8d16818fbae90b269a31d477694f5",
+            "pattern": "carin-test-2.org/*",
+            "script": "example-worker-1",
+            "request_limit_fail_open": false
+          }
+        ]
+      }
+    ],
+    "success": true,
+    "errors": [],
+    "messages": []
+  }
+}

@@ -46,14 +46,23 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-This section is otherwise empty. The extend-2 pass's close (2026-09-20) surfaced and
-cleared two findings in the same step: (`contributor`) `docs/reference` has no dedicated page
-for the `./admin-sources.css` subpath export, only a section inside `cairn-audit.md`,
-promoted whole to `ROADMAP.md`'s Later tier; (`contributor`) the facts container is sectioned
-one file per docs page, and `docs/reference/guidance.md` had no section in
-`docs/internal/facts/reference.md`, so the `cairn-guidance install` symlink-containment
-bullet sat under `docs/extend/what-the-scaffold-wrote.md` instead, fixed by moving the bullet
-to a new `## docs/reference/guidance.md` section in `facts/reference.md`. See Clearings.
+This section holds one open finding, below. The Go tool's Pass B2 close (2026-09-21) surfaced three `admin` findings
+and routed all three in the same step, to `ROADMAP.md`'s "Three docs items for the draft-docs
+pass" entry, since that pass is the one that leans on them: the tool's four public pages moving
+from `tool/docs/` under `docs/`; the drafts needing to avoid a hard-wired scaffold-first order,
+because 2.0's provisioning makes installing `cairn` the first step; and the admin track gaining
+the tool inside its existing "is my site working" job rather than as a page of its own. The
+whole log was triaged at the same close: the sections below carry no open finding, each earlier
+entry having been verified cleared by the pass named beside it. See Clearings.
+
+The extend-2 pass's close (2026-09-20) surfaced and cleared two findings
+in the same step: (`contributor`) `docs/reference` has no dedicated page for the
+`./admin-sources.css` subpath export, only a section inside `cairn-audit.md`, promoted whole to
+`ROADMAP.md`'s Later tier; (`contributor`) the facts container is sectioned one file per docs
+page, and `docs/reference/guidance.md` had no section in `docs/internal/facts/reference.md`, so
+the `cairn-guidance install` symlink-containment bullet sat under `docs/extend/what-the-scaffold-wrote.md`
+instead, fixed by moving the bullet to a new `## docs/reference/guidance.md` section in
+`facts/reference.md`. See Clearings.
 
 (`extender`) The font-carries-the-rule design in the "Names" section (`docs-register.md`) and
 the `Cairn.Names`/`Cairn.NamesRetired` Vale rules only reach prose Vale lints. Mermaid
@@ -120,6 +129,7 @@ history holds every pruned entry in full.
 | 2026-09-08 | the identity-seam pass, Task 6 | its own two findings, both shipped in the pass that found them and recorded in `docs/internal/record/2026-09-07-identity-seam/harvest.md`: the locals hand-off pattern (Task 2) and the doctor probe's `redirect: 'manual'` fix (Task 4) |
 | 2026-09-09 | chassis-B2's whole-log triage (Task 8) | its own Task 7 finding (the two `showcase`-flavored strings surviving in a scaffolded site's shipped content), never open here since it was found and routed in the same pass, promoted whole to `ROADMAP.md`'s Next tier with its trigger; the second-menu editing question (Task 4) filed to `ROADMAP.md`'s Later tier as a consultation candidate |
 | 2026-09-20 | the extend-1 pass's whole-log triage | the three 2026-09-15 facts-harvest entries (the untraced `sveltekit.md` sections, the `migrate-existing-content.md` validation workflow, and the candidate-tagged `sveltekit.md`/`delivery.md`/`delivery-data.md` group) folded whole into `ROADMAP.md`'s Next-tier `[candidate]` re-sourcing entry; extend-1's own three findings filed to `ROADMAP.md`, two in Next (the line-pinned container anchors a pass's own edits invalidate, the showcase `dev` script compiling the admin sheet without watching it) and one in Later (the showcase's public route map, which extend-1's seam proof assumed wrongly) |
+| 2026-09-21 | the Go tool Pass B2 close | its own three `admin` findings, all promoted whole to `ROADMAP.md`'s "Three docs items for the draft-docs pass" entry: the tool's public pages moving under `docs/`, the drafts' scaffold-first order against 2.0's provisioning, and the admin track carrying the tool inside "is my site working". The whole-log sweep found no other open finding to resolve |
 | 2026-09-20 | the extend-2 pass's close | its own two findings, discovered and cleared in the same step: the `./admin-sources.css` subpath's missing dedicated reference page promoted whole to `ROADMAP.md`'s Later tier; the misplaced `cairn-guidance install` symlink-containment fact bullet moved from `docs/internal/facts/extend.md` into a new `## docs/reference/guidance.md` section in `facts/reference.md` |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they

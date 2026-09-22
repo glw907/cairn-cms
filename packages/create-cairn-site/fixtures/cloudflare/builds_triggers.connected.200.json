@@ -1,0 +1,45 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "GET /accounts/{account_id}/builds/workers/{worker_tag}/triggers",
+    "status": 200,
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes (worker tag, trigger and connection uuids, repository, commands, token name); every key set below is the live one. The live body carried one trigger and is kept whole."
+  },
+  "body": {
+    "result": [
+      {
+        "trigger_uuid": "3f0ba18c-5d41-4a6e-9c07-1b2d3e4f5a6b",
+        "external_script_id": "5f3a1c94b2e84d07a9c6182f3b7d4e60",
+        "build_token_uuid": "7c1e8b02-9a3d-4f51-8e6c-0d2a4b6c8e10",
+        "build_token_name": "build token",
+        "trigger_name": "Production Deploy",
+        "build_command": "npm run build",
+        "deploy_command": "npx wrangler deploy",
+        "root_directory": "/",
+        "branch_includes": ["main"],
+        "branch_excludes": [],
+        "path_includes": ["*"],
+        "path_excludes": [],
+        "build_caching_enabled": true,
+        "created_on": "2026-08-22T21:55:06.012Z",
+        "modified_on": "2026-08-23T01:09:26.533Z",
+        "deleted_on": null,
+        "repo_connection": {
+          "repo_connection_uuid": "2d9f4e71-6b08-4c3a-a5d2-9e7f1c3b5a80",
+          "repo_id": "1000000001",
+          "repo_name": "carin-test-5-site",
+          "provider_type": "github",
+          "provider_account_id": "10000001",
+          "provider_account_name": "carin-test",
+          "grant_id": null,
+          "created_on": "2026-08-22T21:54:46.871Z",
+          "modified_on": "2026-08-22T21:54:46.871Z",
+          "deleted_on": null
+        }
+      }
+    ],
+    "success": true,
+    "errors": [],
+    "messages": []
+  }
+}

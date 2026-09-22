@@ -1,0 +1,21 @@
+[1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227mcairn.pub[m  [38;2;168;164;158m1 failing · 1 could not run · 7 passing[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mfailing[m [38;2;74;68;59m─────────────────────────────────────────────────[m
+  [38;2;247;172;77m□[m [1;38;2;234;231;227mengine[m        [38;2;193;189;184m0.76.0 installed, 0.78.0 latest, 2[m
+                  [38;2;193;189;184mreleases behind[m[38;2;168;164;158m[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json,[m
+      [38;2;193;189;184mthen deploy again.[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mcould not run[m [38;2;74;68;59m───────────────────────────────────────────[m
+  [38;2;247;172;77m?[m [1;38;2;234;231;227merrors[m        [38;2;193;189;184mthe Worker has no observability[m
+                  [38;2;193;189;184mdataset[m[38;2;168;164;158m  config.observability-off[m
+    [38;2;157;132;236m→[m [38;2;193;189;184mTurn on observability for the Worker in[m
+      [38;2;193;189;184mwrangler.jsonc, then deploy again.[m
+      ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158mhttps://cairn.pub/docs/admin/is-it-working#turn-on-obs[m]8;;
+      ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158mervability[m]8;;
+
+[38;2;168;164;158m●[m [38;2;168;164;158m7 passing[m  [38;2;168;164;158mcreds · serving · delegation · https-forced ·[m
+             [38;2;168;164;158memail · deploy · publish-path[m
+
+[1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227mcairn.pub[m  [38;2;168;164;158m1 failing · 1 could not run · 7 passing[m

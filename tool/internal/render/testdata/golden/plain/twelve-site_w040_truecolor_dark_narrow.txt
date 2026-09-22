@@ -1,0 +1,25 @@
+verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 3 could not run, 6 passing
+checked: 4m ago (2026-09-20 22:28 UTC), in 16.3s
+
+email: skip
+reason: the token this check reads is not set
+
+errors: skip
+reason: the token this check reads is not set
+
+creds: skip
+reason: Cloudflare token not found; GitHub token read from the keyring
+
+fix for: email, errors, creds
+fix: Run `cairn auth set` naming each missing token, then run the command again.
+fix actor: operator
+
+serving: pass - 200 in 84ms
+engine: pass - 0.78.0 is current
+delegation: pass - nameservers match the zone
+https-forced: pass - forced at the edge, HSTS 1 year
+deploy: pass - built 4h ago (a91f2c7), main is level
+publish-path: pass - App installed, branch writable
+
+verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 3 could not run, 6 passing
+exit: 2

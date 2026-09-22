@@ -51,8 +51,17 @@ func (rt zoneRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return &http.Response{StatusCode: rt.status, Body: io.NopCloser(bytes.NewReader(rt.body)), Header: make(http.Header), Request: req}, nil
 }
 
+// zoneEnvelope wraps one zone in a v4 envelope, carrying the assigned nameserver pair under
+// "name_servers" the way a live GET /zones does.
 func zoneEnvelope(status string) []byte {
-	return []byte(`{"success":true,"result":[{"id":"zone-id","name":"example.test","status":"` + status + `"}]}`)
+	return []byte(`{"success":true,"result":[{"id":"zone-id","name":"example.test","status":"` + status +
+		`","name_servers":["ada.ns.cloudflare.com","walt.ns.cloudflare.com"]}]}`)
+}
+
+// zoneEnvelopeNoNameServers is the same zone with the key absent, the one state that leaves the
+// check with no pair from either source.
+func zoneEnvelopeNoNameServers() []byte {
+	return []byte(`{"success":true,"result":[{"id":"zone-id","name":"example.test","status":"active"}]}`)
 }
 
 func TestDelegationCheckDeclaresIDAndTierCF(t *testing.T) {
@@ -119,12 +128,16 @@ func TestDelegationCheckWrongNameserversIsFailing(t *testing.T) {
 	}
 
 	got := (delegationCheck{}).Run(context.Background(), r, c, Options{})
-	if got.State != spine.Failing || got.Detail != "wrong-nameservers" {
+	if got.State != spine.Failing || got.Detail != detailDelegationWrongNameservers() {
 		t.Errorf("Outcome = %+v, want Failing wrong-nameservers", got)
 	}
 }
 
-func TestDelegationCheckNoAssignedNameServersIsUnknownNotObservable(t *testing.T) {
+// TestDelegationCheckUnrecordedNameServersFallsBackToTheZone asserts a record carrying no
+// "nameServers" key still settles a verdict: the zone reports the pair Cloudflare assigned it,
+// which is the same fact from its own authority, so a site adopted before the key was recorded
+// reads pass rather than unknown.
+func TestDelegationCheckUnrecordedNameServersFallsBackToTheZone(t *testing.T) {
 	r := record.Record{Domain: "example.test"}
 	c := Clients{
 		Probe:  providers.NewProbe(http.DefaultTransport, delegationResolver(assignedPair)),
@@ -133,8 +146,28 @@ func TestDelegationCheckNoAssignedNameServersIsUnknownNotObservable(t *testing.T
 	}
 
 	got := (delegationCheck{}).Run(context.Background(), r, c, Options{})
+	if got.State != spine.OK {
+		t.Errorf("Outcome = %+v, want OK", got)
+	}
+}
+
+// TestDelegationCheckUnrecordedAndZoneSilentIsUnknown asserts the unobservable verdict survives
+// for the one case that earns it: neither the record nor the zone names a pair to compare
+// against.
+func TestDelegationCheckUnrecordedAndZoneSilentIsUnknown(t *testing.T) {
+	r := record.Record{Domain: "example.test"}
+	c := Clients{
+		Probe:  providers.NewProbe(http.DefaultTransport, delegationResolver(assignedPair)),
+		CF:     cfClient(zoneRoundTripper{status: http.StatusOK, body: zoneEnvelopeNoNameServers()}),
+		HaveCF: true,
+	}
+
+	got := (delegationCheck{}).Run(context.Background(), r, c, Options{})
 	if got.State != spine.Unknown || got.Reason != spine.ReasonNotObservable {
 		t.Errorf("Outcome = %+v, want Unknown reason.not-observable", got)
+	}
+	if got.Detail != detailDelegationNoAssignedNS() {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailDelegationNoAssignedNS())
 	}
 }
 

@@ -1,0 +1,42 @@
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m12 sites[m  [38;2;168;164;158m4 CRITICAL · 3 WARNING · 5 OK[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 14:32 UTC), in 31.9s[m
+
+[38;2;168;164;158m[m                    [38;2;168;164;158mcreds[m [38;2;168;164;158mserving[m [38;2;168;164;158mdelegation[m [38;2;168;164;158mhttps[m [38;2;168;164;158memail[m [38;2;168;164;158mdeploy[m [38;2;168;164;158mpublish-path[m [38;2;168;164;158mengine[m [38;2;168;164;158merrors[m
+[1;38;2;234;231;227mtopo.907.life[m         [38;2;168;164;158m●[m      [38;2;255;142;134m■[m         [38;2;247;172;77m?[m       [38;2;247;172;77m?[m     [38;2;247;172;77m?[m      [38;2;247;172;77m?[m         [38;2;247;172;77m?[m         [38;2;168;164;158m●[m      [38;2;247;172;77m?[m   [1;38;2;255;142;134m CRITICAL[m
+[1;38;2;234;231;227mtidelinepress.org[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;255;142;134m■[m         [38;2;168;164;158m●[m      [38;2;168;164;158m●[m   [1;38;2;255;142;134m CRITICAL[m
+[1;38;2;234;231;227m907.life[m              [38;2;247;172;77m□[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;193;189;184m○[m     [38;2;247;172;77m?[m      [38;2;255;142;134m■[m         [38;2;168;164;158m●[m         [38;2;247;172;77m□[m      [38;2;247;172;77m?[m   [1;38;2;255;142;134m CRITICAL[m
+[1;38;2;234;231;227maksailingclub.org[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;255;142;134m■[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;168;164;158m●[m      [38;2;255;142;134m■[m   [1;38;2;255;142;134m CRITICAL[m
+[1;38;2;234;231;227mkenaiworks.example[m    [38;2;247;172;77m□[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;168;164;158m●[m      [38;2;168;164;158m●[m   [1;38;2;247;172;77m WARNING[m
+[1;38;2;234;231;227malpinehut.example[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;247;172;77m□[m      [38;2;168;164;158m●[m   [1;38;2;247;172;77m WARNING[m
+[1;38;2;234;231;227mxcathletes.org[m        [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;247;172;77m□[m      [38;2;247;172;77m?[m   [1;38;2;247;172;77m WARNING[m
+[1;38;2;234;231;227mcairn.pub[m             [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;168;164;158m●[m      [38;2;168;164;158m●[m   [1;38;2;168;164;158m OK[m
+[1;38;2;234;231;227mecxc.ski[m              [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;168;164;158m●[m      [38;2;168;164;158m●[m   [1;38;2;168;164;158m OK[m
+[1;38;2;234;231;227mfjordlight.example[m    [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;168;164;158m●[m      [38;2;168;164;158m●[m   [1;38;2;168;164;158m OK[m
+[1;38;2;234;231;227mglacierbay.example[m    [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;168;164;158m●[m      [38;2;168;164;158m●[m   [1;38;2;168;164;158m OK[m
+[1;38;2;234;231;227mnordicskiclub.org[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m       [38;2;168;164;158m●[m     [38;2;168;164;158m●[m      [38;2;168;164;158m●[m         [38;2;168;164;158m●[m         [38;2;168;164;158m●[m      [38;2;168;164;158m●[m   [1;38;2;168;164;158m OK[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────────────────────────[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mtopo.907.life[m       ]8;;https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings[38;2;168;164;158mserving[m]8;;       [38;2;168;164;158m[m
+      [38;2;193;189;184mConfirm the Worker route and the zone's DNS record point at this site.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mtidelinepress.org[m   ]8;;https://cairn.pub/docs/admin/is-it-working#install-the-github-app[38;2;168;164;158mpublish-path[m]8;;  [38;2;168;164;158m[m
+      [38;2;193;189;184mInstall the GitHub App on the repository.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m            ]8;;https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings[38;2;168;164;158mdeploy[m]8;;        [38;2;168;164;158m[m
+      [38;2;193;189;184mRead the build log in the Cloudflare dashboard, then push a fix.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227maksailingclub.org[m   ]8;;https://cairn.pub/docs/admin/is-it-working#onboard-the-sending-domain[38;2;168;164;158memail[m]8;;         [38;2;168;164;158memail.sender-not-onboarded[m
+      [38;2;193;189;184mRun `wrangler email sending enable <domain>` for the apex domain, then deploy again.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227maksailingclub.org[m   ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158merrors[m]8;;        [38;2;168;164;158m[m
+      [38;2;193;189;184mRead the publish.commit-failed records in Workers Logs.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m            [38;2;168;164;158mcreds[m         [38;2;168;164;158m[m
+      [38;2;193;189;184mRun `cairn auth set CAIRN_CF_READ_TOKEN`, then run the command again.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mkenaiworks.example[m  ]8;;https://cairn.pub/docs/admin/is-it-working#install-the-github-app[38;2;168;164;158mcreds[m]8;;         [38;2;168;164;158m[m
+      [38;2;193;189;184mCreate a new token, then run `cairn auth set CAIRN_GH_TOKEN`.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m            ]8;;https://cairn.pub/docs/admin/is-it-working#meet-the-dependency-floors[38;2;168;164;158mengine[m]8;;        [38;2;168;164;158m[m
+      [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227malpinehut.example[m   ]8;;https://cairn.pub/docs/admin/is-it-working#meet-the-dependency-floors[38;2;168;164;158mengine[m]8;;        [38;2;168;164;158m[m
+      [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mxcathletes.org[m      ]8;;https://cairn.pub/docs/admin/is-it-working#meet-the-dependency-floors[38;2;168;164;158mengine[m]8;;        [38;2;168;164;158m[m
+      [38;2;193;189;184mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mxcathletes.org[m      ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158merrors[m]8;;        [38;2;168;164;158mconfig.observability-off[m
+      [38;2;193;189;184mSet observability.enabled to true in wrangler.jsonc, then deploy again.[m
+
+[1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m12 sites[m  [38;2;168;164;158m4 CRITICAL · 3 WARNING · 5 OK[m

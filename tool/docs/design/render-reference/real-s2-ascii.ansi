@@ -1,0 +1,27 @@
+[mCRITICAL  907.life  3 failing - 2 could not run - 1 held - 3 passing
+[mchecked 4m ago (2026-09-20 14:32 UTC), in 3.2s
+
+[m-- failing -----------------------------------------------------------------------------------------
+[m  ! fail  deploy        build failed 26m ago (3f0ba18), main is 2 commits ahead
+[m    > Read the build log in the Cloudflare dashboard, then push a fix.
+[m      https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings
+[m  ! fail  creds         Cloudflare token not found; GitHub token read from the keyring
+[m    > Run `cairn auth set CAIRN_CF_READ_TOKEN`, then run the command again.
+[m  ! fail  engine        0.71.0 installed, 0.78.0 latest, 7 releases behind
+[m    > Raise the @glw907/cairn-cms range in package.json, then deploy again.
+[m      https://cairn.pub/docs/admin/is-it-working#meet-the-dependency-floors
+
+[m-- could not run -----------------------------------------------------------------------------------
+[m  ? skip  email         no Cloudflare token
+[m  ? skip  errors        no Cloudflare token
+
+[m-- held --------------------------------------------------------------------------------------------
+[m  o held  https-forced  Always Use HTTPS is off for the zone
+[m                        held until 2026-09-25, 5 days left
+[m    > Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
+[m      https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge  edge.https-not-forced
+
+[m+ 3 passing  serving - delegation - publish-path
+
+[mCRITICAL  907.life  3 failing - 2 could not run - 1 held - 3 passing
+[m__DONE_5__

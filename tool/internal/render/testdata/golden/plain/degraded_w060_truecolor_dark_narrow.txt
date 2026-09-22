@@ -1,0 +1,28 @@
+verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 1 failing, 3 could not run, 5 passing
+checked: 4m ago (2026-09-20 22:28 UTC), in 16.3s
+
+creds: fail - the token was rejected
+fix: Create a new token, then run `cairn auth set` naming the credential.
+fix actor: operator
+
+email: skip
+reason: the token this check reads is not set
+
+errors: skip
+reason: the token this check reads is not set
+
+https-forced: skip
+reason: the token this check reads is not set
+
+fix for: email, errors, https-forced
+fix: Run `cairn auth set` naming each missing token, then run the command again.
+fix actor: operator
+
+serving: pass - 200 in 84ms
+delegation: pass - nameservers match the zone
+deploy: pass - built 4h ago (a91f2c7), main is level
+publish-path: pass - App installed, branch writable
+engine: pass - 0.78.0 is current
+
+verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 1 failing, 3 could not run, 5 passing
+exit: 2

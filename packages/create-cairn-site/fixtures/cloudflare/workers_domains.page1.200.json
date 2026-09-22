@@ -1,0 +1,32 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "GET /accounts/{account_id}/workers/domains?page=1",
+    "status": 200,
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes; every key set, result_info value, and count below is the live one. This is the body that falsified the old pagination rule: result_info carries per_page and total_count and no total_pages at all."
+  },
+  "body": {
+    "result": [
+      {
+        "id": "6e941dd02813ad824dffcfbe548fccf5901c3a72",
+        "zone_id": "b7f9214b3a3c44a6d5479dcbb96a2275",
+        "zone_name": "carin-test-2.org",
+        "hostname": "staging.carin-test-2.org",
+        "service": "example-worker-7",
+        "environment": "production",
+        "cert_id": "00000000-0000-4000-8000-3f0d0e375583",
+        "previews_enabled": false,
+        "enabled": true
+      }
+    ],
+    "success": true,
+    "errors": null,
+    "messages": null,
+    "result_info": {
+      "page": 1,
+      "per_page": 1,
+      "count": 1,
+      "total_count": 7
+    }
+  }
+}

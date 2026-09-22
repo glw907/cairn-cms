@@ -139,6 +139,12 @@ func doWithRetry(hc *http.Client, req *http.Request) (*http.Response, error) {
 	return hc.Do(req.Clone(req.Context()))
 }
 
+// isErrorStatus reports whether status is outside the 2xx range, the one boundary every provider
+// in this package turns into its own error type.
+func isErrorStatus(status int) bool {
+	return status < 200 || status >= 300
+}
+
 // isRetryableStatus reports whether status is one of the two rate-limit shapes doWithRetry
 // retries once.
 func isRetryableStatus(status int) bool {

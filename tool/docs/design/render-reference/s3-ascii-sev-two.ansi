@@ -1,0 +1,30 @@
+CRITICAL  6 sites  3 CRITICAL - 1 WARNING - 2 OK
+checked 4m ago (2026-09-20 14:32 UTC), in 16.3s
+
+                   creds serving delegation https email deploy publish-path engine errors
+topo.907.life        +      !         ?       ?     ?      ?         ?         +      ?    CRITICAL
+907.life             *      +         +       o     ?      !         +         *      ?    CRITICAL
+aksailingclub.org    +      +         +       +     !      +         +         +      !    CRITICAL
+xcathletes.org       +      +         +       +     +      +         +         *      ?    WARNING
+cairn.pub            +      +         +       +     +      +         +         +      +    OK
+ecxc.ski             +      +         +       +     +      +         +         +      +    OK
+
+-- what to fix -------------------------------------------------------------------------------------
+  > topo.907.life      serving
+      Confirm the Worker route and the zone's DNS record point at this site.
+  > 907.life           deploy
+      Read the build log in the Cloudflare dashboard, then push a fix.
+  > aksailingclub.org  email         email.sender-not-onboarded
+      Run `wrangler email sending enable <domain>` for the apex domain, then deploy again.
+  > aksailingclub.org  errors
+      Read the publish.commit-failed records in Workers Logs.
+  > 907.life           creds
+      Run `cairn auth set CAIRN_CF_READ_TOKEN`, then run the command again.
+  > 907.life           engine
+      Raise the @glw907/cairn-cms range in package.json, then deploy again.
+  > xcathletes.org     engine
+      Raise the @glw907/cairn-cms range in package.json, then deploy again.
+  > xcathletes.org     errors        config.observability-off
+      Set observability.enabled to true in wrangler.jsonc, then deploy again.
+
+CRITICAL  6 sites  3 CRITICAL - 1 WARNING - 2 OK

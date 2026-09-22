@@ -1,0 +1,8 @@
+[38;2;74;68;59m──[m [38;2;234;231;227mlogs  ecxc.ski  2026-09-20 AKDT[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────────────────────────[m
+  [38;2;168;164;158m14:28:00[m  [38;2;168;164;158minfo[m   [1;38;2;234;231;227mentry.published[m        [38;2;193;189;184meditor=dana@ecxc.ski  sha=c02e17f[m
+  [38;2;168;164;158m14:21:00[m  [38;2;255;142;134merror[m  [1;38;2;234;231;227mcommit.failed[m          [38;2;193;189;184meditor=kari@ecxc.ski  status=422  reason=the branch is behind main by 2[m
+                                          [38;2;193;189;184mcommits[m
+  [38;2;168;164;158m14:20:00[m  [38;2;247;172;77mwarn[m   [1;38;2;234;231;227mpublish.failed[m         [38;2;193;189;184meditor=kari@ecxc.ski  branch=cairn/post/spring-relay[m
+  [38;2;168;164;158m14:14:00[m  [38;2;168;164;158minfo[m   [1;38;2;234;231;227mauth.link.requested[m    [38;2;193;189;184meditor=kari@ecxc.ski  ttl=15m[m
+
+[38;2;168;164;158m4 records · 14:14 to 14:28 AKDT[m

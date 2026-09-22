@@ -20,9 +20,6 @@ type Clients struct {
 	HaveCF bool
 	// HaveGH reports whether a GitHub credential resolved.
 	HaveGH bool
-	// HaveBuilds reports whether the resolved Cloudflare credential carries the Workers Builds
-	// read permission group.
-	HaveBuilds bool
 	// CFFrom names the provider the Cloudflare credential resolved through, "environment" or
 	// "keyring", never the value itself. It is empty when HaveCF is false.
 	CFFrom string

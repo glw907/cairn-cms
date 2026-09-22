@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""Render a frame offscreen: the program's ANSI output to HTML, then headless Chromium to PNG.
+
+No terminal window is opened. The HTML uses the same font and the same Warm Stone grounds the
+kitty harness sets, so a capture made this way and a capture made from the real terminal differ
+only in the window chrome. Truecolor, 256-colour, and 16-colour SGR all become spans; bold becomes
+a weight; OSC 8 becomes an anchor.
+"""
+import html
+import os
+import re
+import subprocess
+import sys
+
+FONT = "JetBrains Mono"
+FONT_PX = 14           # glyph size; JetBrains Mono advances 0.6em, so a cell is 8.4px
+CELL_W = FONT_PX * 0.6
+LINE_H = 20
+PAD = 14
+GROUNDS = {"dark": ("#221f1a", "#eae7e3"), "light": ("#fdfbf9", "#28231d")}
+
+# The 16 ANSI slots, on the Warm Stone grounds. These are kitty's defaults for this workstation,
+# which is what the real-terminal captures render with.
+ANSI16_DARK = ["#1c1b19", "#cc5c52", "#7fa66b", "#d8a657", "#7daea3", "#b18bb1", "#89b8c2", "#c5bfb6",
+               "#6b645c", "#ff8e86", "#a7cf8f", "#f7ac4d", "#9ecfc8", "#d3aee0", "#a9dbe6", "#eae7e3"]
+ANSI16_LIGHT = ["#28231d", "#b71824", "#197037", "#915200", "#1c6a86", "#7246cf", "#137272", "#8a857e",
+                "#615d57", "#d63a2b", "#2f7d5a", "#a86a00", "#2a7fa0", "#8a63d8", "#1f8a8a", "#f0eeec"]
+
+CUBE = [0, 95, 135, 175, 215, 255]
+
+TOKEN = re.compile(r"\x1b\[([0-9;:]*)m|\x1b\]8;;([^\x07\x1b]*)(?:\x07|\x1b\\)")
+
+
+def ansi256(n):
+    if n < 16:
+        return None
+    if n < 232:
+        n -= 16
+        return "#%02x%02x%02x" % (CUBE[n // 36], CUBE[(n % 36) // 6], CUBE[n % 6])
+    v = 8 + (n - 232) * 10
+    return "#%02x%02x%02x" % (v, v, v)
+
+
+class State:
+    def __init__(self):
+        self.fg = None
+        self.bold = False
+        self.link = None
+
+    def open(self):
+        style = []
+        if self.fg:
+            style.append("color:%s" % self.fg)
+        if self.bold:
+            style.append("font-weight:700")
+        tag = '<span style="%s">' % ";".join(style) if style else "<span>"
+        if self.link:
+            # A terminal does not decorate an OSC 8 link until the pointer is over it, so this
+            # does not either: the link must not read as emphasis on the page.
+            return '<a href="%s" style="text-decoration:none">%s' % (
+                html.escape(self.link, quote=True), tag)
+        return tag
+
+    def close(self):
+        return "</span></a>" if self.link else "</span>"
+
+
+def sgr(state, params, slots):
+    codes = [int(x) for x in re.split("[;:]", params) if x != ""] or [0]
+    i = 0
+    while i < len(codes):
+        c = codes[i]
+        if c == 0:
+            state.fg, state.bold = None, False
+        elif c == 1:
+            state.bold = True
+        elif c == 22:
+            state.bold = False
+        elif c == 39:
+            state.fg = None
+        elif 30 <= c <= 37:
+            state.fg = slots[c - 30]
+        elif 90 <= c <= 97:
+            state.fg = slots[c - 90 + 8]
+        elif c == 38 and i + 1 < len(codes):
+            if codes[i + 1] == 5 and i + 2 < len(codes):
+                state.fg = ansi256(codes[i + 2]) or slots[codes[i + 2]]
+                i += 2
+            elif codes[i + 1] == 2 and i + 4 < len(codes):
+                state.fg = "#%02x%02x%02x" % tuple(codes[i + 2:i + 5])
+                i += 4
+        i += 1
+
+
+def to_html(text, theme, cols):
+    bg, fg = GROUNDS[theme]
+    slots = ANSI16_DARK if theme == "dark" else ANSI16_LIGHT
+    state = State()
+    out = []
+    pos = 0
+    for m in TOKEN.finditer(text):
+        chunk = text[pos:m.start()]
+        if chunk:
+            out.append(state.open() + html.escape(chunk) + state.close())
+        pos = m.end()
+        if m.group(1) is not None:
+            sgr(state, m.group(1), slots)
+        else:
+            state.link = m.group(2) or None
+    chunk = text[pos:]
+    if chunk:
+        out.append(state.open() + html.escape(chunk) + state.close())
+    body = "".join(out)
+    return f"""<!doctype html><meta charset="utf-8"><title>cairn</title>
+<style>
+  html,body{{margin:0;padding:0;background:{bg}}}
+  pre{{margin:0;padding:{PAD}px;background:{bg};color:{fg};
+      font-family:"{FONT}","Noto Sans Mono",monospace;font-size:{FONT_PX}px;line-height:{LINE_H}px;
+      font-variant-ligatures:none;white-space:pre;tab-size:8;width:{cols}ch}}
+  a{{color:inherit}}
+</style>
+<pre>{body}</pre>
+"""
+
+
+def main():
+    name, theme, cols = sys.argv[1], sys.argv[2], int(sys.argv[3])
+    args = sys.argv[4:]
+    text = subprocess.run(["./cairnmock"] + args, capture_output=True, text=True,
+                          env={**os.environ, "TERM": "xterm-256color"}).stdout.rstrip("\n")
+    page = to_html(text, theme, cols)
+    tmp = os.path.abspath("_%s.html" % name)
+    with open(tmp, "w") as fh:
+        fh.write(page)
+    rows = text.count("\n") + 1
+    width = int(cols * CELL_W) + 2 * PAD + 2
+    height = rows * LINE_H + 2 * PAD + 2
+    subprocess.run(["chromium-browser", "--headless", "--disable-gpu", "--hide-scrollbars",
+                    "--force-device-scale-factor=2",
+                    "--window-size=%d,%d" % (width, height),
+                    "--screenshot=%s.png" % name, "file://" + tmp],
+                   capture_output=True)
+    os.remove(tmp)
+    with open("%s.ansi" % name, "w") as fh:
+        fh.write(text + "\n")
+    print("  %s.png  (%d cols x %d rows)" % (name, cols, rows))
+
+
+if __name__ == "__main__":
+    main()

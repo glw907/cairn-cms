@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schema/cairn-logs.schema.json",
+  "title": "cairn logs payload",
+  "description": "The log excerpt `cairn logs <site> --json` writes. Every entry is the site's own record, copied unchanged, which is what containsPersonalData names.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "verdict", "exitCode", "site", "containsPersonalData", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "logs" },
+    "verdict": { "type": "string", "enum": ["OK", "WARNING", "CRITICAL", "UNKNOWN"] },
+    "exitCode": { "type": "integer", "enum": [0, 1, 2, 3] },
+    "site": { "type": "string" },
+    "containsPersonalData": { "type": "boolean" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "level", "event"],
+        "additionalProperties": false,
+        "properties": {
+          "at": { "type": "string" },
+          "level": { "type": "string" },
+          "event": { "type": "string" },
+          "fields": { "type": "object", "additionalProperties": {} }
+        }
+      }
+    }
+  }
+}

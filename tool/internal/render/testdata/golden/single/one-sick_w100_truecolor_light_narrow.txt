@@ -1,0 +1,26 @@
+[1;38;2;183;24;36mCRITICAL[m  [1;38;2;40;35;29m907.life[m  [38;2;97;93;87m3 failing · 2 could not run · 1 held · 3 passing[m
+[38;2;97;93;87mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
+
+[38;2;201;195;187m──[m [38;2;40;35;29mfailing[m [38;2;201;195;187m─────────────────────────────────────────────────────────────────────────────────────────[m
+  [38;2;183;24;36m■[m [1;38;2;40;35;29mdeploy[m        [38;2;80;76;71mbuild failed 26m ago (3f0ba18), main is 2 commits ahead[m
+    [38;2;114;70;207m→[m [38;2;80;76;71mRead the build log in the Cloudflare dashboard, then push a fix.[m[38;2;97;93;87m[m
+  [38;2;145;82;0m□[m [1;38;2;40;35;29mcreds[m         [38;2;80;76;71mCloudflare token not found; GitHub token read from the keyring[m
+                  [38;2;145;82;0mCAIRN_CF_READ_TOKEN is not set, so email and errors could not run[m
+                  [38;2;97;93;87mCAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days[m
+    [38;2;114;70;207m→[m [38;2;80;76;71mCreate a new token, then run `cairn auth set` naming the credential.[m[38;2;97;93;87m[m
+  [38;2;145;82;0m□[m [1;38;2;40;35;29mengine[m        [38;2;80;76;71m0.71.0 installed, 0.78.0 latest, 7 releases behind[m
+    [38;2;114;70;207m→[m [38;2;80;76;71mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m[38;2;97;93;87m[m
+
+[38;2;201;195;187m──[m [38;2;40;35;29mcould not run[m [38;2;201;195;187m───────────────────────────────────────────────────────────────────────────────────[m
+  [38;2;145;82;0m?[m [1;38;2;40;35;29memail[m         [38;2;80;76;71mthe token this check reads is not set[m[38;2;97;93;87m[m
+  [38;2;145;82;0m?[m [1;38;2;40;35;29merrors[m        [38;2;80;76;71mthe token this check reads is not set[m[38;2;97;93;87m[m
+
+[38;2;201;195;187m──[m [38;2;40;35;29mheld[m [38;2;201;195;187m────────────────────────────────────────────────────────────────────────────────────────────[m
+  [38;2;145;82;0m○[m [1;38;2;40;35;29mhttps-forced[m  [38;2;80;76;71mAlways Use HTTPS is off for the zone[m
+                  [38;2;97;93;87mheld until 2026-09-25, 5 days left[m
+    [38;2;114;70;207m→[m [38;2;80;76;71mTurn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.[m
+      ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;97;93;87mhttps://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[m]8;;[38;2;97;93;87m  edge.https-not-forced[m
+
+[38;2;97;93;87m●[m [38;2;97;93;87m3 passing[m  [38;2;97;93;87mserving · delegation · publish-path[m
+
+[1;38;2;183;24;36mCRITICAL[m  [1;38;2;40;35;29m907.life[m  [38;2;97;93;87m3 failing · 2 could not run · 1 held · 3 passing[m

@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8">
+<title>cairn CLI render, iteration 3</title>
+<style>
+  :root{--bg:#221f1a;--panel:#2a2621;--ink:#eae7e3;--muted:#a8a49e;--rule:#4a443b;--accent:#9d84ec;
+        --pick:#679371}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.65 "IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+       padding:48px 32px 96px}
+  main{max-width:1180px;margin:0 auto}
+  h1{font:700 34px/1.2 "Bricolage Grotesque","IBM Plex Sans",sans-serif;margin:0 0 8px}
+  h2{font:600 22px/1.3 "Bricolage Grotesque","IBM Plex Sans",sans-serif;
+     margin:64px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+  h3{font:600 16px/1.4 "IBM Plex Sans",sans-serif;margin:32px 0 4px;
+     text-transform:lowercase;letter-spacing:.04em;color:var(--muted)}
+  p{margin:8px 0 16px;max-width:76ch;color:#c1bdb8}
+  .lede{color:var(--ink);font-size:18px}
+  figure{margin:16px 0 28px}
+  figure img{display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:6px}
+  figcaption{margin-top:8px;color:var(--muted);font-size:14px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+  .pair figure{margin:0}
+  .pair p{margin:0 0 10px}
+  .decision{border:1px solid var(--rule);border-radius:8px;padding:24px 26px 12px;margin:24px 0 36px;
+            background:var(--panel)}
+  .decision h3{margin-top:0}
+  .rec{color:var(--ink);border-left:3px solid var(--pick);padding-left:14px;margin-top:18px}
+  .rec::before{content:"recommend";color:var(--pick);font-weight:600;
+               text-transform:uppercase;letter-spacing:.08em;font-size:12px;
+               display:block;margin-bottom:2px}
+  pre.plain{background:#fdfbf9;color:#28231d;padding:24px 28px;border-radius:6px;
+      font:15px/1.6 "IBM Plex Sans","Segoe UI",system-ui,sans-serif;white-space:pre-wrap;
+      max-width:86ch;overflow-wrap:anywhere}
+  pre.mono{background:var(--panel);color:#c1bdb8;padding:18px 20px;border-radius:6px;
+      font:13px/1.55 "JetBrains Mono",monospace;overflow-x:auto;border:1px solid var(--rule)}
+  table{border-collapse:collapse;margin:12px 0 24px;font-size:15px;width:100%;max-width:1000px}
+  th,td{text-align:left;padding:7px 18px 7px 0;border-bottom:1px solid var(--rule);
+        vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  code{font:13px/1.4 "JetBrains Mono",monospace;color:var(--ink)}
+  ul{max-width:80ch;color:#c1bdb8}
+  li{margin:8px 0}
+  .tag{display:inline-block;font:12px/1 "JetBrains Mono",monospace;color:var(--muted);
+       border:1px solid var(--rule);border-radius:4px;padding:4px 7px;margin-right:6px}
+  @media (max-width:900px){.pair{grid-template-columns:1fr}}
+</style>
+<main>
+<h1>cairn CLI render, iteration 3</h1>
+<p class="lede">One design system, three bodies. The header, the vocabulary, the severity ranking,
+the fix format and the section grammar are identical everywhere; the body changes with the scope
+and with whether the output is a terminal. Iteration 2 settled the shape. This round fixes what
+reading its own frames at full attention turned up, and puts four remaining choices side by side
+as finished variants.</p>
+<p><span class="tag">offscreen render</span>Every frame above the last section was drawn without
+opening a terminal window: the program's own ANSI output, converted to HTML on the Warm Stone
+grounds in JetBrains Mono, screenshot by headless Chromium. The real-terminal set at the foot of
+the page is one kitty window driven six times, each frame captured only after its own command had
+finished and verified to carry that scenario's first line.</p>
+
+<h2>The four decisions</h2>
+
+<div class="decision">
+<h3>1. single site: a rail on the failing group, or no rail</h3>
+<div class="pair">
+<div>
+<p>Nothing on screen is decoration, so the only saturated ink is the failing squares and the fix
+arrows. The failing group has no edge of its own, which costs a glance on a long frame.</p>
+<figure><img src="s2-rail-off.png" alt="Single site, no rail: the failing group is marked only by its inset rule and by the red squares on its rows."><figcaption>No rail.</figcaption></figure>
+</div>
+<div>
+<p>One dim rail runs the full height of the failing group, rows and fixes alike, so the block that
+needs work survives a scroll and a paste. It costs a fourth ink and two cells of left gutter on
+every row of the group.</p>
+<figure><img src="s2-rail-on.png" alt="Single site, one dim rail down the left of the failing group only."><figcaption>One rail on the failing group.</figcaption></figure>
+</div>
+</div>
+<p class="rec">no rail. The failing group is always first and always under its own rule, so its
+edge is never actually in question; the rail buys an edge the reader already has and spends an
+ink on it.</p>
+</div>
+
+<div class="decision">
+<h3>2. single site: glyph plus the state word, or the glyph alone</h3>
+<div class="pair">
+<div>
+<p>Every row says its state three ways: the section rule, the glyph, and the word. The word is the
+one carrier that survives a row pasted out of its section.</p>
+<figure><img src="s2-word.png" alt="Single site with the state word: each row reads glyph, then fail or skip or held, then the check id."><figcaption>Glyph plus word.</figcaption></figure>
+</div>
+<div>
+<p>Dropping the word moves the check id and the whole detail column six cells left, and the id is
+what the eye is actually hunting. The section rule is the only thing left naming the state.</p>
+<figure><img src="s2-noword.png" alt="Single site without the state word: each row reads glyph, then the check id in bold, then the detail."><figcaption>Glyph only, name column moved left.</figcaption></figure>
+</div>
+</div>
+<p class="rec">glyph only, in the colour Unicode tier. The check id is the row's subject and it
+should sit as close to the margin as the glyph allows. The no-colour ASCII tier and the plain
+body keep the word unconditionally, since with no hue and no filled glyph the word is the state's
+last carrier; the program enforces that rather than leaving it to a flag.</p>
+</div>
+
+<div class="decision">
+<h3>3. many sites: a labelled status strip, or a plain table</h3>
+<div class="pair">
+<div>
+<p>Every column is a check id spelled out, so the strip answers "which check" as well as "how
+many", with no legend and no cipher. It needs about 100 columns before it will draw.</p>
+<figure><img src="s3-strip.png" alt="Many sites drawn as a labelled status strip: one mark per check per site under real column headings."><figcaption>Labelled strip.</figcaption></figure>
+</div>
+<div>
+<p>Counts by state, the engine version and the data age sit in worded columns, and a state a site
+does not have is blank rather than zero. It never says which check failed, so every answer costs
+one more command.</p>
+<figure><img src="s3-table.png" alt="Many sites drawn as a plain ruleless table: site, verdict, counts by state, engine version, and how old the data is."><figcaption>Plain table.</figcaption></figure>
+</div>
+</div>
+<p class="rec">the strip. The table is not really a rival: it is already the strip's own fallback
+below the width the labels need, so choosing the strip ships both and choosing the table throws
+the better one away.</p>
+</div>
+
+<div class="decision">
+<h3>4. many sites: one fail mark, or two severities</h3>
+<div class="pair">
+<div>
+<p>One red square for every failure. A version drift and a site that is not serving look
+identical, and the verdict column is the only thing that separates them.</p>
+<figure><img src="s3-sev-one.png" alt="Status strip with one red square for every failure, whatever its severity."><figcaption>One red square.</figcaption></figure>
+</div>
+<div>
+<p>A failure that alone would only raise the run to WARNING takes an outlined square in the
+attention ink. It is the same predicate the verdict uses, so the mark can never disagree with the
+word at the end of its own row.</p>
+<figure><img src="s3-sev-two.png" alt="Status strip with two fail marks: a filled red square for a failure that makes the run CRITICAL, an outlined amber square for one that only makes it WARNING."><figcaption>Two severities.</figcaption></figure>
+</div>
+</div>
+<p class="rec">two severities. The strip's whole job is to say where to look first, and one mark
+for both makes it say "look everywhere". Colour never carries it alone: filled against outlined
+in Unicode, and <code>!</code> against <code>*</code> in the ASCII tier.</p>
+<div class="pair">
+<figure><img src="s3-ascii-sev-one.png" alt="The ASCII tier with one fail mark: every failure is an exclamation mark."><figcaption>ASCII, one mark: <code>!</code> for every failure.</figcaption></figure>
+<figure><img src="s3-ascii-sev-two.png" alt="The ASCII tier with two fail marks: an exclamation mark for a critical failure and an asterisk for a warning-level one."><figcaption>ASCII, two marks: <code>!</code> critical, <code>*</code> warning. No colour anywhere on this frame.</figcaption></figure>
+</div>
+</div>
+
+<h2>What changed, and why</h2>
+<ul>
+<li><b>Condition ids are now only the ones a check really declares.</b> Iteration 2 printed
+<code>email.sender-not-onboarded</code> beside a skipped email check, which told the operator the
+sender was not onboarded when the check had never run, and it invented three ids
+(<code>deploy.build-failed</code>, <code>creds.token-not-found</code>,
+<code>engine.behind-latest</code>) that exist in no registry. Reading
+<code>src/lib/diagnostics/conditions.ts</code> and the nine shipped checks gives the real list:
+<code>edge.https-not-forced</code> when Always Use HTTPS is off, <code>email.sender-not-onboarded</code>
+when the sending domain was never onboarded, and <code>config.observability-off</code> when the
+Worker has no observability dataset. Everything else declares none. One nuance worth keeping: the
+observability id is declared on a <em>skip</em>, and it comes with its own fix, so the blanket rule
+is not "skips never carry an id" but "an id appears exactly where the check declared it". Scenario 6
+is that case.</li>
+<li><b>The id sits on the tail of the fix block's URL line</b>, muted, never alone under a detail.
+It is the greppable handle for the same failure the URL documents, so the two share a line. Where
+the URL will not fit the id beside it, at 80 columns and below, it takes one further line at the
+URL's own column, still inside the fix block. On a fleet's <code>what to fix</code> list it rides
+the site-and-check line rather than the sentence.</li>
+<li><b>The state is said twice, not three times</b>, in the glyph-only variant: see decision 2.</li>
+<li><b>The check id is <code>https-forced</code></b>, the shipped one, everywhere. The strip
+abbreviates it to <code>https</code> in its heading and nowhere else: twelve cells of heading over a
+one-cell mark does not fit beside the other eight and the site and verdict columns, and the
+truncation is one a reader can undo, which is the only kind the copy standard allows.</li>
+<li><b>The fleet's fix list gives the sentence the width.</b> The site and the check name the fix on
+one line; the sentence sits beneath them with a hanging indent. No orphan words at 100 columns, and
+at 80 the sentence wraps into a second full line rather than a stray verb.</li>
+<li><b>Every fix is printed, and <code>1 more · cairn health &lt;site&gt;</code> is gone.</b> A count
+of repairs the screen declined to show is a fact an operator cannot act on, and the list is already
+ranked. Twelve sites produce eleven fixes and the frame stays readable. If a fleet ever outgrows
+that, the honest form is a named cap with a sentence, not a cipher; the string would be
+<code>4 more fixes are not shown. Run `cairn health &lt;site&gt;` for one site's full list.</code></li>
+<li><b>One pass rule across every body.</b> Green means this run is OK. In a frame whose verdict is
+anything else, every passing mark is muted: the folded passing line's dot, the strip's pass dots,
+and the <code>OK</code> verdict word on an individual site inside a failing fleet. The only
+saturated ink on a failing screen belongs to what failed.</li>
+<li><b>The strip's marks are centred in their columns</b>, so they form a grid under their headings
+instead of hugging the left edge of each one.</li>
+<li><b>Repairs for checks that could not run are listed too</b>, after the failures, since a check
+blocked by a missing setting is a thing the operator can fix and was previously invisible on the
+fleet screen.</li>
+<li><b>The plain body takes the agent review's shape</b>: see the non-terminal section below.</li>
+</ul>
+
+<h2>Iteration 2 beside iteration 3</h2>
+<h3>one site, failing</h3>
+<div class="pair">
+<figure><img src="../mockups-2/s2-single-a-dark-100.png" alt="Iteration 2: three invented condition ids, two of them stranded on their own lines under the detail, plus a fourth id beside a skipped check that never ran."><figcaption>Iteration 2. Three invented ids, two of them stranded on a line of their own under the detail, and a fourth beside a check that never ran.</figcaption></figure>
+<figure><img src="s2-noword.png" alt="Iteration 3: one condition id on the whole screen, on the tail of the URL line of the one row whose check declares one."><figcaption>Iteration 3, glyph only. One id on the screen, on the row that earns it, on the tail of its URL.</figcaption></figure>
+</div>
+<h3>many sites</h3>
+<div class="pair">
+<figure><img src="../mockups-2/s3-many-a-dark-100.png" alt="Iteration 2: fix sentences wrapping to orphan words, an unexplained one-more line, muted green pass dots, and one red square for every severity."><figcaption>Iteration 2. Orphaned fix sentences, an unexplained <code>1 more</code> line, and one red square for both a site that is down and a version drift.</figcaption></figure>
+<figure><img src="s3-sev-two.png" alt="Iteration 3: every fix printed whole with its sentence on its own line, two fail severities, and muted pass dots."><figcaption>Iteration 3. Every fix whole, two fail marks, and no green anywhere in a CRITICAL run.</figcaption></figure>
+</div>
+
+<h2>The full set</h2>
+<h3>1. one site, everything passing</h3>
+<p>The one frame that can afford to show its work, so it does: every check in the order the engine
+ran them. This is the only body in the design where green appears.</p>
+<div class="pair">
+<figure><img src="s1-healthy.png" alt="Scenario 1 with the state word."><figcaption>With the state word.</figcaption></figure>
+<figure><img src="s1-healthy-noword.png" alt="Scenario 1 with the glyph alone."><figcaption>Glyph only.</figcaption></figure>
+</div>
+<h3>2. one site, failing</h3>
+<div class="pair">
+<figure><img src="s2-word.png" alt="Scenario 2 with the state word."><figcaption>With the state word.</figcaption></figure>
+<figure><img src="s2-noword.png" alt="Scenario 2 with the glyph alone."><figcaption>Glyph only.</figcaption></figure>
+</div>
+<h3>3. many sites</h3>
+<div class="pair">
+<figure><img src="s3-sev-two.png" alt="Scenario 3, the labelled strip with two fail severities."><figcaption>Strip, two severities.</figcaption></figure>
+<figure><img src="s3-table.png" alt="Scenario 3, the plain table."><figcaption>Plain table.</figcaption></figure>
+</div>
+<h3>4. the site list</h3>
+<figure><img src="s4-sites.png" alt="Scenario 4, cairn sites list: the many-sites table body, drawn with lipgloss/v2/table and a per-cell StyleFunc."><figcaption>Scenario 4, <code>cairn sites list</code>.</figcaption></figure>
+<h3>5. logs</h3>
+<p>The date and the zone are stated once on the rule, a level is a word and never a glyph, and the
+field that matters wraps into its own column rather than being cut.</p>
+<figure><img src="s5-logs.png" alt="Scenario 5. The error record's reason wraps; no record is ever rewritten by the CLI."><figcaption>Scenario 5.</figcaption></figure>
+<h3>6. one site, WARNING only</h3>
+<p>Two releases behind and a Worker that logs nowhere. Neither is a reason to page anyone, so the
+verdict is WARNING and the folded passing line is muted. The errors row is the one skip in the set
+that legitimately carries a condition id, and it carries its own fix with it.</p>
+<div class="pair">
+<figure><img src="s6-warning.png" alt="Scenario 6 with the state word."><figcaption>With the state word.</figcaption></figure>
+<figure><img src="s6-warning-noword.png" alt="Scenario 6 with the glyph alone."><figcaption>Glyph only.</figcaption></figure>
+</div>
+<h3>7. twelve sites</h3>
+<p>The unreachable site is the first row at both severity settings, and all eleven fixes print.</p>
+<figure><img src="s7-twelve-sev2.png" alt="Scenario 7, the strip with two fail severities and the full ranked fix list."><figcaption>Strip, two severities.</figcaption></figure>
+<div class="pair">
+<figure><img src="s7-twelve-strip.png" alt="Scenario 7, the strip with one fail mark."><figcaption>Strip, one fail mark.</figcaption></figure>
+<figure><img src="s7-twelve-table.png" alt="Scenario 7, the plain table."><figcaption>Plain table.</figcaption></figure>
+</div>
+<h3>9. hostile data</h3>
+<p>A 57-character domain, an injected newline carrying a forged verdict line, a clear-screen escape,
+a carriage return, a tab, CJK, an IDN, a ZWJ emoji, a 300-character fix, and an acknowledgement that
+lapsed 40 days ago. Every string is sanitized at the render seam: whole escape sequences are
+consumed, a control that separated words becomes a space, and nothing in the data can start a line.
+The lapsed hold holds nothing, so the check renders as failing and says when the hold expired.</p>
+<div class="pair">
+<figure><img src="s9-hostile.png" alt="Scenario 9 with the state word."><figcaption>With the state word.</figcaption></figure>
+<figure><img src="s9-hostile-noword.png" alt="Scenario 9 with the glyph alone."><figcaption>Glyph only.</figcaption></figure>
+</div>
+
+<h2>The tiers scenario 2 has to survive</h2>
+<div class="pair">
+<figure><img src="s2-light.png" alt="Light ground."><figcaption>Light ground.</figcaption></figure>
+<figure><img src="s2-80.png" alt="80 columns. The condition id drops to its own line at the URL's column, still inside the fix block."><figcaption>80 columns. The id takes its own line at the URL's column rather than overflowing.</figcaption></figure>
+<figure><img src="s2-60.png" alt="60 columns, the narrow rung."><figcaption>60 columns, the narrow rung. Below 60 the body drops to one column.</figcaption></figure>
+<figure><img src="s2-ansi16-dark.png" alt="ANSI-16, dark. Muted is the terminal's own foreground with no attribute; only the rule uses slot 8."><figcaption>ANSI-16, dark.</figcaption></figure>
+<figure><img src="s2-ansi16-light.png" alt="ANSI-16, light. The palette carries a light branch, so slot 7 never lands on a light ground."><figcaption>ANSI-16, light.</figcaption></figure>
+<figure><img src="s2-ascii.png" alt="No colour, ASCII glyphs. The state word is kept unconditionally at this tier."><figcaption>No colour, ASCII glyphs. The word is kept here whatever the flag says.</figcaption></figure>
+<figure><img src="s2-ascii-rail.png" alt="No colour, ASCII glyphs, with the rail: it degrades to a bare pipe and still marks the group."><figcaption>No colour with the rail: a bare pipe.</figcaption></figure>
+</div>
+
+<h2>The non-terminal body</h2>
+<p>What a pipe, a cron mail, a CI log and an agent receive, shown in a proportional font because
+that is the test it has to pass. This round takes the agent review's proposed body where it improves
+on iteration 2's and reconciles the wording with the copy standard: the review's
+<code>remedy page:</code> becomes <code>docs:</code>, the state words stay
+<code>pass&nbsp;fail&nbsp;skip&nbsp;held</code>, the check id is <code>https-forced</code>, and no
+condition id is printed for a verdict that declared none. Every line is whole behind a stable
+lowercase <code>key: </code> prefix with no continuations, the verdict is first and last, the group
+of skipped checks names the checks its one fix covers rather than letting the last row appear to own
+it, and <code>remedy actor:</code> says who can carry the fix out and whether doing so changes what
+the public sees, which is the field an agent needs to tell a command it may run from a click it must
+escalate.</p>
+<pre class="plain">verdict: CRITICAL - 907.life, 3 failing, 2 could not run, 1 held, 3 passing
+checked: 2026-09-20 14:32 UTC (4m ago), in 3.2s
+
+deploy: fail - build failed 26m ago (3f0ba18), main is 2 commits ahead
+remedy: Read the build log in the Cloudflare dashboard, then push a fix.
+remedy actor: developer (changes the live site)
+docs: https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings
+
+creds: fail - Cloudflare token not found; GitHub token read from the keyring
+remedy: Run `cairn auth set CAIRN_CF_READ_TOKEN`, then run the command again.
+remedy actor: operator
+
+engine: fail - 0.71.0 installed, 0.78.0 latest, 7 releases behind
+remedy: Raise the @glw907/cairn-cms range in package.json, then deploy again.
+remedy actor: developer (changes the live site)
+docs: https://cairn.pub/docs/admin/is-it-working#meet-the-dependency-floors
+
+email: skip - no Cloudflare token
+errors: skip - no Cloudflare token
+remedy for: email, errors
+remedy: Run `cairn auth set CAIRN_CF_READ_TOKEN`, then run the command again.
+remedy actor: operator
+
+https-forced: held - Always Use HTTPS is off for the zone, held until 2026-09-25, 5 days left
+condition: edge.https-not-forced
+remedy: Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
+remedy actor: provider-console (changes the live site)
+docs: https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge
+
+serving: pass - 200 in 132ms
+delegation: pass - nameservers match the zone
+publish-path: pass - App installed, branch writable
+
+machine-readable: cairn health 907.life --json
+verdict: CRITICAL - 907.life, 3 failing, 2 could not run, 1 held, 3 passing
+exit: 2</pre>
+
+<h3>what it costs</h3>
+<p>Approximate tokens at four characters per token, no colour, 100 columns, measured by running
+iteration 2's binary read-only beside this one. "Collapsed" squeezes runs of spaces and rule glyphs,
+which separates layout cost from content cost.</p>
+<pre class="mono">approximate tokens (4 chars per token), no colour, width 100:
+    body                        raw  collapsed layout
+    i2 single-A, 1 site         426        320    25%
+    i3 single-A, 1 site         388        295    24%
+    i3 single glyph-only        377        288    24%
+    i2 plain (scenario 8)       390        390     0%
+    i3 plain (scenario 8)       411        410     0%
+    i2 many-A, 12 sites         581        322    45%
+    i3 many-A, 12 sites         683        446    35%
+    i2 many-B, 12 sites         512        312    39%
+    i3 many-B, 12 sites         615        437    29%</pre>
+<p>The plain body costs about five per cent more than iteration 2's and removes every guess an agent
+would otherwise make. The single-site terminal body got cheaper, because the condition ids that used
+to take a line each are gone. The fleet body got dearer in absolute terms and cheaper in padding:
+the fix list now prints every repair and gives each sentence its own line, so the content grew while
+the layout waste fell from 45 per cent to 34.</p>
+
+<h2>Measurements</h2>
+<p>Re-run against this program, not carried over. The unicode tier is measured at East Asian
+Ambiguous narrow and the ASCII tier at Ambiguous wide, which is the tier a terminal set the other
+way is told to take; the third sweep is printed as the known consequence of that choice, not as a
+finding. The sweep covers both variants, both state-word settings, both severity settings and
+sixteen widths from 20 to 400.</p>
+<pre class="mono">glyph East Asian Width classes:
+    pass             &#x27;●&#x27; U+25CF EAW=A
+    fail             &#x27;■&#x27; U+25A0 EAW=A
+    fail (warning)   &#x27;□&#x27; U+25A1 EAW=A
+    skip             &#x27;?&#x27; U+003F EAW=Na
+    held             &#x27;○&#x27; U+25CB EAW=A
+    remedy           &#x27;→&#x27; U+2192 EAW=A
+    rule             &#x27;─&#x27; U+2500 EAW=A
+    rail             &#x27;▌&#x27; U+258C EAW=A
+    separator        &#x27;·&#x27; U+00B7 EAW=A
+    ellipsis         &#x27;…&#x27; U+2026 EAW=A
+unicode tier, Ambiguous=narrow, 20 to 400: 0 lines over width across 1024 renders
+ASCII tier, Ambiguous=WIDE, 20 to 400: 0 lines over width across 1024 renders
+unicode tier, Ambiguous=WIDE (known, see the index), 20 to 400: 2980 lines over width across 1024 renders
+    (1, &#x27;a&#x27;, 20, &#x27;line 6 = 31 cells&#x27;, &#x27;── passing ─────────&#x27;)
+    (1, &#x27;a&#x27;, 20, &#x27;line 14 = 21 cells&#x27;, &#x27;  ● pass  delegation&#x27;)
+    (1, &#x27;a&#x27;, 20, &#x27;line 17 = 21 cells&#x27;, &#x27;  ● pass  https-forc&#x27;)
+    (1, &#x27;a&#x27;, 20, &#x27;line 29 = 21 cells&#x27;, &#x27;  ● pass  publish-pa&#x27;)
+    (1, &#x27;a&#x27;, 30, &#x27;line 4 = 51 cells&#x27;, &#x27;── passing ───────────────────&#x27;)
+    (1, &#x27;a&#x27;, 40, &#x27;line 4 = 71 cells&#x27;, &#x27;── passing ─────────────────────────────&#x27;)
+    (1, &#x27;a&#x27;, 50, &#x27;line 3 = 91 cells&#x27;, &#x27;── passing ───────────────────────────────────────&#x27;)
+    (1, &#x27;a&#x27;, 60, &#x27;line 3 = 111 cells&#x27;, &#x27;── passing ─────────────────────────────────────────────────&#x27;)
+    (1, &#x27;a&#x27;, 72, &#x27;line 3 = 135 cells&#x27;, &#x27;── passing ─────────────────────────────────────────────────────────────&#x27;)
+    (1, &#x27;a&#x27;, 79, &#x27;line 3 = 149 cells&#x27;, &#x27;── passing ────────────────────────────────────────────────────────────────────&#x27;)
+    (1, &#x27;a&#x27;, 80, &#x27;line 3 = 151 cells&#x27;, &#x27;── passing ─────────────────────────────────────────────────────────────────────&#x27;)
+    (1, &#x27;a&#x27;, 81, &#x27;line 3 = 153 cells&#x27;, &#x27;── passing ──────────────────────────────────────────────────────────────────────&#x27;)
+    (the unicode tier targets Ambiguous=narrow; a terminal set the other way takes the ASCII tier, which is exact on both tables)
+hostile data: 0 findings
+degenerate widths (0,1,2,5,19,20): 0 panics
+byte-identical across TZ/LANG/TERM/NO_COLOR/LC_CTYPE: yes
+condition ids printed anywhere: [&#x27;config.observability-off&#x27;, &#x27;edge.https-not-forced&#x27;, &#x27;email.sender-not-onboarded&#x27;]
+ids outside the shipped three: 0
+TOTAL FINDINGS 0</pre>
+
+<h2>The real terminal</h2>
+<p><span class="tag">one window, six frames</span>A single kitty window, reused. For each frame the
+harness sent <code>clear; &lt;command&gt;; printf '\n__DONE_n__\n'</code>, polled
+<code>kitten @ get-text</code> until that marker appeared, captured only then, and verified the
+captured text carried the expected scenario's own first line before saving it. Iteration 2's real
+frames were each captured before their command ran, so every one of them showed the previous
+command's output; that is what this procedure exists to prevent.</p>
+<figure><img src="real-s2-noword.png" alt="Scenario 2, glyph only: the recommended single-site body, in kitty at 100 columns and 11pt JetBrains Mono."><figcaption>Scenario 2, glyph only: the recommended single-site body, in kitty at 100 columns and 11pt JetBrains Mono.</figcaption></figure>
+<figure><img src="real-s2-word.png" alt="Scenario 2 with the state word, same window."><figcaption>Scenario 2 with the state word, same window.</figcaption></figure>
+<figure><img src="real-s3-sev-two.png" alt="Scenario 3, the labelled strip with two fail severities: the recommended fleet body."><figcaption>Scenario 3, the labelled strip with two fail severities: the recommended fleet body.</figcaption></figure>
+<figure><img src="real-s2-ansi16.png" alt="Scenario 2 at ANSI-16, on the terminal’s own sixteen slots rather than a converted palette."><figcaption>Scenario 2 at ANSI-16, on the terminal’s own sixteen slots rather than a converted palette.</figcaption></figure>
+<figure><img src="real-s2-ascii.png" alt="Scenario 2 with no colour and the ASCII glyph tier. Every state word is kept at this tier whatever the flag says."><figcaption>Scenario 2 with no colour and the ASCII glyph tier. Every state word is kept at this tier whatever the flag says.</figcaption></figure>
+<figure><img src="real-s9-hostile.png" alt="Scenario 9, hostile data, in a real terminal: the clear-screen escape never reaches it, the forged verdict stays inside a detail column, and the CJK and the ZWJ emoji sit inside the width the layout budgeted."><figcaption>Scenario 9, hostile data, in a real terminal: the clear-screen escape never reaches it, the forged verdict stays inside a detail column, and the CJK and the ZWJ emoji sit inside the width the layout budgeted.</figcaption></figure>
+
+</main>

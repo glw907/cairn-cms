@@ -1,0 +1,144 @@
+package main
+
+import (
+	"strings"
+
+	"charm.land/lipgloss/v2"
+)
+
+// Frame is the render's result in the three sections the 2.0 HUD pins separately: a header that
+// never scrolls, a body that does, and a footer that carries the verdict. The CLI joins them.
+type Frame struct {
+	Header []string
+	Body   []string
+	Footer []string
+}
+
+// Lines is the CLI join: the one place the three sections become a flat screen.
+func (f Frame) Lines() []string {
+	out := append([]string{}, f.Header...)
+	if len(f.Body) > 0 {
+		out = append(out, f.Body...)
+	}
+	if len(f.Footer) > 0 {
+		out = append(out, f.Footer...)
+	}
+	return out
+}
+
+// counts renders the header's tallies in the section words, omitting a state that has none.
+func counts(sep string, failing, couldNotRun, held, passing int) string {
+	var parts []string
+	if failing > 0 {
+		parts = append(parts, plural(failing, "failing"))
+	}
+	if couldNotRun > 0 {
+		parts = append(parts, plural(couldNotRun, "could not run"))
+	}
+	if held > 0 {
+		parts = append(parts, plural(held, "held"))
+	}
+	parts = append(parts, plural(passing, "passing"))
+	return strings.Join(parts, sep)
+}
+
+// verdictRole is the ink a verdict word takes. Full saturation belongs to CRITICAL alone, and OK
+// is green only inside a run that is itself OK, which is the same pass rule the glyphs follow: a
+// green OK beside a red CRITICAL in one strip would be two claims competing for the same eye.
+func (t Theme) verdictRole(v Verdict) Role {
+	switch v {
+	case VerdictCritical:
+		return RoleFail
+	case VerdictOK:
+		return t.PassRole()
+	default:
+		return RoleSkip
+	}
+}
+
+// verdictLines is the one form every body leads with and every run ends on: the verdict first,
+// the subject bold, the tallies muted. A tally is a fact, so when the three will not fit on one
+// line the tally takes a line of its own rather than being cut.
+func verdictLines(t Theme, v Verdict, subject, tally string, width int) []string {
+	head := t.Bold(t.verdictRole(v)).Render(v.Word()) + "  " + t.Bold(RoleFg).Render(subject)
+	if w(v.Word())+2+w(subject)+2+w(tally) <= width {
+		return []string{head + "  " + t.Style(RoleMuted).Render(tally)}
+	}
+	out := []string{head}
+	for _, l := range wrapLines(tally, width) {
+		out = append(out, t.Style(RoleMuted).Render(l))
+	}
+	return out
+}
+
+// header is the block shared by every body and every scope: the verdict, then when the run was
+// checked, how long ago, and how long it took. Credential and keyring detail are not here; they
+// belong to the check that needed them.
+func header(t Theme, v Verdict, subject, tally string, r Report, width int) []string {
+	second := "checked " + age(r.Age) + " ago (" + stamp(r.Now) + "), in " + elapsed(r.Elapsed)
+	out := verdictLines(t, v, subject, tally, width)
+	for _, l := range wrapLines(second, width) {
+		out = append(out, t.Style(RoleMuted).Render(l))
+	}
+	return out
+}
+
+// fixBlock renders one repair under the row it repairs: the imperative sentence wrapped with a
+// hanging indent, then the full documentation URL on its own line, clickable where the terminal
+// supports OSC 8 and readable everywhere else. A fix is never truncated.
+//
+// The condition id, where the check declared one, rides the end of that URL line rather than
+// taking a line of its own. It is the greppable handle for the same failure the URL documents, so
+// the two belong together; on its own line under the detail it read as debris, which is what
+// iteration 2 proved.
+func fixBlock(t Theme, indent int, text, anchor, condition string, width int) []string {
+	if text == "" && condition == "" {
+		return nil
+	}
+	pad := strings.Repeat(" ", indent)
+	col := indent + w(t.Glyphs.Arrow) + 1
+	var out []string
+	if text != "" {
+		arrowLead := pad + t.Style(RoleAccent).Render(t.Glyphs.Arrow) + " "
+		out = hangingAt(t.Style(RoleSubtle), arrowLead, col, san(text), width)
+	}
+	urlPad := strings.Repeat(" ", col)
+	u := docURL(anchor)
+	if u == "" {
+		return appendCondition(t, out, san(condition), col, width)
+	}
+	for _, l := range wrapLines(u, width-col) {
+		out = append(out, urlPad+t.Link(RoleMuted, u).Render(l))
+	}
+	return appendCondition(t, out, san(condition), col, width)
+}
+
+// appendCondition puts the id on the tail of the last line of the fix block when it fits there,
+// and on one further line at the same column when it does not. It is never the only thing under a
+// detail line, and it is never printed for a verdict whose check declared none.
+func appendCondition(t Theme, block []string, cond string, col, width int) []string {
+	if cond == "" {
+		return block
+	}
+	tail := "  " + cond
+	if n := len(block) - 1; n >= 0 && w(block[n])+w(tail) <= width {
+		block[n] += t.Style(RoleMuted).Render(tail)
+		return block
+	}
+	return append(block, strings.Repeat(" ", col)+t.Style(RoleMuted).Render(cond))
+}
+
+// hangingAt wraps text into the column at col, with lead printed before the first line.
+func hangingAt(st lipgloss.Style, lead string, col int, text string, width int) []string {
+	body := wrapLines(text, width-col)
+	pad := strings.Repeat(" ", col)
+	out := make([]string, 0, len(body))
+	for i, l := range body {
+		if i == 0 {
+			out = append(out, lead+st.Render(l))
+			continue
+		}
+		out = append(out, pad+st.Render(l))
+	}
+	return out
+}

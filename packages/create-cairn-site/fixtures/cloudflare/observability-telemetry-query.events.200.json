@@ -1,0 +1,243 @@
+{
+  "provenance": {
+    "captured": "2026-09-21",
+    "source": "POST /accounts/{account_id}/workers/observability/telemetry/query",
+    "status": 200,
+    "note": "recorded live from the query body this round's buildQuery sends, response headers discarded except content-type and no authorization header recorded. result.events is an object, not an array, and each event carries the record the Worker logged under \"source\"; the old synthesized fixture had neither, which is how the decode stayed wrong. Identifiers are scrubbed to the corpus's placeholder shapes, the series and events arrays are trimmed to two, and each event's $workers.event (the whole inbound request, with its client address and geography) is dropped."
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [
+      {
+        "message": "Successful request"
+      }
+    ],
+    "result": {
+      "run": {
+        "id": "ffo0udx44rv2mcvcrrd4xh60",
+        "query": {
+          "id": "cairn-logs",
+          "description": "",
+          "name": "",
+          "generated": false,
+          "parameters": {
+            "datasets": [
+              "cloudflare-workers"
+            ],
+            "filters": [
+              {
+                "key": "$metadata.service",
+                "operation": "eq",
+                "value": "example-site",
+                "type": "string"
+              },
+              {
+                "key": "event",
+                "operation": "exists",
+                "type": "string"
+              }
+            ]
+          },
+          "workspaceId": "0000000000000000000000000000ex01",
+          "environmentId": "cloudflare",
+          "userId": "2226c21721211fbd01e997f1f4446572",
+          "created": "2026-09-21T22:26:40.141Z",
+          "updated": "2026-09-21T22:26:40.141Z"
+        },
+        "accountId": "0000000000000000000000000000ex01",
+        "timeframe": {
+          "from": 1789424800088,
+          "to": 1790029599000
+        },
+        "userId": "2226c21721211fbd01e997f1f4446572",
+        "status": "COMPLETED",
+        "granularity": 10080000,
+        "dry": false,
+        "statistics": {
+          "elapsed": 3.597390099,
+          "rows_read": 3114105,
+          "bytes_read": 2099557671,
+          "abr_level": 10
+        }
+      },
+      "events": {
+        "events": [
+          {
+            "source": {
+              "level": "warn",
+              "reason": "origin",
+              "path": "/about",
+              "event": "guard.rejected",
+              "timestamp": "2026-09-20T19:11:02.614Z"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789931462614,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless"
+            },
+            "$metadata": {
+              "id": "01M303N7YP0000000000000004",
+              "requestId": "1583f1016be54b87c2ad20eef176a734",
+              "rayId": "26ede3e969ee1bc3",
+              "traceId": "c47f4f1653bc507453602f9d4f932e95",
+              "spanId": "0d8117b70bacf700",
+              "trigger": "POST /about",
+              "service": "example-site",
+              "level": "warn",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker",
+              "origin": "fetch"
+            }
+          },
+          {
+            "source": {
+              "level": "warn",
+              "reason": "origin",
+              "path": "/about",
+              "event": "guard.rejected",
+              "timestamp": "2026-09-20T01:25:45.497Z"
+            },
+            "dataset": "cloudflare-workers",
+            "timestamp": 1789867545497,
+            "$workers": {
+              "truncated": false,
+              "scriptName": "example-site",
+              "scriptVersion": {
+                "id": "00000000-0000-4000-8000-232a445a61d2"
+              },
+              "eventType": "fetch",
+              "executionModel": "stateless"
+            },
+            "$metadata": {
+              "id": "01M2Y6PMWS0000000000000004",
+              "requestId": "83d31c028347d908d89fa98a85392235",
+              "rayId": "00acccc1c8ff8e30",
+              "traceId": "5d32e3866381fa95b56d698abd7463d5",
+              "spanId": "bbfe540517b6c6ec",
+              "trigger": "POST /about",
+              "service": "example-site",
+              "level": "warn",
+              "account": "0000000000000000000000000000ex01",
+              "type": "cf-worker",
+              "origin": "fetch"
+            }
+          }
+        ],
+        "fields": [
+          {
+            "type": "string",
+            "key": "level"
+          },
+          {
+            "type": "string",
+            "key": "$workers.scriptName"
+          },
+          {
+            "type": "string",
+            "key": "$workers.scriptVersion.id"
+          },
+          {
+            "type": "string",
+            "key": "$workers.eventType"
+          },
+          {
+            "type": "string",
+            "key": "$workers.executionModel"
+          },
+          {
+            "type": "string",
+            "key": "$workers.event.request.method"
+          },
+          {
+            "type": "string",
+            "key": "$workers.event.request.url"
+          },
+          {
+            "type": "string",
+            "key": "$workers.event.request.path"
+          },
+          {
+            "type": "string",
+            "key": "reason"
+          },
+          {
+            "type": "string",
+            "key": "path"
+          },
+          {
+            "type": "string",
+            "key": "event"
+          },
+          {
+            "type": "string",
+            "key": "timestamp"
+          },
+          {
+            "type": "string",
+            "key": "$workers.requestId"
+          },
+          {
+            "type": "string",
+            "key": "$workers.traceId"
+          },
+          {
+            "type": "string",
+            "key": "$workers.spanId"
+          },
+          {
+            "type": "boolean",
+            "key": "$workers.truncated"
+          }
+        ],
+        "count": 3,
+        "series": [
+          {
+            "time": "2026-09-15 00:24:00",
+            "data": [
+              {
+                "aggregates": {
+                  "_count": 1,
+                  "_countErrors": 0,
+                  "_interval": 1
+                },
+                "count": 1,
+                "errors": 0,
+                "interval": 1,
+                "sampleInterval": 1
+              }
+            ]
+          },
+          {
+            "time": "2026-09-15 03:12:00",
+            "data": [
+              {
+                "aggregates": {
+                  "_count": 1,
+                  "_countErrors": 0,
+                  "_interval": 1
+                },
+                "count": 1,
+                "errors": 0,
+                "interval": 1,
+                "sampleInterval": 1
+              }
+            ]
+          }
+        ]
+      },
+      "statistics": {
+        "elapsed": 3.597390099,
+        "rows_read": 3114105,
+        "bytes_read": 2099557671,
+        "abr_level": 10
+      }
+    }
+  }
+}

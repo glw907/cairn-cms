@@ -1,0 +1,286 @@
+package main
+
+import "time"
+
+// State is the per-check result, in the doctor's own vocabulary: pass, fail, skip. An
+// acknowledged failure is a fail carrying a hold, and renders as the fourth word, held.
+type State int
+
+// The three states a check returns.
+const (
+	Skip State = iota
+	Pass
+	Fail
+)
+
+// Word returns the one word this state is called everywhere: header counts, rows, and sections
+// all draw from this set and no other.
+func (s State) Word() string {
+	switch s {
+	case Pass:
+		return "pass"
+	case Fail:
+		return "fail"
+	default:
+		return "skip"
+	}
+}
+
+// Field is one ordered, named fact behind a detail line.
+type Field struct {
+	Key   string
+	Value string
+}
+
+// Check is one health check's result, flattened for a mockup.
+type Check struct {
+	ID string
+	// Condition is the engine's stable condition id, set only where the shipped check declares
+	// one on this verdict. Most verdicts declare none, and an id the check did not declare is a
+	// lie about what was measured, so the field stays empty rather than being filled in.
+	Condition  string
+	State      State
+	Detail     string
+	Fields     []Field
+	Remedy     string
+	Anchor     string
+	Held       bool
+	HoldExpiry time.Time
+}
+
+// checkRank ranks a check id by what its failure costs the operator: a site that is not serving
+// outranks a broken publish path, which outranks email and errors, which outrank an expiring
+// credential, which outranks version drift. The rank orders fixes, orders sites, and decides
+// whether a failure is CRITICAL or WARNING.
+var checkRank = map[string]int{
+	"serving": 100, "delegation": 95,
+	"publish-path": 80, "deploy": 75,
+	"https-forced": 60,
+	"email":        50, "errors": 45,
+	"creds":  30,
+	"engine": 10,
+}
+
+// Rank returns the check's severity rank, with an unknown id ranked just above version drift so a
+// check this table has not met is never silently sorted last.
+func (c Check) Rank() int {
+	if r, found := checkRank[c.ID]; found {
+		return r
+	}
+	return 20
+}
+
+// warningCeiling is the rank at or below which a lone failure is WARNING rather than CRITICAL: an
+// expiring credential and a version bump are real, and neither is a reason to page anyone.
+const warningCeiling = 30
+
+// Critical reports whether this check failing alone would make the run CRITICAL. It is the same
+// predicate the verdict uses, which is why the second fail mark can never disagree with the
+// verdict word printed at the end of the row.
+func (c Check) Critical() bool { return c.Rank() > warningCeiling }
+
+// Holding reports whether the check's acknowledgement still holds at the render clock, and how
+// long is left. An expired acknowledgement holds nothing.
+func (c Check) Holding(now time.Time) (bool, time.Duration) {
+	if !c.Held {
+		return false, 0
+	}
+	left := c.HoldExpiry.Sub(now)
+	return left > 0, left
+}
+
+// Report is one site's health run.
+type Report struct {
+	Site    string
+	Elapsed time.Duration
+	Age     time.Duration
+	Engine  string
+	Checks  []Check
+	Now     time.Time
+	Adopted time.Time
+}
+
+// Verdict is the monitoring verdict, whose value is the exit code.
+type Verdict int
+
+// The four monitoring verdicts.
+const (
+	VerdictOK Verdict = iota
+	VerdictWarning
+	VerdictCritical
+	VerdictUnknown
+)
+
+// Word returns the capitalized monitoring word a verdict line leads with.
+func (v Verdict) Word() string {
+	switch v {
+	case VerdictOK:
+		return "OK"
+	case VerdictWarning:
+		return "WARNING"
+	case VerdictCritical:
+		return "CRITICAL"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// Exit returns the monitoring exit code the verdict carries.
+func (v Verdict) Exit() int {
+	switch v {
+	case VerdictOK:
+		return 0
+	case VerdictWarning:
+		return 1
+	case VerdictCritical:
+		return 2
+	default:
+		return 3
+	}
+}
+
+// Rank orders verdicts worst first.
+func (v Verdict) Rank() int {
+	switch v {
+	case VerdictCritical:
+		return 3
+	case VerdictUnknown:
+		return 2
+	case VerdictWarning:
+		return 1
+	default:
+		return 0
+	}
+}
+
+// Live returns the checks split by what the operator must do with them: the failures that are not
+// held, the checks that could not run, the held failures, and the passes. Each slice is ordered by
+// severity rank, so the row a reader lands on first is the one that costs the most.
+func (r Report) Live() (failing, couldNotRun, held, passing []Check) {
+	for _, c := range r.Checks {
+		switch {
+		case c.State == Fail && c.Held:
+			if holding, _ := c.Holding(r.Now); holding {
+				held = append(held, c)
+			} else {
+				failing = append(failing, c)
+			}
+		case c.State == Fail:
+			failing = append(failing, c)
+		case c.State == Skip:
+			couldNotRun = append(couldNotRun, c)
+		default:
+			passing = append(passing, c)
+		}
+	}
+	byRank(failing)
+	byRank(couldNotRun)
+	byRank(held)
+	return failing, couldNotRun, held, passing
+}
+
+// byRank sorts checks worst first, with the check id breaking a tie so a render is reproducible.
+func byRank(cs []Check) {
+	for i := 1; i < len(cs); i++ {
+		for j := i; j > 0; j-- {
+			a, b := cs[j-1], cs[j]
+			if a.Rank() > b.Rank() || (a.Rank() == b.Rank() && a.ID <= b.ID) {
+				break
+			}
+			cs[j-1], cs[j] = b, a
+		}
+	}
+}
+
+// Verdict derives the run verdict. Zero checks is UNKNOWN, never OK; a site where nothing could
+// run is UNKNOWN; a site whose only failure is an expiring credential or version drift is WARNING;
+// anything worse is CRITICAL.
+func (r Report) Verdict() Verdict {
+	failing, couldNotRun, _, passing := r.Live()
+	if len(r.Checks) == 0 || (len(passing) == 0 && len(failing) == 0) {
+		return VerdictUnknown
+	}
+	if len(failing) > 0 {
+		if failing[0].Critical() {
+			return VerdictCritical
+		}
+		return VerdictWarning
+	}
+	if len(couldNotRun) > 0 {
+		return VerdictWarning
+	}
+	return VerdictOK
+}
+
+// Counts returns the four tallies the header prints, in section order.
+func (r Report) Counts() (failing, couldNotRun, held, passing int) {
+	f, c, h, p := r.Live()
+	return len(f), len(c), len(h), len(p)
+}
+
+// Rank returns the report's own severity rank, worst check first, for ordering a fleet.
+func (r Report) Rank() int {
+	failing, couldNotRun, _, _ := r.Live()
+	best := 0
+	for _, c := range failing {
+		if c.Rank() > best {
+			best = c.Rank()
+		}
+	}
+	if best == 0 && len(couldNotRun) > 0 {
+		best = 1
+	}
+	return best
+}
+
+// Fix is one ranked repair, carried out of a report so a fleet can order every site's repairs
+// against each other and print each one exactly once.
+type Fix struct {
+	Site      string
+	Check     string
+	Text      string
+	Anchor    string
+	Condition string
+	Rank      int
+}
+
+// Fixes returns the report's repairs: the failures first, worst first, then the repairs that
+// would let a check that could not run actually run. A check that could not run is not yet known
+// to be broken, so its repair never outranks a failure, and each one is printed exactly once.
+func (r Report) Fixes() (failures, blocked []Fix) {
+	failing, couldNotRun, _, _ := r.Live()
+	pick := func(cs []Check) []Fix {
+		var out []Fix
+		for _, c := range cs {
+			if c.Remedy == "" {
+				continue
+			}
+			out = append(out, Fix{Site: r.Site, Check: c.ID, Text: c.Remedy,
+				Anchor: c.Anchor, Condition: c.Condition, Rank: c.Rank()})
+		}
+		return out
+	}
+	return pick(failing), pick(couldNotRun)
+}
+
+// rankFixes orders a fleet's repairs worst first, with site and check breaking a tie.
+func rankFixes(rs []Fix) []Fix {
+	for i := 1; i < len(rs); i++ {
+		for j := i; j > 0; j-- {
+			a, b := rs[j-1], rs[j]
+			if a.Rank > b.Rank || (a.Rank == b.Rank && a.Site <= b.Site) {
+				break
+			}
+			rs[j-1], rs[j] = b, a
+		}
+	}
+	return rs
+}
+
+// Entry is one structured log record.
+type Entry struct {
+	At     time.Time
+	Level  string
+	Event  string
+	Fields []Field
+}

@@ -1,0 +1,15 @@
+[1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 UNKNOWN[m
+[38;2;168;164;158mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
+
+              [38;2;168;164;158mcreds[m [38;2;168;164;158mserving[m [38;2;168;164;158mdelegation[m [38;2;168;164;158mhttps[m [38;2;168;164;158memail[m [38;2;168;164;158mdeploy[m [38;2;168;164;158mpublish-path[m [38;2;168;164;158mengine[m [38;2;168;164;158merrors[m
+[1;38;2;234;231;227mtopo.907.life[m   [38;2;247;172;77m?[m      [38;2;247;172;77m?[m        [38;2;247;172;77m?[m        [38;2;247;172;77m?[m     [38;2;247;172;77m?[m     [38;2;247;172;77m?[m         [38;2;247;172;77m?[m         [38;2;247;172;77m?[m      [38;2;247;172;77m?[m    [1;38;2;247;172;77mUNKNOWN[m
+
+[38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so delegation, https-forced, email, and errors could not run[m
+[38;2;247;172;77mCAIRN_GH_READ_TOKEN is not set, so deploy and publish-path could not run[m
+
+[38;2;74;68;59m──[m [38;2;234;231;227mwhat to fix[m [38;2;74;68;59m─────────────────────────────────────────────────────────────────────────────────────────────────────────[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227mtopo.907.life[m  [38;2;168;164;158mtokens[m[38;2;168;164;158m[m
+      [38;2;193;189;184mRun `cairn auth set` naming each missing token, then run the command again.[m
+      [38;2;168;164;158mfix for: delegation, deploy, publish-path, email, errors, https-forced, creds[m
+
+[1;38;2;247;172;77mUNKNOWN[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 UNKNOWN[m

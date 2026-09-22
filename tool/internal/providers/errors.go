@@ -1,6 +1,9 @@
 package providers
 
-import "net/http"
+import (
+	"net/http"
+	"slices"
+)
 
 // Reason classifies why a provider API call failed, past the raw HTTP status, so a health check
 // can render one stable, translatable message instead of branching on a provider's own numeric
@@ -26,8 +29,34 @@ const (
 	ReasonBuildsAppNotAuthorized
 	ReasonSenderNotConfigured
 	ReasonRateLimited
+	// ReasonRequestRejected is an HTTP 400: the provider parsed the request and refused its
+	// shape. It is separated from ReasonUnknown because the two point at different people. A
+	// rejected request is cairn's own outgoing body being wrong, which no operator can fix and
+	// which has to read as a bug; folding it into the catch-all is what let a malformed Workers
+	// Logs query report for a week as "the Worker has no observability dataset".
+	ReasonRequestRejected
 	ReasonUnknown
 )
+
+// reasons is every Reason above, in declaration order.
+var reasons = []Reason{
+	ReasonUnauthorized,
+	ReasonForbidden,
+	ReasonNotFound,
+	ReasonBuildsNotConnected,
+	ReasonBuildsRepoNotSelected,
+	ReasonBuildsAppNotAuthorized,
+	ReasonSenderNotConfigured,
+	ReasonRateLimited,
+	ReasonRequestRejected,
+	ReasonUnknown,
+}
+
+// Reasons is every known Reason. spine.ReasonCodes spends it to build the reason.api.<reason>
+// family, so the published reason vocabulary is read off these constants rather than retyped.
+func Reasons() []Reason {
+	return slices.Clone(reasons)
+}
 
 // String names the Reason for a log line or an error message.
 func (r Reason) String() string {
@@ -48,6 +77,8 @@ func (r Reason) String() string {
 		return "sender-not-configured"
 	case ReasonRateLimited:
 		return "rate-limited"
+	case ReasonRequestRejected:
+		return "request-rejected"
 	default:
 		return "unknown"
 	}
@@ -70,8 +101,11 @@ type ProviderError interface {
 // (x-ratelimit-remaining: 0), or a Retry-After header, classifies as rate-limited and never as a
 // forbidden credential, because misreading a rate limit as a forbidden credential would report a
 // fault an operator cannot fix. A 403 carrying neither header classifies as forbidden, as it does
-// today. Every other status classifies from the status alone, matching the Cloudflare and GitHub
-// status tables this reasoning once lived in separately.
+// today. A 400 classifies as request-rejected rather than falling through to unknown: the
+// provider read the request and refused its shape, which is a statement about the bytes cairn
+// sent and never about the operator's configuration. Every other status classifies from the
+// status alone, matching the Cloudflare and GitHub status tables this reasoning once lived in
+// separately.
 func reasonForStatus(status int, header http.Header) Reason {
 	if status == http.StatusForbidden && rateLimitedHeaders(header) {
 		return ReasonRateLimited
@@ -85,6 +119,8 @@ func reasonForStatus(status int, header http.Header) Reason {
 		return ReasonNotFound
 	case http.StatusTooManyRequests, http.StatusServiceUnavailable:
 		return ReasonRateLimited
+	case http.StatusBadRequest:
+		return ReasonRequestRejected
 	default:
 		return ReasonUnknown
 	}

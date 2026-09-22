@@ -290,3 +290,31 @@ Name the check that entry holds
 
 ## doctor
 
+- %s resolves to %s, below the engine floor %s
+- %s resolves to %s, outside the engine peer range %s
+- %s satisfy the engine peer ranges
+- %s: no entry for it in pnpm-lock.yaml
+- %s: no entry for it in yarn.lock
+- %s: no node_modules/%s entry in package-lock.json
+- %s: resolved %s is not a plain x.y.z version
+- %s: the engine range %s is not a simple caret range
+- AUTH_DB (d1_databases)
+- EMAIL (send_email)
+- EMAIL and AUTH_DB are declared
+- PUBLIC_ORIGIN is %s (%s)
+- PUBLIC_ORIGIN is not a valid URL, got %s
+- PUBLIC_ORIGIN is not configured
+- PUBLIC_ORIGIN must be https in production, got %s
+- missing %s
+- no site.config.yaml found (looked in %s)
+- no wrangler config found and PUBLIC_ORIGIN is not in the environment
+- no wrangler.jsonc or wrangler.toml found
+- node_modules/@glw907/cairn-cms/package.json did not parse
+- node_modules/@glw907/cairn-cms/package.json not found
+- none of package-lock.json, pnpm-lock.yaml, or yarn.lock was found
+- observability.enabled is not true
+- observability.enabled is true
+- package-lock.json carries no packages map (lockfile v1; reinstall with a current npm)
+- package-lock.json did not parse
+- parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
+- pnpm-lock.yaml did not parse

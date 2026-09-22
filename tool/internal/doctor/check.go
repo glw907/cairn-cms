@@ -22,7 +22,37 @@ var Checks = []Check{}
 
 // Catalogue returns every operator-facing string this package's own checks contribute.
 // cmd/copylist lists it alongside health, spine, and cmd/cairn so a new string cannot land
-// invisibly. It is empty until a check registers detail or fix text of its own.
+// invisibly. Each check_*.go file owns the strings its own checks print; this function only
+// collects them.
 func Catalogue() []string {
-	return nil
+	return []string{
+		noWranglerFoundDetail,
+		bindingEmailMissing,
+		bindingAuthDBMissing,
+		detailBindingsPresent,
+		tmplBindingsMissing,
+		detailObservabilityOff,
+		detailObservabilityOn,
+		detailPublicOriginUnconfigured,
+		tmplPublicOriginNotAURL,
+		tmplPublicOriginNotHTTPS,
+		tmplPublicOriginPass,
+		detailPublicOriginSkip,
+		detailSiteConfigPass,
+		tmplSiteConfigNotFound,
+		detailEnginePackageJSONNotFound,
+		detailEnginePackageJSONInvalid,
+		detailNoLockfileFound,
+		detailNpmLockParseFailed,
+		detailNpmLockNoPackagesMap,
+		detailPnpmLockParseFailed,
+		tmplCaretRangeSkip,
+		tmplPrereleaseSkip,
+		tmplBelowFloorFail,
+		tmplOutsideMajorFail,
+		tmplPassSatisfied,
+		tmplNpmMissingEntry,
+		tmplPnpmMissingEntry,
+		tmplYarnMissingEntry,
+	}
 }

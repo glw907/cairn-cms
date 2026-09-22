@@ -1,11 +1,12 @@
 # The `cairn` CLI's JSON output
 
+This page describes `cairn` 1.1.0, the release that adds the `doctor` payload; 1.0.1 is the
+current release.
+
 Six `cairn` commands accept `--json`: `cairn health`, `cairn sites list`, `cairn logs`,
 `cairn adopt list`, `cairn auth check`, and `cairn doctor`. Together they publish seven payload
 kinds, since `cairn health` writes two, a closed contract a script or an agent can parse without
 running the `cairn` CLI to learn the shape.
-The payloads below are those of cairn 1.1.0. `cairn doctor` and its `doctor` payload are new in
-1.1.0; the other six kinds are unchanged from 1.0.1.
 
 ## Streams and exit codes
 
@@ -287,7 +288,8 @@ registry, so `worstFirst` is empty.
 
 `cairn sites list --json` carries one entry per registered site with `id`, `name`, `domain`, and
 `step`, plus a top-level `errors` array naming every registry read the listing could not
-complete. A non-empty `errors` makes the verdict `UNKNOWN` and the exit code `3`.
+complete. `errors` is present when a site could not complete and absent when there were none. A
+non-empty `errors` makes the verdict `UNKNOWN` and the exit code `3`.
 
 ```json
 {

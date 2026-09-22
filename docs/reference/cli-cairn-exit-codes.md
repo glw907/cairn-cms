@@ -1,6 +1,7 @@
 # The `cairn` CLI's exit codes
 
-This page describes `cairn` 1.0.1, the current release.
+This page describes `cairn` 1.1.0, the release that adds `cairn doctor`; 1.0.1 is the current
+release.
 
 Every `cairn` command exits with one of four codes, following the Monitoring Plugins (Nagios)
 convention. `cairn health`, `cairn doctor`, and `cairn auth check` decide theirs by the rules
@@ -41,11 +42,13 @@ A check that ran reports `OK` when it passed and `CRITICAL` when it failed, with
 
 ## When a check words its result `skip`
 
-A check that could not run contributes `UNKNOWN`, with one exclusion: three reason codes name a
-check the run declined to attempt because the site's own setup gives it nothing to read:
-`reason.cred-missing` (a credential the operator never set), `reason.repo-not-recorded` (a site
-record naming no repository), and `reason.api.builds-not-connected` (a Worker with no Workers
-Builds connection). Those three contribute `WARNING` instead.
+A check that could not run contributes `UNKNOWN`, with one exclusion. Three reason codes name a
+check the run declined to attempt because the site's own setup gives it nothing to read, and
+those three contribute `WARNING` instead.
+
+- `reason.cred-missing`, a credential the operator never set.
+- `reason.repo-not-recorded`, a site record naming no repository.
+- `reason.api.builds-not-connected`, a Worker with no Workers Builds connection.
 
 One fact decides both the wire word and the exit code together: the three reasons above word a
 result `skip`, and every other unattempted or inconclusive check words it `unknown`. A hold never
@@ -53,8 +56,7 @@ softens an unknown; an operator can accept a known failure, never a check that n
 
 ## A site with no checks at all
 
-A site with no checks at all folds to `UNKNOWN`, never `OK`. A site nothing ever measured cannot
-exit 0.
+A site with no checks at all folds to `UNKNOWN`, never `OK`.
 
 ## Empty-registry rules
 
@@ -80,8 +82,10 @@ An exit code is decided in one of two ways, by which kind of run produced it:
   site. `cairn auth check [<site>]` is the one exception: it folds one row per permission rather
   than a site report. A permission the run confirmed contributes `OK`, a permission it refuted
   contributes `CRITICAL`, a permission whose credential is missing contributes `WARNING` with
-  `reason.cred-missing`, and a permission it could not observe contributes `UNKNOWN`. The run
-  exits on the precedence fold of those rows, so it can exit 0, 1, 2, or 3.
+  `reason.cred-missing`, and a permission it could not observe contributes `UNKNOWN`. A run given
+  no site skips every site-scoped permission the same way, so bare `cairn auth check` exits 1
+  even when every credential is set. The run exits on the precedence fold of those rows, so it
+  can exit 0, 1, 2, or 3.
 
 ## Usage errors
 
@@ -96,7 +100,7 @@ hold is a usage error: exit 3, byte-empty stdout.
 
 ## `--help` and `--version`
 
-`--help` and `--version` exit 0 rather than the monitoring guideline's 3.
+`--help` and `--version` exit 0.
 
 ## Timeout bounds
 
@@ -106,7 +110,7 @@ Three nested bounds govern how long a run can take:
 - Each check makes at most a fixed number of requests, published in the table below.
 - `--timeout` (`-t`) bounds the whole command, default 480 seconds.
 
-The timeout is a ceiling. A healthy site answers in a few seconds.
+The timeout is a ceiling.
 
 ## Requests per check
 

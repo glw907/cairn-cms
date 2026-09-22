@@ -102,7 +102,7 @@ func TestAdoptListWrapsItsNoticesToTheWidth(t *testing.T) {
 		if err != nil {
 			t.Fatalf("width %d: adopt list: %v", width, err)
 		}
-		for _, line := range strings.Split(strings.TrimRight(stderr, "\n"), "\n") {
+		for line := range strings.SplitSeq(strings.TrimRight(stderr, "\n"), "\n") {
 			if n := utf8.RuneCountInString(line); n > width {
 				t.Errorf("width %d: the notice line %q is %d cells", width, line, n)
 			}

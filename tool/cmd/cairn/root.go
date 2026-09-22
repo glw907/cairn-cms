@@ -140,7 +140,7 @@ func writeNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error
 		width = render.Width80
 	}
 	theme := render.NewTheme(rf.theme != themeLight, render.ProfileNoColor)
-	for _, paragraph := range strings.Split(notice, "\n") {
+	for paragraph := range strings.SplitSeq(notice, "\n") {
 		for _, line := range theme.Wrap(paragraph, width) {
 			if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
 				return err

@@ -1117,7 +1117,7 @@ func TestNoBodyPrintsAReasonCode(t *testing.T) {
 		for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 			for _, width := range []int{40, 80, 120} {
 				text := textOf(input(reports, body, width, ProfileNoColor, false, verdictFor(reports)))
-				for _, line := range strings.Split(text, "\n") {
+				for line := range strings.SplitSeq(text, "\n") {
 					if strings.Contains(line, "reason.") {
 						t.Errorf("reason %q, body %v, width %d: the line %q carries the code itself",
 							r, body, width, line)

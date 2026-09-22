@@ -1,8 +1,11 @@
 package doctor
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -142,6 +145,12 @@ func TestReadUnderPermissionDeniedIsAnError(t *testing.T) {
 	}
 	if body != nil {
 		t.Errorf("expected nil body, got %q", body)
+	}
+	if !errors.Is(err, fs.ErrPermission) {
+		t.Errorf("expected a wrapped fs.ErrPermission, got %v", err)
+	}
+	if strings.Contains(err.Error(), "refusing to read outside the directory") {
+		t.Errorf("permission failure must not be reported as a containment refusal: %v", err)
 	}
 }
 

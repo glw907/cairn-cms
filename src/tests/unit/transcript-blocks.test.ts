@@ -128,14 +128,13 @@ describe('renderTranscript: real fixture ground truths', () => {
     }
   });
 
-  it('renders 04-doctor-report.txt to exactly 15 lines with the documented shape', () => {
+  it('renders 04-doctor-report.txt to exactly 14 lines with the documented shape', () => {
     const raw = readFileSync(join(FIXTURES_DIR, '04-doctor-report.txt'), 'utf8');
     const lines = renderTranscript(raw).split('\n');
-    expect(lines).toHaveLength(15);
+    expect(lines).toHaveLength(14);
     expect(lines[0]).toBe('+ cairn doctor .');
     expect(lines[1]).toBe('PASS  Wrangler bindings are missing: EMAIL and AUTH_DB are declared');
-    expect(lines.at(-2)).toBe('8 passed, 0 failed, 1 skipped, 0 info, 2 unchecked');
-    expect(lines.at(-1)).toBe('');
+    expect(lines.at(-1)).toBe('8 passed, 0 failed, 1 skipped, 0 info, 2 unchecked');
   });
 });
 

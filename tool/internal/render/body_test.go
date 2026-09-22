@@ -1068,6 +1068,47 @@ func TestFixListLeavesNoOrphanWord(t *testing.T) {
 	}
 }
 
+// TestNoBodyPrintsAReasonCode renders one check under every reason code the spine publishes,
+// through all three bodies, and asserts the code itself never reaches a line. A reason code is
+// the handle --json carries; a body owes the operator the sentence that says what happened.
+func TestNoBodyPrintsAReasonCode(t *testing.T) {
+	codes := spine.ReasonCodes()
+	if len(codes) == 0 {
+		t.Fatal("the reason vocabulary is empty, so this test could not fail")
+	}
+	for _, r := range codes {
+		reports := []health.Report{{Site: "907.life", Checks: []health.CheckResult{{
+			ID:        "email",
+			CheckedAt: fixtures.Now(),
+			Outcome:   spine.Outcome{State: spine.Unknown, Reason: r},
+		}}}}
+		for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
+			for _, width := range []int{40, 80, 120} {
+				text := textOf(input(reports, body, width, ProfileNoColor, false, verdictFor(reports)))
+				for _, line := range strings.Split(text, "\n") {
+					if strings.Contains(line, "reason.") {
+						t.Errorf("reason %q, body %v, width %d: the line %q carries the code itself",
+							r, body, width, line)
+					}
+				}
+				// The fleet body draws a mark per check rather than a detail, so only the two
+				// bodies that carry a check's own line are asked for the phrase.
+				if body == BodyMany {
+					continue
+				}
+				// The comparison drops whitespace entirely rather than collapsing it: at a narrow
+				// width a phrase carrying a URL is hard-wrapped inside the URL, which is the wrap
+				// rule for a token no width can hold.
+				flat := strings.Join(strings.Fields(text), "")
+				if !strings.Contains(flat, strings.Join(strings.Fields(health.ReasonPhrase(r)), "")) {
+					t.Errorf("reason %q, body %v, width %d: the frame carries no phrase for it:\n%s",
+						r, body, width, text)
+				}
+			}
+		}
+	}
+}
+
 // TestFixListEndsNoLineInACutToken covers the fleet fix list across every width a terminal can
 // ask for: a head line carries the condition id whole or wraps it beneath, and a check name too
 // long for the line is ellipsized rather than cut at the edge. A line ending in a piece of a

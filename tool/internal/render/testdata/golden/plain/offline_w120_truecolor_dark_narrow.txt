@@ -2,31 +2,31 @@ verdict: [1;38;2;247;172;77mUNKNOWN[m - 907.life, 9 could not run, 0 passing
 checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
 
 delegation: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 serving: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 deploy: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 publish-path: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 email: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 errors: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 https-forced: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 creds: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 engine: unknown
-reason: reason.offline
+reason: the provider could not be reached
 
 verdict: [1;38;2;247;172;77mUNKNOWN[m - 907.life, 9 could not run, 0 passing
 exit: 3

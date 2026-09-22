@@ -16,11 +16,14 @@
 
 [38;2;74;68;59m──[m [38;2;234;231;227mcould not run[m [38;2;74;68;59m───────────────────────[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227memail[m         
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227merrors[m        
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mhttps-forced[m  
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
 
 [38;2;168;164;158m●[m [38;2;168;164;158m5 passing[m  [38;2;168;164;158mserving · delegation ·[m
              [38;2;168;164;158mdeploy · publish-path ·[m

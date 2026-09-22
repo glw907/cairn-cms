@@ -5,9 +5,11 @@
 
 [38;2;74;68;59m──[m [38;2;234;231;227mcould not run[m [38;2;74;68;59m───────────────────────[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227memail[m         
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227merrors[m        
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mcreds[m         
     [38;2;193;189;184mCloudflare token not found; GitHub[m
     [38;2;193;189;184mtoken read from the keyring[m[38;2;168;164;158m[m

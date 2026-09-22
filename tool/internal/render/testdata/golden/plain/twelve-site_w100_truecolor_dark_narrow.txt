@@ -2,10 +2,10 @@ verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 3 could not run, 6 passing
 checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
 
 email: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 errors: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 creds: skip
 reason: Cloudflare token not found; GitHub token read from the keyring

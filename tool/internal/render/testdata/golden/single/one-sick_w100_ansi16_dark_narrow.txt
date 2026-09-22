@@ -12,8 +12,8 @@ checked 4m ago (2026-09-20 14:28-08:00), in 16.3s
     [35m→[m [37mRaise the @glw907/cairn-cms range in package.json, then deploy again.[m
 
 [90m──[m could not run [90m───────────────────────────────────────────────────────────────────────────────────[m
-  [33m?[m [1memail[m         [37mreason.cred-missing[m
-  [33m?[m [1merrors[m        [37mreason.cred-missing[m
+  [33m?[m [1memail[m         [37mthe token this check reads is not set[m
+  [33m?[m [1merrors[m        [37mthe token this check reads is not set[m
 
 [90m──[m held [90m────────────────────────────────────────────────────────────────────────────────────────────[m
   [33m○[m [1mhttps-forced[m  [37mAlways Use HTTPS is off for the zone[m

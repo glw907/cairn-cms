@@ -41,7 +41,11 @@ and commit the diff.
 - Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
 - Turn on HSTS for the zone under SSL/TLS, Edge Certificates.
 - Turn on observability for the Worker in wrangler.jsonc, then deploy again.
+- Workers Builds is not authorized on the GitHub account
 - Workers Builds is not connected to this Worker, so there is no deployment to read
+- Workers Builds is waiting for a repository to be chosen
+- Workers Builds is waiting for the GitHub app to be authorized
+- Workers Builds names no repository for this Worker
 - at least %d errors in %s
 - at least %d errors in %s, above the %d the check allows
 - no DKIM record found for the sending subdomain
@@ -54,17 +58,39 @@ and commit the diff.
 - the GitHub token expires %s, in %d days
 - the Worker does not exist in this account
 - the Worker has no observability dataset
+- the Workers Builds connection is waiting to settle
+- the account has reached its daily send limit
+- the build has not started yet
+- the build is still running
+- the certificate for the hostname is still being issued
+- the check could not read what it needed
+- the check did not run
 - the domain points at nameservers outside this Cloudflare zone
+- the domain's delegation is still propagating
 - the hostname answers, but /admin is not cairn's sign-in page
 - the hostname does not answer
+- the hostname's DNS records are not published yet
 - the installed or latest version is not in the published version list
 - the last build did not succeed
+- the provider could not be reached
+- the provider did not answer in time
+- the provider failed for a reason cairn cannot classify
+- the provider has no record of what the check asked for
+- the provider is rate-limiting cairn's requests
 - the provider refused the request cairn sent; this is a bug in cairn, reportable at https://github.com/glw907/cairn-cms/issues
+- the resolver has not caught up with the hostname's records
 - the sending subdomain is not onboarded
+- the sending subdomain is not ready to send yet
+- the sending subdomain is still propagating
 - the sending subdomain's SPF record omits %s
 - the site's package.json carries no @glw907/cairn-cms dependency
+- the token is close to expiry
+- the token lacks a permission this check reads
 - the token lacks a required permission
+- the token this check reads is not set
 - the token was rejected
+- the zone is waiting for the domain to be delegated to it
+- this site exposes nothing for the check to read
 - wrangler email sending enable <domain>
 
 ## spine

@@ -2,7 +2,11 @@ package health
 
 import (
 	"fmt"
+	"slices"
 	"time"
+
+	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
 // This file is the messages table tool/docs/design/copy-standard.md section 4.1 requires: every
@@ -284,13 +288,73 @@ func detailCredsForbidden() string {
 	return "the token lacks a required permission"
 }
 
+// reasonPhrases is the prose every reason code prints as. A reason code is cairn's own
+// vocabulary, greppable and stable, and it belongs in --json and in a log line; a body printing
+// the code itself hands an operator a token to search for rather than the sentence that says
+// what the run found. Every code spine publishes has a row here, which
+// TestEveryReasonCodeHasAPhrase holds.
+//
+// The codes name a condition rather than a provider, so the prose does too: a check that fell
+// back to its reason has no measured detail to name one with. Each line is written to the copy
+// standard's 2.6 grammar for a skip reason; the catalogue carries no rows for these, and the set
+// is reported to the editorial gate.
+var reasonPhrases = map[spine.ReasonCode]string{
+	spine.ReasonCredMissing:     "the token this check reads is not set",
+	spine.ReasonCredForbidden:   "the token lacks a permission this check reads",
+	spine.ReasonCredRevoked:     "the token was rejected",
+	spine.ReasonCredExpiring:    "the token is close to expiry",
+	spine.ReasonTimeout:         "the provider did not answer in time",
+	spine.ReasonOffline:         "the provider could not be reached",
+	spine.ReasonNotRun:          "the check did not run",
+	spine.ReasonNotObservable:   "this site exposes nothing for the check to read",
+	spine.ReasonRepoNotRecorded: detailNoRepoRecorded(),
+
+	spine.ParkReason(spine.ParkDelegationPropagating):   "the domain's delegation is still propagating",
+	spine.ParkReason(spine.ParkDelegationPending):       "the zone is waiting for the domain to be delegated to it",
+	spine.ParkReason(spine.ParkHostnameRecordsAbsent):   "the hostname's DNS records are not published yet",
+	spine.ParkReason(spine.ParkHostnameResolverLagging): "the resolver has not caught up with the hostname's records",
+	spine.ParkReason(spine.ParkCertificatePending):      "the certificate for the hostname is still being issued",
+	spine.ParkReason(spine.ParkEmailNotReady):           "the sending subdomain is not ready to send yet",
+	spine.ParkReason(spine.ParkEmailSenderPropagating):  "the sending subdomain is still propagating",
+	spine.ParkReason(spine.ParkEmailDailyLimit):         "the account has reached its daily send limit",
+	spine.ParkReason(spine.ParkBuildsAppNotAuthorized):  "Workers Builds is waiting for the GitHub app to be authorized",
+	spine.ParkReason(spine.ParkBuildsRepoNotSelected):   "Workers Builds is waiting for a repository to be chosen",
+	spine.ParkReason(spine.ParkBuildNotStarted):         "the build has not started yet",
+	spine.ParkReason(spine.ParkBuildRunning):            "the build is still running",
+	spine.ParkReason(spine.ParkBuildsReconcileParked):   "the Workers Builds connection is waiting to settle",
+
+	spine.APIReason(providers.ReasonUnauthorized):           detailCredsUnauthorized(),
+	spine.APIReason(providers.ReasonForbidden):              detailCredsForbidden(),
+	spine.APIReason(providers.ReasonNotFound):               "the provider has no record of what the check asked for",
+	spine.APIReason(providers.ReasonBuildsNotConnected):     detailDeployBuildsNotConnected(),
+	spine.APIReason(providers.ReasonBuildsRepoNotSelected):  "Workers Builds names no repository for this Worker",
+	spine.APIReason(providers.ReasonBuildsAppNotAuthorized): "Workers Builds is not authorized on the GitHub account",
+	spine.APIReason(providers.ReasonSenderNotConfigured):    detailEmailSenderNotOnboarded(),
+	spine.APIReason(providers.ReasonRateLimited):            "the provider is rate-limiting cairn's requests",
+	spine.APIReason(providers.ReasonRequestRejected):        detailAPIRequestRejected(),
+	spine.APIReason(providers.ReasonUnknown):                "the provider failed for a reason cairn cannot classify",
+}
+
+// ReasonPhrase returns the prose r prints as, and empty for the zero code, which is what a check
+// that measured a verdict carries. An unknown code falls back to the one sentence true of every
+// reason: the code itself is never printed, since a body's job is to say what happened.
+func ReasonPhrase(r spine.ReasonCode) string {
+	if r == "" {
+		return ""
+	}
+	if phrase, found := reasonPhrases[r]; found {
+		return phrase
+	}
+	return "the check could not read what it needed"
+}
+
 // Catalogue returns every operator-facing string this package's messages table can print: a
 // fixed detail or skip fragment rendered as-is, and a parameterized one rendered as its own named
 // format template rather than an invented example value. `cmd/copylist` calls this to build
 // `make copy-list`'s output; a caller wanting a rendered line for one specific verdict calls the
 // package's own detailXxx function instead.
 func Catalogue() []string {
-	return []string{
+	out := []string{
 		detailHTTPSAlwaysUseHTTPSOff(),
 		detailHTTPSHSTSOff(),
 		detailHTTPSBothOff(),
@@ -328,5 +392,13 @@ func Catalogue() []string {
 		tmplCredsGitHubExpiring,
 		detailCredsUnauthorized(),
 		detailCredsForbidden(),
+		ReasonPhrase("reason.unrecognized"),
 	}
+	// Every reason phrase is an operator-facing line like any other detail, so the whole table
+	// joins the catalogue rather than one example of it.
+	for _, r := range spine.ReasonCodes() {
+		out = append(out, ReasonPhrase(r))
+	}
+	slices.Sort(out)
+	return slices.Compact(out)
 }

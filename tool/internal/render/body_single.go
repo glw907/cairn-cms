@@ -227,13 +227,15 @@ func (t Theme) detailLines(detail, tail string, col, width int) (lines []string,
 }
 
 // checkDetail returns the line a check contributes: the detail it measured, or, where it
-// measured none, the reason code it could not run under. health's own messages table carries no
-// prose for a reason code, so the code itself is what is left to print.
+// measured none, the prose health's messages table carries for the reason it could not run
+// under. A body never prints the reason code itself: the code is a handle to grep and to file a
+// report against, which --json carries at every width, and a row on the screen owes the operator
+// a sentence about what happened instead.
 func checkDetail(c health.CheckResult) string {
 	if c.Outcome.Detail != "" {
 		return c.Outcome.Detail
 	}
-	return string(c.Outcome.Reason)
+	return health.ReasonPhrase(c.Outcome.Reason)
 }
 
 // fixBlock renders one fix under the row it repairs: the imperative sentence wrapped with a

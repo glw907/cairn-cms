@@ -6,13 +6,13 @@ fix: Create a new token, then run `cairn auth set` naming the credential.
 fix actor: operator
 
 email: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 errors: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 https-forced: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 fix for: email, errors, https-forced
 fix: Run `cairn auth set` naming each missing token, then run the command again.

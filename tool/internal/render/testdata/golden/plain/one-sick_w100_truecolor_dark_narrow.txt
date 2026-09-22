@@ -20,10 +20,10 @@ fix actor: operator (changes the live site)
 docs: https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge
 
 email: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 errors: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 fix for: email, errors
 fix: Run `cairn auth set` naming each missing token, then run the command again.

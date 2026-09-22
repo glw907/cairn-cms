@@ -2,28 +2,28 @@ verdict: [1;38;2;247;172;77mUNKNOWN[m - topo.907.life, 9 could not run, 0 pass
 checked: 4m ago (2026-09-20 14:28-08:00), in 16.3s
 
 delegation: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 serving: unknown
 reason: the site did not answer
 
 deploy: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 publish-path: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 email: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 errors: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 https-forced: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 creds: skip
-reason: reason.cred-missing
+reason: the token this check reads is not set
 
 engine: unknown
 reason: the installed or latest version is not in the published version list

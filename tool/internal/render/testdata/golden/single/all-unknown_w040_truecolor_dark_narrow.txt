@@ -5,21 +5,28 @@
 
 [38;2;74;68;59m──[m [38;2;234;231;227mcould not run[m [38;2;74;68;59m───────────────────────[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mdelegation[m    
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mserving[m       
     [38;2;193;189;184mthe site did not answer[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mdeploy[m        
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mpublish-path[m  
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227memail[m         
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227merrors[m        
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mhttps-forced[m  
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
   [38;2;247;172;77m?[m [1;38;2;234;231;227mcreds[m         
-    [38;2;193;189;184mreason.cred-missing[m[38;2;168;164;158m[m
+    [38;2;193;189;184mthe token this check reads is not[m
+    [38;2;193;189;184mset[m[38;2;168;164;158m[m
     [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so[m
     [38;2;247;172;77mdelegation, https-forced, email, and[m
     [38;2;247;172;77merrors could not run[m

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
 // maxCheckBodyLiteral is the longest string literal a check_*.go file may carry outside a
@@ -259,6 +261,26 @@ func TestErrorsWindowFormatsWholeHoursBare(t *testing.T) {
 	for _, tt := range tests {
 		if got := errorsWindow(tt.d); got != tt.want {
 			t.Errorf("errorsWindow(%v) = %q, want %q", tt.d, got, tt.want)
+		}
+	}
+}
+
+// TestEveryReasonCodeHasAPhrase holds the messages table against spine's own published
+// vocabulary: every code a run can emit resolves to prose written for the table, never to the
+// fallback sentence, so no body is left with the code as the only thing it could print.
+func TestEveryReasonCodeHasAPhrase(t *testing.T) {
+	codes := spine.ReasonCodes()
+	if len(codes) == 0 {
+		t.Fatal("the reason vocabulary is empty, so this test could not fail")
+	}
+	for _, r := range codes {
+		phrase, found := reasonPhrases[r]
+		if !found {
+			t.Errorf("the reason code %q has no phrase in the messages table", r)
+			continue
+		}
+		if phrase == "" || strings.Contains(phrase, "reason.") {
+			t.Errorf("the phrase for %q is %q, which is not prose", r, phrase)
 		}
 	}
 }

@@ -15,9 +15,13 @@ import (
 // composes with. A body owns its frame and nothing else, so the vocabulary, the ranking, the fix
 // format, and the timestamps cannot drift between a terminal and a pipe.
 
-// docsBase is the page every fix's anchor resolves against. It is stated once so no body builds
-// a documentation address of its own.
-const docsBase = "https://cairn.pub/docs/admin/is-it-working#"
+// docsBase is the root every published cairn documentation address resolves under, stated once
+// so no body builds a documentation address of its own.
+const docsBase = "https://cairn.pub/docs/"
+
+// fixAnchorBase is the page every fix's anchor resolves against. A fix names an anchor alone,
+// and the admin arm's is-it-working page is the one page those anchors are written for.
+const fixAnchorBase = docsBase + "admin/is-it-working#"
 
 // The section labels, the four labels a run's checks are grouped under. They are their own fixed
 // vocabulary and no body invents a fifth: the check-result words are five, and the two that mean
@@ -217,7 +221,7 @@ func fixURL(f health.Fix) string {
 	if f.Anchor == "" {
 		return ""
 	}
-	return docsBase + f.Anchor
+	return fixAnchorBase + f.Anchor
 }
 
 // linkable reports whether url may be emitted as an OSC 8 hyperlink. The target is constrained

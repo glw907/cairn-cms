@@ -1,0 +1,23 @@
+{
+  "target": "make -C tool flags",
+  "flags": [
+    "--ack",
+    "--ack-file",
+    "--color",
+    "--domain",
+    "--error-threshold",
+    "--event",
+    "--expect-sites",
+    "--help",
+    "--json",
+    "--quiet",
+    "--repo",
+    "--since",
+    "--theme",
+    "--timeout",
+    "--verbose",
+    "--version",
+    "--width",
+    "--worker"
+  ]
+}

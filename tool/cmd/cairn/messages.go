@@ -16,10 +16,10 @@
 // literal of its own.
 //
 // This table is the program's own strings, never the published docs. tool/README.md,
-// tool/docs/credentials.md, tool/docs/tripwire.md, and the reference pages are documentation an
-// operator reads outside the binary: they are not listed by `copy-list`, and they are linted by
-// the repository's own Vale configuration instead. Do not route a doc sentence through this
-// table.
+// tool/docs/credentials.md, tool/docs/tripwire.md, and the reference pages under
+// docs/reference/ are documentation an operator reads outside the binary: they are not listed by
+// `copy-list`, and they are linted by the repository's own Vale configuration instead. Do not
+// route a doc sentence through this table.
 //
 // A comment reading "new to this table" marks a string the catalogue in copy-standard.md
 // carries no row for: it is drafted to the standard's sections 2.4 through 2.7 rather than
@@ -66,16 +66,22 @@ const (
 // New to this table, reviewed at the 1.0 editorial gate.
 const tmplVersion = "%s (%s), go%s, %s/%s"
 
-// The root command's own Short, Long, and Example. The Long's three lines are the contract a
-// program that reached only `cairn --help` still needs: where the whole contract is, how to ask
-// for a machine-readable payload, and what the process exit codes mean. New to this table,
-// reviewed at the 1.0 editorial gate.
+// The root command's own Short, Long, and Example. The Long is the contract a program that
+// reached only `cairn --help` still needs: where the whole contract is, how to ask for a
+// machine-readable payload, what the process exit codes mean, and where each contract is
+// published. The three addresses are URLs rather than repository paths because `go install`
+// puts the binary on a machine that holds no cairn-cms checkout. New to this table, reviewed at
+// the 1.0 editorial gate.
 const (
 	shortRoot = "Operate a cairn-cms production site"
 	longRoot  = "Operate a cairn-cms production site.\n\n" +
 		"Run `cairn help agents` for the contract a program reads.\n" +
 		"Pass --json to a reporting command for a machine-readable payload on stdout.\n" +
-		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN."
+		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n\n" +
+		"The published contracts:\n" +
+		"  https://cairn.pub/docs/reference/cli-cairn-exit-codes\n" +
+		"  https://cairn.pub/docs/reference/cli-cairn-json-output\n" +
+		"  https://cairn.pub/docs/reference/cli-cairn-doctor"
 	exampleRoot = "cairn health ecxc-ski-a1b2c3"
 )
 
@@ -244,7 +250,12 @@ It exits 3 for a usage error, a run whose only non-passing results are unknown,
 or a directory that is not a cairn site. Run cairn health after deploying for
 the https and email checks that need a live, adopted site.
 
-To check every site cairn knows, run: cairn health --json`
+To check every site cairn knows, run: cairn health --json
+
+Every contract this page summarises is published in full:
+  https://cairn.pub/docs/reference/cli-cairn-exit-codes
+  https://cairn.pub/docs/reference/cli-cairn-json-output
+  https://cairn.pub/docs/reference/cli-cairn-doctor`
 )
 
 // health.go's own Short, Long, Example, and flag help. The Long's second paragraph repeats the
@@ -254,7 +265,8 @@ const (
 	longHealth = "Run the read-only health checks against one site, or every site when none is named.\n\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
 		"Precedence is CRITICAL, then UNKNOWN, then WARNING, then OK, which is not numeric order.\n" +
-		"Pass --json for the machine-readable report; run `cairn help agents` for the whole contract."
+		"Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.\n" +
+		"The payload contract is published at https://cairn.pub/docs/reference/cli-cairn-json-output."
 	shortHealth            = "Run the read-only health checks against one site, or every site when none is named"
 	exampleHealth          = "cairn health ecxc-ski-a1b2c3 --json"
 	flagHealthJSONHelp     = "print the report as JSON"

@@ -205,6 +205,11 @@ or a directory that is not a cairn site. Run cairn health after deploying for
 the https and email checks that need a live, adopted site.
 
 To check every site cairn knows, run: cairn health --json
+
+Every contract this page summarises is published in full:
+  https://cairn.pub/docs/reference/cli-cairn-exit-codes
+  https://cairn.pub/docs/reference/cli-cairn-json-output
+  https://cairn.pub/docs/reference/cli-cairn-doctor
 - cairn logs ecxc-ski-a1b2c3 --since 24h
 - cairn sites
 - cairn sites list --json

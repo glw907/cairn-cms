@@ -111,3 +111,21 @@ authentication, a flood of distinct addresses here signals a request flood that 
 can throttle. `auth.identity.unknown`'s `email` is the second exception: an identity gate's own
 confirmed address, normalized and capped the same way, logged after the allow-list check fails.
 Every other event's `email` fires only for an allow-listed editor.
+
+## What cairn does with this vocabulary
+
+The `cairn` CLI carries a copy of this page's event-name list, for `--event` completion only, as
+a literal Go slice rather than a value generated from the engine's `src/lib/log/events.ts`, since
+a `go install` build reaches no `src/lib` tree. A test (`tool/internal/logs/events_test.go`,
+`TestEventVocabularyMatchesEngine`) keeps that copy in step with `src/lib/log/events.ts`, failing
+when the two sets differ so an event the engine adds fails the CLI's own gate rather than
+drifting silently.
+
+`cairn logs` does nothing to a record. It prints what the endpoint returned, in reverse
+chronological order, and never rewrites, truncates, or reinterprets a field's value. It reads
+`event` to narrow and to complete against, `level` because the `errors` health check counts
+`level: error` records over a window, which is why `cairn health --since` and `cairn logs --since`
+share one grammar for that window, and `timestamp` to order and print each line. A plain `cairn
+logs` run prints an unconditional stderr notice that its output isn't safe to paste in public.
+Under [the `--json` contract](./cli-cairn-json-output.md) that notice travels instead as the
+payload's own `containsPersonalData` field.

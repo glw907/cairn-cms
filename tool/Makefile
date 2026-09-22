@@ -18,7 +18,7 @@ LDFLAGS := -X '$(MODULE)/internal/version.Version=$(VERSION)' -X '$(MODULE)/inte
 
 .PHONY: all build test vet install install-check check clean golden man \
 	tidy-check fmt-check lint vulncheck vale-comments \
-	copy-list check-copy copy-review \
+	copy-list check-copy copy-review flags \
 	build-golangci-lint build-govulncheck
 
 all: check
@@ -96,6 +96,13 @@ copy-review:
 # frame that changed without this step is a failing test rather than a silent drift.
 golden:
 	go test ./internal/render -run TestGolden -update
+
+# flags writes testdata/flags.json from the real cobra tree. Run it and commit the diff whenever
+# a command gains, loses, or renames a flag; `make test` compares the committed file on every
+# run, so a flag that changed without this step is a failing test. The file is also what
+# scripts/checks/check-symbols.mjs accepts a `--flag` in a docs shell fence against.
+flags:
+	go test ./cmd/cairn -run TestCommittedFlagListMatchesTheCommandTree -update
 
 build-golangci-lint:
 	go build -C tools -o ../$(GOLANGCI) github.com/golangci/golangci-lint/v2/cmd/golangci-lint

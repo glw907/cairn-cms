@@ -1,9 +1,11 @@
 name: tool
 
 # The Go operator CLI's own gate: `make -C tool check` on three platforms. Scoped to `tool/**`
-# plus the four cross-tree drift gates whose fixtures or types a Go check depends on, so a
-# change elsewhere in the repo never triggers this workflow and a change to one of those four
-# files always does.
+# plus the cross-tree drift gates whose fixtures, types, schemas, or published pages a Go check
+# depends on, so a change elsewhere in the repo never triggers this workflow and a change to one
+# of those paths always does. The three contract pages and the schema directory are on the list
+# because Go tests read them: they publish the tool's own exit codes, payloads, and check ids,
+# and they live in the engine's reference arm so the npm tarball carries them.
 
 on:
   push:
@@ -16,6 +18,10 @@ on:
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
       - 'docs/admin/is-it-working.md'
+      - 'docs/reference/cli-cairn-exit-codes.md'
+      - 'docs/reference/cli-cairn-json-output.md'
+      - 'docs/reference/cli-cairn-doctor.md'
+      - 'docs/reference/schema/**'
     tags: ['tool/v*']
   pull_request:
     paths:
@@ -26,6 +32,10 @@ on:
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
       - 'docs/admin/is-it-working.md'
+      - 'docs/reference/cli-cairn-exit-codes.md'
+      - 'docs/reference/cli-cairn-json-output.md'
+      - 'docs/reference/cli-cairn-doctor.md'
+      - 'docs/reference/schema/**'
   workflow_dispatch:
 
 defaults:

@@ -12,9 +12,11 @@
 //
 // Five token classes, each resolved against a different ground truth, chosen because each
 // resolves reliably without guessing:
-//   - a CLI flag (`--some-flag`) inside a shell-tagged fenced block, resolved against
-//     `packages/create-cairn-site`'s own argument parser; anything else (npm, npx, wrangler,
-//     git, gh, node, or one of cairn's other CLIs) comes from the allowlist
+//   - a CLI flag (`--some-flag`) inside a shell-tagged fenced block, resolved against the two
+//     CLIs this repository owns: `packages/create-cairn-site`'s own argument parser, and the Go
+//     tool's committed flag list at `tool/testdata/flags.json`, which `make -C tool flags`
+//     writes from the real cobra tree; anything else (npm, npx, wrangler, git, gh, node) comes
+//     from the allowlist
 //   - an environment variable (SCREAMING_SNAKE_CASE), resolved against the source tree
 //   - an exported identifier named in an `import ... from '@glw907/cairn-cms...'` line inside a
 //     fenced block, resolved against the generated `api-surface.md` snapshot, exactly against the
@@ -325,6 +327,33 @@ export function createCairnSiteFlags(root = ROOT) {
   return flags;
 }
 
+/**
+ * Read the Go tool's committed flag list (`tool/testdata/flags.json`) into a set of bare names,
+ * the leading dashes stripped so it lines up with `createCairnSiteFlags`. The file is generated
+ * from the real cobra tree by `make -C tool flags` and held to it by a Go test, so it is the
+ * tool's flag vocabulary rather than a hand-kept list. Its absence throws rather than returning
+ * an empty set: silently accepting no tool flag would turn every documented `cairn` command line
+ * into a finding.
+ * @param {string} root
+ */
+export function cairnToolFlags(root = ROOT) {
+  const path = join(root, 'tool/testdata/flags.json');
+  if (!existsSync(path)) {
+    throw new Error(`check-symbols: ${path} is missing; run \`make -C tool flags\` to write it`);
+  }
+  const { flags } = JSON.parse(readFileSync(path, 'utf8'));
+  return new Set(flags.map((/** @type {string} */ flag) => flag.replace(/^--/, '')));
+}
+
+/**
+ * Every flag name the CLI-flag class resolves against: the union of the two CLIs this repository
+ * owns. A flag belonging to neither is either an allowlisted third-party flag or a finding.
+ * @param {string} root
+ */
+export function cliFlagNames(root = ROOT) {
+  return new Set([...createCairnSiteFlags(root), ...cairnToolFlags(root)]);
+}
+
 /** Parse `src/lib/log/events.ts`'s `CairnLogEvent` union into its literal set. @param {string} root */
 export function logEventNames(root = ROOT) {
   const text = readFileSync(join(root, 'src/lib/log/events.ts'), 'utf8');
@@ -435,7 +464,7 @@ function envVarInSourceTree(token, root = ROOT) {
  */
 export function findUnresolvedSymbols(root = ROOT) {
   const apiSurface = parseApiSurface(root);
-  const cliFlags = createCairnSiteFlags(root);
+  const cliFlags = cliFlagNames(root);
   const logEvents = logEventNames(root);
   const conditions = conditionIds(root);
   const checkIds = doctorCheckIds(root);

@@ -7,12 +7,15 @@ A finding here does not block the doc that found it. A hole in `docs/internal/fa
 pass needed and didn't find, found wrong, or found only as an unverified `[candidate]`) is filed
 here too, the same as any other finding.
 
-Record each finding with its perspective and a short note. The perspective is one of the four
-audience tracks ([`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)): `editor`
+Record each finding with its perspective and a short note. The perspective is one of the five
+audience profiles ([`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)): `editor`
 (the non-technical author working in `/admin`), `admin` (the technical non-developer who sets up
 and runs the default site; `operator` retired into this tag 2026-08-14), `extender` (the
-Svelte-fluent developer building on cairn's seams; formerly tagged `developer`), or `contributor`
-(the engine contributor working on cairn itself; formerly tagged `maintainer`).
+Svelte-fluent developer building on cairn's seams; formerly tagged `developer`), `contributor`
+(the engine contributor working on cairn itself; formerly tagged `maintainer`), or `scripter`
+(anyone automating against `cairn`, a person writing a script or an agent; the profile the
+2026-08-14 record's dated note added for the three tool contract pages under
+`docs/reference/`).
 
 This log holds only live findings and the tombstones below. Resolved findings are pruned here once
 shipped; their detail lives in the per-plan post-mortems and `docs/STATUS.md`, the homes for shipped
@@ -46,7 +49,15 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-This section holds no open finding. retire-1's close (2026-09-22) triaged the whole log and
+Draft docs pass A's close (2026-09-22) triaged the whole log and found one open finding, its own
+`scripter` entry from the json-output page's task, already overtaken by the branch that filed it:
+the `logs` golden's `publish.commit.failed` event now has an allowlist entry in
+`scripts/checks/check-symbols-allowlist.mjs`, beside three `CAIRN_*` variables the same page
+cites, and `check:symbols` is green, so the page ships with no known gate red and the entry is
+deleted rather than re-filed. The pass surfaced no finding of its own. Every other entry below was
+re-read against the code and each was already cleared by the pass named beside it.
+
+The rest of this section is triage history. retire-1's close (2026-09-22) triaged the whole log and
 routed the one entry it carried, the Names one (filed 2026-09-21), to `ROADMAP.md`'s Next tier
 with its trigger, since the draft-docs pass that writes those strings is the one that pays for it.
 retire-1's own `contributor` finding was filed in the same step, also to Next: `link:consumer`
@@ -141,6 +152,7 @@ history holds every pruned entry in full.
 | 2026-09-21 | the Go tool Pass B2 close | its own three `admin` findings, all promoted whole to `ROADMAP.md`'s "Three docs items for the draft-docs pass" entry: the tool's public pages moving under `docs/`, the drafts' scaffold-first order against 2.0's provisioning, and the admin track carrying the tool inside "is my site working". The whole-log sweep found no other open finding to resolve |
 | 2026-09-20 | the extend-2 pass's close | its own two findings, discovered and cleared in the same step: the `./admin-sources.css` subpath's missing dedicated reference page promoted whole to `ROADMAP.md`'s Later tier; the misplaced `cairn-guidance install` symlink-containment fact bullet moved from `docs/internal/facts/extend.md` into a new `## docs/reference/guidance.md` section in `facts/reference.md` |
 | 2026-09-21 | the doctor-retirement pre-task's close | its own three `contributor` findings, all promoted whole to `ROADMAP.md`'s Next tier with their triggers: the `check:surface -- --update` argument-forwarding quirk, `check:facts`'s blindness to an off-by-one `Source:` pointer, and the missing `cairn-run-gate` silence watchdog (a dotfiles chore, filed in the roadmap because cairn passes are what hit it). The whole-log sweep found no open finding left by an earlier pass |
+| 2026-09-22 | draft docs pass A's close | its own `scripter` finding (the `logs` golden's `publish.commit.failed` event failing `check:symbols`'s log-event class) deleted as overtaken: the branch added the allowlist entry, and three `CAIRN_*` entries beside it, and `check:symbols` is green. The whole-log sweep found no other open finding |
 | 2026-09-22 | retire-1's close | the Names finding (mermaid `accDescr:`/`accTitle:` text, image alt text, and nav labels carrying no code font for Vale to read) promoted whole to `ROADMAP.md`'s Next tier with its trigger; retire-1's own `contributor` finding, the pinned-site limit on `link:consumer` plus `cairn-manifest`, filed beside it. The whole-log sweep found no other open finding |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they

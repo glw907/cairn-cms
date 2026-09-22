@@ -1164,11 +1164,12 @@ the named human gates only):**
 - **Three docs items for the draft-docs pass, filed at B2's close (2026-09-21).** Promoted here
   from `docs/internal/docs-friction-log.md` because the pass that leans on them is the draft-docs
   pass, not this one.
-  - The tool's four public pages (`credentials.md`, `tripwire.md`, and the two under
-    `tool/docs/reference/`) move under `docs/` in that pass: the exit-code and JSON contracts to
-    `docs/reference/`, credentials and the scheduled run to `docs/admin/`. `tool/docs/` is the
-    interim copy 1.0 shipped, and a small `tool/v1.1.0` repoints the README, `cairn help`, and
-    the fix-line links afterwards.
+  - **The reference half is DONE (draft docs pass A, 2026-09-22).** The exit-code, JSON, and
+    `cairn doctor` contracts and the seven schemas now live under `docs/reference/` and
+    `docs/reference/schema/`, the interim copies are deleted behind a stub, and the README,
+    `cairn help`, and the fix lines already cite cairn.pub URLs and schema `$id`s; `tool/v1.1.0`
+    ships that repoint. Still open: `tool/docs/credentials.md` and `tool/docs/tripwire.md` move to
+    `docs/admin/` in pass B.
   - **The drafts must not hard-wire a scaffold-first order.** 2.0's goal is provisioning, which
     makes installing `cairn` the first step, ahead of `npm create`. A getting-started page
     written around `npx create-cairn-site` as step one has to be rewritten rather than amended

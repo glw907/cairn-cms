@@ -366,20 +366,32 @@ func TestNoMalformedInOperatorCopy(t *testing.T) {
 	}
 }
 
-// TestBudgetDocsNameTheCutShortSiteAndTheCap covers criterion 25: both exit-codes.md and
-// tripwire.md state the reason a cut-short site's unfinished checks carry
+// TestTheExitCodesPageNamesTheCutShortSiteAndTheCap covers half of criterion 25: the published
+// exit-codes page states the reason a cut-short site's unfinished checks carry
 // (spine.ReasonNotRun's own wire value) and the cap the per-site share divides against, so the
-// prose cannot drift from the arithmetic.
-func TestBudgetDocsNameTheCutShortSiteAndTheCap(t *testing.T) {
+// prose cannot drift from the arithmetic. The page now sits outside this module, which is why
+// it is read from the repository root rather than beside tripwire.md.
+func TestTheExitCodesPageNamesTheCutShortSiteAndTheCap(t *testing.T) {
+	assertNamesTheBudget(t, exitCodesPage, readRepoFile(t, exitCodesPage))
+}
+
+// TestTripwireNamesTheCutShortSiteAndTheCap covers the other half of criterion 25, over the
+// tool's own operator runbook.
+func TestTripwireNamesTheCutShortSiteAndTheCap(t *testing.T) {
+	const rel = "docs/tripwire.md"
+	assertNamesTheBudget(t, rel, readToolFile(t, rel))
+}
+
+// assertNamesTheBudget holds one document to both numbers the sweep's budget arithmetic rests
+// on.
+func assertNamesTheBudget(t *testing.T, rel, body string) {
+	t.Helper()
 	capSeconds := strconv.Itoa(int(maxSweepTimeout.Seconds()))
-	for _, rel := range []string{"docs/reference/exit-codes.md", "docs/tripwire.md"} {
-		body := readToolFile(t, rel)
-		if !strings.Contains(body, string(spine.ReasonNotRun)) {
-			t.Errorf("%s does not name %q", rel, spine.ReasonNotRun)
-		}
-		if !strings.Contains(body, capSeconds) {
-			t.Errorf("%s does not name the %s-second cap", rel, capSeconds)
-		}
+	if !strings.Contains(body, string(spine.ReasonNotRun)) {
+		t.Errorf("%s does not name %q", rel, spine.ReasonNotRun)
+	}
+	if !strings.Contains(body, capSeconds) {
+		t.Errorf("%s does not name the %s-second cap", rel, capSeconds)
 	}
 }
 
@@ -387,13 +399,18 @@ func TestBudgetDocsNameTheCutShortSiteAndTheCap(t *testing.T) {
 var readmeLinkLabelPattern = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
 
 // TestReadmeLinksCarryDescriptiveText covers criterion 14: every README link carries
-// descriptive text, never a bare tool/docs path, so a reader learns what a link leads to before
-// following it.
+// descriptive text, never a bare documentation path, so a reader learns what a link leads to
+// before following it.
+//
+// It inspects a link into the tool's own docs tree and a link to a published cairn.pub page
+// alike. The second form was added when the contract pages left tool/docs/reference: the one
+// README link that named a page there now names its published address, and a rule that stopped
+// at a "docs/" prefix would have stopped covering it.
 func TestReadmeLinksCarryDescriptiveText(t *testing.T) {
 	body := readToolFile(t, "README.md")
 	for _, m := range readmeLinkLabelPattern.FindAllStringSubmatch(body, -1) {
 		label, target := m[1], m[2]
-		if !strings.HasPrefix(target, "docs/") {
+		if !strings.HasPrefix(target, "docs/") && !strings.HasPrefix(target, "https://cairn.pub/docs/") {
 			continue
 		}
 		if strings.Trim(label, "`") == target {

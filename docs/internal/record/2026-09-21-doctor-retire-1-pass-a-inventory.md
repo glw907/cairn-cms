@@ -8,8 +8,8 @@ precondition 4 (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md:44-48`) 
 written list rather than a re-survey.
 
 Written from the retire-1 plan (`docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`) before
-that pass executed. **The conductor refreshes this file with the merge SHA when retire-1 merges**,
-and a divergence between this list and the merged tree is what pass A's precondition 4 stops on.
+that pass executed. Retire-1 merged as `5e286a01` on 2026-09-22, and pass A's Task 1 verified this
+list against that merge, landing the page-coverage test in `tool/internal/doctor/docs_test.go`.
 
 Tool-side line numbers are as read on branch `cairn-tool-b2` at its committed head **`3dc2520f`**
 (2026-09-21), through `git show`. B2 merges before retire-1 branches, so every line below is

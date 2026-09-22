@@ -7,7 +7,7 @@ platform, copy it, and change the paths and the account name.
 
 Every example runs bare `cairn health --quiet`, one command that sweeps the whole registry. This
 page also shows the alternative, a per-site loop, and says when to reach for it instead.
-[`docs/reference/exit-codes.md`](reference/exit-codes.md) is the full contract behind the four
+[The exit-code contract](https://cairn.pub/docs/reference/cli-cairn-exit-codes) is the full contract behind the four
 codes and the `--timeout` arithmetic these examples size against; this page assumes you have read
 it.
 
@@ -350,7 +350,7 @@ cannot eat the rest.
 
 An operator who passes `--timeout` explicitly replaces the whole-run budget with that value, and
 the same division applies inside it. Size it by the same arithmetic
-[`docs/reference/exit-codes.md`](reference/exit-codes.md) states for your own registry's size, not
+[the exit-code contract](https://cairn.pub/docs/reference/cli-cairn-exit-codes) states for your own registry's size, not
 by guessing; a value sized for four sites left running against forty will starve most of them.
 
 Past four sites the per-site share divides, so a large sweep can cut a site's budget well below

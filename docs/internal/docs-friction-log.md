@@ -49,7 +49,18 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-This section holds no open finding. retire-1's close (2026-09-22) triaged the whole log and
+- **scripter.** `docs/reference/cli-cairn-json-output.md`'s required verbatim example for the
+  `logs` payload (`tool/internal/render/testdata/json/logs.json`) carries
+  `"event": "publish.commit.failed"`, which is not in the engine's own event union
+  (`src/lib/log/events.ts` carries `commit.failed`, never `publish.commit.failed`) and fails
+  `check:symbols`'s log-event class as a result. The draft-docs-a task for this page forbids
+  altering the example or touching `scripts/checks/check-symbols-allowlist.mjs`, so the mismatch
+  ships as a known gate red rather than a silent edit to a fixture the task did not authorize.
+  Either the Go fixture's event name is stale and needs a `-update` re-cut, or the page's example
+  needs a substitution rule the plan does not currently carry.
+
+Below this one open finding, the rest of this section is triage history. retire-1's close
+(2026-09-22) triaged the whole log and
 routed the one entry it carried, the Names one (filed 2026-09-21), to `ROADMAP.md`'s Next tier
 with its trigger, since the draft-docs pass that writes those strings is the one that pays for it.
 retire-1's own `contributor` finding was filed in the same step, also to Next: `link:consumer`

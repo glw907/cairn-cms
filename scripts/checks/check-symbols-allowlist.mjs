@@ -40,6 +40,12 @@ export const ALLOWLIST = new Set([
   'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
   'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
 
+  // The Go `cairn` CLI's own credential environment variables, defined in
+  // tool/cmd/cairn/env.go, a separate module this gate's source-tree grep does not scan.
+  'env-var:CAIRN_CF_ACCOUNT_ID', // docs/reference/cli-cairn-json-output.md's authCheck section
+  'env-var:CAIRN_CF_READ_TOKEN', // docs/reference/cli-cairn-json-output.md's authCheck section
+  'env-var:CAIRN_GH_READ_TOKEN', // docs/reference/cli-cairn-json-output.md's authCheck section
+
   // jose's own SCREAMING_SNAKE_CASE error codes (the `code` property jose's error classes carry,
   // never an environment variable), cited in docs/extend/sign-in-through-your-organization.md's
   // `reasonFor` switch. cairn does not depend on jose, so no source tree carries these strings.
@@ -164,4 +170,9 @@ export const ALLOWLIST = new Set([
   // not a registered one. docs/admin/setup-recovery.md cites the literal path an admin visits
   // to fix a GitHub App installation's repository access.
   'log-event:github.com', // GitHub's own hostname, cited in `github.com/settings/installations`
+
+  // The Go `cairn` CLI's own JSON golden fixture literal, quoted verbatim in
+  // docs/reference/cli-cairn-json-output.md's `logs` payload example. It predates this repo's
+  // `publish.failed` log-events.md vocabulary and is not a registered cairn-cms event.
+  'log-event:publish.commit.failed',
 ]);

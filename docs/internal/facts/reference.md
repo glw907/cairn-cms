@@ -330,6 +330,34 @@ re-sourced to Go on this tree rather than to the page.
 - Each failing check's report block and its payload `fix.url` resolve against
   `https://cairn.pub/docs/admin/`, built from the condition's own `docsAnchor` with the `.md`
   removed. Source: `tool/internal/doctor/report.go:66-80`. [verified]
+- The site config YAML is tried at four candidate paths in lookup order: the canonical path, then
+  `site.config.yaml`, `src/lib/site.config.yaml`, and `src/site.config.yaml`; `config.site-config`
+  reports `UNCHECKED` (never `FAIL`) when no file is found at any of the four. Source:
+  `tool/internal/doctor/siteconfig.go:40-46`, `tool/internal/doctor/check_siteconfig.go:23-38`.
+  [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
+  second pass]
+- `config.dependency-floors` reports `UNCHECKED` when no recognized lockfile
+  (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`) is found, or when the installed engine's
+  own `package.json` cannot be read. Source: `tool/internal/doctor/check_floors.go:358-401`.
+  [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
+  second pass]
+- `config.csrf-disable` reports `UNCHECKED` when neither `svelte.config.js` nor `vite.config.ts`
+  is found, distinct from a read error on either. Source:
+  `tool/internal/doctor/check_csrf.go:71-84`. [candidate: found during the 2026-09-22 redraft's Go
+  read, not independently re-verified by a second pass]
+- `ai.posture-effective` reports `UNCHECKED` when `src/content/.cairn/site-facts.json` is absent,
+  or when the `/robots.txt` fetch could not observe a result: no origin resolves, the origin does
+  not parse, the fetch fails, or the response is non-200. Source:
+  `tool/internal/doctor/check_posture.go:292-305`, `tool/internal/doctor/fetchrobots.go:35-62`.
+  [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
+  second pass]
+- Under `--json`, a check's five printed status words collapse to four wire states: `PASS` and
+  `INFO` both write `"state": "pass"`, told apart by `INFO`'s `note` field (absent on a plain
+  pass); `FAIL` writes `"state": "fail"` with a `fix`; `SKIP` writes `"state": "skip"` with
+  `"reason": "reason.not-run"`; `UNCHECKED` writes `"state": "unknown"` with
+  `"reason": "reason.not-observable"`. The condition id itself is the payload's `condition` field.
+  Source: `tool/internal/doctor/json.go:41-54,99-126`. [candidate: found during the 2026-09-22
+  redraft's Go read, not independently re-verified by a second pass]
 
 ## docs/reference/cli-cairn-exit-codes.md
 
@@ -371,6 +399,10 @@ re-sourced to Go on this tree rather than to the page.
   file, which `--ack-file` names and which defaults to `acknowledgements.json` in the registry
   directory; its absence is not an error. Source: `tool/cmd/cairn/ack.go:17-36`,
   `tool/cmd/cairn/health.go:58`, `tool/cmd/cairn/root.go:235`. [verified]
+- The absence rule above covers only the default file. An `--ack-file` path the operator names
+  explicitly and that does not exist, or cannot be read, is a usage error. Source:
+  `tool/cmd/cairn/messages.go:557,562`, `tool/cmd/cairn/messages.go:570-573`. [candidate: filed
+  during the cli-cairn-exit-codes.md redraft, 2026-09-22, re-sourced against `main`]
 - An exit code is decided in exactly two ways, which cannot disagree: a run that produced reports
   folds site verdicts, listing errors, and the expected site count; a run that produced no report
   carries a typed error, and everything but a coded error reports `UNKNOWN`. A cancelled run, a

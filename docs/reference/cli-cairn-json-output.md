@@ -148,7 +148,8 @@ same reason: throttling describes cairn's request, not the site.
 
 `cairn health <site> --json` writes one `site` payload; the same shape, less `exitCode`, is each
 line bare `cairn health --json` streams as a site settles. The payload also carries `domain` and
-`degraded`, both visible below.
+`degraded`, both visible below. `degraded` is true when any check could not run for want of a
+credential, the checks whose `reason` is `reason.cred-missing` and whose `state` reads `skip`.
 
 ```json
 {
@@ -274,10 +275,10 @@ line bare `cairn health --json` streams as a site settles. The payload also carr
 The final line of `cairn health --json` is one `summary` payload, folding every site's verdict
 into the run's own. A stream carrying no sites at all writes the same shape a run against zero
 registered sites writes. `sites` is how many sites the run meant to cover. `counts` maps each
-verdict word to the number of sites that reported it. `worstFirst` lists the sites by verdict,
-worst first, each entry the site's own `site` value. Within one verdict band `worstFirst` keeps
-the run's own sweep order. The example below is a run against an empty registry, so `worstFirst`
-is empty.
+verdict word to the number of sites that reported it. `worstFirst` ranks sites by the severity
+class of their worst unacknowledged failure, not by verdict; sites whose worst failures share a
+class keep the registry's own order. The example below is a run against an empty registry, so
+`worstFirst` is empty.
 
 ```json
 {

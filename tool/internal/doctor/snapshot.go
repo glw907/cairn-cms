@@ -61,8 +61,9 @@ type Robots struct {
 // no network call and reads no clock of its own. The command layer fills PublicOrigin, Robots,
 // and At before any check runs; NewSnapshot fills only Dir.
 type Snapshot struct {
-	// Dir is the resolved, symlink-free absolute path to the directory being examined. Every
-	// file read a check makes through ReadFile is measured against this boundary.
+	// Dir is the resolved, symlink-free directory being examined, absolute if the argument was
+	// and relative otherwise. Every file read a check makes through ReadFile is measured
+	// against this boundary.
 	Dir string
 	// PublicOrigin is the site's resolved public origin, or its typed absence.
 	PublicOrigin PublicOrigin

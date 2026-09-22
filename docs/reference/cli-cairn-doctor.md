@@ -119,10 +119,8 @@ directory that is not a cairn-cms site. Read the `--json` payload to tell them a
 
 Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that
 writes no payload; a directory that is not a cairn-cms site still writes one, carrying the
-`UNKNOWN` verdict and an empty checks array.
-
-A usage error writes no payload; a directory that is not a cairn-cms site writes one with an
-empty `checks` array; any other exit 3 is a run whose only non-passing results are `UNCHECKED`.
+`UNKNOWN` verdict and an empty checks array; any other exit 3 is a run whose only non-passing
+results are `UNCHECKED`.
 
 ## Checks that need a live site
 

@@ -94,7 +94,8 @@ payloads alone. `--json` beats `--quiet`, so empty stdout under `--json` means t
 wrong, never that the site is healthy. `--color` takes `auto`, `always`, or `never`; `--theme`
 takes `dark` or `light`; `--width` takes a whole number from 20 to 1000. Any other value is a
 usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a
-usage error, a cancelled run, or a tool fault, each reporting `UNKNOWN`.
+usage error, a run that ended before any payload was written, or a tool fault, each reporting
+`UNKNOWN`.
 
 `cairn health <site>` takes the site as a positional operand. A site id the registry does not
 hold is a usage error: exit 3, byte-empty stdout. `--quiet`, `--timeout`, `--color`, `--theme`,

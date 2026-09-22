@@ -1083,6 +1083,43 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 	}
 }
 
+// TestLogBodyDropsTheEventColumnForAWorkersOwnLines covers a window carrying no engine record:
+// no row has an event, so the event column is not drawn and the fields sit against the level
+// column, and a message that opened with a newline and a colour escape prints with no gap after
+// its own key. The excerpt carrying engine records keeps the column, so the collapse is the
+// query's answer rather than a rule that took the column away from every log frame.
+func TestLogBodyDropsTheEventColumnForAWorkersOwnLines(t *testing.T) {
+	for _, width := range []int{60, 80, 100, 120} {
+		foreign := plainLines(RenderInput{
+			View: ViewLogs, Width: width, Dark: true, Profile: ProfileNoColor,
+			Site: "907.life", Entries: goldenForeignLogEntries(), Now: fixtures.Now(),
+		})
+		text := strings.Join(foreign, "\n")
+		if strings.Contains(text, "message= ") {
+			t.Errorf("width %d: a message prints a space after its key:\n%s", width, text)
+		}
+		if !strings.Contains(text, "message=[404] POST /blog/") {
+			t.Errorf("width %d: the trimmed message is missing:\n%s", width, text)
+		}
+		if width < Width100 {
+			continue
+		}
+		record := lineCarryingIn(t, foreign, "[404] POST /blog/")
+		if got, want := strings.Index(record, "message="), logIndent+logTime+logLevel; got != want {
+			t.Errorf("width %d: the fields start at column %d, want %d: %q", width, got, want, record)
+		}
+		engine := plainLines(RenderInput{
+			View: ViewLogs, Width: width, Dark: true, Profile: ProfileNoColor,
+			Site: "ecxc.ski", Entries: goldenLogEntries(), Now: fixtures.Now(),
+		})
+		row := lineCarryingIn(t, engine, "commit.failed")
+		if got, want := strings.Index(row, "editor="), logIndent+logTime+logLevel+logEvent; got != want {
+			t.Errorf("width %d: a record carrying an event starts its fields at column %d, want %d: %q",
+				width, got, want, row)
+		}
+	}
+}
+
 // lineCarryingIn returns the one line of lines holding want, failing when none or several do.
 func lineCarryingIn(t *testing.T, lines []string, want string) string {
 	t.Helper()

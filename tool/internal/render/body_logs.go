@@ -2,6 +2,7 @@ package render
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"time"
 
@@ -15,7 +16,6 @@ const (
 	logTime   = 10
 	logLevel  = 7
 	logEvent  = 23
-	logFields = logIndent + logTime + logLevel + logEvent
 )
 
 // logLabel heads the section rule a log excerpt opens with.
@@ -30,6 +30,10 @@ const logEmpty = "no records"
 // design, and a log line is not a check. The fields wrap into their own column with a hanging
 // indent rather than being cut, so the field that carries the answer, a `reason` most of all, is
 // never truncated.
+//
+// The event column belongs to the query rather than to a row. Only the engine writes an "event"
+// key, so a window of a Worker's own console lines carries none at all, and reserving the column
+// there spends twenty-three cells of blank on every row of the excerpt.
 func renderLogs(t Theme, in RenderInput) Frame {
 	width := in.width()
 	site := Sanitize(in.Site)
@@ -45,16 +49,24 @@ func renderLogs(t Theme, in RenderInput) Frame {
 	// line. Below that the record names itself on one line and its fields follow at the time
 	// column, which is a wrap the reader can follow rather than a token cut down the middle.
 	wide := width >= Width100
+	keepsEvent := slices.ContainsFunc(in.Entries, func(e logs.Entry) bool { return e.Event != "" })
+	fieldCol := logIndent + logTime + logLevel
+	if keepsEvent {
+		fieldCol += logEvent
+	}
 	var body []string
 	for _, e := range in.Entries {
-		lead := row(
+		cells := []string{
 			strings.Repeat(" ", logIndent),
 			t.cell(RoleMuted, e.At.Format("15:04:05"), logTime),
 			t.cell(logLevelRole(e.Level), Sanitize(e.Level), logLevel),
-			t.SizedStrong(RoleText, logEvent).Render(Sanitize(e.Event)),
-		)
+		}
+		if keepsEvent {
+			cells = append(cells, t.SizedStrong(RoleText, logEvent).Render(Sanitize(e.Event)))
+		}
+		lead := row(cells...)
 		if wide {
-			body = append(body, t.hangingAt(t.Style(RoleSubtle), lead, logFields, logFieldText(e), width)...)
+			body = append(body, t.hangingAt(t.Style(RoleSubtle), lead, fieldCol, logFieldText(e), width)...)
 			continue
 		}
 		body = append(body, strings.TrimRight(lead, " "))
@@ -99,10 +111,14 @@ func logLevelRole(level string) Role {
 
 // logFieldText joins one record's non-envelope fields into the text that wraps into the field
 // column, in the order the record carried them.
+//
+// A value is trimmed after it is sanitized rather than before. A Worker's own console line
+// commonly opens with a newline and a colour escape, which Sanitize turns into a leading space,
+// and that space reads as a value missing after its `key=` rather than as part of the message.
 func logFieldText(e logs.Entry) string {
 	pairs := make([]string, 0, len(e.Fields))
 	for _, f := range e.Fields {
-		pairs = append(pairs, Sanitize(f.Key)+"="+Sanitize(logFieldValue(f.Value)))
+		pairs = append(pairs, Sanitize(f.Key)+"="+strings.TrimSpace(Sanitize(logFieldValue(f.Value))))
 	}
 	return strings.Join(pairs, "  ")
 }

@@ -420,3 +420,18 @@ Substitution values: sites 907.life, ecxc.ski, aksailingclub.org, xcathletes.org
 ### Amendment 1
 
 The pre-flight found seven disagreements with this plan and stopped the pass. The conductor applied them under Geoff's overnight grant, flagged for his read: (1) the file map row naming `tool/internal/spine/condition_test.go` corrected to `tool/internal/spine/conditions_test.go`; (2) added a file-map row for `tool/internal/doctor/docs_test.go` (`referenceDir` at `:11`, and its two tests that read the moved pages); (3) added a row for `tool/internal/doctor/json.go` and `tool/internal/doctor/report.go` (doc comments at `json.go:16` and `report.go:16-17`); (4) added a row for `tool/cmd/cairn/root_test.go` (`readToolFile` resolved through `providers.RepoRoot()`, not a `../..` climb); (5) Task 8's outcome corrected from "the repository path `docs/reference/`" to citing cairn.pub URLs and schema `$id`s only, since `TestHelpAgentsCitesNoRepositoryDirectory` (`help_agents_test.go:107-116`) forbids a repository directory and `messages.go:224` already follows that ruling; (6) Task 8's outcome gained the `docs_test.go` and `root_test.go` repoint items named above; (7) Task 8 gained a one-line watch that `TestReadmeLinksCarryDescriptiveText` (`messages_test.go:~388`) checks only `docs/`-prefixed link targets, so `tool/README.md:114` must keep that prefix or the test must be widened.
+
+### 2026-09-22 04:52, segment 1 boundary (Tasks 1 to 4)
+
+Task 1 read-only, recorded above; Amendment 1 applied (`6aba21d0`). Task 2 `a5f5bd1e`, accepted.
+Task 3 `be2a5cc1` (seven pure schema renames) and `2049a0be` (the flag list, its drift test,
+`check:symbols` union), accepted; `github.com/spf13/pflag` promoted to a direct require by the
+flag walk, `otherDirectRequires` 5 to 6, no ADR addendum this pass since `tool/docs/adr/` is
+frozen by the plan (filed for the close). Task 4 `70650d13`: the mining file (829 lines) and 77
+facts bullets, every contract statement filed or cut, one interim-page defect ratified (the
+robots request rides `--timeout`, no 15-second bound of its own). Carry-forwards to Task 8:
+`tool.yml`'s `paths` lack `docs/reference/schema/**`; `facts/admin.md:83` says six schemas;
+the completion command's `--no-descriptions` is absent from `flags.json` by design (fails
+closed). Drafter rulings for tasks 5, 6, 6b: the exit-codes page names `cairn auth check`, never
+`cairn auth probe`; the summary example is `health-empty.json`. Spend about 1.21M of 3.5M.
+Next: segment 2, tasks 5, 6, 6b through `docs-page-chain`, Task 7 beside them.

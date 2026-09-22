@@ -1,6 +1,6 @@
 # The `cairn doctor` command
 
-This page describes cairn 1.0.1, the current release; cairn 1.1.0 will carry these pages.
+This page describes `cairn doctor` as it ships in cairn 1.1.0, the release that introduces it; 1.0.1 is the current release.
 
 `cairn doctor` checks a directory against the checked-in configuration a cairn-cms site depends
 on, running eleven checks over the wrangler config, CSRF wiring, the site config, the `/admin`
@@ -80,7 +80,7 @@ error.
 | `config.observability` | `config.observability-off` | warning | `observability.enabled` is `true` in the wrangler config. | No wrangler config is found | A read error only |
 | `config.csrf-disable` | `config.csrf-disable-missing` | warning | A `checkOrigin: false` CSRF disable is paired with `createAuthGuard` wired into `src/hooks.server.ts`, so an admin form POST stays protected once the framework's own check steps aside. | Never | Neither `svelte.config.js` nor `vite.config.ts` is found |
 | `config.site-config` | `config.site-config-invalid` | blocker | The site config YAML parses: valid YAML, a mapping root, and a non-empty `siteName`. This checks presence and parsing only; the per-concept URL policy lives on the adapter concepts and is not checkable from a directory alone. | Never | No file is found at any of the four candidate paths |
-| `config.public-origin` | `config.public-origin-invalid` | blocker | `PUBLIC_ORIGIN` resolves to a valid value, from the wrangler config's vars or from the environment. | Neither the wrangler config nor the environment resolves a value | A read error only |
+| `config.public-origin` | `config.public-origin-invalid` | blocker | `PUBLIC_ORIGIN` resolves to a valid value, from the wrangler config's vars or from the environment. | No wrangler config is found and `PUBLIC_ORIGIN` is not in the environment; a wrangler config that exists but declares no origin fails instead | A read error only |
 | `config.no-referrer-blanket` | `config.no-referrer-blanket` | warning | Neither `src/hooks.server.ts` nor `static/_headers` sets a site-wide `Referrer-Policy: no-referrer`, which strips the `Origin` header from a same-origin form POST and trips cairn's own origin guard. | Neither `src/hooks.server.ts` nor `static/_headers` is found | A read error only |
 | `admin.mount-shape` | `admin.mount-incomplete` | None; never fails | The `/admin` mount calls `createCairnAdmin(...).shellLoad` and renders `CairnAdminShell`. An unreadable or partial mount reports `INFO`, because the read is a heuristic text match rather than proof of a working mount. | Never | A read error only |
 | `config.dependency-floors` | `config.dependency-floors-unmet` | blocker | The resolved `svelte` and `@sveltejs/kit` versions in the lockfile meet the installed engine's own declared peer ranges. | The engine's own declared peer range is not a simple caret range, the lockfile carries no entry for a peer, or a resolved version does not parse as a plain `x.y.z` | No lockfile is found, or the installed engine's `package.json` cannot be read |
@@ -92,8 +92,8 @@ and `ai.posture-effective` each report the same detail: needs engine 0.97.0 or l
 build.
 
 Every check carries its condition id in the payload's `condition` field, whatever its state. On a
-failing check, the report line and the `--json` `fix.url` both resolve against that condition's
-own anchor on [is it working?](../admin/is-it-working.md).
+failing check, the report block and the `--json` `fix.url` carry the same URL, built from the
+condition's own `docsAnchor` under `https://cairn.pub/docs/admin/` with the `.md` removed.
 
 ## Status words
 

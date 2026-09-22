@@ -1,7 +1,7 @@
 // cairn-guidance: the install primitives. One tree hash decides freshness across every packaged
 // tree the install copies: each directory under `skills/`, the review agent under
 // `claude/agents/`, and the `claude/CLAUDE.md` fragment. The containment and `.orig` rules here
-// are the write-side twin of media-seed/bin.ts's `readFileUnderCwd`.
+// are the write-side twin of this package's own bin.ts's `readFileUnderCwd`.
 import { createHash } from 'node:crypto';
 import { constants, type Dirent, type Stats } from 'node:fs';
 import { createRequire } from 'node:module';

@@ -24,8 +24,10 @@ and into `media-seed`, its only surviving caller (`f5f97917`, `0efbec49`). Task 
 check-id vocabulary it fed, trimmed `AdapterFacts` to the three fields the facts writer
 still needs, and allowlisted `cairnManifest` for `check:self-use` (`8d042158`, `0d5aee25`,
 `eff0025c`, `0612c350`). Task 5 retired the scaffolder's `cairn-doctor` reminder in favor of
-the Go tool, fixed a line-count assertion the removal broke, and renamed a transcript
-fixture to `04-doctor-report.txt` (`28eeacc2`, `138cec5c`). Task 6 retired
+the Go tool and replaced the two npm-era doctor transcripts, `02-doctor-bare.txt` and
+`03-doctor-credentialed.txt`, with one new capture from the released `cairn doctor` 1.1.0
+binary, named `04-doctor-report.txt` (`28eeacc2`); `138cec5c` corrected Task 5's own new
+line-count assertion for that fixture, from 15 to 14. Task 6 retired
 `docs/reference/doctor.md` and fixed drift the removal left across the published docs arms,
 through two review rounds (`4eeef9f2`, `3b7f50c6`). The close (Task 7) ran `code-simplifier`
 over Tasks 3 and 4's changed code (`67e98391`), a `web-auth-security-reviewer` read
@@ -45,16 +47,20 @@ incomplete. Task 5's removal-predicate grep surfaced two carve-outs the plan's s
 carve-out (the transcript fixtures directory) did not cover: the permanent rulings-ledger
 id `audit-cli-skill-admin-screens-check-and-cairn-doctor-fix`
 (`scripts/checks/check-rulings-format.mjs`), whose renaming would break id stability, and
-Task 6's own retargeted filenames, `cli-cairn-doctor.md` and `cairn-doctor.schema.json`.
-Task 6's first review round found six false statements in the doctor-drift docs
-replacements that no automated checker catches; the second round confirmed all six fixed
-against source.
+pass A's filenames (`cli-cairn-doctor.md`, `cairn-doctor.schema.json`), which Task 6's
+retargets pointed at. Task 6's first review round found six false statements in the
+doctor-drift docs replacements that no automated checker catches; the second round confirmed
+all six fixed against source.
 
-**What a later pass would be wrong to rediscover.** The `02-doctor-bare.txt` transcript's
-citation lives in a README bullet, not on a published docs page, so a future doctor-related
-docs sweep will not find it by grepping the docs arms. The `01-create-cairn-site.txt` and
-`01d-resume.txt` transcript fixtures are unreproducible pty captures from a torn-down site;
-they cannot be regenerated and instead took a staleness note recording that they predate
+**What a later pass would be wrong to rediscover.** Task 5's own `02-doctor-bare.txt`
+transcript and its citing bullet in
+`packages/create-cairn-site/test/fixtures/transcripts/README.md` were both deleted in the
+same commit (`28eeacc2`), so the citation no longer exists to be found; the general lesson
+survives the specific fixture: a fixture's citation can sit in the transcripts README
+rather than on a published docs page, so a sweep that greps only the docs arms misses it.
+The `01-create-cairn-site.txt` and `01d-resume.txt` transcript fixtures are unreproducible
+pty captures from a torn-down site; they cannot be regenerated and instead took a
+staleness note recording that they predate
 the retirement and still print the old `npx cairn-doctor` reminder. The pass-execute
 runner's `gate-tier.mjs` computed a reduced gate from the diff and silently overrode Task
 6's explicit full gate string on both review rounds; the reviewer ran the omitted docs

@@ -1054,9 +1054,10 @@ remained.
   permanent rulings-ledger id `audit-cli-skill-admin-screens-check-and-cairn-doctor-fix`,
   which a pre-flight grep against `check-rulings-format.mjs` would have found before the
   task ran.
-- Planning miss 2: Task 6's literal-grep criterion needed to exclude pass A's own filenames,
-  `cli-cairn-doctor.md` and `cairn-doctor.schema.json`, which a pre-flight grep against the
-  reference arm's file list would have found the same way.
+- Planning miss 2: Task 6's literal-grep criterion needed to exclude pass A's filenames
+  (`cli-cairn-doctor.md`, `cairn-doctor.schema.json`), which Task 6's retargets pointed at,
+  and which a pre-flight grep against the reference arm's file list would have found the
+  same way.
 - Execution sitting 1: one combined question to Geoff at the Segment C ceiling boundary,
   asking whether to split the remaining close out of the pass or run it through at the
   over-ceiling spend; Geoff ruled through.
@@ -1071,8 +1072,8 @@ unresolvable citation.
 the implementer chain before the next task started (recorded per task in this plan's task
 sections and the close package). The close's `web-auth-security-reviewer` read returned
 `behavior-unchanged`: no auth, CSRF, or guard behavior changed, only its documentation and
-comments. The fold's own re-gate after the merge with `origin/main` is recorded in the
-close report this post-mortem accompanies.
+comments. The fold's full heavy-lane gate, re-run after the merge from `origin/main`, exited
+0; PR #83's CI is green on every check.
 
 **Decisions locked.**
 
@@ -1085,11 +1086,22 @@ close report this post-mortem accompanies.
   intent violation, since the retired bin name survives only in `migration-notes.md`'s
   past-version entries.
 - The security verdict is `behavior-unchanged`; no halt.
-- Three items carried forward to 2b's friction log rather than fixed in this pass: no
+- Both lockfiles, root `package-lock.json` and `examples/showcase/package-lock.json`, still
+  map `"cairn-doctor": "dist/doctor/bin.js"`
+  after Task 4 trimmed the `bin` field from both `package.json` manifests but never
+  regenerated either lockfile. The fold regenerated both and reverted both, because
+  regeneration pulled in unrelated upstream version drift (`workerd`, `wrangler`, `daisyui`,
+  `miniflare`, `@cloudflare/*`) alongside the bin-mapping fix. They clear in the next
+  dependency-upgrade sweep (the `dependency-upgrade` skill), which 2b's friction log carries
+  as its fifth item below.
+- Five items carried forward to 2b's friction log rather than fixed in this pass: no
   scaffolder test pins the setup command's install literal or release URL in printed output;
   `cairn doctor` v1.1.0's PASS lines are titled with the failure condition, worth filing
   against the Go tool's render; `is-it-working.md`'s symlink paragraph addresses a
   contributor rather than a site operator, a register slip for whichever pass next touches
-  those lines.
+  those lines; `src/lib/guidance/bin.ts:71-81`'s `readFileUnderCwd` is a text-prefix check
+  with no realpath step (predates this pass), and media-seed's `realpathNearestAncestor`
+  form is the stronger pattern to adopt; and the two stale `cairn-doctor` lockfile bin
+  mappings above, to clear in the next dependency-upgrade sweep.
 
 **Blockers.** None.

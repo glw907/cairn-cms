@@ -71,13 +71,13 @@ the Go check claims; a Contract v2 shape disagreement is out of this comparison'
 | Check | Tree | `cairn doctor` | `cairn-doctor` | Verdict |
 | --- | --- | --- | --- | --- |
 | `config.media-bucket` | showcase | PASS | PASS | agree |
-| `config.media-bucket` | xcathletes-org, linked | PASS | PASS | agree |
+| `config.media-bucket` | xcathletes-org copy, linked | PASS | PASS | agree |
 | `config.media-bucket` | 907-life, no facts file | UNCHECKED | SKIP | **disagree, expected: D2** |
 | `auth.role-wiring` | showcase | SKIP | SKIP | agree |
-| `auth.role-wiring` | xcathletes-org, linked | PASS | PASS | agree |
+| `auth.role-wiring` | xcathletes-org copy, linked | PASS | PASS | agree |
 | `auth.role-wiring` | 907-life, no facts file | UNCHECKED | SKIP | **disagree, expected: D2** |
 | `ai.posture-effective` | showcase | UNCHECKED | SKIP | **disagree, expected: D3** |
-| `ai.posture-effective` | xcathletes-org, linked | FAIL | FAIL | agree |
+| `ai.posture-effective` | xcathletes-org copy, linked | FAIL | FAIL | agree |
 | `ai.posture-effective` | 907-life, no facts file | UNCHECKED | PASS | **disagree, expected: D2** |
 
 The three trees:
@@ -90,11 +90,13 @@ The three trees:
   its three facts checks answer from their absent-input branches rather than from the adapter.
   The install repointed the worktree's `file:` engine deps and left `package-lock.json` unchanged
   after a `git checkout`.
-- **xcathletes-org, linked** is the one production site declaring all three facts: a media bucket
-  (`media: { bucketBinding: 'MEDIA_BUCKET' }`), a custom role vocabulary (`coach`, beside the
-  reserved `owner`), and an AI posture (`aiPosture: 'decline'`). It was pointed at this worktree's
-  engine with `link:consumer`, had `cairn-manifest` run in it, was measured, and was restored. See
-  "The linked-site run" below for what the restore left and for the one deviation the run forced.
+- **xcathletes-org copy, linked** stands for the one production site declaring all three facts: a
+  media bucket (`media: { bucketBinding: 'MEDIA_BUCKET' }`), a custom role vocabulary (`coach`,
+  beside the reserved `owner`), and an AI posture (`aiPosture: 'decline'`). The real checkout was
+  pointed at this worktree's engine with `link:consumer` and then restored. `cairn-manifest` failed
+  there, so the measurement ran on a scratch copy of that checkout, taken at its HEAD as of
+  2026-09-22 with the four renamed call sites edited in the copy alone and deleted after the run.
+  See "The linked-site run" below for the deviation in full and for what the restore left.
 - **907-life, no facts file** is the third arm: a tree with no `src/content/.cairn/site-facts.json`
   at all. Any of the four production trees serves; 907-life is the one recorded. All three checks
   report `UNCHECKED` under `cairn doctor`, which is what the acceptance bullet asks for.
@@ -173,7 +175,7 @@ condition. Expected, never a defect.
 | aksailingclub-org | 3 (UNKNOWN) | 1 |
 | xcathletes-org | 3 (UNKNOWN) | 1 |
 | showcase | 3 (UNKNOWN) | 1 |
-| xcathletes-org, linked | 1 (WARNING) | 1 |
+| xcathletes-org copy, linked | 1 (WARNING) | 1 |
 
 The two columns are not comparable beyond that one rule. `cairn-doctor` runs seven checks this
 port does not carry (the Cloudflare chain, the GitHub App, the tidy key), and on these trees those
@@ -194,9 +196,10 @@ adapter evaluates against this worktree's engine, and `cairn-manifest` cannot re
 would write. This is a standing consequence of the unreleased rename, worth knowing before the
 next pass points a site at unreleased engine work.
 
-The measurement was completed on a copy of the site in the session scratchpad, with the copy's
-`.git` removed, the copy linked the same way, and the four renamed call sites edited in the copy
-alone. `npx cairn-manifest` then wrote:
+The measurement was completed on a copy of the site in the session scratchpad: a copy of the
+`/var/home/glw907/Projects/xcathletes-org` checkout as it stood at its HEAD on 2026-09-22, with the
+copy's `.git` removed, the copy linked the same way, and the four renamed call sites edited in the
+copy alone. The copy was deleted after the run. `npx cairn-manifest` then wrote:
 
 ```json
 {
@@ -223,3 +226,8 @@ branch can merge`. Restoring re-resolved a few unrelated transitive versions in
 there, so none needed removing. The install left a `node_modules` directory the tree did not have
 before; it is gitignored, and the one thing it changes for a later reader is `config.dependency-floors`,
 which now has an engine to read and so reports `PASS` rather than the `UNCHECKED` Part 1 records.
+
+**What this worktree was left holding.** `examples/showcase` now carries a real `node_modules`
+install rather than the symlink back to the main checkout that a fresh worktree starts with. It is
+gitignored, like the `node_modules` left in xcathletes-org, and a later reader should expect the
+showcase here to resolve the worktree's own engine build.

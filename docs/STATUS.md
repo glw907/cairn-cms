@@ -5,58 +5,56 @@ Present tense only; past tense lives in [`docs/HISTORY.md`](HISTORY.md), durable
 
 ## Current state
 
-Published: **`0.96.0`** on npm `latest`. `main` carries every pass through the Go tool's B2
-(PR #71) and the doctor-retirement pre-task, unpublished under `## Unreleased`; the window holds
-for one cut and includes the tool's 1.0, released as `tool/v1.0.0` and `tool/v1.0.1` (commit
-`9b479e8d`), both reachable from `main`. Held majors: `devalue` 6, TypeScript 7, Vitest 5; two
-`npm audit` findings need `--force` or a downgrade and are held. CI on `main` is green.
+Published: **`0.96.0`** on npm `latest`. `main` carries every pass through the Go tool's B2 (PR
+#71), the doctor-retirement pre-task, and retire-1, unpublished under `## Unreleased`; the window
+holds for one cut and includes the tool's 1.0 (`tool/v1.0.0` and `tool/v1.0.1`, commit `9b479e8d`).
+Held majors: `devalue` 6, TypeScript 7, Vitest 5. CI on `main` is green.
 
-The pre-task's contracts are live: `tool/internal/spine/conditions.json` and
-`tool/internal/doctor/site-config-path.json`, generated and held by `check:tool-conditions`; and
-`.cairn/site-facts.json`, written by the `cairn-manifest` bin and verified in the plugin's
-`buildStart` (`docs/reference/site-facts.md`). Beside the engine: the tool's post-1.0 course is
-`docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md` (`cairn-tripwire` runs daily
-here, `CAIRN_GH_READ_TOKEN` expiring 2026-10-19); `cairn-pub`, on `pass-d-docs-tracks`, stays
-un-pinnable against the registry since `0.95.0`.
+**`cairn doctor` is the Go half of the retirement, merged by the retire-1 PR from `doctor-go` with
+no tool tag** (plan `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`; HISTORY records the
+merge SHA at the next close). It runs eleven checks over a directory and exits 0, 1, 2, or 3.
+`tool/docs/reference/` holds seven schemas and four pages. Retire-2a removes the engine's doctor.
+
+Live contracts from the pre-task: `tool/internal/spine/conditions.json` and
+`tool/internal/doctor/site-config-path.json`, held by `check:tool-conditions`; and
+`.cairn/site-facts.json`, written by `cairn-manifest` and verified in the plugin's `buildStart`.
+`cairn-pub`, on `pass-d-docs-tracks`, stays un-pinnable against the registry since `0.95.0`.
 
 ## Immediate next action
 
-**retire-1, the retirement's Go half.** Branch `doctor-go` off `main`, plan on `main` at
-`docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md` (PR #76), workflow mode, light gate lane,
-merged WITHOUT a tool tag. The plan's tool-side citations were pinned on branch `cairn-tool-b2` at
-`3dc2520f`; its pre-flight re-verifies them against merged `main`, which carries the tool tree
-through `tool/v1.0.1` (`9b479e8d`).
+**Draft docs pass A**, plan `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`, conducted by
+this session under Geoff's grant. It moves the tool's contract pages and schemas under
+`docs/reference/` and repoints the binary's help and tests. Its inventory is
+`docs/internal/record/2026-09-21-doctor-retire-1-pass-a-inventory.md`, refreshed with the merge SHA.
 
 **The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0 (DONE, with
-the pre-task merged behind it); retire-1; draft docs pass A (`2026-09-21-draft-docs-pass-a.md`),
-moving the tool's contract pages and schemas under `docs/reference/`; one `tool/v1.1.0`, tagged and
-released from a commit carrying retire-1 and pass A; the engine removal, retire-2a then retire-2b.
-Each close writes only its own line, and **ONLY retire-2b's close, the last to land, writes the
-line releasing `0.97.0` from this hold**. A cut session finding no such line does not cut, and
-every mechanical gate in Task 6 of the pre-cut plan must pass whatever any line says.
+the pre-task behind it); retire-1 (DONE); draft docs pass A; one `tool/v1.1.0`, tagged from a commit
+carrying retire-1 and pass A; the engine removal, retire-2a then retire-2b. Each close writes only
+its own line, and **ONLY retire-2b's close, the last to land, releases `0.97.0` from this hold**. A
+cut session finding no such line does not cut, whatever any mechanical gate says.
 
-Two carry-forwards are retire-2a's: `site-facts.md:36` links `doctor.md`, which retire-2a deletes;
-and `doctor.md:79-86` plus `facts/reference.md`'s doctor section still say the two config checks
-share `config.bindings-missing`.
+Retire-1's one carry-forward belongs to the tag session: **before the `tool/v1.1.0` tag, confirm
+each distinct `https://cairn.pub/docs/admin/<page>` a failure block prints resolves on the deployed
+cairn.pub.** One that does not means the tool prints the anchor text without a URL, and a `v1.1.x`
+patch adds the link after the pin bump. Retire-2a owns two more: `site-facts.md:36` links
+`doctor.md`, which it deletes, and `doctor.md:79-86` plus `facts/reference.md`'s doctor section
+still say the two config checks share `config.bindings-missing`.
 
 ## Open decisions and watches
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026), and
   TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).
 - extend-1's two advisory audit rules go to error tier at `0.98.0`.
-- Monthly routines: a Cloudflare capability review (`trig_01GnFPkfx7EjrWKAuTBrXVdx`); a Claude
-  Code guidance-schema check (`trig_01UyjoYo9hbGqm7qTeb7HGVH`), emailing only on a mismatch.
+- Monthly routines: a Cloudflare capability review (`trig_01GnFPkfx7EjrWKAuTBrXVdx`); a Claude Code
+  guidance-schema check (`trig_01UyjoYo9hbGqm7qTeb7HGVH`), emailing only on a mismatch.
 - A consumer `guard.rejected` with `detail: 'mismatch'`, `witness: 'field'` can be the known
   double-mint residual; the discriminator names any genuinely new one.
-- Three ASC staging harvest docs are folded into cairn, deletable there once `email-announce` settles.
+- Three ASC staging harvest docs are folded into cairn, deletable once `email-announce` settles.
 - `cairn-audit --rendered` counts differently on identical runs (133 then 116); stabilize first.
-- The heavy gate runs the component project serially (`--no-file-parallelism`); the parallel run stalls here.
-
-**retire-1 ledger (2026-09-22 02:05, segment 2 boundary):** on worktree `.claude/worktrees/doctor-go`, Tasks 1 to 7 are accepted and committed (`56803baa`..`79dc4dfd`). Segment 1 ran as `wf_b28a7d1b-a03` (1.08M), segment 2 as `wf_d953b20e-cb0` (1.64M); Tasks 1, 3, 5, and 6 each cleared one fix round, and Task 5's second verdict was a procedural `escalate` (the relative-versus-absolute gate string, verified the same target and run green by the reviewer), accepted by the conductor. Spend 2.72M against the 2.4M ceiling; the run continues under Geoff's overnight grant to the release (`retirement-to-release-grant` memory), overrun logged here and in the post-mortem. Next: segment 3, Tasks 8 and 9, then Task 10 (the agreement study, a conductor dispatch) and Task 11 (the close).
+- The heavy gate runs the component project serially (`--no-file-parallelism`).
 
 ## Resume prompt
 
-In a fresh session, conduct retire-1 from its plan, the retirement spec, and the
-`doctor-retirement-pass` memory. Then draft docs pass A, the `tool/v1.1.0` tag session, retire-2a,
-and retire-2b, each on its own branch and worktree. Cut `0.97.0` last; `ROADMAP.md`'s "The window
-after the cut" sequences what follows.
+In a fresh session, conduct draft docs pass A from its plan and the retire-1 inventory. Then the
+`tool/v1.1.0` tag session, retire-2a, and retire-2b, each on its own branch and worktree. Cut
+`0.97.0` last; `ROADMAP.md`'s "The window after the cut" sequences what follows.

@@ -1658,3 +1658,92 @@ mapped to the task that carries it.
 | Choreography step 3: merged to `main` without a tool tag, no tag task, no release task (`:352-353`) | Header ("Merge"), 11 |
 | Choreography step 4: the inventory sent to the docs conductor before pass A runs (`:358-359`) | 11, and the record written beside this plan |
 | Out of scope: the `0.97.0` cut, any credentialed check, a Go port of the site-config schema, a TOML parser, scaffolder detection of the binary, narrative-arm rewrites, `cairn health` changes, deleting registry entries (`:382-386`) | Carried by "Halts" and by Tasks 3, 4, and 9's constraints |
+
+---
+
+## Post-mortem (2026-09-22)
+
+### What was built
+
+`cairn doctor [<dir>]`, the Go half of the doctor retirement, on branch `doctor-go` off `main` at
+`d041d1bf`, merged without a tool tag. Eleven tasks, each accepted through the
+implementer / `diff-reviewer` / light-lane gate chain:
+
+| Task | What landed | Commits |
+| --- | --- | --- |
+| 1 | the `doctor` check contract, the one-per-run snapshot, the symlink-resolving containment | `56803baa`, `c29cd716`, `5f9713fe` |
+| 2 | the conditions embed in `spine`, its text accessor, the drift-test replacement | `8b0f2958` |
+| 3 | the wrangler JSONC and line readers, the lifted regex corpus | `0c2e856a`, `5a762721`, `5f3ee04f` |
+| 4 | YAML promoted to a direct require, ADR 0002 and `purity_test.go` amended | `fa1cce36` |
+| 5 | the five config checks, floors hand-rolled with the optional-peer filter | `ca0635c8`, `fd5f8f8d`, `19e16d9f` |
+| 6 | the three heuristic checks | `64a43097`, `5d69c6f8` |
+| 7 | the three facts-dependent checks | `ac31f343`, `2da7cf6e`, `fec5a96a`, `1e5e0146`, `79dc4dfd` |
+| 8 | the command, the plain report, the goldens, `cairn help agents` | `ba351499`, `481ade6d`, `8c0872ef` |
+| 9 | the JSON payload, the seventh schema, the frozen-surface amendments | `884efadb`, `d426017a` |
+| 10 | the agreement study, `tool/testdata/doctor-agreement.md` | `818ea8a4` |
+| 11 | this close | one commit |
+
+Three runner segments: `wf_b28a7d1b-a03` (Tasks 1 to 3, 1.08M), `wf_d953b20e-cb0` (Tasks 4 to 7,
+1.64M), `wf_b2d61f9e-a31` (Tasks 8 and 9, 0.84M). At the merge: four `go-architecture-reader`
+reads (`doctor`, `render`, and `cmd/cairn` sound with nits, `spine` workmanlike, none escalated)
+and a `code-simplifier` round, `aaa405d8` through `2fe66d1e`, whose own review `fix` cleared in
+`fcbf415e`.
+
+### Verified, with the evidence
+
+- **Agreement, the acceptance the spec leans hardest on.** Task 10 compared the eight file-only
+  checks against `cairn-doctor` on all four production trees and the three facts checks on the
+  showcase, a facts-declaring site, and a tree with no facts file. **Zero defects**, every
+  disagreement pre-declared: `config.dependency-floors` reads `UNCHECKED` where the engine reads
+  `FAIL` or `PASS` on a tree with no `node_modules`, proven to agree once installed; the three
+  facts checks read `UNCHECKED` against `SKIP`/`SKIP`/`PASS` on the no-facts tree;
+  `ai.posture-effective` reads `UNCHECKED` against `SKIP` on the offline showcase; and the
+  pre-declared exit split, 2 against 1, appeared once, on ecxc-ski. On the facts-declaring site all
+  eleven checks agreed.
+- **Exit codes, containment, and the payload** are proven by test inside the Go gate: the four
+  codes and the outside-a-cairn-site line in `cmd/cairn`, the symlink refusal in
+  `fileread_test.go`, the golden payload validated against `cairn-doctor.schema.json` in
+  `render/json_schema_test.go`, and the constant-set test failing on a renamed mirror id.
+- **The gate** ran light-lane `make -C tool check` at every commit, green each time.
+- **CI on the branch point.** All seven workflows, `tool-conditions` included, ran green on the
+  pre-task's merge SHA `d041d1bf`.
+
+### Decisions locked at the close
+
+- **Two `code-simplifier` findings deliberately skipped.** Building the checks' `conditions` list
+  from the embedded map would collapse the const-versus-mirror drift gate Task 2 exists to build.
+  Printing `snap.Dir` in plain text would break the `tool.yml` matrix on macOS, whose temp paths
+  resolve under `/private`.
+- **Task 5's second verdict, a procedural `escalate`, was accepted by the conductor.** The finding
+  was the relative-versus-absolute gate string, and the reviewer had itself run that string green
+  against the same target.
+- **Task 10's forced deviation, accepted.** `npx cairn-manifest` cannot run in a production site
+  pinned to a released engine while `main`'s unreleased window renames exports, and the permission
+  layer denies edits to a real site tree. The measurement ran on a scratch copy of the checkout at
+  its HEAD with the four renamed call sites edited, then deleted; the real tree was restored and
+  verified clean. The agreement record labels those rows as the copy.
+
+### Reviewer fan-out
+
+`svelte-reviewer`, `daisyui-a11y-reviewer`, `cloudflare-workers-reviewer`, and
+`web-auth-security-reviewer` were **not** dispatched, as the plan directed: no Svelte component,
+no admin markup, no Worker code, and no auth, session, or write path changed. The review coverage
+this pass took instead is per-task `diff-reviewer`, four architecture reads, the simplifier round
+and its own review, and one independent `diff-reviewer` read over this fold's diff.
+
+### Incidents
+
+None beyond Task 10's deviation above. Two gitignored side effects remain, both recorded in the
+agreement document: xcathletes-org now carries a `node_modules`, and this worktree's
+`examples/showcase` carries a real install rather than the symlink back to the main checkout.
+
+### Both budgets
+
+Ceiling 2.4M subagent tokens; spend about 4.7M at this fold (segments 3.56M; the close about 1.1M,
+of which the architecture reads 444K, the simplifier round and its review and fix 383K, and Task 10
+and its review 250K). The overrun was raised at the segment 2 boundary and the run continued under
+Geoff's overnight grant to the release, logged at each segment boundary.
+
+Attended time: **one planning miss**, Task 10's assumption that `link:consumer` plus
+`cairn-manifest` works on a pinned production site, which a pre-flight against a site's pinned
+version would have caught. **Zero execution sittings**: nothing was asked of Geoff during the run.

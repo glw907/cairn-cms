@@ -6190,3 +6190,129 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verified:** the two e2e guards, failing on `transform` before the rule and passing on `auto`
   after, read against the real preview build; and a 10-run repeat capture of the light drawer at
   390px, all ten byte-identical.
+
+## doctor-go-site-config-narrowing: `cairn doctor`'s `config.site-config` asserts found, parses, and a non-empty `siteName`  (reshape, 2026-09-22, retire-1)
+
+- **Verdict:** reshape. The Go check asserts exactly three things: a `site.config.yaml` at one of
+  the four known candidate paths, a YAML parse, and a root mapping carrying a non-empty
+  `siteName`. It reads no other field. The engine check it replaces validated the full site-config
+  schema, and that schema does not port: it lives in TypeScript as the adapter's own contract, a
+  Go copy would be a second source of truth for a shape the engine owns, and the charter prefers
+  the leanest seam over a mirrored subsystem. The consequence is stated rather than hidden, on the
+  command's docs page and in the check's own pass detail: `cairn doctor` passes a config the old
+  doctor failed, a stale Contract v2 block most of all.
+- **Reopens on:** a site-config defect that reaches production through a preflight that passed,
+  which is the evidence that the narrowing costs something real; or a Go-readable schema artifact
+  the engine emits, which would make the fuller check a read rather than a port.
+- **Shape:** `ConfigSiteConfig` in `tool/internal/doctor/check_siteconfig.go` holds the status arms
+  alone and `siteconfig.go` owns the read and the parse predicate; a found file that fails the
+  predicate fails the check, and no file at any candidate path is `unchecked`, never a fail.
+- **Record:** `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, "Checks", the
+  `config.site-config` bullet; `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, Task 5.
+- **Any-site case:** a consumer whose `site.config.yaml` carries a field the current engine no
+  longer reads. The preflight passes, and the config still surfaces in two other places: the
+  scaffolded template parses the config at module load, so a template-shaped site fails its build,
+  and a legacy site surfaces a bad config in the admin Settings screen.
+- **Verified:** `tool/internal/doctor/check_siteconfig_test.go` and `siteconfig_test.go`, over the
+  four candidate paths, a non-mapping root, an empty `siteName`, and a file absent at every path;
+  and Task 10's agreement study, where `config.site-config` agreed with the engine doctor on all
+  four production trees on found-and-parses.
+
+## doctor-go-plain-report-no-terminal: `cairn doctor` prints a plain report and queries no terminal  (reshape, 2026-09-22, retire-1)
+
+- **Verdict:** reshape of the spec's "single TTY predicate" into the leaner form, "queries no
+  terminal at all". `internal/render`'s bodies are built on `health.Report` and the whole theme,
+  profile, glyph-tier, and golden-frame machinery; a directory preflight needs none of it, and
+  taking it would mean a new view, a new body file, an addition to the pinned exported surface, and
+  a golden matrix across five widths and four colour rungs. So the report is a pure function in
+  `internal/doctor` with its own goldens, in the shape `src/lib/doctor/report.ts` already produced:
+  one line per check, a why/fix/docs block per failure, then a count summary. `--color`,
+  `--theme`, and `--width` therefore have no effect on this command, which the command's `Long`
+  text and its docs page both state. `--quiet` is honoured, suppressing the whole report on an OK
+  run and nothing else.
+- **Reopens on:** a design that needs a coloured doctor body, which would make the command a
+  `render` view like `health` and `logs` and bring the golden matrix with it.
+- **Shape:** `tool/internal/doctor/report.go` with goldens under
+  `tool/internal/doctor/testdata/golden/`; no `internal/doctor` import of `internal/render` beyond
+  the `DoctorSchemaVersion` constant, and no terminal query, which satisfies
+  `cmd/cairn/root_test.go`'s terminal-confinement test trivially.
+- **Record:** `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, "Decisions this plan
+  makes", decision 3; `tool/docs/reference/cli-cairn-doctor.md`.
+- **Any-site case:** an operator running `cairn doctor --theme light` on any site and seeing the
+  same bytes as without the flag. The inert flags are named in the command's own help so the
+  reading is not left to be inferred.
+- **Verified:** the report goldens in `tool/internal/doctor/testdata/golden/`, and the
+  `cmd/cairn` help golden carrying the inert-flag sentence.
+
+## doctor-go-conditions-mirror-drift-test: the condition drift test reads the embedded mirror, not `conditions.ts`  (accept, 2026-09-22, retire-1)
+
+- **Verdict:** accept. The tool's old drift test walked up to the repository root to read
+  `src/lib/diagnostics/conditions.ts` with a regex, which made a Go unit test depend on a
+  TypeScript source file and on being run inside this repository. It is replaced by
+  `TestConditionsMatchEmbeddedMirror`, which compares the hand-written `spine` constant set against
+  the keys of the embedded `conditions.json` mirror. The engine side of the chain is closed by
+  `check:tool-conditions`, which regenerates the mirror from the built `dist/` and fails when
+  regeneration is not a no-op. Constant against mirror plus mirror against engine covers what the
+  regex covered, with no repository walk.
+- **Reopens on:** a mirror generated from anything other than the built `dist/`, or a Go test
+  naming the providers package's repository-root finder again, which
+  `TestConditionTestFilesNameNoRepoRoot` fails on today.
+- **Record:** `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, Task 2;
+  `tool/internal/spine/conditions_test.go`, whose header carries the old test's ruling comment.
+- **Any-site case:** an agent reading the published check-id list. A renamed engine condition id
+  now fails the Go gate as a set mismatch with a note saying the rename is a major-version event,
+  rather than silently passing a regex that no longer matches.
+- **Verified:** `TestConditionsMatchEmbeddedMirror` and `TestTextFor` in
+  `tool/internal/spine/conditions_test.go`, plus `TestCatalogueCarriesEveryCheckString`, which
+  folds a concatenated const so a doc string cannot escape the copy golden.
+
+## doctor-go-containment-symlink-resolving: `cairn doctor` takes the stronger containment, resolving symlinks  (accept, 2026-09-22, retire-1)
+
+- **Verdict:** accept, and it carries the 2026-09-02 amendment to
+  `audit-cli-create-cairn-site-cost-narrative-chapter-1-consent-email-adm`'s sibling site-config
+  ruling forward into Go. That amendment put `SITE_CONFIG_PATH` in a committed data file both the
+  checker and the scaffolder read, and gave `doctor/bin.ts` a resolved-path containment assert.
+  `cairn doctor` embeds the same data file as `tool/internal/doctor/site-config-path.json`, and it
+  takes the **stronger** of the two containment forms: `media-seed/bin.ts`'s symlink-resolving
+  shape, not the doctor's own textual prefix compare. Every read joins the candidate under the
+  resolved directory, checks containment with `filepath.Rel` rather than a string prefix, resolves
+  the nearest existing ancestor through `filepath.EvalSymlinks`, and checks containment again.
+- **Reopens on:** a Go read path under `tool/` that resolves a candidate without
+  `filepath.EvalSymlinks`, which is the defect this entry exists to keep out.
+- **Record:** `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, "Containment";
+  `tool/internal/doctor/fileread.go` (`readUnder`, `contains`, `realpathNearestAncestor`) and
+  `snapshot.go`'s one-time `EvalSymlinks` of `dir`.
+- **Any-site case:** any site whose tree carries a symlink, a pnpm store or a monorepo package
+  link most commonly. A preflight run in it reads only files that really live under the directory
+  it was pointed at, and refuses the rest with a named error rather than reading through.
+- **Verified:** `tool/internal/doctor/fileread_test.go`, including a read through a symlink that
+  leaves the directory (refused), a dangling symlink (not found, not an error), a sibling directory
+  sharing a name prefix (contained, which a `strings.HasPrefix` compare gets wrong), and a
+  permission-denied file.
+
+## doctor-go-wire-mapping-info-skip: the doctor's `info` and `skip` map onto the frozen wire states without widening them  (reshape, 2026-09-22, retire-1)
+
+- **Verdict:** reshape. The doctor's own vocabulary is five status words and the wire `state` set
+  frozen at 1.0 is five different ones (`pass`, `fail`, `held`, `skip`, `unknown`), so the printed
+  report and the JSON payload diverge deliberately. `info` is written `state: pass` with its text
+  in a doctor-only `note` key, which is the spec's own mapping and keeps a reader able to tell an
+  `info` from a bare pass. `skip` is written `state: skip` with `reason.not-run`, the closest fit
+  in the frozen eight: for `cairn doctor` the code means the check's precondition did not apply.
+  `reason.not-observable` would be wrong there, since it names a check that tried and saw nothing.
+  No state word and no reason code was added. `held` is never written: a hold is an adopted site's
+  operator accepting a known failure, which a directory preflight has no concept of.
+- **Reopens on:** a consumer reading `reason.not-run` as a budget-cut `cairn health` check, which
+  is the only other emitter of the code today; or a second payload kind needing an `info`, which
+  would make the doctor-only `note` key a shared shape rather than one command's.
+- **Shape:** `tool/internal/doctor/json.go` marshals the payload and `internal/render` keeps only
+  `DoctorSchemaVersion`, so `render` gains one exported name and no new direct require; the
+  widening of `reason.not-run` is stated in one sentence on `json-output.md`'s `cairn doctor`
+  section.
+- **Record:** `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, "Decisions this plan
+  makes", decision 8; `tool/docs/reference/json-output.md`.
+- **Any-site case:** an agent parsing `cairn doctor --json` on any site. It switches on the same
+  five state words and the same eight reason codes it already knows, and needs to learn one
+  optional key.
+- **Verified:** `tool/internal/doctor/json_test.go` over all five statuses, and
+  `tool/internal/render/json_schema_test.go`'s doctor cases, where a golden payload validates
+  against the committed `cairn-doctor.schema.json`.

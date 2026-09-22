@@ -1077,10 +1077,13 @@ the named human gates only):**
     prints nothing on success (echo the archive name), and `install-check.sh` prints `--version`
     without asserting it.
 
-- **Retire-1's opening inputs: the B2 architecture reads (2026-09-21).** One read per touched Go
-  package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen sound with
-  nits, none escalated. Nothing was fixed at the close, so these are the retirement track's
-  opening inputs, the two with teeth first:
+- **The B2 architecture reads, what retire-1 left (2026-09-21, updated 2026-09-22).** One read per
+  touched Go package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen
+  sound with nits, none escalated. **retire-1's `code-simplifier` round cleared the parts that fell
+  in the packages it touched**: eleven unexports in `render` and `spine`, `spine`'s hand-retyped
+  test lists (which gained the missing `ReasonRepoNotRecorded` coverage), `health`'s catalogue
+  completed and gated by a test, and six process citations rewritten. The rest stands, the two with
+  teeth first:
   - `internal/spine`'s `condition_test.go` retypes the package's code list by hand and **has
     already drifted** (missing `ReasonRepoNotRecorded`). Read the backing lists instead;
     `park_test.go` carries the same shape.
@@ -1110,9 +1113,56 @@ the named human gates only):**
     darwin` merge would break its own gate. The ruling belongs in the files' header.
   Full text: `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
 
+- **Go tool architecture chores filed at retire-1's close (2026-09-22).** Four
+  `go-architecture-reader` reads at the merge, `doctor` and `render` and `cmd/cairn` sound with
+  nits, `spine` workmanlike. None blocks a release; each carries the condition that makes it bite.
+  - **`cmd/copylist` collects only `*ast.BasicLit`, so a concatenated const never reaches the copy
+    golden.** A real gap in the copy-review gate, found when `cairn doctor`'s `longDoctor` escaped
+    it. `TestCatalogueCarriesEveryCheckString` now folds concatenations for the doctor's own
+    catalogue; the generator itself still does not. **Trigger:** the next operator-facing string
+    written as a concatenation, or any pass touching `cmd/copylist`.
+  - **`spine` carries callerless exports and a five-copy vocabulary.** `FromKind`, `Kind`,
+    `CombineState`, `ExitCodeFor`, and `ParkCodes` have no caller outside the package, and the same
+    code vocabulary is restated in five places. **Trigger:** the next pass that adds a code or a
+    state word, which pays for the drift.
+  - **`render` holds roughly thirty callerless exports pinned by `purity_test.go`**, plus the
+    test-only `Height` and `FailingOnly` fields, the byte-identical `profile_linux.go` and
+    `profile_darwin.go` (deliberate, the `hygiene` rule, and their headers should say so), and 23
+    process citations in shipped comments. **Trigger:** draft docs pass A, which already renames
+    `layout.go`'s docs-URL constant, or the HUD, which imports this package wholesale.
+  - **`cmd/cairn` carries stale comments and duplicated printing.** `root.go:37-43,77-78` still
+    claim `--color` and `--width` are inert when `cairn health` acts on both, `probe_token.go`
+    names a retired command, eight `Fprintf(w, "%s\n", data)` copies want one helper, and
+    `deps.go`'s `checks` seam exists for tests alone. **Trigger:** the `tool/v1.1.0` tag session,
+    which re-reads the help text anyway.
+  - **The doctor's `Result.ID` stamp is unobserved by any test.** `Run` stamps each result's id and
+    nothing asserts it, so a wrong id would reach the JSON payload silently. **Trigger:** the next
+    check added to `internal/doctor`.
+  - **The engine-side `check:tool-heuristics` tripwire belongs to retire-2**, not here. It pins the
+    four heuristics (`CairnAdminShell`, `.shellLoad`, `createAuthGuard`'s argument shape,
+    `checkOrigin: false`) against the engine sources retire-2a deletes the readers for.
+
 - **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
   2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact
   upload on failure so a CI-only visual diff is viewable without one.
+
+- **The Names convention reaches only prose Vale lints (promoted from the friction log,
+  2026-09-22).** `docs-register.md`'s "Names" section and the `Cairn.Names`/`Cairn.NamesRetired`
+  rules grade prose. Mermaid `accDescr:`/`accTitle:` text, image alt text, and nav labels carry no
+  code font and sit inside fences, attributes, or config strings, so Vale never reads them (for
+  example `docs/admin/create-your-site.md:106`, "The tool moves through four stages"). The shape: a
+  small text scan in `scripts/checks/` over alt attributes, the two mermaid directives, and
+  nav-label strings, or a manual sweep folded into the admin rebuild's pass B brief. **Trigger:**
+  the draft-docs pass that writes those strings, whichever comes first.
+
+- **`link:consumer` cannot measure a production site against unreleased engine work (filed at
+  retire-1's close, 2026-09-22).** Every production site is pinned to a released version and calls
+  the released export names, so while `main`'s unreleased window carries a rename, a linked site's
+  adapter fails to evaluate and `cairn-manifest` writes nothing. retire-1's agreement study hit
+  exactly this (`extractMenu is not a function`) and measured on a scratch copy instead. Either
+  `link:consumer` gains a pre-flight naming the renamed exports a site still calls, or a pass
+  needing a live measurement plans to release first. **Trigger:** the next pass whose acceptance
+  needs a production site run against unreleased engine work.
 
 - **Three docs items for the draft-docs pass, filed at B2's close (2026-09-21).** Promoted here
   from `docs/internal/docs-friction-log.md` because the pass that leans on them is the draft-docs

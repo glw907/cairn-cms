@@ -2,6 +2,7 @@ package doctor
 
 import (
 	"flag"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,9 +60,7 @@ func cleanRobots() Robots {
 // itself untouched.
 func withFile(files map[string]string, rel, content string) map[string]string {
 	out := make(map[string]string, len(files)+1)
-	for k, v := range files {
-		out[k] = v
-	}
+	maps.Copy(out, files)
 	out[rel] = content
 	return out
 }

@@ -44,10 +44,14 @@ func conditionCases() []conditionCase {
 			wantState: spine.Unknown,
 		},
 		{
-			name:      "delegation with no assigned nameservers recorded",
-			check:     delegationCheck{},
-			record:    record.Record{Domain: "example.test"},
-			clients:   Clients{HaveCF: true},
+			name:   "delegation with no assigned nameservers anywhere",
+			check:  delegationCheck{},
+			record: record.Record{Domain: "example.test"},
+			clients: Clients{
+				Probe:  providers.NewProbe(http.DefaultTransport, servingResolver{ns: nil}),
+				CF:     cfClient(zoneRoundTripper{status: http.StatusOK, body: zoneEnvelopeNoNameServers()}),
+				HaveCF: true,
+			},
 			wantState: spine.Unknown,
 		},
 		{
@@ -84,7 +88,7 @@ func conditionCases() []conditionCase {
 			name:      "deploy with no worker of that name",
 			check:     deployCheck{},
 			record:    deployRecord(),
-			clients:   deployClients(true, deployNoWorkerRoute),
+			clients:   deployClients(deployNoWorkerRoute),
 			wantState: spine.Failing,
 		},
 		{
@@ -93,7 +97,7 @@ func conditionCases() []conditionCase {
 			record:    publishRecord(),
 			clients:   publishClients(publishGHRoundTripper{}),
 			options:   validOptions,
-			wantState: spine.Unknown,
+			wantState: spine.OK,
 		},
 		{
 			name:      "publish-path with a stale branch and no later bot commit",

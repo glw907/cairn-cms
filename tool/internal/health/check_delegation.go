@@ -6,6 +6,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/glw907/cairn-cms/tool/internal/providers"
 	"github.com/glw907/cairn-cms/tool/internal/record"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
@@ -26,11 +27,28 @@ func (delegationCheck) Needs() Tier { return TierCF }
 // to skip a needless lookup during interactive provisioning, Run always measures the live
 // nameservers and, once they match, the live zone state: a recurring health check has no
 // provisioning-time flag to trust, and the zone the account was assigned can only be confirmed
-// by asking it.
+// by asking it. The pair to compare against comes from the record when it carries one and from
+// the zone otherwise, so an adopted record missing the key still settles a verdict.
 func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	assigned := assignedNameServers(r)
+
+	// A record adopted before the registry carried the pair, or written by a tool that never
+	// recorded it, is not unobservable: the zone itself reports the nameservers Cloudflare
+	// assigned it, and reading them here is the same fact from its own authority. The zone is
+	// read once and reused below, so the fallback costs no extra call on the path that needs it.
+	var zone *providers.Zone
 	if len(assigned) == 0 {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoAssignedNS()}
+		z, err := c.CF.ZoneByName(ctx, r.Domain)
+		if err != nil {
+			return apiErrorOutcome(err)
+		}
+		if z == nil {
+			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone()}
+		}
+		if len(z.NameServers) == 0 {
+			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoAssignedNS()}
+		}
+		zone, assigned = z, z.NameServers
 	}
 
 	actual, _ := c.Probe.LookupNS(ctx, r.Domain)
@@ -41,12 +59,15 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkDelegationPending)}
 	}
 
-	zone, err := c.CF.ZoneByName(ctx, r.Domain)
-	if err != nil {
-		return apiErrorOutcome(err)
-	}
 	if zone == nil {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone()}
+		z, err := c.CF.ZoneByName(ctx, r.Domain)
+		if err != nil {
+			return apiErrorOutcome(err)
+		}
+		if z == nil {
+			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone()}
+		}
+		zone = z
 	}
 	if zone.Status != "active" {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkDelegationPropagating)}

@@ -25,9 +25,9 @@ type adoptFlags struct {
 
 // adoptListFlags holds cairn adopt list's own flags.
 type adoptListFlags struct {
-	// asJSON prints the candidates as JSON. It defaults to true: a candidate list is
-	// identifiers all the way down, and JSON is the shape that survives being handed to
-	// whatever decides which Worker to adopt. --json=false asks for the plain listing.
+	// asJSON prints the candidates as JSON. It defaults off, like every other --json in the
+	// tool: a bare command prints for the person who typed it, and a default that differs from
+	// its siblings is one an operator has to read --help to discover.
 	asJSON bool
 }
 
@@ -61,7 +61,7 @@ func newAdoptCmd(d deps, rf *rootFlags) *cobra.Command {
 			return runAdoptList(cmd, d, rf, lf)
 		},
 	}
-	list.Flags().BoolVar(&lf.asJSON, "json", true, flagAdoptListJSONHelp)
+	list.Flags().BoolVar(&lf.asJSON, "json", false, flagAdoptListJSONHelp)
 	cmd.AddCommand(list)
 
 	return cmd
@@ -205,12 +205,16 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 		if err != nil {
 			return err
 		}
-		// A domain outside every zone on the account leaves the zone fields empty rather than
-		// refusing the adoption: the zone-scoped checks report their own unobservable verdict
-		// for a record that carries no zone id, and a site served from a zone elsewhere is
-		// still a site worth registering.
+		// The override replaces the zone fields outright, clearing them when the named domain
+		// sits outside every zone on the account. Keeping the discovered zone would attach the
+		// custom domain's zone id to a domain that is not in it, and the zone-scoped checks
+		// would then report another site's settings as this one's. An adoption is not refused
+		// over it: the zone-scoped checks report their own unobservable verdict against a record
+		// carrying no zone id, and a site served from a zone elsewhere is still worth
+		// registering.
+		chosen.Zone, chosen.ZoneID, chosen.NameServers = "", "", nil
 		if zone != nil {
-			chosen.Zone, chosen.ZoneID = zone.Name, zone.ID
+			chosen.Zone, chosen.ZoneID, chosen.NameServers = zone.Name, zone.ID, zone.NameServers
 		}
 	}
 	if chosen.Domain == "" {

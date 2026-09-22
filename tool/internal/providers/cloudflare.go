@@ -351,6 +351,11 @@ type Zone struct {
 	// Status is the zone's own activation state ("active" once Cloudflare has finished taking
 	// over the domain's DNS, "pending" or "initializing" while that is still in progress).
 	Status string `json:"status"`
+	// NameServers is the nameserver pair Cloudflare assigned this zone, the pair the domain's
+	// registrar has to delegate to. Both the single-zone and the list route carry it, confirmed
+	// against a live GET on 2026-09-21; a zone using vanity nameservers reports those under a
+	// separate key this client does not read.
+	NameServers []string `json:"name_servers"`
 }
 
 // ZoneByName returns the zone named name, or a nil Zone with no error when the account has none

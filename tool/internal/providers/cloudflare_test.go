@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"reflect"
 	"testing"
 )
 
@@ -231,7 +232,7 @@ func TestListZonesDecodesEveryPage(t *testing.T) {
 		t.Fatalf("ListZones returned %d zones, want %d", len(zones), len(want))
 	}
 	for i := range want {
-		if zones[i] != want[i] {
+		if !reflect.DeepEqual(zones[i], want[i]) {
 			t.Errorf("zone %d = %+v, want %+v", i, zones[i], want[i])
 		}
 	}

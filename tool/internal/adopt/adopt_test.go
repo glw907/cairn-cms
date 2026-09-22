@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -79,7 +80,7 @@ func TestDiscoverFillsEveryCandidateField(t *testing.T) {
 		t.Fatalf("Discover returned %d candidates, want %d: %+v", len(got), len(want), got)
 	}
 	for i := range want {
-		if got[i] != want[i] {
+		if !reflect.DeepEqual(got[i], want[i]) {
 			t.Errorf("candidate %d = %+v, want %+v", i, got[i], want[i])
 		}
 	}

@@ -6,6 +6,7 @@ package adopt
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
@@ -29,6 +30,9 @@ type Candidate struct {
 	// ZoneID is that zone's Cloudflare id, the value the HTTPS-forced and email checks read a
 	// site's zone settings and sending subdomains through.
 	ZoneID string
+	// NameServers is the nameserver pair Cloudflare assigned Zone, recorded so the delegation
+	// check has the pair the domain's registrar is meant to point at.
+	NameServers []string
 	// Domain is the Custom Domain attached to this Worker, and is empty when none is. cairn
 	// provisions Workers Custom Domains and never Workers Routes
 	// (packages/create-cairn-site/src/cloudflare/hostname.mjs), so discovery reads only the
@@ -60,14 +64,14 @@ func Discover(ctx context.Context, cf *providers.Cloudflare, accountID string) (
 
 	// The zone listing is skipped when no Worker has a custom domain, so an account with no
 	// domains at all never needs the wider zone read this call performs.
-	zoneNames := map[string]string{}
+	zonesByID := map[string]providers.Zone{}
 	if len(domains) > 0 {
 		zones, err := cf.ListZones(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("adopt: list zones: %w", err)
 		}
 		for _, z := range zones {
-			zoneNames[z.ID] = z.Name
+			zonesByID[z.ID] = z
 		}
 	}
 
@@ -75,9 +79,11 @@ func Discover(ctx context.Context, cf *providers.Cloudflare, accountID string) (
 	for _, w := range workers {
 		c := Candidate{Worker: w.Name, AccountID: accountID}
 		if d, ok := byService[w.Name]; ok {
+			z := zonesByID[d.ZoneID]
 			c.Domain = d.Hostname
-			c.Zone = zoneNames[d.ZoneID]
+			c.Zone = z.Name
 			c.ZoneID = d.ZoneID
+			c.NameServers = z.NameServers
 		}
 		triggers, err := cf.BuildsConnections(ctx, w.Tag)
 		if err != nil {
@@ -182,10 +188,30 @@ func Adopt(ctx context.Context, st *store.Store, c Candidate, name string, resol
 		r.GitHub.Repo.Owner = owner
 		r.GitHub.Repo.Repo = repo
 	}
+	if err := setNameServers(&r, c.NameServers); err != nil {
+		return record.Record{}, err
+	}
 	if err := st.Save(id, r); err != nil {
 		return record.Record{}, fmt.Errorf("adopt: worker %s: %w", c.Worker, err)
 	}
 	return r, nil
+}
+
+// setNameServers writes the zone's assigned nameserver pair under the record's own
+// "cloudflare.nameServers" key, the key the Node CLI writes and the delegation check reads.
+// record.Cloudflare does not type that key, so the value travels as an Extra entry; nothing is
+// written at all when the zone reported no pair, which keeps the key out of a record that has
+// nothing true to put in it.
+func setNameServers(r *record.Record, nameServers []string) error {
+	if len(nameServers) == 0 {
+		return nil
+	}
+	raw, err := json.Marshal(nameServers)
+	if err != nil {
+		return fmt.Errorf("adopt: encode nameservers for %s: %w", r.Domain, err)
+	}
+	r.Cloudflare.Extra = append(r.Cloudflare.Extra, record.ExtraField{Key: "nameServers", Value: raw})
+	return nil
 }
 
 // refusePrivateAddress reports an error when domain resolves to any address off the public

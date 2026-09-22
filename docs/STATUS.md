@@ -52,6 +52,8 @@ share `config.bindings-missing`.
 - `cairn-audit --rendered` counts differently on identical runs (133 then 116); stabilize first.
 - The heavy gate runs the component project serially (`--no-file-parallelism`); the parallel run stalls here.
 
+**retire-1 ledger (2026-09-22 00:35, segment 1 boundary):** on worktree `.claude/worktrees/doctor-go`, Tasks 1 to 3 are accepted and committed (`56803baa`..`5f3ee04f`; Tasks 1 and 3 each cleared one fix round). Segment 1 ran as `wf_b28a7d1b-a03`, 1.08M subagent tokens of the 2.4M ceiling; at this rate the ceiling is crossed inside segment 2, which continues under Geoff's overnight grant to the release (`retirement-to-release-grant` memory) with the overrun logged here and in the post-mortem. Next: segment 2, Tasks 4 to 7, same runner and args (`retire-1-args.compact.json` in the session scratchpad).
+
 ## Resume prompt
 
 In a fresh session, conduct retire-1 from its plan, the retirement spec, and the

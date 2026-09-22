@@ -751,3 +751,111 @@ over the fold's own diff.
 | Acceptance: the third workflow runs `check:tool-conditions` | 2 (local YAML parse) and 4 (`gh run list --branch`, after the PR opens) |
 | Choreography step 2: this pass runs after B2's `tool/v1.0.0` and before retire-1 branches | Header ("Place in the order", "The pass precondition") |
 | Branch `doctor-pretask` off `main`, heavy gate, one PR, merging before retire-1 branches | Header, Task 4 |
+
+---
+
+## Post-mortem (2026-09-21)
+
+### What was built
+
+Three contracts, one per task, all on branch `doctor-pretask`.
+
+- **Task 1** (`0919e5d2`, `5a59c7dd`): `config.media-bucket` gained its own condition id,
+  `config.media-bucket-missing`, on the TypeScript side and in `tool/internal/spine/condition.go`;
+  the three `conditions.ts` strings that still named "the doctor" were reworded per ruling 3a; the
+  new id got its `is-it-working.md` section on the `config.tidy-key-missing` precedent, plus its
+  facts bullet and changelog line.
+- **Task 2** (`97b04eb5`): `scripts/build/emit-tool-conditions.mjs` generates
+  `tool/internal/spine/conditions.json` and `tool/internal/doctor/site-config-path.json` from the
+  built `dist/`; `scripts/checks/check-tool-conditions.mjs` fails when regeneration is not a
+  no-op; the check runs as a root npm script, as a `test.yml` step beside `check:readiness`, and
+  in the standalone `tool-conditions.yml` workflow that covers a commit touching only the
+  generated files under `tool/`.
+- **Task 3** (`3774dabe`, `b3606010`): `.cairn/site-facts.json`, written by the `cairn-manifest`
+  bin and verified in the plugin's `buildStart`, absent warning once and stale failing the build,
+  with `docs/reference/site-facts.md`, its arm index entry, its facts bullet, its
+  `check-symbols-allowlist` path entry, and a migration note.
+- **`code-simplifier`** (`470f0f4a`): `loadCairnBuild` and `siteFactsRelPath` extracted, test
+  helpers deduped, `mkdirSync` and the generator's `check-readiness.mjs` exit shape tidied.
+
+The conductor's ledger commit `2fff18f4` is superseded by this close's STATUS rewrite.
+
+### What was verified, with evidence
+
+Each task ran as implementer (sonnet), then `diff-reviewer` (opus), then the full gate inside the
+chain. Verdicts: Task 1 `fix`, comment-only (a stale comparison in a neighbouring comment, a facts
+`Source:` line off by one), cleared in `5a59c7dd`; Task 2 `accept`; Task 3 `fix`, blocking
+(`docs/internal/api-surface.md` left stale on the new optional `siteFactsPath`), cleared in
+`b3606010`, with the verify messages interpolating the resolved path. Every heavy gate was green
+with the component project run serially
+(`node scripts/test/contained.mjs npx vitest run --project component --no-file-parallelism`): 82
+files and 1429 tests on the component project, 395 files and 5394 tests on unit and integration,
+`npm run check` 0/0. The Go light gate was green at every task and again after the merge from
+`origin/main` (`TestConditionsMatchRegistry` at 25 conditions). Task 2's red-then-green proof: a
+hand-edited `why` in the mirror fails `check:tool-conditions` with exit 1, naming the file and the
+regenerate command.
+
+The review fan-out was deliberately not dispatched, per Task 4: no Svelte component, no admin
+markup, no Worker code, and nothing touching auth, sessions, or the write path changed, so
+`svelte-reviewer`, `daisyui-a11y-reviewer`, `cloudflare-workers-reviewer`, and
+`web-auth-security-reviewer` were all unmatched.
+
+`gh run list --branch doctor-pretask --workflow tool-conditions.yml`: **collected by the conductor
+once the PR is open; recorded here at that point.**
+
+### Decisions locked
+
+- `siteFactsPath?: string` was added to `CairnManifestOptions`: additive, optional, symmetric with
+  `manifestPath`, documented in `vite.md`. The reviewer raised it against the Halts list and the
+  conductor accepted it. This is the pass's one planning miss; a plan naming the option would have
+  pre-authorized it.
+- `checkSiteFacts` returns `ok` when the facts derivation throws, because the manifest verify runs
+  first in `buildStart` and fails the build on a broken adapter. One narrow blind spot remains: a
+  stale file passes when `adapterFactsSource` throws but the config module still loads.
+- The second Task 2 artifact (`site-config-path.json`) rides the same generator rather than
+  getting its own.
+- The facts section for the mirror is headed by the file path `## tool/internal/spine/conditions.json`,
+  the container's only non-page heading.
+- Task 2 fixed a pre-existing off-by-one pointer at `docs/internal/facts/admin.md:57`.
+- `config.site-config` and the reviewer's other notes were left unchanged.
+
+### Blockers, and two workstation incidents
+
+No plan halt fired. Two machine-level incidents cost more than the work did.
+
+1. **The component project's parallel browser pages stopped reaching the Vite server** from about
+   17:30 ("Cannot connect to the server in 60 seconds"), and the stock `npm test` hung for over an
+   hour holding the heavy lock, on a tree that had passed at 11:22. Playwright 1.63 against 1.62,
+   the memory scope, orphaned browsers, ulimits, conntrack, and IPv6 loopback were each ruled out
+   with evidence. Three files in parallel pass; twelve fail. Serial runs are clean. Root cause
+   unknown; the serialized gate above is the workaround
+   (`vitest-browser-parallel-pages-stall` memory).
+2. **The post-merge Go gate failed with `link: mapping output file failed: disk quota exceeded`.**
+   `/tmp` is a tmpfs mounted `usrquota` with a 6275M per-user limit; two stale 1.1G repo copies
+   from a 2026-09-19 leak check had it at 6168M, and the Go linker builds in `/tmp`. Removing them
+   cleared it.
+
+### Carry-forwards filed
+
+- `docs/reference/site-facts.md:38` links `doctor.md`, which retire-2a deletes: recorded in
+  `docs/STATUS.md` as retire-2a's to repoint.
+- `docs/reference/doctor.md:79-86` and the doctor section of `docs/internal/facts/reference.md`
+  still say the two config checks share `config.bindings-missing`: interim drift retire-2a's
+  deletion and rewrite already own, recorded in STATUS beside the first.
+- Three `contributor` findings promoted to `ROADMAP.md`'s Next tier with their triggers: the
+  `npm run check:surface -- --update` forwarding quirk, `check:facts`'s blindness to an off-by-one
+  `Source:` pointer, and the missing `cairn-run-gate` silence watchdog.
+
+### Both budgets
+
+**Tokens.** Ceiling 700K subagent tokens. Spend through the simplifier was about 980K (Task 1
+240K, Task 2 224K, Task 3 399K, simplifier 115K), and about 1.15M at the close with the fold and
+its reviewer read. The overrun was raised at the Task 3 checkpoint and Geoff chose to finish.
+
+**Attended time.** Planning misses: 1, the `siteFactsPath` surface addition, which the Halts list
+would have caught had the plan named the option. Execution sittings: 2, the workstation gate
+diagnosis (a process check) and the budget question at the checkpoint.
+
+The numbers are recorded as they came out. The ceiling was set from a three-task estimate that
+did not price two behavioral arms with a test each in Task 3, and a machine fault absorbed a
+second chunk that no plan could have sized.

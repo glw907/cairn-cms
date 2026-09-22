@@ -7,6 +7,65 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## The doctor-retirement pre-task, four tasks, 2026-09-21
+
+Branch `doctor-pretask`. Plan and post-mortem:
+`docs/superpowers/plans/2026-09-21-doctor-pretask.md`. Spec:
+`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, the "Pre-task" section.
+
+**What landed.** Three contracts the Go doctor needs before retire-1 can branch. Task 1 gave
+`config.media-bucket` its own condition id, `config.media-bucket-missing`, on both the TypeScript
+and the Go side, reworded the three `conditions.ts` strings that still named "the doctor", and
+added the id's `is-it-working.md` section on the `config.tidy-key-missing` precedent
+(`0919e5d2`, `5a59c7dd`). Task 2 built the conditions mirror: `scripts/build/emit-tool-conditions.mjs`
+generates `tool/internal/spine/conditions.json` and `tool/internal/doctor/site-config-path.json`
+from the built `dist/`, `scripts/checks/check-tool-conditions.mjs` fails when regeneration is not
+a no-op, and the check is wired as a root script, a `test.yml` step, and the standalone
+`tool-conditions.yml` workflow for a commit touching only the generated files (`97b04eb5`). Task 3
+added `.cairn/site-facts.json`, written by the `cairn-manifest` bin and verified in the plugin's
+`buildStart`, with its own reference page (`3774dabe`, `b3606010`). The `code-simplifier` round
+landed `470f0f4a`.
+
+**What the gates caught.** Each task ran implementer then `diff-reviewer` then the full gate.
+Task 1 drew a comment-only `fix` (a stale comparison in a neighbouring comment, a facts `Source:`
+line off by one). Task 2 was accepted, and proved its own gate red first: a hand-edited `why`
+fails `check:tool-conditions` with exit 1 naming the file and the regenerate command. Task 3 drew
+a blocking `fix`, `docs/internal/api-surface.md` left stale on the new optional `siteFactsPath`,
+cleared by regenerating the surface snapshot. Two workstation incidents cost more than any of
+that. From about 17:30 the component project's parallel browser pages stopped reaching the Vite
+server ("Cannot connect to the server in 60 seconds") and the stock `npm test` hung for over an
+hour holding the heavy lock, on a tree that had passed at 11:22; Playwright's version, the memory
+scope, orphaned browsers, ulimits, conntrack, and IPv6 loopback were each ruled out with
+evidence. Then the post-merge Go gate failed with `link: mapping output file failed: disk quota
+exceeded`, because `/tmp` is a tmpfs under a 6275M per-user quota that two stale 1.1G repo copies
+from a 2026-09-19 leak check had filled to 6168M, and the Go linker builds in `/tmp`.
+
+**What a later pass would be wrong to rediscover.**
+
+- The retirement spec is wrong in two places, and the plan's pre-flight caught both.
+  `check:tool-conditions` cannot "join `npm run check`", because `npm run check` is
+  `svelte-check` and composes nothing; the gate list is the individual steps in `test.yml`. And
+  `site-facts.json` is not written by "the same chokepoint that writes and verifies
+  `index.json`": the Vite plugin only verifies, the `cairn-manifest` bin writes, so a new
+  build-time file needs both halves wired.
+- A `scripts/` file reaches `src/lib` TypeScript through the built `dist/`, never a loader.
+  `scripts/checks/check-readiness.mjs` is the model: `npm run package`, then a dynamic `import()`
+  of `dist/`, with a clear error when the build is absent.
+- The component project runs serially on this workstation:
+  `node scripts/test/contained.mjs npx vitest run --project component --no-file-parallelism`.
+  Three files in parallel pass, twelve fail, and serial runs are clean. The root cause is
+  unknown, so this is a workaround, not a fix (`vitest-browser-parallel-pages-stall` memory).
+- A Go gate that fails at the link step with a quota error is the machine, not the code. Check
+  `/tmp` usage against the tmpfs quota before reading the failure as a build break.
+- `npm run check:surface -- --update` forwards the flag to `check-surface-leaks.mjs` only,
+  because npm appends run arguments to the end of a three-command script. Regenerating the
+  surface snapshot takes `node scripts/checks/check-surface.mjs --update` directly.
+
+**Both budgets.** Ceiling 700K subagent tokens; spend about 1.15M at the close, an overrun raised
+at the Task 3 checkpoint and taken to the end on Geoff's call. Attended time: one planning miss
+(the `siteFactsPath` option, which the plan's Halts list would have caught had the plan named it),
+two execution sittings (the gate diagnosis, the budget question).
+
 ## The Go tool's Pass B2, twenty-one tasks, 2026-09-21
 
 Branch `cairn-tool-b2`, PR #71. Plan and post-mortem:

@@ -448,6 +448,10 @@ const (
 	fixSentence = 6
 	// fixGutter is the space kept between the site and the check, which a long name may not eat.
 	fixGutter = 2
+	// fixCheckFloor is the narrowest the check cell ever draws. The site column gives way to it
+	// rather than the other way round: a head line that cannot hold both names ellipsizes the
+	// site, which the row beneath it repeats, and keeps the check the fix is named by.
+	fixCheckFloor = 4
 )
 
 // fleetFix is one repair the fleet screen prints, with the facts it is ranked and drawn by.
@@ -485,7 +489,11 @@ type fleetFix struct {
 // cannot act on, and the list is already ranked; if a fleet ever outgrows the screen the honest
 // form is a named cap with a sentence, never a cipher.
 func (t Theme) fleetFixes(in RenderInput, rs []health.Report, width int) []string {
-	siteCol := t.siteColWidth(rs) + 2
+	// The site column is the longest name it holds, held to what the head line can pay for: at a
+	// narrow width the two names and the indent together outrun the line, and a column budgeted
+	// past the width is what a final clamp then cuts a name inside.
+	siteCol := min(t.siteColWidth(rs)+2,
+		max(width-fixIndent-fixArrowCol-fixCheckFloor, siteColFloor+fixGutter))
 	var out []string
 	for _, f := range rankFleetFixes(collectFleetFixes(in, rs)) {
 		out = append(out, t.fixEntry(in, f, siteCol, width)...)
@@ -679,13 +687,31 @@ func compareBool(a, b bool) int {
 // The check name carries the documentation link here rather than a printed URL: a fleet list is
 // an index, and `cairn health <site>` is where the full fix with its URL lives.
 func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string {
+	// What the head line has left for the check name and the handle after it.
+	room := max(width-fixIndent-fixArrowCol-siteCol, 1)
+
+	// The handle keeps the head line only where it fits whole. Below that it wraps to the
+	// sentence column beneath, the way a fix's URL wraps rather than being cut: half a condition
+	// id is a greppable handle for nothing, and the id is the whole reason it is printed.
+	tail := f.tail
+	var tailLines []string
+	if tail != "" && min(fixCheckCol, room)+t.Width(tail) > room {
+		// Below a width that holds the id whole on a line of its own it is not printed at all. A
+		// broken id is worse than an absent one, and --json carries it at every width.
+		if t.Width(tail) <= width-fixSentence {
+			tailLines = atColumn(t.Style(RoleMuted), fixSentence, []string{tail})
+		}
+		tail = ""
+	}
+
 	// The check cell takes a fixed width only where something follows it. A padded cell at the
 	// end of a line is trailing whitespace inside a styled block, which no trim can reach and
 	// every golden would carry.
 	checkCol := fixCheckCol
-	if f.tail == "" {
+	if tail == "" {
 		checkCol = t.Width(f.check)
 	}
+	checkCol = min(checkCol, room)
 	nameCell := t.Sized(RoleMuted, checkCol)
 	if url := fixURL(f.fix); url != "" && in.Profile != ProfileNoColor && linkable(url) {
 		nameCell = t.SizedLink(RoleMuted, url, checkCol)
@@ -695,9 +721,9 @@ func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 		t.cell(RoleAccent, t.glyphs(in.ASCII).Arrow, fixArrowCol),
 		t.SizedStrong(RoleText, siteCol).Render(t.fitted(in.ASCII, f.site, siteCol-fixGutter)),
 		nameCell.Render(t.fitted(in.ASCII, f.check, checkCol)),
-		t.Style(RoleMuted).Render(f.tail),
+		t.Style(RoleMuted).Render(tail),
 	)
-	out := []string{strings.TrimRight(head, " ")}
+	out := append([]string{strings.TrimRight(head, " ")}, tailLines...)
 	out = append(out, atColumn(t.Style(RoleSubtle), fixSentence,
 		t.wrapNoOrphan(Sanitize(f.fix.Text), width-fixSentence))...)
 	// A merged entry can cover, or list "also on:", as many sites as the fleet holds: one shared
@@ -709,8 +735,20 @@ func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	}
 	if len(f.alsoOn) > 0 {
 		lead := strings.Repeat(" ", fixSentence) + t.Style(RoleMuted).Render(labelAlsoOn)
-		out = append(out, t.hangingAtNoOrphan(t.Style(RoleMuted), lead, fixSentence+t.Width(labelAlsoOn),
-			strings.Join(f.alsoOn, ", "), width)...)
+		col := fixSentence + t.Width(labelAlsoOn)
+		out = append(out, t.hangingAtNoOrphan(t.Style(RoleMuted), lead, col,
+			strings.Join(t.fittedEach(in.ASCII, f.alsoOn, width-col), ", "), width)...)
+	}
+	return out
+}
+
+// fittedEach returns names each cut to n cells and marked where it was cut. A name wider than
+// the column it wraps into would otherwise be hard-wrapped in the middle, which turns one site
+// into two strings that name none.
+func (t Theme) fittedEach(ascii bool, names []string, n int) []string {
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		out = append(out, t.fitted(ascii, name, n))
 	}
 	return out
 }

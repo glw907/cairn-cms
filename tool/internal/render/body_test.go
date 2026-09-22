@@ -1044,6 +1044,57 @@ func TestFixListLeavesNoOrphanWord(t *testing.T) {
 	}
 }
 
+// TestFixListEndsNoLineInACutToken covers the fleet fix list across every width a terminal can
+// ask for: a head line carries the condition id whole or wraps it beneath, and a check name too
+// long for the line is ellipsized rather than cut at the edge. A line ending in a piece of a
+// token that is not a token itself ("edg" for edge.https-not-forced) is the failure this catches.
+func TestFixListEndsNoLineInACutToken(t *testing.T) {
+	reports := fixtures.TwelveSites()
+	// The handles this fleet's own fix list prints: the condition id each check declared, the
+	// check ids, the site names, and the credential variables. A line may end in any of them
+	// whole; a proper prefix of one is a cut. They are read off the reports rather than off the
+	// shipped vocabularies, since an id no fixture declares cannot be cut by a frame.
+	var tokens []string
+	for _, c := range sampleStatus().Credentials {
+		tokens = append(tokens, c.Variable)
+	}
+	for _, r := range reports {
+		tokens = append(tokens, r.Site)
+		for _, c := range r.Checks {
+			tokens = append(tokens, c.ID)
+			if c.Outcome.Condition != spine.ConditionNone {
+				tokens = append(tokens, string(c.Outcome.Condition))
+			}
+		}
+	}
+	whole := func(s string) bool { return slices.Contains(tokens, s) }
+
+	for width := 20; width <= 120; width++ {
+		inList := false
+		for _, l := range plainLines(manyInput(reports, width, false)) {
+			if strings.Contains(l, labelWhatToFix) {
+				inList = true
+				continue
+			}
+			fields := strings.Fields(l)
+			if !inList || len(fields) == 0 {
+				continue
+			}
+			last := fields[len(fields)-1]
+			if whole(last) || strings.HasSuffix(last, NewTheme(true, ProfileNoColor).GlyphSet.Unicode.Ellipsis) {
+				continue
+			}
+			for _, tok := range tokens {
+				// A count or a single letter is a word of its own that happens to open a handle
+				// ("9" opens "907.life"), so only a piece long enough to be a cut is read as one.
+				if len(last) > 2 && len(last) < len(tok) && strings.HasPrefix(tok, last) {
+					t.Errorf("width %d: the line %q ends in a cut %q", width, l, tok)
+				}
+			}
+		}
+	}
+}
+
 // TestLogBodyStatesTheDayOnceAndNeverCutsAReason is criterion 10.
 func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 	entries := goldenLogEntries()

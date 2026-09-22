@@ -27,7 +27,8 @@
   [38;2;157;132;236m→[m [1;38;2;234;231;227m907.life[m           [38;2;168;164;158mdeploy[m[38;2;168;164;158m[m
       [38;2;193;189;184mRead the build log in the Cloudflare dashboard, then[m
       [38;2;193;189;184mpush a fix.[m
-  [38;2;157;132;236m→[m [1;38;2;234;231;227maksailingclub.org[m  ]8;;https://cairn.pub/docs/admin/is-it-working#onboard-the-sending-domain[38;2;168;164;158memail[m]8;;         [38;2;168;164;158memail.sender-not-onboar[m
+  [38;2;157;132;236m→[m [1;38;2;234;231;227maksailingclub.org[m  ]8;;https://cairn.pub/docs/admin/is-it-working#onboard-the-sending-domain[38;2;168;164;158memail[m]8;;[38;2;168;164;158m[m
+      [38;2;168;164;158memail.sender-not-onboarded[m
       [38;2;193;189;184mRun `wrangler email sending enable <domain>` for the[m
       [38;2;193;189;184mapex domain, then deploy again.[m
   [38;2;157;132;236m→[m [1;38;2;234;231;227mcairn.pub[m          [38;2;168;164;158mengine[m[38;2;168;164;158m[m

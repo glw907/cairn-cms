@@ -311,8 +311,8 @@ describe('readR2Buckets', () => {
 // bin.ts's own readFileUnderCwd (:73-79), the internals-B docket item 5 WATCH discharge: its
 // three call sites (wrangler.jsonc, wrangler.toml, the media manifest) are all hardcoded
 // literals, so no caller today ever hands it a traversal-shaped relPath. The assert is defense
-// in depth "regardless of where relPath came from" (its own comment), matching doctor/bin.ts's
-// containment shape. bin.ts self-executes main() via a top-level await on import, so the closure
+// in depth "regardless of where relPath came from" (its own comment). bin.ts self-executes
+// main() via a top-level await on import, so the closure
 // is not independently importable; this forces a traversal-shaped relPath through the real
 // closure by mocking readR2Buckets, the one function bin.ts hands readFileUnderCwd to as a
 // callback, to call it with a hostile relPath instead of its own literal ones. The refusal

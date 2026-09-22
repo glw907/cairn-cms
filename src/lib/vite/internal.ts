@@ -411,7 +411,7 @@ export async function readAdapterFacts(cwd: string = process.cwd()): Promise<Ada
  *  normalization. `owner`, `repo`, and `from` are never accepted here: the file carries only what a
  *  Go process (which cannot evaluate a site's adapter) needs.
  */
-export function formatSiteFacts(facts: Pick<AdapterFacts, 'mediaBucketBinding' | 'roles' | 'aiPosture'>): string {
+export function formatSiteFacts(facts: AdapterFacts): string {
   const out: { version: 1; mediaBucketBinding?: string; roles?: RolesDeclaration; aiPosture?: AiPosture } = {
     version: 1,
   };

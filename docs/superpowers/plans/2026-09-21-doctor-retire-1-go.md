@@ -1704,7 +1704,10 @@ and a `code-simplifier` round, `aaa405d8` through `2fe66d1e`, whose own review `
   codes and the outside-a-cairn-site line in `cmd/cairn`, the symlink refusal in
   `fileread_test.go`, the golden payload validated against `cairn-doctor.schema.json` in
   `render/json_schema_test.go`, and the constant-set test failing on a renamed mirror id.
-- **The gate** ran light-lane `make -C tool check` at every commit, green each time.
+- **The gate** ran light-lane `make -C tool check` at every commit, green each time. On PR #80, CI's
+  `windows-latest` leg caught a real gap the local light gate could not: `os.Chmod` cannot deny an
+  owner's own read on Windows, so `TestReadUnderPermissionDeniedIsAnError` needed a Windows skip
+  beside its existing root skip, since this workstation is Linux and never runs that leg.
 - **CI on the branch point.** All seven workflows, `tool-conditions` included, ran green on the
   pre-task's merge SHA `d041d1bf`.
 

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -125,6 +126,9 @@ func TestReadUnderDanglingSymlinkReadsAsAbsent(t *testing.T) {
 func TestReadUnderPermissionDeniedIsAnError(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("running as root: permission bits are not enforced")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("windows: mode bits do not deny the owner's own read")
 	}
 	dir := resolvedTempDir(t)
 	path := filepath.Join(dir, "secret.txt")

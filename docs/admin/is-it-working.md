@@ -104,7 +104,7 @@ Match what your doctor printed to the section that explains it:
 - `Media bucket binding`—[Declare the media bucket binding](#declare-the-media-bucket-binding),
   `config.media-bucket-missing`
 - `Tidy API key`—[Configure the Tidy API key](#configure-the-tidy-api-key),
-  `config.tidy-key-missing` (no command checks this until the `cairn` CLI's 1.x; run one tidy instead)
+  `config.tidy-key-missing` (no command checks this until a later 1.x release of the `cairn` CLI; run one tidy instead)
 - `Workers Logs sink`—[Turn on observability](#turn-on-observability),
   `config.observability-off`
 - `Framework CSRF handoff`—[Wire cairn's CSRF guard](#wire-cairns-csrf-guard),
@@ -122,7 +122,7 @@ Match what your doctor printed to the section that explains it:
 - `Auth store (D1)`, `Editor role vocabulary`,
   `Editor email normalization`—[Provision the auth store](#provision-the-auth-store),
   `auth.store-unreachable`, `auth.unknown-role`,
-  `auth.email-not-normalized` (no command checks these until the `cairn` CLI's 1.x)
+  `auth.email-not-normalized` (no command checks these until a later 1.x release of the `cairn` CLI)
 - `Guard role wiring`—[Provision the auth store](#provision-the-auth-store),
   `auth.role-wiring-missing`
 - `GitHub App`—[Install the GitHub App](#install-the-github-app), `github.app-unreachable`
@@ -205,6 +205,10 @@ at all, and nobody besides you can sign in. If you set this domain up through
 redeploy with `npx wrangler deploy`. The domain has to match your site's configured sign-in
 sender. Both commands use the same Cloudflare sign-in `create-cairn-site` set up on this machine
 when it first deployed your site, so there's no separate `wrangler login` to do first.
+
+**`email.send-failed`, also a blocker.** The sending domain is onboarded, but a real send still
+failed, for a reason other than the missing onboarding above: a delivery error, a binding
+misconfiguration, or a custom sender failure. Logged as `auth.link.send_failed`.
 
 **Act, or ask a developer:** find the matching `auth.link.send_failed` record in your logs (see
 [Troubleshooting](./troubleshooting.md#reading-your-sites-logs)) and read its `code` and `error`
@@ -322,7 +326,7 @@ declares, then reinstall so your lockfile re-resolves; for example,
 
 ## Configure the Tidy API key
 
-**`config.tidy-key-missing`, a warning.** No command checks this until the `cairn` CLI's 1.x;
+**`config.tidy-key-missing`, a warning.** No command checks this until a later 1.x release of the `cairn` CLI;
 run one tidy suggestion in the admin instead and see whether it works. Your site config has
 `tidy.enabled: true`, but no `ANTHROPIC_API_KEY` is set anywhere reachable, or the key set is no
 longer valid. Tidy's suggestions are unavailable until this is fixed; nothing else on your site is
@@ -349,7 +353,7 @@ declares it.
 
 Five related conditions, all about the database that tracks who can sign in. No command checks
 `auth.store-unreachable`, `auth.store-unmigrated`, `auth.unknown-role`, or
-`auth.email-not-normalized` until the `cairn` CLI's 1.x; `auth.role-wiring-missing` is the
+`auth.email-not-normalized` until a later 1.x release of the `cairn` CLI; `auth.role-wiring-missing` is the
 exception, still covered by `cairn doctor` today.
 
 **`auth.store-unreachable`, a blocker.** Your `AUTH_DB` database is missing, doesn't carry the
@@ -423,7 +427,7 @@ without actually being broken, so treat it as a prompt to check, not a certainty
 
 **`admin.login-probe-failed`, a blocker.** No command checks this: the live login probe was
 retired along with the rest of the npm-era doctor's `--probe` flag, and no tool checks the
-workers.dev exposure gap it used to cover until the `cairn` CLI's 1.x. Do the manual check
+workers.dev exposure gap it used to cover until a later 1.x release of the `cairn` CLI. Do the manual check
 instead: an unauthenticated `GET` of `<worker-name>.<subdomain>.workers.dev/admin`, and the same
 against your preview alias. A 200 there means your deployed admin is reachable with no gate in
 front of it, whatever your primary hostname's own access setup looks like.

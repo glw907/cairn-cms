@@ -143,7 +143,7 @@ re-requesting is a cheap escape hatch and a hijacked editor session isn't.
 
 The engine writes the nonce hash to `magic_token.nonce_hash`, added by
 `migrations/0004_login_nonce.sql`. Apply that migration before deploying an engine that carries
-this behavior; no command checks the column until the `cairn` CLI's 1.x, so a missed migration
+this behavior; no command checks the column until a later 1.x release of the `cairn` CLI, so a missed migration
 fails the first sign-in attempt at runtime instead. The column is nullable, and a row without a
 binding still confirms, so a link already in an inbox survives the migration itself.
 
@@ -278,7 +278,7 @@ application.
 
 **No tool checks the workers.dev exposure gap yet.** The npm-era doctor's `--probe` flag, and the
 two live arms it ran, are retired along with the rest of that bin; no tool checks either arm until
-the `cairn` CLI's 1.x. Check both by hand: an unauthenticated `GET` of your primary hostname's
+a later 1.x release of the `cairn` CLI. Check both by hand: an unauthenticated `GET` of your primary hostname's
 `/admin/login`, confirming a redirect lands on your gate's own hostname rather than answering with
 cairn's page directly, and the same unauthenticated `GET` against
 `<worker-name>.<subdomain>.workers.dev/admin`, plus the same against your preview alias, watching

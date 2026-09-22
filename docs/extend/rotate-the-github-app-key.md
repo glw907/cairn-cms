@@ -84,7 +84,8 @@ own half, the encode-and-install step and the verification.
    empty log proves nothing unless `observability.enabled` is `true` in your site's
    `wrangler.jsonc`. A key that fails on the publish path logs `publish.failed` or `commit.failed`
    (Workers Logs, filtered by event), never `github.unreachable`, which fires only on a best-effort
-   read elsewhere (`cairn adopt`, `--help`, or a publish-advisories fetch), not here.
+   read elsewhere (the admin shell's pending-entries count, the admin help screen's pending list,
+   or the publish-success advisories read), not here.
 
 5. **Delete the old key**, once step 4 produces that commit. Back on the App's settings page,
    delete the previous private key. GitHub requires at least one key to exist, so this only works

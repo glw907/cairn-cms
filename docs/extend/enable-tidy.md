@@ -31,10 +31,12 @@ npx wrangler secret put ANTHROPIC_API_KEY
 
 `ANTHROPIC_API_KEY` is the one optional member of
 [`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings); every other binding
-in that type is required. No command checks it: run one tidy pass from `/admin/settings` instead.
-A bad key fails there with a clear reason, logged as `tidy.failed` with `reason: 'auth'`, so a
-revoked key closes the feature with a clear reason rather than a generic failure the next time an
-editor opens it.
+in that type is required. No command checks it. `/admin/settings` runs an active probe and tells a
+missing key apart from a rejected one, so the developer tier already shows which state you're in
+without a publish. Running Tidy on a draft in the editor proves the key end to end: a bad key
+fails there with a clear reason, logged as `tidy.failed` with `reason: 'auth'`, so a revoked key
+closes the feature with a clear reason rather than a generic failure the next time an editor opens
+it.
 
 ## Choose the model
 
@@ -124,7 +126,7 @@ guide](../editors/write-in-the-editor.md) for what an editor experiences running
 
 ## You know it worked when
 
-a tidy pass succeeds, `/admin/settings` shows the Editor tier of controls (rather
+A tidy pass succeeds, `/admin/settings` shows the Editor tier of controls (rather
 than the setup-needed state), and running Tidy on a draft returns a reviewable diff rather than a
 refusal. A refusal that names a specific reason (the key missing, the key rejected, the body too
 long) is doing its job; only a bare failure with no reason is worth investigating further.

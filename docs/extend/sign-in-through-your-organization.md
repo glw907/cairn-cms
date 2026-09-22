@@ -109,7 +109,7 @@ email.
   `preview_urls: true` explicitly, or has previews toggled on in the dashboard on an older
   Wrangler, still serves `/admin` on an `<alias>-<name>.<subdomain>.workers.dev` hostname no
   Access application covers; set `preview_urls: false` too, and confirm it, since this is
-  yours to close and no tool checks it until the `cairn` CLI's 1.x. Check it by hand instead: an
+  yours to close and no tool checks it until a later 1.x release of the `cairn` CLI. Check it by hand instead: an
   unauthenticated `GET` of `<name>.<subdomain>.workers.dev/admin`, and the same against your
   preview alias, watching for any response the Worker itself serves there, a 200, an unguarded
   redirect, or the branded refusal page identity mode itself serves, even when the primary

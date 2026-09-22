@@ -197,7 +197,7 @@ cannot: which sense of "the package" or "the tool" is meant.
 | The system | cairn, lowercase, in prose | At a sentence start it stays lowercase, and the sentence is rewritten to avoid that where possible (Google's capitalization guide: "If an official name begins with a lowercase letter, then put it in lowercase even at the start of a sentence. But it's better to revise the sentence to avoid putting a lowercase word at the start, if possible."). "Cairn" capitalized appears only inside a quoted UI string, because the admin's wordmark, "Powered by Cairn", and the `Sign in · Cairn` title are capitalized on screen, and a doc quoting the screen keeps the screen's case. |
 | The npm library a site imports from | the engine, in prose | Never the compound "cairn engine". The CLI's copy standard (`tool/docs/design/copy-standard.md`) fixes the same word for operators. |
 | The same, as an artifact | `@glw907/cairn-cms` where the reader types or reads it; the package for facts about the tarball, its files, install, and module resolution | "The package is ESM-only" is a package fact; "the engine renders the preview" is an engine fact. |
-| The Go CLI | the `cairn` CLI; a command always carries its verb: `cairn health`, `cairn doctor` | No bare "the CLI" (Google's word list: "Don't use CLI generically"; the docs name five CLIs). A bare `` `cairn` `` code span is an identifier prefix (the ambient `cairn` namespace, the `cairn/<concept>/<id>` holding branch), never the command. Google's code-in-text guidance: "use code font for the command and ordinary font for the name of the project or product." |
+| The Go CLI | the `cairn` CLI; a command always carries its verb: `cairn health`, `cairn adopt` | No bare "the CLI" (Google's word list: "Don't use CLI generically"; the docs name five CLIs). A bare `` `cairn` `` code span is an identifier prefix (the ambient `cairn` namespace, the `cairn/<concept>/<id>` holding branch), never the command. Google's code-in-text guidance: "use code font for the command and ordinary font for the name of the project or product." |
 | The scaffolder | `create-cairn-site` on first mention on a page, then the setup command | A code identifier is not a sentence subject twenty times on a non-developer page. |
 | Other npm bins | `cairn-audit`, `cairn-guidance`, `cairn-doctor`, always by name | |
 | The editing surface | the admin; `/admin` for the path | |
@@ -217,6 +217,11 @@ plain lowercase prose for the system.
 "Cairn" in prose. `Cairn.NamesRetired` (warning) flags "the tool," "the package," "the
 binary," and "the CLI" for a second look, since each is still the right word in the sense the
 table above carves out; a warning is a prompt to check the sense, not an automatic rewrite.
+The rule's escape for the quoted-UI exception is code font: a quoted screen string goes in a
+code span (`` `Powered by Cairn` ``), which Vale skips, and that is the sanctioned form, never
+a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose word "Cairn"
+inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
+already sits in a code span, so the rule never sees it as prose to begin with.
 Existing pages on the three frozen narrative arms (`docs/admin/`, `docs/editors/`,
 `docs/extend/`) are swept at the docs rebuild, never before; a pass touching a frozen page for
 an unrelated reason does not take on a naming sweep of the whole page. A new page, or a page

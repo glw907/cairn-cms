@@ -1,7 +1,10 @@
+# Vale gotcha: multiple `raw:` entries in an `existence` rule concatenate into one pattern
+# (`['\bfoo\b', '\bCairn\b']` becomes `\bfoo\b\bCairn\b` and matches nothing); a token list uses
+# `tokens:` instead, and `raw:` is reserved for a single pattern.
 extends: existence
 message: "Naming convention ('%s'): see 'Names' in docs/internal/docs-register.md. 'The Go tool' is retired; write the `cairn` CLI and name its verb ('cairn health'). Capital 'Cairn' in prose is retired too, except inside a quoted UI string (the wordmark, a rendered title); use lowercase cairn."
 level: error
 scope: text
 tokens:
-  - the Go tool
+  - "[Tt]he Go tool"
   - Cairn

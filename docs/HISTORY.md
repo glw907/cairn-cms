@@ -7,6 +7,63 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Retire cairn-doctor from the engine, retire-2a, seven tasks, 2026-09-22
+
+Branch `doctor-engine`, off `main` at `59b920f1` (tool 1.1.0's merge). Plan and post-mortem:
+`docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md`. Spec:
+`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`. Precondition:
+`tool/v1.1.0` tagged and released, since the Go `cairn` tool now owns everything
+`cairn-doctor` did.
+
+**What landed.** Task 1 added `check-tool-release`, a precondition script confirming the
+tag and release exist before any removal commit (`b9c7eeb4`). Task 2 repaired the facts
+container's pointers into `src/lib/doctor` at HEAD, before the deletion made them
+unresolvable (`11e56092`, `0274a055`). Task 3 copied the R2 bucket reader out of the doctor
+and into `media-seed`, its only surviving caller (`f5f97917`, `0efbec49`). Task 4 deleted
+`src/lib/doctor/` (sixteen files), its `cairn-doctor` bin entry, and the engine-side
+check-id vocabulary it fed, trimmed `AdapterFacts` to the three fields the facts writer
+still needs, and allowlisted `cairnManifest` for `check:self-use` (`8d042158`, `0d5aee25`,
+`eff0025c`, `0612c350`). Task 5 retired the scaffolder's `cairn-doctor` reminder in favor of
+the Go tool, fixed a line-count assertion the removal broke, and renamed a transcript
+fixture to `04-doctor-report.txt` (`28eeacc2`, `138cec5c`). Task 6 retired
+`docs/reference/doctor.md` and fixed drift the removal left across the published docs arms,
+through two review rounds (`4eeef9f2`, `3b7f50c6`). The close (Task 7) ran `code-simplifier`
+over Tasks 3 and 4's changed code (`67e98391`), a `web-auth-security-reviewer` read
+(verdict `behavior-unchanged`, no halt), and three small fixes: two stale comments still
+naming the deleted `doctor/bin.ts`'s `readFileUnderCwd`, and a collapse of
+`formatSiteFacts`'s parameter type from a `Pick<AdapterFacts, ...>` naming every field to
+plain `AdapterFacts` (`807cfb30`).
+
+**What the gates caught.** `check:facts` resolves its pointers against files as they exist
+at HEAD, so a fact bullet citing `src/lib/doctor/*` becomes unresolvable the moment the
+removal commit lands; Task 2 had to repair the container's pointers into the doomed source
+**before** Task 4's deletion, not after, or the container would carry permanently broken
+citations with no later commit able to fix them. `check-symbols.mjs`'s directory walk is
+the gate that crashes first on a deletion this size: it throws on a missing directory
+rather than reporting a clean diff, so it is the fastest signal that a removal task is
+incomplete. Task 5's removal-predicate grep surfaced two carve-outs the plan's single
+carve-out (the transcript fixtures directory) did not cover: the permanent rulings-ledger
+id `audit-cli-skill-admin-screens-check-and-cairn-doctor-fix`
+(`scripts/checks/check-rulings-format.mjs`), whose renaming would break id stability, and
+Task 6's own retargeted filenames, `cli-cairn-doctor.md` and `cairn-doctor.schema.json`.
+Task 6's first review round found six false statements in the doctor-drift docs
+replacements that no automated checker catches; the second round confirmed all six fixed
+against source.
+
+**What a later pass would be wrong to rediscover.** The `02-doctor-bare.txt` transcript's
+citation lives in a README bullet, not on a published docs page, so a future doctor-related
+docs sweep will not find it by grepping the docs arms. The `01-create-cairn-site.txt` and
+`01d-resume.txt` transcript fixtures are unreproducible pty captures from a torn-down site;
+they cannot be regenerated and instead took a staleness note recording that they predate
+the retirement and still print the old `npx cairn-doctor` reminder. The pass-execute
+runner's `gate-tier.mjs` computed a reduced gate from the diff and silently overrode Task
+6's explicit full gate string on both review rounds; the reviewer ran the omitted docs
+checks itself by hand both times. The runner should honor an explicit per-task gate string;
+this defect was filed to the workstation, not this repo. This was also the first pass
+reviewed by `claude-opus-5-5` after the mid-session model repin; its Task 5 verdict was the
+first 5.5 review on this repo, and its Task 6 first read is the review round that found the
+six false statements above.
+
 ## Draft docs pass A, the tool's contract pages, eleven tasks, 2026-09-22
 
 Branch `draft-docs-a`, off `main` at `5e286a01` (retire-1's merge). Plan and post-mortem:

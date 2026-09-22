@@ -95,6 +95,11 @@ func skipResult(id, detail string) Result {
 	return Result{ID: id, Status: StatusSkip, Detail: detail}
 }
 
+// infoResult builds a StatusInfo Result: a passing check carrying a note, never a failure.
+func infoResult(id, detail string) Result {
+	return Result{ID: id, Status: StatusInfo, Detail: detail}
+}
+
 // uncheckedResult builds a StatusUnchecked Result: the check's precondition was not observable,
 // a containment refusal or an absent required input among the causes.
 func uncheckedResult(id, detail string) Result {

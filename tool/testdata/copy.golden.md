@@ -293,6 +293,7 @@ Name the check that entry holds
 - %s resolves to %s, below the engine floor %s
 - %s resolves to %s, outside the engine peer range %s
 - %s satisfy the engine peer ranges
+- %s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; %s (heuristic text read)
 - %s: no entry for it in pnpm-lock.yaml
 - %s: no entry for it in yarn.lock
 - %s: no node_modules/%s entry in package-lock.json
@@ -305,8 +306,16 @@ Name the check that entry holds
 - PUBLIC_ORIGIN is not a valid URL, got %s
 - PUBLIC_ORIGIN is not configured
 - PUBLIC_ORIGIN must be https in production, got %s
+- checkOrigin is off but no cairn guard found in src/hooks.server.ts; the site may have no CSRF protection
+- checkOrigin: false found (svelte.config.js or vite.config.ts) and the hooks file wires the cairn guard (heuristic text read)
+- docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy
 - missing %s
+- neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (%s); see %s
+- neither svelte.config.js nor vite.config.ts was found, so the CSRF handoff could not be checked
+- no checkOrigin: false found in svelte.config.js or vite.config.ts (heuristic text read)
+- no site-wide Referrer-Policy: no-referrer found (%s, heuristic text read)
 - no site.config.yaml found (looked in %s)
+- no wired /admin mount detected; mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin({ runtime }).shellLoad, and the /admin/[...path] catch-all rendering CairnAdmin
 - no wrangler config found and PUBLIC_ORIGIN is not in the environment
 - no wrangler.jsonc or wrangler.toml found
 - node_modules/@glw907/cairn-cms/package.json did not parse
@@ -318,3 +327,4 @@ Name the check that entry holds
 - package-lock.json did not parse
 - parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
 - pnpm-lock.yaml did not parse
+- serve strict-origin-when-cross-origin (or same-origin) as the site default; no-referrer is safe only on a route protected by a double-submit CSRF token (the way /admin is), and a route guarded instead by the origin compare needs same-origin in its place

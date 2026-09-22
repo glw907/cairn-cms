@@ -54,5 +54,15 @@ func Catalogue() []string {
 		tmplNpmMissingEntry,
 		tmplPnpmMissingEntry,
 		tmplYarnMissingEntry,
+		uncheckedCsrfDetail,
+		failCsrfNoDisable,
+		failCsrfNoGuard,
+		passCsrfWired,
+		noReferrerRemedy,
+		noReferrerDocsAnchor,
+		tmplNoReferrerSkip,
+		tmplNoReferrerFail,
+		tmplNoReferrerPass,
+		adminMountGuidance,
 	}
 }

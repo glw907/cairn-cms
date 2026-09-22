@@ -287,9 +287,9 @@ async function probeAnthropicKey(fetchImpl: typeof fetch, apiKey: string): Promi
 }
 
 // The tidy secret check. It carries its own condition id (config.tidy-key-missing), rather than
-// borrowing config.bindings-missing the way configMediaBucket does: a shared id meant one check's
-// failure could print another's remediation (a tidy-key failure printing the missing-EMAIL/AUTH_DB
-// fix), so this check gets its own readiness-checklist entry instead. Presence alone stopped being
+// borrowing config.bindings-missing: a shared id meant one check's failure could print another's
+// remediation (a tidy-key failure printing the missing-EMAIL/AUTH_DB fix), so this check gets its
+// own readiness-checklist entry instead. Presence alone stopped being
 // the bar (save-500-honest-errors): when a literal value is readable locally (the common
 // `.dev.vars` case, or an unusual literal wrangler var), the doctor actively verifies it against
 // Anthropic and reports valid/invalid distinctly, the same live-network posture as the GitHub App

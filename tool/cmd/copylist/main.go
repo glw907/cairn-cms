@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glw907/cairn-cms/tool/internal/doctor"
 	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
@@ -62,6 +63,7 @@ func catalogues() []packageCatalogue {
 		{name: "health", entries: sortedUnique(append(health.Catalogue(), health.FixLines()...))},
 		{name: "spine", entries: sortedUnique(spine.Catalogue())},
 		{name: "cmd/cairn", entries: sortedUnique(cairn)},
+		{name: "doctor", entries: sortedUnique(doctor.Catalogue())},
 	}
 }
 

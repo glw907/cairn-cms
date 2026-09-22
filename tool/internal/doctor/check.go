@@ -37,6 +37,8 @@ func Catalogue() []string {
 		tmplPublicOriginNotHTTPS,
 		tmplPublicOriginPass,
 		detailPublicOriginSkip,
+		sourceWranglerVars,
+		sourceEnvironment,
 		detailSiteConfigPass,
 		tmplSiteConfigNotFound,
 		detailEnginePackageJSONNotFound,

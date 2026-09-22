@@ -22,7 +22,8 @@ list `tool/testdata/flags.json` with its drift test and `make -C tool flags`, wh
 `check-symbols.mjs` unions into its known-token set (`2049a0be`); the flag walk promoted
 `github.com/spf13/pflag` to a direct require, taking `otherDirectRequires` from 5 to 6. Task 4
 mined the three originals into manifests, dispositions, and 77 sourced bullets in
-`docs/internal/facts/reference.md` (`70650d13`). Tasks 5, 6, and 6b drafted
+`docs/internal/facts/reference.md` (`70650d13`). Tasks 5, 6, and 6b drafted the three pages'
+round 2 in `28fa72f2`, then accepted the third-round fixes to
 `docs/reference/cli-cairn-exit-codes.md` (`29a03eff`), `docs/reference/cli-cairn-json-output.md`
 (`3bfaac37`), and `docs/reference/cli-cairn-doctor.md` (`3453668f`). Task 7 folded the tool's
 log-event content into `docs/reference/log-events.md` (`124d52c5`, `b544907a`). Task 8 did the
@@ -51,10 +52,11 @@ reference and the `snapshot.go` `Dir` comment. Task 10's whole-branch read accep
 - **Drift tests dictate these pages' structure, and a rewrite that ignores them fails the Go
   gate.** `usage_test.go:507-527` parses the requests-per-check table with the row regex
   `` | `<check-id>` | <count> | `` over nine rows and checks the total against the budget, and
-  `:568-578` pins the literal `min(480 seconds x sites, 1920 seconds)`. `json_schema_test.go:502-564`
-  requires every golden key in backticks, the headings `## What freezes at 1.0` then
-  `## What does not freeze`, and every id, verdict word, state word, and reason code in the right
-  one of the two. `doctor/docs_test.go` names all eleven check ids and the three literals
+  `:569-577` pins the literal `min(480 seconds x sites, 1920 seconds)`.
+  `TestDocNamesEveryFieldTheGoldensCarry` and `TestDocCarriesBothFreezeLists`
+  (`json_schema_test.go:519-602`) require every golden key in backticks, the headings
+  `## What freezes at 1.0` then `## What does not freeze`, and every id, verdict word, state word,
+  and reason code in the right one of the two. `doctor/docs_test.go` names all eleven check ids and the three literals
   `usage error`, `UNCHECKED`, and `not a cairn-cms site`. `contract_pages_test.go` derives the
   codes and wire words from `spine` rather than repeating them, and
   `TestThePagesDescribeTheDocumentedRelease` ties each page's version line to

@@ -15,11 +15,6 @@ type Check struct {
 	Run func(s Snapshot) Result
 }
 
-// Checks is the complete doctor check set, in report order. It is a literal slice, never
-// populated by init(), the same shape health.All uses (internal/health/health.go:73-83). It is
-// empty until later work registers a check of its own.
-var Checks = []Check{}
-
 // Catalogue returns every operator-facing string this package's own checks contribute.
 // cmd/copylist lists it alongside health, spine, and cmd/cairn so a new string cannot land
 // invisibly. Each check_*.go file owns the strings its own checks print; this function only

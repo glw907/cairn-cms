@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schema/cairn-doctor.schema.json",
+  "title": "cairn doctor payload",
+  "description": "One directory preflight, as written by `cairn doctor --json`. It carries no site, domain, tier, acknowledged, or hold: the run reads a directory on disk, so it has no registry record, no credential, and no holds.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "verdict", "exitCode", "dir", "checkedAt", "checks"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "doctor" },
+    "verdict": { "type": "string", "enum": ["OK", "WARNING", "CRITICAL", "UNKNOWN"] },
+    "exitCode": { "type": "integer", "enum": [0, 1, 2, 3] },
+    "dir": { "type": "string" },
+    "checkedAt": { "type": "string" },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "description": "One settled doctor check. A skip or an unknown always carries a reason: those two states say the check did not settle on a verdict, and the reason is the only thing that says why.",
+      "required": ["checkId", "state"],
+      "if": { "properties": { "state": { "enum": ["skip", "unknown"] } }, "required": ["state"] },
+      "then": { "required": ["reason"] },
+      "additionalProperties": false,
+      "properties": {
+        "checkId": { "type": "string" },
+        "state": { "type": "string", "enum": ["pass", "fail", "held", "skip", "unknown"] },
+        "reason": { "type": "string" },
+        "condition": { "type": "string" },
+        "detail": { "type": "string" },
+        "note": { "type": "string" },
+        "fix": { "$ref": "#/$defs/fix" }
+      }
+    },
+    "fix": {
+      "type": "object",
+      "required": ["summary"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    }
+  }
+}

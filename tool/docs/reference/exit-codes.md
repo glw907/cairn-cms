@@ -118,6 +118,17 @@ failure, and no scheduled routine invokes either.
 prefer flags for every input. POSIX, clig.dev, `gh`, and `kubectl` all accept a primary operand,
 and an operator's muscle memory is the stronger signal here.
 
+## `cairn doctor`
+
+`cairn doctor` reads a directory rather than a live site, so it reads no credential and no
+registry record, and it makes at most one request, a `GET` of the declared origin's
+`/robots.txt`. It has no row in the requests-per-check table below for that reason.
+
+Its exit 3 covers three cases rather than one: a usage error, a run whose only non-passing
+results are checks that could not observe their input, and a directory that is not a cairn-cms
+site. Test for a nonzero exit rather than switching on 3. The command's own page is
+[`cli-cairn-doctor.md`](cli-cairn-doctor.md).
+
 ## Timeouts, and sizing a scheduler's cap
 
 Three bounds nest.

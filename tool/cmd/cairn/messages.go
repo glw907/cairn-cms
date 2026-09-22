@@ -239,10 +239,10 @@ against your own environment or one registered site with cairn auth check
 <site>; --json writes the cairn-auth-check.schema.json payload.
 
 cairn doctor [<dir>] checks a site's own checked-in configuration: no credential
-and no adopted site needed. It exits 3 for a usage error, a run whose only
-non-passing results are unknown, or a directory that is not a cairn site. Run
-cairn health after deploying for the https and email checks that need a live,
-adopted site.
+and no adopted site needed; --json writes the cairn-doctor.schema.json payload.
+It exits 3 for a usage error, a run whose only non-passing results are unknown,
+or a directory that is not a cairn site. Run cairn health after deploying for
+the https and email checks that need a live, adopted site.
 
 To check every site cairn knows, run: cairn health --json`
 )
@@ -303,6 +303,9 @@ const (
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
 		"Run `cairn health` after deploying to reach the checks that need a live site."
 	exampleDoctor = "cairn doctor ./my-site"
+	// flagDoctorJSONHelp is cairn doctor's own --json flag help, the same shape every other
+	// --json in the tree carries.
+	flagDoctorJSONHelp = "print the report as JSON"
 )
 
 // tmplDoctorTooManyArgs is cairn doctor's refusal of more than one positional directory

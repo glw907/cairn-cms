@@ -232,7 +232,7 @@ var exportedSurface = []string{
 	"MarshalAdoptList", "MarshalAuthCheck", "MarshalLogs", "MarshalSite", "MarshalSiteLine", "MarshalSitesList",
 	"MarshalSummary",
 	"AdoptCandidate", "AdoptListSchemaVersion", "AuthCheckPermission", "AuthCheckSchemaVersion",
-	"LogsSchemaVersion", "SiteJSON", "SiteListEntry",
+	"DoctorSchemaVersion", "LogsSchemaVersion", "SiteJSON", "SiteListEntry",
 	"SiteSchemaVersion", "SitesListSchemaVersion", "SummaryJSON", "SummarySchemaVersion",
 	"NewTheme",
 	"Profile", "ProfileANSI16", "ProfileANSI256", "ProfileNoColor", "ProfileTrueColor",

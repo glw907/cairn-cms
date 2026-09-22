@@ -109,7 +109,10 @@ If any fails, stop with one combined report.
 | `tool/docs/reference/` | 8 | four pages deleted; one `README.md` stub left |
 | `tool/internal/render/layout.go` | 8 | the anchor prefix renamed; a real docs base added |
 | `tool/cmd/cairn/messages.go`, `help_agents.go`, `root.go`, `health_sweep.go` | 8 | help text and doc comments repointed |
-| `tool/internal/render/json.go`, `tool/internal/spine/condition_test.go` | 8 | doc comments repointed |
+| `tool/internal/render/json.go`, `tool/internal/spine/conditions_test.go` | 8 | doc comments repointed |
+| `tool/internal/doctor/docs_test.go` | 8 | `referenceDir` at `:11` repointed; `TestBothPublishedPagesNameEveryCheckID` and `TestTheCommandPageNamesTheThreeWaysToExitThree` read `json-output.md` and `cli-cairn-doctor.md` under `docs/reference/` |
+| `tool/internal/doctor/json.go`, `tool/internal/doctor/report.go` | 8 | doc comments at `json.go:16` and `report.go:16-17` repointed |
+| `tool/cmd/cairn/root_test.go` | 8 | `readToolFile` at `:153-160` resolved through `providers.RepoRoot()` instead of a `../..` climb |
 | `tool/cmd/cairn/usage_test.go`, `help_agents_test.go`, `messages_test.go` | 8 | paths moved; the budget-docs test split |
 | a new Go test in `tool/cmd/cairn` | 8 | guards the exit-code table and the version line |
 | `tool/testdata/copy.golden.md`, the help goldens | 8 | regenerated |
@@ -314,9 +317,16 @@ After tasks 5, 6, 6b, and 7 are accepted. One implementer, `model: opus`. Both g
 - in `layout.go`, the constant that holds `https://cairn.pub/docs/admin/is-it-working#` is named
   for what it is, and a separate base, `https://cairn.pub/docs/`, serves every other docs link;
   the three fix-line anchors and their test are unchanged in behaviour;
-- the `--json` long help and `cairn help agents` name the cairn.pub pages and the repository
-  path `docs/reference/`, so the printed line is never wholly wrong while cairn.pub lacks the
-  route;
+- the `--json` long help and `cairn help agents` cite the pages by their cairn.pub URLs
+  (`https://cairn.pub/docs/reference/cli-cairn-exit-codes`,
+  `https://cairn.pub/docs/reference/cli-cairn-json-output`,
+  `https://cairn.pub/docs/reference/cli-cairn-doctor`) and the schemas by their `$id`, never a
+  repository path: `TestHelpAgentsCitesNoRepositoryDirectory`
+  (`tool/cmd/cairn/help_agents_test.go:107-116`) forbids a repository directory in `cairn help
+  agents`, and `messages.go:224` already follows that ruling;
+- `tool/internal/doctor/docs_test.go`'s `referenceDir` is repointed to the new location, and
+  `root_test.go`'s `readToolFile` resolves through `providers.RepoRoot()` per the constraint
+  above, never a relative climb;
 - every comment, test, and golden the file map lists names the new paths; the budget-docs test
   in `messages_test.go` is split so its `tripwire.md` half is unchanged; `make -C tool copy-list`
   and the help goldens are regenerated, and each golden's diff is only repointed lines;
@@ -332,6 +342,10 @@ After tasks 5, 6, 6b, and 7 are accepted. One implementer, `model: opus`. Both g
 files under `tool/docs/design/`, the new stub, and `tool/CHANGELOG.md`'s released entries;
 `tool/docs/tripwire.md` differs from `main` in exactly two lines; changing a word in the
 exit-codes table fails the new test; `diff-reviewer` accepts against this list.
+
+**Watch:** `TestReadmeLinksCarryDescriptiveText` (`messages_test.go:~388`) inspects only link
+targets prefixed `docs/`, so the repointed `tool/README.md:114` link must keep that prefix, or
+the test must be widened in this task.
 
 ### Task 9: The scripter test
 
@@ -393,3 +407,16 @@ merge.
 ## Ledger
 
 Written by the conductor at each segment boundary: tasks done, decisions taken, spend, next task.
+
+### 2026-09-22, Task 1
+
+Preconditions: 1 PASS (STATUS:29-34 five-step order; no unblock sentence on origin/main). 2 PASS (doctor.go present; tags tool/v1.0.0, tool/v1.0.1 only; src/lib/doctor intact; nobody holds check-symbols.mjs; check:symbols not run, npm forbidden in the pre-flight; CI green on f4d562ea, the merge SHA's runs pending). 3 PASS (facts/admin.md:18,19,78,80,83,130,131,132). 4 PASS (7 schemas + 4 pages, exact). 5 PASS (no executor touches tool/; 23 worktrees, zero dirty lines under tool/). 6 PASS (no quiet-main request).
+Readers of tool/docs/reference/: tests docs_test.go:11 (referenceDir), json_schema_test.go:27 (schemaDir), :30 (docPath), usage_test.go:512,569, messages_test.go:375, root_test.go:153-160 (readToolFile, ../..), help_agents_test.go:113 (negative); prose tool/README.md:114, tool/docs/tripwire.md:10,353; doc comments root.go:29, health_sweep.go:25, messages.go:19, help_agents.go:10, render/json.go:19, doctor/json.go:16, doctor/report.go:16-17, spine/conditions_test.go:90; URL constant render/layout.go:20 docsBase (used :220). Out of scope by plan: tool/docs/design/reviews/agent-usability.md:146-147, release-candidate-notes.md:68, tool/CHANGELOG.md:11,12,16,72,76. .github/workflows: no file names tool/docs or docs/reference; tool.yml:18,28 name only docs/admin/is-it-working.md.
+Drift-test assertions: usage_test.go:512-527 row regex ^\| `([a-z-]+)` \| (\d+) \| over "Requests per check" (nine rows: creds 2, serving 6, delegation 2, https-forced 1, email 9, deploy 4, publish-path 2, engine 4, errors 1 = 31); :568-578 literal `min(480 seconds x sites, 1920 seconds)`. json_schema_test.go:502-564 every golden key in backticks (skipping children of fields/observed); headings `## What freezes at 1.0` then `## What does not freeze`; frozen names every health.All id, OK/WARNING/CRITICAL/UNKNOWN, `pass` `fail` `held` `skip` `unknown`; not-frozen names durationMs, glyph; every spine.ReasonCodes() in backticks (9 fixed + 13 reason.park.* + 10 reason.api.* = 32). doctor/docs_test.go:32 frozen list AND cli-cairn-doctor.md name all eleven ids; :61 cli-cairn-doctor.md contains `usage error`, `UNCHECKED`, `not a cairn-cms site`.
+Retirement's additions: cairn-doctor.schema.json ($id https://cairn.pub/schema/cairn-doctor.schema.json); payload kind doctor; eleven ids under the scoped freeze bullet; no new reason code, state word, or flag beyond the command; amended freeze sentence; exit-codes.md:121-130 `## cairn doctor`.
+Goldens (tool/internal/render/testdata/json/, 14): adopt-list, doctor, health-all-unknown, health-degraded, health-empty, health-healthy, health-hostile, health-offline, health-one-sick, health-single, health-twelve-site, health-warning-only, logs, sites-list. No golden for cairn-auth-check.
+Substitution values: sites 907.life, ecxc.ski, aksailingclub.org, xcathletes.org, cairn.pub, topo.907.life; repo glw907/ecxc-ski (adopt-list, health-twelve-site, one-sick, warning-only, single); worker ecxc-ski (adopt-list, sites-list); account id 120c269ad6d3dfbe6d63a0bb53758ca0 (adopt-list). Already safe: *.example.org, /srv/example-site, https://example.com. cairn.pub in doctor.json is a fix URL, not a site name.
+
+### Amendment 1
+
+The pre-flight found seven disagreements with this plan and stopped the pass. The conductor applied them under Geoff's overnight grant, flagged for his read: (1) the file map row naming `tool/internal/spine/condition_test.go` corrected to `tool/internal/spine/conditions_test.go`; (2) added a file-map row for `tool/internal/doctor/docs_test.go` (`referenceDir` at `:11`, and its two tests that read the moved pages); (3) added a row for `tool/internal/doctor/json.go` and `tool/internal/doctor/report.go` (doc comments at `json.go:16` and `report.go:16-17`); (4) added a row for `tool/cmd/cairn/root_test.go` (`readToolFile` resolved through `providers.RepoRoot()`, not a `../..` climb); (5) Task 8's outcome corrected from "the repository path `docs/reference/`" to citing cairn.pub URLs and schema `$id`s only, since `TestHelpAgentsCitesNoRepositoryDirectory` (`help_agents_test.go:107-116`) forbids a repository directory and `messages.go:224` already follows that ruling; (6) Task 8's outcome gained the `docs_test.go` and `root_test.go` repoint items named above; (7) Task 8 gained a one-line watch that `TestReadmeLinksCarryDescriptiveText` (`messages_test.go:~388`) checks only `docs/`-prefixed link targets, so `tool/README.md:114` must keep that prefix or the test must be widened.

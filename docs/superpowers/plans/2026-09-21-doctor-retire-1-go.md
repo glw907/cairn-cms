@@ -47,7 +47,8 @@ marked CONTRADICTS.
    could not take without a major-version event. **The plan is written against exit 3**, and the
    collision the command's docs page states is the real one: exit 3 covers a usage error, a run
    carrying an `unknown` check with no failure, and a directory that is not a cairn site. There is
-   no collision with a WARNING failure.
+   no collision with a WARNING failure. The spec's ruling 5 now carries this as a **proposed
+   amendment awaiting Geoff**; see "Spec amendments this plan proposes" below.
 2. **CONTRADICTS the spec's status mapping (`:168-170`) as it reaches the exit code: neither
    `spine.StateWord` nor `spine.CheckVerdict` can express the doctor's `skip` or `info`.**
    `spine.StateWord` (`internal/spine/exit.go:213-228`) returns `"skip"` only when the reason is
@@ -57,7 +58,13 @@ marked CONTRADICTS.
    that "today's exit-0 runs stay exit 0". **The plan's resolution is in "Decisions this plan
    makes", decision 2**: the `doctor` package owns its own five status words and converts to
    `spine.CheckVerdict` with `skip` and `info` as `State: OK`, which reproduces the spec's table
-   and the doctor's own `exitCodeFor` (`src/lib/doctor/run.ts:43-47`) exactly.
+   (`:168-170`). It does **not** reproduce the doctor's own `exitCodeFor`
+   (`src/lib/doctor/run.ts:43-47`), which returns `0 | 1 | 3` and gives **every** failure exit 1
+   regardless of severity. The Go table maps a blocker failure to 2, which spec ruling 5's
+   four-code convention requires, so a site whose only failure is a blocker exits 2 under
+   `cairn doctor` and 1 under `cairn-doctor`. That difference is deliberate, it is the one
+   pre-declared expected disagreement in Task 10's agreement study, and Task 9's docs page states
+   it.
 3. **CONTRADICTS the spec's containment citation (`:133-135`): the cited block is the call site,
    not the containment.** `src/lib/media-seed/bin.ts:102-120` is the `readFileUnderCwd` closure and
    `:105-113` are its two checks, but both checks call helpers defined earlier in the same file:
@@ -180,6 +187,25 @@ Verified, and not contradictions:
 
 ---
 
+## Spec amendments this plan proposes
+
+Three edits to `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` ship with this
+plan. Two are already applied, since the Choreography is Geoff's own ruling and the spec's prose
+contradicted it. One is marked in the spec as awaiting Geoff and is the only item this plan needs
+a decision on before Task 1.
+
+| Spec line | The edit | Status |
+| --- | --- | --- |
+| Ruling 5 (`:50-52`) | A usage error exits **3**, not 1, so the collision is with UNKNOWN rather than WARNING. Pinned by `cmd/cairn/usage_test.go:136` and frozen at 1.0 by `json-output.md:285`; exit 1 could not be taken without a major-version event. The command's docs page states that exit 3 covers a usage error, an all-`unknown` run, and a non-site directory, so a caller tests for a nonzero exit rather than switching on 3. | **Proposed, awaiting Geoff.** The spec carries it as a marked amendment; this plan's decision 1 and Tasks 8 and 9 are written against exit 3 either way, since the tool's behaviour is frozen. |
+| Brief (`:12-13`) | retire-1 ends at an **untagged merge**, not at the `tool/v1.1.0` release. | Applied. It contradicted Choreography `:352-353`, which is already Geoff's ruling. |
+| The retire-1 heading (`:113`) | Same correction in the section heading. | Applied, same reason. |
+
+A fourth item, smaller, is named where it bites rather than in the spec: the doctor `skip` and
+`info` statuses have no wire word of their own in the frozen five, and decision 8 below settles
+how the JSON payload writes them without adding a state word or a reason code.
+
+---
+
 ## Verified facts, recorded so no task re-derives them
 
 - **The four regex heuristics are four checks, not four functions.** The tool-sizing record's
@@ -227,11 +253,11 @@ Verified, and not contradictions:
 | **Goal** | Land `cairn doctor [<dir>]` in the Go `cairn` CLI on `main`, untagged: a record-less, credential-less directory preflight carrying the eleven checks the spec scopes, its own JSON payload kind and published schema, the conditions text embed, and the corpus lifted from the TypeScript doctor's unit tests before retire-2 deletes them. |
 | **Spec** | `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` ("retire-1", `:113-217`; "Choreography"; "Out of scope"; the retire-1 bullets of "Acceptance"). |
 | **Place in the order** | Step 3 of the spec's five-step Choreography: B2's `tool/v1.0.0` merges and releases, the engine pre-task merges, **this pass** merges untagged, draft docs pass A merges, one `tool/v1.1.0` is tagged and released from a commit carrying both, retire-2a then retire-2b land last. |
-| **Pass precondition** | See "The pass precondition" below. Both halves must hold before Task 1 is dispatched. |
+| **Pass precondition** | See "The pass precondition" below. All three must hold before Task 1 is dispatched. |
 | **Branch** | `doctor-go`, off `origin/main` **after both `tool/v1.0.0` and the pre-task have merged**. |
 | **Worktree** | `.claude/worktrees/doctor-go`, created by the conductor before Task 1. No task touches the main checkout, the `doctor-retirement` worktree, the `doctor-pretask` worktree, `cairn-tool-b2`, or any other worktree. |
 | **Token ceiling** | **2.4M.** The 80 percent decision point is **1.92M.** Sized below. |
-| **Checkpoint interval** | Four tasks: checkpoints at Task 4's accept and Task 8's accept. One STATUS write at each. |
+| **Checkpoint interval** | Checkpoints at **Task 3's accept and Task 7's accept**, which are the first two segment boundaries. One STATUS write at each. A checkpoint lands only at a segment boundary, since that is the only place a decision can land. |
 | **Execution mode** | **Workflow mode.** `~/.claude/workflows/pass-execute.js` for Tasks 1 through 9, args block below. Task 10 (the agreement study) and Task 11 (close) run as the conductor's own dispatches, since neither is an implement-review-gate chain. |
 | **Segments** | Three: Tasks 1 to 3, Tasks 4 to 7, Tasks 8 to 11. Every task boundary is a commit the light gate proved green, so any of them is a safe stop. |
 | **Merge** | By PR, **without a tool tag**. Before the PR, `git merge origin/main` into `doctor-go` and re-gate. No tag task and no release task exists in this plan. |
@@ -247,13 +273,20 @@ pass A's 3.5M for twelve tasks including prose chains, is the consistent number.
 
 ### The pass precondition
 
-Both of these are the conductor's check, before the worktree is created and before Task 1 is
-dispatched. Neither is re-run by an implementer.
+All three of these are the conductor's check, before the worktree is created and before Task 1 is
+dispatched. None is re-run by an implementer.
 
 1. `git ls-remote --tags origin 'tool/v1.0.0'` prints a **non-empty** result. B2's tag is what
    makes `tool/v1.1.0` the next number and what `main` must already carry.
 2. `git ls-tree origin/main tool/internal/spine/conditions.json` prints a tree entry. That is the
    pre-task's conditions mirror, and every task in Segment 1 reads it.
+3. **`doctor-retire-1-plan` is merged to `main`**, asserted with
+   `git ls-tree origin/main docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md
+   docs/internal/record/2026-09-21-doctor-retire-1-pass-a-inventory.md` printing **two** tree
+   entries. Neither file is on `main` as this plan is written; both live on the
+   `doctor-retire-1-plan` branch, and the PR that lands them merges after Geoff's approval and
+   before `doctor-go` branches. Without it Task 11 cannot append its post-mortem to this plan
+   file, and Task 11's handoff has no inventory record on `main` to refresh with the merge SHA.
 
 Three further dependencies this pass inherits from the pre-task's merge, named so a failure is
 diagnosed rather than rediscovered. Each is checked in the same sweep:
@@ -266,7 +299,7 @@ diagnosed rather than rediscovered. Each is checked in the same sweep:
   `buildStart` (pre-task Task 3), and `examples/showcase/src/content/.cairn/site-facts.json` is
   committed. Task 7 reads the file and Task 10 compares against the showcase's.
 
-A failure on any of the five is a halt: write STATUS, name the check that failed, and stop.
+A failure on any of the six is a halt: write STATUS, name the check that failed, and stop.
 
 ### The gate
 
@@ -321,7 +354,7 @@ Three points about that gate every implementer needs:
 Stop, write STATUS, and ask one combined question on any of these. Everything else runs to
 completion with no check-in.
 
-- Either half of the pass precondition failing, or any of its three named dependencies absent.
+- Any of the three pass preconditions failing, or any of its three named dependencies absent.
 - A second `fix` verdict on any task.
 - A red gate that a single fix round does not clear.
 - A `diff-reviewer` finding that a task changed a published check id, a condition id, a
@@ -342,8 +375,10 @@ completion with no check-in.
    error, a run whose only non-passing results are `unknown`, and a directory that is not a cairn
    site, and that a caller therefore tests for a nonzero exit rather than switching on 3 alone.
 2. **The `doctor` package owns its own five status words, and converts to `spine.CheckVerdict` for
-   the exit code alone.** Finding 2. The conversion table, which reproduces the spec's `:168-170`
-   and `run.ts:43-47` exactly:
+   the exit code alone.** Finding 2. The conversion table, which reproduces the spec's `:168-170`.
+   It does **not** reproduce `run.ts:43-47`: `exitCodeFor` returns `0 | 1 | 3` and gives every
+   failure exit 1, while the table below gives a blocker 2, which spec ruling 5's four-code
+   convention requires. Task 10 pre-declares that as an expected disagreement, never a defect.
 
    | doctor status | printed word | `spine.CheckVerdict` | contributes |
    | --- | --- | --- | --- |
@@ -392,13 +427,52 @@ completion with no check-in.
    names where the builder landed so pass A can reconcile the two.
 7. **The ledger split follows the spec, not the brief.** The spec puts the ledger under retire-2
    (`:314-324`), and writing the retirement-wide entries twice would be worse than writing them
-   late. **retire-1's close writes exactly three entries**, each about something this pass itself
+   late. **retire-1's close writes exactly five entries**, each about something this pass itself
    executed and each needed by a reader of `main` before retire-2 lands: the `config.site-config`
    narrowing (spec `:149-155`), the plain text report and the narrowed TTY reading (decision 3),
-   and the drift-test replacement (Task 2). The retirement itself, the dropped and deferred checks,
+   the drift-test replacement (Task 2), the containment carry-forward of the 2026-09-02 ledger
+   amendment (spec `:136`), and the payload's wire mapping for `info` and `skip` (decision 8).
+   The retirement itself, the dropped and deferred checks,
    and `site-facts.json` as new engine surface stay with retire-2b. `check:rulings-format` joins
    the close's gate.
-8. **Eleven tasks, not the spec's "about nine".** The spec's own retire-1 acceptance (`:392-398`)
+8. **The JSON payload writes the frozen five state words, and `info` is not one of them.** The
+   doctor's own vocabulary is five words (decision 2), but `json-output.md:290` freezes the wire
+   `state` set at `pass`, `fail`, `held`, `skip`, `unknown`, and `:225` plus
+   `cairn-health.schema.json:38-39` require a `reason` on every `skip` and every `unknown`. So the
+   printed report and the payload diverge deliberately:
+
+   | doctor status | printed word | wire `state` | wire `reason` |
+   | --- | --- | --- | --- |
+   | pass | `PASS` | `pass` | none |
+   | fail | `FAIL` | `fail` | none |
+   | skip | `SKIP` | `skip` | `reason.not-run` |
+   | info | `INFO` | `pass` | none |
+   | unchecked | `UNKNOWN` | `unknown` | `reason.not-observable` |
+
+   **No state word and no reason code is added**, which keeps spec `:177` true. Two consequences
+   a reviewer must not read as drift. **`info` is written as `state: pass`**, which is the spec's
+   own mapping at `:168-170` ("`info` to pass with its note printed"); the note travels in a
+   doctor-only key, `note`, declared in the doctor schema and named on `json-output.md`'s doctor
+   section, so a reader can still tell an `info` from a bare pass. **A doctor `skip` takes
+   `reason.not-run`**, the closest fit in the frozen eight: the code says the check did not run,
+   which is exactly what a doctor skip means (the check's precondition did not apply, so there
+   was nothing to measure). `reason.not-observable` is wrong here, since it names a check that
+   tried and saw nothing. Today `reason.not-run` is emitted only for a budget-cut or panicking
+   `cairn health` check (`internal/health/health.go:151,173`), so the doctor's use widens the
+   code's meaning without widening the vocabulary; **Task 9 states that widening in one sentence
+   on `json-output.md`'s doctor section**, and Task 11 files it as a fourth ledger entry.
+   `held` is never written: a hold is an adopted site's operator accepting a known failure, which
+   a directory preflight has no concept of.
+9. **`internal/doctor` marshals its own payload; `internal/render` keeps only the schema-version
+   constant.** The reviewer's alternative, `MarshalDoctor` in `render`, would make `render` import
+   `doctor` and transitively `net/http` (the posture check's GET), growing a package whose whole
+   contract is purity and whose direct requires are pinned by name
+   (`purity_test.go:170-175,186-215`). `render` already imports `health`, `logs`, and `spine`, and
+   none of them dials. So the marshaller lands in `internal/doctor`, `render` gains
+   `DoctorSchemaVersion` alone, and `exportedSurface` (`purity_test.go:224-246`) gains exactly one
+   name rather than three. The schema tests stay in `render`, which is where the other six live
+   and where `schemaDir` already resolves.
+10. **Eleven tasks, not the spec's "about nine".** The spec's own retire-1 acceptance (`:392-398`)
    demands an agreement study against four production trees plus two facts-bearing sites, which is
    a task of its own and not an implementer chain; and eight file-only checks in one task would put
    eight deliverables behind one review. The eleven are three foundation tasks, four check tasks,
@@ -410,7 +484,7 @@ completion with no check-in.
 
 | Task | Runs as | Files | Serial after |
 | --- | --- | --- | --- |
-| 1, the package contract, the snapshot, and containment | chain, `sonnet` | `tool/internal/doctor/{doc.go,check.go,snapshot.go,fileread.go,status.go}` and their tests, `tool/cmd/copylist/main.go`, `tool/cmd/copylist/main_test.go` | the pass precondition |
+| 1, the package contract, the snapshot, and containment | chain, `sonnet` | `tool/internal/doctor/{doc.go,check.go,snapshot.go,fileread.go,status.go}` and their tests, `tool/cmd/copylist/main.go`, `tool/cmd/copylist/main_test.go`, `tool/testdata/copy.golden.md` (regenerated, **in its own commit**, the same clause Tasks 5 through 9 carry) | the pass precondition |
 | 2, the conditions embed, its text accessor, and the drift-test replacement | chain, `sonnet` | `tool/internal/spine/{conditions.go,conditions_test.go,condition_test.go}`, `tool/internal/doctor/{siteconfigpath.go,siteconfigpath_test.go}` | 1 |
 | 3, the wrangler readers and the lifted corpus | chain, `sonnet` | `tool/internal/doctor/{wrangler.go,jsonc.go}` and their tests, `tool/internal/doctor/testdata/corpus/**` | 2 |
 | 4, YAML promoted to a direct require | chain, `sonnet` | `tool/go.mod`, `tool/go.sum`, `tool/docs/adr/0002-render-dependencies.md`, `tool/internal/render/purity_test.go`, `tool/internal/doctor/{siteconfig.go,siteconfig_test.go}` | 3 |
@@ -418,7 +492,7 @@ completion with no check-in.
 | 6, the three heuristic checks | chain, `sonnet` | `tool/internal/doctor/{check_csrf.go,check_referrer.go,check_mount.go}` and their tests, `tool/testdata/copy.golden.md` | 5 |
 | 7, the three facts checks | chain, `sonnet` | `tool/internal/doctor/{facts.go,check_media.go,check_roles.go,check_posture.go}` and their tests, `tool/testdata/copy.golden.md` | 6 |
 | 8, the command, the report, the goldens, and the help | chain, `sonnet` | `tool/cmd/cairn/{doctor.go,doctor_test.go,messages.go,help_agents.go,coverage_test.go,root_test.go}`, `tool/internal/doctor/{report.go,report_test.go,testdata/golden/**}`, `tool/testdata/copy.golden.md` | 7 |
-| 9, the JSON payload, the seventh schema, and the frozen surfaces | chain, `model: opus` | `tool/internal/render/{json.go,json_schema_test.go,purity_test.go,testdata/json/doctor.json}`, `tool/docs/reference/{cairn-doctor.schema.json,json-output.md,exit-codes.md,cli-cairn-doctor.md}`, `tool/cmd/cairn/doctor.go`, `tool/CHANGELOG.md` | 8 |
+| 9, the JSON payload, the seventh schema, and the frozen surfaces | chain, `model: opus` | `tool/internal/doctor/{json.go,json_test.go}`, `tool/internal/render/{json.go,json_schema_test.go,purity_test.go,testdata/json/doctor.json}`, `tool/docs/reference/{cairn-doctor.schema.json,json-output.md,exit-codes.md,cli-cairn-doctor.md}`, `tool/cmd/cairn/doctor.go`, `tool/testdata/copy.golden.md`, `tool/CHANGELOG.md` | 8 |
 | 10, the agreement study | conductor dispatch, `model: opus`, read-and-measure | `tool/testdata/doctor-agreement.md` | 9 |
 | 11, close | ritual: the conductor's own turns, one `code-simplifier`, one `go-architecture-reader` per touched package, one `diff-reviewer` over the fold | `docs/STATUS.md`, `docs/HISTORY.md`, `ROADMAP.md`, `docs/internal/engine-rulings.md`, this plan file | 10 |
 
@@ -437,6 +511,38 @@ second worktree.** Four reasons, each sufficient:
 
 The conductor invokes this once for Tasks 1 through 9, from the `doctor-go` worktree. Tasks 10 and
 11 are dispatched separately.
+
+**This block is a template, not a literal.** `implementPrompt` interpolates `${t.criteria}`
+unconditionally (`~/.claude/workflows/pass-execute.js:173`), so a task without it renders the word
+`undefined` into the implementer's prompt where its acceptance criteria belong, and a task without
+`files` renders "Files: not specified". **Before invoking, the conductor fills `criteria`, `files`,
+and `notes` on every one of the nine tasks** from that task's own section below: `criteria` is the
+task's "Acceptance criteria" list as one string, `files` is its row in the task table above as an
+array of paths, and `notes` is its "Constraints" section plus the sentence naming the mandatory
+skills. Task 1, filled, is the worked example:
+
+```json
+{
+  "id": "1",
+  "title": "The doctor package contract, snapshot, and containment",
+  "gateTier": "tool",
+  "files": [
+    "tool/internal/doctor/doc.go",
+    "tool/internal/doctor/check.go",
+    "tool/internal/doctor/snapshot.go",
+    "tool/internal/doctor/fileread.go",
+    "tool/internal/doctor/status.go",
+    "tool/internal/doctor/*_test.go",
+    "tool/cmd/copylist/main.go",
+    "tool/cmd/copylist/main_test.go",
+    "tool/testdata/copy.golden.md"
+  ],
+  "criteria": "A read through a symlink leaving the directory is refused, proven on a real temporary tree, with the textual `..` arm proven separately; a read of an absent file under the directory returns absent, not an error; the status conversion is table-driven over all five statuses and asserts pass 0, fail-blocker 2, fail-warning 1, skip 0, info 0, unchecked 3, plus a case asserting a run of only pass, skip, and info folds to spine.VerdictOK; a run with zero checks folds to spine.VerdictUnknown; the not-a-cairn-site predicate is proven on four fixtures; a test asserts spine.StateWord is named nowhere in the package; `make -C <abs worktree>/tool copy-list` produces a golden carrying a doctor section, committed in its own commit, with check-copy and TestRenderMatchesCommittedGolden green; the light gate is green.",
+  "notes": "Read the plan's Task 1 section whole: docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md. go-conventions is mandatory for every file. The contract is pure functions over one snapshot and is not health.Check. Containment uses filepath.EvalSymlinks and filepath.Rel, never strings.HasPrefix. Report your commit SHAs and subjects."
+}
+```
+
+The nine tasks, before that fill:
 
 ```json
 {
@@ -467,6 +573,13 @@ diff happens to touch a `tool/**/*.md` page still runs the Go gate and not an np
 dispatch names `go-conventions` as mandatory, and Tasks 8 and 9 additionally name
 `golang-spf13-cobra` for `tool/cmd/cairn`.**
 
+**Every implementer report, on every task in this pass, lists its commit SHAs and their subject
+lines, in order.** Five of the acceptance criteria below require a regenerated
+`tool/testdata/copy.golden.md` "in its own commit" (Tasks 1, 5, 6, 7, 8, and 9), and no report
+shape names commits otherwise, so a conductor who never reads a diff has no way to confirm the
+split happened. The `notes` string for every task carries the sentence, and `diff-reviewer` checks
+the listed commits against the task's own "in its own commit" criteria.
+
 ---
 
 ## Task 1: the doctor package's contract, its snapshot, and containment
@@ -486,6 +599,22 @@ cannot read outside the resolved directory even through a symlink. No check is i
   `health.Check.Run` takes a `record.Record` (`internal/health/health.go:68`), which a directory
   run does not have. A doctor check takes the snapshot and returns a result; it makes no I/O of its
   own, holds no client, and reads no clock.
+- **The snapshot is what makes that purity hold for the two checks that are not file reads**, and
+  this task declares those fields even though Tasks 7 and 9 fill them. Without them the contract
+  is unsatisfiable: `ai.posture-effective` needs a live GET (Task 7) and the JSON payload carries a
+  stamped instant (Task 9), and a pure check can do neither. The `Snapshot` therefore carries, in
+  addition to the file bodies:
+  - **the resolved public origin**, or its absence and which source was consulted, under the
+    `vars.PUBLIC_ORIGIN`-then-environment precedence both `config.public-origin` and
+    `ai.posture-effective` use;
+  - **the fetched `robots.txt` body**, or its absence together with the reason for the absence (no
+    origin, an origin that does not parse, a transport failure, a non-200 status), as a typed
+    field rather than a bare empty string;
+  - **the run instant**, stamped once.
+
+  **The command layer fills all three before any check runs**; the checks read them and stay pure,
+  so `internal/doctor`'s check functions still hold no client and read no clock. Task 7 implements
+  the fetch in the command layer, not inside the posture check.
 - **`spine.ExitCode`, `spine.CheckVerdict`, `spine.Condition`, `spine.FailSeverity`, and
   `spine.ReasonNotObservable` are reused exactly as they are.** No type in `spine` is changed by
   this task, and no `Condition` constant is added (finding 11).
@@ -496,6 +625,36 @@ cannot read outside the resolved directory even through a symlink. No check is i
   `:105-113`. A path that resolves outside the directory, and a path whose real resolved location
   is outside it, are both refused with an error naming the relative path and never the absolute
   one. An absent file reads as absent, not as an error, matching `:117`.
+- **The Go primitives, named so "ported whole" is not left to the implementer.** Node's
+  `realpathSync` and `startsWith` have no one-to-one Go twin, and the wrong pick is silently
+  wrong rather than red:
+  - **`filepath.EvalSymlinks` on `<dir>` once**, at snapshot construction, and the result is the
+    boundary every later comparison uses. `<dir>` always exists, so it needs no
+    nearest-ancestor handling of its own.
+  - **Nearest-existing-ancestor resolution for every candidate path**, the
+    `realpathNearestAncestor` shape (`media-seed/bin.ts:29-38`): `filepath.EvalSymlinks` on the
+    candidate, and on `fs.ErrNotExist` recurse to the parent and rejoin the unresolved trailing
+    segments. A candidate that does not exist yet is the common case (a `wrangler.toml` on a
+    jsonc site), so this arm is not an edge case.
+  - **Containment by `filepath.Rel`, never `strings.HasPrefix`.** A path is contained when
+    `filepath.Rel(boundary, candidate)` succeeds and its result is neither `..` nor prefixed by
+    `..` plus a separator. `HasPrefix` is wrong twice over: `/a/bc` prefixes `/a/b`, and the tool
+    ships `internal/store/perm_windows.go`, so Windows paths compare case-insensitively while Go
+    string comparison does not.
+  - **The site-config path is rejected before it is resolved**, on the four shape rules Task 2's
+    accessor enforces: absolute, a `..` segment, a NUL byte, or empty.
+  - **Acceptance cases for the two error paths**: a **dangling symlink** under `<dir>` (the target
+    does not exist, so `EvalSymlinks` fails with something other than a containment violation,
+    and the read reports absent rather than refusing), and a **permission-denied** read of a file
+    that does exist under `<dir>` (an error, not absent, and not a containment refusal).
+- **A containment refusal has a status, and it is `unchecked`.** A refusal is not a failure of the
+  site: the check could not observe its input. Every check whose read is refused returns
+  `unchecked`, which decision 2 maps to `State: Unknown` with `spine.ReasonNotObservable` and
+  exit 3, and its `detail` names the relative path that was refused. This is not hypothetical:
+  `node_modules/@glw907/cairn-cms`, which `config.dependency-floors` reads (Task 5), is a symlink
+  under pnpm and under an npm workspace, and can resolve outside `<dir>` on a perfectly healthy
+  monorepo. **Task 3's corpus carries a symlinked-`node_modules` case** proving that check reports
+  `unchecked` with the refused path rather than failing the site or crashing the run.
 - **Outside-a-cairn-site is a predicate on the snapshot, not a check.** A directory with no
   `wrangler.jsonc`, no `wrangler.toml`, and no `@glw907/cairn-cms` entry in its `package.json`
   dependencies or devDependencies is not a cairn site (spec `:130-131`).
@@ -505,18 +664,27 @@ cannot read outside the resolved directory even through a symlink. No check is i
 - The package's own doc comment follows Go Doc Comments and states what the package is: the
   record-less, credential-less directory preflight `cairn doctor` runs, distinct from `health`,
   which needs a site record.
+- **Everything this task declares ahead of its caller is exported or has a test caller.**
+  `tool/.golangci.yml` enables `unused` and `unparam`, so an unexported identifier or an unused
+  parameter declared for a later task reds `lint` inside the gate on this task's own commit. The
+  `Snapshot` fields Task 7 and Task 9 fill are exported, which satisfies `unused`; an unexported
+  helper written ahead of its caller gets its test in the same commit or waits for the task that
+  calls it.
 
 ### What is built
 
 - `doc.go`: the package comment.
-- `check.go`: the `Check` contract, the package's check registry (a literal slice, never populated
-  by `init()`, the shape `health.All` uses at `internal/health/health.go:71-83`), and each check's
-  id, its condition, and its label.
+- `check.go`: the `Check` contract and the package's check registry (a literal slice, never
+  populated by `init()`, the shape `health.All` uses at `internal/health/health.go:73-83`). Each
+  entry declares **its id and its condition only**. **No label is written here**: a label is the
+  condition's registry `title`, read at run time through Task 2's mirror accessor, and a label
+  declared in this file would be the Go literal Tasks 5 through 7 are forbidden to write.
 - `status.go`: the five statuses, their printed words, the constructors, and `Verdicts()`, which
   converts a run's results into a `spine.SiteVerdicts`.
-- `snapshot.go`: the `Snapshot` type, one per run, carrying the resolved directory and each raw
-  file body the checks read. Fields are filled by later tasks; this task declares the type and the
-  reader that fills it.
+- `snapshot.go`: the `Snapshot` type, one per run, carrying the resolved directory, each raw file
+  body the checks read, and the three command-layer fields above (the resolved origin, the robots
+  body or its typed absence, and the run instant). Fields are filled by later tasks; this task
+  declares the type and the reader that fills the file bodies.
 - `fileread.go`: the contained reader and the not-a-cairn-site predicate.
 
 ### Acceptance criteria
@@ -527,6 +695,13 @@ cannot read outside the resolved directory even through a symlink. No check is i
   only covers the textual `..` case does not satisfy this criterion; **both** arms are proven
   separately.
 - A read of an absent file under the directory returns "absent", not an error.
+- **The two error paths are proven**: a dangling symlink under `<dir>` reads as absent, and a
+  permission-denied read of a file that does exist under `<dir>` is an error and not a containment
+  refusal.
+- **Containment is implemented with `filepath.Rel`**, asserted by a test over a boundary `/a/b`
+  and a candidate `/a/bc`, which `strings.HasPrefix` would wrongly contain.
+- The `Snapshot` declares the resolved origin, the robots body or its typed absence, and the run
+  instant, and a test asserts no check function reads a clock or holds a client.
 - **The status conversion is table-driven over all five statuses**, and asserts the contributed
   verdict for each: pass 0, fail-blocker 2, fail-warning 1, skip 0, info 0, unchecked 3. A sixth
   case asserts a run of only pass, skip, and info folds to `spine.VerdictOK`, which is the spec's
@@ -537,16 +712,17 @@ cannot read outside the resolved directory even through a symlink. No check is i
   dependency and no wrangler file; one with it as a devDependency; and an empty directory, the only
   one of the four that is not a cairn site.
 - A test asserts `spine.StateWord` is named nowhere in the package.
-- `make -C <abs worktree>/tool copy-list` produces a golden carrying a `doctor` section, and
-  `make check`'s `check-copy` and `TestRenderMatchesCommittedGolden` are both green on it.
+- `make -C <abs worktree>/tool copy-list` produces a golden carrying a `doctor` section,
+  `tool/testdata/copy.golden.md` is committed **in its own commit**, and `make check`'s
+  `check-copy` and `TestRenderMatchesCommittedGolden` are both green on it.
 - The light gate is green: `CAIRN_GATE_LANE=light cairn-run-gate 'make -C <abs worktree>/tool check'`.
 
 ### The implementer reports
 
-Files touched; the gate result; the refusal error's exact text for both containment arms; the
-conversion table as implemented, so the conductor can compare it against decision 2 without reading
-the diff; where `Catalogue()` landed and what it returned on the first run; anything the plan did
-not cover.
+Files touched; **every commit's SHA and subject line, in order**; the gate result; the refusal
+error's exact text for both containment arms; the conversion table as implemented, so the
+conductor can compare it against decision 2 without reading the diff; where `Catalogue()` landed
+and what it returned on the first run; anything the plan did not cover.
 
 **Halt:** a second fix round; a red gate; a design that needs a check to perform its own I/O.
 
@@ -569,8 +745,10 @@ replacing `TestConditionsMatchRegistry`'s cross-repo read while keeping its ruli
   (finding 7). `tool/internal/spine/conditions.go` carries
   `//go:embed conditions.json` and the accessor; `tool/internal/doctor/siteconfigpath.go` carries
   `//go:embed site-config-path.json` and its own accessor. Neither package embeds the other's file.
-- **The 24 typed `Condition` constants stay hand-written** (spec `:185-187`). They are the frozen
-  ids and compile-time checking is worth keeping. Nothing in this task generates a constant.
+- **The 25 typed `Condition` constants stay hand-written** (spec `:185-187`, which says 24 because
+  it was written before its own pre-task added `config.media-bucket-missing`; finding 11). They are
+  the frozen ids and compile-time checking is worth keeping. Nothing in this task generates a
+  constant, and this task adds none: the count is 25 at HEAD and 25 when this task ends.
 - **The replacement test asserts set equality between the constants and the embedded ids**, and
   **keeps the existing ruling verbatim in its comment**: an engine id rename is a human decision
   and a major-version event, never an automatic follow (spec `:187-189`;
@@ -614,7 +792,7 @@ replacing `TestConditionsMatchRegistry`'s cross-repo read while keeping its ruli
 
 ### The implementer reports
 
-Files touched; the gate result; the renamed-id red-then-green proof verbatim; the exact count of
+Files touched; **every commit's SHA and subject line, in order**; the gate result; the renamed-id red-then-green proof verbatim; the exact count of
 ids in the embedded mirror and in the constant block, which must be 25 after the pre-task; whether
 any registry field the mirror carries has no home in the Go shape; anything the plan did not cover.
 
@@ -636,6 +814,13 @@ corpus committed under `tool/` before retire-2 deletes them.
 
 ### Constraints
 
+- **The stripped jsonc decodes into `map[string]any`, never into a struct.** `encoding/json`
+  matches object keys to struct fields **case-insensitively**, and `JSON.parse` does not, so a
+  `wrangler.jsonc` writing `Observability` or `VARS` would decode into a Go struct and be read as
+  configuration the engine's reader ignores. Decoding to `map[string]any` and indexing with the
+  exact key reproduces the engine's behaviour. **A mis-cased-key negative case joins the corpus**:
+  a config whose only `observability` key is spelled `Observability` reads as no observability
+  setting at all, the same verdict the engine gives.
 - **`wrangler.jsonc` goes through an in-module JSONC stripper and `encoding/json`** (spec ruling 2,
   `:39-44`). The stripper is a port of `stripJsonc`
   (`src/lib/doctor/wrangler-config.ts:139-176`): `//` and `/* */` removed outside string literals,
@@ -664,15 +849,27 @@ corpus committed under `tool/` before retire-2 deletes them.
   into the same corpus.
 - The corpus is data, read by table-driven Go tests. It is not a Go fixture package and it does not
   import anything from `internal/providers`.
+- **The corpus gains a symlinked-`node_modules` case**, built by the test as a real temporary tree
+  rather than committed (git cannot commit a symlink pointing outside the repository). The case is
+  a `<dir>` whose `node_modules` is a symlink resolving outside `<dir>`, the pnpm and npm-workspace
+  layout. Task 5's `config.dependency-floors` consumes it; this task commits the case's shape and
+  the builder so Task 5 has it.
 
 ### Acceptance criteria
 
-- Every wrangler case in the corpus produces the same facts the engine's reader produces for the
-  same input, asserted case by case in one table-driven test.
+- **Every wrangler case in the corpus carries the engine's expected facts as committed data**, and
+  the table-driven test asserts the Go reader's output equals that data, case by case. "The same
+  facts the engine's reader produces" is not provable from inside the Go gate, which runs no Node:
+  the engine's answer has to be lifted at authoring time and committed. Each case therefore carries
+  three things, in the case file itself: the input, the `file:line` of the TypeScript test it came
+  from, and the expected facts as literal JSON, copied from that test's own assertion. A case whose
+  expectation was not lifted from a named TypeScript assertion does not satisfy this criterion.
 - The jsonc-wins case is proven: a directory holding both files, where the two disagree, reads the
   jsonc.
 - The stripper is proven on four cases: a `//` comment, a `/* */` comment spanning lines, a URL
   inside a string that must survive, and a trailing comma before `}`.
+- **A mis-cased key is not read.** `"Observability": { "enabled": true }` produces no
+  observability fact, the same as the engine, and a test names `map[string]any` as the reason.
 - A present-but-unparseable `wrangler.jsonc` produces the clean message and no parser snippet.
 - A directory with neither file reads as "no wrangler config", which the checks will report as a
   skip, not a failure.
@@ -682,7 +879,7 @@ corpus committed under `tool/` before retire-2 deletes them.
 
 ### The implementer reports
 
-Files touched; the gate result; the corpus's case count and the `file:line` of each TypeScript test
+Files touched; **every commit's SHA and subject line, in order**; the gate result; the corpus's case count and the `file:line` of each TypeScript test
 it was lifted from; any engine behaviour the port could not reproduce, with the input that shows
 it; anything the plan did not cover.
 
@@ -717,6 +914,13 @@ dependency test moved in the same commit, and `site.config.yaml` parses through 
   doc comment gains the fifth member by name. `renderDirectRequires` (`:170-175`) is **not**
   touched: YAML is not a render dependency, and adding it there would make
   `TestRenderDirectRequiresArePinned` (`:186-215`) assert something false about `render`.
+- **This task owns the site-config parser; Task 5 owns the check.** `config.site-config` is one
+  check across two tasks, so the split is stated rather than inferred. **Task 4 builds
+  `siteconfig.go`**: candidate-path resolution, the YAML parse, and the found / not-found /
+  parses / does-not-parse / mapping-with-a-non-empty-`siteName` predicate, with its own tests.
+  **Task 5 builds `check_siteconfig.go`**: the `Check` entry, the condition id, the label, the
+  `detail` sentence, and the mapping of the parser's outcomes onto the status words. No status
+  word is written in this task and no parsing is written in Task 5.
 - **The parse is what `config.site-config` asserts and no more** (spec `:149-155`): the file is
   found at one of the four known paths, it parses as YAML, and its root is a mapping carrying a
   non-empty `siteName`. **No other site-config field is read by any ported check.** This is
@@ -736,17 +940,17 @@ dependency test moved in the same commit, and `site.config.yaml` parses through 
 - No module joined the build graph: `go.sum` gains no new module path, proven by
   `git diff --stat tool/go.sum` showing only the promotion's own line movement, and the implementer
   pastes the diff summary.
-- `config.site-config`'s parse is proven on five cases: the showcase's own committed
-  `site.config.yaml`; a file at each of the three legacy paths; a file that is not YAML; a file
-  whose root is a sequence rather than a mapping; and a file with an empty `siteName`. The last
-  three fail, the first two pass.
-- A directory with no site config at any of the four paths reports `unchecked`, matching
-  `checks-local.ts:225-227`.
+- The parser is proven on five cases: the showcase's own committed `site.config.yaml`; a file at
+  each of the three legacy paths; a file that is not YAML; a file whose root is a sequence rather
+  than a mapping; and a file with an empty `siteName`. The last three do not satisfy the
+  predicate, the first two do. **The parser reports outcomes, not statuses**; Task 5 maps them.
+- A directory with no site config at any of the four paths makes the parser report "not found",
+  which Task 5 maps to `unchecked` (`checks-local.ts:225-227`).
 - The light gate is green.
 
 ### The implementer reports
 
-Files touched; the gate result; the `go.sum` diff summary; the falsification output for the require
+Files touched; **every commit's SHA and subject line, in order**; the gate result; the `go.sum` diff summary; the falsification output for the require
 count; the ADR amendment's own text; anything the plan did not cover.
 
 **Halt:** a second fix round; a red gate; `go mod tidy` wanting any module other than the promoted
@@ -772,7 +976,7 @@ registry `title`.
 | `config.bindings` | `config.bindings-missing` | `src/lib/doctor/checks-local.ts:23-36` |
 | `config.observability` | `config.observability-off` | `checks-local.ts:60-72` |
 | `config.public-origin` | `config.public-origin-invalid` | `checks-local.ts:129-152` |
-| `config.site-config` | `config.site-config-invalid` | `checks-local.ts:219-238`, narrowed per Task 4 |
+| `config.site-config` | `config.site-config-invalid` | `checks-local.ts:219-238`. **The check only**: Task 4 owns the parser (`siteconfig.go`) and this task owns the status arms (`check_siteconfig.go`), per Task 4's ownership constraint. |
 | `config.dependency-floors` | `config.dependency-floors-unmet` | `src/lib/doctor/check-floors.ts:250-267` |
 
 ### Constraints
@@ -813,12 +1017,18 @@ registry `title`.
   the pass, the fail, and the skip or unchecked arm each check can produce.
 - Each check's label is asserted equal to its condition's registry `title` from the embedded
   mirror, in one test over all five, so a label written as a literal fails.
+- **`config.site-config`'s status arms are proven over Task 4's parser**: a found, parsing config
+  with a non-empty `siteName` passes; a config that does not parse, has a non-mapping root, or
+  carries an empty `siteName` fails with `config.site-config-invalid`; no config at any of the
+  four paths is `unchecked`. This task writes no parsing of its own.
 - `requireOrigin`'s three rules are proven case by case, including that `localhost.example.com`
   over http fails while `localhost` over http passes.
 - `config.dependency-floors` is proven on all three lockfile formats, on a prerelease version
   (skip), on a non-caret engine range (skip), on a below-floor version (fail), on an
   outside-major version (fail), on an absent `node_modules/@glw907/cairn-cms/package.json`
-  (unchecked), and **on an engine peer marked optional in `peerDependenciesMeta`, which must be
+  (unchecked), **on Task 3's symlinked-`node_modules` case, where the containment refusal reports
+  `unchecked` naming the refused relative path rather than failing the site or crashing the run**,
+  and **on an engine peer marked optional in `peerDependenciesMeta`, which must be
   filtered out rather than skipped**. That last case is finding 6's whole point and a test that
   omits it does not satisfy this criterion.
 - `tool/testdata/copy.golden.md` is regenerated with `make -C <abs worktree>/tool copy-list` and
@@ -827,7 +1037,7 @@ registry `title`.
 
 ### The implementer reports
 
-Files touched; the gate result; the five labels as resolved from the mirror; every corpus case that
+Files touched; **every commit's SHA and subject line, in order**; the gate result; the five labels as resolved from the mirror; every corpus case that
 disagrees with the engine's own result, with the input; the optional-peer test's assertion; anything
 the plan did not cover.
 
@@ -896,7 +1106,7 @@ four engine symbols they key on named in each check's own doc comment so retire-
 
 ### The implementer reports
 
-Files touched; the gate result; every pattern that could not be written as RE2 and what replaced
+Files touched; **every commit's SHA and subject line, in order**; the gate result; every pattern that could not be written as RE2 and what replaced
 it; every corpus case where the Go verdict differs from the engine's, with the input; anything the
 plan did not cover.
 
@@ -953,17 +1163,39 @@ file is absent.
   case-insensitively per RFC 9309 section 2.2.1, and `observedPosture` (`:140-143`),
   `describeOutsideLayer` (`:154-176`), and `evaluate` (`:187-219`). The one failing case is a
   declared posture the served file does not carry; a site declaring nothing passes.
-- The request is bounded by the command's context, which the root's `--timeout` already carries
-  (`root.go:118-123`), and by nothing else. It does not use `internal/providers`: those clients
-  carry credentials and a transport policy this command has no use for. The implementer states in
-  its report which HTTP client it used and how the timeout reaches it.
+- **The GET happens in the command layer and fills Task 1's snapshot field; the check itself stays
+  pure.** The check reads the robots body or its typed absence from the snapshot and never dials.
+  That is what keeps Task 1's "no I/O, no client, no clock" contract true of all eleven checks.
+- **The request's policy is stated here, not left to the client's defaults.** It does not use
+  `internal/providers`: those clients carry credentials and a host pin this command has no use
+  for. It is a bare `http.Client` configured with all of:
+  - **`CheckRedirect: http.ErrUseLastResponse`**, matching `providers/transport.go:44-47`. A
+    redirect is returned unfollowed, so a site redirecting `/robots.txt` to a third party cannot
+    make the tool fetch that third party, and the non-200 arm reports `unknown`.
+  - **`http`  and `https` schemes only**, checked on the resolved origin before the request is
+    built. Any other scheme is `unknown` with `ReasonNotObservable`, the same arm as an origin
+    that does not parse.
+  - **An `io.LimitReader` body cap** (64 KiB is ample for a `robots.txt`), so a site serving an
+    endless body cannot exhaust the process. A body hitting the cap is parsed as far as it read.
+  - **No `Authorization` header, no cookie, and no cookie jar.** The request is credential-free by
+    construction, which is the spec's own condition on the one network call this command makes.
+  - The timeout is the command's context, which the root's `--timeout` already carries
+    (`root.go:118-123`), and nothing else.
+
+  **One test each**: a redirect is not followed; a `file://` origin is `unknown`; an oversized body
+  is truncated rather than exhausting the read; and the outgoing request carries no `Authorization`
+  header and no cookie. The implementer states in its report which HTTP client it used and how the
+  timeout reaches it.
 
 ### Acceptance criteria
 
 - Each of the three checks is proven on fixtures covering every status it can return.
 - **All three report `unknown` with `ReasonNotObservable` and the exact message against a directory
-  with no `site-facts.json`,** asserted in one test over all three, and the run's exit code for
-  that directory is 3.
+  with no `site-facts.json`,** asserted in one test over all three, and
+  `spine.ExitCode([]spine.SiteVerdicts{verdicts}, nil, 0)` over the package's own verdicts for that
+  directory returns `spine.VerdictUnknown`. The assertion is over the package's verdicts, not over
+  a process exit code: no command exists until Task 8, and Task 8's own criteria prove the process
+  code end to end.
 - A `site-facts.json` carrying a `version` other than 1 fails with a message naming the file and
   the version found.
 - `config.media-bucket` skips when the facts declare no `mediaBucketBinding`, passes when the
@@ -981,7 +1213,7 @@ file is absent.
 
 ### The implementer reports
 
-Files touched; the gate result; the HTTP client and how the timeout reaches it; the absent-facts
+Files touched; **every commit's SHA and subject line, in order**; the gate result; the HTTP client and how the timeout reaches it; the absent-facts
 message verbatim; the media-bucket remediation text as printed; anything the plan did not cover.
 
 **Halt:** a second fix round; a red gate; a check needing a credential; a design that reaches
@@ -1032,7 +1264,8 @@ page, and `cairn help agents`.
   `TestNoCommandFileExceedsItsBound`. A second file is the answer if it does not, the way
   `health_json.go` was split out (`health_json.go:1-3`).
 - **Every operator-facing string this command adds goes in `cmd/cairn/messages.go`**, which
-  `cmd/copylist` parses (`cmd/copylist/main.go:68-70`), and the check details stay in
+  `cmd/copylist` parses (`cairnCatalogue`, `cmd/copylist/main.go:73`; `:68-72` is its doc
+  comment), and the check details stay in
   `internal/doctor`'s own `Catalogue()`.
 - **`cairn help agents` gains the command** (spec `:213`): what it does, that it needs no
   credential and no adopted site, what exit 3 covers, and that `cairn health` is what reaches the
@@ -1067,7 +1300,7 @@ page, and `cairn help agents`.
 
 ### The implementer reports
 
-Files touched; the gate result; the five exit-code test results; the outside-a-cairn-site line
+Files touched; **every commit's SHA and subject line, in order**; the gate result; the five exit-code test results; the outside-a-cairn-site line
 verbatim; the man page's synopsis line; whether `doctor.go` needed a split and what went in the
 second file; anything the plan did not cover.
 
@@ -1093,7 +1326,8 @@ interim docs page written under `tool/docs/reference/`.
 - **The payload is its own kind** (spec ruling 9, `:65-66`), not a `site` payload with different
   checks. It carries `schemaVersion`, `kind`, `verdict`, `exitCode`, the resolved directory, the
   stamped instant, and `checks`, each check carrying `checkId`, `state`, `reason` where the state
-  is `unknown`, `condition`, `detail`, and the failure's `fix` where one exists. It carries no
+  is `skip` or `unknown`, `condition`, `detail`, the doctor-only `note` where the status is `info`,
+  and the failure's `fix` where one exists. It carries no
   `site`, no `domain`, no `tier`, no `acknowledged`, and no `hold`: a directory preflight has no
   registry record, no credential tier, and no holds.
 - **`schemaVersion` is 1.** `json_schema_test.go:399-425`'s
@@ -1124,12 +1358,28 @@ interim docs page written under `tool/docs/reference/`.
   keys automatically once the golden joins `jsonGoldens`; `TestDocCarriesBothFreezeLists` (`:514`)
   gains a loop asserting the frozen section names all eleven doctor check ids, read from the
   `doctor` package's own registry rather than a literal list; `TestEveryGoldenValidatesAgainstItsSchema`
-  (`:196`) validates the doctor golden against the seventh schema.
-- **`internal/render` gains `MarshalDoctor`, its input type, and `DoctorSchemaVersion`, and
-  `purity_test.go:224-246`'s `exportedSurface` gains all three in the same commit** (finding 15).
-  `render` imports `internal/doctor`; it already imports `health`, `logs`, and `spine`.
-- **No reason code is added** (spec `:177-178`). `ReasonNotObservable` is the only reason this
-  payload can carry.
+  (`:196`) validates the doctor golden against the seventh schema. **That freeze-list loop is
+  `render`'s only reach into `doctor`, and it is a test-file import.** A test import does not enter
+  the package's production graph and does not touch `renderDirectRequires`, which reads go.mod's
+  module-level requires, so decision 9's boundary holds.
+- **The marshaller lives in `internal/doctor`, and `internal/render` gains only
+  `DoctorSchemaVersion`** (decision 9). `purity_test.go:224-246`'s `exportedSurface` gains that one
+  name in the same commit (finding 15). **`render` does not import `internal/doctor`**: the posture
+  check pulls `net/http` into that package's transitive graph, and `render`'s whole contract is
+  purity with its direct requires pinned by name. The schema test stays in `render`, where
+  `schemaDir` already resolves and the other six goldens live; it reads the doctor golden as a
+  file, not through a `doctor` import.
+- **The wire `state` is decision 8's table, and no state word and no reason code is added** (spec
+  `:177-178`). The payload writes only the frozen five (`json-output.md:290`); a doctor `info` is
+  written `state: pass` with its text in the doctor-only `note` key; a doctor `skip` is
+  `state: skip` with `reason.not-run`; an `unchecked` is `state: unknown` with
+  `reason.not-observable`. `held` is never written. **The schema requires a `reason` on every
+  `skip` and every `unknown`** (`cairn-health.schema.json:38-39`; `json-output.md:225`), so the
+  seventh schema's conditional covers both states and the golden exercises both arms.
+  **`json-output.md`'s doctor section states in one sentence that for `cairn doctor`
+  `reason.not-run` means the check's precondition did not apply**, which widens that code's
+  meaning without widening the vocabulary; `TestDocPublishesTheWholeReasonVocabulary` (`:551`)
+  stays green because the set is unchanged.
 - **`tool/docs/reference/cli-cairn-doctor.md`** is written as **interim operator copy**, since
   draft docs pass A drafts the public page fresh from a mining read and never renames this one into
   place (spec `:375-378`; pass A plan `:57-59`). It states the synopsis, the flags and which root
@@ -1140,7 +1390,12 @@ interim docs page written under `tool/docs/reference/`.
   email checks.
 - **`tool/CHANGELOG.md` gains the entry** (spec `:214-215`). It goes under a new `## Unreleased`
   heading, not under `1.0.0`, which is released history. The number is set at the tag session, not
-  here.
+  here. **The entry carries a `Consumers must:`-style note naming the loosened promise**, since
+  this task rewrites a sentence inside `## What freezes at 1.0`: before it, a check-id list was
+  frozen outright; after it, an addition to a published id list is a minor-version event and only
+  a rename or a removal is major. A consumer who wrote a reader against the stricter promise needs
+  that stated in the release's own text, not only on the page whose promise changed. The note also
+  names the doctor's use of `reason.not-run` for a precondition that did not apply.
 - **The docs URL resolution is a carry-forward, not a task.** Before the `tool/v1.1.0` tag, the
   conductor of that session confirms each distinct `https://cairn.pub/docs/admin/<page>` the
   failure blocks print resolves on the deployed cairn.pub; if one does not, the tool prints the
@@ -1159,8 +1414,14 @@ interim docs page written under `tool/docs/reference/`.
 - `TestDocNamesEveryFieldTheGoldensCarry` is green, which is the proof every key in the doctor
   payload is documented on the page.
 - `TestEverySchemaVersionIsOneBeforeTheTag` passes with seven rows.
-- `TestExportedSurfaceIsPinned` passes with the three additions, and the implementer falsifies it
-  once by omitting one.
+- `TestExportedSurfaceIsPinned` passes with the one addition, `DoctorSchemaVersion`, and the
+  implementer falsifies it once by omitting it.
+- **The command's page names every check id.** A page-coverage test, in `tool/cmd/cairn` or
+  `tool/internal/doctor`, reads `tool/docs/reference/cli-cairn-doctor.md` and asserts it names all
+  eleven check ids, read from the `doctor` package's own registry rather than a literal list. The
+  pass A inventory record (`:74-75`) promises pass A this test exists and names where it landed,
+  because it is the one new test whose only input is the interim page, so pass A's task 8 must
+  repoint or retire it when the page moves.
 - `cairn doctor --json` on a directory that is not a cairn site writes a parseable payload with
   `verdict: "UNKNOWN"`, `exitCode: 3`, and `checks: []`, and exits 3. Stdout is not empty.
 - `cairn doctor --json --quiet` writes the payload, and `cairn doctor --json --verbose` writes
@@ -1172,10 +1433,13 @@ interim docs page written under `tool/docs/reference/`.
 
 ### The implementer reports
 
-Files touched; the gate result; the `git ls-tree` listing of `tool/docs/reference/`; the two
-falsification outputs; the exact four edits made to `json-output.md` and the one to
-`exit-codes.md`, quoted, so the conductor can confirm no frozen sentence moved without reading the
-diff; anything the plan did not cover.
+Files touched; **every commit's SHA and subject line, in order**; the gate result; the `git ls-tree`
+listing of `tool/docs/reference/`; the two falsification outputs; the exact four edits made to
+`json-output.md` and the one to `exit-codes.md`, quoted, so the conductor can confirm no frozen
+sentence moved without reading the diff; **where the page-coverage test landed**, which the pass A
+inventory record names; **whether the seventh schema's `skip`/`unknown` conditional extended
+`TestSkipAndUnknownRequireAReason` (`json_schema_test.go:574`) or was written as a sibling test,
+and which**, which the pass A inventory record (`:64`) asks for; anything the plan did not cover.
 
 **Halt:** a second fix round; a red gate; any need to change an exit code, a state word, a reason
 code, a `schemaVersion`, or a `$id`; a `diff-reviewer` finding that a frozen sentence was rewritten
@@ -1206,23 +1470,42 @@ expected or a defect.
   `main` with `npm run link:consumer`, restored afterwards** (spec `:396-398`): a site that
   declares media, custom roles, and an AI posture. **Against a site with no `site-facts.json` they
   report `unknown`**, which is the third arm of this criterion.
-- The `--restore` step is mandatory and its output goes in the report. A `file:` path cannot merge
-  (`CLAUDE.md`, "Pointing a consumer at unreleased engine work").
+- **The linked site is modified, deliberately, and restored before the task ends.** Three steps,
+  in order, and none is optional:
+  1. `npm run link:consumer -- <site-dir>` points the site at this worktree's engine.
+  2. **`npx cairn-manifest` is run in that site.** The pre-task's Task 3 has the `cairn-manifest`
+     bin *write* `src/content/.cairn/site-facts.json` and the Vite plugin only *verify* it, so a
+     freshly linked site has no facts file and all three checks would report `unknown` for the
+     wrong reason, measuring nothing. Without this step the comparison's whole point is lost.
+  3. `npm run link:consumer -- <site-dir> --restore` puts the site back on `^<version>` from the
+     registry. Mandatory, and its output goes in the report: a `file:` path cannot merge
+     (`CLAUDE.md`, "Pointing a consumer at unreleased engine work"). The generated
+     `site-facts.json` is left or removed to match that site's own git status before the link,
+     which the report states.
+
+  The other five trees (the four production trees for the eight file-only checks, and the
+  no-facts tree) are **read and never modified**.
+- **One disagreement is pre-declared expected before the study runs**: a blocker-severity failure
+  exits 2 under `cairn doctor` and 1 under `cairn-doctor`, because `run.ts:43-47`'s `exitCodeFor`
+  gives every failure 1 while spine's four-code convention distinguishes CRITICAL from WARNING
+  (finding 2). The table records it as expected wherever it appears, and it is never a defect.
 - **The table is committed at `tool/testdata/doctor-agreement.md`** (spec `:394`, "a status
   mapping table committed in `tool/testdata/`"). It is a record, not a gate: no Go test reads it,
   and the table says so in its own header so a later reader does not look for one.
 - **Zero disagreements are unexplained.** Each is recorded as expected, with the reason, or as a
   defect, with the input that shows it. A defect goes back to the task that owns the check as one
   re-dispatch; a second defect in the same check is the conductor's decision.
-- This task runs no `cairn doctor` against a site it modifies. It reads trees and writes one file.
 
 ### Acceptance criteria
 
 - The table carries one row per check per tree, eight checks across four production trees plus
   three facts checks across the showcase, the linked site, and one site with no `site-facts.json`.
 - Every disagreement is marked expected or defect, and none is unmarked.
-- The linked site is restored: `npm run link:consumer -- <site-dir> --restore` output is in the
-  report and `git status` in that site is clean of a `file:` dependency.
+- The linked site is restored **before the task ends**: `npm run link:consumer -- <site-dir>
+  --restore` output is in the report and `git status` in that site is clean of a `file:`
+  dependency and of any generated file that site did not carry before.
+- `npx cairn-manifest` ran in the linked site before the facts checks were measured, and the
+  report shows the generated `site-facts.json`'s contents.
 - The light gate is green on the commit (the table is under `tool/`, so the tool tier applies).
 
 ### The agent reports
@@ -1250,7 +1533,7 @@ per touched Go package, and one independent `diff-reviewer` read over the fold's
       `cloudflare-workers-reviewer`, and `web-auth-security-reviewer` are **not** dispatched: no
       Svelte component, no admin markup, no Worker code, and no auth, session, or write path
       changed. State this in the post-mortem rather than dispatching for form.
-- [ ] **`docs/internal/engine-rulings.md`** gains **exactly three entries**, per decision 7, each in
+- [ ] **`docs/internal/engine-rulings.md`** gains **exactly five entries**, per decision 7, each in
       the ledger's own format with a `Verdict:`, a `Reopens on:`, and a `Record:` line, and a
       `Shape:` line on the two that are reshapes:
       1. the `config.site-config` narrowing (reshape): what the Go check asserts, why the schema
@@ -1261,7 +1544,20 @@ per touched Go package, and one independent `diff-reviewer` read over the fold's
          no effect on it; reopens on a design that needs a coloured doctor body;
       3. the drift-test replacement (accept): the Go constant set is now checked against the
          embedded mirror rather than a regex over `conditions.ts`, and the engine's
-         `check:tool-conditions` closes the other half of the chain.
+         `check:tool-conditions` closes the other half of the chain;
+      4. the containment carry-forward (accept, spec `:136`): the 2026-09-02 amendment to
+         `audit-cli-...-site-config` put `SITE_CONFIG_PATH` in a committed data file both the
+         checker and the scaffolder read, and gave `doctor/bin.ts` a resolved-path containment
+         assert. `cairn doctor` carries both forward into Go: it embeds the same data file
+         (Task 2) and takes the *stronger* containment, `media-seed/bin.ts`'s symlink-resolving
+         form, rather than the doctor's textual prefix compare (Task 1). Reopens on a Go read
+         path that resolves a candidate without `filepath.EvalSymlinks`;
+      5. the payload's wire mapping for `info` and `skip` (reshape, decision 8): the doctor's five
+         status words do not fit the five frozen wire states, so `info` is written `state: pass`
+         with its text in a doctor-only `note` key, and `skip` is written `state: skip` with
+         `reason.not-run`, which for `cairn doctor` means the check's precondition did not apply.
+         No state word and no reason code was added. Reopens on a consumer reading
+         `reason.not-run` as a budget-cut check, or on a second payload needing an `info`.
       **The retirement itself, the dropped and deferred checks, and `site-facts.json` as new engine
       surface are retire-2b's entries and are not written here.**
 - [ ] **`docs/HISTORY.md`** gains this pass's entry, newest first: what landed, what the gate
@@ -1301,7 +1597,7 @@ per touched Go package, and one independent `diff-reviewer` read over the fold's
   markdown pages, which is pass A's precondition 4.
 - `docs/STATUS.md` is at or under 60 lines, carries no past tense, and carries no unblock line.
 - `ROADMAP.md` lists no item this pass shipped and lists every item it filed.
-- `npm run check:rulings-format` is green over the three new ledger entries.
+- `npm run check:rulings-format` is green over the five new ledger entries.
 
 **Halt:** a red gate after the merge; a merge conflict in anything other than `docs/STATUS.md`,
 `docs/HISTORY.md`, or `ROADMAP.md`; a `go-architecture-reader` verdict naming a structural defect a
@@ -1322,20 +1618,20 @@ mapped to the task that carries it.
 | Package `tool/internal/doctor` with its own check contract; `spine.ExitCode`, `CheckVerdict`, `Condition`, and the severity types reused as they are (`:122-126`) | 1 |
 | One snapshot per run; each check a pure function over it (`:126-128`) | 1, filled by 3 through 7 |
 | Outside a cairn site: one line, exit 3 (`:130-131`) | 8 (the payload arm in 9) |
-| Containment under `<dir>`, symlinks included, the `media-seed/bin.ts` form (`:133-135`) | 1 (finding 3 completes the citation) |
+| Containment under `<dir>`, symlinks included, the `media-seed/bin.ts` form (`:133-135`), carrying forward the 2026-09-02 ledger amendment (`:136`) | 1 (finding 3 completes the citation; the Go primitives are named there), 11 (ledger entry 4) |
 | The site-config path shape verification from `substitute.mjs` (`:135`) | 2 (finding 4 corrects the citation) |
 | The eight file-only checks (`:140-142`) | 5 (five of them), 6 (three of them) |
 | The three facts-dependent checks, `unknown` with `ReasonNotObservable` and the engine-version message when `site-facts.json` is absent (`:144-147`) | 7 |
-| `config.site-config` asserts found, parses as YAML, root is a mapping with a non-empty `siteName`, and nothing else; the narrowing recorded in the ledger (`:149-155`) | 4 (the check), 11 (the ledger) |
+| `config.site-config` asserts found, parses as YAML, root is a mapping with a non-empty `siteName`, and nothing else; the narrowing recorded in the ledger (`:149-155`) | 4 (the parse), 5 (the check), 11 (the ledger) |
 | `ai.posture-effective`'s origin precedence, and `unknown` for no origin or no answer (`:156-158`) | 7 |
 | `config.dependency-floors` hand-rolls the three functions, no semver library; npm, pnpm, yarn order; the engine's peers read as a plain file (`:159-164`) | 5 (findings 5 and 6 complete it) |
 | `config.media-bucket` gets its own remediation, its own condition id from the pre-task (`:165-167`) | 7 |
-| The status mapping, all five doctor statuses (`:168-170`) | 1 (decision 2 resolves what `spine` cannot express) |
+| The status mapping, all five doctor statuses (`:168-170`) | 1 (decision 2 resolves what `spine` cannot express), 9 (decision 8 resolves what the frozen wire states cannot express) |
 | Each check's label equals its condition's registry `title` (`:171-172`) | 5, 6, 7 |
 | `wrangler.jsonc` through an in-module JSONC stripper; `wrangler.toml` through the shallow line reader, never a TOML library; jsonc wins silently (ruling 2, `:39-44`) | 3 |
 | `json-output.md`: the eleven ids under a `cairn doctor` heading, the freeze sentence amended, the schema tests moved with it (`:176-181`) | 9 |
 | The new payload kind's own schema file under the Task 20c contract (`:181`) | 9 |
-| The 24 typed constants stay hand-written; a Go test asserts the constant set equals the embedded id set, replacing the regex read and keeping its ruling comment (`:185-189`) | 2 |
+| The typed constants stay hand-written (25 after the pre-task, not the spec's 24); a Go test asserts the constant set equals the embedded id set, replacing the regex read and keeping its ruling comment (`:185-189`) | 2 |
 | A failure prints the title, the why, the remediation, and the `https://cairn.pub/docs/admin/<basename>#<fragment>` URL (`:191-192`) | 8 |
 | The conductor confirms each docs page resolves before the tag; the anchor-text fallback (`:192-195`) | 11, as a STATUS carry-forward; the tag session executes it |
 | YAML promoted to a direct require, in one task that also amends ADR 0002 and `purity_test.go`'s `otherDirectRequires`; no other new module (`:199-201`) | 4 |

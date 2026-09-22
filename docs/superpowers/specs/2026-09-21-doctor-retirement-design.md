@@ -10,7 +10,8 @@ Geoff then ruled. Agent-facing; not register-graded.
 `cairn` CLI as `cairn doctor [<dir>]`, released as `tool/v1.1.0`. The engine then removes the bin
 and `src/lib/doctor` inside the `0.97.0` window. Geoff ruled the retirement on 2026-09-21; this
 spec settles how, not whether. The work is one spec, one engine pre-task, and two numbered passes:
-**retire-1** (Go, ends at the `tool/v1.1.0` release) and **retire-2** (engine removal, ends at the
+**retire-1** (Go, ends at an untagged merge to `main`; the `tool/v1.1.0` tag and release are a
+later session, per Choreography step 5) and **retire-2** (engine removal, ends at the
 STATUS line). retire-2's close is the only writer of "the `0.97.0` cut is unblocked". Nothing here
 cuts `0.97.0`.
 
@@ -50,6 +51,15 @@ the CSRF handoff, the engine's peer floors), so none belongs to the developer's 
 5. **Exit codes take the tool's frozen convention:** 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN. A
    usage error exits 1 as the tool's cobra layer already does; the collision with a WARNING
    failure is accepted and stated on the command's docs page.
+   **Proposed amendment (2026-09-21, awaiting Geoff):** a usage error exits **3**, not 1, so the
+   collision is with UNKNOWN rather than with WARNING. `exitVerdict` (`cmd/cairn/main.go:162-167`)
+   returns `spine.VerdictUnknown` for every error that is not a `codedError`, a usage error is
+   never a coded error, and `cmd/cairn/usage_test.go:136` pins it; `json-output.md:285` freezes
+   "a usage error means exit 3 with empty stdout" at 1.0, so exit 1 could not be taken without a
+   major-version event. The command's docs page therefore states that exit 3 covers three cases,
+   a usage error, a run whose only non-passing results are `unknown`, and a directory that is not
+   a cairn site, and that a caller tests for a nonzero exit rather than switching on 3 alone. The
+   retire-1 plan is written against exit 3.
 6. **`wrangler-config.ts` moves to `src/lib/media-seed/`,** trimmed to `readR2Buckets` and
    `R2BucketEntry`, with the `DoctorContext['readFile']` type inlined. The engine's copy of
    `site-config-path.json` leaves; the scaffolder's copy is the one source.
@@ -110,7 +120,10 @@ borrowing `config.bindings-missing`'s remediation. `check:readiness` fails close
 with no heading and its allowlist is deliberately empty, so the id brings one new section in
 `docs/admin/is-it-working.md`, following the `config.tidy-key-missing` precedent in the ledger.
 
-## retire-1: the Go pass, `tool/v1.1.0`
+## retire-1: the Go pass, merged untagged
+
+The `tool/v1.1.0` tag and release are not this pass's. Choreography step 5 cuts them from a later
+commit carrying both this pass and draft docs pass A.
 
 Worktree `doctor-go` off the pre-task's merge. Gate: `make -C <abs worktree>/tool check` through
 `cairn-run-gate` with `CAIRN_GATE_LANE=light`. `go-conventions` on every file;

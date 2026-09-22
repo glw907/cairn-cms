@@ -435,3 +435,23 @@ the completion command's `--no-descriptions` is absent from `flags.json` by desi
 closed). Drafter rulings for tasks 5, 6, 6b: the exit-codes page names `cairn auth check`, never
 `cairn auth probe`; the summary example is `health-empty.json`. Spend about 1.21M of 3.5M.
 Next: segment 2, tasks 5, 6, 6b through `docs-page-chain`, Task 7 beside them.
+
+### 2026-09-22 05:40, segment 2 boundary (Tasks 5, 6, 6b, 7)
+
+The page chain `wf_1c976139-126` (24 agents, 2.64M) escalated all three pages after two rounds
+(`28fa72f2`, the round-2 drafts). Conductor decision: one directed third round per page on the
+round-2 findings verbatim, then one combined Opus read per page (register editor, profile grade,
+fact read). Results: `cli-cairn-json-output.md` accepted at `3bfaac37`; `cli-cairn-doctor.md`
+accepted at `3453668f` after the last read's three exact rewrites (the admin-arm link replaced
+by the URL shape, the version line, the `config.public-origin` SKIP cell);
+`cli-cairn-exit-codes.md` accepted at `29a03eff` after two exact rewrites (the site-scoped skip
+in `cairn auth check`, the setup-colon triad) and three advisories. All three version lines now
+say the pages describe `cairn` 1.1.0, since `cairn doctor` is absent from 1.0.1; the plan's brief
+("1.0.1, the current release; 1.1.0 will carry these pages") was found false for these pages.
+Task 7 `124d52c5` then `b544907a` (one redraft: three unsourced statements, the CLI's sanctioned
+name, the `--json` link), accepted. What a later pass would be wrong to rediscover: the three
+pages needed three rounds because the register editor's bar rises on each read and the fact
+read finds untraced sentences the drafter composed from the manifests' neighbours; a page chain
+budget for a contract page is closer to 900K than the 300K assumed. Spend about 4.95M of 3.5M,
+continuing under Geoff's overnight grant. Next: segment 3, Task 8 (the tool-side move, Opus,
+both gates), Task 9 (the scripter test), Task 10 (the pass-end read), Task 11 (close).

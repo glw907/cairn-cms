@@ -73,16 +73,17 @@ durable orientation only.
   0), with the cairn conventions baked in. Pinned to Sonnet; the main loop orchestrates, reviews
   each diff, and verifies the gate between dispatches.
 - **Review subagents** (user-scoped, read-only): `svelte-reviewer`, `cloudflare-workers-reviewer`,
-  `web-auth-security-reviewer`, `daisyui-a11y-reviewer`, pinned to `claude-opus-5`. Fan them out in
+  `web-auth-security-reviewer`, `daisyui-a11y-reviewer`, pinned to `claude-opus-5-5`. Fan them out in
   parallel at a review gate to complement `/code-review`.
 - **Subagent models:** the workstation `.bashrc` sets `CLAUDE_CODE_SUBAGENT_MODEL=inherit`, so
   each agent's frontmatter `model:` wins, and a per-dispatch `model` beats the frontmatter.
   Upshift a single correctness-critical task with `model: opus`; `model: fable` only when an Opus
-  verdict itself hedges on something that matters. Sonnet implements, Opus 5 reviews, and model
+  verdict itself hedges on something that matters. Sonnet implements, Opus 5.5 reviews, and model
   diversity is part of the
-  gate; the `code-simplifier` plugin agent pins Opus. The conductor (Fable) runs plan and
-  execution in one session and never reads diffs itself; the `diff-reviewer` agent does, per the
-  global "Conducting a pass" rule.
+  gate; the `code-simplifier` plugin agent pins Opus. Fable plans and adjudicates; Opus 5.5
+  conducts execution (Geoff, 2026-09-22): a pass's executing session runs on `claude-opus-5-5`
+  and never reads diffs itself; the `diff-reviewer` agent does, per the global "Conducting a
+  pass" rule.
 - **Claude tooling for this stack** lives at user scope, not in this repo: the official DaisyUI
   skill (the component reference every implementer and reviewer reads; prefer a stock DaisyUI
   component over a home-grown one unless `docs/internal/engine-rulings.md` records the defect

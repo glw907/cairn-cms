@@ -26,7 +26,7 @@ verified, `make -C tool install-check VERSION=v1.1.0` green in both containers).
 ruled on 2026-09-22 by the conductor under Geoff's delegation: 1.1.0 prints the cairn.pub URLs
 exactly as 1.0.1 does; the 404s are cairn.pub's debt, recorded in
 [the pass A handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), and no tool patch
-follows. **retire-2a is executing** on `doctor-engine` off `main` at `59b920f1`, plan
+follows. **retire-2a is executing** on `doctor-engine` off `main` at `59b920f1`; Segment A (Tasks 1 to 3) accepted at `0efbec49`, spend 1.11M of 2.6M, Segment B (Task 4, the removal) running as workflow run `wf_24136d34-dfa`'s successor; the light lane's 3G cap OOMs `svelte-check` here, so a light gate must not carry `npm run check`, plan
 `docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md`, workflow mode; its close writes only
 its own line, then retire-2b.
 

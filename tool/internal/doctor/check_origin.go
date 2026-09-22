@@ -48,15 +48,23 @@ func validatePublicOrigin(origin string) (failDetail string, ok bool) {
 	return "", true
 }
 
-// ConfigPublicOrigin ports checks-local.ts's configPublicOrigin (:129-152). It reads no file of
-// its own: Snapshot.PublicOrigin is resolved by the command layer, wrangler vars taking
-// precedence over the environment, before any check runs.
+// ConfigPublicOrigin ports checks-local.ts's configPublicOrigin (:129-152). Snapshot.PublicOrigin
+// is resolved by the command layer, wrangler vars taking precedence over the environment, before
+// any check runs; this check reads wrangler.jsonc/wrangler.toml itself only to learn whether a
+// wrangler config was found at all, matching the ported skip condition: skip only when no
+// wrangler config exists and no origin resolved from either source. A wrangler config found with
+// no PUBLIC_ORIGIN in its vars and none in the environment falls through to the same
+// empty-origin fail every other unconfigured case gets.
 var ConfigPublicOrigin = Check{
 	ID:        "config.public-origin",
 	Condition: spine.ConditionConfigPublicOriginInvalid,
 	Run: func(s Snapshot) Result {
+		_, found, err := ReadWranglerConfig(s)
+		if err != nil {
+			return uncheckedResult("config.public-origin", err.Error())
+		}
 		origin := s.PublicOrigin
-		if origin.Source == OriginAbsent {
+		if !found && origin.Source == OriginAbsent {
 			return skipResult("config.public-origin", detailPublicOriginSkip)
 		}
 		if origin.Value == "" {

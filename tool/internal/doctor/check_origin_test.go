@@ -10,15 +10,25 @@ import "testing"
 func TestConfigPublicOrigin(t *testing.T) {
 	tests := []struct {
 		name       string
+		files      map[string]string
 		origin     PublicOrigin
 		wantStatus Status
 		wantDetail string
 	}{
 		{
-			name:       "skip: neither wrangler vars nor the environment named an origin",
+			name:       "skip: no wrangler config found and no origin resolved",
 			origin:     PublicOrigin{Source: OriginAbsent},
 			wantStatus: StatusSkip,
 			wantDetail: detailPublicOriginSkip,
+		},
+		{
+			name: "fail: wrangler config found but names no origin",
+			files: map[string]string{
+				"wrangler.jsonc": `{}`,
+			},
+			origin:     PublicOrigin{Source: OriginAbsent},
+			wantStatus: StatusFail,
+			wantDetail: detailPublicOriginUnconfigured,
 		},
 		{
 			name:       "fail: unset (empty value from a source that resolved nothing useful)",
@@ -65,7 +75,8 @@ func TestConfigPublicOrigin(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := Snapshot{Dir: t.TempDir(), PublicOrigin: tt.origin}
+			s := snapshotWithFiles(t, tt.files)
+			s.PublicOrigin = tt.origin
 			result := ConfigPublicOrigin.Run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)

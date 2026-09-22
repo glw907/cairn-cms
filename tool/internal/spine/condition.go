@@ -23,6 +23,7 @@ const (
 	ConditionEmailSenderNotOnboarded     Condition = "email.sender-not-onboarded"
 	ConditionEmailSendFailed             Condition = "email.send-failed"
 	ConditionConfigBindingsMissing       Condition = "config.bindings-missing"
+	ConditionConfigMediaBucketMissing    Condition = "config.media-bucket-missing"
 	ConditionConfigObservabilityOff      Condition = "config.observability-off"
 	ConditionConfigCSRFDisableMissing    Condition = "config.csrf-disable-missing"
 	ConditionConfigPublicOriginInvalid   Condition = "config.public-origin-invalid"
@@ -51,6 +52,7 @@ var conditions = []Condition{
 	ConditionEmailSenderNotOnboarded,
 	ConditionEmailSendFailed,
 	ConditionConfigBindingsMissing,
+	ConditionConfigMediaBucketMissing,
 	ConditionConfigObservabilityOff,
 	ConditionConfigCSRFDisableMissing,
 	ConditionConfigPublicOriginInvalid,

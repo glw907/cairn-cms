@@ -4,6 +4,12 @@
 
 ### Added
 
+- The `config.media-bucket` doctor check now carries its own condition id,
+  `config.media-bucket-missing`, instead of borrowing `config.bindings-missing`, so a missing
+  media bucket binding prints its own remediation rather than the `EMAIL`/`AUTH_DB` fix. See
+  [Declare the media bucket binding](docs/admin/is-it-working.md#declare-the-media-bucket-binding).
+  No consumer action; the id is additive, and the registry is exported from no public subpath.
+
 - `packages/create-cairn-site`'s test fakes (`test/fake-cloudflare.mjs`, `test/fake-github.mjs`)
   now load their response bodies from a JSON fixture corpus at
   `packages/create-cairn-site/fixtures/`, one file per captured body, instead of carrying them as

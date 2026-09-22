@@ -37,11 +37,12 @@ export const configBindings: DoctorCheck = {
 
 // The R2 media bucket is never added to the hard config.bindings check, so a no-media site never
 // fails on a missing media binding (decision 9). This conditional runs only when the adapter
-// declares assets, matching the adapter's bucketBinding against wrangler's r2_buckets. It reuses the
-// config.bindings-missing condition rather than registering a new one, so the readiness count holds.
+// declares assets, matching the adapter's bucketBinding against wrangler's r2_buckets. It carries
+// its own condition id, config.media-bucket-missing, rather than borrowing config.bindings-missing:
+// a shared id would print the EMAIL/AUTH_DB remediation for a media-bucket failure.
 export const configMediaBucket: DoctorCheck = {
   id: 'config.media-bucket',
-  conditionId: 'config.bindings-missing',
+  conditionId: 'config.media-bucket-missing',
   title: 'Media bucket binding',
   async run(ctx: DoctorContext): Promise<CheckResult> {
     const binding = ctx.mediaBucketBinding;

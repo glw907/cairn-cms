@@ -114,9 +114,9 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/cairn.server.ts', // a site's own server-only adapter half, by convention
   'file-path:src/lib/cairn.access.ts', // a site's own access-map module, by convention
   'file-path:src/lib/site.config.yaml', // a site's own non-secret config file, by convention
-  // A spot cairn doctor's `config.site-config` SKIP line names as one of three it looked in,
-  // quoted verbatim by is-it-working.md's transcript block from 03-doctor-credentialed.txt.
-  // cairn doctor looks there by convention; no repo carries the path, so nothing can resolve it.
+  // One of three spots `cairn doctor` looks for a site config, named in the doctor CLI's own
+  // reference page and facts/reference.md; cairn doctor looks there by convention, so no repo
+  // carries the path and nothing can resolve it.
   'file-path:src/site.config.yaml',
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
   'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file

@@ -1,7 +1,7 @@
 # Recorded-run transcripts
 
-Real stdout from a live `create-cairn-site` run against a scratch site, plus two
-`cairn-doctor` reports against the deployed result. The admin track's transcript blocks quote
+Real stdout from a live `create-cairn-site` run against a scratch site, plus one
+`cairn doctor` report against a built local site. The admin track's transcript blocks quote
 these files, and `check:transcripts` compares every marked block against the fixture it names.
 
 Two rules govern this directory. **No invented output, ever**: a transcript is real stdout or it
@@ -75,8 +75,7 @@ edited, per the never-edit rule.
 | `01b-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Failed: repository already exists |
 | `01c-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Stopped at the sign-in email prompt |
 | `01d-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Reached the live summary |
-| `02-doctor-bare.txt` | `npx cairn-doctor` | 8 passed, 0 failed, 11 skipped |
-| `03-doctor-credentialed.txt` | `npx cairn-doctor` | 8 passed, 3 failed, 8 skipped |
+| `04-doctor-report.txt` | `cairn doctor .` | 8 passed, 0 failed, 1 skipped, 0 info, 2 unchecked |
 
 Four invocations reached a live site where the plan expected one. Three of the four stops have
 causes worth naming, since two of them are tool behavior a reader can hit:
@@ -93,23 +92,39 @@ causes worth naming, since two of them are tool behavior a reader can hit:
    from a survey that missed `Sign-in email`, so it waited for a later prompt. No tool defect;
    the table was corrected and the run resumed.
 
-## The two doctor environments
+## The doctor capture
 
-`02-doctor-bare.txt` ran with no Cloudflare credentials: the reader's default, showing passes
-alongside credential and structural skips.
+`create-cairn-site` no longer scaffolds `npx cairn-doctor`; the doctor is now `cairn doctor`, a
+subcommand of the separate Go `cairn` tool a reader installs once per machine
+(`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`). `04-doctor-report.txt`
+replaces the two npm-era captures with one run of the released binary.
 
-`03-doctor-credentialed.txt` ran with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
-exported in a separate, uncaptured step, so no token ever reached a captured command line. It
-carries pass, fail, and skip lines together, which is what the page's contract needs. The three
-failures are honest and come from the scaffold's placeholder from-address `cms@showcase.test`,
-which belongs to no zone.
+**Install:** `go install github.com/glw907/cairn-cms/tool/cmd/cairn@v1.1.0`, the tagged release
+rather than `@latest`, so this procedure names a version a reader can reproduce.
 
-The token used was this workstation's existing account-scoped token, not a freshly minted
-read-scoped one. The output is identical either way, and the reason is visible in the report:
-the zone checks fail with "no zone named showcase.test is visible to this token", which holds
-for any token because the zone does not exist, and the D1 checks skip structurally on "no
-AUTH_DB database_id in wrangler.jsonc" rather than on any credential. Minting a narrower token
-would have produced the same bytes, so none was minted and none is owed at teardown.
+**The site:** this repo's own `examples/showcase`, at the `doctor-engine` worktree's commit
+`0612c350dfadf4c884e597601c78aea99c7d7ab6`, the head this task branched from. It is a real
+cairn-cms site, already built, so `cairn doctor` reads committed configuration rather than a
+scaffold that never ran a build. `npx cairn-manifest` was run first from `examples/showcase`, so
+`src/content/.cairn/site-facts.json` exists; without that file the three facts-derived checks
+report `unknown` with "needs engine 0.97.0 or later, and one build" instead of the real result,
+and a capture of that degraded state would publish it as the normal one.
+
+**The command:** `bash -x -c 'cairn doctor .'`, run from `examples/showcase` with `cairn` on
+`PATH`, redirected with a plain `>` into the fixture. `cairn doctor` is a single, non-interactive
+command that writes one report to stdout and exits, so `transcript-blocks.mjs`'s pty-control-stream
+normalizer has nothing to normalize; a shell redirect compares fine against the rendered block, and
+none of the `01` captures' pty harness is needed. Bash's own `-x` trace of the command it is about
+to run becomes the fixture's first line, `+ cairn doctor .`, real bytes the shell produced rather
+than a hand-written header.
+
+`examples/showcase` installs `@glw907/cairn-cms` from this repo (`file:../..`), so
+`node_modules/@glw907/cairn-cms` is a symlink out of the site directory. `cairn doctor`'s
+containment rule refuses to read through it
+(`doctor-go-containment-symlink-resolving` in `docs/internal/engine-rulings.md`), which is why the
+dependency-floor line reads `UNCHECKED` rather than `PASS` or `FAIL`: a site installed the normal
+way, with a real copy of the package under its own `node_modules`, would not hit this. The capture
+is real and unedited either way, per the never-edit rule.
 
 ## The captured sign-in token is dead
 
@@ -146,8 +161,6 @@ No documentation block quotes these; `check:transcripts` treats this list as the
 - `01b-resume.txt`, kept as the record of the non-idempotent resume above.
 - `01c-resume.txt`, kept so the run history is complete and auditable, superseded entirely by
   `01d-resume.txt`.
-- `02-doctor-bare.txt`, kept as the counterpart environment to the credentialed report the
-  admin page does quote.
 
 ## Staleness note (2026-09-19)
 
@@ -159,15 +172,16 @@ stay as recorded rather than being hand-edited to add a step never captured. `ch
 compares the docs pages' quoted blocks against these fixtures, not against the current
 scaffold's behavior, so it stays green either way.
 
-## Staleness note (2026-09-20)
+## Staleness note (2026-09-22)
 
-The doctor retired the `skill.admin-screens` check and its `--fix` flag; the skill install now
-lives in `cairn-guidance`. `03-doctor-credentialed.txt` still carries the retired check's `SKIP`
-line and folds it into the run's total, since this fixture predates the retirement and a fixture
-is never edited. `docs/admin/is-it-working.md` elides that one line from its quoted block with a
-`[...]` marker and says so in its own prose; the total after the block stays the fixture's own
-number. `check:transcripts` compares the quoted block against this fixture, not against the
-current doctor's check count, so it stays green either way.
+`01-create-cairn-site.txt` and `01d-resume.txt` predate the doctor's retirement from npm to Go and
+still print `create-cairn-site`'s own old hand-over line, "Run `npx cairn-doctor` any time to
+check what is set up and what is still missing." The scaffold no longer prints that line: it now
+prints a `cairn doctor` reminder with an install pointer, unconditionally, and never runs
+`npx cairn-doctor` at all. Re-capturing needs a live GitHub App and repository creation, a harness
+outside this repo, so these fixtures stay as recorded. `check:transcripts` compares the docs
+pages' quoted blocks against these fixtures, not against the current scaffold's behavior, so it
+stays green either way.
 
 ## Staleness note (2026-09-20, guidance bake)
 

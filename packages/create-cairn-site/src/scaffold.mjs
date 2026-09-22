@@ -246,7 +246,9 @@ export function handoverText({ dir }) {
     'you write there touches GitHub or sends real email. Write a post, save it, publish it, and',
     "watch it appear on the site. The scaffold's own dev script turns the stand-in on.",
     '',
-    'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
+    'Run `cairn doctor` any time to check what is set up and what is still missing. Install it ' +
+      'with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the release ' +
+      'page at https://github.com/glw907/cairn-cms/releases.',
     '',
     'A workflow at .github/workflows/check.yml runs `npm run check:cairn` on every push, so',
     'GitHub tells you if a change breaks the gate before it reaches your site.',

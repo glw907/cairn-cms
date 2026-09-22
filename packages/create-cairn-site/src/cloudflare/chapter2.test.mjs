@@ -1849,7 +1849,7 @@ test('email closing copy: names the from-address, its override, the DMARC conseq
   });
 
   assert.equal(outcome.outcome, 'email-live');
-  const closing = logs.find((line) => line.includes('cairn-doctor'));
+  const closing = logs.find((line) => line.includes('cairn adopt'));
   assert.ok(closing, 'expected a closing message naming the doctor command');
   assert.match(closing, new RegExp(`no-reply@${domain}`), 'must name the from-address');
   assert.match(closing, /cairn\.config\.ts/, 'must name the one-line override file');
@@ -1857,7 +1857,7 @@ test('email closing copy: names the from-address, its override, the DMARC conseq
   assert.match(closing, /reject/i, 'must name the record\'s policy');
   assert.match(closing, /newsletter/, 'must name the consequence for a later newsletter tool');
   assert.match(closing, /turn Email Sending off again/, 'must say the record outlives turning Email Sending back off (amendment 9)');
-  assert.match(closing, /cairn-doctor --from .* --send-test/, 'must name the doctor re-proof command');
+  assert.match(closing, /cairn adopt.*cairn health/, 'must name adopt then health as the live https/email re-proof step');
 });
 
 // --- T4b.1 defect harvest: the tool never promises delivery, anywhere (live e2e finding) -------
@@ -1884,7 +1884,7 @@ test('email closing copy: proves acceptance, not delivery, and promises no arriv
   });
 
   assert.equal(outcome.outcome, 'email-live');
-  const closing = logs.find((line) => line.includes('cairn-doctor'));
+  const closing = logs.find((line) => line.includes('cairn adopt'));
   assert.ok(closing, 'expected a closing message naming the doctor command');
   assert.equal(
     closing.includes('proving delivery works'),

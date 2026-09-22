@@ -19,51 +19,39 @@ npx cairn-doctor
 It reads your local config, your Cloudflare account, and your GitHub App, and prints one line per
 check. The full command reference is [`cairn-doctor`](../reference/doctor.md).
 
-This report is a real run, against a site named `cairn-capture-scratch` that `create-cairn-site`
-had just finished building. The shell running it carried a `CLOUDFLARE_API_TOKEN`, the credential
-**Making the Cloudflare zone checks run** explains below. That's why its three zone-derived checks
-report a real result instead of a skip. Run the same command with no token, and those three lines
-read SKIP instead. This capture predates the skill-install nudge's retirement (see the note
-below the block), so the no-token total it recorded, 8 passed, 0 failed, 11 skipped, is one skip
-higher than what a current bare run prints.
+This report is a real run of `cairn doctor`, against this repo's own worked example site, taken
+right after building it. `cairn doctor` reads no credential: it checks your local configuration
+and makes at most one network request, a `GET` of your site's own `/robots.txt`. Nothing here
+needed a `CLOUDFLARE_API_TOKEN` or any other secret.
 
-<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/03-doctor-credentialed.txt -->
+<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/04-doctor-report.txt -->
 ```
-PASS  Wrangler bindings: EMAIL and AUTH_DB are declared
-PASS  Media bucket binding: media bucket MEDIA_BUCKET is declared
-PASS  Workers Logs sink: observability.enabled is true
-PASS  Framework CSRF handoff: checkOrigin: false found and the hooks file wires the cairn guard (heuristic text read)
-SKIP  Site config: no site.config.yaml found (looked in site.config.yaml, src/lib/site.config.yaml, src/site.config.yaml)
-PASS  Public origin: PUBLIC_ORIGIN is https://cairn-capture-scratch.glw907.workers.dev (wrangler vars)
-SKIP  Tidy API key: no site.config.yaml found, so tidy enablement is unknown
-PASS  Custom /admin mount: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
-[...]
-PASS  Dependency floors: @sveltejs/kit 2.70.2 and svelte 5.56.9 satisfy the engine peer ranges
-FAIL  Email sending domain: no zone named showcase.test is visible to this token
-FAIL  Always Use HTTPS: no zone named showcase.test is visible to this token
-FAIL  Zone HSTS: no zone named showcase.test is visible to this token
-SKIP  Auth store (D1): no AUTH_DB database_id in wrangler.jsonc or wrangler.toml
-SKIP  Editor role vocabulary: no AUTH_DB database_id in wrangler.jsonc or wrangler.toml
-SKIP  Guard role wiring: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
-SKIP  Editor email normalization: no AUTH_DB database_id in wrangler.jsonc or wrangler.toml
-SKIP  GitHub App: set GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 to run this check
-PASS  AI posture, effective: no AI posture is stated (aiPosture is unset), and https://cairn-capture-scratch.glw907.workers.dev/robots.txt carries no AI-crawler directives, consistent with stating nothing.
-[...]
-8 passed, 3 failed, 8 skipped
++ cairn doctor .
+PASS  Wrangler bindings are missing: EMAIL and AUTH_DB are declared
+PASS  Media bucket binding is missing: media bucket MEDIA_BUCKET is declared
+PASS  Workers Logs has no sink: observability.enabled is true
+PASS  Framework CSRF check is not handed off: checkOrigin: false found (svelte.config.js or vite.config.ts) and the hooks file wires the cairn guard (heuristic text read)
+PASS  Site config does not validate: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
+PASS  PUBLIC_ORIGIN is missing or invalid: PUBLIC_ORIGIN is http://localhost:4173 (wrangler vars)
+PASS  Site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
+PASS  Custom /admin mount looks incomplete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
+UNCHECKED  A framework dependency sits below the engine floor: doctor: refusing to read outside the directory: node_modules/@glw907/cairn-cms/package.json
+SKIP  Guard is missing the declared role vocabulary: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
+UNCHECKED  The stated AI posture is not the served one: could not reach the resolved origin's /robots.txt
+
+8 passed, 0 failed, 1 skipped, 0 info, 2 unchecked
 ```
 
-This report reflects an earlier engine release, so the dependency-floor version numbers you see
-when you run this yourself are newer. It also predates two statuses a current run can show
-alongside PASS, FAIL, and SKIP. `INFO` marks a heuristic that couldn't see enough to answer, or an
-advisory finding; it's never a deploy blocker. `UNCHECKED` marks a check that genuinely needed an
-input, like a lockfile or a config file, and found none of the candidates it looks for. That's
-different from a SKIP, which means the check doesn't apply at all.
+`INFO` marks a heuristic that couldn't see enough to answer, or an advisory finding. It's never a
+deploy blocker. `UNCHECKED` marks a check that genuinely needed an input and found none of the
+candidates it looks for, or, as with the preceding dependency-floor line, refused to read one it
+found for a reason worth knowing about. A `SKIP` differs from both: the check doesn't apply at all.
 
-The elided line between the mount check and the dependency floors was a skill-install nudge the
-doctor no longer prints: that install now lives in
-[`cairn-guidance`](../reference/guidance.md). The totals in the preceding block, and the
-no-token total quoted just before it, both predate that removal and still count the retired
-line, so either total you see from a current run reads one skip lower.
+The preceding `UNCHECKED` dependency-floor line comes from how this repo's own example site
+installs the engine, through a symlink that leads outside the site directory. `cairn doctor`
+refuses to follow a symlink that leaves the directory it started from, by design. A site
+installed the ordinary way, with a real copy of `@glw907/cairn-cms` under its own `node_modules`,
+reads `PASS` or `FAIL` there instead, never this line.
 
 Every `create-cairn-site` scaffold ships the placeholder sign-in address `cms@showcase.test`, and
 this site hadn't connected a domain yet, so no Cloudflare zone named `showcase.test` exists for the

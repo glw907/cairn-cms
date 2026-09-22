@@ -76,11 +76,11 @@ func parseHeadersFile(text string) []headersBlock {
 
 // isCatchAllHeadersPath ports checks-local.ts's own helper (checks-local.ts:509-517): a
 // _headers path line is Cloudflare's catch-all glob either written bare (/*) or as the pathname
-// of an absolute URL (https://example.com/*, which Cloudflare also accepts as a path). Go's
-// regexp package is RE2 and cannot express the TypeScript scheme-sniff regex
-// (^[a-z][a-z0-9+.-]*://) with its own backreference-free but still non-RE2-friendly URL parse
-// fallback, so this ports the URL-parse branch directly with net/url and skips the regex
-// pre-check entirely: url.Parse rejects anything that is not an absolute URL just as reliably.
+// of an absolute URL (https://example.com/*, which Cloudflare also accepts as a path). The
+// TypeScript source sniffs the scheme with a regex before parsing the URL; net/url.Parse is the
+// idiomatic Go spelling of the same scheme-and-host check and reaches the same verdicts on the
+// corpus, so this drops the regex pre-check and parses directly: url.Parse rejects anything that
+// is not an absolute URL just as reliably.
 func isCatchAllHeadersPath(path string) bool {
 	if path == "/*" {
 		return true

@@ -223,8 +223,8 @@ func TestConfigNoReferrerBlanketConditionID(t *testing.T) {
 	}
 }
 
-// TestIsCatchAllHeadersPathGapCase proves the RE2-avoiding net/url port still recognizes the
-// absolute-URL spelling of the catch-all glob.
+// TestIsCatchAllHeadersPathGapCase proves the net/url port still recognizes the absolute-URL
+// spelling of the catch-all glob.
 func TestIsCatchAllHeadersPathGapCase(t *testing.T) {
 	if !isCatchAllHeadersPath("https://example.com/*") {
 		t.Fatal("isCatchAllHeadersPath(https://example.com/*) = false, want true")

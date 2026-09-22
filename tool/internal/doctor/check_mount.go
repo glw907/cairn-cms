@@ -24,6 +24,10 @@ var adminMountPaths = []string{
 // fix, naming the two mount signals verbatim, CairnAdminShell and .shellLoad.
 const adminMountGuidance = "no wired /admin mount detected; mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin({ runtime }).shellLoad, and the /admin/[...path] catch-all rendering CairnAdmin"
 
+// passAdminMountWired is the pass detail when both mount signals are found in the candidate
+// files (a heuristic text read, not proof of a working mount).
+const passAdminMountWired = "the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)"
+
 // cairnAdminShellMentionPattern and shellLoadCallPattern back the mount-shape heuristic, loose
 // like wiresCairnGuard so a renamed or wrapped composer still reads as wired. A .shellLoad
 // member-access on any identifier (not a literal admin.shellLoad) proves the layout calls the
@@ -81,7 +85,7 @@ var AdminMountShape = Check{
 			return infoResult("admin.mount-shape", adminMountGuidance)
 		}
 		if callsShellLoad(text) && wiresAdminShell(text) {
-			return passResult("admin.mount-shape", "the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)")
+			return passResult("admin.mount-shape", passAdminMountWired)
 		}
 		return infoResult("admin.mount-shape", adminMountGuidance)
 	},

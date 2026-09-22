@@ -328,3 +328,4 @@ Name the check that entry holds
 - parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
 - pnpm-lock.yaml did not parse
 - serve strict-origin-when-cross-origin (or same-origin) as the site default; no-referrer is safe only on a route protected by a double-submit CSRF token (the way /admin is), and a route guarded instead by the origin compare needs same-origin in its place
+- the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)

@@ -64,5 +64,6 @@ func Catalogue() []string {
 		tmplNoReferrerFail,
 		tmplNoReferrerPass,
 		adminMountGuidance,
+		passAdminMountWired,
 	}
 }

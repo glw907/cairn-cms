@@ -47,8 +47,8 @@ marked CONTRADICTS.
    could not take without a major-version event. **The plan is written against exit 3**, and the
    collision the command's docs page states is the real one: exit 3 covers a usage error, a run
    carrying an `unknown` check with no failure, and a directory that is not a cairn site. There is
-   no collision with a WARNING failure. The spec's ruling 5 now carries this as a **proposed
-   amendment awaiting Geoff**; see "Spec amendments this plan proposes" below.
+   no collision with a WARNING failure. The spec's ruling 5 now carries this as an **amendment
+   Geoff approved on 2026-09-21**; see "Spec amendments this plan proposes" below.
 2. **CONTRADICTS the spec's status mapping (`:168-170`) as it reaches the exit code: neither
    `spine.StateWord` nor `spine.CheckVerdict` can express the doctor's `skip` or `info`.**
    `spine.StateWord` (`internal/spine/exit.go:213-228`) returns `"skip"` only when the reason is
@@ -191,12 +191,11 @@ Verified, and not contradictions:
 
 Three edits to `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` ship with this
 plan. Two are already applied, since the Choreography is Geoff's own ruling and the spec's prose
-contradicted it. One is marked in the spec as awaiting Geoff and is the only item this plan needs
-a decision on before Task 1.
+contradicted it. The third, ruling 5's exit code, Geoff approved with this plan on 2026-09-21.
 
 | Spec line | The edit | Status |
 | --- | --- | --- |
-| Ruling 5 (`:50-52`) | A usage error exits **3**, not 1, so the collision is with UNKNOWN rather than WARNING. Pinned by `cmd/cairn/usage_test.go:136` and frozen at 1.0 by `json-output.md:285`; exit 1 could not be taken without a major-version event. The command's docs page states that exit 3 covers a usage error, an all-`unknown` run, and a non-site directory, so a caller tests for a nonzero exit rather than switching on 3. | **Proposed, awaiting Geoff.** The spec carries it as a marked amendment; this plan's decision 1 and Tasks 8 and 9 are written against exit 3 either way, since the tool's behaviour is frozen. |
+| Ruling 5 (`:50-52`) | A usage error exits **3**, not 1, so the collision is with UNKNOWN rather than WARNING. Pinned by `cmd/cairn/usage_test.go:136` and frozen at 1.0 by `json-output.md:285`; exit 1 could not be taken without a major-version event. The command's docs page states that exit 3 covers a usage error, an all-`unknown` run, and a non-site directory, so a caller tests for a nonzero exit rather than switching on 3. | **Approved (Geoff, 2026-09-21).** The spec carries it as a marked amendment; this plan's decision 1 and Tasks 8 and 9 are written against exit 3. |
 | Brief (`:12-13`) | retire-1 ends at an **untagged merge**, not at the `tool/v1.1.0` release. | Applied. It contradicted Choreography `:352-353`, which is already Geoff's ruling. |
 | The retire-1 heading (`:113`) | Same correction in the section heading. | Applied, same reason. |
 

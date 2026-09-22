@@ -51,7 +51,7 @@ the CSRF handoff, the engine's peer floors), so none belongs to the developer's 
 5. **Exit codes take the tool's frozen convention:** 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN. A
    usage error exits 1 as the tool's cobra layer already does; the collision with a WARNING
    failure is accepted and stated on the command's docs page.
-   **Proposed amendment (2026-09-21, awaiting Geoff):** a usage error exits **3**, not 1, so the
+   **Amended (Geoff, 2026-09-21):** a usage error exits **3**, not 1, so the
    collision is with UNKNOWN rather than with WARNING. `exitVerdict` (`cmd/cairn/main.go:162-167`)
    returns `spine.VerdictUnknown` for every error that is not a `codedError`, a usage error is
    never a coded error, and `cmd/cairn/usage_test.go:136` pins it; `json-output.md:285` freezes

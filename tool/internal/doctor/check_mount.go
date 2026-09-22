@@ -79,14 +79,14 @@ var AdminMountShape = Check{
 	Run: func(s Snapshot) Result {
 		text, found, err := readAdminMountText(s)
 		if err != nil {
-			return uncheckedResult("admin.mount-shape", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !found {
-			return infoResult("admin.mount-shape", adminMountGuidance)
+			return infoResult(adminMountGuidance)
 		}
 		if callsShellLoad(text) && wiresAdminShell(text) {
-			return passResult("admin.mount-shape", passAdminMountWired)
+			return passResult(passAdminMountWired)
 		}
-		return infoResult("admin.mount-shape", adminMountGuidance)
+		return infoResult(adminMountGuidance)
 	},
 }

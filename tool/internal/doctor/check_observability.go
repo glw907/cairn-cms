@@ -17,14 +17,14 @@ var ConfigObservability = Check{
 	Run: func(s Snapshot) Result {
 		facts, found, err := ReadWranglerConfig(s)
 		if err != nil {
-			return uncheckedResult("config.observability", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !found {
-			return skipResult("config.observability", noWranglerFoundDetail)
+			return skipResult(noWranglerFoundDetail)
 		}
 		if !facts.ObservabilityEnabled {
-			return failResult("config.observability", spine.ConditionConfigObservabilityOff, detailObservabilityOff)
+			return failResult(spine.ConditionConfigObservabilityOff, detailObservabilityOff)
 		}
-		return passResult("config.observability", detailObservabilityOn)
+		return passResult(detailObservabilityOn)
 	},
 }

@@ -33,9 +33,6 @@ var (
 	handleMentionPattern = regexp.MustCompile(`handle`)
 )
 
-// hooksCandidatePaths are the two spellings a site's hooks module might use, .ts checked first.
-var hooksCandidatePaths = []string{"src/hooks.server.ts", "src/hooks.server.js"}
-
 // hasUncommentedDisable ports checks-local.ts's own helper (checks-local.ts:76-84): a line whose
 // trimmed start is a comment marker cannot disable anything, so a commented-out
 // checkOrigin: false never green-lights the handoff.
@@ -63,22 +60,6 @@ func wiresCairnGuard(text string) bool {
 	return cairnMentionPattern.MatchString(text) && handleMentionPattern.MatchString(text)
 }
 
-// readHooksSource reads the site's hooks module under either spelling, .ts preferred, returning
-// the path it read from alongside the text so a failure can name the file. found is false when
-// neither candidate exists.
-func readHooksSource(s Snapshot) (text, path string, found bool, err error) {
-	for _, candidate := range hooksCandidatePaths {
-		body, ok, readErr := s.ReadFile(candidate)
-		if readErr != nil {
-			return "", "", false, readErr
-		}
-		if ok {
-			return string(body), candidate, true, nil
-		}
-	}
-	return "", "", false, nil
-}
-
 // ConfigCsrfDisable ports checks-local.ts's configCsrfDisable (checks-local.ts:94-127): the
 // framework's csrf: { checkOrigin: false } disable must be paired with createAuthGuard wired in
 // src/hooks.server.ts (or .js), the pair that keeps admin form POSTs protected once the
@@ -90,17 +71,17 @@ var ConfigCsrfDisable = Check{
 	Run: func(s Snapshot) Result {
 		svelteConfig, svelteFound, err := s.ReadFile("svelte.config.js")
 		if err != nil {
-			return uncheckedResult("config.csrf-disable", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		// A bare `sv create` scaffold writes no svelte.config.js at all, wiring the adapter (and
 		// any csrf: { checkOrigin: false }) inside vite.config.ts's plugin call instead, so both
 		// files are read.
 		viteConfig, viteFound, err := s.ReadFile("vite.config.ts")
 		if err != nil {
-			return uncheckedResult("config.csrf-disable", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !svelteFound && !viteFound {
-			return uncheckedResult("config.csrf-disable", uncheckedCsrfDetail)
+			return uncheckedResult(uncheckedCsrfDetail)
 		}
 
 		var combined strings.Builder
@@ -112,16 +93,16 @@ var ConfigCsrfDisable = Check{
 			combined.Write(viteConfig)
 		}
 		if !hasUncommentedDisable(combined.String()) {
-			return failResult("config.csrf-disable", spine.ConditionConfigCSRFDisableMissing, failCsrfNoDisable)
+			return failResult(spine.ConditionConfigCSRFDisableMissing, failCsrfNoDisable)
 		}
 
 		hooks, _, hooksFound, err := readHooksSource(s)
 		if err != nil {
-			return uncheckedResult("config.csrf-disable", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !hooksFound || !wiresCairnGuard(hooks) {
-			return failResult("config.csrf-disable", spine.ConditionConfigCSRFDisableMissing, failCsrfNoGuard)
+			return failResult(spine.ConditionConfigCSRFDisableMissing, failCsrfNoGuard)
 		}
-		return passResult("config.csrf-disable", passCsrfWired)
+		return passResult(passCsrfWired)
 	},
 }

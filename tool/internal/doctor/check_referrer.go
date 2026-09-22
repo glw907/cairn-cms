@@ -218,21 +218,21 @@ var ConfigNoReferrerBlanket = Check{
 	Run: func(s Snapshot) Result {
 		hooksText, hooksPath, hooksFound, err := readHooksSource(s)
 		if err != nil {
-			return uncheckedResult("config.no-referrer-blanket", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		headersBody, headersFound, err := s.ReadFile("static/_headers")
 		if err != nil {
-			return uncheckedResult("config.no-referrer-blanket", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !hooksFound && !headersFound {
-			return skipResult("config.no-referrer-blanket", fmt.Sprintf(tmplNoReferrerSkip, noReferrerRemedy, noReferrerDocsAnchor))
+			return skipResult(fmt.Sprintf(tmplNoReferrerSkip, noReferrerRemedy, noReferrerDocsAnchor))
 		}
 		if hooksFound && hooksSetsBlanketNoReferrer(hooksText) {
-			return failResult("config.no-referrer-blanket", spine.ConditionConfigNoReferrerBlanket, blanketNoReferrerFailDetail(hooksPath))
+			return failResult(spine.ConditionConfigNoReferrerBlanket, blanketNoReferrerFailDetail(hooksPath))
 		}
 		if headersFound && headersFileBlanketNoReferrer(string(headersBody)) {
-			return failResult("config.no-referrer-blanket", spine.ConditionConfigNoReferrerBlanket, blanketNoReferrerFailDetail("static/_headers"))
+			return failResult(spine.ConditionConfigNoReferrerBlanket, blanketNoReferrerFailDetail("static/_headers"))
 		}
-		return passResult("config.no-referrer-blanket", fmt.Sprintf(tmplNoReferrerPass, describeNoReferrerSources(hooksPath, hooksFound, headersFound)))
+		return passResult(fmt.Sprintf(tmplNoReferrerPass, describeNoReferrerSources(hooksPath, hooksFound, headersFound)))
 	},
 }

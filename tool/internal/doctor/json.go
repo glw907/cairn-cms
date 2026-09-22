@@ -104,7 +104,7 @@ func Marshal(in JSONInput) ([]byte, error) {
 // which for a directory preflight means its precondition did not apply. An unchecked result
 // takes reason.not-observable, which names a check that tried and saw nothing.
 func wireCheck(cr CheckedResult) checkPayload {
-	out := checkPayload{CheckID: cr.Result.ID, Condition: conditionID(cr.Check.Condition)}
+	out := checkPayload{CheckID: cr.Check.ID, Condition: conditionID(cr.Check.Condition)}
 	switch cr.Result.Status {
 	case StatusFail:
 		out.State = stateWordFail

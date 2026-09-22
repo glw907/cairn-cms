@@ -347,7 +347,7 @@ func readEnginePeers(s Snapshot) (peers map[string]string, found bool, err error
 // resultFromFloorsVerdict wraps a floorsVerdict into config.dependency-floors's Result,
 // resolving Severity from the registry only when the verdict is a fail.
 func resultFromFloorsVerdict(v floorsVerdict) Result {
-	r := Result{ID: "config.dependency-floors", Status: v.status, Detail: v.detail}
+	r := Result{Status: v.status, Detail: v.detail}
 	if v.status == StatusFail {
 		r.Condition = spine.ConditionConfigDependencyFloorsUnmet
 		r.Severity = severityFor(spine.ConditionConfigDependencyFloorsUnmet)
@@ -365,15 +365,15 @@ var ConfigDependencyFloors = Check{
 	Run: func(s Snapshot) Result {
 		peers, found, err := readEnginePeers(s)
 		if err != nil {
-			return uncheckedResult("config.dependency-floors", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !found {
-			return uncheckedResult("config.dependency-floors", detailEnginePackageJSONNotFound)
+			return uncheckedResult(detailEnginePackageJSONNotFound)
 		}
 
 		npmLock, ok, err := s.ReadFile("package-lock.json")
 		if err != nil {
-			return uncheckedResult("config.dependency-floors", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if ok {
 			return resultFromFloorsVerdict(npmDependencyFloors(string(npmLock), peers))
@@ -381,7 +381,7 @@ var ConfigDependencyFloors = Check{
 
 		pnpmLock, ok, err := s.ReadFile("pnpm-lock.yaml")
 		if err != nil {
-			return uncheckedResult("config.dependency-floors", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if ok {
 			return resultFromFloorsVerdict(pnpmDependencyFloors(string(pnpmLock), peers))
@@ -389,12 +389,12 @@ var ConfigDependencyFloors = Check{
 
 		yarnLock, ok, err := s.ReadFile("yarn.lock")
 		if err != nil {
-			return uncheckedResult("config.dependency-floors", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if ok {
 			return resultFromFloorsVerdict(yarnDependencyFloors(string(yarnLock), peers))
 		}
 
-		return uncheckedResult("config.dependency-floors", detailNoLockfileFound)
+		return uncheckedResult(detailNoLockfileFound)
 	},
 }

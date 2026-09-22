@@ -106,32 +106,32 @@ var AuthRoleWiring = Check{
 	Run: func(s Snapshot) Result {
 		facts, found, err := ReadSiteFacts(s)
 		if err != nil {
-			return uncheckedResult("auth.role-wiring", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !found {
-			return uncheckedResult("auth.role-wiring", factsAbsentDetail)
+			return uncheckedResult(factsAbsentDetail)
 		}
 		custom := customRoleNames(facts.Roles)
 		if len(custom) == 0 {
-			return skipResult("auth.role-wiring", skipNoCustomRoles)
+			return skipResult(skipNoCustomRoles)
 		}
 		hooks, _, hooksFound, err := readHooksSource(s)
 		if err != nil {
-			return uncheckedResult("auth.role-wiring", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !hooksFound {
-			return infoResult("auth.role-wiring", infoRoleWiringNoHooksFile)
+			return infoResult(infoRoleWiringNoHooksFile)
 		}
 		switch guardRoleWiring(hooks) {
 		case guardWiringAbsent:
-			return infoResult("auth.role-wiring", infoRoleWiringAbsent)
+			return infoResult(infoRoleWiringAbsent)
 		case guardWiringIndirect:
-			return infoResult("auth.role-wiring", infoRoleWiringIndirect)
+			return infoResult(infoRoleWiringIndirect)
 		case guardWiringUnwired:
-			return failResult("auth.role-wiring", spine.ConditionAuthRoleWiringMissing,
+			return failResult(spine.ConditionAuthRoleWiringMissing,
 				fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", ")))
 		default:
-			return passResult("auth.role-wiring", passRoleWiringWired)
+			return passResult(passRoleWiringWired)
 		}
 	},
 }

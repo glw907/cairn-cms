@@ -61,22 +61,22 @@ var ConfigPublicOrigin = Check{
 	Run: func(s Snapshot) Result {
 		_, found, err := ReadWranglerConfig(s)
 		if err != nil {
-			return uncheckedResult("config.public-origin", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		origin := s.PublicOrigin
 		if !found && origin.Source == OriginAbsent {
-			return skipResult("config.public-origin", detailPublicOriginSkip)
+			return skipResult(detailPublicOriginSkip)
 		}
 		if origin.Value == "" {
-			return failResult("config.public-origin", spine.ConditionConfigPublicOriginInvalid, detailPublicOriginUnconfigured)
+			return failResult(spine.ConditionConfigPublicOriginInvalid, detailPublicOriginUnconfigured)
 		}
 		if detail, ok := validatePublicOrigin(origin.Value); !ok {
-			return failResult("config.public-origin", spine.ConditionConfigPublicOriginInvalid, detail)
+			return failResult(spine.ConditionConfigPublicOriginInvalid, detail)
 		}
 		source := sourceEnvironment
 		if origin.Source == OriginFromVars {
 			source = sourceWranglerVars
 		}
-		return passResult("config.public-origin", fmt.Sprintf(tmplPublicOriginPass, origin.Value, source))
+		return passResult(fmt.Sprintf(tmplPublicOriginPass, origin.Value, source))
 	},
 }

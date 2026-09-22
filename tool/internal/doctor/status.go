@@ -40,7 +40,8 @@ func (s Status) String() string {
 
 // Result is one check's settled outcome against a Snapshot.
 type Result struct {
-	// ID is the check's own stable identifier.
+	// ID is the check's own stable identifier, stamped by Run from the Check that produced this
+	// Result. A Result taken straight from Check.Run carries none.
 	ID string
 	// Condition is the cairn-doctor condition id a Fail status raises.
 	Condition spine.Condition

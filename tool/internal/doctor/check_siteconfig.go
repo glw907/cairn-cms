@@ -27,15 +27,15 @@ var ConfigSiteConfig = Check{
 	Run: func(s Snapshot) Result {
 		outcome, err := s.SiteConfig()
 		if err != nil {
-			return uncheckedResult("config.site-config", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		switch outcome.Status {
 		case SiteConfigValid:
-			return passResult("config.site-config", detailSiteConfigPass)
+			return passResult(detailSiteConfigPass)
 		case SiteConfigInvalid:
-			return failResult("config.site-config", spine.ConditionConfigSiteConfigInvalid, outcome.Reason)
+			return failResult(spine.ConditionConfigSiteConfigInvalid, outcome.Reason)
 		default: // SiteConfigNotFound
-			return uncheckedResult("config.site-config", fmt.Sprintf(tmplSiteConfigNotFound, strings.Join(SiteConfigPaths(), ", ")))
+			return uncheckedResult(fmt.Sprintf(tmplSiteConfigNotFound, strings.Join(SiteConfigPaths(), ", ")))
 		}
 	},
 }

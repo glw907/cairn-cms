@@ -219,23 +219,23 @@ func evaluatePosture(hasDeclared bool, declared, body string, target *url.URL) R
 
 	if hasDeclared {
 		if hasObserved && declared == observed {
-			return passResult("ai.posture-effective", fmt.Sprintf(tmplPostureDeclaredMatch, declared, target, suffix))
+			return passResult(fmt.Sprintf(tmplPostureDeclaredMatch, declared, target, suffix))
 		}
 		carries := postureNoDirectivesConsistent
 		if hasObserved {
 			carries = fmt.Sprintf(tmplPostureObservedInstead, observed)
 		}
-		return failResult("ai.posture-effective", spine.ConditionAIPostureNotEffective,
+		return failResult(spine.ConditionAIPostureNotEffective,
 			fmt.Sprintf(tmplPostureDeclaredMismatch, declared, target, carries, suffix))
 	}
 
 	if hasOutside {
-		return passResult("ai.posture-effective", fmt.Sprintf(tmplPostureUnsetWithOutside, postureUnsetNote, outside))
+		return passResult(fmt.Sprintf(tmplPostureUnsetWithOutside, postureUnsetNote, outside))
 	}
 	if !hasObserved {
-		return passResult("ai.posture-effective", fmt.Sprintf(tmplPostureUnsetNoDirectives, postureUnsetNote, target))
+		return passResult(fmt.Sprintf(tmplPostureUnsetNoDirectives, postureUnsetNote, target))
 	}
-	return passResult("ai.posture-effective", fmt.Sprintf(tmplPostureUnsetObserved, postureUnsetNote, target, observed))
+	return passResult(fmt.Sprintf(tmplPostureUnsetObserved, postureUnsetNote, target, observed))
 }
 
 const (
@@ -292,17 +292,17 @@ var AIPostureEffective = Check{
 	Run: func(s Snapshot) Result {
 		facts, found, err := ReadSiteFacts(s)
 		if err != nil {
-			return uncheckedResult("ai.posture-effective", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !found {
-			return uncheckedResult("ai.posture-effective", factsAbsentDetail)
+			return uncheckedResult(factsAbsentDetail)
 		}
 		if !s.Robots.Present {
-			return uncheckedResult("ai.posture-effective", postureRobotsAbsentDetail(s.Robots.Reason))
+			return uncheckedResult(postureRobotsAbsentDetail(s.Robots.Reason))
 		}
 		target, ok := robotsURL(s.PublicOrigin.Value)
 		if !ok {
-			return uncheckedResult("ai.posture-effective", detailPostureBadOrigin)
+			return uncheckedResult(detailPostureBadOrigin)
 		}
 		return evaluatePosture(facts.HasAIPosture, facts.AIPosture, s.Robots.Body, target)
 	},

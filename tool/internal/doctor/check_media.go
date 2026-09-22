@@ -30,25 +30,25 @@ var ConfigMediaBucket = Check{
 	Run: func(s Snapshot) Result {
 		facts, found, err := ReadSiteFacts(s)
 		if err != nil {
-			return uncheckedResult("config.media-bucket", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !found {
-			return uncheckedResult("config.media-bucket", factsAbsentDetail)
+			return uncheckedResult(factsAbsentDetail)
 		}
 		if !facts.HasMediaBucketBinding {
-			return skipResult("config.media-bucket", skipConfigMediaBucketNone)
+			return skipResult(skipConfigMediaBucketNone)
 		}
 		wrangler, wranglerFound, err := ReadWranglerConfig(s)
 		if err != nil {
-			return uncheckedResult("config.media-bucket", err.Error())
+			return uncheckedResult(err.Error())
 		}
 		if !wranglerFound {
-			return skipResult("config.media-bucket", noWranglerFoundDetail)
+			return skipResult(noWranglerFoundDetail)
 		}
 		if !slices.Contains(wrangler.R2Buckets, facts.MediaBucketBinding) {
-			return failResult("config.media-bucket", spine.ConditionConfigMediaBucketMissing,
+			return failResult(spine.ConditionConfigMediaBucketMissing,
 				fmt.Sprintf(tmplConfigMediaBucketFail, facts.MediaBucketBinding))
 		}
-		return passResult("config.media-bucket", fmt.Sprintf(tmplConfigMediaBucketPass, facts.MediaBucketBinding))
+		return passResult(fmt.Sprintf(tmplConfigMediaBucketPass, facts.MediaBucketBinding))
 	},
 }

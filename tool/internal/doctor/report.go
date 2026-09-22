@@ -41,12 +41,14 @@ type CheckedResult struct {
 	Result Result
 }
 
-// Run executes every check in Checks against s, in report order, and pairs each with its
-// settled Result.
+// Run executes every check in Checks against s, in report order, stamps each Result with its
+// own check's ID, and pairs the two.
 func Run(s Snapshot) []CheckedResult {
 	out := make([]CheckedResult, len(Checks))
 	for i, c := range Checks {
-		out[i] = CheckedResult{Check: c, Result: c.Run(s)}
+		result := c.Run(s)
+		result.ID = c.ID
+		out[i] = CheckedResult{Check: c, Result: result}
 	}
 	return out
 }

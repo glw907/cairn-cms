@@ -26,9 +26,7 @@ verified, `make -C tool install-check VERSION=v1.1.0` green in both containers).
 ruled on 2026-09-22 by the conductor under Geoff's delegation: 1.1.0 prints the cairn.pub URLs
 exactly as 1.0.1 does; the 404s are cairn.pub's debt, recorded in
 [the pass A handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), and no tool patch
-follows. **retire-2a is executing** on `doctor-engine` off `main` at `59b920f1`; Segment A (Tasks 1 to 3) accepted at `0efbec49`, spend 1.11M of 2.6M, Segment B (Task 4, the removal) running as workflow run `wf_24136d34-dfa`'s successor; the light lane's 3G cap OOMs `svelte-check` here, so a light gate must not carry `npm run check`, plan
-`docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md`, workflow mode; its close writes only
-its own line, then retire-2b.
+follows. **retire-2a is executing** on `doctor-engine` off `main` at `59b920f1`: Segments A and B (Tasks 1 to 4) accepted, branch gate-green at `0612c350`, `src/lib/doctor` gone, spend 1.55M of 2.6M. **Paused at the Segment B boundary on 2026-09-22 for a Claude Code update.** Resume: Segment C (Tasks 5 and 6) from `retire-2a-segC.json` in the pass session scratchpad (`/tmp/claude-1000/-var-home-glw907-Projects-cairn-cms/e816c560-cccd-4827-8d0b-86f5a56ec2d5/scratchpad/`, beside `retire-2a-close.md` for Task 7 and a copy of `pass-execute.js`); if that scratchpad is gone, re-extract both from the plan. Task 6 carries one Task 4 finding: five `check-symbols` allowlist env-var entries cite `docs/reference/doctor.md` and must be re-grounded or removed when the page goes. The light lane's 3G cap OOMs `svelte-check`, so a light gate must not carry `npm run check`; the gate-tier classifier rejects `--pin pin`, so pass the gate string and no tier.
 
 **The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0 (DONE, with
 the pre-task behind it); retire-1 (DONE); draft docs pass A (DONE); one `tool/v1.1.0` tagged from a
@@ -53,6 +51,7 @@ links the deleted `doctor.md`, and `doctor.md:79-86`/`facts/reference.md` share 
 
 ## Resume prompt
 
-In a fresh session, conduct retire-2a from its plan on the `doctor-engine` worktree, then retire-2b,
+In a fresh session (after `brew upgrade --cask claude-code@latest` and the `opus-5-5-adoption` chore),
+resume retire-2a at Segment C on the `doctor-engine` worktree, then retire-2b,
 each on its own branch and worktree. Cut `0.97.0` last;
 `ROADMAP.md` sequences what follows.

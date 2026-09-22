@@ -91,7 +91,7 @@ func factsFromToml(text string) WranglerFacts {
 		r2Binding = nil
 	}
 
-	for _, line := range strings.Split(text, "\n") {
+	for line := range strings.SplitSeq(text, "\n") {
 		if header := tomlHeaderPattern.FindStringSubmatch(line); header != nil {
 			flushD1()
 			flushR2()

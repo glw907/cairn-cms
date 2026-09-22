@@ -2,8 +2,10 @@
 
 Six `cairn` commands accept `--json`: `cairn health`, `cairn sites list`, `cairn logs`,
 `cairn adopt list`, `cairn auth check`, and `cairn doctor`. Together they publish seven payload
-kinds, a closed contract a script or an agent can parse without running cairn to learn the shape.
-This page describes cairn 1.0.1, the current release; cairn 1.1.0 will carry these pages.
+kinds, since `cairn health` writes two, a closed contract a script or an agent can parse without
+running the `cairn` CLI to learn the shape.
+The payloads below are those of cairn 1.1.0. `cairn doctor` and its `doctor` payload are new in
+1.1.0; the other six kinds are unchanged from 1.0.1.
 
 ## Streams and exit codes
 
@@ -54,10 +56,11 @@ off the three-value state the `cairn` CLI tracks internally: `pass`, `fail`, `he
 `held` is not a state on its own; it marks a failing check that an unexpired hold currently
 covers.
 
-The line between `skip` and `unknown` is carried by the check's own `reason`, and exactly three
-codes read `skip`: `reason.cred-missing`, `reason.repo-not-recorded`, and
-`reason.api.builds-not-connected`, each naming a check the run declined to attempt. Every other
-reason reads `unknown`, a measurement the run attempted and could not read.
+In a `cairn health` payload the line between `skip` and `unknown` is carried by the check's own
+`reason`, and exactly three codes read `skip`: `reason.cred-missing`, `reason.repo-not-recorded`,
+and `reason.api.builds-not-connected`, each naming a check the run declined to attempt. Every
+other reason reads `unknown`, a measurement the run attempted and could not read. A `doctor`
+payload maps its skips differently; see [The `doctor` payload](#the-doctor-payload) below.
 
 ## A check's fields
 
@@ -66,7 +69,7 @@ reason reads `unknown`, a measurement the run attempted and could not read.
 | `checkId` | Every check | The check's own identifier, for instance `creds` or `config.bindings`. |
 | `state` | Every check | One of the five wire words above. |
 | `checkedAt` | Every health check; a doctor payload carries one `checkedAt` at the top level instead | An RFC 3339 timestamp in UTC. |
-| `tier` | Every health check; absent from a doctor check | Which provider credential the check needs. |
+| `tier` | Every health check; absent from a doctor check | Which provider credential the check needs: `none`, `cloudflare`, `github`, or `both`. |
 | `detail` | Wherever the check's result produced one | Plain text for a person. |
 | `code` | A failing check whose result carries a machine identifier | An identifier under the `tool.` namespace, for instance `tool.creds-unauthorized`. |
 | `condition` | Wherever the check's result raises one | One of the engine's own diagnostic condition ids; `cairn health` and `cairn doctor` draw from the same vocabulary. |
@@ -77,15 +80,19 @@ reason reads `unknown`, a measurement the run attempted and could not read.
 
 A check's `fix` object carries `summary`, `actor`, and `outward` always; `url` where the
 underlying condition has one; and `command` only for an operator's own fix, since an operator is
-the one actor whose remedy is a command line `cairn` can print.
+the one actor whose remedy is a command line `cairn` can print. `actor` is one of four words:
+`operator`, `developer`, `provider-console`, `registrar`. `outward` is true when carrying the
+fix out changes what a visitor sees, a DNS record or a zone setting, as opposed to an internal or
+credential-only change.
 
 A check's `hold` object carries `until` and `expired`. An expired hold is still reported rather
 than dropped, and it arrives at the run's own exit arithmetic as unacknowledged.
 
-A check's measured values split by where they came from: `fields` holds what cairn derived
-itself, and `observed` holds what was copied from a provider's own response, each as an object
-carrying a `value` and the `source` it was read from. The boundary never infers a source from a
-key's name or a value's shape; it reads the source a check declared.
+A check's measured values split by where they came from. `fields` holds what cairn derived
+itself, each key mapping straight to its value. `observed` holds what was copied from a
+provider's own response, each key mapping to an object carrying a `value` and the `source` it
+was read from, `cloudflare` or `github`. The boundary never infers a source from a key's name or
+a value's shape; it reads the source a check declared.
 
 The `errors` check carries `errorCount` always, and `errorCountTruncated` only when its own fetch
 filled the provider's page limit, which makes the count a floor rather than an exact total; the
@@ -257,7 +264,10 @@ line bare `cairn health --json` streams as a site settles. The payload also carr
 
 The final line of `cairn health --json` is one `summary` payload, folding every site's verdict
 into the run's own. A stream carrying no sites at all writes the same shape a run against zero
-registered sites writes. `sites`, `counts`, and `worstFirst` are all visible in the example below.
+registered sites writes. `sites` is how many sites the run meant to cover. `counts` maps each
+verdict word to the number of sites that reported it. `worstFirst` lists the sites by verdict,
+worst first, each entry the site's own `site` value. The example below is a run against an empty
+registry, so `worstFirst` is empty.
 
 ```json
 {
@@ -351,8 +361,9 @@ Custom Domains and never Workers Routes; it was added as an optional field withi
 
 `cairn auth check --json` writes a top-level `permissions` array, one row per permission cairn
 can hold, plus `site` when the run named one. Each row carries `label`, `credential`, and
-`state`, with `reason` beside anything other than a pass; a row never reads `held`. No example
-ships for this kind; the schema is the contract.
+`state`, with `reason` beside anything other than a pass. A row's `reason` is display text for a
+person, not a code from the reason vocabulary above; a row never reads `held`. No example ships
+for this kind; read the schema for the row shape.
 
 cairn resolves three credential variables: `CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, and
 `CAIRN_GH_READ_TOKEN`. Each is read from the process environment first, then from the other
@@ -465,8 +476,9 @@ every doctor failure is fixed by a developer editing a checked-in file.
 
 ## What freezes at 1.0
 
-The following are a versioned contract from `v1.0`: renaming or removing any of them is a
-major-version event, and adding a new member to any of these lists is a minor-version event.
+The following are a versioned contract from `v1.0`: changing any of them is a major-version
+event. Adding a check id to either list below is a minor-version event; renaming or removing one
+is major.
 
 - Every `cairn health` check id: `creds`, `serving`, `delegation`, `https-forced`, `email`,
   `deploy`, `publish-path`, `engine`, `errors`.
@@ -476,6 +488,8 @@ major-version event, and adding a new member to any of these lists is a minor-ve
   `auth.role-wiring`, `ai.posture-effective`.
 - The verdict words: `OK`, `WARNING`, `CRITICAL`, `UNKNOWN`.
 - The state words: `pass`, `fail`, `held`, `skip`, `unknown`.
+- Every condition id a payload can carry, ported from the engine's own registry, and the reason
+  vocabulary above.
 
 ## What does not freeze
 

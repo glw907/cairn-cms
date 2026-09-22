@@ -9,11 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// varPublicOrigin names the site's own PUBLIC_ORIGIN variable, resolvePublicOrigin's fallback
-// once the wrangler config carries none. It is not a cairn credential (env.go's own
-// credentialVars), so it is read straight through deps.env rather than loadEnv's provider chain.
-const varPublicOrigin = "PUBLIC_ORIGIN"
-
 // doctorFlags are cairn doctor's own flags.
 type doctorFlags struct {
 	// asJSON prints the payload instead of the plain report. It defaults off, like every other
@@ -31,12 +26,7 @@ func newDoctorCmd(d deps, rf *rootFlags) *cobra.Command {
 		Long:    longDoctor,
 		Example: exampleDoctor,
 		GroupID: groupSite,
-		Args: func(_ *cobra.Command, args []string) error {
-			if len(args) > 1 {
-				return doctorTooManyArgsError()
-			}
-			return nil
-		},
+		Args:    maxOneArg(doctorTooManyArgsError),
 		// The argument is a directory, never a registered site id, so this never calls
 		// completeSiteIDs.
 		ValidArgsFunction: func(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
@@ -141,15 +131,16 @@ func writeOutsideCairnSite(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFl
 // resolvePublicOrigin resolves a directory run's public origin the way ai.posture-effective and
 // config.public-origin both expect: the wrangler config's own vars.PUBLIC_ORIGIN first, then the
 // process environment. The config wins because it is what the deployed Worker actually runs
-// with; the environment is the local fallback for a site that has not declared one. A wrangler.jsonc that
-// fails to parse resolves no origin here; the read that matters for the operator, config.bindings
-// and its siblings, reports its own unchecked result independently the next time a check reads
-// the same file.
+// with; the environment is the local fallback for a site that has not declared one. A
+// wrangler.jsonc that fails to parse resolves no origin here; the read that matters for the
+// operator, config.bindings and its siblings, reports its own unchecked result independently
+// the next time a check reads the same file.
 func resolvePublicOrigin(d deps, s doctor.Snapshot) doctor.PublicOrigin {
 	if facts, found, err := doctor.ReadWranglerConfig(s); err == nil && found && facts.HasPublicOrigin {
 		return doctor.PublicOrigin{Value: facts.PublicOrigin, Source: doctor.OriginFromVars}
 	}
-	if origin := d.env(varPublicOrigin); origin != "" {
+	resolved, _ := loadEnv(d.env)
+	if origin := resolved.publicOriginValue(); origin != "" {
 		return doctor.PublicOrigin{Value: origin, Source: doctor.OriginFromEnv}
 	}
 	return doctor.PublicOrigin{}

@@ -47,6 +47,11 @@ const (
 	varTerm    = "TERM"
 )
 
+// varPublicOrigin names the site's own public origin variable, cairn doctor's fallback once the
+// wrangler config carries none. It is not a cairn credential, so it carries no Missing entry and
+// is read directly from envFn, the same as the two above.
+const varPublicOrigin = "PUBLIC_ORIGIN"
+
 // credentialVars lists the three variables loadEnv resolves, in resolution
 // order. A fourth variable is a one-line addition here.
 var credentialVars = []credentialVar{
@@ -87,9 +92,10 @@ type resolution struct {
 // reads render.DetectProfile takes (Task 20a): noColor and term. Both come straight from envFn,
 // never from a secrets.Provider, since neither is a credential.
 type env struct {
-	resolutions []resolution
-	noColor     string
-	term        string
+	resolutions  []resolution
+	noColor      string
+	term         string
+	publicOrigin string
 }
 
 // noColorValue returns the resolved NO_COLOR value, empty when unset.
@@ -100,6 +106,11 @@ func (e env) noColorValue() string {
 // termValue returns the resolved TERM value, empty when unset.
 func (e env) termValue() string {
 	return e.term
+}
+
+// publicOriginValue returns the resolved PUBLIC_ORIGIN value, empty when unset.
+func (e env) publicOriginValue() string {
+	return e.publicOrigin
 }
 
 // nonSecretVar enumerates loadEnv's variables whose resolved value is a plain string, never
@@ -193,6 +204,7 @@ func loadEnv(envFn func(string) string, p ...secrets.Provider) (env, []providers
 
 	out.noColor = envFn(varNoColor)
 	out.term = envFn(varTerm)
+	out.publicOrigin = envFn(varPublicOrigin)
 
 	for _, cv := range credentialVars {
 		v, from, err := secrets.Resolve(cv.name, chain...)

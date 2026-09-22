@@ -3,7 +3,8 @@
 ## 1.0.1
 
 The release page, corrected. Nothing the tool does changed: a 1.0.0 binary and a 1.0.1 binary run
-the same checks and print the same output.
+the same checks and render them the same way. Only the version string differs, as the last bullet
+says.
 
 ### Changed
 

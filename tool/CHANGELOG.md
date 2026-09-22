@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.1
+
+The release page, corrected. Nothing the tool does changed: a 1.0.0 binary and a 1.0.1 binary run
+the same checks and print the same output.
+
+### Changed
+
+- **A release now publishes six archives rather than six bare binaries.** Each one is
+  `cairn_<version>_<goos>_<goarch>.tar.gz`, or `.zip` on Windows, holding the binary and a `man`
+  directory with a page for every command, so an operator and a packager both get the manual
+  without a copy of this repository. `SHA256SUMS` covers the six archives.
+- **Every archive carries a build provenance attestation** minted by the workflow that built it.
+  `gh attestation verify <archive> --repo glw907/cairn-cms` checks one. A checksum published on
+  the same page as the file it covers proves integrity, not authenticity, which is what the
+  attestation adds.
+- **The `go` directive is `go 1.26`**, the highest floor any dependency of this module declares.
+  1.0.0 recorded `go 1.27.1`, the toolchain that happened to be installed when it was tagged, so
+  `GOTOOLCHAIN=local` refused the install on every older Go. 1.0.0 stays installable under the
+  default `GOTOOLCHAIN`, which downloads the toolchain a module asks for.
+- **`cairn --version` prints `1.0.1`, not `tool/v1.0.1`.** The `tool/v` prefix is how this
+  repository separates the CLI's tags from the package's; it is not part of the version.
+
 ## 1.0.0
 
 The complete single-site operator CLI.
@@ -142,6 +164,11 @@ site, so a scheduled run would have exited 3 forever.
 - **The fleet table clipped its last column at a narrow width.** At `--width 60` the "engine"
   heading printed as "e" over a version cut to one character. The two leading columns always
   draw; each one after them draws only if it fits whole.
+
+### Release artifacts
+
+`tool/v1.0.0` published six bare binaries, `cairn-<goos>-<goarch>` with `.exe` on Windows, and a
+`SHA256SUMS` file covering them. It carried no man page and no attestation. 1.0.1 adds both.
 
 ### Not in 1.0
 

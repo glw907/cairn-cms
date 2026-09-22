@@ -356,11 +356,12 @@ func (t Theme) wrap(text string, width int) []string {
 }
 
 // Wrap word-wraps text to width and returns the lines, the writer every body composes its own
-// prose with. A caller printing an operator-facing line outside a frame, a command's stderr
+// prose with, down to the guard that pulls a word onto the last line rather than leaving one
+// alone there. A caller printing an operator-facing line outside a frame, a command's stderr
 // notice above all, reaches it here rather than leaving the terminal to fold the line wherever
 // its own edge falls.
 func (t Theme) Wrap(text string, width int) []string {
-	return t.wrap(text, content(width))
+	return t.wrapNoOrphan(text, content(width))
 }
 
 // wrapNoOrphan wraps text to width and then pulls one word down from the line above whenever the

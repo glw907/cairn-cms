@@ -86,14 +86,19 @@ func staleBranchCount(branches []providers.Branch, botCommitAt, now time.Time) i
 	return stale
 }
 
-// Run implements Check. A repository with neither an open "cairn/*" branch nor any bot commit at
-// all has never been observed publishing anything, so it is Unknown rather than a vacuous OK.
-// Every branch age is measured against o.Now, the sweep's clock, so the same branch list replays
-// to the same ages. A stale branch declares spine.ConditionNone rather than an App-unreachable
+// Run implements Check. A repository with no open "cairn/*" branch has nothing waiting to
+// publish, which is the state a site spends most of its life in, so it passes and says so. The
+// absence of any bot commit does not change that: a site whose editors have not published yet is
+// quiet, not unobservable, and Unknown here is reserved for the repository the run could not
+// read at all. Every branch age is measured against o.Now, the sweep's clock, so the same branch
+// list replays to the same ages. A stale branch declares spine.ConditionNone rather than an App-unreachable
 // remedy: a stale edit branch most often means an editor simply never opened Publish, and the
 // same verdict also fires when the repository already carries a bot commit, which proves the App
 // did reach and write it, so blaming the App would mislead.
 func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
+	if !HasRepo(r) {
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonRepoNotRecorded, Detail: detailNoRepoRecorded()}
+	}
 	owner, repo := r.GitHub.Repo.Owner, r.GitHub.Repo.Repo
 
 	branches, err := c.GH.Branches(ctx, owner, repo)
@@ -107,10 +112,6 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 		return apiErrorOutcome(err)
 	}
 
-	if len(open) == 0 && botCommitAt.IsZero() {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailPublishNoActivity()}
-	}
-
 	now := o.Now()
 	oldestFirst := slices.Clone(open)
 	slices.SortFunc(oldestFirst, func(a, b providers.Branch) int { return a.CommitDate.Compare(b.CommitDate) })
@@ -122,6 +123,9 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 
 	if stale := staleBranchCount(open, botCommitAt, now); stale > 0 {
 		return detail.outcome(spine.Failing, "", spine.CodePublishStaleBranch, detailPublishStaleBranches(stale))
+	}
+	if len(open) == 0 {
+		return detail.outcome(spine.OK, "", "", detailPublishNothingWaiting())
 	}
 	return detail.outcome(spine.OK, "", "", "")
 }

@@ -70,15 +70,40 @@ func TestProbeServingLiveIsOK(t *testing.T) {
 	}
 }
 
-func TestProbeServingBareAdmin200IsFailing(t *testing.T) {
+// TestProbeServingBareAdmin200IsNotCairn asserts a hostname whose home page answers but whose
+// /admin carries no marker reports what the probe actually found. The older line sent an
+// operator to DNS for a site that is plainly reachable.
+func TestProbeServingBareAdmin200IsNotCairn(t *testing.T) {
 	srv := httptest.NewTLSServer(markerHandler(true))
 	defer srv.Close()
 
 	probe := providers.NewProbe(srv.Client().Transport, servingResolver{})
 	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
 
-	if got.State != spine.Failing || got.Detail != detailServingHostnameMismatch() {
-		t.Errorf("Outcome = %+v, want Failing hostname-not-serving", got)
+	if got.State != spine.Failing || got.Code != spine.CodeServingNotCairn {
+		t.Errorf("Outcome = %+v, want Failing/%s", got, spine.CodeServingNotCairn)
+	}
+	if got.Detail != detailServingNotCairn() {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailServingNotCairn())
+	}
+}
+
+// TestProbeServingHomePageNot200IsHostnameMismatch asserts the older line keeps the case it is
+// true of: a hostname that answers, but with nothing a visitor would call the site.
+func TestProbeServingHomePageNot200IsHostnameMismatch(t *testing.T) {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	defer srv.Close()
+
+	probe := providers.NewProbe(srv.Client().Transport, servingResolver{})
+	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
+
+	if got.State != spine.Failing || got.Code != spine.CodeServingMismatch {
+		t.Errorf("Outcome = %+v, want Failing/%s", got, spine.CodeServingMismatch)
+	}
+	if got.Detail != detailServingHostnameMismatch() {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailServingHostnameMismatch())
 	}
 }
 

@@ -1,6 +1,9 @@
 package health
 
-import "github.com/glw907/cairn-cms/tool/internal/spine"
+import (
+	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/internal/spine"
+)
 
 // Actor names whose job a Fix's action is. It is a closed set: a renderer or an automated agent
 // switches on it rather than parsing free text.
@@ -101,6 +104,11 @@ var fixesByCode = map[spine.Code]Fix{
 	},
 
 	// Not in the catalogue; the plainest fragment satisfying 2.5, reported to the editorial gate.
+	spine.CodeServingNotCairn: {
+		Text:    "Confirm this hostname serves the cairn site, not another Worker or origin.",
+		Actor:   ActorOperator,
+		Outward: false,
+	},
 	spine.CodeHTTPSHSTSOff: {
 		Text:    "Turn on HSTS for the zone under SSL/TLS, Edge Certificates.",
 		Actor:   ActorOperator,
@@ -141,11 +149,6 @@ var fixesByCode = map[spine.Code]Fix{
 		Actor:   ActorDeveloper,
 		Outward: true,
 	},
-	spine.CodeDeployBuildsNotConnected: {
-		Text:    "Connect Workers Builds to this Worker's repository in the Cloudflare dashboard.",
-		Actor:   ActorOperator,
-		Outward: false,
-	},
 	spine.CodePublishStaleBranch: {
 		Text:    "Open the old branch in the admin and publish it, or delete it if it is abandoned.",
 		Actor:   ActorOperator,
@@ -176,15 +179,25 @@ var fixesByCode = map[spine.Code]Fix{
 // fixesByReason is the fix table's third key, for a check that could not run at all. A skipped
 // check declares no Condition and no Code, so without this key a site whose whole sweep was
 // blocked by a missing token carries no fix anywhere, which is the one state an operator can
-// always clear. Only reason.cred-missing is carried: a timeout, an offline run, and an
-// unobservable subject are conditions of the world rather than something to repair.
+// always clear. Only the reasons spine.ReasonCode.NotAttempted names are carried: a timeout, an
+// offline run, and an unobservable subject are conditions of the world rather than something to
+// repair.
 //
-// The line names no variable, because one entry covers both tokens and this table does not know
-// which one the run could not find. The renderer names it from the run's own credential state,
-// beside the entry. Not in the catalogue; reported to the editorial gate.
+// The cred-missing line names no variable, because one entry covers both tokens and this table
+// does not know which one the run could not find. The renderer names it from the run's own
+// credential state, beside the entry. None of the three is in the catalogue; all are reported to
+// the editorial gate.
 var fixesByReason = map[spine.ReasonCode]Fix{
 	spine.ReasonCredMissing: {
 		Text:  "Run `cairn auth set` naming each missing token, then run the command again.",
+		Actor: ActorOperator,
+	},
+	spine.ReasonRepoNotRecorded: {
+		Text:  "Run `cairn adopt` again with --repo naming the site's repository.",
+		Actor: ActorOperator,
+	},
+	spine.APIReason(providers.ReasonBuildsNotConnected): {
+		Text:  "Connect Workers Builds to this Worker's repository in the Cloudflare dashboard.",
 		Actor: ActorOperator,
 	},
 }

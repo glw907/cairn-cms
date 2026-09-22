@@ -20,6 +20,7 @@ and commit the diff.
 - Cloudflare reports no zone for this domain
 - Cloudflare returned no Always Use HTTPS setting for the zone
 - Confirm the Worker route and the zone's DNS record point at this site.
+- Confirm this hostname serves the cairn site, not another Worker or origin.
 - Connect Workers Builds to this Worker's repository in the Cloudflare dashboard.
 - Create a new token before this one expires, then run `cairn auth set`.
 - Create a new token, then run `cairn auth set` naming the credential.
@@ -34,25 +35,27 @@ and commit the diff.
 - Raise the @glw907/cairn-cms range in package.json, then deploy again.
 - Read the build log in the Cloudflare dashboard, then push a fix.
 - Read the events named above in Workers Logs, then push a fix.
+- Run `cairn adopt` again with --repo naming the site's repository.
 - Run `cairn auth set` naming each missing token, then run the command again.
 - Run `wrangler email sending enable <domain>` for the apex domain, then deploy again.
 - Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.
 - Turn on HSTS for the zone under SSL/TLS, Edge Certificates.
 - Turn on observability for the Worker in wrangler.jsonc, then deploy again.
-- Workers Builds is not connected to this Worker
+- Workers Builds is not connected to this Worker, so there is no deployment to read
 - at least %d errors in %s
 - at least %d errors in %s, above the %d the check allows
 - no DKIM record found for the sending subdomain
 - no DMARC record published for the domain
-- no Workers Builds credential to read the deployment with
+- no GitHub repository recorded for this site
 - no assigned nameservers recorded for this site
-- no cairn branches or publish commits observed
+- no edits are waiting to publish
 - the DMARC record allows every sender (p=none)
 - the DMARC record carries no p= policy
 - the GitHub token expires %s, in %d days
 - the Worker does not exist in this account
 - the Worker has no observability dataset
 - the domain points at nameservers outside this Cloudflare zone
+- the hostname answers, but /admin is not cairn's sign-in page
 - the hostname does not answer
 - the installed or latest version is not in the published version list
 - the last build did not succeed

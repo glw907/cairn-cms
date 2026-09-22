@@ -53,10 +53,18 @@ func detailDelegationNoZone() string {
 	return "Cloudflare reports no zone for this domain"
 }
 
-// detailServingHostnameMismatch renders the serving check's Failing verdict, catalogue section
-// 3.4.
+// detailServingHostnameMismatch renders the serving check's Failing verdict for a hostname that
+// answers something other than a home page, catalogue section 3.4.
 func detailServingHostnameMismatch() string {
 	return "the hostname does not answer"
+}
+
+// detailServingNotCairn renders the serving check's Failing verdict for a hostname whose home
+// page answers but whose /admin is not cairn's. The catalogue folds this case into the line
+// above, which tells an operator the opposite of what the probe found; this is the plainest
+// fragment satisfying 2.4, reported to the editorial gate.
+func detailServingNotCairn() string {
+	return "the hostname answers, but /admin is not cairn's sign-in page"
 }
 
 // detailEmailDMARCMissing renders the email check's no-record verdict, catalogue section 3.4.
@@ -103,9 +111,20 @@ func detailDeployWorkerNotFound() string {
 }
 
 // detailDeployBuildsNotConnected renders the deploy check's disconnected-Builds verdict,
-// catalogue section 3.4.
+// catalogue section 3.4. The clause after the comma is this task's own addition, reported to the
+// editorial gate: the bare catalogue line reads as a fault, and the state it names is a site
+// deployed some other way.
 func detailDeployBuildsNotConnected() string {
-	return "Workers Builds is not connected to this Worker"
+	return "Workers Builds is not connected to this Worker, so there is no deployment to read"
+}
+
+// detailNoRepoRecorded renders the skipped verdict every repository-reading check returns
+// against a record that names none. One fragment serves all three: the fact is the record's, not
+// the check's, and three wordings for one fact would read as three different problems. The
+// catalogue carries no row; this is the plainest fragment satisfying 2.6, reported to the
+// editorial gate.
+func detailNoRepoRecorded() string {
+	return "no GitHub repository recorded for this site"
 }
 
 // detailDeployBuildFailed renders the deploy check's failed-build verdict. The catalogue's own
@@ -117,10 +136,13 @@ func detailDeployBuildFailed() string {
 	return "the last build did not succeed"
 }
 
-// detailPublishNoActivity renders the publish-path check's own unobservable verdict, catalogue
-// section 3.4 (kept verbatim).
-func detailPublishNoActivity() string {
-	return "no cairn branches or publish commits observed"
+// detailPublishNothingWaiting renders the publish-path check's quiet-state verdict: no open
+// edit branch, so nothing is waiting on an editor. The catalogue's own row for this state words
+// it as an absence of observations ("no cairn branches or publish commits observed"), which
+// reads as a failure to measure rather than the ordinary state it names; this is the plainest
+// fragment satisfying 2.4, reported to the editorial gate.
+func detailPublishNothingWaiting() string {
+	return "no edits are waiting to publish"
 }
 
 // detailPublishStaleBranches renders the publish-path check's stale-branch verdict. The
@@ -202,14 +224,6 @@ func detailAPIRequestRejected() string {
 	return "the provider refused the request cairn sent; this is a bug in cairn, reportable at https://github.com/glw907/cairn-cms/issues"
 }
 
-// detailDeployCredMissing renders the deploy check's own skipped verdict when no Workers Builds
-// credential answered. Its siblings report the same reason with no Detail, which leaves the plain
-// body printing the bare reason code; the catalogue carries no row, so this is the plainest
-// fragment satisfying 2.4.
-func detailDeployCredMissing() string {
-	return "no Workers Builds credential to read the deployment with"
-}
-
 // The format templates detailErrorsCount and detailErrorsAboveThreshold render from. The two
 // "at least" forms carry a count the fetch truncated at its own limit: the window holds that many
 // records and possibly more, so the line says what was measured rather than passing a floor off as
@@ -285,6 +299,7 @@ func Catalogue() []string {
 		detailDelegationNoAssignedNS(),
 		detailDelegationNoZone(),
 		detailServingHostnameMismatch(),
+		detailServingNotCairn(),
 		detailEmailDMARCMissing(),
 		detailEmailDMARCPolicyNone(),
 		detailEmailDMARCNoPolicy(),
@@ -293,8 +308,9 @@ func Catalogue() []string {
 		detailEmailSenderNotOnboarded(),
 		detailDeployWorkerNotFound(),
 		detailDeployBuildsNotConnected(),
+		detailNoRepoRecorded(),
 		detailDeployBuildFailed(),
-		detailPublishNoActivity(),
+		detailPublishNothingWaiting(),
 		tmplPublishStaleBranchSingular,
 		tmplPublishStaleBranchesPlural,
 		detailEngineNoCairnDependency(),
@@ -304,7 +320,6 @@ func Catalogue() []string {
 		tmplEngineBehind + tmplEngineBehindActionableSuffix,
 		detailErrorsObservabilityOff(),
 		detailAPIRequestRejected(),
-		detailDeployCredMissing(),
 		tmplErrorsCount,
 		tmplErrorsCountAtLeast,
 		tmplErrorsAboveThreshold,

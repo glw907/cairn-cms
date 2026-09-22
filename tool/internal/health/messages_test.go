@@ -145,6 +145,7 @@ func TestMessagesAreProseOrEmpty(t *testing.T) {
 		"detailDelegationNoAssignedNS":          detailDelegationNoAssignedNS(),
 		"detailDelegationNoZone":                detailDelegationNoZone(),
 		"detailServingHostnameMismatch":         detailServingHostnameMismatch(),
+		"detailServingNotCairn":                 detailServingNotCairn(),
 		"detailEmailDMARCMissing":               detailEmailDMARCMissing(),
 		"detailEmailDMARCPolicyNone":            detailEmailDMARCPolicyNone(),
 		"detailEmailDMARCNoPolicy":              detailEmailDMARCNoPolicy(),
@@ -154,7 +155,8 @@ func TestMessagesAreProseOrEmpty(t *testing.T) {
 		"detailDeployWorkerNotFound":            detailDeployWorkerNotFound(),
 		"detailDeployBuildsNotConnected":        detailDeployBuildsNotConnected(),
 		"detailDeployBuildFailed":               detailDeployBuildFailed(),
-		"detailPublishNoActivity":               detailPublishNoActivity(),
+		"detailPublishNothingWaiting":           detailPublishNothingWaiting(),
+		"detailNoRepoRecorded":                  detailNoRepoRecorded(),
 		"detailPublishStaleBranches(1)":         detailPublishStaleBranches(1),
 		"detailPublishStaleBranches(3)":         detailPublishStaleBranches(3),
 		"detailEngineCurrent":                   detailEngineCurrent("0.78.0"),
@@ -185,10 +187,10 @@ func allCatalogueStrings() []string {
 
 // cairnCommandsCredsGrammarAllows is the literal allow-list criterion 8 of this task calls for:
 // checked against the real cobra tree once Task 19a-i lands it, and by this list until then. The
-// only cairn command this package's own fix table ever names is "cairn auth set", which the
-// ruled grammar (docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md, Task 19a-i's
-// "Produces") gives as `auth set <name>`.
-var cairnCommandsCredsGrammarAllows = []string{"cairn auth set"}
+// two cairn commands this package's own fix table names are "cairn auth set" and "cairn adopt",
+// which the ruled grammar (docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md, Task
+// 19a-i's "Produces") gives as `auth set <name>` and `adopt`.
+var cairnCommandsCredsGrammarAllows = []string{"cairn auth set", "cairn adopt"}
 
 // cairnCommandPattern matches a "cairn <word...>" fragment inside a catalogue string, so
 // TestNoMessageNamesAnUnknownCairnCommand can find every command mention without a human having

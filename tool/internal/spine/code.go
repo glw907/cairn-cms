@@ -19,23 +19,23 @@ const CodeNone Code = ""
 // Condition. health's fix table (fixes.go) keys a fix line off whichever of Condition or Code a
 // verdict carries.
 const (
-	CodeHTTPSHSTSOff             Code = "tool.https-hsts-off"
-	CodeDelegationWrongNS        Code = "tool.delegation-wrong-nameservers"
-	CodeServingMismatch          Code = "tool.serving-hostname-mismatch"
-	CodeEmailDMARCMissing        Code = "tool.email-dmarc-missing"
-	CodeEmailDMARCNoPolicy       Code = "tool.email-dmarc-no-policy"
-	CodeEmailDMARCPolicyNone     Code = "tool.email-dmarc-policy-none"
-	CodeEmailSPFMissing          Code = "tool.email-spf-missing"
-	CodeEmailDKIMMissing         Code = "tool.email-dkim-missing"
-	CodeDeployWorkerNotFound     Code = "tool.deploy-worker-not-found"
-	CodeDeployBuildsNotConnected Code = "tool.deploy-builds-not-connected"
-	CodeDeployBuildFailed        Code = "tool.deploy-build-failed"
-	CodePublishStaleBranch       Code = "tool.publish-path-stale-branch"
-	CodeEngineBehind             Code = "tool.engine-behind"
-	CodeErrorsAboveThreshold     Code = "tool.errors-above-threshold"
-	CodeCredsUnauthorized        Code = "tool.creds-unauthorized"
-	CodeCredsForbidden           Code = "tool.creds-forbidden"
-	CodeCredsExpiringSoon        Code = "tool.creds-expiring-soon"
+	CodeHTTPSHSTSOff         Code = "tool.https-hsts-off"
+	CodeDelegationWrongNS    Code = "tool.delegation-wrong-nameservers"
+	CodeServingMismatch      Code = "tool.serving-hostname-mismatch"
+	CodeServingNotCairn      Code = "tool.serving-not-cairn"
+	CodeEmailDMARCMissing    Code = "tool.email-dmarc-missing"
+	CodeEmailDMARCNoPolicy   Code = "tool.email-dmarc-no-policy"
+	CodeEmailDMARCPolicyNone Code = "tool.email-dmarc-policy-none"
+	CodeEmailSPFMissing      Code = "tool.email-spf-missing"
+	CodeEmailDKIMMissing     Code = "tool.email-dkim-missing"
+	CodeDeployWorkerNotFound Code = "tool.deploy-worker-not-found"
+	CodeDeployBuildFailed    Code = "tool.deploy-build-failed"
+	CodePublishStaleBranch   Code = "tool.publish-path-stale-branch"
+	CodeEngineBehind         Code = "tool.engine-behind"
+	CodeErrorsAboveThreshold Code = "tool.errors-above-threshold"
+	CodeCredsUnauthorized    Code = "tool.creds-unauthorized"
+	CodeCredsForbidden       Code = "tool.creds-forbidden"
+	CodeCredsExpiringSoon    Code = "tool.creds-expiring-soon"
 )
 
 // codes backs Codes.
@@ -43,13 +43,13 @@ var codes = []Code{
 	CodeHTTPSHSTSOff,
 	CodeDelegationWrongNS,
 	CodeServingMismatch,
+	CodeServingNotCairn,
 	CodeEmailDMARCMissing,
 	CodeEmailDMARCNoPolicy,
 	CodeEmailDMARCPolicyNone,
 	CodeEmailSPFMissing,
 	CodeEmailDKIMMissing,
 	CodeDeployWorkerNotFound,
-	CodeDeployBuildsNotConnected,
 	CodeDeployBuildFailed,
 	CodePublishStaleBranch,
 	CodeEngineBehind,

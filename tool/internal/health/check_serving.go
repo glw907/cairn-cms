@@ -42,24 +42,40 @@ func probeServing(ctx context.Context, probe *providers.Probe, r record.Record, 
 		if primary.matches {
 			return spine.Outcome{State: spine.OK}
 		}
-		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingMismatch, Detail: detailServingHostnameMismatch()}
+		return servingMismatch(primary)
 	}
 
 	if fallback := probeOrigin(ctx, probe, "http://"+domain); fallback.reachable {
 		if fallback.matches {
 			return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkCertificatePending)}
 		}
-		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingMismatch, Detail: detailServingHostnameMismatch()}
+		return servingMismatch(fallback)
 	}
 
 	return diagnoseUnreachable(ctx, probe, r, domain, providers.RequestTimeout)
 }
 
 // originProbe is one origin's reachability and marker match, mirroring hostname.mjs's own
-// probeOrigin return shape: matches is only meaningful when reachable is true.
+// probeOrigin return shape: matches and serves are only meaningful when reachable is true.
 type originProbe struct {
 	reachable bool
 	matches   bool
+	// serves reports whether the origin's own "/" answered 200. It splits the two ways a marker
+	// can fail to match, which are two different faults: a site serving its home page but no
+	// cairn admin, and a hostname answering nothing a visitor would call a site.
+	serves bool
+}
+
+// servingMismatch returns the verdict for an origin that answered without carrying the marker
+// pair. A home page that answers 200 is a live site; whatever is at that hostname, it is not
+// cairn's admin, and saying the hostname does not answer would send an operator to DNS over a
+// route or a build that points somewhere else. A home page that answers anything else is a
+// hostname not serving the site at all, which is the older line's own case.
+func servingMismatch(p originProbe) spine.Outcome {
+	if p.serves {
+		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingNotCairn, Detail: detailServingNotCairn()}
+	}
+	return spine.Outcome{State: spine.Failing, Code: spine.CodeServingMismatch, Detail: detailServingHostnameMismatch()}
 }
 
 // probeOrigin fetches origin's "/" and "/admin" (unfollowed), the way hostname.mjs's
@@ -78,7 +94,11 @@ func probeOrigin(ctx context.Context, probe *providers.Probe, origin string) ori
 	}
 	_ = admin.Body.Close()
 
-	return originProbe{reachable: true, matches: matchesMarker(origin, root, admin)}
+	return originProbe{
+		reachable: true,
+		matches:   matchesMarker(origin, root, admin),
+		serves:    root.StatusCode == http.StatusOK,
+	}
 }
 
 // matchesMarker reports whether root and admin, both already fetched from origin, together

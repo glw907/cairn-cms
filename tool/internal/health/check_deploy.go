@@ -149,6 +149,14 @@ func findWorker(ctx context.Context, cf *providers.Cloudflare, name string) (*pr
 	return nil, nil
 }
 
+// HasRepo reports whether r names a GitHub repository. Discovery learns a repository from a
+// Workers Builds trigger alone, so a site deployed any other way is adopted without one and
+// every check that reads the repository has to say so rather than querying "/repos//" and
+// reporting the 404 as the site's own fault.
+func HasRepo(r record.Record) bool {
+	return r.GitHub.Repo.Owner != "" && r.GitHub.Repo.Repo != ""
+}
+
 // DefaultBranch returns r's repository's own default branch, falling back to "main" when a
 // record carries none: an unadopted or freshly created repository's record can predate the
 // default-branch read, and "main" is what every site this tool provisions is created with.
@@ -163,6 +171,13 @@ func DefaultBranch(r record.Record) string {
 // immediately; every other branch flattens whatever of deployDetail the run measured before
 // settling, so a partial measurement (a worker that exists but has never built, say) still
 // renders through the same eleven Fields.
+//
+// A Worker with no Builds trigger is skipped rather than failed. Workers Builds is one way to
+// deploy a cairn site and not the only one: a site deployed from a CI job or from a developer's
+// own `wrangler deploy` has no trigger to read and nothing wrong with it, so reporting it as a
+// broken deploy pipeline would page an operator over a choice they made. The trigger list is
+// also the only read that settles it, which is why the check calls Builds before deciding rather
+// than gating on a credential flag: the token either reads the route or the API says so.
 func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	worker, err := findWorker(ctx, c.CF, r.Cloudflare.WorkerName)
 	if err != nil {
@@ -173,16 +188,12 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	}
 	detail := deployDetail{WorkerExists: true}
 
-	if !c.HaveBuilds {
-		return detail.outcome(spine.Unknown, spine.ReasonCredMissing, "", detailDeployCredMissing())
-	}
-
 	triggers, err := c.CF.BuildsConnections(ctx, worker.Tag)
 	if err != nil {
 		return apiErrorOutcome(err)
 	}
 	if len(triggers) == 0 {
-		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildsNotConnected, detailDeployBuildsNotConnected())
+		return detail.outcome(spine.Unknown, spine.APIReason(providers.ReasonBuildsNotConnected), "", detailDeployBuildsNotConnected())
 	}
 	detail.BuildsConnected = true
 	detail.PushToDeploy = true
@@ -211,6 +222,9 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployBuildFailed())
 	}
 
+	if !HasRepo(r) {
+		return detail.outcome(spine.Unknown, spine.ReasonRepoNotRecorded, "", detailNoRepoRecorded())
+	}
 	mainSHA, err := c.GH.HeadSHA(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, DefaultBranch(r))
 	if err != nil {
 		return apiErrorOutcome(err)

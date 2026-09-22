@@ -1144,6 +1144,21 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/vite/internal.ts:154-173` (`buildStart` calls `verifyManifestFromVite`, which
   `evalVirtual`s the verify-mode virtual module via `server.ssrLoadModule`). [verified]
 
+## tool/internal/spine/conditions.json
+
+- `tool/internal/spine/conditions.json` and `tool/internal/doctor/site-config-path.json` are
+  committed, generated artifacts, never hand-edited; `scripts/build/emit-tool-conditions.mjs`
+  regenerates both from the built condition registry (`dist/diagnostics/conditions.js`) and the
+  scaffolder's own site-config-path file, and `check:tool-conditions`
+  (`scripts/checks/check-tool-conditions.mjs`) regenerates both into memory and fails on the first
+  byte that differs from the committed file. Source: `scripts/build/emit-tool-conditions.mjs`,
+  `scripts/checks/check-tool-conditions.mjs`. [verified]
+- The conditions mirror carries exactly seven fields per entry (`id`, `severity`, `title`, `why`,
+  `remediation`, `docsAnchor`, `logEvent`), omitting `docsAnchor` or `logEvent` when a condition
+  carries none rather than writing `null`, and orders entries by `id` for a deterministic diff.
+  Source: `scripts/build/emit-tool-conditions.mjs` (`FIELDS`, `projectCondition`,
+  `serializeConditions`). [verified]
+
 ## Harvest record
 
 From pages 1-13 (admin-grammar-tokens through core):

@@ -233,7 +233,7 @@ All three registers carry a measured constraint rather than an unconditional gua
 hairline is `color-mix(in oklab, currentColor 55%, transparent)`, so it inherits its color from
 the chip's own ancestor. Inside a `text-muted` ancestor the mix reads roughly 2.4:1 against a
 card ground and 2.97:1 against a page ground, under the audit's own 3:1 border-contrast floor.
-Cairn's five call sites, ConceptList, EditPage, CairnAdminShell, ReferenceField,
+The engine's five call sites, ConceptList, EditPage, CairnAdminShell, ReferenceField,
 MediaCaptureCard, and ManageEditors, all clear this floor; a consumer that places an `outline`
 chip inside its own muted-text ancestor should re-measure. `quiet` and `warning` are tuned to a
 1.16-1.47:1 contrast band against both admin row grounds (plain and zebra) in both admin themes,

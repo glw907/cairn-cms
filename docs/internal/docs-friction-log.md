@@ -46,7 +46,8 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-This section is empty. The doctor-retirement pre-task's close (2026-09-21) triaged the whole log
+This section holds one open finding, the Names one below (filed 2026-09-21, after the pre-task's
+triage). The doctor-retirement pre-task's close (2026-09-21) triaged the whole log
 again and found no finding left open by an earlier pass: every entry below was re-read against the
 code and each was already cleared by the pass named beside it. The pre-task's own three
 `contributor` findings were surfaced and routed in the same step, all to `ROADMAP.md`'s Next tier,
@@ -75,6 +76,16 @@ page, and `docs/reference/guidance.md` had no section in `docs/internal/facts/re
 the `cairn-guidance install` symlink-containment bullet sat under `docs/extend/what-the-scaffold-wrote.md`
 instead, fixed by moving the bullet to a new `## docs/reference/guidance.md` section in
 `facts/reference.md`. See Clearings.
+
+(`extender`) The font-carries-the-rule design in the "Names" section (`docs-register.md`) and
+the `Cairn.Names`/`Cairn.NamesRetired` Vale rules only reach prose Vale lints. Mermaid
+`accDescr:`/`accTitle:` text, image alt text, and nav labels are voiced without code font (for
+example `docs/admin/create-your-site.md:106`, "The tool moves through four stages"), so the
+same naming convention fails there with no linter to catch it: alt text and directive strings
+sit inside a fence or an attribute, and nav labels are plain strings in config, none of them
+prose Vale reads. Proposed home: a small text-scan check in `scripts/checks/` that greps alt
+attributes, `accDescr:`/`accTitle:` directives, and nav-label strings for the retired tokens,
+or folded into the admin rebuild's brief for pass B as a manual sweep item.
 
 The extend-1 pass's whole-log triage (2026-09-20) cleared every open
 finding: the three 2026-09-15 facts-harvest verification-debt entries folded into `ROADMAP.md`'s

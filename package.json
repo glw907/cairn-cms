@@ -41,6 +41,7 @@
     "check:self-use": "npm run package && node scripts/checks/check-self-use.mjs",
     "check:readiness": "npm run package && node scripts/checks/check-readiness.mjs",
     "check:tool-conditions": "npm run package && node scripts/checks/check-tool-conditions.mjs",
+    "check:tool-release": "node scripts/checks/check-tool-release.mjs",
     "check:docs": "node scripts/checks/docs-links.mjs",
     "check:rulings-format": "node scripts/checks/check-rulings-format.mjs",
     "check:target-stack": "node scripts/checks/check-target-stack.mjs",

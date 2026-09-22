@@ -20,21 +20,19 @@ and `.cairn/site-facts.json`, written by `cairn-manifest`, verified in the plugi
 
 ## Immediate next action
 
-**Tag `tool/v1.1.0` HOLDS for Geoff's morning call.** The pre-tag URL check (2026-09-22, 06:20)
-found `is-it-working` (the page every doctor failure block and 1.0.1 health fix line prints), the
-three new reference URLs, and the schema `$id`s all 404 on deployed cairn.pub, while
-`cli-cairn-manifest` returns 200; cairn.pub is pinned to `0.94.0-rc.1` and un-pinnable since
-`0.95.0`, so no pin bump follows the cut. Ruling needed: ship 1.1.0 printing the URLs as 1.0.1
-already does (consistent, 404 until cairn.pub is fixed), or have `cairn doctor` print anchor text
-without a URL and add the link in a `v1.1.x` patch (the plan's carry-forward). Recommendation:
-ship the URLs as 1.0.1 does. Once tagged, the runbook (Tasks 22b/23,
-`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`) bumps `version.Documented` to `1.1.0`
-if the pages' version changed, corrects `release-candidate-notes.md:68`'s stale `docs/reference/`
-claim, and adds the ADR-0002 addendum for the `pflag` promotion (`otherDirectRequires` 5 to 6).
+**`tool/v1.1.0` is tagged and released** (tag object `6dcfdf22` on merge commit `59b920f1`, PR #82;
+release run `35754462389` green on all three legs, six archives plus `SHA256SUMS`, attestation
+verified, `make -C tool install-check VERSION=v1.1.0` green in both containers). The URL fork
+ruled on 2026-09-22 by the conductor under Geoff's delegation: 1.1.0 prints the cairn.pub URLs
+exactly as 1.0.1 does; the 404s are cairn.pub's debt, recorded in
+[the pass A handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), and no tool patch
+follows. **retire-2a is executing** on `doctor-engine` off `main` at `59b920f1`, plan
+`docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md`, workflow mode; its close writes only
+its own line, then retire-2b.
 
 **The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0 (DONE, with
 the pre-task behind it); retire-1 (DONE); draft docs pass A (DONE); one `tool/v1.1.0` tagged from a
-commit carrying retire-1 and pass A; the engine removal, retire-2a then retire-2b. Each close
+commit carrying retire-1 and pass A (DONE); the engine removal, retire-2a then retire-2b. Each close
 writes only its own line, and **ONLY retire-2b's close, the last, releases `0.97.0`**; a cut
 session finding no such line does not cut. Retire-2a owns two carry-forwards: `site-facts.md:36`
 links the deleted `doctor.md`, and `doctor.md:79-86`/`facts/reference.md` share `config.bindings-missing`.
@@ -55,6 +53,6 @@ links the deleted `doctor.md`, and `doctor.md:79-86`/`facts/reference.md` share 
 
 ## Resume prompt
 
-In a fresh session, get Geoff's ruling on the `tool/v1.1.0` URL fork above, tag it, then conduct
-retire-2a and retire-2b, each on its own branch and worktree. Cut `0.97.0` last;
+In a fresh session, conduct retire-2a from its plan on the `doctor-engine` worktree, then retire-2b,
+each on its own branch and worktree. Cut `0.97.0` last;
 `ROADMAP.md` sequences what follows.

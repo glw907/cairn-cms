@@ -690,13 +690,30 @@ Per-package finding:
   does not call `changeByRange` directly; unused.
 - **@codemirror/view 6.43.13.** A `coordsAtPos` bidirectional-text edge-case fix, and the
   deprecated `visualLineSide` option (unused here). `MarkdownEditor.svelte:1199` calls
-  `coordsAtPos` for the caret-anchored insert popover; re-tested below.
+  `coordsAtPos` for the caret-anchored insert popover; `src/tests/component/MediaInsertPopover.test.ts`,
+  the test covering that call site, passed 9/9 on re-run.
 - **wrangler 4.137.0.** A local-only D1 statement-splitting fix in `wrangler d1 execute`; the
   gate never runs that command, using `vite preview` for the showcase instead. No exposure.
 - **@anthropic-ai/sdk 0.128.0.** No breaking change against cairn's single call site
   (`messages.create()`); the devDependency floor moves, the peer range does not.
+- **@sveltejs/vite-plugin-svelte 7.3.0 -> 7.3.1.** An inspector-injection fix scoped to Vite
+  running under pnpm; cairn's toolchain and the showcase both use npm, so the fix path is
+  inert here.
+- **typescript-eslint 8.70.0 -> 8.70.1.** Rule-implementation fixes in rules
+  `eslint.config.js` does not configure; the config's own `typescript-eslint` usage is limited
+  to the parser, unaffected.
+- **@cloudflare/workers-types 5.20260921.1 -> 5.20260923.1.** A daily type-definition build
+  with no change to the D1, R2, or `EmailMessage` types cairn's own code imports; `npm run
+  check` (svelte-check) confirmed 0 errors, 0 warnings against the new types.
 - **prettier 3.9.9 (showcase only).** A markdown `$` character parsing fix. The showcase's
-  format check is re-run below to confirm no reformatting.
+  `npm run format:check` ran clean against the whole tree, confirming no reformatting.
+
+The showcase's full `CI=1 test:e2e` run confirms the daisyUI finding above at the browser
+level: 246 of 266 tests passed, and the 20 failures are exactly the `site-visual.spec.ts`
+`site home`/`archive page 2` files across every width and color scheme, this workstation's
+documented Chromium anti-aliasing divergence from the CI-canonical baselines
+(`docs/internal/durable-gotchas.md#ci-canonical-baselines-this-workstation-cannot-reproduce`),
+not a bump-caused regression.
 
 Refactor decision: nothing to take, nothing newly filed. Every finding above is either a
 no-op for cairn's call sites or a confirmed-unchanged shipped artifact; the existing

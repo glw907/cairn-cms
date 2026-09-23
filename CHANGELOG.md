@@ -2598,7 +2598,7 @@
   (`@sveltejs/vite-plugin-svelte` to `^7.3.1`, `typescript-eslint` to `^8.70.1`, `wrangler` to
   `^4.137.0`, `@cloudflare/workers-types` to `^5.20260923.1`, `@anthropic-ai/sdk` to
   `^0.128.0`, and the showcase's own `prettier` to `^3.9.9`) are not shipped in the tarball and
-  carry no consumer action. Held majors are unchanged. Consumers must: nothing.
+  carry no consumer action. Held majors are unchanged. No consumer action.
 
 ## 0.96.0
 

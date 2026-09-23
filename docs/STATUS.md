@@ -20,12 +20,11 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**In flight (2026-09-23): pass 1 Task 0, the owner sitting,** on `docs-reset-system`
-(`.claude/worktrees/docs-reset-system`); ledger at the foot of the pass 1 plan on that branch.
-Provisioned: private repository `glw907/cairn-scratch-b` and D1 `cairn-scratch-b-auth`
-(`1fe11784-f64e-408f-8bc2-029e997c11a9`). The sitting asks Geoff for the placeholder Worker
-deploy approval, the GitHub App installation confirmation, and the Worker-scoped Cloudflare token
-(`secret-receive CAIRN_SCRATCH_CF_TOKEN`).
+**In flight (2026-09-23): pass 1, segment 1 (Tasks 1 to 3),** on `docs-reset-system`
+(`.claude/worktrees/docs-reset-system`, pushed); ledger at the foot of the pass 1 plan on that
+branch. Task 0 is done: the scratch site's repository, D1, and placeholder Worker exist, the App
+installation covers the repository, and `CAIRN_SCRATCH_CF_TOKEN` is stored (one Worker, Metadata
+Read-only, no TTL; Task 3 confirms `cairn logs` under it).
 
 **Docs reset pass 1, the writing system.** The docs are reset from scratch (only verified facts
 survive), and pass 1 builds and validates the writing system first: confined podman reader

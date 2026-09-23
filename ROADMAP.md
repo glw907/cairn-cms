@@ -1066,6 +1066,32 @@ the named human gates only):**
   covers the same ground. The architectural rule stands whatever the front end: the spine's API
   is the product, every front end is a view over it, and no logic lives in a view.
 
+- **`cairn doctor`'s three deferred checks, filed beside the agent-permission check
+  (doctor-retirement, retire-2b, 2026-09-21).** Ruling 8 of the doctor-retirement spec defers the
+  three D1 reads (`auth.store`, `auth.role-vocabulary`, `auth.email-normalization`), the
+  `--send-test` any-time re-run, and the `--probe` workers.dev exposure arm to 1.x, each because
+  it needs a Cloudflare or D1 credential the pre-adoption, credential-free `cairn doctor` v1.1.0
+  contract does not carry. Reopens on the tool gaining the credentialed read filed beside the
+  agent-permission check below, where the write-credential question is ruled. Ledger:
+  `docs/internal/engine-rulings.md`, `doctor-defer-d1-reads`, `doctor-defer-send-test-rerun`,
+  `doctor-defer-workers-dev-exposure`.
+
+- **Two registry entries stay unraised after the doctor retirement, filed for the docs rebuild
+  (doctor-retirement, retire-2b, 2026-09-21).** `config.tidy-key-missing` and
+  `admin.login-probe-failed` are no longer raised by any check (`config.tidy-key` and the
+  login-envelope probe are dropped, not ported), but `check:readiness` pins each to a
+  frozen-page heading in `is-it-working.md`, so neither registry entry is deleted. The docs
+  rebuild's reference-arm pass is where their removal (and the corresponding heading) belongs.
+  Ledger: `docs/internal/engine-rulings.md`, `doctor-drop-config-tidy-key`,
+  `doctor-drop-login-envelope-probe`.
+
+- **cairn-pub breaks twice at its next pin bump past the doctor retirement (doctor-retirement,
+  retire-2b, 2026-09-21).** Its hardcoded `/docs/reference/doctor` link
+  (`src/routes/(site)/docs/+page.svelte:67` in that repo) 404s once the engine's own
+  `docs/reference/doctor.md` is gone, and its `docs/STATUS.md` scripts `cairn-doctor` in gate
+  prose that no longer runs. This pass never edits another repo; both need a fix in cairn-pub's
+  own next pass, filed here since no engine record reaches that repo.
+
 - **Go tool 1.1 items, filed at B2's close (2026-09-21).**
   - **A per-site hold.** `--ack` matches on check id alone, so holding one site's `email`
     silences real email failures on every other site in the registry. Filed from the owner's

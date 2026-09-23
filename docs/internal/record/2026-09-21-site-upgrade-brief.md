@@ -51,8 +51,9 @@ The npm bin left `package.json`'s `bin` block in the doctor retirement pass (ver
 `node -p "Object.keys(require('./package.json').bin)"` lists `cairn-manifest`,
 `cairn-media-seed`, `cairn-audit`, `cairn-guidance` only). The replacement is `cairn doctor`, a
 subcommand of the `cairn` operator CLI described below: no `npx`, no `--from`/`--repo`, no
-credential. Run it as `cairn doctor <dir>` against the checked-out site directory; it reads the
-directory's checked-in configuration only. A site upgrade runs it after bumping the
+credential. It needs `cairn` 1.1.0 or later, the release that introduces it. Run it as
+`cairn doctor <dir>` against the checked-out site directory; it reads the directory's checked-in
+configuration only. A site upgrade runs it after bumping the
 `@glw907/cairn-cms` pin and building once, so `src/content/.cairn/site-facts.json` exists for
 the checks that read it.
 
@@ -85,8 +86,9 @@ machine rather than once per site.
 go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
 ```
 
-Prebuilt archives for linux, macOS, and Windows on amd64 and arm64 are on the `tool/v1.0.1`
-release, each with the man page beside the binary.
+Prebuilt archives for linux, macOS, and Windows on amd64 and arm64 are on the `tool/v1.1.0`
+release, each with the man page beside the binary. `cairn doctor` needs `cairn` 1.1.0 or later;
+`tool/v1.0.1`, the release before it, ships no `doctor` command.
 
 It needs three read credentials, `CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, and
 `CAIRN_GH_READ_TOKEN`, held in the environment or the OS keyring (`cairn auth set`);

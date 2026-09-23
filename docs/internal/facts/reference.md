@@ -1043,19 +1043,19 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   same stale-name pool). [verified]
 - Reference pages are the extend track's and admin track's shared lookup surface; two of them
   (`log-events`, `supported-toolchain`) additionally serve a site admin reader. `doctor.md` left
-  this list when the doctor retirement deleted it; the replacement `cairn doctor` page
-  (`cli-cairn-doctor.md`) is not listed here, since the CLI contract pages serve the extending
-  developer, not a site admin directly. Source: `docs/reference/README.md:86-93` ("Also for site
-  admins" section lists exactly `log-events.md`, `supported-toolchain.md`). [candidate: sourced to
-  the page only, not traced to code]
+  this list when the doctor retirement deleted it, and the page that documents the replacement
+  command, `cli-cairn-doctor.md`, is not in this list either. Source: `docs/reference/README.md:86-93`
+  ("Also for site admins" section lists exactly `log-events.md`, `supported-toolchain.md`).
+  [candidate: sourced to the page only, not traced to code]
 - Eleven pages document no export subpath: the four npm CLI pages, the three `cairn` CLI
   contract pages, the canonical admin mount, log events, admin grammar tokens, and supported
   toolchain. Source: `docs/reference/README.md:95-104` ("Pages that document no subpath" names
   exactly 11: `cairn-manifest`, `cairn-guidance`, `cairn-media-seed`, `cairn-audit`,
   `cli-cairn-exit-codes.md`, `cli-cairn-json-output.md`, `cli-cairn-doctor.md`,
   `admin-routes.md`, `log-events.md`, `admin-grammar-tokens.md`, `supported-toolchain.md`); the
-  doctor page moved from `doctor.md` to `cli-cairn-doctor.md` in the retirement, still counted
-  among the 11. [candidate: sourced to the page only, not traced to code]
+  old `doctor.md` page is gone, and `cli-cairn-doctor.md` (documenting the replacement `cairn
+  doctor` command, a separate page rather than a rename) is one of the 11. [candidate: sourced to
+  the page only, not traced to code]
 
 ## docs/reference/render.md
 

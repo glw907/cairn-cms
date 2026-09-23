@@ -107,7 +107,7 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - The alert threshold is the operator's choice, and the exit codes are what express it: page on exit 2 and above, notify on any non-zero. Source: `tool/docs/tripwire.md` ("Credentials: a scheduler starts with no shell profile" and the three scheduler examples), `docs/reference/cli-cairn-exit-codes.md`. [verified]
 - A scheduler launches a job directly and sources no shell profile, so a credential exported only from `~/.bashrc` is invisible to the scheduled run even though an interactive `cairn` works. The three documented routes are an environment file the scheduler reads, a wrapper that sources an existing store, or the OS keyring. Source: `tool/docs/tripwire.md`. [verified]
 - A run cairn's own timeout did not bound exits however the scheduler's kill left it, never one of cairn's four codes, so a scheduler's own cap belongs above `--timeout`. Source: `tool/docs/tripwire.md` (the `TimeoutStartSec` comment in the systemd example), `docs/reference/cli-cairn-exit-codes.md`. [verified]
-- The page's "Dependency floors FAIL from `cairn doctor`" trigger is the `config.dependency-floors` check, condition id `config.dependency-floors-unmet`, a blocker; it replaces the retired npm doctor's equivalent check with no change to what triggers it (the resolved `svelte`/`@sveltejs/kit` versions falling below the installed engine's declared peer ranges). Source: `docs/reference/cli-cairn-doctor.md` (checks table, `config.dependency-floors` row). [verified]
+- The page's "Dependency floors FAIL from `cairn doctor`" trigger is the `config.dependency-floors` check, condition id `config.dependency-floors-unmet`, a blocker, raised when the lockfile resolves `svelte` or `@sveltejs/kit` below the engine's declared peer range. Source: `docs/reference/cli-cairn-doctor.md` (checks table, `config.dependency-floors` row) and `src/lib/diagnostics/conditions.ts:130-137` (`'config.dependency-floors-unmet'`: `severity: 'blocker'`, `why: 'The lockfile resolves svelte or @sveltejs/kit below the range the engine declares as a peer...'`). [verified]
 
 ## Harvest record
 - Pages whose facts are entirely covered by another page: none outright duplicated end-to-end; `what-to-run-and-when.md`'s dependency-floor and GitHub-key-rotation facts are subsets already stated more fully in `is-it-working.md` and `before-you-start.md`, but the page adds its own framing (the target-stack table) not present elsewhere, so it is not fully subsumed.
@@ -136,9 +136,10 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
   cover. 2 bullets (`email.sender-not-onboarded`, `auth.unknown-role`) re-sourced from the removed
   package to `src/lib/diagnostics/conditions.ts`, the condition registry both the old and new
   doctor read. Total facts after repair: 84.
-- retire-2b repair 2026-09-22: 2 bullets corrected (the `auth.store-unmigrated` condition no
-  longer catches pre-deploy, since `cairn doctor` runs no D1 check; the npm bin's `Auth store
-  (D1)` wording elsewhere renamed to `cairn doctor`). 2 bullets added (the bin-and-directory
+- retire-2b repair 2026-09-22: 3 bullets corrected (the two `auth.csrf-token-invalid`/
+  `auth.csrf-origin-mismatch` bullets renamed from the npm bin's `cairn-doctor` wording to
+  `cairn doctor`; the `auth.store-unmigrated` bullet corrected to say no command catches it
+  pre-deploy, since `cairn doctor` runs no D1 check). 2 bullets added (the bin-and-directory
   removal; the `cairn doctor` replacement for the `Dependency floors` check under
   what-to-run-and-when.md). Total facts after repair: 86.
 

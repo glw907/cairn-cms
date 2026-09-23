@@ -33,9 +33,12 @@ The release step sets the version number at the cut and renames this section to 
 - **Apply migration `0004` before deploying.** A magic link now only signs in the browser that
   requested it: `cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/`,
   then `npx wrangler d1 migrations apply <auth-db> --remote`. An un-migrated `AUTH_DB` is a total
-  login outage with no second channel, since every confirm names the new `nonce_hash` column;
-  `npx cairn doctor`'s `auth.store` check now fails when the column is absent, so run it before
-  the deploy.
+  login outage with no second channel, since every confirm names the new `nonce_hash` column. No
+  command checks this before you deploy; confirm the migration applied with
+  `npx wrangler d1 migrations list <auth-db> --remote`, valid only after the preceding copy step,
+  since it reads your local migrations directory against D1's own ledger, not the column itself: a
+  database where you hand-ran the SQL instead still reports `0004` unapplied, and re-applying it
+  then fails with a duplicate-column error.
 - **`createContentRoutes` and `createCairnAdmin` (`/sveltekit`) take one config bag, not two
   arguments.** Change `createContentRoutes(runtime, config)` to
   `createContentRoutes({ runtime, ...config })`, and `createCairnAdmin(runtime, config)` to

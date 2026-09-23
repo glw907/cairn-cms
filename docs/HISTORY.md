@@ -32,10 +32,12 @@ carried polish, including three tool contract pages that still named 1.0.1 as cu
 retire-2a's five carried friction findings, plus one of its own, to ROADMAP's Next tier
 (`74284ceb`, `d3737925`).
 
-**What the gates caught.** `check:rulings-format`'s exit ratchet is what Task 3's fix round
-answered: four new retire entries lacked a `Shape:` line of their own. Nothing automated caught
-the changelog's false claims, which took the per-task `diff-reviewer` three rounds, one of them
-correcting the reviewer's own round-one error. The close's ROADMAP reconciliation found that
+**What the gates caught.** The prose gates stayed green throughout; the per-task `diff-reviewer`
+caught what they could not. `check:rulings-format`'s exit ratchet covers only the fixed
+`ORIGINAL_TRUNCATED_SLUGS` population, so it passed four new retire entries that lacked the
+`Shape:` line the plan requires; Task 3's fix round added them. Nothing automated caught the
+changelog's false claims either, which took three rounds, one of them correcting the reviewer's
+own round-one error. The close's ROADMAP reconciliation found that
 retire-2a's `check:tool-heuristics` gate is wired into no CI workflow, so the tripwire fires only
 on a hand-run full gate (filed to Next).
 
@@ -61,8 +63,9 @@ on a hand-run full gate (filed to Next).
   repeated a false carry-over claim.
 - `formatSiteFacts` (`src/lib/vite/internal.ts`) writes only three adapter fields beside
   `version`: `mediaBucketBinding`, `roles`, and `aiPosture`, since retire-2a trimmed
-  `AdapterFacts` to what the facts writer needs. A record describing `site-facts.json` as carrying
-  more is wrong.
+  `AdapterFacts` to what the facts writer needs. A record saying `site-facts.json` replaced the
+  old doctor's `email.from` or `backend.*` derivation is wrong: those left with their own
+  consumers.
 - `cairn health`'s `deploy` check reports a failed last build but not a default branch ahead of
   the last successful one, and `publish-path` runs no App-installation check. Neither is a
   substitute for the dropped `github.app` preflight.

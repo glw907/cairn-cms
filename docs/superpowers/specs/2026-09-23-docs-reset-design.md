@@ -59,10 +59,14 @@ cost about 900K tokens a page over three rounds, and the pass spent 6.1M against
    skills, hooks, and installed plugins; authentication is the owner's plan login, not an API key.
    A probe on Claude Code 2.1.280 confirmed each property. Because `--restricted` does not confine a
    process Bash starts (a build can read any path), every reader runs inside a podman container
-   that mounts only its prepared directory and a copy of the plan credentials, with a minimal
-   environment (`env -i` plus what the class needs) and no D-Bus or keyring. The runner reads the
-   `stream-json` init event and fails a run whose tools, MCP servers, or memory differ from the
-   class's declaration. The accepted residual leak: a reader with `npm` could fetch cairn's
+   that mounts only its prepared directory, with a minimal environment (`env -i` plus what the
+   class needs) and no D-Bus or keyring. Plan authentication is one long-lived token from `claude
+   setup-token`, held in the age store and passed as `CLAUDE_CODE_OAUTH_TOKEN`; no credential file
+   is mounted or copied, so nothing refreshes and the owner's login is never touched (plan 1 review
+   fold, 2026-09-23). Container egress goes through a host allowlisting proxy. The runner reads the
+   `stream-json` init event and fails a run whose tools, MCP servers, skills, or plugins differ
+   from the class's declaration and a pinned per-CLI-version baseline; a canary instruction file
+   proves `CLAUDE.md` and memory stay unloaded. The accepted residual leak: a reader with `npm` could fetch cairn's
    published package metadata; the runner's transcript scan flags any such fetch.
 10. **The operator reader uses real read-only access (2026-09-23).** A scratch site
     (`glw907/cairn-scratch-b`, Worker `cairn-scratch-b`, the pass B plan's design) with tokens
@@ -77,7 +81,8 @@ cost about 900K tokens a page over three rounds, and the pass spent 6.1M against
     locally at `~/.local/share/cairn/exemplars/`, outside the repository, so every worktree and
     reader directory copies from one place and the trial reads a fixed snapshot. The repository
     keeps only the manifest.
-14. **The design spend stands (2026-09-23).** The design stage now totals 28M across three passes;
+14. **The design spend stands (2026-09-23).** The design stage now totals 34M across three passes
+    (pass 1 raised from 6M to 12M at the plan 1 review fold, 2026-09-23);
     the methodology review judged even revision 1's 17M ahead of published practice. Ruling 7
     accepts that, since every later page inherits the system.
 
@@ -133,9 +138,11 @@ From the two research reports and the three reviews:
 A cairn-cms branch `docs-reset-system` plus a dotfiles commit series for workstation artifacts
 (under `~/.claude/docs/claude-tooling.md`'s rules, `claude-tooling-sync verify` green).
 
-0. **Prerequisite: the scratch site.** Claude provisions `cairn-scratch-b` (repository, Worker, D1)
-   by API and mints Cloudflare tokens scoped to it; a GitHub fine-grained token scoped to the one
-   repository is minted in one short owner sitting if no API path exists, stored through
+0. **Prerequisite: the scratch site.** Claude provisions `cairn-scratch-b` (a private repository,
+   Worker, D1) by API. In one owner sitting, the owner mints an account-owned Cloudflare token
+   scoped to that Worker plus the narrowest D1 scope available, with an expiry, and confirms adding
+   the repository to the cairn-cms GitHub App's installation; GitHub access is an installation
+   token minted per batch (plan 1 review fold, 2026-09-23). Tokens are stored through
    `secret-set.sh`. The site is torn down at pass 2a's close.
 1. **The reader runner,** a standalone Node script outside the Workflow tool (a Workflow step can
    only call `agent()`, and an agent's Bash caps at ten minutes). The conductor launches it in the
@@ -145,7 +152,8 @@ A cairn-cms branch `docs-reset-system` plus a dotfiles commit series for worksta
    report's quotes, checks the init event, totals reported usage into a budget ledger of its own,
    and tears every container down. **Acceptance:** a reader fails to open a known repository path
    by file tool, by Bash, and through an `npm` build script; a web tool call is refused; the init
-   event shows no instruction file, skill, or MCP server.
+   event shows no MCP server and only the pinned built-in skills and plugins, and a canary
+   instruction file stays unloaded.
 2. **Four reader classes:**
 
    | Class | Contents | Tools | Audiences |
@@ -188,7 +196,8 @@ A cairn-cms branch `docs-reset-system` plus a dotfiles commit series for worksta
    defines the profile-file format (one-sentence persona, vocabulary contract, knowledge and tool
    ceiling, arrival states, success criterion, two or three exemplar pages). It replaces
    `cairn-implementer` as the page chain's default `drafterType`.
-6. **The revised page chain** (`docs-page-chain.js`). Kept: every existing gate (`check:vale`,
+6. **The revised page chain** (a new `docs-page-chain-v2.js`, so today's `docs-page-chain.js` and
+   its users are untouched until pass 2a rules). Kept: every existing gate (`check:vale`,
    `check:docs`, `check:reference`, `check:facts`, the figure path, and the rest the draft-docs spec
    lists), the register editor, and the fact read. Changed: the drafter writes the brief's
    `sentences` list and `check:provenance` runs; the register editor receives the Vale and
@@ -211,8 +220,9 @@ A cairn-cms branch `docs-reset-system` plus a dotfiles commit series for worksta
 
 ## Pass 2a: the audience record and the trial
 
-A fresh session on `claude-opus-5-5` conducts, loading pass 1's system. Fable 5.1 at `high`
-authors and folds; Opus 5.5 reviews.
+A fresh session on `claude-opus-5-5` conducts, loading pass 1's system. Opus 5.5 at `high`
+authors the pass 2a plan (Geoff, 2026-09-23). Fable 5.1 at `high` authors the pass's artifacts
+(the audience record, the bake-off, the folds); Opus 5.5 reviews.
 
 1. **The audience record,** written to pass 1's profile-file format plus a narrative record per
    profile: who the reader is and the organization around them, what they arrive knowing, the
@@ -334,10 +344,13 @@ until the outline rules on them.
 ## Budgets
 
 Rebased on the repository's measured costs (pass A at about 900K per page and 175 percent of its
-ceiling). Pass 1: ceiling 6M, flag at 4.8M. Pass 2a: 14M, flag at 11.2M, of which the trial takes
+ceiling). Pass 1: ceiling 12M, flag at 9.6M (raised from 6M at the plan 1 review fold,
+2026-09-23: the baseline and validation reader runs, the fix round, and pass A's own overrun). Pass 2a: 14M, flag at 11.2M, of which the trial takes
 about 11M (six full-chain drafts at about 900K, six minimal-chain drafts at about 300K, and 36
 reader runs at about 100K). Pass 2b: 8M, flag at 6.4M. Reader runs report their own usage outside the Workflow
 budget counter; the runner totals them into each pass's ledger against the same ceilings. A
 tripped flag prompts a checkpoint question; no review lens is cut. Fable dispatches receive
 pre-extracted inputs, never the raw repository. Attended time: plan approvals, three owner stops,
-the two human reads in 2a, and at most one short sitting to mint the scratch site's GitHub token.
+the two human reads in 2a, and one owner sitting at the start of pass 1 (the reader token, the
+scratch repository's GitHub App installation, and the scratch site's Cloudflare token). The design
+stage totals 34M.

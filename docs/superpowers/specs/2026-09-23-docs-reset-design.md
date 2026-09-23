@@ -1,18 +1,18 @@
 # The docs reset: design
 
-**Date:** 2026-09-23. **Status:** revision 3, after three adversarial reviews of revision 1 and one of revision 2; for Geoff's
-review. **Owner rulings:** Geoff, 2026-09-22 and 2026-09-23. **Inputs:** banked at
+**Date:** 2026-09-23. **Status:** revision 3, after three adversarial reviews of revision 1 and one
+of revision 2; for Geoff's review. **Owner rulings:** Geoff, 2026-09-22 and 2026-09-23. **Inputs:** banked at
 [`docs/internal/record/2026-09-23-docs-reset-inputs/`](../../internal/record/2026-09-23-docs-reset-inputs/):
-four current-state inventories, two research reports, three reviews of revision 1, and one of revision 2
-(`review-methodologies.md`, `review-repo-reality.md`, `review-project-prior-art.md`, `review-rev2.md`).
+four current-state inventories, two research reports, three reviews of revision 1, and one of
+revision 2 (`review-methodologies.md`, `review-repo-reality.md`, `review-project-prior-art.md`, `review-rev2.md`).
 
 cairn's docs are reset from scratch, and the only thing that survives from the current pages is
 their verified facts. Claude Code drafts the new docs, so this initiative builds the writing system
 first and the outline second. Pass 1 starts from real failures: it runs reader agents against
 today's pages, records what breaks, and builds only the machinery those failures justify, ending
 with a validated system. Pass 2a, in a fresh session, writes the audience record and runs a
-calibration trial on what the chain actually needs, with a researched exemplar corpus as the drafters' primary input. Pass 2b builds a scripted jobs ledger, runs a
-structure bake-off, and writes the outline at slot level. There are three owner stops. Nothing here
+calibration trial on what the chain actually needs, with a researched exemplar corpus as the
+drafters' primary input. Pass 2b builds a scripted jobs ledger, runs a structure bake-off, and writes the outline at slot level. There are three owner stops. Nothing here
 touches the `0.97.0` cut.
 
 ## Why now
@@ -26,8 +26,9 @@ unshipped, no contributor docs, no conceptual page for the admin building blocks
 on three reference pages only.
 
 Pass A's post-mortem (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`) supplies the central
-evidence. A fresh agent that had to write a working wrapper and parser from two pages alone found 15
-defects that the register editor, the profile grader, and the fact read had all accepted. The chain
+evidence. A fresh agent that had to write a working wrapper and parser from three contract pages
+alone found 14 page defects that the register editor, the profile grader, and the fact read had all
+accepted. The chain
 cost about 900K tokens a page over three rounds, and the pass spent 6.1M against a 3.5M ceiling.
 
 ## Rulings
@@ -75,9 +76,9 @@ cost about 900K tokens a page over three rounds, and the pass spent 6.1M against
     locally at `~/.local/share/cairn/exemplars/`, outside the repository, so every worktree and
     reader directory copies from one place and the trial reads a fixed snapshot. The repository
     keeps only the manifest.
-14. **The design spend stands (2026-09-23).** The methodology review judged 28M of design-stage
-    spend ahead of published practice; ruling 7 accepts that, since every later page inherits the
-    system.
+14. **The design spend stands (2026-09-23).** The design stage now totals 28M across three passes;
+    the methodology review judged even revision 1's 17M ahead of published practice. Ruling 7
+    accepts that, since every later page inherits the system.
 
 ## Evidence the method follows
 

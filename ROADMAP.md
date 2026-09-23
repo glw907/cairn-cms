@@ -1090,8 +1090,9 @@ the named human gates only):**
   prose that no longer runs. This pass never edits another repo; both need a fix in cairn-pub's
   own next pass, filed here since no engine record reaches that repo.
 
-- **Four small items retire-2a left, filed from the friction log at retire-2b's close
-  (2026-09-22).** Each was verified against the tree at filing.
+- **Five small items retire-2a left, filed at retire-2b's close (2026-09-22).** Four came from
+  the friction log and the fifth from the close's own ROADMAP reconciliation. Each was verified
+  against the tree at filing.
   - **No scaffolder test pins the install pointer.** `packages/create-cairn-site/src/scaffold.mjs`
     prints the `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` literal and the
     release-page URL beside its `cairn doctor` reminder, but `resume-chapter2.test.mjs` asserts
@@ -1110,6 +1111,12 @@ the named human gates only):**
     `examples/showcase/package-lock.json` carry `"cairn-doctor": "dist/doctor/bin.js"`, because
     regenerating either during retire-2a pulled in unrelated upstream drift. Trigger: the next
     `dependency-upgrade` sweep, which regenerates both and clears it.
+  - **CI never runs `check:tool-heuristics`.** retire-2a added the gate
+    (`scripts/checks/check-tool-heuristics.mjs`) as the tripwire for the engine literals
+    `cairn doctor`'s heuristics grep for, but no workflow under `.github/workflows/` calls it, so
+    it fires only on a hand-run full gate. The fix is one `run:` line in `test.yml` beside
+    `check:tool-conditions`. Trigger: the next pass touching `test.yml`, or sooner, since a
+    tripwire nobody runs catches nothing.
 
 - **Go tool 1.1 items, filed at B2's close (2026-09-21).**
   - **A per-site hold.** `--ack` matches on check id alone, so holding one site's `email`
@@ -1186,9 +1193,6 @@ the named human gates only):**
   - **The doctor's `Result.ID` stamp is unobserved by any test.** `Run` stamps each result's id and
     nothing asserts it, so a wrong id would reach the JSON payload silently. **Trigger:** the next
     check added to `internal/doctor`.
-  - **The engine-side `check:tool-heuristics` tripwire belongs to retire-2**, not here. It pins the
-    four heuristics (`CairnAdminShell`, `.shellLoad`, `createAuthGuard`'s argument shape,
-    `checkOrigin: false`) against the engine sources retire-2a deletes the readers for.
 
 - **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
   2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact

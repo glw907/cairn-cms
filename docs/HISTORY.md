@@ -7,6 +7,66 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Record the doctor retirement, retire-2b, four tasks, 2026-09-22
+
+Branch `doctor-records`, off `main` at `65092fc1` (after retire-2a's merge `688aba41`). Plan and
+post-mortem: `docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`. Spec:
+`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`. The pass changes no engine
+code: it writes the record of a removal retire-2a already made.
+
+**What landed.** Task 1 added the facts container's retirement bullets and re-sourced the
+reference arm-index bullets to the counts retire-2a's page deletion left, and corrected the four
+doctor mentions in `docs/internal/record/2026-09-21-site-upgrade-brief.md` (`98c4f0c7`, one fix
+round `b0718f80`). Task 2 folded the `## Unreleased` window's doctor entries (the four-status
+vocabulary and exit 3, the probe changes, `--fix`, two actor rewords, the site-config path, the
+transcript claim) into one removal entry with its `Consumers must:` line, and rewrote migration
+`0004`'s check to `npx wrangler d1 migrations list <AUTH_DB> --remote` with both caveats
+(`a0159402`, then `ee88d0b5` and `8104cb65`). Task 3 wrote eight new ledger entries, amended
+twenty-three existing ones by name, and filed the deferred checks, the two unraised registry
+entries, and cairn-pub's two breakages to ROADMAP (`317b82e7`, one fix round `1efef1b8`, which
+added `Shape:` lines to four new retire entries; the `Shape:` count went from 87 to 91). retire-1's
+`doctor-go-site-config-narrowing` already covered the ninth ruled item. The close corrected the
+carried polish, including three tool contract pages that still named 1.0.1 as current
+(`cfaae3af`). It repointed every ROADMAP proposal whose actor was the retired npm doctor to
+`cairn doctor` or `cairn health`, and retired two as moot or shipped (`76f3492d`). It routed
+retire-2a's five carried friction findings, plus one of its own, to ROADMAP's Next tier
+(`74284ceb`, `d3737925`).
+
+**What the gates caught.** `check:rulings-format`'s exit ratchet is what Task 3's fix round
+answered: four new retire entries lacked a `Shape:` line of their own. Nothing automated caught
+the changelog's false claims, which took the per-task `diff-reviewer` three rounds, one of them
+correcting the reviewer's own round-one error. The close's ROADMAP reconciliation found that
+retire-2a's `check:tool-heuristics` gate is wired into no CI workflow, so the tripwire fires only
+on a hand-run full gate (filed to Next).
+
+**What a later pass would be wrong to rediscover.**
+
+- The rulings ledger's exit ratchet makes a `Shape:` line load-bearing for every slug in
+  `ORIGINAL_TRUNCATED_SLUGS`. An amendment to a superseded shape adds a sentence saying why it
+  will not execute; it never rewrites or empties the line, which would go red and lose the record
+  of what was once planned.
+- Migration `0004`'s replacement check reads D1's migrations ledger, not the `nonce_hash` column.
+  It is valid only after the migration file is copied in, and a site that hand-ran the SQL sees
+  `0004` reported unapplied, where re-applying it fails on a duplicate column. Both caveats have
+  to be stated, or the replacement is a trap.
+- Splitting the pass, not the tasks, is what brought the undivided nine tasks back under the
+  eight-task guideline. It did not bring the tokens under the undivided 3.2M ceiling (see the
+  post-mortem's split score).
+- A plan's zero-hit grep criterion can contradict the same plan's own remove-or-reword
+  requirements: a record that must name the retired command as history cannot also grep clean for
+  it. Write such criteria as "returns only these lines", enumerated. A hyphen-only grep also
+  misses `cairn doctor` spelled with a space, so grep `cairn[- ]doctor`.
+- Check a changelog claim about what an old command did against the tree before its removal, at
+  `8d042158^`, not only against the current pages: the round-two corrections that did not do this
+  repeated a false carry-over claim.
+- `formatSiteFacts` (`src/lib/vite/internal.ts`) writes only three adapter fields beside
+  `version`: `mediaBucketBinding`, `roles`, and `aiPosture`, since retire-2a trimmed
+  `AdapterFacts` to what the facts writer needs. A record describing `site-facts.json` as carrying
+  more is wrong.
+- `cairn health`'s `deploy` check reports a failed last build but not a default branch ahead of
+  the last successful one, and `publish-path` runs no App-installation check. Neither is a
+  substitute for the dropped `github.app` preflight.
+
 ## Retire cairn-doctor from the engine, retire-2a, seven tasks, 2026-09-22
 
 Branch `doctor-engine`, off `main` at `59b920f1` (tool 1.1.0's merge). Plan and post-mortem:
@@ -69,6 +129,16 @@ this defect was filed to the workstation, not this repo. This was also the first
 reviewed by `claude-opus-5-5` after the mid-session model repin; its Task 5 verdict was the
 first 5.5 review on this repo, and its Task 6 first read is the review round that found the
 six false statements above.
+
+## Tag `tool/v1.1.0`, 2026-09-22
+
+The Go tool's 1.1.0, the release that introduces `cairn doctor`, is tag object `6dcfdf22` on merge
+commit `59b920f1` (PR #82). Release run `35754462389` was green on all three legs, with six
+archives plus `SHA256SUMS`, the attestation verified, and `make -C tool install-check
+VERSION=v1.1.0` green in both containers. The conductor ruled the URL fork on 2026-09-22 under
+Geoff's delegation: 1.1.0 prints the cairn.pub URLs exactly as 1.0.1 does, the 404s are
+cairn.pub's debt ([the pass A handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)),
+and no tool patch follows.
 
 ## Draft docs pass A, the tool's contract pages, eleven tasks, 2026-09-22
 

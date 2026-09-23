@@ -1090,6 +1090,27 @@ the named human gates only):**
   prose that no longer runs. This pass never edits another repo; both need a fix in cairn-pub's
   own next pass, filed here since no engine record reaches that repo.
 
+- **Four small items retire-2a left, filed from the friction log at retire-2b's close
+  (2026-09-22).** Each was verified against the tree at filing.
+  - **No scaffolder test pins the install pointer.** `packages/create-cairn-site/src/scaffold.mjs`
+    prints the `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` literal and the
+    release-page URL beside its `cairn doctor` reminder, but `resume-chapter2.test.mjs` asserts
+    only the reminder's first sentence, so a wrong module path or URL ships green. Trigger: the
+    next pass touching the scaffolder's hand-over text.
+  - **`cairn-guidance`'s containment is a text-prefix check.** `readFileUnderCwd` in
+    `src/lib/guidance/bin.ts` compares `resolve(cwd, relPath)` against `cwd + sep` with no
+    realpath step, so a symlink inside the project can lead the read outside it. It predates the
+    retirement. `src/lib/media-seed/bin.ts`'s `realpathNearestAncestor` is the stronger pattern
+    to adopt. Trigger: the next pass touching `src/lib/guidance/`.
+  - **`is-it-working.md`'s symlink paragraph addresses a contributor.** The paragraph after the
+    transcript explains how this repo's own example site installs the engine, which a site
+    operator never meets. A register slip on a frozen page, for the docs rebuild's admin-arm pass,
+    beside the two unraised registry entries above.
+  - **Both lockfiles still map the retired bin.** `package-lock.json` and
+    `examples/showcase/package-lock.json` carry `"cairn-doctor": "dist/doctor/bin.js"`, because
+    regenerating either during retire-2a pulled in unrelated upstream drift. Trigger: the next
+    `dependency-upgrade` sweep, which regenerates both and clears it.
+
 - **Go tool 1.1 items, filed at B2's close (2026-09-21).**
   - **A per-site hold.** `--ack` matches on check id alone, so holding one site's `email`
     silences real email failures on every other site in the registry. Filed from the owner's
@@ -1100,6 +1121,12 @@ the named human gates only):**
   - **Two release-job nits** the Task 23 review raised and did not block on: the verify step
     prints nothing on success (echo the archive name), and `install-check.sh` prints `--version`
     without asserting it.
+  - **`cairn doctor`'s PASS lines carry the failure title (filed at retire-2b's close,
+    2026-09-22).** `Format` in `tool/internal/doctor/report.go` keys each result line to its
+    condition's registry title, which names the failure, before its detail, so a passing check reads `PASS  Wrangler bindings are missing: EMAIL and
+    AUTH_DB are declared` (`packages/create-cairn-site/test/fixtures/transcripts/04-doctor-report.txt`,
+    captured from 1.1.0). A passing line wants the check's own neutral name. Needs a tool release,
+    and the capture and `is-it-working.md`'s transcript re-taken after it.
 
 - **The B2 architecture reads, what retire-1 left (2026-09-21, updated 2026-09-22).** One read per
   touched Go package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen

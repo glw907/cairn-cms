@@ -3,6 +3,20 @@
 Present tense only; past tense lives in [`docs/HISTORY.md`](HISTORY.md), durable orientation in
 `CLAUDE.md`. `cairn-pass` rewrites this at each pass-end.
 
+## retire-2b checkpoint (Segment A done, 2026-09-22)
+
+Branch `doctor-records` (worktree `.claude/worktrees/doctor-records`), off `65092fc1`. Tasks 1-3
+accepted by `diff-reviewer`: facts at `b0718f80` (one fix round), changelog at `8104cb65` (a third
+round on the conductor's call after a second `fix`, the reviewer's own round-one error among the
+four), ledger and ROADMAP at `1efef1b8` (one fix round; `Shape:` count 87 to 91). Task 4, the close,
+has not started. The 800K flag tripped: subagent spend is 1.1M to 2.1M, depending on whether a
+resumed agent's figure is cumulative. The close waits on Geoff's budget call. Carried to the close:
+`cli-cairn-doctor.md:3-4` still names 1.0.1 as the current release; `engine-rulings.md:5040` names
+`edge.https-forced` where the health id is `https-forced`; optional polish at CHANGELOG.md:569-570
+and :589, engine-rulings.md:5042 and :6480; about eighteen ROADMAP proposals still name the retired
+`cairn-doctor` as actor (enumerated in the Task 3 review), a scope call for Geoff. Task 3 wrote eight
+new entries, and retire-1's `doctor-go-site-config-narrowing` covers the ninth ruled item.
+
 ## Current state
 
 Published: **`0.96.0`** on npm `latest`. `main` carries every pass through the Go tool's B2 (PR

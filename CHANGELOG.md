@@ -560,37 +560,37 @@
 ### Removed
 
 - `cairn-doctor`, the npm-packaged setup-preflight bin (`src/lib/doctor/`), is retired outright,
-  not reshaped. The four-status vocabulary (PASS, FAIL, SKIP, INFO, UNCHECKED) and exit 3 for a
-  run whose only non-passing results are UNCHECKED both carry over unchanged into `cairn doctor`
+  not reshaped. The five status words (PASS, FAIL, SKIP, INFO, UNCHECKED) and exit 3 for a run
+  whose only non-passing results are UNCHECKED both carry over unchanged into `cairn doctor`
   below; what changed is severity, not vocabulary: a blocker FAIL now exits 2 (`CRITICAL`) rather
-  than 1, and the shared `cairn` precedence, `CRITICAL > UNKNOWN > WARNING > OK`, means an
-  UNCHECKED-only run's `UNKNOWN` outranks a `WARNING`, the opposite of the old numeric read.
-  `edge.hsts` still retires outright; it has no counterpart in `cairn doctor`'s eleven checks.
-  `edge.https-forced` does not leave: it lives on as `cairn health`'s `https-forced` check, the
-  live-site counterpart, since the JS-free admin sign-in form POST failure it names needs a
-  deployed site to observe. The `--probe` flag's live derivation of the expected CSRF cookie name
-  off a probed origin's own scheme leaves outright, since `cairn doctor` makes no such probe and
-  `cairn health` derives cookie names differently. `--fix`, the mode that installed the packaged
-  `skill.admin-screens` skill and the `skill.admin-screens-stale` condition that detected it going
-  stale, also leaves outright; `--fix`'s job moved to `cairn-guidance install` earlier in this
-  same window (see Added, above, and
+  than 1, so a run with a warning FAIL and an UNCHECKED result now exits 3, where the old bin's
+  failure-wins rule exited 1; a blocker FAIL (2) still outranks UNCHECKED, under the shared
+  `cairn` precedence, `CRITICAL > UNKNOWN > WARNING > OK`. `edge.hsts` still retires outright; it
+  has no counterpart in `cairn doctor`'s eleven checks, though `cairn health`'s `https-forced`
+  check carries an HSTS half of its own, so the observation survives there. `edge.https-forced`
+  does not leave: it lives on as `cairn health`'s `https-forced` check, the live-site counterpart,
+  since the JS-free admin sign-in form POST failure it names needs a deployed site to observe. The
+  `--probe` flag's live derivation of the expected CSRF cookie name off a probed origin's own
+  scheme leaves outright, since `cairn doctor` makes no such probe. `--fix`, the mode that
+  installed the packaged `skill.admin-screens` skill and the `skill.admin-screens-stale` condition
+  that detected it going stale, also leaves outright; `--fix`'s job moved to `cairn-guidance
+  install` earlier in this same window (see Added, above, and
   [The `cairn-guidance` CLI](docs/reference/guidance.md)) and is unaffected by this retirement.
 
-  Nine of the eleven checks `cairn doctor` runs keep their old condition ids and carry over:
+  All eleven checks `cairn doctor` runs keep their old check and condition ids and carry over:
   `config.bindings`, `config.media-bucket`, `config.observability`, `config.csrf-disable`,
-  `config.site-config`, `config.no-referrer-blanket`, `admin.mount-shape`,
-  `config.dependency-floors`, and `auth.role-wiring`. Two are new to `cairn doctor`:
-  `config.public-origin` and `ai.posture-effective`. The rest, the App probe, `config.tidy-key`,
-  the login-envelope probe, every D1 read, and the send re-run, do not carry over (see
-  `docs/internal/engine-rulings.md`'s ledger for why each was dropped or deferred).
+  `config.public-origin`, `config.site-config`, `config.no-referrer-blanket`,
+  `admin.mount-shape`, `config.dependency-floors`, `auth.role-wiring`, and `ai.posture-effective`.
+  The rest, the App probe, `config.tidy-key`, the login-envelope probe, every D1 read, and the
+  send re-run, do not carry over (see `docs/internal/engine-rulings.md`'s ledger for why each was
+  dropped or deferred).
 
   The replacement is the Go `cairn` operator CLI's `cairn doctor` subcommand (`tool/v1.1.0`),
   contract page [`docs/reference/cli-cairn-doctor.md`](docs/reference/cli-cairn-doctor.md). It is
   not a like-for-like reshape: `cairn doctor` checks a named local directory, reads nothing but
-  that directory, needs no credential, and does not require an adopted site, unlike the npm bin's
-  own local checks it otherwise resembles. The live-site checks the npm bin never ran
-  (`https-forced` among them) moved to `cairn health`, the separate, deployed-site counterpart the
-  Go CLI already ships.
+  that directory, needs no credential, and does not require an adopted site, unlike the npm bin,
+  which also ran credentialed Cloudflare, GitHub App, and D1 checks. The npm bin's live-site
+  checks that survive moved to `cairn health` (`edge.https-forced` as `https-forced`).
 
   **Consumers must:** install the `cairn` binary (`go install
   github.com/glw907/cairn-cms/tool/cmd/cairn@latest`, or a prebuilt archive from the `tool/v1.1.0`

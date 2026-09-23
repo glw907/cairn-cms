@@ -10,8 +10,8 @@ Published: **`0.96.0`** on npm `latest`. `main` carries every pass through the G
 `## Unreleased`; the window holds for one cut and includes the tool's 1.0 (`tool/v1.0.0`,
 `tool/v1.0.1`, commit `9b479e8d`). Held majors: `devalue` 6, TypeScript 7, Vitest 5. CI is green.
 
-**The doctor retirement is half done**, the Go half merged untagged from `doctor-go`; retire-2a
-removes the engine's doctor. **Draft docs pass A is merged**, the tool's contract pages and
+**The doctor retirement is code-complete**: the Go half shipped as `tool/v1.1.0`, the engine half
+merged as `688aba41`; retire-2b records it. **Draft docs pass A is merged**, the tool's contract pages and
 schemas now shipping inside the npm tarball; cairn.pub's own debt is
 [this handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), un-pinnable against the
 registry since `0.95.0` on `pass-d-docs-tracks`. Live contracts from the pre-task:
@@ -26,7 +26,7 @@ verified, `make -C tool install-check VERSION=v1.1.0` green in both containers).
 ruled on 2026-09-22 by the conductor under Geoff's delegation: 1.1.0 prints the cairn.pub URLs
 exactly as 1.0.1 does; the 404s are cairn.pub's debt, recorded in
 [the pass A handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), and no tool patch
-follows. **retire-2a is at its close** on `doctor-engine` off `main` at `59b920f1`: Tasks 1 to 6 accepted, branch gate-green and clean at `3b7f50c6` (Task 5 accepted on an `escalate` that was a plan defect, the removal grep hitting a rulings-ledger id; Task 6 accepted after one fix round of six false statements the Opus 5.5 reviewer caught). Spend is about 2.66M against the 2.6M ceiling, over by the close; Geoff decides at this boundary. Task 7 remains: the fold agent runs `retire-2a-close.md` in `~/.claude/projects/-var-home-glw907-Projects-cairn-cms/retire-2a-scratchpad-2026-09-22/` (its conductor decisions section carries the Task 5 ruling and 2b's friction items), then one `diff-reviewer` read, the merge from `main`, the full heavy re-gate, the PR, and the one STATUS line. Runner lesson for the close's HISTORY entry: `gate-tier.mjs` computes a reduced gate from the diff and overrode the task's explicit full gate string on both Task 6 rounds, so the reviewer ran the omitted docs checks itself; the runner should honor an explicit gate.
+follows. **The engine's doctor is removed on `main`** (retire-2a, PR #83, merge `688aba41`, CI green on that SHA; `src/lib/doctor` and the `cairn-doctor` bin are gone, the media-seed bin stands alone under `src/lib/media-seed/`), and **the records pass, retire-2b, is pending**: plan `docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`, on its own branch and worktree off `main`, conducted by a fresh `claude-opus-5-5` session. Its inputs from 2a's post-mortem: five friction items (the install-literal test gap, the tool's PASS-titled-with-failure render, the contributor-register paragraphs on `is-it-working.md`, `guidance/bin.ts`'s realpath-less containment, and both lockfiles' stale `cairn-doctor` bin mapping, cleared by the next `dependency-upgrade` sweep), the changelog entry, the ledger entries, and the STATUS-to-HISTORY migration. Only 2b's close writes the unblock line.
 
 **The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0 (DONE, with
 the pre-task behind it); retire-1 (DONE); draft docs pass A (DONE); one `tool/v1.1.0` tagged from a
@@ -51,8 +51,8 @@ links the deleted `doctor.md`, and `doctor.md:79-86`/`facts/reference.md` share 
 
 ## Resume prompt
 
-In a fresh session (after `brew upgrade --cask claude-code@latest` and the `opus-5-5-adoption` chore),
-resume retire-2a at Segment C on the `doctor-engine` worktree, then retire-2b (its executing session
-starts on `claude-opus-5-5`, the first pass under the phase-split conducting rule),
-each on its own branch and worktree. Cut `0.97.0` last;
-`ROADMAP.md` sequences what follows.
+In a fresh session started with `claude --model claude-opus-5-5` (the first pass under the phase-split
+conducting rule; effort `medium`), execute retire-2b
+(`docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`) on a `doctor-records` worktree off
+`main` at `688aba41` or later, through the `cairn-pass` skill. Its close writes the `0.97.0` unblock
+line; cut `0.97.0` last, through `cairn-release`. `ROADMAP.md` sequences what follows.

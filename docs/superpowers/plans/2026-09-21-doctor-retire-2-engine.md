@@ -1048,6 +1048,14 @@ reviewer totals land on top of this figure. Geoff ruled the pass through at the 
 boundary rather than splitting it, since every task had already landed and only the close
 remained.
 
+**Final figure (conductor, after the merge).** The close added about 0.5M of subagent tokens: the
+simplifier 80K, the security read 81K, the fold 187K across three rounds, and the reviewer 158K
+across three reads. The pass finished at about 3.2M against the 2.6M ceiling, 123 percent. The
+second and third fold rounds were record-text corrections a reviewer caught (a misdescribed Task 5,
+a present-tense claim about a deleted fixture, a dropped carry-forward, and one false `bin` claim);
+the conductor took the second `fix` as its decision and closed on its own grep of the two final
+phrases rather than a third read. Merge `688aba41`, PR #83, CI green on the SHA.
+
 **Attended time.** Two planning misses, one execution sitting.
 
 - Planning miss 1: Task 5's removal-predicate grep needed a second carve-out for the

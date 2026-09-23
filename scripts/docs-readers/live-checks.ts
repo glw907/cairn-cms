@@ -19,9 +19,20 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CACHE_ROOT, readSecret, runBatchFile } from './run.js';
 import { findInit, parseStream, toolCalls } from './lib/transcript.js';
+import { scrub } from './lib/scrub.js';
 import type { JobReport } from './lib/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Print a summary as JSON. The summary carries denial inputs and verification problems, which quote
+ * what the reader sent, so it passes the scrubber with the reader token first.
+ * @param summary - The summary object.
+ */
+function printScrubbed(summary: object): void {
+  const secrets = [readSecret('CAIRN_DOCS_READER_OAUTH_TOKEN')];
+  process.stdout.write(`${scrub(JSON.stringify(summary, null, 2), secrets)}\n`);
+}
 
 /**
  * Replace every `{{name}}` in a text.
@@ -144,7 +155,7 @@ async function escape(): Promise<number> {
         checks: escapeChecks(job, outDir, hostPath, hostSecret),
       })),
     };
-    process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+    printScrubbed(summary);
     const allPass = summary.jobs.every((j) => j.checks.every((c) => c.pass));
     return allPass && report.teardown.runDirRemoved && report.teardown.containersLeft === 0 ? 0 : 1;
   } finally {
@@ -186,7 +197,7 @@ async function auth(): Promise<number> {
     jobs: report.jobs.map((j) => ({ id: j.id, outcome: j.outcome, abortReason: j.abortReason, verified: j.verified.ok, usage: j.usage })),
     noJobStalled: report.jobs.every((j) => j.outcome !== 'stalled'),
   };
-  process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+  printScrubbed(summary);
   return summary.stopReason === 'auth' && summary.noJobStalled ? 0 : 1;
 }
 

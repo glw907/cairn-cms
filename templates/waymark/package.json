@@ -20,7 +20,7 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@glw907/cairn-cms": "^0.96.0",
+    "@glw907/cairn-cms": "^0.97.0",
     "hastscript": "^9.0.1",
     "remark-smartypants": "^3.0.2"
   },
@@ -29,7 +29,7 @@
     "@fontsource-variable/figtree": "^5.2.10",
     "@fontsource-variable/source-code-pro": "^5.2.5",
     "@fontsource-variable/source-sans-3": "^5.2.5",
-    "@glw907/cairn-cms-dev": "^0.96.0",
+    "@glw907/cairn-cms-dev": "^0.97.0",
     "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2.70",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

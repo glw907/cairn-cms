@@ -12,8 +12,9 @@ first and the outline second. Pass 1 starts from real failures: it runs reader a
 today's pages, records what breaks, and builds only the machinery those failures justify, ending
 with a validated system. Pass 2a, in a fresh session, writes the audience record and runs a
 calibration trial on what the chain actually needs, with a researched exemplar corpus as the
-drafters' primary input. Pass 2b builds a scripted jobs ledger, runs a structure bake-off, and writes the outline at slot level. There are three owner stops. Nothing here
-touches the `0.97.0` cut.
+drafters' primary input. Pass 2b builds a scripted jobs ledger, runs a structure bake-off, and
+writes the outline at slot level. There are three owner stops. Nothing here touches the `0.97.0`
+cut.
 
 ## Why now
 

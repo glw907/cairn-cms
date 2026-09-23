@@ -213,7 +213,7 @@ Two related overturns found (same underlying ruling, recorded twice):
 
 1. **The one-profile-per-track ruling, overturned.** `docs/internal/docs-register.md:377`:
    > "This overturns the 2026-08-14 ruling, above and in
-   > [`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md), that every
+   > [`2026-08-14-audience-profiles.md`](../2026-08-14-audience-profiles.md), that every
    > track serves exactly one profile and the reference arm has none (Geoff, 2026-09-21)."
 
    A dated note was appended to `2026-08-14-audience-profiles.md:202` confirming the same

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** thirteen tasks (0 to 12) in five segments. Tasks 0, 4, 11, and 12 are
 > conductor-run. Every other task runs as the per-task chain: `cairn-implementer` (`sonnet`,
-> `medium`) implements, `diff-reviewer` (`claude-opus-5-5`, `medium`) reads the diff against the
+> `high`) implements, `diff-reviewer` (`claude-opus-5-5`, `high`) reads the diff against the
 > task's acceptance criteria, and the task's gate runs inside the chain through `cairn-run-gate`.
 > **Execution mode:** `pass-execute.js` runs the chain tasks (1 to 3, 5 to 10), one segment per
 > run, tasks sequential within it because each depends on the one before; copy the script to the
@@ -56,11 +56,12 @@ commit or push: `pgrep -f` on the worktree path and on `.dotfiles`, `git status`
 checkouts for changes this pass did not author, and `docs/STATUS.md` on `main` for a live `0.97.0`
 cut session. A live executor stops the task and goes to the conductor.
 
-**Models:** implementers `sonnet` at `medium`; `diff-reviewer`, every reader, and every review
-read on `claude-opus-5-5` at `medium` unless a task names `high`; readers also on
-`claude-sonnet-5` where a task says so. `opus` upshifts are named per task. A hedged verdict on a
-correctness-critical point, or a failure-record verdict the `diff-reviewer` disputes, goes to one
-`fable` dispatch.
+**Models (aligned with Anthropic's model guidance, 2026-09-23):** implementers `sonnet` at `high`
+(their pinned effort); `diff-reviewer` and every review read on `claude-opus-5-5` at `high`;
+readers on `claude-opus-5-5` at its default `medium`, and also on `claude-sonnet-5` where a task
+says so. `opus` upshifts are named per task. A hedged verdict on a correctness-critical point, or
+a failure-record verdict the `diff-reviewer` disputes, is re-run on `claude-opus-5-5` at `xhigh`;
+only if that still falls short does it go to one `fable` dispatch.
 
 ## Pre-flight findings (2026-09-23, from the plan author's reads and the review probes)
 
@@ -284,8 +285,8 @@ listing of the repository, Worker, D1, and tokens, then deletion only on owner c
 **Conductor-run.** The conductor writes the cost estimate first. Dispatch one `sonnet` agent at
 `medium` to write the batch file and the rot-measure script, then run the runner in the
 background; one `claude-opus-5-5` agent at `high` writes the failure record from the reports; one
-`diff-reviewer` (`claude-opus-5-5`, `medium`) reads the record against the reports, and a verdict
-it disputes goes to one `fable` dispatch.
+`diff-reviewer` (`claude-opus-5-5`, `high`) reads the record against the reports, and a verdict
+it disputes is re-run at `xhigh`, then goes to one `fable` dispatch if still unsettled.
 
 **Outcome.** "Through today's chain" is read as today's pages as they stand: the current
 `docs-page-chain.js` is not run, since today's pages already passed it. Readers attempt real jobs,

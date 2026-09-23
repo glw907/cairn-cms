@@ -13,7 +13,7 @@ under `## Unreleased`; the window holds for one cut and includes the tool's 1.0 
 **The doctor retirement is code-complete**: the Go half ships as `tool/v1.1.0`, and the engine
 half is on `main` as retire-2a's merge `688aba41` (`src/lib/doctor` and the `cairn-doctor` bin are
 gone; the media-seed bin stands alone under `src/lib/media-seed/`). **The records pass, retire-2b,
-is on `doctor-records`, awaiting its PR merge**: the `## Unreleased` removal entry and its
+is on `main`** as merge `2fa772ba` (PR #84): the `## Unreleased` removal entry and its
 `Consumers must:` line, the ledger entries, the facts bullets, and the ROADMAP sweep. Plan and
 post-mortem: `docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`.
 
@@ -25,13 +25,10 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-Merge `doctor-records` by PR on green CI, then write the unblock line here.
-
-**The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0, retire-1,
-draft docs pass A, and `tool/v1.1.0` are DONE; the engine removal, retire-2a then retire-2b, is
-DONE for 2a and awaiting merge for 2b. **ONLY retire-2b's close releases `0.97.0`**, through the
-unblock line naming `tool/v1.1.0`, `688aba41`, and retire-2b's merge SHA; a cut session finding
-no such line does not cut.
+**The 0.97.0 cut is unblocked** (retire-2b's close, 2026-09-23): tag `tool/v1.1.0` (tag object
+`6dcfdf22`), retire-2a's merge `688aba41`, and retire-2b's merge `2fa772ba`. All five steps Geoff
+ordered on 2026-09-21 are done: the tool's 1.0, retire-1, draft docs pass A, `tool/v1.1.0`, and
+the engine removal with its record. Cut `0.97.0` next, through `cairn-release`.
 
 ## Open decisions and watches
 

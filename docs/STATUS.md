@@ -20,8 +20,18 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-The `0.97.0` cut is done (2026-09-23). The docs-reset session (PR #85, branch `docs-reset`)
-merges next and writes the next action here. `ROADMAP.md` sequences what follows.
+**Docs reset pass 1, the writing system.** The docs are reset from scratch (only verified facts
+survive), and pass 1 builds and validates the writing system first: confined podman reader
+agents, stable fact ids with sentence-level provenance, the drafter agent, a v2 page chain,
+docs-as-tests, and validation with controls and a held-out defect set. Spec
+`docs/superpowers/specs/2026-09-23-docs-reset-design.md`; plan
+`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md` (13 tasks, ceiling 12M, flag 9.6M).
+Inputs are ready: the readers' plan token (`CAIRN_DOCS_READER_OAUTH_TOKEN`, age store, verified
+with `apiKeySource: none`) and the exemplar corpus (68 captures at
+`~/.local/share/cairn/exemplars/`, manifest `docs/internal/record/docs-exemplars.md`). Task 0's
+remaining owner items, the Cloudflare token scoped to the scratch Worker and the GitHub App
+installation confirmation, come after the conductor creates the scratch site. Pass 2a (audience
+record, exemplar review, calibration trial) follows pass 1's close.
 
 ## Open decisions and watches
 
@@ -43,5 +53,8 @@ merges next and writes the next action here. `ROADMAP.md` sequences what follows
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), read this
-file and the latest `docs/HISTORY.md` entry, then take the next action above.
+In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), execute docs
+reset pass 1 (`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`) through the `cairn-pass`
+skill, on a `docs-reset-system` worktree off `main`. Start with Task 0: write the STATUS line,
+create the private scratch site, then ask Geoff for the Cloudflare token and the GitHub App
+confirmation in one question.

@@ -1041,16 +1041,21 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   longer real exports anywhere in the package (rule b, the reverse check / stale-prose ...)")
   and `:285-292` (`declare function/const/class` names extracted from signature blocks feed the
   same stale-name pool). [verified]
-- Reference pages are the extend track's and admin track's shared lookup surface; three of them
-  (`doctor`, `log-events`, `supported-toolchain`) additionally serve a site admin reader. Source:
-  `docs/reference/README.md:74-83` ("Also for site admins" section lists exactly `doctor.md`,
-  `log-events.md`, `supported-toolchain.md`). [candidate: sourced to the page only, not traced to code]
-- Eight pages document no export subpath: the four CLI pages, the canonical admin mount, log
-  events, admin grammar tokens, and supported toolchain. Source: `docs/reference/README.md:86-90`
-  ("Pages that document no subpath" names exactly 8: `cairn-manifest`, `cairn-doctor`,
-  `cairn-media-seed`, `cairn-audit`, `admin-routes.md`, `log-events.md`,
-  `admin-grammar-tokens.md`, `supported-toolchain.md`), matching the count of `docs/reference/*.md`
-  files (25 total) minus the export-keyed ones. [candidate: sourced to the page only, not traced to code]
+- Reference pages are the extend track's and admin track's shared lookup surface; two of them
+  (`log-events`, `supported-toolchain`) additionally serve a site admin reader. `doctor.md` left
+  this list when the doctor retirement deleted it; the replacement `cairn doctor` page
+  (`cli-cairn-doctor.md`) is not listed here, since the CLI contract pages serve the extending
+  developer, not a site admin directly. Source: `docs/reference/README.md:86-93` ("Also for site
+  admins" section lists exactly `log-events.md`, `supported-toolchain.md`). [candidate: sourced to
+  the page only, not traced to code]
+- Eleven pages document no export subpath: the four npm CLI pages, the three `cairn` CLI
+  contract pages, the canonical admin mount, log events, admin grammar tokens, and supported
+  toolchain. Source: `docs/reference/README.md:95-104` ("Pages that document no subpath" names
+  exactly 11: `cairn-manifest`, `cairn-guidance`, `cairn-media-seed`, `cairn-audit`,
+  `cli-cairn-exit-codes.md`, `cli-cairn-json-output.md`, `cli-cairn-doctor.md`,
+  `admin-routes.md`, `log-events.md`, `admin-grammar-tokens.md`, `supported-toolchain.md`); the
+  doctor page moved from `doctor.md` to `cli-cairn-doctor.md` in the retirement, still counted
+  among the 11. [candidate: sourced to the page only, not traced to code]
 
 ## docs/reference/render.md
 
@@ -1421,9 +1426,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 
 ## docs/reference/vite.md
 
-- The internal write/verify/derive machinery `cairnManifest` shares with the `cairn-manifest` and
-  `cairn-doctor` bins is not public surface; every real caller reaches it by relative import.
-  Source: page text plus `src/lib/vite/internal.ts` exists as the internal module. [verified]
+- The internal write/verify/derive machinery `cairnManifest` shares with the `cairn-manifest`
+  bin is not public surface; every real caller reaches it by relative import. The `cairn-doctor`
+  bin this bullet once named alongside it is retired; only the manifest bin imports this module
+  today. Source: `src/lib/vite/internal.ts:1-11` (module header: "the lower-level functions the
+  cairn-manifest bin and its unit tests import by relative path"). [verified]
 - `CairnManifestOptions.manifestPath` defaults to `/src/content/.cairn/index.json`. Source:
   `src/lib/vite/internal.ts:46` (`DEFAULT_MANIFEST_PATH`). [verified]
 - `cairnManifest()` evaluates a verify virtual module through a nested Vite SSR load in

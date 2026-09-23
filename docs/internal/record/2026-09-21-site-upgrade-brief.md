@@ -45,18 +45,16 @@ leftover `.orig` file match what the package expects. Exits 0 by default; `--str
 the guidance tree is stale or missing. A site upgrade runs this after `install` to confirm the
 tree landed clean, and again after resolving any `.orig` files to confirm none remain.
 
-### `npx cairn-doctor`
+### `cairn doctor`
 
-Bin target: `./dist/doctor/bin.js`. Run it as `docs/extend/upgrade-cairn.md:50` does: `npx
-cairn-doctor --from editor@your-site.com --repo you/your-site`. A bare `npx cairn-doctor` leaves
-its checks unchecked and exits 3 (`src/lib/doctor/bin.ts:5-6`: a failed check exits 1, an
-unchecked check with no failure exits 3, a clean run exits 0). A site upgrade runs it, addressed,
-after bumping the `@glw907/cairn-cms` pin to confirm the site's own configuration still matches
-what the new version expects.
-
-**This command is retiring before the `0.97.0` release**, into the `cairn` CLI below. Do not
-write an upgrade procedure around it as a lasting step; check what the retirement pass left in
-its place before the site round starts.
+The npm bin left `package.json`'s `bin` block in the doctor retirement pass (verified:
+`node -p "Object.keys(require('./package.json').bin)"` lists `cairn-manifest`,
+`cairn-media-seed`, `cairn-audit`, `cairn-guidance` only). The replacement is `cairn doctor`, a
+subcommand of the `cairn` operator CLI described below: no `npx`, no `--from`/`--repo`, no
+credential. Run it as `cairn doctor <dir>` against the checked-out site directory; it reads the
+directory's checked-in configuration only. A site upgrade runs it after bumping the
+`@glw907/cairn-cms` pin and building once, so `src/content/.cairn/site-facts.json` exists for
+the checks that read it.
 
 ### `npx cairn-audit`
 

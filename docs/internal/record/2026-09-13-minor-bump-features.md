@@ -665,3 +665,62 @@ for each, in the tier where it bites.
    `stringify`/`uneval`) on the exact serialization path SvelteKit's own `load` boundary uses;
    worth the CHANGELOG's `Dependencies` entry naming it as security-relevant rather than a
    routine floor move.
+
+## Top-up, 2026-09-23 (0.97.0 cut)
+
+Scope: the pre-cut top-up sweep for the 0.97.0 release, one range move per package listed
+below. Root `package.json`: `daisyui` `^5.7.42` to `^5.7.44`, `@codemirror/state` `^6.7.5` to
+`^6.7.6`, `@codemirror/view` `^6.43.12` to `^6.43.13` (both runtime `dependencies`, so the
+published floors move), `@sveltejs/vite-plugin-svelte` `^7.1` to `^7.3.1`, `typescript-eslint`
+`^8.70.0` to `^8.70.1`, `wrangler` `^4.135.0` to `^4.137.0`, `@cloudflare/workers-types`
+`^5.20260921.1` to `^5.20260923.1`, `@anthropic-ai/sdk` devDependency `^0.127.0` to `^0.128.0`
+(the `>=0.105.0 <1` peer range is untouched). `examples/showcase/package.json`: the same
+`daisyui`, `@sveltejs/vite-plugin-svelte` (`^7` to `^7.3.1`), `wrangler`, and
+`@cloudflare/workers-types` moves, plus `prettier` `^3.9.8` to `^3.9.9`.
+
+Per-package finding:
+
+- **daisyui 5.7.42 -> 5.7.44.** Both patches touch only the `status` and `avatar` components.
+  The rebuilt `dist/components/cairn-admin.css` diff (378,059 bytes to 378,125 bytes) confirms
+  it: the only textual change is inside the `.status` rule block (a `width`/`height` pair
+  replaced by a `--size` custom property computed the same way), and no admin component uses
+  the bare `.status` class (only `avatar avatar-placeholder`, unaffected). Shipped CSS is
+  unchanged in every way that reaches the admin; no `Consumers must:` line needed.
+- **@codemirror/state 6.7.6.** A `changeByRange` cursor-mapping fix. `MarkdownEditor.svelte`
+  does not call `changeByRange` directly; unused.
+- **@codemirror/view 6.43.13.** A `coordsAtPos` bidirectional-text edge-case fix, and the
+  deprecated `visualLineSide` option (unused here). `MarkdownEditor.svelte:1199` calls
+  `coordsAtPos` for the caret-anchored insert popover; `src/tests/component/MediaInsertPopover.test.ts`,
+  the test covering that call site, passed 9/9 on re-run.
+- **wrangler 4.137.0.** A local-only D1 statement-splitting fix in `wrangler d1 execute`; the
+  gate never runs that command, using `vite preview` for the showcase instead. No exposure.
+- **@anthropic-ai/sdk 0.128.0.** No breaking change against cairn's single call site
+  (`messages.create()`); the devDependency floor moves, the peer range does not.
+- **@sveltejs/vite-plugin-svelte 7.3.0 -> 7.3.1.** An inspector-injection fix scoped to Vite
+  running under pnpm; cairn's toolchain and the showcase both use npm, so the fix path is
+  inert here.
+- **typescript-eslint 8.70.0 -> 8.70.1.** Rule-implementation fixes in rules
+  `eslint.config.js` does not configure; the config's own `typescript-eslint` usage is limited
+  to the parser, unaffected.
+- **@cloudflare/workers-types 5.20260921.1 -> 5.20260923.1.** A daily type-definition build
+  with no change to the D1, R2, or `EmailMessage` types cairn's own code imports; `npm run
+  check` (svelte-check) confirmed 0 errors, 0 warnings against the new types.
+- **prettier 3.9.9 (showcase only).** A markdown `$` character parsing fix. The showcase's
+  `npm run format:check` ran clean against the whole tree, confirming no reformatting.
+
+The showcase's full `CI=1 test:e2e` run confirms the daisyUI finding above at the browser
+level: 246 of 266 tests passed, and the 20 failures are exactly the `site-visual.spec.ts`
+`site home`/`archive page 2` files across every width and color scheme, this workstation's
+documented Chromium anti-aliasing divergence from the CI-canonical baselines
+(`docs/internal/durable-gotchas.md#ci-canonical-baselines-this-workstation-cannot-reproduce`),
+not a bump-caused regression.
+
+Refactor decision: nothing to take, nothing newly filed. Every finding above is either a
+no-op for cairn's call sites or a confirmed-unchanged shipped artifact; the existing
+refactor-decision table above is unaffected.
+
+Held majors, unchanged, same triggers as the 2026-09-20 update: `typescript` at `^6.0.3`
+(waiting on `tsgo` going green), `vitest`/`@vitest/browser`/`@vitest/browser-playwright` at
+`^4.1`/`^4.1.7` (waiting on `@cloudflare/vitest-pool-workers` supporting Vitest 5),
+`@types/node` at `^24.13.6` (tracks the engine floor decision in `docs/STATUS.md`), and
+`devalue` at `^5.9.4` (waiting on a `devalue`-consuming toolchain requiring 6.x).

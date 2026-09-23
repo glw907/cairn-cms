@@ -2586,6 +2586,20 @@
   to the admin sidebar's active nav item, which `npm run norms:generate` now observes and
   `cairn-audit norms` reads. No consumer action; the manifest is descriptive, not enforced.
 
+- A second, smaller pre-cut top-up (`docs/internal/record/2026-09-13-minor-bump-features.md`,
+  "Top-up, 2026-09-23") takes every minor and patch still open going into the 0.97.0 cut.
+  Runtime `dependencies` floors of the published package move again: `@codemirror/state` to
+  `^6.7.6` and `@codemirror/view` to `^6.43.13`, both browser-specific bug fixes
+  (`changeByRange` cursor mapping, `coordsAtPos` bidirectional-text edge case) with no cairn
+  call-site exposure. `daisyui` moves to `5.7.44`; both patches touch only the `status` and
+  `avatar` components, neither used as a bare class in the admin, and the rebuilt
+  `dist/components/cairn-admin.css` confirms it, textually unchanged apart from the internal
+  `.status` rule's own implementation. The other moved devDependencies
+  (`@sveltejs/vite-plugin-svelte` to `^7.3.1`, `typescript-eslint` to `^8.70.1`, `wrangler` to
+  `^4.137.0`, `@cloudflare/workers-types` to `^5.20260923.1`, `@anthropic-ai/sdk` to
+  `^0.128.0`, and the showcase's own `prettier` to `^3.9.9`) are not shipped in the tarball and
+  carry no consumer action. Held majors are unchanged. No consumer action.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

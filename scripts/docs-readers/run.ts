@@ -148,9 +148,12 @@ export async function runBatchFile(
   log(`run ${runId}: batch ${batch.name}, ${batch.jobs.length} job(s), CLI ${cliVersion}`);
   let result: Awaited<ReturnType<typeof runBatch>>;
   let teardown: FinishedReport['teardown'];
-  // A killed runner still removes its containers, networks, and per-run directory.
+  // A killed runner halts the batch, waits for every worker to settle, and only then tears down
+  // (in the finally below), so no worker starts a container after teardown has run.
+  const halt = new AbortController();
   const onSignal = () => {
-    executor.teardown().finally(() => process.exit(130));
+    log('signal received; halting the batch before teardown');
+    halt.abort();
   };
   process.once('SIGINT', onSignal);
   process.once('SIGTERM', onSignal);
@@ -163,11 +166,13 @@ export async function runBatchFile(
       runId,
       secrets: secrets(),
       ledger: { append: (entry) => appendLedger(ledgerPath, entry) },
+      halt: halt.signal,
     });
   } finally {
     process.off('SIGINT', onSignal);
     process.off('SIGTERM', onSignal);
     teardown = await executor.teardown();
+    if (halt.signal.aborted) process.exit(130);
   }
   const report: FinishedReport = { ...result.report, cliVersion, runRoot, teardown };
   report.verified = report.verified && teardown.runDirRemoved && teardown.containersLeft === 0 && teardown.networksLeft === 0;

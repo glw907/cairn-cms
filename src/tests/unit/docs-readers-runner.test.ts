@@ -167,6 +167,50 @@ describe('runBatch', () => {
     expect(report.usage.counted).toBe(100 + 3 * 543);
   });
 
+  it('halts on an executor throw: aborts the job in flight, starts no further job, and rejects only once workers settle', async () => {
+    const started: string[] = [];
+    let inFlightSettled = false;
+    let inFlightAborted = false;
+    const executor = {
+      checkToken: async () => ({ events: okCheck, stdout: '' }),
+      run: async (job: { id: string }, _decl: unknown, { signal }: { signal: AbortSignal }) => {
+        started.push(job.id);
+        if (job.id === 'a') {
+          await new Promise((r) => setTimeout(r, 5));
+          throw new Error('prepare failed for a');
+        }
+        // Job b stays in flight until the runner aborts it, then takes a moment to wind down.
+        await new Promise<void>((r) => signal.addEventListener('abort', () => r(), { once: true }));
+        inFlightAborted = true;
+        await new Promise((r) => setTimeout(r, 20));
+        inFlightSettled = true;
+        return { events: [], stdout: '', proxyLog: [], preparedRoot: PREPARED, timedOut: false, aborted: true };
+      },
+    };
+    const run = runBatch({ batch: batchOf(['a', 'b', 'c'], { concurrency: 2 }), classes, baselines, executor, runId: 'r8' });
+    await expect(run).rejects.toThrow('prepare failed for a');
+    expect(started).toEqual(['a', 'b']);
+    expect(inFlightAborted).toBe(true);
+    expect(inFlightSettled).toBe(true);
+  });
+
+  it('halts on the external halt signal and starts no further job', async () => {
+    const halt = new AbortController();
+    const started: string[] = [];
+    const executor = {
+      checkToken: async () => ({ events: okCheck, stdout: '' }),
+      run: async (job: { id: string }, _decl: unknown, { signal }: { signal: AbortSignal }) => {
+        started.push(job.id);
+        halt.abort();
+        await new Promise<void>((r) => (signal.aborted ? r() : signal.addEventListener('abort', () => r(), { once: true })));
+        return { events: [], stdout: '', proxyLog: [], preparedRoot: PREPARED, timedOut: false, aborted: true };
+      },
+    };
+    const run = runBatch({ batch: batchOf(['a', 'b']), classes, baselines, executor, runId: 'r9', halt: halt.signal });
+    await expect(run).rejects.toThrow('batch halted before it finished');
+    expect(started).toEqual(['a']);
+  });
+
   it('fails verification when a canary string reaches the transcript', async () => {
     const { executor, ledger } = replayExecutor({ a: fixture('clean-docs-only.jsonl') }, { canaries: ['Install the tool'] });
     const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, ledger, runId: 'r7' });

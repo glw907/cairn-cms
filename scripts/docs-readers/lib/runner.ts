@@ -104,7 +104,7 @@ export function buildJobReport({
   const pagesRead = derivePagesRead(calls, job.docsSet);
   const init = checkInit(events.find((e) => e.type === 'system' && e.subtype === 'init'), expectedTools(decl), baselines);
   const canariesFound = findCanaries(run.stdout, run.canaries ?? []);
-  const verified = verifyReport({ report, pagesRead, root: run.preparedRoot, init, canariesFound });
+  const verified = verifyReport({ report, pagesRead, docsSet: job.docsSet, root: run.preparedRoot, init, canariesFound });
   const failure = classifyFailure(events);
   const reason = failure ?? abortReason ?? (run.timedOut ? 'timeout' : undefined);
   if (reason) {
@@ -163,7 +163,10 @@ function notStartedReport(job: Job, reason: string): JobReport {
 /**
  * Run a batch. The `executor` runs the token check and each job's container; the `ledger` receives
  * one usage entry per run, tagged with `runId`; `secrets` are the values scrubbed from every
- * transcript.
+ * transcript. Aborting `halt` (the CLI does on SIGINT or SIGTERM) or an executor throwing halts
+ * the batch: every in-flight job is aborted, no further job starts, and the promise rejects only
+ * after every worker has settled, so the caller's teardown never races a worker still starting a
+ * container.
  * @returns The batch report and each job's scrubbed transcript.
  */
 export async function runBatch({
@@ -174,6 +177,7 @@ export async function runBatch({
   ledger,
   runId,
   secrets = [],
+  halt,
 }: {
   batch: Batch;
   classes: Map<string, ClassDecl>;
@@ -182,6 +186,7 @@ export async function runBatch({
   ledger?: { append(entry: LedgerEntry): void };
   runId: string;
   secrets?: readonly unknown[];
+  halt?: AbortSignal;
 }): Promise<{ report: BatchReport; transcripts: Record<string, string> }> {
   let stopReason: StopReason | undefined;
   let spent = 0;
@@ -195,6 +200,14 @@ export async function runBatch({
     stopReason = reason;
     for (const flight of inFlight.values()) flight.controller.abort();
   };
+  let halted = false;
+  let firstError: unknown;
+  const haltAll = () => {
+    halted = true;
+    for (const flight of inFlight.values()) flight.controller.abort();
+  };
+  halt?.addEventListener('abort', haltAll, { once: true });
+  if (halt?.aborted) haltAll();
   const liveSpend = () => [...inFlight.values()].reduce((sum, f) => sum + f.live, 0);
   const record = (jobId: string, model: string, usage: Usage) => {
     total = addUsage(total, usage);
@@ -213,8 +226,8 @@ export async function runBatch({
   }
 
   let next = 0;
-  const worker = async () => {
-    while (next < batch.jobs.length) {
+  const work = async () => {
+    while (!halted && next < batch.jobs.length) {
       const index = next;
       next += 1;
       const job = batch.jobs[index];
@@ -259,7 +272,18 @@ export async function runBatch({
       await executor.release?.(job);
     }
   };
-  await Promise.all(Array.from({ length: Math.min(batch.concurrency, batch.jobs.length) }, worker));
+  const worker = async () => {
+    try {
+      await work();
+    } catch (error) {
+      firstError ??= error;
+      haltAll();
+    }
+  };
+  await Promise.allSettled(Array.from({ length: Math.min(batch.concurrency, batch.jobs.length) }, worker));
+  halt?.removeEventListener('abort', haltAll);
+  if (firstError !== undefined) throw firstError;
+  if (halted) throw new Error('batch halted before it finished');
 
   return {
     report: {

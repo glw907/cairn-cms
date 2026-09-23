@@ -34,9 +34,7 @@ docs-as-tests, and validation with controls and a held-out defect set. Spec
 `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md` (13 tasks, ceiling 12M, flag 9.6M).
 Inputs are ready: the readers' plan token (`CAIRN_DOCS_READER_OAUTH_TOKEN`, age store, verified
 with `apiKeySource: none`) and the exemplar corpus (68 captures at
-`~/.local/share/cairn/exemplars/`, manifest `docs/internal/record/docs-exemplars.md`). Task 0's
-remaining owner items, the Cloudflare token scoped to the scratch Worker and the GitHub App
-installation confirmation, come after the conductor creates the scratch site. Pass 2a (audience
+`~/.local/share/cairn/exemplars/`, manifest `docs/internal/record/docs-exemplars.md`). Pass 2a (audience
 record, exemplar review, calibration trial) follows pass 1's close.
 
 ## Open decisions and watches
@@ -59,8 +57,8 @@ record, exemplar review, calibration trial) follows pass 1's close.
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), execute docs
+In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), continue docs
 reset pass 1 (`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`) through the `cairn-pass`
-skill, on a `docs-reset-system` worktree off `main`. Start with Task 0: write the STATUS line,
-create the private scratch site, then ask Geoff for the Cloudflare token and the GitHub App
-confirmation in one question.
+skill, in the existing `.claude/worktrees/docs-reset-system` worktree. Read the ledger at the
+plan's foot for task states; Task 0 is done, so resume at the first task the ledger does not mark
+done, starting with segment 1's pre-flight over Tasks 1 to 3.

@@ -29,7 +29,7 @@ export const IDENTITY_UNKNOWN_CONDITION = 'auth.identity-unknown' as const;
 
 /**
  * A branded page for an operator fault, built straight from the registered condition's fields so
- * the served copy, the doctor's report, and the readiness checklist say the same thing.
+ * the served copy, cairn doctor's report, and the readiness checklist say the same thing.
  */
 function conditionFaultPage(cond: CairnCondition): string {
   const inner = `

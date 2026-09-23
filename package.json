@@ -33,7 +33,7 @@
     "markdown"
   ],
   "scripts": {
-    "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/doctor/bin.js dist/media-seed/bin.js dist/audit/bin.js dist/guidance/bin.js",
+    "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/media-seed/bin.js dist/audit/bin.js dist/guidance/bin.js",
     "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error && node scripts/checks/check-package-files.mjs && node scripts/checks/check-skill-budget.mjs",
     "check:reference": "npm run package && node scripts/checks/reference-coverage.mjs",
     "check:reference:signatures": "npm run package && node scripts/checks/check-reference-signatures.mjs",
@@ -41,6 +41,8 @@
     "check:self-use": "npm run package && node scripts/checks/check-self-use.mjs",
     "check:readiness": "npm run package && node scripts/checks/check-readiness.mjs",
     "check:tool-conditions": "npm run package && node scripts/checks/check-tool-conditions.mjs",
+    "check:tool-heuristics": "node scripts/checks/check-tool-heuristics.mjs",
+    "check:tool-release": "node scripts/checks/check-tool-release.mjs",
     "check:docs": "node scripts/checks/docs-links.mjs",
     "check:rulings-format": "node scripts/checks/check-rulings-format.mjs",
     "check:target-stack": "node scripts/checks/check-target-stack.mjs",
@@ -181,7 +183,6 @@
   },
   "bin": {
     "cairn-manifest": "./dist/vite/bin.js",
-    "cairn-doctor": "./dist/doctor/bin.js",
     "cairn-media-seed": "./dist/media-seed/bin.js",
     "cairn-audit": "./dist/audit/bin.js",
     "cairn-guidance": "./dist/guidance/bin.js"

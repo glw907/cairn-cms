@@ -13,7 +13,7 @@ import {
 } from '../../lib/media-seed/index.js';
 import type { MediaSeedArgs, SeedDeps, SeedItem } from '../../lib/media-seed/index.js';
 import { stripControlChars } from '../../lib/media-seed/assemble.js';
-import { readR2Buckets } from '../../lib/doctor/wrangler-config.js';
+import { readR2Buckets } from '../../lib/media-seed/wrangler-config.js';
 
 /** Narrows `parseArgs`' union return, since the `--help` shape never carries `headers`/`from`. */
 function expectParsed(args: ReturnType<typeof parseArgs>): MediaSeedArgs {
@@ -311,8 +311,8 @@ describe('readR2Buckets', () => {
 // bin.ts's own readFileUnderCwd (:73-79), the internals-B docket item 5 WATCH discharge: its
 // three call sites (wrangler.jsonc, wrangler.toml, the media manifest) are all hardcoded
 // literals, so no caller today ever hands it a traversal-shaped relPath. The assert is defense
-// in depth "regardless of where relPath came from" (its own comment), matching doctor/bin.ts's
-// containment shape. bin.ts self-executes main() via a top-level await on import, so the closure
+// in depth "regardless of where relPath came from" (its own comment). bin.ts self-executes
+// main() via a top-level await on import, so the closure
 // is not independently importable; this forces a traversal-shaped relPath through the real
 // closure by mocking readR2Buckets, the one function bin.ts hands readFileUnderCwd to as a
 // callback, to call it with a hostile relPath instead of its own literal ones. The refusal
@@ -322,7 +322,7 @@ describe('bin.ts readFileUnderCwd containment', () => {
     vi.resetModules();
     const originalArgv = process.argv;
     process.argv = [process.execPath, 'bin.js', '--from', 'https://example.com'];
-    vi.doMock('../../lib/doctor/wrangler-config.js', () => ({
+    vi.doMock('../../lib/media-seed/wrangler-config.js', () => ({
       readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
         await readFile('../outside.json');
         return null;
@@ -334,7 +334,7 @@ describe('bin.ts readFileUnderCwd containment', () => {
       );
     } finally {
       process.argv = originalArgv;
-      vi.doUnmock('../../lib/doctor/wrangler-config.js');
+      vi.doUnmock('../../lib/media-seed/wrangler-config.js');
       vi.resetModules();
     }
   });
@@ -355,7 +355,7 @@ describe('bin.ts readFileUnderCwd symlink escape', () => {
     const linkName = `cairn-media-seed-symlink-escape-${process.pid}`;
     const linkPath = join(cwd, linkName);
     symlinkSync(outside, linkPath, 'dir');
-    vi.doMock('../../lib/doctor/wrangler-config.js', () => ({
+    vi.doMock('../../lib/media-seed/wrangler-config.js', () => ({
       readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
         await readFile(`${linkName}/secret.txt`);
         return null;
@@ -367,7 +367,7 @@ describe('bin.ts readFileUnderCwd symlink escape', () => {
       );
     } finally {
       process.argv = originalArgv;
-      vi.doUnmock('../../lib/doctor/wrangler-config.js');
+      vi.doUnmock('../../lib/media-seed/wrangler-config.js');
       vi.resetModules();
       rmSync(linkPath, { force: true });
       rmSync(outside, { recursive: true, force: true });
@@ -532,9 +532,9 @@ describe('seedMedia', () => {
   });
 });
 
-// The packaging lesson from cairn-doctor: prove the emitted bin runs under plain Node from
-// dist. The unit suite must pass without a prior `npm run package`, so this spawns only when
-// the built bin exists and skips (via skipIf) otherwise.
+// A packaging lesson this repo's other bins already learned: prove the emitted bin runs under
+// plain Node from dist. The unit suite must pass without a prior `npm run package`, so this
+// spawns only when the built bin exists and skips (via skipIf) otherwise.
 const BIN = resolve(process.cwd(), 'dist/media-seed/bin.js');
 const built = existsSync(BIN);
 

@@ -11,7 +11,7 @@ import {
   extractEventOrConditionCandidates,
   logEventNames,
   conditionIds,
-  doctorCheckIds,
+  toolCheckIds,
   createCairnSiteFlags,
   cairnToolFlags,
   cliFlagNames,
@@ -171,7 +171,7 @@ describe('the two-segment log event regression', () => {
   it('still fails a wrong verb on a real area', () => {
     const events = logEventNames();
     const conditions = conditionIds();
-    const checkIds = doctorCheckIds();
+    const checkIds = toolCheckIds();
     expect(events.has('commit.errored')).toBe(false);
     expect(conditions.has('commit.errored')).toBe(false);
     expect(checkIds.has('commit.errored')).toBe(false);
@@ -205,8 +205,8 @@ describe('the registry parsers', () => {
     expect(conditions.has('auth.csrf-token-invalid')).toBe(true);
   });
 
-  it('doctorCheckIds returns a non-empty set containing a known check id', () => {
-    const checkIds = doctorCheckIds();
+  it('toolCheckIds returns a non-empty set containing a known check id', () => {
+    const checkIds = toolCheckIds();
     expect(checkIds.size).toBeGreaterThan(0);
     expect(checkIds.has('config.bindings')).toBe(true);
   });

@@ -8,7 +8,7 @@
 // bare token; an export carries just the identifier, not its resolved subpath).
 export const ALLOWLIST = new Set([
   // Third-party CLI flags: npm, npx' passthrough to a script, wrangler, and cairn's other own
-  // CLIs (cairn-audit, cairn-doctor, cairn-media-seed), none of which this gate resolves against
+  // CLIs (cairn-audit, cairn-media-seed), none of which this gate resolves against
   // (only `packages/create-cairn-site`'s own parser is ground truth here).
   'cli-flag:--prefix', // npm's own flag, not create-cairn-site's
   'cli-flag:--local', // wrangler d1's own flag
@@ -17,10 +17,9 @@ export const ALLOWLIST = new Set([
   'cli-flag:--port', // vite preview's own flag, shown after `npm run preview --`
   'cli-flag:--rendered', // cairn-audit's own flag, not create-cairn-site's
   'cli-flag:--rule', // cairn-audit's own flag, not create-cairn-site's
-  'cli-flag:--from', // cairn-doctor's and cairn-media-seed's own flag, not create-cairn-site's
-  'cli-flag:--repo', // cairn-doctor's own flag, not create-cairn-site's
+  'cli-flag:--from', // cairn-media-seed's own flag, not create-cairn-site's
   'cli-flag:--header', // cairn-media-seed's own flag, not create-cairn-site's
-  'cli-flag:--help', // cairn-audit's, cairn-doctor's, cairn-media-seed's, and cairn-manifest's own flag, not create-cairn-site's
+  'cli-flag:--help', // cairn-audit's, cairn-media-seed's, and cairn-manifest's own flag, not create-cairn-site's
   'cli-flag:--template', // sv create's own flag, not create-cairn-site's
   'cli-flag:--types', // sv create's own flag, not create-cairn-site's
   'cli-flag:--no-add-ons', // sv create's own flag, not create-cairn-site's
@@ -33,9 +32,6 @@ export const ALLOWLIST = new Set([
   'env-var:MY_RATE_LIMITER', // docs/reference/cloudflare.md's illustrative Rate Limiting binding
   'env-var:SECTION_RATE_LIMIT', // docs/reference/sveltekit.md's illustrative SectionEnv binding
   'env-var:TURNSTILE_SECRET', // docs/reference/auth-channel.md's illustrative Turnstile secret binding
-  'env-var:CAIRN_GITHUB_APP_ID', // docs/reference/doctor.md's illustrative repo-secret name in a CI workflow
-  'env-var:CAIRN_GITHUB_APP_INSTALLATION_ID', // same CI workflow, the installation id secret
-  'env-var:CAIRN_GITHUB_APP_PRIVATE_KEY_B64', // same CI workflow, the private key secret
   'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
   'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
   'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
@@ -109,10 +105,15 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/cairn.server.ts', // a site's own server-only adapter half, by convention
   'file-path:src/lib/cairn.access.ts', // a site's own access-map module, by convention
   'file-path:src/lib/site.config.yaml', // a site's own non-secret config file, by convention
-  // A spot the doctor's `config.site-config` SKIP line names as one of three it looked in, quoted
-  // verbatim by is-it-working.md's transcript block from 03-doctor-credentialed.txt. The doctor
-  // looks there by convention; no repo carries the path, so nothing can resolve it.
+  // One of three spots `cairn doctor` looks for a site config, named in the doctor CLI's own
+  // reference page and facts/reference.md; cairn doctor looks there by convention, so no repo
+  // carries the path and nothing can resolve it.
   'file-path:src/site.config.yaml',
+  // docs/extend/migration-notes.md's own past-version record of the 0.68.0 release, citing the
+  // reference page's path as it was named then. The page is retired (docs/reference/doctor.md
+  // is gone; docs/reference/cli-cairn-doctor.md is its Go-tool successor); the citation stays
+  // unedited, since a release record is immutable and does not chase a later reorganization.
+  'file-path:docs/reference/doctor.md',
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
   'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
   'file-path:src/content/.cairn/index.json', // a site's own generated manifest, by convention

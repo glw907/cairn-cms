@@ -802,8 +802,11 @@ export async function runChapter2({
             "isn't from Cloudflare's own sending infrastructure. That record stays in place even " +
             'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
             'to this domain later, add it to that record too, or its mail will be rejected.\n' +
-            `Run npx cairn-doctor --from ${from} --send-test <you@example.com> to check the ` +
-            'sending path any time, without running this installer.\n' +
+            'Run `cairn doctor` any time to check what is set up and what is still missing; ' +
+            'install it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or ' +
+            'from the release page at https://github.com/glw907/cairn-cms/releases. Run ' +
+            '`cairn adopt` then `cairn health` against this site any time to check its https ' +
+            'and email setup live, without running this installer again.\n' +
             'One more step is available: run npx create-cairn-site --dir ' +
             `${dir} --connect to connect this repository to Cloudflare Workers Builds, so every ` +
             'future commit to your default branch deploys itself, no laptop required.',

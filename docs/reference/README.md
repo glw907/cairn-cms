@@ -53,7 +53,6 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [Ambient types (`/ambient`)](./ambient.md): the `App.Locals` augmentation for a site's `app.d.ts`, naming `cairnEditor`, `cairnBackend`, `cairnAuditSink`, `cairnAccess`, and `cairnIdentity`.
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.
 - [The `cairn-guidance` CLI](./guidance.md): installs and checks the package's shipped skills, review agent, and `CLAUDE.md` fragment in a consumer repo.
-- [The `cairn-doctor` CLI](./doctor.md): the setup preflight that checks a site's local config, Cloudflare account, and GitHub App.
 - [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.
 - [The `cairn-audit` CLI](./cairn-audit.md): the design-language audit, and the norms query that answers a measured norm from the shipped manifest.
 - [The `cairn` CLI's exit codes](./cli-cairn-exit-codes.md): the four codes, the precedence rule
@@ -86,19 +85,18 @@ lets a consumer reach structurally when the package chooses not to give it its o
 
 ## Also for site admins
 
-Three of the preceding pages serve a second reader beyond the extending developer: a site admin
+Two of the preceding pages serve a second reader beyond the extending developer: a site admin
 running a deployed site day to day, following the admin track's own setup and troubleshooting
 pages back to the underlying contract rather than a page that repeats it.
 
-- [The `cairn-doctor` CLI](./doctor.md)
 - [Log events](./log-events.md)
 - [Supported toolchain](./supported-toolchain.md)
 
 ## Pages that document no subpath
 
-Twelve of the preceding pages are not export-keyed, since they document a CLI command or an
-internal contract rather than a package subpath: the five npm CLI pages (`cairn-manifest`,
-`cairn-guidance`, `cairn-doctor`, `cairn-media-seed`, `cairn-audit`), the three `cairn` CLI
+Eleven of the preceding pages are not export-keyed, since they document a CLI command or an
+internal contract rather than a package subpath: the four npm CLI pages (`cairn-manifest`,
+`cairn-guidance`, `cairn-media-seed`, `cairn-audit`), the three `cairn` CLI
 contract pages ([exit codes](./cli-cairn-exit-codes.md),
 [JSON output](./cli-cairn-json-output.md), [`cairn doctor`](./cli-cairn-doctor.md)),
 [the canonical admin mount](./admin-routes.md), [log events](./log-events.md),

@@ -49,7 +49,7 @@ async function walkSourceFiles(dir: string): Promise<string[]> {
 /**
  * A minimal JSONC reader for this test's one file: strips `//` line comments outside string
  * literals, then trailing commas, then parses. wrangler.jsonc never uses block comments, so this
- * stays narrower than src/lib/doctor/wrangler-config.ts's own tolerant reader.
+ * stays narrower than src/lib/media-seed/wrangler-config.ts's own tolerant reader.
  */
 function parseJsonc(text: string): Record<string, unknown> {
   let out = '';

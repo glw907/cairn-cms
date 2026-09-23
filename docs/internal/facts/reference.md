@@ -808,106 +808,6 @@ re-sourced to Go on this tree rather than to the page.
   `docs/reference/delivery-data.md:44-45`; not independently re-traced to
   `createSiteIndexes`'s implementation this pass. [candidate: not independently re-verified]
 
-## docs/reference/doctor.md
-
-- 18 checks run by default; `--send-test` and `--probe` add two more. Source: 20 total `id: '...'`
-  check definitions across `src/lib/doctor/*.ts`; `src/lib/doctor/bin.ts:72,75`
-  (`liveSendCheck` pushed only `if (args.sendTest)`, `liveProbeCheck` pushed only
-  `if (args.probe !== undefined)`), leaving 18 always-on. [verified]
-- `config.bindings` and `config.media-bucket` share the condition id `config.bindings-missing` so
-  the readiness checklist gains a distinct line without a second condition to maintain. Source:
-  `src/lib/doctor/checks-local.ts:22-24,40-42` (both `DoctorCheck`s declare `conditionId:
-  'config.bindings-missing'`; comment: "It reuses the config.bindings-missing condition rather
-  than registering a new one, so the readiness count holds"). [verified]
-- The doctor's exit codes go through `process.exitCode`, never `process.exit`, so a piped stdout
-  flushes the whole report before the process ends. Source: `src/lib/doctor/bin.ts:6-7,31,81`.
-  [verified]
-- `exitCodeFor({failed, unchecked})` returns `0 | 1 | 3`: a failure always wins over an unchecked
-  result. Source: `src/lib/doctor/run.ts:38-43`. [verified]
-- SKIP means a check does not apply at all (never gates); UNCHECKED means the check IS applicable
-  but a deterministic input was absent (drives exit 3 when nothing failed). Source:
-  `src/lib/doctor/types.ts:33-38,54-59` (`skip()` doc: "means the check is not applicable at all
-  ... it never gates"; `unchecked()` doc: "means the check WOULD have an answer if it could look,
-  so it drives exit 3 rather than passing the run silently"). [verified]
-- A bare `sv create` scaffold (verified 2026-08-14 against `sv` 0.17.0) writes no `svelte.config.js`
-  at all; the adapter and any `checkOrigin: false` setting live inside `vite.config.ts`'s
-  `sveltekit({...})` call instead. Source: `src/lib/doctor/checks-local.ts:95-100` (`config.
-  csrf-disable`'s own comment: "A bare `sv create` scaffold writes no svelte.config.js at all,
-  wiring the adapter ... inside vite.config.ts's plugin call instead, so both files are read");
-  the `sv` 0.17.0 version pin itself is external and not re-verified this pass. [verified]
-- `config.no-referrer-blanket`'s heuristic text read does not follow an import into another module,
-  does not join a Prettier-wrapped multi-line header write across lines, and cuts comments at the
-  first `//` on a line even inside a URL literal (e.g. `'https://example.com'`), losing the rest of
-  that line. Source: `src/lib/doctor/checks-local.ts:571-579` (`hooksSetsBlanketNoReferrer`
-  comment: "Single-line only: a Prettier-wrapped multi-line headers.set call ... are known
-  remaining gaps this heuristic does not close") and `:539-565` (`stripComments`:
-  `line.indexOf('//')` with no string-literal awareness, so a `//` inside a quoted URL still cuts
-  the line); both functions read only the raw file text they are handed, with no import
-  resolution anywhere in the check. [verified]
-- `admin.mount-shape` never fails; it reports info with guidance when it cannot see the mount, so
-  an unconventionally wired site never goes red. Source: `src/lib/doctor/checks-local.ts:370-386`
-  (comment: "A best-effort, non-blocking nudge: it never returns fail"; the `run()` body only ever
-  returns `info(...)` or `pass(...)`). [verified]
-- `config.dependency-floors` reads `package-lock.json`, then `pnpm-lock.yaml`, then `yarn.lock`,
-  judging whichever it finds first; UNCHECKED when none of the three exists. Source:
-  `src/lib/doctor/check-floors.ts:249-262` (`run()` checks the three lockfiles in that order,
-  returning `unchecked(...)` only when none is found). [verified]
-- `auth.store` fails an un-migrated database naming `migrations/0004_login_nonce.sql`, since
-  sign-in binds every token to the `nonce_hash` column that migration adds. Source:
-  `src/lib/doctor/checks-cloudflare.ts:169-179` (checks `pragma_table_info('magic_token')` for
-  `nonce_hash`, `fail('magic_token has no nonce_hash column; apply migrations/0004_login_nonce.
-  sql')`); `migrations/0004_login_nonce.sql` exists at the repo root and in every scaffold
-  template. [verified]
-- `ai.posture-effective` fails on exactly one case: a site declares an `aiPosture` the served
-  `robots.txt` doesn't carry; a site declaring none passes (absence is honest), and a managed
-  layer (Cloudflare AI Crawl Control) prepending directives also passes. Source:
-  `src/lib/doctor/check-posture.ts:7-13` (header comment: "One case fails: a site that declares
-  an aiPosture the served file does not carry ... A site that declares nothing passes ... and so
-  does a managed layer prepending its own rules"). [verified]
-- The opt-in live probe (`--probe`) issues its GET with `redirect: 'manual'` so a gate's own
-  redirect is never silently followed, then classifies the response (Access-gate redirect passes,
-  401/403 is info-not-pass, a same-origin/same-registrable-domain redirect is followed exactly
-  once, anything else is info or fail). Source: `src/lib/doctor/check-probe.ts:138-140`
-  (`fetchNoRedirect` uses `redirect: 'manual'`), `:161-183` (`classifyLoginResponse`: Access gate
-  host passes, 401/403 returns info with `sawGate: true`, a `GATE_REDIRECT_STATUSES` redirect
-  recurses into itself exactly once via the `followed` guard when `isSameSite` holds, else info),
-  `:127-130` (`isSameSite` checks same-origin, else eTLD+1 match). [verified]
-- The probe submits a random non-editor address at the reserved `example.invalid` domain; the
-  engine answers a non-editor exactly like a successful send while sending no email and minting no
-  token. Source: `src/lib/doctor/check-probe.ts:416-428` (`postRequestAction` comment: "The
-  address is random and non-editor at the reserved example.invalid domain, so even a delivery bug
-  could send nothing anywhere, and the engine's non-leak design makes the response
-  indistinguishable from a real send"; matches `requestAction`'s non-editor byte-identical
-  response in `src/lib/sveltekit/auth-routes.ts:205-207`). [verified]
-- The second probe arm (workers.dev exposure) only runs when `CLOUDFLARE_API_TOKEN` and
-  `CLOUDFLARE_ACCOUNT_ID` are set, the wrangler config's `name` is shaped like a valid workers.dev
-  subdomain label, and the probed origin is not local; `workers_dev: false` skips the arm entirely
-  but does not close every preview URL, since `preview_urls` defaults to `workers_dev`'s own value
-  on current Wrangler and an older Wrangler serves toggled-on previews regardless. Source:
-  `src/lib/doctor/check-probe.ts:346-359` (`isLocalHost` check, `facts?.workersDev === false`
-  returns `NO_EXPOSURE`, `WORKER_NAME_PATTERN` shape check, then the `ctx.cfToken`/`ctx.
-  cfAccountId` check); the remediation text at `:378` tells an operator to set BOTH
-  `workers_dev: false` AND `preview_urls: false`, which corroborates that the first alone does
-  not close every preview URL. The Wrangler default-inheritance detail itself is external
-  platform behavior, not independently checked against Cloudflare's own docs this pass.
-  [verified]
-- The installed skill's reference files quote utility class names verbatim, and Tailwind v4's
-  automatic source detection scans any non-ignored file including `.claude/`, so a site must
-  exclude `.claude/` from its own Tailwind build or the worked examples compile into shipped CSS.
-  Source: `skills/cairn-admin-screens/references/*.md` (e.g. `craft.md`, `exemplar-list.md`,
-  `exemplar-detail.md`) quote `class="..."` markup verbatim; `scripts/build/admin-css.input.css:5-9`
-  documents the same Tailwind v4 hazard by name (the "tailwind-scans-docs-bad-candidate incident
-  family": "Tailwind v4 otherwise walks up from this file to the repo root and scans everything
-  under it, including examples/showcase and docs/, compiling foreign utility candidates into the
-  shipped sheet"), which is why cairn's own build turns automatic detection off (`source(none)`)
-  and scopes an explicit `@source`. [verified]
-- GitHub Actions runs a `run:` step under `bash -e`, so a bare nonzero doctor exit aborts the step
-  before a capture line runs; the fix is `|| code=$?` before branching. Source: general GitHub
-  Actions/bash behavior (default shell for a `run:` step is `bash --noprofile --norc -eo pipefail`),
-  not a cairn-specific code fact; no cairn workflow in this repo runs the doctor itself to
-  cross-check against, so this rests on documented platform behavior rather than a repo grep.
-  [candidate: sourced to the page only, not traced to code]
-
 ## docs/reference/guidance.md
 
 - `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is also refused and not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Both the `.orig` path and the destination beside it land in `report.refused`, so an operator reading the report sees which destination was left stale, not only its `.orig` sibling. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`, `installGuidance`). [verified]
@@ -1229,18 +1129,18 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 
 - `site-facts.json` carries exactly `version`, `mediaBucketBinding`, `roles`, and `aiPosture`;
   `owner`, `repo`, and `from` are never written, even when the adapter declares them.
-  Source: `src/lib/vite/internal.ts:436-455` (`formatSiteFacts` accepts only
+  Source: `src/lib/vite/internal.ts:416-433` (`formatSiteFacts` accepts only
   `Pick<AdapterFacts, 'mediaBucketBinding' | 'roles' | 'aiPosture'>`; `buildSiteFactsFromVite`
   passes it the result of the shared `parseAdapterFacts` validation, never the raw parsed object).
   [verified]
 - An absent `site-facts.json` is not drift: `checkSiteFacts` returns `{ status: 'absent' }` and the
   `cairnManifest` plugin's `buildStart` reports exactly one build-log warning naming
-  `npx cairn-manifest`, never failing the build. Source: `src/lib/vite/internal.ts:477-481,182-186`
+  `npx cairn-manifest`, never failing the build. Source: `src/lib/vite/internal.ts:460-463,187-189`
   (`checkSiteFacts` returns early on a missing committed file; `buildStart` calls `this.warn` once
   with `siteFactsAbsentWarning(...)`). [verified]
 - A present `site-facts.json` that no longer matches the adapter fails the build through the same
   `this.error(...)` path the content manifest uses, naming the file and the fix. Source:
-  `src/lib/vite/internal.ts:484-493,186-187` (`checkSiteFacts` compares the derived facts against
+  `src/lib/vite/internal.ts:471-476,190-191` (`checkSiteFacts` compares the derived facts against
   the committed bytes and returns `{ status: 'stale', message }`; `buildStart` calls `this.error`
   with that message). [verified]
 - The `cairn-manifest` CLI writes `site-facts.json` in the same run that writes the content
@@ -1280,11 +1180,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   [verified]
 - SvelteKit's `csrf.checkOrigin` is deprecated (2.61) in favor of `csrf.trustedOrigins` but not
   removed (sveltejs/kit#15992); cairn's admin CSRF ownership still depends on disabling
-  `checkOrigin`. Source: `src/lib/doctor/checks-local.ts:95-124` (`config.csrf-disable` check
-  requires `checkOrigin: false` in `svelte.config.js`/`vite.config.ts` plus the cairn guard in
-  `hooks.server.ts`) confirms the cairn-specific half; the SvelteKit deprecation version and
-  issue number are an upstream fact quoted from the page, not independently checked against
-  GitHub this pass. [verified]
+  `checkOrigin`. Source: `src/lib/diagnostics/conditions.ts:103-110` (`config.csrf-disable-missing`
+  condition: `checkOrigin: false` must be set in `svelte.config.js` and cairn's guard wired into
+  `src/hooks.server.ts`, or SvelteKit's own Origin check runs ahead of cairn's) confirms the
+  cairn-specific half; the SvelteKit deprecation version and issue number are an upstream fact
+  quoted from the page, not independently checked against GitHub this pass. [verified]
 
 ## docs/reference/sveltekit.md
 
@@ -1622,6 +1522,13 @@ behavior (paragraphs around line 927-963), the full media-actions vocabulary det
 but yielded mostly signature-adjacent or already-thorough page prose with no independent source
 trace performed; a follow-up harvest could verify those against `src/lib/sveltekit/auth-routes.ts`
 and the nav-layout resolver source directly.
+
+- Facts-container HEAD repair 2026-09-22: the whole `## docs/reference/doctor.md` section (16
+  bullets, all sourced to the now-removed legacy JS doctor package) deleted, since the page
+  itself is removed; the `## docs/reference/cli-cairn-doctor.md` section already carries the Go
+  `cairn doctor` command's facts. One `## docs/reference/supported-toolchain.md` bullet re-sourced
+  from the removed package's `checks-local.ts` module to `src/lib/diagnostics/conditions.ts`, the
+  condition registry the check read from.
 
 ## Provenance
 

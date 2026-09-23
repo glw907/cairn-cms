@@ -1039,6 +1039,69 @@ precondition, recorded in the Header.
 
 ## Post-mortem
 
-Written at pass end by the fold agent. Both budget scores: tokens against the 2.6M ceiling
-(`/cost`), and attended time as two counts (planning misses, execution sittings). Record the numbers
-even when they look bad; the trend is the signal.
+Written at pass end by the fold agent.
+
+**Token budget.** About 2.75M against the 2.6M ceiling, over by roughly 150K. Segments A and
+B spent 1.55M of subagent tokens, Segment C spent 1.11M, and the close's `code-simplifier`
+run and `web-auth-security-reviewer` read add to that base. The conductor's own fold and
+reviewer totals land on top of this figure. Geoff ruled the pass through at the Segment C
+boundary rather than splitting it, since every task had already landed and only the close
+remained.
+
+**Attended time.** Two planning misses, one execution sitting.
+
+- Planning miss 1: Task 5's removal-predicate grep needed a second carve-out for the
+  permanent rulings-ledger id `audit-cli-skill-admin-screens-check-and-cairn-doctor-fix`,
+  which a pre-flight grep against `check-rulings-format.mjs` would have found before the
+  task ran.
+- Planning miss 2: Task 6's literal-grep criterion needed to exclude pass A's filenames
+  (`cli-cairn-doctor.md`, `cairn-doctor.schema.json`), which Task 6's retargets pointed at,
+  and which a pre-flight grep against the reference arm's file list would have found the
+  same way.
+- Execution sitting 1: one combined question to Geoff at the Segment C ceiling boundary,
+  asking whether to split the remaining close out of the pass or run it through at the
+  over-ceiling spend; Geoff ruled through.
+
+**What was built.** `src/lib/doctor/` (sixteen files) and its `cairn-doctor` bin entry are
+gone from the engine; the R2 bucket reader it owned moved into `media-seed`; the scaffolder
+and the published docs arms point at the Go `cairn` tool instead; the facts container's
+pointers into the doctor were repaired before the deletion so the container never carried an
+unresolvable citation.
+
+**What was verified, with evidence.** Each of Tasks 1 through 6 cleared its own gate inside
+the implementer chain before the next task started (recorded per task in this plan's task
+sections and the close package). The close's `web-auth-security-reviewer` read returned
+`behavior-unchanged`: no auth, CSRF, or guard behavior changed, only its documentation and
+comments. The fold's full heavy-lane gate, re-run after the merge from `origin/main`, exited
+0; PR #83's CI is green on every check.
+
+**Decisions locked.**
+
+- Task 5 accepted on an `escalate` verdict: the removal-predicate criterion gains a second
+  permanent carve-out for the rulings-ledger id, the diff (`28eeacc2`, `138cec5c`) stands
+  unchanged, and Task 5's fixture is named `04-doctor-report.txt` rather than the plan's
+  suggested `04-cairn-doctor.txt`, which would have matched the removal predicate itself.
+- Task 6 accepted after one fix round (six false statements caught by the first review,
+  confirmed fixed by the second); its literal-grep criterion is a wording defect, not an
+  intent violation, since the retired bin name survives only in `migration-notes.md`'s
+  past-version entries.
+- The security verdict is `behavior-unchanged`; no halt.
+- Both lockfiles, root `package-lock.json` and `examples/showcase/package-lock.json`, still
+  map `"cairn-doctor": "dist/doctor/bin.js"`. Task 4 trimmed the engine's `package.json`
+  `bin` field, which both lockfiles mirror, and never regenerated either lockfile. The fold
+  regenerated both and reverted both, because
+  regeneration pulled in unrelated upstream version drift (`workerd`, `wrangler`, `daisyui`,
+  `miniflare`, `@cloudflare/*`) alongside the bin-mapping fix. They clear in the next
+  dependency-upgrade sweep (the `dependency-upgrade` skill), which 2b's friction log carries
+  as its fifth item below.
+- Five items carried forward to 2b's friction log rather than fixed in this pass: no
+  scaffolder test pins the setup command's install literal or release URL in printed output;
+  `cairn doctor` v1.1.0's PASS lines are titled with the failure condition, worth filing
+  against the Go tool's render; `is-it-working.md`'s symlink paragraph addresses a
+  contributor rather than a site operator, a register slip for whichever pass next touches
+  those lines; `src/lib/guidance/bin.ts:71-81`'s `readFileUnderCwd` is a text-prefix check
+  with no realpath step (predates this pass), and media-seed's `realpathNearestAncestor`
+  form is the stronger pattern to adopt; and the two stale `cairn-doctor` lockfile bin
+  mappings above, to clear in the next dependency-upgrade sweep.
+
+**Blockers.** None.

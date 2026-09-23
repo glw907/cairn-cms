@@ -113,15 +113,14 @@ describe('verifyReferences wired into the manifest build', () => {
 });
 
 // The type checker cannot parse the string-templated adapter-facts virtual module, so this end-to-end
-// read against a v2-shaped adapter (email/media groups) is the net that the moved reads still resolve.
+// read against a v2-shaped adapter (media group) is the net that the moved reads still resolve.
 describe('readAdapterFacts reads the v2 adapter groups', () => {
-  it('derives from off cairn.email and mediaBucketBinding off cairn.media', async () => {
+  it('derives mediaBucketBinding off cairn.media', async () => {
     const dir = tempProject({
       'vite.config.ts': PLUGIN_CONFIG,
       'src/lib/cairn.config.ts': ADAPTER,
     });
     const facts = await readAdapterFacts(dir);
-    expect(facts?.from).toBe('cms@test.example');
     expect(facts?.mediaBucketBinding).toBe('MEDIA_BUCKET');
   }, 30000);
 });

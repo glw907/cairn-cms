@@ -380,6 +380,8 @@ type InternalCairnAdminRoutes = ReturnType<typeof createCairnAdminInternal>;
  */
 export interface CairnAdminRoutes {
   load: InternalCairnAdminRoutes['load'];
+  // WATCH: check:tool-heuristics greps this exact member for the Go tool's admin.mount-shape
+  // heuristic, which proves a site's admin layout calls .shellLoad.
   shellLoad: InternalCairnAdminRoutes['shellLoad'];
   actions: Pick<
     InternalCairnAdminRoutes['actions'],

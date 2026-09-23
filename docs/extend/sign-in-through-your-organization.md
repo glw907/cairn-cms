@@ -109,12 +109,11 @@ email.
   `preview_urls: true` explicitly, or has previews toggled on in the dashboard on an older
   Wrangler, still serves `/admin` on an `<alias>-<name>.<subdomain>.workers.dev` hostname no
   Access application covers; set `preview_urls: false` too, and confirm it, since this is
-  yours to close, not something the doctor's probe checks. Then run `cairn-doctor --probe`
-  with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set (see
-  [the doctor's live probe](../reference/doctor.md#the-opt-in-live-probe) for what those
-  credentials unlock), whose second arm probes the workers.dev hostname and fails on any
-  response the Worker itself serves there, a 200, an unguarded redirect, or the branded
-  refusal page identity mode itself serves, even when the primary hostname passes. Your
+  yours to close and no tool checks it until a later 1.x release of the `cairn` CLI. Check it by hand instead: an
+  unauthenticated `GET` of `<name>.<subdomain>.workers.dev/admin`, and the same against your
+  preview alias, watching for any response the Worker itself serves there, a 200, an unguarded
+  redirect, or the branded refusal page identity mode itself serves, even when the primary
+  hostname sits correctly behind Access. Your
   site's own rate limit ([`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit))
   is worth having too, since an ungated `/admin` spends an RSA verification per request, but
   it's the smaller half of this bullet.

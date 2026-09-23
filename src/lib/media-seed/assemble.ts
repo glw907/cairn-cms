@@ -1,9 +1,9 @@
 // cairn-media-seed's assembly: the flag parser, the manifest normalizer, the download URL
 // derivation, and the bucket-name resolution, all pure functions so the bin stays a thin
-// wrapper, the same split cairn-doctor's assemble.ts uses.
+// wrapper, the same split cairn-manifest's assemble.ts uses.
 import { parseMediaManifest } from '../media/manifest.js';
 import { HASH_RE, R2_EXT_RE } from '../media/naming.js';
-import type { R2BucketEntry } from '../doctor/wrangler-config.js';
+import type { R2BucketEntry } from './wrangler-config.js';
 
 /** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
 export const USAGE =

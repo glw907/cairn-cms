@@ -171,7 +171,7 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
     `expected the closing block's repo line, got: ${result.stdout}`,
   );
   assert.ok(
-    result.stdout.includes('npx cairn-doctor'),
+    result.stdout.includes('cairn doctor'),
     `expected the closing block's doctor line, got: ${result.stdout}`,
   );
 

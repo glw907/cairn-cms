@@ -57,20 +57,17 @@ type CsrfPlatform = { env?: { PUBLIC_ORIGIN?: string } } | undefined;
  *
  * `PUBLIC_ORIGIN` is read through the shared {@link readPublicOrigin} (`dev-flag.ts`) at its
  * `platform-only` depth, deliberately shallower than that reader's default dual read: consulting
- * `process.env` here would break the doctor probe's external cross-check (`check-probe.ts`, whose
- * expected cookie name must derive from the probed origin alone, never a separately-resolved
- * process value), make the csrf unit suite's outcome depend on the runner's own shell, mint an
- * unusable Secure cookie for a LAN http host whenever a deployed process value happened to be
- * exported, and (since {@link issueCsrfToken}'s `secure` input also names the session cookie)
- * invalidate a live session on a TLS-terminated deploy the moment that value changed. The
- * divergence from `isDeployedHost`'s dual-depth read is consultation depth only, never direction:
- * an https request short-circuits Secure above before either depth is consulted, so no fallback
- * could ever downgrade it. This divergence persists by design; see {@link readPublicOrigin}'s own
- * doc comment for the retirement trigger that would reopen it.
- *
- * `src/lib/doctor/check-probe.ts` also calls this directly, feeding the PROBED origin as `url`
- * and no `platform`, deliberately: an external cross-check on what a deployed runtime actually
- * presents, not a fold onto the runtime's own derivation (see that file's own comment).
+ * `process.env` here would break an external login probe's cross-check on a deployed site (the
+ * `admin.login-probe-failed` condition, currently unraised, whose expected cookie name must
+ * derive from the probed origin alone, never a separately-resolved process value), make the csrf
+ * unit suite's outcome depend on the runner's own shell, mint an unusable Secure cookie for a LAN
+ * http host whenever a deployed process value happened to be exported, and (since
+ * {@link issueCsrfToken}'s `secure` input also names the session cookie) invalidate a live
+ * session on a TLS-terminated deploy the moment that value changed. The divergence from
+ * `isDeployedHost`'s dual-depth read is consultation depth only, never direction: an https
+ * request short-circuits Secure above before either depth is consulted, so no fallback could
+ * ever downgrade it. This divergence persists by design; see {@link readPublicOrigin}'s own doc
+ * comment for the retirement trigger that would reopen it.
  */
 export function csrfSecure(event: { url: URL; platform: CsrfPlatform }): boolean {
   if (event.url.protocol === 'https:') return true;

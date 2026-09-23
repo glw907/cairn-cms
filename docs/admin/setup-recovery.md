@@ -2,7 +2,7 @@
 
 A setup step failed or was interrupted; get back on the path.
 
-- A `cairn-doctor` check named a problem by name: [Is it working?](./is-it-working.md) covers it.
+- A `cairn doctor` check named a problem by name: [Is it working?](./is-it-working.md) covers it.
 - A setup step failed, parked, or got interrupted before your site went live: this page covers
   it, below.
 - The site is live and doing something wrong, with no doctor check naming it:

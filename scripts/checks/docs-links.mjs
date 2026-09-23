@@ -182,6 +182,7 @@ const LEGACY_PATH_MAP = {
   'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md',
   'docs/guides/write-in-the-editor.md': 'docs/editors/write-in-the-editor.md',
   'docs/reference/authoring-syntax.md': 'docs/editors/write-in-the-editor.md',
+  'docs/reference/doctor.md': 'docs/reference/cli-cairn-doctor.md',
 };
 
 // A link destination's path half, with the leading `./` some CHANGELOG entries carry stripped, so

@@ -71,7 +71,7 @@ const CHAPTER3_START_OVER_REFUSAL_STEPS = [...CHAPTER3_RESUMABLE_STEPS, ...CHAPT
 
 /**
  * Build the lines every closing block ends on, whichever hop of the chapter reached it: the
- * finished site's GitHub repository and App links, and the `npx cairn-doctor` reminder. Shared by
+ * finished site's GitHub repository and App links, and the `cairn doctor` reminder. Shared by
  * `printLiveInfo`, `printEmailLiveInfo`, `printDeclinedInfo`, and `continueIntoChapter2`'s own
  * terminal completion print, so none of them can drift into printing a different version of the
  * same information.
@@ -85,7 +85,10 @@ function closingInfoLines(state) {
   const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
   return {
     repoLines: [`Your site is live on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`],
-    doctorLine: 'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
+    doctorLine:
+      'Run `cairn doctor` any time to check what is set up and what is still missing. Install ' +
+      'it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the ' +
+      'release page at https://github.com/glw907/cairn-cms/releases.',
   };
 }
 
@@ -143,7 +146,7 @@ function domainLiveLines(state) {
 /**
  * Print the closing block for a site already at `email-live`: its own domain, admin sign-in URL,
  * and workers.dev note, plus the address it sends its own sign-in email from, and the shared
- * repo/App lines and `npx cairn-doctor` line every closing block ends with. `email-live` is
+ * repo/App lines and `cairn doctor` line every closing block ends with. `email-live` is
  * chapter 2's real finish line (`TERMINAL_STEPS`), so this returns without ever calling
  * `runChapter2` again.
  * @param {string} siteId the site's state-store id, already at step `email-live`

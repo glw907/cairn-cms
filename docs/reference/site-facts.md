@@ -33,8 +33,9 @@ here.
 
 The [`cairn-manifest`](./cli-cairn-manifest.md) CLI writes `site-facts.json` alongside the
 content manifest, reading the same three fields off the adapter that
-[`cairn-doctor`](./doctor.md) derives for its own checks. Run it after you edit your adapter's
-media, roles, or AI-posture declaration, so the committed file tracks what the adapter states.
+[`cairn doctor`](./cli-cairn-doctor.md) derives for its own checks. Run it after you edit your
+adapter's media, roles, or AI-posture declaration, so the committed file tracks what the adapter
+states.
 
 The `cairnManifest` plugin verifies the file in `buildStart`, on every build. Verification has
 two outcomes, not one:

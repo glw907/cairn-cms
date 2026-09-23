@@ -12,10 +12,11 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// The committed twin of src/lib/doctor/site-config-path.json (engine side). The bake never
-// import()s engine code into its process (a compromised or buggy engine install must not
-// execute in the scaffolder), so this is its own copy of the same value, not a cross-package
-// import; the two committed files staying in sync is proved by a test, not by a shared module.
+// This package's own canonical copy of the site-config relative path, not a cross-package
+// import: the bake never import()s engine code into its process (a compromised or buggy engine
+// install must not execute in the scaffolder), so this file is the one source. The Go tool's
+// own mirror (`tool/internal/doctor/site-config-path.json`) carries the same value, kept in
+// sync by hand.
 const SITE_CONFIG_PATH_FILE = fileURLToPath(new URL('./site-config-path.json', import.meta.url));
 
 /**

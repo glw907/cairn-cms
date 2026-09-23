@@ -606,3 +606,4 @@ candidate triage became Task 7, so former Tasks 7 to 11 are now 8 to 12, and Tas
 
 | Task | State | Commit | Spend | Notes |
 | --- | --- | --- | --- | --- |
+| 0 | in flight | — | conductor only | Reader token already stored as `CAIRN_DOCS_READER_OAUTH_TOKEN` (the plan's `DOCS_READER_OAUTH_TOKEN`; STATUS and registry are canonical). Provisioned 2026-09-23: private repo `glw907/cairn-scratch-b` (id 1384270163); D1 `cairn-scratch-b-auth` (`1fe11784-f64e-408f-8bc2-029e997c11a9`); placeholder Worker `cairn-scratch-b` (version `0ae80c09`, workers.dev, `AUTH_DB` bound, no email binding), deployed on Geoff's approval after an auto-mode denial. App installation `135372268` change owner-confirmed 2026-09-23; the API refuses `gh`'s OAuth token for it (community discussion 27280), so Geoff adds the repo in settings. Pending: that add, and `CAIRN_SCRATCH_CF_TOKEN`. |

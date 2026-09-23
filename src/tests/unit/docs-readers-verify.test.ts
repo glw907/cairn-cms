@@ -14,7 +14,7 @@ const passingInit = { ok: true, problems: [] };
 function verifyFixture(name: string) {
   const { events } = parseStream(readFileSync(join(FIXTURES, name), 'utf8'));
   const pagesRead = derivePagesRead(toolCalls(events), ['docs']);
-  return verifyReport({ report: readerReport(events), pagesRead, root: PREPARED, init: passingInit, canariesFound: [] });
+  return verifyReport({ report: readerReport(events), pagesRead, docsSet: ['docs'], root: PREPARED, init: passingInit, canariesFound: [] });
 }
 
 describe('verifyQuote', () => {
@@ -81,10 +81,18 @@ describe('verifyReport against fixture transcripts', () => {
     expect(verified.problems).toEqual(['page docs/other.md was read but carries no verified quote']);
   });
 
+  it('fails a report that quotes a page it never read, though the quote itself verifies', () => {
+    const verified = verifyFixture('unverified-quote-unread.jsonl');
+    expect(verified.ok).toBe(false);
+    expect(verified.quotes.every((q) => q.ok)).toBe(true);
+    expect(verified.problems).toEqual(['quote docs/other.md:3 cites a page the transcript never shows read']);
+  });
+
   it('fails on a missing report, a failed init check, or a loaded canary', () => {
     const verified = verifyReport({
       report: undefined,
       pagesRead: [],
+      docsSet: ['docs'],
       root: PREPARED,
       init: { ok: false, problems: ['apiKeySource is "ANTHROPIC_API_KEY", not "none"'] },
       canariesFound: ['canary-1'],

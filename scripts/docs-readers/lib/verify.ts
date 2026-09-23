@@ -5,7 +5,7 @@
  */
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { toReaderRelative } from './transcript.js';
+import { isPage, toReaderRelative } from './transcript.js';
 import type { InitCheck, RawQuote, ReaderReport, Verified, VerifiedQuote } from './types.js';
 
 /** How many lines a quote may run past its cited line when the reader joined a wrapped sentence. */
@@ -64,19 +64,23 @@ export function verifyQuote(quote: RawQuote, root: string): VerifiedQuote {
 
 /**
  * Decide whether a job's report is verified, from the reader's structured `report` (undefined when
- * it gave none), the `pagesRead` the transcript shows, the pristine prepared `root`, the `init`
- * check's result, and the `canariesFound` in the transcript.
+ * it gave none), the `pagesRead` the transcript shows, the job's `docsSet`, the pristine prepared
+ * `root`, the `init` check's result, and the `canariesFound` in the transcript. Every page read must
+ * carry a verified quote, and every quoted page must have been read: a quote on a docs-set page the
+ * transcript never shows opened was not read in this run.
  * @returns The `verified` block for the job report.
  */
 export function verifyReport({
   report,
   pagesRead,
+  docsSet,
   root,
   init,
   canariesFound,
 }: {
   report: ReaderReport | undefined;
   pagesRead: string[];
+  docsSet: string[];
   root: string;
   init: InitCheck;
   canariesFound: string[];
@@ -96,6 +100,12 @@ export function verifyReport({
     const quoted = new Set(quotes.filter((q) => q.ok).map((q) => q.path));
     for (const page of pagesRead) {
       if (!quoted.has(page)) problems.push(`page ${page} was read but carries no verified quote`);
+    }
+    const read = new Set(pagesRead);
+    for (const q of quotes) {
+      if (q.ok && isPage(q.path, docsSet) && !read.has(q.path)) {
+        problems.push(`quote ${q.path}:${String(q.line)} cites a page the transcript never shows read`);
+      }
     }
   }
   return { ok: problems.length === 0, init: init.ok, canaries: canariesFound.length === 0, quotes, problems };

@@ -46,7 +46,9 @@
 
 - The `config.media-bucket` doctor check now carries its own condition id,
   `config.media-bucket-missing`, instead of borrowing `config.bindings-missing`, so a missing
-  media bucket binding prints its own remediation rather than the `EMAIL`/`AUTH_DB` fix. See
+  media bucket binding prints its own remediation rather than the `EMAIL`/`AUTH_DB` fix. The id
+  survives the retirement below: `cairn doctor`'s own `config.media-bucket` check carries it (see
+  [`cairn doctor`](docs/reference/cli-cairn-doctor.md#the-checks)). See
   [Declare the media bucket binding](docs/admin/is-it-working.md#declare-the-media-bucket-binding).
   No consumer action; the id is additive, and the registry is exported from no public subpath.
 
@@ -298,8 +300,8 @@
   `audit-cli-cairn-manifest-command-vite-config-discovery-exit-behavior`):** all four engine bins
   as they stood then (`cairn-doctor`, `cairn-audit`, `cairn-media-seed`, `cairn-manifest`) now
   answer `--help` by printing their existing `USAGE` constant at exit 0; the retirement below
-  drops the bin from three of those four, and `cairn doctor`'s Cobra-built `--help` is a separate
-  claim, not this one. `cairn-manifest` (`vite/bin.ts`) gains argv
+  removes `cairn-doctor`, so the claim now holds for the other three. `cairn-manifest`
+  (`vite/bin.ts`) gains argv
   parsing for the first time, through a new `vite/assemble.ts` mirroring the doctor split: it
   accepts only `--help` and rejects everything else at exit 2, where it previously ignored argv
   entirely. `vite/bin.ts` also moves from `process.exit(1)` to `process.exitCode`, the stdout-flush
@@ -558,33 +560,48 @@
 ### Removed
 
 - `cairn-doctor`, the npm-packaged setup-preflight bin (`src/lib/doctor/`), is retired outright,
-  not reshaped. Everything it accumulated across this window leaves with it: the four-status
-  vocabulary (PASS, FAIL, SKIP, INFO, UNCHECKED) and the third exit code, **3**, it gained for a
-  deterministic check whose required input was absent or unreadable (exit 1 still won over exit 3
-  when a run carried both); `edge.hsts`'s retirement and `edge.https-forced`'s unchanged gating
-  status; the `--probe` flag's live derivation of the expected CSRF cookie name off a probed
-  origin's own scheme, through `csrfSecure` directly; and `--fix`, the mode that installed the
-  packaged `skill.admin-screens` skill and the `skill.admin-screens-stale` condition that
-  detected it going stale. `--fix`'s job moved to `cairn-guidance install` earlier in this same
-  window (see Added, above, and
+  not reshaped. The four-status vocabulary (PASS, FAIL, SKIP, INFO, UNCHECKED) and exit 3 for a
+  run whose only non-passing results are UNCHECKED both carry over unchanged into `cairn doctor`
+  below; what changed is severity, not vocabulary: a blocker FAIL now exits 2 (`CRITICAL`) rather
+  than 1, and the shared `cairn` precedence, `CRITICAL > UNKNOWN > WARNING > OK`, means an
+  UNCHECKED-only run's `UNKNOWN` outranks a `WARNING`, the opposite of the old numeric read.
+  `edge.hsts` still retires outright; it has no counterpart in `cairn doctor`'s eleven checks.
+  `edge.https-forced` does not leave: it lives on as `cairn health`'s `https-forced` check, the
+  live-site counterpart, since the JS-free admin sign-in form POST failure it names needs a
+  deployed site to observe. The `--probe` flag's live derivation of the expected CSRF cookie name
+  off a probed origin's own scheme leaves outright, since `cairn doctor` makes no such probe and
+  `cairn health` derives cookie names differently. `--fix`, the mode that installed the packaged
+  `skill.admin-screens` skill and the `skill.admin-screens-stale` condition that detected it going
+  stale, also leaves outright; `--fix`'s job moved to `cairn-guidance install` earlier in this
+  same window (see Added, above, and
   [The `cairn-guidance` CLI](docs/reference/guidance.md)) and is unaffected by this retirement.
-  `config.no-referrer-blanket` and `config.site-config`'s local-file reads are the two checks that
-  carry over; the rest, the App probe, `config.tidy-key`, the login-envelope probe, every D1
-  read, and the send re-run, do not (see `docs/internal/engine-rulings.md`'s ledger for why each
-  was dropped or deferred).
+
+  Nine of the eleven checks `cairn doctor` runs keep their old condition ids and carry over:
+  `config.bindings`, `config.media-bucket`, `config.observability`, `config.csrf-disable`,
+  `config.site-config`, `config.no-referrer-blanket`, `admin.mount-shape`,
+  `config.dependency-floors`, and `auth.role-wiring`. Two are new to `cairn doctor`:
+  `config.public-origin` and `ai.posture-effective`. The rest, the App probe, `config.tidy-key`,
+  the login-envelope probe, every D1 read, and the send re-run, do not carry over (see
+  `docs/internal/engine-rulings.md`'s ledger for why each was dropped or deferred).
 
   The replacement is the Go `cairn` operator CLI's `cairn doctor` subcommand (`tool/v1.1.0`),
   contract page [`docs/reference/cli-cairn-doctor.md`](docs/reference/cli-cairn-doctor.md). It is
-  not a like-for-like reshape: `cairn doctor` runs from outside the browser against a site's live
-  deployment and three read credentials, not the local repo tree the npm bin read.
+  not a like-for-like reshape: `cairn doctor` checks a named local directory, reads nothing but
+  that directory, needs no credential, and does not require an adopted site, unlike the npm bin's
+  own local checks it otherwise resembles. The live-site checks the npm bin never ran
+  (`https-forced` among them) moved to `cairn health`, the separate, deployed-site counterpart the
+  Go CLI already ships.
 
   **Consumers must:** install the `cairn` binary (`go install
   github.com/glw907/cairn-cms/tool/cmd/cairn@latest`, or a prebuilt archive from the `tool/v1.1.0`
-  release); replace any `npx cairn-doctor` invocation with `cairn doctor`; test for a nonzero exit
-  the same way as before, since both tools are nonzero-on-problem; build once on `0.97.0` so
-  `src/content/.cairn/site-facts.json` exists, the file `cairn doctor` reads for values a Go
-  program cannot derive on its own; and expect no App probe, no tidy-key check, no login probe,
-  no D1 reads, and no send re-run, none of which carried over.
+  release); replace any `npx cairn-doctor` invocation with `cairn doctor`; a job that tested only
+  for a nonzero exit keeps working, since both tools are nonzero-on-problem, but a job that
+  switched on the specific code needs the new precedence above, since a blocker now exits 2, not
+  1; run `npx cairn-guidance install` after the bump for a site that used `cairn-doctor --fix`,
+  since `--fix` is gone and `cairn-guidance install` already owns the packaged-skill sync it
+  performed; build once on `0.97.0` so `src/content/.cairn/site-facts.json` exists, the file
+  `cairn doctor` reads for values a Go program cannot derive on its own; and expect no App probe,
+  no tidy-key check, no login probe, no D1 reads, and no send re-run, none of which carried over.
 
   The survey behind this removal found no site scripting the doctor bin in CI. `account_id` stays
   configured in the four wrangler configs that named it for the doctor's D1 checks (`ecxc-ski`,
@@ -596,12 +613,12 @@
   still naming `cairn-doctor --fix`; site plan history is left as written. A fifth consumer,
   cairn-pub, breaks twice at its pin bump: a hardcoded `/docs/reference/doctor` link
   (`src/routes/(site)/docs/+page.svelte:67`) 404s, since the page it named is gone, and its own
-  `docs/STATUS.md` still scripts `npx cairn-doctor` in its gate prose. This pass never edits
-  cairn-pub; both are filed to `ROADMAP.md`.
+  `docs/STATUS.md` still scripts `npx cairn-doctor` in its gate prose.
 
   The recorded transcripts `02-doctor-bare.txt` and `03-doctor-credentialed.txt` leave with the
-  bin; `01-create-cairn-site.txt` and `01d-resume.txt` predate the doctor entirely and are
-  unchanged. A new `04-cairn-doctor.txt` capture of the Go tool's own report meets
+  bin; `01-create-cairn-site.txt` and `01d-resume.txt` are unchanged and still carry the
+  scaffolder's old `npx cairn-doctor` pointer line as recorded. A new
+  `04-doctor-report.txt` capture of the Go tool's own report meets
   `docs/admin/is-it-working.md`'s transcript floor.
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one
@@ -1274,7 +1291,7 @@
   `/delivery` alone for `PublicRoutes`), each had zero remaining consumers anywhere in `src/lib`,
   and `unlistedRoutes` takes its two now-orphaned private helpers with it; `AI_CRAWLERS` unexports
   from both delivery barrels but stays reachable at `delivery/ai-crawlers.ts` for the engine's own
-  internal use (`robots.ts`, `doctor/check-posture.ts`), its element type `AiCrawler` unexports
+  internal use (`robots.ts`), its element type `AiCrawler` unexports
   too, consumed only inside its declaring module. `isElement` (`audit-render`) unexports from
   `/render` but stays reachable at `render/rehype-dispatch.ts`, where the pipeline's own transform
   functions call it internally; a site needing the narrowing reaches for `hast-util-is-element`,
@@ -2311,7 +2328,7 @@
   mail app's own WebView cookie jar) is refused, with re-requesting from the clicking browser as
   the escape hatch. Consumers must: apply migration 0004 before deploying
   (`cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/` then
-  `npx wrangler d1 migrations apply <auth-db> --remote`). An un-migrated `AUTH_DB` is a total login
+  `npx wrangler d1 migrations apply <AUTH_DB> --remote`). An un-migrated `AUTH_DB` is a total login
   outage with no second channel, since every confirm names the `nonce_hash` column; verify before
   deploy with `npx wrangler d1 migrations list <AUTH_DB> --remote`, which reports `0004` applied
   only after the copy step above has put `0004_login_nonce.sql` in the local `migrations/`

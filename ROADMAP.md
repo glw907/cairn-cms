@@ -1107,10 +1107,6 @@ the named human gates only):**
     transcript explains how this repo's own example site installs the engine, which a site
     operator never meets. A register slip on a frozen page, for the docs rebuild's admin-arm pass,
     beside the two unraised registry entries above.
-  - **Both lockfiles still map the retired bin.** `package-lock.json` and
-    `examples/showcase/package-lock.json` carry `"cairn-doctor": "dist/doctor/bin.js"`, because
-    regenerating either during retire-2a pulled in unrelated upstream drift. Trigger: the next
-    `dependency-upgrade` sweep, which regenerates both and clears it.
   - **CI never runs `check:tool-heuristics`.** retire-2a added the gate
     (`scripts/checks/check-tool-heuristics.mjs`) as the tripwire for the engine literals
     `cairn doctor`'s heuristics grep for, but no workflow under `.github/workflows/` calls it, so

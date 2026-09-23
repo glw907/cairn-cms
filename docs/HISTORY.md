@@ -7,6 +7,38 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Cut 0.97.0, 2026-09-23
+
+Published `@glw907/cairn-cms` `0.97.0` and `@glw907/cairn-cms-dev` `0.97.0` to npm `latest` from
+release commit `eefd51b4` (GitHub release `v0.97.0`, publish run 35916469474, provenance attached).
+The window carried the Go tool through B2, the doctor retirement, draft docs pass A, and 94
+`Consumers must:` directives. The release body is the full list.
+
+A top-up dependency sweep ran first as PR #86 (merge `2e497a1a`). It took the minors and patches
+released since the 2026-09-21 sweep, moved the `@codemirror/state` and `@codemirror/view` runtime
+floors, and cleared the retired `cairn-doctor` bin from both lockfiles. The survey is the
+"Top-up, 2026-09-23" section of `docs/internal/record/2026-09-13-minor-bump-features.md`.
+
+What the gates caught, and what a later cut would be wrong to rediscover:
+
+- The main checkout's `node_modules` can lag its lockfile. Run `npm ci` before `npm outdated`, or
+  the measurement reports packages the last sweep already took.
+- `check:target-stack` reads the showcase's `package.json` against
+  `docs/reference/supported-toolchain.md`, and a Wrangler bump fails CI if the table is not moved.
+  A sweep's local gate should run every non-browser `run:` step in `test.yml`, not just the
+  release skill's list.
+- The version bump at the cut moves more than `package.json`: `packages/cairn-cms-dev`, the
+  lockfiles' self-entries, the toolchain table's package row, and the waymark template (regenerate
+  it with `npm run emit:template`; `check:template` fails otherwise). Set the lockfile version
+  fields directly; `npm install --package-lock-only` also normalizes unrelated entries.
+- `CHANGELOG.md` and `docs/extend/migration-notes.md` rename their `## Unreleased` headings
+  together; `check:docs` pairs them.
+- `npm publish` under npm 11 warns that it removes every `bin` entry whose path starts with `./`.
+  The entries still ship (verified in the `0.96.0` and `0.97.0` tarballs), so the warning is not a
+  failure, but STATUS carries the `npm pkg fix` watch.
+- The registry can return 404 for a minute or more after the publish job goes green. Read the
+  job log for the `+ @glw907/cairn-cms@<version>` line before suspecting the publish.
+
 ## Record the doctor retirement, retire-2b, four tasks, 2026-09-22
 
 Branch `doctor-records`, off `main` at `65092fc1` (after retire-2a's merge `688aba41`). Plan and

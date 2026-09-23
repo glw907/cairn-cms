@@ -5,17 +5,12 @@ Present tense only; past tense lives in [`docs/HISTORY.md`](HISTORY.md), durable
 
 ## Current state
 
-Published: **`0.96.0`** on npm `latest`. `main` carries every pass through the Go tool's B2 (PR
-#71), the doctor-retirement pre-task, retire-1, draft docs pass A, and retire-2a, unpublished
-under `## Unreleased`; the window holds for one cut and includes the tool's 1.0 (`tool/v1.0.0`,
-`tool/v1.0.1`, commit `9b479e8d`). Held majors: `devalue` 6, TypeScript 7, Vitest 5. CI is green.
-
-**The doctor retirement is code-complete**: the Go half ships as `tool/v1.1.0`, and the engine
-half is on `main` as retire-2a's merge `688aba41` (`src/lib/doctor` and the `cairn-doctor` bin are
-gone; the media-seed bin stands alone under `src/lib/media-seed/`). **The records pass, retire-2b,
-is on `main`** as merge `2fa772ba` (PR #84): the `## Unreleased` removal entry and its
-`Consumers must:` line, the ledger entries, the facts bullets, and the ROADMAP sweep. Plan and
-post-mortem: `docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`.
+Published: **`0.97.0`** on npm `latest` (release commit `eefd51b4`, GitHub release `v0.97.0`),
+with `@glw907/cairn-cms-dev` `0.97.0` beside it. It carries everything through the Go tool's B2,
+the doctor retirement (retire-1, retire-2a `688aba41`, retire-2b `2fa772ba`), draft docs pass A,
+and the pre-cut dependency top-up (PR #86, `2e497a1a`). The Go `cairn` tool ships separately as
+`tool/v1.1.0`. `main` has no `## Unreleased` window yet. Held majors: `devalue` 6, TypeScript 7,
+Vitest 5, `@types/node` 26. CI is green.
 
 cairn.pub's own docs debt is [this handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md),
 un-pinnable against the registry since `0.95.0` on `pass-d-docs-tracks`. Live contracts from the
@@ -25,10 +20,8 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**The 0.97.0 cut is unblocked** (retire-2b's close, 2026-09-23): tag `tool/v1.1.0` (tag object
-`6dcfdf22`), retire-2a's merge `688aba41`, and retire-2b's merge `2fa772ba`. All five steps Geoff
-ordered on 2026-09-21 are done: the tool's 1.0, retire-1, draft docs pass A, `tool/v1.1.0`, and
-the engine removal with its record. Cut `0.97.0` next, through `cairn-release`.
+The `0.97.0` cut is done (2026-09-23). The docs-reset session (PR #85, branch `docs-reset`)
+merges next and writes the next action here. `ROADMAP.md` sequences what follows.
 
 ## Open decisions and watches
 
@@ -43,11 +36,12 @@ the engine removal with its record. Cut `0.97.0` next, through `cairn-release`.
   double-mint residual; the discriminator names any genuinely new one. Three ASC staging harvest
   docs are folded into cairn, deletable once `email-announce` settles; the heavy gate runs the
   component project serially (`--no-file-parallelism`).
-- Both lockfiles still map the retired `cairn-doctor` bin; the next `dependency-upgrade` sweep
-  clears it (ROADMAP, Next).
+- `npm publish` (npm 11) warns that it removes the four `bin` entries because their paths carry
+  a leading `./`; the entries still ship (verified in the `0.96.0` and `0.97.0` tarballs and
+  registry metadata). Drop the `./` prefix (`npm pkg fix`) in the next window before a newer npm
+  turns the warning into a real removal.
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), confirm the
-unblock line above names `tool/v1.1.0`, `688aba41`, and retire-2b's merge SHA, then cut `0.97.0`
-through `cairn-release`. `ROADMAP.md` sequences what follows.
+In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), read this
+file and the latest `docs/HISTORY.md` entry, then take the next action above.

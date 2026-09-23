@@ -1,0 +1,4 @@
+{
+  "anthropic": ["api.anthropic.com:443"],
+  "operator": ["api.anthropic.com:443", "api.cloudflare.com:443", "api.github.com:443"]
+}

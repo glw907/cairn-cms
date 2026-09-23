@@ -1,0 +1,19 @@
+# The docs-reader image: Node plus the Claude Code CLI pinned to the host's version, and the egress
+# proxy that the runner starts beside each reader. The runner builds it with
+# --build-arg CLAUDE_CODE_VERSION=<the host's `claude --version`> and tags it by content hash.
+FROM docker.io/library/node:24-slim
+
+ARG CLAUDE_CODE_VERSION
+RUN test -n "$CLAUDE_CODE_VERSION" \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/* \
+ && npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+ && npm cache clean --force \
+ && claude --version
+
+COPY egress-proxy.mjs /opt/docs-readers/egress-proxy.mjs
+
+# The runner always passes --user, --workdir, and a scrubbed environment; these are fallbacks.
+WORKDIR /reader
+USER node

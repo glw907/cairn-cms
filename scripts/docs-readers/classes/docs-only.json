@@ -1,0 +1,11 @@
+{
+  "name": "docs-only",
+  "description": "The docs set and nothing else, read with the file tools. Serves the evaluator and editor audiences.",
+  "contents": "docs-set",
+  "tools": ["Read", "Grep", "Glob"],
+  "bashAllowlist": [],
+  "permissionMode": "default",
+  "env": {},
+  "secretEnv": [],
+  "egress": "anthropic"
+}

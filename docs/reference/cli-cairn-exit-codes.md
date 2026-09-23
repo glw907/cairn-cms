@@ -1,7 +1,6 @@
 # The `cairn` CLI's exit codes
 
-This page describes `cairn` 1.1.0, the release that adds `cairn doctor`; 1.0.1 is the current
-release.
+This page describes `cairn` 1.1.0, the current release and the one that adds `cairn doctor`.
 
 Every `cairn` command exits with one of four codes, following the Monitoring Plugins (Nagios)
 convention. `cairn health`, `cairn doctor`, and `cairn auth check` decide theirs by the rules

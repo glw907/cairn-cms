@@ -569,7 +569,8 @@
   has no counterpart in `cairn doctor`'s eleven checks, though `cairn health`'s `https-forced`
   check carries an HSTS half of its own, so the observation survives there. `edge.https-forced`
   does not leave: it lives on as `cairn health`'s `https-forced` check, the live-site counterpart,
-  since the JS-free admin sign-in form POST failure it names needs a deployed site to observe. The
+  since the check reads a deployed zone's Cloudflare settings (Always Use HTTPS, and HSTS beside
+  it), which a local directory does not carry. The
   `--probe` flag's live derivation of the expected CSRF cookie name off a probed origin's own
   scheme leaves outright, since `cairn doctor` makes no such probe. `--fix`, the mode that
   installed the packaged `skill.admin-screens` skill and the `skill.admin-screens-stale` condition
@@ -589,7 +590,9 @@
   contract page [`docs/reference/cli-cairn-doctor.md`](docs/reference/cli-cairn-doctor.md). It is
   not a like-for-like reshape: `cairn doctor` checks a named local directory, reads nothing but
   that directory, needs no credential, and does not require an adopted site, unlike the npm bin,
-  which also ran credentialed Cloudflare, GitHub App, and D1 checks. The npm bin's live-site
+  which also ran credentialed Cloudflare, GitHub App, and D1 checks. Its one network request is a
+  credential-free `GET` of the declared origin's `/robots.txt`, for `ai.posture-effective`, and it
+  makes none when no `PUBLIC_ORIGIN` resolves. The npm bin's live-site
   checks that survive moved to `cairn health` (`edge.https-forced` as `https-forced`).
 
   **Consumers must:** install the `cairn` binary (`go install

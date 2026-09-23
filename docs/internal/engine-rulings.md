@@ -5037,9 +5037,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `cairn doctor` (`tool/v1.1.0`). Ruling 8 of the doctor-retirement spec places it, with
   `email.sender-onboarded`, among the checks reachable only after adoption, so it runs as a
   `cairn health` check instead; `edge.hsts` stays retired, as this entry already closed.
-  `cairn health`'s own `edge.https-forced` carries an HSTS half regardless
+  `cairn health`'s own `https-forced` carries an HSTS half regardless
   (`tool/internal/health/check_https.go`, `CodeHTTPSHSTSOff`), so the HSTS signal this entry's
-  retired check dropped is not entirely gone, only relocated to a sibling check's failure arm.
+  retired check dropped is not entirely gone: it is also covered by a sibling check's failure arm,
+  which shipped in tool 1.0 independently of this retirement.
 
 ## audit-cli-chip-ground-collision-rendered-rule: `chip-ground-collision rendered rule`  (reshape, 2026-08-26, any-site audit)
 
@@ -6478,7 +6479,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   a site's first sign-in, written down.
 - **Shape:** The login-envelope arm is absent from `cairn doctor`'s eleven checks. Its condition
   id, `admin.login-probe-failed`, stays in `src/lib/diagnostics/conditions.ts`, unraised: `csrf.ts`
-  and `guard.ts` already document it as currently unraised, and this drop does not change that.
+  already documents it as currently unraised, and this drop does not change that.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
 
 ## doctor-defer-workers-dev-exposure: the `--probe` workers.dev exposure arm deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)

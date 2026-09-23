@@ -1,7 +1,7 @@
 # The `cairn` CLI's JSON output
 
-This page describes `cairn` 1.1.0, the release that adds the `doctor` payload; 1.0.1 is the
-current release.
+This page describes `cairn` 1.1.0, the current release and the one that adds the `doctor`
+payload.
 
 Six `cairn` commands accept `--json`: `cairn health`, `cairn sites list`, `cairn logs`,
 `cairn adopt list`, `cairn auth check`, and `cairn doctor`. Together they publish seven payload

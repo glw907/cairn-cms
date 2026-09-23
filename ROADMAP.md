@@ -1072,7 +1072,7 @@ the named human gates only):**
   `--send-test` any-time re-run, and the `--probe` workers.dev exposure arm to 1.x, each because
   it needs a Cloudflare or D1 credential the pre-adoption, credential-free `cairn doctor` v1.1.0
   contract does not carry. Reopens on the tool gaining the credentialed read filed beside the
-  agent-permission check below, where the write-credential question is ruled. Ledger:
+  agent-permission check above, where the write-credential question is ruled. Ledger:
   `docs/internal/engine-rulings.md`, `doctor-defer-d1-reads`, `doctor-defer-send-test-rerun`,
   `doctor-defer-workers-dev-exposure`.
 
@@ -1081,7 +1081,7 @@ the named human gates only):**
   `admin.login-probe-failed` are no longer raised by any check (`config.tidy-key` and the
   login-envelope probe are dropped, not ported), but `check:readiness` pins each to a
   frozen-page heading in `is-it-working.md`, so neither registry entry is deleted. The docs
-  rebuild's reference-arm pass is where their removal (and the corresponding heading) belongs.
+  rebuild's admin-arm pass is where their removal (and the corresponding heading) belongs.
   Ledger: `docs/internal/engine-rulings.md`, `doctor-drop-config-tidy-key`,
   `doctor-drop-login-envelope-probe`.
 

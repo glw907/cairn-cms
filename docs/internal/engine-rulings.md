@@ -5037,6 +5037,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `cairn doctor` (`tool/v1.1.0`). Ruling 8 of the doctor-retirement spec places it, with
   `email.sender-onboarded`, among the checks reachable only after adoption, so it runs as a
   `cairn health` check instead; `edge.hsts` stays retired, as this entry already closed.
+  `cairn health`'s own `edge.https-forced` carries an HSTS half regardless
+  (`tool/internal/health/check_https.go`, `CodeHTTPSHSTSOff`), so the HSTS signal this entry's
+  retired check dropped is not entirely gone, only relocated to a sibling check's failure arm.
 
 ## audit-cli-chip-ground-collision-rendered-rule: `chip-ground-collision rendered rule`  (reshape, 2026-08-26, any-site audit)
 
@@ -5285,11 +5288,15 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 31.
 - **Any-site case:** Arm A at its cleanest on the doctor: the third source 'evaluates the configured adapter module through the site's own Vite resolution', reading cairn.email.from and cairn.backend.{owner,repo}. The adapter is TypeScript, so no external tool can do it, and the payoff is that a zero-argument npx cairn-doctor works on any correctly-wired site. The secret discipline is right: 'Secrets ... come only from the environment. They are never derived from the repo and never printed', and github assembles only on the complete trio so a partial setup skips with one remediation line.
-- **Note (doctor-retirement, retire-2b, 2026-09-21):** the third source's mechanism changes, not its
-  purpose: no Go process can evaluate a TypeScript adapter, so ruling 7 replaces the live Vite
-  evaluation with a committed, engine-written `site-facts.json` (`site-facts-json`) that `cairn
-  doctor`'s facts-dependent checks read; the `github.app` half this entry also names is dropped
-  outright (`doctor-drop-github-app`), not carried by either mechanism.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** the three fields this entry names do not
+  survive into `site-facts.json`. `formatSiteFacts` (`src/lib/vite/internal.ts`) writes only
+  `mediaBucketBinding`, `roles`, and `aiPosture`, and its own doc comment states that `owner`,
+  `repo`, and `from` "are never accepted here"; retire-2a trimmed those three fields from
+  `readAdapterFacts` along with their doctor-only callers. `cairn.backend.{owner,repo}` left with
+  the dropped `github.app` check (`doctor-drop-github-app`), and `cairn.email.from` left with
+  `email.sender-onboarded`, which now runs under `cairn health`, not `cairn doctor`. The live Vite
+  evaluation this entry kept survives only to write `site-facts.json`'s own three fields
+  (`site-facts-json`), not to derive the email or GitHub trio any more.
 
 ## audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles: `cairn-audit.config.json contract (scope, cssFiles, paletteFiles, sheet, rendered.pages, allowlist)`  (reshape, 2026-08-26, any-site audit)
 
@@ -6426,6 +6433,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** closed. Executed by retire-1 (the Go port, merged untagged to `main`) and
   retire-2a (the engine removal, `src/lib/doctor/` and the `cairn-doctor` bin entry gone, merge
   `688aba41`); this record lands in retire-2b.
+- **Shape:** The bin (`cairn-doctor`) and `src/lib/doctor/` are removed from the npm package
+  entirely; all eleven of its ported checks (eight file-only, three facts-dependent) run under
+  `cairn doctor` (`tool/v1.1.0`) instead.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md);
   executed by [2026-09-21-doctor-retire-2-engine.md](../superpowers/plans/2026-09-21-doctor-retire-2-engine.md)
   and [2026-09-21-doctor-retire-2b-records.md](../superpowers/plans/2026-09-21-doctor-retire-2b-records.md).
@@ -6439,6 +6449,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** a recorded incident where `github.unreachable`'s substitute signal arrived only
   at a site's first publish, costing a real operator real time, written down. A never-published
   site is the named gap: it has no substitute signal until its first Publish attempt.
+- **Shape:** `github.app` is absent from `cairn doctor`'s eleven checks. Its condition id,
+  `github.app-unreachable`, stays in `src/lib/diagnostics/conditions.ts`; it is not unraised, since
+  `src/lib/github/credentials.ts:20` still raises it at Publish time, the substitute this entry
+  names.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
 
 ## doctor-drop-config-tidy-key: `config.tidy-key` check dropped, not ported, from `cairn doctor`  (retire, 2026-09-21, doctor-retirement spec)
@@ -6449,6 +6463,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   v1.1.0; a bad key now surfaces only through the admin's own tidy attempt and its log event.
 - **Reopens on:** a recorded incident where the check's absence cost a real operator real time at
   a site's first tidy, written down.
+- **Shape:** `config.tidy-key` is absent from `cairn doctor`'s eleven checks. Its condition id,
+  `config.tidy-key-missing`, stays in `src/lib/diagnostics/conditions.ts`, unraised: no other code
+  path raises it now that the check that owned it is gone.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
 
 ## doctor-drop-login-envelope-probe: the `--probe` login-envelope arm dropped, not ported, from `cairn doctor`  (retire, 2026-09-21, doctor-retirement spec)
@@ -6459,6 +6476,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   the guard's own log events.
 - **Reopens on:** a recorded incident where the check's absence cost a real operator real time at
   a site's first sign-in, written down.
+- **Shape:** The login-envelope arm is absent from `cairn doctor`'s eleven checks. Its condition
+  id, `admin.login-probe-failed`, stays in `src/lib/diagnostics/conditions.ts`, unraised: `csrf.ts`
+  and `guard.ts` already document it as currently unraised, and this drop does not change that.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
 
 ## doctor-defer-workers-dev-exposure: the `--probe` workers.dev exposure arm deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
@@ -6467,20 +6487,24 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `--probe`, a Cloudflare read that nothing in `cairn doctor` v1.1.0 performs, since the tool's
   pre-adoption contract carries no credential.
 - **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
-  (`ROADMAP.md`, "Go tool 1.1 items"), where the write-credential question is ruled.
+  (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
+  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  question is ruled.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8; filed to `ROADMAP.md`.
 
 ## doctor-defer-send-test-rerun: `--send-test`'s any-time re-run deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
 
 - **Verdict:** defer. Ruling 1: the first-run send test already lives in the scaffolder and stays
-  there (`create-cairn-site/src/cloudflare/chapter2.mjs:740`,
-  `create-cairn-site/src/cloudflare/email.mjs:143`); the doctor's `--send-test` was the
+  there (`packages/create-cairn-site/src/cloudflare/chapter2.mjs:740`,
+  `packages/create-cairn-site/src/cloudflare/email.mjs:143`); the doctor's `--send-test` was the
   re-run-any-time path, deferred to 1.x beside the D1 checks and the agent-permission credential
   design, where the write-credential question is ruled. Known gap: a hand-built (non-scaffolded)
   site has no send test until then, and `cairn health`'s email check is a configuration check
   needing an adopted record and a Cloudflare read credential, so it does not substitute.
 - **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
-  (`ROADMAP.md`, "Go tool 1.1 items"), where the write-credential question is ruled.
+  (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
+  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  question is ruled.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 1; filed to `ROADMAP.md`.
 
 ## doctor-defer-d1-reads: the three D1 reads (`auth.store`, `auth.role-vocabulary`, `auth.email-normalization`) deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
@@ -6489,7 +6513,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   the workers.dev exposure arm, since each needs a Cloudflare credential the pre-adoption,
   credential-free `cairn doctor` contract does not carry.
 - **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
-  (`ROADMAP.md`, "Go tool 1.1 items"), where the write-credential question is ruled.
+  (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
+  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  question is ruled.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8; filed to `ROADMAP.md`.
 
 ## site-facts-json: `src/content/.cairn/site-facts.json`, a committed cross-language facts file  (accept, 2026-09-21, doctor-retirement spec)

@@ -466,6 +466,11 @@ open edits, not part of the shape itself.
   separately-resolved `PUBLIC_ORIGIN` for its own expectation, or a `--url` override diverging
   from the wrangler config's own value would go undetected. One body, two deliberate inputs, not a
   silenced disagreement.
+
+  **Note (doctor-retirement, retire-2b, 2026-09-21):** `check-probe.ts` left with the doctor
+  (retire-2a). The claim above, that the probe cross-checked its own cookie-name derivation
+  against `csrfSecure`, is now history: the login-envelope probe it belonged to is dropped, not
+  ported (`doctor-drop-login-envelope-probe`), so no successor performs this cross-check.
 - **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 1; executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 6.
 
 ## copy-to-clipboard-control: public-side copy-to-clipboard widget  (decline, 2026-08-26, ASC harvest triage)
@@ -603,6 +608,9 @@ open edits, not part of the shape itself.
   that the doctor's `config.no-referrer-blanket` check cannot catch.
 - **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivor
   11 (`asc-harvest-triage.md:93-100`); executed by the harvest-detection pass, Task 1.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `config.no-referrer-blanket` survives under
+  `cairn doctor` (`tool/v1.1.0`), one of the eight file-only checks; only the actor's name changed,
+  so the reopening condition above stands unaltered.
 
 ## ical-builder: iCal feed builder  (decline, 2026-08-05, ASC consumer-brief scope check)
 
@@ -3753,6 +3761,14 @@ when the remediation pass lands.
 - **Shape:** Demote the public export; keep the module internal beside CONTENT_SIGNAL, which the doctor already reaches by relative import.
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
+- **Progress note (doctor-retirement, retire-2a, 2026-09-21):** this entry's evidence cites
+  `doctor/check-posture.ts` as a cross-module consumer of `AI_CRAWLERS` and its sibling
+  `CONTENT_SIGNAL` in `src/lib/delivery/robots.ts`. Retire-2a deleted that consumer, so
+  `CONTENT_SIGNAL`'s own `export` was ruled on rather than assumed (2a Task 4): its only remaining
+  importer is its own declaring module, `robots.ts`, so the `export` keyword was dropped
+  (`const CONTENT_SIGNAL` is now module-private). `AI_CRAWLERS` keeps its own `export` regardless,
+  since this entry's verdict already demoted it from the public barrel and its retention was never
+  conditional on `check-posture.ts`; neither this entry's verdict nor its `Shape:` line changes.
 
 ## audit-delivery-feedview: `feedView`  (retire, 2026-08-26, any-site audit)
 
@@ -4973,6 +4989,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   than an undocumented risk: `cairn-guidance check`'s sixth line reports whether `.claude/` is
   excluded from the site's own Tailwind build, naming the `@source not "./.claude";` line a site
   still adds by hand.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `src/lib/doctor/` and the `cairn-doctor` bin
+  it named are gone entirely (retire-2a, merge `688aba41`); the replacement `cairn doctor`
+  (`tool/v1.1.0`) carries no `--fix` mode and no skill install, so this entry's closure stands
+  unchanged, now against a doctor that no longer exists to fix anything.
 
 ## guidance-layer: the `cairn-guidance` bin, the packaged `claude/` tree, and the trust boundary that gates it  (accept, 2026-09-20, extend-2)
 
@@ -5013,6 +5033,14 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** Split the pair rather than demoting both, per the verification pass, which overturned the ranking's shape: keep `edge.https-forced` as a gating check (its condition is cairn-owned: the JS-free admin sign-in form POST hits an opaque 403 over http, a failure mode a generic tool cannot name), and retire `edge.hsts` outright, since its own registry entry is severity 'warning' yet the check returns a gating `fail()`, and the doctor carries no advisory tier to demote either one into.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 4.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md) (verdict overturned there).
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `edge.https-forced` does not carry over to
+  `cairn doctor` (`tool/v1.1.0`). Ruling 8 of the doctor-retirement spec places it, with
+  `email.sender-onboarded`, among the checks reachable only after adoption, so it runs as a
+  `cairn health` check instead; `edge.hsts` stays retired, as this entry already closed.
+  `cairn health`'s own `https-forced` carries an HSTS half regardless
+  (`tool/internal/health/check_https.go`, `CodeHTTPSHSTSOff`), so the HSTS signal this entry's
+  retired check dropped is not entirely gone: it is also covered by a sibling check's failure arm,
+  which shipped in tool 1.0 independently of this retirement.
 
 ## audit-cli-chip-ground-collision-rendered-rule: `chip-ground-collision rendered rule`  (reshape, 2026-08-26, any-site audit)
 
@@ -5047,6 +5075,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** Fold the check into the doctor's third status tier: 'could not find a file to check' becomes a distinct `info` result from 'checked and passed' (the same distinction `config.csrf-disable`, rank 16, needs), rather than the `skip` the check returns today for both 'nothing wired' and 'could not tell'.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 8.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `admin.mount-shape` carries over to `cairn
+  doctor` (`tool/v1.1.0`) as one of the eight file-only checks, the `info`-not-`skip` shape this
+  entry closed intact.
 
 ## audit-cli-ai-posture-effective-check: `ai.posture-effective check`  (keep, 2026-08-26, any-site audit)
 
@@ -5054,12 +5085,16 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 9.
 - **Any-site case:** Arm A passes narrowly: aiPosture is a cairn adapter concept, and the gap between 'declared in the adapter' and 'served at the edge' is nameable only by the engine that knows what the declaration should have produced. The restraint is right: it 'fails on one case only', passes a site that declares none, and passes a managed Cloudflare layer 'since whether that's wanted belongs to the zone's owner'.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `ai.posture-effective` carries over to `cairn
+  doctor` (`tool/v1.1.0`) as one of the three facts-dependent checks, now reading `aiPosture` from
+  `site-facts.json` (`site-facts-json`) rather than a live Vite evaluation; it reports `unknown`
+  when the file is absent.
 
 ## audit-cli-config-tidy-key-check-and-its-active-anthropic-probe: `config.tidy-key check and its active Anthropic probe`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Tidy is cairn's feature so the tidy.enabled-to-binding relationship is Arm A, but validating an Anthropic key is Anthropic's grammar. Three outcome modes, an outbound third-party call and a fail-soft branch for an opt-in feature that is off by default; and on a real deployed site the secret is 'invisible to any CLI', so the live probe can only fire against a local .dev.vars a developer can curl by hand.
-- **Reopens on:** open; partially executed. The conventions pass, Task 10 fixed the C16 two-jobs half: `config.tidy-key` now carries its own `config.tidy-key-missing` condition id in `src/lib/diagnostics/conditions.ts`, with its own docsAnchor (`is-it-working.md#configure-the-tidy-api-key`), so a failure no longer prints the wrangler-bindings remediation. The active, unconditional Anthropic probe is untouched and remains open; the remediation pass closes it.
-- **Shape:** Two independent defects. (1) C16's two-jobs finding: `config.tidy-key` shares `conditionId: 'config.bindings-missing'` with the wrangler-bindings check, so a tidy-key failure prints remediation written for a missing EMAIL/AUTH_DB binding; give it its own condition id. (2) Arm A fails on the active half: validating an Anthropic key is Anthropic's grammar, not cairn's; keep the presence-and-wiring half, and either drop the live call or move it behind the same opt-in flag discipline `--send-test` and `--probe` already establish for a live third-party touch.
+- **Reopens on:** closed. The conventions pass, Task 10 fixed the C16 two-jobs half: `config.tidy-key` gained its own `config.tidy-key-missing` condition id in `src/lib/diagnostics/conditions.ts`, with its own docsAnchor (`is-it-working.md#configure-the-tidy-api-key`), so a failure no longer printed the wrangler-bindings remediation. The active-probe half closes by mootness, not by execution: `config.tidy-key` is dropped from `cairn doctor` entirely (ruling 8 of the doctor-retirement spec, `doctor-drop-config-tidy-key`), so the choice between dropping the live call and gating it never needs deciding. The check itself, not this reshape, reopens on a recorded incident where its absence cost a real operator real time at a site's first tidy, written down.
+- **Shape:** Two independent defects. (1) C16's two-jobs finding: `config.tidy-key` shares `conditionId: 'config.bindings-missing'` with the wrangler-bindings check, so a tidy-key failure prints remediation written for a missing EMAIL/AUTH_DB binding; give it its own condition id. (2) Arm A fails on the active half: validating an Anthropic key is Anthropic's grammar, not cairn's; keep the presence-and-wiring half, and either drop the live call or move it behind the same opt-in flag discipline `--send-test` and `--probe` already establish for a live third-party touch. **Amended (doctor-retirement, retire-2b, 2026-09-21):** the active-probe half of this shape will not be executed, since `config.tidy-key` left `cairn doctor` entirely rather than being reshaped.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 10.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
@@ -5071,6 +5106,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Progress note:** the fifth command, `create-cairn-site`, is untouched: it has `--version` and no `--help` (Node's `parseArgs` with `strict: true` throws on it), and its own CLI surface is out of scope for a slice-4 engine pass. Routed to the tool's own pre-publish pass, per the "What this pass unblocks" section ("everything create-cairn-site-scoped ... --help ... the tool's pre-publish pass").
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 11.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `cairn-doctor`'s own `--help` fix retired
+  with the bin. The replacement, `cairn doctor`, follows the Go tool's own flag grammar and single
+  TTY predicate rather than this entry's `USAGE`-constant shape; the closure above still governs
+  the three surviving engine bins (`cairn-audit`, `cairn-media-seed`, `cairn-manifest`).
 
 ## audit-cli-focus-parity-motion-band-reduced-motion-static-rules: `focus-parity, motion-band, reduced-motion static rules`  (keep, 2026-08-26, any-site audit)
 
@@ -5090,6 +5129,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   unreadable bare identifier) convert from `skip` to `info`, matching the doctor's new status
   vocabulary; its no-custom-roles branch (the guard fallback already matches the declared
   vocabulary) stays `skip`, since that branch really is not applicable, not merely unseen.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `auth.role-wiring` carries over to `cairn
+  doctor` (`tool/v1.1.0`) as one of the three facts-dependent checks, now reading `roles` from
+  `site-facts.json` (`site-facts-json`) rather than parsing `hooks.server.ts` directly; it reports
+  `unknown` when the file is absent.
 
 ## audit-cli-cairn-media-seed-header-repeatable: `cairn-media-seed --header (repeatable)`  (keep, 2026-08-26, any-site audit)
 
@@ -5114,6 +5157,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** Read `vite.config.ts` as well as `svelte.config.js` (a bare `sv create` scaffold wires the adapter, and any CSRF disable, inside `vite.config.ts`'s plugin call instead), and make 'could not find a file to check' (neither file exists) a result distinct from 'checked and found nothing', which must still read as a real fail, never a false pass or skip.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 16.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `config.csrf-disable` carries over to `cairn
+  doctor` (`tool/v1.1.0`) as one of the eight file-only checks, unchanged: it still reads both
+  `svelte.config.js` and `vite.config.ts` and still fails, never passes or skips, on a found file
+  carrying no uncommented `checkOrigin: false`.
 
 ## audit-cli-cairn-doctor-send-test-opt-in-live-email-send: `cairn-doctor --send-test (opt-in live email send)`  (keep, 2026-08-26, any-site audit)
 
@@ -5122,13 +5169,21 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 17.
 - **Any-site case:** Arm A passes on knowledge the engine paid for in a production outage: env.EMAIL.send throws E_SENDER_NOT_VERIFIED, the same string Email Routing uses for an unverified destination, 'which is how the ecxc outage hid', and the REST send's 10203/10204 cannot distinguish 'never onboarded' from 'still propagating' since 'elapsed time since onboarding is the only discriminator'. A configuration check cannot tell those apart; only a real send can. Any consumer of Cloudflare Email Sending inherits that ambiguity.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** the check this entry kept is deferred, not
+  ported: ruling 1 of the doctor-retirement spec leaves the any-time re-run to 1.x, beside the D1
+  checks and the agent-permission credential design (`doctor-defer-send-test-rerun`). The
+  scaffolder's own first-run send inside `create-cairn-site`'s token window is unaffected.
 
 ## audit-cli-cairn-media-seed-bucket-and-the-wrangler-r2-buckets-resoluti: `cairn-media-seed --bucket and the wrangler r2_buckets resolution`  (keep, 2026-08-26, any-site audit)
 
-- **Verdict:** keep. The binding-vs-real-name distinction is a real Cloudflare trap ('wrangler r2 object put addresses a bucket by name'), and resolveBucket refuses to guess on zero, several, or a nameless entry rather than writing real objects into the wrong bucket. Arm A is thin (reading r2_buckets is Cloudflare's grammar) but the reuse is exemplary: bin.ts:12 imports readR2Buckets from ../doctor/wrangler-config.js, so both commands share one parser.
+- **Verdict:** keep. The binding-vs-real-name distinction is a real Cloudflare trap ('wrangler r2 object put addresses a bucket by name'), and resolveBucket refuses to guess on zero, several, or a nameless entry rather than writing real objects into the wrong bucket. Arm A is thin (reading r2_buckets is Cloudflare's grammar) but the reuse is exemplary: `bin.ts:12` imports `readR2Buckets` from `./wrangler-config.js`, so both commands share one parser.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 18.
-- **Any-site case:** The binding-vs-real-name distinction is a real Cloudflare trap ('wrangler r2 object put addresses a bucket by name'), and resolveBucket refuses to guess on zero, several, or a nameless entry rather than writing real objects into the wrong bucket. Arm A is thin (reading r2_buckets is Cloudflare's grammar) but the reuse is exemplary: bin.ts:12 imports readR2Buckets from ../doctor/wrangler-config.js, so both commands share one parser.
+- **Any-site case:** The binding-vs-real-name distinction is a real Cloudflare trap ('wrangler r2 object put addresses a bucket by name'), and resolveBucket refuses to guess on zero, several, or a nameless entry rather than writing real objects into the wrong bucket. Arm A is thin (reading r2_buckets is Cloudflare's grammar) but the reuse is exemplary: `bin.ts:12` imports `readR2Buckets` from `./wrangler-config.js`, so both commands share one parser.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** the evidence above cited the reader's old
+  location inside the doctor's own directory; retire-2a moved the shared reader to
+  `src/lib/media-seed/wrangler-config.ts` (ruling 6). Corrected to the module's own relative path;
+  the verdict is unchanged, since the reuse the audit praised survives the move intact.
 
 ## audit-cli-cairn-doctor-probe-opt-in-live-admin-sign-in-probe: `cairn-doctor --probe (opt-in live admin sign-in probe)`  (keep, 2026-08-26, any-site audit)
 
@@ -5136,6 +5191,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 19.
 - **Any-site case:** Arm A at its strongest: the probe is safe only because of a specific cairn design decision. 'It submits a random non-editor address at the reserved example.invalid domain, and the engine's non-leak design answers a non-editor exactly like a successful send while sending no email and minting no token.' A consumer writing their own sign-in probe would mint a real token against a real editor row, or would not know example.invalid is safe. The knowledge that makes it harmless is engine-internal.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** the check this entry kept is dropped, not
+  ported: ruling 8 of the doctor-retirement spec drops the login-envelope arm of `--probe`
+  entirely (`doctor-drop-login-envelope-probe`). No substitute exists in `cairn doctor` v1.1.0; a
+  broken sign-in surfaces only at a real editor's first attempt, through the guard's own log events.
 
 ## audit-cli-the-post-hydration-page-identity-guard: `The post-hydration page-identity guard`  (keep, 2026-08-26, any-site audit)
 
@@ -5164,6 +5223,11 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 23.
 - **Any-site case:** Textbook Arm A, and the shape coherence C13 wanted everywhere: 'The judgment is requireOrigin, the same rule the Worker applies.' The check does not reimplement the rule, it calls the engine's own, so the CLI verdict and the runtime verdict cannot drift by construction. A consumer hand-rolling a PUBLIC_ORIGIN sanity regex agrees with the Worker until the Worker changes. The localhost/127.0.0.1 http carve-out serves every consumer, not the family.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** the file half of `config.public-origin`
+  carries over to `cairn doctor` (`tool/v1.1.0`) as one of the eight file-only checks; the Go tool
+  ports `requireOrigin`'s cases from the doctor's own test corpus rather than calling engine code
+  directly, since a Go process cannot import TypeScript, and `ai.posture-effective` reuses the same
+  precedence.
 
 ## audit-cli-create-cairn-site-cloudflare-chapters-deploy-domain-and-emai: `create-cairn-site Cloudflare chapters (deploy, domain and email, Builds)`  (keep, 2026-08-26, any-site audit)
 
@@ -5206,6 +5270,11 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 29.
 - **Any-site case:** Arm A passes through the condition registry: 'Each check ties to a condition in cairn's diagnostics registry, and a failure prints that condition's why and remediation, the same text the runtime error surfaces use.' One vocabulary across the CLI, the runtime errors and the readiness checklist is a coherence property only the engine can hold. 'A failing check never stops the run, so a single pass surfaces everything that still needs fixing' is the right design commitment, and 'An unknown conditionId is a programming error; condition() throws and the report does not paper over it.'
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** the design this entry kept is superseded, not
+  lost: `cairn doctor` (`tool/v1.1.0`) reimplements it with an embedded mirror of the same
+  condition registry (`conditions.ts` stays the source; the pre-task's `emit-tool-conditions.mjs`
+  generates the mirror Go embeds), the same why/remediation text per failure, and the same
+  never-stop-on-failure commitment.
 
 ## audit-cli-cairn-audit-command-shape-tiers-exit-codes: `cairn-audit command shape, tiers, exit codes`  (keep, 2026-08-26, any-site audit)
 
@@ -5220,6 +5289,15 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 31.
 - **Any-site case:** Arm A at its cleanest on the doctor: the third source 'evaluates the configured adapter module through the site's own Vite resolution', reading cairn.email.from and cairn.backend.{owner,repo}. The adapter is TypeScript, so no external tool can do it, and the payoff is that a zero-argument npx cairn-doctor works on any correctly-wired site. The secret discipline is right: 'Secrets ... come only from the environment. They are never derived from the repo and never printed', and github assembles only on the complete trio so a partial setup skips with one remediation line.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** the three fields this entry names do not
+  survive into `site-facts.json`. `formatSiteFacts` (`src/lib/vite/internal.ts`) writes only
+  `mediaBucketBinding`, `roles`, and `aiPosture`, and its own doc comment states that `owner`,
+  `repo`, and `from` "are never accepted here"; retire-2a trimmed those three fields from
+  `readAdapterFacts` along with their doctor-only callers. `cairn.backend.{owner,repo}` left with
+  the dropped `github.app` check (`doctor-drop-github-app`), and `cairn.email.from` left with
+  `email.sender-onboarded`, which now runs under `cairn health`, not `cairn doctor`. The live Vite
+  evaluation this entry kept survives only to write `site-facts.json`'s own three fields
+  (`site-facts-json`), not to derive the email or GitHub trio any more.
 
 ## audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles: `cairn-audit.config.json contract (scope, cssFiles, paletteFiles, sheet, rendered.pages, allowlist)`  (reshape, 2026-08-26, any-site audit)
 
@@ -5250,6 +5328,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 35.
 - **Any-site case:** Magic-link auth is cairn's front door: if the sender is not onboarded, no editor can ever sign in, and the error is E_SENDER_NOT_VERIFIED, the same string Email Routing uses for a different failure, 'which is how the ecxc outage hid'. A check that resolves an ambiguity a production outage could not resolve is a claim about the platform's error vocabulary that any consumer of that platform inherits, hit on day one, not day one hundred.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `email.sender-onboarded` does not carry over
+  to `cairn doctor` (`tool/v1.1.0`). Ruling 8 places it, with `edge.https-forced`, among the checks
+  reachable only after adoption, so it runs as a `cairn health` check instead.
 
 ## audit-cli-github-app-check: `github.app check`  (keep, 2026-08-26, any-site audit)
 
@@ -5257,6 +5338,11 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 36.
 - **Any-site case:** 'The GitHub check walks the exact chain the Worker walks on a save, so a green check means the commit pipeline's credentials work, and a failure names which link broke.' Arm A by construction: PEM parse to JWT sign to installation-token mint to repo read exists in that exact sequence because src/lib/github walks it on every Publish. Three credentials, three ways to be subtly wrong (a re-wrapped PEM, the wrong installation id, an App id vs a client id), all failing identically at the first Publish with the editor watching.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** the check this entry kept is dropped, not
+  ported: ruling 8 of the doctor-retirement spec drops `github.app` entirely
+  (`doctor-drop-github-app`). Its substitute is the runtime `github.unreachable` event
+  (`github/credentials.ts:20`), which walks the same PEM/JWT/installation-token chain at Publish
+  time rather than pre-adoption.
 
 ## audit-cli-stock-default-hazards-static-rule: `stock-default-hazards static rule`  (keep, 2026-08-26, any-site audit)
 
@@ -5294,6 +5380,13 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   reads. `media-seed/bin.ts`'s byte-identical, still-uncontained twin is routed forward to
   internals-B by its own `// WATCH:` comment (see `docs/internal/record/2026-09-02-internals-b-planning-inputs/docket.md`, item 5).
   This closes the WATCH; the row above stays untouched.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `src/lib/doctor/site-config-path.json` left
+  with the doctor (ruling 6); `create-cairn-site/src/substitute.mjs`'s committed twin is now the
+  one source, since no engine copy reads it any more. `config.site-config` carries over to `cairn
+  doctor` (`tool/v1.1.0`), narrowed to one assertion the ported check does not exceed: the file is
+  found at a known path, parses as YAML, and its root is a mapping with a non-empty `siteName`
+  (`doctor-go-site-config-narrowing`, filed by retire-1); the Contract v2 hard-error this entry's Arm A cites stays
+  the engine's own parser's job, unreachable to a pre-adoption file check.
 
 ## audit-cli-type-scale-gap-scale-token-colors-grammar-boundary-static-gr: `type-scale, gap-scale, token-colors, grammar-boundary (static grammar rules)`  (keep, 2026-08-26, any-site audit)
 
@@ -5315,6 +5408,10 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 42.
 - **Any-site case:** Arm A is total: three table names, one capability semantics and one bootstrap invariant, all cairn's, none documented anywhere a consumer could find without reading engine source. The failure mode is the worst a CMS has - a correctly deployed site with an empty owner table locks every human out permanently, with no recovery through the UI because the UI is what you are locked out of. auth.email-normalization names its hole exactly: 'a manual wrangler d1 execute insert is the one way to violate it', which is the documented late-night setup path, and the row silently never matches at sign-in.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** all three D1 reads are deferred, not
+  ported: ruling 8 of the doctor-retirement spec defers them to 1.x, beside the send-test re-run
+  and the workers.dev exposure arm (`doctor-defer-d1-reads`), since each needs a Cloudflare
+  credential `cairn doctor`'s pre-adoption, credential-free contract does not carry.
 
 ## audit-cli-supported-toolchain-contract-and-check-target-stack: `Supported-toolchain contract and check:target-stack`  (keep, 2026-08-26, any-site audit)
 
@@ -5329,6 +5426,12 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 44.
 - **Any-site case:** The closest thing to a pure Arm A trio here. EMAIL and AUTH_DB are cairn's names by identity - the Worker looks them up by literal string, so a typo deploys cleanly and fails at the first sign-in in production, and no generic wrangler validation will ever check them. config.media-bucket is a cross-file consistency check between the TypeScript adapter and the wrangler JSON, the class of contract no single-file tool can hold. config.observability is what makes the entire logging subsystem reachable; a consumer who never sets it discovers it while debugging a production incident with no logs.
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** all three carry over to `cairn doctor`
+  (`tool/v1.1.0`): `config.bindings` and `config.observability` as file-only checks over the
+  wrangler config; `config.media-bucket` as a facts-dependent check, now comparing the wrangler
+  binding against `site-facts.json`'s `mediaBucketBinding` (`site-facts-json`) rather than the
+  adapter directly, and it gains its own remediation text instead of borrowing
+  `config.bindings-missing`'s.
 
 ## audit-cli-no-uncompiled-class-static-rule: `no-uncompiled-class static rule`  (reshape, 2026-08-26, any-site audit)
 
@@ -5351,6 +5454,11 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** Read `pnpm-lock.yaml` and `yarn.lock` alongside `package-lock.json`, so a pnpm or yarn consumer gets a real verdict instead of a silent skip that never changes the exit code; failing that, at minimum give the no-lockfile-found case the INFO-vs-PASS (here, unchecked-vs-skip) distinction rank 8 needs.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 47.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
+- **Note (doctor-retirement, retire-2b, 2026-09-21):** `config.dependency-floors` carries over to
+  `cairn doctor` (`tool/v1.1.0`) as one of the eight file-only checks. The Go port hand-rolls the
+  doctor's three functions (`parseVersion`, `caretFloor`, `compareVersions`) rather than a semver
+  library, which would accept more and diverge, and reads the same three lockfile formats in the
+  same npm-pnpm-yarn order.
 
 ## audit-cli-cairn-audit-norms-subcommand-and-the-shipped-norms-manifest: `cairn-audit norms subcommand and the shipped norms manifest`  (keep, 2026-08-26, any-site audit)
 
@@ -6316,3 +6424,110 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verified:** `tool/internal/doctor/json_test.go` over all five statuses, and
   `tool/internal/render/json_schema_test.go`'s doctor cases, where a golden payload validates
   against the committed `cairn-doctor.schema.json`.
+
+## doctor-retirement: `cairn-doctor` retires from the npm package; its checks move into the Go `cairn` tool  (retire, 2026-09-21, doctor-retirement spec)
+
+- **Verdict:** retire. `cairn-doctor` (the npm bin, `src/lib/doctor/`) is a pre-adoption diagnostic
+  the owner-side Go cockpit can run without an engine dependency at all; Geoff ruled the retirement
+  2026-09-21. `cairn doctor` (`tool/v1.1.0`) is the same job, ported, not a reduced substitute for
+  the eight file-only and three facts-dependent checks the spec keeps.
+- **Reopens on:** closed. Executed by retire-1 (the Go port, merged untagged to `main`) and
+  retire-2a (the engine removal, `src/lib/doctor/` and the `cairn-doctor` bin entry gone, merge
+  `688aba41`); this record lands in retire-2b.
+- **Shape:** The bin (`cairn-doctor`) and `src/lib/doctor/` are removed from the npm package
+  entirely; all eleven of its ported checks (eight file-only, three facts-dependent) run under
+  `cairn doctor` (`tool/v1.1.0`) instead.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md);
+  executed by [2026-09-21-doctor-retire-2-engine.md](../superpowers/plans/2026-09-21-doctor-retire-2-engine.md)
+  and [2026-09-21-doctor-retire-2b-records.md](../superpowers/plans/2026-09-21-doctor-retire-2b-records.md).
+
+## doctor-drop-github-app: `github.app` check dropped, not ported, from `cairn doctor`  (retire, 2026-09-21, doctor-retirement spec)
+
+- **Verdict:** retire. Ruling 8 of the doctor-retirement spec drops `github.app` from the Go port's
+  check scope. Its substitute is the runtime `github.unreachable` event
+  (`src/lib/github/credentials.ts:20`), which walks the same PEM-parse, JWT-sign,
+  installation-token-mint chain the doctor check walked, at Publish time rather than pre-adoption.
+- **Reopens on:** a recorded incident where `github.unreachable`'s substitute signal arrived only
+  at a site's first publish, costing a real operator real time, written down. A never-published
+  site is the named gap: it has no substitute signal until its first Publish attempt.
+- **Shape:** `github.app` is absent from `cairn doctor`'s eleven checks. Its condition id,
+  `github.app-unreachable`, stays in `src/lib/diagnostics/conditions.ts`; it is not unraised, since
+  `src/lib/github/credentials.ts:20` still raises it at Publish time, the substitute this entry
+  names.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
+
+## doctor-drop-config-tidy-key: `config.tidy-key` check dropped, not ported, from `cairn doctor`  (retire, 2026-09-21, doctor-retirement spec)
+
+- **Verdict:** retire. Ruling 8 drops `config.tidy-key`: it false-fails a correctly deployed site
+  whose Anthropic key lives as a Worker secret invisible to any CLI (the doctor's own
+  `checks-local.ts:310-318`, before the removal). No substitute check exists in `cairn doctor`
+  v1.1.0; a bad key now surfaces only through the admin's own tidy attempt and its log event.
+- **Reopens on:** a recorded incident where the check's absence cost a real operator real time at
+  a site's first tidy, written down.
+- **Shape:** `config.tidy-key` is absent from `cairn doctor`'s eleven checks. Its condition id,
+  `config.tidy-key-missing`, stays in `src/lib/diagnostics/conditions.ts`, unraised: no other code
+  path raises it now that the check that owned it is gone.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
+
+## doctor-drop-login-envelope-probe: the `--probe` login-envelope arm dropped, not ported, from `cairn doctor`  (retire, 2026-09-21, doctor-retirement spec)
+
+- **Verdict:** retire. Ruling 8 drops the login-envelope arm of the doctor's opt-in `--probe`, the
+  live admin sign-in probe against a random `example.invalid` address. No substitute exists in
+  `cairn doctor` v1.1.0; a broken sign-in surfaces only at a real editor's first attempt, through
+  the guard's own log events.
+- **Reopens on:** a recorded incident where the check's absence cost a real operator real time at
+  a site's first sign-in, written down.
+- **Shape:** The login-envelope arm is absent from `cairn doctor`'s eleven checks. Its condition
+  id, `admin.login-probe-failed`, stays in `src/lib/diagnostics/conditions.ts`, unraised: `csrf.ts`
+  already documents it as currently unraised, and this drop does not change that.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
+
+## doctor-defer-workers-dev-exposure: the `--probe` workers.dev exposure arm deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
+
+- **Verdict:** defer. Ruling 8 defers the workers.dev exposure arm of the doctor's opt-in
+  `--probe`, a Cloudflare read that nothing in `cairn doctor` v1.1.0 performs, since the tool's
+  pre-adoption contract carries no credential.
+- **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
+  (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
+  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  question is ruled.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8; filed to `ROADMAP.md`.
+
+## doctor-defer-send-test-rerun: `--send-test`'s any-time re-run deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
+
+- **Verdict:** defer. Ruling 1: the first-run send test already lives in the scaffolder and stays
+  there (`packages/create-cairn-site/src/cloudflare/chapter2.mjs:740`,
+  `packages/create-cairn-site/src/cloudflare/email.mjs:143`); the doctor's `--send-test` was the
+  re-run-any-time path, deferred to 1.x beside the D1 checks and the agent-permission credential
+  design, where the write-credential question is ruled. Known gap: a hand-built (non-scaffolded)
+  site has no send test until then, and `cairn health`'s email check is a configuration check
+  needing an adopted record and a Cloudflare read credential, so it does not substitute.
+- **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
+  (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
+  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  question is ruled.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 1; filed to `ROADMAP.md`.
+
+## doctor-defer-d1-reads: the three D1 reads (`auth.store`, `auth.role-vocabulary`, `auth.email-normalization`) deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
+
+- **Verdict:** defer. Ruling 8 defers the three D1 reads to 1.x, beside the send-test re-run and
+  the workers.dev exposure arm, since each needs a Cloudflare credential the pre-adoption,
+  credential-free `cairn doctor` contract does not carry.
+- **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
+  (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
+  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  question is ruled.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8; filed to `ROADMAP.md`.
+
+## site-facts-json: `src/content/.cairn/site-facts.json`, a committed cross-language facts file  (accept, 2026-09-21, doctor-retirement spec)
+
+- **Verdict:** accept. Ruling 7: three checks (`config.media-bucket`, `auth.role-wiring`,
+  `ai.posture-effective`) take their deciding input from the site's TypeScript adapter, which no
+  Go process can evaluate; the engine's Vite plugin writes `site-facts.json` beside `index.json`
+  and `media.json` (`mediaBucketBinding`, `roles`, `aiPosture`), and `cairn doctor`'s three
+  facts-dependent checks read it, reporting `unknown` with `ReasonNotObservable` when it is absent.
+  All three values already sit in committed adapter source, so the file leaks nothing.
+- **Reopens on:** closed. Executed by the pre-task (`writeManifest`/`buildStart` in
+  `src/lib/vite/internal.ts`): a stale file fails the build exactly as a stale manifest does; an
+  absent file never fails a build, since no site's `build` script runs `cairn-manifest` yet.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 7, and the pre-task's "`site-facts.json`" section.

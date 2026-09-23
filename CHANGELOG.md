@@ -46,7 +46,9 @@
 
 - The `config.media-bucket` doctor check now carries its own condition id,
   `config.media-bucket-missing`, instead of borrowing `config.bindings-missing`, so a missing
-  media bucket binding prints its own remediation rather than the `EMAIL`/`AUTH_DB` fix. See
+  media bucket binding prints its own remediation rather than the `EMAIL`/`AUTH_DB` fix. The id
+  survives the retirement below: `cairn doctor`'s own `config.media-bucket` check carries it (see
+  [`cairn doctor`](docs/reference/cli-cairn-doctor.md#the-checks)). See
   [Declare the media bucket binding](docs/admin/is-it-working.md#declare-the-media-bucket-binding).
   No consumer action; the id is additive, and the registry is exported from no public subpath.
 
@@ -228,14 +230,16 @@
   `text-[var(--color-positive-ink)]` with `cairn-text-success`, since the arbitrary-value classes
   no longer ship.
 
-- `cairn-doctor` gains `config.no-referrer-blanket`, a check that catches a site-wide
-  `Referrer-Policy: no-referrer` in `src/hooks.server.ts` (or `.js`) or `static/_headers`. Under
-  the Fetch spec that policy strips the `Origin` header from a plain same-origin form POST, so it
-  arrives as `Origin: null` and cairn's strict `originMatches` guard rejects it, breaking a
-  non-admin form the site never left. The guard itself stays strict on purpose; the check flags
-  the site-side misconfiguration instead, with a source-naming SKIP (never a silent PASS) when
-  neither file is readable. See [Security model](docs/extend/security-model.md#response-hardening)
-  and [Is it working?](docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy).
+- `config.no-referrer-blanket` catches a site-wide `Referrer-Policy: no-referrer` in
+  `src/hooks.server.ts` (or `.js`) or `static/_headers`. Under the Fetch spec that policy strips
+  the `Origin` header from a plain same-origin form POST, so it arrives as `Origin: null` and
+  cairn's strict `originMatches` guard rejects it, breaking a non-admin form the site never left.
+  The guard itself stays strict on purpose; the check flags the site-side misconfiguration
+  instead, with a source-naming SKIP (never a silent PASS) when neither file is readable. The
+  check is added here under the retired npm bin and survives, under the actor named below, in
+  `cairn doctor`, the Go tool's replacement. See
+  [Security model](docs/extend/security-model.md#response-hardening) and
+  [Is it working?](docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy).
   Consumers must: nothing.
 
 - `cairn-audit` gains two static rules. `stripe-trim-parity` flags a striped row's `:nth-child`
@@ -294,8 +298,10 @@
 - The conventions pass (Task 11) closes three ranked CLI-evenness and config-contract items.
   **Bin evenness (`audit-cli-no-help-on-any-of-the-five-commands`,
   `audit-cli-cairn-manifest-command-vite-config-discovery-exit-behavior`):** all four engine bins
-  (`cairn-doctor`, `cairn-audit`, `cairn-media-seed`, `cairn-manifest`) now answer `--help` by
-  printing their existing `USAGE` constant at exit 0. `cairn-manifest` (`vite/bin.ts`) gains argv
+  as they stood then (`cairn-doctor`, `cairn-audit`, `cairn-media-seed`, `cairn-manifest`) now
+  answer `--help` by printing their existing `USAGE` constant at exit 0; the retirement below
+  removes `cairn-doctor`, so the claim now holds for the other three. `cairn-manifest`
+  (`vite/bin.ts`) gains argv
   parsing for the first time, through a new `vite/assemble.ts` mirroring the doctor split: it
   accepts only `--help` and rejects everything else at exit 2, where it previously ignored argv
   entirely. `vite/bin.ts` also moves from `process.exit(1)` to `process.exitCode`, the stdout-flush
@@ -377,12 +383,12 @@
 - `SITE_CONFIG_PATH` (internals pass, Task 11; discharges `docs/internal/engine-rulings.md`'s
   `audit-cli-config-site-config-check` WATCH): the doctor's `config.site-config` check and
   `create-cairn-site`'s `substitute.mjs` now both read the canonical site-config path from a
-  committed data file (`src/lib/doctor/site-config-path.json`, mirrored in
-  `packages/create-cairn-site/src/site-config-path.json`), never from a hand-typed string on
-  either side. Both consumers verify the value's shape before use (relative, no leading `/`, no
-  `..` segment, no NUL byte), and `doctor/bin.ts`'s `readFileUnderCwd` gains a
-  resolved-path-stays-under-cwd containment assert covering every relative read it does, not only
-  this one. Internal tooling and CLI hardening only; no consumer action.
+  committed data file, never from a hand-typed string on either side; both consumers verify the
+  value's shape before use (relative, no leading `/`, no `..` segment, no NUL byte). The doctor's
+  own copy left with `src/lib/doctor/` at the retirement below; the surviving canonical copy is
+  `packages/create-cairn-site/src/site-config-path.json`, the scaffolder's own file, which
+  `tool/internal/doctor/site-config-path.json` mirrors for the Go tool (see Added, above).
+  Internal tooling and CLI hardening only; no consumer action.
 
 - New standing gate `check:idioms` (internals-C pass, Task 2): bans leading-tab indentation across
   `src/lib` and `scripts` (`*.ts`/`*.svelte`/`*.mjs`), bans `process.exit(` inside
@@ -553,14 +559,70 @@
 
 ### Removed
 
-- `cairn-doctor` loses `--fix`, the `skill.admin-screens` check, and the
-  `skill.admin-screens-stale` condition. The packaged skill install now lives in
-  `cairn-guidance`, which installs every packaged skill directory (not just this one), the
-  read-only review agent, and the `CLAUDE.md` fragment, and checks their freshness the same
-  way. See [The `cairn-guidance` CLI](docs/reference/guidance.md). Consumers must: run `npx
-  cairn-guidance install` after the bump; `cairn-doctor --fix` is gone. The recorded doctor
-  transcript `03-doctor-credentialed.txt` predates this retirement and stays as captured; `Is it
-  working?` elides its one retired line rather than hand-editing the fixture.
+- `cairn-doctor`, the npm-packaged setup-preflight bin (`src/lib/doctor/`), is retired outright,
+  not reshaped. The five status words (PASS, FAIL, SKIP, INFO, UNCHECKED) and exit 3 for a run
+  whose only non-passing results are UNCHECKED both carry over unchanged into `cairn doctor`
+  below; what changed is severity, not vocabulary: a blocker FAIL now exits 2 (`CRITICAL`) rather
+  than 1, so a run with a warning FAIL and an UNCHECKED result now exits 3, where the old bin's
+  failure-wins rule exited 1; a blocker FAIL (2) still outranks UNCHECKED, under the shared
+  `cairn` precedence, `CRITICAL > UNKNOWN > WARNING > OK`. `edge.hsts` still retires outright; it
+  has no counterpart in `cairn doctor`'s eleven checks, though `cairn health`'s `https-forced`
+  check carries an HSTS half of its own, so the observation survives there. `edge.https-forced`
+  does not leave: it lives on as `cairn health`'s `https-forced` check, the live-site counterpart,
+  since the check reads a deployed zone's Cloudflare settings (Always Use HTTPS, and HSTS beside
+  it), which a local directory does not carry. The
+  `--probe` flag's live derivation of the expected CSRF cookie name off a probed origin's own
+  scheme leaves outright, since `cairn doctor` makes no such probe. `--fix`, the mode that
+  installed the packaged `skill.admin-screens` skill and the `skill.admin-screens-stale` condition
+  that detected it going stale, also leaves outright; `--fix`'s job moved to `cairn-guidance
+  install` earlier in this same window (see Added, above, and
+  [The `cairn-guidance` CLI](docs/reference/guidance.md)) and is unaffected by this retirement.
+
+  All eleven checks `cairn doctor` runs keep their old check and condition ids and carry over:
+  `config.bindings`, `config.media-bucket`, `config.observability`, `config.csrf-disable`,
+  `config.public-origin`, `config.site-config`, `config.no-referrer-blanket`,
+  `admin.mount-shape`, `config.dependency-floors`, `auth.role-wiring`, and `ai.posture-effective`.
+  The rest, the App probe, `config.tidy-key`, the login-envelope probe, every D1 read, and the
+  send re-run, do not carry over (see `docs/internal/engine-rulings.md`'s ledger for why each was
+  dropped or deferred).
+
+  The replacement is the Go `cairn` operator CLI's `cairn doctor` subcommand (`tool/v1.1.0`),
+  contract page [`docs/reference/cli-cairn-doctor.md`](docs/reference/cli-cairn-doctor.md). It is
+  not a like-for-like reshape: `cairn doctor` checks a named local directory, reads nothing but
+  that directory, needs no credential, and does not require an adopted site, unlike the npm bin,
+  which also ran credentialed Cloudflare, GitHub App, and D1 checks. Its one network request is a
+  credential-free `GET` of the declared origin's `/robots.txt`, for `ai.posture-effective`, and it
+  makes none when no `PUBLIC_ORIGIN` resolves. The npm bin's live-site
+  checks that survive moved to `cairn health` (`edge.https-forced` as `https-forced`).
+
+  **Consumers must:** install the `cairn` binary (`go install
+  github.com/glw907/cairn-cms/tool/cmd/cairn@latest`, or a prebuilt archive from the `tool/v1.1.0`
+  release); replace any `npx cairn-doctor` invocation with `cairn doctor`; a job that tested only
+  for a nonzero exit keeps working, since both tools are nonzero-on-problem, but a job that
+  switched on the specific code needs the new precedence above, since a blocker now exits 2, not
+  1; run `npx cairn-guidance install` after the bump for a site that used `cairn-doctor --fix`,
+  since `--fix` is gone and `cairn-guidance install` already owns the packaged-skill sync it
+  performed; build once on `0.97.0` so `src/content/.cairn/site-facts.json` exists, the file
+  `cairn doctor` reads for values a Go program cannot derive on its own; and expect no App probe,
+  no tidy-key check, no login probe, no D1 reads, and no send re-run, none of which carried over.
+
+  The survey behind this removal found no site scripting the doctor bin in CI. `account_id` stays
+  configured in the four wrangler configs that named it for the doctor's D1 checks (`ecxc-ski`,
+  `907-life`, and `aksailingclub-org`'s `wrangler.toml`; `xcathletes-org`'s `wrangler.jsonc`), and
+  only the comment justifying it by those checks is reworded, as are three adapter comments citing
+  the same checks. Every site runs `npx cairn-manifest` once and commits
+  `src/content/.cairn/site-facts.json`, since an absent file only warns while a stale one fails
+  the build; `aksailingclub-org` runs `cairn-guidance install` to refresh an installed skill copy
+  still naming `cairn-doctor --fix`; site plan history is left as written. A fifth consumer,
+  cairn-pub, breaks twice at its pin bump: a hardcoded `/docs/reference/doctor` link
+  (`src/routes/(site)/docs/+page.svelte:67`) 404s, since the page it named is gone, and its own
+  `docs/STATUS.md` still scripts `npx cairn-doctor` in its gate prose.
+
+  The recorded transcripts `02-doctor-bare.txt` and `03-doctor-credentialed.txt` leave with the
+  bin; `01-create-cairn-site.txt` and `01d-resume.txt` are unchanged and still carry the
+  scaffolder's old `npx cairn-doctor` pointer line as recorded. A new
+  `04-doctor-report.txt` capture of the Go tool's own report meets
+  `docs/admin/is-it-working.md`'s transcript floor.
 
 - `OfficeList` (`/admin-toolkit`) is retired. `AdminTable`'s own wrapper is the toolkit's one
   horizontal scroll container, and nesting it inside `OfficeList`'s card frame duplicated that
@@ -1224,13 +1286,15 @@
   three `audit-cli` rows are process/tooling proposals the CLI-surface audit ledgered as `retire`
   (decline the proposal), not exported names, a `check:dogfood` tripwire proposed into
   `cairn-audit`, `unlistedRoutes` proposed as a `cairn-audit` rendered rule, and a
-  `skill.admin-screens` check plus `cairn-doctor --fix`, closing each is a ledger-only act, with
-  nothing to delete in `src/`. `AI_CRAWLERS_REVIEWED`, `feedView`, `PublicRoutes`, and
+  `skill.admin-screens` check plus `cairn-doctor --fix` (a proposal against the doctor bin, not
+  the packaged skill install `cairn-guidance` already owns), closing each is a ledger-only act,
+  with nothing to delete in `src/`; the retirement below makes the underlying bin moot regardless
+  of that ruling. `AI_CRAWLERS_REVIEWED`, `feedView`, `PublicRoutes`, and
   `unlistedRoutes` (`audit-delivery`) delete outright from `/delivery` and `/delivery/data` (or
   `/delivery` alone for `PublicRoutes`), each had zero remaining consumers anywhere in `src/lib`,
   and `unlistedRoutes` takes its two now-orphaned private helpers with it; `AI_CRAWLERS` unexports
   from both delivery barrels but stays reachable at `delivery/ai-crawlers.ts` for the engine's own
-  internal use (`robots.ts`, `doctor/check-posture.ts`), its element type `AiCrawler` unexports
+  internal use (`robots.ts`), its element type `AiCrawler` unexports
   too, consumed only inside its declaring module. `isElement` (`audit-render`) unexports from
   `/render` but stays reachable at `render/rehype-dispatch.ts`, where the pipeline's own transform
   functions call it internally; a site needing the narrowing reaches for `hast-util-is-element`,
@@ -1443,40 +1507,6 @@
   `DEFAULT_ROLES` from `@glw907/cairn-cms` to satisfy `defineAccess`'s first parameter now passes
   `undefined` there directly; nothing else changes for a site already passing a declared
   `RolesDeclaration`.
-
-- `cairn-doctor` gains a four-status vocabulary and a third exit code, closing the doctor's
-  anti-silent-green gaps the any-site audit found (the conventions pass, Task 10). Every check now
-  resolves to PASS, FAIL, SKIP, INFO, or UNCHECKED. SKIP keeps its old meaning, not applicable at
-  all, and never gates. INFO is new: a heuristic that couldn't see enough to answer, or an advisory
-  finding; never gates. UNCHECKED is new: a deterministic check's required input was absent or
-  unreadable, distinct from SKIP because the check IS applicable and would have an answer if it
-  could look; it drives a new exit code, **3**, when no check failed (exit 1 still wins over exit 3
-  when a run carries both). `admin.mount-shape` and `auth.role-wiring`'s could-not-see branches move
-  from SKIP to INFO; `auth.role-wiring`'s no-custom-roles branch stays SKIP. `edge.hsts` retires
-  outright (its own condition was severity `warning` yet the check returned a gating `fail()`, and
-  the doctor has no advisory tier to demote into); `edge.https-forced` is unchanged and stays
-  gating, since it names a cairn-owned failure (the JS-free admin sign-in form POST hits an opaque
-  403 over http). `config.csrf-disable` now reads `vite.config.ts` as well as `svelte.config.js` (a
-  bare `sv create` scaffold wires the adapter, and any CSRF disable, inside `vite.config.ts`
-  instead), returns UNCHECKED only when neither file exists, and fails rather than passing or
-  skipping when a readable file carries no disable. `config.site-config` adds
-  `src/theme/site.config.yaml` to its candidate paths (where `create-cairn-site` and the showcase
-  bake it) and returns UNCHECKED rather than SKIP when none matches. `config.dependency-floors` now
-  reads `pnpm-lock.yaml` and `yarn.lock` alongside `package-lock.json`, judging whichever it finds
-  first, and returns UNCHECKED only when none of the three exists; a pnpm or yarn consumer gets a
-  real pass/fail verdict instead of a silent skip. `config.tidy-key` carries its own condition id,
-  `config.tidy-key-missing`, rather than borrowing `config.bindings-missing` (a tidy-key failure no
-  longer prints the wrangler-bindings remediation). See
-  [`cairn-doctor`](docs/reference/doctor.md#status-vocabulary) and
-  [Is it working?](docs/admin/is-it-working.md).
-
-  **Consumers must:** a CI job that gates on `cairn-doctor`'s exit code alone still works
-  unmodified (both 1 and 3 are nonzero), but a pnpm or yarn site that previously read a silent SKIP
-  on `config.dependency-floors` now gets a real verdict, which may surface a below-floor dependency
-  that was invisible before. A job that wants to distinguish a real failure (exit 1) from an
-  unchecked environment gap (exit 3), to warn on the latter without blocking on it, captures the
-  exit code and branches on it; see the CI wiring example in the reference page. Nothing else in the
-  report's shape changed: every prior PASS/FAIL/SKIP line still prints exactly as before.
 
 - The conformance pass (slice 4b, Task 1) executes the Tier 1 media-janitorial retire batch: 25
   ratified any-site-audit verdicts (`docs/internal/engine-rulings.md`, `rank-route-factories.md`
@@ -2229,14 +2259,6 @@
   mount-under-`/admin` instruction is the guard against it. Consumers must: nothing for a site
   following the documented single mount under `/admin/**`.
 
-- `cairn-doctor`'s live probe (`--probe`) keeps deriving its expected CSRF cookie name from the
-  PROBED origin's own scheme, deliberately: it is a cross-check on what a deployed runtime
-  actually presents, immune to a `--url` override diverging from the wrangler config's own
-  `PUBLIC_ORIGIN`. The probe now calls `csrfSecure({ url: origin, platform: undefined })`
-  directly, `csrfSecure`'s own body, instead of a hand-duplicated `origin.protocol === 'https:'`
-  copy, provably the same answer on every branch since feeding no `platform` means the CSRF
-  side's own `PUBLIC_ORIGIN` consultation never fires. Consumers must: nothing.
-
 - Five content-route actions that read the CSRF cookie jar directly (`dictionaryAddAction`,
   `uploadAction`'s underlying upload handler, `mediaReplacePreviewAction`,
   `mediaAltPreviewAction`, `tidyAction`) now throw when an untyped caller passes no cookie jar at
@@ -2309,13 +2331,18 @@
   mail app's own WebView cookie jar) is refused, with re-requesting from the clicking browser as
   the escape hatch. Consumers must: apply migration 0004 before deploying
   (`cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/` then
-  `npx wrangler d1 migrations apply <auth-db> --remote`). An un-migrated `AUTH_DB` is a total login
-  outage with no second channel, since every confirm names the `nonce_hash` column;
-  `npx cairn doctor`'s `auth.store` check now fails when the column is absent, so run it before the
-  deploy, and if a deploy slips through anyway the store maps D1's `no such column: nonce_hash`
-  onto the new `auth.store-unmigrated` condition, whose message names the migration to apply,
-  rather than leaving a bare 500 on the login POST. The column is nullable and a row without a
-  binding still confirms, whatever the confirming browser carries, so applying the migration
+  `npx wrangler d1 migrations apply <AUTH_DB> --remote`). An un-migrated `AUTH_DB` is a total login
+  outage with no second channel, since every confirm names the `nonce_hash` column; verify before
+  deploy with `npx wrangler d1 migrations list <AUTH_DB> --remote`, which reports `0004` applied
+  only after the copy step above has put `0004_login_nonce.sql` in the local `migrations/`
+  directory, since the command compares that directory against D1's own migrations ledger, not
+  the `nonce_hash` column itself. A site that hand-ran the SQL instead of running the migration
+  sees `0004` reported unapplied there, and re-applying it through `wrangler d1 migrations apply`
+  then fails with a duplicate-column error; and if a deploy slips through unmigrated anyway the
+  store maps D1's `no such column: nonce_hash` onto the new `auth.store-unmigrated` condition,
+  whose message names the migration to apply, rather than leaving a bare 500 on the login POST.
+  The column is nullable and a row without a binding still confirms, whatever the confirming
+  browser carries, so applying the migration
   cannot strand a link already in an inbox.
 
 - `AssetConfig.variants` and the `VariantSpec` type are retired (ruling 4, 2026-09-01, the
@@ -2387,8 +2414,10 @@
   vocabulary. The magic-link surface (`loginLoad`, `requestAction`, `confirmAction`,
   `confirmLoad`) degrades to a hand-off page and 404s under identity mode; `logoutAction`
   redirects to the configured `logoutUrl` instead of destroying a session. The doctor's login
-  probe now fetches with `redirect: 'manual'` and recognizes a Cloudflare Access gate, an
-  ungated origin, and the identity hand-off page as distinct outcomes. The Cloudflare Access
+  probe, retired below along with the rest of the bin, fetched with `redirect: 'manual'` and
+  recognized a Cloudflare Access gate, an ungated origin, and the identity hand-off page as
+  distinct outcomes over the course of this window; the identity seam itself is unaffected by
+  that retirement. The Cloudflare Access
   verifier itself ships as a documented recipe
   (`docs/extend/sign-in-through-your-organization.md`), not an engine export, following the
   `isuniqueviolation-cloudflare` precedent; no dependency (`jose` included) is added to
@@ -2397,19 +2426,12 @@
   of the existing magic-link shape and a new identity hand-off shape (`{ identity: { label:
   string } }`), additive on the wire but a type-level change for any site importing the type
   directly (a custom `/admin/login` route built against `LoginData` narrows on the `identity`
-  member before reading a magic-link-only field). The login probe's workers.dev arm now also
-  follows a same-site redirect off `/admin/login` once before classifying, tolerates 308, and
-  carries a request timeout on every fetch it issues. Consumers must: nothing to build, deploy, or
-  configure differently; a site that has typed a custom login route against the exported
-  `LoginData` union narrows on `'identity' in data` before reading `csrf` or `error`. A site
-  reading the `admin.login-probe` check's exit status programmatically must: treat the workers.dev
-  arm's exposure finding as `info`, not `fail`, on a plain magic-link site (no gate of its own)
-  that still leaves `workers_dev` enabled and gets the ordinary unauthenticated redirect to
-  `/admin/login` there; the fix is `workers_dev: false` (and `preview_urls: false`) in the
-  wrangler config, which the info detail now names. A site that treated a 401 or 403 answering
-  `GET /admin/login` as a probe failure must: read it as `info` instead, since a WAF rule or a
-  broken deploy answers the same way as a real gate and the check cannot tell them apart; the info
-  detail now says so and names the deploy-fault possibility directly.
+  member before reading a magic-link-only field). The login probe's workers.dev arm, over the
+  course of this window before its own retirement below, also followed a same-site redirect off
+  `/admin/login` once before classifying, tolerated 308, and carried a request timeout on every
+  fetch it issued; none of that check survives the retirement. Consumers must: nothing to build,
+  deploy, or configure differently; a site that has typed a custom login route against the
+  exported `LoginData` union narrows on `'identity' in data` before reading `csrf` or `error`.
   See [`docs/extend/sign-in-through-your-organization.md`](docs/extend/sign-in-through-your-organization.md).
 
 - The state-reset coverage test's `parseDeclaredStateNames` pattern now matches a declarator whose

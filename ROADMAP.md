@@ -372,17 +372,6 @@ The original decision framing, for the record:
   every scaffolded site's build log carries a framework deprecation nobody explains, and a future
   SvelteKit major breaks the guard outright. **Trigger: fired. Schedule it rather than watch it.**
 
-- **A `cairn doctor` bundle-size check needs an exec seam it does not have (release-debt pass,
-  2026-08-19, deliberately dropped).** The pass planned a doctor check measuring the built Worker
-  against the free-tier ceiling. It cannot be built: a `DoctorCheck` gets `ctx.readFile` only, and
-  the deployable bundle exists solely after `npx wrangler deploy --dry-run --outdir=...`, since
-  adapter-cloudflare 7 leaves `.svelte-kit/cloudflare/_worker.js` as a loader that imports the
-  server bundle by relative path. Measuring anything else would report an approximate number against
-  a hard limit, which is the defect class the pass existed to close. Either `DoctorContext` grows a
-  subprocess seam (a new engine capability, and a full build per doctor run), or bundle size stays a
-  CI concern where the real artifact already lives, which is where the pass left it. **Trigger: a
-  decision that the doctor should measure build output at all.**
-
 - **Two reproduction-authoring rules have no home yet.** Both surfaced at the containment pass's
   accessibility review and both bind the editors rewrite rather than the engine. Numbered marker chips
   must render *inside* `[data-cairn-picture]`, because a chip appended as a sibling of the inert wrapper
@@ -547,11 +536,15 @@ The original decision framing, for the record:
      reader outright. Evidence: `01b-resume.txt`. Candidate: adopt an existing repository the App
      owns that matches the saved state record.
   3. **Every scaffold ships the placeholder sign-in from-address `cms@showcase.test`.** The
-     domain chapter never personalizes it on the workers.dev path, so a credentialed
-     `cairn-doctor` run reports three red zone-derived failures on a site that is working exactly
-     as built. `is-it-working.md` now explains that in prose, which is a docs patch over a tool
-     defect. Evidence: `03-doctor-credentialed.txt`. Candidate: derive the from-address, or report
-     those checks as not-applicable until a domain is connected.
+     domain chapter never personalizes it on the workers.dev path (`writeEmailFrom` in
+     `packages/create-cairn-site/src/cloudflare/config.mjs` runs only once a domain is connected).
+     The retired npm doctor's credentialed run reported three red zone-derived failures on a site
+     working exactly as built (the evidence transcript left with it). Its live successor is
+     `cairn health`'s `email` check (`tool/internal/health/check_email.go`), which reads the
+     adoption record's domain rather than the adapter's from-address; whether it reproduces the
+     false reds on a workers.dev site is unverified. The scaffolder defect stands either way.
+     Candidate: derive the from-address, or have `cairn health` report the email check as
+     not-applicable until a domain is connected.
   4. **The scaffold hand-over still says the GitHub and Cloudflare steps have not shipped.**
      `packages/create-cairn-site/src/scaffold.mjs:250` prints "Those steps arrive with the next
      release", and the same run then walks the reader straight through both of them. The string
@@ -721,15 +714,20 @@ The original decision framing, for the record:
   Cloudflare-specific, and the comparables survey makes that a capability rather than a limitation:
   nothing among 22 tools fetches its own live deployed site and reports what it is actually serving,
   with WordPress Site Health the cautionary case, since two of its three checks read configuration
-  back to itself while looking like live probes. cairn's `doctor/` currently sits on the same side of
-  that line for its three Cloudflare checks. The audit established the cost is low: every finding that
+  back to itself while looking like live probes. `cairn health`'s `https-forced` check
+  (`tool/internal/health/check_https.go`) still sits on the same side of that line: it reads the
+  zone's settings back rather than observing the redirect and the header. The audit established the cost is low: every finding that
   needed measuring rather than reading was reachable with `curl` and `dig` and **no credential at
   all**, including HSTS presence, the http-to-https redirect, the TLS floor, the served robots.txt,
   the trailing-slash status, and the full DKIM and return-path SPF picture. Directions, still
   direction rather than commitment:
 
-  - **Effective-state checks in `doctor/`, credential-optional.** Run everything reachable without a
-    token, and do more when one is present, so a developer is never blocked waiting on access. This
+  - **Effective-state checks, credential-optional.** Run everything reachable without a
+    token, and do more when one is present, so a developer is never blocked waiting on access. The
+    Cloudflare checks belong to `cairn health` (`tool/internal/health/`), whose `email` DNS half
+    and `serving` check already run credential-free; `cairn doctor` (`tool/internal/doctor/`)
+    holds the credential-free local half, where `ai.posture-effective` already observes the served
+    `/robots.txt`. This
     replaces config readback with behavior probing and is strictly more truthful, since a Cloudflare
     toggle reading one way while the edge behaves another is documented in the comparables research.
   - **Publish-chain verification end to end.** Confirm the published entry is genuinely live at its
@@ -1029,9 +1027,9 @@ the named human gates only):**
   Carbon's chart guidance is a recipe reference only.
 
 - **The window after the cut, sequenced (Geoff, 2026-09-13, re-ruled 2026-09-21).** The order
-  after the `tool/v1.0.0` tag, with the cut itself now held behind the doctor-retirement track
-  (retire-1, draft docs pass A, a `tool/v1.1.0` release, then retire-2a and retire-2b; see
-  `docs/STATUS.md`): the one release cut; a docs chore moving two overturned rules to
+  after the `tool/v1.0.0` tag. The doctor-retirement track the cut was held behind (retire-1,
+  draft docs pass A, the `tool/v1.1.0` release, then retire-2a and retire-2b) is complete through
+  retire-2b, and the cut follows it (see `docs/STATUS.md`): the one release cut; a docs chore moving two overturned rules to
   their execution paths (the narrative-arm freeze and the site-pass no-edit rule), which touches
   the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
   the docs-infra currency pass
@@ -1066,6 +1064,60 @@ the named human gates only):**
   covers the same ground. The architectural rule stands whatever the front end: the spine's API
   is the product, every front end is a view over it, and no logic lives in a view.
 
+- **`cairn doctor`'s three deferred checks, filed beside the agent-permission check
+  (doctor-retirement, retire-2b, 2026-09-21).** Ruling 8 of the doctor-retirement spec defers the
+  three D1 reads (`auth.store`, `auth.role-vocabulary`, `auth.email-normalization`), the
+  `--send-test` any-time re-run, and the `--probe` workers.dev exposure arm to 1.x, each because
+  it needs a Cloudflare or D1 credential the pre-adoption, credential-free `cairn doctor` v1.1.0
+  contract does not carry. Reopens on the tool gaining the credentialed read filed beside the
+  agent-permission check above, where the write-credential question is ruled. Ledger:
+  `docs/internal/engine-rulings.md`, `doctor-defer-d1-reads`, `doctor-defer-send-test-rerun`,
+  `doctor-defer-workers-dev-exposure`.
+
+- **Two registry entries stay unraised after the doctor retirement, filed for the docs rebuild
+  (doctor-retirement, retire-2b, 2026-09-21).** `config.tidy-key-missing` and
+  `admin.login-probe-failed` are no longer raised by any check (`config.tidy-key` and the
+  login-envelope probe are dropped, not ported), but `check:readiness` pins each to a
+  frozen-page heading in `is-it-working.md`, so neither registry entry is deleted. The docs
+  rebuild's admin-arm pass is where their removal (and the corresponding heading) belongs.
+  Ledger: `docs/internal/engine-rulings.md`, `doctor-drop-config-tidy-key`,
+  `doctor-drop-login-envelope-probe`.
+
+- **cairn-pub breaks twice at its next pin bump past the doctor retirement (doctor-retirement,
+  retire-2b, 2026-09-21).** Its hardcoded `/docs/reference/doctor` link
+  (`src/routes/(site)/docs/+page.svelte:67` in that repo) 404s once the engine's own
+  `docs/reference/doctor.md` is gone, and its `docs/STATUS.md` scripts `cairn-doctor` in gate
+  prose that no longer runs. This pass never edits another repo; both need a fix in cairn-pub's
+  own next pass, filed here since no engine record reaches that repo.
+
+- **Five small items retire-2a left, filed at retire-2b's close (2026-09-22).** Four came from
+  the friction log and the fifth from the close's own ROADMAP reconciliation. Each was verified
+  against the tree at filing.
+  - **No scaffolder test pins the install pointer.** `packages/create-cairn-site/src/scaffold.mjs`
+    prints the `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` literal and the
+    release-page URL beside its `cairn doctor` reminder, but `resume-chapter2.test.mjs` asserts
+    only the reminder's first sentence, so a wrong module path or URL ships green. Trigger: the
+    next pass touching the scaffolder's hand-over text.
+  - **`cairn-guidance`'s containment is a text-prefix check.** `readFileUnderCwd` in
+    `src/lib/guidance/bin.ts` compares `resolve(cwd, relPath)` against `cwd + sep` with no
+    realpath step, so a symlink inside the project can lead the read outside it. It predates the
+    retirement. `src/lib/media-seed/bin.ts`'s `realpathNearestAncestor` is the stronger pattern
+    to adopt. Trigger: the next pass touching `src/lib/guidance/`.
+  - **`is-it-working.md`'s symlink paragraph addresses a contributor.** The paragraph after the
+    transcript explains how this repo's own example site installs the engine, which a site
+    operator never meets. A register slip on a frozen page, for the docs rebuild's admin-arm pass,
+    beside the two unraised registry entries above.
+  - **Both lockfiles still map the retired bin.** `package-lock.json` and
+    `examples/showcase/package-lock.json` carry `"cairn-doctor": "dist/doctor/bin.js"`, because
+    regenerating either during retire-2a pulled in unrelated upstream drift. Trigger: the next
+    `dependency-upgrade` sweep, which regenerates both and clears it.
+  - **CI never runs `check:tool-heuristics`.** retire-2a added the gate
+    (`scripts/checks/check-tool-heuristics.mjs`) as the tripwire for the engine literals
+    `cairn doctor`'s heuristics grep for, but no workflow under `.github/workflows/` calls it, so
+    it fires only on a hand-run full gate. The fix is one `run:` line in `test.yml` beside
+    `check:tool-conditions`. Trigger: the next pass touching `test.yml`, or sooner, since a
+    tripwire nobody runs catches nothing.
+
 - **Go tool 1.1 items, filed at B2's close (2026-09-21).**
   - **A per-site hold.** `--ack` matches on check id alone, so holding one site's `email`
     silences real email failures on every other site in the registry. Filed from the owner's
@@ -1076,6 +1128,12 @@ the named human gates only):**
   - **Two release-job nits** the Task 23 review raised and did not block on: the verify step
     prints nothing on success (echo the archive name), and `install-check.sh` prints `--version`
     without asserting it.
+  - **`cairn doctor`'s PASS lines carry the failure title (filed at retire-2b's close,
+    2026-09-22).** `Format` in `tool/internal/doctor/report.go` keys each result line to its
+    condition's registry title, which names the failure, before its detail, so a passing check reads `PASS  Wrangler bindings are missing: EMAIL and
+    AUTH_DB are declared` (`packages/create-cairn-site/test/fixtures/transcripts/04-doctor-report.txt`,
+    captured from 1.1.0). A passing line wants the check's own neutral name. Needs a tool release,
+    and the capture and `is-it-working.md`'s transcript re-taken after it.
 
 - **The B2 architecture reads, what retire-1 left (2026-09-21, updated 2026-09-22).** One read per
   touched Go package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen
@@ -1135,9 +1193,6 @@ the named human gates only):**
   - **The doctor's `Result.ID` stamp is unobserved by any test.** `Run` stamps each result's id and
     nothing asserts it, so a wrong id would reach the JSON payload silently. **Trigger:** the next
     check added to `internal/doctor`.
-  - **The engine-side `check:tool-heuristics` tripwire belongs to retire-2**, not here. It pins the
-    four heuristics (`CairnAdminShell`, `.shellLoad`, `createAuthGuard`'s argument shape,
-    `checkOrigin: false`) against the engine sources retire-2a deletes the readers for.
 
 - **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
   2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact
@@ -1450,14 +1505,17 @@ the named human gates only):**
   `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`), with an edge Transform Rule injecting
   `Origin` for `/admin` POSTs as the planned fallback and upstream kit#15992 as the higher-leverage
   path. If kit has since shipped a clean disable, the pass is the sweep: `svelte.config.js` spelling
-  in showcase and template, the doctor's `checkOrigin: false` heuristic, the diagnostics copy,
+  in showcase and template, `cairn doctor`'s `config.csrf-disable` heuristic
+  (`tool/internal/doctor/check_csrf.go`, which needs a tool release), the diagnostics copy,
   `csrf.ts`, the docs, and an upgrade-guide entry with its `Consumers must:` line. If kit has not
   moved, the pass decides among the recorded options with the owner-noise cost now on the scale.
   The scheduled kit#15992 watch routine stays armed either way until the removal actually lands.
 
 - **An admin test-send, as engine work for its own pass (split out of T4b, 2026-08-12).** The
-  doctor half already ships (`email.sender-onboarded` plus `--send-test`), and chapter 2's own test
-  send proves the provisioning question at the moment it matters. The admin test-send answers a
+  preflight half is `cairn health`'s `email` check (`email.sender-not-onboarded`) plus the
+  scaffolder's first-run send: chapter 2's own test send proves the provisioning question at the
+  moment it matters. The any-time send re-run the retired npm doctor offered is deferred (ledger
+  `doctor-defer-send-test-rerun`). The admin test-send answers a
   different question: an editor reporting months later that no link arrived. It left the T4b pass
   because that pass carries a hard constraint that the runtime library stays untouched, and this is
   runtime work in the admin surface.
@@ -1496,7 +1554,7 @@ the named human gates only):**
 
   **It completes an arc rather than starting one**, and the sequencing follows from that: the
   ambient-defaults audit defines what a correct deployed site looks like, the scaffolder emits the
-  code, this provisions the infrastructure, and the AI-posture pass's `doctor/` probe verifies the
+  code, this provisions the infrastructure, and `cairn doctor`'s `ai.posture-effective` probe verifies the
   result. The audit is the input to the other three, so this runs after it and pairs with the
   scaffolder. P7, the zero-credential quickstart, is the same story from the developer's side.
 
@@ -1819,33 +1877,6 @@ the named human gates only):**
     the type-role scale untouched (its global constraints rule out changes to type roles), so the
     12px ruling stays unresolved. The ratchet evidence it fed now lives in
     `docs/extend/add-a-custom-admin-screen.md`'s grammar-ladder section.
-  - **`cairn-doctor`'s zone checks report a bare 403 on read the same way a genuinely wrong
-    zone setting reads, misleading an operator into changing a correct setting (severity raised
-    from DX/low, docs friction log, triaged 2026-08-14: reproduced on two live migrations, not
-    one).** `readZoneSetting` (`src/lib/doctor/checks-cloudflare.ts:67-76`, called by
-    `edgeHttpsForced`, its one remaining caller since `edgeHsts` retired with the `edge.hsts-off`
-    condition) still fails with a bare `` `${settingId} read returned
-    ${res.status}` `` and prints a fix that assumes the setting is off, while `emailSenderOnboarded`
-    and the D1 checks in the same file already route the identical status through
-    `permissionFail` (`:42-46`), which names the missing token scope instead. First found on the
-    `aksailingclub-org` `0.94.0-rc.1` migration (see [that
-    report](docs/internal/feedback/2026-08-05-aksailingclub-org-migration.md)): `http://` on both hosts
-    redirected to `https://`, verified with a plain `curl -I`, while the doctor run said Always
-    Use HTTPS had failed, both of that run's only two failures. **Second site, same 403**
-    (`cairn-pub`, see [that report](docs/internal/feedback/2026-08-05-cairn-pub-migration.md)): two of that
-    run's three failures were this same pair, on a different zone under the same operator
-    token, which is the altitude signal that 403 is the standard outcome rather than one site's
-    misconfigured token. It also cost real work downstream on that migration: `0.94.0-rc.1` asks
-    a consumer to check whether the zone sends `includeSubDomains` before deciding on
-    `createAuthGuard({ includeSubDomains })`, and the check that would answer that is one of the
-    two returning 403, so the answer had to come from reading live response headers by hand.
-    Candidate fix, with a precedent already in this repo's own tree: route `readZoneSetting`
-    through `permissionFail` the way the email and D1 checks already do (closes the
-    misdiagnosis), and separately, since the measurement the checks want is available with no
-    API permission at all (the redirect and the `Strict-Transport-Security` header are both
-    observable from an unauthenticated request, the same shape `ai.posture-effective` already
-    uses against a live `GET /robots.txt`), weigh falling back to that credential-free
-    observation on a 403 rather than only relabeling the failure.
 
 - **daisyUI pins every `.list-row` child to `grid-row-start: 1`, so overriding the container's
   grid alone does nothing (from the 2026-07-30 Assets-trial-build harvest, finding 5; the design
@@ -1915,8 +1946,9 @@ the named human gates only):**
 
 - **The `checkOrigin` pre-beta mitigation.** Adopt-now guidance rather than waiting on the upstream
   removal: document the edge Transform Rule that injects `Origin` on `/admin` POSTs in the deploy
-  guide, and add a `cairn-doctor --probe` assertion that an `Origin` header actually reaches
-  `/admin` on the live deployment, so a site that never applied the rule fails loud before an editor
+  guide, and add a `cairn health` live-site check (a candidate; the retired npm doctor's
+  `--probe` never shipped it) asserting that an `Origin` header actually reaches `/admin` on the
+  live deployment, so a site that never applied the rule fails loud before an editor
   hits it. The scheduled kit#15992 watch stays the tripwire for the eventual `checkOrigin` removal;
   this item is the mitigation a site can adopt now, scoped pre-beta, not a 2.0 driver. See the Later
   tracking item below for the removal itself.
@@ -1998,12 +2030,12 @@ the named human gates only):**
   an assertion to `scripts/checks/check-package-files.mjs` (already run by `check:package`) that every
   `dist/**/browser.js` the package emits is matched by at least one `sideEffects` glob, failing with the
   offending path. This is a watch converted into a gate, which is the form that cannot be forgotten.
-- **Extend `cairn-doctor`'s `config.dependency-floors` check beyond svelte and kit (filed by the
-  pre-beta C1 toolchain-matrix task, 2026-08-01).** `src/lib/doctor/check-floors.ts` reads a
-  consumer's `package-lock.json` and compares resolved versions against the engine's own
-  `peerDependencies`, but the loop only ever iterates `svelte` and `@sveltejs/kit`, the package's
-  only two peer entries. It is the only floor enforcement that reaches a real consumer site (CI
-  only proves the engine's own repo), and it currently covers two of the
+- **Extend `cairn doctor`'s `config.dependency-floors` check beyond the engine's peers (filed by
+  the pre-beta C1 toolchain-matrix task, 2026-08-01).** `tool/internal/doctor/check_floors.go`
+  reads a consumer's npm, pnpm, or yarn lockfile and compares resolved versions against the
+  installed engine's non-optional `peerDependencies`, today `svelte`, `@sveltejs/kit`, and
+  `@cloudflare/workers-types`. It is the only floor enforcement that reaches a real consumer site
+  (CI only proves the engine's own repo), and it covers only those rows of the
   [supported-toolchain matrix](docs/reference/supported-toolchain.md)'s rows. Extending it needs a
   source for each additional floor: `typescript`'s 5.0 floor has no `peerDependencies` entry to
   read (it would need a hardcoded constant, since the engine's own devDependency range does not
@@ -2127,11 +2159,13 @@ the named human gates only):**
   `docs/internal/api-surface.md` is already an exact, gate-enforced rendering of the whole public
   contract, precisely what an AI agent wants and cannot get from rendered docs. Ship it (or a JSON
   sibling) in the package or on the docs site; nearly free, and pairs with the filed `/llms` page.
-- **Pre-beta DX: make the diagnostic pair consumer-complete (Geoff, 2026-08-01).** `cairn-doctor`
-  covers config and `cairn-audit` covers the design layer; verify both run cleanly from a consumer
-  site (not only this repo), document them as the first two commands to run when something is
-  wrong, and have the scaffolder's agent brief tell the AI assistant to reach for them before
-  guessing.
+- **Pre-beta DX: make the diagnostic pair consumer-complete (Geoff, 2026-08-01).** `cairn doctor`
+  covers config and `cairn-audit` covers the design layer. The `cairn doctor` half has shipped:
+  it checks any named site directory with no credential, and `docs/admin/is-it-working.md` leads
+  with it. What remains: verify `cairn-audit` runs cleanly from a consumer site (not only this
+  repo), document the two as the first commands to run when something is wrong, and have the
+  scaffolder's agent brief (`claude/CLAUDE.md`, which names neither today) tell the AI assistant
+  to reach for them before guessing.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
   toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
   disk but history was never audited); an exposure review of `docs/internal/` beyond staleness
@@ -2201,8 +2235,9 @@ the named human gates only):**
   documented scope: it catches a broken PKCS#1-to-PKCS#8 conversion, and that is the failure it was
   built for. The gap is that the endpoint is named `healthz`, its top-level field is `ok`, and a
   site whose App installation has never carried its own repository answers `{"ok":true}` while
-  every save and publish 404s. `cairn-doctor` catches that case and `/healthz` does not, so the
-  cheap always-on check disagrees with the expensive occasional one. Candidate: a second check that
+  every save and publish 404s. No preflight catches that case now: the retired npm doctor's
+  `github.app` check did, and it was dropped rather than ported (ledger `doctor-drop-github-app`),
+  while `cairn health`'s `publish-path` check reads branches and runs no App-installation check. Candidate: a second check that
   mints an installation token and reads the configured repository, reported beside
   `githubAppSigning` rather than folded into it, since the two fail for unrelated reasons and an
   operator wants to know which. Weigh the added latency and the GitHub rate-limit cost against
@@ -2235,12 +2270,12 @@ the named human gates only):**
   showcase's own bundle-size assertion (`examples/showcase`'s e2e build step) is the tripwire that
   should surface it.
 
-- **A `cairn-doctor` check that the preview route is not prerenderable (filed 2026-08-06, preview
+- **A `cairn doctor` check that the preview route is not prerenderable (filed 2026-08-06, preview
   pass).** `loadPreview` itself throws a build-time error when a site lets `/preview/[token]`
-  prerender, but that only fires on a build the developer actually runs locally or in CI; a
-  doctor check would catch the same misconfiguration as a deploy-time preflight, the same
-  proactive shape as the doctor's other route-shape checks, rather than relying solely on the
-  in-engine backstop.
+  prerender, but that only fires on a build the developer actually runs locally or in CI. A
+  file-only `cairn doctor` check (a candidate, needing a tool release) would catch the same
+  misconfiguration as a preflight with a heuristic text read of the route files, the same shape
+  as `admin.mount-shape`, rather than relying solely on the in-engine backstop.
 
 - **An engine-level rate-limit seam for `loadPreview` (filed 2026-08-06, preview pass).**
   `loadPreview` currently calls no rate limit of its own; the guide's WAF-rule recommendation on
@@ -2344,15 +2379,17 @@ the named human gates only):**
   question stands for any other embedding host. Whether a component can be asked not to grab focus
   or global keys is still unanswered.
 
-- **`cairn-doctor` has no check for the one failure mode the Builds chapter was built around
-  (docs friction log, backfill mining, 2026-08-18).** The tool's own README documents that
+- **`cairn health` does not name the one failure mode the Builds chapter was built around (docs
+  friction log, backfill mining, 2026-08-18).** The scaffolder's own README documents that
   revoking or rolling the build token breaks push-to-deploy silently, and says plainly that this
   is not hypothetical because a production cairn site was found in exactly that state (STATUS
-  hand step tracked 907-life's deploys as broken since 2026-07-14). None of the doctor's
-  twenty-one checks reads Builds or build-token health, although the analogous email silent
-  failure already got `email.sender-onboarded`. A scheduled routine is the tripwire that would
-  actually catch this in production, not a dashboard an admin has to remember to open; the doctor
-  check is still worth adding so a local run can also surface it.
+  hand step tracked 907-life's deploys as broken since 2026-07-14). `cairn health`'s `deploy`
+  check (`tool/internal/health/check_deploy.go`) covers part of it: a failed last build reports
+  `deploy.build-failed`. It reads no build-token state, though, and a default branch ahead of the
+  last successful build is only a `behind` field on an OK verdict, so a token failure that stops
+  builds from running reads green. Candidate: have the `deploy` check report `behind` as a
+  warning past a window, or read the token's state directly. A scheduled routine is the tripwire
+  that would actually catch this in production, not a dashboard an admin has to remember to open.
 
 - **The bootstrap sign-in hand-copies the engine's token contract, and its test is a closed loop
   (docs friction log, backfill mining, 2026-08-18).**
@@ -2754,7 +2791,8 @@ the named human gates only):**
   flag on `AssetConfig` (default `false`); nothing in the engine verifies it matches whether
   Cloudflare Image Transformations are actually enabled on the zone, so a site that flips the flag
   without enabling the feature (or vice versa) gets silently wrong image URLs instead of a build-time
-  or doctor-time signal. `cairn-doctor` could corroborate the declared flag against a live probe.
+  or preflight signal. A `cairn health` check (a candidate) could corroborate the declared flag
+  against a live probe of the zone.
 - **Frontmatter field `description` channel.** Schema-authored per-field help rendered under the input,
   so the Details panel stops showing fields with no hint. Dovetails with the Contract v2 field work.
 - **Nested-image delivery: seo and needs-alt.** Allow `seo: true` on an image inside a top-level `object`
@@ -2795,9 +2833,11 @@ the named human gates only):**
   `rendering.icons`, but the `fieldset` validator only enforces required and non-empty (3c decision 1); it does
   not check the name against the set (the directive icon is not set-validated today either). A build-time check
   that a frontmatter or attribute icon name resolves in the declared set would catch a typo before delivery.
-- **Empty-icon-set is a doctor-detectable config error.** A required `fields.icon()` field declared while the
-  adapter ships no `rendering.icons` renders an unsavable picker with zero choices (3c A7). `cairn-doctor`
-  could detect this configuration mismatch and report it rather than leaving the editor stuck at runtime.
+- **Empty-icon-set is a build-detectable config error.** A required `fields.icon()` field declared while the
+  adapter ships no `rendering.icons` renders an unsavable picker with zero choices (3c A7). Detecting it
+  needs the evaluated adapter, which `cairn doctor` never loads, so the home is a build-time engine check
+  beside the plugin's `site-facts.json` verification, reporting the mismatch rather than leaving the editor
+  stuck at runtime.
 - **Editor-help later slices.** The screen-contextual slide-over, a route- and concept-keyed help-content
   registry, and a standing Help home with a labeled launcher. The foundation shipped in `0.61.0`-`0.62.1`.
 - **Per-field advisory seam plus live slug recompute.** An editor-side advisory-validation surface, and a

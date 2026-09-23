@@ -43,11 +43,12 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - On a site with only owner/editor roles, the per-row control reads "Make owner" or "Make editor"; a site with custom roles shows a dropdown and "Change" instead. Source: `src/lib/components/ManageEditors.svelte:40-44,118-143` (`isDefaultVocabulary` gates the toggle-button branch vs. the `<select>` + "Change" branch). [verified]
 
 ## docs/admin/is-it-working.md
-- Condition id `auth.csrf-token-invalid` (blocker): the site's own guard refuses a request whose CSRF token is missing or mismatched; logged as `guard.refused` with `reason: csrf`; `cairn-doctor` never reports this by name. Source: `src/lib/sveltekit/guard.ts:281`, `src/lib/sveltekit/condition-response.ts:16`. [verified]
-- Condition id `auth.csrf-origin-mismatch` (blocker): the guard refuses a request whose `Origin` header doesn't match the site, logged as `guard.refused` with `reason: origin`; `cairn-doctor` never reports this by name. Source: `src/lib/sveltekit/guard.ts:206`, `src/lib/sveltekit/condition-response.ts:17`. [verified]
+- Condition id `auth.csrf-token-invalid` (blocker): the site's own guard refuses a request whose CSRF token is missing or mismatched; logged as `guard.refused` with `reason: csrf`; `cairn doctor` never reports this by name. Source: `src/lib/sveltekit/guard.ts:281`, `src/lib/sveltekit/condition-response.ts:16`. [verified]
+- Condition id `auth.csrf-origin-mismatch` (blocker): the guard refuses a request whose `Origin` header doesn't match the site, logged as `guard.refused` with `reason: origin`; `cairn doctor` never reports this by name. Source: `src/lib/sveltekit/guard.ts:206`, `src/lib/sveltekit/condition-response.ts:17`. [verified]
 - Condition id `auth.identity-unresolved` (blocker): only reachable on a site configured with `identity` on the guard (replacing magic-link sign-in); the identity gate refused or threw, logged as `guard.refused` with `reason: identity`. Source: `src/lib/sveltekit/condition-response.ts:19`, `src/lib/diagnostics/conditions.ts:220-221`. [verified]
 - Condition id `auth.identity-unknown` (warning): the identity gate confirmed the requester, but their email isn't on cairn's editor roster; logged as `auth.identity.unknown`. Source: `src/lib/sveltekit/condition-response.ts:28`, `src/lib/diagnostics/conditions.ts:229-230`. [verified]
-- Condition id `auth.store-unmigrated` (blocker): `AUTH_DB` is missing `migrations/0004_login_nonce.sql`, the column sign-in links bind to; `cairn-doctor`'s `Auth store (D1)` check catches this pre-deploy, and post-deploy the site surfaces the condition itself on first sign-in attempt. Source: `src/lib/auth/store.ts:27`, `src/lib/diagnostics/conditions.ts:151-152`. [verified]
+- Condition id `auth.store-unmigrated` (blocker): `AUTH_DB` is missing `migrations/0004_login_nonce.sql`, the column sign-in links bind to; `cairn doctor` runs no D1 check, so no command catches this pre-deploy, and the site surfaces the condition itself only on the first sign-in attempt post-deploy. Source: `src/lib/auth/store.ts:27`, `src/lib/diagnostics/conditions.ts:151-152`; `docs/admin/is-it-working.md` "Provision the auth store" section ("No command checks `auth.store-unreachable`, `auth.store-unmigrated`... until a later 1.x release of the `cairn` CLI"). [verified]
+- The npm package's `cairn-doctor` bin and its `src/lib/doctor` directory left the engine in the doctor retirement pass; the replacement is `cairn doctor`, a subcommand of the separately-installed `cairn` operator CLI, running eleven checks against a directory's checked-in configuration with no credential. Source: `package.json`'s `bin` field (keys `cairn-manifest`, `cairn-media-seed`, `cairn-audit`, `cairn-guidance` only, no doctor key); `git ls-tree HEAD src/lib/doctor` (empty); `docs/reference/cli-cairn-doctor.md`. [verified]
 - The auth schema migrations are `migrations/0000_auth.sql` (creates the sign-in tables) and `migrations/0004_login_nonce.sql` (adds the sign-in-link binding column). Source: `migrations/0000_auth.sql`, `migrations/0004_login_nonce.sql` (also present in `templates/waymark/migrations/`). [verified]
 - The dependency-floor check example in the page (`@sveltejs/kit 2.70.2`, `svelte 5.56.9`) is from an earlier engine release; current floors are newer (`svelte ^5.56.10`). Source: `package.json:197-198` (`"@sveltejs/kit": "^2.70", "svelte": "^5.56.10"`). [verified]
 - `wrangler d1 migrations apply <db> --remote` is the command to apply pending D1 migrations. Source: standard wrangler CLI usage referenced by `migrations/` directory structure. [vendor: link, not a repo fact]
@@ -106,6 +107,7 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
 - The alert threshold is the operator's choice, and the exit codes are what express it: page on exit 2 and above, notify on any non-zero. Source: `tool/docs/tripwire.md` ("Credentials: a scheduler starts with no shell profile" and the three scheduler examples), `docs/reference/cli-cairn-exit-codes.md`. [verified]
 - A scheduler launches a job directly and sources no shell profile, so a credential exported only from `~/.bashrc` is invisible to the scheduled run even though an interactive `cairn` works. The three documented routes are an environment file the scheduler reads, a wrapper that sources an existing store, or the OS keyring. Source: `tool/docs/tripwire.md`. [verified]
 - A run cairn's own timeout did not bound exits however the scheduler's kill left it, never one of cairn's four codes, so a scheduler's own cap belongs above `--timeout`. Source: `tool/docs/tripwire.md` (the `TimeoutStartSec` comment in the systemd example), `docs/reference/cli-cairn-exit-codes.md`. [verified]
+- The page's "Dependency floors FAIL from `cairn doctor`" trigger is the `config.dependency-floors` check, condition id `config.dependency-floors-unmet`, a blocker, raised when the lockfile resolves `svelte` or `@sveltejs/kit` below the engine's declared peer range. Source: `docs/reference/cli-cairn-doctor.md` (checks table, `config.dependency-floors` row) and `src/lib/diagnostics/conditions.ts:130-137` (`'config.dependency-floors-unmet'`: `severity: 'blocker'`, `why: 'The lockfile resolves svelte or @sveltejs/kit below the range the engine declares as a peer...'`). [verified]
 
 ## Harvest record
 - Pages whose facts are entirely covered by another page: none outright duplicated end-to-end; `what-to-run-and-when.md`'s dependency-floor and GitHub-key-rotation facts are subsets already stated more fully in `is-it-working.md` and `before-you-start.md`, but the page adds its own framing (the target-stack table) not present elsewhere, so it is not fully subsumed.
@@ -127,13 +129,19 @@ fact carries a source. Format: one bullet per fact, then `Source:` then a status
   tightening pass found 86 fact bullets across the eight pages).
 - As harvested: Verified: 61. Docs-drift: 1. Candidate: 24.
 - Facts-container HEAD repair 2026-09-22: 24 bullets sourced to the now-removed legacy JS doctor
-  package (the `npx cairn-doctor` condition-id list under is-it-working.md, and its two
+  package (the condition-id list its retired bin printed under is-it-working.md, and its two
   restatements under troubleshooting.md and what-to-run-and-when.md) deleted, since the `cairn
   doctor` Go command's own condition list is a different, code-verified surface the tool harvest
   and `docs/internal/facts/reference.md`'s `docs/reference/cli-cairn-doctor.md` section already
   cover. 2 bullets (`email.sender-not-onboarded`, `auth.unknown-role`) re-sourced from the removed
   package to `src/lib/diagnostics/conditions.ts`, the condition registry both the old and new
   doctor read. Total facts after repair: 84.
+- retire-2b repair 2026-09-22: 3 bullets corrected (the two `auth.csrf-token-invalid`/
+  `auth.csrf-origin-mismatch` bullets renamed from the npm bin's `cairn-doctor` wording to
+  `cairn doctor`; the `auth.store-unmigrated` bullet corrected to say no command catches it
+  pre-deploy, since `cairn doctor` runs no D1 check). 2 bullets added (the bin-and-directory
+  removal; the `cairn doctor` replacement for the `Dependency floors` check under
+  what-to-run-and-when.md). Total facts after repair: 86.
 
 ## Provenance
 

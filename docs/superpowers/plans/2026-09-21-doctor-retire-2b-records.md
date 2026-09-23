@@ -615,3 +615,60 @@ Written at pass end by the fold agent. Both budget scores: tokens against the 1.
 (`/cost`), and attended time as two counts (planning misses, execution sittings). Add the split's
 own score: 2a's spend plus this pass's, against the undivided pass's 3.2M ceiling. Record the
 numbers even when they look bad; the trend is the signal.
+
+Written by the fold agent at the close (2026-09-22).
+
+**Token budget.** Subagent spend through Segment A is about 2.2M if each reported figure is
+incremental, or about 1.2M if a resumed agent's figure is cumulative; the reports cannot tell the
+two apart. Either reading tripped the 800K flag at the Segment A boundary. Geoff raised the
+ceiling to about 3.1M there and added the ROADMAP sweep to the close. The close's own fold and
+its `diff-reviewer` read land on top, and the conductor adds that figure after the merge. Against
+the original 1.0M ceiling, Segment A alone ran 120 to 220 percent.
+
+**The split's score.** retire-2a finished at about 3.2M against its 2.6M ceiling (its
+post-mortem). 2a plus 2b through Segment A is therefore about 4.4M to 5.4M before the close,
+against the undivided pass's 3.2M: 138 to 169 percent. **The split did not come in under the
+undivided ceiling.** It earned its task-count case (nine tasks became seven plus four, each under
+the eight-task guideline, and each half ended on a gate-green commit), but it lost on tokens. The
+undivided 3.2M, judged to carry no slack, was an underestimate, and splitting added a second close
+and a second pre-flight rather than saving either. The sizing rule's evidence here: splitting a
+pass does not shrink its token cost, and a split's two ceilings should sum to more than the
+undivided figure, not re-divide it.
+
+**Attended time.** Zero planning misses, two execution sittings.
+
+- Execution sitting 1: two status questions Geoff asked mid-pass, answered in one pull-in.
+- Execution sitting 2: one combined budget question at the Segment A boundary, which Geoff
+  answered by raising the ceiling to about 3.1M and adding the ROADMAP sweep.
+- No planning miss surfaced as an ambiguity after approval. One plan defect a pre-flight would
+  have caught: the zero-hit grep criteria in Tasks 1 and 2 conflicted with the plan's own removal
+  and reword requirements, since a record that must name the retired command as history cannot
+  also grep clean for it. The implementers and reviewers read the criteria as "returns only these
+  lines", which is how such a criterion should be written.
+
+**Conductor decisions.**
+
+- Task 2 ran a third round after a second `fix` verdict, on the conductor's call. One of the four
+  findings in the rounds was the reviewer's own round-one error; the third round checked the
+  carry-over claim against history at `8d042158^`.
+- Task 1's scope extension to `docs/extend/migration-notes.md` was accepted.
+- The plan's reviewer model string `claude-opus-5` is invalid for the Agent tool, which accepts
+  `opus`; the conductor dispatched with `opus`.
+
+**What was built.** The `## Unreleased` window carries one removal entry with its `Consumers
+must:` line; the ledger has its retirement entries and amendments by name, with the `Shape:` count
+rising from 87 to 91; the facts container records the removal. ROADMAP no longer names the retired
+npm doctor as the actor of any proposal. `docs/STATUS.md` reads present tense at 56 lines, with
+the checkpoint moved to `docs/HISTORY.md`.
+
+**What the close did beyond the plan's list.**
+
+- The carried polish reached two more tool contract pages (`cli-cairn-json-output.md`,
+  `cli-cairn-exit-codes.md`) that named 1.0.1 as current, the same defect as the one the reviewer
+  flagged on `cli-cairn-doctor.md`.
+- The ROADMAP reconciliation removed the shipped `check:tool-heuristics` sub-bullet and found that
+  no CI workflow runs that gate, filed to Next.
+- The `tool/v1.1.0` release detail, which lived only in STATUS, moved to its own HISTORY entry.
+
+**Blockers.** None at the fold. The post-merge re-gate result is recorded in the fold's report to
+the conductor, and the unblock line is the conductor's to write after the merge.

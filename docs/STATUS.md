@@ -6,34 +6,32 @@ Present tense only; past tense lives in [`docs/HISTORY.md`](HISTORY.md), durable
 ## Current state
 
 Published: **`0.96.0`** on npm `latest`. `main` carries every pass through the Go tool's B2 (PR
-#71), the doctor-retirement pre-task, retire-1, and draft docs pass A, unpublished under
-`## Unreleased`; the window holds for one cut and includes the tool's 1.0 (`tool/v1.0.0`,
+#71), the doctor-retirement pre-task, retire-1, draft docs pass A, and retire-2a, unpublished
+under `## Unreleased`; the window holds for one cut and includes the tool's 1.0 (`tool/v1.0.0`,
 `tool/v1.0.1`, commit `9b479e8d`). Held majors: `devalue` 6, TypeScript 7, Vitest 5. CI is green.
 
-**The doctor retirement is code-complete**: the Go half shipped as `tool/v1.1.0`, the engine half
-merged as `688aba41`; retire-2b records it. **Draft docs pass A is merged**, the tool's contract pages and
-schemas now shipping inside the npm tarball; cairn.pub's own debt is
-[this handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), un-pinnable against the
-registry since `0.95.0` on `pass-d-docs-tracks`. Live contracts from the pre-task:
-`tool/internal/{spine/conditions,doctor/site-config-path}.json` under `check:tool-conditions`,
-and `.cairn/site-facts.json`, written by `cairn-manifest`, verified in the plugin's `buildStart`.
+**The doctor retirement is code-complete**: the Go half ships as `tool/v1.1.0`, and the engine
+half is on `main` as retire-2a's merge `688aba41` (`src/lib/doctor` and the `cairn-doctor` bin are
+gone; the media-seed bin stands alone under `src/lib/media-seed/`). **The records pass, retire-2b,
+is on `doctor-records`, awaiting its PR merge**: the `## Unreleased` removal entry and its
+`Consumers must:` line, the ledger entries, the facts bullets, and the ROADMAP sweep. Plan and
+post-mortem: `docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`.
+
+cairn.pub's own docs debt is [this handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md),
+un-pinnable against the registry since `0.95.0` on `pass-d-docs-tracks`. Live contracts from the
+pre-task: `tool/internal/{spine/conditions,doctor/site-config-path}.json` under
+`check:tool-conditions`, and `.cairn/site-facts.json`, written by `cairn-manifest`, verified in the
+plugin's `buildStart`.
 
 ## Immediate next action
 
-**`tool/v1.1.0` is tagged and released** (tag object `6dcfdf22` on merge commit `59b920f1`, PR #82;
-release run `35754462389` green on all three legs, six archives plus `SHA256SUMS`, attestation
-verified, `make -C tool install-check VERSION=v1.1.0` green in both containers). The URL fork
-ruled on 2026-09-22 by the conductor under Geoff's delegation: 1.1.0 prints the cairn.pub URLs
-exactly as 1.0.1 does; the 404s are cairn.pub's debt, recorded in
-[the pass A handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), and no tool patch
-follows. **The engine's doctor is removed on `main`** (retire-2a, PR #83, merge `688aba41`, CI green on that SHA; `src/lib/doctor` and the `cairn-doctor` bin are gone, the media-seed bin stands alone under `src/lib/media-seed/`), and **the records pass, retire-2b, is pending**: plan `docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`, on its own branch and worktree off `main`, conducted by a fresh `claude-opus-5-5` session. Its inputs from 2a's post-mortem: five friction items (the install-literal test gap, the tool's PASS-titled-with-failure render, the contributor-register paragraphs on `is-it-working.md`, `guidance/bin.ts`'s realpath-less containment, and both lockfiles' stale `cairn-doctor` bin mapping, cleared by the next `dependency-upgrade` sweep), the changelog entry, the ledger entries, and the STATUS-to-HISTORY migration. Only 2b's close writes the unblock line.
+Merge `doctor-records` by PR on green CI, then write the unblock line here.
 
-**The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0 (DONE, with
-the pre-task behind it); retire-1 (DONE); draft docs pass A (DONE); one `tool/v1.1.0` tagged from a
-commit carrying retire-1 and pass A (DONE); the engine removal, retire-2a then retire-2b. Each close
-writes only its own line, and **ONLY retire-2b's close, the last, releases `0.97.0`**; a cut
-session finding no such line does not cut. Retire-2a owns two carry-forwards: `site-facts.md:36`
-links the deleted `doctor.md`, and `doctor.md:79-86`/`facts/reference.md` share `config.bindings-missing`.
+**The `0.97.0` cut HOLDS on five steps, in order (Geoff, 2026-09-21):** the tool's 1.0, retire-1,
+draft docs pass A, and `tool/v1.1.0` are DONE; the engine removal, retire-2a then retire-2b, is
+DONE for 2a and awaiting merge for 2b. **ONLY retire-2b's close releases `0.97.0`**, through the
+unblock line naming `tool/v1.1.0`, `688aba41`, and retire-2b's merge SHA; a cut session finding
+no such line does not cut.
 
 ## Open decisions and watches
 
@@ -48,11 +46,11 @@ links the deleted `doctor.md`, and `doctor.md:79-86`/`facts/reference.md` share 
   double-mint residual; the discriminator names any genuinely new one. Three ASC staging harvest
   docs are folded into cairn, deletable once `email-announce` settles; the heavy gate runs the
   component project serially (`--no-file-parallelism`).
+- Both lockfiles still map the retired `cairn-doctor` bin; the next `dependency-upgrade` sweep
+  clears it (ROADMAP, Next).
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` (the first pass under the phase-split
-conducting rule; effort `medium`), execute retire-2b
-(`docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`) on a `doctor-records` worktree off
-`main` at `688aba41` or later, through the `cairn-pass` skill. Its close writes the `0.97.0` unblock
-line; cut `0.97.0` last, through `cairn-release`. `ROADMAP.md` sequences what follows.
+In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), confirm the
+unblock line above names `tool/v1.1.0`, `688aba41`, and retire-2b's merge SHA, then cut `0.97.0`
+through `cairn-release`. `ROADMAP.md` sequences what follows.

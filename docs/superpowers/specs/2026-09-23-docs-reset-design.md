@@ -1,17 +1,17 @@
 # The docs reset: design
 
-**Date:** 2026-09-23. **Status:** revision 2, after a three-reviewer adversarial read; for Geoff's
+**Date:** 2026-09-23. **Status:** revision 3, after three adversarial reviews of revision 1 and one of revision 2; for Geoff's
 review. **Owner rulings:** Geoff, 2026-09-22 and 2026-09-23. **Inputs:** banked at
 [`docs/internal/record/2026-09-23-docs-reset-inputs/`](../../internal/record/2026-09-23-docs-reset-inputs/):
-four current-state inventories, two research reports, and three reviews of revision 1
-(`review-methodologies.md`, `review-repo-reality.md`, `review-project-prior-art.md`).
+four current-state inventories, two research reports, three reviews of revision 1, and one of revision 2
+(`review-methodologies.md`, `review-repo-reality.md`, `review-project-prior-art.md`, `review-rev2.md`).
 
 cairn's docs are reset from scratch, and the only thing that survives from the current pages is
 their verified facts. Claude Code drafts the new docs, so this initiative builds the writing system
 first and the outline second. Pass 1 starts from real failures: it runs reader agents against
 today's pages, records what breaks, and builds only the machinery those failures justify, ending
 with a validated system. Pass 2a, in a fresh session, writes the audience record and runs a
-calibration trial on what the chain actually needs. Pass 2b builds a scripted jobs ledger, runs a
+calibration trial on what the chain actually needs, with a researched exemplar corpus as the drafters' primary input. Pass 2b builds a scripted jobs ledger, runs a
 structure bake-off, and writes the outline at slot level. There are three owner stops. Nothing here
 touches the `0.97.0` cut.
 
@@ -50,25 +50,42 @@ cost about 900K tokens a page over three rounds, and the pass spent 6.1M against
 7. **Spend on the system, not the pages (2026-09-23).** The grant buys evidence quality, not scope.
 8. **Build, then test fresh (2026-09-23).**
 9. **Readers run confined, on the plan (2026-09-23, verified by probe).** A reader is a headless
-   `claude -p --safe-mode --restricted` process started in a prepared directory, with `--tools`
-   naming the tools its class allows, `--allowedTools` scoping Bash to named commands, and
-   `--permission-prompts none`. `--restricted` confines the file tools to the working directory;
-   `--safe-mode` drops every `CLAUDE.md`, skill, hook, and plugin; authentication is the owner's
-   plan login, not an API key. A probe on Claude Code 2.1.280 confirmed each property, with the one
-   leak being a directory path containing the project's name.
-10. **The operator reader uses real read-only access (2026-09-23).** Read-only `cairn` commands run
-    against a real scratch site with read-scoped tokens; a state-changing command is checked as a
-    dry run against the command tree. No `tool/` change for testing's sake.
+   `claude -p --safe-mode --restricted --strict-mcp-config` process, with `--tools` naming the tools
+   its class allows, `--allowedTools` scoping Bash to named commands, `--disallowedTools
+   WebFetch,WebSearch`, `--permission-prompts none`, no `--add-dir`, and a fresh directory per run.
+   `--restricted` confines the file tools to the working directory; `--safe-mode` drops `CLAUDE.md`,
+   skills, hooks, and installed plugins; authentication is the owner's plan login, not an API key.
+   A probe on Claude Code 2.1.280 confirmed each property. Because `--restricted` does not confine a
+   process Bash starts (a build can read any path), every reader runs inside a podman container
+   that mounts only its prepared directory and a copy of the plan credentials, with a minimal
+   environment (`env -i` plus what the class needs) and no D-Bus or keyring. The runner reads the
+   `stream-json` init event and fails a run whose tools, MCP servers, or memory differ from the
+   class's declaration. The accepted residual leak: a reader with `npm` could fetch cairn's
+   published package metadata; the runner's transcript scan flags any such fetch.
+10. **The operator reader uses real read-only access (2026-09-23).** A scratch site
+    (`glw907/cairn-scratch-b`, Worker `cairn-scratch-b`, the pass B plan's design) with tokens
+    scoped to it alone. Bash is allowlisted to read-only subcommands of `cairn` `tool/v1.1.0`
+    (`sites list`, `health`, `logs` on the scratch site, `doctor` on the reader's own directory,
+    `auth list`, `auth check`), with a reader-local `CAIRN_STATE_DIR`. A state-changing command is
+    checked as a dry run against the command tree. No `tool/` change for testing's sake.
 11. **The outline is complete at slot level; contracts are written per pass (2026-09-23).**
 12. **The trial tests chain depth, not brief style (2026-09-23).** The research settles persona
     against operational briefs: operational briefs, exemplars over personas.
+13. **Exemplars are a researched, approved input (2026-09-23).** Captured exemplar pages live
+    locally at `~/.local/share/cairn/exemplars/`, outside the repository, so every worktree and
+    reader directory copies from one place and the trial reads a fixed snapshot. The repository
+    keeps only the manifest.
+14. **The design spend stands (2026-09-23).** The methodology review judged 28M of design-stage
+    spend ahead of published practice; ruling 7 accepts that, since every later page inherits the
+    system.
 
 ## Evidence the method follows
 
 From the two research reports and the three reviews:
 
-- A reader that must act is the primary test. A grader is kept for register and tone, fed the Vale
-  and `tellgrader` output so it filters rather than rediscovers, and given an omission checklist.
+- A reader that must act is the primary test. The one grader kept is the register editor, for
+  register and tone, fed the Vale and `tellgrader` output so it filters rather than rediscovers,
+  and given an omission checklist (pass 1 item 6 builds both). The profile grader goes.
 - Whatever a script can check is checked by script: procedures run literally, code-declared
   surfaces are enumerated, anchors are gated. Agents are reserved for judgment (the prior-art
   review's ten cases all converge here).
@@ -114,39 +131,56 @@ From the two research reports and the three reviews:
 A cairn-cms branch `docs-reset-system` plus a dotfiles commit series for workstation artifacts
 (under `~/.claude/docs/claude-tooling.md`'s rules, `claude-tooling-sync verify` green).
 
-1. **The reader runner.** Prepares a reader directory under a neutral path (never one naming the
-   project), copies in what the reader's class allows, starts the headless process of ruling 9,
-   collects the fixed report, verifies its quotes, totals the reported usage into a budget line of
-   its own, and tears the directory down. **Acceptance:** a reader asked to open a known repository
-   path by file tool and by Bash fails both; a reader's context carries no workstation or project
-   instruction file.
+0. **Prerequisite: the scratch site.** Claude provisions `cairn-scratch-b` (repository, Worker, D1)
+   by API and mints Cloudflare tokens scoped to it; a GitHub fine-grained token scoped to the one
+   repository is minted in one short owner sitting if no API path exists, stored through
+   `secret-set.sh`. The site is torn down at pass 2a's close.
+1. **The reader runner,** a standalone Node script outside the Workflow tool (a Workflow step can
+   only call `agent()`, and an agent's Bash caps at ten minutes). The conductor launches it in the
+   background between chain stages; it runs a batch of readers in parallel, each in the podman
+   container of ruling 9, prepared under a neutral path from the class's contents, with the
+   installed package's `docs/`, `claude/`, and `skills/` directories stripped. It verifies each
+   report's quotes, checks the init event, totals reported usage into a budget ledger of its own,
+   and tears every container down. **Acceptance:** a reader fails to open a known repository path
+   by file tool, by Bash, and through an `npm` build script; a web tool call is refused; the init
+   event shows no instruction file, skill, or MCP server.
 2. **Four reader classes:**
 
-   | Class | Contents | Audiences |
-   | --- | --- | --- |
-   | Docs only | the docs set | evaluator, editor |
-   | Docs and binary | the docs set, the released `cairn` binary, read-scoped scratch-site tokens; Bash allowed only for `cairn` | site operator |
-   | Docs and site | the docs set and a scaffolded site with the engine installed from a packed tarball, never engine source | site designer, admin extender |
-   | Repository | a clean cairn-cms checkout | core developer |
+   | Class | Contents | Tools | Audiences |
+   | --- | --- | --- | --- |
+   | Docs only | the docs set | Read, Grep, Glob | evaluator, editor |
+   | Docs and binary | the docs set, `cairn` `tool/v1.1.0`, scratch-site tokens | Read, Grep, Glob, Bash (ruling 10's subcommands) | site operator |
+   | Docs and site | the docs set and a scaffolded site with the engine installed from a packed tarball | Read, Write, Edit, Grep, Glob, Bash (`npm run` scripts named per job) | site designer, admin extender |
+   | Repository | a clean cairn-cms checkout | all file tools, Bash (`npm run check*`, `npm test`, `make -C tool check`) | core developer |
 
-   Every reader returns: job outcome, each stall, each term or step it had to assume, a quote per
-   page read, and the deterministic check's result where one exists.
+   A reader is given a job phrased as a real task and an arrival state; before pass 2a's profiles
+   exist, it gets one neutral sentence describing its class's reader. Every reader returns: job
+   outcome, each stall, each term or step it had to assume, a quote per page read, and the
+   deterministic check's result where one exists.
 3. **The baseline run.** Before any other component, readers attempt real jobs on today's pages
    through today's chain: an operator job on `docs/admin/is-it-working.md`, a designer job on
    `docs/extend/design-your-site.md`, an extender job on `docs/extend/add-a-custom-admin-screen.md`,
-   a core-developer job on `CONTRIBUTING.md`, and the scripter job on pass A's two contract pages
-   at their pre-fix commits, whose 15 defects are known. The failure record names what each
-   component below must fix; a component with no failure behind it is dropped or deferred, and the
-   record says which.
-4. **Facts ids and provenance.** Every container bullet gains a content-derived id that is not a
-   bracket form, collision-free across parallel worktrees, created wherever a bullet is filed (the
-   id rule lands in `check:facts`, the facts README, and every agent definition that files facts).
-   The roughly 180 bullets sourced only to an old page are traced to code, rejected, or marked excluded; a
-   drafted sentence citing an excluded or candidate id fails. `check:provenance` is built to the
-   docs-standard design, and each page's brief, with its `sentences` list, is committed as the
-   page-to-claim map. `check:facts` gains a reverse mode listing the pages whose briefs cite a
-   changed bullet. Symbol-anchored sources (resolved by the TypeScript compiler for `src/` and a Go
-   resolver for `tool/`) are built if the baseline shows line-window rot; otherwise filed.
+   a core-developer job on `CONTRIBUTING.md`, and the scripter job on pass A's three contract pages
+   at their pre-fix commits (`3bfaac37`, `3453668f`, `29a03eff`), whose 14 page defects are known
+   (the fifteenth finding was the parser's own error). A script also measures line-window rot:
+   the share of container pointers whose anchor no longer sits within the window. The failure
+   record names what each component below must fix; a component with no failure behind it is
+   dropped or deferred, and the record says which.
+4. **Facts ids and provenance.** Every container bullet gains an opaque id, minted once, never
+   derived from its content, stable across edits, not a bracket form, and collision-free across
+   parallel worktrees (a random short id checked unique by `check:facts`). The id rule lands where
+   bullets are filed: `check:facts`, the facts README, and every agent definition that files facts.
+   The container is the docs-standard design's ledger: its `owner` tier is the bullets sourced to an
+   owner brief, and `check:provenance` gets that design's extractor (numerals, versions, paths,
+   commands, flags, export and config names). Of the 179 `[candidate]` bullets, the 134 sourced
+   only to an old page are traced to code, rejected, or marked excluded, and a drafted sentence
+   citing an excluded or candidate id fails; `[external]` and `[vendor-figure]` bullets stay
+   citable; `[docs-drift]` bullets are resolved before a page citing them drafts. Each page's brief,
+   with its `sentences` list, is committed at `docs/internal/briefs/<track>/<page>.json` (outside
+   the tarball) as the page-to-claim map. `check:facts` gains a reverse mode listing the pages
+   whose briefs cite a changed bullet. Symbol-anchored sources (the TypeScript compiler for `src/`,
+   a Go resolver for `tool/`) are built if the baseline's rot measure exceeds ten percent;
+   otherwise filed.
 5. **The drafter agent.** Tools: Read, Write, Edit, Grep, Glob, Bash (for gates). Model
    `claude-opus-5-5` at `high`. Preloads the audience-profile skill through `skills:`; the skill
    defines the profile-file format (one-sentence persona, vocabulary contract, knowledge and tool
@@ -155,17 +189,21 @@ A cairn-cms branch `docs-reset-system` plus a dotfiles commit series for worksta
 6. **The revised page chain** (`docs-page-chain.js`). Kept: every existing gate (`check:vale`,
    `check:docs`, `check:reference`, `check:facts`, the figure path, and the rest the draft-docs spec
    lists), the register editor, and the fact read. Changed: the drafter writes the brief's
-   `sentences` list and `check:provenance` runs; the register editor reports every finding, and a
-   separate Opus 5.5 filter drops only findings that contradict the register or the brief; after
-   each redraft, an Opus 5.5 applied-findings check returns applied or not per finding; the reader
-   test runs in the profile grader's place; source material is wrapped as content; a text-only turn
-   end is a report; the two-round cap holds. Which stages survive is pass 2a's trial's decision.
+   `sentences` list and `check:provenance` runs; the register editor receives the Vale and
+   `tellgrader` output and an omission checklist, reports every finding, and a separate Opus 5.5
+   filter drops only findings that contradict the register or the brief; after each redraft, an
+   Opus 5.5 applied-findings check returns applied or not per finding; the profile grader is
+   removed and the reader stage takes its place, run by the reader runner between two workflow
+   stages (draft, gates, and reads; then redraft); source material is wrapped as content; a
+   text-only turn end is a report; the two-round cap holds. Which stages survive is pass 2a's
+   trial's decision.
 7. **Docs-as-tests.** Opens with a Doc Detective spike and a recorded build-or-adopt decision. The
    minimum either way: every shell procedure and `--json` output on an operator page runs literally
    under ruling 10's tiers and is checked in code.
 8. **Validation, the exit gate.** Each reader class catches the baseline's real failures and a
-   planted-defect set (a removed step, an undefined term, a wrong flag, a stale path), and the
-   planted set becomes a standing regression floor. A reader that misses either is fixed first.
+   planted-defect set: copies of the baseline pages, each carrying a removed step, an undefined
+   term, a wrong flag, and a stale path, recorded with their locations. The planted set becomes a
+   standing regression floor. A reader that misses either is fixed first.
 9. **Failure rule.** If validation cannot get a reader class to catch the known defects, pass 1
    stops and reports to Geoff instead of shipping a weaker instrument.
 
@@ -187,19 +225,36 @@ authors and folds; Opus 5.5 reviews.
    shipped guidance layer; and an open lens that also compares how peer docs divide audiences.
    Each asks whether each profile is testable as written. **Human reads:** one editor on a club
    site attempts one editor task on a current page, and Geoff or an outside reader attempts one
-   evaluator task; both stall logs join the review. One Fable fold. **Owner stop 1**, opened by a
+   evaluator task; both stall logs join the review. One Fable fold.
+3. **The exemplar corpus.** For each profile and each page shape it will likely need, two or three
+   canonical external pages chosen for a matching reader (not only a matching topic), a comparable
+   product (SvelteKit, Astro, Cloudflare, Ghost, Payload, CLI manuals such as `gh`), and evidence or
+   reputation of working for their readers; agent halves get pages agents demonstrably act on. The
+   docs-standard spec's exemplar list is the seed. Each is captured to
+   `~/.local/share/cairn/exemplars/` and gets a manifest row in
+   `docs/internal/record/docs-exemplars.md`: URL, capture date, local file, and an annotation of its
+   structure, the moves that make it work, and what not to copy. One cold Opus 5.5 lens asks whether
+   each serves its profile or only looks polished. The corpus is extended in pass 2b once the
+   outline fixes page shapes; the first accepted cairn page of each shape later becomes that shape's
+   house exemplar. **Owner stop 1** covers the audience record and the corpus together, opened by a
    one-page decision brief.
-3. **Trial preparation.** A scoped harvest for the trial's jobs, through pass 1's id and
-   provenance path, so the trial drafts from traced facts.
-4. **The calibration trial.** Eight to ten jobs across the operator, designer, and extender
-   profiles. Each job's page is drafted through a minimal chain (drafter, scripted checks, one
-   reader) and through the full chain of pass 1 item 6; the full chain's drafter also runs at
-   `medium` and `high`. Each draft gets at least three reader runs, split between Opus 5.5 and
-   Sonnet 5 (`claude-sonnet-5`). A separate comparison runs the old profile grader and the reader
-   over the labeled defect set (the planted set plus pass A's 15). **Decision rule, fixed now:** a
-   stage survives only if it catches defects the minimal chain misses; a tie is reported as no
-   evidence and the cheaper chain wins it; the grader stays only for what the reader misses. Trial
-   pages live on a scratch branch that never merges; each reader report carries a rule-candidate
+4. **Trial preparation.** Fable writes full contracts for the three trial pages
+   (`schedule-a-check` for the operator, a theme task guide for the designer, a building-blocks
+   concept page for the extender), each carrying three or four jobs with done signals, eight to ten
+   jobs in all. A scoped harvest supplies their facts through pass 1's id and provenance path.
+5. **The calibration trial,** laid out as skill-creator's eval harness where it fits (an evals
+   file of jobs, per-run outputs, a blind comparator). Each trial page is drafted twice through a
+   minimal chain (drafter, scripted checks, one reader) and twice through the full chain of pass 1
+   item 6, all at `high`. Each final draft gets three reader runs, split between Opus 5.5 and Sonnet
+   5 (`claude-sonnet-5`). **Measure:** reader-confirmed defects remaining in each chain's final
+   drafts, analysed per page, since jobs on one page are not independent. **Decision rule, fixed
+   now:** the full chain is kept only if its final drafts carry at least a third fewer
+   reader-confirmed defects than the minimal chain's across the trial pages; within it, a stage is
+   kept only if it caught a defect no other stage caught; anything smaller is reported as no
+   evidence, and the cheaper chain wins. A separate comparison runs the old profile grader and the
+   reader over the labeled defect set (the planted set plus pass A's 14), with Fable adjudicating
+   each disagreement; the grader's role survives only for defect classes the reader misses. Trial
+   pages live on a scratch branch that never merges. Each reader report carries a rule-candidate
    field, and the fold writes accepted candidates into the profile files and the drafter skill.
 
 ## Pass 2b: the ledger, the structure, and the outline
@@ -232,6 +287,9 @@ authors and folds; Opus 5.5 reviews.
      whose facts changed, and a pass that changes a cited fact redrafts those pages;
    - the agent delivery decision (per-page Markdown, `llms.txt`, or neither), recorded against the
      2026-08-03 crawler-posture record;
+   - the production signal: what tells us a shipped page works (the site round's source-read logs
+     and per-page reports, tool fix-line landings, the reader suite's scheduled re-runs), and where
+     it is read at each tuning checkpoint;
    - sequencing: which pass executes which slots, each stage followed by a tuning checkpoint.
 4. **The outline review,** six Opus 5.5 lenses reading cold: premise and charter; coverage
    (reviewing only what the script did not enumerate); agent authorability; agent readership;
@@ -274,9 +332,10 @@ until the outline rules on them.
 ## Budgets
 
 Rebased on the repository's measured costs (pass A at about 900K per page and 175 percent of its
-ceiling). Pass 1: ceiling 6M, flag at 4.8M. Pass 2a: 8M, flag at 6.4M, of which the trial takes
-about 5M. Pass 2b: 8M, flag at 6.4M. Reader runs report their own usage outside the Workflow
+ceiling). Pass 1: ceiling 6M, flag at 4.8M. Pass 2a: 14M, flag at 11.2M, of which the trial takes
+about 11M (six full-chain drafts at about 900K, six minimal-chain drafts at about 300K, and 36
+reader runs at about 100K). Pass 2b: 8M, flag at 6.4M. Reader runs report their own usage outside the Workflow
 budget counter; the runner totals them into each pass's ledger against the same ceilings. A
 tripped flag prompts a checkpoint question; no review lens is cut. Fable dispatches receive
 pre-extracted inputs, never the raw repository. Attended time: plan approvals, three owner stops,
-and the two human reads in 2a.
+the two human reads in 2a, and at most one short sitting to mint the scratch site's GitHub token.

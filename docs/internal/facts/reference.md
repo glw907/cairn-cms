@@ -747,9 +747,9 @@ re-sourced to Go on this tree rather than to the page.
   states no posture at all (every site on the engine today); `'decline'` adds one
   `User-agent`/`Disallow: /` group per training-crawler token plus `Content-Signal: ai-train=no`;
   `'invite'` adds `Content-Signal: search=yes, ai-train=yes` with no `Disallow` line, since no
-  robots directive can invite a crawler. Source: `src/lib/delivery/robots.ts:23-24`
+  robots directive can invite a crawler. Source: `src/lib/delivery/robots.ts#CONTENT_SIGNAL`
   (`CONTENT_SIGNAL = { decline: 'ai-train=no', invite: 'search=yes, ai-train=yes' }`) and
-  `:28-32,37-41` (doc comment plus `if (opts.posture === 'decline') { ... }`/`'invite'` branches
+  `src/lib/delivery/robots.ts#buildRobots` (doc comment plus `if (opts.posture === 'decline') { ... }`/`'invite'` branches
   matching exactly). [verified]
 - `f:9q770t` Declining via `robots.txt`/`Content-Signal` is a request that named crawlers say they honor, not
   enforcement; OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are exempt from
@@ -889,7 +889,7 @@ re-sourced to Go on this tree rather than to the page.
   normalized and capped the same way as `auth.link.requested`, but it is logged AFTER the
   allow-list lookup fails, inside the `if (!row)` branch once `findEditor` has already returned
   null, not before it; every other event's `email` fires only for an allow-listed editor. Source:
-  `src/lib/sveltekit/guard.ts:322-330` (`const row = await findEditor(...); if (!row) { ...
+  `src/lib/sveltekit/guard.ts#createAuthGuard.handle` (`const row = await findEditor(...); if (!row) { ...
   log.warn('auth.identity.unknown', ...) }`). [verified: page fixed at `docs/reference/log-events.md:110`
   to say logged after the allow-list check fails]
 - `f:2awy1w` `preview.refused` reasons, in check order: `bindings_missing`, `table_missing`, `unknown`,
@@ -1432,7 +1432,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   today. Source: `src/lib/vite/internal.ts:1-11` (module header: "the lower-level functions the
   cairn-manifest bin and its unit tests import by relative path"). [verified]
 - `f:mbragr` `CairnManifestOptions.manifestPath` defaults to `/src/content/.cairn/index.json`. Source:
-  `src/lib/vite/internal.ts:46` (`DEFAULT_MANIFEST_PATH`). [verified]
+  `src/lib/vite/internal.ts#DEFAULT_MANIFEST_PATH` (`DEFAULT_MANIFEST_PATH`). [verified]
 - `f:skkvr2` `cairnManifest()` evaluates a verify virtual module through a nested Vite SSR load in
   `buildStart`, so a manifest drifted from the corpus fails the build. Source:
   `src/lib/vite/internal.ts:154-173` (`buildStart` calls `verifyManifestFromVite`, which

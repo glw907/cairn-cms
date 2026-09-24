@@ -32,13 +32,33 @@ describe('verifyQuote', () => {
     expect(verifyQuote(quote, PREPARED).ok).toBe(true);
   });
 
-  it('refuses a quote cited one line off, naming the line it is really on', () => {
+  it('accepts a quote cited one line after its real text', () => {
+    // The real text sits on line 3; citing line 4 (one line after) is within the one-line
+    // tolerance, so this now passes rather than naming the line it is really on.
     expect(verifyQuote({ path: 'docs/guide.md', line: 4, text: 'Install the tool before you begin.' }, PREPARED)).toMatchObject({
-      ok: false,
-      reason: 'text starts on line 3, not 4',
+      path: 'docs/guide.md',
+      ok: true,
     });
-    // Starting on the line before the text does not pass either, although the window would reach it.
-    expect(verifyQuote({ path: 'docs/guide.md', line: 2, text: 'Install the tool' }, PREPARED).ok).toBe(false);
+  });
+
+  it('accepts a quote cited one line before its real text', () => {
+    // The real text sits on line 3; citing line 2 (one line before) is within the same tolerance.
+    expect(verifyQuote({ path: 'docs/guide.md', line: 2, text: 'Install the tool' }, PREPARED)).toMatchObject({
+      path: 'docs/guide.md',
+      ok: true,
+    });
+  });
+
+  it('refuses a quote cited two lines off, naming the line it is really on', () => {
+    // Two lines is past the one-line tolerance in either direction, so both still fail.
+    expect(verifyQuote({ path: 'docs/guide.md', line: 5, text: 'Install the tool before you begin.' }, PREPARED)).toMatchObject({
+      ok: false,
+      reason: 'text starts on line 3, not 5',
+    });
+    expect(verifyQuote({ path: 'docs/guide.md', line: 1, text: 'Install the tool' }, PREPARED)).toMatchObject({
+      ok: false,
+      reason: 'text starts on line 3, not 1',
+    });
   });
 
   it('refuses invented text, a missing file, a path outside the directory, and an empty quote', () => {
@@ -92,10 +112,10 @@ describe('verifyReport against fixture transcripts', () => {
     expect(verifyFixture('unverified-no-quote.jsonl')).toMatchObject({ ok: false, problems: ['report has no quote'] });
   });
 
-  it('fails a report whose quote is not at its path:line', () => {
+  it('fails a report whose quote is two lines off its cited line, past the one-line tolerance', () => {
     const verified = verifyFixture('unverified-wrong-line.jsonl');
     expect(verified.ok).toBe(false);
-    expect(verified.problems).toEqual(['quote docs/guide.md:4 unverified: text starts on line 3, not 4']);
+    expect(verified.problems).toEqual(['quote docs/guide.md:5 unverified: text starts on line 3, not 5']);
   });
 
   it('verifies a report quote given relative to a cwd the reader cd’d into (designer-1’s shape)', () => {

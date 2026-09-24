@@ -59,12 +59,13 @@ describe('reverifyJob', () => {
   });
 
   it('catches a quote that only verifies once the fixed line-span rule and cwd tracking apply', () => {
-    // wrong-line's own quote is genuinely off by one line, so it still correctly fails; this
-    // proves reverifyJob runs the real (fixed) verification logic, not a stale cached verdict.
+    // wrong-line's own quote is genuinely off by two lines, past the one-line tolerance, so it
+    // still correctly fails; this proves reverifyJob runs the real (fixed) verification logic,
+    // not a stale cached verdict.
     const transcriptText = readFileSync(join(FIXTURES, 'unverified-wrong-line.jsonl'), 'utf8');
     const result = reverifyJob({ job: savedJob(), batchJob: batchJob(), transcriptText, repoRoot: PREPARED });
     expect(result.verified.ok).toBe(false);
-    expect(result.verified.problems).toEqual(['quote docs/guide.md:4 unverified: text starts on line 3, not 4']);
+    expect(result.verified.problems).toEqual(['quote docs/guide.md:5 unverified: text starts on line 3, not 5']);
   });
 
   it('carries an already-failed init or canary verdict over, noting it was not re-checked', () => {

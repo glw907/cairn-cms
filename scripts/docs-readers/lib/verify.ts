@@ -51,11 +51,15 @@ function matchEndLine(lines: string[], index: number, wanted: string): number | 
 
 /**
  * Check one quote against the prepared directory, resolving its path against one fixed `cwd`. A
- * quote passes when its own text spans the cited line: it starts there, or starts on an earlier
- * line (within `SPAN_LINES`) and its text runs at least as far as the cited line, the way a reader
- * who quotes the tail of a wrapped sentence cites the line the tail actually sits on. A passing
- * quote's own `startLine`/`endLine` record the actual matched span, since that can run wider than
- * the single cited line the reader gave.
+ * quote passes on either of two grounds: its own text spans the cited line, starting there or on
+ * an earlier line (within `SPAN_LINES`) and running at least as far as the cited line, the way a
+ * reader who quotes the tail of a wrapped sentence cites the line the tail actually sits on; or
+ * its text starts on the line immediately before or immediately after the cited one, the
+ * off-by-one tolerance for a reader whose own line count drifted by a single line (a counted
+ * blank line, a wrapped sentence counted from its far end). A miss of two lines or more, in
+ * either direction, still fails, and so does text found nowhere in the file. A passing quote's
+ * own `startLine`/`endLine` record the actual matched span, since that can run wider than, or sit
+ * one line from, the single cited line the reader gave.
  * @param quote - The reader's `{ path, line, text }`.
  * @param root - The pristine prepared directory the reader's copy was made from.
  * @param cwd - The directory a relative `quote.path` is resolved against.
@@ -77,6 +81,11 @@ function verifyQuoteAgainst(quote: RawQuote, root: string, cwd: string): Verifie
   for (let start = Math.max(0, citedIndex - SPAN_LINES + 1); start <= citedIndex; start += 1) {
     const endLine = matchEndLine(lines, start, wanted);
     if (endLine !== undefined && endLine >= citedIndex) return { ...base, ok: true, startLine: start + 1, endLine: endLine + 1 };
+  }
+  for (const near of [citedIndex - 1, citedIndex + 1]) {
+    if (near < 0 || near >= lines.length) continue;
+    const endLine = matchEndLine(lines, near, wanted);
+    if (endLine !== undefined) return { ...base, ok: true, startLine: near + 1, endLine: endLine + 1 };
   }
   const elsewhere = lines.findIndex((_, index) => matchEndLine(lines, index, wanted) !== undefined);
   const reason = elsewhere === -1 ? 'text not found in the file' : `text starts on line ${elsewhere + 1}, not ${line}`;

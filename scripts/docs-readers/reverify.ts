@@ -2,7 +2,8 @@
 /**
  * Offline re-verification. Re-derives `pagesRead` and re-checks every quote from a batch's own
  * saved, scrubbed transcripts, against the CURRENT prepared trees, without re-running any reader.
- * This is what lets a verification-logic fix (`derivePagesRead`, `verifyQuote`, `effectiveCwd`)
+ * This is what lets a verification-logic fix (`derivePagesRead`, `verifyQuote`, `effectiveCwd`,
+ * `grepHitPages`)
  * be checked against an already-completed batch's real transcripts, rather than costing a fresh
  * reader run to prove.
  *
@@ -20,7 +21,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadClasses } from './lib/class-schema.js';
 import { parseBatch } from './lib/batch.js';
-import { derivePagesRead, effectiveCwd, parseStream, readerReport, toolCalls } from './lib/transcript.js';
+import { derivePagesRead, effectiveCwd, grepHitPages, parseStream, readerReport, toolCalls } from './lib/transcript.js';
 import { verifyReport } from './lib/verify.js';
 import type { BatchReport, InitCheck, Job, JobReport } from './lib/types.js';
 
@@ -71,10 +72,11 @@ export function reverifyJob({
   const report = readerReport(events);
   const pagesRead = derivePagesRead(calls, batchJob.docsSet);
   const cwd = effectiveCwd(calls);
+  const grepHits = grepHitPages(calls, batchJob.docsSet);
   const root = reverifyRoot(batchJob.prepared, repoRoot);
   const init: InitCheck = { ok: job.verified.init, problems: job.verified.init ? [] : [PRESERVED_INIT_NOTE] };
   const canariesFound: string[] = job.verified.canaries ? [] : [PRESERVED_CANARY_NOTE];
-  const verified = verifyReport({ report, pagesRead, docsSet: batchJob.docsSet, root, init, canariesFound, cwd });
+  const verified = verifyReport({ report, pagesRead, docsSet: batchJob.docsSet, root, init, canariesFound, cwd, grepHits });
   return { ...job, pagesRead, quotes: verified.quotes, verified };
 }
 

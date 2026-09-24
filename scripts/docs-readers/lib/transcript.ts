@@ -186,6 +186,18 @@ function cdTarget(segment: string): string | undefined {
 }
 
 /**
+ * The cwd after applying one `cd` target from `cwd`, clamped so the result never climbs outside
+ * `READER_CWD` itself.
+ * @param cwd - The cwd before this `cd` ran.
+ * @param target - The raw `cd` target, from `cdTarget`.
+ * @returns The cwd after this `cd` ran.
+ */
+function stepCd(cwd: string, target: string): string {
+  const resolved = posix.resolve(cwd, target);
+  return resolved === READER_CWD || resolved.startsWith(`${READER_CWD}/`) ? resolved : READER_CWD;
+}
+
+/**
  * The cwd after running one Bash command from `cwd`, applying every `cd` its own segments
  * contain, left to right, clamped so the result never climbs outside `READER_CWD` itself.
  * @param command - The Bash command line.
@@ -196,9 +208,7 @@ function applyCd(command: string, cwd: string): string {
   let current = cwd;
   for (const segment of String(command).split(/&&|\|\||[;|\n]/)) {
     const target = cdTarget(segment);
-    if (target === undefined) continue;
-    const resolved = posix.resolve(current, target);
-    current = resolved === READER_CWD || resolved.startsWith(`${READER_CWD}/`) ? resolved : READER_CWD;
+    if (target !== undefined) current = stepCd(current, target);
   }
   return current;
 }
@@ -274,17 +284,27 @@ const SHELL_READERS = new Set(['cat', 'head', 'tail', 'less', 'more', 'sed', 'aw
 /**
  * The pages a shell command printed. The CLI runs read-only commands inside the working directory
  * without an allow rule, so a reader with Bash can read a page with `cat` as easily as with Read.
+ * A command's own segments run left to right against a persistent shell cwd, so a `cd` earlier in
+ * the same command (or an earlier command) changes what a later relative path in it resolves
+ * against; `cwd` is the cwd in effect before this command's own first segment runs.
  * @param command - The Bash command line.
  * @param docsSet - The job's docs-set entries.
+ * @param cwd - The cwd in effect before this command ran.
  * @returns The relative paths of the pages it names after a file-printing command.
  */
-function shellPagesRead(command: unknown, docsSet: string[]): string[] {
+function shellPagesRead(command: unknown, docsSet: string[], cwd: string): string[] {
   const pages: string[] = [];
+  let current = cwd;
   for (const segment of String(command).split(/&&|\|\||[;|\n]/)) {
+    const target = cdTarget(segment);
+    if (target !== undefined) {
+      current = stepCd(current, target);
+      continue;
+    }
     const words = segment.trim().split(/\s+/).map((w) => w.replace(/^['"]|['"]$/g, ''));
     if (!SHELL_READERS.has(words[0])) continue;
     for (const word of words.slice(1)) {
-      const rel = word.startsWith('-') ? undefined : toReaderRelative(word);
+      const rel = word.startsWith('-') ? undefined : toReaderRelative(word, current);
       if (isPage(rel, docsSet)) pages.push(rel);
     }
   }
@@ -294,18 +314,26 @@ function shellPagesRead(command: unknown, docsSet: string[]): string[] {
 /**
  * The pages a reader read: its Read calls, its content-mode Grep calls scoped to exactly one
  * page, and its Bash commands that print a page. A Grep whose own scope spans more than one file
- * counts nothing, even when a hit line happens to name a docs-set page (`grepScopedPage`); a Grep
- * that only listed file names or counted matches read nothing; a failed call read nothing.
+ * counts nothing, even when a hit line happens to name a docs-set page (`grepScopedPage`,
+ * `grepHitPages` widens this only at verification time, never here); a Grep that only listed file
+ * names or counted matches read nothing; a failed call read nothing. A Bash command's relative
+ * paths resolve against the cwd tracked in effect at that call, the same `cd` history
+ * `effectiveCwd` walks, whether or not the call itself succeeded, since a real persistent shell's
+ * cwd moves on a `cd` regardless of what a later command in the same call does.
  * @param calls - The paired tool calls.
  * @param docsSet - The job's docs-set entries.
  * @returns The sorted relative paths of the pages read.
  */
 export function derivePagesRead(calls: ToolCall[], docsSet: string[]): string[] {
   const pages = new Set<string>();
+  let cwd = READER_CWD;
   for (const call of calls) {
+    const isBash = call.name === 'Bash' && typeof call.input.command === 'string';
+    const cwdForThisCall = cwd;
+    if (isBash) cwd = applyCd(call.input.command as string, cwd);
     if (!call.result || call.result.isError) continue;
-    if (call.name === 'Bash') {
-      for (const rel of shellPagesRead(call.input.command, docsSet)) pages.add(rel);
+    if (isBash) {
+      for (const rel of shellPagesRead(call.input.command, docsSet, cwdForThisCall)) pages.add(rel);
     } else if (call.name === 'Read') {
       const rel = toReaderRelative(call.input.file_path);
       if (isPage(rel, docsSet)) pages.add(rel);
@@ -317,6 +345,35 @@ export function derivePagesRead(calls: ToolCall[], docsSet: string[]): string[] 
     }
   }
   return [...pages].sort();
+}
+
+/**
+ * The docs-set pages named in a hit line from any content-mode Grep call, independent of whether
+ * that call's own search scope was narrow enough to count as reading the page
+ * (`derivePagesRead`, `grepScopedPage`). A directory-wide search can print a hit line naming a
+ * page the reader never asked to open on its own; that alone still does not count as reading it,
+ * but the reader's own tool output did show the line, so a report quote on that same page is not
+ * evidence of an invented read either. `verifyReport` is what narrows this further: only a page a
+ * report actually quotes, with a quote that verifies on its own, is ever excused by this set.
+ * @param calls - The paired tool calls.
+ * @param docsSet - The job's docs-set entries.
+ * @returns The set of pages named in a hit line, as relative paths.
+ */
+export function grepHitPages(calls: ToolCall[], docsSet: string[]): Set<string> {
+  const pages = new Set<string>();
+  for (const call of calls) {
+    if (call.name !== 'Grep' || call.input.output_mode !== 'content') continue;
+    if (!call.result || call.result.isError) continue;
+    const text = call.result.text;
+    if (text.trim() === '' || /^No matches found/i.test(text.trim())) continue;
+    for (const line of text.split('\n')) {
+      const match = /^(.+?):(\d+):/.exec(line);
+      if (!match) continue;
+      const rel = toReaderRelative(match[1]);
+      if (isPage(rel, docsSet)) pages.add(rel);
+    }
+  }
+  return pages;
 }
 
 /**

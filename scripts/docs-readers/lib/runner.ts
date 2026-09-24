@@ -16,6 +16,7 @@ import {
   findCanaries,
   findInit,
   findPackageFetches,
+  grepHitPages,
   readerReport,
   toolCalls,
   usageFromEvents,
@@ -104,7 +105,8 @@ export function buildJobReport({
   const init = checkInit(findInit(events), expectedTools(decl), baselines);
   const canariesFound = findCanaries(run.stdout, run.canaries ?? []);
   const cwd = effectiveCwd(calls);
-  const verified = verifyReport({ report, pagesRead, docsSet: job.docsSet, root: run.preparedRoot, init, canariesFound, cwd });
+  const grepHits = grepHitPages(calls, job.docsSet);
+  const verified = verifyReport({ report, pagesRead, docsSet: job.docsSet, root: run.preparedRoot, init, canariesFound, cwd, grepHits });
   const failure = classifyFailure(events);
   const reason = failure ?? abortReason ?? (run.timedOut ? 'timeout' : undefined);
   if (reason) {

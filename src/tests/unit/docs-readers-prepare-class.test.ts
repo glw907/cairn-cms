@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import {
   archiveCommit,
   assertNoExcludedPaths,
+  assertNoUnsafeSymlinks,
   assertSiteAnswerKeyAbsent,
   copyDocsSet,
   ensureScratchSiteCommit,
@@ -572,6 +573,42 @@ describe('assertNoExcludedPaths', () => {
       write(join(dir, 'docs/superpowers/plan.md'), 'answer key');
       write(join(dir, '.git/HEAD'), 'ref: refs/heads/main');
       expect(() => assertNoExcludedPaths(dir)).toThrow(/docs\/superpowers.*\.git|\.git.*docs\/superpowers/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('assertNoUnsafeSymlinks', () => {
+  it('passes a tree whose only symlink resolves inside it', () => {
+    const dir = tmp('symlinks-clean');
+    try {
+      write(join(dir, 'docs/lib/tool.js'), '// tool\n');
+      mkdirSync(join(dir, 'docs/bin'), { recursive: true });
+      symlinkSync('../lib/tool.js', join(dir, 'docs/bin/tool'));
+      expect(() => assertNoUnsafeSymlinks(dir)).not.toThrow();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails preparation, naming the path, when a symlink is planted absolute', () => {
+    const dir = tmp('symlinks-absolute');
+    try {
+      mkdirSync(join(dir, 'docs'), { recursive: true });
+      symlinkSync('/etc/passwd', join(dir, 'docs/link'));
+      expect(() => assertNoUnsafeSymlinks(dir)).toThrow(new RegExp(`${join(dir, 'docs/link')}.*-> /etc/passwd`));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails preparation, naming the path, when a relative symlink resolves outside the tree', () => {
+    const dir = tmp('symlinks-escape');
+    try {
+      mkdirSync(join(dir, 'docs'), { recursive: true });
+      symlinkSync('../../../../etc/passwd', join(dir, 'docs/link'));
+      expect(() => assertNoUnsafeSymlinks(dir)).toThrow(new RegExp(`resolving outside it.*${join(dir, 'docs/link')}`));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

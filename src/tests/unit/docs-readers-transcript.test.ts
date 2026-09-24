@@ -11,6 +11,7 @@ import {
   effectiveCwd,
   findInit,
   findPackageFetches,
+  grepHitPages,
   parseStream,
   readerReport,
   toolCalls,
@@ -66,6 +67,28 @@ describe('derivePagesRead', () => {
     expect(derivePagesRead(calls, ['docs'])).toEqual(['docs/guide.md']);
   });
 
+  it('resolves a shell read command against the cwd tracked at that call, after an earlier cd', () => {
+    // After `cd site`, `cat ../docs/x.md` names a page one level above `site/`; resolving it
+    // against READER_CWD itself (the earlier bug) climbs out of the job tree and misses it.
+    const afterCd = [bash('cd site'), bash('cat ../docs/x.md')];
+    expect(derivePagesRead(afterCd, ['docs/x.md'])).toEqual(['docs/x.md']);
+  });
+
+  it('applies a cd chained in the same call before resolving that call’s own read', () => {
+    const chained = [bash('cd site && cat ../docs/x.md')];
+    expect(derivePagesRead(chained, ['docs/x.md'])).toEqual(['docs/x.md']);
+  });
+
+  it('tracks cd across calls regardless of an intervening call’s own success', () => {
+    // A failed command in between does not undo an earlier cd's effect on the shell's own cwd.
+    const withFailure = [
+      bash('cd site'),
+      { id: 't', name: 'Bash', input: { command: 'npm test' }, result: { isError: true, text: 'boom' } },
+      bash('cat ../docs/x.md'),
+    ];
+    expect(derivePagesRead(withFailure, ['docs/x.md'])).toEqual(['docs/x.md']);
+  });
+
   /** A minimal Grep call, `output_mode: content`, its `path`/`glob` and result text overridable. */
   function grepCall(input: Record<string, unknown>, text: string) {
     return { id: 't', name: 'Grep', input: { pattern: 'x', output_mode: 'content', ...input }, result: { isError: false, text } };
@@ -104,6 +127,30 @@ describe('derivePagesRead', () => {
 function bash(command: string): ToolCall {
   return { id: 't', name: 'Bash', input: { command }, result: { isError: false, text: '' } };
 }
+
+describe('grepHitPages', () => {
+  /** A minimal content-mode Grep call, its `path`/`glob` and result text overridable. */
+  function grepCall(input: Record<string, unknown>, text: string): ToolCall {
+    return { id: 't', name: 'Grep', input: { pattern: 'x', output_mode: 'content', ...input }, result: { isError: false, text } };
+  }
+
+  it('names a page whose hit line surfaced through a broadly-scoped search, unlike derivePagesRead', () => {
+    const wholeDocsSet = grepCall({ path: '/reader/job/docs' }, 'docs/troubleshooting.md:3:send_email');
+    expect(grepHitPages([wholeDocsSet], ['docs/troubleshooting.md'])).toEqual(new Set(['docs/troubleshooting.md']));
+  });
+
+  it('names nothing from an empty result, a "No matches found" result, or a failed call', () => {
+    expect(grepHitPages([grepCall({}, '')], ['docs/troubleshooting.md'])).toEqual(new Set());
+    expect(grepHitPages([grepCall({}, 'No matches found')], ['docs/troubleshooting.md'])).toEqual(new Set());
+    const failed = { id: 't', name: 'Grep', input: { pattern: 'x', output_mode: 'content' }, result: { isError: true, text: 'docs/troubleshooting.md:3:x' } };
+    expect(grepHitPages([failed], ['docs/troubleshooting.md'])).toEqual(new Set());
+  });
+
+  it('ignores a hit line naming a path outside the docs set', () => {
+    const call = grepCall({}, 'src/index.ts:3:x');
+    expect(grepHitPages([call], ['docs/troubleshooting.md'])).toEqual(new Set());
+  });
+});
 
 describe('effectiveCwd and cwd-aware toReaderRelative', () => {
   it('stays at READER_CWD with no Bash calls, or none that cd', () => {

@@ -104,11 +104,14 @@ export function verifyQuote(quote: RawQuote, root: string, cwd: string = READER_
 /**
  * Decide whether a job's report is verified, from the reader's structured `report` (undefined when
  * it gave none), the `pagesRead` the transcript shows, the job's `docsSet`, the pristine prepared
- * `root`, the `init` check's result, the `canariesFound` in the transcript, and the reader's `cwd`
+ * `root`, the `init` check's result, the `canariesFound` in the transcript, the reader's `cwd`
  * by the end of the transcript (`effectiveCwd`, defaulting to `READER_CWD`), against which every
- * relative quote path resolves. Every page read must carry a verified quote, and every quoted page
- * must have been read: a quote on a docs-set page the transcript never shows opened was not read
- * in this run.
+ * relative quote path resolves, and the pages any Grep call's hit lines named (`grepHitPages`,
+ * defaulting to none). Every page read must carry a verified quote, and every quoted page must
+ * have been read: a quote on a docs-set page the transcript never shows opened, and never even
+ * surfaced in a Grep hit line, was not read in this run. A quoted page that only ever surfaced as
+ * an incidental Grep hit line (`grepHits`) is excused from that last check, since the reader's own
+ * tool output did show it the line; it still must carry a quote that verifies on its own.
  * @returns The `verified` block for the job report.
  */
 export function verifyReport({
@@ -119,6 +122,7 @@ export function verifyReport({
   init,
   canariesFound,
   cwd,
+  grepHits = new Set(),
 }: {
   report: ReaderReport | undefined;
   pagesRead: string[];
@@ -127,6 +131,7 @@ export function verifyReport({
   init: InitCheck;
   canariesFound: string[];
   cwd?: string;
+  grepHits?: Set<string>;
 }): Verified {
   const problems: string[] = [];
   if (!init.ok) problems.push(...init.problems.map((p) => `init: ${p}`));
@@ -146,7 +151,7 @@ export function verifyReport({
     }
     const read = new Set(pagesRead);
     for (const q of quotes) {
-      if (q.ok && isPage(q.path, docsSet) && !read.has(q.path)) {
+      if (q.ok && isPage(q.path, docsSet) && !read.has(q.path) && !grepHits.has(q.path)) {
         problems.push(`quote ${q.path}:${String(q.line)} cites a page the transcript never shows read`);
       }
     }

@@ -127,6 +127,55 @@ describe('verifyReport against fixture transcripts', () => {
     expect(verified.problems).toEqual(['quote docs/other.md:3 cites a page the transcript never shows read']);
   });
 
+  it('excuses a quoted page that only ever surfaced through a broadly-scoped Grep hit line, from "never shows read"', () => {
+    const verified = verifyReport({
+      report: {
+        outcome: 'done',
+        stalls: [],
+        assumed: [],
+        quotes: [
+          { path: 'docs/guide.md', line: 3, text: 'Install the tool before you begin.' },
+          { path: 'docs/other.md', line: 3, text: 'Change the settings file here.' },
+        ],
+        ruleCandidates: [],
+      },
+      pagesRead: ['docs/guide.md'],
+      docsSet: ['docs'],
+      root: PREPARED,
+      init: passingInit,
+      canariesFound: [],
+      grepHits: new Set(['docs/other.md']),
+    });
+    expect(verified).toMatchObject({ ok: true, problems: [] });
+  });
+
+  it('does not force a page a broadly-scoped Grep only surfaced, but the report never quoted, to carry a quote', () => {
+    const verified = verifyReport({
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/guide.md', line: 3, text: 'Install the tool before you begin.' }], ruleCandidates: [] },
+      pagesRead: ['docs/guide.md'],
+      docsSet: ['docs'],
+      root: PREPARED,
+      init: passingInit,
+      canariesFound: [],
+      grepHits: new Set(['docs/other.md']),
+    });
+    expect(verified).toMatchObject({ ok: true, problems: [] });
+  });
+
+  it('does not excuse an unverified quote just because its page appeared in a Grep hit', () => {
+    const verified = verifyReport({
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Invented text.' }], ruleCandidates: [] },
+      pagesRead: [],
+      docsSet: ['docs'],
+      root: PREPARED,
+      init: passingInit,
+      canariesFound: [],
+      grepHits: new Set(['docs/other.md']),
+    });
+    expect(verified.ok).toBe(false);
+    expect(verified.problems).toEqual(['quote docs/other.md:3 unverified: text not found in the file']);
+  });
+
   it('fails on a missing report, a failed init check, or a loaded canary', () => {
     const verified = verifyReport({
       report: undefined,

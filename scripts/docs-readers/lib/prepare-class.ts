@@ -7,8 +7,8 @@
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 
 /** A shell command runner, injected so tests can replace the real `npm`, `git`, and `tar` calls. */
 export type CommandRunner = (
@@ -44,6 +44,37 @@ export function copyDocsSet(sourceRoot: string, docsSet: string[], dest: string)
     if (!existsSync(from)) throw new Error(`docs-set path "${relPath}" does not exist at ${from}`);
     cpSync(from, join(dest, relPath), { recursive: true, verbatimSymlinks: true });
   }
+}
+
+/**
+ * Confirm no symlink under a prepared tree points somewhere outside it: an absolute target, or a
+ * relative target whose own resolved path climbs out of `dir` itself. Walks with `lstat`/`readlink`
+ * rather than trust that every copy step along the way (`copyDocsSet`'s `verbatimSymlinks`, a
+ * `git archive`, an `npm install`) only ever planted a link this pass already accounted for; a
+ * reader's container mounts this tree read-only, but a symlink resolving outside it could still
+ * point a read at something never meant to reach a reader.
+ * @param dir - The prepared tree's root.
+ * @throws Naming the first unsafe symlink found, with its own target.
+ */
+export function assertNoUnsafeSymlinks(dir: string): void {
+  const walk = (current: string): void => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const entryPath = join(current, entry.name);
+      if (entry.isSymbolicLink()) {
+        const target = readlinkSync(entryPath);
+        if (isAbsolute(target)) {
+          throw new Error(`prepared tree at ${dir} carries an absolute symlink: ${entryPath} -> ${target}`);
+        }
+        const resolved = resolve(dirname(entryPath), target);
+        if (resolved !== dir && !resolved.startsWith(`${dir}${sep}`)) {
+          throw new Error(`prepared tree at ${dir} carries a symlink resolving outside it: ${entryPath} -> ${target}`);
+        }
+      } else if (entry.isDirectory()) {
+        walk(entryPath);
+      }
+    }
+  };
+  walk(dir);
 }
 
 /**
@@ -367,6 +398,7 @@ export function prepareDocsAndSite({
     scaffoldSite({ repoRoot: sourceRoot, dest: siteDir, tarballs, runner });
     installAndStrip(siteDir, { runner });
     assertSiteAnswerKeyAbsent(siteDir);
+    assertNoUnsafeSymlinks(dest);
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });
     throw error;
@@ -452,6 +484,7 @@ export function prepareRepositoryExport({
   try {
     archiveCommit({ repoRoot, commit, dest, pathspec: ['--', '.', ':!docs/internal/record', ':!docs/superpowers', ':!scripts/docs-readers'], runner });
     assertNoExcludedPaths(dest);
+    assertNoUnsafeSymlinks(dest);
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });
     throw error;
@@ -486,6 +519,12 @@ export function prepareRepositoryExportWithDependencies({
   if (install.status !== 0) {
     rmSync(dest, { recursive: true, force: true });
     throw new Error(`npm ci failed in ${dest}: ${install.stderr}`);
+  }
+  try {
+    assertNoUnsafeSymlinks(dest);
+  } catch (error) {
+    rmSync(dest, { recursive: true, force: true });
+    throw error;
   }
 }
 
@@ -532,6 +571,7 @@ export function prepareContractPagesBundle({
       archiveCommit({ repoRoot, commit: spec.commit, dest: join(dest, spec.name), pathspec: ['--', spec.page, ...spec.schemas], runner });
     }
     assertNoExcludedPaths(dest, REPOSITORY_EXCLUDED_PATHS.flatMap((rel) => pages.map((spec) => join(spec.name, rel))));
+    assertNoUnsafeSymlinks(dest);
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });
     throw error;
@@ -665,6 +705,7 @@ export function prepareDocsAndBinary({
     if (siteExportDir) {
       for (const name of readdirSync(siteExportDir)) cpSync(join(siteExportDir, name), join(dest, name), { recursive: true, verbatimSymlinks: true });
     }
+    assertNoUnsafeSymlinks(dest);
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });
     throw error;

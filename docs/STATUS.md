@@ -20,21 +20,10 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**In flight (2026-09-23): pass 1, segment 1 (Tasks 1 to 3),** on `docs-reset-system`
-(`.claude/worktrees/docs-reset-system`, pushed); ledger at the foot of the pass 1 plan on that
-branch. Task 0 is done: the scratch site's repository, D1, and placeholder Worker exist, the App
-installation covers the repository, and `CAIRN_SCRATCH_CF_TOKEN` is stored (one Worker, Metadata
-Read-only, no TTL; Task 3 confirms `cairn logs` under it).
-
-**Execution amendments (Geoff, 2026-09-23),** to be folded into the pass 1 plan's header after
-Task 3: (1) packed engine tarballs cached by commit plus a clean-tree check (Task 3); (2)
-implementers get unit tests and the gate green first, then run each live check once, rerunning only
-on failure or a later podman or preparation change; every dispatch prompt says so; (3) each
-segment's pre-flight also lists every open choice a task leaves the implementer, pinned in the
-dispatch; (4) after Task 4's verdicts, three parallel lanes: facts (Tasks 5 to 7, own worktree),
-drafting (Tasks 8 and 9 in `~/.dotfiles`, Task 9's dry run after Task 6), harness (Task 10, own
-worktree), merged before Task 11; (5) Task 7 fans out to one Sonnet agent per container file, then
-the one Opus read; (6) reader concurrency 4 in Tasks 4 and 11, backing off on `rateLimit`.
+**In flight (2026-09-23): pass 1, segment 2 (Task 4, the baseline run),** on `docs-reset-system`
+(`.claude/worktrees/docs-reset-system`, pushed). Segment 1 (Tasks 0 to 3) is done: the reader
+runner, all four reader classes, and the deployed scratch site. The ledger and Geoff's six
+execution amendments are in the pass 1 plan on that branch.
 
 **Docs reset pass 1, the writing system.** The docs are reset from scratch (only verified facts
 survive), and pass 1 builds and validates the writing system first: confined podman reader

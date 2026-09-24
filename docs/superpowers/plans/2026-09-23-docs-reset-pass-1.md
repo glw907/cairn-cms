@@ -648,3 +648,54 @@ candidate triage became Task 7, so former Tasks 7 to 11 are now 8 to 12, and Tas
 | 11 prep | done | plant record `1099ab8f`; `cec4f391`..`c76b34e0`; `check:provenance` per-brief `43e316ab` | planter opus ~148k; prep sonnet ~630k over three rounds; reviews ~90k | 17 defects planted across 8 page copies by an Opus planter blind to readers (record excluded from repository exports; the conductor has not read it). Built the pre-registered one-line citation tolerance, the report-contract wording, the planted overlay, and `batches/validation.json` (39 jobs: six jobs planted and control, three runs each, plus three scripter held-out runs; texts byte-identical to baseline). Two silent-miss defects caught before any run: the docs-only evaluator would have read the unplanted repo page (fixed by an optional `prepared` source for docs-set jobs), and the scripter's plants landed outside its bundle subdirectories so its readers saw unplanted pages (caught by a conductor byte check on the built directories after tests, gate, and review had all passed; fixed with a bundle-aware overlay and a guard that throws when a plant's target is absent). A final byte check confirms all eight planted files reach their readers' pages and differ from control. Validation batch launched 2026-09-24 about 00:12. |
 | 11 | FAILED; paused for Geoff before the fix round | record `4f69a52b` (`docs/internal/record/2026-09-23-docs-reset-validation.md`) | batch 1.40M counted plus rerun 0.35M; scoring opus ~? | All four classes fail Task 11's bar (only the replay bar passes). Plants: docs-only pass; docs-and-binary misses P04, P05; docs-and-site misses P06, P07, P08, P10; repository misses P12, P14. Held-out: 1 of 9 caught (D18). Baseline failures on control pages: F5 and F3 missed. False positives: 9, 4, 12, 23 against a cap of 3 (35 of 48 come only from `ruleCandidates[]`). Every miss comes from verified Opus runs; the plants missed sit off the path each job takes. Reliability: Opus 26 of 26 final attempts verified, Sonnet 8 of 13. Readers did find real defects on control pages (seven in the scripter pages). Conductor decision: pause before the plan's one fix round, because that round (tuning on the tuning half only) cannot address these failures (only the scripter has a tuning set; the misses trace to the validation design, blind plants anywhere on a page versus readers doing one job, and the false positives to counting rule candidates as findings); changing where plants go or how findings count after seeing results would be post-hoc. This is a method decision for Geoff; options and a recommendation are in STATUS. |
 | decision | Geoff, 2026-09-24 | — | — | Geoff chose option (b) in a fresh pass, with pass 1 closed first. Sequence: (1) close pass 1 now through Task 12, recording Task 11 as a failed validation of the original design (the built system is reviewed and sound; the failure is a finding about the method); (2) pass 1b, a validation redesign: brainstorm, then a pre-registered plan, then a rerun on the merged system; (3) pass 2a only after pass 1b passes. Pass 1b's open design questions: "on path" conflicts with the planter's blindness (candidate: derive each job's path from the pages baseline readers actually opened); counting rule candidates apart from findings needs a new pre-registered false-positive cap; the bar may belong in terms of what a job tester should catch rather than exhaustive detection; Sonnet readers verified 8 of 13, so decide whether runs stay two Opus plus one Sonnet. Task 12 as amended: skip the plan's "Validation" pass condition; record the failed validation in HISTORY, the post-mortem, and ROADMAP; name pass 1b as the next action. |
+| 12 | fold done; diff-reviewer read and merge pending | `76ddff28` (merge of `main`), then the fold commits on `docs-reset-system` | fold agent opus, one session (figure in the conductor's `/cost`) | Merged `main` into the branch (no conflict). Amended both specs (six docs reset corrections; the docs-standard provenance line now reads per sentence, as built). Filed the pass's deferrals to `ROADMAP.md` (the docs reset in Now with pass 1b; the deferred chain and harness items, the Waymark theme comments, and the readers' real page defects in Next) and deleted the finished page-only candidate entry; the friction log's whole-log triage found no open entry. Facts and briefs READMEs current. HISTORY entry and this post-mortem written. STATUS names pass 1b. The facts id migration re-ran as the last content commit. The plan's "Validation" pass condition was skipped, per the decision row. Post-merge steps stay with the conductor: the id rule in the shared agent definitions, any `cairn-register-editor` change, the `~/.dotfiles` push, and `claude-tooling-sync verify`. |
+
+## Post-mortem (2026-09-24)
+
+**Built.** Every component Task 4's record ruled build. The reader runner and four confined reader
+classes (Tasks 1 to 3), with the scratch site and scoped tokens behind the operator class. The
+baseline failure record (Task 4). Fact ids on all 810 bullets (Task 5). `check:provenance`, page
+briefs, owner-tier key phrases, and `path#Symbol` anchors for `src/` (Task 6). The candidate
+triage, 159 bullets (Task 7). The `cairn-docs-drafter` agent and the v2 page chain in `~/.dotfiles`
+(Tasks 8 and 9). The docs-as-tests harness for `docs/admin/` procedures (Task 10). The validation
+batch, its planted and control pages, and its regression batch (Task 11).
+
+**Verified, with evidence.** Each build task passed its light gate and a `diff-reviewer` accept,
+recorded in its ledger row. The escape suite ran live against each class, with transcripts attached
+to the task reports. The lane merge's cross-lane review compared all 812 ids at base, both lane
+tips, and HEAD, and found none damaged. Task 9's dry run completed both stages on a scratch page,
+with the runner's reports reaching the redraft. The regression batch replays (validation record,
+Bar 5). The close ran `check:docs`, `check:facts`, `check:arm-indexes`, `check:reference`, and the
+full heavy gate; their results are in the fold agent's report to the conductor.
+
+**Decisions locked.**
+
+- Readers run confined in podman under `env -i` with a plan token, and the container plus scoped
+  tokens are the boundary, since the CLI auto-allows read-only Bash in its working directory.
+- A fact id is opaque, minted once, and never changes with the bullet's text.
+- `check:provenance` judges each sentence against the bullet it cites.
+- The page chain's drafter and redraft file new facts only as `[candidate]`. The independent fact
+  read and applied read trace and retag them.
+- Pass 2a defines the profile-file format with the profiles. The drafter ships without a
+  `skills:` preload.
+- Deferred with no recorded failure behind them: the reverse mode, the Go resolver, five chain
+  changes, and two harness scopes. Each is filed in `ROADMAP.md` with a trigger.
+
+**The failed validation.** Task 11 failed every class on its original design
+(`docs/internal/record/2026-09-23-docs-reset-validation.md`). The built system is reviewed and
+sound. The failure is a finding about the method: blind plants anywhere on a page against readers
+doing one job, and rule candidates counted as findings. Geoff ruled on 2026-09-24 to close pass 1
+without the "Validation" pass condition and run pass 1b, a validation redesign with a
+pre-registered plan and a rerun on the merged system, before pass 2a. Pass 1b's open questions are
+in the "decision" row above and in `ROADMAP.md`'s Now tier.
+
+**Blockers and carried items.** No blocker remains for pass 1b. Carried to STATUS as open items for
+Geoff: the owner brief's "all 28 registered rules" (`what-cairn-is-and-is-not.md:49`) against 36
+rule modules; the stale facts `f:ab9kzr` (published version `0.96.0`) and `f:75hawi` (the
+free-tier claim), and `docs/why-cairn.md:41` against its own line 84; the unpushed `~/.dotfiles`
+commits; the earlier Cloudflare token mints to revoke; and the global `CLAUDE.md` over its 6k
+budget. The scratch site stands through pass 2a, with its teardown in the scratch-site record.
+
+**Planning misses and budgets.** 12 planning misses and 4 execution sittings, itemized in
+`docs/HISTORY.md`'s pass 1 entry. Tokens: about 9M counted by the conductor's estimate, against a
+16M ceiling raised from 12M.

@@ -1,0 +1,24 @@
+{
+  "_about": "One brief sentence per case, checked against facts/container.md. `expect` is a substring of the one defect the sentence must produce, or null when it must pass.",
+  "cases": [
+    { "name": "a verified citation carrying every fact class passes", "sentence": { "text": "Run `cairn doctor --json`; it exits 0 from 0.96.0.", "id": "f:pv0001" }, "expect": null },
+    { "name": "an external citation passes", "sentence": { "text": "A GitHub installation token expires after one hour.", "id": "f:pv0003" }, "expect": null },
+    { "name": "a vendor citation passes", "sentence": { "text": "Workers Paid is priced on Cloudflare's plan page.", "id": "f:pv0004" }, "expect": null },
+    { "name": "a no-claim sentence with no extractable fact passes", "sentence": { "text": "The next section walks through it.", "id": "no-claim" }, "expect": null },
+    { "name": "a sentence with no id is unclassified", "sentence": { "text": "This sentence was never classified." }, "expect": "unclassified" },
+    { "name": "an id of the wrong shape is unclassified", "sentence": { "text": "A sentence.", "id": "f:NOTANID" }, "expect": "neither a fact id" },
+    { "name": "an id that resolves to no fact fails", "sentence": { "text": "A sentence.", "id": "f:zzzzzz" }, "expect": "resolves to no fact" },
+    { "name": "a numeral missing from the cited fact fails", "sentence": { "text": "It exits 1 when a check fails.", "id": "f:pv0001" }, "expect": "numeral \"1\"" },
+    { "name": "a version missing from the cited fact fails", "sentence": { "text": "The check ships from 0.97.0.", "id": "f:pv0001" }, "expect": "version \"0.97.0\"" },
+    { "name": "a path missing from the cited fact fails", "sentence": { "text": "The logger lives at `src/lib/emit/`.", "id": "f:pv0002" }, "expect": "path \"src/lib/emit/\"" },
+    { "name": "a command missing from the cited fact fails", "sentence": { "text": "Run `cairn status` first.", "id": "f:pv0001" }, "expect": "command \"cairn status\"" },
+    { "name": "a flag missing from the cited fact fails", "sentence": { "text": "Run `cairn doctor --fix` instead.", "id": "f:pv0001" }, "expect": "flag \"--fix\"" },
+    { "name": "an export name missing from the cited fact fails", "sentence": { "text": "`defineSite` declares a site.", "id": "f:pv0002" }, "expect": "name \"defineSite\"" },
+    { "name": "a no-claim sentence stating a version fails", "sentence": { "text": "Upgrade to 0.96.0 today.", "id": "no-claim" }, "expect": "marked no-claim" },
+    { "name": "an owner-tier key phrase missing from the cited fact fails", "sentence": { "text": "The defaults are floors, not ceilings, as `cairn doctor` shows.", "id": "f:pv0001" }, "expect": "key phrase \"floors, not ceilings\"" },
+    { "name": "a candidate citation fails", "sentence": { "text": "An untraced claim.", "id": "f:pv0006" }, "expect": "[candidate]" },
+    { "name": "an excluded candidate citation fails", "sentence": { "text": "An excluded claim.", "id": "f:pv0007" }, "expect": "[candidate]" },
+    { "name": "a rejected citation fails", "sentence": { "text": "A false claim.", "id": "f:pv0008" }, "expect": "[rejected]" },
+    { "name": "a docs-drift citation fails until resolved", "sentence": { "text": "The token lasts a while.", "id": "f:pv0005" }, "expect": "[docs-drift]" }
+  ]
+}

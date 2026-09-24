@@ -1,0 +1,7 @@
+{
+  "page": "docs/admin/uncovered.md",
+  "sentences": [
+    { "text": "This sentence is in the brief.", "id": "no-claim" },
+    { "text": "This sentence was never written on the page.", "id": "no-claim" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "page": "docs/admin/good-page.md",
+  "sentences": [
+    { "text": "This page walks through one check.", "id": "no-claim" },
+    { "text": "Run `cairn doctor --json` in your site directory.", "id": "f:pv0001" },
+    { "text": "It exits 0 when every check passes.", "id": "f:pv0001" },
+    { "text": "The defaults are floors, not ceilings.", "id": "f:pv0009" },
+    { "text": "A GitHub installation token expires after one hour.", "id": "f:pv0003" },
+    { "text": "See the [pricing page](https://example.com/pricing) for Workers Paid.", "id": "f:pv0004" },
+    { "text": "Command", "id": "no-claim" },
+    { "text": "What it does", "id": "no-claim" },
+    { "text": "`npm run check:facts`", "id": "f:pv0002" },
+    { "text": "Walks every fact.", "id": "f:pv0002" },
+    { "text": "`defineConcept` declares a concept, and the [logger guide](../extend/logging.md) covers the rest.", "id": "f:pv0002" }
+  ]
+}

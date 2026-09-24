@@ -16,7 +16,7 @@
  * The reader token is read from `CAIRN_DOCS_READER_OAUTH_TOKEN`, or from `~/.local/secrets` when
  * that is unset, and is never printed.
  */
-import { randomBytes } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
@@ -95,12 +95,15 @@ function option(args: string[], flag: string): string | undefined {
 }
 
 /**
- * A run id that sorts by time and never names the project.
+ * A run id that sorts by time and never names the project. Built from `randomUUID()` rather than
+ * `randomBytes(...).toString('hex')`, which sidesteps an svelte-check overload-resolution quirk
+ * this module's own test file triggers (the same fix `lib/podman.ts`'s canary marker already
+ * took).
  * @returns A UTC timestamp plus six random hex digits.
  */
 function newRunId(): string {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').toLowerCase();
-  return `${stamp}-${randomBytes(3).toString('hex')}`;
+  return `${stamp}-${randomUUID().replace(/-/g, '').slice(0, 6)}`;
 }
 
 /**

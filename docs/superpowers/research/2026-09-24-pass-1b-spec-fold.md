@@ -129,3 +129,71 @@ it removes.
   (sensitivity, stability, agreement) are shared. A class passes only when those pass and its own
   floor and precision bar pass. This is the fold's reading of O4 under C3; it is stated in the
   spec's Bars and Failure rule.
+
+## Second fold
+
+**Input:** the verification read `2026-09-24-pass-1b-spec-fold-verification.md` (4 majors, 9
+minors, five two-way readings). **Fold agent:** one `claude-opus-5-5` read, scope limited to the
+verification's findings. **Conductor rulings:** V1 stability and refit, V2 thin-map rule, V3
+mining, V4 budget cuts. Computations ran with `uv run --with numpy --with scipy` (scratch in
+`/tmp/claude-1000/fold2/`); the spec names `oc-curve.ts` as the committed reproduction.
+
+### What V1 and V2 produced
+
+- **Refit.** Pass 1's Bar 1 table recounted with `ruleCandidates[]`-only catches as misses: 4
+  plants caught by both Opus runs, 2 by one, 11 by neither (P01, P02, P15, P16 both; P03, P17
+  one). Fit: mean 0.29, ICC 0.72, profile 95 percent interval 0.25 to 0.95.
+- **27 of 36 still meets the rule across 0.25 to 0.95** (recall 0.6 at most 0.076, recall 0.8 at
+  least 0.833), and 27 is the only threshold that does. The endpoints bind: the recall-0.6 pass
+  rate peaks at ICC 0.25, the recall-0.8 rate bottoms at 0.95.
+- **V2 exposed a gap at 36.** Under V2's two-sided rule across the range, a pooled threshold
+  exists at 36, 35, 33, and 32 plants, and at no other count from 20 to 34. A job losing two
+  plants would leave sensitivity ungated. At seven per job (42 plants, threshold 31) a threshold
+  exists at every count from 35 to 54, and the joint chance that a recall-0.8 instrument clears
+  the pooled bar and all four floors rises from 0.67 to 0.81 at its low point. The fold took V1's
+  plant-count lever: **42 plants, seven per job, threshold 31**, with at least four semantic
+  plants per job to keep C2's half. The seventh plant adds no run.
+- **Pass rates, 31 of 42:** recall 0.6 passes 0.08 / 0.06 / 0.05 / 0.05 at ICC 0.25 / 0.5 /
+  0.72 / 0.95; recall 0.7 passes 0.58 / 0.44 / 0.38 / 0.36; recall 0.8 passes 0.98 / 0.93 / 0.90
+  / 0.88.
+- **Floors** rescale by one rule: the largest count a class at recall 0.8 reaches with probability
+  at least 0.9 at every ICC in the range. That gives 4 of 7 and 9 of 14 at full count (4 of 6 and
+  8 of 12 reproduce under it).
+- **Stability.** At 42 plants and recall 0.8, a floor of about 0.13 passes ICC 0.25 with
+  probability 0.8, and it passes ICC 0.2 at 0.66 and ICC 0.1 at 0.32. No floor separates a good
+  instrument from a bad one, so stability is reported (C4's second branch), with the 0.35 floor's
+  pass rates beside it.
+
+### Dispositions
+
+| Finding | Disposition |
+| --- | --- |
+| Major 1, stability floor | Ruled V1. Spec, Bars ("The operating characteristic" states the refit and why; "Stability" reported, with the computation); What the instrument is for; Failure rule; Reported list; parent erratum |
+| Major 2, thin-map recomputation | Ruled V2. Path map, "Recomputed thresholds" (two-sided rule over 0.25 to 0.95, smallest pooled threshold, floors rescale by a stated rule, a bar with no threshold is reported). The plant count moves to 42 under V1's lever, since 36 leaves no threshold at 34 |
+| Major 3, fix-commit mining | Ruled V3. Sequence step 5 (Mine); Planting, "The miner" (separate Opus agent, scripted exclusion of cited commits and development-item spans); planter works from the filtered list; Freeze list carries the miner prompt and exclusion script |
+| Major 4, budget cuts | Ruled V4. Budget: a round 0 line (0.4M to 0.6M); cuts fire at the 8M flag before or after the freeze, in order round 2, Sonnet arm, transfer planting and planted runs; Data split notes the transfer cut |
+| Minor 1, proxy map | Folded. Tuning, "Rounds": any verified quote from any verified Opus control run of the job in pass 1; on-map counts reported before round 1; round 2 is skipped when round 1 leaves fewer than two on-map plants missed |
+| Minor 2, round 0 criteria timing | Ruled (conductor). Sequence step 0; Planting, "Record" |
+| Minor 3, precision pool | Folded. Scoring, "Pools" and the Bars table: the development jobs' mapping runs only |
+| Minor 4, agreement kappa pooling | Folded. Bars, "Adjudicator agreement": gate pooled, report per stratum; pooled kappa averages each stratum's observed and chance agreement, because chance agreement over the union of the label sets inflates kappa; the five-item test runs per stratum, and pooled raw agreement at 85 percent applies if either stratum fails it |
+| Minor 5, `blockedBy` match | Folded. Scoring, "Harness items": repository-relative path equality or containment under an absent-list directory; a command matches on first word and first argument against the denial record |
+| Minor 6, script cannot judge subjects | Folded. Planting, "Validity check": the subject check moves to the blind read and covers every development-set item |
+| Minor 7, ceiling and thin-map order | Folded under V2. Path map, "The ceiling wins" |
+| Minor 8, planter export leak | Folded. The export, fourth bullet |
+| Minor 9, trial tie rule | Folded. Finding for pass 2a: "at most two thirds" reading, 52 percent and 5 to 14 percent; the strict reading's 4 to 12 percent; 52 percent follows from the effect sitting on the threshold; a halving chain is kept 78 to 86 percent |
+| Nit, "at 0.82" | Removed; the passage was rewritten |
+| Nit, "both tables" | Removed; the code-path paragraph names what it reproduces |
+
+The five two-way readings close with majors 2 to 4 and minors 1, 3, 4, 5, and 7. **Counts:** 13
+findings and 2 nits: 5 ruled (V1 to V4 and the round 0 timing), 8 folded, 0 refused.
+
+### For the owner
+
+- **The budget still overruns before cuts.** Mid about 10.5M (9.6M to 11.3M) before cuts. The
+  flag trips during mapping, mining, or planting, after round 2 has run, so the Sonnet arm and the
+  transfer planted runs are cut. After cuts: mid about 9.5M, range 8.6M to 10.3M. The high end is
+  over the 10M ceiling, and the owner rules on it at the plan gate.
+- **Cutting the transfer planted runs is likely at the mid estimate.** Out-of-sample sensitivity
+  would then go unmeasured; out-of-sample precision survives through the transfer mapping runs.
+- **The plant count moved from 36 to 42.** That is V1's lever, applied because V2's rule leaves 36
+  one missing plant away from an ungated bar.

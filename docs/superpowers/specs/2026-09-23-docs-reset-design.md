@@ -48,8 +48,8 @@ Where a line below and the body or the section above disagree, this section wins
 - **Pass 1b's spec
   ([`2026-09-24-docs-reset-pass-1b-validation-design.md`](2026-09-24-docs-reset-pass-1b-validation-design.md))
   replaces pass 1 items 8 and 9 and changes pass 2a item 5.** Validation gates on-path
-  sensitivity, stability, precision, and adjudicator agreement over fresh plants on frozen path
-  maps, with a per-class outcome: a class that fails runs its readers in pass 2a as advisory
+  sensitivity, precision, and adjudicator agreement over fresh plants on frozen path maps, and
+  reports stability, with a per-class outcome: a class that fails runs its readers in pass 2a as advisory
   only, so pass 2a no longer waits on every class passing. Item 8's standing regression floor is
   now pass 1b's frozen test batch, and the baseline failures (F1 to F6, R1 to R4) move from a
   gate to a report, since the instrument was tuned on them. In pass 2a item 5, the Opus and

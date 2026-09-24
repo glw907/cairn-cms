@@ -14,6 +14,7 @@ import {
   grepHitPages,
   parseStream,
   readerReport,
+  splitShellSegments,
   toolCalls,
   toReaderRelative,
   usageFromEvents,
@@ -120,6 +121,37 @@ describe('derivePagesRead', () => {
     expect(derivePagesRead([narrow], ['docs/troubleshooting.md', 'docs/setup-recovery.md'])).toEqual(['docs/troubleshooting.md']);
     const wide = grepCall({ path: '/reader/job/docs', glob: '*.md' }, '3:send_email');
     expect(derivePagesRead([wide], ['docs/troubleshooting.md', 'docs/setup-recovery.md'])).toEqual([]);
+  });
+});
+
+describe('splitShellSegments', () => {
+  it('does not split inside a single-quoted pattern carrying a literal escaped pipe', () => {
+    expect(splitShellSegments("grep -E 'a\\|b' docs/guide.md")).toEqual(["grep -E 'a\\|b' docs/guide.md"]);
+  });
+
+  it('still splits on an unquoted pipe, semicolon, &&, ||, and newline', () => {
+    expect(splitShellSegments('a | b')).toEqual(['a ', ' b']);
+    expect(splitShellSegments('a; b')).toEqual(['a', ' b']);
+    expect(splitShellSegments('a && b')).toEqual(['a ', ' b']);
+    expect(splitShellSegments('a || b')).toEqual(['a ', ' b']);
+    expect(splitShellSegments('a\nb')).toEqual(['a', 'b']);
+  });
+
+  it('does not end a double-quoted span early on an escaped quote', () => {
+    expect(splitShellSegments('echo "a \\" b | c"')).toEqual(['echo "a \\" b | c"']);
+  });
+
+  it('does not split on a delimiter an unquoted backslash escapes', () => {
+    expect(splitShellSegments('find . -name x -exec cat {} \\; -print')).toEqual(['find . -name x -exec cat {} \\; -print']);
+    expect(splitShellSegments('a\\|b')).toEqual(['a\\|b']);
+  });
+
+  it('lets a page read through a grep whose quoted pattern carries an escaped pipe still reach pagesRead', () => {
+    // Before the fix, the split on a bare `[;|\n]` character class cut inside the quotes, at the
+    // escaped pipe, so the page name landed in a later segment whose own first word ("b'") was
+    // never a shell reader and the read was missed entirely.
+    const call = bash("grep -E 'a\\|b' docs/guide.md");
+    expect(derivePagesRead([call], ['docs/guide.md'])).toEqual(['docs/guide.md']);
   });
 });
 

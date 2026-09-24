@@ -20,19 +20,16 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Paused (2026-09-24, 01:20): pass 1 Task 11 failed; Geoff's decision needed before the fix
-round.** Tasks 0 to 10 are done and merged into `docs-reset-system`; Task 9's v2 chain is in
-`~/.dotfiles` (unpushed). Task 11's validation (`docs/internal/record/2026-09-23-docs-reset-validation.md`)
-fails all four reader classes: plants off each job's path went unseen, 1 of 9 held-out defects was
-caught, and false positives ran 4 to 23 per class against a cap of 3 (most from rule candidates). The
-plan's one fix round tunes only on the scripter's tuning half, so it cannot address these; changing
-plant placement or counting now would be post-hoc. Options: (a) run the fix round as written, which
-most likely fails and stops the pass; (b) pre-register a redesigned validation (plants only on each
-job's path, rule candidates reported apart from findings) and rerun it; (c) close pass 1 with readers
-scoped to what they reliably do (on-path job testing and finding real defects) and carry exhaustive
-detection to pass 2a. Recommendation: (b), then (c) if it still fails. Spend: about 9M counted of
-16M (flag 12.8M), an estimate; `/cost` gives the real figure. Morning list for Geoff is in the
-ledger at the pass 1 plan's foot.
+**Next: close docs reset pass 1 (Task 12), then pass 1b (Geoff, 2026-09-24).** Tasks 0 to 10
+are done and merged into `docs-reset-system`; Task 9's v2 chain is in `~/.dotfiles` (unpushed).
+Task 11's validation failed all four reader classes on its original design
+(`docs/internal/record/2026-09-23-docs-reset-validation.md`): readers test the job in front of them
+and find real defects, but miss plants off their path and over-report through rule candidates.
+Geoff chose to close pass 1 with that failure recorded as a method finding, then run pass 1b, a
+validation redesign (brainstorm, pre-registered plan, rerun on the merged system), before pass 2a.
+Pass 1b's open questions are in the pass 1 ledger's "decision" row. Spend: about 9M counted of 16M
+(estimate). The morning list (owner-brief line 49, stale facts, `~/.dotfiles` push, the old
+Cloudflare tokens, global `CLAUDE.md` over budget) is in the pass 1 ledger.
 
 **Docs reset pass 1, the writing system.** The docs are reset from scratch (only verified facts
 survive), and pass 1 builds and validates the writing system first: confined podman reader
@@ -43,7 +40,7 @@ docs-as-tests, and validation with controls and a held-out defect set. Spec
 Inputs are ready: the readers' plan token (`CAIRN_DOCS_READER_OAUTH_TOKEN`, age store, verified
 with `apiKeySource: none`) and the exemplar corpus (68 captures at
 `~/.local/share/cairn/exemplars/`, manifest `docs/internal/record/docs-exemplars.md`). Pass 2a (audience
-record, exemplar review, calibration trial) follows pass 1's close.
+record, exemplar review, calibration trial) follows pass 1b.
 
 ## Open decisions and watches
 
@@ -65,8 +62,9 @@ record, exemplar review, calibration trial) follows pass 1's close.
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), continue docs
-reset pass 1 (`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`) through the `cairn-pass`
-skill, in `.claude/worktrees/docs-reset-system`. Read the ledger at the plan's foot and the
-validation record first. Task 11 is paused on Geoff's choice among options (a), (b), and (c) in
-STATUS; act on the option he names, then Task 12 closes the pass.
+In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), close docs reset
+pass 1 through the `cairn-pass` skill's ending ritual, in `.claude/worktrees/docs-reset-system`: run
+Task 12 of `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md` as amended by the ledger's
+"decision" row (record Task 11 as a failed validation of the original design, no validation pass
+condition). Read the ledger at the plan's foot first. After the PR merges and STATUS names pass 1b,
+start pass 1b's brainstorm in a new session on `claude-opus-5-5` at effort `high`.

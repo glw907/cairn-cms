@@ -20,6 +20,17 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
+**Next: close docs reset pass 1 (Task 12), then pass 1b (Geoff, 2026-09-24).** Tasks 0 to 10
+are done and merged into `docs-reset-system`; Task 9's v2 chain is in `~/.dotfiles` (unpushed).
+Task 11's validation failed all four reader classes on its original design
+(`docs/internal/record/2026-09-23-docs-reset-validation.md`): readers test the job in front of them
+and find real defects, but miss plants off their path and over-report through rule candidates.
+Geoff chose to close pass 1 with that failure recorded as a method finding, then run pass 1b, a
+validation redesign (brainstorm, pre-registered plan, rerun on the merged system), before pass 2a.
+Pass 1b's open questions are in the pass 1 ledger's "decision" row. Spend: about 9M counted of 16M
+(estimate). The morning list (owner-brief line 49, stale facts, `~/.dotfiles` push, the old
+Cloudflare tokens, global `CLAUDE.md` over budget) is in the pass 1 ledger.
+
 **Docs reset pass 1, the writing system.** The docs are reset from scratch (only verified facts
 survive), and pass 1 builds and validates the writing system first: confined podman reader
 agents, stable fact ids with sentence-level provenance, the drafter agent, a v2 page chain,
@@ -28,10 +39,8 @@ docs-as-tests, and validation with controls and a held-out defect set. Spec
 `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md` (13 tasks, ceiling 12M, flag 9.6M).
 Inputs are ready: the readers' plan token (`CAIRN_DOCS_READER_OAUTH_TOKEN`, age store, verified
 with `apiKeySource: none`) and the exemplar corpus (68 captures at
-`~/.local/share/cairn/exemplars/`, manifest `docs/internal/record/docs-exemplars.md`). Task 0's
-remaining owner items, the Cloudflare token scoped to the scratch Worker and the GitHub App
-installation confirmation, come after the conductor creates the scratch site. Pass 2a (audience
-record, exemplar review, calibration trial) follows pass 1's close.
+`~/.local/share/cairn/exemplars/`, manifest `docs/internal/record/docs-exemplars.md`). Pass 2a (audience
+record, exemplar review, calibration trial) follows pass 1b.
 
 ## Open decisions and watches
 
@@ -53,8 +62,9 @@ record, exemplar review, calibration trial) follows pass 1's close.
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), execute docs
-reset pass 1 (`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`) through the `cairn-pass`
-skill, on a `docs-reset-system` worktree off `main`. Start with Task 0: write the STATUS line,
-create the private scratch site, then ask Geoff for the Cloudflare token and the GitHub App
-confirmation in one question.
+In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), close docs reset
+pass 1 through the `cairn-pass` skill's ending ritual, in `.claude/worktrees/docs-reset-system`: run
+Task 12 of `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md` as amended by the ledger's
+"decision" row (record Task 11 as a failed validation of the original design, no validation pass
+condition). Read the ledger at the plan's foot first. After the PR merges and STATUS names pass 1b,
+start pass 1b's brainstorm in a new session on `claude-opus-5-5` at effort `high`.

@@ -30,6 +30,29 @@ of either form (`path:22,63` or `path:22-24,63`) names more than one line or ran
 file. A `Source:` naming only a doc page or a symbol with no line is also accepted, but see the
 `[verified]` entry below for what that means for the tag.
 
+A pointer into a `.ts` or `.js` file under `src/` may name a declaration instead of a line:
+`` `src/lib/delivery/robots.ts#CONTENT_SIGNAL` ``, or a dotted path to a nested one,
+`` `src/lib/sveltekit/guard.ts#createAuthGuard.handle` `` (an interface member, an object property,
+a function declared inside another). `check:facts` finds the declaration with the TypeScript
+compiler API and checks a following anchor, `` (`...`) ``, against the declaration's own lines, so
+an edit that moves the declaration never stales the pointer. Prefer it over `path:line` for any
+`src/` claim that rests on a named declaration. A `.svelte` file, `package.json`, and `tool/` keep
+`path:line`.
+
+## The owner tier
+
+A bullet whose source is the owner brief, `docs/internal/what-cairn-is-and-is-not.md` (named in its
+`Source:` or in its section heading), is in the owner tier. Each one carries a key phrase, a short
+phrase copied verbatim from the owner brief that the claim rests on, written before the source:
+
+```
+- `f:<id>` <the claim>. Key phrase: "floors, not ceilings". Source: <the owner brief>. [<tag>]
+```
+
+`check:facts` fails an owner-tier bullet with no key phrase, and a key phrase the owner brief does
+not contain verbatim (case and line wrapping aside). `check:provenance` matches every key phrase in
+a page's sentences, so a sentence that uses one must cite a fact that carries it.
+
 Two non-fact headings exist per file, both skipped by the gate: `## Harvest record` (the
 cross-page-duplicate index, the "not harvested as a fact" notes, and the per-slice harvest
 counts, merged under one heading) and `## Provenance` (the harvest and tightening narrative). A
@@ -42,13 +65,13 @@ leading code span, `` `f:xxxxxx` ``, six lowercase base36 characters right after
 own `- `. The bracket scan already skips a code span, so the id never interferes with the tag
 rule above.
 
-**The one-line id rule (an agent filing or editing a fact bullet follows this, no more): mint an
-id once with `node scripts/checks/check-facts.mjs --mint`, put it in a leading code span right
-after the bullet's `- `, and never change it again, including when the bullet's own claim, source,
-or tag changes later.** An id is never derived from the bullet's text, so editing the claim, the
-source, or the tag leaves the id exactly as it was; only a brand-new bullet gets a freshly minted
-one. `check:facts` fails a bullet with no id and a duplicate id anywhere in the container, across
-every file, so a filer working in a separate worktree mints independently and never collides.
+**Id rule: mint once with `node scripts/checks/check-facts.mjs --mint`, lead the bullet with it as a code span, and never change it.**
+
+An id is never derived from the bullet's text, so editing the claim, the source, or the tag leaves
+the id exactly as it was; only a brand-new bullet gets a freshly minted one. `check:facts` fails a
+bullet with no id, a duplicate id anywhere in the container, across every file, and an id on a
+`## Harvest record` or `## Provenance` bullet. A filer working in a separate worktree mints
+independently and never collides.
 
 ## Tag vocabulary
 
@@ -84,6 +107,7 @@ every file, so a filer working in a separate worktree mints independently and ne
   re-harvested as if it were still open.
 - Every fact bullet carries an id, minted once and never changed; see "Fact ids" above for the
   one-line rule.
+- Every owner-tier bullet carries a key phrase; see "The owner tier" above.
 - No em dash anywhere in this container; use a comma, a colon, or a new sentence instead.
 
 ## How this container grows
@@ -130,8 +154,9 @@ facts here is a manual, reviewed step, the same as editing any other doc.
 
 `npm run check:facts` (`scripts/checks/check-facts.mjs`) walks every file here and enforces the
 grammar above: a leading id, a source, exactly one vocabulary tag in colon form at the end of the
-bullet, and every `path:line` pointer resolved against the real file, plus that no id repeats
-anywhere in the container. It prints per-file counts by tag on success, replacing what used to be
+bullet, every `path:line` pointer resolved against the real file, every `path#Symbol` pointer
+resolved to its declaration, and a verbatim key phrase on every owner-tier bullet, plus that no id
+repeats anywhere in the container. It prints per-file counts by tag on success, replacing what used to be
 a hand-maintained index table in this README.
 
 A `Source:` pointer into `docs/internal/record/` is the one exception: a repository-class reader
@@ -139,6 +164,11 @@ export drops that whole directory on purpose (`scripts/docs-readers/lib/prepare-
 `REPOSITORY_EXCLUDED_PATHS`), so a pointer into it is skipped, not failed, exactly when the
 directory itself is absent; when the directory exists and the cited file inside it does not, that
 is an ordinary broken pointer and still fails.
+
+A page brief under `docs/internal/briefs/` cites these bullets by id, sentence by sentence, and
+`npm run check:provenance` holds the citations to this container: a cited bullet tagged
+`[candidate]` (any qualifier), `[rejected]`, or `[docs-drift]` is not citable, while `[verified]`,
+`[external]`, and `[vendor]` are. See `docs/internal/briefs/README.md`.
 
 A one-shot, re-runnable migration, `node scripts/checks/migrate-fact-ids.mjs`, gave every existing
 bullet its id; it changes nothing on a bullet that already has one, so running it again, or after

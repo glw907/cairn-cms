@@ -849,6 +849,20 @@ the named human gates only):**
   second one landed in this pass's own first draft. Both were caught by a reviewer reading the
   cited line, not by the gate. The docs rebuild reads these pointers as its raw material, so the
   cost lands there. Trigger: a third stale pointer, or the docs rebuild's first harvest pass.
+  Partly answered (docs reset pass 1, 2026-09-23): a pointer into a `.ts` or `.js` file under
+  `src/` may now cite `path#Symbol`, which `check:facts` resolves to the declaration's current
+  lines with the TypeScript compiler API, and ten of the fourteen off-line `src/` pointers moved
+  to it. The line form keeps the gap for `.svelte` markup, `package.json`, and `tool/`.
+
+- **`check:facts --cited-by <id>`, the reverse index from a fact to the briefs that cite it (docs
+  reset pass 1, 2026-09-23).** `check:provenance` checks a brief's citations forward, from each
+  sentence to its fact, so an edit to a cited fact bullet leaves every citing page unflagged: the
+  id stays put by design, and nothing lists the pages that now rest on changed wording. The
+  reverse mode reads every brief under `docs/internal/briefs/` and prints the pages whose
+  sentences cite a given id, so a filer editing a fact knows which pages to re-read. It was struck
+  from pass 1 because the baseline record's page-versus-code failures were drift no citation
+  index sees, and no brief existed yet to index. Trigger: the first committed brief whose cited
+  fact is later edited, or the docs reset's first drafted page (pass 2b).
 
 - **`npm run check:surface -- --update` cannot regenerate the surface snapshot (doctor-retirement
   pre-task, 2026-09-21).** The script is three commands joined by `&&`, and npm appends run
@@ -2441,6 +2455,17 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **Symbol-anchored `Source:` pointers for the Go `tool/` tree (docs reset pass 1, 2026-09-23).**
+  `check:facts` resolves `path#Symbol` only for `.ts` and `.js` files under `src/`, through the
+  TypeScript compiler API, so a pointer into `tool/` still cites `path:line` and rots when an edit
+  moves the line. The Go form would resolve a function, type, method (`Type.Method`), or
+  package-level constant through `go/parser` and `go/ast`, run as a small helper binary or a
+  `go run` from the gate, and check the anchor against the declaration's own lines the way the
+  TypeScript form does. The baseline's exact-line rot sat in `src/` (fourteen of sixteen off-line
+  pointers, none in `tool/`), so the Go half was filed rather than built. Trigger: the rot measure
+  (`npx tsx scripts/docs-readers/rot.ts`) reports an off-line `tool/` pointer, or a pass files
+  facts against `tool/` source in bulk.
 
 - **Five small simplifications the pre-cut dependency sweep found and filed, none taken (Task 1,
   2026-09-20).** Ruling 3 defaults every survey finding to "file" unless it is zero-behavior-change

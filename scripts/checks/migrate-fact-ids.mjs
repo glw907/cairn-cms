@@ -3,9 +3,9 @@
 // each bullet's leading `- ` and changes nothing else: no other byte on the bullet's own line
 // moves, a soft-wrapped continuation line is untouched, and a bullet already carrying an id (or
 // one under the `## Harvest record` / `## Provenance` headings, which carry no id at all) is left
-// exactly as it stands. Re-running this script is a no-op once every bullet has an id, which is
-// what Task 12 relies on: it re-runs the migration on a rebase onto `main` immediately before the
-// PR merges, so a bullet another branch filed in the meantime still gets one.
+// exactly as it stands. Re-running this script is a no-op once every bullet has an id, so it is
+// safe to run again after a rebase onto `main` picks up a bullet another branch filed in the
+// meantime: the new bullet gets an id and every already-migrated bullet is untouched.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

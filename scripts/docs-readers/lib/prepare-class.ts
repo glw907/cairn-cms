@@ -47,28 +47,47 @@ export function copyDocsSet(sourceRoot: string, docsSet: string[], dest: string)
 }
 
 /**
- * Pack this worktree into a tarball under a content-addressed name, so a second pack of changed
- * code can never collide with an npm-cached tarball at the same name, the trap
- * `scripts/lab/link-consumer.mjs` closes for the developer-facing consumer flow.
- * @param repoRoot - The engine checkout to build and pack.
+ * Pack one package directory into a tarball under a content-addressed name, so a second pack of
+ * changed code can never collide with an npm-cached tarball at the same name, the trap
+ * `scripts/lab/link-consumer.mjs` closes for the developer-facing consumer flow. `--ignore-scripts`
+ * skips `npm pack`'s own `prepare` hook; the caller has already built whatever needed building.
+ * @param packageDir - The directory holding the package's own `package.json`.
  * @param destDir - Where the tarball lands.
  * @param runner - The command runner; overridden in tests.
  * @returns The packed tarball's absolute path.
- * @throws When the build or the pack fails.
+ * @throws When the pack fails.
  */
-export function packEngineTarball(repoRoot: string, destDir: string, runner: CommandRunner = spawnRunner): string {
+export function packTarball(packageDir: string, destDir: string, runner: CommandRunner = spawnRunner): string {
   mkdirSync(destDir, { recursive: true });
-  const built = runner('npm', ['run', 'package'], { cwd: repoRoot });
-  if (built.status !== 0) throw new Error(`npm run package failed: ${built.stderr}`);
-  const packed = runner('npm', ['pack', '--pack-destination', destDir, '--silent'], { cwd: repoRoot });
-  if (packed.status !== 0) throw new Error(`npm pack failed: ${packed.stderr}`);
+  const packed = runner('npm', ['pack', '--ignore-scripts', '--pack-destination', destDir, '--silent'], { cwd: packageDir });
+  if (packed.status !== 0) throw new Error(`npm pack failed in ${packageDir}: ${packed.stderr}`);
   const name = decoder.decode(packed.stdout).trim().split('\n').pop();
-  if (!name) throw new Error('npm pack produced no filename');
+  if (!name) throw new Error(`npm pack produced no filename in ${packageDir}`);
   const packedPath = join(destDir, name);
   const digest = createHash('sha256').update(readFileSync(packedPath)).digest('hex').slice(0, 12);
   const tarball = join(destDir, `${name.replace(/\.tgz$/, '')}-${digest}.tgz`);
   renameSync(packedPath, tarball);
   return tarball;
+}
+
+/**
+ * Build this worktree once, then pack the engine and the dev backend into tarballs under
+ * `packTarball`'s content-addressed scheme. Building first and packing with `--ignore-scripts`
+ * means the engine is built exactly once, not once for the build and again for `npm pack`'s own
+ * `prepare` hook.
+ * @param repoRoot - This worktree's root.
+ * @param destDir - Where both tarballs land.
+ * @param runner - The command runner; overridden in tests.
+ * @returns The engine and dev-backend tarballs' absolute paths.
+ * @throws When the build or either pack fails.
+ */
+export function packEngineTarballs(repoRoot: string, destDir: string, runner: CommandRunner = spawnRunner): { engine: string; dev: string } {
+  const built = runner('npm', ['run', 'package'], { cwd: repoRoot });
+  if (built.status !== 0) throw new Error(`npm run package failed: ${built.stderr}`);
+  return {
+    engine: packTarball(repoRoot, destDir, runner),
+    dev: packTarball(join(repoRoot, 'packages/cairn-cms-dev'), destDir, runner),
+  };
 }
 
 /**
@@ -88,37 +107,63 @@ export function stripInstalledEngineExtras(installedDir: string): void {
   for (const name of INSTALLED_ENGINE_STRIP) rmSync(join(installedDir, name), { recursive: true, force: true });
 }
 
-/** Paths a site scaffold's source tree never carries into a job: prior installs and the lockfile a fresh install writes its own version of. */
-const SCAFFOLD_STRIP = /(^|[/\\])(node_modules|\.svelte-kit|dist|package-lock\.json)($|[/\\])/;
+/**
+ * Confirm a docs-and-site scaffold carries none of a reader's forbidden paths: the setup command's
+ * own guidance (`CLAUDE.md`, `.claude/`, not this reader's job) and the installed engine's docs,
+ * `claude/`, and skills. Independent of whether the removal steps ran, the same way
+ * `assertNoExcludedPaths` re-checks a repository export.
+ * @param siteDir - The scaffold `scaffoldSite` and `installAndStrip` built.
+ * @param packageName - The dependency whose installed copy is checked.
+ * @throws Listing every forbidden path that survived, when any did.
+ */
+export function assertSiteAnswerKeyAbsent(siteDir: string, packageName = '@glw907/cairn-cms'): void {
+  const installedDir = join(siteDir, 'node_modules', ...packageName.split('/'));
+  const forbidden = [join(siteDir, 'CLAUDE.md'), join(siteDir, '.claude'), ...INSTALLED_ENGINE_STRIP.map((name) => join(installedDir, name))];
+  const survived = forbidden.filter((path) => existsSync(path));
+  if (survived.length > 0) {
+    throw new Error(`docs-and-site scaffold at ${siteDir}: forbidden path(s) survived: ${survived.join(', ')}`);
+  }
+}
 
 /**
- * Copy a working site into a job's scaffold directory and point its engine dependency at a packed
- * tarball, so installing it resolves this worktree's own build rather than a registry release.
- * `from` is a working cairn site to copy from, such as `examples/showcase`; `dest` is the
- * scaffold's destination; `tarball` is the packed engine tarball's absolute path; `packageName` is
- * the dependency name to repoint.
+ * Export `templates/waymark`'s tracked files from git HEAD into a job's scaffold directory (the
+ * setup command's own committed output, never a working tree, so no ignored state such as
+ * `.wrangler/`, `.cairn/`, `test-results/`, or `.dev.vars` can reach a reader), drop the
+ * template's own `CLAUDE.md` and `.claude/`, and point its engine and dev-backend dependencies at
+ * packed tarballs. `repoRoot` is the checkout `templates/waymark` is exported from; `dest` is the
+ * scaffold's destination, replaced if it already exists; `tarballs` are the engine and dev-backend
+ * tarballs' absolute paths; `runner` is the command runner, overridden in tests.
+ * @throws When the export fails.
  */
 export function scaffoldSite({
-  from,
+  repoRoot,
   dest,
-  tarball,
-  packageName = '@glw907/cairn-cms',
+  tarballs,
+  runner = spawnRunner,
 }: {
-  from: string;
+  repoRoot: string;
   dest: string;
-  tarball: string;
-  packageName?: string;
+  tarballs: { engine: string; dev: string };
+  runner?: CommandRunner;
 }): void {
+  rmSync(dest, { recursive: true, force: true });
   mkdirSync(dest, { recursive: true });
-  cpSync(from, dest, { recursive: true, filter: (src) => !SCAFFOLD_STRIP.test(src) });
+  const archive = runner('git', ['archive', 'HEAD', 'templates/waymark'], { cwd: repoRoot });
+  if (archive.status !== 0) throw new Error(`git archive of templates/waymark failed: ${archive.stderr}`);
+  // templates/waymark/<file> is two path components deep; strip them so dest becomes the site root.
+  const extract = runner('tar', ['-x', '-C', dest, '--strip-components=2'], { cwd: dest, input: archive.stdout });
+  if (extract.status !== 0) throw new Error(`tar extract of templates/waymark failed: ${extract.stderr}`);
+  rmSync(join(dest, 'CLAUDE.md'), { force: true });
+  rmSync(join(dest, '.claude'), { recursive: true, force: true });
   const pkgPath = join(dest, 'package.json');
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { dependencies?: Record<string, string> };
-  pkg.dependencies = { ...pkg.dependencies, [packageName]: `file:${tarball}` };
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
+  pkg.dependencies = { ...pkg.dependencies, '@glw907/cairn-cms': `file:${tarballs.engine}` };
+  pkg.devDependencies = { ...pkg.devDependencies, '@glw907/cairn-cms-dev': `file:${tarballs.dev}` };
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 }
 
 /**
- * Install a scaffolded site's dependencies from its pointed-at tarball, then strip the installed
+ * Install a scaffolded site's dependencies from its pointed-at tarballs, then strip the installed
  * engine's extra directories. Preparation-time only: a reader's own container never runs
  * `npm install`, since its egress proxy allows nothing but `api.anthropic.com`. `siteDir` is the
  * scaffold `scaffoldSite` built; `runner` is the command runner, overridden in tests; `packageName`
@@ -136,32 +181,39 @@ export function installAndStrip(
 
 /**
  * Build a docs-and-site job's prepared tree: the published docs set at their doc-relative paths,
- * and a scaffolded site with the engine installed from a packed tarball and its `docs/`,
- * `claude/`, and `skills/` directories gone. `sourceRoot` is the checkout the docs set is copied
- * from; `docsSet` is the pages the job's docs set names; `from` is the site to scaffold from;
- * `tarball` is the packed engine tarball's absolute path; `dest` is the prepared tree's root,
- * replaced if it already exists; `runner` is the command runner, overridden in tests.
+ * and a scaffolded site (`templates/waymark`'s tracked files) with the engine and dev backend
+ * installed from packed tarballs, its own `CLAUDE.md`/`.claude/` gone, and the installed engine's
+ * `docs/`, `claude/`, and `skills/` directories gone. Any failure removes `dest` before rethrowing,
+ * so a partially built tree, which could carry the answer key mid-strip, never stays on disk.
+ * `sourceRoot` is the checkout the docs set and `templates/waymark` are exported from; `docsSet` is
+ * the pages the job's docs set names; `tarballs` are the packed engine and dev-backend tarballs;
+ * `dest` is the prepared tree's root, replaced if it already exists; `runner` is the command
+ * runner, overridden in tests.
  */
 export function prepareDocsAndSite({
   sourceRoot,
   docsSet,
-  from,
-  tarball,
+  tarballs,
   dest,
   runner,
 }: {
   sourceRoot: string;
   docsSet: string[];
-  from: string;
-  tarball: string;
+  tarballs: { engine: string; dev: string };
   dest: string;
   runner?: CommandRunner;
 }): void {
   rmSync(dest, { recursive: true, force: true });
-  copyDocsSet(sourceRoot, docsSet, dest);
-  const siteDir = join(dest, 'site');
-  scaffoldSite({ from, dest: siteDir, tarball });
-  installAndStrip(siteDir, { runner });
+  try {
+    copyDocsSet(sourceRoot, docsSet, dest);
+    const siteDir = join(dest, 'site');
+    scaffoldSite({ repoRoot: sourceRoot, dest: siteDir, tarballs, runner });
+    installAndStrip(siteDir, { runner });
+    assertSiteAnswerKeyAbsent(siteDir);
+  } catch (error) {
+    rmSync(dest, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 /**
@@ -189,9 +241,11 @@ export function assertNoExcludedPaths(dir: string, excluded: string[] = REPOSITO
 /**
  * Export a commit of a git checkout into a clean directory, excluding the two answer-key subtrees
  * by pathspec (this repository sets no `export-ignore` attribute), then re-checking that neither
- * it nor `.git` survived, regardless of whether the pathspec worked. `repoRoot` is the checkout to
- * export from; `commit` is the commit-ish to export; `dest` is where the export lands, its
- * existing contents replaced; `runner` is the command runner, overridden in tests.
+ * it nor `.git` survived, regardless of whether the pathspec worked. Any failure, including the
+ * re-check, removes `dest` before rethrowing, so a survived answer-key path never stays on disk.
+ * `repoRoot` is the checkout to export from; `commit` is the commit-ish to export; `dest` is where
+ * the export lands, its existing contents replaced; `runner` is the command runner, overridden in
+ * tests.
  * @throws When the archive or its extraction fails, or an excluded path survives.
  */
 export function prepareRepositoryExport({
@@ -207,9 +261,14 @@ export function prepareRepositoryExport({
 }): void {
   rmSync(dest, { recursive: true, force: true });
   mkdirSync(dest, { recursive: true });
-  const archive = runner('git', ['archive', commit, '--', '.', ':!docs/internal/record', ':!docs/superpowers'], { cwd: repoRoot });
-  if (archive.status !== 0) throw new Error(`git archive failed for ${commit}: ${archive.stderr}`);
-  const extract = runner('tar', ['-x', '-C', dest], { cwd: dest, input: archive.stdout });
-  if (extract.status !== 0) throw new Error(`tar extract failed for ${commit}: ${extract.stderr}`);
-  assertNoExcludedPaths(dest);
+  try {
+    const archive = runner('git', ['archive', commit, '--', '.', ':!docs/internal/record', ':!docs/superpowers'], { cwd: repoRoot });
+    if (archive.status !== 0) throw new Error(`git archive failed for ${commit}: ${archive.stderr}`);
+    const extract = runner('tar', ['-x', '-C', dest], { cwd: dest, input: archive.stdout });
+    if (extract.status !== 0) throw new Error(`tar extract failed for ${commit}: ${extract.stderr}`);
+    assertNoExcludedPaths(dest);
+  } catch (error) {
+    rmSync(dest, { recursive: true, force: true });
+    throw error;
+  }
 }

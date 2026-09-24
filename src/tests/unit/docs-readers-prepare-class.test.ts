@@ -5,9 +5,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   assertNoExcludedPaths,
+  assertSiteAnswerKeyAbsent,
   copyDocsSet,
   installAndStrip,
-  packEngineTarball,
+  packEngineTarballs,
+  packTarball,
   prepareDocsAndSite,
   prepareRepositoryExport,
   scaffoldSite,
@@ -24,6 +26,16 @@ function tmp(prefix: string): string {
 function write(file: string, content: string): void {
   mkdirSync(join(file, '..'), { recursive: true });
   writeFileSync(file, content);
+}
+
+/** Commit every file under `repoRoot` to a fresh git history, for a real `git archive` round trip. */
+function commitAll(repoRoot: string): void {
+  const git = (args: string[]) => execFileSync('git', args, { cwd: repoRoot });
+  git(['init', '-q']);
+  git(['config', 'user.email', 'test@example.com']);
+  git(['config', 'user.name', 'Test']);
+  git(['add', '.']);
+  git(['commit', '-q', '-m', 'initial']);
 }
 
 describe('copyDocsSet', () => {
@@ -69,23 +81,67 @@ describe('stripInstalledEngineExtras', () => {
   });
 });
 
-describe('scaffoldSite', () => {
-  it('copies a site, drops prior installs, and repoints its engine dependency at the tarball', () => {
-    const from = tmp('site-source');
-    const dest = tmp('site-dest');
+describe('assertSiteAnswerKeyAbsent', () => {
+  it('passes when the site carries none of the forbidden paths', () => {
+    const siteDir = tmp('site-clean');
     try {
-      write(join(from, 'package.json'), JSON.stringify({ name: 'site', dependencies: { '@glw907/cairn-cms': 'file:../..', other: '^1.0.0' } }));
-      write(join(from, 'src/routes/+page.svelte'), '<h1>hi</h1>');
-      write(join(from, 'node_modules/leftover/index.js'), 'stale');
-      write(join(from, 'package-lock.json'), '{}');
-      scaffoldSite({ from, dest, tarball: '/cache/engine-abc123.tgz' });
-      expect(existsSync(join(dest, 'node_modules'))).toBe(false);
-      expect(existsSync(join(dest, 'package-lock.json'))).toBe(false);
+      write(join(siteDir, 'package.json'), '{}');
+      write(join(siteDir, 'node_modules/@glw907/cairn-cms/dist/index.js'), 'export {};');
+      expect(() => assertSiteAnswerKeyAbsent(siteDir)).not.toThrow();
+    } finally {
+      rmSync(siteDir, { recursive: true, force: true });
+    }
+  });
+
+  it('lists every forbidden path that survived', () => {
+    const siteDir = tmp('site-dirty');
+    try {
+      write(join(siteDir, 'CLAUDE.md'), 'setup guidance');
+      write(join(siteDir, '.claude/agents/x.md'), 'agent');
+      write(join(siteDir, 'node_modules/@glw907/cairn-cms/docs/index.md'), 'answer key');
+      expect(() => assertSiteAnswerKeyAbsent(siteDir)).toThrow(/CLAUDE\.md/);
+    } finally {
+      rmSync(siteDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('scaffoldSite', () => {
+  it('exports templates/waymark, drops its own guidance, and repoints both engine dependencies at their tarballs', () => {
+    const repoRoot = tmp('waymark-repo');
+    const dest = tmp('waymark-dest');
+    try {
+      write(
+        join(repoRoot, 'templates/waymark/package.json'),
+        JSON.stringify({
+          name: 'site',
+          dependencies: { '@glw907/cairn-cms': '^0.97.0' },
+          devDependencies: { '@glw907/cairn-cms-dev': '^0.97.0', other: '^1.0.0' },
+        }),
+      );
+      write(join(repoRoot, 'templates/waymark/src/routes/+page.svelte'), '<h1>hi</h1>');
+      write(join(repoRoot, 'templates/waymark/CLAUDE.md'), 'setup guidance');
+      write(join(repoRoot, 'templates/waymark/.claude/agents/x.md'), 'agent');
+      commitAll(repoRoot);
+      scaffoldSite({ repoRoot, dest, tarballs: { engine: '/cache/engine-abc123.tgz', dev: '/cache/dev-def456.tgz' } });
+      expect(existsSync(join(dest, 'CLAUDE.md'))).toBe(false);
+      expect(existsSync(join(dest, '.claude'))).toBe(false);
       expect(readFileSync(join(dest, 'src/routes/+page.svelte'), 'utf8')).toBe('<h1>hi</h1>');
       const pkg = JSON.parse(readFileSync(join(dest, 'package.json'), 'utf8'));
-      expect(pkg.dependencies).toEqual({ '@glw907/cairn-cms': 'file:/cache/engine-abc123.tgz', other: '^1.0.0' });
+      expect(pkg.dependencies).toEqual({ '@glw907/cairn-cms': 'file:/cache/engine-abc123.tgz' });
+      expect(pkg.devDependencies).toEqual({ '@glw907/cairn-cms-dev': 'file:/cache/dev-def456.tgz', other: '^1.0.0' });
     } finally {
-      rmSync(from, { recursive: true, force: true });
+      rmSync(repoRoot, { recursive: true, force: true });
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('throws when the archive step fails', () => {
+    const dest = tmp('waymark-fail');
+    try {
+      const runner: CommandRunner = () => ({ status: 128, stdout: Buffer.alloc(0), stderr: 'unknown revision' });
+      expect(() => scaffoldSite({ repoRoot: '/unused', dest, tarballs: { engine: 'e', dev: 'd' }, runner })).toThrow(/unknown revision/);
+    } finally {
       rmSync(dest, { recursive: true, force: true });
     }
   });
@@ -127,39 +183,60 @@ describe('installAndStrip', () => {
   });
 });
 
-describe('packEngineTarball', () => {
-  it('builds, packs, and renames the tarball to a content-addressed name', () => {
+describe('packTarball', () => {
+  it('throws when the pack itself fails', () => {
+    const packageDir = tmp('pkg-fail');
+    const destDir = tmp('pkg-fail-dest');
+    try {
+      const runner: CommandRunner = () => ({ status: 1, stdout: Buffer.alloc(0), stderr: 'ENOENT' });
+      expect(() => packTarball(packageDir, destDir, runner)).toThrow(/ENOENT/);
+    } finally {
+      rmSync(packageDir, { recursive: true, force: true });
+      rmSync(destDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('packEngineTarballs', () => {
+  it('builds once, then packs the engine and the dev backend to content-addressed names', () => {
     const repoRoot = tmp('repo');
     const destDir = tmp('pack-dest');
+    const devDir = join(repoRoot, 'packages/cairn-cms-dev');
     try {
       const calls: string[] = [];
       const runner: CommandRunner = (command, args, { cwd }) => {
-        calls.push(`${command} ${args.join(' ')}`);
+        calls.push(`${command} ${args.join(' ')} (in ${cwd})`);
         if (command === 'npm' && args[0] === 'run') return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
         if (command === 'npm' && args[0] === 'pack') {
           const destArg = args[args.indexOf('--pack-destination') + 1];
-          writeFileSync(join(destArg, 'glw907-cairn-cms-0.97.0.tgz'), 'fake-tarball-bytes');
-          return { status: 0, stdout: Buffer.from('glw907-cairn-cms-0.97.0.tgz\n'), stderr: '' };
+          const name = cwd === devDir ? 'glw907-cairn-cms-dev-0.97.0.tgz' : 'glw907-cairn-cms-0.97.0.tgz';
+          writeFileSync(join(destArg, name), `fake-tarball-bytes-${name}`);
+          return { status: 0, stdout: Buffer.from(`${name}\n`), stderr: '' };
         }
         throw new Error(`unexpected command in ${cwd}: ${command} ${args.join(' ')}`);
       };
-      const tarball = packEngineTarball(repoRoot, destDir, runner);
-      expect(calls).toEqual(['npm run package', `npm pack --pack-destination ${destDir} --silent`]);
-      expect(tarball).toMatch(/glw907-cairn-cms-0\.97\.0-[0-9a-f]{12}\.tgz$/);
-      expect(existsSync(tarball)).toBe(true);
-      expect(existsSync(join(destDir, 'glw907-cairn-cms-0.97.0.tgz'))).toBe(false);
+      const tarballs = packEngineTarballs(repoRoot, destDir, runner);
+      expect(calls).toEqual([
+        `npm run package (in ${repoRoot})`,
+        `npm pack --ignore-scripts --pack-destination ${destDir} --silent (in ${repoRoot})`,
+        `npm pack --ignore-scripts --pack-destination ${destDir} --silent (in ${devDir})`,
+      ]);
+      expect(tarballs.engine).toMatch(/glw907-cairn-cms-0\.97\.0-[0-9a-f]{12}\.tgz$/);
+      expect(tarballs.dev).toMatch(/glw907-cairn-cms-dev-0\.97\.0-[0-9a-f]{12}\.tgz$/);
+      expect(existsSync(tarballs.engine)).toBe(true);
+      expect(existsSync(tarballs.dev)).toBe(true);
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
       rmSync(destDir, { recursive: true, force: true });
     }
   });
 
-  it('throws when the build step fails, without attempting to pack', () => {
+  it('throws when the build step fails, without attempting either pack', () => {
     const repoRoot = tmp('repo-build-fail');
     const destDir = tmp('pack-dest-fail');
     try {
       const runner: CommandRunner = () => ({ status: 1, stdout: Buffer.alloc(0), stderr: 'svelte-package failed' });
-      expect(() => packEngineTarball(repoRoot, destDir, runner)).toThrow(/svelte-package failed/);
+      expect(() => packEngineTarballs(repoRoot, destDir, runner)).toThrow(/svelte-package failed/);
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
       rmSync(destDir, { recursive: true, force: true });
@@ -167,30 +244,80 @@ describe('packEngineTarball', () => {
   });
 });
 
+/** A runner that fakes the templates/waymark export and a clean install, for `prepareDocsAndSite`. */
+function fakeSiteRunner(): CommandRunner {
+  return (command, args, { cwd }) => {
+    if (command === 'git') return { status: 0, stdout: Buffer.from('fake-archive'), stderr: '' };
+    if (command === 'tar') {
+      // What the real `git archive templates/waymark | tar --strip-components=2` would leave.
+      write(join(cwd, 'package.json'), JSON.stringify({ name: 'site', dependencies: {}, devDependencies: {} }));
+      write(join(cwd, 'CLAUDE.md'), 'setup guidance');
+      write(join(cwd, '.claude/agents/x.md'), 'agent');
+      write(join(cwd, 'src/routes/+page.svelte'), '<h1>hi</h1>');
+      return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+    }
+    if (command === 'npm' && args[0] === 'install') {
+      write(join(cwd, 'node_modules/@glw907/cairn-cms/dist/index.js'), 'export {};');
+      write(join(cwd, 'node_modules/@glw907/cairn-cms/docs/index.md'), 'answer key');
+      return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+    }
+    throw new Error(`unexpected command: ${command} ${args.join(' ')}`);
+  };
+}
+
 describe('prepareDocsAndSite', () => {
-  it('builds the docs subtree and the scaffolded, installed site together', () => {
+  it('builds the docs subtree and the scaffolded, installed site together, with the answer key stripped', () => {
     const sourceRoot = tmp('source-int');
-    const from = tmp('site-int');
     const dest = tmp('dest-int');
     try {
       write(join(sourceRoot, 'docs/extend/design-your-site.md'), '# design\n');
-      write(join(from, 'package.json'), JSON.stringify({ name: 'site', dependencies: { '@glw907/cairn-cms': 'file:../..' } }));
-      const runner: CommandRunner = (command, args, { cwd }) => {
-        if (command === 'npm' && args[0] === 'install') {
-          write(join(cwd, 'node_modules/@glw907/cairn-cms/dist/index.js'), 'export {};');
-          write(join(cwd, 'node_modules/@glw907/cairn-cms/docs/index.md'), 'answer key');
-          return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
-        }
-        throw new Error(`unexpected command: ${command} ${args.join(' ')}`);
-      };
-      prepareDocsAndSite({ sourceRoot, docsSet: ['docs/extend/design-your-site.md'], from, tarball: '/cache/engine-x.tgz', dest, runner });
+      prepareDocsAndSite({
+        sourceRoot,
+        docsSet: ['docs/extend/design-your-site.md'],
+        tarballs: { engine: '/cache/engine-x.tgz', dev: '/cache/dev-y.tgz' },
+        dest,
+        runner: fakeSiteRunner(),
+      });
       expect(readFileSync(join(dest, 'docs/extend/design-your-site.md'), 'utf8')).toBe('# design\n');
+      expect(existsSync(join(dest, 'site/CLAUDE.md'))).toBe(false);
+      expect(existsSync(join(dest, 'site/.claude'))).toBe(false);
       expect(existsSync(join(dest, 'site/node_modules/@glw907/cairn-cms/dist/index.js'))).toBe(true);
       expect(existsSync(join(dest, 'site/node_modules/@glw907/cairn-cms/docs'))).toBe(false);
       const pkg = JSON.parse(readFileSync(join(dest, 'site/package.json'), 'utf8'));
       expect(pkg.dependencies['@glw907/cairn-cms']).toBe('file:/cache/engine-x.tgz');
+      expect(pkg.devDependencies['@glw907/cairn-cms-dev']).toBe('file:/cache/dev-y.tgz');
     } finally {
-      for (const dir of [sourceRoot, from, dest]) rmSync(dir, { recursive: true, force: true });
+      for (const dir of [sourceRoot, dest]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('removes dest before rethrowing when a step fails partway through', () => {
+    const sourceRoot = tmp('source-fail');
+    const dest = tmp('dest-fail');
+    try {
+      write(join(sourceRoot, 'docs/extend/design-your-site.md'), '# design\n');
+      const runner: CommandRunner = (command, args, { cwd }) => {
+        if (command === 'git') return { status: 0, stdout: Buffer.from('fake-archive'), stderr: '' };
+        if (command === 'tar') {
+          // The scaffold's package.json lands before the install that fails next, so this proves
+          // cleanup removes a partially built tree, not only one that never started.
+          write(join(cwd, 'package.json'), JSON.stringify({ name: 'site' }));
+          return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+        }
+        return { status: 1, stdout: Buffer.alloc(0), stderr: 'ETARGET' };
+      };
+      expect(() =>
+        prepareDocsAndSite({
+          sourceRoot,
+          docsSet: ['docs/extend/design-your-site.md'],
+          tarballs: { engine: '/cache/engine-x.tgz', dev: '/cache/dev-y.tgz' },
+          dest,
+          runner,
+        }),
+      ).toThrow(/ETARGET/);
+      expect(existsSync(dest)).toBe(false);
+    } finally {
+      for (const dir of [sourceRoot, dest]) rmSync(dir, { recursive: true, force: true });
     }
   });
 });
@@ -226,14 +353,7 @@ describe('prepareRepositoryExport', () => {
       write(join(repoRoot, 'README.md'), '# a project\n');
       write(join(repoRoot, 'docs/internal/record/2026-01-01-note.md'), 'harvest note');
       write(join(repoRoot, 'docs/superpowers/plans/plan.md'), 'the answer key');
-      const git = (args: string[]) => {
-        execFileSync('git', args, { cwd: repoRoot });
-      };
-      git(['init', '-q']);
-      git(['config', 'user.email', 'test@example.com']);
-      git(['config', 'user.name', 'Test']);
-      git(['add', '.']);
-      git(['commit', '-q', '-m', 'initial']);
+      commitAll(repoRoot);
       prepareRepositoryExport({ repoRoot, commit: 'HEAD', dest });
       expect(readFileSync(join(dest, 'README.md'), 'utf8')).toBe('# a project\n');
       expect(existsSync(join(dest, 'docs/internal/record'))).toBe(false);
@@ -245,7 +365,7 @@ describe('prepareRepositoryExport', () => {
     }
   });
 
-  it('fails preparation when a planted docs/superpowers path survives the export', () => {
+  it('fails preparation when a planted docs/superpowers path survives the export, and removes dest', () => {
     // A test double for a pathspec exclusion that did not take: the runner ignores the exclude
     // arguments and plants the excluded path anyway, so this proves the post-export check, not
     // git's own exclusion syntax, is what fails preparation.
@@ -261,16 +381,18 @@ describe('prepareRepositoryExport', () => {
         throw new Error(`unexpected command: ${command} ${args.join(' ')}`);
       };
       expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'HEAD', dest, runner })).toThrow(/docs\/superpowers/);
+      expect(existsSync(dest)).toBe(false);
     } finally {
       rmSync(dest, { recursive: true, force: true });
     }
   });
 
-  it('throws when the archive step fails', () => {
+  it('throws when the archive step fails, and removes dest', () => {
     const dest = tmp('archive-fail');
     try {
       const runner: CommandRunner = (command) => (command === 'git' ? { status: 128, stdout: Buffer.alloc(0), stderr: 'bad revision' } : { status: 0, stdout: Buffer.alloc(0), stderr: '' });
       expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'not-a-commit', dest, runner })).toThrow(/bad revision/);
+      expect(existsSync(dest)).toBe(false);
     } finally {
       rmSync(dest, { recursive: true, force: true });
     }

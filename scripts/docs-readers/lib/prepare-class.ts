@@ -42,7 +42,7 @@ export function copyDocsSet(sourceRoot: string, docsSet: string[], dest: string)
   for (const relPath of docsSet) {
     const from = join(sourceRoot, relPath);
     if (!existsSync(from)) throw new Error(`docs-set path "${relPath}" does not exist at ${from}`);
-    cpSync(from, join(dest, relPath), { recursive: true });
+    cpSync(from, join(dest, relPath), { recursive: true, verbatimSymlinks: true });
   }
 }
 
@@ -663,7 +663,7 @@ export function prepareDocsAndBinary({
     copyDocsSet(sourceRoot, docsSet, dest);
     writeScratchSiteRecord(join(dest, 'state'), siteId, record);
     if (siteExportDir) {
-      for (const name of readdirSync(siteExportDir)) cpSync(join(siteExportDir, name), join(dest, name), { recursive: true });
+      for (const name of readdirSync(siteExportDir)) cpSync(join(siteExportDir, name), join(dest, name), { recursive: true, verbatimSymlinks: true });
     }
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });

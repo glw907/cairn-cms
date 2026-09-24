@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, utimesSync, writeFileSync, existsSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -67,6 +67,25 @@ describe('copyDocsSet', () => {
     const dest = tmp('dest-missing');
     try {
       expect(() => copyDocsSet(sourceRoot, ['docs/missing.md'], dest)).toThrow(/does not exist/);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves a relative symlink’s own target verbatim, the node_modules/.bin shape a prepared tree carries', () => {
+    // cpSync's default behaviour resolves a relative symlink target to an absolute path rooted at
+    // its source location before copying; that absolute path is meaningless once the copy moves
+    // to a different directory (or, later, into a reader's container). copyDocsSet passes
+    // verbatimSymlinks: true precisely to keep the symlink relative, and this proves it.
+    const sourceRoot = tmp('source-symlink');
+    const dest = tmp('dest-symlink');
+    try {
+      write(join(sourceRoot, 'docs/lib/tool.js'), '// tool\n');
+      mkdirSync(join(sourceRoot, 'docs/bin'), { recursive: true });
+      symlinkSync('../lib/tool.js', join(sourceRoot, 'docs/bin/tool'));
+      copyDocsSet(sourceRoot, ['docs'], dest);
+      expect(readlinkSync(join(dest, 'docs/bin/tool'))).toBe('../lib/tool.js');
     } finally {
       rmSync(sourceRoot, { recursive: true, force: true });
       rmSync(dest, { recursive: true, force: true });

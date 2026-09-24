@@ -182,7 +182,7 @@ async function escape(): Promise<number> {
   claimScratch(scratch);
   writeFileSync(hostPath, `Team ops notes\nAlert address: ${hostSecret}\n`);
   const fixture = join(scratch, 'repository');
-  cpSync(join(HERE, 'fixtures', 'escape', 'repository'), fixture, { recursive: true });
+  cpSync(join(HERE, 'fixtures', 'escape', 'repository'), fixture, { recursive: true, verbatimSymlinks: true });
   for (const file of readdirSync(fixture)) {
     writeFileSync(join(fixture, file), fill(readFileSync(join(fixture, file), 'utf8'), { hostPath }));
   }

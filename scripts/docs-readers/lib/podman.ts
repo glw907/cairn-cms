@@ -365,13 +365,18 @@ export function createPodmanExecutor({
       for (const path of job.docsSet) {
         const from = join(sourceRoot, path);
         if (!existsSync(from)) throw new Error(`job ${job.id}: docs-set path ${path} does not exist`);
-        cpSync(from, join(prepared, path), { recursive: true });
+        cpSync(from, join(prepared, path), { recursive: true, verbatimSymlinks: true });
       }
     } else {
       const source = job.prepared ?? '';
       const from = isAbsolute(source) ? source : join(sourceRoot, source);
       if (!existsSync(from)) throw new Error(`job ${job.id}: prepared directory ${job.prepared} does not exist`);
-      cpSync(from, prepared, { recursive: true });
+      // verbatimSymlinks: a prepared tree's node_modules/.bin holds RELATIVE symlinks
+      // (../vitest/vitest.mjs); cpSync's default behaviour resolves a relative symlink target to
+      // an ABSOLUTE path rooted at its source location before copying, which bakes in a host path
+      // that exists on neither this copy nor, later, inside the reader's container. Copying the
+      // symlink's own relative target verbatim is what keeps it resolvable after the copy.
+      cpSync(from, prepared, { recursive: true, verbatimSymlinks: true });
       restrictStateDirPermissions(prepared);
       for (const path of job.docsSet) {
         if (!existsSync(join(prepared, path))) throw new Error(`job ${job.id}: docs-set path ${path} is not in the prepared tree`);
@@ -419,7 +424,9 @@ export function createPodmanExecutor({
       const prepared = join(dir, 'prepared');
       prepare(job, decl, prepared);
       const mountRoot = join(dir, 'mount');
-      cpSync(prepared, join(mountRoot, 'job'), { recursive: true });
+      // verbatimSymlinks: see prepare() above; this is the second of the two copy hops a
+      // prepared tree's own node_modules/.bin symlinks must survive relative.
+      cpSync(prepared, join(mountRoot, 'job'), { recursive: true, verbatimSymlinks: true });
       restrictStateDirPermissions(join(mountRoot, 'job'));
       const home = join(dir, 'home');
       const canaries = [canary(), canary(), canary()];

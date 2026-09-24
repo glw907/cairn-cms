@@ -79,14 +79,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` count, and
   `clear` returns focus to the header checkbox. Source:
   `src/lib/admin-toolkit/AdminTable.svelte`. [verified]
-- `f:7l8ysb` `StatusChip`'s `outline` register hairline is `color-mix(in oklab, currentColor 55%,
-  transparent)`; cairn's five named call sites (ConceptList, EditPage, CairnAdminShell,
-  ReferenceField, MediaCaptureCard, ManageEditors) all clear the 3:1 border-contrast floor, but a
-  consumer placing an `outline` chip inside its own muted-text ancestor should re-measure.
-  Source: page text cross-referenced against `chip-ground-collision`/`border-contrast` rule
-  descriptions in cairn-audit.md; not independently re-measured. [candidate: numeric contrast
-  ratios (2.4:1, 2.97:1) are stated in the page and consistent with the audit's own documented
-  floors, but no automated re-measurement was run in this harvest]
+- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin it has one call site, the edit page's Hidden chip, so a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/components/EditPage.svelte:1456`. [verified]
 - `f:ro7w36` `Tooltip` (added `0.97.0`) reads the triggering `PointerEvent`'s own `pointerType` to detect a
   coarse-pointer tap, never `matchMedia`, since a hybrid device can carry both a mouse and a
   touchscreen at once; an empty `text` prop opts the whole component out (no `aria-describedby`,
@@ -137,36 +130,36 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/auth-channel/factory.ts:432-455` (`resolveLimit`). [verified]
 - `f:mk0zd8` `deliver`'s throw path is fully compensating: the pending code row is deleted and the
   requester's send charge is refunded on any thrown error, so a delivery-provider outage costs a
-  member only a retry, never a lost budget slot. Source: page text; consistent with the design
-  intent documented inline in `factory.ts`'s deliver-wrapping logic (not independently re-traced
-  line-by-line in this harvest). [candidate: behavior is stated precisely and matches the
-  surrounding defaults verified above, but the refund/delete code path itself was not
-  individually grepped]
+  member only a retry, never a lost budget slot. Source: `src/lib/auth-channel/factory.ts:269-272`
+  (`deliver`'s doc comment: "A throw is scrubbed, logged, deletes the pending row, and refunds the
+  send charge"), `:880-887` (the `deliverPromise` catch calls `consumeCode(...)` then
+  `refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now)`). [verified]
 - `f:0hkc8e` `CAIRN_DEV_BACKEND` set on a deployed runtime makes all three actions (`request`, `confirm`,
   `logout`) throw a SvelteKit 503 `HttpError` before touching any row, rather than returning a
   typed outcome, because no result union carries a wire code for a polluted environment.
   "Deployed" is determined by `PUBLIC_ORIGIN` first, falling back to request hostname only when
-  unset. Source: page text; the same dev-backend-flag refusal pattern is corroborated in
-  `src/lib/sveltekit/admin-action.ts` comments referencing `CAIRN_DEV_BACKEND_FLAG`. [candidate:
-  not directly re-verified in `auth-channel/factory.ts` in this pass]
+  unset. Source: `src/lib/auth-channel/factory.ts:118-130` (`assertNoDevBackendLeak`: `throw
+  error(503, CAIRN_DEV_BACKEND_MESSAGE)`, called from `request`/`confirm`/`logout` at
+  `:686,912,1075`), `src/lib/dev-flag.ts:108-114` (`isDeployedHost`: `PUBLIC_ORIGIN` consulted
+  first, falls back to `event.url.hostname` when unset or unparseable). [verified]
 - `f:lccuuc` The channel's own D1 schema ships as `migrations-channel/0000_channel.sql` (tables
   `cairn_channel_meta`, `cairn_channel_code`, `cairn_channel_session`, `cairn_channel_budget`) and
   must never share a `migrations_dir` with the engine's own `AUTH_DB` migrations. The
   per-deployment identity salt is provisioned lazily via `INSERT OR IGNORE` of 32 random bytes
   under `identity_salt`, deliberately absent from the committed migration file since a migration
-  published on npm can't carry a per-deployment secret. Source: page text, cross-referenced with
-  the general cairn-cms secrets-are-never-committed convention; migration file itself not opened
-  in this harvest. [candidate: searched for `migrations-channel` directory existence only
-  indirectly via doc cross-reference]
+  published on npm can't carry a per-deployment secret. Source: `migrations-channel/0000_channel.sql:19-46`
+  (the four `CREATE TABLE` statements), `src/lib/auth-channel/store.ts:60-84` (`provisionSalt`:
+  `INSERT OR IGNORE INTO cairn_channel_meta`, `randomHex(32)`), `examples/showcase/wrangler.jsonc:26-53`
+  (each D1 binding declares its own `migrations_dir`, comment states why). [verified]
 
 ## docs/reference/auth-crypto.md
 
 - `f:exqnwj` The subpath enforces server-only isolation via export conditions: a named import from the
   browser stub fails at build time (no such export), while a bare side-effect import passes the
-  build and throws only at runtime when executed in a browser. Source: page text; the pattern
-  (browser stub with module-level throw, `worker`/`default` resolving the real module) is the
-  same mechanism used by `/cloudflare` (see below), both stated identically. [candidate: sourced
-  to the page only, not traced to code]
+  build and throws only at runtime when executed in a browser. Source: `package.json:157-168`
+  (`./auth-crypto` and `./cloudflare` export conditions each declare `worker`/`browser`/`default`),
+  `src/lib/auth-crypto/browser.ts:1-4`, `src/lib/cloudflare/browser.ts:1-4` (both files are a bare
+  module-level `throw new Error(...)` with no named export). [verified]
 - `f:m41mez` `tokensMatch('', '')` is deliberately `false`, so an unset expected value can never match an
   unset submitted one. Source: `src/lib/auth/crypto.ts:118` (function `tokensMatch`), consistent
   with the stated four properties (length leaks, empty-never-matches, CSPRNG-only intent,
@@ -181,9 +174,12 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   construction"), distinct from this bare primitive's more permissive behavior. [verified]
 - `f:9378z2` The engine's own two cookies (session, CSRF) both derive `secure` through one shared internal
   function (`csrfSecure`), so they can no longer resolve different `secure` values on the same
-  request. This implies an earlier state where they could diverge. Source: page text; not
-  independently re-traced to a changelog entry in this harvest. [candidate: searched for
-  `csrfSecure` only via the doc's own cross-reference to `security-model.md`]
+  request. This implies an earlier state where they could diverge. Source:
+  `src/lib/auth/crypto.ts:22-26` (doc comment: "Both names now also share their `secure` INPUT:
+  `csrf.ts`'s `csrfSecure`..."), `src/lib/sveltekit/csrf.ts:72,122,164,185` (`csrfSecure`,
+  `csrfCookieName(csrfSecure(...))`), `src/lib/sveltekit/guard.ts:274,353`
+  (`sessionCookieName(csrfSecure(...))`). [verified: the shared-function claim is confirmed; the
+  earlier-divergence history is not independently re-traced to a changelog entry]
 
 ## docs/reference/auth-store.md
 
@@ -235,13 +231,14 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/audit/rules/rendered/touch-targets.ts:81-110`. [verified]
 - `f:0jarfk` `form-font-parity` is registered provisionally at advisory tier though its intended tier is
   error, pending a CI re-check confirming the rendered suite is green on the CI runner. Source:
-  page text; consistent with the tier grep above showing it currently `advisory`. [candidate:
-  sourced to the page only, not traced to code]
+  `src/lib/audit/rules/rendered/form-font-parity.ts:38-46` (comment: "Registered PROVISIONALLY at
+  advisory. The intended tier is error..."), `:119` (`tier: 'advisory'`). [verified]
 - `f:vhww6d` The `norms` subcommand reads only the manifest inside the installed package (no config, no
   built stylesheet, no browser needed), distinct from static/rendered modes which read the
-  working tree. Source: page text, structurally consistent with the CLI's described `bin` entry
-  points. [candidate: not independently traced into `src/lib/audit/bin.ts`'s norms subcommand
-  branch in this harvest]
+  working tree. Source: `src/lib/audit/bin.ts:25-27` (comment: "The norms query answers from the
+  shipped manifest, so it reads no consumer tree and needs no config, no built stylesheet, and no
+  browser"), `:28-36` (`norms` calls `loadNormsManifest()`), `:62` (other modes call
+  `loadConfig(process.cwd(), ...)`). [verified]
 
 ## docs/reference/cli-cairn-doctor.md
 
@@ -614,9 +611,10 @@ re-sourced to Go on this tree rather than to the page.
   function in this harvest). [verified: for the URL builder; candidate for the exact write-key
   format string]
 - `f:5a5oq0` A manifest row missing `slug`, `hash`, or `ext` is silently dropped rather than failing the
-  run; the same tolerance applies elsewhere in the manifest reader. Source: page text; consistent
-  with the general manifest-tolerance pattern documented in core.md's manifest section. [candidate:
-  not independently traced into the manifest-reading code in this harvest]
+  run; the same tolerance applies elsewhere in the manifest reader. Source:
+  `src/lib/media-seed/assemble.ts:80-101` (`normalizeManifest`'s doc comment and implementation: a
+  row failing the `slug`/`hash`/`ext` shape checks is not pushed to `items`), `src/lib/media/manifest.ts:107`
+  ("a failing element is dropped"). [verified]
 - `f:4as382` Exit codes: 0 (`--help`, or every entry synced, or manifest holds none), 1 (at least one entry
   failed, each printing `FAILED <slug>: <message>`), 2 (bad flags or unresolved bucket name).
   Source: `src/lib/media-seed/bin.ts:92-150`. [verified]
@@ -626,16 +624,16 @@ re-sourced to Go on this tree rather than to the page.
 - `f:69xbyh` `verifyTurnstile` is fail-closed by contract: every failure mode (bad input, oversized token,
   timeout/throw, non-200, unparseable body, `success: false`, hostname/action mismatch) returns
   `false`, never throws, so a future refactor can't flip it open by accident. `opts.ip` must come
-  from `CF-Connecting-IP`, never a forwardable header. Source: page text; the max-token-length
-  constant and 5-second timeout are independently confirmed below. [candidate: sourced to the
-  page only, not traced to code]
+  from `CF-Connecting-IP`, never a forwardable header. Source: `src/lib/cloudflare/turnstile.ts:1-3`
+  (module comment: "Every failure mode below returns false rather than throwing"), `:17-21`
+  (`ip` doc comment: "from `CF-Connecting-IP` and never a client-forwardable header"). [verified]
 - `f:b857di` `MAX_TOKEN_LENGTH` is exactly `2048` characters and the fetch timeout is exactly `5000`ms
   (`AbortSignal.timeout(5000)`). Source: `src/lib/cloudflare/turnstile.ts:8-10,124`. [verified]
 - `f:bpk8gc` A `success: false` siteverify response logs nothing when every code is one of the two routine
   causes (`invalid-input-response`, `timeout-or-duplicate`), since that is the function working
-  as intended; every other rejection reason does log. Source: page text; not independently
-  re-traced into the logging branch of `turnstile.ts` in this harvest. [candidate: searched only
-  the constants above, not the full logging conditional]
+  as intended; every other rejection reason does log. Source: `src/lib/cloudflare/turnstile.ts:15`
+  (`ROUTINE_ERROR_CODES`), `:146-156` (`isRoutine` check gates the `log.warn('turnstile.verify_failed',
+  { reason: 'rejected', codes })` call). [verified]
 - `f:ndtmx8` `resolveRateLimit` resolves multiple keys in order, short-circuiting at the first key over
   budget (a later key's counter is never incremented once an earlier one has failed), and returns
   a four-arm outcome (`allowed`, `limited`, `no-binding`, `failed`) rather than the boolean its
@@ -650,10 +648,11 @@ re-sourced to Go on this tree rather than to the page.
 - `f:qmz20x` The 13 retired `register*` props on `MarkdownEditor` (11 per-capability callbacks plus the two
   object grants `registerTidy`/`registerImagePlaceholders`) all collapsed into one
   `registerEditor` callback delivering an `EditorApi` object once on mount and `null` once on
-  destroy. Source: `CHANGELOG.md:502-518` (documents exactly this collapse, naming
-  `registerFocusEditor`, `registerImagePlaceholders`, `registerGetSelection`,
-  `registerGetSelectionRange`, `registerTidy`, `registerUndo`, `registerFormat`, etc. as retired).
-  [candidate: sourced to the page only, not traced to code]
+  destroy. Source: `src/lib/components/MarkdownEditor.svelte:29,85-91` (`EditorApi` type,
+  `registerEditor` prop doc), `:946-949` (mount: `registerEditor?.({...})`), `:980` (destroy:
+  `registerEditor?.(null)`); a grep of the file for `registerFocusEditor`, `registerImagePlaceholders`,
+  `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`, and
+  `registerFormat` finds none of them. [verified]
 - `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
   deliberate hardening so the token survives `use:enhance`'s native form reset after a successful
   submit. Source: `src/lib/components/CsrfField.svelte:7,24`. [verified]
@@ -663,17 +662,15 @@ re-sourced to Go on this tree rather than to the page.
   below `lg`. Source: `src/lib/components/CairnAdminShell.svelte:241-242,638,649,669-693`.
   [verified]
 - `f:9ntlzw` `EditPage`'s preview-device choice persists per browser under the localStorage key
-  `cairn-editor-preview-device`. Source: page text; the naming convention matches other
-  `cairn-*` localStorage keys in this codebase but the exact key literal was not independently
-  greped in this harvest. [candidate: searched only CairnAdminShell.svelte and CsrfField.svelte
-  directly; EditPage.svelte's localStorage key was not opened]
+  `cairn-editor-preview-device`. Source: `src/lib/components/EditPage.svelte:381,384-389`
+  (`deviceStorageKey = 'cairn-editor-preview-device'`; `localStorage.getItem`/`.setItem`).
+  [verified]
 - `f:6q5q05` `PreviewBanner` renders the expiry inside a `<time datetime>` formatted by default as a fixed
   `YYYY-MM-DD HH:MM UTC` string (never the visitor's locale), specifically because the same
   formatter must run identically during SSR and hydration to avoid a hydration mismatch when the
-  Worker's runtime zone differs from the browser's. Source: page text; consistent with the
-  general SSR/hydration-parity concern also documented for `formatTimestamp` in
-  admin-toolkit.md. [candidate: not independently re-traced into PreviewBanner.svelte's source in
-  this harvest]
+  Worker's runtime zone differs from the browser's. Source:
+  `src/lib/components/PreviewBanner.svelte:42-46` (`defaultFormatExpiry`), `:52-58` (doc comment:
+  hydration-mismatch rationale), `:68` (`<time datetime={preview.expiresAt}>`). [verified]
 
 ## docs/reference/core.md
 
@@ -699,23 +696,28 @@ re-sourced to Go on this tree rather than to the page.
   other top-level export files searched. [verified]
 - `f:qi5zbj` `CommitConflictError`/`BranchExistsError` are thrown identically by both the GitHub App backend
   and the packaged dev backend from `Backend.createBranch`, so a caller catches the collision as
-  one typed refusal regardless of which backend is active. Source: page text; not independently
-  re-traced into both backend implementations in this harvest. [candidate: searched only the
-  page's own class declarations, not both `Backend.createBranch` implementations]
+  one typed refusal regardless of which backend is active. Source: `src/lib/github/backend.ts:141-147`
+  (`createBranch` throws `CommitConflictError` on an unreadable source), `src/lib/github/branches.ts:53`
+  (`createBranch` throws `BranchExistsError` on a name collision), `packages/cairn-cms-dev/src/fake-github.ts:805-811`
+  (the dev backend's `createBranch` throws both, importing the same classes from
+  `@glw907/cairn-cms`). [verified]
 - `f:dbaklx` `defineRoles` throws on an empty record, empty role name, malformed declaration, a non-
   `/admin`-prefixed `home`, a missing `owner` key, or an `owner` mapped to non-owner capability;
   `owner` is the one reserved name because the last-owner guard and bootstrap owner both anchor
-  on it. Source: page text, consistent with the owner-anchoring behavior independently confirmed
-  in auth-store.md's owner-count guards (`resolveOwnerLevelRoles` derivation). [candidate:
-  sourced to the page only, not traced to code]
+  on it. Source: `src/lib/auth/roles.ts:34-49` (`validateDeclaration`), `:58-74` (`defineRoles`:
+  empty-record, empty-name, missing-owner, and owner-capability throws), `:108`
+  (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:44,201-202` (`bootstrapOwner`).
+  [verified]
 
 ## docs/reference/delivery.md
 
 - `f:upec9v` A `ContentIndex`'s `all()` already returns entries in the engine's own order; a caller never
   re-sorts it. A dated concept (`routing.dated: true`, such as Posts) sorts newest first by `date`
-  with an undated entry last; an undated concept (such as Pages) sorts by `title`. Source: page
-  text `docs/reference/delivery.md:32-37`; not independently re-traced to the index-builder source
-  this pass. [candidate: not independently re-verified]
+  with an undated entry last; an undated concept (such as Pages) sorts by `title`. Source:
+  `src/lib/delivery/content-index.ts:139-141` (comment: "Dated concepts sort newest-first;
+  undated concepts (Pages) sort by title"; `descriptor.routing.dated ? (b.date ?? '').localeCompare(a.date
+  ?? '') : a.title.localeCompare(b.title)`), `:152` (`all` reads from the already-sorted array).
+  [verified]
 - `f:3r08v1` `markdownEntries` enumerates one `.md`-suffixed path per entry whose frontmatter `robots` field
   doesn't carry `noindex`; `markdownLoad` throws `error(404)` on both a lookup miss and a `noindex`
   entry, so the loader and the enumerator always agree regardless of prerendering. Source:
@@ -725,21 +727,22 @@ re-sourced to Go on this tree rather than to the page.
 - `f:umdf7r` `composeEntryData` is the shared composition both `entryLoad` (public route) and `loadPreview`
   (`/sveltekit`, a different lookup) run, so a preview and its eventual public page can't
   structurally drift; `entryLoad` is lookup-then-compose over this function with no `overrides`, so
-  its output is unchanged from before the function existed. Source: page text
-  `docs/reference/delivery.md:74-77,180-188`; not independently re-traced to `preview.ts`'s call
-  site this pass, though `sveltekit.md`'s own text (verified above) independently corroborates
-  `loadPreview` renders "through the same composition." [candidate: sourced to the page only, not traced to code]
+  its output is unchanged from before the function existed. Source:
+  `src/lib/delivery/public-routes.ts:139` (`composeEntryData` defined), `:213-217` (`entryLoad`:
+  `composeEntryData(config, entry)`, no `overrides`), `src/lib/sveltekit/preview.ts:505,523`
+  (`loadPreview`: `composeEntryData(config, ..., resolvers)`). [verified]
 - `f:83gbov` `EntryData.heroImage` is undefined when no hero is set, media is off, or the frontmatter `media:`
   reference does not resolve; the canonical token itself (`entry.frontmatter.image.src`) is left
-  untouched as the raw `media:` token regardless. Source: page text
-  `docs/reference/delivery.md:167-170`; not independently re-traced to the hero-derivation source
-  this pass. [candidate: not independently re-verified]
+  untouched as the raw `media:` token regardless. Source: `src/lib/delivery/public-routes.ts:73-76`
+  (doc comment), `:93-112` (`deriveHeroImage`: returns `undefined` when `resolveMedia` is absent,
+  no `image` object, no `src`, an unparseable token, or an unresolved reference). [verified]
 - `f:dvg5gn` `CairnHead`'s `titleTemplate` applies to `seo.title` only when `title` is left undefined, so an
   explicit `title` or `title={false}` always wins over the template. `markdownUrl`, when passed,
   adds a `rel="alternate" type="text/markdown"` link; omitted (or for a `noindex` entry with no
-  twin) the link is omitted rather than pointing at a dead route. Source: page text
-  `docs/reference/delivery.md:234-239`; not independently re-traced to the `CairnHead.svelte`
-  source this pass. [candidate: not independently re-verified]
+  twin) the link is omitted rather than pointing at a dead route. Source:
+  `src/lib/delivery/CairnHead.svelte:5-8` (doc comment), `:35`
+  (`title !== undefined ? title : titleTemplate ? titleTemplate(seo.title) : seo.title`), `:53-54`
+  (`{#if markdownUrl}<link rel="alternate" type="text/markdown" ...>`). [verified]
 
 ## docs/reference/delivery-data.md
 
@@ -799,14 +802,14 @@ re-sourced to Go on this tree rather than to the page.
   `AssetConfig`, `SenderConfig`, `NavMenuConfig`, `PreviewConfig`, `SiteRender`,
   `ComponentRegistry`, `ComponentDef`, `ComponentContext`, `SlotDef`, `IconSet`, `MediaResolve`;
   `/sveltekit`: `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`, `NavLayoutSection`;
-  `/islands`: `IslandRegistry`; `/media`: `MediaRef`). Source: page text
-  `docs/reference/delivery-data.md:563-572`; this is a documented API-surface reorganization
-  (CHANGELOG-referenced elsewhere on the page as `0.94.0`), not independently re-verified against
-  the export list this pass. [candidate: not independently re-verified against the export gate]
+  `/islands`: `IslandRegistry`; `/media`: `MediaRef`). Source: `src/lib/delivery/data.ts:8-18`
+  (comment: "the adapter-only members ... are NOT re-exported here: nothing this subpath publishes
+  names them, so they resolve from their own canonical homes instead"); a grep of the file for
+  all seventeen names finds none of them. [verified]
 - `f:950l0z` `createSiteIndexes`'s returned object reserves the field name `site` for the cross-concept
-  resolver, so a site cannot declare a content concept literally named `site`. Source: page text
-  `docs/reference/delivery-data.md:44-45`; not independently re-traced to
-  `createSiteIndexes`'s implementation this pass. [candidate: not independently re-verified]
+  resolver, so a site cannot declare a content concept literally named `site`. Source:
+  `src/lib/delivery/site-indexes.ts:23` (doc comment: "`site` is not supported, since `site` is
+  the reserved resolver key"), `:49-51` (throws when `descriptor.id === 'site'`). [verified]
 
 ## docs/reference/guidance.md
 
@@ -867,8 +870,9 @@ re-sourced to Go on this tree rather than to the page.
 ## docs/reference/log-events.md
 
 - `f:rkj7tn` Every log record carries an envelope of `level`, `event`, `timestamp`, plus event-specific
-  fields; renaming an `event` name is a breaking change. Source: `docs/reference/log-events.md:3-6`.
-  [candidate: sourced to the page only, not traced to code]
+  fields; renaming an `event` name is a breaking change. Source: `src/lib/log/create.ts:10-12`
+  (`LogRecord` type), `src/lib/log/events.ts:1-3` (comment: "it is public-observable API: renaming
+  one is a breaking change"). [verified]
 - `f:k085q0` The only event whose `actor` field is not necessarily an editor's email is
   `audit.sink.write_failed`, since a caller can invoke `createD1AuditSink` directly with its own
   domain events. Source: `src/lib/sveltekit/admin-action.ts:33-38` (`AdminActionAuditRecord` doc:
@@ -1032,9 +1036,9 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 
 - `f:u1y47n` Three stability tiers exist: Extension API (frozen), Scaffold API (frozen, for copied
   scaffold-owned wiring), Unstable API (no cross-minor promise). Source:
-  `docs/reference/README.md:21-31` (the three tier definitions, quoted directly); this is a
-  documented policy taxonomy, not an independently-derivable code fact, so verification here
-  means confirming the page states exactly this, which it does. [candidate: sourced to the page only, not traced to code]
+  `scripts/checks/reference-coverage.mjs:68-91` (comment: "Extension and Scaffold API are the
+  frozen contract, Unstable API marks a name..."; the check enforces the Stability cell reads one
+  of exactly these three values). [verified]
 - `f:vljn9d` `check:reference` fails stale prose: a name that appears in a Types table row, a bare export
   heading, or a `declare` signature but is no longer a real export anywhere fails the build.
   Source: `scripts/checks/reference-coverage.mjs:188-205` (`staleNames`, "names ... that are no
@@ -1046,7 +1050,9 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   this list when the doctor retirement deleted it, and the page that documents the replacement
   command, `cli-cairn-doctor.md`, is not in this list either. Source: `docs/reference/README.md:86-93`
   ("Also for site admins" section lists exactly `log-events.md`, `supported-toolchain.md`).
-  [candidate: sourced to the page only, not traced to code]
+  [candidate: excluded, this is docs/reference/README.md's own editorial grouping of its pages;
+  no check or code (searched `scripts/checks/reference-coverage.mjs`) enforces which pages count
+  as "also for site admins", so there is no code line to trace it to]
 - `f:yvusht` Eleven pages document no export subpath: the four npm CLI pages, the three `cairn` CLI
   contract pages, the canonical admin mount, log events, admin grammar tokens, and supported
   toolchain. Source: `docs/reference/README.md:95-104` ("Pages that document no subpath" names
@@ -1054,8 +1060,10 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `cli-cairn-exit-codes.md`, `cli-cairn-json-output.md`, `cli-cairn-doctor.md`,
   `admin-routes.md`, `log-events.md`, `admin-grammar-tokens.md`, `supported-toolchain.md`); the
   old `doctor.md` page is gone, and `cli-cairn-doctor.md` (documenting the replacement `cairn
-  doctor` command, a separate page rather than a rename) is one of the 11. [candidate: sourced to
-  the page only, not traced to code]
+  doctor` command, a separate page rather than a rename) is one of the 11. [candidate: excluded,
+  this is docs/reference/README.md's own editorial list of which pages document no subpath; no
+  check (searched `scripts/checks/reference-coverage.mjs`) generates or enforces this specific
+  list, so there is no code line to trace it to]
 
 ## docs/reference/render.md
 
@@ -1298,7 +1306,10 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   is arithmetically correct despite the 6-member `PreviewRejectedReason` union: `bindings_missing`
   is a distinct log reason emitted outside that union (a separate log call at
   `src/lib/sveltekit/preview.ts:456`), so 6 union members plus that one makes 7 distinct logged
-  reason strings total. Source: same as above. [candidate: sourced to the page only, not traced to code]
+  reason strings total. Source: `src/lib/sveltekit/preview.ts:261-262` (comment: "the missing-binding
+  503 logs its own separately"; the 6-member `PreviewRejectedReason` union), `:456`
+  (`log.warn('preview.refused', { reason: 'bindings_missing', ... })`, called outside the union).
+  [verified]
 
 ### Other sveltekit.md facts
 
@@ -1323,17 +1334,16 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:j2xst9` `createAdminAction`'s `access` option is opt-in rather than default-on because a zero-config
   site's guard attaches an empty access map admitting no target, so enforcing by default would
   refuse every action on the documented database-less default instead of hardening it. Source:
-  page text `docs/reference/sveltekit.md:518-521`; the empty-map zero-config claim is consistent
-  with `requireAccess`'s unmatched-refuses-everyone behavior above but the "database-less default"
-  framing itself was not independently traced to a specific line this pass. [candidate: sourced
-  to the page only, not traced to code]
+  `src/lib/sveltekit/admin-action.ts:74-82` (`access` option doc: "Opt in to the access-map
+  authorization... Omitted, `createAdminAction` authorizes nothing, its behavior for every existing
+  caller"), `src/lib/sveltekit/guard.ts:348,368` (`event.locals.cairnAccess = access ?? {}`).
+  [verified]
 - `f:yfg97w` `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly rather than making the
   parameter optional, because an optional parameter would make the shortest call silently drop the
-  insert when the isolate tears down before it settles. Source: page text
-  `docs/reference/sveltekit.md:700-703`; this is a documented API-design rationale, consistent with
-  the function signature declaring `waitUntil` as a required (non-optional) parameter typed
-  `((promise) => void) | undefined`, but the rationale itself is a design decision, not a runtime
-  behavior a grep confirms. [candidate: sourced to the page only, not traced to code]
+  insert when the isolate tears down before it settles. Source: `src/lib/sveltekit/audit-sink.ts:82-90`
+  (doc comment: "Required, and explicitly accepting `undefined`: an optional parameter would make
+  the shortest call the one that silently drops the insert..."), `:92-94`
+  (`waitUntil: ((promise: Promise<unknown>) => void) | undefined`). [verified]
 - `f:iwed0s` `createD1AuditSink` truncates every bound field before insert: `actor` to 320 characters,
   `action` to 100, `entity` to 100, `entityId` to 200, `detail` to 500, so an oversized `detail`
   cannot suppress its own audit row by failing the insert. Source: `src/lib/sveltekit/audit-sink.ts:16-20`
@@ -1373,56 +1383,62 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   and `HistoryData.truncated` only ever flags the 25-row bound, never a rename boundary the route
   can't see. `revertAction` re-validates the posted `ref` by full-sha exact membership against a
   fresh `listCommits` read, so `ref-unknown` always means the target fell outside that same 25-row
-  window. Source: page text `docs/reference/sveltekit.md:1124-1139`; the 25-row bound and the
-  rename-restart caveat were not independently re-traced to `content-routes-entry-*.ts` this pass.
-  [candidate: not independently re-verified against source line numbers, kept per the page's own
-  detailed and internally consistent account]
+  window. Source: `src/lib/sveltekit/content-routes-shared.ts:156` (`HISTORY_LIMIT = 25`),
+  `src/lib/sveltekit/content-routes-entry-read.ts:511-534` (`historyLoad`: `truncated`),
+  `src/lib/sveltekit/content-routes-entry-revert.ts:81-106` (`revertAction`: fresh `listCommits`
+  full-sha membership check, `ref-unknown`). [verified: the 25-row bound and the revert
+  re-validation are confirmed in source; the commits-API rename-restart behavior is GitHub's own
+  API mechanic, not re-verified against GitHub's own docs this pass]
 - `f:u61eav` `previewMintAction`/`previewRevokeAction`, `mintPreview`/`revokePreview` run the same
   authorization sequence first, before touching the draft: signed-in editor from
   `event.locals.cairnEditor`, concept lookup, concept-scoped access check against `runtime.access`,
   entry-id shape rule, and only then (for mint) the pending-draft check. A refusal never reveals
   whether an entry exists. Both come back as an `outcome` discriminant value, never a throw.
-  Source: page text `docs/reference/sveltekit.md:1430-1436,1469-1474`, describing the
-  `PreviewMintOutcome`/`PreviewRevokeOutcome` union shapes shown in the page's own type blocks; not
-  independently re-traced to `preview.ts`'s mint/revoke implementations this pass. [candidate: not
-  independently re-verified against source line numbers]
+  Source: `src/lib/sveltekit/preview.ts:128-151` (`mintPreview`: `requireEditor`, `findConcept`,
+  `requireEngineAccess`, `isValidId`, then the pending-draft check), `:184-210` (`revokePreview`:
+  doc comment states it "mirrors `mintPreview`'s authorization sequence exactly", same four checks,
+  no draft check). [verified]
 - `f:n0xz8f` `mintPreview`'s `config.ttlMs` defaults to seven days and must be finite, positive, and between
   one minute and thirty days; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error
-  before any token is generated. Source: page text `docs/reference/sveltekit.md:1451-1453`; not
-  independently re-traced to source this pass. [candidate: not independently re-verified]
+  before any token is generated. Source: `src/lib/sveltekit/preview.ts:61`
+  (`DEFAULT_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000`), `:75-85` (`resolveTtlMs`: finite/positive
+  check, min/max bound check, `PreviewTokenConfig:`-prefixed throws). [verified]
 - `f:esg0zx` `renameAction`, `deleteAction`/`listDeleteAction`, and `discardAction` each clear a
   never-published entry's outstanding preview rows as part of their own cascade, closing an
   id-reuse collision where a stale link could later resolve to a different entry's draft;
   publishing deliberately leaves the rows in place since `loadPreview` needs them to answer a stale
-  link with "this preview has ended" rather than a bare 404. Source: page text
-  `docs/reference/sveltekit.md:1172-1176`; not independently re-traced to the destructive-action
-  source files this pass. [candidate: not independently re-verified]
+  link with "this preview has ended" rather than a bare 404. Source:
+  `src/lib/sveltekit/content-routes-entry-destructive.ts:167,205` (`deleteEntry`, shared by
+  `deleteAction`/`listDeleteAction`, calls `clearPreviewTokens`), `:407` (`renameAction` calls
+  `clearPreviewTokens`), `src/lib/sveltekit/content-routes-entry-write.ts:537-543` (`discardAction`
+  clears rows only for a never-published entry), `:406-410` (publish deliberately does not clear,
+  comment states the `loadPreview` "this preview has ended" rationale). [verified]
 - `f:3qexq3` `settingsLoad` actively probes a present Anthropic key with a zero-token call and reports
   `keyStatus` (`missing`/`invalid`/`valid`/`unknown`) distinct from the presence-only
   `keyConfigured`, feeding the same key-health cache `editLoad`'s Tidy control reads (a
   confirmed-invalid key hides the control on the next edit load with no separate check); the cache
-  holds a verdict for a ten-minute window. Source: page text
-  `docs/reference/sveltekit.md:1180-1188`; not independently re-traced to source this pass.
-  [candidate: not independently re-verified]
+  holds a verdict for a ten-minute window. Source: `src/lib/sveltekit/content-routes-settings.ts:52-64`
+  (`keyConfigured`/`keyStatus` doc), `:234-256` (`settingsLoad`: `probeTidyKey`,
+  `cachedProbeResult`), `src/lib/sveltekit/tidy-key-health.ts:5,19` (`TTL_MS = 10 * 60 * 1000`;
+  "editLoad's tidy projection reads this cache only"). [verified]
 - `f:n8qe9y` `tidyAction` refuses before any model call if tidy is disabled or the key is missing; a 401/403
   from Anthropic marks the shared key-health cache unhealthy and is not retryable
   (`fail(503)`, reading "Tidy isn't available right now"), while a deadline overrun, other abort,
-  model error, or empty result is retryable (`fail(502)`). Source: page text
-  `docs/reference/sveltekit.md:1228-1232`; not independently re-traced to
-  `content-routes-tidy.ts` this pass, though this file's own already-verified fact above
-  (`reference.md:667-670`) confirms `tidy.*` log events carry only
-  `editor`/`model`/`reason`/`tokens`, consistent with this action existing and
-  logging outcomes. [candidate: not independently re-verified against this page's specific status
-  codes]
+  model error, or empty result is retryable (`fail(502)`). Source:
+  `src/lib/sveltekit/content-routes-tidy.ts:111,130,135` (`tidyAction`: `fail(503)` before any
+  model call when disabled or key missing), `:200-209` (401/403 calls `markKeyUnhealthy()`,
+  `fail(503)`, not retryable), `:223-231,249` (other errors `fail(502)`, retryable). [verified]
 - `f:sd18xx` `NavLayoutSection.collapsed` (default `false`) is only the group's starting state for a visitor
   with no persisted `cairn-admin-nav-collapsed` cookie; the cookie, once any header is toggled,
   wins entirely in both directions, so a group added after a visitor's cookie already exists
-  renders open. Source: page text `docs/reference/sveltekit.md:1727-1731`; not independently
-  re-traced to the nav-shell source this pass. [candidate: not independently re-verified]
+  renders open. Source: `src/lib/components/CairnAdminShell.svelte:192-218` (comment: "once any
+  header is touched, the cookie carries the full collapsed set and wins entirely"; `collapsed`
+  state derivation; `writeAdminCookie('cairn-admin-nav-collapsed', ...)`). [verified]
 - `f:bc27j9` A `NavLayoutEntry.href` colliding with a built-in admin view throws at startup with the
   conflicting view named; an icon outside the `NavIcon` allowlist throws when the runtime composes.
-  Source: page text `docs/reference/sveltekit.md:1601-1602,1645-1646`; not independently re-traced
-  to the nav-layout validation source this pass. [candidate: not independently re-verified]
+  Source: `src/lib/sveltekit/admin-nav.ts:73-90` (`validateEntry`: icon-allowlist throw, href-collision
+  throw naming the built-in view; doc comment: "fails at server start rather than rendering a
+  broken or shadowing sidebar link"). [verified]
 
 ## docs/reference/vite.md
 

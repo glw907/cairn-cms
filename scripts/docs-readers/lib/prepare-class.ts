@@ -8,7 +8,7 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 /** A shell command runner, injected so tests can replace the real `npm`, `git`, and `tar` calls. */
 export type CommandRunner = (
@@ -396,6 +396,39 @@ export function assertNoExcludedPaths(dir: string, excluded: string[] = REPOSITO
 }
 
 /**
+ * Export a commit of a git checkout into a clean directory via `git archive` piped straight into
+ * `tar`, with no assumption about what the export should or should not carry: `pathspec` is
+ * appended to the `git archive` invocation verbatim, so a caller passes either an inclusion list
+ * (bare paths) or an exclusion list (`:!path` entries) as its own needs require.
+ * `prepareRepositoryExport` and `prepareContractPagesBundle` both build on this, each layering its
+ * own answer-key check on top. `repoRoot` is the checkout to export from; `commit` is the
+ * commit-ish to export; `dest` is where the export lands, replaced first if it already exists;
+ * `pathspec` is extra `git archive` arguments after the commit (an inclusion list, an exclusion
+ * list, or none); `runner` is the command runner, overridden in tests.
+ * @throws When the archive or its extraction fails.
+ */
+export function archiveCommit({
+  repoRoot,
+  commit,
+  dest,
+  pathspec = [],
+  runner = spawnRunner,
+}: {
+  repoRoot: string;
+  commit: string;
+  dest: string;
+  pathspec?: string[];
+  runner?: CommandRunner;
+}): void {
+  rmSync(dest, { recursive: true, force: true });
+  mkdirSync(dest, { recursive: true });
+  const archive = runner('git', ['archive', commit, ...pathspec], { cwd: repoRoot });
+  if (archive.status !== 0) throw new Error(`git archive failed for ${commit}: ${archive.stderr}`);
+  const extract = runner('tar', ['-x', '-C', dest], { cwd: dest, input: archive.stdout });
+  if (extract.status !== 0) throw new Error(`tar extract failed for ${commit}: ${extract.stderr}`);
+}
+
+/**
  * Export a commit of a git checkout into a clean directory, excluding the two answer-key subtrees
  * by pathspec (this repository sets no `export-ignore` attribute), then re-checking that neither
  * it nor `.git` survived, regardless of whether the pathspec worked. Any failure, including the
@@ -416,14 +449,58 @@ export function prepareRepositoryExport({
   dest: string;
   runner?: CommandRunner;
 }): void {
-  rmSync(dest, { recursive: true, force: true });
-  mkdirSync(dest, { recursive: true });
   try {
-    const archive = runner('git', ['archive', commit, '--', '.', ':!docs/internal/record', ':!docs/superpowers'], { cwd: repoRoot });
-    if (archive.status !== 0) throw new Error(`git archive failed for ${commit}: ${archive.stderr}`);
-    const extract = runner('tar', ['-x', '-C', dest], { cwd: dest, input: archive.stdout });
-    if (extract.status !== 0) throw new Error(`tar extract failed for ${commit}: ${extract.stderr}`);
+    archiveCommit({ repoRoot, commit, dest, pathspec: ['--', '.', ':!docs/internal/record', ':!docs/superpowers'], runner });
     assertNoExcludedPaths(dest);
+  } catch (error) {
+    rmSync(dest, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+/**
+ * One subdirectory of the scripter class's contract-pages bundle: a reference page pinned to its
+ * own commit, plus the JSON schema files it cites at that same commit, if any. Each page can be
+ * pinned to a different commit, since pass A's three contract pages were fixed at different points
+ * in their own review.
+ */
+export interface ContractPageSpec {
+  /** The bundle subdirectory this page's own commit lands under. */
+  name: string;
+  /** The commit this page (and its cited schemas) are pinned to. */
+  commit: string;
+  /** The page's path, relative to the checkout root. */
+  page: string;
+  /** The JSON schema paths this page cites, relative to the checkout root. */
+  schemas: string[];
+}
+
+/**
+ * Build the scripter class's repository export: one subdirectory per `ContractPageSpec`, each
+ * holding only its own named page and cited schemas, exported from that page's own pinned commit,
+ * never from `HEAD` or from another page's commit. This is what keeps a later fix to one page from
+ * silently reaching a scripter reader through another page's subdirectory. `repoRoot` is the
+ * checkout to export from; `pages` are the bundle's subdirectories; `dest` is the bundle's root,
+ * replaced first if it already exists; `runner` is the command runner, overridden in tests.
+ * @throws When any page's archive or extraction fails, or an excluded path survives.
+ */
+export function prepareContractPagesBundle({
+  repoRoot,
+  pages,
+  dest,
+  runner = spawnRunner,
+}: {
+  repoRoot: string;
+  pages: ContractPageSpec[];
+  dest: string;
+  runner?: CommandRunner;
+}): void {
+  rmSync(dest, { recursive: true, force: true });
+  try {
+    for (const spec of pages) {
+      archiveCommit({ repoRoot, commit: spec.commit, dest: join(dest, spec.name), pathspec: ['--', spec.page, ...spec.schemas], runner });
+    }
+    assertNoExcludedPaths(dest, REPOSITORY_EXCLUDED_PATHS.flatMap((rel) => pages.map((spec) => join(spec.name, rel))));
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });
     throw error;
@@ -480,16 +557,60 @@ export function restrictStateDirPermissions(root: string): void {
   for (const name of readdirSync(stateDir)) chmodSync(join(stateDir, name), 0o600);
 }
 
+/** The scratch site's own repository, cloned only to build the docs-and-binary class's site checkout copy. */
+export const SCRATCH_SITE_CLONE_URL = 'https://github.com/glw907/cairn-scratch-b.git';
+
+/**
+ * Ensure a local clone of the scratch site's repository holds `commit`: cloning fresh when
+ * `cloneDir` does not exist yet, and fetching that one commit when it exists but lacks it. Every
+ * call after the first clone is a no-op fetch check, so a preparation step run repeatedly (a
+ * rebuild, a re-run baseline) reuses the same local clone rather than clone anew each time. This
+ * is the only place the docs-and-binary class's preparation reaches the network; a reader's own
+ * container never does. `cloneDir` is where the local clone lives, reused across calls; `cloneUrl`
+ * is the repository's clone URL; `commit` is the commit a later export step will pin to; `runner`
+ * is the command runner, overridden in tests.
+ * @throws When the clone, the fetch, or the commit lookup fails.
+ */
+export function ensureScratchSiteCommit({
+  cloneDir,
+  cloneUrl = SCRATCH_SITE_CLONE_URL,
+  commit,
+  runner = spawnRunner,
+}: {
+  cloneDir: string;
+  cloneUrl?: string;
+  commit: string;
+  runner?: CommandRunner;
+}): void {
+  if (!existsSync(join(cloneDir, '.git'))) {
+    mkdirSync(dirname(cloneDir), { recursive: true });
+    const clone = runner('git', ['clone', '--quiet', cloneUrl, cloneDir], { cwd: dirname(cloneDir) });
+    if (clone.status !== 0) throw new Error(`git clone of ${cloneUrl} failed: ${clone.stderr}`);
+  }
+  const verify = runner('git', ['cat-file', '-e', `${commit}^{commit}`], { cwd: cloneDir });
+  if (verify.status === 0) return;
+  const fetch = runner('git', ['fetch', '--quiet', 'origin', commit], { cwd: cloneDir });
+  if (fetch.status !== 0) throw new Error(`git fetch of ${commit} from ${cloneUrl} failed: ${fetch.stderr}`);
+  const reverify = runner('git', ['cat-file', '-e', `${commit}^{commit}`], { cwd: cloneDir });
+  if (reverify.status !== 0) throw new Error(`commit ${commit} not found in ${cloneUrl} after fetching it`);
+}
+
 /**
  * Build a docs-and-binary job's prepared tree: the published docs set at their doc-relative
  * paths, plus a `state/` registry directory holding exactly one site record, so the `cairn`
  * binary baked into the reader image (`Containerfile`) lists, checks, and probes only the
  * scratch site named there. The binary itself is not copied here: it is pinned into the image at
  * build time (`ensureImage`'s `cairnToolVersion`), never into a per-job tree, since a class with
- * no Write or Edit tool has nowhere writable to install one at run time. `sourceRoot` is the
- * checkout the docs set is copied from; `docsSet` are the pages the job names, relative to
- * `sourceRoot`; `siteId` is the site record's filename stem; `record` is the one site record the
- * registry holds; `dest` is the prepared tree's root.
+ * no Write or Edit tool has nowhere writable to install one at run time. When `siteExportDir` is
+ * given, that directory's own top-level entries are copied directly into `dest`'s root (the
+ * scratch site's `wrangler.jsonc`, `svelte.config.js`, `src/`, and the rest), so an operator reader
+ * finds the site's checkout right at its own working directory, the same as a real operator whose
+ * shell already sits inside their site's own directory. `sourceRoot` is the checkout the docs set
+ * is copied from; `docsSet` are the pages the job names, relative to `sourceRoot`; `siteId` is the
+ * site record's filename stem; `record` is the one site record the registry holds; `dest` is the
+ * prepared tree's root; `siteExportDir` is an already-exported site checkout (built separately,
+ * with `ensureScratchSiteCommit` and `archiveCommit`), omitted when a job carries no site checkout.
+ * @throws When a named docs-set page is missing.
  */
 export function prepareDocsAndBinary({
   sourceRoot,
@@ -497,17 +618,22 @@ export function prepareDocsAndBinary({
   siteId,
   record,
   dest,
+  siteExportDir,
 }: {
   sourceRoot: string;
   docsSet: string[];
   siteId: string;
   record: ScratchSiteRecord;
   dest: string;
+  siteExportDir?: string;
 }): void {
   rmSync(dest, { recursive: true, force: true });
   try {
     copyDocsSet(sourceRoot, docsSet, dest);
     writeScratchSiteRecord(join(dest, 'state'), siteId, record);
+    if (siteExportDir) {
+      for (const name of readdirSync(siteExportDir)) cpSync(join(siteExportDir, name), join(dest, name), { recursive: true });
+    }
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });
     throw error;

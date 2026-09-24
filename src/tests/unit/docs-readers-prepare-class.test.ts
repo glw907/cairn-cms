@@ -4,13 +4,16 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, stat
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  archiveCommit,
   assertNoExcludedPaths,
   assertSiteAnswerKeyAbsent,
   copyDocsSet,
+  ensureScratchSiteCommit,
   installAndStrip,
   packEngineTarballs,
   packTarball,
   packageInputPaths,
+  prepareContractPagesBundle,
   prepareDocsAndBinary,
   prepareDocsAndSite,
   prepareRepositoryExport,
@@ -608,6 +611,183 @@ describe('prepareRepositoryExport', () => {
   });
 });
 
+describe('archiveCommit', () => {
+  it('exports only the named pathspec entries from a real commit', () => {
+    const repoRoot = tmp('archive-repo');
+    const dest = tmp('archive-dest');
+    try {
+      write(join(repoRoot, 'kept.md'), '# kept\n');
+      write(join(repoRoot, 'schema/kept.schema.json'), '{}');
+      write(join(repoRoot, 'dropped.md'), '# dropped\n');
+      commitAll(repoRoot);
+      archiveCommit({ repoRoot, commit: 'HEAD', dest, pathspec: ['--', 'kept.md', 'schema/kept.schema.json'] });
+      expect(readFileSync(join(dest, 'kept.md'), 'utf8')).toBe('# kept\n');
+      expect(existsSync(join(dest, 'schema/kept.schema.json'))).toBe(true);
+      expect(existsSync(join(dest, 'dropped.md'))).toBe(false);
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('throws and removes dest when the tar extraction fails', () => {
+    const dest = tmp('archive-tar-fail');
+    try {
+      const runner: CommandRunner = (command) =>
+        command === 'git' ? { status: 0, stdout: Buffer.from('fake-archive'), stderr: '' } : { status: 1, stdout: Buffer.alloc(0), stderr: 'tar: corrupt archive' };
+      expect(() => archiveCommit({ repoRoot: '/unused', commit: 'HEAD', dest, runner })).toThrow(/corrupt archive/);
+    } finally {
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('prepareContractPagesBundle', () => {
+  it('pins each subdirectory to its own commit, never a later edit of the same page', () => {
+    const repoRoot = tmp('bundle-repo');
+    const dest = tmp('bundle-dest');
+    try {
+      write(join(repoRoot, 'docs/page-a.md'), '# page a, version 1\n');
+      write(join(repoRoot, 'docs/schema/a.schema.json'), '{"version":1}');
+      commitAll(repoRoot);
+      const firstCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot }).toString().trim();
+      write(join(repoRoot, 'docs/page-a.md'), '# page a, version 2 (a later fix)\n');
+      write(join(repoRoot, 'docs/page-b.md'), '# page b\n');
+      execFileSync('git', ['add', '.'], { cwd: repoRoot });
+      execFileSync('git', ['commit', '-q', '-m', 'second'], { cwd: repoRoot });
+      const secondCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot }).toString().trim();
+
+      prepareContractPagesBundle({
+        repoRoot,
+        dest,
+        pages: [
+          { name: 'a', commit: firstCommit, page: 'docs/page-a.md', schemas: ['docs/schema/a.schema.json'] },
+          { name: 'b', commit: secondCommit, page: 'docs/page-b.md', schemas: [] },
+        ],
+      });
+
+      expect(readFileSync(join(dest, 'a/docs/page-a.md'), 'utf8')).toBe('# page a, version 1\n');
+      expect(existsSync(join(dest, 'a/docs/schema/a.schema.json'))).toBe(true);
+      expect(existsSync(join(dest, 'a/docs/page-b.md'))).toBe(false);
+      expect(readFileSync(join(dest, 'b/docs/page-b.md'), 'utf8')).toBe('# page b\n');
+      expect(existsSync(join(dest, 'a/.git'))).toBe(false);
+      expect(existsSync(join(dest, 'b/.git'))).toBe(false);
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('fails and removes the whole bundle when an excluded path survives into one subdirectory', () => {
+    const dest = tmp('bundle-survives');
+    try {
+      const runner: CommandRunner = (command, args) => {
+        if (command === 'git') return { status: 0, stdout: Buffer.from('fake-archive'), stderr: '' };
+        if (command === 'tar') {
+          const cwd = args.includes('-C') ? args[args.indexOf('-C') + 1] : '';
+          write(join(cwd, 'docs/page.md'), '# page\n');
+          if (cwd.endsWith('/a')) write(join(cwd, 'docs/superpowers/plan.md'), 'answer key');
+          return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+        }
+        throw new Error(`unexpected command: ${command} ${args.join(' ')}`);
+      };
+      expect(() =>
+        prepareContractPagesBundle({
+          repoRoot: '/unused',
+          dest,
+          pages: [
+            { name: 'a', commit: 'HEAD', page: 'docs/page.md', schemas: [] },
+            { name: 'b', commit: 'HEAD', page: 'docs/page.md', schemas: [] },
+          ],
+          runner,
+        }),
+      ).toThrow(/docs\/superpowers/);
+      expect(existsSync(dest)).toBe(false);
+    } finally {
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('ensureScratchSiteCommit', () => {
+  it('clones fresh when the clone directory does not exist yet', async () => {
+    const calls: string[][] = [];
+    const cloneDir = join(tmp('clone-parent'), 'clone');
+    const runner: CommandRunner = (command, args) => {
+      calls.push([command, ...args]);
+      if (command === 'git' && args[0] === 'clone') {
+        mkdirSync(join(cloneDir, '.git'), { recursive: true });
+        return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+      }
+      return { status: 0, stdout: Buffer.alloc(0), stderr: '' }; // the post-clone cat-file check
+    };
+    try {
+      ensureScratchSiteCommit({ cloneDir, commit: 'abc123', runner });
+      expect(calls.some((c) => c[0] === 'git' && c[1] === 'clone')).toBe(true);
+    } finally {
+      rmSync(cloneDir, { recursive: true, force: true });
+    }
+  });
+
+  it('skips cloning and fetching when the clone already has the commit', () => {
+    const cloneDir = tmp('clone-has-commit');
+    mkdirSync(join(cloneDir, '.git'), { recursive: true });
+    const calls: string[][] = [];
+    const runner: CommandRunner = (command, args) => {
+      calls.push([command, ...args]);
+      return { status: 0, stdout: Buffer.alloc(0), stderr: '' }; // cat-file -e succeeds
+    };
+    try {
+      ensureScratchSiteCommit({ cloneDir, commit: 'abc123', runner });
+      expect(calls).toEqual([['git', 'cat-file', '-e', 'abc123^{commit}']]);
+    } finally {
+      rmSync(cloneDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fetches the one commit when the clone exists but lacks it', () => {
+    const cloneDir = tmp('clone-needs-fetch');
+    mkdirSync(join(cloneDir, '.git'), { recursive: true });
+    let catFileCalls = 0;
+    const calls: string[][] = [];
+    const runner: CommandRunner = (command, args) => {
+      calls.push([command, ...args]);
+      if (command === 'git' && args[0] === 'cat-file') {
+        catFileCalls += 1;
+        return catFileCalls === 1 ? { status: 1, stdout: Buffer.alloc(0), stderr: 'not found' } : { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+      }
+      return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+    };
+    try {
+      ensureScratchSiteCommit({ cloneDir, commit: 'def456', runner });
+      expect(calls.some((c) => c[0] === 'git' && c[1] === 'fetch')).toBe(true);
+      expect(catFileCalls).toBe(2);
+    } finally {
+      rmSync(cloneDir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws when the commit is still missing after fetching it', () => {
+    const cloneDir = tmp('clone-fetch-fails');
+    mkdirSync(join(cloneDir, '.git'), { recursive: true });
+    const runner: CommandRunner = (command, args) => {
+      if (command === 'git' && args[0] === 'cat-file') return { status: 1, stdout: Buffer.alloc(0), stderr: 'not found' };
+      return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+    };
+    try {
+      expect(() => ensureScratchSiteCommit({ cloneDir, commit: 'ghost', runner })).toThrow(/not found in .* after fetching/);
+    } finally {
+      rmSync(cloneDir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws when the initial clone fails', () => {
+    const cloneDir = join(tmp('clone-fail-parent'), 'clone');
+    const runner: CommandRunner = () => ({ status: 128, stdout: Buffer.alloc(0), stderr: 'Repository not found.' });
+    expect(() => ensureScratchSiteCommit({ cloneDir, commit: 'abc123', runner })).toThrow(/Repository not found/);
+  });
+});
+
 /** A minimal, well-formed scratch site record for the tests below. */
 const scratchRecord: ScratchSiteRecord = {
   name: 'Cairn Scratch B',
@@ -702,6 +882,33 @@ describe('prepareDocsAndBinary', () => {
       expect(existsSync(dest)).toBe(false);
     } finally {
       rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('copies a site export’s own top-level entries directly into the prepared tree’s root, so an operator finds the checkout at its own working directory', () => {
+    const sourceRoot = tmp('binary-source-site');
+    const siteExportDir = tmp('binary-site-export');
+    const dest = tmp('binary-dest-site');
+    try {
+      write(join(sourceRoot, 'docs/admin/is-it-working.md'), '# is it working\n');
+      write(join(siteExportDir, 'wrangler.jsonc'), '{}');
+      write(join(siteExportDir, 'src/hooks.server.ts'), '// hooks\n');
+      prepareDocsAndBinary({
+        sourceRoot,
+        docsSet: ['docs/admin/is-it-working.md'],
+        siteId: 'cairn-scratch-b-9f21ac',
+        record: scratchRecord,
+        dest,
+        siteExportDir,
+      });
+      expect(readFileSync(join(dest, 'wrangler.jsonc'), 'utf8')).toBe('{}');
+      expect(readFileSync(join(dest, 'src/hooks.server.ts'), 'utf8')).toBe('// hooks\n');
+      expect(readFileSync(join(dest, 'docs/admin/is-it-working.md'), 'utf8')).toBe('# is it working\n');
+      expect(existsSync(join(dest, 'state', 'cairn-scratch-b-9f21ac.json'))).toBe(true);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(siteExportDir, { recursive: true, force: true });
       rmSync(dest, { recursive: true, force: true });
     }
   });

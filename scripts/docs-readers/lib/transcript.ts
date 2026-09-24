@@ -348,32 +348,61 @@ export function derivePagesRead(calls: ToolCall[], docsSet: string[]): string[] 
 }
 
 /**
- * The docs-set pages named in a hit line from any content-mode Grep call, independent of whether
- * that call's own search scope was narrow enough to count as reading the page
- * (`derivePagesRead`, `grepScopedPage`). A directory-wide search can print a hit line naming a
- * page the reader never asked to open on its own; that alone still does not count as reading it,
- * but the reader's own tool output did show the line, so a report quote on that same page is not
- * evidence of an invented read either. `verifyReport` is what narrows this further: only a page a
- * report actually quotes, with a quote that verifies on its own, is ever excused by this set.
+ * The key `grepHitPages` and `verifyReport`'s overlap check both use for one displayed line of one
+ * page, so the two sides always agree on the same string shape.
+ * @param path - A page's relative path.
+ * @param line - A 1-based line number on that page.
+ * @returns The composite key.
+ */
+export function pageLineKey(path: string, line: number): string {
+  return `${path}:${line}`;
+}
+
+/**
+ * The `{ path, line }` a ripgrep-style content-mode line displays, whether it is a hit line
+ * (`path:N:content`) or a context line from `-A`/`-B`/`-C` (`path-N-content`, the same separator
+ * repeated on both sides of the line number); undefined when a line matches neither shape.
+ * @param line - One line of a content-mode Grep call's own output.
+ * @returns The path and line number it displays, or undefined.
+ */
+function displayedLine(line: string): { path: string; line: number } | undefined {
+  const hit = /^(.+?):(\d+):/.exec(line);
+  if (hit) return { path: hit[1], line: Number(hit[2]) };
+  const context = /^(.+?)-(\d+)-/.exec(line);
+  if (context) return { path: context[1], line: Number(context[2]) };
+  return undefined;
+}
+
+/**
+ * The `page:line` pairs any content-mode Grep call actually displayed, whether on a hit line or a
+ * context line, independent of whether that call's own search scope was narrow enough to count as
+ * reading the page (`derivePagesRead`, `grepScopedPage`). A directory-wide search can print a hit
+ * line naming a page the reader never asked to open on its own; that alone still does not count as
+ * reading it, but the reader's own tool output did show that one line, so a report quote citing
+ * that same line (or a wrapped span that reaches it) is not evidence of an invented read either. A
+ * hit on line 10 of a page does not excuse a quote of line 200 on the same page: the overlap is
+ * checked line by line, in `verifyReport`, never at the whole-page grain. `verifyReport` also
+ * narrows this further: only a page a report actually quotes, with a quote that verifies on its
+ * own, is ever excused by this set.
  * @param calls - The paired tool calls.
  * @param docsSet - The job's docs-set entries.
- * @returns The set of pages named in a hit line, as relative paths.
+ * @returns The set of `page:line` keys (`pageLineKey`) a Grep call displayed.
  */
 export function grepHitPages(calls: ToolCall[], docsSet: string[]): Set<string> {
-  const pages = new Set<string>();
+  const pairs = new Set<string>();
   for (const call of calls) {
     if (call.name !== 'Grep' || call.input.output_mode !== 'content') continue;
     if (!call.result || call.result.isError) continue;
     const text = call.result.text;
     if (text.trim() === '' || /^No matches found/i.test(text.trim())) continue;
     for (const line of text.split('\n')) {
-      const match = /^(.+?):(\d+):/.exec(line);
-      if (!match) continue;
-      const rel = toReaderRelative(match[1]);
-      if (isPage(rel, docsSet)) pages.add(rel);
+      const displayed = displayedLine(line);
+      if (!displayed) continue;
+      const rel = toReaderRelative(displayed.path);
+      if (isPage(rel, docsSet)) pairs.add(pageLineKey(rel, displayed.line));
     }
   }
-  return pages;
+  return pairs;
 }
 
 /**

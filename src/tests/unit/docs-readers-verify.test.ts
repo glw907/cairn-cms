@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyQuote, verifyReport } from '../../../scripts/docs-readers/lib/verify.js';
-import { derivePagesRead, effectiveCwd, parseStream, readerReport, toolCalls } from '../../../scripts/docs-readers/lib/transcript.js';
+import { derivePagesRead, effectiveCwd, grepHitPages, parseStream, readerReport, toolCalls } from '../../../scripts/docs-readers/lib/transcript.js';
 import type { ToolCall } from '../../../scripts/docs-readers/lib/types.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -127,7 +127,7 @@ describe('verifyReport against fixture transcripts', () => {
     expect(verified.problems).toEqual(['quote docs/other.md:3 cites a page the transcript never shows read']);
   });
 
-  it('excuses a quoted page that only ever surfaced through a broadly-scoped Grep hit line, from "never shows read"', () => {
+  it('excuses a quoted page whose exact line only ever surfaced through a broadly-scoped Grep hit, from "never shows read"', () => {
     const verified = verifyReport({
       report: {
         outcome: 'done',
@@ -144,7 +144,40 @@ describe('verifyReport against fixture transcripts', () => {
       root: PREPARED,
       init: passingInit,
       canariesFound: [],
-      grepHits: new Set(['docs/other.md']),
+      grepHits: new Set(['docs/other.md:3']),
+    });
+    expect(verified).toMatchObject({ ok: true, problems: [] });
+  });
+
+  it('does not excuse a quote from a distant line, when the Grep hit surfaced a different line of the same page', () => {
+    // A hit on line 1 of docs/other.md must not excuse a quote of line 3 on the very same page:
+    // the overlap check runs line by line, never at the whole-page grain.
+    const verified = verifyReport({
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }], ruleCandidates: [] },
+      pagesRead: [],
+      docsSet: ['docs'],
+      root: PREPARED,
+      init: passingInit,
+      canariesFound: [],
+      grepHits: new Set(['docs/other.md:1']),
+    });
+    expect(verified.ok).toBe(false);
+    expect(verified.problems).toEqual(['quote docs/other.md:3 cites a page the transcript never shows read']);
+  });
+
+  it('excuses a quote whose line surfaced only as a Grep context line, not a hit line itself', () => {
+    // -A/-B/-C print a context line dash-separated (path-N-content) rather than colon-separated;
+    // grepHitPages keys it the same way as a hit line, so it excuses a quote on it just the same.
+    const contextOnly = { id: 't', name: 'Grep', input: { pattern: 'x', output_mode: 'content', path: '/reader/job/docs' }, result: { isError: false, text: 'docs/other.md-3-Change the settings file here.' } };
+    const grepHits = grepHitPages([contextOnly], ['docs']);
+    const verified = verifyReport({
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }], ruleCandidates: [] },
+      pagesRead: [],
+      docsSet: ['docs'],
+      root: PREPARED,
+      init: passingInit,
+      canariesFound: [],
+      grepHits,
     });
     expect(verified).toMatchObject({ ok: true, problems: [] });
   });
@@ -157,7 +190,7 @@ describe('verifyReport against fixture transcripts', () => {
       root: PREPARED,
       init: passingInit,
       canariesFound: [],
-      grepHits: new Set(['docs/other.md']),
+      grepHits: new Set(['docs/other.md:1']),
     });
     expect(verified).toMatchObject({ ok: true, problems: [] });
   });
@@ -170,7 +203,7 @@ describe('verifyReport against fixture transcripts', () => {
       root: PREPARED,
       init: passingInit,
       canariesFound: [],
-      grepHits: new Set(['docs/other.md']),
+      grepHits: new Set(['docs/other.md:3']),
     });
     expect(verified.ok).toBe(false);
     expect(verified.problems).toEqual(['quote docs/other.md:3 unverified: text not found in the file']);

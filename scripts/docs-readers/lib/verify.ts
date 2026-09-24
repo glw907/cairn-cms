@@ -5,7 +5,7 @@
  */
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { isPage, READER_CWD, toReaderRelative } from './transcript.js';
+import { isPage, pageLineKey, READER_CWD, toReaderRelative } from './transcript.js';
 import type { InitCheck, RawQuote, ReaderReport, Verified, VerifiedQuote } from './types.js';
 
 /** How many lines a quote may run past its cited line when the reader joined a wrapped sentence. */
@@ -53,7 +53,9 @@ function matchEndLine(lines: string[], index: number, wanted: string): number | 
  * Check one quote against the prepared directory, resolving its path against one fixed `cwd`. A
  * quote passes when its own text spans the cited line: it starts there, or starts on an earlier
  * line (within `SPAN_LINES`) and its text runs at least as far as the cited line, the way a reader
- * who quotes the tail of a wrapped sentence cites the line the tail actually sits on.
+ * who quotes the tail of a wrapped sentence cites the line the tail actually sits on. A passing
+ * quote's own `startLine`/`endLine` record the actual matched span, since that can run wider than
+ * the single cited line the reader gave.
  * @param quote - The reader's `{ path, line, text }`.
  * @param root - The pristine prepared directory the reader's copy was made from.
  * @param cwd - The directory a relative `quote.path` is resolved against.
@@ -74,7 +76,7 @@ function verifyQuoteAgainst(quote: RawQuote, root: string, cwd: string): Verifie
   const citedIndex = line - 1;
   for (let start = Math.max(0, citedIndex - SPAN_LINES + 1); start <= citedIndex; start += 1) {
     const endLine = matchEndLine(lines, start, wanted);
-    if (endLine !== undefined && endLine >= citedIndex) return { ...base, ok: true };
+    if (endLine !== undefined && endLine >= citedIndex) return { ...base, ok: true, startLine: start + 1, endLine: endLine + 1 };
   }
   const elsewhere = lines.findIndex((_, index) => matchEndLine(lines, index, wanted) !== undefined);
   const reason = elsewhere === -1 ? 'text not found in the file' : `text starts on line ${elsewhere + 1}, not ${line}`;
@@ -102,16 +104,36 @@ export function verifyQuote(quote: RawQuote, root: string, cwd: string = READER_
 }
 
 /**
+ * Whether a quote's own verified span (`startLine` through `endLine`, falling back to `line` alone
+ * when a caller passes a quote `verifyQuoteAgainst` never annotated) overlaps a `page:line` pair a
+ * Grep call actually displayed. Checked line by line, never at the whole-page grain: a hit on one
+ * line of a page must not excuse a quote of a distant, unrelated line on that same page.
+ * @param quote - A verified quote, `ok` already checked by the caller.
+ * @param grepHits - The `page:line` pairs a Grep call displayed (`grepHitPages`).
+ * @returns True when some line in the quote's own span is one of `grepHits`.
+ */
+function overlapsGrepHit(quote: VerifiedQuote, grepHits: Set<string>): boolean {
+  const start = quote.startLine ?? (typeof quote.line === 'number' ? quote.line : undefined);
+  const end = quote.endLine ?? start;
+  if (start === undefined || end === undefined) return false;
+  for (let line = start; line <= end; line += 1) {
+    if (grepHits.has(pageLineKey(quote.path, line))) return true;
+  }
+  return false;
+}
+
+/**
  * Decide whether a job's report is verified, from the reader's structured `report` (undefined when
  * it gave none), the `pagesRead` the transcript shows, the job's `docsSet`, the pristine prepared
  * `root`, the `init` check's result, the `canariesFound` in the transcript, the reader's `cwd`
  * by the end of the transcript (`effectiveCwd`, defaulting to `READER_CWD`), against which every
- * relative quote path resolves, and the pages any Grep call's hit lines named (`grepHitPages`,
+ * relative quote path resolves, and the `page:line` pairs any Grep call displayed (`grepHitPages`,
  * defaulting to none). Every page read must carry a verified quote, and every quoted page must
- * have been read: a quote on a docs-set page the transcript never shows opened, and never even
- * surfaced in a Grep hit line, was not read in this run. A quoted page that only ever surfaced as
- * an incidental Grep hit line (`grepHits`) is excused from that last check, since the reader's own
- * tool output did show it the line; it still must carry a quote that verifies on its own.
+ * have been read: a quote on a docs-set page the transcript never shows opened, and whose own span
+ * never overlapped a displayed Grep line either, was not read in this run. A quote whose span
+ * overlaps a line a Grep call displayed (`grepHits`, checked by `overlapsGrepHit`) is excused from
+ * that last check, since the reader's own tool output did show that line; the quote still must
+ * verify on its own, and an unrelated line elsewhere on the same page excuses nothing.
  * @returns The `verified` block for the job report.
  */
 export function verifyReport({
@@ -151,7 +173,7 @@ export function verifyReport({
     }
     const read = new Set(pagesRead);
     for (const q of quotes) {
-      if (q.ok && isPage(q.path, docsSet) && !read.has(q.path) && !grepHits.has(q.path)) {
+      if (q.ok && isPage(q.path, docsSet) && !read.has(q.path) && !overlapsGrepHit(q, grepHits)) {
         problems.push(`quote ${q.path}:${String(q.line)} cites a page the transcript never shows read`);
       }
     }

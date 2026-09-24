@@ -134,9 +134,16 @@ describe('grepHitPages', () => {
     return { id: 't', name: 'Grep', input: { pattern: 'x', output_mode: 'content', ...input }, result: { isError: false, text } };
   }
 
-  it('names a page whose hit line surfaced through a broadly-scoped search, unlike derivePagesRead', () => {
+  it('keys a hit line by page and line number, whose hit surfaced through a broadly-scoped search unlike derivePagesRead', () => {
     const wholeDocsSet = grepCall({ path: '/reader/job/docs' }, 'docs/troubleshooting.md:3:send_email');
-    expect(grepHitPages([wholeDocsSet], ['docs/troubleshooting.md'])).toEqual(new Set(['docs/troubleshooting.md']));
+    expect(grepHitPages([wholeDocsSet], ['docs/troubleshooting.md'])).toEqual(new Set(['docs/troubleshooting.md:3']));
+  });
+
+  it('keys a context line (the dash-separated shape -A/-B/-C print) the same way as a hit line', () => {
+    const withContext = grepCall({ path: '/reader/job/docs' }, 'docs/troubleshooting.md-2-before the match\ndocs/troubleshooting.md:3:send_email\ndocs/troubleshooting.md-4-after the match');
+    expect(grepHitPages([withContext], ['docs/troubleshooting.md'])).toEqual(
+      new Set(['docs/troubleshooting.md:2', 'docs/troubleshooting.md:3', 'docs/troubleshooting.md:4']),
+    );
   });
 
   it('names nothing from an empty result, a "No matches found" result, or a failed call', () => {

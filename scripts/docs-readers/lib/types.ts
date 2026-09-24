@@ -135,6 +135,10 @@ export interface VerifiedQuote {
   text: unknown;
   ok: boolean;
   reason?: string;
+  /** The first line (1-based, inclusive) the quote's own text actually matched on, when `ok`. */
+  startLine?: number;
+  /** The last line (1-based, inclusive) the quote's own text actually reached, when `ok`. */
+  endLine?: number;
 }
 
 /** The reader's structured report. */

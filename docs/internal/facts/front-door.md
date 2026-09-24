@@ -14,12 +14,11 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:0ij7do` With the zero-config default, an editor signs in from an emailed link, no GitHub account, no
   password. Source: `src/lib/auth-channel/`, `src/lib/env.ts` (AUTH_DB binding backs the magic-link
   session store); CLAUDE.md, "magic-link". [verified]
-- `f:8289h7` Behind Cloudflare Access, an editor can instead sign in with the organization's Google or
-  Microsoft account. Source: docs/extend/sign-in-through-your-organization.md (not read this
-  slice; referenced by docs/why-cairn.md:20). [candidate: not opened this pass, cross-referenced
-  only]
-- `f:dl1trb` The live preview renders through the exact function the public site uses. Source: CLAUDE.md,
-  "the one renderer the editor preview and every public page call". [candidate: sourced to the page only, not traced to code]
+- `f:8289h7` Behind Cloudflare Access, an editor can instead sign in with the organization's Google or Microsoft account. Source: `src/lib/sveltekit/guard.ts:64-68`, "Replace magic-link session resolution with the site's own identity gate (Cloudflare Access or any other reverse proxy that authenticates the request before it reaches this Worker)"; docs/extend/sign-in-through-your-organization.md, the Google Workspace/Microsoft Entra ID recipe built on that seam. [verified: the Cloudflare Access identity seam traces to guard.ts; which identity providers (Google, Microsoft) an Access application offers is Cloudflare's own configuration, external to this repo]
+- `f:dl1trb` The live preview renders through the exact function the public site uses. Source:
+  `examples/showcase/src/chassis/public-routes.ts:14`, `render: cairn.rendering.render`;
+  `examples/showcase/src/routes/admin/[...path]/+page.svelte:26`, `render={cairn.rendering.render}`,
+  the identical binding threaded to both routes. [verified]
 - `f:qehbx3` A save holds on a per-entry branch; a deliberate publish copies it to the main branch with the
   editor as commit author. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in
   editor (spec §7.4). The committer is left to the App."; `src/lib/github/repo.ts:262`,
@@ -37,8 +36,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   event calendar, reservation form, and shared sign-in go past it, and line 68 puts a site's domain
   in the developer's own routes, data, and auth]
 - `f:i74t7g` Every production cairn site the author runs is hosted on Cloudflare. Source: docs/why-cairn.md:40
-  (owner brief, first-person claim; not independently verifiable from code). [candidate: owner
-  claim, no code source]
+  (owner brief, first-person claim; not independently verifiable from code). [candidate: excluded, an operational claim about the author's own live deployed infrastructure, outside anything this repo's code can confirm]
 - `f:hk24xs` cairn has no abstraction layer that lets a developer swap Cloudflare for another host later; no
   second `BackendProvider` implementation ships with cairn today besides GitHub. Source:
   `grep -rn "BackendProvider" src/lib` (single GitHub implementation; extend seam documented at
@@ -58,10 +56,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   `docs/internal/what-cairn-is-and-is-not.md:11-14,56`, "a starting framework and an admin skeleton,
   not a platform" and "cairn owns its core job, managing markdown content and the editor/admin
   frame, and little else." [verified]
-- `f:zpjl8k` `create-cairn-site` still requires a GitHub account, a Cloudflare account, and a paid Cloudflare
-  plan from the first deploy. Source: docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md,
-  citing docs/admin/before-you-start.md:29 and :53 on the Workers Paid requirement for Email
-  Sending. [candidate: sourced to the page only, not traced to code]
+- `f:zpjl8k` `create-cairn-site` still requires a GitHub account, a Cloudflare account, and a paid Cloudflare plan from the first deploy. Source: `packages/create-cairn-site/src/github/oauth.mjs:67`, `authorizeUrl` building GitHub's OAuth authorize step; `packages/create-cairn-site/src/cloudflare/account.mjs:47`, resolving the Cloudflare account id every chapter-1 call needs; `packages/create-cairn-site/src/cloudflare/catalogue.mjs:543-544`, the setup command's own declined-plan message: "a cairn site needs that plan from its first deploy" (the Workers Paid plan). [verified]
 - `f:oyiv3h` Every publish is a git commit, so content lives in a repository the organization needs a GitHub
   account to reach, even though editors never see it directly. Source:
   `src/lib/github/repo.ts:262`, commit-per-publish mechanics. [verified]
@@ -79,16 +74,14 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   it in. Key phrase: "built with DaisyUI + Tailwind". Source:
   `docs/internal/what-cairn-is-and-is-not.md:42-43`, "An admin skeleton a developer extends, built
   with DaisyUI + Tailwind (the idiom custom admin screens follow". [verified]
-- `f:u705t5` `create-cairn-site` scaffolds a complete starter called Waymark; a second template, Topo, is
-  planned but not shipped. Source: README.md:58-60 (page's own claim); no `Topo` package or
-  directory found in this repo (`find . -iname "*topo*"` in this slice returned nothing under
-  packages/ or examples/). [candidate: not independently located in code, page-only claim]
+- `f:u705t5` `create-cairn-site` scaffolds a complete starter called Waymark; a second template, Topo, is planned but not shipped. Source: `packages/create-cairn-site/package.json:4`, "scaffold a branded Waymark starter"; `packages/create-cairn-site/src/prompts.mjs:15`, `DEFAULTS = { name: 'Waymark', ... }`; no `Topo` package or directory found under `packages/` or `examples/` (`find . -iname "*topo*"` matched only spec and record docs under `docs/`). [verified: Waymark and the absence of any Topo template trace to the tree; "planned" rests on the specs and ROADMAP.md, not code]
 - `f:4sxnxp` cairn is pre-1.0 and runs in production on two sites today, ecxc.ski and 907.life. Source:
   CLAUDE.md credentials section, "a single installation on glw907 covering ecxc-ski and 907-life."
-  [candidate: sourced to the page only, not traced to code]
+  [candidate: excluded, the pre-1.0 half traces to `package.json:3` but "runs in production on
+  ecxc.ski and 907.life today" is an operational deployment claim this repo's code cannot confirm]
 - `f:3utth1` The published version, unpublished window, and next action live in `docs/STATUS.md`. Source:
-  CLAUDE.md, "How to run this project", "The published version, the unpublished window, and the
-  next action live in `docs/STATUS.md`." [candidate: sourced to the page only, not traced to code]
+  `docs/STATUS.md:8`, "Published: **`0.97.0`**..."; `docs/STATUS.md:19`, "## Immediate next
+  action". [verified]
 
 ## docs/README.md
 - `f:zmih7p` cairn publishes through a GitHub App. Source: `src/lib/github/repo.ts:262` (App-attributed
@@ -132,12 +125,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   closed structurally by the showcase's `pretest:e2e` repackage hook. Source:
   `examples/showcase/package.json:13`, `"pretest:e2e": "npm --prefix ../.. run package"`.
   [verified]
-- `f:mf00hq` Visual e2e baselines are CI-canonical, regenerated by `e2e.yml`'s `update_snapshots` job; this
-  workstation's local Chromium renders a few surfaces a few pixels differently than the CI
-  runner's, so a local gate is green only when its visual failures are exactly the files the
-  latest regen commit rewrote. Source: CLAUDE.md, "Durable gotcha (CI-canonical baselines this
-  workstation cannot reproduce)" (chassis-B2 example: 20 files from commit `4de378ec`).
-  [candidate: workflow file `e2e.yml` itself not opened this slice; CLAUDE.md's own account taken as source]
+- `f:mf00hq` Visual e2e baselines are CI-canonical, regenerated by `e2e.yml`'s `update_snapshots` job; this workstation's local Chromium renders a few surfaces a few pixels differently than the CI runner's, so a local gate is green only when its visual failures are exactly the files the latest regen commit rewrote. Source: `.github/workflows/e2e.yml:11`, the `update_snapshots` workflow_dispatch input; `.github/workflows/e2e.yml:121-130`, "baselines are CI-canonical and a workstation render is never an acceptable substitute" and the `--update-snapshots` regen run; `docs/internal/durable-gotchas.md:44` (chassis-B2 example: 20 files from commit `4de378ec`). [verified: the CI-canonical regen traces to e2e.yml; the workstation's pixel difference and the local-green rule are an operational observation recorded in durable-gotchas.md, not code]
 - `f:t4aj07` Vite 8 / Rolldown parses shipped `.svelte` `<script lang="ts">` as plain JavaScript before the
   consumer's Svelte plugin runs, so the post-package step `transpile-dist-svelte.mjs` transpiles
   each dist `<script>` body while KEEPING the `lang="ts"` attribute, because the markup still

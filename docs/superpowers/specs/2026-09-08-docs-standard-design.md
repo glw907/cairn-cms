@@ -578,6 +578,10 @@ export and config names, and the product claims listed in the ledger's `owner` t
 at least one cited entry. Everything the extractor cannot reach is left to the fresh reviewer at
 step 7, who reads the brief beside the page. Ids never appear in the published markdown.
 
+Amended 2026-09-24 (docs reset pass 1, as built): the check is per sentence. Each extractable fact
+in a sentence must appear in the entry that sentence cites, not in any entry the page cites
+anywhere (`scripts/checks/check-provenance.mjs`).
+
 `check:provenance` was scoped to the front door alone when the proposal first sized it; owner
 direction (b) widens it to every rebuilt page, since the harvest it depends on now runs per track
 rather than for one page.

@@ -28,15 +28,17 @@ const houseComments = {
   },
 };
 
-// The comment gate covers src/lib, the dev-package source (packages/cairn-cms-dev/src), and the
-// showcase's own .ts and e2e sources, so the TSDoc and em-dash rules reach all three.
-// check:comments lints src/lib and the showcase; check:dev-package lints the dev-package paths
-// against this same config.
+// The comment gate covers src/lib, the dev-package source (packages/cairn-cms-dev/src), the
+// showcase's own .ts and e2e sources, and the docs-reader runner's sources, so the TSDoc and
+// em-dash rules reach all four. check:comments lints src/lib, the showcase, and the runner;
+// check:dev-package lints the dev-package paths against this same config.
 const COMMENT_GLOBS = [
   'src/lib/**/*.ts',
   'packages/cairn-cms-dev/src/**/*.ts',
   'examples/showcase/src/**/*.ts',
   'examples/showcase/e2e/**/*.ts',
+  'scripts/docs-readers/**/*.ts',
+  'scripts/docs-readers/**/*.mjs',
 ];
 
 export default [

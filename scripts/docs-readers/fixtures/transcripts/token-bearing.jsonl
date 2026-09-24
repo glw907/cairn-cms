@@ -1,0 +1,2 @@
+{"type": "system", "subtype": "init", "tools": ["Bash"], "session_id": "fixture"}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "env dump: CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-FIXTUREfakeFIXTUREfake0000 GH=ghs_FIXTUREfakeFIXTUREfake0000abcd\ncurl -H 'Authorization: Bearer FIXTUREfakeBearerValue0123456789'\nsecret file said literal-fixture-secret-9f8e7d"}]}, "session_id": "fixture"}

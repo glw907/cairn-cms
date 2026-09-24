@@ -1,0 +1,169 @@
+{
+  "name": "validation-rerun",
+  "concurrency": 4,
+  "budgetTokens": 800000,
+  "jobs": [
+    {
+      "id": "evaluator-control-3",
+      "class": "docs-only",
+      "model": "claude-sonnet-5",
+      "arrival": "You're deciding whether to build your next small content site on cairn-cms instead of the stack you already know, and you want a straight answer before you spend a weekend on it.",
+      "job": "Read what you have access to and form your own verdict: what cairn is actually for, what it deliberately leaves out, and what running a site on it would cost you and a co-editor day to day. Note anything that reads like marketing rather than a real claim, and anything left unclear. You're done once you can state whether you'd prototype on cairn or not, and the one or two reasons that decided it. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
+      "docsSet": [
+        "docs/why-cairn.md",
+        "docs/admin/before-you-start.md",
+        "docs/admin/README.md",
+        "docs/editors/welcome.md",
+        "docs/extend/add-a-second-audience.md",
+        "docs/extend/migration-notes.md",
+        "docs/extend/README.md",
+        "docs/extend/sign-in-through-your-organization.md"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/prepared/validation/evaluator-control",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "operator-planted-2",
+      "class": "docs-and-binary",
+      "model": "claude-opus-5-5",
+      "arrival": "You're the volunteer who keeps a small cairn-cms site running for a friend's project. Something about the site's health has been bugging you, so before your next content update you want to check it over.",
+      "job": "From your site's own working directory, run `cairn doctor` and read what it reports. If it names a failing or warning check, find that condition on the page that documents it and follow what it tells you to look at or fix, and say exactly what you found there. You're done once you can name which condition (if any) `cairn doctor` reported and what the matching page told you to do about it. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
+      "docsSet": [
+        "docs/admin/is-it-working.md",
+        "docs/extend/add-cairn-to-a-sveltekit-app.md",
+        "docs/extend/build-a-site-by-hand.md",
+        "docs/extend/choose-an-ai-posture.md",
+        "docs/extend/restrict-admin-access.md",
+        "docs/extend/rotate-the-github-app-key.md",
+        "docs/extend/security-model.md",
+        "docs/extend/wire-the-delivery-surface.md",
+        "docs/admin/invite-editors.md",
+        "docs/admin/own-your-domain.md",
+        "docs/reference/admin-routes.md",
+        "docs/reference/cli-cairn-doctor.md",
+        "docs/reference/cloudflare.md",
+        "docs/admin/setup-recovery.md",
+        "docs/admin/troubleshooting.md"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/prepared/validation/operator-planted",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "operator-control-1",
+      "class": "docs-and-binary",
+      "model": "claude-opus-5-5",
+      "arrival": "You're the volunteer who keeps a small cairn-cms site running for a friend's project. Something about the site's health has been bugging you, so before your next content update you want to check it over.",
+      "job": "From your site's own working directory, run `cairn doctor` and read what it reports. If it names a failing or warning check, find that condition on the page that documents it and follow what it tells you to look at or fix, and say exactly what you found there. You're done once you can name which condition (if any) `cairn doctor` reported and what the matching page told you to do about it. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
+      "docsSet": [
+        "docs/admin/is-it-working.md",
+        "docs/extend/add-cairn-to-a-sveltekit-app.md",
+        "docs/extend/build-a-site-by-hand.md",
+        "docs/extend/choose-an-ai-posture.md",
+        "docs/extend/restrict-admin-access.md",
+        "docs/extend/rotate-the-github-app-key.md",
+        "docs/extend/security-model.md",
+        "docs/extend/wire-the-delivery-surface.md",
+        "docs/admin/invite-editors.md",
+        "docs/admin/own-your-domain.md",
+        "docs/reference/admin-routes.md",
+        "docs/reference/cli-cairn-doctor.md",
+        "docs/reference/cloudflare.md",
+        "docs/admin/setup-recovery.md",
+        "docs/admin/troubleshooting.md"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/prepared/validation/operator-control",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "designer-planted-3",
+      "class": "docs-and-site",
+      "model": "claude-sonnet-5",
+      "arrival": "You're the designer on a small team about to launch a new cairn-cms site, and it's your job to give it its own look before launch.",
+      "job": "Read what you need to understand how a site's own look is separated from cairn's plumbing, then make one concrete visual change in your site's own theme file (for example, rotate the primary color's hue, or adjust one spacing or font token), and confirm it with `npm run build`. You're done once the build finishes clean and you can name the exact file and value you changed. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
+      "docsSet": [
+        "docs/extend/design-your-site.md",
+        "docs/extend/build-a-site-by-hand.md",
+        "docs/reference/cli-cairn-media-seed.md"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/prepared/validation/designer-planted",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "designer-control-3",
+      "class": "docs-and-site",
+      "model": "claude-sonnet-5",
+      "arrival": "You're the designer on a small team about to launch a new cairn-cms site, and it's your job to give it its own look before launch.",
+      "job": "Read what you need to understand how a site's own look is separated from cairn's plumbing, then make one concrete visual change in your site's own theme file (for example, rotate the primary color's hue, or adjust one spacing or font token), and confirm it with `npm run build`. You're done once the build finishes clean and you can name the exact file and value you changed. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
+      "docsSet": [
+        "docs/extend/design-your-site.md",
+        "docs/extend/build-a-site-by-hand.md",
+        "docs/reference/cli-cairn-media-seed.md"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/prepared/validation/designer-control",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "extender-planted-3",
+      "class": "docs-and-site",
+      "model": "claude-sonnet-5",
+      "arrival": "You're adding a small members-only screen to a client's cairn-cms admin, alongside the screens cairn already ships.",
+      "job": "Add one new custom screen under /admin that renders inside the shared admin shell and is gated the way this guide describes, then confirm it with `npm run check`. You're done once `npm run check` passes and you can name the file(s) you added and which gating helper you used. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
+      "docsSet": [
+        "docs/extend/add-a-custom-admin-screen.md",
+        "docs/extend/build-a-site-by-hand.md",
+        "docs/extend/define-an-adapter-and-schema.md",
+        "docs/extend/organize-your-admin-nav.md",
+        "docs/extend/restrict-admin-access.md",
+        "docs/reference/admin-routes.md",
+        "docs/reference/admin-toolkit.md",
+        "docs/reference/sveltekit.md"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/prepared/validation/extender-planted",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "scripter-planted-3",
+      "class": "repository",
+      "model": "claude-sonnet-5",
+      "arrival": "You're writing a small internal script at work that shells out to the cairn CLI and needs to parse its --json output reliably, and these three reference pages are all you have to go on.",
+      "job": "Write a short wrapper function that runs cairn with --json and a parser that reads its stdout into a typed value, following exactly what these pages document about the payload shapes, the streams, and the exit codes; do not guess at anything the pages do not state. Note anywhere the pages left you guessing, gave you conflicting information, or did not match each other. You're done once you've written the wrapper and the parser and can point to the exact schema field or exit-code rule behind each design decision. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
+      "docsSet": [
+        "json-output/docs/reference/cli-cairn-json-output.md",
+        "json-output/docs/reference/schema/cairn-health.schema.json",
+        "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+        "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+        "json-output/docs/reference/schema/cairn-logs.schema.json",
+        "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+        "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+        "json-output/docs/reference/schema/cairn-doctor.schema.json",
+        "doctor/docs/reference/cli-cairn-doctor.md",
+        "doctor/docs/reference/schema/cairn-doctor.schema.json",
+        "exit-codes/docs/reference/cli-cairn-exit-codes.md"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/prepared/validation/scripter-planted",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "scripter-heldout-3",
+      "class": "repository",
+      "model": "claude-sonnet-5",
+      "arrival": "You're writing a small internal script at work that shells out to the cairn CLI and needs to parse its --json output reliably, and these three reference pages are all you have to go on.",
+      "job": "Write a short wrapper function that runs cairn with --json and a parser that reads its stdout into a typed value, following exactly what these pages document about the payload shapes, the streams, and the exit codes; do not guess at anything the pages do not state. Note anywhere the pages left you guessing, gave you conflicting information, or did not match each other. You're done once you've written the wrapper and the parser and can point to the exact schema field or exit-code rule behind each design decision. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
+      "docsSet": [
+        "json-output/docs/reference/cli-cairn-json-output.md",
+        "json-output/docs/reference/schema/cairn-health.schema.json",
+        "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+        "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+        "json-output/docs/reference/schema/cairn-logs.schema.json",
+        "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+        "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+        "json-output/docs/reference/schema/cairn-doctor.schema.json",
+        "doctor/docs/reference/cli-cairn-doctor.md",
+        "doctor/docs/reference/schema/cairn-doctor.schema.json",
+        "exit-codes/docs/reference/cli-cairn-exit-codes.md"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/prepared/baseline/scripter-contract-pages",
+      "timeoutMinutes": 30
+    }
+  ]
+}

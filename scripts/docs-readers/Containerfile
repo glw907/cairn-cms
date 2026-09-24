@@ -1,0 +1,39 @@
+# The docs-reader image: Node plus the Claude Code CLI pinned to the host's version, the egress
+# proxy that the runner starts beside each reader, and the `cairn` tool release, verified against
+# its own SHA256SUMS. One image serves every class (the runner builds and tags it once, shared
+# across the whole batch); only the docs-and-binary class's Bash allowlist actually names `cairn`
+# subcommands, so every other class's reader simply never runs it. The runner builds it with
+# --build-arg CLAUDE_CODE_VERSION=<the host's `claude --version`> and
+# --build-arg CAIRN_TOOL_VERSION=<lib/podman.ts's CAIRN_TOOL_VERSION> and tags it by content hash.
+FROM docker.io/library/node:24-slim
+
+ARG CLAUDE_CODE_VERSION
+RUN test -n "$CLAUDE_CODE_VERSION" \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/* \
+ && npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+ && npm cache clean --force \
+ && claude --version
+
+# The `cairn` binary is baked into the image, never copied into a per-job prepared tree: the
+# docs-and-binary class grants no Write or Edit tool, so a job's own mount has nowhere writable to
+# install one at run time. Downloaded straight from the public release (no `gh` CLI, no token
+# needed in the build environment) and checked against the exact line of its own SHA256SUMS before
+# extraction, so a corrupted or substituted archive fails the build rather than shipping silently.
+ARG CAIRN_TOOL_VERSION
+RUN test -n "$CAIRN_TOOL_VERSION" \
+ && cd /tmp \
+ && curl -fsSL -o "cairn_${CAIRN_TOOL_VERSION}_linux_amd64.tar.gz" "https://github.com/glw907/cairn-cms/releases/download/tool%2Fv${CAIRN_TOOL_VERSION}/cairn_${CAIRN_TOOL_VERSION}_linux_amd64.tar.gz" \
+ && curl -fsSL -o SHA256SUMS "https://github.com/glw907/cairn-cms/releases/download/tool%2Fv${CAIRN_TOOL_VERSION}/SHA256SUMS" \
+ && grep " cairn_${CAIRN_TOOL_VERSION}_linux_amd64.tar.gz\$" SHA256SUMS | sha256sum -c - \
+ && tar -xzf "cairn_${CAIRN_TOOL_VERSION}_linux_amd64.tar.gz" -C /usr/local/bin cairn \
+ && chmod +x /usr/local/bin/cairn \
+ && rm -f "cairn_${CAIRN_TOOL_VERSION}_linux_amd64.tar.gz" SHA256SUMS \
+ && cairn --version
+
+COPY egress-proxy.mjs /opt/docs-readers/egress-proxy.mjs
+
+# The runner always passes --user, --workdir, and a scrubbed environment; these are fallbacks.
+WORKDIR /reader
+USER node

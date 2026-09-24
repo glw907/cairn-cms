@@ -49,6 +49,15 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+Docs reset pass 1's close (2026-09-24) triaged the whole log and found no open entry. The pass
+routed its own findings straight to `ROADMAP.md` in the same step, so none opens here. The docs
+reset itself went to the Now tier, with pass 1b next. The pass's deferred chain and harness items,
+the Waymark template's `contributor` finding (theme comments citing cairn-internal documents), and
+the real page defects its readers found went to the Next tier, each with a trigger. Its candidate
+triage covered every page-only bullet (retained, rejected, or excluded), so the Next-tier entry
+"Re-source the page-only `[candidate]` bullets" was reworded to the 25 excluded bullets that still
+carry verification debt. See Clearings.
+
 retire-2b's close (2026-09-22) triaged the whole log and found no open entry. It routed the five
 findings retire-2a's post-mortem carried forward, each re-verified against the tree first, to
 `ROADMAP.md`'s Next tier: `cairn doctor`'s PASS lines titled with the failure condition joined the
@@ -165,6 +174,7 @@ history holds every pruned entry in full.
 | 2026-09-22 | draft docs pass A's close | its own `scripter` finding (the `logs` golden's `publish.commit.failed` event failing `check:symbols`'s log-event class) deleted as overtaken: the branch added the allowlist entry, and three `CAIRN_*` entries beside it, and `check:symbols` is green. The whole-log sweep found no other open finding |
 | 2026-09-22 | retire-1's close | the Names finding (mermaid `accDescr:`/`accTitle:` text, image alt text, and nav labels carrying no code font for Vale to read) promoted whole to `ROADMAP.md`'s Next tier with its trigger; retire-1's own `contributor` finding, the pinned-site limit on `link:consumer` plus `cairn-manifest`, filed beside it. The whole-log sweep found no other open finding |
 | 2026-09-22 | retire-2b's close | retire-2a's five carried findings, all promoted to `ROADMAP.md`'s Next tier: the `cairn doctor` PASS-line title into the "Go tool 1.1 items" entry; the scaffolder install-literal test gap, `cairn-guidance`'s containment, the `is-it-working.md` register slip, and the stale lockfile bin mapping into one new entry with a trigger each, beside the close's own finding that CI never runs `check:tool-heuristics`. The whole-log sweep found no other open finding |
+| 2026-09-24 | docs reset pass 1's close | no open finding in the log; the pass's own findings routed to `ROADMAP.md` (the docs reset to Now; the deferred chain and harness items, the Waymark theme comments, and the readers' real page defects to Next); the page-only `[candidate]` re-sourcing entry in Next reworded to the 25 bullets the triage excluded |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

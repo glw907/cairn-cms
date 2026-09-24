@@ -171,4 +171,47 @@ describe('checkProvenance, the full run', () => {
       expect.stringMatching(/uncovered\.json: .*unclassified page text: "This sentence is not in the brief\."/),
     ]);
   });
+
+  it('with no-argument mode explicitly given an empty list, behaves the same as no argument at all', () => {
+    const root = join(FIXTURES, 'site-good');
+    const withArg = checkProvenance(join(root, 'docs/internal/briefs'), FACTS, root, []);
+    const withoutArg = checkProvenance(join(root, 'docs/internal/briefs'), FACTS, root);
+    expect(withArg).toEqual(withoutArg);
+  });
+
+  it('given one brief path, checks only that brief, so a sibling bad brief does not fail it', () => {
+    const root = join(FIXTURES, 'site-bad');
+    const { defects } = checkProvenance(
+      join(root, 'docs/internal/briefs'),
+      FACTS,
+      root,
+      ['docs/internal/briefs/admin/uncovered.json'],
+    );
+    expect(defects).toEqual([
+      expect.stringMatching(/uncovered\.json: .*"This sentence was never written on the page\." is not on the page/),
+      expect.stringMatching(/uncovered\.json: .*unclassified page text: "This sentence is not in the brief\."/),
+    ]);
+  });
+
+  it('fails a brief path that does not exist, with a clear message', () => {
+    const root = join(FIXTURES, 'site-bad');
+    const { defects } = checkProvenance(
+      join(root, 'docs/internal/briefs'),
+      FACTS,
+      root,
+      ['docs/internal/briefs/admin/does-not-exist.json'],
+    );
+    expect(defects).toEqual([
+      expect.stringContaining('docs/internal/briefs/admin/does-not-exist.json: does not exist'),
+    ]);
+  });
+
+  it('fails a brief path that exists but sits outside docs/internal/briefs/, with a clear message', () => {
+    const root = join(FIXTURES, 'site-bad');
+    const outside = join(FIXTURES, 'facts/container.md');
+    const { defects } = checkProvenance(join(root, 'docs/internal/briefs'), FACTS, root, [outside]);
+    expect(defects).toEqual([
+      expect.stringContaining(`${outside}: is not under docs/internal/briefs/`),
+    ]);
+  });
 });

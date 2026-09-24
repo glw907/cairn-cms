@@ -5,6 +5,12 @@ never shipped, and never register-graded. `npm run check:provenance`
 (`scripts/checks/check-provenance.mjs`) reads every brief here and fails the build on any sentence
 it cannot trace. Until the first brief lands, the check passes and prints "no page has a brief yet".
 
+Pass one or more brief paths to check only those briefs, leaving every other brief unchecked:
+`npm run check:provenance -- <brief path>...`. Each path must exist and sit under
+`docs/internal/briefs/`; a missing or outside path fails with a clear message. This is the mode a
+page chain runs while a sibling page's brief is still in flight, so one page's gate never fails
+on another page's draft. With no path given, the check runs every brief, as before.
+
 ## Where briefs live
 
 One brief per page, at `docs/internal/briefs/<track>/<page>.json`, where `<track>` is the page's

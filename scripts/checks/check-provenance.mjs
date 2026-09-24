@@ -5,6 +5,11 @@
 //   { "page": "docs/admin/is-it-working.md",
 //     "sentences": [{ "text": "...", "id": "f:7k3q9x" }, { "text": "...", "id": "no-claim" }] }
 //
+// Run it over every brief with `node scripts/checks/check-provenance.mjs`, or over just the
+// briefs a page chain drafted with `node scripts/checks/check-provenance.mjs <brief path>...`
+// (each path must exist and sit under docs/internal/briefs/), so one page's gate does not fail
+// on a sibling page's in-flight brief.
+//
 // The gate is deny-by-default. A script cannot decide which sentences state facts, but it can
 // refuse a page whose author declined to decide, so it fails:
 //
@@ -54,7 +59,7 @@
 //   only machine-visible token is an ordinary word;
 // - a path compared by substring, so a shorter path inside a longer cited one passes.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { basename, join, relative, resolve } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import {
@@ -466,6 +471,48 @@ export function findBriefs(briefsDir) {
 }
 
 /**
+ * One CLI brief-path argument, resolved to an absolute path. A relative argument resolves
+ * against `root`, so it reads the same whether it names a file from the repository root or from
+ * wherever the argument itself was already absolute.
+ * @param {string} arg
+ * @param {string} root
+ * @returns {string}
+ */
+function resolveBriefArg(arg, root) {
+  return isAbsolute(arg) ? arg : resolve(root, arg);
+}
+
+/**
+ * The brief paths a CLI argument list names, each checked to exist and to sit under `briefsDir`.
+ * A bad argument becomes one defect and stops that argument from reaching the brief list; a good
+ * argument resolves to its absolute path.
+ * @param {string[]} args
+ * @param {string} briefsDir
+ * @param {string} root
+ * @returns {{ briefs: string[], defects: string[] }}
+ */
+function resolveBriefArgs(args, briefsDir, root) {
+  /** @type {string[]} */
+  const briefs = [];
+  /** @type {string[]} */
+  const defects = [];
+  for (const arg of args) {
+    const full = resolveBriefArg(arg, root);
+    if (!existsSync(full) || !statSync(full).isFile()) {
+      defects.push(`${arg}: does not exist`);
+      continue;
+    }
+    const rel = relative(briefsDir, full);
+    if (rel.startsWith('..') || isAbsolute(rel)) {
+      defects.push(`${arg}: is not under docs/internal/briefs/`);
+      continue;
+    }
+    briefs.push(full);
+  }
+  return { briefs, defects };
+}
+
+/**
  * @typedef {{ defects: string[], sentences: number, cited: number, noClaim: number }} BriefResult
  */
 
@@ -520,15 +567,27 @@ export function checkBrief(briefPath, index, root) {
 }
 
 /**
- * Run the full provenance check: every brief under `briefsDir` against the container in
- * `factsDir`, pages resolved from `root`. With no brief present, it passes and says so.
+ * Run the provenance check: either every brief under `briefsDir` against the container in
+ * `factsDir` (the default), or, when `briefArgs` names any paths, exactly those briefs, each
+ * checked to exist and to sit under `briefsDir`. Pages resolve from `root`. With no brief to
+ * check, it passes and says so.
  * @param {string} briefsDir
  * @param {string} factsDir
  * @param {string} root
+ * @param {string[]} [briefArgs] CLI-style brief paths, absolute or relative to `root`. Omitted
+ * or empty runs every brief under `briefsDir`.
  * @returns {{ defects: string[], report: string[] }}
  */
-export function checkProvenance(briefsDir, factsDir, root) {
-  const briefs = findBriefs(briefsDir);
+export function checkProvenance(briefsDir, factsDir, root, briefArgs) {
+  /** @type {string[]} */
+  let briefs;
+  if (briefArgs && briefArgs.length > 0) {
+    const resolved = resolveBriefArgs(briefArgs, briefsDir, root);
+    if (resolved.defects.length > 0) return { defects: resolved.defects, report: [] };
+    briefs = resolved.briefs;
+  } else {
+    briefs = findBriefs(briefsDir);
+  }
   if (briefs.length === 0) return { defects: [], report: ['  no page has a brief yet'] };
   const index = loadFactIndex(factsDir);
   /** @type {string[]} */
@@ -545,7 +604,7 @@ export function checkProvenance(briefsDir, factsDir, root) {
 }
 
 function main() {
-  const { defects, report } = checkProvenance(BRIEFS_DIR, FACTS_DIR, ROOT);
+  const { defects, report } = checkProvenance(BRIEFS_DIR, FACTS_DIR, ROOT, process.argv.slice(2));
   if (defects.length === 0) {
     console.log('check-provenance: OK');
     console.log(report.join('\n'));

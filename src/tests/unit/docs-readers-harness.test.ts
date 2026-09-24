@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractProcedures } from '../../../scripts/docs-readers/harness/extract.js';
@@ -7,7 +8,12 @@ import { commandPath, isReadOnly } from '../../../scripts/docs-readers/harness/c
 import { listOperatorPages } from '../../../scripts/docs-readers/harness/pages.js';
 import { runProcedure, runProcedures, type HarnessDeps } from '../../../scripts/docs-readers/harness/run.js';
 import { checkTitles, type Condition } from '../../../scripts/docs-readers/harness/titles.js';
-import { doctorRaisedConditionIds, parseConditionIdentifiers, referencedConditionIdentifiers } from '../../../scripts/docs-readers/harness/doctor-conditions.js';
+import {
+  doctorRaisedConditionIds,
+  parseConditionIdentifiers,
+  parseNonConstantConditionNames,
+  referencedConditionIdentifiers,
+} from '../../../scripts/docs-readers/harness/doctor-conditions.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const FIXTURES = join(ROOT, 'scripts/docs-readers/fixtures/harness');
@@ -97,10 +103,14 @@ describe('runProcedure', () => {
     expect(step.detail).toMatch(/did not carry a real report/);
   });
 
-  it('fails a read-only command whose stdout is a cobra usage block, even with a clean exit', async () => {
-    // A bad subcommand word can still exit 0 while cobra prints its own "Usage:" help to stdout;
-    // that is not a report either.
-    const execCairn = vi.fn().mockResolvedValue({ exitCode: 0, stdout: 'Usage:\n  cairn health [site] [flags]\n' });
+  it('fails a read-only command whose stdout is a cobra help block, even with a clean exit and a description line first', async () => {
+    // A mistyped subcommand can still exit 0 while cobra prints its own help to stdout, opening
+    // with the command's Short description rather than "Usage:" itself; that is not a report
+    // either.
+    const execCairn = vi.fn().mockResolvedValue({
+      exitCode: 0,
+      stdout: 'Report on the health of an adopted site.\n\nUsage:\n  cairn health [site] [flags]\n\nAvailable Commands:\n  check\n',
+    });
     const deps: HarnessDeps = { allowlist: ALLOWLIST, execCairn, execHelp: vi.fn() };
     const step = await runProcedure(proc(), deps);
     expect(step.outcome).toBe('fail');
@@ -216,6 +226,11 @@ describe('doctorRaisedConditionIds', () => {
     expect(referencedConditionIdentifiers(source)).toEqual(['ConditionFoo', 'ConditionFoo', 'ConditionBar']);
   });
 
+  it('parses a type or func declaration sharing the Condition prefix as a known non-constant name', () => {
+    const source = 'type ConditionText struct {\n\tTitle string\n}\n\nfunc Conditions() []Condition {\n\treturn nil\n}\n';
+    expect(parseNonConstantConditionNames(source)).toEqual(new Set(['ConditionText', 'Conditions']));
+  });
+
   it('derives the real doctor-raised id set from this checkout’s own Go sources, ConditionNone excluded', () => {
     const ids = doctorRaisedConditionIds(ROOT);
     expect([...ids].sort()).toEqual(
@@ -233,6 +248,40 @@ describe('doctorRaisedConditionIds', () => {
         'config.site-config-invalid',
       ].sort(),
     );
+  });
+
+  /** A throwaway repo root holding only `condition.go`'s declarations and one doctor check file. */
+  function fixtureRepoRoot(conditionGoBody: string, doctorCheckBody: string): string {
+    const root = mkdtempSync(join(tmpdir(), 'doctor-conditions-'));
+    mkdirSync(join(root, 'tool/internal/spine'), { recursive: true });
+    mkdirSync(join(root, 'tool/internal/doctor'), { recursive: true });
+    writeFileSync(join(root, 'tool/internal/spine/condition.go'), conditionGoBody);
+    writeFileSync(join(root, 'tool/internal/doctor/check.go'), doctorCheckBody);
+    return root;
+  }
+
+  it('throws when a doctor source references a spine.ConditionXxx identifier condition.go does not declare', () => {
+    const root = fixtureRepoRoot(
+      'package spine\n\nconst (\n\tConditionFoo Condition = "area.foo"\n)\n',
+      'package doctor\n\nfunc check() { _ = spine.ConditionBar }\n',
+    );
+    try {
+      expect(() => doctorRaisedConditionIds(root)).toThrow(/spine\.ConditionBar, which condition\.go does not declare/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('throws when no condition id resolves at all', () => {
+    const root = fixtureRepoRoot(
+      'package spine\n\nconst (\n\tConditionNone Condition = ""\n)\n',
+      'package doctor\n\nfunc check() { _ = spine.ConditionNone }\n',
+    );
+    try {
+      expect(() => doctorRaisedConditionIds(root)).toThrow(/no condition id resolved/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

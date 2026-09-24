@@ -18,22 +18,32 @@ export interface ExecResult {
 const DOCTOR_SUMMARY = /\d+ passed,\s*\d+ failed,/;
 
 /**
+ * Cobra's own help-text signature: a `Usage:` line, on its own line anywhere in the output (a
+ * mistyped subcommand's help opens with the command's own Short description first, so `Usage:`
+ * sits a few lines down, never at the very start), or the `Available Commands:` heading a
+ * multi-subcommand help block prints.
+ */
+const HELP_SIGNATURE = /^Usage:/m;
+
+/**
  * Whether a read-only run counts as the command having actually run, as opposed to a usage error,
  * a tool fault, or a crash: `cli-cairn-exit-codes.md` documents a Nagios-style `cairn health`,
  * `cairn doctor`, and `cairn auth check` whose exit code alone spans 0 to 3 whether the verdict is
  * a real pass or a real failure, so exit code cannot tell a broken invocation from a genuinely
  * unhealthy site. The same reference page says a usage error writes no payload, but cobra's own
- * help text for an unrecognized subcommand word writes its usage block to stdout and still exits
- * 0, so an empty stdout alone is not enough either. A stdout starting with `Usage:` is rejected
- * outright; `cairn doctor`'s own report additionally needs its closing tally line, the one line no
- * usage block or truncated crash output could produce by accident.
+ * help text for a mistyped subcommand word writes its usage block to stdout and still exits 0, so
+ * an empty stdout alone is not enough either; that block opens with the command's own Short
+ * description, then a `Usage:` line further down, then often an `Available Commands:` heading, so
+ * both are checked rather than only a `Usage:` prefix. `cairn doctor`'s own report additionally
+ * needs its closing tally line, the one line no help block or truncated crash output could
+ * produce by accident.
  * @param result - The executor's result.
  * @param words - The command's own words, `cairn` excluded (`words[0]` names the subcommand).
  * @returns True when the command produced a real report on stdout.
  */
 function ran(result: ExecResult, words: string[]): boolean {
   const stdout = result.stdout.trim();
-  if (stdout === '' || stdout.startsWith('Usage:')) return false;
+  if (stdout === '' || HELP_SIGNATURE.test(stdout) || stdout.includes('Available Commands:')) return false;
   if (words[0] === 'doctor') return DOCTOR_SUMMARY.test(stdout);
   return true;
 }

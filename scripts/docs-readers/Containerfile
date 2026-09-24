@@ -1,6 +1,8 @@
 # The docs-reader image: Node plus the Claude Code CLI pinned to the host's version, the egress
-# proxy that the runner starts beside each reader, and (for the docs-and-binary class alone) the
-# `cairn` tool release, verified against its own SHA256SUMS. The runner builds it with
+# proxy that the runner starts beside each reader, and the `cairn` tool release, verified against
+# its own SHA256SUMS. One image serves every class (the runner builds and tags it once, shared
+# across the whole batch); only the docs-and-binary class's Bash allowlist actually names `cairn`
+# subcommands, so every other class's reader simply never runs it. The runner builds it with
 # --build-arg CLAUDE_CODE_VERSION=<the host's `claude --version`> and
 # --build-arg CAIRN_TOOL_VERSION=<lib/podman.ts's CAIRN_TOOL_VERSION> and tags it by content hash.
 FROM docker.io/library/node:24-slim

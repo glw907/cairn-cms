@@ -17,6 +17,7 @@ import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { claudeArgs } from './class-schema.js';
+import { currentOwnerMarker, OWNER_LABEL, ownerLabelValue } from './owner.js';
 import { restrictStateDirPermissions } from './prepare-class.js';
 import { READER_CWD } from './transcript.js';
 import type { ClassDecl, EgressConfig, Executor, Job, ProxyRecord, RunResult, StreamEvent } from './types.js';
@@ -170,6 +171,10 @@ export function createPodmanExecutor({
   let counter = 0;
   const jobDirs = new Map<string, string>();
   const runLabelFilter = `label=${RUN_LABEL}=${runId}`;
+  // Stamped on every container and network this executor creates, alongside RUN_LABEL, so the
+  // startup sweep's orphan pass (lib/sweep.ts) can tell this run is still live even when its own
+  // run directory sits under a different cache root, or is already gone.
+  const ownerLabelArg = `${OWNER_LABEL}=${ownerLabelValue(currentOwnerMarker())}`;
 
   /**
    * Claim the next run slot: its container-name stem and its directory under the run root.
@@ -205,9 +210,9 @@ export function createPodmanExecutor({
    */
   async function startNetwork(name: string, allow: string[]): Promise<{ network: string; proxy: string }> {
     const network = `${name}-net`;
-    await podman(['network', 'create', '--internal', '--disable-dns', '--label', `${RUN_LABEL}=${runId}`, network]);
+    await podman(['network', 'create', '--internal', '--disable-dns', '--label', `${RUN_LABEL}=${runId}`, '--label', ownerLabelArg, network]);
     await podman([
-      'run', '-d', '--name', `${name}-proxy`, '--label', `${RUN_LABEL}=${runId}`,
+      'run', '-d', '--name', `${name}-proxy`, '--label', `${RUN_LABEL}=${runId}`, '--label', ownerLabelArg,
       '--network', network, '--network', 'podman',
       '--read-only', '--cap-drop=all', '--security-opt', 'no-new-privileges',
       '--unsetenv-all', '--env', `PATH=${CONTAINER_PATH}`, '--env', `EGRESS_ALLOW=${allow.join(',')}`,
@@ -293,7 +298,7 @@ export function createPodmanExecutor({
     for (const [key, value] of Object.entries(containerEnv)) envArgs.push('--env', `${key}=${value}`);
     for (const key of ['CLAUDE_CODE_OAUTH_TOKEN', ...secretNames]) envArgs.push('--env', key);
     const podmanArgs = [
-      'run', '--rm', '-i', '--name', `${name}-reader`, '--label', `${RUN_LABEL}=${runId}`,
+      'run', '--rm', '-i', '--name', `${name}-reader`, '--label', `${RUN_LABEL}=${runId}`, '--label', ownerLabelArg,
       '--network', network, '--userns=keep-id',
       '--read-only', '--tmpfs', '/tmp', '--cap-drop=all', '--security-opt', 'no-new-privileges',
       '-v', `${mountRoot}:/reader:Z`, '-v', `${home}:/home/reader:Z`, '-w', READER_CWD,

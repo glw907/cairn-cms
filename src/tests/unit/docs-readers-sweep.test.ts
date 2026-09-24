@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { currentOwnerMarker, sweepOrphans, writeOwnerMarker, type OwnerMarker, type PodmanRunner } from '../../../scripts/docs-readers/lib/sweep.js';
+import { ownerLabelValue } from '../../../scripts/docs-readers/lib/owner.js';
 
 /** A fresh scratch cache root, removed by the caller. */
 function tmp(): string {
@@ -11,16 +12,22 @@ function tmp(): string {
 
 /**
  * A podman stand-in that records every call and answers a fixed id list for `ps`/`network ls`.
- * `labeledRunIds` answers the sweep's own "every run id with a labeled container" listing query
- * (`ps --format ...`, no `-q`); every `-q`-filtered `ps`/`network ls` query answers with
- * `containers`/`networks` regardless of which run id it names, since each test drives a single
- * run id at a time.
+ * `labeled` answers the sweep's own "every run id with a labeled container" listing query (`ps
+ * --format ...`, no `-q`) as `runId\towner` rows, `owner` defaulting to an empty value (no owner
+ * label at all); every `-q`-filtered `ps`/`network ls` query answers with `containers`/`networks`
+ * regardless of which run id it names, since each test drives a single run id at a time.
  */
-function fakePodman(ids: { containers: string[]; networks: string[]; labeledRunIds?: string[] }): { podman: PodmanRunner; calls: string[][] } {
+function fakePodman(ids: {
+  containers: string[];
+  networks: string[];
+  labeled?: Array<{ runId: string; owner?: string }>;
+}): { podman: PodmanRunner; calls: string[][] } {
   const calls: string[][] = [];
   const podman: PodmanRunner = async (args) => {
     calls.push(args);
-    if (args[0] === 'ps' && args.includes('--format')) return (ids.labeledRunIds ?? []).join('\n');
+    if (args[0] === 'ps' && args.includes('--format')) {
+      return (ids.labeled ?? []).map(({ runId, owner = '' }) => `${runId}\t${owner}`).join('\n');
+    }
     if (args[0] === 'ps') return ids.containers.join('\n');
     if (args[0] === 'network' && args[1] === 'ls') return ids.networks.join('\n');
     return '';
@@ -100,7 +107,7 @@ describe('sweepOrphans: owner liveness', () => {
   });
 
   it('leaves a marker-less directory alone within the grace period, since its marker write may not have landed yet', async () => {
-    const runId = '20260923t143022-freshaa';
+    const runId = '20260923t143022-f0f0f0';
     const { podman } = fakePodman({ containers: [], networks: [] });
     const cacheRoot = tmp();
     try {
@@ -204,9 +211,9 @@ describe('sweepOrphans: stale directory recognition', () => {
 });
 
 describe('sweepOrphans: labeled containers and networks whose run directory is gone', () => {
-  it('reaps a run id’s labeled containers and network when no directory for it exists in the cache root at all', async () => {
+  it('reaps a run id’s labeled containers and network when no directory for it exists in the cache root at all, and the label carries no owner at all', async () => {
     const runId = '20260923t143022-orphan1';
-    const { podman, calls } = fakePodman({ containers: ['c-orphan'], networks: ['n-orphan'], labeledRunIds: [runId] });
+    const { podman, calls } = fakePodman({ containers: ['c-orphan'], networks: ['n-orphan'], labeled: [{ runId }] });
     const cacheRoot = tmp();
     try {
       const result = await sweepOrphans({ cacheRoot, podman });
@@ -220,9 +227,39 @@ describe('sweepOrphans: labeled containers and networks whose run directory is g
     }
   });
 
+  it('reaps a run id with no directory at all whose owner label names a dead process', async () => {
+    const runId = '20260923t143022-deadfa1';
+    const { podman } = fakePodman({ containers: ['c-orphan'], networks: ['n-orphan'], labeled: [{ runId, owner: ownerLabelValue(DEAD_MARKER) }] });
+    const cacheRoot = tmp();
+    try {
+      const result = await sweepOrphans({ cacheRoot, podman });
+      expect(result.containersRemoved).toEqual(['c-orphan']);
+      expect(result.networksRemoved).toEqual(['n-orphan']);
+    } finally {
+      rmSync(cacheRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('never reaps a run id with no directory at all whose owner label names a still-live process, since it can be a concurrent runner under a different cache root', async () => {
+    const runId = '20260923t143022-livefa1';
+    const { podman } = fakePodman({
+      containers: ['should-not-be-removed'],
+      networks: ['should-not-be-removed'],
+      labeled: [{ runId, owner: ownerLabelValue(currentOwnerMarker()) }],
+    });
+    const cacheRoot = tmp();
+    try {
+      const result = await sweepOrphans({ cacheRoot, podman });
+      expect(result.containersRemoved).toEqual([]);
+      expect(result.networksRemoved).toEqual([]);
+    } finally {
+      rmSync(cacheRoot, { recursive: true, force: true });
+    }
+  });
+
   it('never reaps a labeled run id that still has a live, owned directory', async () => {
     const runId = '20260923t143022-11ff22';
-    const { podman } = fakePodman({ containers: ['should-not-be-removed'], networks: [], labeledRunIds: [runId] });
+    const { podman } = fakePodman({ containers: ['should-not-be-removed'], networks: [], labeled: [{ runId }] });
     const cacheRoot = tmp();
     try {
       mkdirSync(join(cacheRoot, runId), { recursive: true });
@@ -237,8 +274,8 @@ describe('sweepOrphans: labeled containers and networks whose run directory is g
   });
 
   it('does not reap a labeled run id a second time: the per-directory reap above already covers a dead directory that still exists', async () => {
-    const runId = '20260923t143022-deadbe2';
-    const { podman, calls } = fakePodman({ containers: ['c1'], networks: ['n1'], labeledRunIds: [runId] });
+    const runId = '20260923t143022-deadbe';
+    const { podman, calls } = fakePodman({ containers: ['c1'], networks: ['n1'], labeled: [{ runId }] });
     const cacheRoot = tmp();
     try {
       mkdirSync(join(cacheRoot, runId), { recursive: true });
@@ -248,6 +285,35 @@ describe('sweepOrphans: labeled containers and networks whose run directory is g
       // One query for containers and one for networks, from the per-directory reap alone; the
       // no-directory-at-all step must not issue a second round for the same run id.
       expect(reapQueries.length).toBe(2);
+    } finally {
+      rmSync(cacheRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('re-checks the directory just before reaping: a directory that appears for this exact run id after the initial snapshot is not reaped', async () => {
+    const runId = '20260923t143022-appear1';
+    const cacheRoot = tmp();
+    let checkedOnce = false;
+    const podman: PodmanRunner = async (args) => {
+      if (args[0] === 'ps' && args.includes('--format')) {
+        // The directory appears only once this query (the initial snapshot, already taken) has
+        // run, simulating a concurrent runner under the SAME cache root that started just after
+        // this sweep began.
+        if (!checkedOnce) {
+          checkedOnce = true;
+          mkdirSync(join(cacheRoot, runId), { recursive: true });
+          writeOwnerMarker(join(cacheRoot, runId), currentOwnerMarker());
+        }
+        return `${runId}\t${ownerLabelValue(DEAD_MARKER)}`;
+      }
+      if (args[0] === 'ps') return 'should-not-be-removed';
+      if (args[0] === 'network' && args[1] === 'ls') return 'should-not-be-removed';
+      return '';
+    };
+    try {
+      const result = await sweepOrphans({ cacheRoot, podman });
+      expect(result.containersRemoved).toEqual([]);
+      expect(result.networksRemoved).toEqual([]);
     } finally {
       rmSync(cacheRoot, { recursive: true, force: true });
     }

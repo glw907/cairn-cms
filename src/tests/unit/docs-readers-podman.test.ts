@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { currentOwnerMarker, OWNER_LABEL, ownerLabelValue } from '../../../scripts/docs-readers/lib/owner.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -104,6 +105,27 @@ describe('createPodmanExecutor: the abort race in startNetwork', () => {
       expect(spawnArgs.length).toBe(1);
       expect(result.aborted).toBe(false);
       expect(result.exitCode).toBe(0);
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('createPodmanExecutor: the owner label', () => {
+  it('stamps the current process’s owner marker on the network, the proxy, and the reader, alongside RUN_LABEL', async () => {
+    const runRoot = mkdtempSync(join(tmpdir(), 'docs-readers-podman-'));
+    execFileArgs.length = 0;
+    spawnArgs.length = 0;
+    try {
+      const executor = newExecutor(runRoot);
+      await executor.run(job(30), decl, { signal: new AbortController().signal, onEvent: () => {}, prompt: 'hi', reportSchema: {} });
+      const expectedLabel = `${OWNER_LABEL}=${ownerLabelValue(currentOwnerMarker())}`;
+      const networkCreateArgs = execFileArgs.find((a) => a[0] === 'network' && a[1] === 'create');
+      const proxyRunArgs = execFileArgs.find((a) => a[0] === 'run' && a.includes('-d'));
+      const readerRunArgs = spawnArgs.find((a) => a.includes('claude'));
+      expect(networkCreateArgs).toContain(expectedLabel);
+      expect(proxyRunArgs).toContain(expectedLabel);
+      expect(readerRunArgs).toContain(expectedLabel);
     } finally {
       rmSync(runRoot, { recursive: true, force: true });
     }

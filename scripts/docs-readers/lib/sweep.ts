@@ -13,12 +13,21 @@
  * treat a brand-new, live directory as an old, ownerless one. Beyond the directory-owned
  * containers and network, the sweep also reaps any run's labeled containers and network when that
  * run id names no directory in the cache root at all: a directory can be gone (a cleared cache, a
- * cross-host container) while its containers linger, and no directory ever exists to drive the
- * per-directory reap above.
+ * cross-host container), or can simply live under a DIFFERENT cache root (a concurrent runner
+ * under another `XDG_CACHE_HOME`, sharing this same podman storage), while its containers linger
+ * or are still live. That second case is exactly why `lib/podman.ts` also stamps every container
+ * and network with `OWNER_LABEL` (`lib/owner.ts`): this orphan pass trusts THAT label's own
+ * aliveness, never a directory listing, to decide whether a run id with no directory in ITS OWN
+ * cache root is actually dead, and re-checks the directory's existence again immediately before
+ * each reap, narrowing (never fully closing) the window between the initial directory snapshot
+ * and the reap itself.
  */
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUN_LABEL } from './podman.js';
+import { currentOwnerMarker, isOwnerAliveReal, OWNER_LABEL, parseOwnerLabelValue, type OwnerMarker } from './owner.js';
+
+export { currentOwnerMarker, type OwnerMarker } from './owner.js';
 
 /** A podman command runner, the same shape `lib/podman.ts` uses internally. */
 export type PodmanRunner = (args: string[]) => Promise<string>;
@@ -36,59 +45,6 @@ export interface SweepResult {
  * sweep never has to guess.
  */
 const OWNER_FILE = '.owner.json';
-
-/** A run or scratch directory's owner: the creating process's pid and its own start time. */
-export interface OwnerMarker {
-  pid: number;
-  startTime: string;
-}
-
-/**
- * Read one process's own start time from `/proc`, the value that changes when a pid is recycled
- * for an unrelated process, which a pid number alone cannot detect. `stat`'s `comm` field (the
- * executable name, in parentheses) can itself contain spaces or parentheses, so the split point
- * is the LAST `)` in the line, never the first.
- * @param pid - The process id to read.
- * @returns The `starttime` field (in clock ticks since boot), or undefined when `/proc` cannot be
- *  read for this pid (the process is gone, or `/proc` itself is unavailable).
- */
-function procStartTime(pid: number): string | undefined {
-  try {
-    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
-    const afterComm = stat.slice(stat.lastIndexOf(')') + 2).trim();
-    // Fields after comm, 0-indexed: state(0) ppid(1) pgrp(2) session(3) tty_nr(4) tpgid(5)
-    // flags(6) minflt(7) cminflt(8) majflt(9) cmajflt(10) utime(11) stime(12) cutime(13)
-    // cstime(14) priority(15) nice(16) num_threads(17) itrealvalue(18) starttime(19).
-    return afterComm.split(/\s+/)[19];
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Whether `pid` names a running process at all, with no defence against pid reuse. The fallback
- * `isOwnerAliveReal` takes when `/proc` itself is unavailable (a non-Linux host); every podman
- * run this module otherwise assumes happens on Linux, where `procStartTime` is the real check.
- * @param pid - The process id to probe.
- * @returns True when the process exists.
- */
-function pidExists(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * The current process's own owner marker, for a caller about to create a run or scratch
- * directory.
- * @returns This process's pid and its own `/proc` start time (empty when `/proc` is unavailable).
- */
-export function currentOwnerMarker(): OwnerMarker {
-  return { pid: process.pid, startTime: procStartTime(process.pid) ?? '' };
-}
 
 /**
  * Write a directory's owner marker, creating the directory first if it does not exist yet.
@@ -111,19 +67,6 @@ function readOwnerMarker(dir: string): OwnerMarker | undefined {
   } catch {
     return undefined;
   }
-}
-
-/**
- * The real aliveness check: the marker's process still exists, and (when `/proc` answers) is
- * still the same process, never one that reused the pid. A marker missing its own start time (an
- * older marker, or one written where `/proc` was unavailable) falls back to a bare pid check.
- * @param marker - The marker to check.
- * @returns True when the marker's owner is still the live one.
- */
-function isOwnerAliveReal(marker: OwnerMarker): boolean {
-  const current = procStartTime(marker.pid);
-  if (current !== undefined && marker.startTime !== '') return current === marker.startTime;
-  return pidExists(marker.pid);
 }
 
 /**
@@ -246,9 +189,27 @@ export async function sweepOrphans({
     }
   }
 
-  const labeledRunIds = new Set(ids(await podman(['ps', '-a', '--filter', `label=${RUN_LABEL}`, '--format', `{{.Label "${RUN_LABEL}"}}`])));
-  for (const runId of labeledRunIds) {
+  // A run id's directory can live under a DIFFERENT cache root than this one (a concurrent runner
+  // under another XDG_CACHE_HOME), so its own owner label, never dirRunIds alone, decides
+  // liveness here; dirRunIds only short-circuits a run id this pass's own loop above already
+  // settled. The first owner value seen for a run id is trusted for all its containers and
+  // networks, since one executor stamps every one of them with the same marker.
+  const ownerByRunId = new Map<string, string>();
+  const labelRows = ids(
+    await podman(['ps', '-a', '--filter', `label=${RUN_LABEL}`, '--format', `{{.Label "${RUN_LABEL}"}}\t{{.Label "${OWNER_LABEL}"}}`]),
+  );
+  for (const row of labelRows) {
+    const [runId, ownerValue = ''] = row.split('\t');
+    if (runId && !ownerByRunId.has(runId)) ownerByRunId.set(runId, ownerValue);
+  }
+  for (const [runId, ownerValue] of ownerByRunId) {
     if (dirRunIds.has(runId)) continue;
+    const marker = ownerValue ? parseOwnerLabelValue(ownerValue) : undefined;
+    if (marker && isAlive(marker)) continue;
+    // Re-check right before reaping, narrowing (never fully closing) the window between the
+    // directory snapshot above and this reap: a legitimate directory for this exact run id can
+    // have appeared under THIS cache root in between.
+    if (existsSync(join(cacheRoot, runId))) continue;
     await reapRunLabel(runId, podman, containersRemoved, networksRemoved);
   }
 

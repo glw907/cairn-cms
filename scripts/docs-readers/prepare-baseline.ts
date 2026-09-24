@@ -85,12 +85,16 @@ export const OPERATOR_DOCS_SET = [
   'docs/admin/troubleshooting.md',
 ];
 
-/** `docs/extend/design-your-site.md` plus its one in-docs-set link, kept in sync with `baseline.json`. */
-export const DESIGNER_DOCS_SET = ['docs/extend/design-your-site.md', 'docs/extend/build-a-site-by-hand.md'];
+/** `docs/extend/design-your-site.md` plus every page it links to that sits under `docs/`, kept in sync with `baseline.json`. */
+export const DESIGNER_DOCS_SET = ['docs/extend/design-your-site.md', 'docs/extend/build-a-site-by-hand.md', 'docs/reference/cli-cairn-media-seed.md'];
 
-/** `docs/extend/add-a-custom-admin-screen.md` plus its in-docs-set links, kept in sync with `baseline.json`. */
+/** `docs/extend/add-a-custom-admin-screen.md` plus every page it links to that sits under `docs/`, kept in sync with `baseline.json`. */
 export const EXTENDER_DOCS_SET = [
   'docs/extend/add-a-custom-admin-screen.md',
+  'docs/extend/build-a-site-by-hand.md',
+  'docs/extend/define-an-adapter-and-schema.md',
+  'docs/extend/organize-your-admin-nav.md',
+  'docs/extend/restrict-admin-access.md',
   'docs/reference/admin-routes.md',
   'docs/reference/admin-toolkit.md',
   'docs/reference/sveltekit.md',

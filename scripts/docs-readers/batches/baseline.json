@@ -141,7 +141,7 @@
       "model": "claude-opus-5-5",
       "arrival": "You're the designer on a small team about to launch a new cairn-cms site, and it's your job to give it its own look before launch.",
       "job": "Read what you need to understand how a site's own look is separated from cairn's plumbing, then make one concrete visual change in your site's own theme file (for example, rotate the primary color's hue, or adjust one spacing or font token), and confirm it with `npm run build`. You're done once the build finishes clean and you can name the exact file and value you changed. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
-      "docsSet": ["docs/extend/design-your-site.md", "docs/extend/build-a-site-by-hand.md"],
+      "docsSet": ["docs/extend/design-your-site.md", "docs/extend/build-a-site-by-hand.md", "docs/reference/cli-cairn-media-seed.md"],
       "prepared": "/var/home/glw907/.cache/docs-readers/prepared/baseline/designer-design-your-site",
       "timeoutMinutes": 30
     },
@@ -151,7 +151,7 @@
       "model": "claude-opus-5-5",
       "arrival": "You're the designer on a small team about to launch a new cairn-cms site, and it's your job to give it its own look before launch.",
       "job": "Read what you need to understand how a site's own look is separated from cairn's plumbing, then make one concrete visual change in your site's own theme file (for example, rotate the primary color's hue, or adjust one spacing or font token), and confirm it with `npm run build`. You're done once the build finishes clean and you can name the exact file and value you changed. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
-      "docsSet": ["docs/extend/design-your-site.md", "docs/extend/build-a-site-by-hand.md"],
+      "docsSet": ["docs/extend/design-your-site.md", "docs/extend/build-a-site-by-hand.md", "docs/reference/cli-cairn-media-seed.md"],
       "prepared": "/var/home/glw907/.cache/docs-readers/prepared/baseline/designer-design-your-site",
       "timeoutMinutes": 30
     },
@@ -161,7 +161,7 @@
       "model": "claude-sonnet-5",
       "arrival": "You're the designer on a small team about to launch a new cairn-cms site, and it's your job to give it its own look before launch.",
       "job": "Read what you need to understand how a site's own look is separated from cairn's plumbing, then make one concrete visual change in your site's own theme file (for example, rotate the primary color's hue, or adjust one spacing or font token), and confirm it with `npm run build`. You're done once the build finishes clean and you can name the exact file and value you changed. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
-      "docsSet": ["docs/extend/design-your-site.md", "docs/extend/build-a-site-by-hand.md"],
+      "docsSet": ["docs/extend/design-your-site.md", "docs/extend/build-a-site-by-hand.md", "docs/reference/cli-cairn-media-seed.md"],
       "prepared": "/var/home/glw907/.cache/docs-readers/prepared/baseline/designer-design-your-site",
       "timeoutMinutes": 30
     },
@@ -171,7 +171,7 @@
       "model": "claude-opus-5-5",
       "arrival": "You're adding a small members-only screen to a client's cairn-cms admin, alongside the screens cairn already ships.",
       "job": "Add one new custom screen under /admin that renders inside the shared admin shell and is gated the way this guide describes, then confirm it with `npm run check`. You're done once `npm run check` passes and you can name the file(s) you added and which gating helper you used. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
-      "docsSet": ["docs/extend/add-a-custom-admin-screen.md", "docs/reference/admin-routes.md", "docs/reference/admin-toolkit.md", "docs/reference/sveltekit.md"],
+      "docsSet": ["docs/extend/add-a-custom-admin-screen.md", "docs/extend/build-a-site-by-hand.md", "docs/extend/define-an-adapter-and-schema.md", "docs/extend/organize-your-admin-nav.md", "docs/extend/restrict-admin-access.md", "docs/reference/admin-routes.md", "docs/reference/admin-toolkit.md", "docs/reference/sveltekit.md"],
       "prepared": "/var/home/glw907/.cache/docs-readers/prepared/baseline/extender-add-a-custom-admin-screen",
       "timeoutMinutes": 30
     },
@@ -181,7 +181,7 @@
       "model": "claude-opus-5-5",
       "arrival": "You're adding a small members-only screen to a client's cairn-cms admin, alongside the screens cairn already ships.",
       "job": "Add one new custom screen under /admin that renders inside the shared admin shell and is gated the way this guide describes, then confirm it with `npm run check`. You're done once `npm run check` passes and you can name the file(s) you added and which gating helper you used. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
-      "docsSet": ["docs/extend/add-a-custom-admin-screen.md", "docs/reference/admin-routes.md", "docs/reference/admin-toolkit.md", "docs/reference/sveltekit.md"],
+      "docsSet": ["docs/extend/add-a-custom-admin-screen.md", "docs/extend/build-a-site-by-hand.md", "docs/extend/define-an-adapter-and-schema.md", "docs/extend/organize-your-admin-nav.md", "docs/extend/restrict-admin-access.md", "docs/reference/admin-routes.md", "docs/reference/admin-toolkit.md", "docs/reference/sveltekit.md"],
       "prepared": "/var/home/glw907/.cache/docs-readers/prepared/baseline/extender-add-a-custom-admin-screen",
       "timeoutMinutes": 30
     },
@@ -191,7 +191,7 @@
       "model": "claude-sonnet-5",
       "arrival": "You're adding a small members-only screen to a client's cairn-cms admin, alongside the screens cairn already ships.",
       "job": "Add one new custom screen under /admin that renders inside the shared admin shell and is gated the way this guide describes, then confirm it with `npm run check`. You're done once `npm run check` passes and you can name the file(s) you added and which gating helper you used. Quote the exact lines you relied on, with their file path and line number, the way your Read tool shows them.",
-      "docsSet": ["docs/extend/add-a-custom-admin-screen.md", "docs/reference/admin-routes.md", "docs/reference/admin-toolkit.md", "docs/reference/sveltekit.md"],
+      "docsSet": ["docs/extend/add-a-custom-admin-screen.md", "docs/extend/build-a-site-by-hand.md", "docs/extend/define-an-adapter-and-schema.md", "docs/extend/organize-your-admin-nav.md", "docs/extend/restrict-admin-access.md", "docs/reference/admin-routes.md", "docs/reference/admin-toolkit.md", "docs/reference/sveltekit.md"],
       "prepared": "/var/home/glw907/.cache/docs-readers/prepared/baseline/extender-add-a-custom-admin-screen",
       "timeoutMinutes": 30
     },

@@ -3,13 +3,13 @@
 This record is docs reset pass 1's failure record: the scope decision for Tasks 5 to 10. The
 baseline yielded 13 usable reader runs. The scripter readers found 4 of pass A's 19 known defects
 in at least one usable run: 1 of 10 in the tuning half and 3 of 9 in the held-out half. Across the
-other classes, the readers surfaced 5 verified docs failures and 4 more verified page defects they
+other classes, the readers surfaced 6 verified docs failures and 4 more verified page defects they
 reported only as rule candidates. No stall in a usable run was docs-caused. Exact-line rot is
 25.4% (16 of 63 anchored pointers), 14 of the 16 in `src/`. Reader reliability is the largest
 open risk: 5 final-attempt runs failed verification, 4 of them Sonnet 5 runs, and 6 of their 8
 unverified quotes were one line off. The verdicts: Tasks 5, 6, 7, and 10 build, 6 with its
 reverse mode deferred and 10 scoped; Task 8 builds the drafter and defers the audience-profile
-skill to pass 2a; Task 9 builds 7 of the spec's 12 chain changes and defers 5.
+skill to pass 2a; Task 9 builds 7 of 12 chain changes (the spec's 11 plus bounded auto-continue) and defers 5.
 
 ## Ground truth: pass A's scripter-visible defects
 
@@ -188,6 +188,11 @@ operator-2 also verified, but rerun-2 is its final attempt, so rerun-2 is the on
 unusable final attempts are evaluator-3, extender-2, extender-3, core-developer-3, and scripter-3
 (see "Reader reliability").
 
+**Conductor ruling on "every report verified".** Task 4's acceptance asks that every report
+verify. The five final attempts above were each rerun once and are still unverified. Under the
+pinned rerun-once rule, they are excluded from docs evidence. This is a recorded deviation from
+the acceptance bullet's letter.
+
 **Operator condition.** The condition was natural, not planted. `cairn doctor` on the scratch
 checkout fails `config.bindings-missing`, since the scratch site has no `send_email` binding, and
 `docs/admin/is-it-working.md` covers it. All three usable operator runs named that condition and
@@ -291,7 +296,8 @@ skip-to-`UNKNOWN` rule, seven against nine health checks, and `tier: "none"` on 
 ## Stalls in usable runs
 
 Every stall in a usable run, quoted from its report and classified. None is docs-caused. One
-harness-caused stall carries a verified docs omission inside it (F4 below).
+harness-caused stall carries a verified docs omission inside it (F4 below), and another carries
+a second (F6).
 
 | Run | Stall (quoted, shortened) | Cause |
 | --- | --- | --- |
@@ -306,7 +312,7 @@ harness-caused stall carries a verified docs omission inside it (F4 below).
 | core-dev rerun-1 [0], rerun-2 [0] | "`npm install` (CONTRIBUTING.md:12): skipped because a fresh install isn't possible here" | Harness: install happens at preparation by design |
 | core-dev rerun-1 [1], rerun-2 [1] | "`npm test` ... failed: ... (a) the Playwright chromium headless shell isn't installed ...; (b) `scripts/docs-readers/` is missing ...; (c) the directory isn't a git repository ...; (d) docs-links.test.ts found 971 broken links; (e) reference-coverage.test.ts timed out" | Harness: the image has no browser, and the export drops `scripts/docs-readers/`, `.git`, and the linked internal docs. Contains docs omission F4. |
 | core-dev rerun-1 [2], rerun-2 [2] | "The component project never ran ... the permission layer denied it"; "Rerunning the failing vitest files directly ... was denied by the permission layer" | Harness: allowlist, after the `&&` chain stopped |
-| core-dev rerun-1 [3], rerun-2 [3] | "`npm run check` ... finished with 75 errors across 13 files ... Every error is in src/tests/unit/docs-readers-*.test.ts" | Harness: the export drops `scripts/docs-readers/`. Rerun-2 attributes some errors to showcase and waymark dependencies; rerun-1 contradicts it, and this record does not count it. |
+| core-dev rerun-1 [3], rerun-2 [3] | "`npm run check` ... finished with 75 errors across 13 files ... Every error is in src/tests/unit/docs-readers-*.test.ts" | Harness: the export drops `scripts/docs-readers/`. Rerun-2 also attributes errors to showcase and waymark dependencies, and its transcript confirms the showcase part. Contains docs omission F6. |
 | core-dev rerun-1 [4], rerun-2 [4] | "`npm --version` was denied by the permission layer"; "Could not inspect package.json scripts/engines via node -e (permission denied)" | Harness: allowlist |
 | scripter orig-1, rerun-2 | "Could not run a test of the parser ... the code is unexecuted" | Harness: the repository class cannot run scripts |
 | scripter rerun-2 [1] | "Could not check which cairn version is installed" | Harness: no binary in the repository class |
@@ -322,6 +328,7 @@ the docs. Each one below was checked against the page at `HEAD`.
 | F2 | `docs/extend/design-your-site.md:31-33` | The re-skin recipe says to rotate `--color-primary`'s hue and says nothing about `--color-primary-content`. The two Opus runs took opposite readings of the same gap. | Rerun, designer-1, `assumed[1]`: "Rotated the hue of --color-primary-content too"; rerun, designer-2, `assumed[1]`: "Left --color-primary-content unchanged ... I'm not sure whether its hue should also rotate to match." |
 | F3 | `docs/extend/restrict-admin-access.md:21`, `:51` | The guide places the access map at `src/lib/cairn.access.ts`. The scaffolded site keeps it at `src/access.ts` (`templates/waymark/src/hooks.server.ts:5`). | Rerun, extender-1, `assumed[3]`: "I should add the rule to the site's existing src/access.ts, not create the src/lib/cairn.access.ts the guide's example uses." |
 | F4 | `CONTRIBUTING.md:10-14` | The setup steps never name the Playwright browser install that `npm test` needs. CI installs it explicitly (`.github/workflows/norms.yml:49`). | Rerun, core-developer-1, `stalls[1]`: "(a) the Playwright chromium headless shell isn't installed (~24 files; install is impossible here)"; rerun, core-developer-2, `stalls[1]`: "Most failed because the Playwright chromium_headless_shell-1243 browser is not installed". |
+| F6 | `CONTRIBUTING.md:10-14`, `:18` | The setup steps never say that `npm run check` loads `examples/showcase/svelte.config.js`, so the showcase must be installed first. The guide mentions a showcase install only for viewing a change. CI installs it (`.github/workflows/norms.yml:45`, `npm ci --prefix examples/showcase`). Verified from the transcript. | Rerun, core-developer-2, `stalls[3]`: "npm run check exited 1 with 75 errors in 13 files: showcase/waymark configs could not load (@sveltejs/adapter-cloudflare, @tailwindcss/vite not installed in those sub-projects)". The transcript (`baseline-rerun-20260923/transcripts/core-developer-2.jsonl`) shows `Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@sveltejs/adapter-cloudflare' imported from /reader/job/examples/showcase/svelte.config.js`. |
 | F5 | The evaluator docs set (`docs/why-cairn.md`, `docs/admin/before-you-start.md`, and the rest) | No page in the set states the current published version. | Original, evaluator-1, `assumed[2]`: "the docs never state the current published version." |
 
 ### Verified defects reported only as rule candidates
@@ -383,9 +390,11 @@ line's prefix. This record has not tested that.
 
 Two further verification problems are not quote text. Original operator-3 read
 `cli-cairn-doctor.md` and quoted nothing from it. Rerun extender-3 quoted `sveltekit.md:376`
-correctly, but it read that page only through a Bash `grep` on an absolute path, which the
-verifier's pages-read derivation does not see. The second problem is a verifier gap, not a reader
-failure.
+correctly, and it read that page through a Bash `grep` on an absolute path. The verifier's
+`shellPagesRead` does count such a read, but its command split at
+`scripts/docs-readers/lib/transcript.ts:298` breaks on `[;|\n]` and cuts at the `\|` inside the
+quoted grep pattern, so the page never reached `pagesRead[]`. The second problem is a verifier
+gap, not a reader failure. The fix is a quote-aware command split, which goes to Task 10's lane.
 
 **The decision this forces for Task 11.** Task 11's bar is catching each defect in at least two
 of three runs. With the Sonnet run lost in four of six jobs, that bar becomes "both Opus runs" for
@@ -421,24 +430,27 @@ and R1 to R4 (verified rule-candidate defects).
 | 6, provenance, briefs, extractor | Build | P1 (joined sentences caught only by a late fact read), P2 (a false version line, the extractor's version class), and R3 (a joined contradiction on a published page). |
 | 6, owner-tier key phrases | Build | R1: an owner-voice claim in `why-cairn.md:41` contradicts a pricing fact, and both usable evaluator runs flagged it. |
 | 6, tag citability (candidate, excluded, and `[docs-drift]` fail; `[external]` and `[vendor-figure]` pass) | Build | Part of `check:provenance`, and Task 7 depends on it. The failures are the same as the row above. |
-| 6, reverse mode (`--cited-by`) | Defer | No recorded failure. No page in the baseline or in pass A went stale after a fact it cites changed. R2 and R3 each came from a single commit, and P2 was a false brief, not a changed fact. File in ROADMAP. |
+| 6, reverse mode (`--cited-by`) | Defer | The baseline's stale pages drifted from code, not from a fact. F1 and R4 are stale prose in `docs/admin/is-it-working.md`, left by `28eeacc2` in the same commit that rewrote its transcript. F3 is `restrict-admin-access.md` from `55bf8184`, which predates `templates/waymark/src/access.ts` from `5ef225b9`. No container bullet names those titles or paths, and no brief existed, so a mode listing the pages whose briefs cite an edited fact would have caught none of them. Task 10's title check catches F1 and R4. Task 5 still pins the id-unchanged half of Review focus item 5. File in ROADMAP, with the trigger: the first committed brief whose cited fact is later edited, or pass 2b's first drafted page. |
 | 6, symbol-anchored sources for `src/` | Build | Rot is 25.4%, above the 10% threshold, and 14 of the 16 off-line pointers are in `src/`. |
 | 6, the Go resolver for `tool/` | Defer (file) | No off-line pointer cites `tool/`. The plan files it either way. |
 | 7, candidate triage | Build | The baseline shows current pages carrying wrong claims (R1 to R4, F1, F3) on top of pass A's 19 (P4). A bullet whose only source is such a page inherits an unchecked claim, and 134 bullets are in that state. Hand-off: `docs/internal/facts/extend.md:104` (tagged `[external]`) says "everything through Milestone 4 runs on Cloudflare's free tier", which contradicts `before-you-start.md:52`. Triage should check it for a `[docs-drift]` tag. |
 | 8, the drafter agent and the v2 default `drafterType` | Build | P3 (Sonnet drafts escalated on all three pages and needed a third round) and P1 (the `sentences` list the agent writes). The agent's other four prompt rules (answer first, named tells, no padding, plain instructions) are the spec's method with no recorded failure behind them. They ride along as lines in the same file, and pass 2a's trial judges them. |
-| 8, the audience-profile skill and profile template | Defer to pass 2a | No failure in the baseline or in pass A traces to a missing profile or exemplar. Pass A's drafters worked under a required profile section, and their failures were facts and rounds (P1 to P3). Pass 2a authors the profiles and defines their format with them. The agent ships without the `skills:` preload until then. |
+| 8, the audience-profile skill and profile template | Defer to pass 2a | Pass A's drafter already received its profile verbatim in the draft prompt, and P1 to P3 happened anyway. P1 is a sourcing failure, which the `sentences` list and `check:provenance` answer. Pass 2a defines the profile-file format together with the profiles. Spec pass 2a items 1 and 5 need a one-line amendment to say so (pass 2a defines the format with the profiles; folds go to the profile files and the drafter agent), and the conductor records it. Task 9's v2 chain passes the profile and any exemplars in the drafter's dispatch prompt, at no build cost. The agent ships without the `skills:` preload until then. |
 | 9, the revised page chain | Build, partly | Per change, in the next table. |
 | 10, docs-as-tests | Build, scoped | F1 and R4: the operator page's prose names report titles that `cairn doctor` never prints, and the page's own real transcript contradicts that prose. The scope is in "Harness scope" below. |
 
 ### Chain changes (spec pass 1 item 6)
 
+The spec's item 6 lists 11 changes. The table adds a twelfth, bounded auto-continue of two, which
+comes from the spec's "Evidence the method follows" section and from Task 9.
+
 | Change | Verdict | The failure behind it, or the reason to defer |
 | --- | --- | --- |
 | The drafter writes the brief's `sentences` list, and `check:provenance` runs in the page gate | Build | P1, P2, R3. |
 | The register editor receives Vale and `tellgrader` output | Build | P3: "the register editor's bar rises on each read." Deterministic findings give each read a fixed floor to filter, so the editor does not rediscover it. This is the thinnest-supported build, and pass 2a's trial may drop it. |
-| The register editor receives an omission checklist | Build | 14 of the 19 ground-truth defects are omissions (D01 to D04, D06 to D09, D11, D12, D15 to D17, D19). F2, F4, and F5 are omissions too. |
-| The register editor reports every finding | Defer | No recorded case of the register editor withholding a finding. The nearest evidence is the pass A verifier's ranked list, which merged or dropped five of the 19 defects. That was a reader's report, and the reader report shape already lists every stall and assumption. |
-| A separate Opus 5.5 filter drops only findings that contradict the register or the brief | Defer | No recorded finding contradicted the register or the brief. The filter exists to prune the every-finding report, which is deferred. |
+| The register editor receives an omission checklist | Build | 14 of the 19 ground-truth defects are omissions (D01 to D04, D06 to D09, D11, D12, D15 to D17, D19). F2, F4, F5, and F6 are omissions too. |
+| The register editor reports every finding | Defer | No recorded case of the register editor withholding a finding. In pass A's chain, the setup-colon triad first appeared in the round-1 redraft. The round-2 editor reported it (`cli-cairn-exit-codes.md:43-47`, `blocking: false`, with a rewrite). The conductor's round-3 prompt applied only blocking findings, so the triad was dropped and caught again in the third read. `docs/HISTORY.md:207-208` is therefore a finding reported and not applied, the applied-findings class, which builds. It is not a withheld finding. "The bar rises on each read" is a conductor gloss with no withheld case behind it. |
+| A separate Opus 5.5 filter drops only findings that contradict the register or the brief | Defer | No recorded finding contradicted the register or the brief. P2's false version line came from the brief itself. The filter exists to prune the every-finding report, which is deferred. |
 | An applied-findings check after each redraft | Build | P5: the redraft skipped a sentence the verifier wrote (D09), wrote a false fix (D11), and introduced a duplicate paragraph and a false cause. |
 | The profile grader removed | Build | P4: the profile grade was one of the three reads that accepted pages carrying 19 defects. P3: its round cost. |
 | The reader stage in its place, run by the reader runner between a draft-gates-reads stage and a redraft stage | Build | P4, plus this baseline: readers found F1 to F3 and R1 to R4 on pages the plan's Task 4 treats as having passed today's chain. |
@@ -455,12 +467,14 @@ Every existing gate stays unchanged, as the spec requires.
 settles build or adopt, which item 7 requires either way. The harness then covers item 7's minimum
 on the operator pages (every page under `docs/admin/` with a shell procedure or `--json` output,
 run literally in the docs-and-binary container, with state-changing commands dry-run). It adds one
-enumeration check, the one F1 and R4 need: every report title an operator page names must appear
-in `cairn doctor`'s printed title set.
+enumeration check, the one F1 and R4 need. Each jump-list title on a `docs/admin/` page is checked
+against the `title` of its paired condition id in `tool/internal/spine/conditions.json`, over
+every `docs/admin/` page that names titles. Pairing each title with its condition id keeps
+`cairn health` entries, and conditions no command checks, from failing falsely.
 
 Two failures fall outside that scope, and this record files them rather than building for them.
-F4 is a literal procedure failure on `CONTRIBUTING.md`, a core-developer page, and running it needs
-a browser in the repository image. D05, D10, D13, D14, and D18 are prose claims about `--json`
+F4 and F6 are literal procedure failures on `CONTRIBUTING.md`, a core-developer page, and running
+it needs a browser and the installed showcase in the repository image. D05, D10, D13, D14, and D18 are prose claims about `--json`
 output on the three `cli-cairn-*` reference pages. Pass A caught D05 only by running a parser
 against the goldens, and a literal run of a page's output block does not test such claims.
 

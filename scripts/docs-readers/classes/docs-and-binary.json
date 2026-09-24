@@ -5,7 +5,10 @@
   "tools": ["Read", "Grep", "Glob", "Bash"],
   "bashAllowlist": ["cairn sites list", "cairn health*", "cairn logs*", "cairn doctor*", "cairn auth list", "cairn auth check*"],
   "permissionMode": "default",
-  "env": {},
-  "secretEnv": [],
+  "env": {
+    "CAIRN_STATE_DIR": "/reader/job/state",
+    "CAIRN_CF_ACCOUNT_ID": "120c269ad6d3dfbe6d63a0bb53758ca0"
+  },
+  "secretEnv": ["CAIRN_CF_READ_TOKEN", "CAIRN_GH_READ_TOKEN"],
   "egress": "operator"
 }

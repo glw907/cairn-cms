@@ -52,6 +52,12 @@ describe('class declarations', () => {
     ]);
   });
 
+  it('gives docs-and-binary a reader-local state directory and the two scoped credential names', () => {
+    const docsAndBinary = loadClasses().get('docs-and-binary');
+    expect(docsAndBinary?.env).toMatchObject({ CAIRN_STATE_DIR: '/reader/job/state', CAIRN_CF_ACCOUNT_ID: '120c269ad6d3dfbe6d63a0bb53758ca0' });
+    expect(docsAndBinary?.secretEnv).toEqual(['CAIRN_CF_READ_TOKEN', 'CAIRN_GH_READ_TOKEN']);
+  });
+
   it('accepts a valid declaration', () => {
     expect(validateClass(valid, egressNames)).toEqual([]);
   });

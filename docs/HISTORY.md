@@ -31,7 +31,7 @@ the reader runner. A validation batch and its scores (`2026-09-23-docs-reset-val
 **The failed validation.** All four reader classes failed Task 11's bar. Plants caught: 9 of 17.
 Held-out defects caught: 1 of 9. Two baseline failures missed on control pages. False positives:
 48 against a cap of 3 per class, 35 of them only from rule candidates. The readers found real
-defects on the control pages, and every miss sat off the path the job took. The plan's one fix
+defects on the control pages, and every missed plant sat off the path the job took. The plan's one fix
 round tunes on the tuning half only, and it could not address a design problem. Changing plant
 placement or the counting rule after seeing results would be post-hoc, so the conductor paused and
 Geoff chose a fresh pass.

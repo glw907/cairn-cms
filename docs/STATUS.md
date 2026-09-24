@@ -21,14 +21,12 @@ plugin's `buildStart`.
 ## Immediate next action
 
 **Next: docs reset pass 1b, the validation redesign (Geoff, 2026-09-24).** Pass 1's writing
-system is built; its validation failed on the validation's own design
+system is built; its validation failed on its own design
 (`docs/internal/record/2026-09-23-docs-reset-validation.md`). Pass 1b brainstorms, pre-registers a
-plan, and reruns on the merged system; pass 2a waits for it. Open questions (plant placement, rule
-candidates under a new cap, a job-tester bar, the model mix): the pass 1 ledger's "decision" row.
-The scratch site stands through pass 2a (teardown: `internal/record/2026-09-23-scratch-site.md`).
-
-After the `docs-reset-system` PR merges: the fact-id rule into the shared agent definitions, the
-`~/.dotfiles` push, and `claude-tooling-sync verify` (plan Task 12).
+plan, and reruns on the merged system; pass 2a waits for it. Open questions: the pass 1 ledger's
+"decision" row. The scratch site stands through pass 2a, teardown in
+`docs/internal/record/2026-09-23-scratch-site.md`. After the PR merges: the fact-id rule into the
+shared agents, the `~/.dotfiles` push, `claude-tooling-sync verify`.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`

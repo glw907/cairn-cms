@@ -1035,6 +1035,17 @@ the named human gates only):**
   (`docs/internal/record/2026-09-15-facts-container-review/`, charter report finding 9).
   Trigger: twenty hand-filed facts.
 
+- **Trace or retire the 25 `[candidate: excluded ...]` bullets in `docs/internal/facts/` (docs
+  reset pass 1 triage, 2026-09-24; reworded from the 2026-09-15 page-only re-sourcing entry).**
+  The pass 1 triage traced every bullet sourced only to a page: 137 were retained on code sources,
+  2 rejected, and 20 excluded, and 25 excluded bullets now sit in the container (admin 3, editors
+  2, extend 12, front-door 6, reference 2). An excluded bullet is not citable by a page brief, so
+  its claim cannot reach a reset page until someone traces it to code or deletes it. One example
+  is `f:my9dgx`, `docs/extend/migrate-existing-content.md`'s validate-in-the-admin workflow, whose
+  mechanisms want `EditPage.svelte` and the field validation call sites opened directly. Record:
+  `docs/internal/record/2026-09-23-candidate-dispositions.md`. Trigger: a reset drafting pass that
+  needs one of these claims.
+
 - **A `[verified]` container anchor pinned to `path:line` in a component the same pass edits goes
   stale inside that pass (extend-1, 2026-09-20).** `check:facts` re-reads the quoted anchor text at
   the cited line, so task 4's own `AdminTable.svelte` edit invalidated two anchors it had just

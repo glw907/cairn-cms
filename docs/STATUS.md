@@ -20,14 +20,19 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**In flight (2026-09-23, overnight): pass 1, checkpoint 2 passed; Task 9's dry-run fix round,
-then Task 11 (validation).** Tasks 0 to 8 and 10 are done and merged into `docs-reset-system`
-(lanes A, B, D merged at `28617164`, cross-lane review clean); Task 9's v2 chain lives in
-`~/.dotfiles` (unpushed: three older foreign commits sit ahead of its origin) and its end-to-end
-dry run passed on the scratch branch `docs-reset-dryrun`, surfacing two chain gaps now in a fix
-round. Ceiling 16M, flag 12.8M; spend by the counting rule is estimated at 5M to 7M (the subagent
-upper bound is about 10M). The ledger at the pass 1 plan's foot carries every ruling and the
-morning list for Geoff.
+**Paused (2026-09-24, 01:20): pass 1 Task 11 failed; Geoff's decision needed before the fix
+round.** Tasks 0 to 10 are done and merged into `docs-reset-system`; Task 9's v2 chain is in
+`~/.dotfiles` (unpushed). Task 11's validation (`docs/internal/record/2026-09-23-docs-reset-validation.md`)
+fails all four reader classes: plants off each job's path went unseen, 1 of 9 held-out defects was
+caught, and false positives ran 4 to 23 per class against a cap of 3 (most from rule candidates). The
+plan's one fix round tunes only on the scripter's tuning half, so it cannot address these; changing
+plant placement or counting now would be post-hoc. Options: (a) run the fix round as written, which
+most likely fails and stops the pass; (b) pre-register a redesigned validation (plants only on each
+job's path, rule candidates reported apart from findings) and rerun it; (c) close pass 1 with readers
+scoped to what they reliably do (on-path job testing and finding real defects) and carry exhaustive
+detection to pass 2a. Recommendation: (b), then (c) if it still fails. Spend: about 9M counted of
+16M (flag 12.8M), an estimate; `/cost` gives the real figure. Morning list for Geoff is in the
+ledger at the pass 1 plan's foot.
 
 **Docs reset pass 1, the writing system.** The docs are reset from scratch (only verified facts
 survive), and pass 1 builds and validates the writing system first: confined podman reader
@@ -62,6 +67,6 @@ record, exemplar review, calibration trial) follows pass 1's close.
 
 In a fresh session started with `claude --model claude-opus-5-5` (effort `medium`), continue docs
 reset pass 1 (`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`) through the `cairn-pass`
-skill, in the existing `.claude/worktrees/docs-reset-system` worktree. Read the ledger at the
-plan's foot for task states; Task 0 is done, so resume at the first task the ledger does not mark
-done, starting with segment 1's pre-flight over Tasks 1 to 3.
+skill, in `.claude/worktrees/docs-reset-system`. Read the ledger at the plan's foot and the
+validation record first. Task 11 is paused on Geoff's choice among options (a), (b), and (c) in
+STATUS; act on the option he names, then Task 12 closes the pass.

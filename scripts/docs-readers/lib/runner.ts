@@ -66,7 +66,7 @@ export const REPORT_REQUEST = [
   '- outcome: "done" if you got the job done, "stalled" if you could not finish it, or "refused" if you decided not to do it;',
   '- stalls: each point where you got stuck, and what you were missing there;',
   '- assumed: each term, value, or step you had to guess because nothing you read told you;',
-  '- quotes: for every documentation file you read, at least one line you relied on, given as the file path relative to your working directory, the 1-based line number (as the Read tool numbers it), and the exact text of that line;',
+  '- quotes: for every documentation file you read, at least one line you relied on, given as the file path relative to your working directory, the exact text of that line, and the line number your Read tool printed beside that text\'s first words;',
   '- ruleCandidates: anything you think the documentation should have told you and did not.',
 ].join('\n');
 

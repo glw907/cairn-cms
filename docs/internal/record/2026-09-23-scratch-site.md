@@ -38,13 +38,22 @@ verification of `cairn auth set`'s refusal, and the teardown pass 2a's close run
 
 `scripts/docs-readers/lib/prepare-class.ts`'s `packEngineTarballs` now takes an optional
 `cacheRoot`. `tarballCacheKey` returns HEAD's own commit hash only when `git status --porcelain`
-is clean across `PACKAGE_INPUT_PATHS` (`src/lib`, `packages/cairn-cms-dev`, `package.json`,
-`svelte.config.js`, `scripts/build`); a dirty tree in any of those paths returns no key, so the
+is clean across `packageInputPaths(repoRoot)`: `PACKAGE_FIXED_INPUTS` (`src/lib`,
+`packages/cairn-cms-dev`, `package.json`, `package-lock.json`, `svelte.config.js`,
+`tsconfig.json`, `scripts/build`, `README.md`, `LICENSE`) plus every entry `package.json`'s own
+`files` field ships into the tarball (`migrations`, `migrations-channel`, `skills`, `claude`,
+`CHANGELOG.md`, and each docs arm: `docs/README.md`, `docs/why-cairn.md`, `docs/reference`,
+`docs/admin`, `docs/editors`, `docs/extend`), `dist` excluded (the build's own output, whose
+freshness already follows `src/lib`, not a second input to key against): every one of the
+`files`-listed paths reaches the tarball unbuilt, copied as-is, so a dirty docs page (exactly the
+shape of change this initiative makes) needs its own place in the check rather than riding along
+with `src/lib`'s. A dirty tree in any of these paths returns no key, so the
 caller always rebuilds. A hit under `<cacheRoot>/tarballs/<key>/{engine,dev}.tgz` skips `npm run
-package` and both `npm pack` calls entirely. `pruneTarballCache` keeps the newest three keys by
-directory mtime. The startup sweep (`lib/sweep.ts`) preserves the `tarballs/` cache root by name,
-alongside `results/` and `ledger.jsonl`, alongside the run-id and live-check scratch patterns it
-does remove.
+package` and both `npm pack` calls entirely, and touches the key's own directory mtime, so a key
+kept in active use is not the one `pruneTarballCache` evicts next. `pruneTarballCache` keeps the
+newest three keys by directory mtime. The startup sweep (`lib/sweep.ts`) preserves the `tarballs/`
+cache root by name, alongside `results/` and `ledger.jsonl`, alongside the run-id and live-check
+scratch patterns it does remove.
 
 Timing from this task's own scratch-site preparation (this worktree's real `npm run package`,
 `src/lib` and `packages/cairn-cms-dev` clean at HEAD): a cold build (cache miss) took **27,863
@@ -65,10 +74,13 @@ ten-minute RS256 App JWT and posts it to `POST /app/installations/{id}/access_to
 `{"repositories":["cairn-scratch-b"],"permissions":{"contents":"read","metadata":"read"}}`,
 verifying the response's own `repositories` list is exactly what was requested before returning
 the token (a mismatch throws rather than handing a reader a wider-scoped credential than its
-class declares). `run.ts`'s `operatorSecretResolver` mints this once per run, memoized in the
-run's own closure, the first time a job asks for `CAIRN_GH_READ_TOKEN`; `CAIRN_CF_READ_TOKEN`
-maps onto the host secret `CAIRN_SCRATCH_CF_TOKEN`. Neither the App's private key nor
-`CAIRN_SCRATCH_CF_TOKEN` is ever handed to a reader directly; only the derived, scoped values are.
+class declares). `run.ts`'s `operatorSecretResolver` mints this the first time a job asks for
+`CAIRN_GH_READ_TOKEN`, caches it, and re-mints once the cached token is within ten minutes of its
+own one-hour expiry (GitHub's own installation-token lifetime), since Task 4's batches run several
+jobs, each with its own timeout, and can outlive a single mint; two calls racing the same in-flight
+or about-to-expire mint always share one mint, never two. `CAIRN_CF_READ_TOKEN` maps onto the host
+secret `CAIRN_SCRATCH_CF_TOKEN`. Neither the App's private key nor `CAIRN_SCRATCH_CF_TOKEN` is
+ever handed to a reader directly; only the derived, scoped values are.
 
 **Verified before relying on it** (this task, live, both the minted-token round trip and
 `cairn auth check`'s own acceptance of the result):
@@ -90,7 +102,7 @@ the two `fail` rows below, which are expected under this token's deliberately na
 | Workers Scripts | `CAIRN_CF_READ_TOKEN` | account | pass | pass | yes | The account-owned token's one policy (Individual Workers `cairn-scratch-b`, Metadata Read-only) covers this Worker's own metadata. |
 | Workers Builds Configuration | `CAIRN_CF_READ_TOKEN` | account | fail (forbidden) | fail (forbidden) | **yes, expected to fail** | Metadata Read-only carries no Builds scope; Task 0 recorded the same token as scoped to metadata alone. |
 | Workers Observability | `CAIRN_CF_READ_TOKEN` | account | fail (forbidden) | fail (forbidden) | **yes, expected to fail** | Task 0 already found the account-level telemetry query 403 under this token; `cairn logs` (below) reproduces the same 403 live. |
-| Zone | `CAIRN_CF_READ_TOKEN` | account | pass | pass | yes | The account-level zone list route does not need a Workers-scoped grant beyond account membership. |
+| Zone | `CAIRN_CF_READ_TOKEN` | account | pass | pass | **weak pass, proves little** | `GET /zones` returns 200 with zero zones in the result. The token carries no Zone permission at all (its one policy is Individual Workers, Metadata Read-only), so this `pass` shows only that the call was not rejected outright, never that the token can actually read a real zone's data; the account itself does hold zones (`ecxc.ski`, `907.life`, and others), so the empty result reflects the token's own view, not an empty account. A meaningful proof needs a token with real Zone scope, which this one deliberately lacks. |
 | Zone Settings | `CAIRN_CF_READ_TOKEN` | site | skip (no site named) | unknown (`not-found`) | **yes, expected** | The scratch site carries no domain and no zone id; there is nothing to check. |
 | DNS | `CAIRN_CF_READ_TOKEN` | site | skip | unknown (`not-found`) | **yes, expected** | Same: no zone. |
 | Email Sending | `CAIRN_CF_READ_TOKEN` | site | skip | unknown (`not-found`) | **yes, expected** | Same: no zone, and email sending is off for this site by design. |
@@ -130,13 +142,18 @@ project, not a failure.
   `CAIRN_SCRATCH_CF_TOKEN` returns `{"success":false,"errors":[{"message":"No access to the
   specified service."}]}`. The same token's own settings route for `cairn-scratch-b` returns 200.
   Re-verifies Task 0's finding under this task's own credential handling.
-- **Installation token against another repository**: the token minted above (scoped to
-  `cairn-scratch-b`) reads `GET /repos/glw907/cairn-scratch-b/contents/` as 200 and `GET
-  /repos/glw907/cairn-pub/contents/` as 404. (`907-life` and `ecxc-ski`, the installation's other
-  two repositories, are both public, so a contents read against either succeeds for any token,
-  authenticated or not, independent of this token's own repository scope; `cairn-pub` is private
-  and outside the installation the token was minted under, which is what makes its 404 a real
-  scope proof rather than an artifact of public visibility.)
+- **Installation token against another repository**: the real scope proof is the mint response's
+  own `repositories` list, already named above: a token requested for `["cairn-scratch-b"]` and
+  scoped to installation `135372268` (which also covers `907-life` and `ecxc-ski`) came back
+  naming only `cairn-scratch-b`, so GitHub itself narrowed the grant to the one requested
+  repository even though the installation covers more. The live denied call below is a second,
+  weaker check, recorded for completeness rather than as the scope proof: the token reads `GET
+  /repos/glw907/cairn-scratch-b/contents/` as 200 and `GET /repos/glw907/cairn-pub/contents/` as
+  404. `cairn-pub` is private and outside this installation entirely, so its 404 shows the
+  installation boundary, not the token's own narrower repository scope within that
+  installation; `907-life` and `ecxc-ski`, the installation's other two repositories, are both
+  public, so a contents read against either would succeed for any token, or none, regardless of
+  scope, which is why neither was used for this check.
 
 ## `cairn auth set` and a production site name: refused
 
@@ -195,6 +212,20 @@ the hostname does not answer`). Added `cairn-scratch-b.glw907.workers.dev:443` t
 egress class, scoped to this one scratch site's own hostname, not a general `workers.dev`
 allowance. Confirmed live on the next run: `serving` now passes.
 
+A fourth fix, from review: the startup sweep's first cut reaped every container, network, and
+run-id directory carrying the runner's own label outright, with no regard for whether the run
+that made them was still alive. Since parallel lanes are planned for this pass, a concurrent
+runner (another worktree, another session) would have lost its own live containers to a second
+runner's startup sweep. `lib/sweep.ts` now writes an owner marker (the creating process's pid and
+its own `/proc` start time, which a reused pid cannot fake) into every run and scratch directory
+at creation, and the sweep reaps a directory, and a run id's own labeled containers and network
+(filtered by `label=docs-readers.run=<that id>`, never the bare label), only when that marker's
+process is no longer the one that wrote it. `STALE_DIR_PATTERN` also gained the
+`docs-and-binary-<hex>` stem `live-checks.ts`'s own scratch directory uses, which the first cut
+missed. Unit-tested: a live owner's run-id and scratch directories both survive the sweep with no
+podman query issued for them at all; a dead owner's (or a missing marker's, treated the same as
+dead) directory is reaped along with its own containers and network.
+
 ## Teardown for pass 2a's close
 
 Not run in this task; recorded here as the procedure pass 2a's close follows.
@@ -212,8 +243,10 @@ Not run in this task; recorded here as the procedure pass 2a's close follows.
    the cairn-cms GitHub App's installation repository list (`gh api -X PATCH
    /user/installations/135372268` is not the right call for a selected-repository install; do
    this in the GitHub UI, the same owner-confirmed-change pattern Task 0 used to add it); revoke
-   `CAIRN_SCRATCH_CF_TOKEN` in the Cloudflare dashboard (API tokens have no delete-by-name API
-   call this account's admin token can reach) and remove its row from
-   `~/.dotfiles/secrets/registry.md` and `~/.local/secrets`.
+   `CAIRN_SCRATCH_CF_TOKEN`, API first: `DELETE
+   /accounts/120c269ad6d3dfbe6d63a0bb53758ca0/tokens/{token_id}` (the token's own id, from `GET
+   /accounts/{account_id}/tokens` filtered by name, not the token value itself), falling back to
+   the Cloudflare dashboard only if the estate's admin token cannot reach that route; then remove
+   its row from `~/.dotfiles/secrets/registry.md` and `~/.local/secrets`.
 3. Every deletion is independent and idempotent to re-run (a 404 on a second attempt is success,
    not a failure), so a partially completed teardown is safe to resume.

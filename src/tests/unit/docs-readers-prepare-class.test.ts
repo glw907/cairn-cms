@@ -560,18 +560,20 @@ describe('assertNoExcludedPaths', () => {
 });
 
 describe('prepareRepositoryExport', () => {
-  it('exports a real commit and excludes the internal record and superpowers subtrees', () => {
+  it('exports a real commit and excludes the internal record, superpowers, and reader-harness subtrees', () => {
     const repoRoot = tmp('git-repo');
     const dest = tmp('git-export');
     try {
       write(join(repoRoot, 'README.md'), '# a project\n');
       write(join(repoRoot, 'docs/internal/record/2026-01-01-note.md'), 'harvest note');
       write(join(repoRoot, 'docs/superpowers/plans/plan.md'), 'the answer key');
+      write(join(repoRoot, 'scripts/docs-readers/batches/baseline.json'), '{}');
       commitAll(repoRoot);
       prepareRepositoryExport({ repoRoot, commit: 'HEAD', dest });
       expect(readFileSync(join(dest, 'README.md'), 'utf8')).toBe('# a project\n');
       expect(existsSync(join(dest, 'docs/internal/record'))).toBe(false);
       expect(existsSync(join(dest, 'docs/superpowers'))).toBe(false);
+      expect(existsSync(join(dest, 'scripts/docs-readers'))).toBe(false);
       expect(existsSync(join(dest, '.git'))).toBe(false);
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
@@ -601,6 +603,27 @@ describe('prepareRepositoryExport', () => {
     }
   });
 
+  it('fails preparation when a planted scripts/docs-readers path survives the export, and removes dest', () => {
+    // The same double as the docs/superpowers case above, for the reader-harness exclusion: a
+    // reader must never find the harness that dispatched it, its batch files, or its job texts.
+    const dest = tmp('survives-export-harness');
+    try {
+      const runner: CommandRunner = (command, args) => {
+        if (command === 'git') return { status: 0, stdout: Buffer.from('fake-archive'), stderr: '' };
+        if (command === 'tar') {
+          write(join(dest, 'scripts/docs-readers/batches/baseline.json'), '{}');
+          write(join(dest, 'README.md'), '# a project\n');
+          return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+        }
+        throw new Error(`unexpected command: ${command} ${args.join(' ')}`);
+      };
+      expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'HEAD', dest, runner })).toThrow(/scripts\/docs-readers/);
+      expect(existsSync(dest)).toBe(false);
+    } finally {
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
   it('throws when the archive step fails, and removes dest', () => {
     const dest = tmp('archive-fail');
     try {
@@ -614,7 +637,7 @@ describe('prepareRepositoryExport', () => {
 });
 
 describe('prepareRepositoryExportWithDependencies', () => {
-  it('exports the commit, then installs dependencies in that same directory', () => {
+  it('exports the commit, then installs dependencies with npm ci in that same directory', () => {
     const repoRoot = tmp('deps-repo');
     const dest = tmp('deps-dest');
     try {
@@ -623,7 +646,7 @@ describe('prepareRepositoryExportWithDependencies', () => {
       const installCalls: Array<{ command: string; args: string[]; cwd: string }> = [];
       const runner: CommandRunner = (command, args, options) => {
         if (command === 'npm') installCalls.push({ command, args, cwd: options.cwd });
-        if (command === 'npm' && args[0] === 'install') {
+        if (command === 'npm' && args[0] === 'ci') {
           write(join(options.cwd, 'node_modules/.installed'), 'ok');
           return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
         }
@@ -633,7 +656,7 @@ describe('prepareRepositoryExportWithDependencies', () => {
       prepareRepositoryExportWithDependencies({ repoRoot, commit: 'HEAD', dest, runner });
       expect(readFileSync(join(dest, 'README.md'), 'utf8')).toBe('# a project\n');
       expect(existsSync(join(dest, 'node_modules/.installed'))).toBe(true);
-      expect(installCalls).toEqual([{ command: 'npm', args: ['install', '--no-audit', '--no-fund'], cwd: dest }]);
+      expect(installCalls).toEqual([{ command: 'npm', args: ['ci', '--no-audit', '--no-fund'], cwd: dest }]);
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
       rmSync(dest, { recursive: true, force: true });

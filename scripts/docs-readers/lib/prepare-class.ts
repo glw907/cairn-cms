@@ -375,10 +375,11 @@ export function prepareDocsAndSite({
 
 /**
  * The paths a repository-class checkout must never carry: the harvest-only internal record, the
- * whole specs-and-plans corpus that is this pass's own answer key, and the git history that could
- * name either.
+ * whole specs-and-plans corpus that is this pass's own answer key, this pass's own reader harness
+ * (its batch files and job texts would hand a reader a script for the very task it is being
+ * asked to do), and the git history that could name any of them.
  */
-export const REPOSITORY_EXCLUDED_PATHS = ['docs/internal/record', 'docs/superpowers', '.git'];
+export const REPOSITORY_EXCLUDED_PATHS = ['docs/internal/record', 'docs/superpowers', 'scripts/docs-readers', '.git'];
 
 /**
  * Confirm none of the excluded paths reached an export, independent of whether the pathspec that
@@ -429,13 +430,12 @@ export function archiveCommit({
 }
 
 /**
- * Export a commit of a git checkout into a clean directory, excluding the two answer-key subtrees
- * by pathspec (this repository sets no `export-ignore` attribute), then re-checking that neither
- * it nor `.git` survived, regardless of whether the pathspec worked. Any failure, including the
- * re-check, removes `dest` before rethrowing, so a survived answer-key path never stays on disk.
- * `repoRoot` is the checkout to export from; `commit` is the commit-ish to export; `dest` is where
- * the export lands, its existing contents replaced; `runner` is the command runner, overridden in
- * tests.
+ * Export a commit of a git checkout into a clean directory, excluding `REPOSITORY_EXCLUDED_PATHS`
+ * by pathspec (this repository sets no `export-ignore` attribute), then re-checking that none of
+ * them survived, regardless of whether the pathspec worked. Any failure, including the re-check,
+ * removes `dest` before rethrowing, so a survived excluded path never stays on disk. `repoRoot` is
+ * the checkout to export from; `commit` is the commit-ish to export; `dest` is where the export
+ * lands, its existing contents replaced; `runner` is the command runner, overridden in tests.
  * @throws When the archive or its extraction fails, or an excluded path survives.
  */
 export function prepareRepositoryExport({
@@ -450,7 +450,7 @@ export function prepareRepositoryExport({
   runner?: CommandRunner;
 }): void {
   try {
-    archiveCommit({ repoRoot, commit, dest, pathspec: ['--', '.', ':!docs/internal/record', ':!docs/superpowers'], runner });
+    archiveCommit({ repoRoot, commit, dest, pathspec: ['--', '.', ':!docs/internal/record', ':!docs/superpowers', ':!scripts/docs-readers'], runner });
     assertNoExcludedPaths(dest);
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });
@@ -460,13 +460,14 @@ export function prepareRepositoryExport({
 
 /**
  * Build a core-developer job's prepared tree: `prepareRepositoryExport` at `commit`, then that
- * export's own dependencies installed, so the class's allowlisted `npm run check*`/`npm test`
- * checks have something real to run against, the same as `prepareDocsAndSite`'s own
- * `installAndStrip` step does for a scaffolded site. Preparation-time only: a reader's own
- * container never runs `npm install` itself, since its egress proxy allows nothing but
- * `api.anthropic.com`, and its Bash allowlist does not name `npm install` either. `repoRoot` is
- * the checkout to export from; `commit` is the commit-ish to export; `dest` is the prepared tree's
- * root, replaced first if it already exists; `runner` is the command runner, overridden in tests.
+ * export's own dependencies installed with `npm ci` (never `npm install`: the export's
+ * `package-lock.json` is `commit`'s own, always in sync with its `package.json`, and `npm ci`
+ * installs exactly what it names without ever rewriting it), so the class's allowlisted checks
+ * have something real to run against. Preparation-time only: a reader's own container never runs
+ * an install itself, since its egress proxy allows nothing but `api.anthropic.com`, and its Bash
+ * allowlist does not name one either. `repoRoot` is the checkout to export from; `commit` is the
+ * commit-ish to export; `dest` is the prepared tree's root, replaced first if it already exists;
+ * `runner` is the command runner, overridden in tests.
  * @throws When the export or the install fails.
  */
 export function prepareRepositoryExportWithDependencies({
@@ -481,10 +482,10 @@ export function prepareRepositoryExportWithDependencies({
   runner?: CommandRunner;
 }): void {
   prepareRepositoryExport({ repoRoot, commit, dest, runner });
-  const install = runner('npm', ['install', '--no-audit', '--no-fund'], { cwd: dest });
+  const install = runner('npm', ['ci', '--no-audit', '--no-fund'], { cwd: dest });
   if (install.status !== 0) {
     rmSync(dest, { recursive: true, force: true });
-    throw new Error(`npm install failed in ${dest}: ${install.stderr}`);
+    throw new Error(`npm ci failed in ${dest}: ${install.stderr}`);
   }
 }
 

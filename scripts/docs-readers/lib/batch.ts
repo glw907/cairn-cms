@@ -75,8 +75,12 @@ export function parseBatch(raw: unknown, classes: Map<string, ClassDecl>): Batch
     if (decl?.contents === 'prepared' && (typeof job.prepared !== 'string' || job.prepared.trim() === '')) {
       problems.push(`${where}: class "${decl.name}" needs a prepared directory`);
     }
-    if (decl?.contents === 'docs-set' && job.prepared !== undefined) {
-      problems.push(`${where}: class "${decl.name}" copies its docs set and takes no prepared directory`);
+    // A docs-set class job's `prepared` is optional: when given, it names a directory to copy the
+    // job's own docs set from instead of the run's own sourceRoot; when omitted, the job copies
+    // from sourceRoot as it always has. Either way the field, when present, must be a real path,
+    // not a blank string.
+    if (decl?.contents === 'docs-set' && job.prepared !== undefined && (typeof job.prepared !== 'string' || job.prepared.trim() === '')) {
+      problems.push(`${where}: class "${decl.name}"'s prepared directory, when given, must be a non-empty string`);
     }
     const timeout = job.timeoutMinutes;
     if (timeout !== undefined && !(typeof timeout === 'number' && timeout > 0)) {

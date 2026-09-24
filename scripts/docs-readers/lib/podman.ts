@@ -354,7 +354,11 @@ export function createPodmanExecutor({
   }
 
   /**
-   * Fill a job's pristine prepared directory from its class's contents rule.
+   * Fill a job's pristine prepared directory from its class's contents rule. A docs-set class job
+   * copies each of its own docs-set pages from `job.prepared` when the job carries one, so a
+   * docs-only reader can be given a page tree that differs from the host checkout without
+   * widening its class to a full prepared-tree copy; when the job carries no `prepared`, it
+   * copies from `sourceRoot` as it always has.
    * @param job - The parsed batch job.
    * @param decl - Its class declaration.
    * @param prepared - The directory to fill.
@@ -362,9 +366,12 @@ export function createPodmanExecutor({
   function prepare(job: Job, decl: ClassDecl, prepared: string): void {
     mkdirSync(prepared, { recursive: true });
     if (decl.contents === 'docs-set') {
+      const docsSetSource = job.prepared;
+      const base = docsSetSource === undefined ? sourceRoot : isAbsolute(docsSetSource) ? docsSetSource : join(sourceRoot, docsSetSource);
       for (const path of job.docsSet) {
-        const from = join(sourceRoot, path);
-        if (!existsSync(from)) throw new Error(`job ${job.id}: docs-set path ${path} does not exist`);
+        const from = join(base, path);
+        const notice = docsSetSource === undefined ? '' : ` in prepared directory ${docsSetSource}`;
+        if (!existsSync(from)) throw new Error(`job ${job.id}: docs-set path ${path} does not exist${notice}`);
         cpSync(from, join(prepared, path), { recursive: true, verbatimSymlinks: true });
       }
     } else {

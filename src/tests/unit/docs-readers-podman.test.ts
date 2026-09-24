@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -198,6 +198,55 @@ describe('createPodmanExecutor: an async secretValue', () => {
       const readerArgs = spawnArgs.find((args) => args.includes('claude'));
       expect(readerArgs).toContain('CAIRN_CF_READ_TOKEN');
       expect(readerArgs).toContain('CAIRN_GH_READ_TOKEN');
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+      rmSync(preparedDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('createPodmanExecutor: a docs-set job’s optional prepared override', () => {
+  /** A docs-only job carrying the given optional `prepared` field, built through `parseBatch`. */
+  function docsOnlyJob(prepared?: string) {
+    return parseBatch(
+      { name: 'fixture', concurrency: 1, budgetTokens: 1000, jobs: [{ id: 'a', class: 'docs-only', model: 'haiku', arrival: 'Arrival.', job: 'Job.', docsSet: ['README.md'], prepared, timeoutMinutes: 30 }] },
+      classes,
+    ).jobs[0];
+  }
+
+  it('copies its docs set from sourceRoot, as ever, when the job carries no prepared field', async () => {
+    const runRoot = mkdtempSync(join(tmpdir(), 'docs-readers-podman-'));
+    try {
+      const executor = newExecutor(runRoot);
+      const result = await executor.run(docsOnlyJob(), decl, { signal: new AbortController().signal, onEvent: () => {}, prompt: 'hi', reportSchema: {} });
+      expect(readFileSync(join(result.preparedRoot, 'README.md'), 'utf8')).toBe(readFileSync(join(ROOT, 'README.md'), 'utf8'));
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('copies its docs set from the given prepared directory instead of sourceRoot, when the job carries one', async () => {
+    const runRoot = mkdtempSync(join(tmpdir(), 'docs-readers-podman-'));
+    const preparedDir = mkdtempSync(join(tmpdir(), 'docs-readers-podman-docsset-prepared-'));
+    writeFileSync(join(preparedDir, 'README.md'), '# a planted README\n');
+    try {
+      const executor = newExecutor(runRoot);
+      const result = await executor.run(docsOnlyJob(preparedDir), decl, { signal: new AbortController().signal, onEvent: () => {}, prompt: 'hi', reportSchema: {} });
+      expect(readFileSync(join(result.preparedRoot, 'README.md'), 'utf8')).toBe('# a planted README\n');
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+      rmSync(preparedDir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws naming the prepared directory when one of the job’s docs-set paths is missing from it', async () => {
+    const runRoot = mkdtempSync(join(tmpdir(), 'docs-readers-podman-'));
+    const preparedDir = mkdtempSync(join(tmpdir(), 'docs-readers-podman-docsset-missing-'));
+    try {
+      const executor = newExecutor(runRoot);
+      await expect(
+        executor.run(docsOnlyJob(preparedDir), decl, { signal: new AbortController().signal, onEvent: () => {}, prompt: 'hi', reportSchema: {} }),
+      ).rejects.toThrow(new RegExp(`does not exist in prepared directory ${preparedDir}`));
     } finally {
       rmSync(runRoot, { recursive: true, force: true });
       rmSync(preparedDir, { recursive: true, force: true });

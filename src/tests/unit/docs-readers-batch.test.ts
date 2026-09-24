@@ -46,11 +46,15 @@ describe('parseBatch', () => {
     expect(() => parseBatch(batch([{ ...docsJob, docsSet: [] }]), classes)).toThrow(/docsSet must be a non-empty array/);
   });
 
-  it('requires a prepared directory for a prepared-contents class and refuses one for a docs-set class', () => {
+  it('requires a prepared directory for a prepared-contents class, and accepts an optional one for a docs-set class', () => {
     const repoJob = { ...docsJob, id: 'core-1', class: 'repository', docsSet: ['CONTRIBUTING.md'] };
     expect(() => parseBatch(batch([repoJob]), classes)).toThrow(/needs a prepared directory/);
     expect(parseBatch(batch([{ ...repoJob, prepared: '/tmp/export' }]), classes).jobs[0].prepared).toBe('/tmp/export');
-    expect(() => parseBatch(batch([{ ...docsJob, prepared: '/tmp/x' }]), classes)).toThrow(/takes no prepared directory/);
+    // A docs-set class job carries no prepared field at all by default, and copies from sourceRoot.
+    expect(parseBatch(batch([docsJob]), classes).jobs[0].prepared).toBeUndefined();
+    // Given one, a docs-set class job keeps it, to copy its docs set from there instead.
+    expect(parseBatch(batch([{ ...docsJob, prepared: '/tmp/x' }]), classes).jobs[0].prepared).toBe('/tmp/x');
+    expect(() => parseBatch(batch([{ ...docsJob, prepared: '   ' }]), classes)).toThrow(/prepared directory, when given, must be a non-empty string/);
   });
 
   it('rejects a missing budget, a zero concurrency, an unknown field, and an empty job text', () => {

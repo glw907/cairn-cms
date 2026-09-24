@@ -1,6 +1,6 @@
 #!/usr/bin/env -S npx tsx
 /**
- * Builds Task 11's validation trees: for each of the six baseline jobs (evaluator, operator,
+ * Builds the validation batch's trees: for each of the six baseline jobs (evaluator, operator,
  * scripter, core-developer, designer, extender), a CONTROL prepared directory built the same way
  * `prepare-baseline.ts` builds that job's own tree, and a PLANTED variant of it, the control tree
  * copied once more and then overlaid with that job's own planted pages from

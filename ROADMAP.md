@@ -296,7 +296,9 @@ The original decision framing, for the record:
     rather than exhaustive detection; and whether runs stay two Opus plus one Sonnet, since Sonnet
     readers verified 8 of 13. Detail: the pass 1 ledger's "decision" row.
   - **Pass 2a, the audience record and the trial,** only after pass 1b passes. It defines the
-    profile-file format together with the profiles (the spec's pass 1 amendment).
+    profile-file format together with the profiles (the spec's pass 1 amendment). Its inputs are
+    ready: the exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
+    `docs/internal/record/docs-exemplars.md`) and the readers' plan token.
   - **Pass 2b, the ledger, the structure, and the outline.** Two carry-forwards from pass 1 land
     here. A multi-page chain run shares one retag list across its pages, since a stage-1 fact read
     on one page can undo a legitimate retag another page's read made. A scaffolded-site reader

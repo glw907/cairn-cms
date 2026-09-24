@@ -282,6 +282,30 @@ The original decision framing, for the record:
 
 ## Now
 
+- **The docs reset (spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`, Geoff,
+  2026-09-22 to 24).** cairn's docs are rebuilt from scratch on a writing system that is tested by
+  confined reader agents. Pass 1 built that system and closed on 2026-09-24 (plan and post-mortem:
+  `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`). Its validation failed on the
+  validation's own design, not on the system
+  (`docs/internal/record/2026-09-23-docs-reset-validation.md`). The sequence now runs:
+  - **Pass 1b, the validation redesign (next).** A brainstorm, then a pre-registered plan, then a
+    rerun on the merged system. Its open questions: where plants go, since "on the job's path"
+    conflicts with a planter blind to readers (candidate: derive each job's path from the pages
+    baseline readers opened); counting rule candidates apart from findings, under a new
+    pre-registered false-positive cap; whether the bar measures what a job tester should catch
+    rather than exhaustive detection; and whether runs stay two Opus plus one Sonnet, since Sonnet
+    readers verified 8 of 13. Detail: the pass 1 ledger's "decision" row.
+  - **Pass 2a, the audience record and the trial,** only after pass 1b passes. It defines the
+    profile-file format together with the profiles (the spec's pass 1 amendment).
+  - **Pass 2b, the ledger, the structure, and the outline.** Two carry-forwards from pass 1 land
+    here. A multi-page chain run shares one retag list across its pages, since a stage-1 fact read
+    on one page can undo a legitimate retag another page's read made. A scaffolded-site reader
+    class may need a variant that keeps the template's own `CLAUDE.md` and `.claude/`, which the
+    prepared site drops today.
+  - The scratch site (`glw907/cairn-scratch-b`, its Worker and D1, and two scoped tokens) stands
+    through pass 2a. Its teardown, a dry-run listing then deletion on owner confirmation, is in
+    `docs/internal/record/2026-09-23-scratch-site.md`, "Teardown for pass 2a's close".
+
 - **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
   and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
   pass.** The unscoped run (`cairn-audit --rendered`, no `--rule`) had never actually run in CI
@@ -840,6 +864,38 @@ the named human gates only):**
 
 ## Next
 
+- **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
+  The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or
+  defer") deferred these, and pass 1 built none of them. Trigger for the chain items: pass 2a's
+  trial, or any v2 chain run, records the failure the item answers.
+  - Page chain (`docs-page-chain-v2.js`): the register editor fed Vale and `tellgrader` output;
+    the register editor reporting every finding, with a separate Opus filter that drops only
+    findings contradicting the register or the brief; source material wrapped as content; a
+    text-only turn end treated as a report; bounded auto-continue of two.
+  - Harness scope: `CONTRIBUTING.md`'s procedures run literally (F4 and F6 need a browser and
+    the installed showcase in the repository image), and a parser run against the goldens for
+    the `--json` prose claims on the three `cli-cairn-*` reference pages (D05, D10, D13, D14,
+    D18). Trigger: pass 2b drafts either page set.
+  - The title check's two blind spots (Task 10): a `cairn health`-only title, and a title with no
+    command, match nothing any report prints; and a command written inline in prose is not run
+    until the page puts it in a fence. Trigger: the reset's admin-arm drafting.
+
+- **The Waymark template's theme files cite cairn-internal documents a scaffolded site does not
+  carry (docs reset pass 1 validation, 2026-09-24).** `templates/waymark/src/theme/theme.css:6,68,201`,
+  `site.css:18,34`, and `src/chassis/prose.css:40` point at `docs/internal/public-design-system.md`
+  and `docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`. A designer reader
+  followed one and found nothing. Point the comments at a published page or state the rule inline.
+  Trigger: the next pass that edits the template's CSS.
+
+- **Real defects the pass 1 readers found on current pages (2026-09-24).** The pass changed no
+  published page, and the reset rebuilds these pages from the container, so each is evidence for
+  the page pass that redrafts it, or a freeze-rule fix if a site pass hits it first. They are
+  listed in the baseline record (F1 to F6, R1 to R4) and in the validation record's "Confirmed
+  real, not counted" notes: the missing Email Sending price in "What it costs", the `send_email`
+  binding shape no linked page states, the unexplained `UNCHECKED` reason on
+  `is-it-working.md`, and seven contradictions on the three `cli-cairn-*` pages. Trigger: the
+  reset's drafting pass for each page's arm.
+
 - **`check:facts` cannot catch an off-by-one `Source:` pointer (doctor-retirement pre-task,
   2026-09-21).** `validatePointer` (`scripts/checks/check-facts.mjs:309`) resolves the path and
   checks that every cited line is in range; an anchored pointer then passes when its tokens appear
@@ -977,22 +1033,6 @@ the named human gates only):**
   (`docs/internal/record/2026-09-15-facts-container-review/`, charter report finding 9).
   Trigger: twenty hand-filed facts.
 
-- **Re-source the page-only `[candidate]` bullets in `docs/internal/facts/` to code (docs-to-facts
-  pass, 2026-09-15).** A bullet sourced only to a doc arm page, never traced to code, stays
-  `[candidate]` until re-verified. Trigger: the docs rebuild after the site round, which reads
-  every arm bullet to rebuild the narrative pages. The extend-1 close (2026-09-20) folds the docs
-  friction log's three verification-debt findings in here, each naming where the debt sits: the
-  three `docs/reference/sveltekit.md` sections read but not traced in the harvest
-  (`createAuthRoutes`/`bootstrapOwner`/identity modes, the media-actions vocabulary, and the
-  `NavLayoutEntry`/`NavIcon`/`ResolvedNavEntry` family); `docs/extend/migrate-existing-content.md`'s
-  validate-in-the-admin workflow, whose two mechanisms want `EditPage.svelte` and the field
-  validation call sites opened directly; and the candidate-tagged group across
-  `docs/reference/sveltekit.md`, `delivery.md`, and `delivery-data.md` (the `historyLoad` bound, the
-  preview mint and revoke sequence, `mintPreview`'s `ttlMs` bounds, the preview-row cascade,
-  `settingsLoad`'s key-health probe, `tidyAction`'s retryable statuses,
-  `NavLayoutSection.collapsed`, the `NavLayoutEntry` validation throws, `ContentIndex.all()`'s sort
-  order, `EntryData.heroImage`, and `CairnHead`'s `titleTemplate`/`markdownUrl`).
-
 - **A `[verified]` container anchor pinned to `path:line` in a component the same pass edits goes
   stale inside that pass (extend-1, 2026-09-20).** `check:facts` re-reads the quoted anchor text at
   the cited line, so task 4's own `AdminTable.svelte` edit invalidated two anchors it had just
@@ -1051,7 +1091,8 @@ the named human gates only):**
   the draft docs unruled); the draft docs; the site round, upgrading aksailingclub-org, ecxc-ski,
   and 907-life into model cairn sites, each filing container bullets through
   `site-docs/<site>-<pass>`; one improvement release; the docs rebuild from the facts container;
-  then beta. The original entry sequenced the Go tool first against extend-1, the docs rewrite,
+  then beta. The docs reset (Now tier) supersedes both the draft docs step and the docs rebuild
+  from the container. The original entry sequenced the Go tool first against extend-1, the docs rewrite,
   and site migration, and that sequencing is spent: the tool, both extend passes, and the pre-cut
   pass have all landed.
 

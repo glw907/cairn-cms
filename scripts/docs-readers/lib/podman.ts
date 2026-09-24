@@ -17,6 +17,7 @@ import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { claudeArgs } from './class-schema.js';
+import { restrictStateDirPermissions } from './prepare-class.js';
 import { READER_CWD } from './transcript.js';
 import type { ClassDecl, EgressConfig, Executor, Job, ProxyRecord, RunResult, StreamEvent } from './types.js';
 
@@ -56,11 +57,12 @@ function podmanEnv(extra: Record<string, string> = {}): Record<string, string> {
 }
 
 /**
- * Run one podman command to completion.
+ * Run one podman command to completion. Exported so the startup sweep (`lib/sweep.ts`) reuses
+ * this exact invocation, rather than a second copy of `podmanEnv`'s scrubbed environment.
  * @param args - The podman arguments.
  * @returns Its stdout.
  */
-async function podman(args: string[]): Promise<string> {
+export async function podman(args: string[]): Promise<string> {
   const { stdout } = await run('podman', args, { env: podmanEnv(), maxBuffer: 64 * 1024 * 1024 });
   return stdout;
 }
@@ -77,16 +79,32 @@ export async function hostCliVersion(): Promise<string> {
 }
 
 /**
- * Build the reader image when this Containerfile, proxy, and CLI version have not been built.
+ * The `cairn` tool release the docs-and-binary class's image bakes in, verified at build time
+ * against its release's `SHA256SUMS` (Containerfile). Bumping this both busts the image cache
+ * (the version feeds `ensureImage`'s content hash) and moves every future build to the new
+ * release.
+ */
+export const CAIRN_TOOL_VERSION = '1.1.0';
+
+/**
+ * Build the reader image when this Containerfile, proxy, CLI version, and `cairn` tool version
+ * have not been built.
  * @param cliVersion - The Claude Code version to pin.
  * @param log - Where progress lines go.
+ * @param cairnToolVersion - The `cairn` tool release to bake in, verified against its own
+ *  `SHA256SUMS`.
  * @returns The image tag.
  */
-export async function ensureImage(cliVersion: string, log: (line: string) => void = () => {}): Promise<string> {
+export async function ensureImage(
+  cliVersion: string,
+  log: (line: string) => void = () => {},
+  cairnToolVersion: string = CAIRN_TOOL_VERSION,
+): Promise<string> {
   const hash = createHash('sha256')
     .update(readFileSync(join(HERE, 'Containerfile')))
     .update(readFileSync(join(HERE, 'egress-proxy.mjs')))
     .update(cliVersion)
+    .update(cairnToolVersion)
     .digest('hex')
     .slice(0, 12);
   const tag = `localhost/docs-reader:${hash}`;
@@ -94,9 +112,14 @@ export async function ensureImage(cliVersion: string, log: (line: string) => voi
     await podman(['image', 'exists', tag]);
     return tag;
   } catch {
-    log(`building ${tag} (Claude Code ${cliVersion})`);
+    log(`building ${tag} (Claude Code ${cliVersion}, cairn tool ${cairnToolVersion})`);
   }
-  await podman(['build', '-q', '--build-arg', `CLAUDE_CODE_VERSION=${cliVersion}`, '-t', tag, '-f', join(HERE, 'Containerfile'), HERE]);
+  await podman([
+    'build', '-q',
+    '--build-arg', `CLAUDE_CODE_VERSION=${cliVersion}`,
+    '--build-arg', `CAIRN_TOOL_VERSION=${cairnToolVersion}`,
+    '-t', tag, '-f', join(HERE, 'Containerfile'), HERE,
+  ]);
   return tag;
 }
 
@@ -123,7 +146,8 @@ function writeCanary(file: string, marker: string): void {
  * finds them; `runRoot` is the per-run directory under the neutral cache path; `sourceRoot` is the
  * tree docs-set paths are copied from; `egress` holds the proxy allowlists by egress class;
  * `token` returns the reader token for the next container; `secretValue` looks up a class's
- * secret variable by name.
+ * secret variable by name, asynchronously, since a mapped value can mean minting a fresh
+ * credential (the docs-and-binary class's GitHub installation token) rather than a plain lookup.
  * @returns The executor the runner drives.
  */
 export function createPodmanExecutor({
@@ -133,7 +157,7 @@ export function createPodmanExecutor({
   image,
   egress,
   token,
-  secretValue = () => undefined,
+  secretValue = async () => undefined,
 }: {
   runId: string;
   runRoot: string;
@@ -141,7 +165,7 @@ export function createPodmanExecutor({
   image: string;
   egress: EgressConfig;
   token: () => string;
-  secretValue?: (name: string) => string | undefined;
+  secretValue?: (name: string) => Promise<string | undefined>;
 }): PodmanExecutor {
   let counter = 0;
   const jobDirs = new Map<string, string>();
@@ -316,6 +340,7 @@ export function createPodmanExecutor({
       const from = isAbsolute(source) ? source : join(sourceRoot, source);
       if (!existsSync(from)) throw new Error(`job ${job.id}: prepared directory ${job.prepared} does not exist`);
       cpSync(from, prepared, { recursive: true });
+      restrictStateDirPermissions(prepared);
       for (const path of job.docsSet) {
         if (!existsSync(join(prepared, path))) throw new Error(`job ${job.id}: docs-set path ${path} is not in the prepared tree`);
       }
@@ -367,6 +392,7 @@ export function createPodmanExecutor({
       prepare(job, decl, prepared);
       const mountRoot = join(dir, 'mount');
       cpSync(prepared, join(mountRoot, 'job'), { recursive: true });
+      restrictStateDirPermissions(join(mountRoot, 'job'));
       const home = join(dir, 'home');
       const canaries = [canary(), canary(), canary()];
       writeCanary(join(mountRoot, 'CLAUDE.md'), canaries[0]);
@@ -374,7 +400,7 @@ export function createPodmanExecutor({
       writeCanary(join(home, '.claude', 'projects', READER_CWD.replaceAll('/', '-'), 'memory', 'MEMORY.md'), canaries[2]);
       const secrets: Record<string, string> = { CLAUDE_CODE_OAUTH_TOKEN: token() };
       for (const key of decl.secretEnv) {
-        const value = secretValue(key);
+        const value = await secretValue(key);
         if (!value) throw new Error(`job ${job.id}: secret ${key} is not available`);
         secrets[key] = value;
       }

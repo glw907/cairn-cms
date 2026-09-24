@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -106,6 +106,79 @@ describe('createPodmanExecutor: the abort race in startNetwork', () => {
       expect(result.exitCode).toBe(0);
     } finally {
       rmSync(runRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('createPodmanExecutor: an async secretValue', () => {
+  const binaryDecl = classes.get('docs-and-binary');
+  if (!binaryDecl) throw new Error('the docs-and-binary class must be declared');
+
+  /** One docs-and-binary job, whose `prepared` tree carries the one docs-set page it names. */
+  function binaryJob(preparedDir: string) {
+    return parseBatch(
+      {
+        name: 'fixture',
+        concurrency: 1,
+        budgetTokens: 1000,
+        jobs: [{ id: 'b', class: 'docs-and-binary', model: 'haiku', arrival: 'Arrival.', job: 'Job.', docsSet: ['README.md'], prepared: preparedDir, timeoutMinutes: 30 }],
+      },
+      classes,
+    ).jobs[0];
+  }
+
+  it('awaits the resolved value, so a secret that resolves to undefined fails the run rather than the pending promise reading as truthy', async () => {
+    const runRoot = mkdtempSync(join(tmpdir(), 'docs-readers-podman-'));
+    const preparedDir = mkdtempSync(join(tmpdir(), 'docs-readers-podman-prepared-'));
+    writeFileSync(join(preparedDir, 'README.md'), '# hi');
+    try {
+      const executor = createPodmanExecutor({
+        runId: 'test-run',
+        runRoot,
+        sourceRoot: ROOT,
+        image: 'localhost/fake:tag',
+        egress: loadEgress(),
+        token: () => 'fake-token',
+        secretValue: async (name) => (name === 'CAIRN_GH_READ_TOKEN' ? undefined : 'cf-secret-value'),
+      });
+      await expect(
+        executor.run(binaryJob(preparedDir), binaryDecl, { signal: new AbortController().signal, onEvent: () => {}, prompt: 'hi', reportSchema: {} }),
+      ).rejects.toThrow(/secret CAIRN_GH_READ_TOKEN is not available/);
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+      rmSync(preparedDir, { recursive: true, force: true });
+    }
+  });
+
+  it('passes every resolved secretEnv name through to the container, once both resolve', async () => {
+    const runRoot = mkdtempSync(join(tmpdir(), 'docs-readers-podman-'));
+    const preparedDir = mkdtempSync(join(tmpdir(), 'docs-readers-podman-prepared-'));
+    writeFileSync(join(preparedDir, 'README.md'), '# hi');
+    execFileArgs.length = 0;
+    spawnArgs.length = 0;
+    try {
+      const executor = createPodmanExecutor({
+        runId: 'test-run',
+        runRoot,
+        sourceRoot: ROOT,
+        image: 'localhost/fake:tag',
+        egress: loadEgress(),
+        token: () => 'fake-token',
+        secretValue: async (name) => `${name}-value`,
+      });
+      const result = await executor.run(binaryJob(preparedDir), binaryDecl, {
+        signal: new AbortController().signal,
+        onEvent: () => {},
+        prompt: 'hi',
+        reportSchema: {},
+      });
+      expect(result.aborted).toBe(false);
+      const readerArgs = spawnArgs.find((args) => args.includes('claude'));
+      expect(readerArgs).toContain('CAIRN_CF_READ_TOKEN');
+      expect(readerArgs).toContain('CAIRN_GH_READ_TOKEN');
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+      rmSync(preparedDir, { recursive: true, force: true });
     }
   });
 });

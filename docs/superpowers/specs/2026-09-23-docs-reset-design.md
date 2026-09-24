@@ -16,6 +16,31 @@ drafters' primary input. Pass 2b builds a scripted jobs ledger, runs a structure
 writes the outline at slot level. There are three owner stops. Nothing here touches the `0.97.0`
 cut.
 
+## Amendments at pass 1's close (2026-09-24)
+
+Pass 1's execution corrected this spec in six places. Where a line below and the body disagree,
+this section wins. The detail is in the pass 1 plan's ledger and post-mortem
+(`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`).
+
+- **Pass A's defects number 19, not 14.** The 14 was the verifier's ranked summary. The itemized
+  ground truth (`0e7f4eb9`) has 19 scripter-visible defects, and the json-output page was tested
+  at `29a03eff`, not `3bfaac37`. Every "pass A's 14" below means these 19.
+- **Pass 2a defines the profile-file format together with the profiles.** The audience-profile
+  skill was deferred: the drafter agent ships without a `skills:` preload, and the page chain
+  passes the profile and exemplars in the drafter's dispatch prompt. Pass 2a's folds go to the
+  profile files and the drafter agent.
+- **The reverse mode and the Go resolver are filed, not built.** `check:facts --cited-by` sits in
+  `ROADMAP.md`'s Next tier and the `tool/` resolver in its Later tier, each with a trigger. The
+  TypeScript resolver for `src/` was built (rot was 25.4 percent).
+- **The candidate triage covered 159 bullets, not 134.** The tag this spec calls
+  `[vendor-figure]` is the container's `[vendor]` tag.
+- **Pass 1's ceiling rose to 16M, flag at 12.8M** (Geoff, 2026-09-23, after the first spend
+  estimate).
+- **Pass 1 ends with a built system, not a validated one.** Its validation failed on the
+  validation's own design (`docs/internal/record/2026-09-23-docs-reset-validation.md`). Pass 1b
+  redesigns the validation and reruns it on the merged system, and pass 2a starts only after pass
+  1b passes (Geoff, 2026-09-24).
+
 ## Why now
 
 The 2026-08-15 outline (`docs/internal/record/2026-08-15-docs-outlines-with-visuals.md`) predates

@@ -102,9 +102,11 @@ export const EXTENDER_DOCS_SET = [
 
 /**
  * Build the operator job's prepared tree: the scratch site's own commit, cloned and archived, with
- * the `is-it-working` docs page and the site's registry record layered on top.
+ * the `is-it-working` docs page and the site's registry record layered on top. Exported so
+ * `prepare-validation.ts` can build the same tree at its own destination, ahead of planting.
+ * @param dest - Where the prepared tree lands; defaults to the baseline's own path.
  */
-async function prepareOperator(): Promise<void> {
+export async function prepareOperator(dest: string = join(BASELINE_PREPARED_ROOT, 'operator-is-it-working')): Promise<void> {
   const scratchClone = join(CACHE_ROOT, 'scratch-site-repo');
   ensureScratchSiteCommit({ cloneDir: scratchClone, commit: SCRATCH_SITE_COMMIT });
   const siteExportDir = join(BASELINE_PREPARED_ROOT, 'operator-site-export');
@@ -114,23 +116,31 @@ async function prepareOperator(): Promise<void> {
     docsSet: OPERATOR_DOCS_SET,
     siteId: SCRATCH_SITE.siteId,
     record: SCRATCH_SITE.record,
-    dest: join(BASELINE_PREPARED_ROOT, 'operator-is-it-working'),
+    dest,
     siteExportDir,
   });
 }
 
-/** Build the scripter job's prepared tree: the three contract pages, each from its own commit. */
-async function prepareScripter(): Promise<void> {
-  prepareContractPagesBundle({ repoRoot: REPO_ROOT, dest: join(BASELINE_PREPARED_ROOT, 'scripter-contract-pages'), pages: CONTRACT_PAGES });
+/**
+ * Build the scripter job's prepared tree: three contract pages, each from its own commit. Exported
+ * so `prepare-validation.ts` can build the same shape at its own destination and commits (the
+ * validation batch pins all three to `HEAD` rather than pass A's commits).
+ * @param dest - Where the bundle lands; defaults to the baseline's own path.
+ * @param pages - The bundle's own page specs; defaults to the baseline's `CONTRACT_PAGES`.
+ */
+export async function prepareScripter(dest: string = join(BASELINE_PREPARED_ROOT, 'scripter-contract-pages'), pages: ContractPageSpec[] = CONTRACT_PAGES): Promise<void> {
+  prepareContractPagesBundle({ repoRoot: REPO_ROOT, dest, pages });
 }
 
 /**
  * Build the core-developer job's prepared tree: this worktree's own `HEAD`, with its own
  * dependencies already installed, since the job's arrival tells the reader a fresh `npm install`
- * is not possible in this environment.
+ * is not possible in this environment. Exported so `prepare-validation.ts` can build the same
+ * tree at its own destination.
+ * @param dest - Where the prepared tree lands; defaults to the baseline's own path.
  */
-async function prepareCoreDeveloper(): Promise<void> {
-  prepareRepositoryExportWithDependencies({ repoRoot: REPO_ROOT, commit: 'HEAD', dest: join(BASELINE_PREPARED_ROOT, 'core-developer-head') });
+export async function prepareCoreDeveloper(dest: string = join(BASELINE_PREPARED_ROOT, 'core-developer-head')): Promise<void> {
+  prepareRepositoryExportWithDependencies({ repoRoot: REPO_ROOT, commit: 'HEAD', dest });
 }
 
 /**
@@ -139,12 +149,17 @@ async function prepareCoreDeveloper(): Promise<void> {
  * freshly built pair (a cache miss) lands under a neutral scratch directory, never under
  * `BASELINE_PREPARED_ROOT`: `scaffoldSite` writes the returned tarball path straight into the
  * scaffolded site's own `package.json`, which a reader can read, so that path must never name this
- * batch.
+ * batch. Exported so `prepare-validation.ts` can build the same two trees at its own destinations.
+ * @param destDesigner - Where the designer tree lands; defaults to the baseline's own path.
+ * @param destExtender - Where the extender tree lands; defaults to the baseline's own path.
  */
-async function prepareDesignerAndExtender(): Promise<void> {
+export async function prepareDesignerAndExtender(
+  destDesigner: string = join(BASELINE_PREPARED_ROOT, 'designer-design-your-site'),
+  destExtender: string = join(BASELINE_PREPARED_ROOT, 'extender-add-a-custom-admin-screen'),
+): Promise<void> {
   const tarballs = packEngineTarballs(REPO_ROOT, join(CACHE_ROOT, 'pack-scratch'), undefined, CACHE_ROOT);
-  prepareDocsAndSite({ sourceRoot: REPO_ROOT, docsSet: DESIGNER_DOCS_SET, tarballs, dest: join(BASELINE_PREPARED_ROOT, 'designer-design-your-site') });
-  prepareDocsAndSite({ sourceRoot: REPO_ROOT, docsSet: EXTENDER_DOCS_SET, tarballs, dest: join(BASELINE_PREPARED_ROOT, 'extender-add-a-custom-admin-screen') });
+  prepareDocsAndSite({ sourceRoot: REPO_ROOT, docsSet: DESIGNER_DOCS_SET, tarballs, dest: destDesigner });
+  prepareDocsAndSite({ sourceRoot: REPO_ROOT, docsSet: EXTENDER_DOCS_SET, tarballs, dest: destExtender });
 }
 
 /**

@@ -1,15 +1,15 @@
 # Docs reset baseline: pass A's scripter-visible defects
 
 This record is docs reset pass 1's failure record: the scope decision for Tasks 5 to 10. The
-baseline yielded 13 usable reader runs. The scripter readers found 4 of pass A's 19 known defects
-in at least one usable run: 1 of 10 in the tuning half and 3 of 9 in the held-out half. Across the
+baseline yielded 13 usable reader runs. The scripter readers found 4 of pass A's 19 known defects in
+at least one usable run: 1 of 10 in the tuning half and 3 of 9 in the held-out half. Across the
 other classes, the readers surfaced 6 verified docs failures and 4 more verified page defects they
-reported only as rule candidates. No stall in a usable run was docs-caused. Exact-line rot is
-25.4% (16 of 63 anchored pointers), 14 of the 16 in `src/`. Reader reliability is the largest
-open risk: 5 final-attempt runs failed verification, 4 of them Sonnet 5 runs, and 6 of their 8
-unverified quotes were one line off. The verdicts: Tasks 5, 6, 7, and 10 build, 6 with its
-reverse mode deferred and 10 scoped; Task 8 builds the drafter and defers the audience-profile
-skill to pass 2a; Task 9 builds 7 of 12 chain changes (the spec's 11 plus bounded auto-continue) and defers 5.
+reported only as rule candidates. No stall in a usable run was docs-caused. Exact-line rot is 25.4%
+(16 of 63 anchored pointers), 14 of the 16 in `src/`. Reader reliability is the largest open risk: 5
+final-attempt runs failed verification, 4 of them Sonnet 5 runs, and 6 of their 8 unverified quotes
+were one line off. The verdicts: Tasks 5, 6, 7, and 10 build, 6 with its reverse mode deferred and
+10 scoped; Task 8 builds the drafter and defers the audience-profile skill to pass 2a; Task 9 builds
+7 of 12 chain changes (the spec's 11 plus bounded auto-continue) and defers 5.
 
 ## Ground truth: pass A's scripter-visible defects
 
@@ -472,19 +472,20 @@ against the `title` of its paired condition id in `tool/internal/spine/condition
 every `docs/admin/` page that names titles. Pairing each title with its condition id keeps
 `cairn health` entries, and conditions no command checks, from failing falsely.
 
-Two failures fall outside that scope, and this record files them rather than building for them.
-F4 and F6 are literal procedure failures on `CONTRIBUTING.md`, a core-developer page, and running
-it needs a browser and the installed showcase in the repository image. D05, D10, D13, D14, and D18 are prose claims about `--json`
-output on the three `cli-cairn-*` reference pages. Pass A caught D05 only by running a parser
-against the goldens, and a literal run of a page's output block does not test such claims.
+Two failures fall outside that scope, and this record files them rather than building for them. F4
+and F6 are literal procedure failures on `CONTRIBUTING.md`, a core-developer page, and running it
+needs a browser and the installed showcase in the repository image. D05, D10, D13, D14, and D18 are
+prose claims about `--json` output on the three `cli-cairn-*` reference pages. Pass A caught D05
+only by running a parser against the goldens, and a literal run of a page's output block does not
+test such claims.
 
 ### The facts-container carry-forward
 
 Task 2's ledger records that `check:facts` fails inside a repository-class export, because three
 bullets cite `docs/internal/record/` paths the export excludes:
-`docs/internal/facts/front-door.md:26`, `:50`, and `:108`. The core-developer job avoided the problem by not using `check:facts` as its
-done signal. Task 11's repository-class jobs will need it. **Task 5 owns the fix**, since it
-already changes `check-facts.mjs` and its tests. Its acceptance gains one bullet: `check:facts`
-is green inside a repository-class export. The conductor pins the method in the dispatch:
-re-source the three bullets to code (the triage work Task 7 does), or teach `check:facts` the
-export's exclusion list.
+`docs/internal/facts/front-door.md:26`, `:50`, and `:108`. The core-developer job avoided the
+problem by not using `check:facts` as its done signal. Task 11's repository-class jobs will need it.
+**Task 5 owns the fix**, since it already changes `check-facts.mjs` and its tests. Its acceptance
+gains one bullet: `check:facts` is green inside a repository-class export. The conductor pins the
+method in the dispatch: re-source the three bullets to code (the triage work Task 7 does), or teach
+`check:facts` the export's exclusion list.

@@ -394,14 +394,15 @@ export function checkSentences(sentences, index) {
 
 /**
  * A page's prose with everything the brief does not classify set aside: YAML front matter,
- * fenced code blocks, HTML comments, images, and heading lines. Whitespace is collapsed.
+ * fenced code blocks (indented under a list item too, closed by the same fence run), HTML
+ * comments, images, and heading lines. Whitespace is collapsed.
  * @param {string} markdown
  * @returns {string}
  */
 function pageProse(markdown) {
   return markdown
     .replace(/^---\n[\s\S]*?\n---\n/, '')
-    .replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, ' ')
+    .replace(/^[ \t]*(`{3,}|~{3,})[^\n]*\n[\s\S]*?^[ \t]*\1[^\n]*$/gm, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(IMAGE_RE, ' ')
     .replace(/^#{1,6}\s.*$/gm, ' ')

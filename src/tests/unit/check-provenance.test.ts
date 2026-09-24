@@ -101,6 +101,32 @@ describe('checkPageCoverage', () => {
     expect(checkPageCoverage(page, sentences)).toEqual([]);
   });
 
+  it('sets aside a fence indented under an ordered list item, backticks and tildes alike', () => {
+    const page = [
+      '1. **Encode the key.** Run this:',
+      '',
+      '   ```bash',
+      '   node -e "process.stdout.write(1)" > new-key.b64',
+      '   ```',
+      '',
+      '   It writes one line.',
+      '',
+      '2. **Push it.**',
+      '',
+      '    ~~~~',
+      '    npx wrangler secret put KEY',
+      '    ~~~~',
+      '',
+    ].join('\n');
+    const sentences = [
+      { text: '**Encode the key.**' },
+      { text: 'Run this:' },
+      { text: 'It writes one line.' },
+      { text: '**Push it.**' },
+    ];
+    expect(checkPageCoverage(page, sentences)).toEqual([]);
+  });
+
   it('fails a page sentence the brief leaves out and a brief sentence the page does not carry', () => {
     const page = 'One sentence. An extra sentence.\n';
     const defects = checkPageCoverage(page, [{ text: 'One sentence.' }, { text: 'A missing sentence.' }]);

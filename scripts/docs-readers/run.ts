@@ -24,10 +24,10 @@ import { fileURLToPath } from 'node:url';
 import { loadClasses, loadEgress } from './lib/class-schema.js';
 import { parseBatch } from './lib/batch.js';
 import { appendLedger, ledgerTotal, readLedger } from './lib/ledger.js';
-import { mintInstallationToken } from './lib/github-app-token.js';
+import { mintInstallationToken, type InstallationToken } from './lib/github-app-token.js';
 import { createPodmanExecutor, ensureImage, hostCliVersion, podman } from './lib/podman.js';
 import { REPORT_SCHEMA, runBatch } from './lib/runner.js';
-import { sweepOrphans } from './lib/sweep.js';
+import { sweepOrphans, writeOwnerMarker } from './lib/sweep.js';
 import { findInit } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
 import type { ScratchSiteRecord } from './lib/prepare-class.js';
@@ -111,41 +111,73 @@ function log(message: string): void {
 /**
  * Mint the operator class's scoped GitHub installation token, from the App identity in
  * `~/.local/secrets` and the scratch site's own installation id and repository (`scratch-site.json`).
- * @returns The minted token.
+ * @returns The minted token, its expiry, and the repositories it covers.
  * @throws When the App identity is not available, or the mint itself fails.
  */
-async function mintScratchGithubToken(): Promise<string> {
+async function mintScratchGithubToken(): Promise<InstallationToken> {
   const appId = readSecret('GITHUB_APP_ID');
   const keyB64 = readSecret('GITHUB_APP_PRIVATE_KEY_B64');
   if (!appId || !keyB64) {
     throw new Error("GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY_B64 must both be set to mint the operator class's scoped GitHub token");
   }
   const privateKeyPem = Buffer.from(keyB64, 'base64').toString('utf8');
-  const minted = await mintInstallationToken({
+  return mintInstallationToken({
     appId,
     privateKeyPem,
     installationId: SCRATCH_SITE.installationId,
     repositories: SCRATCH_SITE.githubRepositoriesForToken,
     permissions: SCRATCH_SITE.githubPermissionsForToken,
   });
-  return minted.token;
+}
+
+/**
+ * How long before a minted installation token's own expiry `operatorSecretResolver` re-mints
+ * rather than hand out a token that could expire mid-job: GitHub mints these for one hour, but
+ * Task 4's batches (several jobs, each with its own timeout) can outlive that, so a token handed
+ * out with minutes left could expire while a job is still running.
+ */
+const GITHUB_TOKEN_REMINT_MARGIN_MS = 10 * 60 * 1000;
+
+/**
+ * One minted token, cached against the promise that produced it: `expiresAtMs` is undefined until
+ * that promise resolves, which is what keeps two calls racing the same in-flight mint from ever
+ * starting a second one.
+ */
+interface CachedGithubToken {
+  promise: Promise<InstallationToken>;
+  expiresAtMs?: number;
 }
 
 /**
  * Build the operator class's secret resolver: `CAIRN_CF_READ_TOKEN` maps onto the scratch site's
- * own Cloudflare token, and `CAIRN_GH_READ_TOKEN` mints a GitHub installation token once per run
- * (memoized in the closure, so a batch with several docs-and-binary jobs mints exactly once) and
- * then returns the same value to every later job. Every other name falls through to a plain
- * `readSecret` lookup, the mapping every other class's secretEnv already relied on.
+ * own Cloudflare token, and `CAIRN_GH_READ_TOKEN` mints a GitHub installation token, caching it
+ * until it is within `GITHUB_TOKEN_REMINT_MARGIN_MS` of its own expiry, at which point the next
+ * call mints a fresh one; the check-and-mint decision runs with no `await` in between, so two
+ * calls racing the same in-flight or about-to-expire mint always share one mint, never two.
+ * Every other name falls through to a plain `readSecret` lookup, the mapping every other class's
+ * secretEnv already relied on. `now` and `mint` are overridden in tests.
  * @returns A secret resolver for `createPodmanExecutor`.
  */
-function operatorSecretResolver(): (name: string) => Promise<string | undefined> {
-  let minted: Promise<string> | undefined;
+export function operatorSecretResolver({
+  now = () => Date.now(),
+  mint = mintScratchGithubToken,
+}: { now?: () => number; mint?: () => Promise<InstallationToken> } = {}): (name: string) => Promise<string | undefined> {
+  let cached: CachedGithubToken | undefined;
   return async (name: string) => {
     if (name === 'CAIRN_CF_READ_TOKEN') return readSecret(SCRATCH_CF_TOKEN_NAME);
     if (name === 'CAIRN_GH_READ_TOKEN') {
-      minted ??= mintScratchGithubToken();
-      return minted;
+      const expiringSoon = cached?.expiresAtMs !== undefined && cached.expiresAtMs - now() < GITHUB_TOKEN_REMINT_MARGIN_MS;
+      if (!cached || expiringSoon) {
+        const promise = mint();
+        const entry: CachedGithubToken = { promise };
+        cached = entry;
+        promise
+          .then((token) => {
+            if (cached === entry) entry.expiresAtMs = Date.parse(token.expiresAt);
+          })
+          .catch(() => {});
+      }
+      return (await cached.promise).token;
     }
     return readSecret(name);
   };
@@ -169,6 +201,7 @@ export async function setUpRun(runId: string, tokenFor?: () => string) {
   const image = await ensureImage(cliVersion, log);
   const runRoot = join(CACHE_ROOT, runId);
   mkdirSync(runRoot, { recursive: true });
+  writeOwnerMarker(runRoot);
   const secretValues = new Map<string, string>();
   const resolveOperatorSecret = operatorSecretResolver();
   const executor = createPodmanExecutor({

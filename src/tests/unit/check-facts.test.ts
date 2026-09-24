@@ -17,6 +17,11 @@ import {
   extractFactId,
   findDuplicateFactIds,
   isSkippedRecordPointer,
+  extractSymbolPointers,
+  resolveSymbolDeclaration,
+  extractKeyPhrase,
+  isOwnerTierBullet,
+  SKIPPED_SECTIONS,
   TAG_VOCABULARY,
 } from '../../../scripts/checks/check-facts.mjs';
 import { migrateFactIds } from '../../../scripts/checks/migrate-fact-ids.mjs';
@@ -399,5 +404,128 @@ describe('migrateFactIds, against the migrate-before fixture', () => {
     const { text: twice, added } = migrateFactIds(once);
     expect(added).toBe(0);
     expect(twice).toBe(once);
+  });
+});
+
+describe('extractSymbolPointers', () => {
+  it('extracts a `path#Symbol` pointer with its anchor, and leaves line pointers to extractPointers', () => {
+    const field = 'Source: `src/lib/a.ts#outer.inner` (`const x = 1`) and `src/lib/a.ts:4`. [verified]';
+    expect(extractSymbolPointers(field)).toEqual([
+      { path: 'src/lib/a.ts', symbol: 'outer.inner', anchor: 'const x = 1', index: 8 },
+    ]);
+    expect(extractPointers(field).map((p) => p.lineSpec)).toEqual(['4']);
+  });
+});
+
+describe('resolveSymbolDeclaration', () => {
+  const file = 'src/lib/symbol-target.ts';
+  const original = readFileSync(join(FIXTURES_DIR, 'symbols', file), 'utf8');
+  const moved = readFileSync(join(FIXTURES_DIR, 'symbols-moved', file), 'utf8');
+
+  it('resolves a top-level constant, an interface member, and a nested named function', () => {
+    expect(resolveSymbolDeclaration(original, file, 'SYMBOL_ANCHOR_CONSTANT')).toMatchObject({ ok: true, startLine: 2 });
+    expect(resolveSymbolDeclaration(original, file, 'SymbolAnchorShape.lookup')).toMatchObject({ ok: true, startLine: 8, endLine: 8 });
+    expect(resolveSymbolDeclaration(original, file, 'symbolAnchorFactory.innerHandle')).toMatchObject({ ok: true, startLine: 13 });
+  });
+
+  it('resolves the same symbol to its new line after the declaration moves', () => {
+    const before = resolveSymbolDeclaration(original, file, 'symbolAnchorFactory.innerHandle');
+    const after = resolveSymbolDeclaration(moved, file, 'symbolAnchorFactory.innerHandle');
+    expect(before.ok && after.ok).toBe(true);
+    if (before.ok && after.ok) expect(after.startLine - before.startLine).toBe(41);
+  });
+
+  it('picks the implementation of an overloaded function', () => {
+    const result = resolveSymbolDeclaration(original, file, 'symbolAnchorOverload');
+    expect(result).toMatchObject({ ok: true, startLine: 21 });
+  });
+
+  it('fails an unknown symbol and an ambiguous nested one', () => {
+    expect(resolveSymbolDeclaration(original, file, 'noSuchSymbol')).toMatchObject({ ok: false });
+    expect(resolveSymbolDeclaration(original, file, 'symbolAnchorFactory.noSuchInner')).toMatchObject({ ok: false });
+  });
+});
+
+describe('validateBullet, symbol-anchored pointers', () => {
+  const bulletFor = (source: string) => extractBullets(`## x\n- \`f:sym001\` A claim. Source: ${source}. [verified]`)[0];
+
+  it('passes an anchor inside the named declaration, before and after the declaration moves', () => {
+    const bullet = bulletFor('`src/lib/symbol-target.ts#symbolAnchorFactory.innerHandle` (`const marker = input.trim()`)');
+    for (const fixture of ['symbols', 'symbols-moved']) {
+      const root = join(FIXTURES_DIR, fixture);
+      expect(validateBullet(bullet, root, buildBasenameIndex(root)).defects).toEqual([]);
+    }
+  });
+
+  it('fails an anchor whose tokens sit outside the named declaration', () => {
+    const root = join(FIXTURES_DIR, 'symbols');
+    const bullet = bulletFor('`src/lib/symbol-target.ts#SymbolAnchorShape.lookup` (`verify subject`)');
+    const { defects } = validateBullet(bullet, root, buildBasenameIndex(root));
+    expect(defects).toEqual([expect.stringContaining('not found in the declaration')]);
+  });
+
+  it('fails an unknown symbol, a path outside src/, a missing file, and a .svelte file', () => {
+    const root = join(FIXTURES_DIR, 'symbols');
+    const index = buildBasenameIndex(root);
+    expect(validateBullet(bulletFor('`src/lib/symbol-target.ts#missingSymbol`'), root, index).defects).toEqual([
+      expect.stringContaining('no declaration named'),
+    ]);
+    expect(validateBullet(bulletFor('`lib/symbol-target.ts#SYMBOL_ANCHOR_CONSTANT`'), root, index).defects).toEqual([
+      expect.stringContaining('only for a file under src/'),
+    ]);
+    expect(validateBullet(bulletFor('`src/lib/absent.ts#SYMBOL_ANCHOR_CONSTANT`'), root, index).defects).toEqual([
+      expect.stringContaining('unresolved path'),
+    ]);
+    expect(validateBullet(bulletFor('`src/lib/Widget.svelte#thing`'), root, index).defects).toEqual([
+      expect.stringContaining('TypeScript or JavaScript'),
+    ]);
+  });
+});
+
+describe('the owner tier and its key phrases', () => {
+  it('extracts a bullet\'s quoted key phrase', () => {
+    expect(extractKeyPhrase('A claim. Key phrase: "floors, not ceilings". Source: x. [verified]')).toBe('floors, not ceilings');
+    expect(extractKeyPhrase('A claim. Source: x, "floors, not ceilings". [verified]')).toBeNull();
+  });
+
+  it('counts a bullet as owner tier when its source or its section names the owner brief', () => {
+    const bullets = extractBullets(readFileSync(join(FIXTURES_DIR, 'owner-tier/facts/front-door.md'), 'utf8'));
+    expect(bullets.map((b) => isOwnerTierBullet(b))).toEqual([true, true, true, true, false]);
+  });
+
+  it('fails an owner-tier bullet with no key phrase and one whose phrase is not in the owner brief', () => {
+    const root = join(FIXTURES_DIR, 'owner-tier');
+    const { defects } = checkFacts(join(root, 'facts'), root);
+    expect(defects).toEqual([
+      expect.stringMatching(/front-door\.md:5: .*missing a key phrase/),
+      expect.stringMatching(/front-door\.md:6: .*"ceilings are optional" is not a verbatim phrase/),
+    ]);
+  });
+
+  it('every owner-tier bullet in the real container carries a key phrase found in the owner brief', () => {
+    const bullets = extractBullets(readFileSync(join(FACTS_DIR, 'front-door.md'), 'utf8')).filter(
+      (b) => !SKIPPED_SECTIONS.has((b.section ?? '').trim().toLowerCase()),
+    );
+    const ownerTier = bullets.filter((b) => isOwnerTierBullet(b));
+    const withPhrase = ownerTier.filter((b) => extractKeyPhrase(b.text) !== null);
+    expect(ownerTier.length).toBeGreaterThan(0);
+    expect(withPhrase.length).toBe(ownerTier.length);
+    const index = buildBasenameIndex(ROOT);
+    for (const bullet of ownerTier) expect(validateBullet(bullet, ROOT, index).defects).toEqual([]);
+  });
+});
+
+describe('ids on skipped sections', () => {
+  it('fails a Harvest record or Provenance bullet that carries a fact id', () => {
+    const dir = join(FIXTURES_DIR, 'full-run/id-in-skipped');
+    const { defects } = checkFacts(dir, dir);
+    expect(defects).toEqual([
+      expect.stringMatching(/only\.md:7: .*carries a fact id/),
+      expect.stringMatching(/only\.md:10: .*carries a fact id/),
+    ]);
+  });
+
+  it('exports the skipped-section names the migration also honors', () => {
+    expect([...SKIPPED_SECTIONS].sort()).toEqual(['harvest record', 'provenance']);
   });
 });

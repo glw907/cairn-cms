@@ -10,13 +10,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
-import { factsFiles, mintFactId, FACT_ID_RE } from './check-facts.mjs';
+import { factsFiles, mintFactId, FACT_ID_RE, SKIPPED_SECTIONS } from './check-facts.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 const FACTS_DIR = join(ROOT, 'docs/internal/facts');
-
-/** Section headings whose bullets never get an id, matching check-facts.mjs's own skip list. */
-const SKIPPED_SECTIONS = new Set(['harvest record', 'provenance']);
 
 /**
  * Insert a freshly minted id after the leading `- ` of every fact bullet in `markdown` that does

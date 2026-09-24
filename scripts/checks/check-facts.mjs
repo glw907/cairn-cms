@@ -54,8 +54,30 @@
 // a symbol nowhere near the cited line (measured against every anchored pointer in the real
 // container: a whole-file check passed all of them, a window this size caught the two whose
 // citation had drifted a full function away).
+//
+// A pointer into `src/` may name a symbol instead of a line: `` `src/lib/x.ts#Symbol` ``, or a
+// dotted path to a nested declaration, `` `src/lib/x.ts#outerFn.innerFn` `` (an interface member,
+// an object-literal property, a function declared inside another). The TypeScript compiler API
+// parses the file and finds the named declaration, shallowest first, and the anchor, when one
+// follows, is checked against that declaration's own lines rather than a window around a cited
+// line number, so an edit that moves the declaration cannot rot the pointer. The form is limited
+// to `.ts`/`.js` files under `src/`: a `.svelte` file is not parseable by the compiler API and its
+// markup has no nameable symbol, so it keeps a `path:line` pointer.
+//
+// The owner tier is every bullet whose source is the owner brief,
+// `docs/internal/what-cairn-is-and-is-not.md`, named either in its `Source:` field or in its
+// section heading (the container's "same file" shorthand). Each carries a key phrase, written
+// `Key phrase: "..."` before its `Source:`, a short verbatim phrase from the owner brief the claim
+// rests on; `check-provenance.mjs` matches those phrases in a page's sentences. This gate fails an
+// owner-tier bullet with no key phrase, and a key phrase the owner brief does not contain
+// verbatim (compared case-insensitively, whitespace collapsed, markdown emphasis dropped); the
+// verbatim check is skipped only when the owner brief itself is absent.
+//
+// A bullet under `## Harvest record` or `## Provenance` is exempt from the grammar, but it may
+// not carry a fact id: an id there would read as a citable fact that no grammar check covers.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
@@ -63,8 +85,8 @@ import { repoRoot } from '../repo-root.mjs';
 const ROOT = repoRoot(import.meta.url);
 const FACTS_DIR = join(ROOT, 'docs/internal/facts');
 
-/** Section headings whose bullets carry no Source/tag requirement. */
-const SKIPPED_SECTIONS = new Set(['harvest record', 'provenance']);
+/** Section headings whose bullets carry no Source/tag requirement and no fact id. */
+export const SKIPPED_SECTIONS = new Set(['harvest record', 'provenance']);
 
 /** The full status-tag vocabulary, in the order the README lists it. */
 export const TAG_VOCABULARY = ['verified', 'docs-drift', 'external', 'vendor', 'candidate', 'rejected'];
@@ -339,6 +361,264 @@ export function extractPointers(sourceField) {
 }
 
 /**
+ * @typedef {{ path: string, symbol: string, anchor: string | null, index: number }} SymbolPointer
+ */
+
+// A backtick-quoted `path#Symbol` pointer, the symbol an identifier or a dotted path of them,
+// optionally followed by a backtick-quoted anchor snippet in parens. `.svelte` is matched only so
+// the gate can reject it with a clear reason.
+const SYMBOL_POINTER_RE =
+  /`([A-Za-z0-9_.\/-]+\.(?:ts|js|mjs|cjs|mts|cts|svelte))#([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)`(?:\s*\(`([^`]*)`\))?/g;
+
+/**
+ * Every `path#Symbol` pointer inside a bullet's `Source:` field. A `path:line` pointer is never
+ * returned here; `extractPointers` owns that form.
+ * @param {string} sourceField
+ * @returns {SymbolPointer[]}
+ */
+export function extractSymbolPointers(sourceField) {
+  const pointers = [];
+  for (const m of sourceField.matchAll(SYMBOL_POINTER_RE)) {
+    pointers.push({ path: m[1], symbol: m[2], anchor: m[3] ?? null, index: m.index });
+  }
+  return pointers;
+}
+
+/**
+ * The TypeScript compiler API once loaded; null until the first symbol pointer needs it.
+ * @type {typeof import('typescript') | null}
+ */
+let typescript = null;
+
+/**
+ * The TypeScript compiler API, loaded on first use so `--mint` and a run with no symbol pointer
+ * never pay for it.
+ * @returns {typeof import('typescript')}
+ */
+function loadTypeScript() {
+  if (!typescript) typescript = createRequire(import.meta.url)('typescript');
+  return /** @type {typeof import('typescript')} */ (typescript);
+}
+
+/**
+ * The name a declaration node carries, or null when the node is not a named declaration this
+ * resolver recognizes (a destructuring pattern, a computed property name, any non-declaration).
+ * @param {import('typescript').Node} node
+ * @returns {string | null}
+ */
+function declarationName(node) {
+  const ts = loadTypeScript();
+  const named =
+    ts.isFunctionDeclaration(node) ||
+    ts.isFunctionExpression(node) ||
+    ts.isClassDeclaration(node) ||
+    ts.isClassExpression(node) ||
+    ts.isInterfaceDeclaration(node) ||
+    ts.isTypeAliasDeclaration(node) ||
+    ts.isEnumDeclaration(node) ||
+    ts.isEnumMember(node) ||
+    ts.isModuleDeclaration(node) ||
+    ts.isVariableDeclaration(node) ||
+    ts.isMethodDeclaration(node) ||
+    ts.isMethodSignature(node) ||
+    ts.isPropertyDeclaration(node) ||
+    ts.isPropertySignature(node) ||
+    ts.isPropertyAssignment(node) ||
+    ts.isShorthandPropertyAssignment(node) ||
+    ts.isGetAccessorDeclaration(node) ||
+    ts.isSetAccessorDeclaration(node);
+  if (!named) return null;
+  const name = /** @type {{ name?: import('typescript').Node }} */ (node).name;
+  if (!name) return null;
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isPrivateIdentifier(name)) return name.text;
+  return null;
+}
+
+/**
+ * The declarations named `name` under `container` at the shallowest declaration depth (the count
+ * of named declarations between `container` and the match), so a top-level symbol wins over a
+ * same-named local and a nested path segment finds its nearest match.
+ * @param {import('typescript').Node} container
+ * @param {string} name
+ * @returns {import('typescript').Node[]}
+ */
+function shallowestDeclarations(container, name) {
+  const ts = loadTypeScript();
+  /** @type {import('typescript').Node[]} */
+  let found = [];
+  let foundDepth = Infinity;
+  /**
+   * @param {import('typescript').Node} node
+   * @param {number} depth
+   */
+  const visit = (node, depth) => {
+    if (depth > foundDepth) return;
+    const nodeName = declarationName(node);
+    if (nodeName === name) {
+      if (depth < foundDepth) {
+        found = [];
+        foundDepth = depth;
+      }
+      found.push(node);
+    }
+    const childDepth = nodeName === null ? depth : depth + 1;
+    ts.forEachChild(node, (child) => visit(child, childDepth));
+  };
+  ts.forEachChild(container, (child) => visit(child, 0));
+  return found;
+}
+
+/**
+ * @typedef {{ ok: true, startLine: number, endLine: number } | { ok: false, reason: string }} SymbolResolution
+ */
+
+/**
+ * Resolve a symbol path (`name` or `outer.inner`) to the 1-indexed line range of its declaration
+ * in `fileText`, parsed by the TypeScript compiler API. Each dotted segment is searched inside the
+ * previous segment's declaration, shallowest match first; more than one match at that depth fails
+ * as ambiguous, except a run of function overloads, which resolves to the implementation (the
+ * one with a body). The range starts at the declaration itself, after any doc comment.
+ * @param {string} fileText
+ * @param {string} filePath Used for the parser's file name and to pick TypeScript or JavaScript.
+ * @param {string} symbol
+ * @returns {SymbolResolution}
+ */
+export function resolveSymbolDeclaration(fileText, filePath, symbol) {
+  const ts = loadTypeScript();
+  const scriptKind = /\.[mc]?ts$/.test(filePath) ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+  const sourceFile = ts.createSourceFile(filePath, fileText, ts.ScriptTarget.Latest, true, scriptKind);
+  /** @type {import('typescript').Node} */
+  let current = sourceFile;
+  for (const segment of symbol.split('.')) {
+    let matches = shallowestDeclarations(current, segment);
+    if (matches.length > 1 && matches.every((m) => ts.isFunctionDeclaration(m) || ts.isMethodDeclaration(m))) {
+      matches = matches.filter((m) => /** @type {{ body?: unknown }} */ (m).body !== undefined);
+    }
+    if (matches.length === 0) return { ok: false, reason: `no declaration named "${segment}"` };
+    if (matches.length > 1) return { ok: false, reason: `"${segment}" names ${matches.length} declarations at the same depth` };
+    current = matches[0];
+  }
+  const startLine = sourceFile.getLineAndCharacterOfPosition(current.getStart(sourceFile)).line + 1;
+  const endLine = sourceFile.getLineAndCharacterOfPosition(current.getEnd()).line + 1;
+  return { ok: true, startLine, endLine };
+}
+
+/** The one directory a `path#Symbol` pointer may name a file under. */
+const SYMBOL_POINTER_PREFIX = 'src/';
+
+/**
+ * Validate one `path#Symbol` pointer: a TypeScript or JavaScript file under `src/` that exists,
+ * a symbol that resolves to exactly one declaration, and, when an anchor follows, every anchor
+ * token inside that declaration's lines. Returns the one defect string, or `null` when clean.
+ * @param {SymbolPointer} pointer
+ * @param {string} root
+ * @returns {string | null}
+ */
+function validateSymbolPointer(pointer, root) {
+  const label = `${pointer.path}#${pointer.symbol}`;
+  if (pointer.path.endsWith('.svelte')) {
+    return `"${label}": a symbol anchor resolves only a TypeScript or JavaScript file; cite a .svelte file as path:line`;
+  }
+  if (!pointer.path.startsWith(SYMBOL_POINTER_PREFIX)) {
+    return `"${label}": a path#Symbol anchor is only for a file under src/`;
+  }
+  if (!existsSync(join(root, pointer.path))) return `unresolved path "${pointer.path}"`;
+  const fileText = readFileSync(join(root, pointer.path), 'utf8');
+  const resolution = resolveSymbolDeclaration(fileText, pointer.path, pointer.symbol);
+  if (!resolution.ok) return `"${label}": ${resolution.reason} in ${pointer.path}`;
+  if (!pointer.anchor) return null;
+  const declaration = fileText.split('\n').slice(resolution.startLine - 1, resolution.endLine).join('\n');
+  const missing = anchorTokens(pointer.anchor).filter((t) => !declaration.includes(t));
+  if (missing.length === 0) return null;
+  return `anchor for "${label}" names ${JSON.stringify(missing)}, not found in the declaration (lines ${resolution.startLine}-${resolution.endLine})`;
+}
+
+/** The owner brief, the one source an owner-tier bullet rests on. */
+export const OWNER_BRIEF_PATH = 'docs/internal/what-cairn-is-and-is-not.md';
+
+/** A bullet's key phrase: `Key phrase: "..."`, the quoted text captured. */
+const KEY_PHRASE_RE = /\bKey phrase: "([^"]+)"/;
+
+/**
+ * A bullet's quoted key phrase, or null when it carries none.
+ * @param {string} bulletText
+ * @returns {string | null}
+ */
+export function extractKeyPhrase(bulletText) {
+  const match = bulletText.match(KEY_PHRASE_RE);
+  return match ? match[1] : null;
+}
+
+/**
+ * Normalize a phrase for verbatim comparison: curly quotes straightened, markdown emphasis
+ * asterisks dropped, whitespace collapsed, lowercased. Shared with `check-provenance.mjs`, which
+ * matches key phrases in page sentences the same way.
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizePhrase(text) {
+  return text
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/\*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * True when a bullet belongs to the owner tier: its `Source:` field or its section heading names
+ * the owner brief.
+ * @param {{ section: string | null, text: string }} bullet
+ * @returns {boolean}
+ */
+export function isOwnerTierBullet(bullet) {
+  const sourceIdx = bullet.text.indexOf('Source:');
+  const sourceField = sourceIdx === -1 ? '' : bullet.text.slice(sourceIdx);
+  return sourceField.includes(OWNER_BRIEF_PATH) || (bullet.section ?? '').includes(OWNER_BRIEF_PATH);
+}
+
+/**
+ * The normalized owner brief text per root, read once; null when the brief is absent.
+ * @type {Map<string, string | null>}
+ */
+const ownerBriefCache = new Map();
+
+/**
+ * The owner brief under `root`, normalized by `normalizePhrase`, or null when it is absent (a
+ * checkout or fixture without it skips the verbatim check).
+ * @param {string} root
+ * @returns {string | null}
+ */
+function normalizedOwnerBrief(root) {
+  if (!ownerBriefCache.has(root)) {
+    const path = join(root, OWNER_BRIEF_PATH);
+    ownerBriefCache.set(root, existsSync(path) ? normalizePhrase(readFileSync(path, 'utf8')) : null);
+  }
+  return ownerBriefCache.get(root) ?? null;
+}
+
+/**
+ * The owner-tier defect a bullet produces, or null: a missing key phrase, or one the owner brief
+ * at `root` does not contain verbatim.
+ * @param {Bullet} bullet
+ * @param {string} root
+ * @returns {string | null}
+ */
+function validateOwnerTier(bullet, root) {
+  if (!isOwnerTierBullet(bullet)) return null;
+  const phrase = extractKeyPhrase(bullet.text);
+  if (!phrase) {
+    return `owner-tier bullet (sourced to ${OWNER_BRIEF_PATH}) is missing a key phrase: add \`Key phrase: "..."\` before its Source`;
+  }
+  const brief = normalizedOwnerBrief(root);
+  if (brief !== null && !brief.includes(normalizePhrase(phrase))) {
+    return `key phrase "${phrase}" is not a verbatim phrase in ${OWNER_BRIEF_PATH}`;
+  }
+  return null;
+}
+
+/**
  * Every individual line number a pointer's line spec names, ranges expanded.
  * @param {string} lineSpec `"22,63"` or `"296-297"` or `"22"`.
  * @returns {number[]}
@@ -434,8 +714,8 @@ function validatePointer(pointer, root, basenameIndex) {
 }
 
 /**
- * Validate one bullet's grammar and, for a `[verified]`/`[docs-drift]`/etc. bullet, every
- * `Source:` pointer it carries. Returns the defects found (empty when the bullet is clean), the
+ * Validate one bullet's grammar, every `path:line` and `path#Symbol` pointer in its `Source:`
+ * field, and, for an owner-tier bullet, its key phrase. Returns the defects found (empty when the bullet is clean), the
  * tag name for the caller's running count when the tag itself was valid, and the bullet's fact id
  * for the caller's cross-file duplicate check.
  * @param {Bullet} bullet
@@ -462,7 +742,14 @@ export function validateBullet(bullet, root, basenameIndex) {
       const defect = validatePointer(pointer, root, basenameIndex);
       if (defect) defects.push(defect);
     }
+    for (const pointer of extractSymbolPointers(sourceField)) {
+      const defect = validateSymbolPointer(pointer, root);
+      if (defect) defects.push(defect);
+    }
   }
+
+  const ownerDefect = validateOwnerTier(bullet, root);
+  if (ownerDefect) defects.push(ownerDefect);
 
   return { defects, tag: tagCheck.ok ? tagCheck.tag : null, id };
 }
@@ -510,9 +797,14 @@ export function checkFacts(factsDir, root) {
   const idOccurrences = [];
   for (const file of files) {
     const markdown = readFileSync(join(factsDir, file), 'utf8');
-    const bullets = extractBullets(markdown).filter(
-      (b) => !SKIPPED_SECTIONS.has((b.section ?? '').trim().toLowerCase()),
-    );
+    const allBullets = extractBullets(markdown);
+    const isSkipped = (/** @type {Bullet} */ b) => SKIPPED_SECTIONS.has((b.section ?? '').trim().toLowerCase());
+    for (const bullet of allBullets.filter(isSkipped)) {
+      if (extractFactId(bullet.text)) {
+        allDefects.push(`docs/internal/facts/${file}:${bullet.line}: a ${bullet.section} bullet carries a fact id; only a fact bullet takes one`);
+      }
+    }
+    const bullets = allBullets.filter((b) => !isSkipped(b));
     const counts = emptyCounts();
     for (const bullet of bullets) {
       const { defects, tag, id } = validateBullet(bullet, root, basenameIndex);

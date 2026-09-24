@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyQuote, verifyReport } from '../../../scripts/docs-readers/lib/verify.js';
-import { derivePagesRead, parseStream, readerReport, toolCalls } from '../../../scripts/docs-readers/lib/transcript.js';
+import { derivePagesRead, effectiveCwd, parseStream, readerReport, toolCalls } from '../../../scripts/docs-readers/lib/transcript.js';
+import type { ToolCall } from '../../../scripts/docs-readers/lib/types.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const PREPARED = join(ROOT, 'scripts/docs-readers/fixtures/prepared');
@@ -58,6 +59,28 @@ describe('verifyQuote', () => {
       'line is not a positive integer',
     ]);
   });
+
+  it('accepts a quote cited on the line a wrapped sentence continues onto, not only the line it starts on', () => {
+    const quote = { path: 'docs/guide.md', line: 8, text: 'This sentence wraps onto the next line of the source.' };
+    expect(verifyQuote(quote, PREPARED).ok).toBe(true);
+  });
+
+  it('refuses a quote whose text never reaches the cited line at all, a 7-line miss', () => {
+    const quote = { path: 'docs/guide.md', line: 8, text: '# Guide' };
+    expect(verifyQuote(quote, PREPARED)).toMatchObject({ ok: false, reason: 'text starts on line 1, not 8' });
+  });
+
+  it('resolves a relative quote path against a given cwd, falling back to READER_CWD when omitted', () => {
+    expect(verifyQuote({ path: '../docs/other.md', line: 3, text: 'Change the settings file here.' }, PREPARED, '/reader/job/docs')).toMatchObject({
+      path: 'docs/other.md',
+      ok: true,
+    });
+    // The same relative path, with no cwd given, resolves against READER_CWD itself and climbs out.
+    expect(verifyQuote({ path: '../docs/other.md', line: 3, text: 'Change the settings file here.' }, PREPARED)).toMatchObject({
+      ok: false,
+      reason: 'path is outside the reader directory',
+    });
+  });
 });
 
 describe('verifyReport against fixture transcripts', () => {
@@ -73,6 +96,22 @@ describe('verifyReport against fixture transcripts', () => {
     const verified = verifyFixture('unverified-wrong-line.jsonl');
     expect(verified.ok).toBe(false);
     expect(verified.problems).toEqual(['quote docs/guide.md:4 unverified: text starts on line 3, not 4']);
+  });
+
+  it('verifies a report quote given relative to a cwd the reader cd’d into (designer-1’s shape)', () => {
+    const buildCalls: ToolCall[] = [{ id: 't1', name: 'Bash', input: { command: 'cd site && npm run build' }, result: { isError: false, text: '' } }];
+    const cwd = effectiveCwd(buildCalls);
+    expect(cwd).toBe('/reader/job/site');
+    const verified = verifyReport({
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: '../docs/guide.md', line: 3, text: 'Install the tool before you begin.' }], ruleCandidates: [] },
+      pagesRead: ['docs/guide.md'],
+      docsSet: ['docs'],
+      root: PREPARED,
+      init: passingInit,
+      canariesFound: [],
+      cwd,
+    });
+    expect(verified).toMatchObject({ ok: true, problems: [] });
   });
 
   it('fails a report that read a page it never quoted', () => {

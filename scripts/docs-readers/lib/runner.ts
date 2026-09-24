@@ -10,6 +10,7 @@ import {
   classifyFailure,
   collectDenials,
   derivePagesRead,
+  effectiveCwd,
   emptyUsage,
   eventFailure,
   findCanaries,
@@ -102,7 +103,8 @@ export function buildJobReport({
   const pagesRead = derivePagesRead(calls, job.docsSet);
   const init = checkInit(findInit(events), expectedTools(decl), baselines);
   const canariesFound = findCanaries(run.stdout, run.canaries ?? []);
-  const verified = verifyReport({ report, pagesRead, docsSet: job.docsSet, root: run.preparedRoot, init, canariesFound });
+  const cwd = effectiveCwd(calls);
+  const verified = verifyReport({ report, pagesRead, docsSet: job.docsSet, root: run.preparedRoot, init, canariesFound, cwd });
   const failure = classifyFailure(events);
   const reason = failure ?? abortReason ?? (run.timedOut ? 'timeout' : undefined);
   if (reason) {

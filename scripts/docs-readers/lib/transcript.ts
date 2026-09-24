@@ -154,16 +154,69 @@ export function toolCalls(events: StreamEvent[]): ToolCall[] {
 }
 
 /**
- * Turn a path the reader used into a path relative to its working directory.
+ * Turn a path the reader used into a path relative to its working directory. A relative `path` is
+ * resolved against `cwd`, defaulting to `READER_CWD`; an already-absolute `path` ignores `cwd`
+ * entirely, the same as a real shell.
  * @param path - An absolute or relative path from a tool input or output.
+ * @param cwd - The directory a relative `path` is resolved against.
  * @returns The relative path, or undefined when it points outside the working directory.
  */
-export function toReaderRelative(path: unknown): string | undefined {
+export function toReaderRelative(path: unknown, cwd: string = READER_CWD): string | undefined {
   if (typeof path !== 'string' || path === '') return undefined;
-  const absolute = posix.resolve(READER_CWD, path);
+  const absolute = posix.resolve(cwd, path);
   if (absolute === READER_CWD) return '.';
   if (!absolute.startsWith(`${READER_CWD}/`)) return undefined;
   return absolute.slice(READER_CWD.length + 1);
+}
+
+/**
+ * Extract a `cd DIR` target from one shell segment, split the same way `shellPagesRead` splits a
+ * Bash command into segments. `cd` with no argument or `cd -` returns undefined, since resolving
+ * home or "the previous directory" needs history this module does not track.
+ * @param segment - One `&&`/`;`/`|`/newline-separated segment of a Bash command.
+ * @returns The raw `cd` target, or undefined when this segment is not a plain `cd`.
+ */
+function cdTarget(segment: string): string | undefined {
+  const words = segment
+    .trim()
+    .split(/\s+/)
+    .map((w) => w.replace(/^['"]|['"]$/g, ''));
+  if (words[0] !== 'cd' || !words[1] || words[1] === '-') return undefined;
+  return words[1];
+}
+
+/**
+ * The cwd after running one Bash command from `cwd`, applying every `cd` its own segments
+ * contain, left to right, clamped so the result never climbs outside `READER_CWD` itself.
+ * @param command - The Bash command line.
+ * @param cwd - The cwd before this command ran.
+ * @returns The cwd after this command ran.
+ */
+function applyCd(command: string, cwd: string): string {
+  let current = cwd;
+  for (const segment of String(command).split(/&&|\|\||[;|\n]/)) {
+    const target = cdTarget(segment);
+    if (target === undefined) continue;
+    const resolved = posix.resolve(current, target);
+    current = resolved === READER_CWD || resolved.startsWith(`${READER_CWD}/`) ? resolved : READER_CWD;
+  }
+  return current;
+}
+
+/**
+ * The reader's shell cwd by the end of the transcript. The CLI's Bash tool shares one persistent
+ * shell across calls, so a `cd` in one call still holds for the structured report the reader gives
+ * at the end, and for every relative path in it. Starts at `READER_CWD` and applies every Bash
+ * call's own `cd` in order; never resolves outside `READER_CWD`.
+ * @param calls - The paired tool calls, in call order.
+ * @returns The cwd in effect after the last Bash call.
+ */
+export function effectiveCwd(calls: ToolCall[]): string {
+  let cwd = READER_CWD;
+  for (const call of calls) {
+    if (call.name === 'Bash' && typeof call.input.command === 'string') cwd = applyCd(call.input.command, cwd);
+  }
+  return cwd;
 }
 
 /**
@@ -178,26 +231,41 @@ export function isPage(rel: string | undefined, docsSet: string[]): rel is strin
 }
 
 /**
- * The page a content-mode Grep output line came from. A line reads `path:N:text`, `path-N-text`
- * (a context line), or `path:text`, and a path may itself hold colons, hyphens, and digits, so
- * each separator position is tried in turn until the prefix is a page.
- * @param line - One line of Grep output.
- * @param docsSet - The job's docs-set entries.
- * @returns The page's relative path, or undefined.
+ * Turn a simple glob (`*` and `?` wildcards, every other character literal) into a predicate over
+ * a bare file name.
+ * @param glob - The glob pattern, such as `troubleshoot*.md` or a literal file name.
+ * @returns A predicate that is true when a name matches the glob.
  */
-function grepLinePage(line: string, docsSet: string[]): string | undefined {
-  // A prefix like `docs/a` from `docs/a-1-b.md-12-...` sits under a docs-set directory too, so a
-  // candidate must also be a file name (an extension) or a docs-set entry itself.
-  const isFilePage = (rel: string | undefined): rel is string => isPage(rel, docsSet) && (/\.[A-Za-z0-9]+$/.test(rel) || docsSet.includes(rel));
-  for (let i = line.indexOf(':'); i !== -1; i = line.indexOf(':', i + 1)) {
-    const rel = toReaderRelative(line.slice(0, i));
-    if (isFilePage(rel)) return rel;
-  }
-  for (const match of line.matchAll(/-\d+-/g)) {
-    const rel = toReaderRelative(line.slice(0, match.index));
-    if (isFilePage(rel)) return rel;
-  }
-  return undefined;
+function globMatcher(glob: string): (name: string) => boolean {
+  const pattern = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+  const re = new RegExp(`^${pattern}$`);
+  return (name) => re.test(name);
+}
+
+/**
+ * The one docs-set page a Grep call was scoped to search, or undefined when its own scope could
+ * span more than one file. `path` alone must resolve to exactly one docs-set page; `path` paired
+ * with a `glob` must resolve to a directory in which the glob matches exactly one docs-set page's
+ * own file name. A directory search with no glob, the whole job root (an unset or `.` path), or a
+ * glob that still matches more than one docs-set page there, is NOT scoped to any one page: each
+ * can print a hit line naming a page the reader never asked to open, incidentally cross-referenced
+ * by whatever line matched, and that must not count as reading it.
+ * @param call - The Grep tool call.
+ * @param docsSet - The job's docs-set entries.
+ * @returns The page this call was scoped to, or undefined.
+ */
+function grepScopedPage(call: ToolCall, docsSet: string[]): string | undefined {
+  const target = toReaderRelative(call.input.path ?? '.');
+  if (target !== undefined && isPage(target, docsSet) && /\.[A-Za-z0-9]+$/.test(target)) return target;
+  const glob = call.input.glob;
+  if (target === undefined || typeof glob !== 'string' || glob.trim() === '') return undefined;
+  const matchesName = globMatcher(glob);
+  const inTargetDir = docsSet.filter((page) => {
+    const slash = page.lastIndexOf('/');
+    const dir = slash === -1 ? '.' : page.slice(0, slash);
+    return dir === target && matchesName(slash === -1 ? page : page.slice(slash + 1));
+  });
+  return inTargetDir.length === 1 ? inTargetDir[0] : undefined;
 }
 
 /** Shell commands that print a file's contents. */
@@ -224,9 +292,10 @@ function shellPagesRead(command: unknown, docsSet: string[]): string[] {
 }
 
 /**
- * The pages a reader read: its Read calls, its content-mode Grep calls, and its Bash commands
- * that print a page. A Grep that only listed file names or counted matches read nothing, and a
- * failed call read nothing.
+ * The pages a reader read: its Read calls, its content-mode Grep calls scoped to exactly one
+ * page, and its Bash commands that print a page. A Grep whose own scope spans more than one file
+ * counts nothing, even when a hit line happens to name a docs-set page (`grepScopedPage`); a Grep
+ * that only listed file names or counted matches read nothing; a failed call read nothing.
  * @param calls - The paired tool calls.
  * @param docsSet - The job's docs-set entries.
  * @returns The sorted relative paths of the pages read.
@@ -243,14 +312,8 @@ export function derivePagesRead(calls: ToolCall[], docsSet: string[]): string[] 
     } else if (call.name === 'Grep' && call.input.output_mode === 'content') {
       const text = call.result.text;
       if (text.trim() === '' || /^No matches found/i.test(text.trim())) continue;
-      const hits = text
-        .split('\n')
-        .map((line) => grepLinePage(line, docsSet))
-        .filter((rel): rel is string => rel !== undefined);
-      for (const rel of hits) pages.add(rel);
-      // A Grep of one file prints bare lines with no path prefix; the file is the search target.
-      const target = toReaderRelative(call.input.path ?? '.');
-      if (hits.length === 0 && /\.[A-Za-z0-9]+$/.test(target ?? '') && isPage(target, docsSet)) pages.add(target);
+      const page = grepScopedPage(call, docsSet);
+      if (page) pages.add(page);
     }
   }
   return [...pages].sort();

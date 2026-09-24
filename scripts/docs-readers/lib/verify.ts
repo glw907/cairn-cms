@@ -5,7 +5,7 @@
  */
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { isPage, toReaderRelative } from './transcript.js';
+import { isPage, READER_CWD, toReaderRelative } from './transcript.js';
 import type { InitCheck, RawQuote, ReaderReport, Verified, VerifiedQuote } from './types.js';
 
 /** How many lines a quote may run past its cited line when the reader joined a wrapped sentence. */
@@ -21,31 +21,46 @@ function collapse(text: string): string {
 }
 
 /**
- * Whether a quote begins on a given line, possibly running onto the lines after it.
+ * Whether a quote starting on a given line reaches at least as far as `wanted`'s own text runs,
+ * and if so, the last line (zero-based, absolute) that text reaches.
  * @param lines - The file's lines.
  * @param index - The zero-based line the quote must begin on.
  * @param wanted - The collapsed quote text.
- * @returns True when the quote starts within that line's text.
+ * @returns The last line `wanted` reaches, or undefined when it does not start on `index`.
  */
-function startsOn(lines: string[], index: number, wanted: string): boolean {
-  const first = collapse(lines[index] ?? '');
-  if (first === '') return false;
-  const window = collapse(lines.slice(index, index + SPAN_LINES).join(' '));
+function matchEndLine(lines: string[], index: number, wanted: string): number | undefined {
+  const collapsedLines = lines.slice(index, index + SPAN_LINES).map((l) => collapse(l));
+  const first = collapsedLines[0] ?? '';
+  if (first === '') return undefined;
+  const window = collapsedLines.join(' ');
   for (let at = window.indexOf(wanted); at !== -1; at = window.indexOf(wanted, at + 1)) {
-    if (at < first.length) return true;
+    if (at >= first.length) continue;
+    // Map the match's own end offset, a position in the space-joined window, back to which of
+    // this window's lines it falls on: walk each line's collapsed length plus its joining space.
+    let consumed = 0;
+    const end = at + wanted.length;
+    for (let i = 0; i < collapsedLines.length; i += 1) {
+      consumed += collapsedLines[i].length;
+      if (end <= consumed) return index + i;
+      consumed += 1;
+    }
+    return index + collapsedLines.length - 1;
   }
-  return false;
+  return undefined;
 }
 
 /**
- * Check one quote against the prepared directory. The quote must begin on the cited line; it may
- * run onto the following lines, as a wrapped sentence does.
+ * Check one quote against the prepared directory, resolving its path against one fixed `cwd`. A
+ * quote passes when its own text spans the cited line: it starts there, or starts on an earlier
+ * line (within `SPAN_LINES`) and its text runs at least as far as the cited line, the way a reader
+ * who quotes the tail of a wrapped sentence cites the line the tail actually sits on.
  * @param quote - The reader's `{ path, line, text }`.
  * @param root - The pristine prepared directory the reader's copy was made from.
+ * @param cwd - The directory a relative `quote.path` is resolved against.
  * @returns The quote with its path made relative, plus `ok` and, on failure, a reason.
  */
-export function verifyQuote(quote: RawQuote, root: string): VerifiedQuote {
-  const rel = toReaderRelative(quote.path);
+function verifyQuoteAgainst(quote: RawQuote, root: string, cwd: string): VerifiedQuote {
+  const rel = toReaderRelative(quote.path, cwd);
   const base = { path: rel ?? String(quote.path), line: quote.line, text: quote.text };
   if (!rel || rel === '.') return { ...base, ok: false, reason: 'path is outside the reader directory' };
   const line = quote.line;
@@ -56,18 +71,44 @@ export function verifyQuote(quote: RawQuote, root: string): VerifiedQuote {
   if (!existsSync(file) || !statSync(file).isFile()) return { ...base, ok: false, reason: 'file does not exist' };
   const lines = readFileSync(file, 'utf8').split('\n');
   if (line > lines.length) return { ...base, ok: false, reason: `file has ${lines.length} lines` };
-  if (startsOn(lines, line - 1, wanted)) return { ...base, ok: true };
-  const elsewhere = lines.findIndex((_, index) => startsOn(lines, index, wanted));
+  const citedIndex = line - 1;
+  for (let start = Math.max(0, citedIndex - SPAN_LINES + 1); start <= citedIndex; start += 1) {
+    const endLine = matchEndLine(lines, start, wanted);
+    if (endLine !== undefined && endLine >= citedIndex) return { ...base, ok: true };
+  }
+  const elsewhere = lines.findIndex((_, index) => matchEndLine(lines, index, wanted) !== undefined);
   const reason = elsewhere === -1 ? 'text not found in the file' : `text starts on line ${elsewhere + 1}, not ${line}`;
   return { ...base, ok: false, reason };
 }
 
 /**
+ * Check one quote against the prepared directory, the way `verifyQuoteAgainst` does, but a
+ * relative `quote.path` first tries `cwd` (the reader's tracked effective cwd) and only falls
+ * back to `READER_CWD` when that attempt does not verify: a report mixes quotes written from
+ * whichever directory the reader had in mind at the time, not always the shell's own final cwd
+ * (a `cd` for a build step does not mean every later quote is relative to it), so both are tried
+ * and whichever actually verifies wins.
+ * @param quote - The reader's `{ path, line, text }`.
+ * @param root - The pristine prepared directory the reader's copy was made from.
+ * @param cwd - The reader's tracked effective cwd (`effectiveCwd`), defaulting to `READER_CWD`.
+ * @returns The quote with its path made relative, plus `ok` and, on failure, a reason.
+ */
+export function verifyQuote(quote: RawQuote, root: string, cwd: string = READER_CWD): VerifiedQuote {
+  if (cwd !== READER_CWD) {
+    const viaTrackedCwd = verifyQuoteAgainst(quote, root, cwd);
+    if (viaTrackedCwd.ok) return viaTrackedCwd;
+  }
+  return verifyQuoteAgainst(quote, root, READER_CWD);
+}
+
+/**
  * Decide whether a job's report is verified, from the reader's structured `report` (undefined when
  * it gave none), the `pagesRead` the transcript shows, the job's `docsSet`, the pristine prepared
- * `root`, the `init` check's result, and the `canariesFound` in the transcript. Every page read must
- * carry a verified quote, and every quoted page must have been read: a quote on a docs-set page the
- * transcript never shows opened was not read in this run.
+ * `root`, the `init` check's result, the `canariesFound` in the transcript, and the reader's `cwd`
+ * by the end of the transcript (`effectiveCwd`, defaulting to `READER_CWD`), against which every
+ * relative quote path resolves. Every page read must carry a verified quote, and every quoted page
+ * must have been read: a quote on a docs-set page the transcript never shows opened was not read
+ * in this run.
  * @returns The `verified` block for the job report.
  */
 export function verifyReport({
@@ -77,6 +118,7 @@ export function verifyReport({
   root,
   init,
   canariesFound,
+  cwd,
 }: {
   report: ReaderReport | undefined;
   pagesRead: string[];
@@ -84,6 +126,7 @@ export function verifyReport({
   root: string;
   init: InitCheck;
   canariesFound: string[];
+  cwd?: string;
 }): Verified {
   const problems: string[] = [];
   if (!init.ok) problems.push(...init.problems.map((p) => `init: ${p}`));
@@ -92,7 +135,7 @@ export function verifyReport({
   if (!report) {
     problems.push('no structured report');
   } else {
-    quotes = report.quotes.map((q) => verifyQuote(q, root));
+    quotes = report.quotes.map((q) => verifyQuote(q, root, cwd));
     if (quotes.length === 0) problems.push('report has no quote');
     for (const q of quotes) {
       if (!q.ok) problems.push(`quote ${q.path}:${q.line} unverified: ${q.reason}`);

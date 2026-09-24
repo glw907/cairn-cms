@@ -8,13 +8,16 @@ import {
   classifyFailure,
   collectDenials,
   derivePagesRead,
+  effectiveCwd,
   findInit,
   findPackageFetches,
   parseStream,
   readerReport,
   toolCalls,
+  toReaderRelative,
   usageFromEvents,
 } from '../../../scripts/docs-readers/lib/transcript.js';
+import type { ToolCall } from '../../../scripts/docs-readers/lib/types.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const FIXTURES = join(ROOT, 'scripts/docs-readers/fixtures/transcripts');
@@ -50,9 +53,10 @@ describe('checkInit', () => {
 });
 
 describe('derivePagesRead', () => {
-  it('counts Read calls and content-mode Grep hits inside the docs set, and nothing else', () => {
+  it('counts Read calls and a Grep scoped to exactly one file, and nothing else', () => {
     const calls = toolCalls(load('clean-docs-only.jsonl'));
-    // The files-only Grep (missing.md) and the failed out-of-directory Read are not reads.
+    // guide.md is Read directly; other.md's Grep names it as the search path directly (a single-
+    // file search). The files-only Grep (missing.md) and the failed out-of-directory Read are not reads.
     expect(derivePagesRead(calls, ['docs'])).toEqual(['docs/guide.md', 'docs/other.md']);
     expect(derivePagesRead(calls, ['docs/guide.md'])).toEqual(['docs/guide.md']);
   });
@@ -62,16 +66,72 @@ describe('derivePagesRead', () => {
     expect(derivePagesRead(calls, ['docs'])).toEqual(['docs/guide.md']);
   });
 
-  it('finds the page in a Grep line whose path holds digits, hyphens, and a context-line separator', () => {
-    const call = (text: string) => ({
-      id: 't',
-      name: 'Grep',
-      input: { pattern: 'x', output_mode: 'content' },
-      result: { isError: false, text },
-    });
-    expect(derivePagesRead([call('docs/2026-09-23-notes.md:4:x marks it')], ['docs'])).toEqual(['docs/2026-09-23-notes.md']);
-    expect(derivePagesRead([call('docs/a-1-b.md-12-context line')], ['docs'])).toEqual(['docs/a-1-b.md']);
-    expect(derivePagesRead([call('No matches found')], ['docs'])).toEqual([]);
+  /** A minimal Grep call, `output_mode: content`, its `path`/`glob` and result text overridable. */
+  function grepCall(input: Record<string, unknown>, text: string) {
+    return { id: 't', name: 'Grep', input: { pattern: 'x', output_mode: 'content', ...input }, result: { isError: false, text } };
+  }
+
+  it('does not count a hit inside a broadly-scoped search, even when the hit line names a docs-set page (operator-2’s shape)', () => {
+    // A directory-wide (or whole-job-root) search can print a hit line that names a page the
+    // reader never asked to open on its own, incidentally cross-referenced by whatever line
+    // matched; that must not count as reading it.
+    const wholeDocsSet = grepCall({ path: '/reader/job/docs' }, 'docs/troubleshooting.md:3:send_email');
+    expect(derivePagesRead([wholeDocsSet], ['docs/troubleshooting.md', 'docs/setup-recovery.md'])).toEqual([]);
+    const wholeJobRoot = grepCall({}, 'docs/troubleshooting.md:3:send_email');
+    expect(derivePagesRead([wholeJobRoot], ['docs/troubleshooting.md'])).toEqual([]);
+  });
+
+  it('counts a Grep whose own path names exactly one docs-set page', () => {
+    const call = grepCall({ path: '/reader/job/docs/2026-09-23-notes.md' }, '4:x marks it');
+    expect(derivePagesRead([call], ['docs/2026-09-23-notes.md'])).toEqual(['docs/2026-09-23-notes.md']);
+    expect(derivePagesRead([grepCall({}, 'No matches found')], ['docs'])).toEqual([]);
+  });
+
+  it('counts a Grep whose path plus a literal glob names exactly one docs-set page', () => {
+    const call = grepCall({ path: '/reader/job/docs', glob: 'troubleshooting.md' }, '3:send_email');
+    expect(derivePagesRead([call], ['docs/troubleshooting.md', 'docs/setup-recovery.md'])).toEqual(['docs/troubleshooting.md']);
+  });
+
+  it('counts a Grep whose path plus a wildcard glob narrows to exactly one docs-set page, but not one that still matches several', () => {
+    const narrow = grepCall({ path: '/reader/job/docs', glob: 'trouble*.md' }, '3:send_email');
+    expect(derivePagesRead([narrow], ['docs/troubleshooting.md', 'docs/setup-recovery.md'])).toEqual(['docs/troubleshooting.md']);
+    const wide = grepCall({ path: '/reader/job/docs', glob: '*.md' }, '3:send_email');
+    expect(derivePagesRead([wide], ['docs/troubleshooting.md', 'docs/setup-recovery.md'])).toEqual([]);
+  });
+});
+
+/** A minimal Bash tool call running `command`, paired with a successful, empty result. */
+function bash(command: string): ToolCall {
+  return { id: 't', name: 'Bash', input: { command }, result: { isError: false, text: '' } };
+}
+
+describe('effectiveCwd and cwd-aware toReaderRelative', () => {
+  it('stays at READER_CWD with no Bash calls, or none that cd', () => {
+    expect(effectiveCwd([])).toBe('/reader/job');
+    expect(effectiveCwd([bash('ls')])).toBe('/reader/job');
+  });
+
+  it('tracks a cd across calls, in order, the way a persistent shell does (designer-1’s shape)', () => {
+    const calls = [bash('cd site'), bash('npm run build')];
+    expect(effectiveCwd(calls)).toBe('/reader/job/site');
+    // A relative report quote given after cd'ing into site/ now resolves the way the reader meant it.
+    expect(toReaderRelative('../docs/extend/design-your-site.md', effectiveCwd(calls))).toBe('docs/extend/design-your-site.md');
+    expect(toReaderRelative('src/theme/theme.css', effectiveCwd(calls))).toBe('site/src/theme/theme.css');
+  });
+
+  it('applies a cd chained with && within one Bash call, and a later cd .. against the new cwd', () => {
+    expect(effectiveCwd([bash('cd site && npm install')])).toBe('/reader/job/site');
+    expect(effectiveCwd([bash('cd site'), bash('cd ..')])).toBe('/reader/job');
+  });
+
+  it('never resolves outside READER_CWD, however many levels a cd climbs', () => {
+    expect(effectiveCwd([bash('cd ../../..')])).toBe('/reader/job');
+    expect(effectiveCwd([bash('cd site'), bash('cd ../../../../etc')])).toBe('/reader/job');
+  });
+
+  it('ignores a bare cd and a cd -, since there is no tracked history to resolve them against', () => {
+    expect(effectiveCwd([bash('cd site'), bash('cd'), bash('pwd')])).toBe('/reader/job/site');
+    expect(effectiveCwd([bash('cd site'), bash('cd -')])).toBe('/reader/job/site');
   });
 });
 

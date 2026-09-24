@@ -20,10 +20,11 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**In flight (2026-09-23): pass 1, segment 2 (Task 4, the baseline run),** on `docs-reset-system`
-(`.claude/worktrees/docs-reset-system`, pushed). Segment 1 (Tasks 0 to 3) is done: the reader
-runner, all four reader classes, and the deployed scratch site. The ledger and Geoff's six
-execution amendments are in the pass 1 plan on that branch.
+**In flight (2026-09-23, overnight): pass 1, segment 3 in four lanes.** Tasks 0 to 4 are done on
+`docs-reset-system` (the baseline failure record is `docs/internal/record/2026-09-23-docs-reset-baseline.md`).
+Lanes: A Task 5 then 6 on `docs-reset-facts`, B Task 7 off Task 5's commit, C Tasks 8 then 9 in
+`~/.dotfiles`, D Task 10 on `docs-reset-harness`; each merges back into `docs-reset-system` before
+Task 11. Ceiling 16M, flag 12.8M. The ledger at the pass 1 plan's foot carries every ruling.
 
 **Docs reset pass 1, the writing system.** The docs are reset from scratch (only verified facts
 survive), and pass 1 builds and validates the writing system first: confined podman reader

@@ -1,0 +1,11 @@
+{
+  "name": "docs-and-site",
+  "description": "The docs set plus a scaffolded site with the engine installed, read and edited with the file tools and Bash scoped to its own npm scripts. Serves the site designer and admin extender audiences.",
+  "contents": "prepared",
+  "tools": ["Read", "Write", "Edit", "Grep", "Glob", "Bash"],
+  "bashAllowlist": ["npm run *", "npm install*"],
+  "permissionMode": "acceptEdits",
+  "env": {},
+  "secretEnv": [],
+  "egress": "anthropic"
+}

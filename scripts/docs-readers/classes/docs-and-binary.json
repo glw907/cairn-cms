@@ -1,0 +1,11 @@
+{
+  "name": "docs-and-binary",
+  "description": "The docs set plus the cairn CLI against a scratch site, with Bash scoped to read-only operator subcommands. Serves the site operator audience.",
+  "contents": "prepared",
+  "tools": ["Read", "Grep", "Glob", "Bash"],
+  "bashAllowlist": ["cairn sites list", "cairn health*", "cairn logs*", "cairn doctor*", "cairn auth list", "cairn auth check*"],
+  "permissionMode": "default",
+  "env": {},
+  "secretEnv": [],
+  "egress": "operator"
+}

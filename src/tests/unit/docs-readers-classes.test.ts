@@ -25,8 +25,31 @@ describe('class declarations', () => {
   it('loads the docs-only and repository classes from the classes directory', () => {
     const classes = loadClasses();
     expect(classes.get('docs-only')?.tools).toEqual(['Read', 'Grep', 'Glob']);
-    expect(classes.get('repository')?.bashAllowlist).toEqual(['npm run check*', 'npm test', 'make -C tool check']);
+    expect(classes.get('repository')?.bashAllowlist).toEqual(['npm run check*', 'npm test']);
     expect(classes.get('repository')?.egress).toBe('anthropic');
+  });
+
+  it('loads all four reader classes, each with a non-empty neutral sentence', () => {
+    const classes = loadClasses();
+    expect([...classes.keys()].sort()).toEqual(['docs-and-binary', 'docs-and-site', 'docs-only', 'repository']);
+    for (const decl of classes.values()) expect(decl.description.trim().length).toBeGreaterThan(0);
+  });
+
+  it('scopes docs-and-site to its own npm scripts and docs-and-binary to read-only cairn subcommands', () => {
+    const classes = loadClasses();
+    const docsAndSite = classes.get('docs-and-site');
+    const docsAndBinary = classes.get('docs-and-binary');
+    expect(docsAndSite).toMatchObject({ contents: 'prepared', tools: ['Read', 'Write', 'Edit', 'Grep', 'Glob', 'Bash'], egress: 'anthropic' });
+    expect(docsAndSite?.bashAllowlist).toEqual(['npm run *', 'npm install*']);
+    expect(docsAndBinary).toMatchObject({ contents: 'prepared', tools: ['Read', 'Grep', 'Glob', 'Bash'], egress: 'operator' });
+    expect(docsAndBinary?.bashAllowlist).toEqual([
+      'cairn sites list',
+      'cairn health*',
+      'cairn logs*',
+      'cairn doctor*',
+      'cairn auth list',
+      'cairn auth check*',
+    ]);
   });
 
   it('accepts a valid declaration', () => {
@@ -60,12 +83,7 @@ describe('class declarations', () => {
     expect(args).toContain('--disallowedTools=WebFetch,WebSearch');
     expect(args[args.indexOf('--permission-prompts') + 1]).toBe('none');
     expect(args[args.indexOf('--output-format') + 1]).toBe('stream-json');
-    expect(args.slice(args.indexOf('--allowedTools'))).toEqual([
-      '--allowedTools',
-      'Bash(npm run check*)',
-      'Bash(npm test)',
-      'Bash(make -C tool check)',
-    ]);
+    expect(args.slice(args.indexOf('--allowedTools'))).toEqual(['--allowedTools', 'Bash(npm run check*)', 'Bash(npm test)']);
     expect(claudeArgs(docsOnly, 'm', {})).not.toContain('--allowedTools');
   });
 

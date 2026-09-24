@@ -7,6 +7,86 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Docs reset pass 1, the writing system, thirteen tasks, 2026-09-23 to 24
+
+Branch `docs-reset-system`, off `main` after the `docs-reset` spec merge. Plan, ledger, and
+post-mortem: `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`. Spec:
+`docs/superpowers/specs/2026-09-23-docs-reset-design.md`, with its pass 1 amendments at the top.
+The pass built the system and closed with its validation failed. Geoff ruled on 2026-09-24 that the
+failure is a finding about the validation method, and pass 1b redesigns it before pass 2a.
+
+**What landed.** A confined reader runner under `scripts/docs-readers/`: podman containers with
+`env -i`, a plan token, an allowlisting egress proxy, a pinned init baseline per CLI version,
+quote verification, transcript scrubbing, and four reader classes (docs-only, docs-and-site,
+docs-and-binary, repository). A scratch site, `glw907/cairn-scratch-b`, with scoped Cloudflare and
+GitHub installation tokens (`docs/internal/record/2026-09-23-scratch-site.md`). A baseline failure
+record (`2026-09-23-docs-reset-baseline.md`) that ruled build or defer for every component. Fact
+ids on all 810 container bullets, `check:provenance` with page briefs under
+`docs/internal/briefs/`, owner-tier key phrases, and `path#Symbol` anchors for `src/`. A triage of
+159 candidate bullets: 137 retained on code sources, 2 rejected, 20 excluded. A docs-as-tests
+harness for `docs/admin/` procedures, after Doc Detective was spiked and rejected. In
+`~/.dotfiles`: the `cairn-docs-drafter` agent and `docs-page-chain-v2.js`, a two-stage chain around
+the reader runner. A validation batch and its scores (`2026-09-23-docs-reset-validation.md`).
+
+**The failed validation.** All four reader classes failed Task 11's bar. Plants caught: 9 of 17.
+Held-out defects caught: 1 of 9. Two baseline failures missed on control pages. False positives:
+48 against a cap of 3 per class, 35 of them only from rule candidates. The readers found real
+defects on the control pages, and every miss sat off the path the job took. The plan's one fix
+round tunes on the tuning half only, and it could not address a design problem. Changing plant
+placement or the counting rule after seeing results would be post-hoc, so the conductor paused and
+Geoff chose a fresh pass.
+
+**What the gates caught.** The `diff-reviewer` sent every build task except Tasks 5, 7, and 8 to
+a fix round. Task 9 took four rounds. Its fixture harness hid eight stage-2 wiring breaks by
+hand-building an input shape stage 1 never produced. The Task 9 dry run found two design gaps no
+test saw: the chain retagged its own new facts, and reader jobs needing a shell ran as docs-only.
+Two silent misses in the validation preparation were caught before any run. The docs-only
+evaluator would have read the unplanted page, and the scripter's plants landed outside its bundle.
+The second was caught only by a conductor byte check, after tests, gate, and review had passed.
+
+**What a later pass would be wrong to rediscover.**
+
+- A planted-defect validation scores a job tester against exhaustive detection. A reader doing
+  one real job reports what that job touches, so a blind plant anywhere on a page measures the
+  plant's placement more than the reader.
+- Count rule candidates apart from findings. They are wishes for more text, and they carried 35
+  of the 48 false positives.
+- Opus readers cite line numbers one off by habit. The one-line tolerance took Opus from 11 of 12
+  verified to 26 of 26. Sonnet readers verified 8 of 13 even with it.
+- A fixture that hand-builds the input of a stage it follows proves nothing about the handoff.
+  Feed every later stage the earlier stage's captured output.
+- Byte-check a prepared reader directory after every other gate. Tests and review both passed a
+  planted overlay that never reached the reader.
+- The CLI auto-allows read-only Bash inside its working directory whatever the allowlist says.
+  The container and the scoped tokens are the boundary, not the allowlist.
+- Pass A's defects number 19, not 14. The 14 was a ranked summary, and the ground truth is
+  `0e7f4eb9`.
+- `check:facts` inside a repository export skips a `docs/internal/record/` pointer only when that
+  directory is absent. The skip cannot mask a broken pointer in the real repository.
+- The auto-mode classifier refuses a Workflow launch of an edited `pass-execute.js` copy. Plan
+  per-task Agent chains instead.
+- The Agent tool cannot set effort `xhigh`, so an escalation the plan names at `xhigh` runs at
+  `high` on Opus 5.5 and is recorded as a deviation.
+
+**Planning misses: 12.** Ambiguities that surfaced after approval and that a planning question
+would have caught. (1) Pass A's 14 defects were never itemized, and the count was 19. (2) The
+operator page's `cairn doctor` needs a site directory the class did not carry. (3) Stale counts and
+names at segment 3: 182 candidates, not 179; `[vendor-figure]` is `[vendor]`; the profile grader is
+an inline prompt, not an agent. (4) `check:facts` failed inside a repository export. (5) The escape
+suite's refusal shapes: WebFetch and WebSearch are absent, not denied, and the docs-only class has
+no Bash. (6) Strict quote-line verification left 9 of 18 baseline reports unverified. (7) No stage
+owned tracing and retagging the chain's new facts. (8) Reader jobs carried no class. (9) The
+validation design: blind plants against one-job readers, and rule candidates counted as findings.
+(10) The 12M ceiling was too low and rose to 16M. (11) The Workflow execution mode was refused by
+the auto-mode classifier. (12) The `xhigh` escalation path is not settable through the Agent tool.
+
+**Budgets.** Tokens: the ledger's recorded figures sum to about 13.9M. Most subagent figures
+include cache reads, which the counting rule excludes, so the sum overstates. Reader runs, measured
+by the runner under the rule, total about 2.7M counted. The conductor's estimate is about 9M
+counted, under the raised 16M ceiling (flag 12.8M) and just under the original 9.6M flag. Several rows (pre-flights, some reviews, Task 11's scoring) have no figure.
+Attended time: 12 planning misses; 4 execution sittings: the planned Task 0 owner sitting, the
+post-Task 2 execution amendments, the ceiling raise, and the Task 11 decision.
+
 ## Cut 0.97.0, 2026-09-23
 
 Published `@glw907/cairn-cms` `0.97.0` and `@glw907/cairn-cms-dev` `0.97.0` to npm `latest` from

@@ -7,7 +7,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** A shell command runner, injected so tests can replace the real `npm`, `git`, and `tar` calls. */
@@ -71,23 +71,142 @@ export function packTarball(packageDir: string, destDir: string, runner: Command
 }
 
 /**
+ * The paths, relative to a checkout's root, whose bytes `npm run package` reads: the library
+ * source `svelte-package` compiles, the dev-backend package a second `npm pack` reads directly,
+ * the root `package.json` (name, version, and the `exports` map the build honours), the
+ * preprocessor config, and the admin CSS build's own scripts and input stylesheet. Exported so a
+ * caller building a wider dirty-tree check (a live preparation run) can name the same set rather
+ * than drift from `tarballCacheKey`'s own list.
+ */
+export const PACKAGE_INPUT_PATHS = ['src/lib', 'packages/cairn-cms-dev', 'package.json', 'svelte.config.js', 'scripts/build'];
+
+/**
+ * How many packed-tarball cache keys `pruneTarballCache` keeps. Each key holds a full engine and
+ * dev-backend tarball pair; keeping a small, bounded set caps the cache's disk use without
+ * forcing a rebuild on every commit the way keeping only the newest one would (a caller pinned to
+ * yesterday's HEAD, mid-rebase, still gets a hit).
+ */
+const TARBALL_CACHE_KEEP = 3;
+
+/**
+ * The packed-tarball cache's root, under the runner's own neutral cache path. Named apart from
+ * the per-run and scratch directories the startup sweep (`lib/sweep.ts`) removes: a rebuilt
+ * engine tarball costs a full `svelte-package` and CSS compile, so surviving a sweep is the
+ * point, not an oversight the sweep's stale-directory patterns happen to miss.
+ * @param cacheRoot - The runner's neutral cache root.
+ * @returns The tarball cache's own root directory.
+ */
+export function tarballCacheRoot(cacheRoot: string): string {
+  return join(cacheRoot, 'tarballs');
+}
+
+/**
+ * Compute the packed-tarball cache key: HEAD's own commit hash, returned only when every path
+ * `npm run package` reads (`PACKAGE_INPUT_PATHS`, or a narrower set a caller names) is clean
+ * against that commit. A dirty tree in any of those paths, or a checkout `git` itself cannot
+ * read, returns undefined, so the caller always rebuilds rather than serve a tarball that does
+ * not match what is really on disk (`npm pack`'s stale-cache trap, `scripts/lab/link-consumer.mjs`).
+ * `repoRoot` is the checkout to key; `paths` are the paths, relative to `repoRoot`, whose
+ * dirtiness invalidates the key; `runner` is the command runner, overridden in tests.
+ * @returns HEAD's commit hash, or undefined when the tree is dirty in a path that matters.
+ */
+export function tarballCacheKey({
+  repoRoot,
+  paths = PACKAGE_INPUT_PATHS,
+  runner = spawnRunner,
+}: {
+  repoRoot: string;
+  paths?: string[];
+  runner?: CommandRunner;
+}): string | undefined {
+  const head = runner('git', ['rev-parse', 'HEAD'], { cwd: repoRoot });
+  if (head.status !== 0) return undefined;
+  const status = runner('git', ['status', '--porcelain', '--', ...paths], { cwd: repoRoot });
+  if (status.status !== 0 || decoder.decode(status.stdout).trim() !== '') return undefined;
+  return decoder.decode(head.stdout).trim();
+}
+
+/**
+ * One cache key's tarball paths, whether or not they exist yet.
+ * @param cacheRoot - The runner's neutral cache root.
+ * @param key - A `tarballCacheKey` result.
+ * @returns The key's own directory and its engine and dev-backend tarball paths.
+ */
+function tarballCachePaths(cacheRoot: string, key: string): { dir: string; engine: string; dev: string } {
+  const dir = join(tarballCacheRoot(cacheRoot), key);
+  return { dir, engine: join(dir, 'engine.tgz'), dev: join(dir, 'dev.tgz') };
+}
+
+/**
+ * Read a cache key's tarballs, when both files are present.
+ * @param cacheRoot - The runner's neutral cache root.
+ * @param key - A `tarballCacheKey` result.
+ * @returns The cached tarball paths, or undefined on a cache miss.
+ */
+function readTarballCache(cacheRoot: string, key: string): { engine: string; dev: string } | undefined {
+  const { engine, dev } = tarballCachePaths(cacheRoot, key);
+  return existsSync(engine) && existsSync(dev) ? { engine, dev } : undefined;
+}
+
+/**
+ * Remove every cache key beyond the newest `keep`, by directory modification time.
+ * @param cacheRoot - The runner's neutral cache root.
+ * @param keep - How many keys to keep; defaults to `TARBALL_CACHE_KEEP`.
+ */
+function pruneTarballCache(cacheRoot: string, keep: number = TARBALL_CACHE_KEEP): void {
+  const root = tarballCacheRoot(cacheRoot);
+  if (!existsSync(root)) return;
+  const byAge = readdirSync(root)
+    .map((name) => ({ name, mtimeMs: statSync(join(root, name)).mtimeMs }))
+    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  for (const stale of byAge.slice(keep)) rmSync(join(root, stale.name), { recursive: true, force: true });
+}
+
+/**
+ * Copy a freshly built tarball pair into the cache under `key`, then prune older keys. `cacheRoot`
+ * is the runner's neutral cache root; `key` is a `tarballCacheKey` result; `tarballs` are the
+ * freshly packed engine and dev-backend tarball paths.
+ */
+function writeTarballCache(cacheRoot: string, key: string, tarballs: { engine: string; dev: string }): void {
+  const { dir, engine, dev } = tarballCachePaths(cacheRoot, key);
+  mkdirSync(dir, { recursive: true });
+  cpSync(tarballs.engine, engine);
+  cpSync(tarballs.dev, dev);
+  pruneTarballCache(cacheRoot);
+}
+
+/**
  * Build this worktree once, then pack the engine and the dev backend into tarballs under
- * `packTarball`'s content-addressed scheme. Building first and packing with `--ignore-scripts`
- * means the engine is built exactly once, not once for the build and again for `npm pack`'s own
- * `prepare` hook.
+ * `packTarball`'s content-addressed scheme, reusing a cached pair when `cacheRoot` is given and
+ * `tarballCacheKey` finds the tree clean against HEAD in every path that feeds the build. Building
+ * first and packing with `--ignore-scripts` means the engine is built exactly once, not once for
+ * the build and again for `npm pack`'s own `prepare` hook.
  * @param repoRoot - This worktree's root.
- * @param destDir - Where both tarballs land.
+ * @param destDir - Where a freshly built pair lands; unused on a cache hit.
  * @param runner - The command runner; overridden in tests.
- * @returns The engine and dev-backend tarballs' absolute paths.
+ * @param cacheRoot - The runner's neutral cache root; caching is off when this is omitted.
+ * @returns The engine and dev-backend tarballs' absolute paths, cached or freshly built.
  * @throws When the build or either pack fails.
  */
-export function packEngineTarballs(repoRoot: string, destDir: string, runner: CommandRunner = spawnRunner): { engine: string; dev: string } {
+export function packEngineTarballs(
+  repoRoot: string,
+  destDir: string,
+  runner: CommandRunner = spawnRunner,
+  cacheRoot?: string,
+): { engine: string; dev: string } {
+  const key = cacheRoot ? tarballCacheKey({ repoRoot, runner }) : undefined;
+  if (cacheRoot && key) {
+    const cached = readTarballCache(cacheRoot, key);
+    if (cached) return cached;
+  }
   const built = runner('npm', ['run', 'package'], { cwd: repoRoot });
   if (built.status !== 0) throw new Error(`npm run package failed: ${built.stderr}`);
-  return {
+  const tarballs = {
     engine: packTarball(repoRoot, destDir, runner),
     dev: packTarball(join(repoRoot, 'packages/cairn-cms-dev'), destDir, runner),
   };
+  if (cacheRoot && key) writeTarballCache(cacheRoot, key, tarballs);
+  return tarballs;
 }
 
 /**
@@ -267,6 +386,90 @@ export function prepareRepositoryExport({
     const extract = runner('tar', ['-x', '-C', dest], { cwd: dest, input: archive.stdout });
     if (extract.status !== 0) throw new Error(`tar extract failed for ${commit}: ${extract.stderr}`);
     assertNoExcludedPaths(dest);
+  } catch (error) {
+    rmSync(dest, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+/**
+ * The site-record shape the Go tool's `tool/internal/record` package reads (and the Node CLI
+ * itself writes under a live site's own state directory): the fields `store.Load` parses, with
+ * every secret-bearing key left out, since the operator class's credentials arrive as environment
+ * variables (`CAIRN_CF_READ_TOKEN`, `CAIRN_GH_READ_TOKEN`), never through the registry.
+ */
+export interface ScratchSiteRecord {
+  name: string;
+  step: string;
+  domain: string;
+  schemaVersion: number;
+  adopted: boolean;
+  github: { repo: { id: number; owner: string; repo: string; defaultBranch: string }; installationId: number };
+  cloudflare: { accountId: string; workerName: string };
+}
+
+/**
+ * Write one site record under a `CAIRN_STATE_DIR`-shaped registry directory, at the permissions
+ * `store.Save` itself writes (`0700` directory, `0600` file): the Go tool's `checkSafePerm` refuses
+ * a record or directory that grants access beyond the owner, so a registry built by this function
+ * must match what a live `cairn` run would have produced.
+ * @param stateDir - The registry directory (a job's prepared tree's `state/` subdirectory).
+ * @param siteId - The record's filename stem, matching the Go tool's site-id shape.
+ * @param record - The record to write.
+ */
+export function writeScratchSiteRecord(stateDir: string, siteId: string, record: ScratchSiteRecord): void {
+  mkdirSync(stateDir, { recursive: true });
+  chmodSync(stateDir, 0o700);
+  const file = join(stateDir, `${siteId}.json`);
+  writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
+  chmodSync(file, 0o600);
+}
+
+/**
+ * Re-tighten a copied `state/` registry directory's permissions to the owner-only mode
+ * `writeScratchSiteRecord` wrote, undoing `cpSync`'s own directory-copy behaviour: `cpSync`
+ * preserves a copied file's mode but creates every copied directory at the process's default
+ * mode, so a job's `state/` directory comes out world-readable after each of the runner's two
+ * `cpSync` hops (`prepare` into a fresh per-job tree, then that tree into the container's mount),
+ * and the Go tool's `store.checkSafePerm` then refuses to read it. A tree with no `state/`
+ * directory (every class but docs-and-binary) is left untouched.
+ * @param root - The job directory that may hold a `state/` subdirectory.
+ */
+export function restrictStateDirPermissions(root: string): void {
+  const stateDir = join(root, 'state');
+  if (!existsSync(stateDir)) return;
+  chmodSync(stateDir, 0o700);
+  for (const name of readdirSync(stateDir)) chmodSync(join(stateDir, name), 0o600);
+}
+
+/**
+ * Build a docs-and-binary job's prepared tree: the published docs set at their doc-relative
+ * paths, plus a `state/` registry directory holding exactly one site record, so the `cairn`
+ * binary baked into the reader image (`Containerfile`) lists, checks, and probes only the
+ * scratch site named there. The binary itself is not copied here: it is pinned into the image at
+ * build time (`ensureImage`'s `cairnToolVersion`), never into a per-job tree, since a class with
+ * no Write or Edit tool has nowhere writable to install one at run time. `sourceRoot` is the
+ * checkout the docs set is copied from; `docsSet` are the pages the job names, relative to
+ * `sourceRoot`; `siteId` is the site record's filename stem; `record` is the one site record the
+ * registry holds; `dest` is the prepared tree's root.
+ */
+export function prepareDocsAndBinary({
+  sourceRoot,
+  docsSet,
+  siteId,
+  record,
+  dest,
+}: {
+  sourceRoot: string;
+  docsSet: string[];
+  siteId: string;
+  record: ScratchSiteRecord;
+  dest: string;
+}): void {
+  rmSync(dest, { recursive: true, force: true });
+  try {
+    copyDocsSet(sourceRoot, docsSet, dest);
+    writeScratchSiteRecord(join(dest, 'state'), siteId, record);
   } catch (error) {
     rmSync(dest, { recursive: true, force: true });
     throw error;

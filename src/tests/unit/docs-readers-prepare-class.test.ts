@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -10,11 +10,15 @@ import {
   installAndStrip,
   packEngineTarballs,
   packTarball,
+  prepareDocsAndBinary,
   prepareDocsAndSite,
   prepareRepositoryExport,
+  restrictStateDirPermissions,
   scaffoldSite,
   stripInstalledEngineExtras,
+  writeScratchSiteRecord,
   type CommandRunner,
+  type ScratchSiteRecord,
 } from '../../../scripts/docs-readers/lib/prepare-class.js';
 
 /** A fresh scratch directory, removed by the caller. */
@@ -244,6 +248,107 @@ describe('packEngineTarballs', () => {
   });
 });
 
+/**
+ * A runner that fakes `git rev-parse HEAD`, `git status --porcelain`, and a real `npm run
+ * package` plus two `npm pack` calls, for the tarball-cache tests below. `head` is HEAD's own
+ * commit; `dirty` lists the porcelain lines `git status` reports (empty for a clean tree).
+ */
+function fakeCacheableRunner({ head, dirty = [] as string[] }: { head: string; dirty?: string[] }): { runner: CommandRunner; calls: string[] } {
+  const calls: string[] = [];
+  const runner: CommandRunner = (command, args, { cwd }) => {
+    calls.push(`${command} ${args.join(' ')}`);
+    if (command === 'git' && args[0] === 'rev-parse') return { status: 0, stdout: Buffer.from(`${head}\n`), stderr: '' };
+    if (command === 'git' && args[0] === 'status') return { status: 0, stdout: Buffer.from(dirty.length ? `${dirty.join('\n')}\n` : ''), stderr: '' };
+    if (command === 'npm' && args[0] === 'run') return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+    if (command === 'npm' && args[0] === 'pack') {
+      const destArg = args[args.indexOf('--pack-destination') + 1];
+      const name = cwd.endsWith('cairn-cms-dev') ? 'glw907-cairn-cms-dev-0.97.0.tgz' : 'glw907-cairn-cms-0.97.0.tgz';
+      writeFileSync(join(destArg, name), `fake-tarball-bytes-${name}-${head}`);
+      return { status: 0, stdout: Buffer.from(`${name}\n`), stderr: '' };
+    }
+    throw new Error(`unexpected command in ${cwd}: ${command} ${args.join(' ')}`);
+  };
+  return { runner, calls };
+}
+
+describe('packEngineTarballs: the tarball cache', () => {
+  it('builds on a cache miss, then skips npm run package and both packs on a hit for the same clean HEAD', () => {
+    const repoRoot = tmp('cache-repo');
+    const destDir = tmp('cache-dest');
+    const cacheRoot = tmp('cache-root');
+    try {
+      const first = fakeCacheableRunner({ head: 'abc123' });
+      const built = packEngineTarballs(repoRoot, destDir, first.runner, cacheRoot);
+      expect(first.calls.some((c) => c.startsWith('npm run package'))).toBe(true);
+      expect(first.calls.filter((c) => c.startsWith('npm pack'))).toHaveLength(2);
+
+      const second = fakeCacheableRunner({ head: 'abc123' });
+      const cached = packEngineTarballs(repoRoot, destDir, second.runner, cacheRoot);
+      expect(second.calls.some((c) => c.startsWith('npm run package'))).toBe(false);
+      expect(second.calls.some((c) => c.startsWith('npm pack'))).toBe(false);
+      expect(readFileSync(cached.engine, 'utf8')).toBe(readFileSync(built.engine, 'utf8'));
+      expect(readFileSync(cached.dev, 'utf8')).toBe(readFileSync(built.dev, 'utf8'));
+    } finally {
+      for (const dir of [repoRoot, destDir, cacheRoot]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('bypasses the cache when the tree is dirty in a path that feeds the build, even for a key already cached', () => {
+    const repoRoot = tmp('cache-repo-dirty');
+    const destDir = tmp('cache-dest-dirty');
+    const cacheRoot = tmp('cache-root-dirty');
+    try {
+      const clean = fakeCacheableRunner({ head: 'abc123' });
+      packEngineTarballs(repoRoot, destDir, clean.runner, cacheRoot);
+
+      const dirty = fakeCacheableRunner({ head: 'abc123', dirty: [' M src/lib/index.ts'] });
+      packEngineTarballs(repoRoot, destDir, dirty.runner, cacheRoot);
+      expect(dirty.calls.some((c) => c.startsWith('npm run package'))).toBe(true);
+      expect(dirty.calls.filter((c) => c.startsWith('npm pack'))).toHaveLength(2);
+    } finally {
+      for (const dir of [repoRoot, destDir, cacheRoot]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('rebuilds under a new key when HEAD moves, keeping the old key cached alongside it', () => {
+    const repoRoot = tmp('cache-repo-key');
+    const destDir = tmp('cache-dest-key');
+    const cacheRoot = tmp('cache-root-key');
+    try {
+      const atFirstHead = fakeCacheableRunner({ head: 'abc123' });
+      packEngineTarballs(repoRoot, destDir, atFirstHead.runner, cacheRoot);
+
+      const atSecondHead = fakeCacheableRunner({ head: 'def456' });
+      packEngineTarballs(repoRoot, destDir, atSecondHead.runner, cacheRoot);
+      expect(atSecondHead.calls.some((c) => c.startsWith('npm run package'))).toBe(true);
+
+      const atFirstHeadAgain = fakeCacheableRunner({ head: 'abc123' });
+      packEngineTarballs(repoRoot, destDir, atFirstHeadAgain.runner, cacheRoot);
+      expect(atFirstHeadAgain.calls.some((c) => c.startsWith('npm run package'))).toBe(false);
+    } finally {
+      for (const dir of [repoRoot, destDir, cacheRoot]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps only the newest few keys, pruning an older one once the cache grows past that bound', () => {
+    const repoRoot = tmp('cache-repo-prune');
+    const destDir = tmp('cache-dest-prune');
+    const cacheRoot = tmp('cache-root-prune');
+    try {
+      for (const head of ['h1', 'h2', 'h3', 'h4']) {
+        const { runner } = fakeCacheableRunner({ head });
+        packEngineTarballs(repoRoot, destDir, runner, cacheRoot);
+      }
+      const keys = readdirSync(join(cacheRoot, 'tarballs'));
+      expect(keys).toHaveLength(3);
+      expect(keys).not.toContain('h1');
+      expect(keys).toEqual(expect.arrayContaining(['h2', 'h3', 'h4']));
+    } finally {
+      for (const dir of [repoRoot, destDir, cacheRoot]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 /** A runner that fakes the templates/waymark export and a clean install, for `prepareDocsAndSite`. */
 function fakeSiteRunner(): CommandRunner {
   return (command, args, { cwd }) => {
@@ -394,6 +499,105 @@ describe('prepareRepositoryExport', () => {
       expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'not-a-commit', dest, runner })).toThrow(/bad revision/);
       expect(existsSync(dest)).toBe(false);
     } finally {
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+});
+
+/** A minimal, well-formed scratch site record for the tests below. */
+const scratchRecord: ScratchSiteRecord = {
+  name: 'Cairn Scratch B',
+  step: 'live',
+  domain: 'cairn-scratch-b.glw907.workers.dev',
+  schemaVersion: 1,
+  adopted: true,
+  github: { repo: { id: 1384270163, owner: 'glw907', repo: 'cairn-scratch-b', defaultBranch: 'main' }, installationId: 135372268 },
+  cloudflare: { accountId: '120c269ad6d3dfbe6d63a0bb53758ca0', workerName: 'cairn-scratch-b' },
+};
+
+describe('writeScratchSiteRecord', () => {
+  it('writes the record at owner-only permissions, the same mode the Node CLI itself writes', () => {
+    const stateDir = join(tmp('state'), 'state');
+    try {
+      writeScratchSiteRecord(stateDir, 'cairn-scratch-b-9f21ac', scratchRecord);
+      const file = join(stateDir, 'cairn-scratch-b-9f21ac.json');
+      expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual(scratchRecord);
+      expect(statSync(stateDir).mode & 0o777).toBe(0o700);
+      expect(statSync(file).mode & 0o777).toBe(0o600);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('restrictStateDirPermissions', () => {
+  it('re-tightens a state/ directory and its files that a plain cpSync left world-readable', () => {
+    const root = tmp('restrict-source');
+    const copy = tmp('restrict-copy');
+    try {
+      writeScratchSiteRecord(join(root, 'state'), 'cairn-scratch-b-9f21ac', scratchRecord);
+      // cpSync preserves a copied file's mode but not a copied directory's, the exact drift a
+      // job's two cpSync hops (prepare, then the mount copy) leave behind.
+      cpSync(root, copy, { recursive: true });
+      expect(statSync(join(copy, 'state')).mode & 0o777).not.toBe(0o700);
+      restrictStateDirPermissions(copy);
+      expect(statSync(join(copy, 'state')).mode & 0o777).toBe(0o700);
+      expect(statSync(join(copy, 'state', 'cairn-scratch-b-9f21ac.json')).mode & 0o777).toBe(0o600);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+      rmSync(copy, { recursive: true, force: true });
+    }
+  });
+
+  it('does nothing when the tree carries no state/ directory', () => {
+    const root = tmp('no-state');
+    try {
+      write(join(root, 'docs/page.md'), '# x\n');
+      expect(() => restrictStateDirPermissions(root)).not.toThrow();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('prepareDocsAndBinary', () => {
+  it('builds the docs subtree and a state/ registry holding exactly the one scratch-site record', () => {
+    const sourceRoot = tmp('binary-source');
+    const dest = tmp('binary-dest');
+    try {
+      write(join(sourceRoot, 'docs/admin/troubleshooting.md'), '# troubleshooting\n');
+      prepareDocsAndBinary({
+        sourceRoot,
+        docsSet: ['docs/admin/troubleshooting.md'],
+        siteId: 'cairn-scratch-b-9f21ac',
+        record: scratchRecord,
+        dest,
+      });
+      expect(readFileSync(join(dest, 'docs/admin/troubleshooting.md'), 'utf8')).toBe('# troubleshooting\n');
+      const files = readFileSync(join(dest, 'state', 'cairn-scratch-b-9f21ac.json'), 'utf8');
+      expect(JSON.parse(files)).toEqual(scratchRecord);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('removes dest before rethrowing when a named docs-set page is missing', () => {
+    const sourceRoot = tmp('binary-source-fail');
+    const dest = tmp('binary-dest-fail');
+    try {
+      expect(() =>
+        prepareDocsAndBinary({
+          sourceRoot,
+          docsSet: ['docs/admin/missing.md'],
+          siteId: 'cairn-scratch-b-9f21ac',
+          record: scratchRecord,
+          dest,
+        }),
+      ).toThrow(/does not exist/);
+      expect(existsSync(dest)).toBe(false);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
       rmSync(dest, { recursive: true, force: true });
     }
   });

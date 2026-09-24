@@ -20,11 +20,14 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**In flight (2026-09-23, overnight): pass 1, segment 3 in four lanes.** Tasks 0 to 4 are done on
-`docs-reset-system` (the baseline failure record is `docs/internal/record/2026-09-23-docs-reset-baseline.md`).
-Lanes: A Task 5 then 6 on `docs-reset-facts`, B Task 7 off Task 5's commit, C Tasks 8 then 9 in
-`~/.dotfiles`, D Task 10 on `docs-reset-harness`; each merges back into `docs-reset-system` before
-Task 11. Ceiling 16M, flag 12.8M. The ledger at the pass 1 plan's foot carries every ruling.
+**In flight (2026-09-23, overnight): pass 1, checkpoint 2 passed; Task 9's dry-run fix round,
+then Task 11 (validation).** Tasks 0 to 8 and 10 are done and merged into `docs-reset-system`
+(lanes A, B, D merged at `28617164`, cross-lane review clean); Task 9's v2 chain lives in
+`~/.dotfiles` (unpushed: three older foreign commits sit ahead of its origin) and its end-to-end
+dry run passed on the scratch branch `docs-reset-dryrun`, surfacing two chain gaps now in a fix
+round. Ceiling 16M, flag 12.8M; spend by the counting rule is estimated at 5M to 7M (the subagent
+upper bound is about 10M). The ledger at the pass 1 plan's foot carries every ruling and the
+morning list for Geoff.
 
 **Docs reset pass 1, the writing system.** The docs are reset from scratch (only verified facts
 survive), and pass 1 builds and validates the writing system first: confined podman reader

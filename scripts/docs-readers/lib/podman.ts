@@ -11,7 +11,7 @@
  * on a command line.
  */
 import { execFile, spawn } from 'node:child_process';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -105,7 +105,7 @@ export async function ensureImage(cliVersion: string, log: (line: string) => voi
  * @returns A random marker no transcript should ever contain.
  */
 function canary(): string {
-  return `canary-${randomBytes(8).toString('hex')}`;
+  return `canary-${randomUUID()}`;
 }
 
 /**
@@ -229,6 +229,14 @@ export function createPodmanExecutor({
     onEvent?: (event: StreamEvent) => void;
     timeoutMs: number;
   }): Promise<Omit<RunResult, 'preparedRoot' | 'proxyLog' | 'canaries'> & { stderr: string }> {
+    if (signal?.aborted) {
+      // The batch's stop() or an external halt can fire while this call was still waiting on
+      // startNetwork. An 'abort' event that already fired never re-fires for a listener added
+      // afterward, so the addEventListener below would never see it and the container would run
+      // to its timeout unwatched. Checking the flag here, before anything spawns, is what
+      // actually cuts the job short in that case.
+      return { stdout: '', events: [], stderr: '', exitCode: null, aborted: true, timedOut: false };
+    }
     const envArgs: string[] = [];
     const containerEnv = { ...BASE_ENV, ...env, HTTPS_PROXY: proxy, HTTP_PROXY: proxy, https_proxy: proxy, http_proxy: proxy };
     for (const [key, value] of Object.entries(containerEnv)) envArgs.push('--env', `${key}=${value}`);

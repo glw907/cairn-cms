@@ -7,9 +7,16 @@
  * sweep. Every run or scratch directory carries an owner marker (the creating process's pid and
  * its own `/proc` start time, which a reused pid cannot fake); the sweep reaps a directory, and
  * the run-id directories among them their labeled containers and network, only when that marker's
- * process is no longer the one that wrote it.
+ * process is no longer the one that wrote it. A directory younger than `MARKERLESS_GRACE_MS` and
+ * still carrying no marker is left alone rather than reaped: a caller writes its marker just after
+ * `mkdirSync`, never atomically with it, so a sweep landing in that short window would otherwise
+ * treat a brand-new, live directory as an old, ownerless one. Beyond the directory-owned
+ * containers and network, the sweep also reaps any run's labeled containers and network when that
+ * run id names no directory in the cache root at all: a directory can be gone (a cleared cache, a
+ * cross-host container) while its containers linger, and no directory ever exists to drive the
+ * per-directory reap above.
  */
-import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUN_LABEL } from './podman.js';
 
@@ -143,6 +150,14 @@ const RUN_ID_PATTERN = /^\d{8}t\d{6}-[0-9a-f]{6}$/;
 const PRESERVED_NAMES = new Set(['results', 'ledger.jsonl', 'tarballs']);
 
 /**
+ * How long a marker-less directory is left alone before the sweep treats it as ownerless: long
+ * enough to cover the gap between a caller's `mkdirSync` and its following `writeOwnerMarker`
+ * call, short enough that a genuinely dead, marker-less directory from an old run is still reaped
+ * promptly.
+ */
+const MARKERLESS_GRACE_MS = 60_000;
+
+/**
  * Split a newline-delimited id list from a podman query into an array, dropping empty lines.
  * @param output - The command's raw stdout.
  * @returns The non-empty lines.
@@ -152,53 +167,89 @@ function ids(output: string): string[] {
 }
 
 /**
+ * Remove one run id's labeled containers and network. Best-effort: nothing found or already gone
+ * is not a failure.
+ * @param runId - The run id its containers and network are labeled with.
+ * @param podman - Runs one podman command and returns its stdout.
+ * @param containersRemoved - Accumulates the removed container ids.
+ * @param networksRemoved - Accumulates the removed network ids.
+ */
+async function reapRunLabel(
+  runId: string,
+  podman: PodmanRunner,
+  containersRemoved: string[],
+  networksRemoved: string[],
+): Promise<void> {
+  const containers = ids(await podman(['ps', '-a', '-q', '--filter', `label=${RUN_LABEL}=${runId}`]));
+  if (containers.length > 0) {
+    await podman(['rm', '-f', '-t', '0', ...containers]).catch(() => '');
+    containersRemoved.push(...containers);
+  }
+  const networks = ids(await podman(['network', 'ls', '-q', '--filter', `label=${RUN_LABEL}=${runId}`]));
+  if (networks.length > 0) {
+    await podman(['network', 'rm', '-f', ...networks]).catch(() => '');
+    networksRemoved.push(...networks);
+  }
+}
+
+/**
  * Remove every run-id directory and scratch directory under the cache root whose owner marker
  * names a process that is no longer running, and, for a dead run id, its own labeled containers
- * and network. A live owner's directory, and its containers and network, are left untouched, so a
- * concurrent runner (another worktree, another lane) never loses live work to this one's startup.
- * A directory carrying no owner marker at all is treated as dead (an older run, or a kill before
- * the marker write ever landed) and is swept the same as an expired one. Every removal is
- * best-effort: a container, network, or directory already gone is not a failure. `cacheRoot` is
- * the neutral cache root every per-run and scratch directory lives under; `podman` runs one
- * podman command and returns its stdout; `isAlive` decides whether a marker's owner still holds
- * its directory, overridden in tests.
+ * and network; separately, remove any run's labeled containers and network when that run id names
+ * no directory in the cache root at all. A live owner's directory, and its containers and network,
+ * are left untouched, so a concurrent runner (another worktree, another lane) never loses live
+ * work to this one's startup. A directory carrying no owner marker at all is treated as dead (an
+ * older run, or a kill before the marker write ever landed) once it is older than
+ * `MARKERLESS_GRACE_MS`; a marker-less directory younger than that is left alone, since its
+ * creator's marker write may simply not have landed yet. Every removal is best-effort: a
+ * container, network, or directory already gone is not a failure. `cacheRoot` is the neutral cache
+ * root every per-run and scratch directory lives under; `podman` runs one podman command and
+ * returns its stdout; `isAlive` decides whether a marker's owner still holds its directory,
+ * overridden in tests; `now` reads the clock the grace period is measured against, overridden in
+ * tests.
  * @returns The containers, networks, and directories the sweep removed.
  */
 export async function sweepOrphans({
   cacheRoot,
   podman,
   isAlive = isOwnerAliveReal,
+  now = () => Date.now(),
 }: {
   cacheRoot: string;
   podman: PodmanRunner;
   isAlive?: (marker: OwnerMarker) => boolean;
+  now?: () => number;
 }): Promise<SweepResult> {
   const containersRemoved: string[] = [];
   const networksRemoved: string[] = [];
   const dirsRemoved: string[] = [];
+  const dirRunIds = new Set<string>();
 
   if (existsSync(cacheRoot)) {
-    for (const entry of readdirSync(cacheRoot)) {
+    const entries = readdirSync(cacheRoot);
+    for (const entry of entries) {
+      if (RUN_ID_PATTERN.test(entry)) dirRunIds.add(entry);
+    }
+    for (const entry of entries) {
       if (PRESERVED_NAMES.has(entry) || !STALE_DIR_PATTERN.test(entry)) continue;
       const dir = join(cacheRoot, entry);
       const marker = readOwnerMarker(dir);
-      if (marker && isAlive(marker)) continue;
-
-      if (RUN_ID_PATTERN.test(entry)) {
-        const containers = ids(await podman(['ps', '-a', '-q', '--filter', `label=${RUN_LABEL}=${entry}`]));
-        if (containers.length > 0) {
-          await podman(['rm', '-f', '-t', '0', ...containers]).catch(() => '');
-          containersRemoved.push(...containers);
-        }
-        const networks = ids(await podman(['network', 'ls', '-q', '--filter', `label=${RUN_LABEL}=${entry}`]));
-        if (networks.length > 0) {
-          await podman(['network', 'rm', '-f', ...networks]).catch(() => '');
-          networksRemoved.push(...networks);
-        }
+      if (marker) {
+        if (isAlive(marker)) continue;
+      } else if (now() - statSync(dir).mtimeMs < MARKERLESS_GRACE_MS) {
+        continue;
       }
+
+      if (RUN_ID_PATTERN.test(entry)) await reapRunLabel(entry, podman, containersRemoved, networksRemoved);
       rmSync(dir, { recursive: true, force: true });
       dirsRemoved.push(entry);
     }
+  }
+
+  const labeledRunIds = new Set(ids(await podman(['ps', '-a', '--filter', `label=${RUN_LABEL}`, '--format', `{{.Label "${RUN_LABEL}"}}`])));
+  for (const runId of labeledRunIds) {
+    if (dirRunIds.has(runId)) continue;
+    await reapRunLabel(runId, podman, containersRemoved, networksRemoved);
   }
 
   return { containersRemoved, networksRemoved, dirsRemoved };

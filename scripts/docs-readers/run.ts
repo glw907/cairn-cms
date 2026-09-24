@@ -152,11 +152,29 @@ interface CachedGithubToken {
 }
 
 /**
+ * Mint with one bounded retry: a transient failure (a network blip, a slow App token exchange)
+ * gets one immediate second attempt before the caller sees a rejection.
+ * @param mint - The mint function to attempt.
+ * @returns The minted token.
+ * @throws The second attempt's error, when both attempts fail.
+ */
+async function mintWithRetry(mint: () => Promise<InstallationToken>): Promise<InstallationToken> {
+  try {
+    return await mint();
+  } catch {
+    return await mint();
+  }
+}
+
+/**
  * Build the operator class's secret resolver: `CAIRN_CF_READ_TOKEN` maps onto the scratch site's
  * own Cloudflare token, and `CAIRN_GH_READ_TOKEN` mints a GitHub installation token, caching it
  * until it is within `GITHUB_TOKEN_REMINT_MARGIN_MS` of its own expiry, at which point the next
  * call mints a fresh one; the check-and-mint decision runs with no `await` in between, so two
- * calls racing the same in-flight or about-to-expire mint always share one mint, never two.
+ * calls racing the same in-flight or about-to-expire mint always share one mint, never two. A
+ * mint gets one bounded retry before it is allowed to fail, and a mint that fails even after that
+ * retry is never left cached: the next call starts a fresh mint rather than replaying the same
+ * rejection forever, and the job that asked for the token during the failed mint fails cleanly.
  * Every other name falls through to a plain `readSecret` lookup, the mapping every other class's
  * secretEnv already relied on. `now` and `mint` are overridden in tests.
  * @returns A secret resolver for `createPodmanExecutor`.
@@ -171,14 +189,16 @@ export function operatorSecretResolver({
     if (name === 'CAIRN_GH_READ_TOKEN') {
       const expiringSoon = cached?.expiresAtMs !== undefined && cached.expiresAtMs - now() < GITHUB_TOKEN_REMINT_MARGIN_MS;
       if (!cached || expiringSoon) {
-        const promise = mint();
+        const promise = mintWithRetry(mint);
         const entry: CachedGithubToken = { promise };
         cached = entry;
         promise
           .then((token) => {
             if (cached === entry) entry.expiresAtMs = Date.parse(token.expiresAt);
           })
-          .catch(() => {});
+          .catch(() => {
+            if (cached === entry) cached = undefined;
+          });
       }
       return (await cached.promise).token;
     }

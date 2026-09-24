@@ -9,11 +9,18 @@ function tmp(): string {
   return mkdtempSync(join(tmpdir(), 'docs-readers-sweep-'));
 }
 
-/** A podman stand-in that records every call and answers a fixed id list for `ps`/`network ls`. */
-function fakePodman(ids: { containers: string[]; networks: string[] }): { podman: PodmanRunner; calls: string[][] } {
+/**
+ * A podman stand-in that records every call and answers a fixed id list for `ps`/`network ls`.
+ * `labeledRunIds` answers the sweep's own "every run id with a labeled container" listing query
+ * (`ps --format ...`, no `-q`); every `-q`-filtered `ps`/`network ls` query answers with
+ * `containers`/`networks` regardless of which run id it names, since each test drives a single
+ * run id at a time.
+ */
+function fakePodman(ids: { containers: string[]; networks: string[]; labeledRunIds?: string[] }): { podman: PodmanRunner; calls: string[][] } {
   const calls: string[][] = [];
   const podman: PodmanRunner = async (args) => {
     calls.push(args);
+    if (args[0] === 'ps' && args.includes('--format')) return (ids.labeledRunIds ?? []).join('\n');
     if (args[0] === 'ps') return ids.containers.join('\n');
     if (args[0] === 'network' && args[1] === 'ls') return ids.networks.join('\n');
     return '';
@@ -76,14 +83,31 @@ describe('sweepOrphans: owner liveness', () => {
     }
   });
 
-  it('treats a run-id directory with no marker at all as dead, the same as an older run', async () => {
+  it('treats a run-id directory with no marker at all as dead once past the grace period, the same as an older run', async () => {
     const runId = '20260923t143022-b0b0b0';
     const { podman } = fakePodman({ containers: [], networks: [] });
     const cacheRoot = tmp();
     try {
       mkdirSync(join(cacheRoot, runId), { recursive: true });
-      const result = await sweepOrphans({ cacheRoot, podman });
+      // The directory's real mtime is "now"; a clock pushed well past the grace period is what
+      // makes this a genuinely old, marker-less directory rather than one whose marker write
+      // simply has not landed yet.
+      const result = await sweepOrphans({ cacheRoot, podman, now: () => Date.now() + 10 * 60_000 });
       expect(result.dirsRemoved).toEqual([runId]);
+    } finally {
+      rmSync(cacheRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('leaves a marker-less directory alone within the grace period, since its marker write may not have landed yet', async () => {
+    const runId = '20260923t143022-freshaa';
+    const { podman } = fakePodman({ containers: [], networks: [] });
+    const cacheRoot = tmp();
+    try {
+      mkdirSync(join(cacheRoot, runId), { recursive: true });
+      const result = await sweepOrphans({ cacheRoot, podman });
+      expect(result.dirsRemoved).toEqual([]);
+      expect(existsSync(join(cacheRoot, runId))).toBe(true);
     } finally {
       rmSync(cacheRoot, { recursive: true, force: true });
     }
@@ -99,13 +123,13 @@ describe('sweepOrphans: owner liveness', () => {
       const result = await sweepOrphans({ cacheRoot, podman });
       expect(result.dirsRemoved).toEqual([]);
       expect(existsSync(join(cacheRoot, name))).toBe(true);
-      expect(calls).toEqual([]);
+      expect(calls.some((a) => a.includes(`label=docs-readers.run=${name}`))).toBe(false);
     } finally {
       rmSync(cacheRoot, { recursive: true, force: true });
     }
   });
 
-  it('reaps a dead docs-and-binary-* scratch directory without any podman query, since it carries no run label itself', async () => {
+  it('reaps a dead docs-and-binary-* scratch directory with no run-label podman query, since it carries no run label itself', async () => {
     const { podman, calls } = fakePodman({ containers: [], networks: [] });
     const cacheRoot = tmp();
     const name = 'docs-and-binary-00ff11aa';
@@ -114,7 +138,7 @@ describe('sweepOrphans: owner liveness', () => {
       writeOwnerMarker(join(cacheRoot, name), DEAD_MARKER);
       const result = await sweepOrphans({ cacheRoot, podman });
       expect(result.dirsRemoved).toEqual([name]);
-      expect(calls).toEqual([]);
+      expect(calls.some((a) => a.includes(`label=docs-readers.run=${name}`))).toBe(false);
     } finally {
       rmSync(cacheRoot, { recursive: true, force: true });
     }
@@ -145,7 +169,9 @@ describe('sweepOrphans: stale directory recognition', () => {
       mkdirSync(join(cacheRoot, 'results', 'some-batch'), { recursive: true });
       mkdirSync(join(cacheRoot, 'tarballs', 'abc123'), { recursive: true });
       writeFileSync(join(cacheRoot, 'ledger.jsonl'), '{}\n');
-      const result = await sweepOrphans({ cacheRoot, podman });
+      // Every stale directory here is marker-less; a clock past the grace period is what makes
+      // them dead rather than "just created, marker write still pending".
+      const result = await sweepOrphans({ cacheRoot, podman, now: () => Date.now() + 10 * 60_000 });
       expect(result.dirsRemoved.sort()).toEqual([...stale].sort());
       for (const name of stale) expect(existsSync(join(cacheRoot, name))).toBe(false);
       expect(existsSync(join(cacheRoot, 'results', 'some-batch'))).toBe(true);
@@ -174,5 +200,56 @@ describe('sweepOrphans: stale directory recognition', () => {
     const cacheRoot = join(tmpdir(), `docs-readers-sweep-missing-${Date.now()}`);
     const result = await sweepOrphans({ cacheRoot, podman });
     expect(result.dirsRemoved).toEqual([]);
+  });
+});
+
+describe('sweepOrphans: labeled containers and networks whose run directory is gone', () => {
+  it('reaps a run id’s labeled containers and network when no directory for it exists in the cache root at all', async () => {
+    const runId = '20260923t143022-orphan1';
+    const { podman, calls } = fakePodman({ containers: ['c-orphan'], networks: ['n-orphan'], labeledRunIds: [runId] });
+    const cacheRoot = tmp();
+    try {
+      const result = await sweepOrphans({ cacheRoot, podman });
+      expect(result.containersRemoved).toEqual(['c-orphan']);
+      expect(result.networksRemoved).toEqual(['n-orphan']);
+      expect(result.dirsRemoved).toEqual([]);
+      expect(calls).toContainEqual(['ps', '-a', '-q', '--filter', `label=docs-readers.run=${runId}`]);
+      expect(calls).toContainEqual(['network', 'ls', '-q', '--filter', `label=docs-readers.run=${runId}`]);
+    } finally {
+      rmSync(cacheRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('never reaps a labeled run id that still has a live, owned directory', async () => {
+    const runId = '20260923t143022-11ff22';
+    const { podman } = fakePodman({ containers: ['should-not-be-removed'], networks: [], labeledRunIds: [runId] });
+    const cacheRoot = tmp();
+    try {
+      mkdirSync(join(cacheRoot, runId), { recursive: true });
+      writeOwnerMarker(join(cacheRoot, runId), currentOwnerMarker());
+      const result = await sweepOrphans({ cacheRoot, podman });
+      expect(result.containersRemoved).toEqual([]);
+      expect(result.networksRemoved).toEqual([]);
+      expect(result.dirsRemoved).toEqual([]);
+    } finally {
+      rmSync(cacheRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('does not reap a labeled run id a second time: the per-directory reap above already covers a dead directory that still exists', async () => {
+    const runId = '20260923t143022-deadbe2';
+    const { podman, calls } = fakePodman({ containers: ['c1'], networks: ['n1'], labeledRunIds: [runId] });
+    const cacheRoot = tmp();
+    try {
+      mkdirSync(join(cacheRoot, runId), { recursive: true });
+      writeOwnerMarker(join(cacheRoot, runId), DEAD_MARKER);
+      await sweepOrphans({ cacheRoot, podman });
+      const reapQueries = calls.filter((a) => a.includes(`label=docs-readers.run=${runId}`) && a.includes('-q'));
+      // One query for containers and one for networks, from the per-directory reap alone; the
+      // no-directory-at-all step must not issue a second round for the same run id.
+      expect(reapQueries.length).toBe(2);
+    } finally {
+      rmSync(cacheRoot, { recursive: true, force: true });
+    }
   });
 });

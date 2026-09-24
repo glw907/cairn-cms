@@ -135,10 +135,14 @@ async function prepareCoreDeveloper(): Promise<void> {
 
 /**
  * Build the designer and extender jobs' prepared trees: one packed engine tarball pair, reused for
- * both scaffolded sites, since neither job's own docs set changes what the site scaffold needs.
+ * both scaffolded sites, since neither job's own docs set changes what the site scaffold needs. A
+ * freshly built pair (a cache miss) lands under a neutral scratch directory, never under
+ * `BASELINE_PREPARED_ROOT`: `scaffoldSite` writes the returned tarball path straight into the
+ * scaffolded site's own `package.json`, which a reader can read, so that path must never name this
+ * batch.
  */
 async function prepareDesignerAndExtender(): Promise<void> {
-  const tarballs = packEngineTarballs(REPO_ROOT, join(BASELINE_PREPARED_ROOT, 'pack'), undefined, CACHE_ROOT);
+  const tarballs = packEngineTarballs(REPO_ROOT, join(CACHE_ROOT, 'pack-scratch'), undefined, CACHE_ROOT);
   prepareDocsAndSite({ sourceRoot: REPO_ROOT, docsSet: DESIGNER_DOCS_SET, tarballs, dest: join(BASELINE_PREPARED_ROOT, 'designer-design-your-site') });
   prepareDocsAndSite({ sourceRoot: REPO_ROOT, docsSet: EXTENDER_DOCS_SET, tarballs, dest: join(BASELINE_PREPARED_ROOT, 'extender-add-a-custom-admin-screen') });
 }

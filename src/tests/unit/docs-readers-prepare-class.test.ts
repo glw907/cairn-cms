@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, existsSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, utimesSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -10,6 +10,7 @@ import {
   installAndStrip,
   packEngineTarballs,
   packTarball,
+  packageInputPaths,
   prepareDocsAndBinary,
   prepareDocsAndSite,
   prepareRepositoryExport,
@@ -249,6 +250,15 @@ describe('packEngineTarballs', () => {
 });
 
 /**
+ * Write a minimal `package.json` with a `files` field, so `packageInputPaths`'s real read of it
+ * (inside `tarballCacheKey`) finds something rather than throwing `ENOENT` against a bare tmp
+ * directory.
+ */
+function writeFakePackageJson(repoRoot: string, files: string[] = ['dist', 'docs/admin', 'migrations']): void {
+  writeFileSync(join(repoRoot, 'package.json'), JSON.stringify({ name: '@glw907/cairn-cms', files }));
+}
+
+/**
  * A runner that fakes `git rev-parse HEAD`, `git status --porcelain`, and a real `npm run
  * package` plus two `npm pack` calls, for the tarball-cache tests below. `head` is HEAD's own
  * commit; `dirty` lists the porcelain lines `git status` reports (empty for a clean tree).
@@ -271,12 +281,45 @@ function fakeCacheableRunner({ head, dirty = [] as string[] }: { head: string; d
   return { runner, calls };
 }
 
+describe('packageInputPaths', () => {
+  it('adds every package.json "files" entry except dist to the fixed build inputs', () => {
+    const repoRoot = tmp('input-paths');
+    try {
+      writeFakePackageJson(repoRoot, ['dist', 'docs/admin', 'docs/editors', 'migrations', 'skills', 'claude', 'CHANGELOG.md']);
+      const paths = packageInputPaths(repoRoot);
+      expect(paths).toEqual(
+        expect.arrayContaining([
+          'src/lib',
+          'packages/cairn-cms-dev',
+          'package.json',
+          'package-lock.json',
+          'svelte.config.js',
+          'tsconfig.json',
+          'scripts/build',
+          'README.md',
+          'LICENSE',
+          'docs/admin',
+          'docs/editors',
+          'migrations',
+          'skills',
+          'claude',
+          'CHANGELOG.md',
+        ]),
+      );
+      expect(paths).not.toContain('dist');
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('packEngineTarballs: the tarball cache', () => {
   it('builds on a cache miss, then skips npm run package and both packs on a hit for the same clean HEAD', () => {
     const repoRoot = tmp('cache-repo');
     const destDir = tmp('cache-dest');
     const cacheRoot = tmp('cache-root');
     try {
+      writeFakePackageJson(repoRoot);
       const first = fakeCacheableRunner({ head: 'abc123' });
       const built = packEngineTarballs(repoRoot, destDir, first.runner, cacheRoot);
       expect(first.calls.some((c) => c.startsWith('npm run package'))).toBe(true);
@@ -298,10 +341,33 @@ describe('packEngineTarballs: the tarball cache', () => {
     const destDir = tmp('cache-dest-dirty');
     const cacheRoot = tmp('cache-root-dirty');
     try {
+      writeFakePackageJson(repoRoot);
       const clean = fakeCacheableRunner({ head: 'abc123' });
       packEngineTarballs(repoRoot, destDir, clean.runner, cacheRoot);
 
       const dirty = fakeCacheableRunner({ head: 'abc123', dirty: [' M src/lib/index.ts'] });
+      packEngineTarballs(repoRoot, destDir, dirty.runner, cacheRoot);
+      expect(dirty.calls.some((c) => c.startsWith('npm run package'))).toBe(true);
+      expect(dirty.calls.filter((c) => c.startsWith('npm pack'))).toHaveLength(2);
+    } finally {
+      for (const dir of [repoRoot, destDir, cacheRoot]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('checks every package.json "files" entry (docs pages included) for dirtiness, and a dirty docs page bypasses the cache', () => {
+    const repoRoot = tmp('cache-repo-docs');
+    const destDir = tmp('cache-dest-docs');
+    const cacheRoot = tmp('cache-root-docs');
+    try {
+      writeFakePackageJson(repoRoot, ['dist', 'docs/admin', 'migrations']);
+      const clean = fakeCacheableRunner({ head: 'abc123' });
+      packEngineTarballs(repoRoot, destDir, clean.runner, cacheRoot);
+      const statusCall = clean.calls.find((c) => c.startsWith('git status'));
+      expect(statusCall).toContain('docs/admin');
+      expect(statusCall).toContain('migrations');
+      expect(statusCall?.split(' ')).not.toContain('dist');
+
+      const dirty = fakeCacheableRunner({ head: 'abc123', dirty: [' M docs/admin/troubleshooting.md'] });
       packEngineTarballs(repoRoot, destDir, dirty.runner, cacheRoot);
       expect(dirty.calls.some((c) => c.startsWith('npm run package'))).toBe(true);
       expect(dirty.calls.filter((c) => c.startsWith('npm pack'))).toHaveLength(2);
@@ -315,6 +381,7 @@ describe('packEngineTarballs: the tarball cache', () => {
     const destDir = tmp('cache-dest-key');
     const cacheRoot = tmp('cache-root-key');
     try {
+      writeFakePackageJson(repoRoot);
       const atFirstHead = fakeCacheableRunner({ head: 'abc123' });
       packEngineTarballs(repoRoot, destDir, atFirstHead.runner, cacheRoot);
 
@@ -335,6 +402,7 @@ describe('packEngineTarballs: the tarball cache', () => {
     const destDir = tmp('cache-dest-prune');
     const cacheRoot = tmp('cache-root-prune');
     try {
+      writeFakePackageJson(repoRoot);
       for (const head of ['h1', 'h2', 'h3', 'h4']) {
         const { runner } = fakeCacheableRunner({ head });
         packEngineTarballs(repoRoot, destDir, runner, cacheRoot);
@@ -343,6 +411,42 @@ describe('packEngineTarballs: the tarball cache', () => {
       expect(keys).toHaveLength(3);
       expect(keys).not.toContain('h1');
       expect(keys).toEqual(expect.arrayContaining(['h2', 'h3', 'h4']));
+    } finally {
+      for (const dir of [repoRoot, destDir, cacheRoot]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('touches a key’s directory mtime on a cache hit, so eviction follows use rather than build order alone', () => {
+    const repoRoot = tmp('cache-repo-touch');
+    const destDir = tmp('cache-dest-touch');
+    const cacheRoot = tmp('cache-root-touch');
+    try {
+      writeFakePackageJson(repoRoot);
+      for (const head of ['h1', 'h2', 'h3']) {
+        const { runner } = fakeCacheableRunner({ head });
+        packEngineTarballs(repoRoot, destDir, runner, cacheRoot);
+      }
+      // Backdate all three, oldest to newest, so a plain build-order prune (ignoring use) would
+      // evict h1 next, exactly the case a real cache hit on h1 must prevent.
+      const tarballsDir = join(cacheRoot, 'tarballs');
+      const old = new Date(Date.now() - 60_000);
+      utimesSync(join(tarballsDir, 'h1'), old, new Date(old.getTime() + 1000));
+      utimesSync(join(tarballsDir, 'h2'), old, new Date(old.getTime() + 2000));
+      utimesSync(join(tarballsDir, 'h3'), old, new Date(old.getTime() + 3000));
+
+      // A cache hit on h1 (same head, already cached): reading it back must touch its mtime to now.
+      const hit = fakeCacheableRunner({ head: 'h1' });
+      packEngineTarballs(repoRoot, destDir, hit.runner, cacheRoot);
+      expect(hit.calls.some((c) => c.startsWith('npm run package'))).toBe(false);
+
+      // A fourth, genuinely new key pushes the cache past its bound of three.
+      const fresh = fakeCacheableRunner({ head: 'h4' });
+      packEngineTarballs(repoRoot, destDir, fresh.runner, cacheRoot);
+
+      const keys = readdirSync(tarballsDir);
+      expect(keys).toHaveLength(3);
+      expect(keys).not.toContain('h2'); // the true oldest, once h1's use bumped it out of that spot
+      expect(keys).toEqual(expect.arrayContaining(['h1', 'h3', 'h4']));
     } finally {
       for (const dir of [repoRoot, destDir, cacheRoot]) rmSync(dir, { recursive: true, force: true });
     }

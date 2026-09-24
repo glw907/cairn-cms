@@ -7,7 +7,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** A shell command runner, injected so tests can replace the real `npm`, `git`, and `tar` calls. */
@@ -71,14 +71,42 @@ export function packTarball(packageDir: string, destDir: string, runner: Command
 }
 
 /**
- * The paths, relative to a checkout's root, whose bytes `npm run package` reads: the library
- * source `svelte-package` compiles, the dev-backend package a second `npm pack` reads directly,
- * the root `package.json` (name, version, and the `exports` map the build honours), the
- * preprocessor config, and the admin CSS build's own scripts and input stylesheet. Exported so a
- * caller building a wider dirty-tree check (a live preparation run) can name the same set rather
- * than drift from `tarballCacheKey`'s own list.
+ * The paths, relative to a checkout's root, that feed `npm run package` but never appear in the
+ * root `package.json`'s own `files` list: the library source `svelte-package` compiles, the
+ * dev-backend package a second `npm pack` reads directly, the build's own scripts, and the
+ * configuration and lockfile that shape what the build produces. `files`-listed paths (the docs
+ * arms, `migrations`, `skills`, `claude`, `CHANGELOG.md`, and the rest) are added by
+ * `packageInputPaths`, which reads `package.json` itself rather than duplicate its list here,
+ * since every one of them reaches the published tarball unbuilt and a dirty copy would otherwise
+ * ship stale with no build step ever touching it to notice. `dist` is `files`-listed too, but is
+ * this build's own output, not an input to it, and its freshness already follows `src/lib`, so
+ * `packageInputPaths` excludes it explicitly rather than key the cache off files it just wrote.
  */
-export const PACKAGE_INPUT_PATHS = ['src/lib', 'packages/cairn-cms-dev', 'package.json', 'svelte.config.js', 'scripts/build'];
+export const PACKAGE_FIXED_INPUTS = [
+  'src/lib',
+  'packages/cairn-cms-dev',
+  'package.json',
+  'package-lock.json',
+  'svelte.config.js',
+  'tsconfig.json',
+  'scripts/build',
+  'README.md',
+  'LICENSE',
+];
+
+/**
+ * The full set of paths whose dirtiness invalidates the packed-tarball cache: `PACKAGE_FIXED_INPUTS`
+ * plus every entry `package.json`'s own `files` field ships into the published tarball, `dist`
+ * excluded. Reads `package.json` fresh on every call, since a checkout's own `files` list can
+ * change between commits.
+ * @param repoRoot - The checkout whose `package.json` to read.
+ * @returns The paths, relative to `repoRoot`, `tarballCacheKey` checks for dirtiness.
+ */
+export function packageInputPaths(repoRoot: string): string[] {
+  const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')) as { files?: string[] };
+  const shipped = (pkg.files ?? []).filter((entry) => entry !== 'dist');
+  return [...PACKAGE_FIXED_INPUTS, ...shipped];
+}
 
 /**
  * How many packed-tarball cache keys `pruneTarballCache` keeps. Each key holds a full engine and
@@ -102,26 +130,30 @@ export function tarballCacheRoot(cacheRoot: string): string {
 
 /**
  * Compute the packed-tarball cache key: HEAD's own commit hash, returned only when every path
- * `npm run package` reads (`PACKAGE_INPUT_PATHS`, or a narrower set a caller names) is clean
+ * that reaches the tarball (`packageInputPaths`, or a narrower set a caller names) is clean
  * against that commit. A dirty tree in any of those paths, or a checkout `git` itself cannot
  * read, returns undefined, so the caller always rebuilds rather than serve a tarball that does
- * not match what is really on disk (`npm pack`'s stale-cache trap, `scripts/lab/link-consumer.mjs`).
- * `repoRoot` is the checkout to key; `paths` are the paths, relative to `repoRoot`, whose
- * dirtiness invalidates the key; `runner` is the command runner, overridden in tests.
+ * not match what is really on disk (`npm pack`'s stale-cache trap, `scripts/lab/link-consumer.mjs`;
+ * a dirty docs page is exactly the shape of change this pass makes, and `packageInputPaths`
+ * covers every docs arm `package.json`'s own `files` field ships). `repoRoot` is the checkout to
+ * key; `paths` are the paths, relative to `repoRoot`, whose dirtiness invalidates the key,
+ * defaulting to `packageInputPaths(repoRoot)`; `runner` is the command runner, overridden in
+ * tests.
  * @returns HEAD's commit hash, or undefined when the tree is dirty in a path that matters.
  */
 export function tarballCacheKey({
   repoRoot,
-  paths = PACKAGE_INPUT_PATHS,
+  paths,
   runner = spawnRunner,
 }: {
   repoRoot: string;
   paths?: string[];
   runner?: CommandRunner;
 }): string | undefined {
+  const effectivePaths = paths ?? packageInputPaths(repoRoot);
   const head = runner('git', ['rev-parse', 'HEAD'], { cwd: repoRoot });
   if (head.status !== 0) return undefined;
-  const status = runner('git', ['status', '--porcelain', '--', ...paths], { cwd: repoRoot });
+  const status = runner('git', ['status', '--porcelain', '--', ...effectivePaths], { cwd: repoRoot });
   if (status.status !== 0 || decoder.decode(status.stdout).trim() !== '') return undefined;
   return decoder.decode(head.stdout).trim();
 }
@@ -138,14 +170,20 @@ function tarballCachePaths(cacheRoot: string, key: string): { dir: string; engin
 }
 
 /**
- * Read a cache key's tarballs, when both files are present.
+ * Read a cache key's tarballs, when both files are present, touching the key directory's own
+ * mtime to now on a hit: `pruneTarballCache` evicts by directory mtime, so a key that keeps
+ * getting used stays current against one that was built once and never read again, rather than
+ * both aging out together by build order alone.
  * @param cacheRoot - The runner's neutral cache root.
  * @param key - A `tarballCacheKey` result.
  * @returns The cached tarball paths, or undefined on a cache miss.
  */
 function readTarballCache(cacheRoot: string, key: string): { engine: string; dev: string } | undefined {
-  const { engine, dev } = tarballCachePaths(cacheRoot, key);
-  return existsSync(engine) && existsSync(dev) ? { engine, dev } : undefined;
+  const { dir, engine, dev } = tarballCachePaths(cacheRoot, key);
+  if (!existsSync(engine) || !existsSync(dev)) return undefined;
+  const now = new Date();
+  utimesSync(dir, now, now);
+  return { engine, dev };
 }
 
 /**

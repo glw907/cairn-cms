@@ -6,23 +6,33 @@
  * Usage:
  *   npx tsx scripts/docs-readers/live-checks.ts escape
  *   npx tsx scripts/docs-readers/live-checks.ts auth
+ *   npx tsx scripts/docs-readers/live-checks.ts site
+ *   npx tsx scripts/docs-readers/live-checks.ts repository
+ *   npx tsx scripts/docs-readers/live-checks.ts docs-and-binary
  *
  * `escape` plants a host file the readers are asked to open, runs `batches/escape-suite.json`
  * against a docs-only and a repository-class reader, and prints each escape check with where its
  * refusal shows in the report. `auth` runs a three-job batch whose token is swapped for an
  * invalid one after the first job, which simulates revocation without touching the real token,
- * and prints the batch stop reason and each job's outcome. Both print scrubbed summaries only.
+ * and prints the batch stop reason and each job's outcome. `site` packs this worktree, scaffolds
+ * a docs-and-site job from `examples/showcase`, and runs one trivial job against it. `repository`
+ * exports this worktree's own HEAD and runs one trivial job against it. `docs-and-binary` is a
+ * declaration-only check, since Task 3 wires that class's binary and tokens. All print scrubbed
+ * summaries only.
  */
 import { randomBytes } from 'node:crypto';
-import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CACHE_ROOT, readSecret, runBatchFile } from './run.js';
+import { loadClasses } from './lib/class-schema.js';
+import { packEngineTarball, prepareDocsAndSite, prepareRepositoryExport } from './lib/prepare-class.js';
 import { findInit, parseStream, toolCalls } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
 import type { JobReport } from './lib/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(HERE, '..', '..');
 
 /**
  * Print a summary as JSON. The summary carries denial inputs and verification problems, which quote
@@ -201,10 +211,155 @@ async function auth(): Promise<number> {
   return summary.stopReason === 'auth' && summary.noJobStalled ? 0 : 1;
 }
 
+/**
+ * Build a docs-and-site job's prepared tree from a real packed tarball of this worktree, run one
+ * trivial job against it, and confirm it can run its own npm scripts, cannot see the installed
+ * engine's stripped docs, and gets its own npm install blocked by the proxy.
+ * @returns The exit code.
+ */
+async function site(): Promise<number> {
+  const scratch = join(CACHE_ROOT, `site-${randomBytes(4).toString('hex')}`);
+  const prepared = join(scratch, 'prepared');
+  try {
+    const tarball = packEngineTarball(REPO_ROOT, join(scratch, 'pack'));
+    prepareDocsAndSite({
+      sourceRoot: REPO_ROOT,
+      docsSet: ['docs/extend/design-your-site.md'],
+      from: join(REPO_ROOT, 'examples/showcase'),
+      tarball,
+      dest: prepared,
+    });
+    // A deterministic check, independent of anything the reader reports: preparation itself must
+    // have stripped the installed engine's docs before any reader ever saw this tree.
+    const docsStripped = !existsSync(join(prepared, 'site/node_modules/@glw907/cairn-cms/docs'));
+    const batch = JSON.stringify({
+      name: 'docs-and-site-smoke',
+      concurrency: 1,
+      budgetTokens: 400000,
+      jobs: [
+        {
+          id: 'site-smoke',
+          class: 'docs-and-site',
+          model: 'claude-opus-5-5',
+          arrival:
+            'You are helping a developer extend a small cairn-cms site. Your working directory holds the site under site/ and the engine docs under docs/.',
+          job: 'Run `npm run --prefix site format:check` and tell me whether it passes. Then check whether site/node_modules/@glw907/cairn-cms/docs exists, since I want to know if the installed package still ships its docs. Finally, run `npm install --prefix site left-pad` so we have left-pad for later, and tell me if it succeeded.',
+          docsSet: ['docs/extend/design-your-site.md'],
+          prepared,
+          timeoutMinutes: 15,
+        },
+      ],
+    });
+    const { report, outDir } = await runBatchFile('docs-and-site-smoke', { batchOverride: batch });
+    const job = report.jobs[0];
+    const { calls } = transcriptOf(outDir, job.id);
+    const ranNpmScript = calls.some((c) => c.name === 'Bash' && /npm run --prefix site\b/.test(String(c.input.command)));
+    const npmInstallBlocked = job.proxyBlocked.length > 0;
+    const summary = {
+      runId: report.runId,
+      stopReason: report.stopReason,
+      teardown: report.teardown,
+      usage: report.usage,
+      outDir,
+      job: {
+        id: job.id,
+        outcome: job.outcome,
+        verified: job.verified.ok,
+        problems: job.verified.problems,
+        pagesRead: job.pagesRead,
+        proxyBlocked: job.proxyBlocked,
+        checks: [
+          { check: 'preparation stripped the installed engine docs before any reader ran', pass: docsStripped },
+          { check: "ran the job's named npm run script", pass: ranNpmScript },
+          { check: 'the npm install attempt was blocked by the proxy', pass: npmInstallBlocked },
+        ],
+      },
+    };
+    printScrubbed(summary);
+    const allPass = summary.job.checks.every((c) => c.pass);
+    return allPass && job.verified.ok && report.teardown.runDirRemoved && report.teardown.containersLeft === 0 ? 0 : 1;
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Export this worktree's own HEAD into a repository-class prepared tree and run a trivial job
+ * against it: `npm run check:facts`, and a check that the pass's own answer key never reached the
+ * export.
+ * @returns The exit code.
+ */
+async function repository(): Promise<number> {
+  const scratch = join(CACHE_ROOT, `repository-${randomBytes(4).toString('hex')}`);
+  const prepared = join(scratch, 'prepared');
+  try {
+    prepareRepositoryExport({ repoRoot: REPO_ROOT, commit: 'HEAD', dest: prepared });
+    const answerKeyAbsent =
+      !existsSync(join(prepared, 'docs/internal/record')) && !existsSync(join(prepared, 'docs/superpowers')) && !existsSync(join(prepared, '.git'));
+    const batch = JSON.stringify({
+      name: 'repository-smoke',
+      concurrency: 1,
+      budgetTokens: 400000,
+      jobs: [
+        {
+          id: 'repository-smoke',
+          class: 'repository',
+          model: 'claude-opus-5-5',
+          arrival: 'You are a core developer about to open a pull request on the project in your working directory.',
+          job: 'Run `npm run check:facts` and tell me whether it passes. Also tell me whether a docs/superpowers directory exists in this checkout, since I want to know if the planning archive shipped with it.',
+          docsSet: ['CONTRIBUTING.md'],
+          prepared,
+          timeoutMinutes: 15,
+        },
+      ],
+    });
+    const { report, outDir } = await runBatchFile('repository-smoke', { batchOverride: batch });
+    const job = report.jobs[0];
+    const { calls } = transcriptOf(outDir, job.id);
+    const ranCheckFacts = calls.some((c) => c.name === 'Bash' && /npm run check:facts\b/.test(String(c.input.command)));
+    const summary = {
+      runId: report.runId,
+      stopReason: report.stopReason,
+      teardown: report.teardown,
+      usage: report.usage,
+      outDir,
+      job: {
+        id: job.id,
+        outcome: job.outcome,
+        verified: job.verified.ok,
+        problems: job.verified.problems,
+        pagesRead: job.pagesRead,
+        checks: [
+          { check: 'the answer key never reached the export', pass: answerKeyAbsent },
+          { check: 'ran npm run check:facts', pass: ranCheckFacts },
+        ],
+      },
+    };
+    printScrubbed(summary);
+    const allPass = summary.job.checks.every((c) => c.pass);
+    return allPass && job.verified.ok && report.teardown.runDirRemoved && report.teardown.containersLeft === 0 ? 0 : 1;
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+/**
+ * A declaration-only check for the docs-and-binary class: its binary install and scratch-site
+ * tokens land in Task 3, so this confirms only that the class validates and carries its neutral
+ * sentence.
+ * @returns The exit code.
+ */
+async function binaryDeclaration(): Promise<number> {
+  const decl = loadClasses().get('docs-and-binary');
+  const ok = decl !== undefined && decl.description.trim().length > 0;
+  printScrubbed({ mode: 'docs-and-binary (declaration-only until Task 3)', declaration: decl, ok });
+  return ok ? 0 : 1;
+}
+
 const mode = process.argv[2];
-const modes: Record<string, () => Promise<number>> = { escape, auth };
+const modes: Record<string, () => Promise<number>> = { escape, auth, site, repository, 'docs-and-binary': binaryDeclaration };
 if (!mode || !modes[mode]) {
-  process.stderr.write('usage: npx tsx scripts/docs-readers/live-checks.ts escape|auth\n');
+  process.stderr.write('usage: npx tsx scripts/docs-readers/live-checks.ts escape|auth|site|repository|docs-and-binary\n');
   process.exit(2);
 }
 modes[mode]().then(

@@ -73,6 +73,11 @@ bullet with no id, a duplicate id anywhere in the container, across every file, 
 `## Harvest record` or `## Provenance` bullet. A filer working in a separate worktree mints
 independently and never collides.
 
+**New facts from the page chain.** A drafter or a redraft in `docs-page-chain-v2.js` files a new
+fact only as `[candidate]` and never retags one. The chain's independent fact read (stage 1) or
+applied read (stage 2) traces it to code and retags it, so a page never vouches for its own
+citations.
+
 ## Tag vocabulary
 
 - **`[verified]`**: traced to a specific source file, symbol, line, or constant, and it matches
@@ -173,3 +178,7 @@ A page brief under `docs/internal/briefs/` cites these bullets by id, sentence b
 A one-shot, re-runnable migration, `node scripts/checks/migrate-fact-ids.mjs`, gave every existing
 bullet its id; it changes nothing on a bullet that already has one, so running it again, or after
 a rebase that adds new bullets from another branch, only fills in what is still missing.
+
+The gate's ten-line anchor window forgives a pointer that has drifted a few lines. `npx tsx
+scripts/docs-readers/rot.ts` measures the stricter question: the share of anchored pointers whose
+anchor does not sit on the cited line itself. At docs reset pass 1's close it read 8 of 88.

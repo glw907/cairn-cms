@@ -3,7 +3,9 @@
 A brief records where every sentence of one published docs page comes from. It is agent-facing,
 never shipped, and never register-graded. `npm run check:provenance`
 (`scripts/checks/check-provenance.mjs`) reads every brief here and fails the build on any sentence
-it cannot trace. Until the first brief lands, the check passes and prints "no page has a brief yet".
+it cannot trace. It runs in CI (`.github/workflows/test.yml`). Until the first brief lands, the
+check passes and prints "no page has a brief yet"; no brief is committed as of docs reset pass 1's
+close.
 
 Pass one or more brief paths to check only those briefs, leaving every other brief unchecked:
 `npm run check:provenance -- <brief path>...`. Each path must exist and sit under
@@ -43,8 +45,8 @@ out of the list. Table cells and list items are sentences.
 
 ## The drafter writes it
 
-The drafter writes the `sentences` list together with the page, in the same round, never after
-it. A sentence that states two facts from two bullets is two sentences. A drafted sentence with
+The drafter (`cairn-docs-drafter`, run by the workstation's `docs-page-chain-v2.js`) writes the
+`sentences` list together with the page, in the same round, never after it. A sentence that states two facts from two bullets is two sentences. A drafted sentence with
 no fact to cite is either `no-claim`, because it claims nothing, or it goes back to the facts
 container first, because a claim with no fact is the defect this check exists to catch.
 

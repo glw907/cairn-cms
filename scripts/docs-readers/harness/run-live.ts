@@ -2,10 +2,21 @@
 /**
  * The harness's live run, by hand outside any gate (a podman container escapes the gate's cgroup
  * cap): every operator page's read-only procedures run for real against the scratch site's own
- * checkout, and the title check runs against the real registry. `cairn doctor` reads no
- * credential (the page itself says so), so this run mints no token and uses no secret; a future
- * state-changing procedure would need `cairn <path> --help` only, still no credential to execute
- * one for real.
+ * checkout, and the title check runs against the condition ids `cairn doctor` actually raises.
+ * `cairn doctor` reads no credential (the page itself says so), so this run mints no token and
+ * uses no secret; a future state-changing procedure would need `cairn <path> --help` only, still
+ * no credential to execute one for real.
+ *
+ * Exit contract: 0 only when every extracted procedure's own step outcome is `pass` and the title
+ * check reports no finding; 1 when any step failed, any title finding remains, or the run itself
+ * threw. A validation pass gates on this exit code, so a real regression must fail it, not only
+ * appear in the printed JSON.
+ *
+ * Filed, not built: a title only `cairn health` prints, or one no command checks yet, is outside
+ * the title check's own registry on purpose, so a page defect in one of those titles matches
+ * nothing this check prints; that gap is a separate page defect, not a harness gap. An inline
+ * prose `cairn` command (not inside a fenced block) is never extracted either; counting one needs
+ * the page to fence it first, which this pass changes no published page to do.
  *
  * Usage:
  *   npx tsx scripts/docs-readers/harness/run-live.ts
@@ -23,10 +34,11 @@ import { archiveCommit, ensureScratchSiteCommit, prepareDocsAndBinary } from '..
 import { ensureImage, hostCliVersion } from '../lib/podman.js';
 import { writeOwnerMarker } from '../lib/sweep.js';
 import type { ScratchSiteRecord } from '../lib/prepare-class.js';
+import { doctorRaisedConditionIds } from './doctor-conditions.js';
 import { extractProcedures } from './extract.js';
 import { listOperatorPages } from './pages.js';
 import { runProcedures, type ExecResult, type HarnessDeps, type HarnessStep } from './run.js';
-import { checkTitles, type Condition } from './titles.js';
+import { checkTitles, type Condition, type TitleFinding } from './titles.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..', '..');
@@ -78,23 +90,28 @@ async function runCairn(image: string, prepared: string, args: string[]): Promis
 }
 
 /**
- * Run the harness against every in-scope operator page and the real condition registry.
- * @returns The exit code: 0 when the run itself completed, whatever the pages' own findings say.
+ * Run the harness against every in-scope operator page and the condition ids `cairn doctor`
+ * actually raises.
+ * @returns The exit code, per this module's own exit contract.
  */
 async function main(): Promise<number> {
   const adminDir = join(REPO_ROOT, 'docs', 'admin');
   const pages = listOperatorPages(adminDir);
-  const conditions = JSON.parse(readFileSync(join(REPO_ROOT, 'tool/internal/spine/conditions.json'), 'utf8')) as Condition[];
+  const registry = JSON.parse(readFileSync(join(REPO_ROOT, 'tool/internal/spine/conditions.json'), 'utf8')) as Condition[];
+  const doctorIds = doctorRaisedConditionIds(REPO_ROOT);
+  const doctorConditions = registry.filter((c) => doctorIds.has(c.id));
   const docsAndBinary = loadClasses(join(REPO_ROOT, 'scripts/docs-readers/classes')).get('docs-and-binary');
   if (!docsAndBinary) throw new Error('the docs-and-binary class declaration is missing');
 
-  const titleFindings = pages.flatMap((page) => checkTitles(readFileSync(join(REPO_ROOT, page), 'utf8'), page, conditions));
+  const titleFindings: TitleFinding[] = pages.flatMap((page) =>
+    checkTitles(readFileSync(join(REPO_ROOT, page), 'utf8'), page, doctorConditions),
+  );
 
   const scratch = join(CACHE_ROOT, `harness-live-${randomBytes(4).toString('hex')}`);
   const prepared = join(scratch, 'prepared');
-  mkdirSync(scratch, { recursive: true });
-  writeOwnerMarker(scratch);
   try {
+    mkdirSync(scratch, { recursive: true });
+    writeOwnerMarker(scratch);
     const scratchClone = join(CACHE_ROOT, 'scratch-site-repo');
     ensureScratchSiteCommit({ cloneDir: scratchClone, commit: SCRATCH_SITE_COMMIT });
     const siteExportDir = join(scratch, 'site-export');
@@ -124,7 +141,8 @@ async function main(): Promise<number> {
     }
 
     process.stdout.write(`${JSON.stringify({ pages: results, titleFindings }, null, 2)}\n`);
-    return 0;
+    const anyStepFailed = Object.values(results).some((steps) => steps.some((step) => step.outcome === 'fail'));
+    return anyStepFailed || titleFindings.length > 0 ? 1 : 0;
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

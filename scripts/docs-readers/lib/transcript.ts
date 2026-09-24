@@ -199,11 +199,14 @@ function stepCd(cwd: string, target: string): string {
 
 /**
  * Split a Bash command into its `&&`/`||`/`;`/`|`/newline-separated segments, the same grain
- * `cdTarget` and `SHELL_READERS` scan, without splitting inside a single- or double-quoted span.
- * A single-quoted span takes every character literally, backslash included, so a quoted pattern
- * such as `'a\|b'` carries a literal pipe that names no new segment; a double-quoted span still
- * lets a backslash escape the character right after it, so an escaped quote inside one does not
- * end it early.
+ * `cdTarget` and `SHELL_READERS` scan, without splitting inside a single- or double-quoted span,
+ * or on a delimiter an unquoted backslash escapes. A single-quoted span takes every character
+ * literally, backslash included, so a quoted pattern such as `'a\|b'` carries a literal pipe that
+ * names no new segment; a double-quoted span still lets a backslash escape the character right
+ * after it, so an escaped quote inside one does not end it early; outside any quote, a bare
+ * backslash escapes the very next character the same way, so an unquoted escaped semicolon (the
+ * shape a `find` command's own `-exec` terminator takes) or an unquoted escaped pipe never splits
+ * on the delimiter it escapes either.
  * @param command - The Bash command line.
  * @returns The segments, in order, quoted spans left intact.
  */
@@ -226,6 +229,11 @@ export function splitShellSegments(command: string): string[] {
       }
       current += ch;
       if (ch === '"') quote = undefined;
+      continue;
+    }
+    if (ch === '\\' && i + 1 < command.length) {
+      current += ch + command[i + 1];
+      i += 1;
       continue;
     }
     if (ch === "'" || ch === '"') {

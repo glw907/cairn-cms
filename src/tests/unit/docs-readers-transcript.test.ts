@@ -141,6 +141,11 @@ describe('splitShellSegments', () => {
     expect(splitShellSegments('echo "a \\" b | c"')).toEqual(['echo "a \\" b | c"']);
   });
 
+  it('does not split on a delimiter an unquoted backslash escapes', () => {
+    expect(splitShellSegments('find . -name x -exec cat {} \\; -print')).toEqual(['find . -name x -exec cat {} \\; -print']);
+    expect(splitShellSegments('a\\|b')).toEqual(['a\\|b']);
+  });
+
   it('lets a page read through a grep whose quoted pattern carries an escaped pipe still reach pagesRead', () => {
     // Before the fix, the split on a bare `[;|\n]` character class cut inside the quotes, at the
     // escaped pipe, so the page name landed in a later segment whose own first word ("b'") was

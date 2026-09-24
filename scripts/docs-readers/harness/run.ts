@@ -14,18 +14,28 @@ export interface ExecResult {
   stdout: string;
 }
 
+/** The doctor report's own closing tally line, for example `6 passed, 1 failed, 0 skipped, 0 info, 4 unchecked`. */
+const DOCTOR_SUMMARY = /\d+ passed,\s*\d+ failed,/;
+
 /**
  * Whether a read-only run counts as the command having actually run, as opposed to a usage error,
  * a tool fault, or a crash: `cli-cairn-exit-codes.md` documents a Nagios-style `cairn health`,
  * `cairn doctor`, and `cairn auth check` whose exit code alone spans 0 to 3 whether the verdict is
  * a real pass or a real failure, so exit code cannot tell a broken invocation from a genuinely
- * unhealthy site. The same reference page says a usage error writes no payload; an empty stdout is
- * the one signal common to every broken invocation, real report or not.
+ * unhealthy site. The same reference page says a usage error writes no payload, but cobra's own
+ * help text for an unrecognized subcommand word writes its usage block to stdout and still exits
+ * 0, so an empty stdout alone is not enough either. A stdout starting with `Usage:` is rejected
+ * outright; `cairn doctor`'s own report additionally needs its closing tally line, the one line no
+ * usage block or truncated crash output could produce by accident.
  * @param result - The executor's result.
+ * @param words - The command's own words, `cairn` excluded (`words[0]` names the subcommand).
  * @returns True when the command produced a real report on stdout.
  */
-function ran(result: ExecResult): boolean {
-  return result.stdout.trim() !== '';
+function ran(result: ExecResult, words: string[]): boolean {
+  const stdout = result.stdout.trim();
+  if (stdout === '' || stdout.startsWith('Usage:')) return false;
+  if (words[0] === 'doctor') return DOCTOR_SUMMARY.test(stdout);
+  return true;
 }
 
 /** The executors a harness run needs, real ones live, fakes in a unit test. */
@@ -59,11 +69,11 @@ export async function runProcedure(proc: Procedure, deps: HarnessDeps): Promise<
   const base = { page: proc.page, line: proc.line, command: proc.command };
   if (isReadOnly(proc.command, deps.allowlist)) {
     const result = await deps.execCairn(words);
-    const producedReport = ran(result);
+    const producedReport = ran(result, words);
     const jsonOk = !proc.expectJson || isValidJson(result.stdout);
     const pass = producedReport && jsonOk;
     const problems = [
-      ...(producedReport ? [] : ['stdout was empty (a usage error, a tool fault, or a crash)']),
+      ...(producedReport ? [] : ['stdout did not carry a real report (empty, a usage block, or missing its own summary line)']),
       ...(producedReport && !jsonOk ? ['stdout did not parse as JSON'] : []),
     ];
     const detail = `exit ${result.exitCode}${problems.length > 0 ? `; ${problems.join('; ')}` : ''}`;

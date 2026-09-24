@@ -74,8 +74,9 @@ function looksLikeJson(content: string): boolean {
 }
 
 /**
- * Extract every `cairn` command line from a page's own non-transcript fenced blocks, pairing a
- * command with the nearest following fenced block when that block parses as JSON.
+ * Extract every `cairn` command line from a page's own non-transcript fenced blocks. A command is
+ * marked to expect JSON output when it names `--json` itself, or, failing that, when the nearest
+ * following fenced block parses as JSON.
  * @param page - The page's path, relative to the docs root.
  * @param text - The page's raw markdown.
  * @returns One entry per command line found, in document order.
@@ -90,9 +91,10 @@ export function extractProcedures(page: string, text: string): Procedure[] {
     for (let offset = 0; offset < lines.length; offset += 1) {
       const match = CAIRN_COMMAND.exec(lines[offset].trim());
       if (!match) continue;
+      const command = match[1];
       const next = blocks[i + 1];
-      const expectJson = next !== undefined && !next.isTranscript && looksLikeJson(next.content);
-      procedures.push({ page, line: block.startLine + offset, command: match[1], expectJson });
+      const expectJson = command.includes('--json') || (next !== undefined && !next.isTranscript && looksLikeJson(next.content));
+      procedures.push({ page, line: block.startLine + offset, command, expectJson });
     }
   }
   return procedures;

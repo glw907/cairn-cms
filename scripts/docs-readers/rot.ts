@@ -19,11 +19,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildBasenameIndex, extractBullets, extractPointers, factsFiles, resolvePointerPath } from '../checks/check-facts.mjs';
+import { buildBasenameIndex, extractBullets, extractPointers, factsFiles, resolvePointerPath, SKIPPED_SECTIONS } from '../checks/check-facts.mjs';
 import { repoRoot } from '../repo-root.mjs';
-
-/** Section headings `check-facts.mjs` also skips: no `Source:`/tag grammar applies to their bullets. */
-const SKIPPED_SECTIONS = new Set(['harvest record', 'provenance']);
 
 /**
  * Every individual line number a pointer's line spec names, ranges expanded. Reproduced from

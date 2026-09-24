@@ -440,6 +440,23 @@ describe('resolveSymbolDeclaration', () => {
     expect(result).toMatchObject({ ok: true, startLine: 21 });
   });
 
+  it('resolves an undotted symbol only at the top level, never falling back to a local', () => {
+    expect(resolveSymbolDeclaration(original, file, 'repeated')).toMatchObject({
+      ok: false,
+      reason: expect.stringContaining('no top-level declaration named "repeated"'),
+    });
+    expect(resolveSymbolDeclaration(original, file, 'marker')).toMatchObject({ ok: false });
+    expect(resolveSymbolDeclaration(original, file, 'containerOne.repeated')).toMatchObject({ ok: true, startLine: 27 });
+  });
+
+  it('resolves each dotted segment only as a direct declaration of the one before it', () => {
+    expect(resolveSymbolDeclaration(original, file, 'symbolAnchorFactory.marker')).toMatchObject({ ok: false });
+    expect(resolveSymbolDeclaration(original, file, 'symbolAnchorFactory.innerHandle.marker')).toMatchObject({
+      ok: true,
+      startLine: 14,
+    });
+  });
+
   it('fails an unknown symbol and an ambiguous nested one', () => {
     expect(resolveSymbolDeclaration(original, file, 'noSuchSymbol')).toMatchObject({ ok: false });
     expect(resolveSymbolDeclaration(original, file, 'symbolAnchorFactory.noSuchInner')).toMatchObject({ ok: false });
@@ -468,7 +485,7 @@ describe('validateBullet, symbol-anchored pointers', () => {
     const root = join(FIXTURES_DIR, 'symbols');
     const index = buildBasenameIndex(root);
     expect(validateBullet(bulletFor('`src/lib/symbol-target.ts#missingSymbol`'), root, index).defects).toEqual([
-      expect.stringContaining('no declaration named'),
+      expect.stringContaining('no top-level declaration named'),
     ]);
     expect(validateBullet(bulletFor('`lib/symbol-target.ts#SYMBOL_ANCHOR_CONSTANT`'), root, index).defects).toEqual([
       expect.stringContaining('only for a file under src/'),

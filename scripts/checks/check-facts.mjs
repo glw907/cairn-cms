@@ -58,9 +58,11 @@
 // A pointer into `src/` may name a symbol instead of a line: `` `src/lib/x.ts#Symbol` ``, or a
 // dotted path to a nested declaration, `` `src/lib/x.ts#outerFn.innerFn` `` (an interface member,
 // an object-literal property, a function declared inside another). The TypeScript compiler API
-// parses the file and finds the named declaration, shallowest first, and the anchor, when one
-// follows, is checked against that declaration's own lines rather than a window around a cited
-// line number, so an edit that moves the declaration cannot rot the pointer. The form is limited
+// parses the file and finds the named declaration: an undotted symbol only at the top level, each
+// later segment only directly inside the one before, so a renamed symbol fails rather than
+// resolving to a same-named local. The anchor, when one follows, is checked against that
+// declaration's own lines rather than a window around a cited line number, so an edit that moves
+// the declaration cannot rot the pointer. The form is limited
 // to `.ts`/`.js` files under `src/`: a `.svelte` file is not parseable by the compiler API and its
 // markup has no nameable symbol, so it keeps a `path:line` pointer.
 //
@@ -435,36 +437,25 @@ function declarationName(node) {
 }
 
 /**
- * The declarations named `name` under `container` at the shallowest declaration depth (the count
- * of named declarations between `container` and the match), so a top-level symbol wins over a
- * same-named local and a nested path segment finds its nearest match.
+ * The declarations named `name` directly under `container`: reached without passing through
+ * another named declaration. Blocks, statements, and expressions in between do not count, so a
+ * function returned from a factory is direct, while a local declared inside that function is
+ * not. A symbol never falls back to a same-named declaration nested deeper.
  * @param {import('typescript').Node} container
  * @param {string} name
  * @returns {import('typescript').Node[]}
  */
-function shallowestDeclarations(container, name) {
+function directDeclarations(container, name) {
   const ts = loadTypeScript();
   /** @type {import('typescript').Node[]} */
-  let found = [];
-  let foundDepth = Infinity;
-  /**
-   * @param {import('typescript').Node} node
-   * @param {number} depth
-   */
-  const visit = (node, depth) => {
-    if (depth > foundDepth) return;
+  const found = [];
+  /** @param {import('typescript').Node} node */
+  const visit = (node) => {
     const nodeName = declarationName(node);
-    if (nodeName === name) {
-      if (depth < foundDepth) {
-        found = [];
-        foundDepth = depth;
-      }
-      found.push(node);
-    }
-    const childDepth = nodeName === null ? depth : depth + 1;
-    ts.forEachChild(node, (child) => visit(child, childDepth));
+    if (nodeName === name) found.push(node);
+    if (nodeName === null) ts.forEachChild(node, visit);
   };
-  ts.forEachChild(container, (child) => visit(child, 0));
+  ts.forEachChild(container, visit);
   return found;
 }
 
@@ -474,10 +465,11 @@ function shallowestDeclarations(container, name) {
 
 /**
  * Resolve a symbol path (`name` or `outer.inner`) to the 1-indexed line range of its declaration
- * in `fileText`, parsed by the TypeScript compiler API. Each dotted segment is searched inside the
- * previous segment's declaration, shallowest match first; more than one match at that depth fails
- * as ambiguous, except a run of function overloads, which resolves to the implementation (the
- * one with a body). The range starts at the declaration itself, after any doc comment.
+ * in `fileText`, parsed by the TypeScript compiler API. The first segment must be a top-level
+ * declaration, and each later segment a direct declaration of the one before it, so a renamed
+ * symbol fails rather than resolving to a same-named local. More than one match fails as
+ * ambiguous, except a run of function overloads, which resolves to the implementation (the one
+ * with a body). The range starts at the declaration itself, after any doc comment.
  * @param {string} fileText
  * @param {string} filePath Used for the parser's file name and to pick TypeScript or JavaScript.
  * @param {string} symbol
@@ -489,13 +481,16 @@ export function resolveSymbolDeclaration(fileText, filePath, symbol) {
   const sourceFile = ts.createSourceFile(filePath, fileText, ts.ScriptTarget.Latest, true, scriptKind);
   /** @type {import('typescript').Node} */
   let current = sourceFile;
-  for (const segment of symbol.split('.')) {
-    let matches = shallowestDeclarations(current, segment);
+  for (const [i, segment] of symbol.split('.').entries()) {
+    let matches = directDeclarations(current, segment);
     if (matches.length > 1 && matches.every((m) => ts.isFunctionDeclaration(m) || ts.isMethodDeclaration(m))) {
       matches = matches.filter((m) => /** @type {{ body?: unknown }} */ (m).body !== undefined);
     }
-    if (matches.length === 0) return { ok: false, reason: `no declaration named "${segment}"` };
-    if (matches.length > 1) return { ok: false, reason: `"${segment}" names ${matches.length} declarations at the same depth` };
+    if (matches.length === 0) {
+      const where = i === 0 ? 'top-level declaration' : `declaration directly inside "${symbol.split('.').slice(0, i).join('.')}"`;
+      return { ok: false, reason: `no ${where} named "${segment}"` };
+    }
+    if (matches.length > 1) return { ok: false, reason: `"${segment}" names ${matches.length} declarations at the same level` };
     current = matches[0];
   }
   const startLine = sourceFile.getLineAndCharacterOfPosition(current.getStart(sourceFile)).line + 1;

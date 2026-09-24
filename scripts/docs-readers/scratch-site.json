@@ -1,0 +1,23 @@
+{
+  "siteId": "cairn-scratch-b-9f21ac",
+  "name": "Cairn Scratch B",
+  "domain": "cairn-scratch-b.glw907.workers.dev",
+  "installationId": 135372268,
+  "githubRepositoriesForToken": ["cairn-scratch-b"],
+  "githubPermissionsForToken": { "contents": "read", "metadata": "read" },
+  "record": {
+    "name": "Cairn Scratch B",
+    "step": "live",
+    "domain": "cairn-scratch-b.glw907.workers.dev",
+    "schemaVersion": 1,
+    "adopted": true,
+    "github": {
+      "repo": { "id": 1384270163, "owner": "glw907", "repo": "cairn-scratch-b", "defaultBranch": "main" },
+      "installationId": 135372268
+    },
+    "cloudflare": {
+      "accountId": "120c269ad6d3dfbe6d63a0bb53758ca0",
+      "workerName": "cairn-scratch-b"
+    }
+  }
+}

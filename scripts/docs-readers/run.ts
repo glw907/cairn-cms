@@ -24,10 +24,13 @@ import { fileURLToPath } from 'node:url';
 import { loadClasses, loadEgress } from './lib/class-schema.js';
 import { parseBatch } from './lib/batch.js';
 import { appendLedger, ledgerTotal, readLedger } from './lib/ledger.js';
-import { createPodmanExecutor, ensureImage, hostCliVersion } from './lib/podman.js';
+import { mintInstallationToken } from './lib/github-app-token.js';
+import { createPodmanExecutor, ensureImage, hostCliVersion, podman } from './lib/podman.js';
 import { REPORT_SCHEMA, runBatch } from './lib/runner.js';
+import { sweepOrphans } from './lib/sweep.js';
 import { findInit } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
+import type { ScratchSiteRecord } from './lib/prepare-class.js';
 import type { BatchReport, InitBaseline } from './lib/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -35,6 +38,21 @@ const REPO_ROOT = resolve(HERE, '..', '..');
 
 /** The neutral cache root every per-run directory, result, and ledger lives under. */
 export const CACHE_ROOT = join(process.env.XDG_CACHE_HOME || join(homedir(), '.cache'), 'docs-readers');
+
+/** The scratch site's facts: its registry record and the GitHub token scope minted for it. */
+interface ScratchSiteDecl {
+  siteId: string;
+  installationId: number;
+  githubRepositoriesForToken: string[];
+  githubPermissionsForToken: Record<string, string>;
+  record: ScratchSiteRecord;
+}
+
+/** The scratch site the docs-and-binary class's credentials and registry record are built from. */
+export const SCRATCH_SITE: ScratchSiteDecl = JSON.parse(readFileSync(join(HERE, 'scratch-site.json'), 'utf8')) as ScratchSiteDecl;
+
+/** The host secret name `CAIRN_CF_READ_TOKEN` maps onto: the scratch site's own account-owned, per-Worker token. */
+const SCRATCH_CF_TOKEN_NAME = 'CAIRN_SCRATCH_CF_TOKEN';
 
 /** A batch report with the CLI version, run root, and teardown result the CLI adds. */
 export interface FinishedReport extends BatchReport {
@@ -91,7 +109,51 @@ function log(message: string): void {
 }
 
 /**
- * Set up the executor for a run: the token, the CLI version, the image, and the run directory.
+ * Mint the operator class's scoped GitHub installation token, from the App identity in
+ * `~/.local/secrets` and the scratch site's own installation id and repository (`scratch-site.json`).
+ * @returns The minted token.
+ * @throws When the App identity is not available, or the mint itself fails.
+ */
+async function mintScratchGithubToken(): Promise<string> {
+  const appId = readSecret('GITHUB_APP_ID');
+  const keyB64 = readSecret('GITHUB_APP_PRIVATE_KEY_B64');
+  if (!appId || !keyB64) {
+    throw new Error("GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY_B64 must both be set to mint the operator class's scoped GitHub token");
+  }
+  const privateKeyPem = Buffer.from(keyB64, 'base64').toString('utf8');
+  const minted = await mintInstallationToken({
+    appId,
+    privateKeyPem,
+    installationId: SCRATCH_SITE.installationId,
+    repositories: SCRATCH_SITE.githubRepositoriesForToken,
+    permissions: SCRATCH_SITE.githubPermissionsForToken,
+  });
+  return minted.token;
+}
+
+/**
+ * Build the operator class's secret resolver: `CAIRN_CF_READ_TOKEN` maps onto the scratch site's
+ * own Cloudflare token, and `CAIRN_GH_READ_TOKEN` mints a GitHub installation token once per run
+ * (memoized in the closure, so a batch with several docs-and-binary jobs mints exactly once) and
+ * then returns the same value to every later job. Every other name falls through to a plain
+ * `readSecret` lookup, the mapping every other class's secretEnv already relied on.
+ * @returns A secret resolver for `createPodmanExecutor`.
+ */
+function operatorSecretResolver(): (name: string) => Promise<string | undefined> {
+  let minted: Promise<string> | undefined;
+  return async (name: string) => {
+    if (name === 'CAIRN_CF_READ_TOKEN') return readSecret(SCRATCH_CF_TOKEN_NAME);
+    if (name === 'CAIRN_GH_READ_TOKEN') {
+      minted ??= mintScratchGithubToken();
+      return minted;
+    }
+    return readSecret(name);
+  };
+}
+
+/**
+ * Set up the executor for a run: a startup sweep, the token, the CLI version, the image, and the
+ * run directory.
  * @param runId - Names the per-run directory and labels its containers.
  * @param tokenFor - Returns the token for the next container; defaults to the stored token.
  * @returns The executor, the run root, and the secret values to scrub.
@@ -99,11 +161,16 @@ function log(message: string): void {
 export async function setUpRun(runId: string, tokenFor?: () => string) {
   const stored = readSecret(TOKEN_NAME);
   if (!stored) throw new Error(`${TOKEN_NAME} is not set and not in ~/.local/secrets`);
+  const swept = await sweepOrphans({ cacheRoot: CACHE_ROOT, podman });
+  if (swept.containersRemoved.length > 0 || swept.networksRemoved.length > 0 || swept.dirsRemoved.length > 0) {
+    log(`startup sweep: removed ${swept.containersRemoved.length} container(s), ${swept.networksRemoved.length} network(s), ${swept.dirsRemoved.length} stale dir(s)`);
+  }
   const cliVersion = await hostCliVersion();
   const image = await ensureImage(cliVersion, log);
   const runRoot = join(CACHE_ROOT, runId);
   mkdirSync(runRoot, { recursive: true });
   const secretValues = new Map<string, string>();
+  const resolveOperatorSecret = operatorSecretResolver();
   const executor = createPodmanExecutor({
     runId,
     runRoot,
@@ -111,8 +178,8 @@ export async function setUpRun(runId: string, tokenFor?: () => string) {
     image,
     egress: loadEgress(),
     token: tokenFor ?? (() => stored),
-    secretValue: (name: string) => {
-      const value = readSecret(name);
+    secretValue: async (name: string) => {
+      const value = await resolveOperatorSecret(name);
       if (value) secretValues.set(name, value);
       return value;
     },

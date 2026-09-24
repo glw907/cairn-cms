@@ -169,6 +169,33 @@ export function createPodmanExecutor({
 }): PodmanExecutor {
   let counter = 0;
   const jobDirs = new Map<string, string>();
+  const runLabelFilter = `label=${RUN_LABEL}=${runId}`;
+
+  /**
+   * Claim the next run slot: its container-name stem and its directory under the run root.
+   * @param label - The directory's suffix, a job id or a quick-run label.
+   * @returns The name stem and the directory path.
+   */
+  function nextSlot(label: string): { name: string; dir: string } {
+    counter += 1;
+    return { name: `dr-${runId}-${counter}`, dir: join(runRoot, `${counter}-${label}`) };
+  }
+
+  /**
+   * List this run's labeled containers.
+   * @returns Their ids.
+   */
+  async function runContainers(): Promise<string[]> {
+    return (await podman(['ps', '-a', '-q', '--filter', runLabelFilter])).split('\n').filter(Boolean);
+  }
+
+  /**
+   * List this run's labeled networks.
+   * @returns Their ids.
+   */
+  async function runNetworks(): Promise<string[]> {
+    return (await podman(['network', 'ls', '-q', '--filter', runLabelFilter])).split('\n').filter(Boolean);
+  }
 
   /**
    * Start a run's network and proxy.
@@ -355,9 +382,7 @@ export function createPodmanExecutor({
    * @returns The parsed events and raw stdout.
    */
   async function quickRun(label: string, args: string[], prompt: string): Promise<{ events: StreamEvent[]; stdout: string }> {
-    counter += 1;
-    const name = `dr-${runId}-${counter}`;
-    const dir = join(runRoot, `${counter}-${label}`);
+    const { name, dir } = nextSlot(label);
     mkdirSync(join(dir, 'mount', 'job'), { recursive: true });
     mkdirSync(join(dir, 'home'), { recursive: true });
     const { network, proxy } = await startNetwork(name, egress.anthropic);
@@ -384,9 +409,7 @@ export function createPodmanExecutor({
     },
 
     async run(job, decl, { signal, onEvent, prompt, reportSchema }) {
-      counter += 1;
-      const name = `dr-${runId}-${counter}`;
-      const dir = join(runRoot, `${counter}-${job.id}`);
+      const { name, dir } = nextSlot(job.id);
       jobDirs.set(job.id, dir);
       const prepared = join(dir, 'prepared');
       prepare(job, decl, prepared);
@@ -424,20 +447,27 @@ export function createPodmanExecutor({
     },
 
     async teardown() {
-      const containers = (await podman(['ps', '-a', '-q', '--filter', `label=${RUN_LABEL}=${runId}`])).split('\n').filter(Boolean);
+      const containers = await runContainers();
       if (containers.length > 0) await podman(['rm', '-f', '-t', '0', ...containers]).catch(() => {});
-      const networks = (await podman(['network', 'ls', '-q', '--filter', `label=${RUN_LABEL}=${runId}`])).split('\n').filter(Boolean);
+      const networks = await runNetworks();
       if (networks.length > 0) await podman(['network', 'rm', '-f', ...networks]).catch(() => {});
       rmSync(runRoot, { recursive: true, force: true });
-      const containersLeft = (await podman(['ps', '-a', '-q', '--filter', `label=${RUN_LABEL}=${runId}`])).split('\n').filter(Boolean).length;
-      const networksLeft = (await podman(['network', 'ls', '-q', '--filter', `label=${RUN_LABEL}=${runId}`])).split('\n').filter(Boolean).length;
+      const containersLeft = (await runContainers()).length;
+      const networksLeft = (await runNetworks()).length;
       return { runDirRemoved: !existsSync(runRoot), containersLeft, networksLeft };
     },
   };
 }
 
+/** What a run's teardown left behind. */
+export interface TeardownResult {
+  runDirRemoved: boolean;
+  containersLeft: number;
+  networksLeft: number;
+}
+
 /** The podman executor: the runner's executor plus the init probe and teardown. */
 export interface PodmanExecutor extends Executor {
   probeInit(decl: ClassDecl, reportSchema: object): Promise<{ events: StreamEvent[]; stdout: string }>;
-  teardown(): Promise<{ runDirRemoved: boolean; containersLeft: number; networksLeft: number }>;
+  teardown(): Promise<TeardownResult>;
 }

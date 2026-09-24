@@ -13,6 +13,7 @@ import {
   emptyUsage,
   eventFailure,
   findCanaries,
+  findInit,
   findPackageFetches,
   readerReport,
   toolCalls,
@@ -36,9 +37,6 @@ import type {
   StreamEvent,
   Usage,
 } from './types.js';
-
-/** The batch stop reasons, in the report's vocabulary. */
-export const STOP_REASONS: StopReason[] = ['complete', 'auth', 'rateLimit', 'budget'];
 
 /** The JSON schema the reader's structured report must match. */
 export const REPORT_SCHEMA = {
@@ -102,7 +100,7 @@ export function buildJobReport({
   const calls = toolCalls(events);
   const report = readerReport(events);
   const pagesRead = derivePagesRead(calls, job.docsSet);
-  const init = checkInit(events.find((e) => e.type === 'system' && e.subtype === 'init'), expectedTools(decl), baselines);
+  const init = checkInit(findInit(events), expectedTools(decl), baselines);
   const canariesFound = findCanaries(run.stdout, run.canaries ?? []);
   const verified = verifyReport({ report, pagesRead, docsSet: job.docsSet, root: run.preparedRoot, init, canariesFound });
   const failure = classifyFailure(events);
@@ -195,16 +193,19 @@ export async function runBatch({
   const reports: JobReport[] = new Array<JobReport>(batch.jobs.length);
   const transcripts: Record<string, string> = {};
 
+  const abortInFlight = () => {
+    for (const flight of inFlight.values()) flight.controller.abort();
+  };
   const stop = (reason: StopReason) => {
     if (stopReason) return;
     stopReason = reason;
-    for (const flight of inFlight.values()) flight.controller.abort();
+    abortInFlight();
   };
   let halted = false;
   let firstError: unknown;
   const haltAll = () => {
     halted = true;
-    for (const flight of inFlight.values()) flight.controller.abort();
+    abortInFlight();
   };
   halt?.addEventListener('abort', haltAll, { once: true });
   if (halt?.aborted) haltAll();

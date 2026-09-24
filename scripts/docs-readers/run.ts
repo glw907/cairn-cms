@@ -25,7 +25,7 @@ import { loadClasses, loadEgress } from './lib/class-schema.js';
 import { parseBatch } from './lib/batch.js';
 import { appendLedger, ledgerTotal, readLedger } from './lib/ledger.js';
 import { mintInstallationToken, type InstallationToken } from './lib/github-app-token.js';
-import { createPodmanExecutor, ensureImage, hostCliVersion, podman } from './lib/podman.js';
+import { createPodmanExecutor, ensureImage, hostCliVersion, podman, type TeardownResult } from './lib/podman.js';
 import { REPORT_SCHEMA, runBatch } from './lib/runner.js';
 import { sweepOrphans, writeOwnerMarker } from './lib/sweep.js';
 import { findInit } from './lib/transcript.js';
@@ -54,11 +54,14 @@ export const SCRATCH_SITE: ScratchSiteDecl = JSON.parse(readFileSync(join(HERE, 
 /** The host secret name `CAIRN_CF_READ_TOKEN` maps onto: the scratch site's own account-owned, per-Worker token. */
 const SCRATCH_CF_TOKEN_NAME = 'CAIRN_SCRATCH_CF_TOKEN';
 
+/** The usage ledger's default path. */
+const DEFAULT_LEDGER = join(CACHE_ROOT, 'ledger.jsonl');
+
 /** A batch report with the CLI version, run root, and teardown result the CLI adds. */
 export interface FinishedReport extends BatchReport {
   cliVersion: string;
   runRoot: string;
-  teardown: { runDirRemoved: boolean; containersLeft: number; networksLeft: number };
+  teardown: TeardownResult;
 }
 
 /** The environment variable the reader token is stored under. */
@@ -244,7 +247,7 @@ export async function runBatchFile(
   const runId = newRunId();
   const { executor, runRoot, cliVersion, secrets } = await setUpRun(runId, tokenFor);
   const outDir = out ?? join(CACHE_ROOT, 'results', `${batch.name}-${runId}`);
-  const ledgerPath = ledgerFile ?? join(CACHE_ROOT, 'ledger.jsonl');
+  const ledgerPath = ledgerFile ?? DEFAULT_LEDGER;
   log(`run ${runId}: batch ${batch.name}, ${batch.jobs.length} job(s), CLI ${cliVersion}`);
   let result: Awaited<ReturnType<typeof runBatch>>;
   let teardown: FinishedReport['teardown'];
@@ -313,7 +316,7 @@ async function probeInit(className: string): Promise<void> {
  * @returns The process exit code.
  */
 async function main(args: string[]): Promise<number> {
-  const ledgerFile = option(args, '--ledger') ?? join(CACHE_ROOT, 'ledger.jsonl');
+  const ledgerFile = option(args, '--ledger') ?? DEFAULT_LEDGER;
   if (args.includes('--ledger-total')) {
     process.stdout.write(`${JSON.stringify(ledgerTotal(readLedger(ledgerFile)), null, 2)}\n`);
     return 0;

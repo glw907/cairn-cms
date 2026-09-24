@@ -12,11 +12,13 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ClassDecl, EgressConfig } from './types.js';
 
+const READERS_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+
 /** The directory holding the class declarations. */
-export const CLASSES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'classes');
+export const CLASSES_DIR = join(READERS_ROOT, 'classes');
 
 /** The egress-proxy allowlists, keyed by egress class. */
-export const EGRESS_CONFIG = join(dirname(fileURLToPath(import.meta.url)), '..', 'egress.json');
+export const EGRESS_CONFIG = join(READERS_ROOT, 'egress.json');
 
 /**
  * The built-in tools a class may name. The web tools are absent on purpose: every reader runs

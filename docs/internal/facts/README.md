@@ -13,7 +13,7 @@ a draft of them.
 Every fact is one bullet:
 
 ```
-- <the claim>. Source: <file, symbol, line, or doc citation>. [<tag>]
+- `f:<id>` <the claim>. Source: <file, symbol, line, or doc citation>. [<tag>]
 ```
 
 A bullet ends with exactly one status tag, always the last thing on the bullet (never at the
@@ -33,7 +33,22 @@ file. A `Source:` naming only a doc page or a symbol with no line is also accept
 Two non-fact headings exist per file, both skipped by the gate: `## Harvest record` (the
 cross-page-duplicate index, the "not harvested as a fact" notes, and the per-slice harvest
 counts, merged under one heading) and `## Provenance` (the harvest and tightening narrative). A
-bullet under either heading carries no `Source:`/tag requirement.
+bullet under either heading carries no `Source:`/tag requirement, and never carries an id either.
+
+## Fact ids
+
+Every fact bullet, outside `## Harvest record` and `## Provenance`, carries an opaque id: a
+leading code span, `` `f:xxxxxx` ``, six lowercase base36 characters right after the bullet's
+own `- `. The bracket scan already skips a code span, so the id never interferes with the tag
+rule above.
+
+**The one-line id rule (an agent filing or editing a fact bullet follows this, no more): mint an
+id once with `node scripts/checks/check-facts.mjs --mint`, put it in a leading code span right
+after the bullet's `- `, and never change it again, including when the bullet's own claim, source,
+or tag changes later.** An id is never derived from the bullet's text, so editing the claim, the
+source, or the tag leaves the id exactly as it was; only a brand-new bullet gets a freshly minted
+one. `check:facts` fails a bullet with no id and a duplicate id anywhere in the container, across
+every file, so a filer working in a separate worktree mints independently and never collides.
 
 ## Tag vocabulary
 
@@ -67,6 +82,8 @@ bullet under either heading carries no `Source:`/tag requirement.
   number, since cairn does not own it and it goes stale silently.
 - A rejected fact stays as a bullet, tagged `[rejected]` with the reason, so it is not
   re-harvested as if it were still open.
+- Every fact bullet carries an id, minted once and never changed; see "Fact ids" above for the
+  one-line rule.
 - No em dash anywhere in this container; use a comma, a colon, or a new sentence instead.
 
 ## How this container grows
@@ -112,6 +129,17 @@ facts here is a manual, reviewed step, the same as editing any other doc.
 ## The gate
 
 `npm run check:facts` (`scripts/checks/check-facts.mjs`) walks every file here and enforces the
-grammar above: a source, exactly one vocabulary tag in colon form at the end of the bullet, and
-every `path:line` pointer resolved against the real file. It prints per-file counts by tag on
-success, replacing what used to be a hand-maintained index table in this README.
+grammar above: a leading id, a source, exactly one vocabulary tag in colon form at the end of the
+bullet, and every `path:line` pointer resolved against the real file, plus that no id repeats
+anywhere in the container. It prints per-file counts by tag on success, replacing what used to be
+a hand-maintained index table in this README.
+
+A `Source:` pointer into `docs/internal/record/` is the one exception: a repository-class reader
+export drops that whole directory on purpose (`scripts/docs-readers/lib/prepare-class.ts`'s
+`REPOSITORY_EXCLUDED_PATHS`), so a pointer into it is skipped, not failed, exactly when the
+directory itself is absent; when the directory exists and the cited file inside it does not, that
+is an ordinary broken pointer and still fails.
+
+A one-shot, re-runnable migration, `node scripts/checks/migrate-fact-ids.mjs`, gave every existing
+bullet its id; it changes nothing on a bullet that already has one, so running it again, or after
+a rebase that adds new bullets from another branch, only fills in what is still missing.

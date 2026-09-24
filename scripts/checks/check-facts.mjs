@@ -22,6 +22,19 @@
 // runs rather than excluded by a vocabulary allowlist alone (a stray, non-code bracket outside
 // the trailing tag is still a real grammar violation the gate should catch).
 //
+// Every fact bullet also carries an opaque id, a leading `` `f:xxxxxx` `` code span the bracket
+// scan already treats as a code span and skips: six lowercase base36 characters minted once by
+// `mintFactId` and never derived from the bullet's own text, so editing a claim or its source
+// never touches the id. A bullet with no such leading span fails; an id that repeats anywhere in
+// the container, across files, fails too. `--mint` on the command line prints one freshly minted
+// id and exits, the path `docs/internal/facts/README.md` sends a filer down.
+//
+// A `Source:` pointer into `docs/internal/record/` is a special case: that whole directory is one
+// of the paths a repository-class reader export excludes (see
+// `scripts/docs-readers/lib/prepare-class.ts`'s `REPOSITORY_EXCLUDED_PATHS`), so a pointer into it
+// is skipped, not failed, exactly when the directory itself is absent; when the directory exists
+// and the cited file inside it does not, that is an ordinary broken pointer and still fails.
+//
 // A `path:line` or `path:line-line` pointer inside the bullet's `Source:` field is resolved two
 // ways: first as a literal path from the repo root, then, when that fails and the pointer names
 // no directory at all (a bare filename, the container's shorthand for "the file just named
@@ -42,6 +55,7 @@
 // container: a whole-file check passed all of them, a window this size caught the two whose
 // citation had drifted a full function away).
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
@@ -70,6 +84,80 @@ const EXCLUDED_DIRS = new Set([
   'coverage',
   '.cache',
 ]);
+
+const BASE36 = '0123456789abcdefghijklmnopqrstuvwxyz';
+
+/** The largest multiple of 36 within a byte's 256 values, for unbiased rejection sampling. */
+const REJECTION_CEILING = 216;
+
+/**
+ * One unbiased base36 digit from `crypto.randomBytes`, drawing another byte whenever the one
+ * drawn falls in the biased tail above `REJECTION_CEILING` (256 is not a multiple of 36, so a
+ * plain `byte % 36` would favor the low digits).
+ * @returns {string}
+ */
+function randomBase36Char() {
+  let byte;
+  do {
+    [byte] = randomBytes(1);
+  } while (byte >= REJECTION_CEILING);
+  return BASE36[byte % 36];
+}
+
+/**
+ * Mint a fresh, opaque fact id: `f:` plus six lowercase base36 characters. An id is never derived
+ * from a bullet's content, so editing a bullet's claim or its source never touches the id; that is
+ * the one rule `docs/internal/facts/README.md` states for a filer. Each call draws independently
+ * from `crypto.randomBytes`, so two filers minting in separate worktrees at the same moment do not
+ * collide against the 36^6 (about 2.18 billion) id space.
+ * @returns {string}
+ */
+export function mintFactId() {
+  let id = '';
+  for (let i = 0; i < 6; i++) id += randomBase36Char();
+  return `f:${id}`;
+}
+
+/** A fact bullet's leading id: `` `f:xxxxxx` `` immediately after the `- ` marker. */
+export const FACT_ID_RE = /^`(f:[0-9a-z]{6})`/;
+
+/**
+ * A bullet's fact id, or null when it carries none. The id is always the bullet's leading code
+ * span, so a later edit to the claim or the source never changes what this returns.
+ * @param {string} bulletText
+ * @returns {string | null}
+ */
+export function extractFactId(bulletText) {
+  const match = bulletText.match(FACT_ID_RE);
+  return match ? match[1] : null;
+}
+
+/**
+ * @typedef {{ id: string, file: string, line: number }} FactIdOccurrence
+ */
+
+/**
+ * Every id occurring more than once anywhere in the container, keyed by id, each value carrying
+ * every occurrence (not just the second one), so a defect message can name every bullet that
+ * shares it.
+ * @param {FactIdOccurrence[]} occurrences
+ * @returns {Map<string, FactIdOccurrence[]>}
+ */
+export function findDuplicateFactIds(occurrences) {
+  /** @type {Map<string, FactIdOccurrence[]>} */
+  const byId = new Map();
+  for (const occurrence of occurrences) {
+    const list = byId.get(occurrence.id);
+    if (list) list.push(occurrence);
+    else byId.set(occurrence.id, [occurrence]);
+  }
+  /** @type {Map<string, FactIdOccurrence[]>} */
+  const duplicates = new Map();
+  for (const [id, list] of byId) {
+    if (list.length > 1) duplicates.set(id, list);
+  }
+  return duplicates;
+}
 
 /**
  * One fact bullet extracted from an arm file: its section heading, its fully joined text (soft
@@ -298,6 +386,23 @@ function anchorWindow(citedLines, fileLineCount) {
   return [start, end];
 }
 
+/** The path prefix a repository-class reader export drops whole, per `check:facts`'s own header note. */
+const RECORD_DIR_PREFIX = 'docs/internal/record/';
+
+/**
+ * True exactly when a pointer names a path under `docs/internal/record/` AND that whole directory
+ * is absent from `root`: a repository-class export dropped it on purpose, so a pointer into it is
+ * expected to fail resolution and is skipped rather than reported. A pointer into the same
+ * directory when the directory DOES exist is never skipped by this check, whether or not the
+ * specific cited file is present; that case falls through to the ordinary unresolved-path defect.
+ * @param {string} pointerPath
+ * @param {string} root
+ * @returns {boolean}
+ */
+export function isSkippedRecordPointer(pointerPath, root) {
+  return pointerPath.startsWith(RECORD_DIR_PREFIX) && !existsSync(join(root, 'docs/internal/record'));
+}
+
 /**
  * Validate one `Source:` pointer: its path resolves, every cited line is in range, and, when it
  * carries an anchor, every anchor token appears within the anchor window. Returns the one defect
@@ -308,6 +413,8 @@ function anchorWindow(citedLines, fileLineCount) {
  * @returns {string | null}
  */
 function validatePointer(pointer, root, basenameIndex) {
+  if (isSkippedRecordPointer(pointer.path, root)) return null;
+
   const resolved = resolvePointerPath(pointer.path, root, basenameIndex);
   if (!resolved) return `unresolved path "${pointer.path}"`;
 
@@ -328,16 +435,20 @@ function validatePointer(pointer, root, basenameIndex) {
 
 /**
  * Validate one bullet's grammar and, for a `[verified]`/`[docs-drift]`/etc. bullet, every
- * `Source:` pointer it carries. Returns the defects found (empty when the bullet is clean) and,
- * when the tag itself was valid, the tag name for the caller's running count.
+ * `Source:` pointer it carries. Returns the defects found (empty when the bullet is clean), the
+ * tag name for the caller's running count when the tag itself was valid, and the bullet's fact id
+ * for the caller's cross-file duplicate check.
  * @param {Bullet} bullet
  * @param {string} root
  * @param {Map<string, string[]>} basenameIndex
- * @returns {{ defects: string[], tag: string | null }}
+ * @returns {{ defects: string[], tag: string | null, id: string | null }}
  */
 export function validateBullet(bullet, root, basenameIndex) {
   /** @type {string[]} */
   const defects = [];
+  const id = extractFactId(bullet.text);
+  if (!id) defects.push('missing a fact id (a leading `f:xxxxxx` code span right after "- ")');
+
   if (!bullet.text.includes('Source:')) {
     defects.push('missing "Source:"');
   }
@@ -353,7 +464,7 @@ export function validateBullet(bullet, root, basenameIndex) {
     }
   }
 
-  return { defects, tag: tagCheck.ok ? tagCheck.tag : null };
+  return { defects, tag: tagCheck.ok ? tagCheck.tag : null, id };
 }
 
 /**
@@ -380,21 +491,33 @@ function formatCounts(counts) {
     .join(', ');
 }
 
-function main() {
-  const basenameIndex = buildBasenameIndex(ROOT);
-  const files = factsFiles(FACTS_DIR);
+/**
+ * Run the full facts-container check against one facts directory: every bullet in every arm file
+ * gets a grammar and id check against `root`, then every id collected across every file in
+ * `factsDir` is checked for a duplicate. Factored out of `main` so a test can run the whole check
+ * against a fixture directory instead of the real container.
+ * @param {string} factsDir
+ * @param {string} root
+ * @returns {{ defects: string[], report: string[] }}
+ */
+export function checkFacts(factsDir, root) {
+  const basenameIndex = buildBasenameIndex(root);
+  const files = factsFiles(factsDir);
   /** @type {string[]} */
   const allDefects = [];
   const report = [];
+  /** @type {FactIdOccurrence[]} */
+  const idOccurrences = [];
   for (const file of files) {
-    const markdown = readFileSync(join(FACTS_DIR, file), 'utf8');
+    const markdown = readFileSync(join(factsDir, file), 'utf8');
     const bullets = extractBullets(markdown).filter(
       (b) => !SKIPPED_SECTIONS.has((b.section ?? '').trim().toLowerCase()),
     );
     const counts = emptyCounts();
     for (const bullet of bullets) {
-      const { defects, tag } = validateBullet(bullet, ROOT, basenameIndex);
+      const { defects, tag, id } = validateBullet(bullet, root, basenameIndex);
       if (tag) counts[/** @type {keyof TagCounts} */ (tag)]++;
+      if (id) idOccurrences.push({ id, file, line: bullet.line });
       for (const defect of defects) {
         allDefects.push(`docs/internal/facts/${file}:${bullet.line}: ${defect}`);
       }
@@ -402,14 +525,27 @@ function main() {
     report.push(`  ${file}: ${bullets.length} facts (${formatCounts(counts)})`);
   }
 
-  if (allDefects.length === 0) {
+  for (const [id, occurrences] of findDuplicateFactIds(idOccurrences)) {
+    const locations = occurrences.map((o) => `docs/internal/facts/${o.file}:${o.line}`).join(', ');
+    allDefects.push(`duplicate fact id \`${id}\`: ${locations}`);
+  }
+
+  return { defects: allDefects, report };
+}
+
+function main() {
+  const { defects, report } = checkFacts(FACTS_DIR, ROOT);
+  if (defects.length === 0) {
     console.log('check-facts: OK');
     console.log(report.join('\n'));
     return;
   }
-  console.error(`check-facts: ${allDefects.length} defect(s)\n`);
-  for (const defect of allDefects) console.error(`  ${defect}`);
+  console.error(`check-facts: ${defects.length} defect(s)\n`);
+  for (const defect of defects) console.error(`  ${defect}`);
   process.exitCode = 1;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (process.argv.includes('--mint')) console.log(mintFactId());
+  else main();
+}

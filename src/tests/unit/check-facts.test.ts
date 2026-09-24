@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
 import {
   extractBullets,
   maskCodeAndQuotedSpans,
@@ -11,12 +12,42 @@ import {
   extractPointers,
   validateBullet,
   factsFiles,
+  checkFacts,
+  mintFactId,
+  extractFactId,
+  findDuplicateFactIds,
+  isSkippedRecordPointer,
   TAG_VOCABULARY,
 } from '../../../scripts/checks/check-facts.mjs';
+import { migrateFactIds } from '../../../scripts/checks/migrate-fact-ids.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const FIXTURES_DIR = join(ROOT, 'scripts/checks/fixtures/facts');
 const FACTS_DIR = join(ROOT, 'docs/internal/facts');
+const CHECK_FACTS_PATH = join(ROOT, 'scripts/checks/check-facts.mjs');
+
+/**
+ * Run `check-facts.mjs --mint` in a fresh OS process and return the id it printed. Used to prove
+ * mint uniqueness across separate processes, not just separate calls in one process.
+ * @returns {Promise<string>}
+ */
+function mintInSubprocess(): Promise<string> {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(process.execPath, [CHECK_FACTS_PATH, '--mint']);
+    let stdout = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`--mint subprocess exited ${code}`));
+        return;
+      }
+      resolvePromise(stdout.trim());
+    });
+  });
+}
 
 describe('extractBullets', () => {
   it('joins a bullet soft-wrapped across continuation lines into one string', () => {
@@ -172,6 +203,7 @@ describe('validateBullet, against the check-facts fixtures', () => {
       [expect.stringContaining('unresolved path')],
       [expect.stringContaining('out of range')],
       [expect.stringContaining('not found within')],
+      [expect.stringContaining('missing a fact id')],
     ]);
   });
 
@@ -192,14 +224,14 @@ describe('the anchor window, against the check-facts fixtures', () => {
 
   it('accepts an anchor token within 10 lines of the cited line', () => {
     const bullet = extractBullets(
-      '## x\n- A claim. Source: `windowed.ts:15` (`NEARBY_TOKEN`). [verified]',
+      '## x\n- `f:win001` A claim. Source: `windowed.ts:15` (`NEARBY_TOKEN`). [verified]',
     )[0];
     expect(validateBullet(bullet, FIXTURES_DIR, index).defects).toEqual([]);
   });
 
   it('rejects an anchor token more than 10 lines from the cited line', () => {
     const bullet = extractBullets(
-      '## x\n- A claim. Source: `windowed.ts:15` (`FAR_AWAY_TOKEN`). [verified]',
+      '## x\n- `f:win002` A claim. Source: `windowed.ts:15` (`FAR_AWAY_TOKEN`). [verified]',
     )[0];
     const { defects } = validateBullet(bullet, FIXTURES_DIR, index);
     expect(defects).toEqual([expect.stringContaining('not found within 10 lines')]);
@@ -211,5 +243,161 @@ describe('factsFiles', () => {
     const files = factsFiles(FACTS_DIR);
     expect(files).not.toContain('README.md');
     expect(files).toEqual(expect.arrayContaining(['admin.md', 'editors.md', 'extend.md', 'front-door.md', 'reference.md']));
+  });
+});
+
+describe('extractFactId', () => {
+  it('extracts a bullet\'s leading id', () => {
+    expect(extractFactId('`f:7k3q9x` The original claim. Source: x. [verified]')).toBe('f:7k3q9x');
+  });
+
+  it('returns the same id after the rest of the bullet is rewritten, proving an edit never moves it', () => {
+    const original = '`f:7k3q9x` The original claim. Source: x. [verified]';
+    const edited = '`f:7k3q9x` A completely rewritten claim with new wording. Source: y. [candidate: reworded]';
+    expect(extractFactId(original)).toBe(extractFactId(edited));
+  });
+
+  it('returns null when the bullet carries no leading id', () => {
+    expect(extractFactId('A claim with no id. Source: x. [verified]')).toBeNull();
+  });
+
+  it('does not match an id that is not the very first token', () => {
+    expect(extractFactId('A claim `f:7k3q9x` mid-sentence. Source: x. [verified]')).toBeNull();
+  });
+});
+
+describe('mintFactId', () => {
+  it('mints an id in the `f:` plus six lowercase base36 characters form', () => {
+    for (let i = 0; i < 50; i++) {
+      expect(mintFactId()).toMatch(/^f:[0-9a-z]{6}$/);
+    }
+  });
+
+  it('produces no collision across many ids minted in separate OS processes at once', async () => {
+    const ids = await Promise.all(Array.from({ length: 20 }, () => mintInSubprocess()));
+    for (const id of ids) expect(id).toMatch(/^f:[0-9a-z]{6}$/);
+    expect(new Set(ids).size).toBe(ids.length);
+  }, 20000);
+});
+
+describe('findDuplicateFactIds', () => {
+  it('flags an id occurring more than once anywhere in the container', () => {
+    const duplicates = findDuplicateFactIds([
+      { id: 'f:aaaaaa', file: 'admin.md', line: 3 },
+      { id: 'f:bbbbbb', file: 'admin.md', line: 7 },
+      { id: 'f:aaaaaa', file: 'extend.md', line: 42 },
+    ]);
+    expect([...duplicates.keys()]).toEqual(['f:aaaaaa']);
+    expect(duplicates.get('f:aaaaaa')).toHaveLength(2);
+  });
+
+  it('finds nothing when every id is unique', () => {
+    const duplicates = findDuplicateFactIds([
+      { id: 'f:aaaaaa', file: 'admin.md', line: 3 },
+      { id: 'f:bbbbbb', file: 'admin.md', line: 7 },
+    ]);
+    expect(duplicates.size).toBe(0);
+  });
+});
+
+describe('checkFacts, the full run over a fixture directory', () => {
+  it('fails when a bullet carries no fact id', () => {
+    const dir = join(FIXTURES_DIR, 'full-run/no-id');
+    const { defects } = checkFacts(dir, dir);
+    expect(defects.some((d) => d.includes('missing a fact id'))).toBe(true);
+  });
+
+  it('fails when the same id appears twice across different container files', () => {
+    const dir = join(FIXTURES_DIR, 'full-run/duplicate-ids');
+    const { defects } = checkFacts(dir, dir);
+    expect(defects.some((d) => d.includes('duplicate fact id'))).toBe(true);
+  });
+
+  it('passes with no defects when every id across the container is unique', () => {
+    const dir = join(FIXTURES_DIR, 'full-run/ok');
+    const { defects } = checkFacts(dir, dir);
+    expect(defects).toEqual([]);
+  });
+});
+
+describe('isSkippedRecordPointer and the docs/internal/record export case', () => {
+  it('skips a pointer under docs/internal/record when that directory is absent from root', () => {
+    const root = join(FIXTURES_DIR, 'record-dir-absent');
+    expect(isSkippedRecordPointer('docs/internal/record/2026-01-01-example.md', root)).toBe(true);
+  });
+
+  it('does not skip when the directory exists, even if the cited file inside it is missing', () => {
+    const root = join(FIXTURES_DIR, 'record-dir-present');
+    expect(isSkippedRecordPointer('docs/internal/record/2026-01-01-example.md', root)).toBe(false);
+  });
+
+  it('never skips a pointer outside docs/internal/record, regardless of root', () => {
+    const root = join(FIXTURES_DIR, 'record-dir-absent');
+    expect(isSkippedRecordPointer('src/lib/log/index.ts', root)).toBe(false);
+  });
+
+  it('validateBullet passes a docs/internal/record pointer when the directory is absent (the export case)', () => {
+    const root = join(FIXTURES_DIR, 'record-dir-absent');
+    const index = buildBasenameIndex(root);
+    const bullet = extractBullets(
+      '## x\n- `f:rec001` A claim. Source: `docs/internal/record/2026-01-01-example.md:5`. [verified]',
+    )[0];
+    expect(validateBullet(bullet, root, index).defects).toEqual([]);
+  });
+
+  it('validateBullet still fails a docs/internal/record pointer when the directory exists but the file does not', () => {
+    const root = join(FIXTURES_DIR, 'record-dir-present');
+    const index = buildBasenameIndex(root);
+    const bullet = extractBullets(
+      '## x\n- `f:rec002` A claim. Source: `docs/internal/record/2026-01-01-example.md:5`. [verified]',
+    )[0];
+    const { defects } = validateBullet(bullet, root, index);
+    expect(defects).toEqual([expect.stringContaining('unresolved path')]);
+  });
+});
+
+describe('migrateFactIds, against the migrate-before fixture', () => {
+  const fixturePath = join(FIXTURES_DIR, 'migrate-before.md');
+
+  /**
+   * Assert that `after` differs from `before` only by a freshly minted id inserted right after a
+   * bullet's leading `- `: same line count, and every changed line, once its inserted id is
+   * stripped back out, reads exactly as the corresponding `before` line did. This is the
+   * line-level stand-in for `git diff --word-diff` showing nothing but insertions.
+   */
+  function assertOnlyIdInsertions(before: string, after: string) {
+    const beforeLines = before.split('\n');
+    const afterLines = after.split('\n');
+    expect(afterLines).toHaveLength(beforeLines.length);
+    for (let i = 0; i < beforeLines.length; i++) {
+      if (afterLines[i] === beforeLines[i]) continue;
+      const stripped = afterLines[i].replace(/^(- )`f:[0-9a-z]{6}` /, '$1');
+      expect(stripped).toBe(beforeLines[i]);
+    }
+  }
+
+  it('adds an id to every bullet lacking one, leaves an existing id and skipped sections untouched', () => {
+    const before = readFileSync(fixturePath, 'utf8');
+    const { text: after, added } = migrateFactIds(before);
+    expect(added).toBe(2);
+    expect(after).toContain('`f:zzz999` A claim that already carries an id');
+    expect(after).toMatch(/- `f:[0-9a-z]{6}` A claim that soft-wraps/);
+    expect(after).toMatch(/- `f:[0-9a-z]{6}` Another claim needing an id/);
+    expect(after).toContain('- A note under the skipped heading');
+    expect(after).toContain('- Another skipped-heading note.');
+  });
+
+  it('changes only id insertions: every altered line, id stripped, matches the source line', () => {
+    const before = readFileSync(fixturePath, 'utf8');
+    const { text: after } = migrateFactIds(before);
+    assertOnlyIdInsertions(before, after);
+  });
+
+  it('is idempotent: a second run changes nothing', () => {
+    const before = readFileSync(fixturePath, 'utf8');
+    const { text: once } = migrateFactIds(before);
+    const { text: twice, added } = migrateFactIds(once);
+    expect(added).toBe(0);
+    expect(twice).toBe(once);
   });
 });

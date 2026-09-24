@@ -17,8 +17,10 @@ import {
   prepareDocsAndBinary,
   prepareDocsAndSite,
   prepareRepositoryExport,
+  prepareRepositoryExportWithDependencies,
   restrictStateDirPermissions,
   scaffoldSite,
+  spawnRunner,
   stripInstalledEngineExtras,
   writeScratchSiteRecord,
   type CommandRunner,
@@ -606,6 +608,50 @@ describe('prepareRepositoryExport', () => {
       expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'not-a-commit', dest, runner })).toThrow(/bad revision/);
       expect(existsSync(dest)).toBe(false);
     } finally {
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('prepareRepositoryExportWithDependencies', () => {
+  it('exports the commit, then installs dependencies in that same directory', () => {
+    const repoRoot = tmp('deps-repo');
+    const dest = tmp('deps-dest');
+    try {
+      write(join(repoRoot, 'README.md'), '# a project\n');
+      commitAll(repoRoot);
+      const installCalls: Array<{ command: string; args: string[]; cwd: string }> = [];
+      const runner: CommandRunner = (command, args, options) => {
+        if (command === 'npm') installCalls.push({ command, args, cwd: options.cwd });
+        if (command === 'npm' && args[0] === 'install') {
+          write(join(options.cwd, 'node_modules/.installed'), 'ok');
+          return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+        }
+        // git/tar fall through to the real spawnRunner behaviour for the export step.
+        return spawnRunner(command, args, options);
+      };
+      prepareRepositoryExportWithDependencies({ repoRoot, commit: 'HEAD', dest, runner });
+      expect(readFileSync(join(dest, 'README.md'), 'utf8')).toBe('# a project\n');
+      expect(existsSync(join(dest, 'node_modules/.installed'))).toBe(true);
+      expect(installCalls).toEqual([{ command: 'npm', args: ['install', '--no-audit', '--no-fund'], cwd: dest }]);
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+      rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('removes dest and throws when the install step fails', () => {
+    const repoRoot = tmp('deps-repo-fail');
+    const dest = tmp('deps-dest-fail');
+    try {
+      write(join(repoRoot, 'README.md'), '# a project\n');
+      commitAll(repoRoot);
+      const runner: CommandRunner = (command, args, options) =>
+        command === 'npm' ? { status: 1, stdout: Buffer.alloc(0), stderr: 'npm ERR! network' } : spawnRunner(command, args, options);
+      expect(() => prepareRepositoryExportWithDependencies({ repoRoot, commit: 'HEAD', dest, runner })).toThrow(/npm ERR! network/);
+      expect(existsSync(dest)).toBe(false);
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
       rmSync(dest, { recursive: true, force: true });
     }
   });

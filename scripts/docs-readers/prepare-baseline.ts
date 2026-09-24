@@ -23,7 +23,7 @@ import {
   prepareContractPagesBundle,
   prepareDocsAndBinary,
   prepareDocsAndSite,
-  prepareRepositoryExport,
+  prepareRepositoryExportWithDependencies,
   type ContractPageSpec,
 } from './lib/prepare-class.js';
 
@@ -120,9 +120,13 @@ async function prepareScripter(): Promise<void> {
   prepareContractPagesBundle({ repoRoot: REPO_ROOT, dest: join(BASELINE_PREPARED_ROOT, 'scripter-contract-pages'), pages: CONTRACT_PAGES });
 }
 
-/** Build the core-developer job's prepared tree: this worktree's own `HEAD`. */
+/**
+ * Build the core-developer job's prepared tree: this worktree's own `HEAD`, with its own
+ * dependencies already installed, since the job's arrival tells the reader a fresh `npm install`
+ * is not possible in this environment.
+ */
 async function prepareCoreDeveloper(): Promise<void> {
-  prepareRepositoryExport({ repoRoot: REPO_ROOT, commit: 'HEAD', dest: join(BASELINE_PREPARED_ROOT, 'core-developer-head') });
+  prepareRepositoryExportWithDependencies({ repoRoot: REPO_ROOT, commit: 'HEAD', dest: join(BASELINE_PREPARED_ROOT, 'core-developer-head') });
 }
 
 /**

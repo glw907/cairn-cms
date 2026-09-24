@@ -459,6 +459,36 @@ export function prepareRepositoryExport({
 }
 
 /**
+ * Build a core-developer job's prepared tree: `prepareRepositoryExport` at `commit`, then that
+ * export's own dependencies installed, so the class's allowlisted `npm run check*`/`npm test`
+ * checks have something real to run against, the same as `prepareDocsAndSite`'s own
+ * `installAndStrip` step does for a scaffolded site. Preparation-time only: a reader's own
+ * container never runs `npm install` itself, since its egress proxy allows nothing but
+ * `api.anthropic.com`, and its Bash allowlist does not name `npm install` either. `repoRoot` is
+ * the checkout to export from; `commit` is the commit-ish to export; `dest` is the prepared tree's
+ * root, replaced first if it already exists; `runner` is the command runner, overridden in tests.
+ * @throws When the export or the install fails.
+ */
+export function prepareRepositoryExportWithDependencies({
+  repoRoot,
+  commit,
+  dest,
+  runner = spawnRunner,
+}: {
+  repoRoot: string;
+  commit: string;
+  dest: string;
+  runner?: CommandRunner;
+}): void {
+  prepareRepositoryExport({ repoRoot, commit, dest, runner });
+  const install = runner('npm', ['install', '--no-audit', '--no-fund'], { cwd: dest });
+  if (install.status !== 0) {
+    rmSync(dest, { recursive: true, force: true });
+    throw new Error(`npm install failed in ${dest}: ${install.stderr}`);
+  }
+}
+
+/**
  * One subdirectory of the scripter class's contract-pages bundle: a reference page pinned to its
  * own commit, plus the JSON schema files it cites at that same commit, if any. Each page can be
  * pinned to a different commit, since pass A's three contract pages were fixed at different points

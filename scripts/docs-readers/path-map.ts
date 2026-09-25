@@ -515,21 +515,31 @@ function isJobReportShaped(raw: unknown): raw is JobReport {
  * Load the mapping runs a `build` invocation reads: each `--report` file is either one job
  * report, taken directly, or a saved batch report, whose `jobs[]` this reads through the shared
  * saved-report loader (so an earlier-shape saved report still parses) and filters to the ids
- * `--run` named, when any were given; with none given, every job in a batch file is taken.
+ * `--run` named. A batch file mixes every job it ever ran, so `--run` is required for one:
+ * without it, a job-report-shaped file's own single run would pool in among every other job's
+ * runs from the same batch, silently. Every `--run` id must match a job in some batch file;
+ * one that matches none is a typo the caller needs to see, not a quietly empty selection.
  * @param files - The `--report` file paths.
- * @param runIds - The `--run` ids to select from a batch-shaped file, empty for "take every job".
+ * @param runIds - The `--run` ids to select from every batch-shaped file.
  * @returns The runs, in file order, batch jobs in their own file order within their file.
- * @throws When a file is neither shape, naming the file.
+ * @throws When a file is neither shape, naming the file; when a batch-shaped file is given with
+ * no `--run` at all, naming the file; when a `--run` id matched no job in any batch file, naming
+ * every id that matched none.
  */
 function loadRuns(files: string[], runIds: string[]): JobReport[] {
   const wanted = new Set(runIds);
+  const matched = new Set<string>();
   const runs: JobReport[] = [];
   for (const file of files) {
     const raw = JSON.parse(readFileSync(resolve(file), 'utf8')) as unknown;
     if (isBatchShaped(raw)) {
+      if (wanted.size === 0) throw new Error(`"${file}" is a batch report; --run is required to select which of its jobs to take`);
       const batch = loadSavedBatchReport(raw);
       for (const job of batch.jobs) {
-        if (wanted.size === 0 || wanted.has(job.id)) runs.push(job);
+        if (wanted.has(job.id)) {
+          runs.push(job);
+          matched.add(job.id);
+        }
       }
     } else if (isJobReportShaped(raw)) {
       runs.push(raw);
@@ -537,6 +547,8 @@ function loadRuns(files: string[], runIds: string[]): JobReport[] {
       throw new Error(`"${file}" is neither a job report nor a batch report`);
     }
   }
+  const unmatched = runIds.filter((id) => !matched.has(id));
+  if (unmatched.length > 0) throw new Error(`--run id(s) matched no job in any batch file: ${unmatched.join(', ')}`);
   return runs;
 }
 

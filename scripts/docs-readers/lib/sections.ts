@@ -3,10 +3,10 @@
  * span under an H2 or H3 heading, ending at the next heading of level 1 to 3 (a deeper heading,
  * H4 and below, never ends a section, so its own content stays part of its enclosing section). The
  * lead span, from the line after the H1 (the page's first line when there is none) to the line
- * before the first H2 (the page's last line when there is none), is itself a section, carrying the
- * H1's own text as its heading and level 1; it is left out of the list when empty. A heading-shaped
- * line inside a fenced code block never starts a section, and a quote's line span is assigned to a
- * section only when the whole span sits inside one.
+ * before the first H2 or H3, whichever comes first (the page's last line when there is neither),
+ * is itself a section, carrying the H1's own text as its heading and level 1; it is left out of
+ * the list when empty. A heading-shaped line inside a fenced code block never starts a section,
+ * and a quote's line span is assigned to a section only when the whole span sits inside one.
  */
 
 /** One section: its heading text, level (1 for the lead span, 2 or 3 otherwise), and 1-based inclusive line span. */
@@ -81,8 +81,8 @@ export function parseSections(text: string): PageSections {
   const first = headings[0];
   const hasH1 = first?.level === 1;
   const leadStart = hasH1 ? first.line + 1 : 1;
-  const firstH2 = headings.find((h) => h.level === 2);
-  const leadEnd = firstH2 ? firstH2.line - 1 : lines;
+  const firstBoundary = headings.find((h) => h.level === 2 || h.level === 3);
+  const leadEnd = firstBoundary ? firstBoundary.line - 1 : lines;
   if (leadStart <= leadEnd) sections.push({ heading: hasH1 ? first.text : '', level: 1, start: leadStart, end: leadEnd });
 
   for (let i = 0; i < headings.length; i += 1) {

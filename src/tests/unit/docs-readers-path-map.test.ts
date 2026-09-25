@@ -134,6 +134,16 @@ describe('parseSections', () => {
       { heading: 'Section B', level: 2, start: 10, end: 12 },
     ]);
   });
+
+  it('ends the lead span at the first H3 too, when an H3 comes before the first H2, so it never overlaps that H3', () => {
+    const page = ['# Title', '', '### Early Sub', '', 'Text under Early Sub.', '', '## Section A', '', 'Text A.'].join('\n');
+    const { sections } = parseSections(page);
+    expect(sections).toEqual([
+      { heading: 'Title', level: 1, start: 2, end: 2 },
+      { heading: 'Early Sub', level: 3, start: 3, end: 6 },
+      { heading: 'Section A', level: 2, start: 7, end: 9 },
+    ]);
+  });
 });
 
 describe('sectionForSpan', () => {
@@ -509,6 +519,64 @@ describe('the path-map CLI', () => {
     // Both named runs are verified Opus runs, so both count.
     expect(output.verifiedRuns).toBe(2);
     expect(output.pages['docs/why-cairn.md'].sections.map((s: { heading: string }) => s.heading)).toEqual(['Section A']);
+  });
+
+  it('throws, naming the file, when a batch-shaped --report file is given with no --run at all', async () => {
+    const { main } = await import('../../../scripts/docs-readers/path-map.js');
+    const { mkdtempSync, mkdirSync, writeFileSync, readFileSync: readFileSyncNode } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join, resolve: resolveNode, dirname } = await import('node:path');
+    const { fileURLToPath: toPath } = await import('node:url');
+
+    const root = resolveNode(dirname(toPath(import.meta.url)), '../../..');
+    const fixtureFile = join(root, 'scripts/docs-readers/fixtures/saved-reports/pass1-trimmed.json');
+    const batch = readFileSyncNode(fixtureFile, 'utf8');
+
+    const dir = mkdtempSync(join(tmpdir(), 'path-map-cli-no-run-'));
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'why-cairn.md'), ['# Title', '', '## Section A', fillerLines(60)].join('\n'));
+    const reportFile = join(dir, 'batch.json');
+    writeFileSync(reportFile, batch);
+
+    // No --run at all: without one, every job in the batch would pool together, silently.
+    expect(() => main(['build', '--job', 'j', '--docs-set', 'docs/why-cairn.md', '--pages-root', dir, '--report', reportFile, '--proxy'])).toThrow(/batch\.json/);
+  });
+
+  it('throws, naming it, when a --run id matches no job in any batch file', async () => {
+    const { main } = await import('../../../scripts/docs-readers/path-map.js');
+    const { mkdtempSync, mkdirSync, writeFileSync, readFileSync: readFileSyncNode } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join, resolve: resolveNode, dirname } = await import('node:path');
+    const { fileURLToPath: toPath } = await import('node:url');
+
+    const root = resolveNode(dirname(toPath(import.meta.url)), '../../..');
+    const fixtureFile = join(root, 'scripts/docs-readers/fixtures/saved-reports/pass1-trimmed.json');
+    const batch = readFileSyncNode(fixtureFile, 'utf8');
+
+    const dir = mkdtempSync(join(tmpdir(), 'path-map-cli-typo-run-'));
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'why-cairn.md'), ['# Title', '', '## Section A', fillerLines(60)].join('\n'));
+    const reportFile = join(dir, 'batch.json');
+    writeFileSync(reportFile, batch);
+
+    expect(() =>
+      main([
+        'build',
+        '--job',
+        'j',
+        '--docs-set',
+        'docs/why-cairn.md',
+        '--pages-root',
+        dir,
+        '--report',
+        reportFile,
+        '--run',
+        'evaluator-planted-1',
+        '--run',
+        'evaluator-planted-typo',
+        '--proxy',
+      ]),
+    ).toThrow(/evaluator-planted-typo/);
   });
 
   it('throws, naming the file, when a --report file is neither a job report nor a batch report', async () => {

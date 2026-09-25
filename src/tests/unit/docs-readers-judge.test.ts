@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { checkJudgeJobField, composeJudgePrompt, JUDGE_FIELD_UNUSED, runJudgeBatch } from '../../../scripts/docs-readers/lib/runner.js';
+import { describe, it, expect, vi } from 'vitest';
+import { checkJudgeJobField, composeJudgePrompt, JUDGE_FIELD_UNUSED, REPORT_REQUEST, runJudgeBatch } from '../../../scripts/docs-readers/lib/runner.js';
+import * as classSchema from '../../../scripts/docs-readers/lib/class-schema.js';
 import { loadClasses, loadJudgePrompt } from '../../../scripts/docs-readers/lib/class-schema.js';
 import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
 import { ADJUDICATOR_SCHEMA, AGREEMENT_SCHEMA, CATCH_JUDGE_SCHEMA, judgeReportSchema } from '../../../scripts/docs-readers/lib/judge-verify.js';
@@ -100,6 +101,8 @@ describe('composeJudgePrompt', () => {
     const prompt = composeJudgePrompt('catchJudge');
     expect(prompt.split('\n\n')[0]).toContain('index.json');
     expect(prompt).toContain(loadJudgePrompt('catchJudge').trim());
+    expect(prompt).not.toContain(REPORT_REQUEST);
+    expect(prompt).not.toContain('hand back a short structured report');
   });
 
   it('maps each of the three judge kinds to its own distinct frozen prompt', () => {
@@ -131,6 +134,63 @@ describe('checkJudgeJobField', () => {
   it('refuses one kind\'s frozen prompt sent under another kind', () => {
     const problem = checkJudgeJobField({ id: 'a', job: loadJudgePrompt('catchJudge') }, 'adjudicator');
     expect(problem).toContain('job a');
+  });
+});
+
+describe('runJudgeBatch: the frozen prompt, read once per batch', () => {
+  it('never sends a job\'s own batch-authored arrival text, only JUDGE_ARRIVAL_LINE and the frozen prompt', async () => {
+    const events = [INIT, assistantEvent(), resultEvent({ rulings: [] })];
+    const { executor, ledger } = replayExecutor({ a: [events] });
+    const batch = parseBatch(
+      {
+        name: 'fixture-judge-arrival',
+        concurrency: 1,
+        budgetTokens: 1_000_000,
+        jobs: [{ id: 'a', class: 'judge-catch', model: 'claude-opus-5-5', arrival: 'DISTINCTIVE-BATCH-ARRIVAL-TEXT', job: JUDGE_FIELD_UNUSED, docsSet: ['.'], prepared: '/dev/null' }],
+      },
+      classes,
+    );
+    const { report } = await runJudgeBatch({
+      batch,
+      classes,
+      baselines,
+      executor,
+      ledger,
+      runId: 'j-arrival-ignored',
+      kind: 'catchJudge',
+      expectedItems: { a: [] },
+    });
+    expect(report.verified).toBe(true);
+    expect(executor.prompts.a).not.toContain('DISTINCTIVE-BATCH-ARRIVAL-TEXT');
+  });
+
+  it('reads the kind\'s frozen prompt exactly once for the whole batch, so an edit between jobs never reaches a later job', async () => {
+    const events = [INIT, assistantEvent(), resultEvent({ rulings: [] })];
+    const { executor, ledger } = replayExecutor({ a: [events], b: [events] });
+    let calls = 0;
+    const spy = vi.spyOn(classSchema, 'loadJudgePrompt').mockImplementation(() => {
+      calls += 1;
+      return calls === 1 ? 'first prompt bytes' : 'edited mid-batch; a later job must never see this';
+    });
+    try {
+      const { report } = await runJudgeBatch({
+        batch: judgeBatchOf(['a', 'b'], 'judge-catch'),
+        classes,
+        baselines,
+        executor,
+        ledger,
+        runId: 'j-frozen-once',
+        kind: 'catchJudge',
+        expectedItems: { a: [], b: [] },
+      });
+      expect(report.verified).toBe(true);
+      expect(calls).toBe(1);
+      expect(executor.prompts.a).toContain('first prompt bytes');
+      expect(executor.prompts.b).toContain('first prompt bytes');
+      expect(executor.prompts.b).not.toContain('edited mid-batch');
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

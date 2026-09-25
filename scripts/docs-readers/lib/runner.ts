@@ -508,8 +508,8 @@ export async function runBatch({
 }
 
 /**
- * The name `judge-packets.ts` gives every packet's own entry point, at the root of the mounted
- * packet directory (`packet/index.json`, one level below the reader's own working directory).
+ * The name `judge-packets.ts` gives every packet's own entry point, at the root of the judge's
+ * working directory (`/reader/job`, where the runner copies the packet).
  */
 const JUDGE_PACKET_INDEX = 'index.json';
 
@@ -522,10 +522,12 @@ const JUDGE_PACKET_INDEX = 'index.json';
 const JUDGE_ARRIVAL_LINE = `Your packet is mounted at your working directory. Its entry point is ${JUDGE_PACKET_INDEX}; read that first.`;
 
 /**
- * The marker a judge job's `arrival` and `job` fields carry when a batch defers those fields to
- * the runner. `composeJudgePrompt` never reads either field: it always sends `JUDGE_ARRIVAL_LINE`
- * and the job's judge kind's own frozen prompt, so a batch author writes this marker rather than
- * inventing a placeholder a judge's container could mistake for real instructions.
+ * The marker a judge job's `job` field carries when a batch defers that field to the runner.
+ * `composeJudgePromptText` never reads it: it always sends `JUDGE_ARRIVAL_LINE` and the job's
+ * judge kind's own frozen prompt, so a batch author writes this marker rather than inventing a
+ * placeholder a judge's container could mistake for real instructions. `checkJudgeJobField` checks
+ * only `job`; a batch's `arrival` field is never read or checked for a judge job, so a batch author
+ * may still write this same marker there for consistency, but nothing enforces it.
  */
 export const JUDGE_FIELD_UNUSED = "unused: the runner supplies this job's arrival line and frozen prompt";
 
@@ -536,24 +538,41 @@ export const JUDGE_FIELD_UNUSED = "unused: the runner supplies this job's arriva
  * checked against exactly these two accepted forms before any container starts.
  * @param job - The batch job to check.
  * @param kind - The judge kind whose frozen prompt the job's text is checked against.
+ * @param promptText - The kind's frozen prompt text; defaults to a fresh `loadJudgePrompt(kind)`
+ *  read, but `runJudgeBatch` passes its own once-read copy so every job in a batch is checked
+ *  against the same bytes.
  * @returns The problem, naming the job, or undefined when the field is valid.
  */
-export function checkJudgeJobField(job: Pick<Job, 'id' | 'job'>, kind: JudgeKind): string | undefined {
-  if (job.job === JUDGE_FIELD_UNUSED || job.job === loadJudgePrompt(kind)) return undefined;
+export function checkJudgeJobField(job: Pick<Job, 'id' | 'job'>, kind: JudgeKind, promptText: string = loadJudgePrompt(kind)): string | undefined {
+  if (job.job === JUDGE_FIELD_UNUSED || job.job === promptText) return undefined;
   return `job ${job.id}: job text is neither ${JSON.stringify(JUDGE_FIELD_UNUSED)} nor byte-identical to the ${kind} frozen prompt file`;
 }
 
 /**
- * The stdin text every job of a judge batch receives: the arrival line naming the packet's own
+ * The stdin text one job of a judge batch receives: the arrival line naming the packet's own
  * entry point, then the judge kind's frozen prompt, with no reader `REPORT_REQUEST` appended,
  * since the frozen prompt already states its own output shape and `--json-schema` enforces it.
  * Never reads a batch job's own `arrival` or `job` field; `checkJudgeJobField` is what a job's
  * `job` field is checked against instead.
  * @param kind - The judge kind this batch runs as.
+ * @param promptText - The bytes to send in place of a fresh `loadJudgePrompt` read, so a caller
+ *  that already read the file once can reuse that exact copy for every job.
+ * @returns The composed stdin text for one job's `claude` invocation.
+ */
+function composeJudgePromptText(kind: JudgeKind, promptText: string): string {
+  return `${JUDGE_ARRIVAL_LINE}\n\n${promptText.trim()}\n`;
+}
+
+/**
+ * The stdin text every job of a judge batch receives, reading the kind's frozen prompt fresh from
+ * disk. `runJudgeBatch` never calls this: it reads the prompt once for the whole batch and calls
+ * `composeJudgePromptText` with that one copy, so a batch's later jobs cannot see a prompt edited
+ * mid-batch. Exported for a caller that wants one kind's composed prompt outside a batch run.
+ * @param kind - The judge kind this batch runs as.
  * @returns The prompt text.
  */
 export function composeJudgePrompt(kind: JudgeKind): string {
-  return `${JUDGE_ARRIVAL_LINE}\n\n${loadJudgePrompt(kind).trim()}\n`;
+  return composeJudgePromptText(kind, loadJudgePrompt(kind));
 }
 
 /** One judge run attempt, with its own rulings and verification. Exactly one attempt per job is `final`. */
@@ -709,8 +728,13 @@ export async function runJudgeBatch({
   freeze?: GatedFreeze;
   resumeFrom?: Record<string, { attempts: JudgeAttempt[]; pendingCause: AttemptCause }>;
 }): Promise<{ report: JudgeBatchReport; transcripts: Record<string, string> }> {
+  // Read this kind's frozen prompt once, for the whole batch: the freeze gate already hashed it
+  // once at batch start (before this function was even called), and every job's own stdin text
+  // must match that same one hash, never a fresh read that a mid-batch edit could change out from
+  // under a later job.
+  const frozenPrompt = loadJudgePrompt(kind);
   const jobFieldProblems = batch.jobs.flatMap((job) => {
-    const problem = checkJudgeJobField(job, kind);
+    const problem = checkJudgeJobField(job, kind, frozenPrompt);
     return problem ? [problem] : [];
   });
   if (jobFieldProblems.length > 0) {
@@ -806,7 +830,7 @@ export async function runJudgeBatch({
         };
         let run: RunResult;
         try {
-          run = await executor.run(job, decl, { signal: flight.controller.signal, onEvent, prompt: composeJudgePrompt(kind), reportSchema: schema });
+          run = await executor.run(job, decl, { signal: flight.controller.signal, onEvent, prompt: composeJudgePromptText(kind, frozenPrompt), reportSchema: schema });
         } finally {
           inFlight.delete(job.id);
         }

@@ -2,8 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildManifest, gitTrackedFiles, hashBytes, hashFile, loadManifest, main, verifyTree, writeManifest } from '../../../scripts/docs-readers/freeze.js';
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const DOCS_READERS_ROOT = join(REPO_ROOT, 'scripts', 'docs-readers');
 
 /** A small fixture tree of two tracked files, for a manifest that does not need real git. */
 function fixtureTree(): { root: string; listFiles: () => string[] } {
@@ -196,6 +200,13 @@ describe('gitTrackedFiles: the real function against a real git repository', () 
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  it('lists the three judge kinds\' frozen prompt files, so the manifest hash covers them', () => {
+    const files = gitTrackedFiles(DOCS_READERS_ROOT);
+    expect(files).toContain('prompts/catch-judge.md');
+    expect(files).toContain('prompts/adjudicator.md');
+    expect(files).toContain('prompts/agreement.md');
   });
 });
 

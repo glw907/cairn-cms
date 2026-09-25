@@ -602,6 +602,11 @@ Tasks 7 and 9 to 16 under these rules. Where they differ from the header, these 
   in the background.
 - Arm a self-paced wake-up (`ScheduleWakeup`, a 1200 to 1800 second fallback on every wait), so
   that a dropped API link never strands the run.
+- Confirm that `claude --version` prints `2.1.282` and that `DISABLE_AUTOUPDATER=1` is set in
+  `~/.claude/settings.json` (Geoff, 2026-09-25, dotfiles `4265aea`). Before Task 9, pin the 2.1.282 init
+  baseline with `run.ts --probe-init` and rebuild the image (carries file, last section). A version
+  that differs from 2.1.282 before the freeze gets the same pin; a version that differs after the
+  freeze stops the run for Geoff.
 
 **Mode.**
 - Every implementer task runs as a per-task Agent chain: implementer, `code-simplifier`, `diff-reviewer`.
@@ -616,7 +621,7 @@ Tasks 7 and 9 to 16 under these rules. Where they differ from the header, these 
 - Every dispatch carries its items from the carries file.
 
 **Spend.**
-- The ceiling is 21M and the flag 17M (O9).
+- The ceiling is 25M and the flag 21M (O10, Geoff 2026-09-25, raised from O9's 21M and 17M).
 - Spend is the sum of two figures from `scripts/docs-readers/session-ledger.ts --since
   2026-09-24T15:30:00Z`: one for the segment 1 and 2 session (`e4f32f69-aaf9-43b0-ad47-92d96aaf09a4`),
   one for the new session, plus the runner ledger scoped with the same `--since`.
@@ -644,7 +649,8 @@ projection to the close, then commit one STATUS line to `main`.
 - WIP-commit the partial work on its branch;
 - write STATUS with the exact resume prompt.
 
-**End.** Task 16 ends with the PR opened, not merged. The run then brings Geoff the program budget
+**End.** Task 16 removes `DISABLE_AUTOUPDATER` from `~/.dotfiles/claude/.claude/settings.json`
+and commits that in the dotfiles repo. It ends with the PR opened, not merged. The run then brings Geoff the program budget
 question the plan names.
 
 ## Ledger
@@ -666,3 +672,4 @@ question the plan names.
 | ruling | O9 (Geoff, 2026-09-25) | this commit | | Geoff raised the ceiling to 21M, flag at 17M, and the full sequence runs to the per-class verdict. O6 applies to the new ceiling unchanged. |
 | 6 | accepted (lane) | `c9a6d0ab`, `7bc2105e`, `8b9452e7`, `12c41535`, `1a0963f4`, `350a3cef` on `docs-reset-1b-runner` | implementer about 2.3M over four rounds, simplifier 0.11M, reviewer about 1.1M over four reads (Agent figures) | Four `diff-reviewer` reads: fix (11 blocking: no `run.ts` judge mode, the ledger ignored `--since` on runner entries, audit bypasses, `docs/internal` counted as published, packet leaks, pass 1 string entries lost their text, keys did not trace items to runs), fix (6: catch packets read the unplanted page, an agreement finding carried every item, a fixture-built key passed a gated batch, a vacuous leak test), fix (2: silent fallback to the unplanted page, integrity check skipped relative or missing inputs), accept. The second and third `fix` were conductor calls (all mechanical, fully specified). Conductor ruling: published roots are the `docs` entries of `package.json` `files` at the pinned commit, without `CHANGELOG.md`. Judges run on a minimal system prompt (skills stay; disabling them needs a per-kind init baseline). The real blind audits stay clean under the tightened audit. |
 | seg 2 | closed | `d4354321` | 12.50M counted at the close (session ledger; conductor 1.10M, subagents 11.36M, runner 0.03M) | The runner and path-map lanes merged into `docs-reset-1b` cleanly; merged gate green at 570 tests. Every build task drew at least one `fix` (Tasks 1 to 6: 49 blocking findings, each a real defect); fix rounds on large resumed agents drove the overrun, mostly cache creation. Projection to the close at segment 2's rate: about 22M, over the 21M ceiling. The host CLI moved to 2.1.282 (no pinned init baseline yet). Question to Geoff at the handoff: the ceiling, and holding the CLI version through the close. |
+| ruling | O10 (Geoff, 2026-09-25) | this commit | | Geoff raised the ceiling to 25M, flag 21M, on the segment 2 projection of about 22M, and approved holding the host CLI at 2.1.282 until the close (`DISABLE_AUTOUPDATER=1`, dotfiles `4265aea`). He asked whether the setup is using tokens more efficiently; the answer is in the pass's close. |

@@ -53,7 +53,8 @@ export interface FinalAttemptResult {
  * The outcome a job report's final attempt carries, and which attempt number it was:
  * `attempts[]`'s own `final: true` entry (its 1-based position) when the report carries attempts
  * at all, or the job's own top-level fields at attempt 1 for the earlier report shape
- * (`loadSavedBatchReport` already normalizes those to mirror the same `RunOutcome` fields).
+ * (`loadSavedBatchReport` already normalizes both the job's own fields and every entry in
+ * `attempts[]` to mirror the same `RunOutcome` fields).
  * @param job - The job report.
  * @returns The final attempt's outcome fields and its 1-based attempt number.
  * @throws When the job carries `attempts[]` but none is marked final.

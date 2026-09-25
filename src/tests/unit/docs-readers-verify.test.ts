@@ -415,7 +415,7 @@ describe('verifyReport: steps, diverged, wrong, and missing quotes', () => {
     expect(verified.problems).toEqual(['missing quote docs/other.md:3 cites a page the transcript never shows read']);
   });
 
-  it('parses and verifies a report carrying one wrong[] entry and one missing[] entry', () => {
+  it('verifies a report carrying one wrong[] entry and one missing[] entry', () => {
     const verified = verifyReport({
       report: {
         ...baseReport,

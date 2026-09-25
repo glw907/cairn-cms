@@ -5,6 +5,7 @@
  */
 import { posix } from 'node:path';
 import type {
+  Attempt,
   BatchReport,
   BlockedEntry,
   ContentBlock,
@@ -794,10 +795,27 @@ function normalizeSavedVerified(value: unknown): Verified {
 }
 
 /**
+ * Bring one saved job report's attempt up to the current shape: an attempt saved before
+ * `wrong[]`/`missing[]` existed predates them at both its own level and inside its `verified`
+ * block, filled with empty arrays here.
+ * @param raw - One entry from a saved job report's `attempts[]`.
+ * @returns The attempt with every field in the current shape.
+ */
+function normalizeSavedAttempt(raw: unknown): Attempt {
+  const attempt = (raw ?? {}) as Record<string, unknown>;
+  return {
+    ...(attempt as unknown as Attempt),
+    wrong: Array.isArray(attempt.wrong) ? (attempt.wrong as VerifiedWrongEntry[]) : [],
+    missing: Array.isArray(attempt.missing) ? (attempt.missing as VerifiedMissingEntry[]) : [],
+    verified: normalizeSavedVerified(attempt.verified),
+  };
+}
+
+/**
  * Bring one saved job report up to the current shape: the earlier report shape predates
- * `steps[]`, `diverged[]`, `wrong[]`, and `missing[]`, at both the job report's own level and
- * inside `verified` (filled with empty arrays here), and gave `stalls[]`/`assumed[]` as plain
- * strings.
+ * `steps[]`, `diverged[]`, `wrong[]`, and `missing[]`, at the job report's own level, inside
+ * `verified`, and inside every one of its `attempts[]` (filled with empty arrays here), and gave
+ * `stalls[]`/`assumed[]` as plain strings.
  * @param raw - One job entry from a saved batch report.
  * @returns The job report with every field in the current shape.
  */
@@ -812,6 +830,7 @@ function normalizeSavedJobReport(raw: unknown): JobReport {
     wrong: Array.isArray(job.wrong) ? (job.wrong as VerifiedWrongEntry[]) : [],
     missing: Array.isArray(job.missing) ? (job.missing as VerifiedMissingEntry[]) : [],
     verified: normalizeSavedVerified(job.verified),
+    attempts: Array.isArray(job.attempts) ? job.attempts.map(normalizeSavedAttempt) : (job.attempts as Attempt[] | undefined),
   };
 }
 

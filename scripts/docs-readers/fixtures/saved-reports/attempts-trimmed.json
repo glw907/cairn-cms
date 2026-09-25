@@ -1,0 +1,51 @@
+{
+  "batch": "validation",
+  "runId": "attempts-trimmed",
+  "stopReason": "complete",
+  "budgetTokens": 0,
+  "usage": { "input": 0, "output": 0, "cacheCreation": 0, "cacheRead": 0, "counted": 0 },
+  "jobs": [
+    {
+      "id": "evaluator-planted-1",
+      "class": "docs-only",
+      "model": "claude-opus-5-5",
+      "outcome": "done",
+      "stalls": [],
+      "assumed": [],
+      "pagesRead": [],
+      "quotes": [],
+      "steps": [],
+      "diverged": [],
+      "checks": [],
+      "ruleCandidates": [],
+      "denials": [],
+      "proxyBlocked": [],
+      "packageFetches": [],
+      "usage": { "input": 0, "output": 0, "cacheCreation": 0, "cacheRead": 0, "counted": 0 },
+      "verified": { "ok": true, "init": true, "canaries": true, "quotes": [], "steps": [], "diverged": [], "problems": [] },
+      "attempts": [
+        {
+          "cause": "initial",
+          "final": true,
+          "transcript": "evaluator-planted-1-attempt-1.jsonl",
+          "outcome": "done",
+          "stalls": [],
+          "assumed": [],
+          "pagesRead": [],
+          "quotes": [],
+          "steps": [],
+          "diverged": [],
+          "checks": [],
+          "ruleCandidates": [],
+          "denials": [],
+          "proxyBlocked": [],
+          "packageFetches": [],
+          "usage": { "input": 0, "output": 0, "cacheCreation": 0, "cacheRead": 0, "counted": 0 },
+          "verified": { "ok": true, "init": true, "canaries": true, "quotes": [], "steps": [], "diverged": [], "problems": [] }
+        }
+      ]
+    }
+  ],
+  "verified": true,
+  "cliVersion": "2.1.281"
+}

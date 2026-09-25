@@ -76,7 +76,7 @@ function freezeStamp(freeze: GatedFreeze): FreezeStamp {
   return { tag: freeze.tag, manifestHash: freeze.manifestHash, chainHead: freeze.chainHead };
 }
 
-/** The quote shape shared by `quotes[]` and every quote embedded in `steps[]` or `diverged[]`. */
+/** The quote shape shared by `quotes[]` and every quote embedded in `steps[]`, `diverged[]`, `wrong[]`, or `missing[]`. */
 const QUOTE_SCHEMA = {
   type: 'object',
   properties: { path: { type: 'string' }, line: { type: 'integer' }, text: { type: 'string' } },
@@ -159,7 +159,7 @@ export const REPORT_REQUEST = [
   '- steps: each instruction you followed or statement you relied on for a decision, as { quote: the page:line quote it rests on, in the same form as above, decision: the decision it supported };',
   '- diverged: each place you did something other than what a page said, including a workaround that worked, as { quote: that page\'s quote, didInstead: what you did instead, why: why you diverged, blockedBy: the same field as above };',
   '- wrong: each statement on a page that turned out to be false, filed even when you worked around it, as { quote: that page\'s quote, pageSays: what the page states, actual: what is actually true, evidence: how you know };',
-  '- missing: each fact or step the job needed that no page gave you, filed even when you worked around it, as { quote: the nearest line, in the section you relied on, where it belonged, needed: what was missing there, evidence: how you know it was needed };',
+  '- missing: each fact or step the job needed that the page you relied on did not give, filed even when you worked around it, as { quote: the nearest line, in the section you relied on, where it belonged, needed: what was missing there, evidence: how you know it was needed };',
   '- ruleCandidates: anything you wish the documentation had told you, when the job did not actually need it (something the job did need belongs in missing instead).',
 ].join('\n');
 
@@ -763,8 +763,9 @@ export async function runJudgeBatch({
 }): Promise<{ report: JudgeBatchReport; transcripts: Record<string, string> }> {
   // Read this kind's frozen prompt once, for the whole batch, so every job's composed stdin text
   // is built from the same bytes: checkJudgeJobField already requires each job's own `job` field
-  // to match these exact bytes (a byte comparison, never a hash) before any container starts, and
-  // a fresh read mid-batch could let an edit landing between jobs reach a later one.
+  // to be either JUDGE_FIELD_UNUSED or these exact bytes (a byte comparison, never a hash) before
+  // any container starts, and a fresh read mid-batch could let an edit landing between jobs reach
+  // a later one.
   const frozenPrompt = loadJudgePrompt(kind);
   const jobFieldProblems = batch.jobs.flatMap((job) => {
     const problem = checkJudgeJobField(job, kind, frozenPrompt);

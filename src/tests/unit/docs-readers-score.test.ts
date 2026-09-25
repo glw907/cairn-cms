@@ -74,9 +74,8 @@ describe('score.ts dev', () => {
   }
 
   it('scores a pass 1 saved report in development mode', () => {
-    // This one-plant `dev-plants.json` is written fresh into this test's own scratch dir; it
-    // shares its filename with the real, seventeen-plant `fixtures/dev-plants.json` a live pilot
-    // scores from, but the two are unrelated files.
+    // This fixture has one on-map plant and only Opus runs, so neither the off-map exclusion nor
+    // the non-Opus exclusion is pinned by this test.
     const plantsPath = writeJsonFile('dev-plants.json', [{ id: 'PLANT-X1', job: 'evaluator', page: 'docs/fixture-page.md', line: 12 }]);
     const mapPath = writeJsonFile('evaluator-map.json', {
       job: 'evaluator',

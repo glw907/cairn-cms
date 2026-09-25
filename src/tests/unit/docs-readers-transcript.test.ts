@@ -21,6 +21,7 @@ import {
   toReaderRelative,
   usageFromEvents,
 } from '../../../scripts/docs-readers/lib/transcript.js';
+import { finalOutcome } from '../../../scripts/docs-readers/lib/score-assemble.js';
 import type { ToolCall } from '../../../scripts/docs-readers/lib/types.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -420,5 +421,16 @@ describe('loadSavedBatchReport', () => {
       jobs: [{ id: 'j', stalls: [{ text: 'already structured', blockedBy: 'npm test' }], assumed: [] }],
     });
     expect(batch.jobs[0].stalls).toEqual([{ text: 'already structured', blockedBy: 'npm test' }]);
+  });
+
+  it('fills empty wrong and missing on a saved attempt that predates them, at both the attempt\'s own level and inside its verified block', () => {
+    const raw = readFileSync(join(SAVED_REPORTS, 'attempts-trimmed.json'), 'utf8');
+    const batch = loadSavedBatchReport(raw);
+    const job = batch.jobs.find((j) => j.id === 'evaluator-planted-1');
+    const result = finalOutcome(job!);
+    expect(result.outcome.wrong).toEqual([]);
+    expect(result.outcome.missing).toEqual([]);
+    expect(result.outcome.verified.wrong).toEqual([]);
+    expect(result.outcome.verified.missing).toEqual([]);
   });
 });

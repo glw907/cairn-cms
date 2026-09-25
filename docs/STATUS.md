@@ -20,15 +20,15 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Waiting on Geoff: pass 1b stopped before the freeze (2026-09-25).** Plan
-`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`, branch `docs-reset-1b` (worktree
-`.claude/worktrees/docs-reset-1b`, pushed). Tasks 0 to 10 are done: the scorer, rounds 0 and 1, and
-three runner defects found and fixed in tuning (record:
-`docs/internal/record/2026-09-24-docs-reset-1b-tuning.md`). Spend 19.92M counted; projection to the
-close about 26M against the 25M ceiling. The open question, in the plan's last ledger row: run the
-freeze and the gated test, or close on the tuning record. The CLI stays held at 2.1.282 until the
-close. Carry notes: `docs/superpowers/research/2026-09-24-pass-1b-carries.md`. Still owed from
-pass 1: the `~/.dotfiles` push and `claude-tooling-sync verify`.
+**Next: merge docs reset pass 1b (PR #89) on Geoff's word, then brainstorm pass 2a.** Pass 1b
+closed on its tuning record (O11, Geoff 2026-09-25): no freeze and no gated runs, so every reader
+class goes to pass 2a as advisory. Records: `docs/internal/record/2026-09-24-docs-reset-1b-{tuning,validation}.md`.
+Post-mortem, ledger (20.07M counted), and a draft program budget (lean pass 2a about 8.5M) are at the
+foot of `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`. Pass 2a's design must first answer
+the catch-field finding: readers file routed-around defects only as rule candidates. Its inputs are
+in `ROADMAP.md`'s docs reset entry. Geoff sets the program ceiling. The CLI hold is released in
+dotfiles `75f3d96`. Still owed: the `~/.dotfiles` push and `claude-tooling-sync verify`. The lane
+worktrees `docs-reset-1b-{export,runner,pathmap}` can be removed.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`
@@ -53,9 +53,8 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` at effort `medium`, in
-`/var/home/glw907/Projects/cairn-cms`, continue docs reset pass 1b unattended from Task 7 on branch
-`docs-reset-1b` (worktree `.claude/worktrees/docs-reset-1b`). Read the plan
-(`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`) and the spec in full, then the carry
-notes, and follow the plan's "Unattended execution" section for guards, mode, spend, checkpoints,
-and the conditions that stop the run for Geoff.
+After PR #89 merges, in a fresh session started with `claude --model claude-opus-5-5` at effort
+`high`, in `/var/home/glw907/Projects/cairn-cms`, brainstorm docs reset pass 2a. Read the parent
+spec (`docs/superpowers/specs/2026-09-23-docs-reset-design.md`, including "Amendments from pass
+1b"), the pass 1b validation record and post-mortem, and `ROADMAP.md`'s docs reset entry. Settle the
+catch-field design and the program ceiling with Geoff before planning.

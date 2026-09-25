@@ -19,7 +19,7 @@
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addUsage, ledgerTotal, readLedger, reportUsage } from './lib/ledger.js';
 import { emptyUsage } from './lib/transcript.js';
@@ -246,8 +246,9 @@ export function main(args: string[]): number {
   const since = option(args, '--since');
   const projectRoot = mainRepoRoot(resolve(process.cwd()));
   const projectDir = option(args, '--project-dir') ?? join(homedir(), '.claude', 'projects', projectSlug(projectRoot));
-  const sessionPath = session.endsWith('.jsonl') || session.includes('/') ? resolve(session) : join(projectDir, `${session}.jsonl`);
-  const sessionId = session.endsWith('.jsonl') || session.includes('/') ? sessionPath.replace(/\.jsonl$/, '').split('/').pop()! : session;
+  const sessionIsPath = session.endsWith('.jsonl') || session.includes('/');
+  const sessionPath = sessionIsPath ? resolve(session) : join(projectDir, `${session}.jsonl`);
+  const sessionId = sessionIsPath ? basename(sessionPath, '.jsonl') : session;
   const runnerLedgerPath = option(args, '--runner-ledger') ?? join(homedir(), '.cache', 'docs-readers', 'ledger.jsonl');
 
   const tasksDirs = [defaultTasksDir(projectRoot, sessionId), ...options(args, '--tasks-dir')];

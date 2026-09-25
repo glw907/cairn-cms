@@ -18,6 +18,9 @@ export interface ExpectedItem {
   expectedKind?: 'finding' | 'catchCall';
 }
 
+/** A judge's parsed structured output, whichever of the three shapes its kind returns. */
+export type JudgeOutput = CatchJudgeOutput | AdjudicatorOutput | AgreementOutput;
+
 /** A judge's parsed rulings, whichever of the three shapes its kind returns. */
 export type JudgeRulings = CatchRuling[] | Adjudication[] | AgreementRuling[];
 
@@ -196,7 +199,7 @@ function parseAgreementOutput(raw: Record<string, unknown>): AgreementOutput | u
  * @param kind - Which of the three judges produced `events`.
  * @returns The parsed output, or undefined when the run gave none or the wrong shape.
  */
-export function judgeOutput(events: StreamEvent[], kind: JudgeKind): CatchJudgeOutput | AdjudicatorOutput | AgreementOutput | undefined {
+export function judgeOutput(events: StreamEvent[], kind: JudgeKind): JudgeOutput | undefined {
   const raw = findResult(events)?.structured_output;
   if (!raw || typeof raw !== 'object') return undefined;
   const output = raw as Record<string, unknown>;
@@ -211,7 +214,7 @@ export function judgeOutput(events: StreamEvent[], kind: JudgeKind): CatchJudgeO
  * @param kind - The judge kind it came from.
  * @returns The output's own rulings array, under whichever key its kind uses.
  */
-export function rulingsOf(output: CatchJudgeOutput | AdjudicatorOutput | AgreementOutput, kind: JudgeKind): JudgeRulings {
+export function rulingsOf(output: JudgeOutput, kind: JudgeKind): JudgeRulings {
   if (kind === 'adjudicator') return (output as AdjudicatorOutput).adjudications;
   return (output as CatchJudgeOutput | AgreementOutput).rulings;
 }
@@ -252,18 +255,19 @@ export function verifyJudgeRulings({
   init,
   canariesFound,
 }: {
-  output: CatchJudgeOutput | AdjudicatorOutput | AgreementOutput | undefined;
+  output: JudgeOutput | undefined;
   kind: JudgeKind;
   expected: readonly ExpectedItem[];
   init: InitCheck;
   canariesFound: string[];
 }): JudgeVerified {
   const problems: string[] = [];
+  const canariesClean = canariesFound.length === 0;
   if (!init.ok) problems.push(...init.problems.map((p) => `init: ${p}`));
-  if (canariesFound.length > 0) problems.push(`canary loaded: ${canariesFound.length} canary string(s) in the transcript`);
+  if (!canariesClean) problems.push(`canary loaded: ${canariesFound.length} canary string(s) in the transcript`);
   if (!output) {
     problems.push('no structured ruling output');
-    return { ok: false, init: init.ok, canaries: canariesFound.length === 0, problems };
+    return { ok: false, init: init.ok, canaries: canariesClean, problems };
   }
   const rulings = rulingsOf(output, kind);
   const counts = new Map<string, number>();
@@ -289,5 +293,5 @@ export function verifyJudgeRulings({
       }
     }
   }
-  return { ok: problems.length === 0, init: init.ok, canaries: canariesFound.length === 0, problems };
+  return { ok: problems.length === 0, init: init.ok, canaries: canariesClean, problems };
 }

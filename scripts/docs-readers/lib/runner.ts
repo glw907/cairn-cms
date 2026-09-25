@@ -25,16 +25,13 @@ import {
 import { addUsage, countedTokens, reportUsage } from './ledger.js';
 import { expectedTools, type JudgeKind } from './class-schema.js';
 import { verifyReport } from './verify.js';
-import { judgeOutput, judgeReportSchema, rulingsOf, verifyJudgeRulings, type ExpectedItem, type JudgeVerified } from './judge-verify.js';
+import { judgeOutput, judgeReportSchema, rulingsOf, verifyJudgeRulings, type ExpectedItem, type JudgeRulings, type JudgeVerified } from './judge-verify.js';
 import { scrub } from './scrub.js';
 import type {
-  Adjudication,
-  AgreementRuling,
   Attempt,
   AttemptCause,
   Batch,
   BatchReport,
-  CatchRuling,
   ClassDecl,
   Executor,
   FreezeStamp,
@@ -531,7 +528,7 @@ export interface JudgeAttempt {
   initModel?: string;
   outcome: 'done' | 'aborted' | 'error';
   abortReason?: string;
-  rulings: CatchRuling[] | Adjudication[] | AgreementRuling[];
+  rulings: JudgeRulings;
   usage: ReportUsage;
   verified: JudgeVerified;
 }
@@ -541,7 +538,7 @@ export interface JudgeJobReport {
   id: string;
   class: string;
   model: string;
-  rulings: CatchRuling[] | Adjudication[] | AgreementRuling[];
+  rulings: JudgeRulings;
   usage: ReportUsage;
   verified: JudgeVerified;
   /** Every counted attempt the runner made at this job; omitted for a `stoppedBy` report with zero. */
@@ -598,9 +595,12 @@ function buildJudgeOutcome({
     verified.problems.unshift(`aborted: ${reason}`);
   }
   const model = initModel(events);
+  let outcome: JudgeAttempt['outcome'] = 'error';
+  if (reason) outcome = 'aborted';
+  else if (output) outcome = 'done';
   return {
     ...(model !== undefined ? { initModel: model } : {}),
-    outcome: reason ? 'aborted' : output ? 'done' : 'error',
+    outcome,
     ...(reason ? { abortReason: reason } : {}),
     rulings: output ? rulingsOf(output, kind) : [],
     usage: reportUsage(usageFromEvents(events)),

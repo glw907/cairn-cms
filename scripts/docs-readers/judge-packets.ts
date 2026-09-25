@@ -33,6 +33,15 @@ function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex');
 }
 
+/**
+ * Write a value as pretty-printed JSON with a trailing newline.
+ * @param path - The file to write.
+ * @param value - The value to serialize.
+ */
+function writeJson(path: string, value: unknown): void {
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
 /** One plant entry as a catch or held-out packet carries it: never `original`, `planted`, `proof`, or `type`. */
 export interface PlantEntry {
   id: string;
@@ -191,17 +200,14 @@ export function buildCatchPacket({
   });
 
   const { fields: items, key: itemKey } = buildCatchFields(run);
-  writeFileSync(join(packetDir, 'job.json'), `${JSON.stringify({ text: jobText }, null, 2)}\n`);
-  writeFileSync(join(packetDir, 'plants.json'), `${JSON.stringify(plantEntries, null, 2)}\n`);
-  writeFileSync(join(packetDir, 'items.json'), `${JSON.stringify(items, null, 2)}\n`);
-  writeFileSync(
-    join(packetDir, 'index.json'),
-    `${JSON.stringify({ kind: 'catch', job: 'job.json', plants: 'plants.json', items: 'items.json', pages: 'pages/' }, null, 2)}\n`,
-  );
+  writeJson(join(packetDir, 'job.json'), { text: jobText });
+  writeJson(join(packetDir, 'plants.json'), plantEntries);
+  writeJson(join(packetDir, 'items.json'), items);
+  writeJson(join(packetDir, 'index.json'), { kind: 'catch', job: 'job.json', plants: 'plants.json', items: 'items.json', pages: 'pages/' });
   inputs['job.json'] = sha256(jobText);
 
   const key: CatchPacketKey = { kind: 'catch', plants: plantKey, items: itemKey, inputs };
-  writeFileSync(join(outDir, 'key.json'), `${JSON.stringify(key, null, 2)}\n`);
+  writeJson(join(outDir, 'key.json'), key);
   return { key, expected: plantEntries.map((p) => ({ itemId: p.id })) };
 }
 
@@ -262,15 +268,12 @@ export function buildAdjudicatorPacket({
 
   const { absent } = preparePlanterExport({ repoRoot, commit, dest: join(packetDir, 'tree'), ...(runner ? { runner } : {}) });
 
-  writeFileSync(join(packetDir, 'job.json'), `${JSON.stringify({ text: jobText, pageList, absentList }, null, 2)}\n`);
-  writeFileSync(join(packetDir, 'items.json'), `${JSON.stringify(items, null, 2)}\n`);
-  writeFileSync(
-    join(packetDir, 'index.json'),
-    `${JSON.stringify({ kind: 'adjudicator', job: 'job.json', items: 'items.json', tree: 'tree/', publishedRoots }, null, 2)}\n`,
-  );
+  writeJson(join(packetDir, 'job.json'), { text: jobText, pageList, absentList });
+  writeJson(join(packetDir, 'items.json'), items);
+  writeJson(join(packetDir, 'index.json'), { kind: 'adjudicator', job: 'job.json', items: 'items.json', tree: 'tree/', publishedRoots });
 
   const key: AdjudicatorPacketKey = { kind: 'adjudicator', items: itemKey, excluded: excludedIds, treeCommit: commit, treeAbsent: absent, inputs: { 'job.json': sha256(jobText) } };
-  writeFileSync(join(outDir, 'key.json'), `${JSON.stringify(key, null, 2)}\n`);
+  writeJson(join(outDir, 'key.json'), key);
   return { key, expected: items.map((item) => ({ itemId: item.id })) };
 }
 
@@ -338,10 +341,10 @@ export function buildAgreementPacket({
     if (!resolved) throw new Error(`agreement packet: no resolved material for finding ${itemId}`);
     const dir = join(packetDir, 'findings', itemId);
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'job.json'), `${JSON.stringify({ text: resolved.jobText }, null, 2)}\n`);
+    writeJson(join(dir, 'job.json'), { text: resolved.jobText });
     writeFileSync(join(dir, 'page.md'), resolved.pageContent);
     const { fields } = buildCatchFields(resolved.item);
-    writeFileSync(join(dir, 'item.json'), `${JSON.stringify(fields, null, 2)}\n`);
+    writeJson(join(dir, 'item.json'), fields);
     inputs[`findings/${itemId}/job.json`] = sha256(resolved.jobText);
     inputs[`findings/${itemId}/page.md`] = sha256(resolved.pageContent);
     findingKey[itemId] = { resolved: true };
@@ -354,13 +357,13 @@ export function buildAgreementPacket({
     if (!resolved) throw new Error(`agreement packet: no resolved material for catch call ${itemId}`);
     const dir = join(packetDir, 'catchCalls', itemId);
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'job.json'), `${JSON.stringify({ text: resolved.jobText }, null, 2)}\n`);
+    writeJson(join(dir, 'job.json'), { text: resolved.jobText });
     writeFileSync(join(dir, 'page.md'), resolved.pageContent);
-    writeFileSync(join(dir, 'plant.json'), `${JSON.stringify(resolved.plant, null, 2)}\n`);
+    writeJson(join(dir, 'plant.json'), resolved.plant);
     // Distinct ids from the outer sampled itemId, per the packet requirements: this run's own
     // items are keyed under their own opaque ids, never the itemId the sample draws on.
     const { fields } = buildCatchFields(resolved.run, `${itemId}-run`);
-    writeFileSync(join(dir, 'items.json'), `${JSON.stringify(fields, null, 2)}\n`);
+    writeJson(join(dir, 'items.json'), fields);
     inputs[`catchCalls/${itemId}/job.json`] = sha256(resolved.jobText);
     inputs[`catchCalls/${itemId}/page.md`] = sha256(resolved.pageContent);
     catchCallKey[itemId] = { resolved: true };
@@ -374,10 +377,10 @@ export function buildAgreementPacket({
     treeCommit = tree.commit;
   }
 
-  writeFileSync(join(packetDir, 'index.json'), `${JSON.stringify({ kind: 'agreement', items: indexItems, ...(tree ? { tree: 'tree/' } : {}) }, null, 2)}\n`);
+  writeJson(join(packetDir, 'index.json'), { kind: 'agreement', items: indexItems, ...(tree ? { tree: 'tree/' } : {}) });
 
   const key: AgreementPacketKey = { kind: 'agreement', findings: findingKey, catchCalls: catchCallKey, ...(treeCommit ? { treeCommit } : {}), inputs };
-  writeFileSync(join(outDir, 'key.json'), `${JSON.stringify(key, null, 2)}\n`);
+  writeJson(join(outDir, 'key.json'), key);
   return { key, expected };
 }
 

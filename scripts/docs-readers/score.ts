@@ -10,7 +10,19 @@
  * `<job>-<role>-<index>` id convention (`role` one of `planted`, `control`, `heldout`); the
  * catch-judge and adjudicator batches referenced by `--catch-rulings`/`--adjudicator-rulings` are
  * assumed, by convention, to give each of their own jobs the same id as the reader job whose
- * packet it rules, which the key file's own `report.jobId` asserts.
+ * packet it rules, which the key file's own `report.path`/`runId`/`attempt` must match against the
+ * indexed job's actual source. A reader job id that appears in more than one `--report` file
+ * (pass 1's `validation` and `validation-rerun` can share ids) is resolved the same way: the copy
+ * a judge key's own trace names is kept, and every other copy is dropped and noted.
+ *
+ * Gated mode refuses (never silently scores around) an assembly problem a development-mode run
+ * would otherwise carry as a `notes` entry: a planted, heldout, or control reader job with no
+ * joined key and rulings; a judge job that is unverified or carries `stoppedBy`; a judge batch
+ * report that fails `checkReportComplete` or `checkGatedStamp`; a key whose own trace does not
+ * match the indexed job it names; or a key plant or item without exactly one ruling. It also
+ * refuses any gated input path (the plant record, thresholds, a map, a catch or adjudicator key or
+ * rulings file, the agreement sample) that has no entry in the post-freeze chain at all, and
+ * requires exactly one ruling per agreement-sample item from a verified, unstopped agreement job.
  *
  * The seed convention: the manifest's `seeds` map carries the `oc-curve.ts` seed under the key
  * `"oc-curve"`, checked against the thresholds file's own `seed` field, refusing a mismatch.
@@ -26,9 +38,9 @@
  *     --report FILE [--report FILE...]
  *     [--catch-rulings FILE...] [--catch-key FILE...]
  *     [--adjudicator-rulings FILE...] [--adjudicator-key FILE...]
- *     --plants FILE [--map JOB=FILE...] [--heldout-ids ID,ID,...]
+ *     --plants FILE [--map JOB=FILE...] --heldout-ids ID,ID,...
  *     --thresholds FILE --manifest FILE --chain FILE --root DIR
- *     --agreement-sample FILE [--agreement-rulings FILE...]
+ *     --agreement-sample FILE --agreement-rulings FILE [--agreement-rulings FILE...]
  *     --out FILE
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -36,6 +48,7 @@ import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CLASSES_DIR, judgeKindForClass, loadClasses } from './lib/class-schema.js';
 import { loadManifest } from './freeze.js';
+import { latestEntry } from './lib/chain.js';
 import {
   checkDevelopmentBatch,
   checkGatedStamp,
@@ -47,12 +60,12 @@ import {
 import {
   buildCatchRunRecords,
   buildPrecisionRunRecords,
-  finalOutcome,
   indexReaderJobs,
   joinAdjudications,
   joinCatchRulings,
   parseReaderJobId,
   type IndexedReaderJob,
+  type JobKeyRef,
 } from './lib/score-assemble.js';
 import {
   assertThresholdsMatchTally,
@@ -88,7 +101,7 @@ import { scoreClassVerdicts, type ClassVerdict } from './lib/score-verdict.js';
 import { CLASS_IDS, type CatchRunRecord, type ClassId, type PlantSpec, type PrecisionRunRecord } from './lib/score-types.js';
 import { loadSavedBatchReport } from './lib/transcript.js';
 import { JOB_CLASS } from './oc-curve.js';
-import type { BatchReport } from './lib/types.js';
+import type { AgreementRuling, BatchReport } from './lib/types.js';
 import type { JudgeBatchReport } from './lib/runner.js';
 import type { CatchPacketKey, AdjudicatorPacketKey } from './judge-packets.js';
 
@@ -209,6 +222,18 @@ function loadMaps(values: string[]): Record<string, unknown> {
 }
 
 /**
+ * The file half of every `--map JOB=FILE` value, for the chain-entry check.
+ * @param values - The raw `JOB=FILE` values.
+ * @returns Each value's own file path.
+ */
+function mapFilePaths(values: string[]): string[] {
+  return values.map((value) => {
+    const at = value.indexOf('=');
+    return at === -1 ? value : value.slice(at + 1);
+  });
+}
+
+/**
  * Every base job name a set of indexed reader jobs names, mapped to its own class id.
  * @param indexed - The indexed reader jobs.
  * @returns Each base job name's class id.
@@ -220,41 +245,54 @@ function jobClassesOf(indexed: ReadonlyMap<string, IndexedReaderJob>): Map<strin
 }
 
 /**
+ * Every catch-judge and adjudicator key's own report trace, used to resolve a reader job id that
+ * appears in more than one `--report` file.
+ * @param catchKeys - Every loaded catch-judge key.
+ * @param adjudicatorKeys - Every loaded adjudicator key.
+ * @returns Each key's own `{jobId, reportPath, runId}` claim.
+ */
+function buildKeyRefs(catchKeys: readonly CatchPacketKey[], adjudicatorKeys: readonly AdjudicatorPacketKey[]): JobKeyRef[] {
+  return [
+    ...catchKeys.map((key) => ({ jobId: key.report.jobId, reportPath: key.report.path, runId: key.report.runId })),
+    ...adjudicatorKeys.map((key) => ({ jobId: key.report.jobId, reportPath: key.report.path, runId: key.report.runId })),
+  ];
+}
+
+/**
  * Assemble catch and precision runs from real artifacts: the indexed reader jobs, the catch-judge
- * and adjudicator rulings and key files. Shared by development and gated mode alike.
- * @returns Every assembled piece, plus every note (a job the judges carried no rulings for; never
- * fatal, since a missing ruling simply scores as catching nothing or zero items).
+ * and adjudicator rulings and key files. Shared by development and gated mode alike; every problem
+ * this finds (a missing key, an unverified judge job, a trace mismatch, a ruling that is missing
+ * or duplicated, a reader job with nothing joined to it) is returned in `problems`, and the caller
+ * decides whether that is fatal (gated mode) or a note (development mode).
+ * @returns Every assembled piece, plus every problem found while joining.
  */
 function assembleRuns({
   indexed,
   catchRulingsPaths,
-  catchKeyPaths,
+  catchKeys,
   adjudicatorRulingsPaths,
-  adjudicatorKeyPaths,
+  adjudicatorKeys,
 }: {
   indexed: ReadonlyMap<string, IndexedReaderJob>;
   catchRulingsPaths: string[];
-  catchKeyPaths: string[];
+  catchKeys: readonly CatchPacketKey[];
   adjudicatorRulingsPaths: string[];
-  adjudicatorKeyPaths: string[];
+  adjudicatorKeys: readonly AdjudicatorPacketKey[];
 }): {
   catchRunsByJob: Record<string, CatchRunRecord[]>;
   heldOutRuns: CatchRunRecord[];
   precisionRuns: PrecisionRunRecord[];
-  notes: string[];
   problems: string[];
 } {
   const catchRulingsReports = loadJudgeBatchReports(catchRulingsPaths);
-  const catchKeys = catchKeyPaths.map((path) => readJson<CatchPacketKey>(path));
-  const { byReaderJobId: catchesByJob, problems: catchProblems } = joinCatchRulings(catchRulingsReports, catchKeys);
-  const { catchRunsByJob, heldOutRuns, notes: catchNotes } = buildCatchRunRecords(indexed, catchesByJob);
+  const { byReaderJobId: catchesByJob, problems: catchJoinProblems } = joinCatchRulings(catchRulingsReports, catchKeys, indexed);
+  const { catchRunsByJob, heldOutRuns, problems: catchBuildProblems } = buildCatchRunRecords(indexed, catchesByJob);
 
   const adjudicatorRulingsReports = loadJudgeBatchReports(adjudicatorRulingsPaths);
-  const adjudicatorKeys = adjudicatorKeyPaths.map((path) => readJson<AdjudicatorPacketKey>(path));
-  const { byReaderJobId: itemsByJob, problems: adjProblems } = joinAdjudications(adjudicatorRulingsReports, adjudicatorKeys);
-  const { runs: precisionRuns, notes: precisionNotes } = buildPrecisionRunRecords(indexed, itemsByJob);
+  const { byReaderJobId: itemsByJob, problems: adjJoinProblems } = joinAdjudications(adjudicatorRulingsReports, adjudicatorKeys, indexed);
+  const { runs: precisionRuns, problems: precisionBuildProblems } = buildPrecisionRunRecords(indexed, itemsByJob);
 
-  return { catchRunsByJob, heldOutRuns, precisionRuns, notes: [...catchNotes, ...precisionNotes], problems: [...catchProblems, ...adjProblems] };
+  return { catchRunsByJob, heldOutRuns, precisionRuns, problems: [...catchJoinProblems, ...catchBuildProblems, ...adjJoinProblems, ...precisionBuildProblems] };
 }
 
 /**
@@ -290,10 +328,11 @@ interface DevJobResult {
 /**
  * Run the `dev` subcommand: refuse a `--report` whose batch is not a development batch or whose
  * any job carries a freeze stamp, then rescore the assembled on-map plants and false findings per
- * verified Opus control run, by job. Development precision restricts both its numerator and its
- * denominator to verified Opus runs: an unverified run's items are never counted, and the run
- * itself is dropped from the denominator, unlike gated mode's rerun-failure rule. Never emits a
- * bar or a class verdict.
+ * verified Opus control run, by job. Every assembly problem `assembleRuns` finds (a job with
+ * nothing joined to it, an unverified judge job, and so on) is carried as a `notes` entry here,
+ * never fatal. Development precision restricts both its numerator and its denominator to verified
+ * Opus runs: an unverified run's items are never counted, and the run itself is dropped from the
+ * denominator, unlike gated mode's rerun-failure rule. Never emits a bar or a class verdict.
  * @param argv - The arguments after `dev`.
  * @returns The process exit code.
  */
@@ -316,10 +355,11 @@ function runDev(argv: string[]): number {
     return 1;
   }
 
-  const { byId: indexed, problems: indexProblems } = indexReaderJobs(
-    reports.map((r) => r.report),
-    scoringClassNames(),
-  );
+  const catchKeys = repeatedOption(argv, '--catch-key').map((path) => readJson<CatchPacketKey>(path));
+  const adjudicatorKeys = repeatedOption(argv, '--adjudicator-key').map((path) => readJson<AdjudicatorPacketKey>(path));
+  const keyRefs = buildKeyRefs(catchKeys, adjudicatorKeys);
+
+  const { byId: indexed, problems: indexProblems, notes: indexNotes } = indexReaderJobs(reports, scoringClassNames(), keyRefs);
   if (indexProblems.length > 0) {
     writeJson(out, { ok: false, mode: 'development', problems: indexProblems });
     return 1;
@@ -328,9 +368,9 @@ function runDev(argv: string[]): number {
   const assembled = assembleRuns({
     indexed,
     catchRulingsPaths: repeatedOption(argv, '--catch-rulings'),
-    catchKeyPaths: repeatedOption(argv, '--catch-key'),
+    catchKeys,
     adjudicatorRulingsPaths: repeatedOption(argv, '--adjudicator-rulings'),
-    adjudicatorKeyPaths: repeatedOption(argv, '--adjudicator-key'),
+    adjudicatorKeys,
   });
 
   const plants = loadPlants(plantsPath, jobClassesOf(indexed));
@@ -357,7 +397,7 @@ function runDev(argv: string[]): number {
     };
   }
 
-  writeJson(out, { ok: true, mode: 'development', byJob, onMapRecall: recallByClass(onMapTallies), notes: assembled.notes, assemblyProblems: assembled.problems });
+  writeJson(out, { ok: true, mode: 'development', byJob, onMapRecall: recallByClass(onMapTallies), notes: [...indexNotes, ...assembled.problems] });
   return 0;
 }
 
@@ -372,17 +412,19 @@ interface GatedReportedMeasures {
   lineDistanceByPlant: Record<string, number | null>;
   /** Recall grouped by a plant's own on-path section rank; the bucket keys are string ranks ("1", "2", ...). */
   recallByPosition: Record<string, ReturnType<typeof recallByClass>[ClassId]>;
-  /** Recall grouped by whether any run scoring the plant's own job carried a stall (a per-job proxy: the schema gives a stall no line, so no finer, per-run positional read is possible). */
-  recallAfterPriorStall: Record<string, ReturnType<typeof recallByClass>[ClassId]>;
-  ruleCandidatesByRun: Array<{ runId: string; count: number; reason: string }>;
+  /** Recall grouped by a plant-run pair's own prior-stall state: whether that specific run recorded any stall, not merely any run on the job. */
+  recallAfterPriorStall: { stalled: { caught: number; total: number; rate: number | null }; clean: { caught: number; total: number; rate: number | null } };
+  ruleCandidatesByRun: Array<{ runId: string; role: 'planted' | 'control'; count: number; reason: string }>;
   deferred: string[];
 }
 
 /**
- * Run the `gated` subcommand: verify every `--report`'s completeness, freeze stamp, and chain
- * dependencies, then score the pooled and per-class bars, the agreement bar (computed before
- * Fable's replacements are applied to the catch and precision records the bars are then scored
- * from), the held-out found rule, and the reported measures.
+ * Run the `gated` subcommand: verify every `--report`'s and every judge batch report's
+ * completeness and freeze stamp, the post-freeze chain's job-scoped dependencies and its coverage
+ * of every gated input path, and the agreement sample's own ruling coverage, then score the pooled
+ * and per-class bars, the agreement bar (computed before Fable's replacements are applied to the
+ * catch and precision records the bars are then scored from), the held-out found rule, and the
+ * reported measures.
  * @param argv - The arguments after `gated`.
  * @returns The process exit code.
  */
@@ -394,9 +436,24 @@ function runGated(argv: string[]): number {
   const chainPath = option(argv, '--chain');
   const root = option(argv, '--root');
   const agreementSamplePath = option(argv, '--agreement-sample');
+  const agreementRulingsPaths = repeatedOption(argv, '--agreement-rulings');
+  const heldOutIdsRaw = option(argv, '--heldout-ids');
   const out = option(argv, '--out');
-  if (reportPaths.length === 0 || !plantsPath || !thresholdsPath || !manifestPath || !chainPath || !root || !agreementSamplePath || !out) {
-    process.stderr.write('usage: score.ts gated --report FILE [...] --plants FILE --thresholds FILE --manifest FILE --chain FILE --root DIR --agreement-sample FILE --out FILE\n');
+  if (
+    reportPaths.length === 0 ||
+    !plantsPath ||
+    !thresholdsPath ||
+    !manifestPath ||
+    !chainPath ||
+    !root ||
+    !agreementSamplePath ||
+    agreementRulingsPaths.length === 0 ||
+    heldOutIdsRaw === undefined ||
+    !out
+  ) {
+    process.stderr.write(
+      'usage: score.ts gated --report FILE [...] --plants FILE --thresholds FILE --manifest FILE --chain FILE --root DIR --agreement-sample FILE --agreement-rulings FILE [...] --heldout-ids ID,ID,... --out FILE\n',
+    );
     return 2;
   }
 
@@ -414,45 +471,102 @@ function runGated(argv: string[]): number {
       if (!stampCheck.ok) problems.push(stampCheck.problem!);
     }
   }
+
+  const catchRulingsPaths = repeatedOption(argv, '--catch-rulings');
+  const adjudicatorRulingsPaths = repeatedOption(argv, '--adjudicator-rulings');
+  // Every judge batch report gated mode reads (catch-judge, adjudicator, agreement) must itself be
+  // complete and correctly stamped, the same as a reader report.
+  const judgeReportGroups: ReadonlyArray<readonly [string, readonly string[]]> = [
+    ['catch-judge', catchRulingsPaths],
+    ['adjudicator', adjudicatorRulingsPaths],
+    ['agreement', agreementRulingsPaths],
+  ];
+  for (const [kind, paths] of judgeReportGroups) {
+    for (const path of paths) {
+      // A missing or unparseable judge batch report is itself a problem, named and never a crash,
+      // so a caller's mistaken path always gets a clean refusal even when an earlier problem
+      // (checked in the same pass, not short-circuited) would otherwise have made this file moot.
+      let report: JudgeBatchReport;
+      try {
+        report = readJson<JudgeBatchReport>(path);
+      } catch (error) {
+        problems.push(`${kind} ${path}: could not be read (${(error as Error).message})`);
+        continue;
+      }
+      const completeCheck = checkReportComplete({ label: `${kind} ${path}`, stopReason: report.stopReason, jobs: report.jobs ?? [] });
+      if (!completeCheck.ok) problems.push(...completeCheck.problems);
+      for (const job of report.jobs ?? []) {
+        const stampCheck = checkGatedStamp({ label: `${kind} ${path} (job ${job.id})`, freeze: job.freeze }, manifest.tag, manifestHash);
+        if (!stampCheck.ok) problems.push(stampCheck.problem!);
+      }
+    }
+  }
   if (problems.length > 0) {
     writeJson(out, { ok: false, mode: 'gated', problems });
     return 1;
   }
 
-  const { byId: indexed, problems: indexProblems } = indexReaderJobs(
-    reports.map((r) => r.report),
-    scoringClassNames(),
-  );
+  const catchKeyPaths = repeatedOption(argv, '--catch-key');
+  const catchKeys = catchKeyPaths.map((path) => readJson<CatchPacketKey>(path));
+  const adjudicatorKeyPaths = repeatedOption(argv, '--adjudicator-key');
+  const adjudicatorKeys = adjudicatorKeyPaths.map((path) => readJson<AdjudicatorPacketKey>(path));
+  const keyRefs = buildKeyRefs(catchKeys, adjudicatorKeys);
+
+  const { byId: indexed, problems: indexProblems, notes: indexNotes } = indexReaderJobs(reports, scoringClassNames(), keyRefs);
   if (indexProblems.length > 0) {
     writeJson(out, { ok: false, mode: 'gated', problems: indexProblems });
     return 1;
   }
 
   // The chain dependency the scorer can actually verify for a planted-run report is the
-  // thresholds file (recomputed after planting and before any planted run, per the spec's
-  // sequence); a control/mapping-run report depends on nothing past genesis. The planted batch
-  // file and each planted tree's digest the spec also names are not read by this scorer, so they
-  // are not separately checked here.
+  // thresholds file and the plant record (both recomputed or planted after the freeze and before
+  // any planted run, per the spec's sequence); a heldout-run report depends on the plant record
+  // alone; a control/mapping-run report depends on nothing past genesis. The planted batch file
+  // and each planted tree's digest the spec also names are not read by this scorer, so they are
+  // not separately checked here.
   const thresholdsRelPath = relative(resolve(root), resolve(thresholdsPath));
+  const plantsRelPath = relative(resolve(root), resolve(plantsPath));
   const chainChecks: GatedChainCheck[] = [];
   for (const { path, report } of reports) {
     for (const job of report.jobs) {
       const parsed = parseReaderJobId(job.id);
-      const dependsOn = parsed?.role === 'planted' ? [thresholdsRelPath] : [];
+      const dependsOn = parsed?.role === 'planted' ? [thresholdsRelPath, plantsRelPath] : parsed?.role === 'heldout' ? [plantsRelPath] : [];
       chainChecks.push({ label: `${path} (job ${job.id})`, chainHead: job.freeze!.chainHead, dependsOn });
     }
   }
-  const agreementRulingsPaths = repeatedOption(argv, '--agreement-rulings');
   const sampleRelPath = relative(resolve(root), resolve(agreementSamplePath));
-  const rulingsRelPath = agreementRulingsPaths[0] ? relative(resolve(root), resolve(agreementRulingsPaths[0])) : undefined;
+  const rulingsRelPaths = agreementRulingsPaths.map((path) => relative(resolve(root), resolve(path)));
   const chainResult = verifyGatedChain({
     chainFile: resolve(chainPath),
     root: resolve(root),
     checks: chainChecks,
-    ...(rulingsRelPath ? { sampleBeforeRulings: { samplePath: sampleRelPath, rulingsPath: rulingsRelPath } } : {}),
+    sampleBeforeRulings: { samplePath: sampleRelPath, rulingsPaths: rulingsRelPaths },
   });
   if (!chainResult.ok) {
     writeJson(out, { ok: false, mode: 'gated', problems: chainResult.problems });
+    return 1;
+  }
+
+  // Every gated input path must itself carry a chain entry, not merely pass the job-scoped
+  // dependency checks above (which only ever name a handful of dependencies per job).
+  const mapValues = repeatedOption(argv, '--map');
+  const chainEntryTargets: Array<{ label: string; path: string }> = [
+    { label: 'plants', path: plantsPath },
+    { label: 'thresholds', path: thresholdsPath },
+    ...mapFilePaths(mapValues).map((path) => ({ label: 'map', path })),
+    ...catchKeyPaths.map((path) => ({ label: 'catch key', path })),
+    ...adjudicatorKeyPaths.map((path) => ({ label: 'adjudicator key', path })),
+    ...catchRulingsPaths.map((path) => ({ label: 'catch rulings', path })),
+    ...adjudicatorRulingsPaths.map((path) => ({ label: 'adjudicator rulings', path })),
+    { label: 'agreement sample', path: agreementSamplePath },
+  ];
+  const entryProblems: string[] = [];
+  for (const { label, path } of chainEntryTargets) {
+    const rel = relative(resolve(root), resolve(path));
+    if (!latestEntry(resolve(chainPath), rel)) entryProblems.push(`${label} "${rel}" has no chain entry`);
+  }
+  if (entryProblems.length > 0) {
+    writeJson(out, { ok: false, mode: 'gated', problems: entryProblems });
     return 1;
   }
 
@@ -466,13 +580,11 @@ function runGated(argv: string[]): number {
     return 1;
   }
 
-  const assembled = assembleRuns({
-    indexed,
-    catchRulingsPaths: repeatedOption(argv, '--catch-rulings'),
-    catchKeyPaths: repeatedOption(argv, '--catch-key'),
-    adjudicatorRulingsPaths: repeatedOption(argv, '--adjudicator-rulings'),
-    adjudicatorKeyPaths: repeatedOption(argv, '--adjudicator-key'),
-  });
+  const assembled = assembleRuns({ indexed, catchRulingsPaths, catchKeys, adjudicatorRulingsPaths, adjudicatorKeys });
+  if (assembled.problems.length > 0) {
+    writeJson(out, { ok: false, mode: 'gated', problems: assembled.problems });
+    return 1;
+  }
 
   const plants = loadPlants(plantsPath, jobClassesOf(indexed));
   try {
@@ -505,17 +617,34 @@ function runGated(argv: string[]): number {
 
   const sample = readJson<AgreementSampleFile>(agreementSamplePath);
   const agreementRulingsReports = loadJudgeBatchReports(agreementRulingsPaths);
+  const validAgreementJobs = agreementRulingsReports.flatMap((report) => report.jobs).filter((job) => job.verified?.ok === true && job.stoppedBy === undefined);
+  const rulingCounts = new Map<string, number>();
   const fableByItemId = new Map<string, string>();
-  for (const report of agreementRulingsReports) for (const job of report.jobs) for (const ruling of job.rulings as Array<{ itemId: string; ruling: string }>) fableByItemId.set(ruling.itemId, ruling.ruling);
+  for (const job of validAgreementJobs) {
+    for (const ruling of job.rulings as AgreementRuling[]) {
+      rulingCounts.set(ruling.itemId, (rulingCounts.get(ruling.itemId) ?? 0) + 1);
+      fableByItemId.set(ruling.itemId, ruling.ruling);
+    }
+  }
+  const sampleItemIds = [...sample.findings.map((finding) => finding.itemId), ...sample.catchCalls.map((catchCall) => catchCall.itemId)];
+  const rulingProblems: string[] = [];
+  for (const itemId of sampleItemIds) {
+    const count = rulingCounts.get(itemId) ?? 0;
+    if (count !== 1) rulingProblems.push(`agreement sample item "${itemId}": ${count} ruling(s) from a verified, unstopped agreement job, exactly one required`);
+  }
+  if (rulingProblems.length > 0) {
+    writeJson(out, { ok: false, mode: 'gated', problems: rulingProblems });
+    return 1;
+  }
 
   const agreement: AgreementResult = computeAgreement({
-    findings: sample.findings.map((f) => ({ itemId: f.itemId, primaryLabel: f.primaryLabel, fableLabel: fableByItemId.get(f.itemId) ?? f.primaryLabel })),
-    catchCalls: sample.catchCalls.map((c) => ({ itemId: c.itemId, primaryLabel: c.primaryLabel, fableLabel: fableByItemId.get(c.itemId) ?? c.primaryLabel })),
+    findings: sample.findings.map((finding) => ({ itemId: finding.itemId, primaryLabel: finding.primaryLabel, fableLabel: fableByItemId.get(finding.itemId)! })),
+    catchCalls: sample.catchCalls.map((catchCall) => ({ itemId: catchCall.itemId, primaryLabel: catchCall.primaryLabel, fableLabel: fableByItemId.get(catchCall.itemId)! })),
   });
   const replacements = deriveReplacements(
     sample,
-    sample.findings.map((f) => ({ itemId: f.itemId, fableLabel: fableByItemId.get(f.itemId) ?? f.primaryLabel })),
-    sample.catchCalls.map((c) => ({ itemId: c.itemId, fableLabel: fableByItemId.get(c.itemId) ?? c.primaryLabel })),
+    sample.findings.map((finding) => ({ itemId: finding.itemId, fableLabel: fableByItemId.get(finding.itemId)! })),
+    sample.catchCalls.map((catchCall) => ({ itemId: catchCall.itemId, fableLabel: fableByItemId.get(catchCall.itemId)! })),
   );
 
   const catchRunsByJob = applyCatchReplacements(assembled.catchRunsByJob, replacements);
@@ -533,11 +662,10 @@ function runGated(argv: string[]): number {
     classSensitivities,
     classPrecisions,
   });
-  const heldOutIdsRaw = option(argv, '--heldout-ids');
-  const heldOutIds = heldOutIdsRaw ? heldOutIdsRaw.split(',').filter((id) => id.length > 0) : [];
+  const heldOutIds = heldOutIdsRaw.split(',').filter((id) => id.length > 0);
   const heldOut = scoreHeldOut(heldOutIds, assembled.heldOutRuns);
 
-  const maps = loadMaps(repeatedOption(argv, '--map')) as Record<string, Parameters<typeof isPlantOnMap>[0] & { onPathShare: number }>;
+  const maps = loadMaps(mapValues) as Record<string, Parameters<typeof isPlantOnMap>[0] & { onPathShare: number }>;
   writeJson(out, {
     ok: true,
     mode: 'gated',
@@ -546,9 +674,8 @@ function runGated(argv: string[]): number {
     classes,
     allClassesFailed,
     heldOut,
-    reported: gatedReportedMeasures({ tallies, precisionRuns, heldOut, indexed, maps }),
-    notes: assembled.notes,
-    assemblyProblems: assembled.problems,
+    reported: gatedReportedMeasures({ tallies, precisionRuns, heldOut, indexed, maps, catchRunsByJob }),
+    notes: indexNotes,
   });
   return 0;
 }
@@ -567,12 +694,14 @@ function gatedReportedMeasures({
   heldOut,
   indexed,
   maps,
+  catchRunsByJob,
 }: {
   tallies: readonly PlantCatchTally[];
   precisionRuns: readonly PrecisionRunRecord[];
   heldOut: ReturnType<typeof scoreHeldOut>;
   indexed: ReadonlyMap<string, IndexedReaderJob>;
   maps: Record<string, Parameters<typeof isPlantOnMap>[0] & { onPathShare: number }>;
+  catchRunsByJob: Record<string, CatchRunRecord[]>;
 }): GatedReportedMeasures {
   const onPathShareByJob: Record<string, number | null> = {};
   for (const [job, map] of Object.entries(maps)) onPathShareByJob[job] = map.onPathShare;
@@ -586,12 +715,38 @@ function gatedReportedMeasures({
   const lineDistanceByPlant: Record<string, number | null> = {};
   for (const tally of tallies) lineDistanceByPlant[tally.plantId] = nearestStepDistance(tally, stepsByJob.get(tally.job) ?? []);
 
-  const stalledJobs = new Set<string>();
-  for (const job of indexed.values()) if (job.parsed.role === 'planted' && job.outcome.stalls.length > 0) stalledJobs.add(job.parsed.job);
+  // A plant-run pair's own prior-stall state: whether that specific counted run (by its position
+  // in catchRunsByJob, the same order tallyPlantCatches read) recorded any stall, never merely
+  // whether any run on the job did.
+  const stalledRunIds = new Set<string>();
+  for (const job of indexed.values()) if (job.outcome.stalls.length > 0) stalledRunIds.add(job.id);
+  let stalledCaught = 0;
+  let stalledTotal = 0;
+  let cleanCaught = 0;
+  let cleanTotal = 0;
+  for (const tally of tallies) {
+    const runs = catchRunsByJob[tally.job] ?? [];
+    tally.runsCaught.forEach((caught, position) => {
+      const run = runs[position];
+      const stalled = run !== undefined && stalledRunIds.has(run.runId);
+      if (stalled) {
+        stalledTotal += 1;
+        if (caught) stalledCaught += 1;
+      } else {
+        cleanTotal += 1;
+        if (caught) cleanCaught += 1;
+      }
+    });
+  }
 
   const ruleCandidatesByRun = [...indexed.values()]
-    .filter((job) => job.parsed.role === 'planted')
-    .map((job) => ({ runId: job.id, count: job.outcome.ruleCandidates?.length ?? 0, reason: 'not ruled: judges never see ruleCandidates (spec, Scoring)' }));
+    .filter((job) => job.parsed.role === 'planted' || job.parsed.role === 'control')
+    .map((job) => ({
+      runId: job.id,
+      role: job.parsed.role as 'planted' | 'control',
+      count: job.outcome.ruleCandidates?.length ?? 0,
+      reason: 'not ruled: judges never see ruleCandidates (spec, Scoring)',
+    }));
 
   return {
     recallByClass: recallByClass(tallies),
@@ -606,7 +761,10 @@ function gatedReportedMeasures({
       const position = map ? plantPathPosition(map, tally) : null;
       return position === null ? null : String(position);
     }),
-    recallAfterPriorStall: recallByBucket(tallies, (tally) => (stalledJobs.has(tally.job) ? 'stalled' : 'clean')),
+    recallAfterPriorStall: {
+      stalled: { caught: stalledCaught, total: stalledTotal, rate: stalledTotal === 0 ? null : stalledCaught / stalledTotal },
+      clean: { caught: cleanCaught, total: cleanTotal, rate: cleanTotal === 0 ? null : cleanCaught / cleanTotal },
+    },
     ruleCandidatesByRun,
     deferred: [
       "ruleCandidates[] precision: not ruled: judges never see ruleCandidates (spec, Scoring); the raw per-run count is reported above instead.",

@@ -66,8 +66,11 @@ describe('score.ts dev', () => {
     };
   }
 
+  // pass1-trimmed.json's own top-level runId, which a key's report trace must match.
+  const SAVED_REPORT_RUN_ID = '20260924t081831-4ca4ee';
+
   function catchKey(readerJobId: string, plantId: string): unknown {
-    return { kind: 'catch', builtFrom: 'sources', report: { path: savedReport, jobId: readerJobId, attempt: 1, runId: 'run' }, plants: { 'plant-1': { plantId } }, items: {}, inputs: {} };
+    return { kind: 'catch', builtFrom: 'sources', report: { path: savedReport, jobId: readerJobId, attempt: 1, runId: SAVED_REPORT_RUN_ID }, plants: { 'plant-1': { plantId } }, items: {}, inputs: {} };
   }
 
   it('scores a pass 1 saved report in development mode', () => {
@@ -139,6 +142,11 @@ describe('score.ts dev', () => {
   });
 
   it('restricts development precision to verified Opus runs: a verified run with zero false findings plus an unverified run with nine items gives zero', () => {
+    // evaluator-control-2's own final outcome carries nine catch-field items (stalls[]), the
+    // itemCount source since this round's fix; it is unverified, so per the rerun rule its own
+    // nine items would each count false in gated mode, but development mode instead drops the
+    // whole run from both the numerator and the denominator, never reading itemCount for it at all.
+    const nineStalls = Array.from({ length: 9 }, (_, i) => ({ text: `s${i}`, blockedBy: null }));
     const report = writeJsonFile('round1-precision-report.json', {
       batch: 'round1',
       runId: 'r',
@@ -148,7 +156,7 @@ describe('score.ts dev', () => {
       verified: true,
       jobs: [
         { id: 'evaluator-control-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED },
-        { id: 'evaluator-control-2', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: { ...VERIFIED, ok: false } },
+        { id: 'evaluator-control-2', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', stalls: nineStalls, verified: { ...VERIFIED, ok: false } },
       ],
     });
     const adjudicatorRulings = {
@@ -162,21 +170,13 @@ describe('score.ts dev', () => {
       jobs: [{ id: 'evaluator-control-1', class: 'judge-adjudicator', model: 'claude-opus-5-5', outcome: 'done', rulings: [], usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] } }],
     };
     const rulingsPath = writeJsonFile('adjudicator-rulings.json', adjudicatorRulings);
-    const key1Path = writeJsonFile('evaluator-control-1-key.json', { kind: 'adjudicator', builtFrom: 'sources', report: { path: report, jobId: 'evaluator-control-1', attempt: 1, runId: 'run' }, items: {}, excluded: [], treeCommit: 'c', treeAbsent: [], inputs: {} });
-    // evaluator-control-2 has nine catch-field items but is unverified: the assembler's itemCount
-    // for it comes from its own adjudicator key, which this fixture gives nine entries so the
-    // unverified run's item count is nine, per the rerun rule's own fallback count. Development
-    // mode, unlike gated mode, drops this run from both the numerator and the denominator.
-    const nineItems: Record<string, unknown> = {};
-    for (let i = 0; i < 9; i += 1) nineItems[`item-${i}`] = { field: 'stalls', sourceIndex: i };
-    const key2Path = writeJsonFile('evaluator-control-2-key.json', { kind: 'adjudicator', builtFrom: 'sources', report: { path: report, jobId: 'evaluator-control-2', attempt: 1, runId: 'run2' }, items: nineItems, excluded: [], treeCommit: 'c', treeAbsent: [], inputs: {} });
+    const key1Path = writeJsonFile('evaluator-control-1-key.json', { kind: 'adjudicator', builtFrom: 'sources', report: { path: report, jobId: 'evaluator-control-1', attempt: 1, runId: 'r' }, items: {}, excluded: [], treeCommit: 'c', treeAbsent: [], inputs: {} });
     const outPath = join(dir, 'dev-out.json');
     const code = main([
       'dev',
       '--report', report,
       '--adjudicator-rulings', rulingsPath,
       '--adjudicator-key', key1Path,
-      '--adjudicator-key', key2Path,
       '--plants', writeJsonFile('empty-plants.json', []),
       '--out', outPath,
     ]);
@@ -199,6 +199,11 @@ describe('score.ts gated', () => {
   const JOB_PLANT_COUNT: Record<string, number> = { evaluator: 7, operator: 7, designer: 7, extender: 6, 'core-developer': 7, scripter: 6 };
   const JOB_CLASS: Record<string, string> = { evaluator: 'docs-only', operator: 'docs-and-binary', designer: 'docs-and-site', extender: 'docs-and-site', 'core-developer': 'repository', scripter: 'repository' };
   const JOBS = Object.keys(JOB_PLANT_COUNT);
+
+  /** The freeze stamp every gated job (reader or judge) must carry, matching this suite's own manifest and chain. */
+  function freezeStamp(): { tag: string; manifestHash: string; chainHead: string } {
+    return { tag: manifestTag, manifestHash, chainHead: chainHeadAfterThresholds };
+  }
 
   beforeEach(() => {
     manifestTag = 'docs-reset-1b-freeze';
@@ -225,14 +230,14 @@ describe('score.ts gated', () => {
     const jobs: unknown[] = [];
     for (const job of JOBS) {
       for (let n = 1; n <= 3; n += 1) {
-        jobs.push({ id: `${job}-planted-${n}`, class: JOB_CLASS[job], model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: { tag: manifestTag, manifestHash, chainHead: chainHeadAfterThresholds } });
-        jobs.push({ id: `${job}-control-${n}`, class: JOB_CLASS[job], model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: { tag: manifestTag, manifestHash, chainHead: chainHeadAfterThresholds } });
+        jobs.push({ id: `${job}-planted-${n}`, class: JOB_CLASS[job], model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: freezeStamp() });
+        jobs.push({ id: `${job}-control-${n}`, class: JOB_CLASS[job], model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: freezeStamp() });
       }
     }
     return { batch: 'gated-planted', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs };
   }
 
-  /** One catch-judge job per planted reader job id, with `caughtCount` of the job's plants marked caught in exactly two of three runs. */
+  /** One catch-judge job per planted reader job id, with `caughtCount` of the job's plants marked caught in exactly two of three runs. Every key and the rulings file are entered into the chain. */
   function buildCatchRulingsAndKeys(caughtByJob: Record<string, number>, reportPath: string): { rulingsPath: string; keyPaths: string[] } {
     const judgeJobs: unknown[] = [];
     const keyPaths: string[] = [];
@@ -242,17 +247,20 @@ describe('score.ts gated', () => {
       for (let n = 1; n <= 3; n += 1) {
         const jobId = `${job}-planted-${n}`;
         const rulings = plantIds.map((_, i) => ({ itemId: `plant-${i + 1}`, ruling: n <= 2 && i < caughtByJob[job] ? 'caught' : 'missed', reason: 'r' }));
-        judgeJobs.push({ id: jobId, class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings, usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] } });
+        judgeJobs.push({ id: jobId, class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings, usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: freezeStamp() });
         const plants: Record<string, { plantId: string }> = {};
         plantIds.forEach((plantId, i) => (plants[`plant-${i + 1}`] = { plantId }));
-        keyPaths.push(writeJsonFile(`${jobId}-catch-key.json`, { kind: 'catch', builtFrom: 'sources', report: { path: reportPath, jobId, attempt: 1, runId: jobId }, plants, items: {}, inputs: {} }));
+        const keyPath = writeJsonFile(`${jobId}-catch-key.json`, { kind: 'catch', builtFrom: 'sources', report: { path: reportPath, jobId, attempt: 1, runId: 'r' }, plants, items: {}, inputs: {} });
+        appendEntry(chainPath, { path: `${jobId}-catch-key.json`, sha256: hashFile(keyPath), commit: 'c-key' });
+        keyPaths.push(keyPath);
       }
     }
     const rulingsPath = writeJsonFile('catch-rulings.json', { batch: 'gated-catch', runId: 'r', kind: 'catchJudge', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: judgeJobs });
+    appendEntry(chainPath, { path: 'catch-rulings.json', sha256: hashFile(rulingsPath), commit: 'c-catch-rulings' });
     return { rulingsPath, keyPaths };
   }
 
-  /** One adjudicator job per control reader job id, with `falseFindingsByClass` false-ruled subject groups placed on that class's first control run. */
+  /** One adjudicator job per control reader job id, with `falseFindingsByClass` false-ruled subject groups placed on that class's first control run. Every key and the rulings file are entered into the chain. */
   function buildAdjudicatorRulingsAndKeys(falseFindingsByClass: Partial<Record<string, number>>, reportPath: string): { rulingsPath: string; keyPaths: string[] } {
     const judgeJobs: unknown[] = [];
     const keyPaths: string[] = [];
@@ -262,22 +270,34 @@ describe('score.ts gated', () => {
         const classId = JOB_CLASS[job];
         const count = n === 1 ? (falseFindingsByClass[classId] ?? 0) : 0;
         const rulings = Array.from({ length: count }, (_, i) => ({ itemId: `item-${i + 1}`, class: 'finding', subjectGroupId: `subject-${jobId}-${i}`, ruling: 'false', reason: 'r' }));
-        judgeJobs.push({ id: jobId, class: 'judge-adjudicator', model: 'claude-opus-5-5', outcome: 'done', rulings, usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] } });
+        judgeJobs.push({ id: jobId, class: 'judge-adjudicator', model: 'claude-opus-5-5', outcome: 'done', rulings, usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: freezeStamp() });
         const items: Record<string, unknown> = {};
         for (let i = 0; i < count; i += 1) items[`item-${i + 1}`] = { field: 'stalls', sourceIndex: i };
-        keyPaths.push(writeJsonFile(`${jobId}-adjudicator-key.json`, { kind: 'adjudicator', builtFrom: 'sources', report: { path: reportPath, jobId, attempt: 1, runId: jobId }, items, excluded: [], treeCommit: 'c', treeAbsent: [], inputs: {} }));
+        const keyPath = writeJsonFile(`${jobId}-adjudicator-key.json`, { kind: 'adjudicator', builtFrom: 'sources', report: { path: reportPath, jobId, attempt: 1, runId: 'r' }, items, excluded: [], treeCommit: 'c', treeAbsent: [], inputs: {} });
+        appendEntry(chainPath, { path: `${jobId}-adjudicator-key.json`, sha256: hashFile(keyPath), commit: 'c-key' });
+        keyPaths.push(keyPath);
       }
     }
     const rulingsPath = writeJsonFile('adjudicator-rulings.json', { batch: 'gated-adjudicator', runId: 'r', kind: 'adjudicator', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: judgeJobs });
+    appendEntry(chainPath, { path: 'adjudicator-rulings.json', sha256: hashFile(rulingsPath), commit: 'c-adjudicator-rulings' });
     return { rulingsPath, keyPaths };
   }
 
+  /**
+   * Chains the plant record, then advances `chainHeadAfterThresholds` (the head every
+   * subsequent job's own freeze stamp reads) past it: a planted or heldout job's own dependsOn
+   * names the plant record, so its own chain head must already include it, the same way the real
+   * sequence chains the plant record before any planted run's own batch starts.
+   */
   function buildPlants(): string {
     const plants: unknown[] = [];
     for (const job of JOBS) {
       for (let i = 0; i < JOB_PLANT_COUNT[job]; i += 1) plants.push({ id: `${job}-P${i}`, job, classId: JOB_CLASS[job], type: 'false-behavior', semantic: true });
     }
-    return writeJsonFile('plants.json', plants);
+    const plantsPath = writeJsonFile('plants.json', plants);
+    appendEntry(chainPath, { path: 'plants.json', sha256: hashFile(plantsPath), commit: 'c-plants' });
+    chainHeadAfterThresholds = hashFile(chainPath);
+    return plantsPath;
   }
 
   function buildAgreement(overrides: { findings?: unknown[]; catchCalls?: unknown[]; fableLabels?: Record<string, string> } = {}): { samplePath: string; rulingsPath: string } {
@@ -300,7 +320,16 @@ describe('score.ts gated', () => {
     // Fable's own ruling per item: the primary label by default (full agreement), unless
     // `fableLabels` overrides a specific item to disagree.
     const rulings = [...findings, ...catchCalls].map((item: any) => ({ itemId: item.itemId, ruling: overrides.fableLabels?.[item.itemId] ?? item.primaryLabel, reason: 'r' }));
-    const rulingsReport = { batch: 'agreement', runId: 'r', kind: 'agreement', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'agreement-1', class: 'judge-agreement', model: 'fable', outcome: 'done', rulings, usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] } }] };
+    const rulingsReport = {
+      batch: 'agreement',
+      runId: 'r',
+      kind: 'agreement',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [{ id: 'agreement-1', class: 'judge-agreement', model: 'fable', outcome: 'done', rulings, usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: freezeStamp() }],
+    };
     const rulingsPath = writeJsonFile('agreement-rulings.json', rulingsReport);
     appendEntry(chainPath, { path: 'agreement-rulings.json', sha256: hashFile(rulingsPath), commit: 'c3' });
     return { samplePath, rulingsPath };
@@ -308,7 +337,8 @@ describe('score.ts gated', () => {
 
   const ALL_PASS_CAUGHT: Record<string, number> = { evaluator: 5, operator: 5, designer: 4, extender: 6, 'core-developer': 5, scripter: 5 };
 
-  function runGatedScore({
+  /** Build every artifact a full gated run needs and return the CLI args, without invoking `main`, so a test can mutate them before running. */
+  function buildGatedArgs({
     caughtByJob = ALL_PASS_CAUGHT,
     falseFindingsByClass = {},
     agreement,
@@ -316,16 +346,19 @@ describe('score.ts gated', () => {
     caughtByJob?: Record<string, number>;
     falseFindingsByClass?: Partial<Record<string, number>>;
     agreement?: { findings?: unknown[]; catchCalls?: unknown[]; fableLabels?: Record<string, string> };
-  }): { code: number; result: Record<string, unknown> } {
-    const reportPath = writeJsonFile(`report-${Math.random()}.json`, buildReaderReport());
-    const { rulingsPath: catchRulingsPath, keyPaths: catchKeyPaths } = buildCatchRulingsAndKeys(caughtByJob, reportPath);
-    const { rulingsPath: adjudicatorRulingsPath, keyPaths: adjudicatorKeyPaths } = buildAdjudicatorRulingsAndKeys(falseFindingsByClass, reportPath);
+  } = {}): { args: string[]; outPath: string; reportPath: string } {
+    // The plant record is chained (and chainHeadAfterThresholds advanced past it) before any
+    // planted or heldout job's own freeze stamp is minted, since its own dependsOn names the
+    // plant record.
     const plantsPath = buildPlants();
+    const resolvedReportPath = writeJsonFile(`report-${Math.random()}.json`, buildReaderReport());
+    const { rulingsPath: catchRulingsPath, keyPaths: catchKeyPaths } = buildCatchRulingsAndKeys(caughtByJob, resolvedReportPath);
+    const { rulingsPath: adjudicatorRulingsPath, keyPaths: adjudicatorKeyPaths } = buildAdjudicatorRulingsAndKeys(falseFindingsByClass, resolvedReportPath);
     const { samplePath, rulingsPath: agreementRulingsPath } = buildAgreement(agreement);
     const outPath = join(dir, `out-${Math.random()}.json`);
     const args = [
       'gated',
-      '--report', reportPath,
+      '--report', resolvedReportPath,
       '--catch-rulings', catchRulingsPath,
       ...catchKeyPaths.flatMap((p) => ['--catch-key', p]),
       '--adjudicator-rulings', adjudicatorRulingsPath,
@@ -337,8 +370,14 @@ describe('score.ts gated', () => {
       '--root', dir,
       '--agreement-sample', samplePath,
       '--agreement-rulings', agreementRulingsPath,
+      '--heldout-ids', '',
       '--out', outPath,
     ];
+    return { args, outPath, reportPath: resolvedReportPath };
+  }
+
+  function runGatedScore(options: Parameters<typeof buildGatedArgs>[0] = {}): { code: number; result: Record<string, unknown> } {
+    const { args, outPath } = buildGatedArgs(options);
     const code = main(args);
     return { code, result: readOut(outPath) };
   }
@@ -402,11 +441,13 @@ describe('score.ts gated', () => {
     expect(classes.every((cls) => cls.reasons.some((r) => r.includes('agreement')))).toBe(true);
   });
 
-  it('never lets a false finding in a round1 tuning report reach gated precision scoring: it never matches the planned pool\'s job ids', () => {
-    // A stray round1/tuning report the caller mistakenly points the CLI at: its job ids
-    // ("evaluator-tuning-control-1") never match the planned "<job>-control-<n>" pattern the
-    // gated precision pool draws from, so its false finding can never reach any class's count.
-    const reportPath = writeJsonFile('report-base.json', buildReaderReport());
+  it('refuses a stray round1 tuning report as an unstamped input, never letting its false finding reach any class', () => {
+    // evaluator-tuning-control-1 parses as job "evaluator-tuning", role "control": the id
+    // convention alone does not exclude it from the precision pool by job name. What actually
+    // stops it here is that it is unstamped (a round1/tuning report carries no freeze at all),
+    // which gated mode refuses before assembly ever runs, so its false finding never has a
+    // chance to reach any class's precision count.
+    const { args, outPath } = buildGatedArgs({});
     const tuningReportPath = writeJsonFile('report-tuning.json', {
       batch: 'round1',
       runId: 'r',
@@ -416,41 +457,11 @@ describe('score.ts gated', () => {
       verified: true,
       jobs: [{ id: 'evaluator-tuning-control-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED }],
     });
-    const { rulingsPath: catchRulingsPath, keyPaths: catchKeyPaths } = buildCatchRulingsAndKeys(ALL_PASS_CAUGHT, reportPath);
-    const { rulingsPath: adjudicatorRulingsPath, keyPaths: adjudicatorKeyPaths } = buildAdjudicatorRulingsAndKeys({}, reportPath);
-    // The tuning report's own job carries a false finding in its adjudicator rulings, joined
-    // through a key whose reader job id is the tuning job's, never one of the planned pool's ids.
-    const tuningAdjudicatorRulings = { batch: 'tuning', runId: 'r', kind: 'adjudicator', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'evaluator-tuning-control-1', class: 'judge-adjudicator', model: 'claude-opus-5-5', outcome: 'done', rulings: [{ itemId: 'item-1', class: 'finding', subjectGroupId: 'subject-tuning', ruling: 'false', reason: 'r' }], usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] } }] };
-    const tuningRulingsPath = writeJsonFile('tuning-adjudicator-rulings.json', tuningAdjudicatorRulings);
-    const tuningKeyPath = writeJsonFile('evaluator-tuning-control-1-key.json', { kind: 'adjudicator', builtFrom: 'sources', report: { path: tuningReportPath, jobId: 'evaluator-tuning-control-1', attempt: 1, runId: 'run' }, items: { 'item-1': { field: 'stalls', sourceIndex: 0 } }, excluded: [], treeCommit: 'c', treeAbsent: [], inputs: {} });
-    const plantsPath = buildPlants();
-    const { samplePath, rulingsPath: agreementRulingsPath } = buildAgreement();
-    const outPath = join(dir, 'out.json');
-    const code = main([
-      'gated',
-      '--report', reportPath,
-      '--report', tuningReportPath,
-      '--catch-rulings', catchRulingsPath,
-      ...catchKeyPaths.flatMap((p) => ['--catch-key', p]),
-      '--adjudicator-rulings', adjudicatorRulingsPath,
-      '--adjudicator-rulings', tuningRulingsPath,
-      ...adjudicatorKeyPaths.flatMap((p) => ['--adjudicator-key', p]),
-      '--adjudicator-key', tuningKeyPath,
-      '--plants', plantsPath,
-      '--thresholds', thresholdsPath,
-      '--manifest', manifestPath,
-      '--chain', chainPath,
-      '--root', dir,
-      '--agreement-sample', samplePath,
-      '--agreement-rulings', agreementRulingsPath,
-      '--out', outPath,
-    ]);
-    // The stray report's own job id fails the "<job>-<role>-<index>" role match at index time
-    // (its role parses as "tuning", not "control"), so it never joins the precision pool at all,
-    // and the run itself is refused as an unindexed job rather than silently ignored.
+    args.push('--report', tuningReportPath);
+    const code = main(args);
     expect(code).toBe(1);
     const problems = readOut(outPath).problems as string[];
-    expect(problems.some((p) => p.includes('evaluator-tuning-control-1'))).toBe(true);
+    expect(problems.some((p) => p.includes('evaluator-tuning-control-1') && p.includes('unstamped'))).toBe(true);
   });
 
   it('rejects an unstamped report in both modes', () => {
@@ -469,7 +480,19 @@ describe('score.ts gated', () => {
     expect((readOut(devOut).problems as string[])[0]).toContain('gated-planted');
 
     const gatedOut = join(dir, 'gated-out.json');
-    const gatedCode = main(['gated', '--report', reportPath, '--plants', '/does/not/exist.json', '--thresholds', thresholdsPath, '--manifest', manifestPath, '--chain', chainPath, '--root', dir, '--agreement-sample', '/does/not/exist.json', '--out', gatedOut]);
+    const gatedCode = main([
+      'gated',
+      '--report', reportPath,
+      '--plants', '/does/not/exist.json',
+      '--thresholds', thresholdsPath,
+      '--manifest', manifestPath,
+      '--chain', chainPath,
+      '--root', dir,
+      '--agreement-sample', '/does/not/exist.json',
+      '--agreement-rulings', '/does/not/exist-rulings.json',
+      '--heldout-ids', '',
+      '--out', gatedOut,
+    ]);
     expect(gatedCode).toBe(1);
     expect((readOut(gatedOut).problems as string[])[0]).toContain('unstamped');
   });
@@ -485,7 +508,19 @@ describe('score.ts gated', () => {
       jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: { tag: manifestTag, manifestHash: 'a-stale-hash', chainHead: chainHeadAfterThresholds } }],
     });
     const outPath = join(dir, 'gated-out.json');
-    const code = main(['gated', '--report', reportPath, '--plants', '/does/not/exist.json', '--thresholds', thresholdsPath, '--manifest', manifestPath, '--chain', chainPath, '--root', dir, '--agreement-sample', '/does/not/exist.json', '--out', outPath]);
+    const code = main([
+      'gated',
+      '--report', reportPath,
+      '--plants', '/does/not/exist.json',
+      '--thresholds', thresholdsPath,
+      '--manifest', manifestPath,
+      '--chain', chainPath,
+      '--root', dir,
+      '--agreement-sample', '/does/not/exist.json',
+      '--agreement-rulings', '/does/not/exist-rulings.json',
+      '--heldout-ids', '',
+      '--out', outPath,
+    ]);
     expect(code).toBe(1);
     const problems = readOut(outPath).problems as string[];
     expect(problems[0]).toContain(reportPath);
@@ -500,10 +535,22 @@ describe('score.ts gated', () => {
       budgetTokens: 0,
       usage: USAGE,
       verified: true,
-      jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: { tag: manifestTag, manifestHash, chainHead: chainHeadAfterThresholds } }],
+      jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: freezeStamp() }],
     });
     const outPath = join(dir, 'gated-out.json');
-    const code = main(['gated', '--report', reportPath, '--plants', '/does/not/exist.json', '--thresholds', thresholdsPath, '--manifest', manifestPath, '--chain', chainPath, '--root', dir, '--agreement-sample', '/does/not/exist.json', '--out', outPath]);
+    const code = main([
+      'gated',
+      '--report', reportPath,
+      '--plants', '/does/not/exist.json',
+      '--thresholds', thresholdsPath,
+      '--manifest', manifestPath,
+      '--chain', chainPath,
+      '--root', dir,
+      '--agreement-sample', '/does/not/exist.json',
+      '--agreement-rulings', '/does/not/exist-rulings.json',
+      '--heldout-ids', '',
+      '--out', outPath,
+    ]);
     expect(code).toBe(1);
     const problems = readOut(outPath).problems as string[];
     expect(problems.some((p) => p.includes('budget'))).toBe(true);
@@ -517,24 +564,184 @@ describe('score.ts gated', () => {
       budgetTokens: 0,
       usage: USAGE,
       verified: true,
-      jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', stoppedBy: 'rateLimit', pendingCause: 'initial', freeze: { tag: manifestTag, manifestHash, chainHead: chainHeadAfterThresholds } }],
+      jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', stoppedBy: 'rateLimit', pendingCause: 'initial', freeze: freezeStamp() }],
     });
     const outPath = join(dir, 'gated-out.json');
-    const code = main(['gated', '--report', reportPath, '--plants', '/does/not/exist.json', '--thresholds', thresholdsPath, '--manifest', manifestPath, '--chain', chainPath, '--root', dir, '--agreement-sample', '/does/not/exist.json', '--out', outPath]);
+    const code = main([
+      'gated',
+      '--report', reportPath,
+      '--plants', '/does/not/exist.json',
+      '--thresholds', thresholdsPath,
+      '--manifest', manifestPath,
+      '--chain', chainPath,
+      '--root', dir,
+      '--agreement-sample', '/does/not/exist.json',
+      '--agreement-rulings', '/does/not/exist-rulings.json',
+      '--heldout-ids', '',
+      '--out', outPath,
+    ]);
     expect(code).toBe(1);
     const problems = readOut(outPath).problems as string[];
     expect(problems.some((p) => p.includes('evaluator-planted-1'))).toBe(true);
   });
 
+  it('refuses and names a catch-judge batch report that fails checkGatedStamp', () => {
+    const { args, outPath } = buildGatedArgs({});
+    const catchRulingsIndex = args.indexOf('--catch-rulings') + 1;
+    const badRulingsPath = writeJsonFile('bad-catch-rulings.json', {
+      batch: 'gated-catch',
+      runId: 'r',
+      kind: 'catchJudge',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [{ id: 'evaluator-planted-1', class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings: [], usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] } }],
+    });
+    appendEntry(chainPath, { path: 'bad-catch-rulings.json', sha256: hashFile(badRulingsPath), commit: 'c-bad' });
+    args[catchRulingsIndex] = badRulingsPath;
+    const code = main(args);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('catch-judge') && p.includes('unstamped'))).toBe(true);
+  });
+
+  it('refuses and names an unverified catch-judge job, never scoring around it', () => {
+    const plantsPath = buildPlants();
+    const reportPath = writeJsonFile('single-job-report.json', { batch: 'gated-planted', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: freezeStamp() }] });
+    const key: unknown = { kind: 'catch', builtFrom: 'sources', report: { path: reportPath, jobId: 'evaluator-planted-1', attempt: 1, runId: 'r' }, plants: { 'plant-1': { plantId: 'evaluator-P0' } }, items: {}, inputs: {} };
+    const keyPath = writeJsonFile('single-key.json', key);
+    appendEntry(chainPath, { path: 'single-key.json', sha256: hashFile(keyPath), commit: 'c-key' });
+    const rulings = { batch: 'catch', runId: 'r', kind: 'catchJudge', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'evaluator-planted-1', class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings: [], usage: USAGE, verified: { ok: false, init: true, canaries: true, problems: [] }, freeze: freezeStamp() }] };
+    const rulingsPath = writeJsonFile('single-catch-rulings.json', rulings);
+    appendEntry(chainPath, { path: 'single-catch-rulings.json', sha256: hashFile(rulingsPath), commit: 'c-rulings' });
+    const { samplePath, rulingsPath: agreementRulingsPath } = buildAgreement();
+    const outPath = join(dir, 'out.json');
+    const code = main([
+      'gated',
+      '--report', reportPath,
+      '--catch-rulings', rulingsPath,
+      '--catch-key', keyPath,
+      '--plants', plantsPath,
+      '--thresholds', thresholdsPath,
+      '--manifest', manifestPath,
+      '--chain', chainPath,
+      '--root', dir,
+      '--agreement-sample', samplePath,
+      '--agreement-rulings', agreementRulingsPath,
+      '--heldout-ids', '',
+      '--out', outPath,
+    ]);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('unverified'))).toBe(true);
+  });
+
+  it('refuses and names a planted reader job with no joined catch-judge key or rulings', () => {
+    const plantsPath = buildPlants();
+    const reportPath = writeJsonFile('single-job-no-key-report.json', { batch: 'gated-planted', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: freezeStamp() }] });
+    const { samplePath, rulingsPath: agreementRulingsPath } = buildAgreement();
+    const outPath = join(dir, 'out.json');
+    const code = main([
+      'gated',
+      '--report', reportPath,
+      '--plants', plantsPath,
+      '--thresholds', thresholdsPath,
+      '--manifest', manifestPath,
+      '--chain', chainPath,
+      '--root', dir,
+      '--agreement-sample', samplePath,
+      '--agreement-rulings', agreementRulingsPath,
+      '--heldout-ids', '',
+      '--out', outPath,
+    ]);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('evaluator-planted-1') && p.includes('no catch-judge'))).toBe(true);
+  });
+
+  it('refuses and names a catch-judge key whose own trace does not match the indexed job it names', () => {
+    const plantsPath = buildPlants();
+    const reportPath = writeJsonFile('trace-mismatch-report.json', { batch: 'gated-planted', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: freezeStamp() }] });
+    // The key claims a runId the reader report never carried.
+    const key: unknown = { kind: 'catch', builtFrom: 'sources', report: { path: reportPath, jobId: 'evaluator-planted-1', attempt: 1, runId: 'wrong-run-id' }, plants: { 'plant-1': { plantId: 'evaluator-P0' } }, items: {}, inputs: {} };
+    const keyPath = writeJsonFile('mismatch-key.json', key);
+    appendEntry(chainPath, { path: 'mismatch-key.json', sha256: hashFile(keyPath), commit: 'c-key' });
+    const rulings = { batch: 'catch', runId: 'r', kind: 'catchJudge', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'evaluator-planted-1', class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings: [{ itemId: 'plant-1', ruling: 'caught', reason: 'r' }], usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: freezeStamp() }] };
+    const rulingsPath = writeJsonFile('mismatch-catch-rulings.json', rulings);
+    appendEntry(chainPath, { path: 'mismatch-catch-rulings.json', sha256: hashFile(rulingsPath), commit: 'c-rulings' });
+    const { samplePath, rulingsPath: agreementRulingsPath } = buildAgreement();
+    const outPath = join(dir, 'out.json');
+    const code = main([
+      'gated',
+      '--report', reportPath,
+      '--catch-rulings', rulingsPath,
+      '--catch-key', keyPath,
+      '--plants', plantsPath,
+      '--thresholds', thresholdsPath,
+      '--manifest', manifestPath,
+      '--chain', chainPath,
+      '--root', dir,
+      '--agreement-sample', samplePath,
+      '--agreement-rulings', agreementRulingsPath,
+      '--heldout-ids', '',
+      '--out', outPath,
+    ]);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('evaluator-planted-1') && p.includes('wrong-run-id'))).toBe(true);
+  });
+
+  it('refuses and names a catch-judge key plant with zero or more than one ruling', () => {
+    const plantsPath = buildPlants();
+    const reportPath = writeJsonFile('duplicate-ruling-report.json', { batch: 'gated-planted', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: freezeStamp() }] });
+    const key: unknown = { kind: 'catch', builtFrom: 'sources', report: { path: reportPath, jobId: 'evaluator-planted-1', attempt: 1, runId: 'r' }, plants: { 'plant-1': { plantId: 'evaluator-P0' } }, items: {}, inputs: {} };
+    const keyPath = writeJsonFile('dup-key.json', key);
+    appendEntry(chainPath, { path: 'dup-key.json', sha256: hashFile(keyPath), commit: 'c-key' });
+    // Two rulings for the same opaque item id: never exactly one.
+    const rulings = {
+      batch: 'catch',
+      runId: 'r',
+      kind: 'catchJudge',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [{ id: 'evaluator-planted-1', class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings: [{ itemId: 'plant-1', ruling: 'caught', reason: 'r' }, { itemId: 'plant-1', ruling: 'missed', reason: 'r2' }], usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: freezeStamp() }],
+    };
+    const rulingsPath = writeJsonFile('dup-catch-rulings.json', rulings);
+    appendEntry(chainPath, { path: 'dup-catch-rulings.json', sha256: hashFile(rulingsPath), commit: 'c-rulings' });
+    const { samplePath, rulingsPath: agreementRulingsPath } = buildAgreement();
+    const outPath = join(dir, 'out.json');
+    const code = main([
+      'gated',
+      '--report', reportPath,
+      '--catch-rulings', rulingsPath,
+      '--catch-key', keyPath,
+      '--plants', plantsPath,
+      '--thresholds', thresholdsPath,
+      '--manifest', manifestPath,
+      '--chain', chainPath,
+      '--root', dir,
+      '--agreement-sample', samplePath,
+      '--agreement-rulings', agreementRulingsPath,
+      '--heldout-ids', '',
+      '--out', outPath,
+    ]);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('evaluator-P0') && p.includes('2 ruling'))).toBe(true);
+  });
+
   it('refuses and names every planned mapping run position missing from the precision pool', () => {
     // evaluator-control-3's own reader job is absent from the report entirely: the class's
     // precision pool is genuinely short a planned position, not just missing its judge rulings.
+    const plantsPath = buildPlants();
     const fullReport = buildReaderReport() as { jobs: Array<{ id: string }> };
     const reportPath = writeJsonFile('missing-run-report.json', { ...fullReport, jobs: fullReport.jobs.filter((j) => j.id !== 'evaluator-control-3') });
     const { rulingsPath: catchRulingsPath, keyPaths: catchKeyPaths } = buildCatchRulingsAndKeys(ALL_PASS_CAUGHT, reportPath);
     const { rulingsPath: adjudicatorRulingsPath, keyPaths: adjudicatorKeyPaths } = buildAdjudicatorRulingsAndKeys({}, reportPath);
     const keptKeys = adjudicatorKeyPaths.filter((p) => !p.includes('evaluator-control-3'));
-    const plantsPath = buildPlants();
     const { samplePath, rulingsPath: agreementRulingsPath } = buildAgreement();
     const outPath = join(dir, 'missing-run-out.json');
     const code = main([
@@ -551,11 +758,80 @@ describe('score.ts gated', () => {
       '--root', dir,
       '--agreement-sample', samplePath,
       '--agreement-rulings', agreementRulingsPath,
+      '--heldout-ids', '',
       '--out', outPath,
     ]);
     expect(code).toBe(1);
     const problems = readOut(outPath).problems as string[];
     expect(problems.some((p) => p.includes('evaluator-3'))).toBe(true);
+  });
+
+  it('scores an unverified Opus mapping run\'s own three items as three false findings, and never refuses it as missing', () => {
+    const { args, outPath, reportPath } = buildGatedArgs({});
+    // evaluator-control-1's own reader run (never its adjudicator judge, which stays verified and
+    // rules normally) is made unverified, with three catch-field items of its own; the run's model
+    // is still Opus, and opus is set from the model alone now, so it stays in the planned pool, and
+    // the rerun rule's own fallback (every one of its own catch-field items) counts three false
+    // findings, read from the run's final outcome, never from its adjudicator key.
+    const report = JSON.parse(readFileSync(reportPath, 'utf8')) as { jobs: Array<{ id: string; verified: { ok: boolean }; stalls?: unknown[] }> };
+    const target = report.jobs.find((j) => j.id === 'evaluator-control-1')!;
+    target.verified = { ...target.verified, ok: false };
+    target.stalls = [{ text: 's1', blockedBy: null }, { text: 's2', blockedBy: null }, { text: 's3', blockedBy: null }];
+    writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+
+    const code = main(args);
+    expect(code).toBe(0);
+    const result = readOut(outPath);
+    const classes = result.classes as Array<{ classId: string; precision: { falseFindings: number } }>;
+    const docsOnly = classes.find((cls) => cls.classId === 'docs-only')!;
+    expect(docsOnly.precision.falseFindings).toBe(3);
+  });
+
+  it('requires --agreement-rulings in gated mode', () => {
+    const { args } = buildGatedArgs({});
+    const index = args.indexOf('--agreement-rulings');
+    args.splice(index, 2);
+    expect(main(args)).toBe(2);
+  });
+
+  it('refuses and names a sample item with no ruling from a verified, unstopped agreement job', () => {
+    const { args, outPath } = buildGatedArgs({});
+    const agreementRulingsIndex = args.indexOf('--agreement-rulings') + 1;
+    // An agreement job that rules nothing at all: every sample item is left without a ruling.
+    const emptyRulings = { batch: 'agreement', runId: 'r', kind: 'agreement', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [{ id: 'agreement-1', class: 'judge-agreement', model: 'fable', outcome: 'done', rulings: [], usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: freezeStamp() }] };
+    const emptyRulingsPath = writeJsonFile('empty-agreement-rulings.json', emptyRulings);
+    appendEntry(chainPath, { path: 'empty-agreement-rulings.json', sha256: hashFile(emptyRulingsPath), commit: 'c-empty' });
+    args[agreementRulingsIndex] = emptyRulingsPath;
+    const code = main(args);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('f1') && p.includes('0 ruling'))).toBe(true);
+  });
+
+  it('order-checks every agreement rulings path against the sample, refusing one chained before it', () => {
+    // Chain "early-rulings.json" before building the rest of the gated fixture, so its own entry
+    // sits earlier in the chain than the agreement sample's (buildGatedArgs chains the sample only
+    // once buildAgreement runs, later than this).
+    const earlyRulingsPath = writeJsonFile('early-rulings.json', { batch: 'early', runId: 'r', kind: 'agreement', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [] });
+    appendEntry(chainPath, { path: 'early-rulings.json', sha256: hashFile(earlyRulingsPath), commit: 'c-early' });
+    const { args, outPath } = buildGatedArgs({});
+    args.push('--agreement-rulings', earlyRulingsPath);
+    const code = main(args);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('early-rulings.json'))).toBe(true);
+  });
+
+  it('refuses and names a gated input path with no chain entry at all', () => {
+    const { args, outPath } = buildGatedArgs({});
+    const plantsIndex = args.indexOf('--plants') + 1;
+    const strayPlantsPath = writeJsonFile('unchained-plants.json', []);
+    // unchained-plants.json is deliberately never entered into the chain.
+    args[plantsIndex] = strayPlantsPath;
+    const code = main(args);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('unchained-plants.json') && p.includes('no chain entry'))).toBe(true);
   });
 
   it('refuses when the thresholds file\'s seed does not match the manifest\'s pinned oc-curve seed', () => {
@@ -568,6 +844,10 @@ describe('score.ts gated', () => {
     // different manifest contents in one directory would itself be a file-drift mismatch).
     appendEntry(badChainPath, { path: 'bad-seed-manifest.json', sha256: badManifestHash, commit: 'c0' });
     appendEntry(badChainPath, { path: 'thresholds.json', sha256: hashFile(thresholdsPath), commit: 'c1' });
+    // A minimal but complete plant record, sample, and rulings, each chained, so this run clears
+    // every earlier check (stamps, completeness, chain coverage) and reaches the seed check.
+    const plantsPath = writeJsonFile('bad-seed-plants.json', []);
+    appendEntry(badChainPath, { path: 'bad-seed-plants.json', sha256: hashFile(plantsPath), commit: 'c-plants' });
     const chainHead = hashFile(badChainPath);
     const reportPath = writeJsonFile('bad-seed-report.json', {
       batch: 'gated-planted',
@@ -578,8 +858,25 @@ describe('score.ts gated', () => {
       verified: true,
       jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: { tag: manifestTag, manifestHash: badManifestHash, chainHead } }],
     });
+    const samplePath = writeJsonFile('bad-seed-sample.json', { orderingLabel: 'docs-reset-1b-agreement', findings: [], catchCalls: [], notes: [] });
+    appendEntry(badChainPath, { path: 'bad-seed-sample.json', sha256: hashFile(samplePath), commit: 'c-sample' });
+    const rulingsReport = { batch: 'agreement', runId: 'r', kind: 'agreement', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [] };
+    const rulingsPath = writeJsonFile('bad-seed-rulings.json', rulingsReport);
+    appendEntry(badChainPath, { path: 'bad-seed-rulings.json', sha256: hashFile(rulingsPath), commit: 'c-rulings' });
     const outPath = join(dir, 'bad-seed-out.json');
-    const code = main(['gated', '--report', reportPath, '--plants', '/does/not/exist.json', '--thresholds', thresholdsPath, '--manifest', badManifestPath, '--chain', badChainPath, '--root', dir, '--agreement-sample', '/does/not/exist.json', '--out', outPath]);
+    const code = main([
+      'gated',
+      '--report', reportPath,
+      '--plants', plantsPath,
+      '--thresholds', thresholdsPath,
+      '--manifest', badManifestPath,
+      '--chain', badChainPath,
+      '--root', dir,
+      '--agreement-sample', samplePath,
+      '--agreement-rulings', rulingsPath,
+      '--heldout-ids', '',
+      '--out', outPath,
+    ]);
     expect(code).toBe(1);
     const problems = readOut(outPath).problems as string[];
     expect(problems.some((p) => p.includes('seed'))).toBe(true);
@@ -590,14 +887,19 @@ describe('score.ts gated', () => {
     const chain34 = join(dir, 'chain-34.jsonl');
     appendEntry(chain34, { path: 'manifest.json', sha256: manifestHash, commit: 'c0' });
     appendEntry(chain34, { path: 'thresholds-34.json', sha256: hashFile(thirtyFour), commit: 'c1' });
-    const chainHead34 = hashFile(chain34);
     const caughtByJob34: Record<string, number> = { evaluator: 6, operator: 6, designer: 6, extender: 6, 'core-developer': 5, scripter: 5 };
     const jobPlantCount34: Record<string, number> = { evaluator: 6, operator: 6, designer: 6, extender: 6, 'core-developer': 5, scripter: 5 };
+    // The plant record is chained before any planted or heldout job's own freeze stamp is minted,
+    // the same ordering buildPlants() follows for the main fixture.
+    const plantsPath = writeJsonFile('plants-34.json', JOBS.flatMap((job) => Array.from({ length: jobPlantCount34[job] }, (_, i) => ({ id: `${job}-P${i}`, job, classId: JOB_CLASS[job], type: 'false-behavior', semantic: true }))));
+    appendEntry(chain34, { path: 'plants-34.json', sha256: hashFile(plantsPath), commit: 'c-plants' });
+    const chainHead34 = hashFile(chain34);
+    const stamp34 = { tag: manifestTag, manifestHash, chainHead: chainHead34 };
     const reportPath = writeJsonFile('report-34.json', (() => {
       const jobs: unknown[] = [];
       for (const job of JOBS) for (let n = 1; n <= 3; n += 1) {
-        jobs.push({ id: `${job}-planted-${n}`, class: JOB_CLASS[job], model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: { tag: manifestTag, manifestHash, chainHead: chainHead34 } });
-        jobs.push({ id: `${job}-control-${n}`, class: JOB_CLASS[job], model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: { tag: manifestTag, manifestHash, chainHead: chainHead34 } });
+        jobs.push({ id: `${job}-planted-${n}`, class: JOB_CLASS[job], model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: stamp34 });
+        jobs.push({ id: `${job}-control-${n}`, class: JOB_CLASS[job], model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED, freeze: stamp34 });
       }
       return { batch: 'gated-planted', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs };
     })());
@@ -609,18 +911,55 @@ describe('score.ts gated', () => {
       for (let n = 1; n <= 3; n += 1) {
         const jobId = `${job}-planted-${n}`;
         const rulings = plantIds.map((_, i) => ({ itemId: `plant-${i + 1}`, ruling: n <= 2 && i < caughtByJob34[job] ? 'caught' : 'missed', reason: 'r' }));
-        judgeJobs.push({ id: jobId, class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings, usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] } });
+        judgeJobs.push({ id: jobId, class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings, usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: stamp34 });
         const plants: Record<string, { plantId: string }> = {};
         plantIds.forEach((plantId, i) => (plants[`plant-${i + 1}`] = { plantId }));
-        keyPaths.push(writeJsonFile(`${jobId}-34-catch-key.json`, { kind: 'catch', builtFrom: 'sources', report: { path: reportPath, jobId, attempt: 1, runId: jobId }, plants, items: {}, inputs: {} }));
+        const keyPath = writeJsonFile(`${jobId}-34-catch-key.json`, { kind: 'catch', builtFrom: 'sources', report: { path: reportPath, jobId, attempt: 1, runId: 'r' }, plants, items: {}, inputs: {} });
+        appendEntry(chain34, { path: `${jobId}-34-catch-key.json`, sha256: hashFile(keyPath), commit: 'c-key' });
+        keyPaths.push(keyPath);
       }
     }
     const catchRulingsPath = writeJsonFile('catch-rulings-34.json', { batch: 'gated-catch', runId: 'r', kind: 'catchJudge', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: judgeJobs });
-    const { rulingsPath: adjudicatorRulingsPath, keyPaths: adjudicatorKeyPaths } = buildAdjudicatorRulingsAndKeys({}, reportPath);
-    const plantsPath = writeJsonFile('plants-34.json', JOBS.flatMap((job) => Array.from({ length: jobPlantCount34[job] }, (_, i) => ({ id: `${job}-P${i}`, job, classId: JOB_CLASS[job], type: 'false-behavior', semantic: true }))));
-    const { samplePath, rulingsPath: agreementRulingsPath } = buildAgreement();
-    appendEntry(chain34, { path: 'agreement-sample.json', sha256: hashFile(samplePath), commit: 'c2' });
-    appendEntry(chain34, { path: 'agreement-rulings.json', sha256: hashFile(agreementRulingsPath), commit: 'c3' });
+    appendEntry(chain34, { path: 'catch-rulings-34.json', sha256: hashFile(catchRulingsPath), commit: 'c-catch-rulings' });
+
+    const adjudicatorJobs: unknown[] = [];
+    const adjudicatorKeyPaths: string[] = [];
+    for (const job of JOBS) {
+      for (let n = 1; n <= 3; n += 1) {
+        const jobId = `${job}-control-${n}`;
+        adjudicatorJobs.push({ id: jobId, class: 'judge-adjudicator', model: 'claude-opus-5-5', outcome: 'done', rulings: [], usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: stamp34 });
+        const keyPath = writeJsonFile(`${jobId}-34-adjudicator-key.json`, { kind: 'adjudicator', builtFrom: 'sources', report: { path: reportPath, jobId, attempt: 1, runId: 'r' }, items: {}, excluded: [], treeCommit: 'c', treeAbsent: [], inputs: {} });
+        appendEntry(chain34, { path: `${jobId}-34-adjudicator-key.json`, sha256: hashFile(keyPath), commit: 'c-key' });
+        adjudicatorKeyPaths.push(keyPath);
+      }
+    }
+    const adjudicatorRulingsPath = writeJsonFile('adjudicator-rulings-34.json', { batch: 'gated-adjudicator', runId: 'r', kind: 'adjudicator', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: adjudicatorJobs });
+    appendEntry(chain34, { path: 'adjudicator-rulings-34.json', sha256: hashFile(adjudicatorRulingsPath), commit: 'c-adjudicator-rulings' });
+
+    const findings = [
+      { itemId: 'f1', runId: 'evaluator-control-1', jobId: 'evaluator', primaryLabel: 'real' },
+      { itemId: 'f2', runId: 'evaluator-control-1', jobId: 'evaluator', primaryLabel: 'false' },
+      { itemId: 'f3', runId: 'evaluator-control-1', jobId: 'evaluator', primaryLabel: 'harness' },
+    ];
+    const catchCalls = [
+      { itemId: 'c1', runId: 'evaluator-planted-1', plantId: 'evaluator-P0', primaryLabel: 'caught' },
+      { itemId: 'c2', runId: 'evaluator-planted-1', plantId: 'evaluator-P1', primaryLabel: 'missed' },
+    ];
+    const samplePath = writeJsonFile('agreement-sample-34.json', { orderingLabel: 'docs-reset-1b-agreement', findings, catchCalls, notes: [] });
+    appendEntry(chain34, { path: 'agreement-sample-34.json', sha256: hashFile(samplePath), commit: 'c-sample' });
+    const agreementRulings = {
+      batch: 'agreement',
+      runId: 'r',
+      kind: 'agreement',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [{ id: 'agreement-1', class: 'judge-agreement', model: 'fable', outcome: 'done', rulings: [...findings, ...catchCalls].map((item) => ({ itemId: item.itemId, ruling: item.primaryLabel, reason: 'r' })), usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: stamp34 }],
+    };
+    const agreementRulingsPath = writeJsonFile('agreement-rulings-34.json', agreementRulings);
+    appendEntry(chain34, { path: 'agreement-rulings-34.json', sha256: hashFile(agreementRulingsPath), commit: 'c-agreement-rulings' });
+
     const outPath = join(dir, 'out-34.json');
     const code = main([
       'gated',
@@ -636,6 +975,7 @@ describe('score.ts gated', () => {
       '--root', dir,
       '--agreement-sample', samplePath,
       '--agreement-rulings', agreementRulingsPath,
+      '--heldout-ids', '',
       '--out', outPath,
     ]);
     expect(code).toBe(0);

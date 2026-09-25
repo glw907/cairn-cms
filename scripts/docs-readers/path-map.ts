@@ -65,7 +65,7 @@ const WIDEN_WINDOW = 40;
  * @param model - A report's `model` field.
  * @returns True when the model is an Opus model.
  */
-function isOpusModel(model: string | undefined): boolean {
+export function isOpusModel(model: string | undefined): boolean {
   return typeof model === 'string' && model.includes('opus');
 }
 

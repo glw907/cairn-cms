@@ -191,7 +191,7 @@ describe('verifyGatedChain', () => {
     const rulingsPath = join(dir, 'rulings.json');
     writeFileSync(rulingsPath, '{}');
     appendEntry(chainFile, { path: 'rulings.json', sha256: hashFile(rulingsPath), commit: 'c2' });
-    const result = verifyGatedChain({ chainFile, root: dir, checks: [], sampleBeforeRulings: { samplePath: 'sample.json', rulingsPath: 'rulings.json' } });
+    const result = verifyGatedChain({ chainFile, root: dir, checks: [], sampleBeforeRulings: { samplePath: 'sample.json', rulingsPaths: ['rulings.json'] } });
     expect(result.ok).toBe(true);
   });
 
@@ -203,8 +203,27 @@ describe('verifyGatedChain', () => {
     writeFileSync(samplePath, '{}');
     // The sample is chained after the rulings: it cannot have been written before any Fable ruling existed.
     appendEntry(chainFile, { path: 'sample.json', sha256: hashFile(samplePath), commit: 'c2' });
-    const result = verifyGatedChain({ chainFile, root: dir, checks: [], sampleBeforeRulings: { samplePath: 'sample.json', rulingsPath: 'rulings.json' } });
+    const result = verifyGatedChain({ chainFile, root: dir, checks: [], sampleBeforeRulings: { samplePath: 'sample.json', rulingsPaths: ['rulings.json'] } });
     expect(result.ok).toBe(false);
     expect(result.problems.some((p) => p.includes('sample.json') && p.includes('rulings.json'))).toBe(true);
+  });
+
+  it('order-checks every rulings path against the sample, not just the first', () => {
+    const samplePath = join(dir, 'sample.json');
+    writeFileSync(samplePath, '{}');
+    appendEntry(chainFile, { path: 'sample.json', sha256: hashFile(samplePath), commit: 'c1' });
+    const rulingsAPath = join(dir, 'rulings-a.json');
+    writeFileSync(rulingsAPath, '{}');
+    appendEntry(chainFile, { path: 'rulings-a.json', sha256: hashFile(rulingsAPath), commit: 'c2' });
+    // rulings-b.json is never chained at all: a second rulings file the sample was never checked against.
+    const result = verifyGatedChain({
+      chainFile,
+      root: dir,
+      checks: [],
+      sampleBeforeRulings: { samplePath: 'sample.json', rulingsPaths: ['rulings-a.json', 'rulings-b.json'] },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.problems.some((p) => p.includes('rulings-b.json'))).toBe(true);
+    expect(result.problems.some((p) => p.includes('rulings-a.json'))).toBe(false);
   });
 });

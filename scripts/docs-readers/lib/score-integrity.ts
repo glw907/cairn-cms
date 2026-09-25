@@ -121,11 +121,12 @@ export interface GatedChainCheck {
  * chain entry (the chain's own linkage and file-drift check), for each report being scored, none
  * of the artifacts its scoring depends on was chained after that report's own `chainHead` prefix
  * (an entry appended after a report's chain head postdates it, and the report cannot have read
- * that later version), and, when given, that the agreement sample's own chain entry precedes the
- * agreement rulings' entry (the sample is written, and chained, before any Fable ruling exists).
+ * that later version), and, when given, that the agreement sample's own chain entry precedes every
+ * one of the agreement rulings files' own entries (the sample is written, and chained, before any
+ * Fable ruling exists, so every rulings file scored against it must postdate it in the chain).
  * Takes the post-freeze chain file; the directory each chain entry's own path is resolved
  * against; every report being scored with the artifact paths its scoring reads; and, optionally,
- * the sample and rulings chain paths to order-check against each other.
+ * the sample path and every rulings path to order-check against it.
  * @returns Every problem found; `ok` when none were.
  */
 export function verifyGatedChain({
@@ -137,7 +138,7 @@ export function verifyGatedChain({
   chainFile: string;
   root: string;
   checks: readonly GatedChainCheck[];
-  sampleBeforeRulings?: { samplePath: string; rulingsPath: string };
+  sampleBeforeRulings?: { samplePath: string; rulingsPaths: readonly string[] };
 }): { ok: boolean; problems: string[] } {
   const problems: string[] = [];
   const drift = verifyChain(chainFile, root);
@@ -169,11 +170,16 @@ export function verifyGatedChain({
 
   if (sampleBeforeRulings) {
     const sampleLine = latestLine.get(sampleBeforeRulings.samplePath);
-    const rulingsLine = latestLine.get(sampleBeforeRulings.rulingsPath);
-    if (sampleLine === undefined) problems.push(`no chain entry for the agreement sample "${sampleBeforeRulings.samplePath}"`);
-    else if (rulingsLine === undefined) problems.push(`no chain entry for the agreement rulings "${sampleBeforeRulings.rulingsPath}"`);
-    else if (sampleLine >= rulingsLine) {
-      problems.push(`agreement sample "${sampleBeforeRulings.samplePath}" (chained at line ${sampleLine}) does not precede the rulings "${sampleBeforeRulings.rulingsPath}" (chained at line ${rulingsLine})`);
+    if (sampleLine === undefined) {
+      problems.push(`no chain entry for the agreement sample "${sampleBeforeRulings.samplePath}"`);
+    } else {
+      for (const rulingsPath of sampleBeforeRulings.rulingsPaths) {
+        const rulingsLine = latestLine.get(rulingsPath);
+        if (rulingsLine === undefined) problems.push(`no chain entry for the agreement rulings "${rulingsPath}"`);
+        else if (sampleLine >= rulingsLine) {
+          problems.push(`agreement sample "${sampleBeforeRulings.samplePath}" (chained at line ${sampleLine}) does not precede the rulings "${rulingsPath}" (chained at line ${rulingsLine})`);
+        }
+      }
     }
   }
 

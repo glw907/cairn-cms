@@ -20,13 +20,16 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Next: docs reset pass 1b, the validation redesign (Geoff, 2026-09-24).** Pass 1's writing
-system is built; its validation failed on its own design
-(`docs/internal/record/2026-09-23-docs-reset-validation.md`). Pass 1b brainstorms, pre-registers a
-plan, and reruns on the merged system; pass 2a waits for it. Open questions: the pass 1 ledger's
-"decision" row. The scratch site stands through pass 2a, teardown in
-`docs/internal/record/2026-09-23-scratch-site.md`. After the PR merges: the fact-id rule into the
-shared agents, the `~/.dotfiles` push, `claude-tooling-sync verify`.
+**Next: execute docs reset pass 1b, the validation redesign (plan approved by Geoff,
+2026-09-24).** Plan `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` and spec
+`docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` live on branch
+`docs-reset-1b` (worktree `.claude/worktrees/docs-reset-1b`, pushed, head `34d70f67`); they reach
+`main` with the pass's PR. Seventeen tasks in five segments, core gate only; ceiling 15M, flag
+12M, spend measured by the plan's session-ledger script (pass 1's recorded 9M was about 18.7M
+measured). Start at Task 0. Pass 2a waits for pass 1b's per-class verdict and the program budget
+its close brings to Geoff. The scratch site stands through pass 2a, teardown in
+`docs/internal/record/2026-09-23-scratch-site.md`. Still owed from pass 1: the `~/.dotfiles` push
+and `claude-tooling-sync verify`.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`
@@ -51,9 +54,8 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` at effort `high`, in
-`/var/home/glw907/Projects/cairn-cms`, start docs reset pass 1b on a new worktree off `main`.
-Read `ROADMAP.md`'s docs reset entry, the pass 1 plan's ledger "decision" row and post-mortem
-(`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`), and the validation record. Brainstorm
-the validation redesign with Geoff, then author a pre-registered plan that fixes its bars before
-any run.
+In a fresh session started with `claude --model claude-opus-5-5` at effort `medium`, in
+`/var/home/glw907/Projects/cairn-cms`, execute docs reset pass 1b from
+`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` on branch `docs-reset-1b` (worktree
+`.claude/worktrees/docs-reset-1b`), starting at Task 0. Read the plan and the spec in full, and
+follow the plan's header for models, lanes, gates, checkpoints, and the ledger.

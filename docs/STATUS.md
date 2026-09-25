@@ -20,6 +20,8 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
+**Live (2026-09-24): pass 1b executing on `docs-reset-1b`, segment 1 closed at `5ae7bc9e`; segment 2 (Tasks 2 to 6, three lanes, plus Task 8) running. Ledger at the foot of the plan. A second session must not execute this branch.**
+
 **Next: execute docs reset pass 1b, the validation redesign (plan approved by Geoff,
 2026-09-24).** Plan `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` and spec
 `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` live on branch

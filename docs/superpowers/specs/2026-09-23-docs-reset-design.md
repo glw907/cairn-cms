@@ -73,6 +73,21 @@ Where a line below and the body or the section above disagree, this section wins
   without the formal chain-depth trial, a minimal page chain that grows only on reader evidence,
   and a measured per-page target. Geoff sets a program ceiling.
 
+## Amendments from pass 2a's brainstorm (2026-09-25)
+
+Where a line below and this section disagree, this section wins.
+
+- **Pass 2a has its own spec,
+  [`2026-09-25-docs-reset-pass-2a-design.md`](2026-09-25-docs-reset-pass-2a-design.md), which
+  replaces the pass 2a section below.** Program ruling O12 (Geoff, 2026-09-25) drops the
+  calibration trial (items 4 and 5) and any freeze. Pass 2a opens with a go/no-go reader pilot,
+  and readers join the page chain as a gating stage only on a go.
+- **Pass 2a's ceiling is 7M, flag 5.6M** (Geoff, 2026-09-25), against this spec's 14M. Pass 2b
+  keeps 8M. Drafting passes are budgeted at 0.7M per page plus 1.5M per pass, and the program cap
+  is about 45M counted.
+- **Opus 5.5 at `high` authors pass 2a's artifacts** (the 2026-09-23 model ruling); Fable 5.1 is
+  the escalation only.
+
 ## Why now
 
 The 2026-08-15 outline (`docs/internal/record/2026-08-15-docs-outlines-with-visuals.md`) predates

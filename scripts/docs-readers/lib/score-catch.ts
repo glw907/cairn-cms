@@ -6,8 +6,7 @@
  * job's path map, the proxy tuning rounds are scored against.
  */
 import { binomialAtLeast } from './beta-binomial.js';
-import { fleissKappa } from '../oc-curve.js';
-import type { ThresholdsFile } from '../oc-curve.js';
+import { fleissKappa, type ThresholdsFile } from '../oc-curve.js';
 import type { PathMap } from '../path-map.js';
 import { CLASS_IDS, SEMANTIC_PLANT_TYPES, type CatchRunRecord, type ClassId, type PlantSpec, type PlantType } from './score-types.js';
 
@@ -20,11 +19,12 @@ import { CLASS_IDS, SEMANTIC_PLANT_TYPES, type CatchRunRecord, type ClassId, typ
  * @returns True when the plant's line sits on the map.
  */
 export function isPlantOnMap(map: PathMap, plant: Pick<PlantSpec, 'page' | 'line'>): boolean {
-  if (plant.page === undefined || plant.line === undefined) return true;
-  const ranges = map.ranges?.[plant.page];
-  if (ranges) return ranges.some(([start, end]) => plant.line! >= start && plant.line! <= end);
-  const sections = map.pages[plant.page]?.sections ?? [];
-  return sections.some((section) => plant.line! >= section.start && plant.line! <= section.end);
+  const { page, line } = plant;
+  if (page === undefined || line === undefined) return true;
+  const ranges = map.ranges?.[page];
+  if (ranges) return ranges.some(([start, end]) => line >= start && line <= end);
+  const sections = map.pages[page]?.sections ?? [];
+  return sections.some((section) => line >= section.start && line <= section.end);
 }
 
 /** One plant's catch outcome across its job's runs, after the unverified-run and opus-only rules. */
@@ -150,6 +150,25 @@ export interface RecallReport {
 }
 
 /**
+ * The success probability at which `binomialAtLeast(n, t, p)` crosses `target`, by bisection over
+ * the tail probability's monotone rise in `p`.
+ * @param n - The trial count.
+ * @param t - The tail's lower success count.
+ * @param target - The tail probability to solve for.
+ * @returns The crossing probability.
+ */
+function solveTailProbability(n: number, t: number, target: number): number {
+  let lo = 0;
+  let hi = 1;
+  for (let step = 0; step < 100; step += 1) {
+    const mid = (lo + hi) / 2;
+    if (binomialAtLeast(n, t, mid) < target) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/**
  * The exact (Clopper-Pearson) binomial confidence interval for `k` successes in `n` trials, found
  * by bisection on `binomialAtLeast`'s own monotone tail probability rather than a normal
  * approximation.
@@ -160,18 +179,8 @@ export interface RecallReport {
  */
 export function clopperPearson(k: number, n: number, alpha = 0.05): { lower: number; upper: number } {
   if (n === 0) return { lower: 0, upper: 1 };
-  const solve = (t: number, target: number): number => {
-    let lo = 0;
-    let hi = 1;
-    for (let step = 0; step < 100; step += 1) {
-      const mid = (lo + hi) / 2;
-      if (binomialAtLeast(n, t, mid) < target) lo = mid;
-      else hi = mid;
-    }
-    return (lo + hi) / 2;
-  };
-  const lower = k === 0 ? 0 : solve(k, alpha / 2);
-  const upper = k === n ? 1 : solve(k + 1, 1 - alpha / 2);
+  const lower = k === 0 ? 0 : solveTailProbability(n, k, alpha / 2);
+  const upper = k === n ? 1 : solveTailProbability(n, k + 1, 1 - alpha / 2);
   return { lower, upper };
 }
 

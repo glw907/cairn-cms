@@ -32,27 +32,19 @@ export interface AgreementSampleFile {
 }
 
 /**
- * The sha256 hex digest that orders one pool item: `sha256(orderingLabel + itemId)`.
- * @param orderingLabel - The frozen ordering label (`docs-reset-1b-agreement`).
- * @param itemId - The pool item's own opaque id.
- * @returns The digest, as hex.
- */
-function orderKey(orderingLabel: string, itemId: string): string {
-  return createHash('sha256').update(orderingLabel + itemId).digest('hex');
-}
-
-/**
- * Sort a pool by its sha256 ordering, ascending.
+ * Sort a pool ascending by `sha256(orderingLabel + itemId)`, each item's digest computed once.
  * @param items - The items to sort.
- * @param orderingLabel - The frozen ordering label.
+ * @param orderingLabel - The frozen ordering label (`docs-reset-1b-agreement`).
  * @returns The items in sha256 order (a fresh array; the input is never mutated).
  */
 function sortByOrder<T extends { itemId: string }>(items: readonly T[], orderingLabel: string): T[] {
-  return [...items].sort((a, b) => {
-    const ka = orderKey(orderingLabel, a.itemId);
-    const kb = orderKey(orderingLabel, b.itemId);
-    return ka === kb ? 0 : ka < kb ? -1 : 1;
+  const keyed = items.map((item) => ({ item, key: createHash('sha256').update(orderingLabel + item.itemId).digest('hex') }));
+  keyed.sort((a, b) => {
+    if (a.key < b.key) return -1;
+    if (a.key > b.key) return 1;
+    return 0;
   });
+  return keyed.map(({ item }) => item);
 }
 
 /**
@@ -165,6 +157,16 @@ export interface StratumAgreement {
 }
 
 /**
+ * Cohen's formula for kappa from observed and chance agreement; NaN when chance agreement is total.
+ * @param po - The observed agreement.
+ * @param pe - The chance agreement.
+ * @returns The kappa figure.
+ */
+function cohenKappa(po: number, pe: number): number {
+  return pe < 1 ? (po - pe) / (1 - pe) : NaN;
+}
+
+/**
  * One stratum's agreement: observed agreement `po` (the share of items where the primary rater and
  * Fable agree), chance agreement `pe` (Cohen's own marginal-product sum, over this stratum's own
  * label set only, never pooled across strata), and this stratum's own kappa.
@@ -185,8 +187,7 @@ export function computeStratumAgreement(items: readonly RuledItem[]): StratumAgr
     const p2 = fableLabels.filter((label) => label === category).length / n;
     pe += p1 * p2;
   }
-  const kappa = pe < 1 ? (po - pe) / (1 - pe) : NaN;
-  return { n, po, pe, kappa, fiveItemPass: fiveItemTestPasses(primaryLabels, fableLabels) };
+  return { n, po, pe, kappa: cohenKappa(po, pe), fiveItemPass: fiveItemTestPasses(primaryLabels, fableLabels) };
 }
 
 /** The instrument-wide agreement bar's result. */
@@ -215,7 +216,7 @@ export function computeAgreement({ findings, catchCalls }: { findings: readonly 
   const pooledPo = totalN === 0 ? 0 : (findingsAgreement.po * findingsAgreement.n + catchCallsAgreement.po * catchCallsAgreement.n) / totalN;
   if (findingsAgreement.fiveItemPass && catchCallsAgreement.fiveItemPass) {
     const pooledPe = (findingsAgreement.pe * findingsAgreement.n + catchCallsAgreement.pe * catchCallsAgreement.n) / totalN;
-    const kappa = pooledPe < 1 ? (pooledPo - pooledPe) / (1 - pooledPe) : NaN;
+    const kappa = cohenKappa(pooledPo, pooledPe);
     return { findings: findingsAgreement, catchCalls: catchCallsAgreement, method: 'kappa', value: kappa, pass: kappa >= 0.6 };
   }
   return {
@@ -238,6 +239,16 @@ export interface AgreementReplacement {
 }
 
 /**
+ * The lookup key joining a replacement to the run and plant or item it re-rules.
+ * @param runId - The run the replacement re-rules.
+ * @param refId - The plant or precision item within that run.
+ * @returns A key no two distinct pairs share.
+ */
+function replacementKey(runId: string, refId: string): string {
+  return `${runId}\u0000${refId}`;
+}
+
+/**
  * Apply Fable's catch-call replacements to a set of catch runs, standing for "the bars are
  * computed after those replacements". Returns fresh records; the input is never mutated.
  * @param runsByJob - Every job's catch runs.
@@ -250,14 +261,14 @@ export function applyCatchReplacements(
 ): Record<string, CatchRunRecord[]> {
   const byRunPlant = new Map<string, 'caught' | 'missed'>();
   for (const replacement of replacements) {
-    if (replacement.kind === 'catchCall') byRunPlant.set(`${replacement.runId}\u0000${replacement.refId}`, replacement.label as 'caught' | 'missed');
+    if (replacement.kind === 'catchCall') byRunPlant.set(replacementKey(replacement.runId, replacement.refId), replacement.label as 'caught' | 'missed');
   }
   const result: Record<string, CatchRunRecord[]> = {};
   for (const [job, runs] of Object.entries(runsByJob)) {
     result[job] = runs.map((run) => {
       const catches = { ...run.catches };
       for (const plantId of Object.keys(catches)) {
-        const replaced = byRunPlant.get(`${run.runId}\u0000${plantId}`);
+        const replaced = byRunPlant.get(replacementKey(run.runId, plantId));
         if (replaced) catches[plantId] = replaced;
       }
       return { ...run, catches };
@@ -275,12 +286,12 @@ export function applyCatchReplacements(
 export function applyPrecisionReplacements(runs: readonly PrecisionRunRecord[], replacements: readonly AgreementReplacement[]): PrecisionRunRecord[] {
   const byRunItem = new Map<string, 'real' | 'false' | 'harness'>();
   for (const replacement of replacements) {
-    if (replacement.kind === 'finding') byRunItem.set(`${replacement.runId}\u0000${replacement.refId}`, replacement.label as 'real' | 'false' | 'harness');
+    if (replacement.kind === 'finding') byRunItem.set(replacementKey(replacement.runId, replacement.refId), replacement.label as 'real' | 'false' | 'harness');
   }
   return runs.map((run) => {
     if (!run.items) return run;
     const items = run.items.map((item) => {
-      const replaced = byRunItem.get(`${run.runId}\u0000${item.itemId}`);
+      const replaced = byRunItem.get(replacementKey(run.runId, item.itemId));
       if (!replaced) return item;
       return { ...item, harnessExcluded: false, ruling: replaced };
     });

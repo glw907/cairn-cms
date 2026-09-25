@@ -32,23 +32,22 @@ import {
   stabilityKappa,
   tallyPlantCatches,
   type ClassSensitivityResult,
+  type HeldOutResult,
   type PlantCatchTally,
-  type PooledSensitivityResult,
+  type RecallReport,
 } from './lib/score-catch.js';
-import { findingCountsForRun, precisionByClass, type ClassPrecisionResult } from './lib/score-precision.js';
+import { findingCountsForRun, precisionByClass } from './lib/score-precision.js';
 import {
   applyCatchReplacements,
   applyPrecisionReplacements,
   computeAgreement,
   drawAgreementSample,
   type AgreementReplacement,
-  type AgreementResult,
-  type AgreementSampleFile,
   type CatchCallPoolItem,
   type FindingPoolItem,
   type RuledItem,
 } from './lib/score-agreement.js';
-import { scoreClassVerdicts, type ClassVerdict } from './lib/score-verdict.js';
+import { scoreClassVerdicts } from './lib/score-verdict.js';
 import { CLASS_IDS, type CatchRunRecord, type ClassId, type PlantSpec, type PrecisionRunRecord } from './lib/score-types.js';
 import { loadSavedBatchReport } from './lib/transcript.js';
 import type { PathMap } from './path-map.js';
@@ -152,7 +151,7 @@ function runSample(argv: string[]): number {
     return 2;
   }
   const pool = readJson<{ orderingLabel: string; findingsPool: FindingPoolItem[]; catchCallsPool: CatchCallPoolItem[]; perStratum?: number }>(poolPath);
-  const sample: AgreementSampleFile = drawAgreementSample(pool);
+  const sample = drawAgreementSample(pool);
   writeJson(out, sample);
   process.stdout.write(`wrote ${out} (${sample.findings.length} finding(s), ${sample.catchCalls.length} catch call(s))\n`);
   return 0;
@@ -232,7 +231,7 @@ function runDev(argv: string[]): number {
 
 /** The gated run's every reported (never gating) measure this scorer computes from its bundle, plus the ones it explicitly defers. */
 interface GatedReportedMeasures {
-  recallByClass: Record<ClassId, ReturnType<typeof recallByClass>[ClassId]>;
+  recallByClass: Record<ClassId, RecallReport>;
   recallByPlantKind: ReturnType<typeof recallByPlantKind>;
   perRunRecall: number[];
   stability: ReturnType<typeof stabilityKappa>;
@@ -252,7 +251,7 @@ interface GatedReportedMeasures {
 function gatedReportedMeasures(
   tallies: readonly PlantCatchTally[],
   precisionRuns: readonly PrecisionRunRecord[],
-  heldOut: ReturnType<typeof scoreHeldOut>,
+  heldOut: readonly HeldOutResult[],
 ): GatedReportedMeasures {
   return {
     recallByClass: recallByClass(tallies),
@@ -325,17 +324,17 @@ function runGated(argv: string[]): number {
     return 1;
   }
 
-  const agreement: AgreementResult = computeAgreement({ findings: bundle.agreement.findings, catchCalls: bundle.agreement.catchCalls });
+  const agreement = computeAgreement({ findings: bundle.agreement.findings, catchCalls: bundle.agreement.catchCalls });
   const replacements = bundle.agreement.replacements ?? [];
   const catchRunsByJob = applyCatchReplacements(bundle.catchRunsByJob, replacements);
   const precisionRuns = applyPrecisionReplacements(bundle.precisionRuns, replacements);
 
   const tallies = tallyPlantCatches(bundle.plants, catchRunsByJob);
-  const pooledSensitivity: PooledSensitivityResult = scorePooledSensitivity(tallies, bundle.thresholds);
+  const pooledSensitivity = scorePooledSensitivity(tallies, bundle.thresholds);
   const classSensitivities = {} as Record<ClassId, ClassSensitivityResult>;
   for (const classId of CLASS_IDS) classSensitivities[classId] = scoreClassSensitivity(classId, tallies, bundle.thresholds);
-  const classPrecisions: Record<ClassId, ClassPrecisionResult> = precisionByClass(precisionRuns);
-  const { classes, allClassesFailed }: { classes: ClassVerdict[]; allClassesFailed: boolean } = scoreClassVerdicts({
+  const classPrecisions = precisionByClass(precisionRuns);
+  const { classes, allClassesFailed } = scoreClassVerdicts({
     pooledSensitivity,
     agreement,
     classSensitivities,

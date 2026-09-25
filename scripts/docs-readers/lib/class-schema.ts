@@ -26,6 +26,33 @@ export const EGRESS_CONFIG = join(READERS_ROOT, 'egress.json');
  */
 export const KNOWN_TOOLS = ['Read', 'Write', 'Edit', 'Grep', 'Glob', 'Bash'];
 
+/**
+ * The three judge kinds a runner batch can run, and the freeze manifest key each one's frozen
+ * model id lives under (`Manifest.models`, never `models.reader`).
+ */
+export type JudgeKind = 'catchJudge' | 'adjudicator' | 'agreement';
+
+/**
+ * Every judge class's name, mapped to the kind of rulings its packets carry. `ClassDecl` itself
+ * carries no `judgeKind` field (ordinary classes never need one), so a judge batch's caller reads
+ * the kind from the class name here instead of adding a runtime field `loadClasses` would have to
+ * validate.
+ */
+export const JUDGE_CLASSES: Readonly<Record<string, JudgeKind>> = {
+  'judge-catch': 'catchJudge',
+  'judge-adjudicator': 'adjudicator',
+  'judge-agreement': 'agreement',
+};
+
+/**
+ * The judge kind a class name runs as, or undefined when the name is not a judge class.
+ * @param className - A class declaration's `name`.
+ * @returns The judge kind, or undefined for an ordinary reader class.
+ */
+export function judgeKindForClass(className: string): JudgeKind | undefined {
+  return JUDGE_CLASSES[className];
+}
+
 /** How a class fills its per-run directory: copied docs-set paths, or a prepared tree. */
 export const CONTENTS_KINDS = ['docs-set', 'prepared'];
 

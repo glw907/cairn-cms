@@ -23,14 +23,18 @@ import {
   usageFromEvents,
 } from './transcript.js';
 import { addUsage, countedTokens, reportUsage } from './ledger.js';
-import { expectedTools } from './class-schema.js';
+import { expectedTools, type JudgeKind } from './class-schema.js';
 import { verifyReport } from './verify.js';
+import { judgeOutput, judgeReportSchema, rulingsOf, verifyJudgeRulings, type ExpectedItem, type JudgeVerified } from './judge-verify.js';
 import { scrub } from './scrub.js';
 import type {
+  Adjudication,
+  AgreementRuling,
   Attempt,
   AttemptCause,
   Batch,
   BatchReport,
+  CatchRuling,
   ClassDecl,
   Executor,
   FreezeStamp,
@@ -38,6 +42,7 @@ import type {
   Job,
   JobReport,
   LedgerEntry,
+  ReportUsage,
   RunOutcome,
   RunResult,
   StopReason,
@@ -201,13 +206,22 @@ export function buildRunOutcome({
 }
 
 /**
+ * The fields `checkFrozenModel` needs from any run outcome, reader or judge: never `RunOutcome`
+ * itself, so a judge's outcome, which carries no quotes or pages, shares this one check.
+ */
+interface ModelCheckedOutcome {
+  initModel?: string;
+  verified: { ok: boolean; problems: string[] };
+}
+
+/**
  * Mark an outcome unverified when it carries no init model at all, or when its init event
  * reported a model other than the one a gated batch freezes for this kind of run. A missing
  * `expectedModel` means the batch is not gated, so the check never applies.
  * @param outcome - The outcome to check, mutated in place when the model is missing or differs.
  * @param expectedModel - The manifest's model id for this batch's kind, when the batch is gated.
  */
-function checkFrozenModel(outcome: RunOutcome, expectedModel: string | undefined): void {
+function checkFrozenModel(outcome: ModelCheckedOutcome, expectedModel: string | undefined): void {
   if (!expectedModel) return;
   if (outcome.initModel === undefined) {
     outcome.verified.ok = false;
@@ -220,12 +234,22 @@ function checkFrozenModel(outcome: RunOutcome, expectedModel: string | undefined
 }
 
 /**
+ * The fields `rerunCause` needs from any attempt outcome, reader or judge: a judge's `outcome`
+ * field never carries `stalled` or `refused`, so this stays wider than `RunOutcome`.
+ */
+interface RerunCheckedOutcome {
+  outcome: string;
+  abortReason?: string;
+  verified: { ok: boolean };
+}
+
+/**
  * Why an attempt should be rerun once, or undefined when its outcome should stand as final.
  * @param outcome - The attempt's outcome.
  * @param run - The raw run result behind it, whose exit code tells crashed apart from report-less.
  * @returns The cause the next attempt would carry, or undefined.
  */
-function rerunCause(outcome: RunOutcome, run: RunResult): AttemptCause | undefined {
+function rerunCause(outcome: RerunCheckedOutcome, run: RunResult): AttemptCause | undefined {
   if (outcome.outcome === 'aborted') return outcome.abortReason === 'timeout' ? 'timedOut' : undefined;
   if (outcome.outcome === 'error') return run.exitCode ? 'crashed' : 'noReport';
   return outcome.verified.ok ? undefined : 'unverified';
@@ -476,6 +500,321 @@ export async function runBatch({
     report: {
       batch: batch.name,
       runId,
+      stopReason: stopReason ?? 'complete',
+      budgetTokens: batch.budgetTokens,
+      usage: reportUsage(total),
+      jobs: reports,
+      verified: stopReason === undefined && reports.every((r) => r.verified.ok),
+    },
+    transcripts,
+  };
+}
+
+/**
+ * The stdin text for one judge job: the arrival state and the frozen prompt, with no reader
+ * `REPORT_REQUEST` appended, since a judge's job text already states its own output shape and
+ * `--json-schema` enforces it.
+ * @param job - A parsed batch job whose `job` field holds the judge's frozen prompt text.
+ * @returns The prompt text.
+ */
+export function composeJudgePrompt(job: Pick<Job, 'arrival' | 'job'>): string {
+  return `${job.arrival.trim()}\n\n${job.job.trim()}\n`;
+}
+
+/** One judge run attempt, with its own rulings and verification. Exactly one attempt per job is `final`. */
+export interface JudgeAttempt {
+  cause: AttemptCause;
+  final: boolean;
+  /** This attempt's own transcript file, relative to the results directory. */
+  transcript: string;
+  /** The model id the init event reported for this run, when the run started at all. */
+  initModel?: string;
+  outcome: 'done' | 'aborted' | 'error';
+  abortReason?: string;
+  rulings: CatchRuling[] | Adjudication[] | AgreementRuling[];
+  usage: ReportUsage;
+  verified: JudgeVerified;
+}
+
+/** A judge job report: its top-level fields mirror the final attempt, the same way a reader's `JobReport` does. */
+export interface JudgeJobReport {
+  id: string;
+  class: string;
+  model: string;
+  rulings: CatchRuling[] | Adjudication[] | AgreementRuling[];
+  usage: ReportUsage;
+  verified: JudgeVerified;
+  /** Every counted attempt the runner made at this job; omitted for a `stoppedBy` report with zero. */
+  attempts?: JudgeAttempt[];
+  /** Set when a batch-level stop left this job with no final attempt, the same rule `JobReport.stoppedBy` follows. */
+  stoppedBy?: 'rateLimit' | 'auth' | 'budget';
+  /** The cause a resumed attempt at this job runs under. Set only alongside `stoppedBy`. */
+  pendingCause?: AttemptCause;
+  /** The freeze manifest this report was gated against. Set only on a gated batch's report. */
+  freeze?: FreezeStamp;
+}
+
+/** A judge batch report. */
+export interface JudgeBatchReport {
+  batch: string;
+  runId: string;
+  kind: JudgeKind;
+  stopReason: StopReason;
+  budgetTokens: number;
+  usage: ReportUsage;
+  jobs: JudgeJobReport[];
+  verified: boolean;
+}
+
+/**
+ * Build one judge attempt's outcome from its finished run: the init check, the canary check, the
+ * parsed rulings for this judge `kind`, and whether every `expected` item was ruled exactly once.
+ * @returns The outcome, before any gating or rerun decision is layered on.
+ */
+function buildJudgeOutcome({
+  decl,
+  baselines,
+  run,
+  abortReason,
+  kind,
+  expected,
+}: {
+  decl: ClassDecl;
+  baselines: Record<string, InitBaseline>;
+  run: RunResult;
+  abortReason?: string;
+  kind: JudgeKind;
+  expected: readonly ExpectedItem[];
+}): Omit<JudgeAttempt, 'cause' | 'final' | 'transcript'> {
+  const events = run.events;
+  const init = checkInit(findInit(events), expectedTools(decl), baselines);
+  const canariesFound = findCanaries(run.stdout, run.canaries ?? []);
+  const output = judgeOutput(events, kind);
+  const verified = verifyJudgeRulings({ output, kind, expected, init, canariesFound });
+  const failure = classifyFailure(events);
+  const reason = failure ?? abortReason ?? (run.timedOut ? 'timeout' : undefined);
+  if (reason) {
+    verified.ok = false;
+    verified.problems.unshift(`aborted: ${reason}`);
+  }
+  const model = initModel(events);
+  return {
+    ...(model !== undefined ? { initModel: model } : {}),
+    outcome: reason ? 'aborted' : output ? 'done' : 'error',
+    ...(reason ? { abortReason: reason } : {}),
+    rulings: output ? rulingsOf(output, kind) : [],
+    usage: reportUsage(usageFromEvents(events)),
+    verified,
+  };
+}
+
+/**
+ * A report for a judge job a batch-level stop left without a final attempt, the judge analogue of
+ * `stoppedReport`.
+ */
+function judgeStoppedReport(job: Job, stoppedBy: BatchStop, pendingCause: AttemptCause, attempts: JudgeAttempt[], freeze?: GatedFreeze): JudgeJobReport {
+  return {
+    id: job.id,
+    class: job.class,
+    model: job.model,
+    rulings: [],
+    usage: reportUsage(emptyUsage()),
+    verified: {
+      ok: false,
+      init: false,
+      canaries: true,
+      problems: [`aborted: ${stoppedBy}`, attempts.length > 0 ? 'stopped before its rerun started' : 'not started'],
+    },
+    stoppedBy,
+    pendingCause,
+    ...(attempts.length > 0 ? { attempts } : {}),
+    ...(freeze ? { freeze: freezeStamp(freeze) } : {}),
+  };
+}
+
+/**
+ * Run a judge batch: the catch judge, the adjudicator, or the agreement read, all headless runner
+ * classes whose container mounts only a packet directory. This mirrors `runBatch`'s scheduling
+ * (concurrency, the budget watch, the rerun rule, gating, resume) but builds rulings instead of a
+ * reader's catch fields, and verifies ruling coverage against `expectedItems` instead of a
+ * reader's quote verification. `kind` picks the report schema and the rulings shape every job in
+ * this batch returns; `expectedItems` names, per job id, every packet item that job's rulings must
+ * cover exactly once.
+ * @returns The batch report and each job's scrubbed transcript.
+ */
+export async function runJudgeBatch({
+  batch,
+  classes,
+  baselines,
+  executor,
+  ledger,
+  runId,
+  kind,
+  expectedItems,
+  secrets = [],
+  halt,
+  freeze,
+  resumeFrom,
+}: {
+  batch: Batch;
+  classes: Map<string, ClassDecl>;
+  baselines: Record<string, InitBaseline>;
+  executor: Executor;
+  ledger?: { append(entry: LedgerEntry): void };
+  runId: string;
+  kind: JudgeKind;
+  expectedItems: Record<string, readonly ExpectedItem[]>;
+  secrets?: readonly unknown[];
+  halt?: AbortSignal;
+  freeze?: GatedFreeze;
+  resumeFrom?: Record<string, { attempts: JudgeAttempt[]; pendingCause: AttemptCause }>;
+}): Promise<{ report: JudgeBatchReport; transcripts: Record<string, string> }> {
+  let stopReason: StopReason | undefined;
+  let spent = 0;
+  let total = emptyUsage();
+  const inFlight = new Map<string, { controller: AbortController; live: number; seen: StreamEvent[] }>();
+  const reports: JudgeJobReport[] = new Array<JudgeJobReport>(batch.jobs.length);
+  const transcripts: Record<string, string> = {};
+
+  const abortInFlight = () => {
+    for (const flight of inFlight.values()) flight.controller.abort();
+  };
+  const stop = (reason: StopReason) => {
+    if (stopReason) return;
+    stopReason = reason;
+    abortInFlight();
+  };
+  let halted = false;
+  let firstError: unknown;
+  const haltAll = () => {
+    halted = true;
+    abortInFlight();
+  };
+  halt?.addEventListener('abort', haltAll, { once: true });
+  if (halt?.aborted) haltAll();
+  const liveSpend = () => [...inFlight.values()].reduce((sum, f) => sum + f.live, 0);
+  const record = (jobId: string, model: string, usage: Usage) => {
+    total = addUsage(total, usage);
+    spent += countedTokens(usage);
+    ledger?.append({ batch: batch.name, runId, job: jobId, model, usage });
+  };
+
+  const check = await executor.checkToken();
+  record('(token-check)', 'token-check', usageFromEvents(check.events));
+  const checkFailure = classifyFailure(check.events);
+  if (checkFailure) {
+    stop(checkFailure);
+  } else if (check.events.find((e) => e.type === 'result')?.is_error !== false) {
+    throw new Error('token check did not complete; see the runner log for the container output');
+  }
+
+  const schema = judgeReportSchema(kind);
+  let next = 0;
+  const work = async () => {
+    while (!halted && next < batch.jobs.length) {
+      const index = next;
+      next += 1;
+      const job = batch.jobs[index];
+      const resumed = resumeFrom?.[job.id];
+      const priorAttempts = resumed?.attempts ?? [];
+      if (!stopReason && spent + liveSpend() >= batch.budgetTokens) stop('budget');
+      if (stopReason) {
+        reports[index] = judgeStoppedReport(job, stopReason as BatchStop, resumed?.pendingCause ?? 'initial', priorAttempts, freeze);
+        continue;
+      }
+      const decl = classes.get(job.class);
+      if (!decl) throw new Error(`job ${job.id}: class ${job.class} is not declared`);
+      const expected = expectedItems[job.id] ?? [];
+
+      const attempts: JudgeAttempt[] = [...priorAttempts];
+      let cause: AttemptCause = resumed?.pendingCause ?? 'initial';
+      const startAttempt = priorAttempts.length + 1;
+      let stopped: { stoppedBy: BatchStop; pendingCause: AttemptCause } | undefined;
+
+      for (let attemptNumber = startAttempt; attemptNumber <= MAX_ATTEMPTS; attemptNumber += 1) {
+        if (attemptNumber > startAttempt) {
+          if (!stopReason && spent + liveSpend() >= batch.budgetTokens) stop('budget');
+          if (stopReason) {
+            stopped = { stoppedBy: stopReason as BatchStop, pendingCause: cause };
+            break;
+          }
+        }
+        const flight = { controller: new AbortController(), live: 0, seen: [] as StreamEvent[] };
+        inFlight.set(job.id, flight);
+        const onEvent = (event: StreamEvent) => {
+          flight.seen.push(event);
+          const failure = eventFailure(event);
+          if (failure) {
+            stop(failure);
+            return;
+          }
+          if (event.type === 'assistant') {
+            flight.live = countedTokens(assistantUsage(flight.seen));
+            if (spent + liveSpend() > batch.budgetTokens) stop('budget');
+          }
+        };
+        let run: RunResult;
+        try {
+          run = await executor.run(job, decl, { signal: flight.controller.signal, onEvent, prompt: composeJudgePrompt(job), reportSchema: schema });
+        } finally {
+          inFlight.delete(job.id);
+        }
+        record(job.id, job.model, usageFromEvents(run.events));
+        const failure = classifyFailure(run.events);
+        if (failure) stop(failure);
+        if (stopReason !== undefined && (run.aborted || failure !== undefined)) {
+          transcripts[`${job.id}-stopped-${runId}.jsonl`] = scrub(run.stdout, secrets);
+          await executor.release?.(job);
+          stopped = { stoppedBy: stopReason as BatchStop, pendingCause: cause };
+          break;
+        }
+        const abortReason = run.aborted ? 'aborted' : undefined;
+        const outcome = buildJudgeOutcome({ decl, baselines, run, abortReason, kind, expected });
+        checkFrozenModel(outcome, freeze?.expectedModel);
+        const transcriptName = `${job.id}-attempt${attemptNumber}.jsonl`;
+        transcripts[transcriptName] = scrub(run.stdout, secrets);
+        const nextCause = rerunCause(outcome, run);
+        const wantsRerun = nextCause !== undefined && attemptNumber < MAX_ATTEMPTS;
+        attempts.push({ ...outcome, cause, final: !wantsRerun, transcript: `transcripts/${transcriptName}` });
+        await executor.release?.(job);
+        if (!wantsRerun) break;
+        cause = nextCause;
+      }
+
+      if (stopped) {
+        reports[index] = judgeStoppedReport(job, stopped.stoppedBy, stopped.pendingCause, attempts, freeze);
+        continue;
+      }
+      const last = attempts[attempts.length - 1];
+      const { cause: _cause, final: _final, transcript: _transcript, ...outcomeFields } = last;
+      reports[index] = {
+        id: job.id,
+        class: job.class,
+        model: job.model,
+        ...outcomeFields,
+        attempts,
+        ...(freeze ? { freeze: freezeStamp(freeze) } : {}),
+      };
+    }
+  };
+  const worker = async () => {
+    try {
+      await work();
+    } catch (error) {
+      firstError ??= error;
+      haltAll();
+    }
+  };
+  await Promise.allSettled(Array.from({ length: Math.min(batch.concurrency, batch.jobs.length) }, worker));
+  halt?.removeEventListener('abort', haltAll);
+  if (firstError !== undefined) throw firstError;
+  if (halted) throw new Error('batch halted before it finished');
+
+  return {
+    report: {
+      batch: batch.name,
+      runId,
+      kind,
       stopReason: stopReason ?? 'complete',
       budgetTokens: batch.budgetTokens,
       usage: reportUsage(total),

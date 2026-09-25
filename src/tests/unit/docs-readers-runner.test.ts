@@ -119,7 +119,7 @@ describe('runBatch', () => {
   it('aborts a job still in flight when another job hits the auth failure', async () => {
     const slow = fixture('clean-docs-only.jsonl');
     const { executor, ledger } = replayExecutor({ a: fixture('auth-failure.jsonl'), b: [...slow, ...slow, ...slow] });
-    const { report } = await runBatch({
+    const { report, transcripts } = await runBatch({
       batch: batchOf(['a', 'b'], { concurrency: 2 }),
       classes,
       baselines,
@@ -132,6 +132,12 @@ describe('runBatch', () => {
       ['aborted', 'auth'],
       ['aborted', 'auth'],
     ]);
+    // Job b was still in flight when job a's auth failure stopped the batch: the runner's own
+    // stop cut it short, not a counted attempt, so it carries stoppedBy and no attempts, and its
+    // in-flight transcript is saved under the "-stopped-" name rather than an attempt number.
+    expect(report.jobs[1]).toMatchObject({ stoppedBy: 'auth', pendingCause: 'initial' });
+    expect(report.jobs[1]).not.toHaveProperty('attempts');
+    expect(transcripts).toHaveProperty(`b-stopped-r3.jsonl`);
   });
 
   it('stops with auth before any job when the pre-batch token check fails', async () => {

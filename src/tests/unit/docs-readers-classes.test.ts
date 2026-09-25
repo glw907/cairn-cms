@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   claudeArgs,
   expectedTools,
+  judgeKindForClass,
   loadClasses,
   loadEgress,
   validateClass,
@@ -30,9 +31,11 @@ describe('class declarations', () => {
     expect(classes.get('repository')?.egress).toBe('anthropic');
   });
 
-  it('loads all four reader classes, each with a non-empty neutral sentence', () => {
+  it('loads all four reader classes and the three judge classes, each with a non-empty neutral sentence', () => {
     const classes = loadClasses();
-    expect([...classes.keys()].sort()).toEqual(['docs-and-binary', 'docs-and-site', 'docs-only', 'repository']);
+    expect([...classes.keys()].sort()).toEqual([
+      'docs-and-binary', 'docs-and-site', 'docs-only', 'judge-adjudicator', 'judge-agreement', 'judge-catch', 'repository',
+    ]);
     for (const decl of classes.values()) expect(decl.description.trim().length).toBeGreaterThan(0);
   });
 
@@ -96,5 +99,20 @@ describe('class declarations', () => {
 
   it('expects the declared tools plus the structured-report tool in the init event', () => {
     expect(expectedTools(valid)).toEqual(['Glob', 'Grep', 'Read', 'StructuredOutput']);
+  });
+
+  it('gives each judge class no Bash and no secrets, mountable through the same prepared-contents pathway', () => {
+    const classes = loadClasses();
+    for (const name of ['judge-catch', 'judge-adjudicator', 'judge-agreement']) {
+      const decl = classes.get(name);
+      expect(decl, name).toMatchObject({ contents: 'prepared', tools: ['Read', 'Grep', 'Glob'], bashAllowlist: [], secretEnv: [], egress: 'anthropic' });
+    }
+  });
+
+  it('maps each judge class name to its manifest model key, and an ordinary class to none', () => {
+    expect(judgeKindForClass('judge-catch')).toBe('catchJudge');
+    expect(judgeKindForClass('judge-adjudicator')).toBe('adjudicator');
+    expect(judgeKindForClass('judge-agreement')).toBe('agreement');
+    expect(judgeKindForClass('docs-only')).toBeUndefined();
   });
 });

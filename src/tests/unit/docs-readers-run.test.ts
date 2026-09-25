@@ -18,6 +18,7 @@ import {
   type FinishedJudgeReport,
   type FinishedReport,
 } from '../../../scripts/docs-readers/run.js';
+import { buildCatchPacket } from '../../../scripts/docs-readers/judge-packets.js';
 import { buildManifest, hashFile, writeManifest } from '../../../scripts/docs-readers/freeze.js';
 import { loadClasses } from '../../../scripts/docs-readers/lib/class-schema.js';
 import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
@@ -675,11 +676,34 @@ describe('checkJudgeKeyIntegrity: the gated judge path’s trust check', () => {
     }
   });
 
-  it('skips a non-absolute or non-existent inputs key, a synthetic label rather than a real path', () => {
+  it('skips only a page@<commit>: synthetic label, never a real path', () => {
     const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-'));
-    const prepared = packetWithKey(dir, { builtFrom: 'sources', inputs: { 'page@abc123:docs/guide.md': 'deadbeef', 'pages/docs/guide.md': 'deadbeef' } });
+    const prepared = packetWithKey(dir, { builtFrom: 'sources', inputs: { 'page@abc123:docs/guide.md': 'deadbeef' } });
     try {
       expect(checkJudgeKeyIntegrity('job-a', prepared)).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses when an absolute inputs key no longer exists on disk', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-'));
+    const missing = join(dir, 'gone.json');
+    const prepared = packetWithKey(dir, { builtFrom: 'sources', inputs: { [missing]: 'deadbeef' } });
+    try {
+      const problems = checkJudgeKeyIntegrity('job-a', prepared);
+      expect(problems.some((p) => p.includes(missing) && p.includes('no longer exists'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses when a relative, non-synthetic inputs key names a packet file the build never wrote', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-'));
+    const prepared = packetWithKey(dir, { builtFrom: 'sources', inputs: { 'pages/docs/guide.md': 'deadbeef' } });
+    try {
+      const problems = checkJudgeKeyIntegrity('job-a', prepared);
+      expect(problems.some((p) => p.includes('pages/docs/guide.md') && p.includes('no longer exists'))).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -692,6 +716,72 @@ describe('checkJudgeKeyIntegrity: the gated judge path’s trust check', () => {
     try {
       const problems = checkJudgeKeyIntegrity('job-a', prepared);
       expect(problems.some((p) => p.includes('job-a') && p.includes('no key.json'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * A real source-built catch packet: a dev plant read from a planted root, never `git show` (the
+   * repoRoot/commit pair are unused on this path and stand in for values a real build would pin).
+   */
+  function buildRealCatchPacket(dir: string): { outDir: string; plantedRoot: string } {
+    const outDir = join(dir, 'out');
+    const batchPath = join(dir, 'batch.json');
+    writeFileSync(batchPath, JSON.stringify({ name: 'fixture', jobs: [{ id: 'job-a', job: 'Job text.' }] }));
+    const reportPath = join(dir, 'report.json');
+    writeFileSync(
+      reportPath,
+      JSON.stringify({ batch: 'fixture', runId: 'r1', jobs: [{ id: 'job-a', model: 'claude-opus-5-5', stalls: [], assumed: [], diverged: [], checks: [] }] }),
+    );
+    const criteriaPath = join(dir, 'dev-plants.json');
+    writeFileSync(criteriaPath, JSON.stringify([{ id: 'P01', page: 'docs/guide.md', line: 1, subject: 's', criterion: 'c', nearMiss: 'n' }]));
+    const indexPath = join(dir, 'dev-plants-index.json');
+    writeFileSync(indexPath, JSON.stringify([{ id: 'P01', job: 'job-a', page: 'docs/guide.md', line: 1 }]));
+    const plantedRoot = join(dir, 'planted', 'job-a');
+    mkdirSync(join(plantedRoot, 'docs'), { recursive: true });
+    writeFileSync(join(plantedRoot, 'docs', 'guide.md'), 'planted guide content\n');
+    buildCatchPacket({
+      outDir,
+      repoRoot: dir,
+      batchPath,
+      reportPath,
+      jobId: 'job-a',
+      plants: { kind: 'dev', criteriaPath, indexPath, jobId: 'job-a', plantedRoot },
+      commit: 'unused',
+    });
+    return { outDir, plantedRoot };
+  }
+
+  it('refuses when a planted page a real packet was built from changes after the build', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-real-'));
+    const { outDir, plantedRoot } = buildRealCatchPacket(dir);
+    try {
+      writeFileSync(join(plantedRoot, 'docs', 'guide.md'), 'the plant changed after the build\n');
+      const problems = checkJudgeKeyIntegrity('job-a', join(outDir, 'packet'));
+      expect(problems.some((p) => p.includes('has changed since the packet was built'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses when a packet file itself is edited after the build', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-real-'));
+    const { outDir } = buildRealCatchPacket(dir);
+    try {
+      writeFileSync(join(outDir, 'packet', 'job.json'), JSON.stringify({ text: 'tampered job text' }));
+      const problems = checkJudgeKeyIntegrity('job-a', join(outDir, 'packet'));
+      expect(problems.some((p) => p.includes('job.json') && p.includes('has changed since the packet was built'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('passes an untouched, real source-built packet end to end', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-real-'));
+    const { outDir } = buildRealCatchPacket(dir);
+    try {
+      expect(checkJudgeKeyIntegrity('job-a', join(outDir, 'packet'))).toEqual([]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -339,9 +339,9 @@ describe('buildCatchPacket (source-based)', () => {
     }
   });
 
-  it('falls back to the pinned commit for a page the planted root does not contain (a multi-page job’s untouched page)', () => {
+  it('throws, naming the missing path, when a plant’s page is absent from the planted root (the builder never reads an unplanted page)', () => {
     const { repoRoot, commit } = pageRepo('docs/other.md', '# Other\n\nUnplanted, original text.\n');
-    const fixturesDir = tmp('catch-fallback-fixtures');
+    const fixturesDir = tmp('catch-missing-fixtures');
     const plantedRoot = join(fixturesDir, 'planted', 'job-a'); // exists, but never gets docs/other.md
     mkdirSync(plantedRoot, { recursive: true });
     const batchPath = writeBatchFixture(fixturesDir, 'job-a', 'Job.');
@@ -350,18 +350,19 @@ describe('buildCatchPacket (source-based)', () => {
     writeJsonFixture(criteriaPath, [{ id: 'P01', page: 'docs/other.md', line: 1, subject: 's', criterion: 'c', nearMiss: 'n' }]);
     const indexPath = join(fixturesDir, 'dev-plants-index.json');
     writeJsonFixture(indexPath, [{ id: 'P01', job: 'job-a', page: 'docs/other.md', line: 1 }]);
-    const outDir = tmp('catch-fallback-out');
+    const outDir = tmp('catch-missing-out');
     try {
-      buildCatchPacket({
-        outDir,
-        repoRoot,
-        batchPath,
-        reportPath,
-        jobId: 'job-a',
-        plants: { kind: 'dev', criteriaPath, indexPath, jobId: 'job-a', plantedRoot },
-        commit,
-      });
-      expect(readFileSync(join(outDir, 'packet', 'pages', 'docs', 'other.md'), 'utf8')).toContain('Unplanted, original text.');
+      expect(() =>
+        buildCatchPacket({
+          outDir,
+          repoRoot,
+          batchPath,
+          reportPath,
+          jobId: 'job-a',
+          plants: { kind: 'dev', criteriaPath, indexPath, jobId: 'job-a', plantedRoot },
+          commit,
+        }),
+      ).toThrow(join(plantedRoot, 'docs/other.md'));
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
       rmSync(fixturesDir, { recursive: true, force: true });
@@ -507,6 +508,8 @@ describe('buildAgreementPacket', () => {
     writeJsonFixture(plantsPath, [
       { id: 'P07', job: 'call-job', page: 'docs/guide.md', line: 1, type: 'false-behavior', semantic: true, subject: 's', original: 'SENTINEL-ORIGINAL', planted: 'SENTINEL-PLANTED', proof: 'SENTINEL-PROOF', criterion: 'c', nearMiss: 'n' },
     ]);
+    const callPlantedRoot = join(fixturesDir, 'planted', 'call-job');
+    write(join(callPlantedRoot, 'docs/guide.md'), 'guide content\n');
     // The sample, in its pinned shape: every field the pool draws, sentinel-valued, none of which
     // the packet may carry (the builder reads only itemId off each entry).
     const samplePath = join(fixturesDir, 'agreement-sample.json');
@@ -524,7 +527,7 @@ describe('buildAgreementPacket', () => {
         repoRoot,
         samplePath,
         findings: { 'f-1': { batchPath: findingBatchPath, reportPath: findingReportPath, jobId: 'finding-job', field: 'assumed', sourceIndex: 0, page: 'docs/guide.md', commit } },
-        catchCalls: { 'c-1': { batchPath: callBatchPath, reportPath: callReportPath, jobId: 'call-job', page: 'docs/guide.md', commit, plant: { kind: 'planted', id: 'P07', plantsPath } } },
+        catchCalls: { 'c-1': { batchPath: callBatchPath, reportPath: callReportPath, jobId: 'call-job', page: 'docs/guide.md', plantedRoot: callPlantedRoot, plant: { kind: 'planted', id: 'P07', plantsPath } } },
       });
       expect(expected).toEqual([
         { itemId: 'f-1', expectedKind: 'finding' },
@@ -574,7 +577,7 @@ describe('buildAgreementPacket', () => {
   });
 
   it('reads the catch call’s planted page from the planted root, never the pinned commit’s original', () => {
-    const { repoRoot, commit } = pageRepo('docs/guide.md', 'original, unplanted text\n');
+    const { repoRoot } = pageRepo('docs/guide.md', 'original, unplanted text\n');
     const fixturesDir = tmp('agreement-planted-fixtures');
     const plantedRoot = join(fixturesDir, 'planted', 'call-job');
     write(join(plantedRoot, 'docs/guide.md'), 'planted text the reader actually saw\n');
@@ -594,7 +597,7 @@ describe('buildAgreementPacket', () => {
         repoRoot,
         samplePath,
         findings: {},
-        catchCalls: { 'c-1': { batchPath: callBatchPath, reportPath: callReportPath, jobId: 'call-job', page: 'docs/guide.md', commit, plant: { kind: 'planted', id: 'P07', plantsPath }, plantedRoot } },
+        catchCalls: { 'c-1': { batchPath: callBatchPath, reportPath: callReportPath, jobId: 'call-job', page: 'docs/guide.md', plant: { kind: 'planted', id: 'P07', plantsPath }, plantedRoot } },
       });
       const pageInPacket = readFileSync(join(outDir, 'packet', 'catchCalls', 'c-1', 'page.md'), 'utf8');
       expect(pageInPacket).toContain('planted text');
@@ -652,7 +655,8 @@ describe('judge-packets.ts CLI', () => {
     const indexPath = join(fixturesDir, 'dev-plants-index.json');
     writeJsonFixture(indexPath, [{ id: 'P01', job: 'job-a', page: 'docs/guide.md', line: 1 }]);
     const specPath = join(fixturesDir, 'spec.json');
-    const plantedRoot = join(fixturesDir, 'planted', 'job-a'); // not created: the CLI smoke test exercises the pinned-commit fallback
+    const plantedRoot = join(fixturesDir, 'planted', 'job-a');
+    write(join(plantedRoot, 'docs/guide.md'), 'guide content\n');
     writeJsonFixture(specPath, { repoRoot, batchPath, reportPath, jobId: 'job-a', plants: { kind: 'dev', criteriaPath, indexPath, jobId: 'job-a', plantedRoot }, commit });
     const packetDir = join(fixturesDir, 'packet-out');
     try {

@@ -53,6 +53,33 @@ function sha256File(path: string): string {
 }
 
 /**
+ * Every file under a packet directory, hashed from the exact bytes on disk after every write: the
+ * key's own record of a packet file (`job.json`, `pages/...`, `findings/...`, `catchCalls/...`,
+ * `index.json`, and so on) must match what a judge's container actually mounts, not a
+ * pre-serialization value (`job.json`'s bytes are `{"text": ...}`, never the bare job text alone).
+ * Called once, after a builder has written every packet file. `excludeDirs` skips a top-level
+ * directory entirely (the adjudicator's `tree/`, an exported git tree too large to hash file by
+ * file, whose own commit pin and export re-check already cover it).
+ * @param packetDir - The packet's own root (`<outDir>/packet`).
+ * @param excludeDirs - Top-level directory names to skip.
+ * @returns Every file's packet-relative path, mapped to its sha256.
+ */
+function hashPacketFiles(packetDir: string, excludeDirs: readonly string[] = []): Record<string, string> {
+  const hashes: Record<string, string> = {};
+  const walk = (dir: string, rel: string): void => {
+    for (const name of readdirSync(dir)) {
+      if (rel === '' && excludeDirs.includes(name)) continue;
+      const full = join(dir, name);
+      const relPath = rel ? `${rel}/${name}` : name;
+      if (statSync(full).isDirectory()) walk(full, relPath);
+      else hashes[relPath] = sha256(readFileSync(full, 'utf8'));
+    }
+  };
+  walk(packetDir, '');
+  return hashes;
+}
+
+/**
  * Write a value as pretty-printed JSON with a trailing newline.
  * @param path - The file to write.
  * @param value - The value to serialize.
@@ -176,34 +203,25 @@ function readPageAtCommit(repoRoot: string, commit: string, page: string, runner
 }
 
 /**
- * Read a job's page as the reader actually saw it: from the planted tree when `plantedRoot` holds
- * that page (a development or real plant overlays its own page there, never the pinned commit),
- * otherwise from the pinned commit via `git show`. A multi-page job's untouched pages are never in
- * the planted tree, so they fall through to the commit read, unchanged.
- * @param repoRoot - The checkout to read an unplanted page from.
- * @param commit - The pinned commit an unplanted page reads at.
- * @param page - The page's repository-relative path.
- * @param plantedRoot - The job's planted tree root, when its plants come from one.
- * @param runner - The command runner; overridden in tests.
- * @returns The page's content, its own hash, and the input key to record it under (a real
- *  filesystem path when read from the planted tree, a synthetic label otherwise).
+ * Read a plant's page from its job's planted tree: the tree the reader actually saw, which the
+ * pinned commit alone would miss (a `git show` there returns only the original, unplanted text).
+ * Every page a builder reads through this function carries a plant, by construction (a builder
+ * only ever asks for a page a plant ref names), so there is no "untouched page" case to fall back
+ * for: a page missing from the planted root is a real defect in the plant record or the export,
+ * refused here rather than silently read from the commit instead.
+ * @param plantedRoot - The job's planted tree root.
+ * @param page - The plant's page, repository-relative.
+ * @returns The page's content, its own hash, and its real, resolved filesystem path (the key
+ *  file's input key).
+ * @throws When the page does not exist under the planted root.
  */
-function readJobPage(
-  repoRoot: string,
-  commit: string,
-  page: string,
-  plantedRoot: string | undefined,
-  runner: CommandRunner = spawnRunner,
-): { content: string; hash: string; inputKey: string } {
-  if (plantedRoot) {
-    const plantedPath = join(plantedRoot, page);
-    if (existsSync(plantedPath)) {
-      const content = readFileSync(plantedPath, 'utf8');
-      return { content, hash: sha256(content), inputKey: plantedPath };
-    }
+function readPlantedPage(plantedRoot: string, page: string): { content: string; hash: string; inputKey: string } {
+  const plantedPath = resolve(join(plantedRoot, page));
+  if (!existsSync(plantedPath)) {
+    throw new Error(`plant page "${page}" is missing from the planted root: expected it at ${plantedPath}`);
   }
-  const { content, hash } = readPageAtCommit(repoRoot, commit, page, runner);
-  return { content, hash, inputKey: `page@${commit}:${page}` };
+  const content = readFileSync(plantedPath, 'utf8');
+  return { content, hash: sha256(content), inputKey: plantedPath };
 }
 
 /**
@@ -330,16 +348,22 @@ function resolvePlantsForJob(
   const refs = resolveJobPlantRefs(source);
   const inputs: Record<string, string> = {};
   const criteriaPath = source.kind === 'planted' ? source.plantsPath : source.criteriaPath;
-  inputs[criteriaPath] = sha256File(criteriaPath);
-  if (source.kind === 'dev') inputs[source.indexPath] = sha256File(source.indexPath);
-  // A held-out defect has no planted tree: it is a historical page, read at its own pre-fix
-  // commit alone. A dev or planted plant's page comes from the job's planted tree when that tree
-  // holds it, since the pinned commit carries only the original, unplanted text.
-  const plantedRoot = source.kind === 'dev' || source.kind === 'planted' ? source.plantedRoot : undefined;
+  inputs[resolve(criteriaPath)] = sha256File(criteriaPath);
+  if (source.kind === 'dev') inputs[resolve(source.indexPath)] = sha256File(source.indexPath);
   const plants: CatchPlantInput[] = refs.map((ref) => {
     const { subject, criterion, nearMiss } = readCriterionById(criteriaPath, ref.id);
-    const commit = ref.commit ?? defaultCommit;
-    const { content, hash, inputKey } = readJobPage(repoRoot, commit, ref.page, plantedRoot, runner);
+    let content: string;
+    let hash: string;
+    let inputKey: string;
+    if (source.kind === 'heldout') {
+      // A held-out defect has no planted tree: it is a historical page, read at its own pre-fix
+      // commit alone.
+      const commit = ref.commit ?? defaultCommit;
+      ({ content, hash } = readPageAtCommit(repoRoot, commit, ref.page, runner));
+      inputKey = `page@${commit}:${ref.page}`;
+    } else {
+      ({ content, hash, inputKey } = readPlantedPage(source.plantedRoot, ref.page));
+    }
     inputs[inputKey] = hash;
     return { plantId: ref.id, subject, criterion, nearMiss, page: ref.page, pageContent: content };
   });
@@ -544,7 +568,6 @@ export function buildCatchPacketFromResolved({
   const distinctPages = new Set(plants.map((p) => p.page)).size;
   const plantEntries: PlantEntry[] = [];
   const plantKey: Record<string, { plantId: string }> = {};
-  const inputs: Record<string, string> = { ...extraInputs };
   const written = new Set<string>();
   plants.forEach((plant, i) => {
     assertSafeRelativePagePath(plant.page);
@@ -556,7 +579,6 @@ export function buildCatchPacketFromResolved({
       const dest = join(packetDir, 'pages', plant.page);
       mkdirSync(dirname(dest), { recursive: true });
       writeFileSync(dest, plant.pageContent);
-      inputs[`pages/${plant.page}`] = sha256(plant.pageContent);
     }
   });
 
@@ -565,7 +587,10 @@ export function buildCatchPacketFromResolved({
   writeJson(join(packetDir, 'plants.json'), plantEntries);
   writeJson(join(packetDir, 'items.json'), items);
   writeJson(join(packetDir, 'index.json'), { kind: 'catch', job: 'job.json', plants: 'plants.json', items: 'items.json', pages: 'pages/' });
-  inputs['job.json'] = sha256(jobText);
+
+  // Every packet file's hash is the sha256 of the bytes actually written, taken after every write
+  // above, never a pre-serialization value that might not match the file byte for byte.
+  const inputs: Record<string, string> = { ...extraInputs, ...hashPacketFiles(packetDir) };
 
   const key: CatchPacketKey = { kind: 'catch', builtFrom, report, plants: plantKey, items: itemKey, inputs };
   writeJson(join(outDir, 'key.json'), key);
@@ -609,7 +634,7 @@ export function buildCatchPacket({
     run: run.runFields,
     report: { path: reportPath, jobId, attempt: run.attempt, runId: run.runId },
     builtFrom: 'sources',
-    extraInputs: { [batchPath]: batchHash, [reportPath]: run.reportHash, ...plantInputs },
+    extraInputs: { [resolve(batchPath)]: batchHash, [resolve(reportPath)]: run.reportHash, ...plantInputs },
   });
 }
 
@@ -687,6 +712,14 @@ export function buildAdjudicatorPacket({
   writeJson(join(packetDir, 'items.json'), items);
   writeJson(join(packetDir, 'index.json'), { kind: 'adjudicator', job: 'job.json', items: 'items.json', tree: 'tree/', publishedRoots: roots });
 
+  // Every packet file's hash comes from its actual bytes on disk, taken after every write above;
+  // tree/ is excluded (an exported git tree, its own commit pin and export re-check already cover it).
+  const inputs: Record<string, string> = {
+    [resolve(batchPath)]: batchHash,
+    [resolve(reportPath)]: run.reportHash,
+    ...hashPacketFiles(packetDir, ['tree']),
+  };
+
   const key: AdjudicatorPacketKey = {
     kind: 'adjudicator',
     builtFrom: 'sources',
@@ -695,7 +728,7 @@ export function buildAdjudicatorPacket({
     excluded: excludedIds,
     treeCommit: commit,
     treeAbsent: absent,
-    inputs: { [batchPath]: batchHash, [reportPath]: run.reportHash },
+    inputs,
   };
   writeJson(join(outDir, 'key.json'), key);
   return { key, expected: items.map((item) => ({ itemId: item.id })) };
@@ -721,10 +754,9 @@ export interface AgreementCatchCallSource {
   jobId: string;
   attempt?: number;
   page: string;
-  commit: string;
+  /** The job's planted tree root: a catch call always names a planted page (the agreement pool draws only from planted runs), never a held-out one, so this is always required. */
+  plantedRoot: string;
   plant: SinglePlantSource;
-  /** The job's planted tree root, when its plant comes from one (never set for a held-out defect). */
-  plantedRoot?: string;
 }
 
 /** The key file an agreement packet's builder writes outside the mount. */
@@ -792,7 +824,7 @@ export function buildAgreementPacket({
   const expected: ExpectedItem[] = [];
   const findingKey: Record<string, { report: ReportTrace }> = {};
   const catchCallKey: Record<string, { report: ReportTrace; plantId: string }> = {};
-  const inputs: Record<string, string> = { [samplePath]: sha256(sampleRaw) };
+  const inputs: Record<string, string> = { [resolve(samplePath)]: sha256(sampleRaw) };
   const indexItems: Array<{ id: string; kind: 'finding' | 'catchCall'; page?: string }> = [];
 
   for (const { itemId } of sample.findings) {
@@ -809,8 +841,8 @@ export function buildAgreementPacket({
     writeJson(join(dir, 'job.json'), { text: jobText, pageList: docsSet, page: src.page });
     writeFileSync(join(dir, 'page.md'), pageContent);
     writeJson(join(dir, 'item.json'), item);
-    inputs[src.batchPath] = batchHash;
-    inputs[src.reportPath] = run.reportHash;
+    inputs[resolve(src.batchPath)] = batchHash;
+    inputs[resolve(src.reportPath)] = run.reportHash;
     inputs[`page@${src.commit}:${src.page}`] = pageHash;
     findingKey[itemId] = { report: { path: src.reportPath, jobId: src.jobId, attempt: run.attempt, runId: run.runId } };
     expected.push({ itemId, expectedKind: 'finding' });
@@ -823,7 +855,7 @@ export function buildAgreementPacket({
     assertSafeRelativePagePath(src.page);
     const run = resolveRunSource({ reportPath: src.reportPath, jobId: src.jobId, attempt: src.attempt });
     const { text: jobText, hash: batchHash } = resolveJobText(src.batchPath, src.jobId);
-    const { content: pageContent, hash: pageHash, inputKey: pageInputKey } = readJobPage(repoRoot, src.commit, src.page, src.plantedRoot, runner);
+    const { content: pageContent, hash: pageHash, inputKey: pageInputKey } = readPlantedPage(src.plantedRoot, src.page);
     const { subject, criterion, nearMiss, sourcePath } = resolveSinglePlantCriterion(src.plant);
     const dir = join(packetDir, 'catchCalls', itemId);
     mkdirSync(dir, { recursive: true });
@@ -835,10 +867,10 @@ export function buildAgreementPacket({
     // items are keyed under their own opaque ids, never the itemId the sample draws on.
     const { fields } = buildCatchFields(run.runFields, `${itemId}-run`);
     writeJson(join(dir, 'items.json'), fields);
-    inputs[src.batchPath] = batchHash;
-    inputs[src.reportPath] = run.reportHash;
+    inputs[resolve(src.batchPath)] = batchHash;
+    inputs[resolve(src.reportPath)] = run.reportHash;
     inputs[pageInputKey] = pageHash;
-    inputs[sourcePath] = sha256File(sourcePath);
+    inputs[resolve(sourcePath)] = sha256File(sourcePath);
     catchCallKey[itemId] = { report: { path: src.reportPath, jobId: src.jobId, attempt: run.attempt, runId: run.runId }, plantId: src.plant.id };
     expected.push({ itemId, expectedKind: 'catchCall' });
     indexItems.push({ id: itemId, kind: 'catchCall' });
@@ -854,6 +886,8 @@ export function buildAgreementPacket({
   }
 
   writeJson(join(packetDir, 'index.json'), { kind: 'agreement', items: indexItems, ...(tree ? { tree: 'tree/', publishedRoots } : {}) });
+
+  Object.assign(inputs, hashPacketFiles(packetDir, tree ? ['tree'] : []));
 
   const key: AgreementPacketKey = { kind: 'agreement', builtFrom: 'sources', findings: findingKey, catchCalls: catchCallKey, ...(treeCommit ? { treeCommit } : {}), inputs };
   writeJson(join(outDir, 'key.json'), key);

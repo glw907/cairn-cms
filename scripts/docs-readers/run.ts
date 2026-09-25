@@ -402,9 +402,14 @@ export function checkKeyOutsideMount(jobId: string, prepared: string): string | 
  * built through `buildCatchPacket`'s (or `buildAdjudicatorPacket`'s or `buildAgreementPacket`'s)
  * real source resolution, never the `buildCatchPacketFromResolved` escape hatch a fixture uses
  * (`builtFrom === 'sources'`); and every filesystem input it recorded still hashes to what the key
- * recorded, so nothing the packet was built from has changed since. An `inputs` entry that is not
- * an existing absolute path (a synthetic label for a `git show` read, or a path inside the packet
- * itself) is not independently rehashable and is skipped.
+ * recorded, so nothing the packet was built from, or the packet itself, has changed since. An
+ * `inputs` key falls into exactly one of three buckets, and every bucket is checked, never
+ * skipped: a `page@<commit>:<page>` synthetic label names a `git show` read, not independently
+ * rehashable, and is the only kind this check does not re-verify; a non-absolute key is
+ * packet-relative (`job.json`, `pages/...`, `findings/...`, `catchCalls/...`, `index.json`, and
+ * so on) and is rehashed against that file under `prepared`; every other key is a required
+ * absolute external source path, rehashed directly. A missing file, a hash mismatch, or (for a
+ * packet-relative key) a file the build never wrote is each a named problem.
  * @param jobId - The job id, for the problem messages.
  * @param prepared - The job's prepared packet directory.
  * @returns Every problem found; empty when the key checks out.
@@ -416,10 +421,19 @@ export function checkJudgeKeyIntegrity(jobId: string, prepared: string): string[
   const problems: string[] = [];
   if (key.builtFrom !== 'sources') problems.push(`job ${jobId}: key ${keyPath} has builtFrom ${JSON.stringify(key.builtFrom)}, not "sources"`);
   const inputs = key.inputs && typeof key.inputs === 'object' ? (key.inputs as Record<string, unknown>) : {};
-  for (const [path, expectedHash] of Object.entries(inputs)) {
-    if (typeof expectedHash !== 'string' || !isAbsolute(path) || !existsSync(path)) continue;
+  for (const [inputKey, expectedHash] of Object.entries(inputs)) {
+    if (typeof expectedHash !== 'string') {
+      problems.push(`job ${jobId}: input ${inputKey} in ${keyPath} carries a non-string hash`);
+      continue;
+    }
+    if (inputKey.startsWith('page@')) continue;
+    const path = isAbsolute(inputKey) ? inputKey : join(prepared, inputKey);
+    if (!existsSync(path)) {
+      problems.push(`job ${jobId}: input ${inputKey} (expected at ${path}) no longer exists`);
+      continue;
+    }
     const currentHash = hashFile(path);
-    if (currentHash !== expectedHash) problems.push(`job ${jobId}: input ${path} has changed since the packet was built`);
+    if (currentHash !== expectedHash) problems.push(`job ${jobId}: input ${inputKey} has changed since the packet was built`);
   }
   return problems;
 }

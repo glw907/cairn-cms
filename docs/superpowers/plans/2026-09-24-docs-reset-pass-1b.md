@@ -586,6 +586,67 @@ ceiling.
 - Gates: `npm run check:docs`, `npm run check:arm-indexes`, and the chain gate.
 - The PR merges only on Geoff's word.
 
+## Unattended execution: segments 3 to 5 (Geoff, 2026-09-25)
+
+Geoff asked for the rest of the pass to run as one long unattended session: four hours or more,
+with no one watching. The executing session starts cold from the STATUS resume prompt and runs
+Tasks 7 and 9 to 16 under these rules. Where they differ from the header, these rules win.
+
+**At start.**
+- Read this plan, the spec, and `docs/superpowers/research/2026-09-24-pass-1b-carries.md` (review
+  findings routed to later tasks).
+- Run the one-executor check.
+- Confirm that `docs-reset-1b` carries the segment 2 merge.
+- Confirm that `systemd-inhibit --list` shows `claude-awake`.
+- Hold the lid switch: `systemd-inhibit --what=handle-lid-switch --who=docs-reset-1b sleep 28800`
+  in the background.
+- Arm a self-paced wake-up (`ScheduleWakeup`, a 1200 to 1800 second fallback on every wait), so
+  that a dropped API link never strands the run.
+
+**Mode.**
+- Every implementer task runs as a per-task Agent chain: implementer, `code-simplifier`, `diff-reviewer`.
+  Never use the `pass-execute` workflows. They run `scripts/checks/gate-tier.mjs`, which picks the
+  scripts tier's browser `npm test` and dies under the light lane.
+- Every gate call starts with an explicit `cd <worktree> &&`. An implementer's shell cwd drifted
+  once in segment 2.
+- A fix round goes back to the same implementer and reviewer by `SendMessage`, while their context
+  is still warm.
+- A second `fix` verdict is the conductor's call. A third stops the run for Geoff.
+- Tasks 9 and 12 each begin with their pre-flight.
+- Every dispatch carries its items from the carries file.
+
+**Spend.**
+- The ceiling is 21M and the flag 17M (O9).
+- Spend is the sum of two figures from `scripts/docs-readers/session-ledger.ts --since
+  2026-09-24T15:30:00Z`: one for the segment 1 and 2 session (`e4f32f69-aaf9-43b0-ad47-92d96aaf09a4`),
+  one for the new session, plus the runner ledger scoped with the same `--since`.
+- At the handoff, spend stood at about 10.5M counted.
+
+**Checkpoints.** At each segment boundary, write a ledger row carrying the counted figure and a
+projection to the close, then commit one STATUS line to `main`.
+
+**Stop and ask Geoff** (write the ledger and STATUS first, ask one combined question, then wait):
+- Spend reaches the 17M flag. Finish the running task first. Inside a gated batch, O6 applies.
+- A burn is needed.
+- Any task draws a third `fix`.
+- Every class fails (O5).
+- A freeze-readiness blocker survives one fix round.
+- A task finds the spec unbuildable.
+- A correctness point is still hedged after an `xhigh` read and one `fable` dispatch.
+
+**Never:**
+- merge the PR, which waits for Geoff's word;
+- push to `main` anything but STATUS lines;
+- move a bar, a pool, or a counting rule.
+
+**Battery.** If the laptop is on battery and reaches 11 percent, stand down:
+- stop the agents;
+- WIP-commit the partial work on its branch;
+- write STATUS with the exact resume prompt.
+
+**End.** Task 16 ends with the PR opened, not merged. The run then brings Geoff the program budget
+question the plan names.
+
 ## Ledger
 
 | Task | State | Commit | Spend | Notes |

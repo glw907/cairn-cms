@@ -41,8 +41,8 @@ function renderValue(key: string, value: unknown, schema: JsonSchema, indent: st
   if (value !== null && typeof value === 'object' && schema.properties) {
     const nested = value as Record<string, unknown>;
     const lines = [label];
-    for (const subKey of Object.keys(schema.properties)) {
-      if (subKey in nested) lines.push(...renderValue(subKey, nested[subKey], schema.properties[subKey], `${indent}  `));
+    for (const [subKey, subSchema] of Object.entries(schema.properties)) {
+      if (subKey in nested) lines.push(...renderValue(subKey, nested[subKey], subSchema, `${indent}  `));
     }
     return lines;
   }
@@ -57,9 +57,9 @@ function renderValue(key: string, value: unknown, schema: JsonSchema, indent: st
  */
 export function renderProfile(data: Record<string, unknown>, schema: JsonSchema): string {
   const lines: string[] = [`${String(data.id)}: ${String(data.persona)}`];
-  for (const key of Object.keys(schema.properties ?? {})) {
+  for (const [key, keySchema] of Object.entries(schema.properties ?? {})) {
     if (FIRST_LINE_KEYS.has(key) || !(key in data)) continue;
-    lines.push('', ...renderValue(key, data[key], (schema.properties ?? {})[key], ''));
+    lines.push('', ...renderValue(key, data[key], keySchema, ''));
   }
   return lines.join('\n');
 }

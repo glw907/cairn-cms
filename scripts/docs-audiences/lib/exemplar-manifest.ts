@@ -48,14 +48,8 @@ export function idResolves(manifestText: string, id: string): boolean {
       continue;
     }
     if (!line.startsWith('- ')) continue;
-    for (const match of line.matchAll(SLUG_IN_BACKTICKS)) {
-      const raw = match[1];
-      if (raw.includes('/')) {
-        const [dirPart, slugPart] = raw.split('/');
-        if (dirPart === wantDir && slugPart === wantSlug) found = true;
-      } else if (raw === wantSlug) {
-        found = true;
-      }
+    for (const [, named] of line.matchAll(SLUG_IN_BACKTICKS)) {
+      if (named === id || (!named.includes('/') && named === wantSlug)) found = true;
     }
   }
 

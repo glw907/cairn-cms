@@ -58,17 +58,20 @@ export function validateAgainstSchema(data: unknown, schema: JsonSchema, path = 
 
   const errors: string[] = [];
   const obj = data as Record<string, unknown>;
+  const properties = schema.properties ?? {};
 
   for (const key of schema.required ?? []) {
     if (!(key in obj)) errors.push(`${label}: missing required key "${key}"`);
   }
   if (schema.additionalProperties === false) {
     for (const key of Object.keys(obj)) {
-      if (!(key in (schema.properties ?? {}))) errors.push(`${label}: unknown key "${key}"`);
+      if (!(key in properties)) errors.push(`${label}: unknown key "${key}"`);
     }
   }
-  for (const [key, subSchema] of Object.entries(schema.properties ?? {})) {
-    if (key in obj) errors.push(...validateAgainstSchema(obj[key], subSchema, path === '' ? key : `${path}.${key}`));
+  for (const [key, subSchema] of Object.entries(properties)) {
+    if (!(key in obj)) continue;
+    const childPath = path === '' ? key : `${path}.${key}`;
+    errors.push(...validateAgainstSchema(obj[key], subSchema, childPath));
   }
   if (schema.if && schema.then && matchesCondition(obj, schema.if)) {
     for (const key of schema.then.required ?? []) {

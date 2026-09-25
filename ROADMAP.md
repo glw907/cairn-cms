@@ -298,7 +298,10 @@ The original decision framing, for the record:
   - **Pass 2a, the audience record and the trial,** only after pass 1b passes. It defines the
     profile-file format together with the profiles (the spec's pass 1 amendment). Its inputs are
     ready: the exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
-    `docs/internal/record/docs-exemplars.md`) and the readers' plan token.
+    `docs/internal/record/docs-exemplars.md`) and the readers' plan token. One content input for
+    the designer's theme task guide (Geoff, 2026-09-24): a short general section on giving a
+    DaisyUI-built site its own identity through a theme, so it does not read as stock DaisyUI.
+    It links to DaisyUI's theme docs rather than restating them.
   - **Pass 2b, the ledger, the structure, and the outline.** Two carry-forwards from pass 1 land
     here. A multi-page chain run shares one retag list across its pages, since a stage-1 fact read
     on one page can undo a legitimate retag another page's read made. A scaffolded-site reader

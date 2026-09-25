@@ -685,3 +685,213 @@ question the plan names.
 | fixes | accepted | `6d5d2e18`, `2528a7f9`, `407dbb2a` | implementer 0.25M, reviewer about 0.2M | Expected rulings are the packet's items (adjudicator: key items minus excluded; catch and agreement have no exclusion); each judge batch reads its prompt once after the gate; development catches per plant-run (R8). `diff-reviewer` accept. R9: an unverified planted run counts as a miss in the development per-run denominator (the spec's rerun rule). Optional hardening carried to the freeze-readiness review: compare the once-read prompt with its manifest hash on a gated batch. |
 | 9, 10 | done | `d7ef74dd` | round 1 adjudicator re-run 0.07M counted | Both rounds scored on the fixed runner, every control run verified. On-map recall per plant-run: round 0 2 of 16, round 1 1 of 8 (the same plant each time). False findings per verified Opus control run, round 0 to round 1: evaluator 1.5 to 0, operator 1.5 to 0, designer 0.5 to 0, extender 0 to 0, core-developer 0 to 0, scripter 1.5 to 7. Record: `docs/internal/record/2026-09-24-docs-reset-1b-tuning.md`. |
 | checkpoint | question to Geoff before the freeze | this commit | 19.92M counted (first session 12.57M, this session 7.35M including the runner's 1.33M) | Stopped before Task 11 (irreversible). Projection to the close about 26M (freeze and its review 1M, mapping 1.1M, planting 1.5M, planted runs 0.8M, judges 0.6M, record and close 1M), over the 25M ceiling. Forecast: the gated sensitivity bar needs true on-path recall near 0.8; round 1 measured 1 of 8 on-map plant-runs, and the audit shows why (readers route around a defect and file it only as a rule candidate, which the spec counts as neither catch nor finding). Every class failing (O5) is the likely outcome. Question: run the preregistered test as specified (raise the ceiling to about 27M), or close pass 1b on the tuning record and carry the finding to pass 2a's design. |
+| ruling | O11 (Geoff, 2026-09-25) | this commit | | Close pass 1b on the tuning record. Skip the freeze, mapping, planting, planted runs, and gated scoring (Tasks 11 to 15); make no `docs-reset-1b-freeze` tag; carry the finding to pass 2a's design. Trigger: the pre-freeze checkpoint (19.92M counted, about 26M projected against 25M, on-map recall per plant-run 2 of 16 and 1 of 8 against a bar needing about 0.8). |
+| 11 | not run (O11) | | | No freeze, no manifest, no freeze-readiness review, no tag. The carries file's freeze-readiness items pass to pass 2a, and they bite only if pass 2a freezes. |
+| 12 | not run (O11) | | | No mapping runs and no held-out scripter runs. |
+| 13 | not run (O11) | | | No test plants. The labeled set pass 2a inherits is empty. |
+| 14 | not run (O11) | | | No planted runs. |
+| 15 | not run (O11) | | | No gated scoring. The verdict record (`docs/internal/record/2026-09-24-docs-reset-1b-validation.md`) sends every class to pass 2a as advisory, with the cause per class. |
+| 16 | fold draft committed | this commit | 20.07M counted for the pass (below) | Verdict record, this post-mortem, the program budget, the HISTORY entry, and ROADMAP's docs reset entry. Two acceptance items need a freeze and are moot under O11: the regression batch dry check and the freeze-tag diff. `check:docs` and `check:arm-indexes` pass. The chain gate was not rerun, since this commit changes docs only and the last code commit (`407dbb2a`) passed it. The conductor handles STATUS, memory, the independent `diff-reviewer` read, the `DISABLE_AUTOUPDATER` removal in dotfiles, and the PR. |
+
+## Post-mortem
+
+Written by the close fold agent (`claude-opus-5-5`, `high`) on 2026-09-25. Pass 1b closed on its
+tuning record under O11. It produced no gated verdict. Every class goes to pass 2a as advisory
+(`docs/internal/record/2026-09-24-docs-reset-1b-validation.md`).
+
+### What was built and verified
+
+Tasks 0 to 10 ran, and each build task passed its chain gate and a `diff-reviewer` accept.
+
+- **Task 0:** the pre-flight, `dev-items.json` (46 items), and a page-identity check (41 pages
+  identical between pass 1's pin and `3a7485dd`).
+- **Task 1:** the report schema (`steps[]`, `diverged[]`, `blockedBy`), the shared types, the
+  shared loader for pass 1's reports, quote verification over the new fields, and the ban grep.
+- **Task 2:** the git export: one synthetic commit after the overlay, fixed mtimes, zeroed index
+  inodes, exclusions, derived absent lists, and pinned page sources. Verified at scale: 0
+  off-time paths over 74,365.
+- **Task 3:** `freeze.ts` and `--verify`, the gated-batch refusal, the stamp, the automatic rerun,
+  and batch-level stops.
+- **Task 4:** `path-map.ts` with the proxy mode, `harness-filter.ts`, and `oc-curve.ts` (the
+  spec's figures held under the reviewer's own ICC sweep).
+- **Task 5:** `plant-validity.ts` and `lib/chain.ts`.
+- **Task 6:** three judge classes, `judge-packets.ts`, `session-ledger.ts`, and
+  `audit-transcripts.ts`.
+- **Task 7:** `score.ts` with its assembler, in development and gated modes.
+- **Task 8:** the judge prompts, rubrics, and criteria; the blind planting prompts. Both blind
+  authors' transcript audits are clean.
+- **Tasks 9 and 10:** round 0 (pass 1's saved reports, re-judged) and round 1 (12 new reader
+  runs, all verified on the first attempt), with three runner and scorer defects found and fixed
+  on the way (`f618743a`, `6d5d2e18`, `407dbb2a`). The tuning record is
+  `docs/internal/record/2026-09-24-docs-reset-1b-tuning.md`.
+
+The instrument is built and tested but not frozen. The mapping, planting, and gated scoring
+machinery was never exercised on real runs, so its first real use (in pass 2a or later) is its
+first end-to-end test.
+
+### Decisions
+
+Owner rulings:
+
+- **O1:** a budget ceiling (10M, flag 8M at the spec fold), later revised to 15M and 12M.
+- **O2:** a `fable` read validates the judges on a sample of findings and catch calls, with no
+  human labelling.
+- **O3:** one fresh transfer job per class, reported only. Withdrawn by O7.
+- **O4:** the outcome is per class, with no fix round after the freeze.
+- **O5:** if every class fails, pass 1b stops and reports to Geoff before pass 2a.
+- **O6:** a gated batch that reaches the ceiling finishes, and the ledger reports the overrun.
+- **O7:** core gate only: no transfer set, no Sonnet arm, no historical mining, one tuning round.
+- **O8:** ceiling 15M, flag 12M.
+- **O9:** ceiling raised to 21M, flag 17M, full sequence to the verdict.
+- **O10:** ceiling raised to 25M, flag 21M; the host CLI held at 2.1.282 until the close; the
+  rest of the pass to run unattended.
+- **O11:** close on the tuning record; skip Tasks 11 to 15; carry the finding to pass 2a.
+
+Conductor rulings in execution (the planning rulings P1 to P11 are in the plan fold record):
+
+- **R1:** the scorer's assembler stays in Task 7, as a fifth deliverable added after dispatch.
+- **R2:** precision over `ruleCandidates[]` is not measured, since judges never see candidates;
+  the raw count is reported.
+- **R3:** a false finding is one subject group ruled false per run, and an unverified run counts
+  every item.
+- **R4:** "found again on unplanted sections" is deferred; planted runs score catches only.
+- **R5:** the development batches are `validation`, `validation-rerun`, and `round1`.
+- **R6:** the agreement sample's stratum balancing stands.
+- **R7:** fix confirmation is deferred, since stalls and assumptions carry no page location.
+- **R8:** development mode counts catches per plant-run.
+- **R9:** an unverified planted run counts as a miss in the development per-run denominator.
+
+Other conductor rulings are recorded in the Task 2, 3, 4, 5, and 6 rows: the absent-list reading,
+read-only git for the repository class, `pendingCause`, the lead section and narrowing pins, the
+prepared-tree-relative plant page, the published docs roots, and the minimal judge system prompt.
+
+### Planning misses: 10
+
+An ambiguity that surfaced after approval and that a planning question would have caught.
+
+1. **46 development items, not 50.** Counting the listed ids would have caught it. Counted.
+2. **The `pass-execute-chains` mode could not run.** Its gate-tier script swaps in the browser
+   `npm test`, which dies under the light lane. One dry launch at planning would have shown it.
+   Counted.
+3. **"The published docs tree" was undefined.** The Task 6 ruling fixed it as the `docs` entries
+   of `package.json` `files` at the pin. Counted.
+4. **The scorer's input shape was unpinned.** The first build scored a hand-assembled bundle
+   and drew a 12-blocking escalate (R1). Counted.
+5. **Task 6 gave no acceptance criterion that a judge's stdin carries its prompt.** The live
+   check passed a judge that had no instructions, and every first-run round 0 ruling was void.
+   Counted.
+6. **The false-finding counting unit was unstated** (R3). Counted.
+7. **Some reported measures had no data behind them:** found-again on unplanted sections (R4),
+   fix confirmation (R7), and the prior-stall recall proxy. Counted once.
+8. **Development-mode catch counting.** The spec's round 1 has one planted run per job, and its
+   only catch rule needs two of three (R8). Counted.
+9. **The CLI version was not held from the start.** The init baseline is per CLI version (a pass
+   1 lesson), and a mid-pass auto-update forced the pin and the O10 hold. Counted.
+10. **The budget estimate.** The implementer-chain line (3.9M to 8.5M) came in near 14M for Tasks
+    1 to 7 with their reviewers and simplifiers, driven by fix rounds on resumed agents. The O9 and
+    O10 raises followed. Counted, as pass 1 counted its ceiling raise.
+
+Judged and not counted:
+
+- **The expected set against harness exclusions** (`6d5d2e18`). Task 6 said "every packet item",
+  which was right; the implementation read the key instead. The miss is a missing fixture with an
+  excluded item, an implementation defect.
+- **The held-out role's chain dependency** (Task 7's third `fix`). The plan placed held-out runs
+  in the mapping batch; depending on the plant record was an implementation choice.
+- **The light lane's 3G cap.** Earlier chains passed under it; `svelte-check` outgrew it as the
+  pass added code. That is environment growth, not an ambiguity.
+- **The stop-cut attempt semantics** (`pendingCause`). The spec's rerun rule decided it; the
+  ruling allowed one type edit outside Task 1.
+
+### Attended time: 4 execution sittings
+
+Counted from the ledger, one combined question counting once:
+
+1. The segment 2 budget checkpoint, answered by O9.
+2. The segment 2 close and handoff (the ceiling and the CLI hold), answered by O10.
+3. The stop at Task 7's third `fix`, answered by Geoff's word to continue.
+4. The pre-freeze checkpoint, answered by O11.
+
+Planning questions before approval: 12 (not scored).
+
+### Spend
+
+The session ledger, `session-ledger.ts --since 2026-09-24T15:30:00Z`, run at the close:
+
+| Source | Counted | Cache read |
+| --- | --- | --- |
+| Session `e4f32f69` (segments 1 and 2): conductor | 1.20M | 58.6M |
+| Session `e4f32f69`: 25 subagent transcripts | 11.36M | 578.7M |
+| Session `e14ee587` (segments 3 to close): conductor | 0.37M | 28.2M |
+| Session `e14ee587`: 48 subagent transcripts, this fold included while in progress | 5.80M | 334.2M |
+| Runner ledger (readers and judges), counted once | 1.33M | 6.2M |
+| **Total** | **20.07M** | **1,006M** |
+
+That is 13,899,603 plus 7,499,657, less the runner's 1,331,694 counted once: 20,067,566. It is
+within the 25M ceiling and under the 21M flag. The fold's own transcript was still growing when
+the ledger ran, so the final figure is a little higher.
+
+The runner's 1.33M splits as: round 1 readers 0.42M; judges on the fixed runner 0.33M; the voided
+and superseded judge runs 0.54M (round 0's uninstructed first run 0.40M and round 1's first
+adjudicator run 0.14M); live judge checks 0.04M. The two tuning-phase runner defects cost about
+0.54M in runner spend alone, and more in operator and fix-chain time.
+
+### Is the setup using tokens more efficiently? (Geoff's O10 question)
+
+No. The runner is efficient; the agent orchestration around it is not, and fix rounds on resumed
+agents are the main cost.
+
+Where the spend went, from each subagent transcript (per-transcript deduplication, so the sum is
+18.3M against the session ledger's cross-transcript 17.2M):
+
+- **Cache creation is 93 percent of subagent spend** (16.95M of 18.28M). Output is under 0.3M.
+  The pass pays for context written into the cache, not for work produced.
+- **About 7.9M (39 percent of the pass) is whole-context rewrites.** When an agent resumed after
+  its prompt cache had expired, its whole context was written again. The largest: Task 6's
+  implementer 1.22M in three rewrites, the round 0 operator 1.17M in four (waiting on runner
+  batches), Task 4's implementer 0.84M, Task 6's reviewer 0.75M, and Task 7's reviewer 0.72M.
+- **The build tasks cost 14.0M** (implementer, simplifier, and reviewer): Task 1 1.44M, Task 2
+  1.12M, Task 3 1.54M, Task 4 2.12M, Task 5 0.96M, Task 6 3.82M, Task 7 3.00M. Every task drew
+  at least one `fix`; the 49 blocking findings in Tasks 1 to 6 were real defects.
+- **A fresh agent is cheaper than a cold resume.** Task 7's two final fixes, done by a fresh
+  implementer with the findings only, cost 0.16M. The judge-prompt fix chain cost 0.22M. Cold
+  resumes rewrote 0.12M to 1.22M of context per agent.
+- **Agent startup is about 25k to 60k** of cache creation each, about 1.7M across 41 agents.
+- **Readers and judges are cheap:** 35k per reader run (pass 1 measured 45k per final run), about 3k per catch
+  judge, and about 15k per adjudication.
+
+What would lower it:
+
+1. **Resume only inside the cache window.** The plan's rule to send a fix round to the warm agent
+   by `SendMessage` backfires once the cache has expired. After a gap, dispatch a fresh agent
+   with the finding list and the diff range.
+2. **Wait outside an agent.** Run long runner batches as background commands and dispatch a
+   fresh agent to read the result, never an operator idling across the batch.
+3. **Split build tasks at two deliverables.** Task 6 (four deliverables, four reads) cost 3.8M.
+4. **Pin every cross-stage input shape and delivery in the plan,** with a fixture built from the
+   earlier stage's real output. The two costliest fix sequences (the scorer's input and the
+   judges' prompt delivery) were unpinned handoffs, the same lesson pass 1 recorded.
+5. **Budget fix rounds as the norm.** Every build task in passes 1 and 1b drew one. An estimate
+   that assumes a clean first pass will overrun.
+
+### Program budget for the rest of the reset (draft for Geoff)
+
+The parent amendment asks for a lean default. Measured unit costs from this pass: a reader run
+35k counted (15.6k to 67k over round 1's 12 runs), a catch judge about 3k, an adjudication about
+15k, a first `diff-reviewer` read 0.17M to 0.49M, and a build task 1M to 3.8M with its fix rounds.
+
+- **Pass 2a, lean: about 8.5M, ceiling 10M, flag 8M** (against the parent's 14M). It writes the
+  audience record, runs its review, and builds the exemplar corpus as specified: about 3M for
+  authoring and folds, 1.5M for four review lenses, 1.5M for the corpus, and 1M for the
+  conductor. It drops the formal chain-depth trial. Instead it drafts the three trial pages once
+  each through the minimal chain, with three or four Opus reader jobs per page, as evidence of
+  what that chain misses (about 1.5M).
+- **Pass 2b: 8M as the parent specifies.** The bake-off and the six-lens outline review are
+  design work with no cheaper measured substitute.
+- **Drafting passes: a target of 0.5M per page, tripwire at 0.75M.** That covers a minimal chain
+  (drafter, scripted checks, one redraft) at about 0.3M (the parent's estimate), four reader runs
+  at 35k (0.14M), and four adjudications at 15k (0.06M). A stage joins the chain only when reader
+  findings show a defect class the minimal chain misses. Pass A measured about 0.9M per page.
+  Add about 1.5M per drafting pass for the conductor, the page contracts, and the close.
+- **The program ceiling** is 10M plus 8M plus, for each drafting pass, 0.5M per page and 1.5M.
+  The page count comes from pass 2b's outline. Geoff sets the ceiling.

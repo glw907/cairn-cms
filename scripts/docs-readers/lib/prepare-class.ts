@@ -140,8 +140,10 @@ export function normalizeMtimes(dir: string, when: Date = new Date(EXPORT_COMMIT
  * The environment every git call against a prepared tree runs under: the caller's environment
  * with every `GIT_*` variable and `EMAIL` removed, the global and system config files switched
  * off (so no host identity, hook path, template directory, or signing setting applies), the
- * repository pinned to `dir` itself (so git never discovers an enclosing checkout), and the
- * neutral identity and date set explicitly for both author and committer.
+ * repository pinned to `dir` itself (so git never discovers an enclosing checkout), automatic
+ * maintenance and garbage collection switched off (so no detached background process repacks
+ * objects or rewrites the index after the tree's mtimes are fixed), and the neutral identity and
+ * date set explicitly for both author and committer.
  * @param dir - The prepared tree's root.
  * @returns The environment to pass to the runner.
  */
@@ -155,6 +157,11 @@ export function exportGitEnv(dir: string): NodeJS.ProcessEnv {
     GIT_WORK_TREE: dir,
     GIT_TERMINAL_PROMPT: '0',
     GIT_OPTIONAL_LOCKS: '0',
+    GIT_CONFIG_COUNT: '2',
+    GIT_CONFIG_KEY_0: 'maintenance.auto',
+    GIT_CONFIG_VALUE_0: 'false',
+    GIT_CONFIG_KEY_1: 'gc.auto',
+    GIT_CONFIG_VALUE_1: '0',
     GIT_AUTHOR_NAME: EXPORT_COMMIT_NAME,
     GIT_AUTHOR_EMAIL: EXPORT_COMMIT_EMAIL,
     GIT_AUTHOR_DATE: EXPORT_COMMIT_DATE,
@@ -199,7 +206,10 @@ export function assertOneCleanCommit(dir: string, runner: CommandRunner = spawnR
 /**
  * Make a prepared tree's one synthetic commit: a fresh repository with no template (so no sample
  * hooks or host-configured template files), every file staged, then one commit under the neutral
- * identity, date, and message, with hooks, signing, and reflogs switched off. `dir` is the
+ * identity, date, and message, with hooks, signing, reflogs, and automatic maintenance switched
+ * off. The index is then rebuilt from the commit with `git read-tree HEAD`, which records no stat
+ * data (inode, device, ctime, size), so no entry's stat data sets an overlaid file apart from its
+ * siblings; git re-reads each file's content on the next status instead. `dir` is the
  * prepared tree's root; `forceAdd` names files, relative to `dir`, to stage even when the tree's
  * own `.gitignore` matches them, so a file the source commit tracked despite its ignore rules stays
  * tracked in the export too; `runner` is the command runner, overridden in tests.
@@ -214,9 +224,10 @@ export function commitPreparedTree(dir: string, { forceAdd = [], runner = spawnR
   }
   treeGit(
     dir,
-    ['-c', 'core.hooksPath=/dev/null', '-c', 'commit.gpgSign=false', '-c', 'core.logAllRefUpdates=false', 'commit', '--quiet', '--no-verify', '-m', EXPORT_COMMIT_MESSAGE],
+    ['-c', 'core.hooksPath=/dev/null', '-c', 'commit.gpgSign=false', '-c', 'core.logAllRefUpdates=false', '-c', 'maintenance.auto=false', '-c', 'gc.auto=0', 'commit', '--quiet', '--no-verify', '-m', EXPORT_COMMIT_MESSAGE],
     runner,
   );
+  treeGit(dir, ['read-tree', 'HEAD'], runner);
 }
 
 /**
@@ -371,6 +382,17 @@ export function tarballCacheRoot(cacheRoot: string): string {
 }
 
 /**
+ * The pinned-commit tarball cache's root, apart from `tarballCacheRoot`: a working-tree build keyed
+ * by a clean HEAD and a pinned build of the same commit share a commit id, but only the pinned
+ * build is made from `git archive`, so a pinned request is never served a working-tree pair.
+ * @param cacheRoot - The runner's neutral cache root.
+ * @returns The pinned tarball cache's own root directory.
+ */
+export function pinnedTarballCacheRoot(cacheRoot: string): string {
+  return join(cacheRoot, 'tarballs-pinned');
+}
+
+/**
  * Compute the packed-tarball cache key: HEAD's own commit hash, returned only when every path
  * that reaches the tarball (`packageInputPaths`, or a narrower set a caller names) is clean
  * against that commit. A dirty tree in any of those paths, or a checkout `git` itself cannot
@@ -402,12 +424,13 @@ export function tarballCacheKey({
 
 /**
  * One cache key's tarball paths, whether or not they exist yet.
- * @param cacheRoot - The runner's neutral cache root.
- * @param key - A `tarballCacheKey` result.
+ * @param keysRoot - The directory holding one subdirectory per key (`tarballCacheRoot` or
+ *  `pinnedTarballCacheRoot`).
+ * @param key - A commit id.
  * @returns The key's own directory and its engine and dev-backend tarball paths.
  */
-function tarballCachePaths(cacheRoot: string, key: string): { dir: string; engine: string; dev: string } {
-  const dir = join(tarballCacheRoot(cacheRoot), key);
+function tarballCachePaths(keysRoot: string, key: string): { dir: string; engine: string; dev: string } {
+  const dir = join(keysRoot, key);
   return { dir, engine: join(dir, 'engine.tgz'), dev: join(dir, 'dev.tgz') };
 }
 
@@ -416,12 +439,12 @@ function tarballCachePaths(cacheRoot: string, key: string): { dir: string; engin
  * mtime to now on a hit: `pruneTarballCache` evicts by directory mtime, so a key that keeps
  * getting used stays current against one that was built once and never read again, rather than
  * both aging out together by build order alone.
- * @param cacheRoot - The runner's neutral cache root.
- * @param key - A `tarballCacheKey` result.
+ * @param keysRoot - The directory holding one subdirectory per key.
+ * @param key - A commit id.
  * @returns The cached tarball paths, or undefined on a cache miss.
  */
-function readTarballCache(cacheRoot: string, key: string): { engine: string; dev: string } | undefined {
-  const { dir, engine, dev } = tarballCachePaths(cacheRoot, key);
+function readTarballCache(keysRoot: string, key: string): { engine: string; dev: string } | undefined {
+  const { dir, engine, dev } = tarballCachePaths(keysRoot, key);
   if (!existsSync(engine) || !existsSync(dev)) return undefined;
   const now = new Date();
   utimesSync(dir, now, now);
@@ -430,11 +453,10 @@ function readTarballCache(cacheRoot: string, key: string): { engine: string; dev
 
 /**
  * Remove every cache key beyond the newest `keep`, by directory modification time.
- * @param cacheRoot - The runner's neutral cache root.
+ * @param root - The directory holding one subdirectory per key.
  * @param keep - How many keys to keep; defaults to `TARBALL_CACHE_KEEP`.
  */
-function pruneTarballCache(cacheRoot: string, keep: number = TARBALL_CACHE_KEEP): void {
-  const root = tarballCacheRoot(cacheRoot);
+function pruneTarballCache(root: string, keep: number = TARBALL_CACHE_KEEP): void {
   if (!existsSync(root)) return;
   const byAge = readdirSync(root)
     .map((name) => ({ name, mtimeMs: statSync(join(root, name)).mtimeMs }))
@@ -443,17 +465,17 @@ function pruneTarballCache(cacheRoot: string, keep: number = TARBALL_CACHE_KEEP)
 }
 
 /**
- * Copy a freshly built tarball pair into the cache under `key`, then prune older keys. `cacheRoot`
- * is the runner's neutral cache root; `key` is a `tarballCacheKey` result; `tarballs` are the
+ * Copy a freshly built tarball pair into the cache under `key`, then prune older keys. `keysRoot`
+ * is the directory holding one subdirectory per key; `key` is a commit id; `tarballs` are the
  * freshly packed engine and dev-backend tarball paths.
  * @returns The cached copies' paths.
  */
-function writeTarballCache(cacheRoot: string, key: string, tarballs: { engine: string; dev: string }): { engine: string; dev: string } {
-  const { dir, engine, dev } = tarballCachePaths(cacheRoot, key);
+function writeTarballCache(keysRoot: string, key: string, tarballs: { engine: string; dev: string }): { engine: string; dev: string } {
+  const { dir, engine, dev } = tarballCachePaths(keysRoot, key);
   mkdirSync(dir, { recursive: true });
   cpSync(tarballs.engine, engine);
   cpSync(tarballs.dev, dev);
-  pruneTarballCache(cacheRoot);
+  pruneTarballCache(keysRoot);
   return { engine, dev };
 }
 
@@ -478,7 +500,7 @@ export function packEngineTarballs(
 ): { engine: string; dev: string } {
   const key = cacheRoot ? tarballCacheKey({ repoRoot, runner }) : undefined;
   if (cacheRoot && key) {
-    const cached = readTarballCache(cacheRoot, key);
+    const cached = readTarballCache(tarballCacheRoot(cacheRoot), key);
     if (cached) return cached;
   }
   const built = runner('npm', ['run', 'package'], { cwd: repoRoot });
@@ -487,7 +509,7 @@ export function packEngineTarballs(
     engine: packTarball(repoRoot, destDir, runner),
     dev: packTarball(join(repoRoot, 'packages/cairn-cms-dev'), destDir, runner),
   };
-  if (cacheRoot && key) writeTarballCache(cacheRoot, key, tarballs);
+  if (cacheRoot && key) writeTarballCache(tarballCacheRoot(cacheRoot), key, tarballs);
   return tarballs;
 }
 
@@ -495,7 +517,8 @@ export function packEngineTarballs(
  * Pack the engine and the dev backend as they stand at a pinned commit, never as the working tree
  * holds them: the commit is exported whole into `scratchDir`, its dependencies installed with
  * `npm ci`, the engine built, and both packages packed from that export. With `cacheRoot`, the pair
- * is cached under the commit's full id, which a working-tree edit can never make stale, so a hit
+ * is cached under the commit's full id in `pinnedTarballCacheRoot`, apart from the working-tree
+ * cache, and a working-tree edit can never make that entry stale, so a hit
  * skips the export and build entirely. Either way the returned paths sit under the cache when one
  * is given, so every tree built from one commit names the same tarball paths. `repoRoot` is the
  * checkout; `commit` is the commit id; `scratchDir` is where the export and a fresh pack land, the
@@ -520,7 +543,7 @@ export function packPinnedEngineTarballs({
   assertPinnedCommit(repoRoot, commit, runner);
   const key = resolveCommit(repoRoot, commit, runner);
   if (cacheRoot) {
-    const cached = readTarballCache(cacheRoot, key);
+    const cached = readTarballCache(pinnedTarballCacheRoot(cacheRoot), key);
     if (cached) return cached;
   }
   const source = join(scratchDir, 'source');
@@ -532,7 +555,7 @@ export function packPinnedEngineTarballs({
     if (built.status !== 0) throw new Error(`npm run package failed in ${source}: ${built.stderr}`);
     const packDir = join(scratchDir, 'pack');
     const tarballs = { engine: packTarball(source, packDir, runner), dev: packTarball(join(source, 'packages/cairn-cms-dev'), packDir, runner) };
-    return cacheRoot ? writeTarballCache(cacheRoot, key, tarballs) : tarballs;
+    return cacheRoot ? writeTarballCache(pinnedTarballCacheRoot(cacheRoot), key, tarballs) : tarballs;
   } finally {
     rmSync(source, { recursive: true, force: true });
   }
@@ -633,12 +656,14 @@ export function installAndStrip(
 
 /**
  * What every builder returns: the paths absent by design from the tree it built, relative to the
- * tree's root, a directory written with a trailing `/`. A batch or job file records this list as
+ * tree's root, a directory written with a trailing `/`. An exclusion-built tree lists what its
+ * exclusions kept out (`absentPaths`); an inclusion-built tree lists what the source commit tracks
+ * that it did not take in (`omittedPaths`). A batch or job file records this list as
  * the job's `absent`, so a reader stalled on one of these paths reads as the harness's design,
  * not a docs defect.
  */
 export interface PreparedTree {
-  /** The paths the builder's own exclusions kept out of the tree. */
+  /** The paths the builder kept out of the tree. */
   absent: string[];
 }
 
@@ -722,8 +747,8 @@ export function exportDocsSet({
 }
 
 /**
- * Build a docs-only job's prepared tree: its docs set, exported at a pinned commit. The builder
- * excludes nothing, so its absent list is empty. `sourceRoot` is the checkout; `commit` is the
+ * Build a docs-only job's prepared tree: its docs set, exported at a pinned commit. Its absent
+ * list is `omittedPaths` against the commit's tracked files. `sourceRoot` is the checkout; `commit` is the
  * commit id; `docsSet` is the pages; `dest` is the tree's root, replaced if it exists; `runner` is
  * the command runner, overridden in tests; `variants` are trees built from this one.
  * @returns The tree's absent list.
@@ -752,7 +777,7 @@ export function prepareDocsOnly({
     build: () => {
       exportDocsSet({ repoRoot: sourceRoot, commit, docsSet, dest, runner });
       assertNoUnsafeSymlinks(dest);
-      return { absent: [] };
+      return { absent: omittedPaths(dest, trackedPaths({ repoRoot: sourceRoot, commit, runner })) };
     },
   });
 }
@@ -776,7 +801,8 @@ export const DOCS_AND_SITE_EXCLUDED_PATHS = [
  * `sourceRoot` is the checkout; `commit` is the commit id; `docsSet` is the pages; `tarballs` are
  * the packed engine and dev-backend tarballs; `dest` is the tree's root, replaced if it exists;
  * `runner` is the command runner, overridden in tests; `variants` are trees built from this one.
- * @returns The tree's absent list, `DOCS_AND_SITE_EXCLUDED_PATHS`.
+ * @returns The tree's absent list: `omittedPaths` against the commit's tracked files (the scaffold's
+ * `templates/` source included, since it lands under `site/`), then `DOCS_AND_SITE_EXCLUDED_PATHS`.
  */
 export function prepareDocsAndSite({
   sourceRoot,
@@ -807,7 +833,7 @@ export function prepareDocsAndSite({
       installAndStrip(siteDir, { runner });
       assertSiteAnswerKeyAbsent(siteDir);
       assertNoUnsafeSymlinks(dest);
-      return { absent: [...DOCS_AND_SITE_EXCLUDED_PATHS] };
+      return { absent: [...omittedPaths(dest, trackedPaths({ repoRoot: sourceRoot, commit, runner })), ...DOCS_AND_SITE_EXCLUDED_PATHS] };
     },
   });
 }
@@ -876,6 +902,39 @@ export function trackedPaths({ repoRoot, commit, runner = spawnRunner }: { repoR
   const listed = runner('git', ['ls-tree', '-r', '-z', '--name-only', commit], { cwd: repoRoot });
   if (listed.status !== 0) throw new Error(`git ls-tree failed for ${commit}: ${listed.stderr}`);
   return decoder.decode(listed.stdout).split('\0').filter((path) => path !== '');
+}
+
+/**
+ * Derive an inclusion-built tree's absent list: every path the source commit tracks that the built
+ * tree does not hold at the same place, with each run of absent paths collapsed to the shallowest
+ * directory missing from the tree (written with a trailing `/`), so a directory the builder left
+ * out whole costs one entry. Only tracked paths are ever listed, so a link to a path the commit
+ * never held stays a real finding rather than reading as the harness's design.
+ * @param dir - The built tree's root.
+ * @param tracked - The source commit's file paths, repository-relative.
+ * @param prefix - Where the commit's root sits inside the tree (`name/` for a bundle
+ *  subdirectory), or empty when it is the tree's own root.
+ * @returns The absent list, tree-relative and sorted.
+ */
+export function omittedPaths(dir: string, tracked: string[], prefix = ''): string[] {
+  const present = new Map<string, boolean>();
+  const inTree = (rel: string): boolean => {
+    let found = present.get(rel);
+    if (found === undefined) {
+      found = existsSync(join(dir, rel));
+      present.set(rel, found);
+    }
+    return found;
+  };
+  const omitted = new Set<string>();
+  for (const path of tracked) {
+    const rel = `${prefix}${path}`;
+    if (inTree(rel)) continue;
+    const segments = rel.split('/');
+    const missingDir = segments.slice(0, -1).findIndex((_, index) => !inTree(segments.slice(0, index + 1).join('/')));
+    omitted.add(missingDir === -1 ? rel : `${segments.slice(0, missingDir + 1).join('/')}/`);
+  }
+  return [...omitted].sort();
 }
 
 /**
@@ -1093,8 +1152,9 @@ export interface ContractPageSpec {
  * holding only its own named page and cited schemas, exported from that page's own pinned commit,
  * never from `HEAD` or from another page's commit, then one synthetic commit over the whole bundle.
  * This is what keeps a later fix to one page from silently reaching a scripter reader through
- * another page's subdirectory. The export is by inclusion, so the builder excludes nothing and its
- * absent list is empty; `REPOSITORY_EXCLUDED_PATHS` is still re-checked under each subdirectory.
+ * another page's subdirectory. The export is by inclusion, so the absent list is `omittedPaths`
+ * under each subdirectory against that page's own commit; `REPOSITORY_EXCLUDED_PATHS` is still
+ * re-checked under each subdirectory.
  * `repoRoot` is the checkout to export from; `pages` are the bundle's subdirectories; `dest` is the
  * bundle's root, replaced first if it already exists; `runner` is the command runner, overridden in
  * tests; `variants` are trees built from this one.
@@ -1126,7 +1186,8 @@ export function prepareContractPagesBundle({
       }
       assertNoExcludedPaths(dest, REPOSITORY_EXCLUDED_PATHS.flatMap((rel) => pages.map((spec) => join(spec.name, rel))));
       assertNoUnsafeSymlinks(dest);
-      return { absent: [] };
+      const absent = pages.flatMap((spec) => omittedPaths(dest, trackedPaths({ repoRoot, commit: spec.commit, runner }), `${spec.name}/`));
+      return { absent: absent.sort() };
     },
   });
 }
@@ -1234,8 +1295,8 @@ export function ensureScratchSiteCommit({
  * the site record's filename stem; `record` is the one site record the registry holds; `dest` is
  * the prepared tree's root; `siteExportDir` is an already-exported site checkout (built separately,
  * with `ensureScratchSiteCommit` and `archiveCommit`), omitted when a job carries no site checkout;
- * `runner` is the command runner; `variants` are trees built from this one. The builder excludes
- * nothing, so its absent list is empty.
+ * `runner` is the command runner; `variants` are trees built from this one. Its absent list is
+ * `omittedPaths` against the commit's tracked files.
  * @returns The tree's absent list.
  * @throws When the commit is not a pinned id, or a named docs-set page is missing.
  */
@@ -1272,7 +1333,7 @@ export function prepareDocsAndBinary({
         for (const name of readdirSync(siteExportDir)) cpSync(join(siteExportDir, name), join(dest, name), { recursive: true, verbatimSymlinks: true });
       }
       assertNoUnsafeSymlinks(dest);
-      return { absent: [] };
+      return { absent: omittedPaths(dest, trackedPaths({ repoRoot: sourceRoot, commit, runner })) };
     },
   });
 }

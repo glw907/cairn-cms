@@ -526,7 +526,7 @@ describe('prepareDocsAndSite', () => {
       const pkg = JSON.parse(readFileSync(join(dest, 'site/package.json'), 'utf8'));
       expect(pkg.dependencies['@glw907/cairn-cms']).toBe('file:/cache/engine-x.tgz');
       expect(pkg.devDependencies['@glw907/cairn-cms-dev']).toBe('file:/cache/dev-y.tgz');
-      expect(absent).toEqual(DOCS_AND_SITE_EXCLUDED_PATHS);
+      expect(absent).toEqual(['templates/', ...DOCS_AND_SITE_EXCLUDED_PATHS]);
       for (const path of absent) expect(existsSync(join(dest, path))).toBe(false);
     } finally {
       for (const dir of [repoRoot, dest]) rmSync(dir, { recursive: true, force: true });

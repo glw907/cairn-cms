@@ -400,6 +400,10 @@ describe('the six development jobs', () => {
       expect(() => assertOneCleanCommit(tree)).not.toThrow();
       expect(offTimePaths(tree)).toEqual([]);
     }
+    // Read before `git diff`, which refreshes the index the way a reader's own git would.
+    const indexEntries = readerGit(plantedDest, ['ls-files', '--debug']).split('\n').filter((line) => line.includes('ino:'));
+    expect(indexEntries.length).toBeGreaterThan(0);
+    for (const line of indexEntries) expect(line).toMatch(/ino: 0\b/);
     expect(readerGit(plantedDest, ['log', metadata])).toBe(readerGit(opts.controlDest, ['log', metadata]));
     expect(readerGit(plantedDest, ['log', '--format=%B'])).not.toMatch(/planted|control/i);
     expect(readerGit(plantedDest, ['log', '-p', '--all'])).not.toContain(pinnedText(page).trim());
@@ -448,7 +452,9 @@ describe('the six development jobs', () => {
     writeFileSync(batchPath, JSON.stringify({ name: 'fixture', jobs }));
     prepareValidationBatch(batchPath, { repoRoot, runner: fakeInstallRunner, plantsRoot });
     const written = JSON.parse(readFileSync(batchPath, 'utf8')) as { jobs: Array<{ id: string; absent?: string[]; commit: string }> };
-    expect(written.jobs[0].absent).toEqual([]);
+    const evaluatorAbsent = written.jobs[0].absent ?? [];
+    expect(evaluatorAbsent).toEqual(expect.arrayContaining(['CONTRIBUTING.md', 'templates/', 'docs/reference/']));
+    for (const page of EVALUATOR_DOCS_SET) expect(evaluatorAbsent).not.toContain(page);
     const repositoryAbsent = REPOSITORY_EXCLUDED_PATHS.filter((entry) => !entry.includes('*'));
     expect(written.jobs[1].absent).toEqual(repositoryAbsent);
     expect(written.jobs[2].absent).toEqual(repositoryAbsent);

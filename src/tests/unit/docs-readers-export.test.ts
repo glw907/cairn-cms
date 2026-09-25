@@ -15,11 +15,19 @@ import {
   assertOneCleanCommit,
   assertPinnedCommit,
   exportGitEnv,
+  finalizePreparedTree,
   isExcluded,
   normalizeMtimes,
+  omittedPaths,
+  packPinnedEngineTarballs,
+  pinnedTarballCacheRoot,
+  prepareDocsOnly,
   preparePlanterExport,
   prepareRepositoryExport,
   resolveCommit,
+  spawnRunner,
+  tarballCacheRoot,
+  type CommandRunner,
 } from '../../../scripts/docs-readers/lib/prepare-class.js';
 import { main as planterExportMain } from '../../../scripts/docs-readers/planter-export.js';
 import { recordAbsentLists } from '../../../scripts/docs-readers/prepare-validation.js';
@@ -254,6 +262,112 @@ describe('prepareRepositoryExport: the synthetic commit', () => {
         else process.env[key] = saved[key];
       }
       for (const dir of [repoRoot, dest, host]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('finalizePreparedTree: a real-size tree', () => {
+  it('leaves no path off the fixed instant and no pack behind, even after a background writer would have run', { timeout: 60_000 }, async () => {
+    const dir = tmp('large');
+    try {
+      for (let group = 0; group < 30; group += 1) {
+        mkdirSync(join(dir, `group-${group}`));
+        for (let file = 0; file < 100; file += 1) writeFileSync(join(dir, `group-${group}`, `file-${file}.md`), `group ${group} file ${file}\n`);
+      }
+      finalizePreparedTree(dir, { commit: true });
+      // Git's automatic maintenance, when it runs, detaches and writes after the call returns.
+      await new Promise((resolveWait) => setTimeout(resolveWait, 3000));
+      expect(offTimePaths(dir)).toEqual([]);
+      const packDir = join(dir, '.git/objects/pack');
+      expect(existsSync(packDir) ? readdirSync(packDir).filter((name) => name.endsWith('.pack')) : []).toEqual([]);
+      expect(() => assertOneCleanCommit(dir)).not.toThrow();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('records no stat data in the index, and the status stays clean', () => {
+    const dir = tmp('stat');
+    try {
+      write(join(dir, 'a.md'), 'a\n');
+      write(join(dir, 'b/c.md'), 'c\n');
+      finalizePreparedTree(dir, { commit: true });
+      const inodes = readerGit(dir, ['ls-files', '--debug']).split('\n').filter((line) => line.includes('ino:'));
+      expect(inodes).toHaveLength(2);
+      for (const line of inodes) expect(line).toMatch(/ino: 0\b/);
+      expect(() => assertOneCleanCommit(dir)).not.toThrow();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('omittedPaths and inclusion-built trees', () => {
+  it('lists an omitted sibling file and collapses a wholly omitted directory, and never a path the commit lacks', () => {
+    const repoRoot = tmp('inclusion-source');
+    const dest = tmp('inclusion-dest');
+    try {
+      write(join(repoRoot, 'docs/a.md'), 'a\n');
+      write(join(repoRoot, 'docs/b.md'), 'b\n');
+      write(join(repoRoot, 'src/x.ts'), 'x\n');
+      const commit = commitAll(repoRoot);
+      const { absent } = prepareDocsOnly({ sourceRoot: repoRoot, commit, docsSet: ['docs/a.md'], dest });
+      expect(absent).toEqual(['docs/b.md', 'src/']);
+      expect(absent).not.toContain('docs/missing.md');
+    } finally {
+      for (const dir of [repoRoot, dest]) rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('checks each path against the tree, under a prefix, so a directory the tree holds is never collapsed', () => {
+    const dir = tmp('omitted-prefix');
+    try {
+      write(join(dir, 'bundle/docs/a.md'), 'a\n');
+      write(join(dir, 'bundle/src/other.ts'), 'placed by another source\n');
+      expect(omittedPaths(dir, ['docs/a.md', 'docs/b.md', 'src/lib/x.ts', 'src/y.ts', 'README.md'], 'bundle/')).toEqual([
+        'bundle/README.md',
+        'bundle/docs/b.md',
+        'bundle/src/lib/',
+        'bundle/src/y.ts',
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('packPinnedEngineTarballs: its own cache', () => {
+  it('never serves a working-tree pair cached under the same commit id', () => {
+    const repoRoot = tmp('pinned-source');
+    const cacheRoot = tmp('pinned-cache');
+    const scratchDir = tmp('pinned-scratch');
+    try {
+      write(join(repoRoot, 'package.json'), '{}');
+      write(join(repoRoot, 'packages/cairn-cms-dev/package.json'), '{}');
+      const commit = commitAll(repoRoot);
+      // A working-tree pair already cached under this very commit id.
+      write(join(tarballCacheRoot(cacheRoot), commit, 'engine.tgz'), 'working-tree engine');
+      write(join(tarballCacheRoot(cacheRoot), commit, 'dev.tgz'), 'working-tree dev');
+      const npmCalls: string[] = [];
+      const runner: CommandRunner = (command, args, options) => {
+        if (command !== 'npm') return spawnRunner(command, args, options);
+        npmCalls.push(args[0]);
+        if (args[0] !== 'pack') return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+        const name = options.cwd.endsWith('cairn-cms-dev') ? 'dev-1.0.0.tgz' : 'engine-1.0.0.tgz';
+        writeFileSync(join(args[args.indexOf('--pack-destination') + 1], name), `pinned ${name}`);
+        return { status: 0, stdout: Buffer.from(`${name}\n`), stderr: '' };
+      };
+      const first = packPinnedEngineTarballs({ repoRoot, commit, scratchDir, cacheRoot, runner });
+      expect(npmCalls).toEqual(['ci', 'run', 'pack', 'pack']);
+      expect(first.engine).toBe(join(pinnedTarballCacheRoot(cacheRoot), commit, 'engine.tgz'));
+      expect(readFileSync(first.engine, 'utf8')).toBe('pinned engine-1.0.0.tgz');
+      npmCalls.length = 0;
+      const second = packPinnedEngineTarballs({ repoRoot, commit, scratchDir, cacheRoot, runner });
+      expect(npmCalls).toEqual([]);
+      expect(second).toEqual(first);
+      expect(readFileSync(join(tarballCacheRoot(cacheRoot), commit, 'engine.tgz'), 'utf8')).toBe('working-tree engine');
+    } finally {
+      for (const dir of [repoRoot, cacheRoot, scratchDir]) rmSync(dir, { recursive: true, force: true });
     }
   });
 });

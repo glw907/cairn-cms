@@ -37,7 +37,7 @@ import { findInit } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
 import { gitTrackedFiles, hashFile, loadManifest, verifyTree } from './freeze.js';
 import type { ScratchSiteRecord } from './lib/prepare-class.js';
-import type { Batch, BatchReport, InitBaseline, Job } from './lib/types.js';
+import type { Batch, BatchReport, InitBaseline } from './lib/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -400,7 +400,7 @@ export function jobsNeedingResume(report: Pick<BatchReport, 'jobs'>): string[] {
  */
 export function buildResumeBatch(batch: Batch, jobIds: readonly string[]): Batch {
   const keep = new Set(jobIds);
-  return { ...batch, jobs: batch.jobs.filter((job: Job) => keep.has(job.id)) };
+  return { ...batch, jobs: batch.jobs.filter((job) => keep.has(job.id)) };
 }
 
 /**

@@ -33,6 +33,7 @@ import type {
   BatchReport,
   ClassDecl,
   Executor,
+  FreezeStamp,
   InitBaseline,
   Job,
   JobReport,
@@ -49,16 +50,25 @@ import type {
  * init event of a run under this batch's kind (reader, catch judge, adjudicator, or agreement)
  * must report. Undefined when the batch is not gated.
  */
-export interface GatedFreeze {
-  tag: string;
-  manifestHash: string;
-  chainHead: string;
+export interface GatedFreeze extends FreezeStamp {
   /** The manifest's model id for this batch's kind; a run whose init event reports a different one is unverified. */
   expectedModel?: string;
 }
 
 /** The most attempts the runner makes at one job: the initial run, and its one automatic rerun. */
 const MAX_ATTEMPTS = 2;
+
+/** A batch-level stop: every stop reason except a batch that ran to completion. */
+type BatchStop = Exclude<StopReason, 'complete'>;
+
+/**
+ * The stamp a gated batch's reports carry, without the run-time-only expected model.
+ * @param freeze - The gated batch's freeze.
+ * @returns The report's `freeze` block.
+ */
+function freezeStamp(freeze: GatedFreeze): FreezeStamp {
+  return { tag: freeze.tag, manifestHash: freeze.manifestHash, chainHead: freeze.chainHead };
+}
 
 /** The quote shape shared by `quotes[]` and every quote embedded in `steps[]` or `diverged[]`. */
 const QUOTE_SCHEMA = {
@@ -219,7 +229,7 @@ function rerunCause(outcome: RunOutcome, run: RunResult): AttemptCause | undefin
  * @param freeze - The gated batch's stamp, when the batch is gated.
  * @returns The job report.
  */
-function notStartedReport(job: Job, stoppedBy: 'rateLimit' | 'auth' | 'budget', freeze?: GatedFreeze): JobReport {
+function notStartedReport(job: Job, stoppedBy: BatchStop, freeze?: GatedFreeze): JobReport {
   return {
     id: job.id,
     class: job.class,
@@ -240,7 +250,7 @@ function notStartedReport(job: Job, stoppedBy: 'rateLimit' | 'auth' | 'budget', 
     usage: reportUsage(emptyUsage()),
     verified: { ok: false, init: false, canaries: true, quotes: [], steps: [], diverged: [], problems: [`aborted: ${stoppedBy}`, 'not started'] },
     stoppedBy,
-    ...(freeze ? { freeze: { tag: freeze.tag, manifestHash: freeze.manifestHash, chainHead: freeze.chainHead } } : {}),
+    ...(freeze ? { freeze: freezeStamp(freeze) } : {}),
   };
 }
 
@@ -326,7 +336,7 @@ export async function runBatch({
         // A batch-level stop is the runner's own event, never an attempt at the job: `stopReason`
         // is 'complete' only after every job has settled, so it is always one of the three stop
         // kinds here.
-        reports[index] = notStartedReport(job, stopReason as 'rateLimit' | 'auth' | 'budget', freeze);
+        reports[index] = notStartedReport(job, stopReason as BatchStop, freeze);
         continue;
       }
       const decl = classes.get(job.class);
@@ -383,7 +393,7 @@ export async function runBatch({
         model: job.model,
         ...outcomeFields,
         attempts,
-        ...(freeze ? { freeze: { tag: freeze.tag, manifestHash: freeze.manifestHash, chainHead: freeze.chainHead } } : {}),
+        ...(freeze ? { freeze: freezeStamp(freeze) } : {}),
       };
     }
   };

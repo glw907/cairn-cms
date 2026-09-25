@@ -244,9 +244,9 @@ function main(args: string[]): number {
       adjudicator: modelPairs.adjudicator ?? '',
       agreement: modelPairs.agreement ?? '',
     };
-    const seedPairs = collectPairs(args, '--seed');
-    const seeds: Record<string, number> = {};
-    for (const [name, value] of Object.entries(seedPairs)) seeds[name] = Number(value);
+    const seeds = Object.fromEntries(
+      Object.entries(collectPairs(args, '--seed')).map(([name, value]) => [name, Number(value)]),
+    );
     const manifest = buildManifest({
       tag,
       root: HERE,

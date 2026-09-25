@@ -293,7 +293,7 @@ The original decision framing, for the record:
   - **Pass 2a, the audience record and the trial (next).** It defines the profile-file format
     together with the profiles (the spec's pass 1 amendment). Its inputs:
     - **Every reader class is advisory** (`docs/internal/record/2026-09-24-docs-reset-1b-validation.md`,
-      with the cause per class). Development on-map recall per plant-run was 2 of 16 and 1 of 8,
+      with the cause per class). Development on-map recall per plant-run, on the tuning proxy map, was 2 of 16 and 1 of 8,
       against a gated bar needing about 0.8.
     - **Trial readers are Opus only.** No Sonnet share is validated.
     - **The labeled defect set is empty.** The spec assigned it pass 1b's test plants, and the

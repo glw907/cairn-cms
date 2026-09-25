@@ -671,7 +671,7 @@ question the plan names.
 | checkpoint | budget question to Geoff | this commit | counted about 8.7M (session ledger over the conductor session and 23 subagent transcripts; the runner ledger's 3.19M is pass 1's, its only pass 1b entry a 11k live judge run) | Task 6 in its fix round (11 blocking: no `run.ts` judge mode, the ledger ignored `--since` on runner entries, audit bypasses, `docs/internal` counted as published, two packet leaks, string entries lost their text, keys did not trace items to runs). The blind audits stand: the reviewer read both transcripts call by call. Projection to the close: about 19.5M (segment 2 remainder 1.2M, Task 7 2M, rounds 0 and 1 1.9M, freeze 0.6M, mapping 1M, planting to close 4M), near the plan's high estimate. The driver is reviewer fix rounds, each on a real defect (every build task drew a `fix`; 36 blocking findings across Tasks 1 to 6). The flag (12M) has not tripped; the question goes to Geoff now because the projection crosses the 15M ceiling during mapping. |
 | ruling | O9 (Geoff, 2026-09-25) | this commit | | Geoff raised the ceiling to 21M, flag at 17M, and the full sequence runs to the per-class verdict. O6 applies to the new ceiling unchanged. |
 | 6 | accepted (lane) | `c9a6d0ab`, `7bc2105e`, `8b9452e7`, `12c41535`, `1a0963f4`, `350a3cef` on `docs-reset-1b-runner` | implementer about 2.3M over four rounds, simplifier 0.11M, reviewer about 1.1M over four reads (Agent figures) | Four `diff-reviewer` reads: fix (11 blocking: no `run.ts` judge mode, the ledger ignored `--since` on runner entries, audit bypasses, `docs/internal` counted as published, packet leaks, pass 1 string entries lost their text, keys did not trace items to runs), fix (6: catch packets read the unplanted page, an agreement finding carried every item, a fixture-built key passed a gated batch, a vacuous leak test), fix (2: silent fallback to the unplanted page, integrity check skipped relative or missing inputs), accept. The second and third `fix` were conductor calls (all mechanical, fully specified). Conductor ruling: published roots are the `docs` entries of `package.json` `files` at the pinned commit, without `CHANGELOG.md`. Judges run on a minimal system prompt (skills stay; disabling them needs a per-kind init baseline). The real blind audits stay clean under the tightened audit. |
-| seg 2 | closed | `d4354321` | 12.50M counted at the close (session ledger; conductor 1.10M, subagents 11.36M, runner 0.03M) | The runner and path-map lanes merged into `docs-reset-1b` cleanly; merged gate green at 570 tests. Every build task drew at least one `fix` (Tasks 1 to 6: 49 blocking findings, each a real defect); fix rounds on large resumed agents drove the overrun, mostly cache creation. Projection to the close at segment 2's rate: about 22M, over the 21M ceiling. The host CLI moved to 2.1.282 (no pinned init baseline yet). Question to Geoff at the handoff: the ceiling, and holding the CLI version through the close. |
+| seg 2 | closed | `d4354321` | 12.50M counted at the close (session ledger; conductor 1.10M, subagents 11.36M, runner 0.03M) | The runner and path-map lanes merged into `docs-reset-1b` cleanly; merged gate green at 570 tests. Every build task drew at least one `fix` (Tasks 1 to 6: about 44 blocking findings, each a real defect; this row first said 49, reconciled at the close as 36 by the segment 2 checkpoint plus 6 and 2 in Task 6's later reads); fix rounds on large resumed agents drove the overrun, mostly cache creation. Projection to the close at segment 2's rate: about 22M, over the 21M ceiling. The host CLI moved to 2.1.282 (no pinned init baseline yet). Question to Geoff at the handoff: the ceiling, and holding the CLI version through the close. |
 | ruling | O10 (Geoff, 2026-09-25) | this commit | | Geoff raised the ceiling to 25M, flag 21M, on the segment 2 projection of about 22M, and approved holding the host CLI at 2.1.282 until the close (`DISABLE_AUTOUPDATER=1`, dotfiles `4265aea`). He asked whether the setup is using tokens more efficiently; the answer is in the pass's close. |
 | 7 | fix round 1 (escalate ruled) | `b1aad10b`, `9e544c5d` | implementer 0.42M, simplifier 0.12M, reviewer 0.17M (Agent figures) | `diff-reviewer` escalate: scorer read a hand-built bundle, not the real artifacts; 12 blocking. Conductor rulings: R1 assembler stays in Task 7 (fifth deliverable, added after dispatch); R2 `ruleCandidates[]` precision not measured (judges never see candidates), raw count reported; R3 a false finding is one subject group ruled false per run, an unverified run counting every item; R4 "found again on unplanted sections" deferred (planted runs score catches only); R5 development batches `validation`, `validation-rerun`, `round1`; R6 balancing stands. Gate cap: the light lane's 3G OOMs svelte-check at this repo's size; the pass gate adds `CAIRN_GATE_MEMORY_MAX=6G CAIRN_GATE_MEMORY_HIGH=5G`. |
 | pin | done | `243a0bd3` | 0.08M | CLI 2.1.282 init baseline pinned; identical to 2.1.281 for reader and judge classes (the baseline is per CLI version). Image `localhost/docs-reader:375dbe1d9d66` (`4e155fa3e6e8…`). |
@@ -841,6 +841,10 @@ adjudicator run 0.14M); live judge checks 0.04M. The two tuning-phase runner def
 No. The runner is efficient; the agent orchestration around it is not, and fix rounds on resumed
 agents are the main cost.
 
+The committed figures agree. Pass 1 measured 0.57M to 2.99M per implementer chain (the pass 1b
+spec, "Budget"). This pass's ledger rows give 0.75M to 3.5M per build task (Task 5 low, Task 6
+high), as Agent figures that include cache reads. The range did not come down.
+
 Where the spend went, from each subagent transcript (per-transcript deduplication, so the sum is
 18.3M against the session ledger's cross-transcript 17.2M):
 
@@ -852,7 +856,8 @@ Where the spend went, from each subagent transcript (per-transcript deduplicatio
   batches), Task 4's implementer 0.84M, Task 6's reviewer 0.75M, and Task 7's reviewer 0.72M.
 - **The build tasks cost 14.0M** (implementer, simplifier, and reviewer): Task 1 1.44M, Task 2
   1.12M, Task 3 1.54M, Task 4 2.12M, Task 5 0.96M, Task 6 3.82M, Task 7 3.00M. Every task drew
-  at least one `fix`; the 49 blocking findings in Tasks 1 to 6 were real defects.
+  at least one `fix`; the about 44 blocking findings in Tasks 1 to 6 (36 by the segment 2
+  checkpoint, then 6 and 2 in Task 6's later reads) were real defects.
 - **A fresh agent is cheaper than a cold resume.** Task 7's two final fixes, done by a fresh
   implementer with the findings only, cost 0.16M. The judge-prompt fix chain cost 0.22M. Cold
   resumes rewrote 0.12M to 1.22M of context per agent.
@@ -878,19 +883,22 @@ What would lower it:
 
 The parent amendment asks for a lean default. Measured unit costs from this pass: a reader run
 35k counted (15.6k to 67k over round 1's 12 runs), a catch judge about 3k, an adjudication about
-15k, a first `diff-reviewer` read 0.17M to 0.49M, and a build task 1M to 3.8M with its fix rounds.
+15k, an itemized first `diff-reviewer` read 0.12M to 0.17M (Tasks 1, 2, 5, and 7; Agent figures,
+cache reads included), and a build task 1M to 3.8M with its fix rounds.
 
-- **Pass 2a, lean: about 8.5M, ceiling 10M, flag 8M** (against the parent's 14M). It writes the
-  audience record, runs its review, and builds the exemplar corpus as specified: about 3M for
-  authoring and folds, 1.5M for four review lenses, 1.5M for the corpus, and 1M for the
-  conductor. It drops the formal chain-depth trial. Instead it drafts the three trial pages once
+- **Pass 2a, lean: about 8.5M, ceiling 10M, flag 8M** (against the parent's 14M). The estimate
+  sits above the 8M flag on purpose: the flag trips near the close, and Geoff sets the ceiling
+  knowing that. The pass writes the audience record and runs its review: about 3M for authoring
+  and folds, 1.5M for four review lenses, and 1M for the conductor. The exemplar corpus already
+  exists (68 captures), so pass 2a reviews it and extends it per profile, about 1.5M, since only
+  the editor slice rests on user-testing evidence. It drops the formal chain-depth trial. Instead it drafts the three trial pages once
   each through the minimal chain, with three or four Opus reader jobs per page, as evidence of
   what that chain misses (about 1.5M).
 - **Pass 2b: 8M as the parent specifies.** The bake-off and the six-lens outline review are
   design work with no cheaper measured substitute.
-- **Drafting passes: a target of 0.5M per page, tripwire at 0.75M.** That covers a minimal chain
-  (drafter, scripted checks, one redraft) at about 0.3M (the parent's estimate), four reader runs
-  at 35k (0.14M), and four adjudications at 15k (0.06M). A stage joins the chain only when reader
+- **Drafting passes: a target of 0.5M per page, tripwire at 0.75M.** That covers the parent's minimal
+  chain (drafter, scripted checks, and one reader) at about 0.3M, then three more reader runs at
+  35k (about 0.1M), four adjudications at 15k (0.06M), and one redraft within the remainder. A stage joins the chain only when reader
   findings show a defect class the minimal chain misses. Pass A measured about 0.9M per page.
   Add about 1.5M per drafting pass for the conductor, the page contracts, and the close.
 - **The program ceiling** is 10M plus 8M plus, for each drafting pass, 0.5M per page and 1.5M.

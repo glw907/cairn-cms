@@ -13,19 +13,21 @@ evidence behind the stop.
 
 ## Labels
 
-Every figure below carries three labels the spec requires:
+The spec requires two labels on every figure below, and a third on held-out figures. A
+descriptive term, the proxy map, also applies.
 
 - **Development-contaminated.** Every run, plant, and control page is in the development set (pass
   1's plants P01 to P17 and its control pages). The instrument was tuned on these items. No
   figure here measures the frozen instrument on unseen plants.
-- **Proxy map.** On-map counts use the tuning proxy map, built from pass 1's verified Opus
+- **Proxy map (descriptive, not a required label).** On-map counts use the tuning proxy map, built from pass 1's verified Opus
   control-run quotes in any field (`scripts/docs-readers/tuning/round0/maps/`). No map was built
   from `steps[]` on frozen mapping runs.
 - **In-sample.** False findings are counted on control runs of pages the conductor had already
   adjudicated in pass 1.
 
-No held-out scripter runs took place, since they belonged to the mapping batch. Pass 1's 1 of 9
-held-out defects is still the only held-out figure, and it is also contaminated.
+- **Contaminated (held-out figures).** No held-out scripter runs took place, since they belonged
+  to the mapping batch. Pass 1's 1 of 9 held-out defects is still the only held-out figure, and it
+  carries this label.
 
 ## Why the pass stopped
 
@@ -66,9 +68,10 @@ Pooled (`onMapPlantRunRecall`): round 0 2 of 16 (rate 0.125, interval 0.016 to 0
 (`onMapRecall`, per plant), round 0 caught 1 of 8 plants (repository 1 of 2) and round 1 caught
 none. Round 1 cannot reach that rule, since it has one planted run per job.
 
-Every control run verified in both rounds. Round 1's `notes` list is empty. Round 0's 17 notes
-are expected exclusions (Sonnet duplicates and jobs outside round 0's scope), listed in the
-tuning record.
+Every control run verified in both rounds. Round 1's `notes` list is empty. Round 0 has 17 notes.
+Two resolve superseded rerun copies: `operator-planted-2` and `operator-control-1` are scored from
+their rerun copies. The other 15 are expected exclusions (Sonnet duplicates and jobs outside
+round 0's scope), listed in the tuning record.
 
 ## The catch-ruling audit
 

@@ -36,7 +36,8 @@ Development false findings per control run were 0 in round 1 for five jobs; the 
 rose from 1.5 to 7.
 
 **What the gates caught.** Every build task (Tasks 1 to 7) drew at least one `diff-reviewer`
-fix, with 49 blocking findings in Tasks 1 to 6, each a real defect. Plants leaked through git
+fix, with about 44 blocking findings in Tasks 1 to 6 (36 by the segment 2 checkpoint, then 6 and 2
+in Task 6's later reads), each a real defect. Plants leaked through git
 auto-maintenance and index inodes. A stale-path check never fired on a real plant. Catch
 packets showed the unplanted page. Task 7 took four reads, and its third `fix` stopped the
 unattended run for Geoff. Tuning then found three defects no test had caught. Judges never

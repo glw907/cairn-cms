@@ -12,6 +12,8 @@ import {
   findInit,
   findPackageFetches,
   grepHitPages,
+  initModel,
+  loadSavedBatchReport,
   parseStream,
   readerReport,
   splitShellSegments,
@@ -23,9 +25,13 @@ import type { ToolCall } from '../../../scripts/docs-readers/lib/types.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const FIXTURES = join(ROOT, 'scripts/docs-readers/fixtures/transcripts');
+const SAVED_REPORTS = join(ROOT, 'scripts/docs-readers/fixtures/saved-reports');
 const baselines = JSON.parse(readFileSync(join(ROOT, 'scripts/docs-readers/init-baseline.json'), 'utf8'));
 const load = (name: string) => parseStream(readFileSync(join(FIXTURES, name), 'utf8')).events;
 const DOCS_TOOLS = ['Glob', 'Grep', 'Read', 'StructuredOutput'];
+
+/** A minimal well-formed steps[]/diverged[] quote, in the report's page:line shape. */
+const okQuote = { path: 'docs/guide.md', line: 3, text: 'Install the tool before you begin.' };
 
 describe('checkInit', () => {
   const found = findInit(load('clean-docs-only.jsonl'));
@@ -269,5 +275,111 @@ describe('usage and failures', () => {
     const events = load('clean-docs-only.jsonl');
     events[events.length - 1].structured_output = { outcome: 'finished', stalls: [], assumed: [], quotes: [], ruleCandidates: [] };
     expect(readerReport(events)).toBeUndefined();
+  });
+});
+
+describe('readerReport: steps, diverged, and blockedBy', () => {
+  /** A well-formed structured_output, every new field present in the shape a fresh run must give. */
+  function validOutput(): Record<string, unknown> {
+    return {
+      outcome: 'done',
+      stalls: [{ text: 'stuck here', blockedBy: null }],
+      assumed: [{ text: 'guessed this', blockedBy: 'npm test' }],
+      quotes: [okQuote],
+      steps: [{ quote: okQuote, decision: 'used the install step' }],
+      diverged: [{ quote: okQuote, didInstead: 'skipped ahead', why: 'the page did not cover it', blockedBy: null }],
+      ruleCandidates: [],
+    };
+  }
+
+  /** The clean fixture's events, with its result event's structured_output replaced. */
+  function withOutput(output: unknown): StreamEvent[] {
+    const events = load('clean-docs-only.jsonl');
+    events[events.length - 1].structured_output = output;
+    return events;
+  }
+
+  it('parses a well-formed report, carrying steps and diverged through', () => {
+    const report = readerReport(withOutput(validOutput()));
+    expect(report?.steps).toEqual([{ quote: okQuote, decision: 'used the install step' }]);
+    expect(report?.diverged).toEqual([{ quote: okQuote, didInstead: 'skipped ahead', why: 'the page did not cover it', blockedBy: null }]);
+    expect(report?.stalls).toEqual([{ text: 'stuck here', blockedBy: null }]);
+  });
+
+  it('fails a report missing steps or diverged entirely', () => {
+    const withoutSteps = validOutput();
+    delete withoutSteps.steps;
+    expect(readerReport(withOutput(withoutSteps))).toBeUndefined();
+
+    const withoutDiverged = validOutput();
+    delete withoutDiverged.diverged;
+    expect(readerReport(withOutput(withoutDiverged))).toBeUndefined();
+  });
+
+  it('fails a diverged entry given without its page quote', () => {
+    const output = validOutput();
+    output.diverged = [{ didInstead: 'x', why: 'y', blockedBy: null }];
+    expect(readerReport(withOutput(output))).toBeUndefined();
+  });
+
+  it('fails a diverged entry missing blockedBy, accepts null, and round-trips a string', () => {
+    const missing = validOutput();
+    missing.diverged = [{ quote: okQuote, didInstead: 'x', why: 'y' }];
+    expect(readerReport(withOutput(missing))).toBeUndefined();
+
+    const withNull = validOutput();
+    withNull.diverged = [{ quote: okQuote, didInstead: 'x', why: 'y', blockedBy: null }];
+    expect(readerReport(withOutput(withNull))?.diverged[0]?.blockedBy).toBeNull();
+
+    const withString = validOutput();
+    withString.diverged = [{ quote: okQuote, didInstead: 'x', why: 'y', blockedBy: 'npm run build' }];
+    expect(readerReport(withOutput(withString))?.diverged[0]?.blockedBy).toBe('npm run build');
+  });
+
+  it('fails a stalls or assumed entry missing blockedBy', () => {
+    const badStall = validOutput();
+    badStall.stalls = [{ text: 'stuck' }];
+    expect(readerReport(withOutput(badStall))).toBeUndefined();
+
+    const badAssumed = validOutput();
+    badAssumed.assumed = [{ text: 'guessed' }];
+    expect(readerReport(withOutput(badAssumed))).toBeUndefined();
+  });
+});
+
+describe('initModel', () => {
+  it('reads the init event\'s model id', () => {
+    expect(initModel(load('clean-docs-only.jsonl'))).toBe('claude-opus-5-5');
+  });
+
+  it('is undefined when the run never started', () => {
+    expect(initModel([])).toBeUndefined();
+  });
+});
+
+describe('loadSavedBatchReport', () => {
+  it('turns pass 1\'s plain-string stalls and assumed into blocked entries, and fills empty steps and diverged', () => {
+    const raw = readFileSync(join(SAVED_REPORTS, 'pass1-trimmed.json'), 'utf8');
+    const batch = loadSavedBatchReport(raw);
+    expect(batch.jobs).toHaveLength(2);
+    const job = batch.jobs.find((j) => j.id === 'evaluator-planted-1');
+    expect(job?.stalls[0]).toMatchObject({ blockedBy: null });
+    expect(typeof job?.stalls[0]?.text).toBe('string');
+    expect(job?.assumed[0]).toMatchObject({ blockedBy: null });
+    expect(job?.steps).toEqual([]);
+    expect(job?.diverged).toEqual([]);
+  });
+
+  it('accepts an already-parsed object, not only JSON text', () => {
+    const raw = JSON.parse(readFileSync(join(SAVED_REPORTS, 'pass1-trimmed.json'), 'utf8'));
+    const batch = loadSavedBatchReport(raw);
+    expect(batch.jobs).toHaveLength(2);
+  });
+
+  it('passes an already-structured stalls or assumed entry through unchanged', () => {
+    const batch = loadSavedBatchReport({
+      jobs: [{ id: 'j', stalls: [{ text: 'already structured', blockedBy: 'npm test' }], assumed: [] }],
+    });
+    expect(batch.jobs[0].stalls).toEqual([{ text: 'already structured', blockedBy: 'npm test' }]);
   });
 });

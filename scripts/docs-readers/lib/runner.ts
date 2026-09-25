@@ -17,6 +17,7 @@ import {
   findInit,
   findPackageFetches,
   grepHitPages,
+  initModel,
   readerReport,
   toolCalls,
   usageFromEvents,
@@ -40,33 +41,63 @@ import type {
   Usage,
 } from './types.js';
 
+/** The quote shape shared by `quotes[]` and every quote embedded in `steps[]` or `diverged[]`. */
+const QUOTE_SCHEMA = {
+  type: 'object',
+  properties: { path: { type: 'string' }, line: { type: 'integer' }, text: { type: 'string' } },
+  required: ['path', 'line', 'text'],
+};
+
+/** The shape shared by `stalls[]` and `assumed[]`: free text, plus what blocked the reader there. */
+const BLOCKED_ENTRY_SCHEMA = {
+  type: 'object',
+  properties: { text: { type: 'string' }, blockedBy: { type: ['string', 'null'] } },
+  required: ['text', 'blockedBy'],
+};
+
 /** The JSON schema the reader's structured report must match. */
 export const REPORT_SCHEMA = {
   type: 'object',
   properties: {
     outcome: { type: 'string', enum: ['done', 'stalled', 'refused'] },
-    stalls: { type: 'array', items: { type: 'string' } },
-    assumed: { type: 'array', items: { type: 'string' } },
-    quotes: {
+    stalls: { type: 'array', items: BLOCKED_ENTRY_SCHEMA },
+    assumed: { type: 'array', items: BLOCKED_ENTRY_SCHEMA },
+    quotes: { type: 'array', items: QUOTE_SCHEMA },
+    steps: {
       type: 'array',
       items: {
         type: 'object',
-        properties: { path: { type: 'string' }, line: { type: 'integer' }, text: { type: 'string' } },
-        required: ['path', 'line', 'text'],
+        properties: { quote: QUOTE_SCHEMA, decision: { type: 'string' } },
+        required: ['quote', 'decision'],
+      },
+    },
+    diverged: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          quote: QUOTE_SCHEMA,
+          didInstead: { type: 'string' },
+          why: { type: 'string' },
+          blockedBy: { type: ['string', 'null'] },
+        },
+        required: ['quote', 'didInstead', 'why', 'blockedBy'],
       },
     },
     ruleCandidates: { type: 'array', items: { type: 'string' } },
   },
-  required: ['outcome', 'stalls', 'assumed', 'quotes', 'ruleCandidates'],
+  required: ['outcome', 'stalls', 'assumed', 'quotes', 'steps', 'diverged', 'ruleCandidates'],
 };
 
 /** The closing request every job carries, phrased as a hand-off, never as a test. */
 export const REPORT_REQUEST = [
   'When you are finished, hand back a short structured report:',
   '- outcome: "done" if you got the job done, "stalled" if you could not finish it, or "refused" if you decided not to do it;',
-  '- stalls: each point where you got stuck, and what you were missing there;',
-  '- assumed: each term, value, or step you had to guess because nothing you read told you;',
+  '- stalls: each point where you got stuck, as { text: what you were missing there, blockedBy: the command that was denied or the path that was missing, if that is what stopped you, otherwise null };',
+  '- assumed: each term, value, or step you had to guess, as { text: what you assumed and why, blockedBy: the same field, when a denial or a missing path forced the guess, otherwise null };',
   '- quotes: for every documentation file you read, at least one line you relied on, given as the file path relative to your working directory, the exact text of that line, and the line number your Read tool printed beside that text\'s first words;',
+  '- steps: each instruction you followed or statement you relied on for a decision, as { quote: the page:line quote it rests on, in the same form as above, decision: the decision it supported };',
+  '- diverged: each place you did something other than what a page said, including a workaround that worked, as { quote: that page\'s quote, didInstead: what you did instead, why: why you diverged, blockedBy: the same field as above };',
   '- ruleCandidates: anything you think the documentation should have told you and did not.',
 ].join('\n');
 
@@ -113,16 +144,20 @@ export function buildJobReport({
     verified.ok = false;
     verified.problems.unshift(`aborted: ${reason}`);
   }
+  const model = initModel(events);
   return {
     id: job.id,
     class: job.class,
     model: job.model,
+    ...(model !== undefined ? { initModel: model } : {}),
     outcome: reason ? 'aborted' : (report?.outcome ?? 'error'),
     ...(reason ? { abortReason: reason } : {}),
     stalls: report?.stalls ?? [],
     assumed: report?.assumed ?? [],
     pagesRead,
     quotes: verified.quotes,
+    steps: verified.steps,
+    diverged: verified.diverged,
     checks: [],
     ruleCandidates: report?.ruleCandidates ?? [],
     denials: collectDenials(events, calls),
@@ -152,13 +187,15 @@ function notStartedReport(job: Job, reason: string): JobReport {
     assumed: [],
     pagesRead: [],
     quotes: [],
+    steps: [],
+    diverged: [],
     checks: [],
     ruleCandidates: [],
     denials: [],
     proxyBlocked: [],
     packageFetches: [],
     usage: reportUsage(emptyUsage()),
-    verified: { ok: false, init: false, canaries: true, quotes: [], problems: [`aborted: ${reason}`, 'not started'] },
+    verified: { ok: false, init: false, canaries: true, quotes: [], steps: [], diverged: [], problems: [`aborted: ${reason}`, 'not started'] },
   };
 }
 

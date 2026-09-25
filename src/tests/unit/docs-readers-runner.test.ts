@@ -76,11 +76,12 @@ describe('runBatch', () => {
     expect(report.verified).toBe(true);
     const job = report.jobs[0];
     expect(Object.keys(job)).toEqual([
-      'id', 'class', 'model', 'outcome', 'stalls', 'assumed', 'pagesRead', 'quotes', 'checks',
+      'id', 'class', 'model', 'initModel', 'outcome', 'stalls', 'assumed', 'pagesRead', 'quotes', 'steps', 'diverged', 'checks',
       'ruleCandidates', 'denials', 'proxyBlocked', 'packageFetches', 'usage', 'verified',
     ]);
     expect(job).toMatchObject({
       outcome: 'done',
+      initModel: 'claude-opus-5-5',
       pagesRead: ['docs/guide.md', 'docs/other.md'],
       denials: [{ source: 'permission', tool: 'Read' }],
       proxyBlocked: [{ method: 'CONNECT', target: 'example.org:443', reason: 'not-allowlisted' }],
@@ -88,6 +89,8 @@ describe('runBatch', () => {
       usage: { input: 9, output: 120, cacheCreation: 1500, cacheRead: 3000, counted: 1629 },
     });
     expect(job.quotes.every((q: { ok: boolean }) => q.ok)).toBe(true);
+    expect(job.steps).toEqual([]);
+    expect(job.diverged).toEqual([]);
     expect(entries.map((e) => e.job)).toEqual(['(token-check)', 'a']);
     expect(report.usage).toMatchObject({ counted: 1729, cacheRead: 3000 });
     expect(transcripts.a).toContain('"type":"result"');

@@ -1,0 +1,574 @@
+{
+  "batch": "validation",
+  "runId": "20260924t081831-4ca4ee",
+  "stopReason": "complete",
+  "budgetTokens": 3000000,
+  "usage": {
+    "input": 3944,
+    "output": 264562,
+    "cacheCreation": 1134488,
+    "cacheRead": 7651140,
+    "counted": 1402994
+  },
+  "jobs": [
+    {
+      "id": "evaluator-planted-1",
+      "class": "docs-only",
+      "model": "claude-opus-5-5",
+      "outcome": "done",
+      "stalls": [
+        "Many linked pages (admin/create-your-site.md, admin/own-your-domain.md, admin/invite-editors.md, extend/upgrade-cairn.md, reference/*, CHANGELOG.md) were not present, so I could not check the real upgrade effort or how the editor works day to day beyond the welcome page."
+      ],
+      "assumed": [
+        "Assumed the editor sign-in in the default setup is the email magic link (welcome.md, before-you-start.md), not the 'own GitHub account' sign-in why-cairn.md:20 describes.",
+        "Assumed 'hold ref' (why-cairn.md:22) means the same thing as 'Holding branch' (extend/README.md:120).",
+        "Assumed Cloudflare Email Sending costs nothing extra, since no page gives it a price.",
+        "Assumed that for a small site I would be the developer doing every upgrade myself, so the 0.x churn is my cost."
+      ],
+      "pagesRead": [
+        "docs/admin/README.md",
+        "docs/admin/before-you-start.md",
+        "docs/editors/welcome.md",
+        "docs/extend/README.md",
+        "docs/extend/add-a-second-audience.md",
+        "docs/extend/migration-notes.md",
+        "docs/extend/sign-in-through-your-organization.md",
+        "docs/why-cairn.md"
+      ],
+      "quotes": [
+        {
+          "path": "docs/why-cairn.md",
+          "line": 58,
+          "text": "**cairn is pre-1.0, and seams still move.** The extend track's own stability section documents a",
+          "ok": true,
+          "startLine": 58,
+          "endLine": 58
+        },
+        {
+          "path": "docs/why-cairn.md",
+          "line": 17,
+          "text": "cairn is two things at once: an editor-first, git-backed CMS, and a SvelteKit toolkit a developer",
+          "ok": true,
+          "startLine": 17,
+          "endLine": 17
+        },
+        {
+          "path": "docs/why-cairn.md",
+          "line": 76,
+          "text": "**cairn is a CMS and an admin toolkit, not a platform.** It manages markdown content and the",
+          "ok": true,
+          "startLine": 76,
+          "endLine": 76
+        },
+        {
+          "path": "docs/admin/before-you-start.md",
+          "line": 52,
+          "text": "1. **Cloudflare's Workers Paid plan, $5 a month.** That's what running a cairn site on",
+          "ok": true,
+          "startLine": 52,
+          "endLine": 52
+        },
+        {
+          "path": "docs/admin/before-you-start.md",
+          "line": 83,
+          "text": "Adding an editor, a co-owner, anyone besides you, takes two things beyond what your site already",
+          "ok": true,
+          "startLine": 83,
+          "endLine": 83
+        },
+        {
+          "path": "docs/admin/README.md",
+          "line": 5,
+          "text": "developer. You never write code here. `create-cairn-site` does the setup; these pages narrate",
+          "ok": true,
+          "startLine": 5,
+          "endLine": 5
+        },
+        {
+          "path": "docs/editors/welcome.md",
+          "line": 5,
+          "text": "of your own, or anything installed. You sign in with your email address and a link.",
+          "ok": true,
+          "startLine": 5,
+          "endLine": 5
+        },
+        {
+          "path": "docs/extend/README.md",
+          "line": 83,
+          "text": "`1.0`, treat every version bump as a real upgrade to verify, tier or no tier, and read",
+          "ok": true,
+          "startLine": 83,
+          "endLine": 83
+        },
+        {
+          "path": "docs/extend/migration-notes.md",
+          "line": 34,
+          "text": "login outage with no second channel, since every confirm names the new `nonce_hash` column. No",
+          "ok": true,
+          "startLine": 34,
+          "endLine": 34
+        },
+        {
+          "path": "docs/extend/add-a-second-audience.md",
+          "line": 18,
+          "text": "**A genuinely separate population, with its own identity and its own volume.** Members, athletes,",
+          "ok": true,
+          "startLine": 18,
+          "endLine": 18
+        },
+        {
+          "path": "docs/extend/sign-in-through-your-organization.md",
+          "line": 345,
+          "text": "the one provider cairn ships, wrapping the GitHub App flow this project defaults to; none ships",
+          "ok": true,
+          "startLine": 345,
+          "endLine": 345
+        }
+      ],
+      "checks": [],
+      "ruleCandidates": [
+        "why-cairn.md:20 says editors sign in with their own GitHub account, while before-you-start.md:37-38 and editors/welcome.md:5 say they use an email link and need no GitHub account; the docs should give one answer.",
+        "why-cairn.md:40-42 praises a free tier that 'stays free', but the admin docs require the $5/month paid plan from the first deploy; the claim should be corrected.",
+        "The cost of Cloudflare Email Sending, which a second editor requires, should be stated alongside the other costs.",
+        "The docs should say how often breaking releases arrive and roughly how long an upgrade takes, so an evaluator can judge the maintenance cost before 1.0.",
+        "sign-in-through-your-organization.md:345-346 says createGithubApp is 'the one provider cairn ships' and then 'none ships with cairn today'; this sentence contradicts itself.",
+        "Use one term for where saves wait: 'hold ref' (why-cairn.md:22) or 'Holding branch' (extend/README.md:120)."
+      ],
+      "denials": [],
+      "proxyBlocked": [],
+      "packageFetches": [],
+      "usage": {
+        "input": 6,
+        "output": 3975,
+        "cacheCreation": 45281,
+        "cacheRead": 9409,
+        "counted": 49262
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "quotes": [
+          {
+            "path": "docs/why-cairn.md",
+            "line": 58,
+            "text": "**cairn is pre-1.0, and seams still move.** The extend track's own stability section documents a",
+            "ok": true,
+            "startLine": 58,
+            "endLine": 58
+          },
+          {
+            "path": "docs/why-cairn.md",
+            "line": 17,
+            "text": "cairn is two things at once: an editor-first, git-backed CMS, and a SvelteKit toolkit a developer",
+            "ok": true,
+            "startLine": 17,
+            "endLine": 17
+          },
+          {
+            "path": "docs/why-cairn.md",
+            "line": 76,
+            "text": "**cairn is a CMS and an admin toolkit, not a platform.** It manages markdown content and the",
+            "ok": true,
+            "startLine": 76,
+            "endLine": 76
+          },
+          {
+            "path": "docs/admin/before-you-start.md",
+            "line": 52,
+            "text": "1. **Cloudflare's Workers Paid plan, $5 a month.** That's what running a cairn site on",
+            "ok": true,
+            "startLine": 52,
+            "endLine": 52
+          },
+          {
+            "path": "docs/admin/before-you-start.md",
+            "line": 83,
+            "text": "Adding an editor, a co-owner, anyone besides you, takes two things beyond what your site already",
+            "ok": true,
+            "startLine": 83,
+            "endLine": 83
+          },
+          {
+            "path": "docs/admin/README.md",
+            "line": 5,
+            "text": "developer. You never write code here. `create-cairn-site` does the setup; these pages narrate",
+            "ok": true,
+            "startLine": 5,
+            "endLine": 5
+          },
+          {
+            "path": "docs/editors/welcome.md",
+            "line": 5,
+            "text": "of your own, or anything installed. You sign in with your email address and a link.",
+            "ok": true,
+            "startLine": 5,
+            "endLine": 5
+          },
+          {
+            "path": "docs/extend/README.md",
+            "line": 83,
+            "text": "`1.0`, treat every version bump as a real upgrade to verify, tier or no tier, and read",
+            "ok": true,
+            "startLine": 83,
+            "endLine": 83
+          },
+          {
+            "path": "docs/extend/migration-notes.md",
+            "line": 34,
+            "text": "login outage with no second channel, since every confirm names the new `nonce_hash` column. No",
+            "ok": true,
+            "startLine": 34,
+            "endLine": 34
+          },
+          {
+            "path": "docs/extend/add-a-second-audience.md",
+            "line": 18,
+            "text": "**A genuinely separate population, with its own identity and its own volume.** Members, athletes,",
+            "ok": true,
+            "startLine": 18,
+            "endLine": 18
+          },
+          {
+            "path": "docs/extend/sign-in-through-your-organization.md",
+            "line": 345,
+            "text": "the one provider cairn ships, wrapping the GitHub App flow this project defaults to; none ships",
+            "ok": true,
+            "startLine": 345,
+            "endLine": 345
+          }
+        ],
+        "problems": []
+      }
+    },
+    {
+      "id": "evaluator-planted-2",
+      "class": "docs-only",
+      "model": "claude-opus-5-5",
+      "outcome": "done",
+      "stalls": [
+        "Could not reconcile how editors sign in: why-cairn.md says GitHub accounts, before-you-start.md and editors/welcome.md say email magic link with no GitHub account. The pages that would settle it (own-your-domain.md, invite-editors.md, reference/) are linked but not in the working directory.",
+        "Could not judge how much ongoing upgrade work to expect: nothing says how often releases come out, and upgrade-cairn.md is not present."
+      ],
+      "assumed": [
+        "That the email magic link in editors/welcome.md is the current default sign-in, and that the GitHub-account wording in why-cairn.md is out of date.",
+        "That 'hold ref' in why-cairn.md means the same thing as 'Holding branch' in extend/README.md.",
+        "That the reader is a developer, so 'needs a developer' tasks fall on the reader, and that the co-editor is not a developer.",
+        "That the ~$6/month figure is the full running cost apart from the unconfirmed domain-certificate charge and possible Email Sending charges, which are never priced."
+      ],
+      "pagesRead": [
+        "docs/admin/README.md",
+        "docs/admin/before-you-start.md",
+        "docs/editors/welcome.md",
+        "docs/extend/README.md",
+        "docs/extend/add-a-second-audience.md",
+        "docs/extend/migration-notes.md",
+        "docs/extend/sign-in-through-your-organization.md",
+        "docs/why-cairn.md"
+      ],
+      "quotes": [
+        {
+          "path": "docs/why-cairn.md",
+          "line": 41,
+          "text": "security-forward defaults with a free tier that actually stays free for a small site's real",
+          "ok": true,
+          "startLine": 41,
+          "endLine": 41
+        },
+        {
+          "path": "docs/why-cairn.md",
+          "line": 84,
+          "text": "still needs a GitHub account, a Cloudflare account, a paid Cloudflare plan from the first deploy,",
+          "ok": true,
+          "startLine": 84,
+          "endLine": 84
+        },
+        {
+          "path": "docs/why-cairn.md",
+          "line": 20,
+          "text": "identity system for its editors: they sign in with their own GitHub account, with no password to",
+          "ok": true,
+          "startLine": 19,
+          "endLine": 19
+        },
+        {
+          "path": "docs/why-cairn.md",
+          "line": 58,
+          "text": "**cairn is pre-1.0, and seams still move.** The extend track's own stability section documents a",
+          "ok": true,
+          "startLine": 58,
+          "endLine": 58
+        },
+        {
+          "path": "docs/admin/before-you-start.md",
+          "line": 37,
+          "text": "- **A GitHub App** that publishes on your writers' behalf, so nobody needs a GitHub account of",
+          "ok": true,
+          "startLine": 37,
+          "endLine": 37
+        },
+        {
+          "path": "docs/admin/before-you-start.md",
+          "line": 74,
+          "text": "Those two come to about $6 a month for a small site on its own domain: the $5 Workers Paid plan,",
+          "ok": true,
+          "startLine": 74,
+          "endLine": 74
+        },
+        {
+          "path": "docs/admin/before-you-start.md",
+          "line": 84,
+          "text": "has: a domain of your own connected, and Cloudflare's Email Sending turned on for it. Sign-in mail",
+          "ok": true,
+          "startLine": 84,
+          "endLine": 84
+        },
+        {
+          "path": "docs/admin/before-you-start.md",
+          "line": 98,
+          "text": "- **Updating the cairn engine itself** to pick up a new release. See",
+          "ok": true,
+          "startLine": 98,
+          "endLine": 98
+        },
+        {
+          "path": "docs/admin/README.md",
+          "line": 5,
+          "text": "developer. You never write code here. `create-cairn-site` does the setup; these pages narrate",
+          "ok": true,
+          "startLine": 5,
+          "endLine": 5
+        },
+        {
+          "path": "docs/editors/welcome.md",
+          "line": 5,
+          "text": "of your own, or anything installed. You sign in with your email address and a link.",
+          "ok": true,
+          "startLine": 5,
+          "endLine": 5
+        },
+        {
+          "path": "docs/editors/welcome.md",
+          "line": 35,
+          "text": "Once you're signed in, your browser stays signed in for about a month, so you won't have",
+          "ok": true,
+          "startLine": 35,
+          "endLine": 35
+        },
+        {
+          "path": "docs/extend/add-a-second-audience.md",
+          "line": 22,
+          "text": "store, its own session, and its own area outside `/admin` entirely. Price: you build and own that",
+          "ok": true,
+          "startLine": 22,
+          "endLine": 22
+        },
+        {
+          "path": "docs/extend/migration-notes.md",
+          "line": 33,
+          "text": "then `npx wrangler d1 migrations apply <auth-db> --remote`. An un-migrated `AUTH_DB` is a total",
+          "ok": true,
+          "startLine": 33,
+          "endLine": 33
+        },
+        {
+          "path": "docs/extend/README.md",
+          "line": 82,
+          "text": "[Migration notes](./migration-notes.md) is the record of exactly which versions did this. Until",
+          "ok": true,
+          "startLine": 82,
+          "endLine": 82
+        },
+        {
+          "path": "docs/extend/README.md",
+          "line": 120,
+          "text": "- **Holding branch.** Where a save waits, `cairn/<concept>/<id>`, one per entry, until a",
+          "ok": true,
+          "startLine": 120,
+          "endLine": 120
+        },
+        {
+          "path": "docs/extend/sign-in-through-your-organization.md",
+          "line": 345,
+          "text": "the one provider cairn ships, wrapping the GitHub App flow this project defaults to; none ships",
+          "ok": true,
+          "startLine": 345,
+          "endLine": 345
+        },
+        {
+          "path": "docs/extend/sign-in-through-your-organization.md",
+          "line": 313,
+          "text": "`identity`, `IdentityResolver`, `ResolvedIdentity`, and `IdentityRefusal` are Unstable API: the",
+          "ok": true,
+          "startLine": 313,
+          "endLine": 313
+        }
+      ],
+      "checks": [],
+      "ruleCandidates": [
+        "why-cairn.md should describe editor sign-in the same way as the admin and editor docs (email magic link, no GitHub account needed), or explain when GitHub sign-in applies.",
+        "why-cairn.md's 'free tier that actually stays free' claim should be removed or reconciled with the $5/month Workers Paid plan required from the first deploy.",
+        "Use one term for where saves wait ('hold ref' vs 'Holding branch').",
+        "State how often releases come out and how much upgrade effort to expect, so evaluators can estimate upkeep.",
+        "Put a price on Cloudflare Email Sending for magic-link sign-in, since a second editor requires it.",
+        "Fix 'createGithubApp is the one provider cairn ships... none ships with cairn today' to say 'no non-GitHub provider ships'."
+      ],
+      "denials": [],
+      "proxyBlocked": [],
+      "packageFetches": [],
+      "usage": {
+        "input": 6,
+        "output": 3989,
+        "cacheCreation": 45281,
+        "cacheRead": 9409,
+        "counted": 49276
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "quotes": [
+          {
+            "path": "docs/why-cairn.md",
+            "line": 41,
+            "text": "security-forward defaults with a free tier that actually stays free for a small site's real",
+            "ok": true,
+            "startLine": 41,
+            "endLine": 41
+          },
+          {
+            "path": "docs/why-cairn.md",
+            "line": 84,
+            "text": "still needs a GitHub account, a Cloudflare account, a paid Cloudflare plan from the first deploy,",
+            "ok": true,
+            "startLine": 84,
+            "endLine": 84
+          },
+          {
+            "path": "docs/why-cairn.md",
+            "line": 20,
+            "text": "identity system for its editors: they sign in with their own GitHub account, with no password to",
+            "ok": true,
+            "startLine": 19,
+            "endLine": 19
+          },
+          {
+            "path": "docs/why-cairn.md",
+            "line": 58,
+            "text": "**cairn is pre-1.0, and seams still move.** The extend track's own stability section documents a",
+            "ok": true,
+            "startLine": 58,
+            "endLine": 58
+          },
+          {
+            "path": "docs/admin/before-you-start.md",
+            "line": 37,
+            "text": "- **A GitHub App** that publishes on your writers' behalf, so nobody needs a GitHub account of",
+            "ok": true,
+            "startLine": 37,
+            "endLine": 37
+          },
+          {
+            "path": "docs/admin/before-you-start.md",
+            "line": 74,
+            "text": "Those two come to about $6 a month for a small site on its own domain: the $5 Workers Paid plan,",
+            "ok": true,
+            "startLine": 74,
+            "endLine": 74
+          },
+          {
+            "path": "docs/admin/before-you-start.md",
+            "line": 84,
+            "text": "has: a domain of your own connected, and Cloudflare's Email Sending turned on for it. Sign-in mail",
+            "ok": true,
+            "startLine": 84,
+            "endLine": 84
+          },
+          {
+            "path": "docs/admin/before-you-start.md",
+            "line": 98,
+            "text": "- **Updating the cairn engine itself** to pick up a new release. See",
+            "ok": true,
+            "startLine": 98,
+            "endLine": 98
+          },
+          {
+            "path": "docs/admin/README.md",
+            "line": 5,
+            "text": "developer. You never write code here. `create-cairn-site` does the setup; these pages narrate",
+            "ok": true,
+            "startLine": 5,
+            "endLine": 5
+          },
+          {
+            "path": "docs/editors/welcome.md",
+            "line": 5,
+            "text": "of your own, or anything installed. You sign in with your email address and a link.",
+            "ok": true,
+            "startLine": 5,
+            "endLine": 5
+          },
+          {
+            "path": "docs/editors/welcome.md",
+            "line": 35,
+            "text": "Once you're signed in, your browser stays signed in for about a month, so you won't have",
+            "ok": true,
+            "startLine": 35,
+            "endLine": 35
+          },
+          {
+            "path": "docs/extend/add-a-second-audience.md",
+            "line": 22,
+            "text": "store, its own session, and its own area outside `/admin` entirely. Price: you build and own that",
+            "ok": true,
+            "startLine": 22,
+            "endLine": 22
+          },
+          {
+            "path": "docs/extend/migration-notes.md",
+            "line": 33,
+            "text": "then `npx wrangler d1 migrations apply <auth-db> --remote`. An un-migrated `AUTH_DB` is a total",
+            "ok": true,
+            "startLine": 33,
+            "endLine": 33
+          },
+          {
+            "path": "docs/extend/README.md",
+            "line": 82,
+            "text": "[Migration notes](./migration-notes.md) is the record of exactly which versions did this. Until",
+            "ok": true,
+            "startLine": 82,
+            "endLine": 82
+          },
+          {
+            "path": "docs/extend/README.md",
+            "line": 120,
+            "text": "- **Holding branch.** Where a save waits, `cairn/<concept>/<id>`, one per entry, until a",
+            "ok": true,
+            "startLine": 120,
+            "endLine": 120
+          },
+          {
+            "path": "docs/extend/sign-in-through-your-organization.md",
+            "line": 345,
+            "text": "the one provider cairn ships, wrapping the GitHub App flow this project defaults to; none ships",
+            "ok": true,
+            "startLine": 345,
+            "endLine": 345
+          },
+          {
+            "path": "docs/extend/sign-in-through-your-organization.md",
+            "line": 313,
+            "text": "`identity`, `IdentityResolver`, `ResolvedIdentity`, and `IdentityRefusal` are Unstable API: the",
+            "ok": true,
+            "startLine": 313,
+            "endLine": 313
+          }
+        ],
+        "problems": []
+      }
+    }
+  ],
+  "verified": false,
+  "cliVersion": "2.1.281"
+}

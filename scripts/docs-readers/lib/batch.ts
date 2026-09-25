@@ -7,8 +7,8 @@ import { isAbsolute, normalize } from 'node:path';
 import type { Batch, ClassDecl, Job } from './types.js';
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-const BATCH_FIELDS = ['name', 'concurrency', 'budgetTokens', 'jobs'];
-const JOB_FIELDS = ['id', 'class', 'model', 'arrival', 'job', 'docsSet', 'prepared', 'timeoutMinutes'];
+const BATCH_FIELDS = ['name', 'concurrency', 'budgetTokens', 'jobs', 'gated'];
+const JOB_FIELDS = ['id', 'class', 'model', 'arrival', 'job', 'docsSet', 'prepared', 'timeoutMinutes', 'absent', 'commit'];
 
 /** The per-job wall-clock limit when a job does not set one. */
 export const DEFAULT_TIMEOUT_MINUTES = 30;
@@ -47,6 +47,7 @@ export function parseBatch(raw: unknown, classes: Map<string, ClassDecl>): Batch
   if (!Array.isArray(batch.jobs) || batch.jobs.length === 0) {
     problems.push('jobs must be a non-empty array');
   }
+  if (batch.gated !== undefined && typeof batch.gated !== 'boolean') problems.push('gated, when given, must be a boolean');
   const seen = new Set<string>();
   const jobs = (Array.isArray(batch.jobs) ? (batch.jobs as unknown[]) : []).map((item, index) => {
     const where = `job ${index + 1}`;
@@ -85,6 +86,12 @@ export function parseBatch(raw: unknown, classes: Map<string, ClassDecl>): Batch
     const timeout = job.timeoutMinutes;
     if (timeout !== undefined && !(typeof timeout === 'number' && timeout > 0)) {
       problems.push(`${where}: timeoutMinutes must be a positive number`);
+    }
+    if (job.absent !== undefined && (!Array.isArray(job.absent) || !job.absent.every(isContainedRelative))) {
+      problems.push(`${where}: absent, when given, must be an array of relative paths that stay inside the tree`);
+    }
+    if (job.commit !== undefined && (typeof job.commit !== 'string' || job.commit.trim() === '')) {
+      problems.push(`${where}: commit, when given, must be a non-empty string`);
     }
     return {
       ...job,

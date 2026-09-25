@@ -29,6 +29,10 @@ export interface Job {
   docsSet: string[];
   prepared?: string;
   timeoutMinutes: number;
+  /** Repository-relative paths this job's tree excludes, a directory given with a trailing slash. */
+  absent?: string[];
+  /** The commit this job's pages were pinned to. */
+  commit?: string;
 }
 
 /** A parsed batch. */
@@ -37,6 +41,8 @@ export interface Batch {
   concurrency: number;
   budgetTokens: number;
   jobs: Job[];
+  /** Whether this batch's inputs must verify against the freeze manifest before any container starts. */
+  gated?: boolean;
 }
 
 /** An Anthropic API `usage` block. */
@@ -79,6 +85,8 @@ export interface StreamEvent {
   is_error?: boolean;
   api_error_status?: number | null;
   message?: { id?: string; content?: ContentBlock[] | string; usage?: ApiUsage };
+  /** The model id the init event reports for the session (the `system`/`init` event only). */
+  model?: string;
   rate_limit_info?: { status?: string };
   permission_denials?: Array<{ tool_name: string; tool_use_id?: string; tool_input?: unknown }>;
   modelUsage?: Record<string, ModelUsage>;
@@ -141,13 +149,49 @@ export interface VerifiedQuote {
   endLine?: number;
 }
 
+/** A stall or assumption entry: its text, and what blocked the reader there, when anything did. */
+export interface BlockedEntry {
+  text: string;
+  blockedBy: string | null;
+}
+
+/** One instruction the reader followed or statement it relied on, and the decision it supported. */
+export interface Step {
+  quote: Quote;
+  decision: string;
+}
+
+/** A step whose quote has gone through verification. */
+export interface VerifiedStep {
+  quote: VerifiedQuote;
+  decision: string;
+}
+
+/** A place the reader did something other than what a page said, including a workaround that worked. */
+export interface Diverged {
+  quote: Quote;
+  didInstead: string;
+  why: string;
+  blockedBy: string | null;
+}
+
+/** A divergence entry whose quote has gone through verification. */
+export interface VerifiedDiverged {
+  quote: VerifiedQuote;
+  didInstead: string;
+  why: string;
+  blockedBy: string | null;
+}
+
 /** The reader's structured report. */
 export interface ReaderReport {
   outcome: 'done' | 'stalled' | 'refused';
-  stalls: string[];
-  assumed: string[];
+  stalls: BlockedEntry[];
+  assumed: BlockedEntry[];
   quotes: Quote[];
   ruleCandidates: string[];
+  steps: Step[];
+  diverged: Diverged[];
 }
 
 /** The init check's result. */
@@ -168,6 +212,8 @@ export interface Verified {
   init: boolean;
   canaries: boolean;
   quotes: VerifiedQuote[];
+  steps: VerifiedStep[];
+  diverged: VerifiedDiverged[];
   problems: string[];
 }
 
@@ -194,17 +240,37 @@ export interface ProxyRecord {
   time?: string;
 }
 
+/** Why one attempt at a job ran. */
+export type AttemptCause = 'initial' | 'unverified' | 'crashed' | 'timedOut' | 'noReport';
+
+/** One run attempt at a job. The runner keeps every attempt it made; exactly one is `final`. */
+export interface Attempt {
+  cause: AttemptCause;
+  final: boolean;
+}
+
+/** The freeze manifest a gated batch's report was stamped against. */
+export interface FreezeStamp {
+  tag: string;
+  manifestHash: string;
+  chainHead: string;
+}
+
 /** A job report: outcome `aborted` and `error` are the runner's, the other three the reader's. */
 export interface JobReport {
   id: string;
   class: string;
   model: string;
+  /** The model id the init event reported for this run, when the run started at all. */
+  initModel?: string;
   outcome: 'done' | 'stalled' | 'refused' | 'aborted' | 'error';
   abortReason?: string;
-  stalls: string[];
-  assumed: string[];
+  stalls: BlockedEntry[];
+  assumed: BlockedEntry[];
   pagesRead: string[];
   quotes: VerifiedQuote[];
+  steps: VerifiedStep[];
+  diverged: VerifiedDiverged[];
   checks: unknown[];
   ruleCandidates: string[];
   denials: Denial[];
@@ -212,6 +278,42 @@ export interface JobReport {
   packageFetches: PackageFetch[];
   usage: ReportUsage;
   verified: Verified;
+  /** Every attempt the runner made at this job. Unset until a batch actually reruns a job. */
+  attempts?: Attempt[];
+  /** Set when a batch-level stop left this job unstarted, naming what stopped the batch. */
+  stoppedBy?: 'rateLimit' | 'auth' | 'budget';
+  /** The freeze manifest this report was gated against. Set only on a gated batch's report. */
+  freeze?: FreezeStamp;
+}
+
+/** One catch judge ruling for a plant item in its packet. */
+export interface CatchRuling {
+  itemId: string;
+  ruling: 'caught' | 'missed';
+  reason: string;
+}
+
+/** The catch judge's structured output: one ruling per plant item its packet carried. */
+export interface CatchJudgeOutput {
+  rulings: CatchRuling[];
+}
+
+/** How the adjudicator classified one catch-field item before ruling it. */
+export type AdjudicationClass = 'finding' | 'interpretation' | 'notAClaim';
+
+/** One adjudicator ruling for a catch-field item in its packet. */
+export interface Adjudication {
+  itemId: string;
+  class: AdjudicationClass;
+  /** The group items sharing a subject (same page, same claimed fact) are pooled under. */
+  subjectGroupId: string;
+  /** Set only when `class` is `finding`: whether the claim is real, false, or a harness artifact. */
+  ruling?: 'real' | 'false' | 'harness';
+}
+
+/** The adjudicator's structured output: one adjudication per catch-field item its packet carried. */
+export interface AdjudicatorOutput {
+  adjudications: Adjudication[];
 }
 
 /** Why a batch stopped. */

@@ -240,27 +240,13 @@ export interface ProxyRecord {
   time?: string;
 }
 
-/** Why one attempt at a job ran. */
-export type AttemptCause = 'initial' | 'unverified' | 'crashed' | 'timedOut' | 'noReport';
-
-/** One run attempt at a job. The runner keeps every attempt it made; exactly one is `final`. */
-export interface Attempt {
-  cause: AttemptCause;
-  final: boolean;
-}
-
-/** The freeze manifest a gated batch's report was stamped against. */
-export interface FreezeStamp {
-  tag: string;
-  manifestHash: string;
-  chainHead: string;
-}
-
-/** A job report: outcome `aborted` and `error` are the runner's, the other three the reader's. */
-export interface JobReport {
-  id: string;
-  class: string;
-  model: string;
+/**
+ * The fields one run attempt at a job produces: outcome `aborted` and `error` are the runner's,
+ * the other three the reader's. A `JobReport`'s own top-level fields carry this shape too,
+ * mirroring the final attempt, so a caller that never needs per-attempt detail reads them the
+ * same way it always has.
+ */
+export interface RunOutcome {
   /** The model id the init event reported for this run, when the run started at all. */
   initModel?: string;
   outcome: 'done' | 'stalled' | 'refused' | 'aborted' | 'error';
@@ -278,7 +264,39 @@ export interface JobReport {
   packageFetches: PackageFetch[];
   usage: ReportUsage;
   verified: Verified;
-  /** Every attempt the runner made at this job. Unset until a batch actually reruns a job. */
+}
+
+/** Why one attempt at a job ran. */
+export type AttemptCause = 'initial' | 'unverified' | 'crashed' | 'timedOut' | 'noReport';
+
+/**
+ * One run attempt at a job, with its own full outcome (a non-final attempt's result is kept, not
+ * discarded). The runner keeps every attempt it made; exactly one is `final`.
+ */
+export interface Attempt extends RunOutcome {
+  cause: AttemptCause;
+  final: boolean;
+  /** This attempt's own transcript file, relative to the results directory. */
+  transcript: string;
+}
+
+/** The freeze manifest a gated batch's report was stamped against. */
+export interface FreezeStamp {
+  tag: string;
+  manifestHash: string;
+  chainHead: string;
+}
+
+/** A job report: its top-level fields mirror the final attempt (see `RunOutcome`). */
+export interface JobReport extends RunOutcome {
+  id: string;
+  class: string;
+  model: string;
+  /**
+   * Every attempt the runner made at this job. A fresh run's report always carries at least one
+   * entry, even a single successful attempt; only a report loaded from before attempts existed
+   * (the earlier saved shape) may omit it.
+   */
   attempts?: Attempt[];
   /** Set when a batch-level stop left this job unstarted, naming what stopped the batch. */
   stoppedBy?: 'rateLimit' | 'auth' | 'budget';
@@ -301,19 +319,41 @@ export interface CatchJudgeOutput {
 /** How the adjudicator classified one catch-field item before ruling it. */
 export type AdjudicationClass = 'finding' | 'interpretation' | 'notAClaim';
 
-/** One adjudicator ruling for a catch-field item in its packet. */
-export interface Adjudication {
+/** An adjudication that classified its item as a finding: it also carries the real/false/harness ruling and the subject group the finding pools under. */
+export interface FindingAdjudication {
   itemId: string;
-  class: AdjudicationClass;
+  class: 'finding';
   /** The group items sharing a subject (same page, same claimed fact) are pooled under. */
   subjectGroupId: string;
-  /** Set only when `class` is `finding`: whether the claim is real, false, or a harness artifact. */
-  ruling?: 'real' | 'false' | 'harness';
+  ruling: 'real' | 'false' | 'harness';
+  reason: string;
 }
+
+/** An adjudication that classified its item as an interpretation choice or not a claim at all. */
+export interface NonFindingAdjudication {
+  itemId: string;
+  class: 'interpretation' | 'notAClaim';
+  reason: string;
+}
+
+/** One adjudicator ruling for a catch-field item in its packet. */
+export type Adjudication = FindingAdjudication | NonFindingAdjudication;
 
 /** The adjudicator's structured output: one adjudication per catch-field item its packet carried. */
 export interface AdjudicatorOutput {
   adjudications: Adjudication[];
+}
+
+/** One agreement read's ruling over a re-ruled finding or catch call the scorer's sample drew. */
+export interface AgreementRuling {
+  itemId: string;
+  ruling: 'real' | 'false' | 'harness' | 'caught' | 'missed';
+  reason: string;
+}
+
+/** The agreement read's structured output: one ruling per sampled item. */
+export interface AgreementOutput {
+  rulings: AgreementRuling[];
 }
 
 /** Why a batch stopped. */

@@ -9,7 +9,7 @@ const DEV_ITEMS_PATH = join(ROOT, 'scripts/docs-readers/fixtures/dev-items.json'
 
 const items: DevItem[] = [
   { id: 'D02', subject: 'each JSON payload is one compact line, not pretty-printed', page: 'docs/reference/cli-cairn-json-output.md' },
-  { id: 'F5', subject: 'a spanning defect', page: 'docs/one.md', pages: ['docs/two.md'] },
+  { id: 'F5', subject: 'a spanning defect', page: 'docs/admin/is-it-working.md', pages: ['docs/why-cairn.md'] },
 ];
 
 describe('scanText', () => {
@@ -28,7 +28,7 @@ describe('scanText', () => {
   });
 
   it('flags a line naming a page only listed in pages[]', () => {
-    expect(scanText('See docs/two.md for more.', items)[0]).toMatchObject({ itemId: 'F5' });
+    expect(scanText('See docs/why-cairn.md for more.', items)[0]).toMatchObject({ itemId: 'F5' });
   });
 
   it('flags a sentence restating a subject, case- and punctuation-insensitive', () => {
@@ -43,6 +43,24 @@ describe('scanText', () => {
   it('reports the file and line number on each hit', () => {
     const hits = scanText('line one\nline two mentions D02 here\nline three', items, 'some/file.md');
     expect(hits).toEqual([{ itemId: 'D02', term: 'D02', file: 'some/file.md', line: 2 }]);
+  });
+
+  it('matches a page by its basename\'s stem, without the .md extension', () => {
+    const hits = scanText('See is-it-working for the details.', items);
+    expect(hits).toEqual([{ itemId: 'F5', term: 'docs/admin/is-it-working.md', file: '<text>', line: 1 }]);
+  });
+
+  it('compares a page case-insensitively', () => {
+    const caseItems: DevItem[] = [{ id: 'R9', subject: 'an unrelated subject', page: 'CONTRIBUTING.md' }];
+    expect(scanText('See contributing.md for the process.', caseItems)[0]).toMatchObject({ itemId: 'R9' });
+  });
+
+  it('catches a subject a source hard-wraps across two lines, which a per-line check would miss', () => {
+    const wrapItems: DevItem[] = [{ id: 'W1', subject: 'chassis import alias name', page: 'docs/one.md' }];
+    // Neither line alone contains all four subject words: line 1 ends after "import", line 2
+    // starts at "alias". A check confined to one line at a time would find nothing here.
+    const hits = scanText('Use the $chassis import\nalias name here.', wrapItems);
+    expect(hits).toEqual([{ itemId: 'W1', term: 'chassis import alias name', file: '<text>', line: 1 }]);
   });
 });
 

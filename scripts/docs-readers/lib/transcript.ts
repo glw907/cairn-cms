@@ -20,6 +20,7 @@ import type {
   StreamEvent,
   ToolCall,
   Usage,
+  Verified,
   VerifiedDiverged,
   VerifiedStep,
 } from './types.js';
@@ -730,8 +731,8 @@ export function initModel(events: StreamEvent[]): string | undefined {
 
 /**
  * Turn one saved job report's `stalls[]`/`assumed[]` entries into blocked entries, a plain string
- * (pass 1's shape) becoming `{ text, blockedBy: null }` and an already-structured entry passing
- * through unchanged.
+ * (the earlier report shape) becoming `{ text, blockedBy: null }` and an already-structured entry
+ * passing through unchanged.
  * @param value - A saved job report's raw `stalls` or `assumed` field.
  * @returns The field in the current, structured shape.
  */
@@ -741,8 +742,24 @@ function toBlockedEntries(value: unknown): BlockedEntry[] {
 }
 
 /**
- * Bring one saved job report up to the current shape: pass 1 predates `steps[]` and `diverged[]`
- * (filled with empty arrays here) and gave `stalls[]`/`assumed[]` as plain strings.
+ * Bring one saved job report's `verified` block up to the current shape: the earlier report shape
+ * predates its own `steps[]`/`diverged[]` fields, filled with empty arrays here.
+ * @param value - A saved job report's raw `verified` field.
+ * @returns The `verified` block with every field in the current shape.
+ */
+function normalizeSavedVerified(value: unknown): Verified {
+  const verified = (value ?? {}) as Record<string, unknown>;
+  return {
+    ...(verified as unknown as Verified),
+    steps: Array.isArray(verified.steps) ? (verified.steps as VerifiedStep[]) : [],
+    diverged: Array.isArray(verified.diverged) ? (verified.diverged as VerifiedDiverged[]) : [],
+  };
+}
+
+/**
+ * Bring one saved job report up to the current shape: the earlier report shape predates
+ * `steps[]` and `diverged[]`, at both the job report's own level and inside `verified` (filled
+ * with empty arrays here), and gave `stalls[]`/`assumed[]` as plain strings.
  * @param raw - One job entry from a saved batch report.
  * @returns The job report with every field in the current shape.
  */
@@ -754,13 +771,14 @@ function normalizeSavedJobReport(raw: unknown): JobReport {
     assumed: toBlockedEntries(job.assumed),
     steps: Array.isArray(job.steps) ? (job.steps as VerifiedStep[]) : [],
     diverged: Array.isArray(job.diverged) ? (job.diverged as VerifiedDiverged[]) : [],
+    verified: normalizeSavedVerified(job.verified),
   };
 }
 
 /**
- * Read a batch report saved before `steps[]` and `diverged[]` existed (pass 1's shape), the
- * shared loader every later saved-report reader uses: it brings every job up to the current
- * `JobReport` shape, tolerating a missing `steps[]`/`diverged[]` and a plain-string
+ * Read a batch report saved in the earlier report shape (before `steps[]` and `diverged[]`
+ * existed), the shared loader every later saved-report reader uses: it brings every job up to the
+ * current `JobReport` shape, tolerating a missing `steps[]`/`diverged[]` and a plain-string
  * `stalls[]`/`assumed[]`.
  * @param raw - The parsed contents of a saved `report.json`, or its JSON text.
  * @returns The batch report with every job in the current shape.

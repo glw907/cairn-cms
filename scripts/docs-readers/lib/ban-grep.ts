@@ -5,11 +5,20 @@
  * doing the job for real. This module flags a text that names one of `dev-items.json`'s entries
  * by its id, its page, or its subject.
  *
- * The subject rule: a subject and the candidate text are both lowercased, stripped of
- * punctuation, and collapsed to single spaces. A subject of four words or fewer must appear
- * whole, as a substring, in the normalized text (a short subject is usually already a
- * distinctive phrase, and matching only a fragment of it would flag ordinary prose that happens
- * to share a couple of common words). A longer subject is split into every run of four
+ * The id rule: an item's id must appear as a whole token on some line, checked line by line.
+ *
+ * The page rule, also checked line by line: a line naming an item's page, its basename, or its
+ * basename without a `.md` extension (the slug a bullet or a title often uses instead of the
+ * full filename) counts as naming the item, compared case-insensitively, since a page name can
+ * be written in either case in prose.
+ *
+ * The subject rule: the whole candidate text is normalized once, lowercased, stripped of
+ * punctuation, and joined across line breaks into a single collapsed-whitespace string, so a
+ * subject a source hard-wraps across two or more lines still matches; an offset map back to
+ * source lines lets a match report the line its own text starts on. A subject of four words or
+ * fewer must appear whole, as a substring, in the normalized text (a short subject is usually
+ * already a distinctive phrase, and matching only a fragment of it would flag ordinary prose that
+ * happens to share a couple of common words). A longer subject is split into every run of four
  * consecutive words it contains, and the text is flagged when any one such run appears in it: a
  * four-word run is long enough to be a restatement of the subject rather than a coincidence, and
  * checking every run (not just the whole subject) still catches a sentence that only restates
@@ -78,17 +87,79 @@ function subjectPhrases(subject: string): string[] {
   return phrases;
 }
 
+/** One source line's own run of characters inside a whole-text normalized string. */
+interface LineSegment {
+  /** This line's first character's index into the normalized string. */
+  start: number;
+  /** The 1-based source line this segment came from. */
+  line: number;
+}
+
+/** A text normalized as one collapsed-whitespace string, plus the map back to source lines. */
+interface NormalizedText {
+  normalized: string;
+  segments: LineSegment[];
+}
+
 /**
- * Every place one line names a development item: its id as a whole token, its page (the full
- * repository-relative path or the page's own basename) as a substring, or one of its subject
- * phrases in the line's normalized text.
+ * Normalize an entire text to one string, joining every non-blank line's own normalized form with
+ * a single space, so a phrase a source hard-wraps across two or more lines still appears as one
+ * contiguous run; `segments` records where each source line's own characters begin in the result.
+ * @param text - The full text to normalize.
+ * @returns The normalized text and its line segments, in source order.
+ */
+function normalizeWithLines(text: string): NormalizedText {
+  const segments: LineSegment[] = [];
+  let normalized = '';
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const lineNormalized = normalize(lines[i]);
+    if (lineNormalized === '') continue;
+    if (normalized !== '') normalized += ' ';
+    segments.push({ start: normalized.length, line: i + 1 });
+    normalized += lineNormalized;
+  }
+  return { normalized, segments };
+}
+
+/**
+ * The source line a normalized-text offset came from.
+ * @param segments - The ascending line segments `normalizeWithLines` recorded.
+ * @param offset - An index into the normalized text.
+ * @returns The line of the segment that offset falls in.
+ */
+function lineAtOffset(segments: LineSegment[], offset: number): number {
+  let line = segments[0]?.line ?? 1;
+  for (const segment of segments) {
+    if (segment.start > offset) break;
+    line = segment.line;
+  }
+  return line;
+}
+
+/**
+ * The strings that count as naming a page: its full repository-relative path, its basename, and
+ * its basename without a `.md` extension (the slug a bullet or a title often names it by), each
+ * lowercased for a case-insensitive comparison.
+ * @param page - A development item's page path.
+ * @returns The lowercased terms a lowercased line is checked against.
+ */
+function pageTerms(page: string): string[] {
+  const base = basename(page);
+  const stem = base.replace(/\.md$/i, '');
+  return [...new Set([page, base, stem])].map((term) => term.toLowerCase());
+}
+
+/**
+ * Every place one line names a development item by its id (a whole token) or its page (its full
+ * path, its basename, or its basename's stem, compared case-insensitively).
  * @param line - One line of text.
  * @param items - The development items to check the line against.
- * @returns Each item the line names, in item order; a line naming an item more than one way is
- * reported once, on its first match.
+ * @returns Each item the line names this way, in item order; an item named by both its id and its
+ * page on the same line is reported once, on its first match.
  */
 function lineHits(line: string, items: DevItem[]): Array<Pick<BanHit, 'itemId' | 'term'>> {
-  const normalizedLine = normalize(line);
+  const lowerLine = line.toLowerCase();
   const hits: Array<Pick<BanHit, 'itemId' | 'term'>> = [];
   for (const item of items) {
     const idPattern = new RegExp(`\\b${escapeRegExp(item.id)}\\b`);
@@ -97,13 +168,29 @@ function lineHits(line: string, items: DevItem[]): Array<Pick<BanHit, 'itemId' |
       continue;
     }
     const pages = [item.page, ...(item.pages ?? [])];
-    const pageTerm = pages.find((page) => line.includes(page) || line.includes(basename(page)));
-    if (pageTerm) {
-      hits.push({ itemId: item.id, term: pageTerm });
-      continue;
+    const pageTerm = pages.find((page) => pageTerms(page).some((term) => lowerLine.includes(term)));
+    if (pageTerm) hits.push({ itemId: item.id, term: pageTerm });
+  }
+  return hits;
+}
+
+/**
+ * Every place the whole text names a development item's subject, searched in one
+ * whole-text-normalized pass so a hard-wrapped subject cannot escape a per-line check.
+ * @param normalizedText - `text` normalized once, with the line segments to resolve a match's
+ * start offset back to a source line.
+ * @param items - The development items to check against.
+ * @returns Each item whose subject the text restates, on the line its match starts on.
+ */
+function subjectHits(normalizedText: NormalizedText, items: DevItem[]): Array<{ itemId: string; term: string; line: number }> {
+  const hits: Array<{ itemId: string; term: string; line: number }> = [];
+  for (const item of items) {
+    for (const phrase of subjectPhrases(item.subject)) {
+      const at = normalizedText.normalized.indexOf(phrase);
+      if (at === -1) continue;
+      hits.push({ itemId: item.id, term: phrase, line: lineAtOffset(normalizedText.segments, at) });
+      break;
     }
-    const phrase = subjectPhrases(item.subject).find((p) => normalizedLine.includes(p));
-    if (phrase) hits.push({ itemId: item.id, term: phrase });
   }
   return hits;
 }
@@ -113,7 +200,7 @@ function lineHits(line: string, items: DevItem[]): Array<Pick<BanHit, 'itemId' |
  * @param text - The text to scan, one or more lines.
  * @param items - The development items to check against.
  * @param file - The path reported on each hit.
- * @returns Every hit, in line order.
+ * @returns Every hit: every line's id and page hits, in line order, then every subject hit.
  */
 export function scanText(text: string, items: DevItem[], file = '<text>'): BanHit[] {
   const hits: BanHit[] = [];
@@ -122,6 +209,9 @@ export function scanText(text: string, items: DevItem[], file = '<text>'): BanHi
     for (const hit of lineHits(lines[i], items)) {
       hits.push({ ...hit, file, line: i + 1 });
     }
+  }
+  for (const hit of subjectHits(normalizeWithLines(text), items)) {
+    hits.push({ ...hit, file });
   }
   return hits;
 }

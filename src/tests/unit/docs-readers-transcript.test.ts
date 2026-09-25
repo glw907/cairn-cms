@@ -368,6 +368,8 @@ describe('loadSavedBatchReport', () => {
     expect(job?.assumed[0]).toMatchObject({ blockedBy: null });
     expect(job?.steps).toEqual([]);
     expect(job?.diverged).toEqual([]);
+    expect(job?.verified.steps).toEqual([]);
+    expect(job?.verified.diverged).toEqual([]);
   });
 
   it('accepts an already-parsed object, not only JSON text', () => {

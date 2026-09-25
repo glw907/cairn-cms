@@ -312,4 +312,32 @@ describe('verifyReport: steps and diverged quotes', () => {
     expect(twoOff.ok).toBe(false);
     expect(twoOff.problems).toEqual(['diverged quote docs/guide.md:1 unverified: text starts on line 3, not 1']);
   });
+
+  it('fails the run when a steps[] quote verifies but cites a docs-set page the transcript never shows read', () => {
+    const verified = verifyReport({
+      report: {
+        ...baseReport,
+        steps: [{ quote: { path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }, decision: 'used the settings page' }],
+        diverged: [],
+      },
+      ...baseArgs,
+    });
+    expect(verified.steps[0].quote.ok).toBe(true);
+    expect(verified.ok).toBe(false);
+    expect(verified.problems).toEqual(['step quote docs/other.md:3 cites a page the transcript never shows read']);
+  });
+
+  it('fails the run when a diverged[] quote verifies but cites a docs-set page the transcript never shows read', () => {
+    const verified = verifyReport({
+      report: {
+        ...baseReport,
+        steps: [],
+        diverged: [{ quote: { path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }, didInstead: 'skipped ahead', why: 'not covered', blockedBy: null }],
+      },
+      ...baseArgs,
+    });
+    expect(verified.diverged[0].quote.ok).toBe(true);
+    expect(verified.ok).toBe(false);
+    expect(verified.problems).toEqual(['diverged quote docs/other.md:3 cites a page the transcript never shows read']);
+  });
 });

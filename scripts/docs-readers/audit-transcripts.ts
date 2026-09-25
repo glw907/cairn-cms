@@ -6,6 +6,12 @@
  * dispatch never named. The frozen prompt copy inside the granted directory is in bounds, since it
  * is a hash-verified copy the agent reads without ever touching the worktree.
  *
+ * Every relative path a tool call or a Bash command names is resolved against its own effective
+ * working directory before the containment check: a transcript record's own `cwd` field for a
+ * tool call, or a Bash command's leading `cd <dir> &&`, falling back to the record's `cwd`. A
+ * relative reference from a cwd the audit cannot resolve, or that resolves outside every granted
+ * directory, is a hit, the same as an absolute one.
+ *
  * Usage:
  *   npx tsx scripts/docs-readers/audit-transcripts.ts --transcript FILE --granted DIR [--granted DIR...]
  *
@@ -14,7 +20,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, normalize, resolve } from 'node:path';
+import { isAbsolute, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** One tool call the audit flagged. */
@@ -29,20 +35,12 @@ export interface AuditHit {
   reason: string;
 }
 
-/** The path-bearing field(s) each tool's `input` carries, checked against the granted directories. */
-const PATH_FIELDS: Readonly<Record<string, readonly string[]>> = {
-  Read: ['file_path'],
-  Write: ['file_path'],
-  Edit: ['file_path'],
-  Grep: ['path'],
-  Glob: ['path'],
-};
-
 /**
  * Well-known forbidden roots this pass's blind agents must never read, named by a stable
- * substring: a mention of one anywhere in a Bash command, absolute or not, is itself a hit.
+ * substring (no trailing slash, so a mention with or without one still matches): a mention of one
+ * anywhere in a Bash command, absolute or not, is itself a hit.
  */
-const FORBIDDEN_MARKERS = ['docs/internal/record/', '.claude/worktrees/', '/var/home/glw907/Projects/cairn-cms', join(homedir(), '.cache', 'docs-readers')];
+const FORBIDDEN_MARKERS = ['docs/internal/record', '.claude/worktrees', '/var/home/glw907/Projects/cairn-cms', join(homedir(), '.cache', 'docs-readers')];
 
 /**
  * The forbidden markers worth checking for one audit run: a marker that already sits inside one
@@ -58,7 +56,7 @@ function applicableMarkers(granted: readonly string[]): string[] {
 
 /**
  * Whether a path sits inside one of the granted directories.
- * @param path - A path to check, ideally already absolute.
+ * @param path - A path to check, already absolute.
  * @param granted - The granted directories, resolved.
  * @returns True when the path equals or falls under one of them.
  */
@@ -68,53 +66,100 @@ function isContainedIn(path: string, granted: readonly string[]): boolean {
 }
 
 /**
- * Resolve a `~/`-prefixed value against a home directory; leave every other value, absolute or
- * relative, as given.
- * @param value - A raw path value from a tool call.
- * @param homeDir - The home directory `~` expands to.
- * @returns The resolved value.
- */
-function expandHome(value: string, homeDir: string): string {
-  return value.startsWith('~/') ? join(homeDir, value.slice(2)) : value;
-}
-
-/** How many characters of an offending Bash command the report keeps. */
-const COMMAND_EXCERPT_LENGTH = 300;
-
-/**
  * Standard device paths every shell command may reference freely: they hold no project data to
  * leak, so a bare `/dev/null` redirect never counts as a path outside the granted directory.
  */
 const BENIGN_PATH_PREFIXES = ['/dev/'];
 
 /**
- * Every absolute or home-relative token in a Bash command: a crude but effective split, since a
- * forbidden path's mere appearance as a token is the signal, not a full shell parse. Surrounding
- * quotes and trailing shell punctuation (a command separator, a closing paren) are stripped so a
- * path glued to the next token, as `/dev/null;` or `path/to/file),` is read as the bare path.
+ * Resolve a path value to an absolute path: `~/` expands against `homeDir`, an already-absolute
+ * value is normalized as given, and a relative value resolves against `cwd`.
+ * @param value - A raw path value from a tool call or a Bash token.
+ * @param cwd - The effective working directory a relative `value` resolves against, when known.
+ * @param homeDir - The home directory `~` expands to.
+ * @returns The resolved absolute path, or undefined when `value` is relative and `cwd` is unknown.
+ */
+function resolvePathValue(value: string, cwd: string | undefined, homeDir: string): string | undefined {
+  if (value.startsWith('~/')) return normalize(join(homeDir, value.slice(2)));
+  if (isAbsolute(value)) return normalize(value);
+  if (cwd === undefined) return undefined;
+  return normalize(join(cwd, value));
+}
+
+/**
+ * Whether a bare token looks like a filesystem path worth resolving: it carries a directory
+ * separator, or ends in a short alphanumeric extension (`catch-judge.md`, with no directory
+ * component of its own, still names a file in the effective cwd).
+ * @param token - A candidate token.
+ * @returns True when the token is worth resolving and checking.
+ */
+function looksPathLike(token: string): boolean {
+  return token.includes('/') || /\.[A-Za-z0-9]{1,8}$/.test(token);
+}
+
+/**
+ * A glob pattern's own directory prefix: every path segment before the first one carrying a glob
+ * metacharacter (`*`, `?`, `[`). `docs/internal/record/*.md` yields `docs/internal/record`;
+ * `**\/*.ts` (no real directory before its own wildcard) yields the empty string, which the
+ * caller treats as nothing to check.
+ * @param pattern - A Glob `pattern` or a Grep `glob` value.
+ * @returns The directory prefix, possibly empty.
+ */
+function globPatternDirPrefix(pattern: string): string {
+  const segments = pattern.split('/');
+  const cut = segments.findIndex((segment) => /[*?[]/.test(segment));
+  return (cut === -1 ? segments : segments.slice(0, cut)).join('/');
+}
+
+/** How many characters of an offending Bash command the report keeps. */
+const COMMAND_EXCERPT_LENGTH = 300;
+
+/**
+ * Every path-like token in a Bash command: a crude but effective split, since a forbidden path's
+ * mere appearance as a token is the signal, not a full shell parse. A leading redirect operator
+ * (`>`, `2>`, `>>`, with an optional file-descriptor number), surrounding quotes, and trailing
+ * shell punctuation (a command separator, a closing paren) are stripped, so a path glued to an
+ * operator or the next token, as `2>/dev/null;` or `path/to/file),`, is read as the bare path. A
+ * token naming a URL (`://`) is dropped: its slashes are not a filesystem path.
  * @param command - The Bash command text, exactly as the tool call gave it.
  * @returns Each candidate path token, with no device path among them.
  */
 function extractPathTokens(command: string): string[] {
   return command
     .split(/\s+/)
-    .map((token) => token.replace(/^['"]+|['"]+$/g, '').replace(/[;:,)]+$/, ''))
-    .filter((token) => (token.startsWith('/') || token.startsWith('~/')) && !BENIGN_PATH_PREFIXES.some((prefix) => token.startsWith(prefix)));
+    .map((token) => token.replace(/^\d*(>>?|<)&?/, '').replace(/^['"]+|['"]+$/g, '').replace(/[;:,)]+$/, ''))
+    .filter(
+      (token) =>
+        token !== '' &&
+        !token.includes('://') &&
+        !/[*?[]/.test(token) && // a shell glob (*.md, notes/*) expands in place; not a literal path reference
+        looksPathLike(token) &&
+        !BENIGN_PATH_PREFIXES.some((prefix) => token.startsWith(prefix)),
+    );
 }
 
 /**
- * Audit one Bash command: every absolute or home-relative token must resolve inside a granted
- * directory, and the command text must not mention a forbidden root by name.
+ * Audit one Bash command: every path-like token must resolve, against the command's own effective
+ * cwd, inside a granted directory, and the command text must not mention a forbidden root by name.
+ * The effective cwd is a leading `cd <dir> &&`'s own target when the command opens with one
+ * (itself resolved against the record's cwd, when relative), otherwise the record's own cwd.
  * @param command - The Bash command text, exactly as the tool call gave it.
  * @param granted - The granted directories, resolved.
+ * @param recordCwd - The transcript record's own `cwd` field, when it carries one.
  * @param homeDir - The home directory `~` expands to.
  * @returns Every hit the command produced.
  */
-function auditBashCommand(command: string, granted: readonly string[], homeDir: string): AuditHit[] {
+function auditBashCommand(command: string, granted: readonly string[], recordCwd: string | undefined, homeDir: string): AuditHit[] {
   const excerpt = command.length > COMMAND_EXCERPT_LENGTH ? `${command.slice(0, COMMAND_EXCERPT_LENGTH)}…` : command;
   const hits: AuditHit[] = [];
+  const cdMatch = /^\s*cd\s+(\S+)\s*&&/.exec(command);
+  const effectiveCwd = cdMatch ? (resolvePathValue(cdMatch[1].replace(/^['"]+|['"]+$/g, ''), recordCwd, homeDir) ?? recordCwd) : recordCwd;
   for (const token of extractPathTokens(command)) {
-    const resolvedPath = expandHome(token, homeDir);
+    const resolvedPath = resolvePathValue(token, effectiveCwd, homeDir);
+    if (resolvedPath === undefined) {
+      hits.push({ source: 'bash', command: excerpt, reason: `command references relative path "${token}" and this record carries no cwd to resolve it against` });
+      continue;
+    }
     if (!isContainedIn(resolvedPath, granted)) {
       hits.push({ source: 'bash', command: excerpt, path: resolvedPath, reason: `command references a path outside every granted directory: ${token}` });
     }
@@ -128,36 +173,54 @@ function auditBashCommand(command: string, granted: readonly string[], homeDir: 
 }
 
 /**
- * Audit one tool call: a Bash call is scanned as a command string; a Read, Grep, Glob, Edit, or
- * Write call is checked on its own path field(s). Any other tool name is not path-bearing and
- * produces no hit.
+ * Audit one tool call: a Bash call is scanned as a command string; a Read, Write, or Edit call is
+ * checked on its `file_path`; a Grep or Glob call is checked on its `path` (the effective cwd
+ * itself, when the call omits `path` entirely, since that is where the tool then searches) and,
+ * when it carries a real directory component, the directory prefix of a Glob `pattern` or a Grep
+ * `glob`. Any other tool name is not path-bearing and produces no hit.
  * @param name - The tool call's own name, such as `Read` or `Bash`.
  * @param input - The tool call's `input` object.
  * @param granted - The granted directories, resolved.
+ * @param cwd - The transcript record's own `cwd` field, when it carries one.
  * @param homeDir - The home directory `~` expands to.
  * @returns Every hit the call produced.
  */
-export function auditToolCall(name: string, input: Record<string, unknown>, granted: readonly string[], homeDir: string = homedir()): AuditHit[] {
+export function auditToolCall(name: string, input: Record<string, unknown>, granted: readonly string[], cwd: string | undefined, homeDir: string = homedir()): AuditHit[] {
   if (name === 'Bash') {
     const command = typeof input.command === 'string' ? input.command : '';
-    return command === '' ? [] : auditBashCommand(command, granted, homeDir);
+    return command === '' ? [] : auditBashCommand(command, granted, cwd, homeDir);
   }
-  const fields = PATH_FIELDS[name];
-  if (!fields) return [];
   const hits: AuditHit[] = [];
-  for (const field of fields) {
-    const value = input[field];
-    if (typeof value !== 'string' || value.trim() === '') continue;
-    const resolvedPath = expandHome(value, homeDir);
+  const check = (field: string, raw: string | undefined) => {
+    if (raw === undefined) return;
+    const resolvedPath = resolvePathValue(raw, cwd, homeDir);
+    if (resolvedPath === undefined) {
+      hits.push({ source: 'tool', tool: name, reason: `${name} ${field} "${raw}" is relative and this record carries no cwd to resolve it against` });
+      return;
+    }
     if (!isContainedIn(resolvedPath, granted)) {
       hits.push({ source: 'tool', tool: name, path: resolvedPath, reason: `${name} ${field} is outside every granted directory` });
+    }
+  };
+  const stringField = (field: string): string | undefined => (typeof input[field] === 'string' && (input[field] as string).trim() !== '' ? (input[field] as string) : undefined);
+  if (name === 'Read' || name === 'Write' || name === 'Edit') {
+    check('file_path', stringField('file_path'));
+  } else if (name === 'Grep' || name === 'Glob') {
+    // A missing path means the tool searches the effective cwd itself, so that cwd is what gets checked.
+    check('path', stringField('path') ?? cwd);
+    const patternField = name === 'Glob' ? 'pattern' : 'glob';
+    const rawPattern = stringField(patternField);
+    if (rawPattern !== undefined) {
+      const prefix = globPatternDirPrefix(rawPattern);
+      if (prefix !== '') check(patternField, prefix);
     }
   }
   return hits;
 }
 
 /**
- * Audit a whole transcript: every `tool_use` block in every assistant message.
+ * Audit a whole transcript: every `tool_use` block in every assistant message, resolved against
+ * that record's own `cwd`.
  * @param path - The transcript's `.jsonl` path.
  * @param granted - The agent's granted directories.
  * @param homeDir - The home directory `~` expands to.
@@ -174,6 +237,7 @@ export function auditTranscript(path: string, granted: readonly string[], homeDi
     } catch {
       continue;
     }
+    const cwd = typeof record.cwd === 'string' ? record.cwd : undefined;
     const message = record.message as Record<string, unknown> | undefined;
     const content = message?.content;
     if (!Array.isArray(content)) continue;
@@ -183,7 +247,7 @@ export function auditTranscript(path: string, granted: readonly string[], homeDi
       if (b.type !== 'tool_use') continue;
       const name = typeof b.name === 'string' ? b.name : '';
       const input = (b.input ?? {}) as Record<string, unknown>;
-      hits.push(...auditToolCall(name, input, resolvedGranted, homeDir));
+      hits.push(...auditToolCall(name, input, resolvedGranted, cwd, homeDir));
     }
   }
   return hits;

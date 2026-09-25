@@ -104,6 +104,40 @@ describe('judgeReportSchema', () => {
   });
 });
 
+describe('runJudgeBatch: expectedItems coverage', () => {
+  it('throws when a job carries no expectedItems entry, rather than verifying vacuously', async () => {
+    const events = [INIT, assistantEvent(), resultEvent({ rulings: [] })];
+    const { executor, ledger } = replayExecutor({ a: [events] });
+    const run = runJudgeBatch({
+      batch: judgeBatchOf(['a'], 'judge-catch'),
+      classes,
+      baselines,
+      executor,
+      ledger,
+      runId: 'j-missing-expected',
+      kind: 'catchJudge',
+      expectedItems: {},
+    });
+    await expect(run).rejects.toThrow('expectedItems carries no entry');
+  });
+
+  it('accepts an explicit empty list, verifying a run with no rulings', async () => {
+    const events = [INIT, assistantEvent(), resultEvent({ rulings: [] })];
+    const { executor, ledger } = replayExecutor({ a: [events] });
+    const { report } = await runJudgeBatch({
+      batch: judgeBatchOf(['a'], 'judge-catch'),
+      classes,
+      baselines,
+      executor,
+      ledger,
+      runId: 'j-empty-expected',
+      kind: 'catchJudge',
+      expectedItems: { a: [] },
+    });
+    expect(report.jobs[0].verified.ok).toBe(true);
+  });
+});
+
 describe('runJudgeBatch: the catch judge', () => {
   it('completes with a verified ruling for every plant entry the packet named', async () => {
     const events = [INIT, assistantEvent(), resultEvent({ rulings: [{ itemId: 'plant-1', ruling: 'caught', reason: 'r1' }, { itemId: 'plant-2', ruling: 'missed', reason: 'r2' }] })];

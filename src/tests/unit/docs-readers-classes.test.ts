@@ -6,6 +6,7 @@ import {
   loadClasses,
   loadEgress,
   validateClass,
+  JUDGE_SYSTEM_PROMPT,
 } from '../../../scripts/docs-readers/lib/class-schema.js';
 
 const egressNames = Object.keys(loadEgress());
@@ -95,6 +96,17 @@ describe('class declarations', () => {
     expect(args[args.indexOf('--output-format') + 1]).toBe('stream-json');
     expect(args.slice(args.indexOf('--allowedTools'))).toEqual(['--allowedTools', 'Bash(npm run check*)', 'Bash(npm test)', 'Bash(git log)', 'Bash(git log *)', 'Bash(git status)', 'Bash(git status *)', 'Bash(git diff)', 'Bash(git diff *)', 'Bash(git show)', 'Bash(git show *)', 'Bash(git ls-files)', 'Bash(git ls-files *)', 'Bash(git grep)', 'Bash(git grep *)']);
     expect(claudeArgs(docsOnly, 'm', {})).not.toContain('--allowedTools');
+  });
+
+  it('gives a judge class the minimal --system-prompt override, and a reader class none', () => {
+    const classes = loadClasses();
+    const judgeCatch = classes.get('judge-catch');
+    const docsOnly = classes.get('docs-only');
+    if (!judgeCatch || !docsOnly) throw new Error('the judge-catch and docs-only classes must be declared');
+    const judgeArgs = claudeArgs(judgeCatch, 'claude-opus-5-5', { type: 'object' });
+    expect(judgeArgs).toContain('--system-prompt');
+    expect(judgeArgs[judgeArgs.indexOf('--system-prompt') + 1]).toBe(JUDGE_SYSTEM_PROMPT);
+    expect(claudeArgs(docsOnly, 'claude-opus-5-5', { type: 'object' })).not.toContain('--system-prompt');
   });
 
   it('expects the declared tools plus the structured-report tool in the init event', () => {

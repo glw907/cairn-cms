@@ -1,0 +1,1 @@
+{"type": "assistant", "cwd": "/tmp/granted-fixture", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": "cat ../../.claude/projects/x/y.jsonl"}}]}}

@@ -533,14 +533,14 @@ export interface JudgeAttempt {
   verified: JudgeVerified;
 }
 
-/** A judge job report: its top-level fields mirror the final attempt, the same way a reader's `JobReport` does. */
-export interface JudgeJobReport {
+/**
+ * A judge job report: its top-level fields mirror the final attempt (`outcome`, `initModel`,
+ * `abortReason`, `rulings`, `usage`, `verified`), the same way a reader's `JobReport` does.
+ */
+export interface JudgeJobReport extends Omit<JudgeAttempt, 'cause' | 'final' | 'transcript'> {
   id: string;
   class: string;
   model: string;
-  rulings: JudgeRulings;
-  usage: ReportUsage;
-  verified: JudgeVerified;
   /** Every counted attempt the runner made at this job; omitted for a `stoppedBy` report with zero. */
   attempts?: JudgeAttempt[];
   /** Set when a batch-level stop left this job with no final attempt, the same rule `JobReport.stoppedBy` follows. */
@@ -617,6 +617,8 @@ function judgeStoppedReport(job: Job, stoppedBy: BatchStop, pendingCause: Attemp
     id: job.id,
     class: job.class,
     model: job.model,
+    outcome: 'aborted',
+    abortReason: stoppedBy,
     rulings: [],
     usage: reportUsage(emptyUsage()),
     verified: {
@@ -724,7 +726,10 @@ export async function runJudgeBatch({
       }
       const decl = classes.get(job.class);
       if (!decl) throw new Error(`job ${job.id}: class ${job.class} is not declared`);
-      const expected = expectedItems[job.id] ?? [];
+      const expected = expectedItems[job.id];
+      // Undefined (never an explicit []) means the caller forgot this job's packet items, which
+      // would otherwise verify vacuously on zero rulings; an explicit empty list stays valid.
+      if (expected === undefined) throw new Error(`job ${job.id}: expectedItems carries no entry for this job`);
 
       const attempts: JudgeAttempt[] = [...priorAttempts];
       let cause: AttemptCause = resumed?.pendingCause ?? 'initial';

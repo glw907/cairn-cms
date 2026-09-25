@@ -1,14 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   buildResumeBatch,
   checkGate,
+  classifyBatchKind,
+  expectedItemsFromKey,
   jobsNeedingResume,
+  judgeResumeInputs,
+  mergeResumedJudgeReport,
   mergeResumedReport,
   operatorSecretResolver,
   resumeInputs,
+  type FinishedJudgeReport,
   type FinishedReport,
 } from '../../../scripts/docs-readers/run.js';
 import { buildManifest, writeManifest } from '../../../scripts/docs-readers/freeze.js';
@@ -16,6 +21,8 @@ import { loadClasses } from '../../../scripts/docs-readers/lib/class-schema.js';
 import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
 import type { InstallationToken } from '../../../scripts/docs-readers/lib/github-app-token.js';
 import type { BatchReport, JobReport, Verified } from '../../../scripts/docs-readers/lib/types.js';
+import type { JudgeJobReport } from '../../../scripts/docs-readers/lib/runner.js';
+import type { JudgeVerified } from '../../../scripts/docs-readers/lib/judge-verify.js';
 
 /** A fake clock: `now()` reads a mutable box, so a test advances time without a real delay. */
 function fakeClock(startMs: number): { now: () => number; advance: (ms: number) => void } {
@@ -231,6 +238,83 @@ describe('checkGate', () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  it('gates a catch-judge batch against manifest.models.catchJudge, read from the manifest and never passed in by hand', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture({ reader: 'claude-opus-5-5', catchJudge: 'claude-opus-4-9', adjudicator: 'claude-opus-5-5', agreement: 'fable' });
+    try {
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [GATED_JOB], listFiles, kind: 'catchJudge' });
+      expect(gate.ok).toBe(true);
+      if (gate.ok) expect(gate.freeze.expectedModel).toBe('claude-opus-4-9');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('gates an agreement batch against manifest.models.agreement, a second, distinct key from the same manifest', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture({ reader: 'claude-opus-5-5', catchJudge: 'claude-opus-5-5', adjudicator: 'claude-opus-5-5', agreement: 'fable' });
+    try {
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [GATED_JOB], listFiles, kind: 'agreement' });
+      expect(gate.ok).toBe(true);
+      if (gate.ok) expect(gate.freeze.expectedModel).toBe('fable');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses when the manifest freezes an empty model for the given judge kind', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture({ reader: 'claude-opus-5-5', catchJudge: 'claude-opus-5-5', adjudicator: '', agreement: 'fable' });
+    try {
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [GATED_JOB], listFiles, kind: 'adjudicator' });
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.problems).toContain('manifest models.adjudicator is empty');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses a judge job whose prepared directory itself carries key.json inside the mount', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture();
+    const preparedDir = join(root, 'packet-with-key');
+    mkdirSync(preparedDir, { recursive: true });
+    writeFileSync(join(preparedDir, 'key.json'), '{}');
+    try {
+      const gate = checkGate({
+        manifestPath,
+        chainPath,
+        root,
+        imageId: 'sha256:image',
+        cliVersion: '2.1.280',
+        jobs: [{ id: 'job-a', commit: 'deadbeef', prepared: preparedDir }],
+        listFiles,
+        kind: 'catchJudge',
+      });
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.problems.some((p) => p.includes('carries key.json inside its own mount'))).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not apply the key.json check to a reader batch (kind undefined)', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture();
+    const preparedDir = join(root, 'reader-tree-with-key');
+    mkdirSync(preparedDir, { recursive: true });
+    writeFileSync(join(preparedDir, 'key.json'), '{}');
+    try {
+      const gate = checkGate({
+        manifestPath,
+        chainPath,
+        root,
+        imageId: 'sha256:image',
+        cliVersion: '2.1.280',
+        jobs: [{ id: 'job-a', commit: 'deadbeef', prepared: preparedDir }],
+        listFiles,
+      });
+      expect(gate.ok).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 /** A minimal, valid `JobReport`, for the resume tests below. */
@@ -355,5 +439,164 @@ describe('jobsNeedingResume, resumeInputs, buildResumeBatch, and mergeResumedRep
     const merged = mergeResumedReport(original, resumed);
     expect(merged.jobs.every((j) => j.verified.ok)).toBe(true);
     expect(merged.verified).toBe(false);
+  });
+});
+
+describe('classifyBatchKind', () => {
+  const classes = loadClasses();
+  function batchOf(jobs: { id: string; class: string }[]) {
+    return parseBatch(
+      {
+        name: 'fixture',
+        concurrency: 1,
+        budgetTokens: 1000,
+        jobs: jobs.map(({ id, class: className }) => ({
+          id,
+          class: className,
+          model: 'claude-opus-5-5',
+          arrival: 'Arrival.',
+          job: 'Job.',
+          docsSet: ['.'],
+          prepared: '/dev/null',
+        })),
+      },
+      classes,
+    );
+  }
+
+  it('classifies an all-reader batch as reader', () => {
+    const result = classifyBatchKind(batchOf([{ id: 'a', class: 'docs-only' }, { id: 'b', class: 'repository' }]), classes);
+    expect(result).toEqual({ ok: true, kind: 'reader' });
+  });
+
+  it('classifies an all-judge batch by its one shared kind', () => {
+    const result = classifyBatchKind(batchOf([{ id: 'a', class: 'judge-adjudicator' }, { id: 'b', class: 'judge-adjudicator' }]), classes);
+    expect(result).toEqual({ ok: true, kind: 'adjudicator' });
+  });
+
+  it('refuses a batch mixing a judge class with a reader class', () => {
+    const result = classifyBatchKind(batchOf([{ id: 'a', class: 'judge-catch' }, { id: 'b', class: 'docs-only' }]), classes);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.problems[0]).toMatch(/mixes job kinds/);
+  });
+
+  it('refuses a batch mixing two judge kinds', () => {
+    const result = classifyBatchKind(batchOf([{ id: 'a', class: 'judge-catch' }, { id: 'b', class: 'judge-agreement' }]), classes);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.problems[0]).toMatch(/mixes job kinds/);
+  });
+});
+
+describe('expectedItemsFromKey', () => {
+  /** A packet mount plus its sibling key.json, for expectedItemsFromKey. */
+  function packetWithKey(key: object): { dir: string; prepared: string } {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-key-'));
+    const prepared = join(dir, 'packet');
+    mkdirSync(prepared, { recursive: true });
+    writeFileSync(join(dir, 'key.json'), JSON.stringify(key));
+    return { dir, prepared };
+  }
+
+  it('reads plant ids for a catch packet', () => {
+    const { dir, prepared } = packetWithKey({ kind: 'catch', plants: { 'plant-1': { plantId: 'P01' }, 'plant-2': { plantId: 'P02' } }, items: {}, inputs: {} });
+    try {
+      expect(expectedItemsFromKey(prepared, 'catchJudge')).toEqual([{ itemId: 'plant-1' }, { itemId: 'plant-2' }]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('reads item ids for an adjudicator packet', () => {
+    const { dir, prepared } = packetWithKey({ kind: 'adjudicator', items: { 'item-1': { field: 'stalls', sourceIndex: 0 } }, excluded: [], treeCommit: 'deadbeef', treeAbsent: [], inputs: {} });
+    try {
+      expect(expectedItemsFromKey(prepared, 'adjudicator')).toEqual([{ itemId: 'item-1' }]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('reads findings and catch calls, labeled by kind, for an agreement packet', () => {
+    const { dir, prepared } = packetWithKey({ kind: 'agreement', findings: { 'f-1': { resolved: true } }, catchCalls: { 'c-1': { resolved: true } }, inputs: {} });
+    try {
+      expect(expectedItemsFromKey(prepared, 'agreement')).toEqual([
+        { itemId: 'f-1', expectedKind: 'finding' },
+        { itemId: 'c-1', expectedKind: 'catchCall' },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws, naming the expected path, when no key.json sits beside the packet', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-key-missing-'));
+    const prepared = join(dir, 'packet');
+    mkdirSync(prepared, { recursive: true });
+    try {
+      expect(() => expectedItemsFromKey(prepared, 'catchJudge')).toThrow(/no key\.json beside packet/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+/** A minimal, valid `JudgeJobReport`, for the judge resume tests below. */
+function judgeJobReport(id: string, overrides: Partial<JudgeJobReport> = {}): JudgeJobReport {
+  const verified: JudgeVerified = { ok: true, init: true, canaries: true, problems: [] };
+  return {
+    id,
+    class: 'judge-catch',
+    model: 'claude-opus-5-5',
+    outcome: 'done',
+    rulings: [],
+    usage: { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, counted: 0 },
+    verified,
+    attempts: [{ cause: 'initial', final: true, transcript: 't', outcome: 'done', rulings: [], usage: { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, counted: 0 }, verified }],
+    ...overrides,
+  };
+}
+
+/** A minimal, valid `FinishedJudgeReport`. */
+function finishedJudgeReport(
+  overrides: Partial<FinishedJudgeReport> & Pick<FinishedJudgeReport, 'jobs' | 'runId' | 'stopReason' | 'usage' | 'verified'>,
+): FinishedJudgeReport {
+  return {
+    batch: 'fixture',
+    kind: 'catchJudge',
+    budgetTokens: 1000,
+    cliVersion: '2.1.280',
+    runRoot: '/tmp/does-not-matter',
+    teardown: { runDirRemoved: true, containersLeft: 0, networksLeft: 0 },
+    ...overrides,
+  };
+}
+
+describe('judgeResumeInputs and mergeResumedJudgeReport', () => {
+  it('carries each stopped judge job’s saved attempts and pending cause, defaulting a missing pendingCause to initial', () => {
+    const report = { jobs: [judgeJobReport('a'), judgeJobReport('b', { stoppedBy: 'rateLimit', pendingCause: 'unverified', attempts: [] })] };
+    expect(judgeResumeInputs(report)).toEqual({ b: { attempts: [], pendingCause: 'unverified' } });
+  });
+
+  it('merges a resumed judge sub-batch’s reports back in place', () => {
+    const original = finishedJudgeReport({
+      runId: 'r1',
+      stopReason: 'rateLimit',
+      usage: { input: 5, output: 5, cacheCreation: 0, cacheRead: 0, counted: 10 },
+      jobs: [judgeJobReport('a'), judgeJobReport('b', { stoppedBy: 'rateLimit', attempts: undefined })],
+      verified: false,
+    });
+    const resumed = finishedJudgeReport({
+      runId: 'r2',
+      stopReason: 'complete',
+      usage: { input: 3, output: 3, cacheCreation: 0, cacheRead: 0, counted: 6 },
+      jobs: [judgeJobReport('b')],
+      verified: true,
+    });
+    const merged = mergeResumedJudgeReport(original, resumed);
+    expect(merged.jobs.map((j) => [j.id, j.stoppedBy])).toEqual([
+      ['a', undefined],
+      ['b', undefined],
+    ]);
+    expect(merged.usage.counted).toBe(16);
+    expect(merged.verified).toBe(true);
   });
 });

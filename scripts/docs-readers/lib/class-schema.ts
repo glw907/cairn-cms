@@ -202,7 +202,19 @@ export function loadClasses(dir = CLASSES_DIR, egress = loadEgress()): Map<strin
 }
 
 /**
- * The `claude` flags a class implies. The job text never appears here; it goes on stdin.
+ * The minimal system prompt every judge class runs under, replacing Claude Code's default one: a
+ * judge only ever reads the packet in its working directory and returns the JSON its own frozen
+ * prompt and `--json-schema` ask for, so the default prompt's tool-use and git conventions, aimed
+ * at an interactive coding session, cost tokens a headless judge never uses.
+ */
+export const JUDGE_SYSTEM_PROMPT =
+  'You judge material in your working directory against the instructions on your stdin. Read what you need, then follow those instructions exactly and return only the JSON object they and the response schema ask for.';
+
+/**
+ * The `claude` flags a class implies. The job text never appears here; it goes on stdin. A judge
+ * class (`judgeKindForClass(decl.name)` set) also gets `--system-prompt`, replacing the default
+ * with `JUDGE_SYSTEM_PROMPT`; this does not touch `init.skills`, `init.tools`, `init.mcp_servers`,
+ * or `init.apiKeySource`, so the existing init check applies unchanged.
  * @param decl - A validated class declaration.
  * @param model - The reader model for this job.
  * @param reportSchema - The JSON schema the reader's structured report must match.
@@ -230,6 +242,9 @@ export function claudeArgs(decl: ClassDecl, model: string, reportSchema: object)
     '--json-schema',
     JSON.stringify(reportSchema),
   ];
+  if (judgeKindForClass(decl.name)) {
+    args.push('--system-prompt', JUDGE_SYSTEM_PROMPT);
+  }
   if (decl.bashAllowlist.length > 0) {
     // Variadic, so it goes last: one argument per pattern, and nothing follows it to swallow.
     args.push('--allowedTools', ...decl.bashAllowlist.map((p) => `Bash(${p})`));

@@ -77,7 +77,7 @@ describe('runBatch', () => {
     const job = report.jobs[0];
     expect(Object.keys(job)).toEqual([
       'id', 'class', 'model', 'initModel', 'outcome', 'stalls', 'assumed', 'pagesRead', 'quotes', 'steps', 'diverged', 'checks',
-      'ruleCandidates', 'denials', 'proxyBlocked', 'packageFetches', 'usage', 'verified',
+      'ruleCandidates', 'denials', 'proxyBlocked', 'packageFetches', 'usage', 'verified', 'attempts',
     ]);
     expect(job).toMatchObject({
       outcome: 'done',
@@ -93,7 +93,9 @@ describe('runBatch', () => {
     expect(job.diverged).toEqual([]);
     expect(entries.map((e) => e.job)).toEqual(['(token-check)', 'a']);
     expect(report.usage).toMatchObject({ counted: 1729, cacheRead: 3000 });
-    expect(transcripts.a).toContain('"type":"result"');
+    expect(job.attempts).toHaveLength(1);
+    expect(job.attempts?.[0]).toMatchObject({ cause: 'initial', final: true, transcript: 'transcripts/a-attempt1.jsonl' });
+    expect(transcripts['a-attempt1.jsonl']).toContain('"type":"result"');
   });
 
   it('stops with auth when the token fails mid-batch, and reports no job as stalled', async () => {
@@ -140,12 +142,18 @@ describe('runBatch', () => {
     expect(report.jobs[0]).toMatchObject({ outcome: 'aborted', abortReason: 'auth' });
   });
 
-  it('stops with rateLimit on a rejected rate-limit response', async () => {
+  it('stops with rateLimit on a rejected rate-limit response, and records the stop on the job it never started', async () => {
     const { executor, ledger } = replayExecutor({ a: fixture('rate-limit.jsonl'), b: fixture('clean-docs-only.jsonl') });
     const { report } = await runBatch({ batch: batchOf(['a', 'b']), classes, baselines, executor, ledger, runId: 'r5' });
     expect(report.stopReason).toBe('rateLimit');
     expect(executor.started).toEqual(['a']);
     expect(report.jobs.map((j: { abortReason?: string }) => j.abortReason)).toEqual(['rateLimit', 'rateLimit']);
+    // Job a itself hit the rate limit mid-run: it made one attempt, not eligible for the
+    // automatic rerun. Job b never started: it carries stoppedBy and no attempt at all.
+    expect(report.jobs[0].attempts).toHaveLength(1);
+    expect(report.jobs[0]).not.toHaveProperty('stoppedBy');
+    expect(report.jobs[1].stoppedBy).toBe('rateLimit');
+    expect(report.jobs[1]).not.toHaveProperty('attempts');
   });
 
   it('stops with budget when live usage passes the batch budget, cutting the running job short', async () => {
@@ -219,5 +227,128 @@ describe('runBatch', () => {
     const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, ledger, runId: 'r7' });
     expect(report.stopReason).toBe('complete');
     expect(report.jobs[0].verified).toMatchObject({ ok: false, canaries: false });
+  });
+});
+
+describe('runBatch: the automatic rerun', () => {
+  const clean = fixture('clean-docs-only.jsonl');
+  const cleanStdout = clean.map((e) => JSON.stringify(e)).join('\n');
+
+  it('reruns once when the first attempt is unverified, and marks the clean second attempt final', async () => {
+    let calls = 0;
+    const executor = {
+      checkToken: async () => ({ events: okCheck, stdout: '' }),
+      run: async (_job: unknown, _decl: unknown, { onEvent }: { onEvent: (e: Event) => void }) => {
+        calls += 1;
+        for (const event of clean) onEvent(event);
+        // The first attempt's canary "loaded": unverified. The second attempt's canary never appears.
+        const canaries = calls === 1 ? ['Install the tool'] : ['canary-unused'];
+        return { events: clean, stdout: cleanStdout, proxyLog: [], preparedRoot: PREPARED, canaries, timedOut: false, aborted: false, exitCode: 0 };
+      },
+    };
+    const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, runId: 'rerun-1' });
+    const job = report.jobs[0];
+    expect(job.attempts?.map((a) => [a.cause, a.final])).toEqual([
+      ['initial', false],
+      ['unverified', true],
+    ]);
+    expect(job.attempts?.map((a) => a.transcript)).toEqual(['transcripts/a-attempt1.jsonl', 'transcripts/a-attempt2.jsonl']);
+    expect(job.verified.ok).toBe(true);
+    expect(calls).toBe(2);
+  });
+
+  it('stops after its one rerun when both attempts stay unverified, and the final attempt carries the failure', async () => {
+    const executor = {
+      checkToken: async () => ({ events: okCheck, stdout: '' }),
+      run: async (_job: unknown, _decl: unknown, { onEvent }: { onEvent: (e: Event) => void }) => {
+        for (const event of clean) onEvent(event);
+        return { events: clean, stdout: cleanStdout, proxyLog: [], preparedRoot: PREPARED, canaries: ['Install the tool'], timedOut: false, aborted: false, exitCode: 0 };
+      },
+    };
+    const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, runId: 'rerun-2' });
+    const job = report.jobs[0];
+    expect(job.attempts?.map((a) => [a.cause, a.final])).toEqual([
+      ['initial', false],
+      ['unverified', true],
+    ]);
+    expect(job.verified.ok).toBe(false);
+  });
+
+  it('passes on the first attempt: exactly one attempt, no rerun', async () => {
+    const { executor, ledger } = replayExecutor({ a: clean });
+    const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, ledger, runId: 'rerun-3' });
+    expect(report.jobs[0].attempts).toHaveLength(1);
+    expect(report.jobs[0].attempts?.[0]).toMatchObject({ cause: 'initial', final: true });
+  });
+
+  it('reruns once after a timeout, and the clean rerun is final', async () => {
+    let calls = 0;
+    const executor = {
+      checkToken: async () => ({ events: okCheck, stdout: '' }),
+      run: async (_job: unknown, _decl: unknown, { onEvent }: { onEvent: (e: Event) => void }) => {
+        calls += 1;
+        if (calls === 1) {
+          return { events: [], stdout: '', proxyLog: [], preparedRoot: PREPARED, canaries: [], timedOut: true, aborted: false, exitCode: null };
+        }
+        for (const event of clean) onEvent(event);
+        return { events: clean, stdout: cleanStdout, proxyLog: [], preparedRoot: PREPARED, canaries: ['canary-unused'], timedOut: false, aborted: false, exitCode: 0 };
+      },
+    };
+    const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, runId: 'rerun-4' });
+    const job = report.jobs[0];
+    expect(job.attempts?.map((a) => [a.cause, a.final])).toEqual([
+      ['initial', false],
+      ['timedOut', true],
+    ]);
+    expect(job.verified.ok).toBe(true);
+  });
+
+  it('reruns once when the first attempt produces no structured report, and the clean rerun is final', async () => {
+    const noReport: Event[] = [{ type: 'result', is_error: false }];
+    let calls = 0;
+    const executor = {
+      checkToken: async () => ({ events: okCheck, stdout: '' }),
+      run: async (_job: unknown, _decl: unknown, { onEvent }: { onEvent: (e: Event) => void }) => {
+        calls += 1;
+        if (calls === 1) {
+          for (const event of noReport) onEvent(event);
+          return { events: noReport, stdout: '', proxyLog: [], preparedRoot: PREPARED, canaries: [], timedOut: false, aborted: false, exitCode: 0 };
+        }
+        for (const event of clean) onEvent(event);
+        return { events: clean, stdout: cleanStdout, proxyLog: [], preparedRoot: PREPARED, canaries: ['canary-unused'], timedOut: false, aborted: false, exitCode: 0 };
+      },
+    };
+    const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, runId: 'rerun-5' });
+    const job = report.jobs[0];
+    expect(job.attempts?.map((a) => [a.cause, a.final])).toEqual([
+      ['initial', false],
+      ['noReport', true],
+    ]);
+    expect(job.verified.ok).toBe(true);
+  });
+});
+
+describe('runBatch: the freeze stamp', () => {
+  const freeze = { tag: 'docs-reset-1b-freeze', manifestHash: 'deadbeef', chainHead: 'cafebabe', expectedModel: 'claude-opus-5-5' };
+
+  it('stamps every report of a gated batch with the tag, manifest hash, and chain head', async () => {
+    const { executor, ledger } = replayExecutor({ a: fixture('clean-docs-only.jsonl') });
+    const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, ledger, runId: 'gate-1', freeze });
+    expect(report.jobs[0].freeze).toEqual({ tag: 'docs-reset-1b-freeze', manifestHash: 'deadbeef', chainHead: 'cafebabe' });
+  });
+
+  it('leaves an ungated batch’s reports with no freeze field', async () => {
+    const { executor, ledger } = replayExecutor({ a: fixture('clean-docs-only.jsonl') });
+    const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, ledger, runId: 'gate-2' });
+    expect(report.jobs[0]).not.toHaveProperty('freeze');
+  });
+
+  it('marks a run unverified when its init event reports a model other than the manifest pins', async () => {
+    const { executor, ledger } = replayExecutor({ a: fixture('clean-docs-only.jsonl') });
+    const mismatched = { ...freeze, expectedModel: 'claude-sonnet-5' };
+    const { report } = await runBatch({ batch: batchOf(['a']), classes, baselines, executor, ledger, runId: 'gate-3', freeze: mismatched });
+    const first = report.jobs[0].attempts?.[0];
+    expect(first?.verified.ok).toBe(false);
+    expect(first?.verified.problems.some((p) => p.includes('init model'))).toBe(true);
   });
 });

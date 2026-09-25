@@ -80,6 +80,15 @@ export async function hostCliVersion(): Promise<string> {
 }
 
 /**
+ * The reader image's own digest, for the freeze manifest.
+ * @param image - The image tag `ensureImage` returned.
+ * @returns The image id `podman image inspect` reports.
+ */
+export async function imageId(image: string): Promise<string> {
+  return (await podman(['image', 'inspect', '--format', '{{.Id}}', image])).trim();
+}
+
+/**
  * The `cairn` tool release the docs-and-binary class's image bakes in, verified at build time
  * against its release's `SHA256SUMS` (Containerfile). Bumping this both busts the image cache
  * (the version feeds `ensureImage`'s content hash) and moves every future build to the new
@@ -372,7 +381,7 @@ export function createPodmanExecutor({
         const from = join(base, path);
         const notice = docsSetSource === undefined ? '' : ` in prepared directory ${docsSetSource}`;
         if (!existsSync(from)) throw new Error(`job ${job.id}: docs-set path ${path} does not exist${notice}`);
-        cpSync(from, join(prepared, path), { recursive: true, verbatimSymlinks: true });
+        cpSync(from, join(prepared, path), { recursive: true, verbatimSymlinks: true, preserveTimestamps: true });
       }
     } else {
       const source = job.prepared ?? '';
@@ -383,7 +392,7 @@ export function createPodmanExecutor({
       // an ABSOLUTE path rooted at its source location before copying, which bakes in a host path
       // that exists on neither this copy nor, later, inside the reader's container. Copying the
       // symlink's own relative target verbatim is what keeps it resolvable after the copy.
-      cpSync(from, prepared, { recursive: true, verbatimSymlinks: true });
+      cpSync(from, prepared, { recursive: true, verbatimSymlinks: true, preserveTimestamps: true });
       restrictStateDirPermissions(prepared);
       for (const path of job.docsSet) {
         if (!existsSync(join(prepared, path))) throw new Error(`job ${job.id}: docs-set path ${path} is not in the prepared tree`);
@@ -433,7 +442,7 @@ export function createPodmanExecutor({
       const mountRoot = join(dir, 'mount');
       // verbatimSymlinks: see prepare() above; this is the second of the two copy hops a
       // prepared tree's own node_modules/.bin symlinks must survive relative.
-      cpSync(prepared, join(mountRoot, 'job'), { recursive: true, verbatimSymlinks: true });
+      cpSync(prepared, join(mountRoot, 'job'), { recursive: true, verbatimSymlinks: true, preserveTimestamps: true });
       restrictStateDirPermissions(join(mountRoot, 'job'));
       const home = join(dir, 'home');
       const canaries = [canary(), canary(), canary()];

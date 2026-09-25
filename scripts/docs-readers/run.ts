@@ -4,14 +4,19 @@
  *
  * Usage:
  *   npx tsx scripts/docs-readers/run.ts BATCH_JSON [--out DIR] [--ledger FILE]
+ *   npx tsx scripts/docs-readers/run.ts BATCH_JSON --resume DIR
  *   npx tsx scripts/docs-readers/run.ts --probe-init [--class NAME]
  *   npx tsx scripts/docs-readers/run.ts --ledger-total [--ledger FILE]
  *
  * A batch run checks the reader token, runs every job in its own confined container, writes the
  * scrubbed batch report and transcripts under `--out`, appends usage to the ledger, and tears
  * every container, network, and per-run directory down. It exits 0 only when the batch completed,
- * every report verified, and teardown left nothing behind. `--probe-init` prints the init fields
- * a class's session shows under this CLI version, for pinning in `init-baseline.json`.
+ * every report verified, and teardown left nothing behind. A batch marked `gated` is checked
+ * against the freeze manifest before any container starts, and its reports carry the stamp;
+ * `--resume DIR` re-runs only the jobs a prior run there left `stoppedBy` a rate limit, an
+ * authentication failure, or a budget stop, and merges the result back into that run's
+ * `report.json`. `--probe-init` prints the init fields a class's session shows under this CLI
+ * version, for pinning in `init-baseline.json`.
  *
  * The reader token is read from `CAIRN_DOCS_READER_OAUTH_TOKEN`, or from `~/.local/secrets` when
  * that is unset, and is never printed.
@@ -23,15 +28,16 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadClasses, loadEgress } from './lib/class-schema.js';
 import { parseBatch } from './lib/batch.js';
-import { appendLedger, ledgerTotal, readLedger } from './lib/ledger.js';
+import { addUsage, appendLedger, ledgerTotal, readLedger, reportUsage } from './lib/ledger.js';
 import { mintInstallationToken, type InstallationToken } from './lib/github-app-token.js';
-import { createPodmanExecutor, ensureImage, hostCliVersion, podman, type TeardownResult } from './lib/podman.js';
-import { REPORT_SCHEMA, runBatch } from './lib/runner.js';
+import { createPodmanExecutor, ensureImage, hostCliVersion, imageId as currentImageId, podman, type TeardownResult } from './lib/podman.js';
+import { REPORT_SCHEMA, runBatch, type GatedFreeze } from './lib/runner.js';
 import { sweepOrphans, writeOwnerMarker } from './lib/sweep.js';
 import { findInit } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
+import { gitTrackedFiles, hashFile, loadManifest, verifyTree } from './freeze.js';
 import type { ScratchSiteRecord } from './lib/prepare-class.js';
-import type { BatchReport, InitBaseline } from './lib/types.js';
+import type { Batch, BatchReport, InitBaseline, Job } from './lib/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -214,7 +220,7 @@ export function operatorSecretResolver({
  * run directory.
  * @param runId - Names the per-run directory and labels its containers.
  * @param tokenFor - Returns the token for the next container; defaults to the stored token.
- * @returns The executor, the run root, and the secret values to scrub.
+ * @returns The executor, the run root, the ensured image tag, and the secret values to scrub.
  */
 export async function setUpRun(runId: string, tokenFor?: () => string) {
   const stored = readSecret(TOKEN_NAME);
@@ -243,7 +249,49 @@ export async function setUpRun(runId: string, tokenFor?: () => string) {
       return value;
     },
   });
-  return { executor, runRoot, cliVersion, secrets: () => [stored, ...secretValues.values()] };
+  return { executor, runRoot, cliVersion, image, secrets: () => [stored, ...secretValues.values()] };
+}
+
+/** Where the freeze manifest and the post-freeze chain live, under this script's own directory. */
+const DEFAULT_MANIFEST_PATH = join(HERE, 'post-freeze', 'manifest.json');
+const DEFAULT_CHAIN_PATH = join(HERE, 'post-freeze', 'chain.jsonl');
+
+/**
+ * Check a gated batch against the freeze manifest before any container starts: every file the
+ * manifest hashes, the image id, the CLI version, and this batch's own job commits. A gate that
+ * passes also requires the post-freeze chain file to exist, since a gated report's stamp always
+ * carries a chain head. `manifestPath` and `chainPath` are the freeze manifest and the
+ * post-freeze chain file, whose bytes become the stamp's chain head; `root` is the directory the
+ * manifest's files are relative to; `imageId` and `cliVersion` are the current reader image's
+ * digest and the current CLI version; `jobs` are the batch's own job commits to check, by job id;
+ * `listFiles` returns the current tree's files, relative to `root`, defaulting to the real
+ * git-tracked-file listing, overridable in tests.
+ * @returns Every drifted input's name when the gate refuses; the freeze stamp to run under
+ *  otherwise.
+ */
+export function checkGate({
+  manifestPath,
+  chainPath,
+  root,
+  imageId,
+  cliVersion,
+  jobs,
+  listFiles = gitTrackedFiles,
+}: {
+  manifestPath: string;
+  chainPath: string;
+  root: string;
+  imageId: string;
+  cliVersion: string;
+  jobs: Record<string, string>;
+  listFiles?: (root: string) => string[];
+}): { ok: true; freeze: GatedFreeze } | { ok: false; problems: string[] } {
+  if (!existsSync(manifestPath)) return { ok: false, problems: [`no freeze manifest at ${manifestPath}`] };
+  const { manifest, hash: manifestHash } = loadManifest(manifestPath);
+  const problems = verifyTree({ manifest, root, imageId, cliVersion, jobs, listFiles });
+  if (!existsSync(chainPath)) problems.push(`no chain file at ${chainPath}`);
+  if (problems.length > 0) return { ok: false, problems };
+  return { ok: true, freeze: { tag: manifest.tag, manifestHash, chainHead: hashFile(chainPath), expectedModel: manifest.models.reader } };
 }
 
 /**
@@ -251,9 +299,12 @@ export async function setUpRun(runId: string, tokenFor?: () => string) {
  * The options override the output directory (`out`) and the ledger path (`ledgerFile`), both
  * defaulting under the cache root; `tokenFor` returns the token for each container, which the live
  * credential check uses to swap in an invalid token mid-batch; `batchOverride` is batch JSON to
- * run in place of the file's contents.
+ * run in place of the file's contents; `manifestPath` and `chainPath` override the freeze
+ * manifest and chain a gated batch checks against.
  * @param batchFile - The batch JSON path.
  * @returns The batch report, with its teardown result.
+ * @throws When the batch is gated and its gate check finds any drifted input; no container has
+ *  started by then.
  */
 export async function runBatchFile(
   batchFile: string,
@@ -262,16 +313,35 @@ export async function runBatchFile(
     ledgerFile,
     tokenFor,
     batchOverride,
-  }: { out?: string; ledgerFile?: string; tokenFor?: () => string; batchOverride?: string } = {},
+    manifestPath = DEFAULT_MANIFEST_PATH,
+    chainPath = DEFAULT_CHAIN_PATH,
+  }: {
+    out?: string;
+    ledgerFile?: string;
+    tokenFor?: () => string;
+    batchOverride?: string;
+    manifestPath?: string;
+    chainPath?: string;
+  } = {},
 ): Promise<{ report: FinishedReport; outDir: string }> {
   const classes = loadClasses();
   const batch = parseBatch(batchOverride ?? readFileSync(batchFile, 'utf8'), classes);
   const baselines = JSON.parse(readFileSync(join(HERE, 'init-baseline.json'), 'utf8')) as Record<string, InitBaseline>;
   const runId = newRunId();
-  const { executor, runRoot, cliVersion, secrets } = await setUpRun(runId, tokenFor);
+  const { executor, runRoot, cliVersion, image, secrets } = await setUpRun(runId, tokenFor);
+  let freeze: GatedFreeze | undefined;
+  if (batch.gated) {
+    const jobs = Object.fromEntries(batch.jobs.filter((j) => j.commit !== undefined).map((j) => [j.id, j.commit as string]));
+    const gate = checkGate({ manifestPath, chainPath, root: HERE, imageId: await currentImageId(image), cliVersion, jobs });
+    if (!gate.ok) {
+      await executor.teardown().catch(() => {});
+      throw new Error(`gated batch ${batch.name} refused to start: ${gate.problems.join('; ')}`);
+    }
+    freeze = gate.freeze;
+  }
   const outDir = out ?? join(CACHE_ROOT, 'results', `${batch.name}-${runId}`);
   const ledgerPath = ledgerFile ?? DEFAULT_LEDGER;
-  log(`run ${runId}: batch ${batch.name}, ${batch.jobs.length} job(s), CLI ${cliVersion}`);
+  log(`run ${runId}: batch ${batch.name}, ${batch.jobs.length} job(s), CLI ${cliVersion}${freeze ? ', gated' : ''}`);
   let result: Awaited<ReturnType<typeof runBatch>>;
   let teardown: FinishedReport['teardown'];
   // A killed runner halts the batch, waits for every worker to settle, and only then tears down
@@ -293,6 +363,7 @@ export async function runBatchFile(
       secrets: secrets(),
       ledger: { append: (entry) => appendLedger(ledgerPath, entry) },
       halt: halt.signal,
+      freeze,
     });
   } finally {
     process.off('SIGINT', onSignal);
@@ -304,11 +375,52 @@ export async function runBatchFile(
   report.verified = report.verified && teardown.runDirRemoved && teardown.containersLeft === 0 && teardown.networksLeft === 0;
   mkdirSync(join(outDir, 'transcripts'), { recursive: true });
   writeFileSync(join(outDir, 'report.json'), `${scrub(JSON.stringify(report, null, 2), secrets())}\n`);
-  for (const [jobId, text] of Object.entries(result.transcripts)) {
-    writeFileSync(join(outDir, 'transcripts', `${jobId}.jsonl`), text);
+  for (const [name, text] of Object.entries(result.transcripts)) {
+    writeFileSync(join(outDir, 'transcripts', name), text);
   }
   log(`wrote ${outDir}`);
   return { report, outDir };
+}
+
+/**
+ * The ids of every job a saved report shows left unstarted by a batch-level stop.
+ * @param report - A batch's saved report.
+ * @returns The stopped jobs' ids, in the report's own order.
+ */
+export function jobsNeedingResume(report: Pick<BatchReport, 'jobs'>): string[] {
+  return report.jobs.filter((job) => job.stoppedBy !== undefined).map((job) => job.id);
+}
+
+/**
+ * The subset of a batch that carries only the given job ids, in the full batch's own order and
+ * carrying its own name, concurrency, budget, and gating.
+ * @param batch - The full parsed batch a stopped run was given.
+ * @param jobIds - The ids to keep.
+ * @returns The narrowed batch.
+ */
+export function buildResumeBatch(batch: Batch, jobIds: readonly string[]): Batch {
+  const keep = new Set(jobIds);
+  return { ...batch, jobs: batch.jobs.filter((job: Job) => keep.has(job.id)) };
+}
+
+/**
+ * Merge a resumed sub-batch's report back into the original: each resumed job's own report
+ * replaces its `stoppedBy` placeholder, the token totals add, and the merged report is verified
+ * only when every job, resumed ones included, now verifies clean.
+ * @param original - The report a batch-level stop left behind.
+ * @param resumed - The report from running only the jobs it stopped before starting.
+ * @returns The merged report.
+ */
+export function mergeResumedReport<T extends BatchReport>(original: T, resumed: BatchReport): T {
+  const byId = new Map(resumed.jobs.map((job) => [job.id, job]));
+  const jobs = original.jobs.map((job) => byId.get(job.id) ?? job);
+  return {
+    ...original,
+    jobs,
+    usage: reportUsage(addUsage(original.usage, resumed.usage)),
+    stopReason: resumed.stopReason,
+    verified: jobs.every((job) => job.stoppedBy === undefined && job.verified.ok),
+  };
 }
 
 /**
@@ -348,10 +460,40 @@ async function main(args: string[]): Promise<number> {
     await probeInit(option(args, '--class') ?? 'docs-only');
     return 0;
   }
-  const batchFile = args.find((a) => !a.startsWith('--') && a !== option(args, '--out') && a !== option(args, '--ledger'));
+  const batchFile = args.find(
+    (a) => !a.startsWith('--') && a !== option(args, '--out') && a !== option(args, '--ledger') && a !== option(args, '--resume'),
+  );
   if (!batchFile) {
-    log('usage: npx tsx scripts/docs-readers/run.ts BATCH_JSON [--out DIR] [--ledger FILE] | --probe-init [--class NAME] | --ledger-total');
+    log(
+      'usage: npx tsx scripts/docs-readers/run.ts BATCH_JSON [--out DIR] [--ledger FILE] | BATCH_JSON --resume DIR | --probe-init [--class NAME] | --ledger-total',
+    );
     return 2;
+  }
+  if (args.includes('--resume')) {
+    const resumeDir = option(args, '--resume');
+    if (!resumeDir) {
+      log('usage: npx tsx scripts/docs-readers/run.ts BATCH_JSON --resume DIR');
+      return 2;
+    }
+    const reportPath = join(resumeDir, 'report.json');
+    const original = JSON.parse(readFileSync(reportPath, 'utf8')) as FinishedReport;
+    const classes = loadClasses();
+    const fullBatch = parseBatch(readFileSync(resolve(batchFile), 'utf8'), classes);
+    const jobIds = jobsNeedingResume(original);
+    if (jobIds.length === 0) {
+      log('nothing to resume: no job in the saved report carries stoppedBy');
+      return original.verified ? 0 : 1;
+    }
+    const subBatch = buildResumeBatch(fullBatch, jobIds);
+    const { report: resumedReport } = await runBatchFile(resolve(batchFile), {
+      out: resumeDir,
+      ledgerFile,
+      batchOverride: JSON.stringify(subBatch),
+    });
+    const merged = mergeResumedReport(original, resumedReport);
+    writeFileSync(reportPath, `${scrub(JSON.stringify(merged, null, 2), [])}\n`);
+    log(`resumed ${jobIds.length} job(s); wrote ${reportPath}`);
+    return merged.verified ? 0 : 1;
   }
   const { report } = await runBatchFile(resolve(batchFile), { out: option(args, '--out'), ledgerFile });
   for (const job of report.jobs) {

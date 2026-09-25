@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { operatorSecretResolver } from '../../../scripts/docs-readers/run.js';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { buildResumeBatch, checkGate, jobsNeedingResume, mergeResumedReport, operatorSecretResolver } from '../../../scripts/docs-readers/run.js';
+import { buildManifest, writeManifest } from '../../../scripts/docs-readers/freeze.js';
+import { loadClasses } from '../../../scripts/docs-readers/lib/class-schema.js';
+import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
 import type { InstallationToken } from '../../../scripts/docs-readers/lib/github-app-token.js';
+import type { BatchReport, JobReport, Verified } from '../../../scripts/docs-readers/lib/types.js';
 
 /** A fake clock: `now()` reads a mutable box, so a test advances time without a real delay. */
 function fakeClock(startMs: number): { now: () => number; advance: (ms: number) => void } {
@@ -94,5 +101,152 @@ describe('operatorSecretResolver: CAIRN_GH_READ_TOKEN re-minting', () => {
     // The next call must mint fresh rather than replay the same rejection forever.
     await expect(resolve('CAIRN_GH_READ_TOKEN')).resolves.toBe('token-3');
     expect(calls.count).toBe(3);
+  });
+});
+
+/** A fixture tree of one tracked file, its manifest, and its post-freeze chain, for `checkGate`. */
+function gatedFixture() {
+  const root = mkdtempSync(join(tmpdir(), 'docs-readers-gate-'));
+  writeFileSync(join(root, 'run.ts'), 'export {};\n');
+  const listFiles = () => ['run.ts'];
+  const manifest = buildManifest({
+    tag: 'docs-reset-1b-freeze',
+    root,
+    imageId: 'sha256:image',
+    cliVersion: '2.1.280',
+    models: { reader: 'claude-opus-5-5', catchJudge: 'claude-opus-5-5', adjudicator: 'claude-opus-5-5', agreement: 'fable' },
+    jobs: { 'job-a': 'deadbeef' },
+    heldOutPins: {},
+    seeds: {},
+    listFiles,
+  });
+  const manifestPath = join(root, 'manifest.json');
+  writeManifest(manifest, manifestPath);
+  const chainPath = join(root, 'chain.jsonl');
+  writeFileSync(chainPath, `${JSON.stringify({ path: 'manifest.json', sha256: 'x', commit: 'y', prior: null })}\n`);
+  return { root, manifestPath, chainPath, listFiles };
+}
+
+describe('checkGate', () => {
+  it('passes and returns the freeze stamp when nothing has drifted', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture();
+    try {
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: { 'job-a': 'deadbeef' }, listFiles });
+      expect(gate.ok).toBe(true);
+      if (gate.ok) {
+        expect(gate.freeze).toMatchObject({ tag: 'docs-reset-1b-freeze', expectedModel: 'claude-opus-5-5' });
+        expect(gate.freeze.manifestHash).toHaveLength(64);
+        expect(gate.freeze.chainHead).toHaveLength(64);
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses and names the drifted input when one byte of a manifested file changes', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture();
+    try {
+      writeFileSync(join(root, 'run.ts'), 'export const x = 1;\n');
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: { 'job-a': 'deadbeef' }, listFiles });
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.problems).toEqual(['file changed: run.ts']);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses naming a missing manifest, and a missing chain file, without reading either as drift', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture();
+    try {
+      const noManifest = checkGate({ manifestPath: join(root, 'absent.json'), chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: {}, listFiles });
+      expect(noManifest.ok).toBe(false);
+      rmSync(chainPath);
+      const noChain = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: { 'job-a': 'deadbeef' }, listFiles });
+      expect(noChain.ok).toBe(false);
+      if (!noChain.ok) expect(noChain.problems).toEqual([`no chain file at ${chainPath}`]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+/** A minimal, valid `JobReport`, for the resume tests below. */
+function jobReport(id: string, overrides: Partial<JobReport> = {}): JobReport {
+  const verified: Verified = { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] };
+  return {
+    id,
+    class: 'docs-only',
+    model: 'claude-opus-5-5',
+    outcome: 'done',
+    stalls: [],
+    assumed: [],
+    pagesRead: [],
+    quotes: [],
+    steps: [],
+    diverged: [],
+    checks: [],
+    ruleCandidates: [],
+    denials: [],
+    proxyBlocked: [],
+    packageFetches: [],
+    usage: { input: 1, output: 1, cacheCreation: 0, cacheRead: 0, counted: 2 },
+    verified,
+    attempts: [],
+    ...overrides,
+  };
+}
+
+describe('jobsNeedingResume, buildResumeBatch, and mergeResumedReport', () => {
+  it('names only the jobs a batch-level stop left unstarted', () => {
+    const report: Pick<BatchReport, 'jobs'> = {
+      jobs: [jobReport('a'), jobReport('b', { stoppedBy: 'rateLimit', attempts: undefined }), jobReport('c', { stoppedBy: 'rateLimit', attempts: undefined })],
+    };
+    expect(jobsNeedingResume(report)).toEqual(['b', 'c']);
+  });
+
+  it('narrows a batch to the given job ids, keeping the batch’s own name, concurrency, budget, and gating', () => {
+    const classes = loadClasses();
+    const batch = parseBatch(
+      {
+        name: 'fixture',
+        concurrency: 4,
+        budgetTokens: 1000,
+        gated: true,
+        jobs: ['a', 'b', 'c'].map((id) => ({ id, class: 'docs-only', model: 'claude-opus-5-5', arrival: 'Arrival.', job: 'Job.', docsSet: ['docs'] })),
+      },
+      classes,
+    );
+    const resumed = buildResumeBatch(batch, ['b']);
+    expect(resumed.jobs.map((j) => j.id)).toEqual(['b']);
+    expect(resumed).toMatchObject({ name: 'fixture', concurrency: 4, budgetTokens: 1000, gated: true });
+  });
+
+  it('merges a resumed sub-batch’s reports back in place, without consuming an attempt for the stop itself', () => {
+    const original: BatchReport = {
+      batch: 'fixture',
+      runId: 'r1',
+      stopReason: 'rateLimit',
+      budgetTokens: 1000,
+      usage: { input: 5, output: 5, cacheCreation: 0, cacheRead: 0, counted: 10 },
+      jobs: [jobReport('a'), jobReport('b', { stoppedBy: 'rateLimit', attempts: undefined })],
+      verified: false,
+    };
+    const resumed: BatchReport = {
+      batch: 'fixture',
+      runId: 'r2',
+      stopReason: 'complete',
+      budgetTokens: 1000,
+      usage: { input: 3, output: 3, cacheCreation: 0, cacheRead: 0, counted: 6 },
+      jobs: [jobReport('b')],
+      verified: true,
+    };
+    const merged = mergeResumedReport(original, resumed);
+    expect(merged.jobs.map((j) => [j.id, j.stoppedBy])).toEqual([
+      ['a', undefined],
+      ['b', undefined],
+    ]);
+    expect(merged.usage.counted).toBe(16);
+    expect(merged.stopReason).toBe('complete');
+    expect(merged.verified).toBe(true);
   });
 });

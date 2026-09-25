@@ -1,27 +1,65 @@
 /**
- * The scorer's integrity checks: which batches development mode may read, and gated mode's three
- * requirements (every job stamped, the stamp matching the manifest at its tag, and the post-freeze
- * chain verified for every artifact the scoring run depends on).
+ * The scorer's integrity checks: which batches development mode may read, and gated mode's
+ * requirements (every job stamped, the stamp matching the manifest at its tag, every job actually
+ * finished, and the post-freeze chain verified for every artifact the scoring run depends on).
  */
 import { readChain, verifyChain, chainPrefixLength } from './chain.js';
 import type { FreezeStamp } from './types.js';
 
 /**
- * The batch names development mode may score: pass 1's saved batches, rescored under this spec's
- * rules, and round 1's own batch. A batch outside this set is either a live gated batch or a
- * caller's mistake, and development mode refuses either way, since it can never emit a bar or a
- * class verdict.
+ * The batch names development mode may score: pass 1's validation batch and its rerun, rescored
+ * under this spec's rules, and round 1's own batch (O7 ruling: no other pass 1 batch is a
+ * development batch for this spec's purposes). A batch outside this set is either a live gated
+ * batch or a caller's mistake, and development mode refuses either way, since it can never emit a
+ * bar or a class verdict.
  */
-export const DEVELOPMENT_BATCH_NAMES: ReadonlySet<string> = new Set(['validation', 'validation-rerun', 'baseline', 'baseline-rerun', 'round1']);
+export const DEVELOPMENT_BATCH_NAMES: ReadonlySet<string> = new Set(['validation', 'validation-rerun', 'round1']);
+
+/** A report development mode is asked to score: its batch name and every job's own freeze stamp. */
+export interface DevelopmentModeReport {
+  batch: string;
+  jobs: ReadonlyArray<{ id: string; freeze?: unknown }>;
+}
 
 /**
- * Whether development mode may read a batch, by its own name.
- * @param batchName - A batch report's `batch` field.
- * @returns `ok: false` with a problem naming the batch when it is not a development batch.
+ * Whether development mode may read a report: its batch name is a development batch, and no job
+ * in it carries a freeze stamp at all, since a stamped job belongs to a gated batch by
+ * construction and development mode can never emit a bar or a class verdict for one.
+ * @param report - The report to check.
+ * @returns `ok: false` with a problem naming the batch or the stamped job.
  */
-export function checkDevelopmentBatch(batchName: string): { ok: boolean; problem?: string } {
-  if (DEVELOPMENT_BATCH_NAMES.has(batchName)) return { ok: true };
-  return { ok: false, problem: `batch "${batchName}" is not a development batch; development mode reads only ${[...DEVELOPMENT_BATCH_NAMES].sort().join(', ')}` };
+export function checkDevelopmentBatch(report: DevelopmentModeReport): { ok: boolean; problem?: string } {
+  if (!DEVELOPMENT_BATCH_NAMES.has(report.batch)) {
+    return { ok: false, problem: `batch "${report.batch}" is not a development batch; development mode reads only ${[...DEVELOPMENT_BATCH_NAMES].sort().join(', ')}` };
+  }
+  const stamped = report.jobs.find((job) => job.freeze !== undefined);
+  if (stamped) return { ok: false, problem: `batch "${report.batch}" job "${stamped.id}" carries a freeze stamp; development mode never reads a gated job` };
+  return { ok: true };
+}
+
+/** A report gated mode is asked to score: its own stop reason, and every job's stop state. */
+export interface GatedModeReport {
+  label: string;
+  stopReason: string;
+  jobs: ReadonlyArray<{ id: string; stoppedBy?: unknown; pendingCause?: unknown }>;
+}
+
+/**
+ * Whether a report gated mode is asked to score actually finished: its own `stopReason` is
+ * `complete`, and no job carries `stoppedBy`/`pendingCause` (a batch-level stop left it with no
+ * final attempt, so it has nothing a scorer could read).
+ * @param report - The report to check, labeled for its problem message.
+ * @returns `ok: false` with one problem per unfinished job, plus one for a non-`complete` stop reason.
+ */
+export function checkReportComplete(report: GatedModeReport): { ok: boolean; problems: string[] } {
+  const problems: string[] = [];
+  if (report.stopReason !== 'complete') problems.push(`${report.label}: stopReason is "${report.stopReason}", not "complete"`);
+  for (const job of report.jobs) {
+    if (job.stoppedBy !== undefined || job.pendingCause !== undefined) {
+      problems.push(`${report.label}: job "${job.id}" carries stoppedBy/pendingCause and has no final attempt`);
+    }
+  }
+  return { ok: problems.length === 0, problems };
 }
 
 /** One report's gated stamp, as the scorer reads it. */
@@ -52,8 +90,25 @@ export function checkGatedStamp(report: StampedReport, manifestTag: string, mani
 }
 
 /**
+ * Whether the manifest hash equals the chain's own genesis entry hash, the pinned link between the
+ * freeze manifest and the post-freeze chain (the chain's first entry is always the manifest
+ * itself, per its own "Task 5, the chain" pin).
+ * @param chainFile - The post-freeze chain file.
+ * @param manifestHash - The manifest file's own current sha256.
+ * @returns `ok: false` with a problem when the chain is empty or its genesis entry does not match.
+ */
+export function checkManifestIsGenesis(chainFile: string, manifestHash: string): { ok: boolean; problem?: string } {
+  const [genesis] = readChain(chainFile);
+  if (!genesis) return { ok: false, problem: 'the post-freeze chain has no genesis entry' };
+  if (genesis.sha256 !== manifestHash) {
+    return { ok: false, problem: `the chain's genesis entry ("${genesis.sha256}") does not match the manifest's own hash ("${manifestHash}")` };
+  }
+  return { ok: true };
+}
+
+/**
  * One report's own chain dependency check: its `chainHead` (the prefix of the chain it saw at gate
- * time or its last resume) and the chain-relative artifact paths its scoring reads.
+ * time or its last resume) and the chain-relative artifact paths its scoring depends on.
  */
 export interface GatedChainCheck {
   label: string;
@@ -63,22 +118,26 @@ export interface GatedChainCheck {
 
 /**
  * Verify the post-freeze chain gated mode requires: every artifact on disk matches its own latest
- * chain entry (the chain's own linkage and file-drift check), and, for each report being scored,
- * none of the artifacts its scoring depends on was chained after that report's own `chainHead`
- * prefix, since an entry appended after a report's chain head postdates it, and the report cannot
- * have read that later version. Takes the post-freeze chain file, the directory each chain entry's
- * own path is resolved against, and every report being scored with the artifact paths its scoring
- * reads.
+ * chain entry (the chain's own linkage and file-drift check), for each report being scored, none
+ * of the artifacts its scoring depends on was chained after that report's own `chainHead` prefix
+ * (an entry appended after a report's chain head postdates it, and the report cannot have read
+ * that later version), and, when given, that the agreement sample's own chain entry precedes the
+ * agreement rulings' entry (the sample is written, and chained, before any Fable ruling exists).
+ * Takes the post-freeze chain file; the directory each chain entry's own path is resolved
+ * against; every report being scored with the artifact paths its scoring reads; and, optionally,
+ * the sample and rulings chain paths to order-check against each other.
  * @returns Every problem found; `ok` when none were.
  */
 export function verifyGatedChain({
   chainFile,
   root,
   checks,
+  sampleBeforeRulings,
 }: {
   chainFile: string;
   root: string;
   checks: readonly GatedChainCheck[];
+  sampleBeforeRulings?: { samplePath: string; rulingsPath: string };
 }): { ok: boolean; problems: string[] } {
   const problems: string[] = [];
   const drift = verifyChain(chainFile, root);
@@ -107,5 +166,16 @@ export function verifyGatedChain({
       }
     }
   }
+
+  if (sampleBeforeRulings) {
+    const sampleLine = latestLine.get(sampleBeforeRulings.samplePath);
+    const rulingsLine = latestLine.get(sampleBeforeRulings.rulingsPath);
+    if (sampleLine === undefined) problems.push(`no chain entry for the agreement sample "${sampleBeforeRulings.samplePath}"`);
+    else if (rulingsLine === undefined) problems.push(`no chain entry for the agreement rulings "${sampleBeforeRulings.rulingsPath}"`);
+    else if (sampleLine >= rulingsLine) {
+      problems.push(`agreement sample "${sampleBeforeRulings.samplePath}" (chained at line ${sampleLine}) does not precede the rulings "${sampleBeforeRulings.rulingsPath}" (chained at line ${rulingsLine})`);
+    }
+  }
+
   return { ok: problems.length === 0, problems };
 }

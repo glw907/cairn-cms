@@ -23,6 +23,12 @@ export interface CatchCallPoolItem {
   primaryLabel: 'caught' | 'missed';
 }
 
+/** The findings stratum's fixed label vocabulary: the adjudicator's own three rulings, never derived from what a pool happens to carry. */
+const FINDING_CATEGORIES: readonly string[] = ['real', 'false', 'harness'];
+
+/** The catch-calls stratum's fixed label vocabulary: the catch judge's own two rulings. */
+const CATCH_CALL_CATEGORIES: readonly string[] = ['caught', 'missed'];
+
 /** The agreement sample file, in the pinned shape (`docs/superpowers/research/2026-09-24-pass-1b-preflight.md`). */
 export interface AgreementSampleFile {
   orderingLabel: string;
@@ -48,23 +54,29 @@ function sortByOrder<T extends { itemId: string }>(items: readonly T[], ordering
 }
 
 /**
- * Draw one stratum's balanced sample: an even split across the pool's own `primaryLabel`
- * categories, each category's own pick a prefix of its sha256-ordered candidates, a category short
- * of its target drawn in full with a note, and any shortfall filled from the sha256-ordered
- * leftover pool (so the whole draw stays a prefix of the pool's own ordering wherever balance does
- * not force otherwise).
+ * Draw one stratum's balanced sample: an even split across the stratum's own fixed label
+ * vocabulary (never derived from what the pool happens to carry, so a category the pool carries
+ * none of still gets its own note), each category's own pick a prefix of its sha256-ordered
+ * candidates, a category short of its target drawn in full with a note, and any shortfall filled
+ * from the sha256-ordered leftover pool (so the whole draw stays a prefix of the pool's own
+ * ordering wherever balance does not force otherwise).
  * @param pool - The stratum's full candidate pool.
+ * @param categories - The stratum's fixed label vocabulary, the split's own categories.
  * @param orderingLabel - The frozen ordering label.
  * @param want - How many items the stratum should carry (15).
- * @returns The picked items, in sha256 order, and any notes about a pool too small to balance.
+ * @returns The picked items, in sha256 order, and any notes about a category absent or too small to balance.
  */
-function drawStratum<T extends { itemId: string; primaryLabel: string }>(pool: readonly T[], orderingLabel: string, want: number): { picked: T[]; notes: string[] } {
+function drawStratum<T extends { itemId: string; primaryLabel: string }>(
+  pool: readonly T[],
+  categories: readonly string[],
+  orderingLabel: string,
+  want: number,
+): { picked: T[]; notes: string[] } {
   const notes: string[] = [];
   if (pool.length <= want) {
     if (pool.length < want) notes.push(`pool has only ${pool.length} item(s), below the intended ${want}: drawn unbalanced`);
     return { picked: sortByOrder(pool, orderingLabel), notes };
   }
-  const categories = [...new Set(pool.map((item) => item.primaryLabel))].sort();
   const base = Math.floor(want / categories.length);
   const remainder = want - base * categories.length;
   const picked: T[] = [];
@@ -76,11 +88,14 @@ function drawStratum<T extends { itemId: string; primaryLabel: string }>(pool: r
       pool.filter((item) => item.primaryLabel === category),
       orderingLabel,
     );
-    const taken = candidates.slice(0, target);
-    if (taken.length < target) {
-      shortfall += target - taken.length;
+    if (candidates.length === 0) {
+      shortfall += target;
+      notes.push(`category "${category}": absent from the pool (wanted ${target}): drawn unbalanced`);
+    } else if (candidates.length < target) {
+      shortfall += target - candidates.length;
       notes.push(`category "${category}": pool too small to balance (had ${candidates.length}, wanted ${target}): drawn unbalanced`);
     }
+    const taken = candidates.slice(0, target);
     for (const item of taken) {
       picked.push(item);
       pickedIds.add(item.itemId);
@@ -116,8 +131,8 @@ export function drawAgreementSample({
   catchCallsPool: readonly CatchCallPoolItem[];
   perStratum?: number;
 }): AgreementSampleFile {
-  const findings = drawStratum(findingsPool, orderingLabel, perStratum);
-  const catchCalls = drawStratum(catchCallsPool, orderingLabel, perStratum);
+  const findings = drawStratum(findingsPool, FINDING_CATEGORIES, orderingLabel, perStratum);
+  const catchCalls = drawStratum(catchCallsPool, CATCH_CALL_CATEGORIES, orderingLabel, perStratum);
   return { orderingLabel, findings: findings.picked, catchCalls: catchCalls.picked, notes: [...findings.notes, ...catchCalls.notes] };
 }
 
@@ -238,6 +253,45 @@ export interface AgreementReplacement {
   label: string;
 }
 
+/** One sample item, already joined to Fable's own ruling by `itemId`. */
+export interface SampleFableJoin {
+  itemId: string;
+  fableLabel: string;
+}
+
+/**
+ * Derive Fable's replacements: exactly the sample items whose Fable label differs from the
+ * primary label the sample file itself carries, joined through the sample's own `runId` and
+ * `plantId` (a catch call) or `runId` and `itemId` (a finding). An item Fable agreed with never
+ * becomes a replacement, so the bars read the original judge's ruling for it unchanged.
+ * @param sample - The agreement sample file (its own primary labels).
+ * @param fableFindings - Fable's ruling per sampled finding `itemId`.
+ * @param fableCatchCalls - Fable's ruling per sampled catch call `itemId`.
+ * @returns Every replacement a disagreement produced.
+ */
+export function deriveReplacements(
+  sample: Pick<AgreementSampleFile, 'findings' | 'catchCalls'>,
+  fableFindings: readonly SampleFableJoin[],
+  fableCatchCalls: readonly SampleFableJoin[],
+): AgreementReplacement[] {
+  const replacements: AgreementReplacement[] = [];
+  const fableFindingByItem = new Map(fableFindings.map((f) => [f.itemId, f.fableLabel]));
+  for (const finding of sample.findings) {
+    const fableLabel = fableFindingByItem.get(finding.itemId);
+    if (fableLabel !== undefined && fableLabel !== finding.primaryLabel) {
+      replacements.push({ kind: 'finding', runId: finding.runId, refId: finding.itemId, label: fableLabel });
+    }
+  }
+  const fableCatchCallByItem = new Map(fableCatchCalls.map((f) => [f.itemId, f.fableLabel]));
+  for (const catchCall of sample.catchCalls) {
+    const fableLabel = fableCatchCallByItem.get(catchCall.itemId);
+    if (fableLabel !== undefined && fableLabel !== catchCall.primaryLabel) {
+      replacements.push({ kind: 'catchCall', runId: catchCall.runId, refId: catchCall.plantId, label: fableLabel });
+    }
+  }
+  return replacements;
+}
+
 /**
  * The lookup key joining a replacement to the run and plant or item it re-rules.
  * @param runId - The run the replacement re-rules.
@@ -278,7 +332,11 @@ export function applyCatchReplacements(
 }
 
 /**
- * Apply Fable's finding replacements to a set of precision runs.
+ * Apply Fable's finding replacements to a set of precision runs: the replaced item's own subject
+ * group is kept when it already had one (a subject group Fable disagreed on stays the same
+ * group, just with a different ruling), and falls back to the item's own id when it did not (an
+ * item Fable turned into a finding that the adjudicator itself had classified as an
+ * interpretation or not a claim at all).
  * @param runs - The precision pool's runs.
  * @param replacements - Fable's replacement rulings.
  * @returns The precision runs with every matched item's ruling replaced.
@@ -293,7 +351,8 @@ export function applyPrecisionReplacements(runs: readonly PrecisionRunRecord[], 
     const items = run.items.map((item) => {
       const replaced = byRunItem.get(replacementKey(run.runId, item.itemId));
       if (!replaced) return item;
-      return { ...item, harnessExcluded: false, ruling: replaced };
+      const subjectGroupId = item.adjudication?.class === 'finding' ? item.adjudication.subjectGroupId : item.itemId;
+      return { ...item, harnessFiltered: false, adjudication: { class: 'finding' as const, subjectGroupId, ruling: replaced } };
     });
     return { ...run, items };
   });

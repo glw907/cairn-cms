@@ -11,6 +11,28 @@ import type { PathMap } from '../path-map.js';
 import { CLASS_IDS, SEMANTIC_PLANT_TYPES, type CatchRunRecord, type ClassId, type PlantSpec, type PlantType } from './score-types.js';
 
 /**
+ * Refuse when a thresholds file's own achieved plant counts do not match the plants actually being
+ * tallied: a scorer run against the wrong thresholds file (one recomputed for a different achieved
+ * count) would silently score against the wrong bar.
+ * @param plants - Every plant being scored.
+ * @param thresholds - The recomputed thresholds file.
+ * @throws When the pooled count or any class's own count mismatches, naming both counts.
+ */
+export function assertThresholdsMatchTally(plants: readonly PlantSpec[], thresholds: ThresholdsFile): void {
+  if (thresholds.achieved.pooled !== plants.length) {
+    throw new Error(`thresholds file's achieved pooled count (${thresholds.achieved.pooled}) does not match the tallied plant count (${plants.length})`);
+  }
+  const perClass = new Map<string, number>();
+  for (const plant of plants) perClass.set(plant.classId, (perClass.get(plant.classId) ?? 0) + 1);
+  for (const [classId, count] of Object.entries(thresholds.achieved.perClass)) {
+    const tallied = perClass.get(classId) ?? 0;
+    if (count !== tallied) {
+      throw new Error(`thresholds file's achieved count for class "${classId}" (${count}) does not match the tallied plant count (${tallied})`);
+    }
+  }
+}
+
+/**
  * Whether a plant's line sits inside a job's on-path map: within a narrowed map's own ranges for
  * that page when the ceiling narrowed it, or within one of the page's on-path sections otherwise.
  * A plant with no page or line (a bundle that never restricts by the map) is always on-map.
@@ -32,8 +54,10 @@ export interface PlantCatchTally {
   plantId: string;
   job: string;
   classId: ClassId;
-  type: PlantType;
-  semantic: boolean;
+  type?: PlantType;
+  semantic?: boolean;
+  page?: string;
+  line?: number;
   /** Each counted run's own caught/missed outcome, in run order. */
   runsCaught: boolean[];
   caughtCount: number;
@@ -62,6 +86,8 @@ export function tallyPlantCatches(plants: readonly PlantSpec[], runsByJob: Reado
       classId: plant.classId,
       type: plant.type,
       semantic: plant.semantic,
+      page: plant.page,
+      line: plant.line,
       runsCaught,
       caughtCount,
       caught: caughtCount >= 2,
@@ -75,6 +101,8 @@ export interface PooledSensitivityResult {
   achieved: number;
   threshold: number | null;
   pass: boolean;
+  /** Set only when `threshold` is null: why sensitivity has no gate. */
+  reason?: string;
 }
 
 /**
@@ -88,7 +116,13 @@ export interface PooledSensitivityResult {
 export function scorePooledSensitivity(tallies: readonly PlantCatchTally[], thresholds: ThresholdsFile): PooledSensitivityResult {
   const caught = tallies.filter((tally) => tally.caught).length;
   const threshold = thresholds.pooled.threshold;
-  return { caught, achieved: thresholds.achieved.pooled, threshold, pass: threshold !== null && caught >= threshold };
+  return {
+    caught,
+    achieved: thresholds.achieved.pooled,
+    threshold,
+    pass: threshold !== null && caught >= threshold,
+    ...(threshold === null ? { reason: `no pooled threshold at ${thresholds.achieved.pooled} plants; sensitivity ungated` } : {}),
+  };
 }
 
 /** One class's own sensitivity floor result. */
@@ -215,9 +249,10 @@ export function recallByClass(tallies: readonly PlantCatchTally[]): Record<Class
  * @returns The semantic and token recall reports.
  */
 export function recallByPlantKind(tallies: readonly PlantCatchTally[]): { semantic: RecallReport; token: RecallReport } {
+  const typed = tallies.filter((tally): tally is PlantCatchTally & { type: PlantType } => tally.type !== undefined);
   return {
-    semantic: recallOf(tallies.filter((tally) => SEMANTIC_PLANT_TYPES.has(tally.type))),
-    token: recallOf(tallies.filter((tally) => !SEMANTIC_PLANT_TYPES.has(tally.type))),
+    semantic: recallOf(typed.filter((tally) => SEMANTIC_PLANT_TYPES.has(tally.type))),
+    token: recallOf(typed.filter((tally) => !SEMANTIC_PLANT_TYPES.has(tally.type))),
   };
 }
 
@@ -256,4 +291,71 @@ export function stabilityKappa(tallies: readonly PlantCatchTally[]): { instrumen
   const byClass = {} as Record<ClassId, number>;
   for (const classId of CLASS_IDS) byClass[classId] = fleissKappa(toKappaMatrix(tallies.filter((tally) => tally.classId === classId)));
   return { instrumentWide: fleissKappa(toKappaMatrix(tallies)), byClass };
+}
+
+/**
+ * A plant's position along its job's path map: the 1-based rank of the on-path section its own
+ * line sits in, taken in path order (page order, then section start line). This is the mechanical
+ * reading of "position along the path": which on-path section, first through last, the plant sits
+ * in, since the map exposes sections, not a finer per-line ordering.
+ * @param map - The job's path map.
+ * @param plant - The plant to place, by its page and line.
+ * @returns The 1-based rank, or null when the plant carries no page or line, or its line sits in
+ * no on-path section (a narrowed map's ranges are not sections, so this reads null for one).
+ */
+export function plantPathPosition(map: PathMap, plant: Pick<PlantSpec, 'page' | 'line'>): number | null {
+  const { page, line } = plant;
+  if (page === undefined || line === undefined) return null;
+  const pageOrder = Object.keys(map.pages);
+  const sections: Array<{ page: string; start: number; end: number }> = [];
+  for (const p of pageOrder) for (const section of map.pages[p].sections) sections.push({ page: p, start: section.start, end: section.end });
+  sections.sort((a, b) => {
+    const pageDiff = pageOrder.indexOf(a.page) - pageOrder.indexOf(b.page);
+    return pageDiff !== 0 ? pageDiff : a.start - b.start;
+  });
+  const index = sections.findIndex((section) => section.page === page && line >= section.start && line <= section.end);
+  return index === -1 ? null : index + 1;
+}
+
+/** One mapping-run `steps[]` quote, reduced to what a line-distance measure needs. */
+export interface MappingStep {
+  page: string;
+  line: number;
+}
+
+/**
+ * A plant's line distance to the nearest mapping-run `steps[]` quote on the same page.
+ * @param plant - The plant, by its page and line.
+ * @param steps - Every mapping-run step to check against, from any job's control runs.
+ * @returns The smallest absolute line distance, or null when the plant carries no page or line, or
+ * no step sits on that page at all.
+ */
+export function nearestStepDistance(plant: Pick<PlantSpec, 'page' | 'line'>, steps: readonly MappingStep[]): number | null {
+  const { page, line } = plant;
+  if (page === undefined || line === undefined) return null;
+  const onPage = steps.filter((step) => step.page === page);
+  if (onPage.length === 0) return null;
+  return Math.min(...onPage.map((step) => Math.abs(step.line - line)));
+}
+
+/**
+ * Recall grouped by an arbitrary bucket key, for measures like "recall by position along the
+ * path" or "recall after a prior stall": a tally whose bucket key is null is left out of every
+ * group (it has nothing to report a position or a prior-stall state for).
+ * @param tallies - Every plant's catch tally.
+ * @param bucketOf - The bucket key for one tally, or null to exclude it.
+ * @returns One recall report per bucket key that at least one tally reached.
+ */
+export function recallByBucket(tallies: readonly PlantCatchTally[], bucketOf: (tally: PlantCatchTally) => string | null): Record<string, RecallReport> {
+  const buckets = new Map<string, PlantCatchTally[]>();
+  for (const tally of tallies) {
+    const key = bucketOf(tally);
+    if (key === null) continue;
+    const list = buckets.get(key) ?? [];
+    list.push(tally);
+    buckets.set(key, list);
+  }
+  const result: Record<string, RecallReport> = {};
+  for (const [key, list] of buckets) result[key] = recallOf(list);
+  return result;
 }

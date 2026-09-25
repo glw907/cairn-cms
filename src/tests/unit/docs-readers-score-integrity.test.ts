@@ -3,19 +3,87 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { appendEntry, hashFile } from '../../../scripts/docs-readers/lib/chain.js';
-import { checkDevelopmentBatch, checkGatedStamp, verifyGatedChain } from '../../../scripts/docs-readers/lib/score-integrity.js';
+import {
+  checkDevelopmentBatch,
+  checkGatedStamp,
+  checkManifestIsGenesis,
+  checkReportComplete,
+  verifyGatedChain,
+} from '../../../scripts/docs-readers/lib/score-integrity.js';
 
 describe('checkDevelopmentBatch', () => {
-  it('allows every known development batch name', () => {
-    for (const name of ['validation', 'validation-rerun', 'baseline', 'baseline-rerun', 'round1']) {
-      expect(checkDevelopmentBatch(name).ok).toBe(true);
+  it('allows every known development batch name, with no job stamped', () => {
+    for (const name of ['validation', 'validation-rerun', 'round1']) {
+      expect(checkDevelopmentBatch({ batch: name, jobs: [{ id: 'evaluator-planted-1' }] }).ok).toBe(true);
     }
   });
 
   it('refuses a test-set batch, naming it', () => {
-    const result = checkDevelopmentBatch('test-set');
+    const result = checkDevelopmentBatch({ batch: 'test-set', jobs: [] });
     expect(result.ok).toBe(false);
     expect(result.problem).toContain('"test-set"');
+  });
+
+  it('no longer treats pass 1\'s baseline batches as development batches', () => {
+    for (const name of ['baseline', 'baseline-rerun']) {
+      expect(checkDevelopmentBatch({ batch: name, jobs: [] }).ok).toBe(false);
+    }
+  });
+
+  it('refuses a round1 report whose job carries a freeze stamp, naming the job', () => {
+    const result = checkDevelopmentBatch({
+      batch: 'round1',
+      jobs: [{ id: 'evaluator-planted-1' }, { id: 'evaluator-planted-2', freeze: { tag: 't', manifestHash: 'h', chainHead: 'c' } }],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.problem).toContain('evaluator-planted-2');
+    expect(result.problem).toContain('freeze stamp');
+  });
+});
+
+describe('checkReportComplete', () => {
+  it('passes a complete report with no stopped job', () => {
+    const result = checkReportComplete({ label: 'r.json', stopReason: 'complete', jobs: [{ id: 'j1' }] });
+    expect(result.ok).toBe(true);
+    expect(result.problems).toHaveLength(0);
+  });
+
+  it('refuses and names a job carrying stoppedBy/pendingCause', () => {
+    const result = checkReportComplete({ label: 'r.json', stopReason: 'complete', jobs: [{ id: 'j1', stoppedBy: 'rateLimit', pendingCause: 'initial' }] });
+    expect(result.ok).toBe(false);
+    expect(result.problems[0]).toContain('j1');
+  });
+
+  it('refuses a report whose own stopReason is not complete', () => {
+    const result = checkReportComplete({ label: 'r.json', stopReason: 'budget', jobs: [] });
+    expect(result.ok).toBe(false);
+    expect(result.problems[0]).toContain('budget');
+  });
+});
+
+describe('checkManifestIsGenesis', () => {
+  let dir: string;
+  let chainFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'docs-readers-score-integrity-genesis-'));
+    chainFile = join(dir, 'chain.jsonl');
+  });
+
+  it('passes when the chain\'s genesis entry hashes to the manifest hash', () => {
+    appendEntry(chainFile, { path: 'manifest.json', sha256: 'manifest-hash', commit: 'c0' });
+    expect(checkManifestIsGenesis(chainFile, 'manifest-hash').ok).toBe(true);
+  });
+
+  it('refuses when the genesis entry does not match', () => {
+    appendEntry(chainFile, { path: 'manifest.json', sha256: 'wrong-hash', commit: 'c0' });
+    const result = checkManifestIsGenesis(chainFile, 'manifest-hash');
+    expect(result.ok).toBe(false);
+    expect(result.problem).toContain('wrong-hash');
+  });
+
+  it('refuses an empty chain', () => {
+    expect(checkManifestIsGenesis(chainFile, 'manifest-hash').ok).toBe(false);
   });
 });
 
@@ -114,5 +182,29 @@ describe('verifyGatedChain', () => {
     const result = verifyGatedChain({ chainFile, root: dir, checks: [{ label: 'r.json', chainHead: 'not-a-real-head', dependsOn: [] }] });
     expect(result.ok).toBe(false);
     expect(result.problems.some((p) => p.includes('r.json') && p.includes('chain head'))).toBe(true);
+  });
+
+  it('passes when the agreement sample\'s chain entry precedes the rulings\' entry', () => {
+    const samplePath = join(dir, 'sample.json');
+    writeFileSync(samplePath, '{}');
+    appendEntry(chainFile, { path: 'sample.json', sha256: hashFile(samplePath), commit: 'c1' });
+    const rulingsPath = join(dir, 'rulings.json');
+    writeFileSync(rulingsPath, '{}');
+    appendEntry(chainFile, { path: 'rulings.json', sha256: hashFile(rulingsPath), commit: 'c2' });
+    const result = verifyGatedChain({ chainFile, root: dir, checks: [], sampleBeforeRulings: { samplePath: 'sample.json', rulingsPath: 'rulings.json' } });
+    expect(result.ok).toBe(true);
+  });
+
+  it('refuses when the agreement sample was chained on or after the rulings, naming both', () => {
+    const rulingsPath = join(dir, 'rulings.json');
+    writeFileSync(rulingsPath, '{}');
+    appendEntry(chainFile, { path: 'rulings.json', sha256: hashFile(rulingsPath), commit: 'c1' });
+    const samplePath = join(dir, 'sample.json');
+    writeFileSync(samplePath, '{}');
+    // The sample is chained after the rulings: it cannot have been written before any Fable ruling existed.
+    appendEntry(chainFile, { path: 'sample.json', sha256: hashFile(samplePath), commit: 'c2' });
+    const result = verifyGatedChain({ chainFile, root: dir, checks: [], sampleBeforeRulings: { samplePath: 'sample.json', rulingsPath: 'rulings.json' } });
+    expect(result.ok).toBe(false);
+    expect(result.problems.some((p) => p.includes('sample.json') && p.includes('rulings.json'))).toBe(true);
   });
 });

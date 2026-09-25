@@ -3,9 +3,13 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import {
+  assertThresholdsMatchTally,
   clopperPearson,
   isPlantOnMap,
+  nearestStepDistance,
   perRunRecall,
+  plantPathPosition,
+  recallByBucket,
   recallByClass,
   recallByPlantKind,
   recallOf,
@@ -38,6 +42,7 @@ const PLANT = (id: string, job: string, classId: PlantSpec['classId'], overrides
 const RUN = (runId: string, catches: Record<string, 'caught' | 'missed'>, overrides: Partial<CatchRunRecord> = {}): CatchRunRecord => ({
   runId,
   verified: true,
+  opus: true,
   catches,
   ...overrides,
 });
@@ -263,5 +268,94 @@ describe('stabilityKappa', () => {
     expect(Number.isFinite(result.instrumentWide)).toBe(true);
     expect(Number.isFinite(result.byClass['docs-only'])).toBe(true);
     expect(Number.isNaN(result.byClass['repository'])).toBe(true);
+  });
+});
+
+describe('assertThresholdsMatchTally', () => {
+  it('passes when the tallied plant counts match the thresholds file', () => {
+    const thresholds = fixture<ThresholdsFile>('thresholds-40-plants.json');
+    const plants: PlantSpec[] = [
+      ...Array.from({ length: 7 }, (_, i) => ({ id: `e${i}`, job: 'evaluator', classId: 'docs-only' as const })),
+      ...Array.from({ length: 7 }, (_, i) => ({ id: `o${i}`, job: 'operator', classId: 'docs-and-binary' as const })),
+      ...Array.from({ length: 13 }, (_, i) => ({ id: `s${i}`, job: 'designer', classId: 'docs-and-site' as const })),
+      ...Array.from({ length: 13 }, (_, i) => ({ id: `r${i}`, job: 'core-developer', classId: 'repository' as const })),
+    ];
+    expect(() => assertThresholdsMatchTally(plants, thresholds)).not.toThrow();
+  });
+
+  it('throws and names the pooled counts when they mismatch', () => {
+    const thresholds = fixture<ThresholdsFile>('thresholds-40-plants.json');
+    const plants: PlantSpec[] = [{ id: 'e1', job: 'evaluator', classId: 'docs-only' }];
+    expect(() => assertThresholdsMatchTally(plants, thresholds)).toThrow(/pooled count \(40\).*tallied plant count \(1\)/);
+  });
+
+  it('throws and names a class\'s own counts when they mismatch', () => {
+    const thresholds = fixture<ThresholdsFile>('thresholds-40-plants.json');
+    const plants: PlantSpec[] = [
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `e${i}`, job: 'evaluator', classId: 'docs-only' as const })),
+      ...Array.from({ length: 7 }, (_, i) => ({ id: `o${i}`, job: 'operator', classId: 'docs-and-binary' as const })),
+      ...Array.from({ length: 13 }, (_, i) => ({ id: `s${i}`, job: 'designer', classId: 'docs-and-site' as const })),
+      ...Array.from({ length: 14 }, (_, i) => ({ id: `r${i}`, job: 'core-developer', classId: 'repository' as const })),
+    ];
+    expect(() => assertThresholdsMatchTally(plants, thresholds)).toThrow(/class "docs-only"/);
+  });
+});
+
+describe('plantPathPosition', () => {
+  const map: PathMap = {
+    job: 'evaluator',
+    verifiedRuns: 3,
+    mode: 'steps',
+    pages: {
+      'docs/a.md': {
+        lines: 100,
+        sections: [
+          { heading: 'H2a', level: 2, start: 10, end: 20, quotes: 3, runs: 3 },
+          { heading: 'H2b', level: 2, start: 30, end: 40, quotes: 3, runs: 3 },
+        ],
+      },
+    },
+    onPathShare: 0.2,
+    narrowed: false,
+    widened: false,
+    capacity: 7,
+    noMap: null,
+  };
+
+  it('ranks a plant by its section\'s 1-based position in path order', () => {
+    expect(plantPathPosition(map, { page: 'docs/a.md', line: 15 })).toBe(1);
+    expect(plantPathPosition(map, { page: 'docs/a.md', line: 35 })).toBe(2);
+  });
+
+  it('is null for a plant outside every on-path section', () => {
+    expect(plantPathPosition(map, { page: 'docs/a.md', line: 50 })).toBeNull();
+  });
+
+  it('is null for a plant with no page or line', () => {
+    expect(plantPathPosition(map, {})).toBeNull();
+  });
+});
+
+describe('nearestStepDistance', () => {
+  it('finds the smallest absolute distance to a same-page step', () => {
+    const steps = [{ page: 'docs/a.md', line: 10 }, { page: 'docs/a.md', line: 25 }, { page: 'docs/b.md', line: 12 }];
+    expect(nearestStepDistance({ page: 'docs/a.md', line: 20 }, steps)).toBe(5);
+  });
+
+  it('is null when no step sits on the plant\'s own page', () => {
+    expect(nearestStepDistance({ page: 'docs/c.md', line: 20 }, [{ page: 'docs/a.md', line: 10 }])).toBeNull();
+  });
+});
+
+describe('recallByBucket', () => {
+  it('groups tallies by an arbitrary bucket key, excluding a null key', () => {
+    const tallies: PlantCatchTally[] = [
+      { plantId: 'P1', job: 'evaluator', classId: 'docs-only', runsCaught: [], caughtCount: 2, caught: true },
+      { plantId: 'P2', job: 'evaluator', classId: 'docs-only', runsCaught: [], caughtCount: 0, caught: false },
+      { plantId: 'P3', job: 'evaluator', classId: 'docs-only', runsCaught: [], caughtCount: 2, caught: true },
+    ];
+    const buckets = recallByBucket(tallies, (t) => (t.plantId === 'P3' ? null : 'a'));
+    expect(buckets.a).toEqual({ caught: 1, total: 2, rate: 0.5, interval: expect.any(Object) });
+    expect(Object.keys(buckets)).toEqual(['a']);
   });
 });

@@ -20,16 +20,15 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Stopped for Geoff: pass 1b Task 7 drew a third `fix` (2026-09-25).** Plan
+**Waiting on Geoff: pass 1b stopped before the freeze (2026-09-25).** Plan
 `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`, branch `docs-reset-1b` (worktree
-`.claude/worktrees/docs-reset-1b`, head `c4e4ae41`, pushed). The scorer is built and gated green
-(`089e4707`); its third review found two one-line defects, recorded with their fixes in the plan's
-ledger. The 2.1.282 init baseline is pinned (`243a0bd3`). Spend 15.28M counted, ceiling 25M, flag
-21M. On Geoff's word: send the two fixes to a fresh `cairn-implementer`, a fourth `diff-reviewer`
-read, then Task 9 under the plan's "Unattended execution" rules. Carry notes:
-`docs/superpowers/research/2026-09-24-pass-1b-carries.md`. The lane worktrees
-`docs-reset-1b-{export,runner,pathmap}` are merged and can be removed. Still owed from pass 1: the
-`~/.dotfiles` push and `claude-tooling-sync verify`.
+`.claude/worktrees/docs-reset-1b`, pushed). Tasks 0 to 10 are done: the scorer, rounds 0 and 1, and
+three runner defects found and fixed in tuning (record:
+`docs/internal/record/2026-09-24-docs-reset-1b-tuning.md`). Spend 19.92M counted; projection to the
+close about 26M against the 25M ceiling. The open question, in the plan's last ledger row: run the
+freeze and the gated test, or close on the tuning record. The CLI stays held at 2.1.282 until the
+close. Carry notes: `docs/superpowers/research/2026-09-24-pass-1b-carries.md`. Still owed from
+pass 1: the `~/.dotfiles` push and `claude-tooling-sync verify`.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`

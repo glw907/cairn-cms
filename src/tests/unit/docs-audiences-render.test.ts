@@ -1,11 +1,11 @@
 // Covers Task 6 (4a) of the docs reset pass 2a spec: render-profile.ts's rendered `profile`
 // string, pinned against a synthetic fixture profile since no authored profile exists yet.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import matter from 'gray-matter';
-import { renderProfile } from '../../../scripts/docs-audiences/render-profile.js';
+import { main, renderProfile } from '../../../scripts/docs-audiences/render-profile.js';
 import type { JsonSchema } from '../../../scripts/docs-audiences/lib/profile-schema.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -57,5 +57,25 @@ describe('renderProfile', () => {
       provisionalReason: 'evidence pending a human read',
     };
     expect(renderProfile(data, schema)).toContain('Provisional reason: evidence pending a human read');
+  });
+});
+
+describe('main (the CLI entry point)', () => {
+  it('exits 1 and names the file on broken YAML frontmatter, without throwing an uncaught stack trace', () => {
+    const path = join(FIXTURES_DIR, 'profile-broken-yaml.md');
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    let exitCode = -1;
+    let written = '';
+    try {
+      exitCode = main([path]);
+      // Read the call history before mockRestore(), which also clears it (mockRestore is
+      // mockReset plus restoring the original implementation).
+      written = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    } finally {
+      stderrSpy.mockRestore();
+    }
+    expect(exitCode).toBe(1);
+    expect(written).toContain(`${path} fails its schema:`);
+    expect(written).toContain('frontmatter does not parse:');
   });
 });

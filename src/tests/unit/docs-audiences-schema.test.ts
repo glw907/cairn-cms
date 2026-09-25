@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { validateAgainstSchema, type JsonSchema } from '../../../scripts/docs-audiences/lib/profile-schema.js';
 import { idResolves, unresolvedExemplarIds } from '../../../scripts/docs-audiences/lib/exemplar-manifest.js';
+import { checkProfileFile } from '../../../scripts/docs-audiences/lib/check-profile-file.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const SCHEMA_PATH = join(ROOT, 'docs/internal/audiences/profile.schema.json');
@@ -20,6 +21,10 @@ const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8')) as JsonSchema;
 
 function readFixture(name: string): string {
   return readFileSync(join(FIXTURES_DIR, name), 'utf8');
+}
+
+function fixturePath(name: string): string {
+  return join(FIXTURES_DIR, name);
 }
 
 describe('profile.schema.json', () => {
@@ -59,6 +64,13 @@ describe('validateAgainstSchema, on the synthetic fixture profile', () => {
     expect(validateAgainstSchema(data, schema)).toEqual([]);
   });
 
+  it('passes the full check (schema plus exemplar resolution) against the fixture manifest', () => {
+    const { data } = matter(readFixture('profile-valid.md'));
+    expect(validateAgainstSchema(data, schema)).toEqual([]);
+    const manifest = readFixture('manifest-fixture.md');
+    expect(unresolvedExemplarIds(data.exemplars as string[], manifest)).toEqual([]);
+  });
+
   it('fails a profile missing a required key, naming it', () => {
     const { data } = matter(readFixture('profile-missing-key.md'));
     const errors = validateAgainstSchema(data, schema);
@@ -87,11 +99,53 @@ describe('validateAgainstSchema, on the synthetic fixture profile', () => {
     expect(errors).toContain('frontmatter: missing required key "provisionalReason" (conditionally required)');
   });
 
+  it('fails provisional: false carrying a provisionalReason', () => {
+    const { data } = matter(readFixture('profile-provisional-reason-not-allowed.md'));
+    const errors = validateAgainstSchema(data, schema);
+    expect(errors).toContain('frontmatter: key "provisionalReason" must not be present (conditionally forbidden)');
+  });
+
   it('passes the shape check but fails on an exemplar id with no manifest entry', () => {
     const { data } = matter(readFixture('profile-unknown-exemplar.md'));
     expect(validateAgainstSchema(data, schema)).toEqual([]);
     const manifest = readFixture('manifest-fixture.md');
     expect(unresolvedExemplarIds(data.exemplars as string[], manifest)).toEqual(['editors/no-such-capture']);
+  });
+});
+
+describe('checkProfileFile, on the fixture profiles', () => {
+  const manifest = readFixture('manifest-fixture.md');
+
+  it('fails a profile missing a required key, naming both the key and the file', () => {
+    const path = fixturePath('profile-missing-key.md');
+    const errors = checkProfileFile(path, schema, manifest);
+    expect(errors).toContain(`${path}: frontmatter: missing required key "success"`);
+  });
+
+  it('fails a profile carrying an unknown key, naming both the key and the file', () => {
+    const path = fixturePath('profile-extra-key.md');
+    const errors = checkProfileFile(path, schema, manifest);
+    expect(errors).toContain(`${path}: frontmatter: unknown key "unexpected-extra-key"`);
+  });
+
+  it('fails a profile with no frontmatter block, naming the file on every missing key', () => {
+    const path = fixturePath('profile-no-frontmatter.md');
+    const errors = checkProfileFile(path, schema, manifest);
+    expect(errors.length).toBe((schema.required ?? []).length);
+    for (const error of errors) expect(error.startsWith(`${path}:`)).toBe(true);
+  });
+
+  it('fails a profile whose frontmatter is broken YAML, naming the file instead of throwing', () => {
+    const path = fixturePath('profile-broken-yaml.md');
+    const errors = checkProfileFile(path, schema, manifest);
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain(`${path}: frontmatter does not parse:`);
+  });
+
+  it('fails a profile whose id does not match its file name, naming the file', () => {
+    const path = fixturePath('profile-id-mismatch.md');
+    const errors = checkProfileFile(path, schema, manifest);
+    expect(errors).toContain(`${path}: id "not-the-file-name" does not match file name "profile-id-mismatch"`);
   });
 });
 
@@ -106,11 +160,12 @@ describe('every real audience profile (none exist yet at Task 6)', () => {
     });
   }
   for (const file of files) {
-    it(`${file} conforms to profile.schema.json and its exemplar ids all resolve`, () => {
-      const { data } = matter(readFileSync(join(AUDIENCES_DIR, file), 'utf8'));
-      expect(validateAgainstSchema(data, schema)).toEqual([]);
+    it(`${file} conforms to profile.schema.json, its exemplar ids resolve, and its id matches its file name`, () => {
+      const path = join(AUDIENCES_DIR, file);
       const manifest = readFileSync(REAL_MANIFEST_PATH, 'utf8');
-      expect(unresolvedExemplarIds((data.exemplars ?? []) as string[], manifest)).toEqual([]);
+      expect(checkProfileFile(path, schema, manifest)).toEqual([]);
+      const { data } = matter(readFileSync(path, 'utf8'));
+      expect(data.id).toBe(file.replace(/\.md$/, ''));
     });
   }
 });
@@ -122,13 +177,17 @@ describe('idResolves, against the fixture manifest', () => {
     expect(idResolves(manifest, 'editors/govuk-publishing-guidance-home')).toBe(true);
   });
 
-  it('resolves the un-rejected slug of a two-slug "Local paths:" entry', () => {
+  it('resolves one slug of a two-slug "Local paths:" entry', () => {
     expect(idResolves(manifest, 'editors/substack-app-login-link')).toBe(true);
   });
 
-  it('fails the rejected slug of that same "Local paths:" entry, its Verdict line in the exact pinned form', () => {
-    expect(manifest).toContain('- **Verdict (`substack-log-in/`):** rejected (too thin for the profile)');
-    expect(idResolves(manifest, 'editors/substack-log-in')).toBe(false);
+  it('resolves the other slug of that same two-slug entry too, since neither slug carries the rejected verdict', () => {
+    expect(idResolves(manifest, 'editors/substack-log-in')).toBe(true);
+  });
+
+  it('fails a rejected id, its Verdict line in the exact pinned form', () => {
+    expect(manifest).toContain('- **Verdict (`google-docs-get-started/`):** rejected (too thin for the profile)');
+    expect(idResolves(manifest, 'editors/google-docs-get-started')).toBe(false);
   });
 
   it('resolves an id carrying a "kept" Verdict line', () => {
@@ -148,6 +207,14 @@ describe('idResolves, against the fixture manifest', () => {
     expect(idResolves(manifest, 'extenders/payload-custom-components')).toBe(true);
   });
 
+  it('resolves the newly added Operators entry, the exemplar the valid synthetic profile depends on', () => {
+    expect(idResolves(manifest, 'operators/github-pat')).toBe(true);
+  });
+
+  it('resolves the newly added Core section\'s dir/slug entry', () => {
+    expect(idResolves(manifest, 'core/rust-analyzer-architecture')).toBe(true);
+  });
+
   it('never resolves the method source, named only in the section\'s opening paragraph', () => {
     expect(idResolves(manifest, 'editors/mozilla-kb-writing-guide')).toBe(false);
   });
@@ -158,11 +225,25 @@ describe('idResolves, against the fixture manifest', () => {
   });
 
   it('never resolves a slug named only in indented prose', () => {
-    expect(idResolves(manifest, 'editors/tool')).toBe(false);
+    expect(idResolves(manifest, 'core/tool')).toBe(false);
+    expect(idResolves(manifest, 'core/templates')).toBe(false);
   });
 
-  it('never resolves an id whose section is absent from the manifest', () => {
-    expect(idResolves(manifest, 'operators/github-pat')).toBe(false);
+  it('never resolves an id whose section has no heading in the manifest at all', () => {
+    expect(idResolves(manifest, 'nonexistent-audience/some-slug')).toBe(false);
+  });
+});
+
+describe('manifest-fixture.md carries only real lines below its preamble', () => {
+  it('has every non-Verdict, non-blank line appear verbatim as a line of the real exemplar manifest', () => {
+    const fixtureLines = readFixture('manifest-fixture.md').split('\n');
+    const startIndex = fixtureLines.findIndex((line) => line === '## Editors');
+    const bodyLines = fixtureLines.slice(startIndex);
+    const realLines = new Set(readFileSync(REAL_MANIFEST_PATH, 'utf8').split('\n'));
+    const offenders = bodyLines.filter(
+      (line) => line.trim() !== '' && !line.includes('**Verdict (') && !realLines.has(line),
+    );
+    expect(offenders).toEqual([]);
   });
 });
 

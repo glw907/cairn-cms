@@ -1,5 +1,5 @@
 ---
-id: unknown-exemplar-profile
+id: profile-unknown-exemplar
 persona: A profile fixture whose exemplars list carries an id with no manifest entry.
 vocabulary:
   use:

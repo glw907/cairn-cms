@@ -2,9 +2,9 @@
 /**
  * Prints an audience profile's rendered `profile` string: the plain-text block the docs drafter
  * chain embeds in its prompt (spec 2026-09-25-docs-reset-pass-2a-design.md, section 4, 4a). Reads
- * one profile markdown file's frontmatter, validates it against
- * docs/internal/audiences/profile.schema.json, then writes the rendered text to stdout in the
- * schema's own property order.
+ * one profile markdown file's frontmatter, checks it against
+ * docs/internal/audiences/profile.schema.json and docs/internal/record/docs-exemplars.md, then
+ * writes the rendered text to stdout in the schema's own property order.
  *
  * Usage:
  *   npx tsx scripts/docs-audiences/render-profile.ts PROFILE_MD
@@ -13,11 +13,13 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
-import { validateAgainstSchema, type JsonSchema } from './lib/profile-schema.js';
+import { type JsonSchema } from './lib/profile-schema.js';
+import { checkProfileFile } from './lib/check-profile-file.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
 const SCHEMA_PATH = resolve(REPO_ROOT, 'docs/internal/audiences/profile.schema.json');
+const MANIFEST_PATH = resolve(REPO_ROOT, 'docs/internal/record/docs-exemplars.md');
 
 /** The two keys the rendered profile names on its first line, never as their own block. */
 const FIRST_LINE_KEYS = new Set(['id', 'persona']);
@@ -65,24 +67,27 @@ export function renderProfile(data: Record<string, unknown>, schema: JsonSchema)
 }
 
 /**
- * The command-line entry point: reads the named profile file, validates it against the schema,
- * and writes the rendered profile string to stdout.
+ * The command-line entry point: reads the named profile file, checks it (frontmatter parses,
+ * conforms to the schema, its id matches the file name, its exemplar ids all resolve), and writes
+ * the rendered profile string to stdout. A check failure, including broken YAML frontmatter,
+ * prints a message naming the profile instead of an uncaught stack trace.
  * @param args - The arguments after the script name.
  * @returns The process exit code.
  */
-function main(args: string[]): number {
+export function main(args: string[]): number {
   const [profilePath] = args;
   if (!profilePath) {
     process.stderr.write('usage: npx tsx scripts/docs-audiences/render-profile.ts PROFILE_MD\n');
     return 2;
   }
   const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8')) as JsonSchema;
-  const { data } = matter(readFileSync(resolve(profilePath), 'utf8'));
-  const errors = validateAgainstSchema(data, schema);
+  const manifestText = readFileSync(MANIFEST_PATH, 'utf8');
+  const errors = checkProfileFile(profilePath, schema, manifestText);
   if (errors.length > 0) {
     process.stderr.write(`${profilePath} fails its schema:\n${errors.map((e) => `  ${e}`).join('\n')}\n`);
     return 1;
   }
+  const { data } = matter(readFileSync(resolve(profilePath), 'utf8'));
   process.stdout.write(`${renderProfile(data, schema)}\n`);
   return 0;
 }

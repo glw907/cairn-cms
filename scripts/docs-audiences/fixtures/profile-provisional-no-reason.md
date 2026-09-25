@@ -1,5 +1,5 @@
 ---
-id: provisional-no-reason-profile
+id: profile-provisional-no-reason
 persona: A profile fixture marked provisional with no provisionalReason.
 vocabulary:
   use:

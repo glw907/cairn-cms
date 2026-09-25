@@ -65,5 +65,8 @@
   },
   "then": {
     "required": ["provisionalReason"]
+  },
+  "else": {
+    "not": { "required": ["provisionalReason"] }
   }
 }

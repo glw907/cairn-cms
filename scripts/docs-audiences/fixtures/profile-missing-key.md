@@ -1,5 +1,5 @@
 ---
-id: missing-key-profile
+id: profile-missing-key
 persona: A profile fixture missing its required success key.
 vocabulary:
   use:

@@ -3,8 +3,8 @@
 // are existing dependencies), so this module checks the parsed object's shape against
 // docs/internal/audiences/profile.schema.json without a schema-validation library, per the
 // pass's "no new dependency" line. It supports only the keywords that schema uses: type,
-// required, properties, items, additionalProperties, and a single-property if/const/then
-// conditional.
+// required, properties, items, additionalProperties, a single-property if/const/then/else
+// conditional, and a `not: { required: [...] }` forbidding form for the else branch.
 
 /** The subset of JSON Schema (draft-07) this validator understands. */
 export interface JsonSchema {
@@ -15,6 +15,8 @@ export interface JsonSchema {
   additionalProperties?: boolean;
   if?: JsonSchema;
   then?: JsonSchema;
+  else?: JsonSchema;
+  not?: JsonSchema;
   const?: unknown;
 }
 
@@ -73,9 +75,13 @@ export function validateAgainstSchema(data: unknown, schema: JsonSchema, path = 
     const childPath = path === '' ? key : `${path}.${key}`;
     errors.push(...validateAgainstSchema(obj[key], subSchema, childPath));
   }
-  if (schema.if && schema.then && matchesCondition(obj, schema.if)) {
-    for (const key of schema.then.required ?? []) {
+  if (schema.if) {
+    const branch = matchesCondition(obj, schema.if) ? schema.then : schema.else;
+    for (const key of branch?.required ?? []) {
       if (!(key in obj)) errors.push(`${label}: missing required key "${key}" (conditionally required)`);
+    }
+    for (const key of branch?.not?.required ?? []) {
+      if (key in obj) errors.push(`${label}: key "${key}" must not be present (conditionally forbidden)`);
     }
   }
 

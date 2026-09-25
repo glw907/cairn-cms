@@ -1,6 +1,6 @@
 ---
-id: profile-extra-key
-persona: A profile fixture carrying one key the schema does not declare.
+id: not-the-file-name
+persona: A profile fixture whose id does not match its file name.
 vocabulary:
   use:
     - term one
@@ -13,7 +13,7 @@ success: Finishes the task without opening a support ticket.
 exemplars:
   - editors/govuk-publishing-guidance-home
 provisional: false
-unexpected-extra-key: true
 ---
 
-This fixture carries `unexpected-extra-key`, to prove the schema test fails an unknown key.
+This fixture's `id` (`not-the-file-name`) does not match its file name (`profile-id-mismatch`), to
+prove `checkProfileFile` fails a mismatch, naming the file.

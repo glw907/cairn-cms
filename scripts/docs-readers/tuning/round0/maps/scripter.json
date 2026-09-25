@@ -1,0 +1,267 @@
+{
+  "job": "scripter",
+  "verifiedRuns": 2,
+  "mode": "proxy",
+  "pages": {
+    "json-output/docs/reference/cli-cairn-json-output.md": {
+      "lines": 520,
+      "sections": [
+        {
+          "heading": "Streams and exit codes",
+          "level": 2,
+          "start": 11,
+          "end": 20,
+          "quotes": 6,
+          "runs": 2
+        },
+        {
+          "heading": "Payload kinds",
+          "level": 2,
+          "start": 21,
+          "end": 44,
+          "quotes": 4,
+          "runs": 2
+        },
+        {
+          "heading": "Streaming `cairn health --json`",
+          "level": 2,
+          "start": 45,
+          "end": 54,
+          "quotes": 3,
+          "runs": 2
+        },
+        {
+          "heading": "The `logs` payload",
+          "level": 2,
+          "start": 317,
+          "end": 341,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "The `adoptCandidates` payload",
+          "level": 2,
+          "start": 342,
+          "end": 371,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "The `authCheck` payload",
+          "level": 2,
+          "start": 372,
+          "end": 389,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "The `doctor` payload",
+          "level": 2,
+          "start": 390,
+          "end": 494,
+          "quotes": 1,
+          "runs": 1
+        }
+      ]
+    },
+    "json-output/docs/reference/schema/cairn-health.schema.json": {
+      "lines": 90,
+      "sections": [
+        {
+          "heading": "",
+          "level": 1,
+          "start": 1,
+          "end": 90,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "json-output/docs/reference/schema/cairn-health-summary.schema.json": {
+      "lines": 30,
+      "sections": [
+        {
+          "heading": "",
+          "level": 1,
+          "start": 1,
+          "end": 30,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "json-output/docs/reference/schema/cairn-sites-list.schema.json": {
+      "lines": 30,
+      "sections": [
+        {
+          "heading": "",
+          "level": 1,
+          "start": 1,
+          "end": 30,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "json-output/docs/reference/schema/cairn-logs.schema.json": {
+      "lines": 31,
+      "sections": [
+        {
+          "heading": "",
+          "level": 1,
+          "start": 1,
+          "end": 31,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "json-output/docs/reference/schema/cairn-adopt-list.schema.json": {
+      "lines": 34,
+      "sections": [
+        {
+          "heading": "",
+          "level": 1,
+          "start": 1,
+          "end": 34,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "json-output/docs/reference/schema/cairn-auth-check.schema.json": {
+      "lines": 30,
+      "sections": [
+        {
+          "heading": "",
+          "level": 1,
+          "start": 1,
+          "end": 30,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "json-output/docs/reference/schema/cairn-doctor.schema.json": {
+      "lines": 46,
+      "sections": [
+        {
+          "heading": "",
+          "level": 1,
+          "start": 1,
+          "end": 46,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "doctor/docs/reference/cli-cairn-doctor.md": {
+      "lines": 136,
+      "sections": [
+        {
+          "heading": "When the directory is not a cairn-cms site",
+          "level": 2,
+          "start": 49,
+          "end": 55,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "Flags",
+          "level": 2,
+          "start": 56,
+          "end": 67,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "The checks",
+          "level": 2,
+          "start": 68,
+          "end": 98,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "Status words",
+          "level": 2,
+          "start": 99,
+          "end": 113,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "Exit codes",
+          "level": 2,
+          "start": 114,
+          "end": 125,
+          "quotes": 3,
+          "runs": 2
+        }
+      ]
+    },
+    "doctor/docs/reference/schema/cairn-doctor.schema.json": {
+      "lines": 46,
+      "sections": [
+        {
+          "heading": "",
+          "level": 1,
+          "start": 1,
+          "end": 46,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "exit-codes/docs/reference/cli-cairn-exit-codes.md": {
+      "lines": 152,
+      "sections": [
+        {
+          "heading": "The `cairn` CLI's exit codes",
+          "level": 1,
+          "start": 2,
+          "end": 11,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "Precedence",
+          "level": 2,
+          "start": 21,
+          "end": 31,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "When a check words its result `skip`",
+          "level": 2,
+          "start": 42,
+          "end": 55,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "How a code is decided",
+          "level": 2,
+          "start": 73,
+          "end": 88,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "Usage errors",
+          "level": 2,
+          "start": 89,
+          "end": 102,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    }
+  },
+  "onPathShare": 0.6122270742358079,
+  "narrowed": false,
+  "widened": false,
+  "capacity": 7,
+  "noMap": null
+}

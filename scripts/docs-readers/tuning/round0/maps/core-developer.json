@@ -1,0 +1,45 @@
+{
+  "job": "core-developer",
+  "verifiedRuns": 2,
+  "mode": "proxy",
+  "pages": {
+    "CONTRIBUTING.md": {
+      "lines": 161,
+      "sections": [
+        {
+          "heading": "Set up and run the suite",
+          "level": 2,
+          "start": 9,
+          "end": 23,
+          "quotes": 8,
+          "runs": 2
+        },
+        {
+          "heading": "The gates",
+          "level": 2,
+          "start": 64,
+          "end": 70,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/README.md": {
+      "lines": 42,
+      "sections": []
+    },
+    "docs/why-cairn.md": {
+      "lines": 102,
+      "sections": []
+    },
+    "docs/extend/design-your-site.md": {
+      "lines": 127,
+      "sections": []
+    }
+  },
+  "onPathShare": 0.05092592592592592,
+  "narrowed": false,
+  "widened": false,
+  "capacity": 3,
+  "noMap": null
+}

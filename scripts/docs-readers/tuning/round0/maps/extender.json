@@ -1,0 +1,88 @@
+{
+  "job": "extender",
+  "verifiedRuns": 2,
+  "mode": "proxy",
+  "pages": {
+    "docs/extend/add-a-custom-admin-screen.md": {
+      "lines": 446,
+      "sections": [
+        {
+          "heading": "Drop the route",
+          "level": 2,
+          "start": 14,
+          "end": 29,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "Gate it",
+          "level": 2,
+          "start": 30,
+          "end": 88,
+          "quotes": 4,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/extend/build-a-site-by-hand.md": {
+      "lines": 689,
+      "sections": []
+    },
+    "docs/extend/define-an-adapter-and-schema.md": {
+      "lines": 169,
+      "sections": []
+    },
+    "docs/extend/organize-your-admin-nav.md": {
+      "lines": 110,
+      "sections": []
+    },
+    "docs/extend/restrict-admin-access.md": {
+      "lines": 151,
+      "sections": [
+        {
+          "heading": "Enforce it on your own route",
+          "level": 2,
+          "start": 63,
+          "end": 101,
+          "quotes": 4,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/reference/admin-routes.md": {
+      "lines": 308,
+      "sections": []
+    },
+    "docs/reference/admin-toolkit.md": {
+      "lines": 1030,
+      "sections": [
+        {
+          "heading": "`EmptyState`",
+          "level": 3,
+          "start": 718,
+          "end": 757,
+          "quotes": 1,
+          "runs": 1
+        }
+      ]
+    },
+    "docs/reference/sveltekit.md": {
+      "lines": 2086,
+      "sections": [
+        {
+          "heading": "`requireAccess`",
+          "level": 3,
+          "start": 371,
+          "end": 411,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    }
+  },
+  "onPathShare": 0.039085989176187615,
+  "narrowed": false,
+  "widened": false,
+  "capacity": 7,
+  "noMap": null
+}

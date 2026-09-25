@@ -1,0 +1,41 @@
+{
+  "job": "designer",
+  "verifiedRuns": 2,
+  "mode": "proxy",
+  "pages": {
+    "docs/extend/design-your-site.md": {
+      "lines": 127,
+      "sections": [
+        {
+          "heading": "The boundary: chassis versus theme",
+          "level": 2,
+          "start": 9,
+          "end": 28,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "The re-skin recipe",
+          "level": 2,
+          "start": 29,
+          "end": 49,
+          "quotes": 6,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/extend/build-a-site-by-hand.md": {
+      "lines": 689,
+      "sections": []
+    },
+    "docs/reference/cli-cairn-media-seed.md": {
+      "lines": 86,
+      "sections": []
+    }
+  },
+  "onPathShare": 0.045454545454545456,
+  "narrowed": false,
+  "widened": false,
+  "capacity": 4,
+  "noMap": null
+}

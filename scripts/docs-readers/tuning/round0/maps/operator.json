@@ -1,0 +1,98 @@
+{
+  "job": "operator",
+  "verifiedRuns": 2,
+  "mode": "proxy",
+  "pages": {
+    "docs/admin/is-it-working.md": {
+      "lines": 437,
+      "sections": [
+        {
+          "heading": "Running the check",
+          "level": 2,
+          "start": 11,
+          "end": 141,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "Deploy the Worker with its bindings",
+          "level": 2,
+          "start": 218,
+          "end": 228,
+          "quotes": 4,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/extend/add-cairn-to-a-sveltekit-app.md": {
+      "lines": 196,
+      "sections": [
+        {
+          "heading": "Wire the bindings",
+          "level": 2,
+          "start": 122,
+          "end": 179,
+          "quotes": 2,
+          "runs": 1
+        }
+      ]
+    },
+    "docs/extend/build-a-site-by-hand.md": {
+      "lines": 689,
+      "sections": []
+    },
+    "docs/extend/choose-an-ai-posture.md": {
+      "lines": 82,
+      "sections": []
+    },
+    "docs/extend/restrict-admin-access.md": {
+      "lines": 151,
+      "sections": []
+    },
+    "docs/extend/rotate-the-github-app-key.md": {
+      "lines": 116,
+      "sections": []
+    },
+    "docs/extend/security-model.md": {
+      "lines": 543,
+      "sections": []
+    },
+    "docs/extend/wire-the-delivery-surface.md": {
+      "lines": 215,
+      "sections": []
+    },
+    "docs/admin/invite-editors.md": {
+      "lines": 45,
+      "sections": []
+    },
+    "docs/admin/own-your-domain.md": {
+      "lines": 163,
+      "sections": []
+    },
+    "docs/reference/admin-routes.md": {
+      "lines": 308,
+      "sections": []
+    },
+    "docs/reference/cli-cairn-doctor.md": {
+      "lines": 136,
+      "sections": []
+    },
+    "docs/reference/cloudflare.md": {
+      "lines": 188,
+      "sections": []
+    },
+    "docs/admin/setup-recovery.md": {
+      "lines": 103,
+      "sections": []
+    },
+    "docs/admin/troubleshooting.md": {
+      "lines": 141,
+      "sections": []
+    }
+  },
+  "onPathShare": 0.0569313976658127,
+  "narrowed": false,
+  "widened": false,
+  "capacity": 5,
+  "noMap": null
+}

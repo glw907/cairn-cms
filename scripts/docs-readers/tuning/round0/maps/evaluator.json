@@ -1,0 +1,164 @@
+{
+  "job": "evaluator",
+  "verifiedRuns": 2,
+  "mode": "proxy",
+  "pages": {
+    "docs/why-cairn.md": {
+      "lines": 102,
+      "sections": [
+        {
+          "heading": "Why this stack",
+          "level": 2,
+          "start": 37,
+          "end": 55,
+          "quotes": 3,
+          "runs": 2
+        },
+        {
+          "heading": "The honest trade-offs",
+          "level": 2,
+          "start": 56,
+          "end": 95,
+          "quotes": 4,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/admin/before-you-start.md": {
+      "lines": 119,
+      "sections": [
+        {
+          "heading": "What it costs",
+          "level": 2,
+          "start": 48,
+          "end": 80,
+          "quotes": 4,
+          "runs": 2
+        },
+        {
+          "heading": "What a second editor needs",
+          "level": 2,
+          "start": 81,
+          "end": 90,
+          "quotes": 2,
+          "runs": 2
+        },
+        {
+          "heading": "What needs a developer",
+          "level": 2,
+          "start": 91,
+          "end": 110,
+          "quotes": 1,
+          "runs": 1
+        }
+      ]
+    },
+    "docs/admin/README.md": {
+      "lines": 32,
+      "sections": [
+        {
+          "heading": "The admin track",
+          "level": 1,
+          "start": 2,
+          "end": 11,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/editors/welcome.md": {
+      "lines": 47,
+      "sections": [
+        {
+          "heading": "Staying signed in",
+          "level": 2,
+          "start": 33,
+          "end": 38,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/extend/add-a-second-audience.md": {
+      "lines": 152,
+      "sections": [
+        {
+          "heading": "The fork",
+          "level": 2,
+          "start": 8,
+          "end": 25,
+          "quotes": 2,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/extend/migration-notes.md": {
+      "lines": 557,
+      "sections": [
+        {
+          "heading": "0.97.0",
+          "level": 2,
+          "start": 12,
+          "end": 397,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "0.96.0",
+          "level": 2,
+          "start": 427,
+          "end": 467,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "0.95.0",
+          "level": 2,
+          "start": 468,
+          "end": 494,
+          "quotes": 1,
+          "runs": 1
+        }
+      ]
+    },
+    "docs/extend/README.md": {
+      "lines": 140,
+      "sections": [
+        {
+          "heading": "Operate across versions",
+          "level": 2,
+          "start": 68,
+          "end": 90,
+          "quotes": 3,
+          "runs": 2
+        }
+      ]
+    },
+    "docs/extend/sign-in-through-your-organization.md": {
+      "lines": 347,
+      "sections": [
+        {
+          "heading": "Stability",
+          "level": 2,
+          "start": 311,
+          "end": 317,
+          "quotes": 1,
+          "runs": 1
+        },
+        {
+          "heading": "A backend other than GitHub",
+          "level": 3,
+          "start": 340,
+          "end": 347,
+          "quotes": 1,
+          "runs": 1
+        }
+      ]
+    }
+  },
+  "onPathShare": 0.43315508021390375,
+  "narrowed": false,
+  "widened": false,
+  "capacity": 7,
+  "noMap": null
+}

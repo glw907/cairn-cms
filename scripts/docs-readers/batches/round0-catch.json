@@ -1,0 +1,151 @@
+{
+  "name": "round0-catch",
+  "concurrency": 4,
+  "budgetTokens": 2000000,
+  "jobs": [
+    {
+      "id": "evaluator-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/evaluator-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "evaluator-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/evaluator-planted-2/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "operator-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/operator-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "operator-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/operator-planted-2/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "designer-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/designer-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "designer-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/designer-planted-2/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "extender-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/extender-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "extender-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/extender-planted-2/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "core-developer-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/core-developer-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "core-developer-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/core-developer-planted-2/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "scripter-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/scripter-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "scripter-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "n/a: judge class, packet-driven",
+      "job": "n/a: judge class, packet-driven",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round0/catch/scripter-planted-2/packet",
+      "timeoutMinutes": 30
+    }
+  ]
+}

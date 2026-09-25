@@ -1,0 +1,55 @@
+{
+  "kind": "catch",
+  "builtFrom": "sources",
+  "report": {
+    "path": "/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json",
+    "jobId": "extender-planted-1",
+    "attempt": 1,
+    "runId": "20260924t081831-4ca4ee"
+  },
+  "plants": {
+    "plant-1": {
+      "plantId": "P09"
+    },
+    "plant-2": {
+      "plantId": "P10"
+    },
+    "plant-3": {
+      "plantId": "P11"
+    }
+  },
+  "items": {
+    "item-1": {
+      "field": "stalls",
+      "sourceIndex": 0
+    },
+    "item-2": {
+      "field": "assumed",
+      "sourceIndex": 0
+    },
+    "item-3": {
+      "field": "assumed",
+      "sourceIndex": 1
+    },
+    "item-4": {
+      "field": "assumed",
+      "sourceIndex": 2
+    },
+    "item-5": {
+      "field": "assumed",
+      "sourceIndex": 3
+    }
+  },
+  "inputs": {
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/batches/validation.json": "db9459a82d206590b6c927dbcb0489d190743c8b2d67c216a90c9f687c014162",
+    "/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json": "a53c0eb33ed834afeb6e90424a17fe50d621934306c9fa511e2515c01e106556",
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/prompts/criteria/dev-plants.json": "32ed43880954bc6d4da04a0e8390ddef12b5aeaa4f7a7f63db2017184b0d6f7f",
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/fixtures/dev-plants.json": "f166fb31526a5918966f4c96f2368c76a6523283b5664ab56fa7f44fdba1aac3",
+    "/var/home/glw907/.cache/docs-readers/prepared/validation/extender-planted/docs/extend/add-a-custom-admin-screen.md": "f592231931edbe64a30e7a3bb2bb512a1d62dda2b93b9b6ee2034d42ade9828b",
+    "index.json": "841eb93e74116c9c1ad7e9802dc87920932dbcc5bba786fd21483b71a0e2c094",
+    "items.json": "39f211fbc0f3013ea5e2779b6046fa9d5918aa9ddf9a87ebd6d9d98ab6b80b53",
+    "job.json": "cbc384b9ba3de5c22c501ca5d5c80c4c0f475db841b5821bc5fbd3f9a4d868ab",
+    "pages/docs/extend/add-a-custom-admin-screen.md": "f592231931edbe64a30e7a3bb2bb512a1d62dda2b93b9b6ee2034d42ade9828b",
+    "plants.json": "92ae87de34bb869487081a54edf7a7745c8dd054c843e89ea654f45d60e7bb5d"
+  }
+}

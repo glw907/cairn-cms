@@ -1,0 +1,70 @@
+{
+  "kind": "adjudicator",
+  "builtFrom": "sources",
+  "report": {
+    "path": "/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json",
+    "jobId": "evaluator-control-2",
+    "attempt": 1,
+    "runId": "20260924t081831-4ca4ee"
+  },
+  "items": {
+    "item-1": {
+      "field": "stalls",
+      "sourceIndex": 0
+    },
+    "item-2": {
+      "field": "assumed",
+      "sourceIndex": 0
+    },
+    "item-3": {
+      "field": "assumed",
+      "sourceIndex": 1
+    },
+    "item-4": {
+      "field": "assumed",
+      "sourceIndex": 2
+    },
+    "item-5": {
+      "field": "assumed",
+      "sourceIndex": 3
+    },
+    "item-6": {
+      "field": "assumed",
+      "sourceIndex": 4
+    }
+  },
+  "excluded": [],
+  "treeCommit": "b2756399",
+  "treeAbsent": [
+    "docs/internal/record/",
+    "docs/superpowers/",
+    "scripts/docs-readers/",
+    "src/tests/unit/docs-readers-baseline-docsset.test.ts",
+    "src/tests/unit/docs-readers-batch.test.ts",
+    "src/tests/unit/docs-readers-classes.test.ts",
+    "src/tests/unit/docs-readers-github-app-token.test.ts",
+    "src/tests/unit/docs-readers-harness.test.ts",
+    "src/tests/unit/docs-readers-ledger.test.ts",
+    "src/tests/unit/docs-readers-podman.test.ts",
+    "src/tests/unit/docs-readers-prepare-class.test.ts",
+    "src/tests/unit/docs-readers-reverify.test.ts",
+    "src/tests/unit/docs-readers-rot.test.ts",
+    "src/tests/unit/docs-readers-run.test.ts",
+    "src/tests/unit/docs-readers-runner.test.ts",
+    "src/tests/unit/docs-readers-scrub.test.ts",
+    "src/tests/unit/docs-readers-sweep.test.ts",
+    "src/tests/unit/docs-readers-transcript.test.ts",
+    "src/tests/unit/docs-readers-verify.test.ts",
+    "docs/HISTORY.md",
+    "docs/STATUS.md",
+    "ROADMAP.md",
+    "docs/internal/docs-friction-log.md"
+  ],
+  "inputs": {
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/batches/validation.json": "db9459a82d206590b6c927dbcb0489d190743c8b2d67c216a90c9f687c014162",
+    "/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json": "a53c0eb33ed834afeb6e90424a17fe50d621934306c9fa511e2515c01e106556",
+    "index.json": "0cfc89806182f711aad7e95e90f5e5ad5937b4c56cbc32a366412a487a427489",
+    "items.json": "8fa17fb86310194fc9c083ffac7573ad60fa9f331fe0775289f0be7d6b850ced",
+    "job.json": "97b23408c5d553ee91c7cf4183d32c85ad122948f228a5aa04bf9bf0e4bb50b3"
+  }
+}

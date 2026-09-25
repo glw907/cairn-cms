@@ -23,7 +23,7 @@ import {
   usageFromEvents,
 } from './transcript.js';
 import { addUsage, countedTokens, reportUsage } from './ledger.js';
-import { expectedTools, type JudgeKind } from './class-schema.js';
+import { expectedTools, loadJudgePrompt, type JudgeKind } from './class-schema.js';
 import { verifyReport } from './verify.js';
 import { judgeOutput, judgeReportSchema, rulingsOf, verifyJudgeRulings, type ExpectedItem, type JudgeRulings, type JudgeVerified } from './judge-verify.js';
 import { scrub } from './scrub.js';
@@ -508,14 +508,52 @@ export async function runBatch({
 }
 
 /**
- * The stdin text for one judge job: the arrival state and the frozen prompt, with no reader
- * `REPORT_REQUEST` appended, since a judge's job text already states its own output shape and
- * `--json-schema` enforces it.
- * @param job - A parsed batch job whose `job` field holds the judge's frozen prompt text.
+ * The name `judge-packets.ts` gives every packet's own entry point, at the root of the mounted
+ * packet directory (`packet/index.json`, one level below the reader's own working directory).
+ */
+const JUDGE_PACKET_INDEX = 'index.json';
+
+/**
+ * The arrival line every judge job receives, composed by the runner rather than read from the
+ * batch: it names the one file, `JUDGE_PACKET_INDEX`, that orients a judge inside its mounted
+ * packet, and is the same for every job of a batch since only the packet's own contents differ
+ * job to job, never how a judge is told to find it.
+ */
+const JUDGE_ARRIVAL_LINE = `Your packet is mounted at your working directory. Its entry point is ${JUDGE_PACKET_INDEX}; read that first.`;
+
+/**
+ * The marker a judge job's `arrival` and `job` fields carry when a batch defers those fields to
+ * the runner. `composeJudgePrompt` never reads either field: it always sends `JUDGE_ARRIVAL_LINE`
+ * and the job's judge kind's own frozen prompt, so a batch author writes this marker rather than
+ * inventing a placeholder a judge's container could mistake for real instructions.
+ */
+export const JUDGE_FIELD_UNUSED = "unused: the runner supplies this job's arrival line and frozen prompt";
+
+/**
+ * Refuse a judge job whose `job` field is neither `JUDGE_FIELD_UNUSED` nor byte-identical to its
+ * judge kind's own frozen prompt file (`loadJudgePrompt`): the placeholder that once reached a
+ * judge's stdin unread must never validate again, so every judge batch job's `job` field is
+ * checked against exactly these two accepted forms before any container starts.
+ * @param job - The batch job to check.
+ * @param kind - The judge kind whose frozen prompt the job's text is checked against.
+ * @returns The problem, naming the job, or undefined when the field is valid.
+ */
+export function checkJudgeJobField(job: Pick<Job, 'id' | 'job'>, kind: JudgeKind): string | undefined {
+  if (job.job === JUDGE_FIELD_UNUSED || job.job === loadJudgePrompt(kind)) return undefined;
+  return `job ${job.id}: job text is neither ${JSON.stringify(JUDGE_FIELD_UNUSED)} nor byte-identical to the ${kind} frozen prompt file`;
+}
+
+/**
+ * The stdin text every job of a judge batch receives: the arrival line naming the packet's own
+ * entry point, then the judge kind's frozen prompt, with no reader `REPORT_REQUEST` appended,
+ * since the frozen prompt already states its own output shape and `--json-schema` enforces it.
+ * Never reads a batch job's own `arrival` or `job` field; `checkJudgeJobField` is what a job's
+ * `job` field is checked against instead.
+ * @param kind - The judge kind this batch runs as.
  * @returns The prompt text.
  */
-export function composeJudgePrompt(job: Pick<Job, 'arrival' | 'job'>): string {
-  return `${job.arrival.trim()}\n\n${job.job.trim()}\n`;
+export function composeJudgePrompt(kind: JudgeKind): string {
+  return `${JUDGE_ARRIVAL_LINE}\n\n${loadJudgePrompt(kind).trim()}\n`;
 }
 
 /** One judge run attempt, with its own rulings and verification. Exactly one attempt per job is `final`. */
@@ -671,6 +709,14 @@ export async function runJudgeBatch({
   freeze?: GatedFreeze;
   resumeFrom?: Record<string, { attempts: JudgeAttempt[]; pendingCause: AttemptCause }>;
 }): Promise<{ report: JudgeBatchReport; transcripts: Record<string, string> }> {
+  const jobFieldProblems = batch.jobs.flatMap((job) => {
+    const problem = checkJudgeJobField(job, kind);
+    return problem ? [problem] : [];
+  });
+  if (jobFieldProblems.length > 0) {
+    throw new Error(`judge batch ${batch.name} refused to start: ${jobFieldProblems.join('; ')}`);
+  }
+
   let stopReason: StopReason | undefined;
   let spent = 0;
   let total = emptyUsage();
@@ -760,7 +806,7 @@ export async function runJudgeBatch({
         };
         let run: RunResult;
         try {
-          run = await executor.run(job, decl, { signal: flight.controller.signal, onEvent, prompt: composeJudgePrompt(job), reportSchema: schema });
+          run = await executor.run(job, decl, { signal: flight.controller.signal, onEvent, prompt: composeJudgePrompt(kind), reportSchema: schema });
         } finally {
           inFlight.delete(job.id);
         }

@@ -53,6 +53,27 @@ export function judgeKindForClass(className: string): JudgeKind | undefined {
   return JUDGE_CLASSES[className];
 }
 
+/** Where every judge kind's frozen prompt lives. */
+export const PROMPTS_DIR = join(READERS_ROOT, 'prompts');
+
+/** Each judge kind's own frozen prompt file, under `PROMPTS_DIR`. */
+export const JUDGE_PROMPT_FILES: Readonly<Record<JudgeKind, string>> = {
+  catchJudge: join(PROMPTS_DIR, 'catch-judge.md'),
+  adjudicator: join(PROMPTS_DIR, 'adjudicator.md'),
+  agreement: join(PROMPTS_DIR, 'agreement.md'),
+};
+
+/**
+ * A judge kind's frozen prompt, read fresh from disk on every call rather than cached at import
+ * time, so nothing in this process can serve a stale copy once a gated batch's own manifest hash
+ * (which covers every file under `PROMPTS_DIR`) has pinned the bytes a run must match.
+ * @param kind - Which of the three judge kinds' prompt files to read.
+ * @returns The prompt file's raw text.
+ */
+export function loadJudgePrompt(kind: JudgeKind): string {
+  return readFileSync(JUDGE_PROMPT_FILES[kind], 'utf8');
+}
+
 /** How a class fills its per-run directory: copied docs-set paths, or a prepared tree. */
 export const CONTENTS_KINDS = ['docs-set', 'prepared'];
 

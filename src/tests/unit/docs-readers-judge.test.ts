@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { composeJudgePrompt, runJudgeBatch } from '../../../scripts/docs-readers/lib/runner.js';
-import { loadClasses } from '../../../scripts/docs-readers/lib/class-schema.js';
+import { checkJudgeJobField, composeJudgePrompt, JUDGE_FIELD_UNUSED, runJudgeBatch } from '../../../scripts/docs-readers/lib/runner.js';
+import { loadClasses, loadJudgePrompt } from '../../../scripts/docs-readers/lib/class-schema.js';
 import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
 import { ADJUDICATOR_SCHEMA, AGREEMENT_SCHEMA, CATCH_JUDGE_SCHEMA, judgeReportSchema } from '../../../scripts/docs-readers/lib/judge-verify.js';
 import type { LedgerEntry, StreamEvent } from '../../../scripts/docs-readers/lib/types.js';
@@ -50,30 +50,41 @@ function resultEvent(structured_output: unknown): Event {
 
 const okCheck: Event[] = [{ type: 'result', is_error: false, modelUsage: { haiku: { inputTokens: 100, outputTokens: 0, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 } } }];
 
-/** One judge batch of the given class, over fixture jobs. */
+/**
+ * One judge batch of the given class, over fixture jobs. `job` defaults to `JUDGE_FIELD_UNUSED`,
+ * the marker `checkJudgeJobField` accepts, since the runner never reads a job's own `arrival` or
+ * `job` text; `arrival` stays an arbitrary placeholder for the same reason.
+ */
 function judgeBatchOf(ids: string[], className: string, extra: Record<string, unknown> = {}) {
   return parseBatch(
     {
       name: 'fixture-judge',
       concurrency: 1,
       budgetTokens: 1_000_000,
-      jobs: ids.map((id) => ({ id, class: className, model: 'claude-opus-5-5', arrival: 'Judge this packet.', job: 'Rule every item.', docsSet: ['.'], prepared: '/dev/null' })),
+      jobs: ids.map((id) => ({ id, class: className, model: 'claude-opus-5-5', arrival: 'Judge this packet.', job: JUDGE_FIELD_UNUSED, docsSet: ['.'], prepared: '/dev/null' })),
       ...extra,
     },
     classes,
   );
 }
 
-/** An executor that returns one fixed stream per job, ignoring the mount (buildJudgeOutcome never reads the filesystem). */
+/**
+ * An executor that returns one fixed stream per job, ignoring the mount (buildJudgeOutcome never
+ * reads the filesystem). `prompts` captures the stdin text each `run` call received, keyed by job
+ * id, so a test can assert on what actually reached the container.
+ */
 function replayExecutor(streams: Record<string, Event[][]>) {
   const started: string[] = [];
+  const prompts: Record<string, string> = {};
   const calls = new Map<string, number>();
   const ledger: LedgerEntry[] = [];
   const executor = {
     started,
+    prompts,
     checkToken: async () => ({ events: okCheck, stdout: '' }),
-    run: async (job: { id: string }) => {
+    run: async (job: { id: string }, _decl: unknown, { prompt }: { prompt: string }) => {
       started.push(job.id);
+      prompts[job.id] = prompt;
       const attempt = calls.get(job.id) ?? 0;
       calls.set(job.id, attempt + 1);
       const events = streams[job.id][Math.min(attempt, streams[job.id].length - 1)];
@@ -85,8 +96,80 @@ function replayExecutor(streams: Record<string, Event[][]>) {
 }
 
 describe('composeJudgePrompt', () => {
-  it('puts the arrival state and the frozen prompt on stdin, with no report request appended', () => {
-    expect(composeJudgePrompt({ arrival: ' Judge this. ', job: 'Rule every item.' })).toBe('Judge this.\n\nRule every item.\n');
+  it('names the packet index in the arrival line, then the frozen prompt, with no report request appended', () => {
+    const prompt = composeJudgePrompt('catchJudge');
+    expect(prompt.split('\n\n')[0]).toContain('index.json');
+    expect(prompt).toContain(loadJudgePrompt('catchJudge').trim());
+  });
+
+  it('maps each of the three judge kinds to its own distinct frozen prompt', () => {
+    const prompts = {
+      catchJudge: composeJudgePrompt('catchJudge'),
+      adjudicator: composeJudgePrompt('adjudicator'),
+      agreement: composeJudgePrompt('agreement'),
+    };
+    expect(prompts.catchJudge).toContain(loadJudgePrompt('catchJudge').trim());
+    expect(prompts.adjudicator).toContain(loadJudgePrompt('adjudicator').trim());
+    expect(prompts.agreement).toContain(loadJudgePrompt('agreement').trim());
+    expect(new Set(Object.values(prompts)).size).toBe(3);
+  });
+});
+
+describe('checkJudgeJobField', () => {
+  it('accepts the JUDGE_FIELD_UNUSED marker', () => {
+    expect(checkJudgeJobField({ id: 'a', job: JUDGE_FIELD_UNUSED }, 'catchJudge')).toBeUndefined();
+  });
+
+  it('accepts job text byte-identical to the kind\'s own frozen prompt', () => {
+    expect(checkJudgeJobField({ id: 'a', job: loadJudgePrompt('adjudicator') }, 'adjudicator')).toBeUndefined();
+  });
+
+  it('refuses a placeholder that is neither the marker nor the frozen prompt, naming the job', () => {
+    const problem = checkJudgeJobField({ id: 'evaluator-planted-1', job: 'n/a: judge class, packet-driven' }, 'catchJudge');
+    expect(problem).toContain('job evaluator-planted-1');
+  });
+
+  it('refuses one kind\'s frozen prompt sent under another kind', () => {
+    const problem = checkJudgeJobField({ id: 'a', job: loadJudgePrompt('catchJudge') }, 'adjudicator');
+    expect(problem).toContain('job a');
+  });
+});
+
+describe('runJudgeBatch: the job field gate', () => {
+  it('sends the kind\'s frozen prompt bytes on stdin for a job carrying JUDGE_FIELD_UNUSED', async () => {
+    const events = [INIT, assistantEvent(), resultEvent({ rulings: [] })];
+    const { executor, ledger } = replayExecutor({ a: [events] });
+    const { report } = await runJudgeBatch({
+      batch: judgeBatchOf(['a'], 'judge-catch'),
+      classes,
+      baselines,
+      executor,
+      ledger,
+      runId: 'j-frozen-prompt',
+      kind: 'catchJudge',
+      expectedItems: { a: [] },
+    });
+    expect(report.verified).toBe(true);
+    expect(executor.prompts.a).toContain(loadJudgePrompt('catchJudge').trim());
+  });
+
+  it('refuses the whole batch, naming the job, before any container starts, when a job carries the old placeholder', async () => {
+    const { executor, ledger } = replayExecutor({});
+    const batch = judgeBatchOf(['evaluator-planted-1'], 'judge-catch', {
+      jobs: [{ id: 'evaluator-planted-1', class: 'judge-catch', model: 'claude-opus-5-5', arrival: 'n/a: judge class, packet-driven', job: 'n/a: judge class, packet-driven', docsSet: ['.'], prepared: '/dev/null' }],
+    });
+    const run = runJudgeBatch({
+      batch,
+      classes,
+      baselines,
+      executor,
+      ledger,
+      runId: 'j-placeholder-refused',
+      kind: 'catchJudge',
+      expectedItems: {},
+    });
+    await expect(run).rejects.toThrow('job evaluator-planted-1');
+    expect(executor.started).toEqual([]);
   });
 });
 

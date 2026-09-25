@@ -264,6 +264,39 @@ describe('checkGate', () => {
     }
   });
 
+  it('refuses a gated catch-judge batch when its frozen prompt file drifts from the manifest', () => {
+    const root = mkdtempSync(join(tmpdir(), 'docs-readers-gate-'));
+    try {
+      writeFileSync(join(root, 'run.ts'), 'export {};\n');
+      mkdirSync(join(root, 'prompts'), { recursive: true });
+      writeFileSync(join(root, 'prompts', 'catch-judge.md'), 'Judge every plant.\n');
+      const listFiles = () => ['run.ts', 'prompts/catch-judge.md'];
+      const manifest = buildManifest({
+        tag: 'docs-reset-1b-freeze',
+        root,
+        imageId: 'sha256:image',
+        cliVersion: '2.1.280',
+        models: { reader: 'claude-opus-5-5', catchJudge: 'claude-opus-5-5', adjudicator: 'claude-opus-5-5', agreement: 'fable' },
+        jobs: { 'job-a': 'deadbeef' },
+        heldOutPins: {},
+        seeds: {},
+        listFiles,
+      });
+      const manifestPath = join(root, 'manifest.json');
+      writeManifest(manifest, manifestPath);
+      const chainPath = join(root, 'chain.jsonl');
+      writeFileSync(chainPath, `${JSON.stringify({ path: 'manifest.json', sha256: 'x', commit: 'y', prior: null })}\n`);
+
+      // The prompt file drifts after the manifest was built, the same as any other tracked input.
+      writeFileSync(join(root, 'prompts', 'catch-judge.md'), 'Judge every plant, and be lenient.\n');
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [GATED_JOB], listFiles, kind: 'catchJudge' });
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.problems).toContain('file changed: prompts/catch-judge.md');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('refuses when the manifest freezes an empty model for the given judge kind', () => {
     const { root, manifestPath, chainPath, listFiles } = gatedFixture({ reader: 'claude-opus-5-5', catchJudge: 'claude-opus-5-5', adjudicator: '', agreement: 'fable' });
     try {

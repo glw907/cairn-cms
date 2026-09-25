@@ -1,0 +1,1 @@
+{"type": "assistant", "cwd": "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b-runner", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": "cat scripts/docs-readers/prompts/*.md"}}]}}

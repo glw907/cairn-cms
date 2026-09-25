@@ -1,0 +1,11 @@
+{
+  "name": "judge-adjudicator",
+  "description": "The adjudicator: rules, from a packet-only working directory, whether each control run's catch-field item claims a real, false, or harness documentation defect. Serves the scoring machinery, never a public audience.",
+  "contents": "prepared",
+  "tools": ["Read", "Grep", "Glob"],
+  "bashAllowlist": [],
+  "permissionMode": "default",
+  "env": {},
+  "secretEnv": [],
+  "egress": "anthropic"
+}

@@ -1,0 +1,1 @@
+{"type": "assistant", "cwd": "/tmp/granted-fixture", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "Glob", "input": {"pattern": "/var/home/glw907/Projects/cairn-cms/docs/internal/record/*.md"}}]}}

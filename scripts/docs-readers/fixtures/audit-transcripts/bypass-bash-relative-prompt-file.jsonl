@@ -1,0 +1,1 @@
+{"type": "assistant", "cwd": "/var/home/glw907/Projects/cairn-cms", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": "cat scripts/docs-readers/prompts/catch-judge.md"}}]}}

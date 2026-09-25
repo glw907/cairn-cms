@@ -736,7 +736,7 @@ export function initModel(events: StreamEvent[]): string | undefined {
  * @param value - A saved job report's raw `stalls` or `assumed` field.
  * @returns The field in the current, structured shape.
  */
-function toBlockedEntries(value: unknown): BlockedEntry[] {
+export function toBlockedEntries(value: unknown): BlockedEntry[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => (typeof item === 'string' ? { text: item, blockedBy: null } : (item as BlockedEntry)));
 }

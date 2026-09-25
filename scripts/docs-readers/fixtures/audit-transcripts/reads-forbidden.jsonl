@@ -1,0 +1,2 @@
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "Read", "input": {"file_path": "/var/home/glw907/Projects/cairn-cms/docs/internal/record/2026-09-24-docs-reset-1b-planted-defects.md"}}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t2", "name": "Bash", "input": {"command": "cat docs/internal/record/2026-09-24-note.md", "description": "peek at a forbidden path relatively"}}]}}

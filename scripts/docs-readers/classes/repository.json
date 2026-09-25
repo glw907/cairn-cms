@@ -1,9 +1,9 @@
 {
   "name": "repository",
-  "description": "A clean cairn-cms tree with every file tool and Bash scoped to the project's own checks and tests. Serves the core-developer audience.",
+  "description": "A clean cairn-cms tree with every file tool and Bash scoped to the project's own checks and tests and to read-only git. Serves the core-developer audience.",
   "contents": "prepared",
   "tools": ["Read", "Write", "Edit", "Grep", "Glob", "Bash"],
-  "bashAllowlist": ["npm run check*", "npm test"],
+  "bashAllowlist": ["npm run check*", "npm test", "git log", "git log *", "git status", "git status *", "git diff", "git diff *", "git show", "git show *", "git ls-files", "git ls-files *", "git grep", "git grep *"],
   "permissionMode": "acceptEdits",
   "env": {},
   "secretEnv": [],

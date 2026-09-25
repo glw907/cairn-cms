@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -198,6 +198,53 @@ describe('createPodmanExecutor: an async secretValue', () => {
       const readerArgs = spawnArgs.find((args) => args.includes('claude'));
       expect(readerArgs).toContain('CAIRN_CF_READ_TOKEN');
       expect(readerArgs).toContain('CAIRN_GH_READ_TOKEN');
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+      rmSync(preparedDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('createPodmanExecutor: the per-run copy preserves timestamps', () => {
+  const binaryDecl = classes.get('docs-and-binary');
+  if (!binaryDecl) throw new Error('the docs-and-binary class must be declared');
+
+  /** One docs-and-binary job, whose `prepared` tree carries the one docs-set page it names. */
+  function binaryJob(preparedDir: string) {
+    return parseBatch(
+      {
+        name: 'fixture',
+        concurrency: 1,
+        budgetTokens: 1000,
+        jobs: [{ id: 'c', class: 'docs-and-binary', model: 'haiku', arrival: 'Arrival.', job: 'Job.', docsSet: ['README.md'], prepared: preparedDir, timeoutMinutes: 30 }],
+      },
+      classes,
+    ).jobs[0];
+  }
+
+  it('carries a source file’s mtime through both copy hops, into the mount the container sees', async () => {
+    const runRoot = mkdtempSync(join(tmpdir(), 'docs-readers-podman-'));
+    const preparedDir = mkdtempSync(join(tmpdir(), 'docs-readers-podman-mtime-'));
+    const sourceFile = join(preparedDir, 'README.md');
+    writeFileSync(sourceFile, '# hi');
+    const fixedMtime = new Date('2000-01-01T00:00:00Z');
+    utimesSync(sourceFile, fixedMtime, fixedMtime);
+    try {
+      const executor = createPodmanExecutor({
+        runId: 'test-run',
+        runRoot,
+        sourceRoot: ROOT,
+        image: 'localhost/fake:tag',
+        egress: loadEgress(),
+        token: () => 'fake-token',
+        secretValue: async (name) => `${name}-value`,
+      });
+      const result = await executor.run(binaryJob(preparedDir), binaryDecl, { signal: new AbortController().signal, onEvent: () => {}, prompt: 'hi', reportSchema: {} });
+      // preparedRoot is the first copy hop's target (source -> prepared); the mount's job/
+      // directory, one level up from preparedRoot, is the per-run copy the container mounts.
+      const mountedFile = join(dirname(result.preparedRoot), 'mount', 'job', 'README.md');
+      expect(statSync(join(result.preparedRoot, 'README.md')).mtime.getTime()).toBe(fixedMtime.getTime());
+      expect(statSync(mountedFile).mtime.getTime()).toBe(fixedMtime.getTime());
     } finally {
       rmSync(runRoot, { recursive: true, force: true });
       rmSync(preparedDir, { recursive: true, force: true });

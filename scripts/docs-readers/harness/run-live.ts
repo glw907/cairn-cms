@@ -30,7 +30,7 @@ import { promisify } from 'node:util';
 import { CACHE_ROOT } from '../run.js';
 import { SCRATCH_SITE_COMMIT } from '../prepare-baseline.js';
 import { loadClasses } from '../lib/class-schema.js';
-import { archiveCommit, ensureScratchSiteCommit, prepareDocsAndBinary } from '../lib/prepare-class.js';
+import { archiveCommit, ensureScratchSiteCommit, prepareDocsAndBinary, resolveCommit } from '../lib/prepare-class.js';
 import { ensureImage, hostCliVersion } from '../lib/podman.js';
 import { writeOwnerMarker } from '../lib/sweep.js';
 import type { ScratchSiteRecord } from '../lib/prepare-class.js';
@@ -118,6 +118,7 @@ async function main(): Promise<number> {
     archiveCommit({ repoRoot: scratchClone, commit: SCRATCH_SITE_COMMIT, dest: siteExportDir });
     prepareDocsAndBinary({
       sourceRoot: REPO_ROOT,
+      commit: resolveCommit(REPO_ROOT, 'HEAD'),
       docsSet: pages,
       siteId: SCRATCH_SITE.siteId,
       record: SCRATCH_SITE.record,

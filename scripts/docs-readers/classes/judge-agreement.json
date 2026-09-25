@@ -1,0 +1,11 @@
+{
+  "name": "judge-agreement",
+  "description": "The agreement read: re-rules a sample of findings and catch calls, from a packet-only working directory, with no earlier ruling visible. Serves the scoring machinery, never a public audience.",
+  "contents": "prepared",
+  "tools": ["Read", "Grep", "Glob"],
+  "bashAllowlist": [],
+  "permissionMode": "default",
+  "env": {},
+  "secretEnv": [],
+  "egress": "anthropic"
+}

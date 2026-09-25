@@ -2,9 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   claudeArgs,
   expectedTools,
+  judgeKindForClass,
   loadClasses,
   loadEgress,
   validateClass,
+  JUDGE_SYSTEM_PROMPT,
 } from '../../../scripts/docs-readers/lib/class-schema.js';
 
 const egressNames = Object.keys(loadEgress());
@@ -25,13 +27,16 @@ describe('class declarations', () => {
   it('loads the docs-only and repository classes from the classes directory', () => {
     const classes = loadClasses();
     expect(classes.get('docs-only')?.tools).toEqual(['Read', 'Grep', 'Glob']);
-    expect(classes.get('repository')?.bashAllowlist).toEqual(['npm run check*', 'npm test']);
+    // Read-only git subcommands only, each listed bare and with arguments.
+    expect(classes.get('repository')?.bashAllowlist).toEqual(['npm run check*', 'npm test', 'git log', 'git log *', 'git status', 'git status *', 'git diff', 'git diff *', 'git show', 'git show *', 'git ls-files', 'git ls-files *', 'git grep', 'git grep *']);
     expect(classes.get('repository')?.egress).toBe('anthropic');
   });
 
-  it('loads all four reader classes, each with a non-empty neutral sentence', () => {
+  it('loads all four reader classes and the three judge classes, each with a non-empty neutral sentence', () => {
     const classes = loadClasses();
-    expect([...classes.keys()].sort()).toEqual(['docs-and-binary', 'docs-and-site', 'docs-only', 'repository']);
+    expect([...classes.keys()].sort()).toEqual([
+      'docs-and-binary', 'docs-and-site', 'docs-only', 'judge-adjudicator', 'judge-agreement', 'judge-catch', 'repository',
+    ]);
     for (const decl of classes.values()) expect(decl.description.trim().length).toBeGreaterThan(0);
   });
 
@@ -89,11 +94,37 @@ describe('class declarations', () => {
     expect(args).toContain('--disallowedTools=WebFetch,WebSearch');
     expect(args[args.indexOf('--permission-prompts') + 1]).toBe('none');
     expect(args[args.indexOf('--output-format') + 1]).toBe('stream-json');
-    expect(args.slice(args.indexOf('--allowedTools'))).toEqual(['--allowedTools', 'Bash(npm run check*)', 'Bash(npm test)']);
+    expect(args.slice(args.indexOf('--allowedTools'))).toEqual(['--allowedTools', 'Bash(npm run check*)', 'Bash(npm test)', 'Bash(git log)', 'Bash(git log *)', 'Bash(git status)', 'Bash(git status *)', 'Bash(git diff)', 'Bash(git diff *)', 'Bash(git show)', 'Bash(git show *)', 'Bash(git ls-files)', 'Bash(git ls-files *)', 'Bash(git grep)', 'Bash(git grep *)']);
     expect(claudeArgs(docsOnly, 'm', {})).not.toContain('--allowedTools');
+  });
+
+  it('gives a judge class the minimal --system-prompt override, and a reader class none', () => {
+    const classes = loadClasses();
+    const judgeCatch = classes.get('judge-catch');
+    const docsOnly = classes.get('docs-only');
+    if (!judgeCatch || !docsOnly) throw new Error('the judge-catch and docs-only classes must be declared');
+    const judgeArgs = claudeArgs(judgeCatch, 'claude-opus-5-5', { type: 'object' });
+    expect(judgeArgs).toContain('--system-prompt');
+    expect(judgeArgs[judgeArgs.indexOf('--system-prompt') + 1]).toBe(JUDGE_SYSTEM_PROMPT);
+    expect(claudeArgs(docsOnly, 'claude-opus-5-5', { type: 'object' })).not.toContain('--system-prompt');
   });
 
   it('expects the declared tools plus the structured-report tool in the init event', () => {
     expect(expectedTools(valid)).toEqual(['Glob', 'Grep', 'Read', 'StructuredOutput']);
+  });
+
+  it('gives each judge class no Bash and no secrets, mountable through the same prepared-contents pathway', () => {
+    const classes = loadClasses();
+    for (const name of ['judge-catch', 'judge-adjudicator', 'judge-agreement']) {
+      const decl = classes.get(name);
+      expect(decl, name).toMatchObject({ contents: 'prepared', tools: ['Read', 'Grep', 'Glob'], bashAllowlist: [], secretEnv: [], egress: 'anthropic' });
+    }
+  });
+
+  it('maps each judge class name to its manifest model key, and an ordinary class to none', () => {
+    expect(judgeKindForClass('judge-catch')).toBe('catchJudge');
+    expect(judgeKindForClass('judge-adjudicator')).toBe('adjudicator');
+    expect(judgeKindForClass('judge-agreement')).toBe('agreement');
+    expect(judgeKindForClass('docs-only')).toBeUndefined();
   });
 });

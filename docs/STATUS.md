@@ -20,13 +20,21 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Next: docs reset pass 1b, the validation redesign (Geoff, 2026-09-24).** Pass 1's writing
-system is built; its validation failed on its own design
-(`docs/internal/record/2026-09-23-docs-reset-validation.md`). Pass 1b brainstorms, pre-registers a
-plan, and reruns on the merged system; pass 2a waits for it. Open questions: the pass 1 ledger's
-"decision" row. The scratch site stands through pass 2a, teardown in
-`docs/internal/record/2026-09-23-scratch-site.md`. After the PR merges: the fact-id rule into the
-shared agents, the `~/.dotfiles` push, `claude-tooling-sync verify`.
+**Next: merge docs reset pass 1b (PR #89) on Geoff's word, then brainstorm pass 2a.** Pass 1b
+closed on its tuning record (O11, Geoff 2026-09-25): no freeze and no gated runs, so every reader
+class goes to pass 2a as advisory. Records: `docs/internal/record/2026-09-24-docs-reset-1b-{tuning,validation}.md`.
+Post-mortem, ledger (20.07M counted), and a draft program budget (lean pass 2a about 8.5M) are at the
+foot of `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`. Pass 2a's design must first answer
+the catch-field finding: readers file routed-around defects only as rule candidates. Its inputs are
+in `ROADMAP.md`'s docs reset entry. Program ruling O12 (Geoff, 2026-09-25): pass 2a has a ceiling of 6M with the flag at 5M. It opens
+with a go/no-go reader pilot on round 1's planted trees (about 0.6M) that tests a reader change for
+routed-around defects: readers join the chain as its reader stage only if on-map recall per plant-run
+rises to a clear majority, and stay advisory otherwise. Then come the profiles and the exemplar
+review, with no formal trial and no freeze. Pass 2b (the outline) gets 8M. Drafting plans at 0.7M
+per page plus 1.5M per pass. The program cap is about 45M counted. After the first drafting pass,
+compare the measured cost per page with 0.7M and cut the chain or the page count, never the cap. The CLI hold is released in
+dotfiles `75f3d96`. Still owed: the `~/.dotfiles` push and `claude-tooling-sync verify`. The lane
+worktrees `docs-reset-1b-{export,runner,pathmap}` can be removed.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`
@@ -51,9 +59,8 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` at effort `high`, in
-`/var/home/glw907/Projects/cairn-cms`, start docs reset pass 1b on a new worktree off `main`.
-Read `ROADMAP.md`'s docs reset entry, the pass 1 plan's ledger "decision" row and post-mortem
-(`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`), and the validation record. Brainstorm
-the validation redesign with Geoff, then author a pre-registered plan that fixes its bars before
-any run.
+After PR #89 merges, in a fresh session started with `claude --model claude-opus-5-5` at effort
+`high`, in `/var/home/glw907/Projects/cairn-cms`, brainstorm docs reset pass 2a. Read the parent
+spec (`docs/superpowers/specs/2026-09-23-docs-reset-design.md`, including "Amendments from pass
+1b"), the pass 1b validation record and post-mortem, and `ROADMAP.md`'s docs reset entry. Start from
+program ruling O12 above; settle the pilot's reader change and its pass mark with Geoff before planning.

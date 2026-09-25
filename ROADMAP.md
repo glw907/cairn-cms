@@ -301,8 +301,9 @@ The original decision framing, for the record:
     - **The trial redesign the pass 1b spec hands over** ("Finding for pass 2a"). As fixed, the
       trial keeps a truly one-third-better chain about half the time, so pass 2a resizes it or
       restates its decision rule. Its measuring jobs must be disjoint from the chain's
-      reader-stage jobs, or it adds an independent measure. The draft program budget proposes
-      dropping the formal chain-depth trial for a lean pass 2a; Geoff rules on it.
+      reader-stage jobs, or it adds an independent measure. Program ruling O12 (Geoff, 2026-09-25)
+      drops the formal chain-depth trial: pass 2a runs at a ceiling of 6M and opens with a go/no-go
+      reader pilot, and the chain's depth follows reader evidence page by page (STATUS).
     - **The catch-field design finding.** Readers route around a defect and file it only as a
       rule candidate (10 of 21 audited misses), which the spec counts as neither a catch nor a
       finding. Any instrument pass 2a gates on needs a field design that captures a
@@ -328,6 +329,9 @@ The original decision framing, for the record:
       published docs roots in the planter's input directory.
     - The exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
       `docs/internal/record/docs-exemplars.md`) and the readers' plan token are ready.
+    - One content input for the designer's theme task guide (Geoff, 2026-09-24): a short general
+      section on giving a DaisyUI-built site its own identity through a theme, so it does not read
+      as stock DaisyUI. It links to DaisyUI's theme docs rather than restating them.
   - **Pass 2b, the ledger, the structure, and the outline.** Two carry-forwards from pass 1 land
     here. A multi-page chain run shares one retag list across its pages, since a stage-1 fact read
     on one page can undo a legitimate retag another page's read made. A scaffolded-site reader

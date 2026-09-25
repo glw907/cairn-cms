@@ -20,19 +20,16 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Next: brainstorm docs reset pass 2a.** Pass 1b (PR #89, merged as `1e4a7c31`)
-closed on its tuning record (O11, Geoff 2026-09-25): no freeze and no gated runs, so every reader
-class goes to pass 2a as advisory. Records: `docs/internal/record/2026-09-24-docs-reset-1b-{tuning,validation}.md`.
-Post-mortem, ledger (20.07M counted), and a draft program budget (lean pass 2a about 8.5M) are at the
-foot of `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`. Pass 2a's design must first answer
-the catch-field finding: readers file routed-around defects only as rule candidates. Its inputs are
-in `ROADMAP.md`'s docs reset entry. Program ruling O12 (Geoff, 2026-09-25): pass 2a has a ceiling of 6M with the flag at 5M. It opens
-with a go/no-go reader pilot on round 1's planted trees (about 0.6M) that tests a reader change for
-routed-around defects: readers join the chain as its reader stage only if on-map recall per plant-run
-rises to a clear majority, and stay advisory otherwise. Then come the profiles and the exemplar
-review, with no formal trial and no freeze. Pass 2b (the outline) gets 8M. Drafting plans at 0.7M
-per page plus 1.5M per pass. The program cap is about 45M counted. After the first drafting pass,
-compare the measured cost per page with 0.7M and cut the chain or the page count, never the cap. The CLI hold is released in
+**Next: write the docs reset pass 2a plan, after Geoff's read of the spec.** The spec is
+`docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`, reviewed through
+`spec-plan-review` (four lenses, fold, verification, second fold, prose review; records under
+`docs/superpowers/research/2026-09-25-docs-reset-2a-spec-*.md`). Pass 2a adds scored `wrong[]` and
+`missing[]` reader fields, runs a pre-registered go/no-go pilot per reader class (12 of 16 on-map
+plant-runs, breadth, and precision), writes and reviews the audience record, and reviews the
+exemplar corpus. Ceiling 15M, flag 12M (B4, Geoff 2026-09-25, replacing O12's 6M); the chain build
+moves to the first drafting pass and the exemplar gap fills to pass 2b. Pass 2b gets 8M; drafting
+plans at 0.7M per page plus 1.5M per pass; the program cap stays about 45M counted. Pass 1b's
+records: `docs/internal/record/2026-09-24-docs-reset-1b-{tuning,validation}.md`. The CLI hold is released in
 dotfiles `75f3d96`. Still owed: the `~/.dotfiles` push and `claude-tooling-sync verify`. The lane
 worktrees `docs-reset-1b-{export,runner,pathmap}` can be removed.
 

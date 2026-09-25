@@ -302,8 +302,10 @@ The original decision framing, for the record:
       trial keeps a truly one-third-better chain about half the time, so pass 2a resizes it or
       restates its decision rule. Its measuring jobs must be disjoint from the chain's
       reader-stage jobs, or it adds an independent measure. Program ruling O12 (Geoff, 2026-09-25)
-      drops the formal chain-depth trial: pass 2a runs at a ceiling of 6M and opens with a go/no-go
-      reader pilot, and the chain's depth follows reader evidence page by page (STATUS).
+      drops the formal chain-depth trial; pass 2a opens with a go/no-go reader pilot, and the
+      chain's depth follows reader evidence page by page. Pass 2a's spec answers this and the
+      catch-field finding below: `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`,
+      ceiling 15M, flag 12M (B4).
     - **The catch-field design finding.** Readers route around a defect and file it only as a
       rule candidate (10 of 21 audited misses), which the spec counts as neither a catch nor a
       finding. Any instrument pass 2a gates on needs a field design that captures a

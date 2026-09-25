@@ -183,6 +183,40 @@ export interface VerifiedDiverged {
   blockedBy: string | null;
 }
 
+/** A statement on a page the reader found false, filed even when the reader worked around it. */
+export interface WrongEntry {
+  quote: Quote;
+  pageSays: string;
+  actual: string;
+  evidence: string;
+}
+
+/** A `wrong[]` entry whose quote has gone through verification. */
+export interface VerifiedWrongEntry {
+  quote: VerifiedQuote;
+  pageSays: string;
+  actual: string;
+  evidence: string;
+}
+
+/**
+ * A fact or step the job needed that no page gave, filed even when the reader worked around the
+ * gap. `quote` is the nearest line, in the section the reader relied on, where the content
+ * belonged.
+ */
+export interface MissingEntry {
+  quote: Quote;
+  needed: string;
+  evidence: string;
+}
+
+/** A `missing[]` entry whose quote has gone through verification. */
+export interface VerifiedMissingEntry {
+  quote: VerifiedQuote;
+  needed: string;
+  evidence: string;
+}
+
 /** The reader's structured report. */
 export interface ReaderReport {
   outcome: 'done' | 'stalled' | 'refused';
@@ -192,6 +226,8 @@ export interface ReaderReport {
   ruleCandidates: string[];
   steps: Step[];
   diverged: Diverged[];
+  wrong: WrongEntry[];
+  missing: MissingEntry[];
 }
 
 /** The init check's result. */
@@ -214,6 +250,8 @@ export interface Verified {
   quotes: VerifiedQuote[];
   steps: VerifiedStep[];
   diverged: VerifiedDiverged[];
+  wrong: VerifiedWrongEntry[];
+  missing: VerifiedMissingEntry[];
   problems: string[];
 }
 
@@ -257,6 +295,8 @@ export interface RunOutcome {
   quotes: VerifiedQuote[];
   steps: VerifiedStep[];
   diverged: VerifiedDiverged[];
+  wrong: VerifiedWrongEntry[];
+  missing: VerifiedMissingEntry[];
   checks: unknown[];
   ruleCandidates: string[];
   denials: Denial[];

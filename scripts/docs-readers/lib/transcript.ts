@@ -14,6 +14,7 @@ import type {
   InitBaseline,
   InitCheck,
   JobReport,
+  MissingEntry,
   PackageFetch,
   ReaderReport,
   Step,
@@ -22,7 +23,10 @@ import type {
   Usage,
   Verified,
   VerifiedDiverged,
+  VerifiedMissingEntry,
   VerifiedStep,
+  VerifiedWrongEntry,
+  WrongEntry,
 } from './types.js';
 
 /** The working directory every reader runs in, inside its container. */
@@ -695,10 +699,37 @@ function isDivergedEntry(item: unknown): item is Diverged {
 }
 
 /**
+ * Whether a raw list item is a well-formed `wrong[]` entry: a quote for the page, what the page
+ * says, what is actually true, and how the reader knows.
+ * @param item - One raw `wrong[]` entry.
+ * @returns Whether the item has the shape a new run's report must give.
+ */
+function isWrongEntry(item: unknown): item is WrongEntry {
+  return (
+    isRecord(item) &&
+    typeof item.pageSays === 'string' &&
+    typeof item.actual === 'string' &&
+    typeof item.evidence === 'string' &&
+    isRecord(item.quote)
+  );
+}
+
+/**
+ * Whether a raw list item is a well-formed `missing[]` entry: a quote for where the content
+ * belonged, what was missing there, and how the reader knows it was needed.
+ * @param item - One raw `missing[]` entry.
+ * @returns Whether the item has the shape a new run's report must give.
+ */
+function isMissingEntry(item: unknown): item is MissingEntry {
+  return isRecord(item) && typeof item.needed === 'string' && typeof item.evidence === 'string' && isRecord(item.quote);
+}
+
+/**
  * The reader's structured report, when it returned one of the right shape. Every field the
- * report's schema requires must be present, and every `stalls[]`, `assumed[]`, `steps[]`, and
- * `diverged[]` entry must carry its own required fields; a report missing any of it, at the top
- * level or inside one entry, is not a report a fresh run can hand back and is treated as none.
+ * report's schema requires must be present, and every `stalls[]`, `assumed[]`, `steps[]`,
+ * `diverged[]`, `wrong[]`, and `missing[]` entry must carry its own required fields; a report
+ * missing any of it, at the top level or inside one entry, is not a report a fresh run can hand
+ * back and is treated as none.
  * @param events - The parsed stream.
  * @returns The report fields, or undefined.
  */
@@ -714,10 +745,13 @@ export function readerReport(events: StreamEvent[]): ReaderReport | undefined {
   const ruleCandidates = list(output.ruleCandidates);
   const steps = list(output.steps);
   const diverged = list(output.diverged);
-  if (!stalls || !assumed || !quotes || !ruleCandidates || !steps || !diverged) return undefined;
+  const wrong = list(output.wrong);
+  const missing = list(output.missing);
+  if (!stalls || !assumed || !quotes || !ruleCandidates || !steps || !diverged || !wrong || !missing) return undefined;
   if (!stalls.every(isBlockedEntry) || !assumed.every(isBlockedEntry)) return undefined;
   if (!steps.every(isStepEntry) || !diverged.every(isDivergedEntry)) return undefined;
-  return { outcome: output.outcome, stalls, assumed, quotes, ruleCandidates, steps, diverged };
+  if (!wrong.every(isWrongEntry) || !missing.every(isMissingEntry)) return undefined;
+  return { outcome: output.outcome, stalls, assumed, quotes, ruleCandidates, steps, diverged, wrong, missing };
 }
 
 /**
@@ -743,7 +777,8 @@ export function toBlockedEntries(value: unknown): BlockedEntry[] {
 
 /**
  * Bring one saved job report's `verified` block up to the current shape: the earlier report shape
- * predates its own `steps[]`/`diverged[]` fields, filled with empty arrays here.
+ * predates its own `steps[]`/`diverged[]`/`wrong[]`/`missing[]` fields, filled with empty arrays
+ * here.
  * @param value - A saved job report's raw `verified` field.
  * @returns The `verified` block with every field in the current shape.
  */
@@ -753,13 +788,16 @@ function normalizeSavedVerified(value: unknown): Verified {
     ...(verified as unknown as Verified),
     steps: Array.isArray(verified.steps) ? (verified.steps as VerifiedStep[]) : [],
     diverged: Array.isArray(verified.diverged) ? (verified.diverged as VerifiedDiverged[]) : [],
+    wrong: Array.isArray(verified.wrong) ? (verified.wrong as VerifiedWrongEntry[]) : [],
+    missing: Array.isArray(verified.missing) ? (verified.missing as VerifiedMissingEntry[]) : [],
   };
 }
 
 /**
  * Bring one saved job report up to the current shape: the earlier report shape predates
- * `steps[]` and `diverged[]`, at both the job report's own level and inside `verified` (filled
- * with empty arrays here), and gave `stalls[]`/`assumed[]` as plain strings.
+ * `steps[]`, `diverged[]`, `wrong[]`, and `missing[]`, at both the job report's own level and
+ * inside `verified` (filled with empty arrays here), and gave `stalls[]`/`assumed[]` as plain
+ * strings.
  * @param raw - One job entry from a saved batch report.
  * @returns The job report with every field in the current shape.
  */
@@ -771,15 +809,17 @@ function normalizeSavedJobReport(raw: unknown): JobReport {
     assumed: toBlockedEntries(job.assumed),
     steps: Array.isArray(job.steps) ? (job.steps as VerifiedStep[]) : [],
     diverged: Array.isArray(job.diverged) ? (job.diverged as VerifiedDiverged[]) : [],
+    wrong: Array.isArray(job.wrong) ? (job.wrong as VerifiedWrongEntry[]) : [],
+    missing: Array.isArray(job.missing) ? (job.missing as VerifiedMissingEntry[]) : [],
     verified: normalizeSavedVerified(job.verified),
   };
 }
 
 /**
- * Read a batch report saved in the earlier report shape (before `steps[]` and `diverged[]`
- * existed), the shared loader every later saved-report reader uses: it brings every job up to the
- * current `JobReport` shape, tolerating a missing `steps[]`/`diverged[]` and a plain-string
- * `stalls[]`/`assumed[]`.
+ * Read a batch report saved in the earlier report shape (before `steps[]`, `diverged[]`,
+ * `wrong[]`, and `missing[]` existed), the shared loader every later saved-report reader uses: it
+ * brings every job up to the current `JobReport` shape, tolerating a missing
+ * `steps[]`/`diverged[]`/`wrong[]`/`missing[]` and a plain-string `stalls[]`/`assumed[]`.
  * @param raw - The parsed contents of a saved `report.json`, or its JSON text.
  * @returns The batch report with every job in the current shape.
  */

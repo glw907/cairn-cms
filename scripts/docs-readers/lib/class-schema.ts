@@ -65,8 +65,8 @@ export const JUDGE_PROMPT_FILES: Readonly<Record<JudgeKind, string>> = {
 
 /**
  * A judge kind's frozen prompt, read fresh from disk on every call rather than cached at import
- * time, so a caller taken before a gated batch's manifest hash (which covers every file under
- * `PROMPTS_DIR`) pins the bytes a run must match never serves a copy from before that pin.
+ * time, so a call made before a gated batch's manifest hash (which covers every file under
+ * `PROMPTS_DIR`) pins the bytes a run must match never returns a copy read before that pin.
  * `runJudgeBatch` itself calls this once per batch, right after that hash is checked, and reuses
  * the one string it gets back for every job, so an edit landing mid-batch cannot reach a later job.
  * @param kind - Which of the three judge kinds' prompt files to read.

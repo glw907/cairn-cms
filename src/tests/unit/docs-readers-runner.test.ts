@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { REPORT_REQUEST, composePrompt, runBatch } from '../../../scripts/docs-readers/lib/runner.js';
+import { REPORT_REQUEST, REPORT_SCHEMA, composePrompt, runBatch } from '../../../scripts/docs-readers/lib/runner.js';
 import { loadClasses } from '../../../scripts/docs-readers/lib/class-schema.js';
 import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
 import { parseStream } from '../../../scripts/docs-readers/lib/transcript.js';
@@ -68,6 +68,12 @@ describe('composePrompt', () => {
   });
 });
 
+describe('REPORT_SCHEMA', () => {
+  it('requires wrong and missing, beside every other top-level field', () => {
+    expect(REPORT_SCHEMA.required).toEqual(expect.arrayContaining(['wrong', 'missing']));
+  });
+});
+
 describe('runBatch', () => {
   it('completes a clean batch with a verified report of the fixed shape, and ledgers every run', async () => {
     const { executor, ledger, entries } = replayExecutor({ a: fixture('clean-docs-only.jsonl') });
@@ -76,8 +82,8 @@ describe('runBatch', () => {
     expect(report.verified).toBe(true);
     const job = report.jobs[0];
     expect(Object.keys(job)).toEqual([
-      'id', 'class', 'model', 'initModel', 'outcome', 'stalls', 'assumed', 'pagesRead', 'quotes', 'steps', 'diverged', 'checks',
-      'ruleCandidates', 'denials', 'proxyBlocked', 'packageFetches', 'usage', 'verified', 'attempts',
+      'id', 'class', 'model', 'initModel', 'outcome', 'stalls', 'assumed', 'pagesRead', 'quotes', 'steps', 'diverged', 'wrong', 'missing',
+      'checks', 'ruleCandidates', 'denials', 'proxyBlocked', 'packageFetches', 'usage', 'verified', 'attempts',
     ]);
     expect(job).toMatchObject({
       outcome: 'done',
@@ -91,6 +97,8 @@ describe('runBatch', () => {
     expect(job.quotes.every((q: { ok: boolean }) => q.ok)).toBe(true);
     expect(job.steps).toEqual([]);
     expect(job.diverged).toEqual([]);
+    expect(job.wrong).toEqual([]);
+    expect(job.missing).toEqual([]);
     expect(entries.map((e) => e.job)).toEqual(['(token-check)', 'a']);
     expect(report.usage).toMatchObject({ counted: 1729, cacheRead: 3000 });
     expect(job.attempts).toHaveLength(1);
@@ -422,7 +430,7 @@ describe('runBatch: a stop mid-attempt versus a blocked rerun, and resuming each
       {
         type: 'result',
         is_error: false,
-        structured_output: { outcome: 'done', stalls: [], assumed: [], quotes: [], steps: [], diverged: [], ruleCandidates: [] },
+        structured_output: { outcome: 'done', stalls: [], assumed: [], quotes: [], steps: [], diverged: [], wrong: [], missing: [], ruleCandidates: [] },
         modelUsage: { 'claude-opus-5-5': { inputTokens: counted, outputTokens: 0, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 } },
       },
     ];

@@ -119,9 +119,34 @@ export const REPORT_SCHEMA = {
         required: ['quote', 'didInstead', 'why', 'blockedBy'],
       },
     },
+    wrong: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          quote: QUOTE_SCHEMA,
+          pageSays: { type: 'string' },
+          actual: { type: 'string' },
+          evidence: { type: 'string' },
+        },
+        required: ['quote', 'pageSays', 'actual', 'evidence'],
+      },
+    },
+    missing: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          quote: QUOTE_SCHEMA,
+          needed: { type: 'string' },
+          evidence: { type: 'string' },
+        },
+        required: ['quote', 'needed', 'evidence'],
+      },
+    },
     ruleCandidates: { type: 'array', items: { type: 'string' } },
   },
-  required: ['outcome', 'stalls', 'assumed', 'quotes', 'steps', 'diverged', 'ruleCandidates'],
+  required: ['outcome', 'stalls', 'assumed', 'quotes', 'steps', 'diverged', 'wrong', 'missing', 'ruleCandidates'],
 };
 
 /** The closing request every job carries, phrased as a hand-off, never as a test. */
@@ -133,7 +158,9 @@ export const REPORT_REQUEST = [
   '- quotes: for every documentation file you read, at least one line you relied on, given as the file path relative to your working directory, the exact text of that line, and the line number your Read tool printed beside that text\'s first words;',
   '- steps: each instruction you followed or statement you relied on for a decision, as { quote: the page:line quote it rests on, in the same form as above, decision: the decision it supported };',
   '- diverged: each place you did something other than what a page said, including a workaround that worked, as { quote: that page\'s quote, didInstead: what you did instead, why: why you diverged, blockedBy: the same field as above };',
-  '- ruleCandidates: anything you think the documentation should have told you and did not.',
+  '- wrong: each statement on a page that turned out to be false, filed even when you worked around it, as { quote: that page\'s quote, pageSays: what the page states, actual: what is actually true, evidence: how you know };',
+  '- missing: each fact or step the job needed that no page gave you, filed even when you worked around it, as { quote: the nearest line, in the section you relied on, where it belonged, needed: what was missing there, evidence: how you know it was needed };',
+  '- ruleCandidates: anything you wish the documentation had told you, when the job did not actually need it (something the job did need belongs in missing instead).',
 ].join('\n');
 
 /**
@@ -190,6 +217,8 @@ export function buildRunOutcome({
     quotes: verified.quotes,
     steps: verified.steps,
     diverged: verified.diverged,
+    wrong: verified.wrong,
+    missing: verified.missing,
     checks: [],
     ruleCandidates: report?.ruleCandidates ?? [],
     denials: collectDenials(events, calls),
@@ -279,6 +308,8 @@ function stoppedReport(job: Job, stoppedBy: BatchStop, pendingCause: AttemptCaus
     quotes: [],
     steps: [],
     diverged: [],
+    wrong: [],
+    missing: [],
     checks: [],
     ruleCandidates: [],
     denials: [],
@@ -292,6 +323,8 @@ function stoppedReport(job: Job, stoppedBy: BatchStop, pendingCause: AttemptCaus
       quotes: [],
       steps: [],
       diverged: [],
+      wrong: [],
+      missing: [],
       problems: [`aborted: ${stoppedBy}`, attempts.length > 0 ? 'stopped before its rerun started' : 'not started'],
     },
     stoppedBy,
@@ -728,10 +761,10 @@ export async function runJudgeBatch({
   freeze?: GatedFreeze;
   resumeFrom?: Record<string, { attempts: JudgeAttempt[]; pendingCause: AttemptCause }>;
 }): Promise<{ report: JudgeBatchReport; transcripts: Record<string, string> }> {
-  // Read this kind's frozen prompt once, for the whole batch: the freeze gate already hashed it
-  // once at batch start (before this function was even called), and every job's own stdin text
-  // must match that same one hash, never a fresh read that a mid-batch edit could change out from
-  // under a later job.
+  // Read this kind's frozen prompt once, for the whole batch, so every job's composed stdin text
+  // is built from the same bytes: checkJudgeJobField already requires each job's own `job` field
+  // to match these exact bytes (a byte comparison, never a hash) before any container starts, and
+  // a fresh read mid-batch could let an edit landing between jobs reach a later one.
   const frozenPrompt = loadJudgePrompt(kind);
   const jobFieldProblems = batch.jobs.flatMap((job) => {
     const problem = checkJudgeJobField(job, kind, frozenPrompt);

@@ -6,7 +6,21 @@
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { isPage, pageLineKey, READER_CWD, toReaderRelative } from './transcript.js';
-import type { Diverged, InitCheck, RawQuote, ReaderReport, Step, Verified, VerifiedDiverged, VerifiedQuote, VerifiedStep } from './types.js';
+import type {
+  Diverged,
+  InitCheck,
+  MissingEntry,
+  RawQuote,
+  ReaderReport,
+  Step,
+  Verified,
+  VerifiedDiverged,
+  VerifiedMissingEntry,
+  VerifiedQuote,
+  VerifiedStep,
+  VerifiedWrongEntry,
+  WrongEntry,
+} from './types.js';
 
 /** How many lines a quote may run past its cited line when the reader joined a wrapped sentence. */
 const SPAN_LINES = 5;
@@ -174,6 +188,37 @@ function verifyDiverged(diverged: Diverged[], root: string, cwd: string | undefi
 }
 
 /**
+ * Verify every `wrong[]` entry's quote, the way `verifySteps` verifies a step's.
+ * @param wrong - The report's raw `wrong[]`, when it gave any.
+ * @param root - The pristine prepared directory.
+ * @param cwd - The directory a relative quote path is resolved against.
+ * @returns Each entry with its quote's verified form.
+ */
+function verifyWrong(wrong: WrongEntry[], root: string, cwd: string | undefined): VerifiedWrongEntry[] {
+  return wrong.map((entry) => ({
+    quote: verifyQuote(entry.quote ?? {}, root, cwd),
+    pageSays: entry.pageSays,
+    actual: entry.actual,
+    evidence: entry.evidence,
+  }));
+}
+
+/**
+ * Verify every `missing[]` entry's quote, the way `verifySteps` verifies a step's.
+ * @param missing - The report's raw `missing[]`, when it gave any.
+ * @param root - The pristine prepared directory.
+ * @param cwd - The directory a relative quote path is resolved against.
+ * @returns Each entry with its quote's verified form.
+ */
+function verifyMissing(missing: MissingEntry[], root: string, cwd: string | undefined): VerifiedMissingEntry[] {
+  return missing.map((entry) => ({
+    quote: verifyQuote(entry.quote ?? {}, root, cwd),
+    needed: entry.needed,
+    evidence: entry.evidence,
+  }));
+}
+
+/**
  * Decide whether a job's report is verified, from the reader's structured `report` (undefined when
  * it gave none), the `pagesRead` the transcript shows, the job's `docsSet`, the pristine prepared
  * `root`, the `init` check's result, the `canariesFound` in the transcript, the reader's `cwd`
@@ -182,11 +227,11 @@ function verifyDiverged(diverged: Diverged[], root: string, cwd: string | undefi
  * defaulting to none). Every page read must carry a verified quote, and every quoted page must
  * have been read: a quote on a docs-set page the transcript never shows opened, and whose own span
  * never overlapped a displayed Grep line either, was not read in this run. The same unread-page
- * check applies to every verified `steps[]` and `diverged[]` quote, not only the top-level ones. A
- * quote whose span overlaps a line a Grep call displayed (`grepHits`, checked by `overlapsGrepHit`)
- * is excused from that last check, since the reader's own tool output did show that line; the
- * quote still must verify on its own, and an unrelated line elsewhere on the same page excuses
- * nothing.
+ * check applies to every verified `steps[]`, `diverged[]`, `wrong[]`, and `missing[]` quote, not
+ * only the top-level ones. A quote whose span overlaps a line a Grep call displayed (`grepHits`,
+ * checked by `overlapsGrepHit`) is excused from that last check, since the reader's own tool
+ * output did show that line; the quote still must verify on its own, and an unrelated line
+ * elsewhere on the same page excuses nothing.
  * @returns The `verified` block for the job report.
  */
 export function verifyReport({
@@ -214,6 +259,8 @@ export function verifyReport({
   let quotes: VerifiedQuote[] = [];
   let steps: VerifiedStep[] = [];
   let diverged: VerifiedDiverged[] = [];
+  let wrong: VerifiedWrongEntry[] = [];
+  let missing: VerifiedMissingEntry[] = [];
   if (!report) {
     problems.push('no structured report');
   } else {
@@ -246,6 +293,20 @@ export function verifyReport({
         problems.push(`diverged quote ${entry.quote.path}:${String(entry.quote.line)} cites a page the transcript never shows read`);
       }
     }
+    wrong = verifyWrong(report.wrong ?? [], root, cwd);
+    for (const entry of wrong) {
+      if (!entry.quote.ok) problems.push(`wrong quote ${entry.quote.path}:${String(entry.quote.line)} unverified: ${entry.quote.reason}`);
+      else if (citesUnreadPage(entry.quote, docsSet, read, grepHits)) {
+        problems.push(`wrong quote ${entry.quote.path}:${String(entry.quote.line)} cites a page the transcript never shows read`);
+      }
+    }
+    missing = verifyMissing(report.missing ?? [], root, cwd);
+    for (const entry of missing) {
+      if (!entry.quote.ok) problems.push(`missing quote ${entry.quote.path}:${String(entry.quote.line)} unverified: ${entry.quote.reason}`);
+      else if (citesUnreadPage(entry.quote, docsSet, read, grepHits)) {
+        problems.push(`missing quote ${entry.quote.path}:${String(entry.quote.line)} cites a page the transcript never shows read`);
+      }
+    }
   }
-  return { ok: problems.length === 0, init: init.ok, canaries: canariesFound.length === 0, quotes, steps, diverged, problems };
+  return { ok: problems.length === 0, init: init.ok, canaries: canariesFound.length === 0, quotes, steps, diverged, wrong, missing, problems };
 }

@@ -15,13 +15,15 @@ function makeReport(overrides: Partial<JobReport> & Pick<JobReport, 'model'>): J
     quotes: [],
     steps: [],
     diverged: [],
+    wrong: [],
+    missing: [],
     checks: [],
     ruleCandidates: [],
     denials: [],
     proxyBlocked: [],
     packageFetches: [],
     usage: { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, counted: 0 },
-    verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] },
+    verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] },
     ...overrides,
   };
 }
@@ -211,7 +213,7 @@ describe('computeCapacity', () => {
 
 /** Build a job report whose only structured field is `steps[]`, for on-path-rule fixtures. */
 function stepsRun(model: string, verified: boolean, steps: VerifiedStep[]): JobReport {
-  return makeReport({ model, steps, verified: { ok: verified, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] } });
+  return makeReport({ model, steps, verified: { ok: verified, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] } });
 }
 
 const OPUS = 'claude-opus-5-5';
@@ -399,7 +401,7 @@ describe('buildProxyMap', () => {
     const run = makeReport({
       model: OPUS,
       diverged: [{ quote: makeQuote('p.md', 7), didInstead: 'used a workaround', why: 'the page was silent', blockedBy: null }],
-      verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] },
+      verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] },
     });
     const map = buildProxyMap({ job: 'j', runs: [run], pages });
     expect(map.mode).toBe('proxy');
@@ -410,7 +412,7 @@ describe('buildProxyMap', () => {
     const run = makeReport({
       model: OPUS,
       quotes: [makeQuote('p.md', 7, 7, false)],
-      verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] },
+      verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] },
     });
     const map = buildProxyMap({ job: 'j', runs: [run], pages });
     expect(map.pages['p.md'].sections).toEqual([]);
@@ -420,7 +422,7 @@ describe('buildProxyMap', () => {
     const run = makeReport({
       model: SONNET,
       quotes: [makeQuote('p.md', 7)],
-      verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] },
+      verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] },
     });
     const map = buildProxyMap({ job: 'j', runs: [run], pages });
     expect(map.pages['p.md'].sections).toEqual([]);
@@ -428,8 +430,8 @@ describe('buildProxyMap', () => {
 
   it('one run suffices: a second, unverified run adds nothing and takes nothing away', () => {
     const runs = [
-      makeReport({ model: OPUS, quotes: [makeQuote('p.md', 7)], verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] } }),
-      makeReport({ model: OPUS, quotes: [makeQuote('p.md', 17)], verified: { ok: false, init: false, canaries: true, quotes: [], steps: [], diverged: [], problems: ['no report'] } }),
+      makeReport({ model: OPUS, quotes: [makeQuote('p.md', 7)], verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] } }),
+      makeReport({ model: OPUS, quotes: [makeQuote('p.md', 17)], verified: { ok: false, init: false, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: ['no report'] } }),
     ];
     const map = buildProxyMap({ job: 'j', runs, pages });
     expect(map.pages['p.md'].sections.map((s) => s.heading)).toEqual(['Section A']);
@@ -447,7 +449,7 @@ describe('the path-map CLI', () => {
     const report: JobReport = makeReport({
       model: OPUS,
       quotes: [makeQuote('p.md', 5)],
-      verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] },
+      verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] },
     });
     const reportFile = join(dir, 'report.json');
     writeFileSync(reportFile, JSON.stringify(report));

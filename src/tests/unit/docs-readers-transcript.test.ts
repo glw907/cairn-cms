@@ -288,6 +288,8 @@ describe('readerReport: steps, diverged, and blockedBy', () => {
       quotes: [okQuote],
       steps: [{ quote: okQuote, decision: 'used the install step' }],
       diverged: [{ quote: okQuote, didInstead: 'skipped ahead', why: 'the page did not cover it', blockedBy: null }],
+      wrong: [{ quote: okQuote, pageSays: 'the page states', actual: 'what is actually true', evidence: 'how the reader knows' }],
+      missing: [{ quote: okQuote, needed: 'what was missing', evidence: 'how the reader knows it was needed' }],
       ruleCandidates: [],
     };
   }
@@ -299,14 +301,16 @@ describe('readerReport: steps, diverged, and blockedBy', () => {
     return events;
   }
 
-  it('parses a well-formed report, carrying steps and diverged through', () => {
+  it('parses a well-formed report, carrying steps, diverged, wrong, and missing through', () => {
     const report = readerReport(withOutput(validOutput()));
     expect(report?.steps).toEqual([{ quote: okQuote, decision: 'used the install step' }]);
     expect(report?.diverged).toEqual([{ quote: okQuote, didInstead: 'skipped ahead', why: 'the page did not cover it', blockedBy: null }]);
     expect(report?.stalls).toEqual([{ text: 'stuck here', blockedBy: null }]);
+    expect(report?.wrong).toEqual([{ quote: okQuote, pageSays: 'the page states', actual: 'what is actually true', evidence: 'how the reader knows' }]);
+    expect(report?.missing).toEqual([{ quote: okQuote, needed: 'what was missing', evidence: 'how the reader knows it was needed' }]);
   });
 
-  it('fails a report missing steps or diverged entirely', () => {
+  it('fails a report missing steps, diverged, wrong, or missing entirely', () => {
     const withoutSteps = validOutput();
     delete withoutSteps.steps;
     expect(readerReport(withOutput(withoutSteps))).toBeUndefined();
@@ -314,6 +318,34 @@ describe('readerReport: steps, diverged, and blockedBy', () => {
     const withoutDiverged = validOutput();
     delete withoutDiverged.diverged;
     expect(readerReport(withOutput(withoutDiverged))).toBeUndefined();
+
+    const withoutWrong = validOutput();
+    delete withoutWrong.wrong;
+    expect(readerReport(withOutput(withoutWrong))).toBeUndefined();
+
+    const withoutMissing = validOutput();
+    delete withoutMissing.missing;
+    expect(readerReport(withOutput(withoutMissing))).toBeUndefined();
+  });
+
+  it('fails a wrong entry missing pageSays, actual, evidence, or its page quote', () => {
+    const missingPageSays = validOutput();
+    missingPageSays.wrong = [{ quote: okQuote, actual: 'a', evidence: 'e' }];
+    expect(readerReport(withOutput(missingPageSays))).toBeUndefined();
+
+    const missingQuote = validOutput();
+    missingQuote.wrong = [{ pageSays: 'p', actual: 'a', evidence: 'e' }];
+    expect(readerReport(withOutput(missingQuote))).toBeUndefined();
+  });
+
+  it('fails a missing entry given without its needed, evidence, or page quote', () => {
+    const withoutNeeded = validOutput();
+    withoutNeeded.missing = [{ quote: okQuote, evidence: 'e' }];
+    expect(readerReport(withOutput(withoutNeeded))).toBeUndefined();
+
+    const withoutQuote = validOutput();
+    withoutQuote.missing = [{ needed: 'n', evidence: 'e' }];
+    expect(readerReport(withOutput(withoutQuote))).toBeUndefined();
   });
 
   it('fails a diverged entry given without its page quote', () => {
@@ -358,7 +390,7 @@ describe('initModel', () => {
 });
 
 describe('loadSavedBatchReport', () => {
-  it('turns pass 1\'s plain-string stalls and assumed into blocked entries, and fills empty steps and diverged', () => {
+  it('turns pass 1\'s plain-string stalls and assumed into blocked entries, and fills empty steps, diverged, wrong, and missing', () => {
     const raw = readFileSync(join(SAVED_REPORTS, 'pass1-trimmed.json'), 'utf8');
     const batch = loadSavedBatchReport(raw);
     expect(batch.jobs).toHaveLength(2);
@@ -368,8 +400,12 @@ describe('loadSavedBatchReport', () => {
     expect(job?.assumed[0]).toMatchObject({ blockedBy: null });
     expect(job?.steps).toEqual([]);
     expect(job?.diverged).toEqual([]);
+    expect(job?.wrong).toEqual([]);
+    expect(job?.missing).toEqual([]);
     expect(job?.verified.steps).toEqual([]);
     expect(job?.verified.diverged).toEqual([]);
+    expect(job?.verified.wrong).toEqual([]);
+    expect(job?.verified.missing).toEqual([]);
   });
 
   it('accepts an already-parsed object, not only JSON text', () => {

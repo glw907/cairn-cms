@@ -22,13 +22,15 @@ function savedJob(verified: Partial<JobReport['verified']> = {}): JobReport {
     quotes: [],
     steps: [],
     diverged: [],
+    wrong: [],
+    missing: [],
     checks: [],
     ruleCandidates: [],
     denials: [],
     proxyBlocked: [],
     packageFetches: [],
     usage: { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, counted: 0 },
-    verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [], ...verified },
+    verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [], ...verified },
   };
 }
 
@@ -68,6 +70,15 @@ describe('reverifyJob', () => {
     const result = reverifyJob({ job: savedJob(), batchJob: batchJob(), transcriptText, repoRoot: PREPARED });
     expect(result.verified.ok).toBe(false);
     expect(result.verified.problems).toEqual(['quote docs/guide.md:5 unverified: text starts on line 3, not 5']);
+  });
+
+  it('fails a wrong[] quote cited two lines before its real line, naming it', () => {
+    // The real text sits on line 3; a wrong[] quote citing line 1 is past the one-line tolerance,
+    // proving reverifyJob re-checks a wrong[] quote too, not only the top-level ones.
+    const transcriptText = readFileSync(join(FIXTURES, 'unverified-wrong-quote.jsonl'), 'utf8');
+    const result = reverifyJob({ job: savedJob(), batchJob: batchJob(), transcriptText, repoRoot: PREPARED });
+    expect(result.verified.ok).toBe(false);
+    expect(result.verified.problems).toContain('wrong quote docs/guide.md:1 unverified: text starts on line 3, not 1');
   });
 
   it('carries an already-failed init or canary verdict over, noting it was not re-checked', () => {

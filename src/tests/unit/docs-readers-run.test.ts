@@ -355,7 +355,7 @@ describe('checkGate', () => {
 
 /** A minimal, valid `JobReport`, for the resume tests below. */
 function jobReport(id: string, overrides: Partial<JobReport> = {}): JobReport {
-  const verified: Verified = { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] };
+  const verified: Verified = { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] };
   return {
     id,
     class: 'docs-only',
@@ -367,6 +367,8 @@ function jobReport(id: string, overrides: Partial<JobReport> = {}): JobReport {
     quotes: [],
     steps: [],
     diverged: [],
+    wrong: [],
+    missing: [],
     checks: [],
     ruleCandidates: [],
     denials: [],

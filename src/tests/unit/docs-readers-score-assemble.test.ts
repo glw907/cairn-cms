@@ -17,7 +17,7 @@ const VALID_CLASSES = new Set(['docs-only', 'docs-and-binary', 'docs-and-site', 
 const USAGE = { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, counted: 0 };
 
 function verifiedBlock(ok = true): JobReport['verified'] {
-  return { ok, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [] };
+  return { ok, init: true, canaries: true, quotes: [], steps: [], diverged: [], wrong: [], missing: [], problems: [] };
 }
 
 function job(overrides: Partial<JobReport> = {}): JobReport {
@@ -32,6 +32,8 @@ function job(overrides: Partial<JobReport> = {}): JobReport {
     quotes: [],
     steps: [],
     diverged: [],
+    wrong: [],
+    missing: [],
     checks: [],
     ruleCandidates: [],
     denials: [],
@@ -76,8 +78,8 @@ describe('finalOutcome', () => {
   it('reads the attempt marked final, and its own 1-based position, when attempts exist', () => {
     const j = job({
       attempts: [
-        { cause: 'initial', final: false, transcript: 't1', outcome: 'stalled', stalls: [], assumed: [], pagesRead: [], quotes: [], steps: [], diverged: [], checks: [], ruleCandidates: [], denials: [], proxyBlocked: [], packageFetches: [], usage: USAGE, verified: verifiedBlock(false) },
-        { cause: 'unverified', final: true, transcript: 't2', outcome: 'done', stalls: [], assumed: [], pagesRead: [], quotes: [], steps: [], diverged: [], checks: [], ruleCandidates: [], denials: [], proxyBlocked: [], packageFetches: [], usage: USAGE, verified: verifiedBlock(true) },
+        { cause: 'initial', final: false, transcript: 't1', outcome: 'stalled', stalls: [], assumed: [], pagesRead: [], quotes: [], steps: [], diverged: [], wrong: [], missing: [], checks: [], ruleCandidates: [], denials: [], proxyBlocked: [], packageFetches: [], usage: USAGE, verified: verifiedBlock(false) },
+        { cause: 'unverified', final: true, transcript: 't2', outcome: 'done', stalls: [], assumed: [], pagesRead: [], quotes: [], steps: [], diverged: [], wrong: [], missing: [], checks: [], ruleCandidates: [], denials: [], proxyBlocked: [], packageFetches: [], usage: USAGE, verified: verifiedBlock(true) },
       ],
     });
     const result = finalOutcome(j);
@@ -88,7 +90,7 @@ describe('finalOutcome', () => {
 
   it('throws when attempts exist but none is marked final', () => {
     const j = job({
-      attempts: [{ cause: 'initial', final: false, transcript: 't1', outcome: 'done', stalls: [], assumed: [], pagesRead: [], quotes: [], steps: [], diverged: [], checks: [], ruleCandidates: [], denials: [], proxyBlocked: [], packageFetches: [], usage: USAGE, verified: verifiedBlock() }],
+      attempts: [{ cause: 'initial', final: false, transcript: 't1', outcome: 'done', stalls: [], assumed: [], pagesRead: [], quotes: [], steps: [], diverged: [], wrong: [], missing: [], checks: [], ruleCandidates: [], denials: [], proxyBlocked: [], packageFetches: [], usage: USAGE, verified: verifiedBlock() }],
     });
     expect(() => finalOutcome(j)).toThrow(/no attempt marked final/);
   });

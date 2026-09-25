@@ -174,8 +174,8 @@ Naming the correct value is not required, but it is good evidence. An item that 
 quotes, or uses the planted point without claiming a problem with it does not count. Keep the
 criterion to what a report item can show. Do not require the reader to explain the code.
 
-Example: "Counts when an item says the page gives the wrong name for the retry option in the
-queue setup step, or that setting the option as the step says had no effect or was rejected."
+Example: "Counts when an item says the page gives the wrong name for the sharpening option in
+the thumbnail step, or that setting the option as the step says had no effect or was rejected."
 
 **The near miss** is one example report item that touches the subject but does not count. Make it
 the most plausible confusable item, not an easy one. Good near misses include an item that
@@ -183,7 +183,7 @@ quotes the planted line as a step the reader followed with no complaint, a compl
 same step on a different ground, or a request for more detail about the subject that never says
 the page is wrong.
 
-Example: "The queue setup step could use an example value for the retry option."
+Example: "The thumbnail step could use an example value for the sharpening option."
 
 ## Outputs
 
@@ -273,8 +273,8 @@ does not need, or any change whose truth the code cannot decide.
 writes, accepts, rejects, defaults to, or how it responds to an action or an error. The code does
 something else. The identifiers on the line stay correct. The error is in the claim.
 
-**Example.** A page says an import skips rows with a missing date. The code rejects the whole
-file on the first row with a missing date.
+**Example.** A page says a resize call clamps an upscale factor above the limit to the limit.
+The code throws a range error and returns no image.
 
 **Does not count.**
 - A correct claim with a swapped identifier, such as the wrong option name. That is `wrong-name`.
@@ -291,9 +291,9 @@ meets both cannot act without guessing which one holds. The counterpart statemen
 same page or on another page in the job's page list, and preferably inside the plantable region,
 so a reader on the job's path meets both.
 
-**Example.** A page's overview says archived items stay searchable. A later step, planted, tells
-the reader that archiving removes an item from search results. The code keeps archived items in
-the index.
+**Example.** A page's overview says cropping keeps the source image's color profile. A later
+step, planted, tells the reader that cropping strips the color profile from the output. The code
+copies the profile to every cropped image.
 
 **Does not count.**
 - A false claim with no true counterpart on the job's pages. That is `false-behavior`.
@@ -307,8 +307,9 @@ the code does not need, omits the fact that one is needed while claiming the act
 alone, or puts steps in an order the code does not support. Following the page as written fails
 or has a different effect.
 
-**Example.** A page says to start the worker and then write its queue settings file. The worker
-reads that file only at startup, so the settings must be written first.
+**Example.** A page says to call the thumbnail function and then register the custom resampling
+filter it uses. The library looks up the filter when the call starts, so it must be registered
+first.
 
 **Does not count.**
 - A needed step deleted outright, with no false claim about order or need. That is
@@ -322,8 +323,8 @@ reads that file only at startup, so the settings must be written first.
 page supplies it elsewhere. The surrounding text still reads naturally. Following the page as
 written fails or leaves the task incomplete.
 
-**Example.** A setup list goes from "install the package" to "run the migration", having dropped
-the step that creates the database file the migration writes to.
+**Example.** A usage list goes from "load the source image" to "run the batch resize", having
+dropped the step that sets the target size the batch resize reads.
 
 **Does not count.**
 - A deleted optional tip, example, note, or explanation.
@@ -337,8 +338,8 @@ the job's other pages, nor any published page defines it. The usual form replace
 defined phrase with an unexplained name for the same thing. The reader cannot tell what the term
 refers to from the page.
 
-**Example.** A step that said "open the folder that holds unpublished drafts" now says "open
-the holding bay". Nothing in the docs says what the holding bay is.
+**Example.** A step that said "pass the box the output image must fit inside" now says "pass
+the frame envelope". Nothing in the docs says what the frame envelope is.
 
 **Does not count.**
 - A standard term that a competent member of the page's audience knows, such as "environment
@@ -353,8 +354,8 @@ one: a command or subcommand, a flag, an option or configuration key, an environ
 field, a function or export, a setting name, or an interface label. The planted name does not
 exist in the code, or names a different thing.
 
-**Example.** A page tells the reader to set `CACHE_TTL_SECONDS`. The code reads
-`CACHE_MAX_AGE`.
+**Example.** A page tells the reader to pass `keepAspect: true`. The code reads
+`preserveAspectRatio`.
 
 **Does not count.**
 - A file, directory, or route path. That is `stale-path`.
@@ -368,8 +369,8 @@ or visit is replaced with one that does not exist in the export or points somewh
 planted path is plausibly an old or neighboring location. Neither the original path nor the
 planted path is on the job's absent list, or under a directory on it.
 
-**Example.** A page says to add the handler to `handlers/index.js`. The code loads handlers from
-`src/handlers/registry.js`, and no `handlers/` directory exists.
+**Example.** A page says to add the custom filter to `filters/index.js`. The library loads
+filters from `src/resample/filters.js`, and no `filters/` directory exists.
 
 **Does not count.**
 - A path on or under the job's absent list. A reader cannot tell it from a file that is absent

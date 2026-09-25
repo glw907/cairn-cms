@@ -219,6 +219,32 @@ function verifyMissing(missing: MissingEntry[], root: string, cwd: string | unde
 }
 
 /**
+ * The problems a list of report entries' verified quotes carry: an unverified quote gives its own
+ * reason, and a verified one that `citesUnreadPage` flags gives the unread-page problem.
+ * @param label - The entry kind each problem names, such as `step` or `wrong`.
+ * @param entries - The entries, each with its quote verified by `verifyQuote`.
+ * @param docsSet - The job's docs-set entries.
+ * @param read - The set of pages the transcript shows the reader actually opened.
+ * @param grepHits - The `page:line` pairs a Grep call displayed.
+ * @returns One problem per failing entry, in entry order.
+ */
+function entryQuoteProblems(
+  label: string,
+  entries: readonly { quote: VerifiedQuote }[],
+  docsSet: string[],
+  read: Set<string>,
+  grepHits: Set<string>,
+): string[] {
+  const problems: string[] = [];
+  for (const { quote } of entries) {
+    const where = `${label} quote ${quote.path}:${String(quote.line)}`;
+    if (!quote.ok) problems.push(`${where} unverified: ${quote.reason}`);
+    else if (citesUnreadPage(quote, docsSet, read, grepHits)) problems.push(`${where} cites a page the transcript never shows read`);
+  }
+  return problems;
+}
+
+/**
  * Decide whether a job's report is verified, from the reader's structured `report` (undefined when
  * it gave none), the `pagesRead` the transcript shows, the job's `docsSet`, the pristine prepared
  * `root`, the `init` check's result, the `canariesFound` in the transcript, the reader's `cwd`
@@ -280,33 +306,13 @@ export function verifyReport({
       }
     }
     steps = verifySteps(report.steps ?? [], root, cwd);
-    for (const step of steps) {
-      if (!step.quote.ok) problems.push(`step quote ${step.quote.path}:${String(step.quote.line)} unverified: ${step.quote.reason}`);
-      else if (citesUnreadPage(step.quote, docsSet, read, grepHits)) {
-        problems.push(`step quote ${step.quote.path}:${String(step.quote.line)} cites a page the transcript never shows read`);
-      }
-    }
+    problems.push(...entryQuoteProblems('step', steps, docsSet, read, grepHits));
     diverged = verifyDiverged(report.diverged ?? [], root, cwd);
-    for (const entry of diverged) {
-      if (!entry.quote.ok) problems.push(`diverged quote ${entry.quote.path}:${String(entry.quote.line)} unverified: ${entry.quote.reason}`);
-      else if (citesUnreadPage(entry.quote, docsSet, read, grepHits)) {
-        problems.push(`diverged quote ${entry.quote.path}:${String(entry.quote.line)} cites a page the transcript never shows read`);
-      }
-    }
+    problems.push(...entryQuoteProblems('diverged', diverged, docsSet, read, grepHits));
     wrong = verifyWrong(report.wrong ?? [], root, cwd);
-    for (const entry of wrong) {
-      if (!entry.quote.ok) problems.push(`wrong quote ${entry.quote.path}:${String(entry.quote.line)} unverified: ${entry.quote.reason}`);
-      else if (citesUnreadPage(entry.quote, docsSet, read, grepHits)) {
-        problems.push(`wrong quote ${entry.quote.path}:${String(entry.quote.line)} cites a page the transcript never shows read`);
-      }
-    }
+    problems.push(...entryQuoteProblems('wrong', wrong, docsSet, read, grepHits));
     missing = verifyMissing(report.missing ?? [], root, cwd);
-    for (const entry of missing) {
-      if (!entry.quote.ok) problems.push(`missing quote ${entry.quote.path}:${String(entry.quote.line)} unverified: ${entry.quote.reason}`);
-      else if (citesUnreadPage(entry.quote, docsSet, read, grepHits)) {
-        problems.push(`missing quote ${entry.quote.path}:${String(entry.quote.line)} cites a page the transcript never shows read`);
-      }
-    }
+    problems.push(...entryQuoteProblems('missing', missing, docsSet, read, grepHits));
   }
   return { ok: problems.length === 0, init: init.ok, canaries: canariesFound.length === 0, quotes, steps, diverged, wrong, missing, problems };
 }

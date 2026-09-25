@@ -282,6 +282,15 @@ function checkSpacing(items: SpacingItem[], controlPages: Record<string, string>
 }
 
 /**
+ * A text's line count, split already, not counting the empty element a trailing newline leaves.
+ * @param lines - The text, split into lines.
+ * @returns How many lines the text carries.
+ */
+function countLines(lines: string[]): number {
+  return lines.at(-1) === '' ? lines.length - 1 : lines.length;
+}
+
+/**
  * One page's verdict: its planted copy carries the control copy's line count, and every line that
  * differs from the control falls inside a declared plant span.
  * @param page - The page's repository-relative path.
@@ -293,8 +302,8 @@ function checkSpacing(items: SpacingItem[], controlPages: Record<string, string>
 function checkPage(page: string, control: string, planted: string, declaredLines: Set<number>): PageVerdict {
   const controlLines = control.split('\n');
   const plantedLines = planted.split('\n');
-  const controlCount = controlLines.at(-1) === '' ? controlLines.length - 1 : controlLines.length;
-  const plantedCount = plantedLines.at(-1) === '' ? plantedLines.length - 1 : plantedLines.length;
+  const controlCount = countLines(controlLines);
+  const plantedCount = countLines(plantedLines);
   const reasons: string[] = [];
   if (controlCount !== plantedCount) reasons.push(`line count mismatch: control has ${controlCount}, planted has ${plantedCount}`);
   for (let line = 1; line <= Math.max(controlCount, plantedCount); line += 1) {
@@ -351,9 +360,8 @@ export function checkJobPlants(input: CheckJobPlantsInput): JobValidityResult {
   const pages: PageVerdict[] = [...new Set(plants.map((plant) => plant.page))].map((page) => {
     const control = controlPages[page];
     const planted = plantedPages[page];
-    if (control === undefined || planted === undefined) {
-      return { page, valid: false, reasons: [control === undefined ? `no control page for "${page}"` : `no planted page for "${page}"`] };
-    }
+    if (control === undefined) return { page, valid: false, reasons: [`no control page for "${page}"`] };
+    if (planted === undefined) return { page, valid: false, reasons: [`no planted page for "${page}"`] };
     const declaredLines = new Set<number>();
     for (const plant of plants) {
       if (plant.page !== page) continue;
@@ -397,6 +405,23 @@ function readJobPages(root: string, job: string, pages: string[]): Record<string
     }
   }
   return result;
+}
+
+/**
+ * Read one job's mapping-run finding spans from `<findingsDir>/<job>.json`, grouped by page.
+ * @param findingsDir - The directory the mapping run wrote its findings to.
+ * @param job - The job id.
+ * @returns The job's finding spans by page; empty when the file is missing or unreadable.
+ */
+function readFindingSpans(findingsDir: string, job: string): FindingSpans {
+  try {
+    const raw = JSON.parse(readFileSync(resolve(findingsDir, `${job}.json`), 'utf8')) as { spans: Array<{ page: string; start: number; end: number }> };
+    const byPage: FindingSpans = {};
+    for (const { page, start, end } of raw.spans) (byPage[page] ??= []).push({ start, end });
+    return byPage;
+  } catch {
+    return {};
+  }
 }
 
 /** The `check` subcommand's parsed arguments. */
@@ -466,18 +491,7 @@ export function main(argv: string[]): number {
   const results: JobValidityResult[] = jobIds.map((job) => {
     const jobPlants = allPlants.filter((plant) => plant.job === job);
     const map = JSON.parse(readFileSync(resolve(args.mapsDir, `${job}.json`), 'utf8')) as PathMap;
-    const findingSpans: FindingSpans = args.findingsDir
-      ? (() => {
-          try {
-            const raw = JSON.parse(readFileSync(resolve(args.findingsDir as string, `${job}.json`), 'utf8')) as { spans: Array<{ page: string; start: number; end: number }> };
-            const byPage: FindingSpans = {};
-            for (const { page, start, end } of raw.spans) (byPage[page] ??= []).push({ start, end });
-            return byPage;
-          } catch {
-            return {};
-          }
-        })()
-      : {};
+    const findingSpans = args.findingsDir ? readFindingSpans(args.findingsDir, job) : {};
     const pages = [...new Set(jobPlants.map((plant) => plant.page))];
     const controlPages = readJobPages(resolve(args.controlRoot), job, pages);
     const plantedPages = readJobPages(resolve(args.plantedRoot), job, pages);

@@ -87,9 +87,9 @@ function subjectPhrases(subject: string): string[] {
  * @returns Each item the line names, in item order; a line naming an item more than one way is
  * reported once, on its first match.
  */
-function lineHits(line: string, items: DevItem[]): Array<{ itemId: string; term: string }> {
+function lineHits(line: string, items: DevItem[]): Array<Pick<BanHit, 'itemId' | 'term'>> {
   const normalizedLine = normalize(line);
-  const hits: Array<{ itemId: string; term: string }> = [];
+  const hits: Array<Pick<BanHit, 'itemId' | 'term'>> = [];
   for (const item of items) {
     const idPattern = new RegExp(`\\b${escapeRegExp(item.id)}\\b`);
     if (idPattern.test(line)) {

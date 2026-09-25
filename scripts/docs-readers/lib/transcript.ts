@@ -15,7 +15,6 @@ import type {
   InitCheck,
   JobReport,
   PackageFetch,
-  Quote,
   ReaderReport,
   Step,
   StreamEvent,
@@ -639,18 +638,33 @@ export function classifyFailure(events: StreamEvent[]): Failure | undefined {
 }
 
 /**
+ * Whether a raw value is a non-null object whose fields can be read by name.
+ * @param value - Any parsed JSON value.
+ * @returns Whether the value is an object other than `null`.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Whether an entry carries a well-formed `blockedBy`: the key present, as either a string or
+ * `null` (an item the reader never marked blocked still carries the key, set to `null`; an item
+ * missing the key entirely is malformed).
+ * @param entry - One raw report entry.
+ * @returns Whether the entry's `blockedBy` has the shape a new run's report must give.
+ */
+function hasBlockedBy(entry: Record<string, unknown>): boolean {
+  return 'blockedBy' in entry && (entry.blockedBy === null || typeof entry.blockedBy === 'string');
+}
+
+/**
  * Whether a raw list item is a well-formed stall or assumption entry: its own `text`, and a
- * `blockedBy` key present as either a string or `null` (an item the reader never marked blocked
- * still carries the key, set to `null`; an item missing the key entirely is malformed).
+ * well-formed `blockedBy`.
  * @param item - One raw `stalls[]`/`assumed[]` entry.
  * @returns Whether the item has the shape a new run's report must give.
  */
 function isBlockedEntry(item: unknown): item is BlockedEntry {
-  if (typeof item !== 'object' || item === null) return false;
-  const entry = item as Record<string, unknown>;
-  if (typeof entry.text !== 'string') return false;
-  if (!('blockedBy' in entry)) return false;
-  return entry.blockedBy === null || typeof entry.blockedBy === 'string';
+  return isRecord(item) && typeof item.text === 'string' && hasBlockedBy(item);
 }
 
 /**
@@ -660,24 +674,23 @@ function isBlockedEntry(item: unknown): item is BlockedEntry {
  * @returns Whether the item has the shape a new run's report must give.
  */
 function isStepEntry(item: unknown): item is Step {
-  if (typeof item !== 'object' || item === null) return false;
-  const entry = item as Record<string, unknown>;
-  if (typeof entry.decision !== 'string') return false;
-  return typeof entry.quote === 'object' && entry.quote !== null;
+  return isRecord(item) && typeof item.decision === 'string' && isRecord(item.quote);
 }
 
 /**
  * Whether a raw list item is a well-formed divergence entry: a quote for the page the reader
- * diverged from, what it did instead, why, and the same `blockedBy` shape `isBlockedEntry` checks.
+ * diverged from, what it did instead, why, and a well-formed `blockedBy`.
  * @param item - One raw `diverged[]` entry.
  * @returns Whether the item has the shape a new run's report must give.
  */
 function isDivergedEntry(item: unknown): item is Diverged {
-  if (typeof item !== 'object' || item === null) return false;
-  const entry = item as Record<string, unknown>;
-  if (typeof entry.didInstead !== 'string' || typeof entry.why !== 'string') return false;
-  if (!('blockedBy' in entry) || !(entry.blockedBy === null || typeof entry.blockedBy === 'string')) return false;
-  return typeof entry.quote === 'object' && entry.quote !== null;
+  return (
+    isRecord(item) &&
+    typeof item.didInstead === 'string' &&
+    typeof item.why === 'string' &&
+    hasBlockedBy(item) &&
+    isRecord(item.quote)
+  );
 }
 
 /**
@@ -703,15 +716,7 @@ export function readerReport(events: StreamEvent[]): ReaderReport | undefined {
   if (!stalls || !assumed || !quotes || !ruleCandidates || !steps || !diverged) return undefined;
   if (!stalls.every(isBlockedEntry) || !assumed.every(isBlockedEntry)) return undefined;
   if (!steps.every(isStepEntry) || !diverged.every(isDivergedEntry)) return undefined;
-  return {
-    outcome: output.outcome,
-    stalls: stalls as BlockedEntry[],
-    assumed: assumed as BlockedEntry[],
-    quotes: quotes as Quote[],
-    ruleCandidates: ruleCandidates as string[],
-    steps: steps as Step[],
-    diverged: diverged as Diverged[],
-  };
+  return { outcome: output.outcome, stalls, assumed, quotes, ruleCandidates, steps, diverged };
 }
 
 /**

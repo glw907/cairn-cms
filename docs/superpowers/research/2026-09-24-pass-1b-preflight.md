@@ -98,3 +98,52 @@ output is committed under `scripts/docs-readers/post-freeze/scores/`. The agreem
 Fifteen items per stratum where the pool allows. `judge-packets.ts agreement` reads it and emits
 per item only the `itemId` and the material to re-rule, never `primaryLabel`, `runId`, or
 `jobId`. Fable's rulings come back as a separate file; the sample is never mutated.
+
+## Segment 2 pins (added at the segment 1 close)
+
+These formats cross Tasks 4, 5, 6, and 8, so the conductor fixed them before any of those tasks
+started.
+
+**Path map** (Task 4 writes, Task 5 and the planter read), one file per job:
+
+```json
+{
+  "job": "…", "verifiedRuns": 3, "mode": "steps|proxy",
+  "pages": { "<path>": { "lines": 212, "sections": [
+    { "heading": "…", "level": 2, "start": 14, "end": 40, "quotes": 5, "runs": 3 }
+  ] } },
+  "ranges": { "<path>": [[a, b]] },
+  "onPathShare": 0.41, "narrowed": false, "widened": false, "capacity": 7,
+  "noMap": null
+}
+```
+
+`sections` lists the on-path sections with 1-based inclusive line spans. `ranges` is present only
+when the ceiling narrowed the map, and then it is the plantable region. `noMap` carries the reason
+when the job has no map.
+
+**Mapping-run finding spans** (Task 12 writes, the planter and Task 5 read), one file per job:
+`{ "job": "…", "spans": [ { "page": "…", "start": n, "end": n } ] }`.
+
+**Plants** (the planter writes, Task 5's validity script, the plant check, Task 2's overlay, and
+Task 6's catch packets read): `plants.json`, an array of `{ id, job, page, line, type, semantic,
+subject, original, planted, proof, criterion, nearMiss }`. `type` is one of
+`false-behavior | contradiction | precondition-or-ordering | removed-step | undefined-term |
+wrong-name | stale-path`, and `semantic` is true for the first three. The planted pages sit beside
+it at `planted/<job>/<page path>`, which is the overlay layout preparation already reads.
+
+**Plant check output**: `check.json`, an array of `{ plantId, proofHolds, sharesSubjectWith,
+reason }`, where `sharesSubjectWith` is a development item id or null.
+
+**Blind input directory** (the frozen wrapper's `<dir>`): the planter gets `export/` (the
+planter's export), `maps/<job>.json`, `avoid/<job>.json`, and `jobs.json` (`[{ job, class,
+pages, absent }]`), and it writes to `out/`. The plant check gets `export/`, `plants.json`, and
+`dev-items.json`, and it writes `out/check.json`.
+
+**Task 8 outputs** under `scripts/docs-readers/prompts/`: `catch-judge.md`, `adjudicator.md`,
+`agreement.md` (each a prompt with its rubric), `planter.md`, `plant-check.md`, `plant-types.md`;
+the criteria at `prompts/criteria/dev-plants.json` (P01 to P17: `{ id, page, line, subject,
+criterion, nearMiss }`) and `prompts/criteria/heldout.json` (the nine held-out defects: `{ id,
+page, commit, subject, criterion, nearMiss }`); the proxy-scoring list at
+`scripts/docs-readers/fixtures/dev-plants.json` (`{ id, job, page, line }`). The criteria are
+development inputs that only judges read.

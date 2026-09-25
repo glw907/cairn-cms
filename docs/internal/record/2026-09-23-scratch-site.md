@@ -226,9 +226,10 @@ missed. Unit-tested: a live owner's run-id and scratch directories both survive 
 podman query issued for them at all; a dead owner's (or a missing marker's, treated the same as
 dead) directory is reaped along with its own containers and network.
 
-## Teardown for pass 2a's close
+## Teardown at the last docs-and-binary drafting pass
 
-Not run in this task; recorded here as the procedure pass 2a's close follows.
+Not run in this task; recorded here as the procedure the last drafting pass that runs
+`docs-and-binary` readers follows at its close.
 
 1. **Dry-run listing** (no deletion): `gh api repos/glw907/cairn-scratch-b` (confirms the
    repository still exists and its current default-branch commit); `npx wrangler deployments list

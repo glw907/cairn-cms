@@ -90,7 +90,7 @@ amendment 2). Reader and judge concurrency is 4, backing off on `rateLimit` (pas
 - **Blindness.** The planting-prompt author and the planter never see a development record
   (`docs/internal/record/2026-09-23-docs-reset-{validation,planted-defects,baseline}.md`, pass A's
   plan and ground truth), a job text, a reader prompt, or a report. The plant check sees the plant
-  record, the code export, and the development items' subjects only. Each blind agent works in a
+  record, the code export, and `dev-items.json` (id, subject, page) only. Each blind agent works in a
   scratch directory holding copies of its granted inputs, and after it returns, Task 6's transcript
   audit runs over its transcript; a hit invalidates its output (spec, "Blindness is audited").
   After the freeze, a blind agent's dispatch is the fixed wrapper "Read `<frozen path>` (sha256
@@ -155,8 +155,11 @@ plan and pins each open choice in the dispatch. The same pre-flight runs again b
 - One `sonnet` agent at `medium`, which may read the development records, extracts
   `scripts/docs-readers/fixtures/dev-items.json`: each of the 50 development items' id, one-line
   subject, and page.
-- The spec folds' scratch simulations (`/tmp/claude-1000/fold2/*.py`) and the mechanics review's
-  probes are copied under `docs/superpowers/research/2026-09-24-pass-1b-sims/` and committed.
+- The spec folds' scratch simulations are committed at plan approval under
+  `docs/superpowers/research/2026-09-24-pass-1b-sims/` (tmpfs would lose them); Task 0 confirms
+  they rerun.
+- The pre-flight pins the chain file's path (shared by Tasks 3 and 5) and the agreement sample
+  file's format (Task 6 builds from it, Task 7 writes it) into both dispatches.
 - A script confirms every development page is byte-identical between pass 1's validation commit
   and the `3a7485dd` pin.
 
@@ -251,7 +254,8 @@ ordering is the one leak the mechanics review found.
 2. **Gated batches.** Before any container starts, `run.ts` refuses a batch marked gated when
    verification fails. The runner stamps `freeze: { tag, manifestHash, chainHead }` into every
    report of a gated batch and leaves the field unset on an ungated one; the chain head is the
-   sha256 of the chain file (Task 5) when it exists. After a run, the init event's model id is
+   sha256 of the chain file (Task 5), which Task 11 creates with a genesis entry at the freeze, so
+   every gated report carries a head. After a run, the init event's model id is
    compared with the manifest, and a mismatched run is unverified.
 3. **The automatic rerun.** An unverified, crashed, timed-out, or report-less run gets exactly one
    rerun in the same batch. Every attempt is kept with its cause, and the final attempt is marked.
@@ -371,6 +375,8 @@ tests.
 - A fixture run whose only mention of a plant is in `ruleCandidates[]` yields a catch packet
   without it; a packet contains no model id, run id, batch name, or `modelUsage` key; `checks[]` is
   present only when non-empty.
+- A held-out catch packet (a pre-fix contract page, a held-out criterion, a fixture run) builds
+  and passes the same checks as a planted-run packet.
 - A fixture judge output missing one item's ruling is unverified and rerun once.
 - The ledger script's total over a fixture session with a repeated message id counts it once and
   reports cache reads apart.
@@ -435,7 +441,8 @@ tests.
 **Acceptance.**
 - The ban grep passes every judge and planting prompt; the criteria files are development inputs,
   read only by judges, and never enter a reader or planter input.
-- The planting-prompt author's transcript audit is clean.
+- The planting-prompt author's transcript audit is clean, run once Task 6's audit script has
+  merged (lane B), before the freeze.
 - A `diff-reviewer` read of both sets against the spec's "Scoring" and "Planting" and the bans,
   given the full development-item list, returns accept.
 
@@ -443,7 +450,8 @@ tests.
 
 **Conductor-run.** The judges, as ungated runner batches, rule pass 1's saved Opus reports (catch
 judge on its planted runs, adjudicator on its control runs), and the scorer, in development mode,
-rescores them under the proxy map.
+rescores them under the proxy map. Pass 1's jobs carry no absent lists, so Task 2's derivation
+is run over pass 1's prepared trees first and the derived lists are named in the round-0 record.
 
 **Acceptance.**
 - Round 0's record, `docs/internal/record/2026-09-24-docs-reset-1b-tuning.md`, gives each
@@ -475,13 +483,18 @@ spec's "Freeze" list.
 - The manifest lists by path every input in the spec's list, including each prompt, rubric,
   criteria file, and script from Tasks 1 to 8; the reviewer names none missing.
 - A dry `freeze.ts --verify` passes on the tagged tree.
+- The chain file exists with a genesis entry (the manifest hash) committed with the tag, and a
+  fixture report stamped against it passes the scorer's gated-mode integrity check.
+- The three held-out catch packets (pre-fix page plus held-out criterion) are built dry from a
+  fixture run and pass the packet checks, before the tag.
 - Checkpoint: ledger with the session ledger's figure, STATUS line, and the flag check.
 
 ### Task 12: Mapping
 
 **Conductor-run.** The runner runs the gated mapping batch: each development job three times on
 `claude-opus-5-5` on control pages, plus the scripter's three held-out runs on the pre-fix pins.
-`path-map.ts` builds each job's map, and the maps, the batch's results index, and the finding spans
+The held-out runs carry their own job id (`scripter-heldout`), which `path-map.ts`, the precision
+pool, and the adjudicator skip. `path-map.ts` builds each job's map, and the maps, the batch's results index, and the finding spans
 to avoid enter the chain.
 
 **Acceptance.**

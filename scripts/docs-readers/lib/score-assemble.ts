@@ -107,12 +107,30 @@ export interface JobKeyRef {
 }
 
 /**
+ * Whether a candidate job's own final attempt names an Opus model, defaulting to true (never
+ * silently dropped) when the job carries `attempts[]` with none marked final, since that shape is
+ * itself malformed and this helper never decides whether a malformed job is fatal.
+ * @param job - The candidate job report.
+ * @returns True when the job's final attempt is Opus, or when its final attempt cannot be read.
+ */
+function candidateIsOpus(job: JobReport): boolean {
+  try {
+    const { outcome } = finalOutcome(job);
+    return isOpusModel(outcome.initModel ?? job.model);
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Index every job across a set of reader batch reports: parse its id, validate and resolve its
  * class, and take its final outcome. A job id that appears in more than one report (pass 1's
  * `validation` and `validation-rerun` can share ids such as `operator-control-1`) is resolved by
  * `keyRefs`: the one candidate a judge key's own `report.path`/`runId` names is kept, and every
  * other candidate is listed in `notes` as superseded, never picked by argument order. A duplicate
- * id with no key, or whose keys name none or more than one of its candidates, is refused.
+ * id with no key, or whose keys name none or more than one of its candidates, is refused, unless
+ * every one of its candidates is a non-Opus run (round 0 never judges a Sonnet run, so no key can
+ * ever resolve one); then every copy is dropped and `notes` carries the id instead.
  * @param reports - Every loaded reader batch report, with the file path it came from.
  * @param validClassNames - The four scoring class ids.
  * @param keyRefs - Every catch-judge and adjudicator key's own report trace, used to resolve a duplicate job id.
@@ -151,12 +169,13 @@ export function indexReaderJobs(
     } else {
       const refs = refsById.get(id) ?? [];
       const matches = candidates.filter((candidate) => refs.some((ref) => ref.reportPath === candidate.reportPath && ref.runId === candidate.batchRunId));
-      if (refs.length === 0) {
-        problems.push(`job "${id}": appears in ${candidates.length} reports (${candidates.map((c) => c.reportPath).join(', ')}) with no judge key to resolve which copy to score`);
-        continue;
-      }
-      if (matches.length !== 1) {
-        problems.push(`job "${id}": appears in ${candidates.length} reports (${candidates.map((c) => c.reportPath).join(', ')}); no judge key names exactly one of them`);
+      if (refs.length === 0 || matches.length !== 1) {
+        const reason = refs.length === 0 ? 'with no judge key to resolve which copy to score' : 'no judge key names exactly one of them';
+        if (!candidates.some((candidate) => candidateIsOpus(candidate.job))) {
+          notes.push(`job "${id}": appears in ${candidates.length} reports (${candidates.map((c) => c.reportPath).join(', ')}) ${reason}; no copy is an Opus run, so every copy is dropped`);
+          continue;
+        }
+        problems.push(`job "${id}": appears in ${candidates.length} reports (${candidates.map((c) => c.reportPath).join(', ')}) ${reason}`);
         continue;
       }
       chosen = matches[0];

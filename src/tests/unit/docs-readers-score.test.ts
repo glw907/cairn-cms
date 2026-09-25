@@ -986,4 +986,69 @@ describe('score.ts gated', () => {
     const classes = result.classes as Array<{ verdict: string }>;
     expect(classes.every((cls) => cls.verdict === 'advisory')).toBe(true);
   });
+
+  it('gives a held-out run the same empty dependsOn as a mapping run, so a chain head from before the plant record still scores', () => {
+    // A held-out run lives inside the gated mapping batch, whose chain head predates the plant
+    // record, the same as a mapping (control) run's own chain head here; neither depends on it.
+    const chainHeadBeforePlants = chainHeadAfterThresholds;
+    const { args, outPath, reportPath } = buildGatedArgs({});
+
+    const report = JSON.parse(readFileSync(reportPath, 'utf8')) as { jobs: Array<{ id: string; freeze: { chainHead: string } }> };
+    const mappingJob = report.jobs.find((j) => j.id === 'evaluator-control-1')!;
+    mappingJob.freeze.chainHead = chainHeadBeforePlants;
+    report.jobs.push({
+      id: 'scripter-heldout-1',
+      class: 'repository',
+      model: 'claude-opus-5-5',
+      outcome: 'done',
+      verified: VERIFIED,
+      freeze: { tag: manifestTag, manifestHash, chainHead: chainHeadBeforePlants },
+    } as unknown as { id: string; freeze: { chainHead: string } });
+    writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+
+    const heldoutRulingsPath = writeJsonFile('heldout-catch-rulings.json', {
+      batch: 'gated-catch',
+      runId: 'r',
+      kind: 'catchJudge',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [{ id: 'scripter-heldout-1', class: 'judge-catch', model: 'claude-opus-5-5', outcome: 'done', rulings: [{ itemId: 'plant-1', ruling: 'caught', reason: 'r' }], usage: USAGE, verified: { ok: true, init: true, canaries: true, problems: [] }, freeze: freezeStamp() }],
+    });
+    appendEntry(chainPath, { path: 'heldout-catch-rulings.json', sha256: hashFile(heldoutRulingsPath), commit: 'c-heldout-catch-rulings' });
+    const heldoutKeyPath = writeJsonFile('heldout-catch-key.json', {
+      kind: 'catch',
+      builtFrom: 'sources',
+      report: { path: reportPath, jobId: 'scripter-heldout-1', attempt: 1, runId: 'r' },
+      plants: { 'plant-1': { plantId: 'HELD-1' } },
+      items: {},
+      inputs: {},
+    });
+    appendEntry(chainPath, { path: 'heldout-catch-key.json', sha256: hashFile(heldoutKeyPath), commit: 'c-heldout-catch-key' });
+
+    args.push('--catch-rulings', heldoutRulingsPath, '--catch-key', heldoutKeyPath);
+    args[args.indexOf('--heldout-ids') + 1] = 'HELD-1';
+
+    const code = main(args);
+    const result = readOut(outPath);
+    expect(code).toBe(0);
+    expect(result.ok).toBe(true);
+    expect(result.heldOut).toEqual([{ id: 'HELD-1', caughtCount: 1, found: false }]);
+  });
+
+  it('still refuses a planted job whose own chain head predates the plant record', () => {
+    const chainHeadBeforePlants = chainHeadAfterThresholds;
+    const { args, outPath, reportPath } = buildGatedArgs({});
+
+    const report = JSON.parse(readFileSync(reportPath, 'utf8')) as { jobs: Array<{ id: string; freeze: { chainHead: string } }> };
+    const plantedJob = report.jobs.find((j) => j.id === 'evaluator-planted-1')!;
+    plantedJob.freeze.chainHead = chainHeadBeforePlants;
+    writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+
+    const code = main(args);
+    expect(code).toBe(1);
+    const problems = readOut(outPath).problems as string[];
+    expect(problems.some((p) => p.includes('evaluator-planted-1') && p.includes('plants.json') && p.includes('postdates'))).toBe(true);
+  });
 });

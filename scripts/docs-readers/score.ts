@@ -520,17 +520,18 @@ function runGated(argv: string[]): number {
 
   // The chain dependency the scorer can actually verify for a planted-run report is the
   // thresholds file and the plant record (both recomputed or planted after the freeze and before
-  // any planted run, per the spec's sequence); a heldout-run report depends on the plant record
-  // alone; a control/mapping-run report depends on nothing past genesis. The planted batch file
-  // and each planted tree's digest the spec also names are not read by this scorer, so they are
-  // not separately checked here.
+  // any planted run, per the spec's sequence); a held-out or control/mapping-run report depends on
+  // nothing past genesis, since a held-out run runs inside the gated mapping batch, whose chain
+  // head predates the plant record, and never reads it. The planted batch file and each planted
+  // tree's digest the spec also names are not read by this scorer, so they are not separately
+  // checked here.
   const thresholdsRelPath = relative(resolve(root), resolve(thresholdsPath));
   const plantsRelPath = relative(resolve(root), resolve(plantsPath));
   const chainChecks: GatedChainCheck[] = [];
   for (const { path, report } of reports) {
     for (const job of report.jobs) {
       const parsed = parseReaderJobId(job.id);
-      const dependsOn = parsed?.role === 'planted' ? [thresholdsRelPath, plantsRelPath] : parsed?.role === 'heldout' ? [plantsRelPath] : [];
+      const dependsOn = parsed?.role === 'planted' ? [thresholdsRelPath, plantsRelPath] : [];
       chainChecks.push({ label: `${path} (job ${job.id})`, chainHead: job.freeze!.chainHead, dependsOn });
     }
   }

@@ -168,6 +168,15 @@ describe('indexReaderJobs', () => {
     expect(problems[0]).toContain('operator-control-1');
   });
 
+  it('drops every copy and notes the id, never refusing, when a duplicate id with no key is Sonnet on every copy', () => {
+    const reportA = batchReport([job({ id: 'evaluator-control-1', model: 'claude-sonnet-5' })], { runId: 'run-a' });
+    const reportB = batchReport([job({ id: 'evaluator-control-1', model: 'claude-sonnet-5' })], { runId: 'run-b' });
+    const { byId, problems, notes } = indexReaderJobs([at('a.json', reportA), at('b.json', reportB)], VALID_CLASSES);
+    expect(problems).toHaveLength(0);
+    expect(byId.has('evaluator-control-1')).toBe(false);
+    expect(notes[0]).toContain('evaluator-control-1');
+  });
+
   it('refuses a duplicate job id whose keys name neither candidate', () => {
     const reportA = batchReport([job({ id: 'operator-control-1' })], { runId: 'run-a' });
     const reportB = batchReport([job({ id: 'operator-control-1' })], { runId: 'run-b' });

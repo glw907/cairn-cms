@@ -46,3 +46,11 @@ Review findings routed from one task to a later one during segments 1 and 2. Eac
 
 ## Carried to the next session's start (the CLI version)
 - The host CLI auto-updated to 2.1.282 during segment 2; `scripts/docs-readers/init-baseline.json` pins 2.1.280 and 2.1.281 only, so a new run is unverified (`init: no pinned init baseline for CLI 2.1.282`). Before Task 9, pin the baseline with `run.ts --probe-init` (the way pass 1 pinned 2.1.281) and rebuild the image. After the freeze, a CLI change drifts the manifest's `cliVersion` and `imageId`, so every gated batch refuses and the plants burn: host auto-update must stay off from the freeze to the close.
+
+## Carried from the Task 7 reviews (session 2026-09-25)
+- Task 11: pass `--seed oc-curve=20260924` to `freeze.ts build`; the scorer refuses a thresholds file whose `seed` differs from `manifest.seeds["oc-curve"]`.
+- Task 11 freeze-readiness review: the scorer does not order-check the planted batch file or the planted tree digests against the chain; check that order there.
+- Task 15: pass the nine held-out ids from `prompts/criteria/heldout.json` as `--heldout-ids` (required in gated mode).
+- Task 15: gated mode requires an adjudicator key and rulings for every mapping run, including one left unverified after its rerun (whose raw items R3 counts); include unverified mapping runs in the adjudicator batch.
+- Task 15 record author: the class-level reason for a null pooled threshold is generic (`score-verdict.ts:43`); the specific reason is on `pooledSensitivity.reason`.
+- Gate: every chain gate in this pass adds `CAIRN_GATE_MEMORY_MAX=6G CAIRN_GATE_MEMORY_HIGH=5G`; the light lane's 3G cap OOMs `svelte-check` at this repository's size.

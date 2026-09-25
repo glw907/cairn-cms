@@ -1,15 +1,15 @@
 {
   "batch": "round0-adjudicator",
-  "runId": "20260925t174516-7394e3",
+  "runId": "20260925t182654-35eb92",
   "kind": "adjudicator",
   "stopReason": "complete",
   "budgetTokens": 2000000,
   "usage": {
-    "input": 3522,
-    "output": 36206,
-    "cacheCreation": 262265,
-    "cacheRead": 1235436,
-    "counted": 301993
+    "input": 3430,
+    "output": 29036,
+    "cacheCreation": 173425,
+    "cacheRead": 1141819,
+    "counted": 205891
   },
   "jobs": [
     {
@@ -22,39 +22,39 @@
         {
           "itemId": "item-1",
           "class": "finding",
-          "subjectGroupId": "linked-pages-withheld-from-reader",
+          "subjectGroupId": "g1",
           "ruling": "harness",
-          "reason": "Every page named (admin/own-your-domain.md, admin/invite-editors.md, extend/upgrade-cairn.md, docs/reference/, CHANGELOG.md) is on job.json's absentList. They exist in the tree, and own-your-domain.md does cover Email Sending onboarding at lines 30 and 106-117. The reader stalled because the harness withheld those pages, not because the docs are missing anything."
+          "reason": "The linked pages (docs/admin/own-your-domain.md, docs/admin/invite-editors.md, docs/extend/upgrade-cairn.md, docs/reference/*, CHANGELOG.md) all appear in the job's absentList, so the reader's export left them out on purpose. They exist in the published tree (e.g. tree/docs/admin/own-your-domain.md). The claim comes from the environment, not from a page."
         },
         {
           "itemId": "item-2",
           "class": "interpretation",
-          "reason": "This is how the reader framed 'co-editor' in the task, and the docs back it: before-you-start.md:83-86 says adding any editor besides you needs your own domain connected plus Cloudflare Email Sending turned on. It is a sound reading of the scenario, not a claim about a defect."
+          "reason": "This is how the reader read the job's 'co-editor' scenario, as a second person who signs in. The docs back that reading (docs/admin/before-you-start.md:83-84), and the item makes no claim that a page was wrong or silent."
         },
         {
           "itemId": "item-3",
           "class": "finding",
-          "subjectGroupId": "email-sending-cost-unpriced",
+          "subjectGroupId": "g2",
           "ruling": "real",
-          "reason": "Email Sending is required for a second editor (before-you-start.md:83-86), but the 'What it costs' section (before-you-start.md:48-79) prices only Workers Paid, the domain, the token and the certificate. It says nothing about Email Sending. why-cairn.md:87 calls that section 'the complete cost picture', and what-the-scaffold-wrote.md:114 sends readers there for 'what each binding costs', including EMAIL. A search of all docs found no price for Email Sending anywhere. The reader's guess that it costs something is unverified, but the gap they point to is real."
+          "reason": "docs/admin/before-you-start.md:48-79 ('What it costs') and docs/admin/own-your-domain.md:90-108 price Workers Paid and the domain, but never say whether Email Sending has its own cost or quota. A search of the published tree turns up no such statement, only the bare code name `reason.park.email-daily-limit` at docs/reference/cli-cairn-json-output.md:133. The code has a real daily sending limit: tool/internal/spine/park.go:20 and packages/create-cairn-site/src/cloudflare/chapter2.mjs:749. The job asked for day-to-day cost, so it needed this fact."
         },
         {
           "itemId": "item-4",
           "class": "interpretation",
-          "reason": "This extrapolates future upgrade effort from the size of the 0.97.0 section in migration-notes.md. The docs say only that seams still move before 1.0 and that upgrades need checking (why-cairn.md:58-61). They make no claim about how large future releases will be, so this is the reader's own inference."
+          "reason": "The reader guessed at future release sizes to form a verdict. It makes no claim that a page was wrong or left out a fact that could be stated."
         },
         {
           "itemId": "item-5",
           "class": "interpretation",
-          "reason": "This is a choice about the reader's role in the scenario. before-you-start.md:98-99 puts engine upgrades on 'someone who can write and ship code'. Deciding that the reader is that person is a reading of the task, not a claim about the docs."
+          "reason": "This is the reader's choice of role in the job's scenario (acting as its own developer). It is a scope decision, not a claim against the docs."
         }
       ],
       "usage": {
         "input": 20,
-        "output": 2993,
-        "cacheCreation": 38307,
-        "cacheRead": 102609,
-        "counted": 41320
+        "output": 2447,
+        "cacheCreation": 13166,
+        "cacheRead": 104479,
+        "counted": 15633
       },
       "verified": {
         "ok": true,
@@ -70,39 +70,39 @@
             {
               "itemId": "item-1",
               "class": "finding",
-              "subjectGroupId": "linked-pages-withheld-from-reader",
+              "subjectGroupId": "g1",
               "ruling": "harness",
-              "reason": "Every page named (admin/own-your-domain.md, admin/invite-editors.md, extend/upgrade-cairn.md, docs/reference/, CHANGELOG.md) is on job.json's absentList. They exist in the tree, and own-your-domain.md does cover Email Sending onboarding at lines 30 and 106-117. The reader stalled because the harness withheld those pages, not because the docs are missing anything."
+              "reason": "The linked pages (docs/admin/own-your-domain.md, docs/admin/invite-editors.md, docs/extend/upgrade-cairn.md, docs/reference/*, CHANGELOG.md) all appear in the job's absentList, so the reader's export left them out on purpose. They exist in the published tree (e.g. tree/docs/admin/own-your-domain.md). The claim comes from the environment, not from a page."
             },
             {
               "itemId": "item-2",
               "class": "interpretation",
-              "reason": "This is how the reader framed 'co-editor' in the task, and the docs back it: before-you-start.md:83-86 says adding any editor besides you needs your own domain connected plus Cloudflare Email Sending turned on. It is a sound reading of the scenario, not a claim about a defect."
+              "reason": "This is how the reader read the job's 'co-editor' scenario, as a second person who signs in. The docs back that reading (docs/admin/before-you-start.md:83-84), and the item makes no claim that a page was wrong or silent."
             },
             {
               "itemId": "item-3",
               "class": "finding",
-              "subjectGroupId": "email-sending-cost-unpriced",
+              "subjectGroupId": "g2",
               "ruling": "real",
-              "reason": "Email Sending is required for a second editor (before-you-start.md:83-86), but the 'What it costs' section (before-you-start.md:48-79) prices only Workers Paid, the domain, the token and the certificate. It says nothing about Email Sending. why-cairn.md:87 calls that section 'the complete cost picture', and what-the-scaffold-wrote.md:114 sends readers there for 'what each binding costs', including EMAIL. A search of all docs found no price for Email Sending anywhere. The reader's guess that it costs something is unverified, but the gap they point to is real."
+              "reason": "docs/admin/before-you-start.md:48-79 ('What it costs') and docs/admin/own-your-domain.md:90-108 price Workers Paid and the domain, but never say whether Email Sending has its own cost or quota. A search of the published tree turns up no such statement, only the bare code name `reason.park.email-daily-limit` at docs/reference/cli-cairn-json-output.md:133. The code has a real daily sending limit: tool/internal/spine/park.go:20 and packages/create-cairn-site/src/cloudflare/chapter2.mjs:749. The job asked for day-to-day cost, so it needed this fact."
             },
             {
               "itemId": "item-4",
               "class": "interpretation",
-              "reason": "This extrapolates future upgrade effort from the size of the 0.97.0 section in migration-notes.md. The docs say only that seams still move before 1.0 and that upgrades need checking (why-cairn.md:58-61). They make no claim about how large future releases will be, so this is the reader's own inference."
+              "reason": "The reader guessed at future release sizes to form a verdict. It makes no claim that a page was wrong or left out a fact that could be stated."
             },
             {
               "itemId": "item-5",
               "class": "interpretation",
-              "reason": "This is a choice about the reader's role in the scenario. before-you-start.md:98-99 puts engine upgrades on 'someone who can write and ship code'. Deciding that the reader is that person is a reading of the task, not a claim about the docs."
+              "reason": "This is the reader's choice of role in the job's scenario (acting as its own developer). It is a scope decision, not a claim against the docs."
             }
           ],
           "usage": {
             "input": 20,
-            "output": 2993,
-            "cacheCreation": 38307,
-            "cacheRead": 102609,
-            "counted": 41320
+            "output": 2447,
+            "cacheCreation": 13166,
+            "cacheRead": 104479,
+            "counted": 15633
           },
           "verified": {
             "ok": true,
@@ -126,42 +126,48 @@
         {
           "itemId": "item-1",
           "class": "finding",
-          "subjectGroupId": "item-1",
+          "subjectGroupId": "g1",
           "ruling": "harness",
-          "reason": "The pages it calls missing are all in the tree: docs/admin/create-your-site.md, own-your-domain.md, invite-editors.md, docs/extend/upgrade-cairn.md, docs/reference/* and CHANGELOG.md. The stall came from what the reviewer's environment could see, not from a gap in the docs."
+          "reason": "The linked pages (admin/create-your-site.md, own-your-domain.md, invite-editors.md, extend/upgrade-cairn.md, reference/*, CHANGELOG.md) are on the job's absentList and do exist in the published tree, e.g. tree/docs/admin/own-your-domain.md. The reader could not open them only because its export left them out."
         },
         {
           "itemId": "item-2",
           "class": "interpretation",
-          "reason": "This assumes a reader's current stack has no comparable cost. It is a judgment about the reader's situation, not a checkable claim about the docs."
+          "reason": "This is the reader's own baseline for comparing cairn with some other stack. It says nothing about any page being wrong or silent on a fact about cairn."
         },
         {
           "itemId": "item-3",
           "class": "interpretation",
-          "reason": "This is the reviewer's reading of what 'co-editor' means in the scenario. It is a premise, not a claim about the docs."
+          "reason": "The job text names 'you and a co-editor', and the reader chose to treat the co-editor as someone who signs in. before-you-start.md:83-85 states what that requires, so the item makes no claim against the docs."
         },
         {
           "itemId": "item-4",
-          "class": "interpretation",
-          "reason": "This is stated as an assumption made because no price was found. A search of the docs found no stated price for Email Sending either, so it stays an unverified premise."
+          "class": "finding",
+          "subjectGroupId": "g2",
+          "ruling": "false",
+          "reason": "own-your-domain.md:92-101 prices turning on sign-in email as Workers Paid, $5 a month, the plan the site already needs. before-you-start.md:48-79 gives the full cost list and flags only the certificate as unconfirmed. The docs therefore settle that Email Sending adds no separate charge beyond Workers Paid."
         },
         {
           "itemId": "item-5",
-          "class": "interpretation",
-          "reason": "This is an assumption made because no latency figure was given. It is a premise, not a claim about the docs."
+          "class": "finding",
+          "subjectGroupId": "g3",
+          "ruling": "false",
+          "reason": "editors/publish-and-history.md:23-24 answers this: after publishing, 'The live site is rebuilding,' which 'usually takes a moment'. why-cairn.md:23-24 also says the site deploys the way any push does."
         },
         {
           "itemId": "item-6",
-          "class": "interpretation",
-          "reason": "This infers release cadence from the span of the migration record, and the item itself says no cadence is stated. It is an inference, not a verifiable claim."
+          "class": "finding",
+          "subjectGroupId": "g4",
+          "ruling": "false",
+          "reason": "The job needed the day-to-day upgrade cost. admin/what-to-run-and-when.md:17-35 covers it: 'most releases touch nothing you would notice', 'Most weeks, nothing on this page needs your attention', and act only on a 'Consumers must:' changelog line. A fixed release cadence is not needed to judge that cost."
         }
       ],
       "usage": {
-        "input": 14,
-        "output": 1849,
-        "cacheCreation": 7431,
-        "cacheRead": 46868,
-        "counted": 9294
+        "input": 26,
+        "output": 3631,
+        "cacheCreation": 21844,
+        "cacheRead": 202112,
+        "counted": 25501
       },
       "verified": {
         "ok": true,
@@ -173,74 +179,52 @@
         {
           "initModel": "claude-opus-5-5",
           "outcome": "done",
-          "rulings": [],
-          "usage": {
-            "input": 12,
-            "output": 840,
-            "cacheCreation": 11061,
-            "cacheRead": 38192,
-            "counted": 11913
-          },
-          "verified": {
-            "ok": false,
-            "init": true,
-            "canaries": true,
-            "problems": [
-              "item item-1: no ruling",
-              "item item-2: no ruling",
-              "item item-3: no ruling",
-              "item item-4: no ruling",
-              "item item-5: no ruling",
-              "item item-6: no ruling"
-            ]
-          },
-          "cause": "initial",
-          "final": false,
-          "transcript": "transcripts/evaluator-control-2-attempt1.jsonl"
-        },
-        {
-          "initModel": "claude-opus-5-5",
-          "outcome": "done",
           "rulings": [
             {
               "itemId": "item-1",
               "class": "finding",
-              "subjectGroupId": "item-1",
+              "subjectGroupId": "g1",
               "ruling": "harness",
-              "reason": "The pages it calls missing are all in the tree: docs/admin/create-your-site.md, own-your-domain.md, invite-editors.md, docs/extend/upgrade-cairn.md, docs/reference/* and CHANGELOG.md. The stall came from what the reviewer's environment could see, not from a gap in the docs."
+              "reason": "The linked pages (admin/create-your-site.md, own-your-domain.md, invite-editors.md, extend/upgrade-cairn.md, reference/*, CHANGELOG.md) are on the job's absentList and do exist in the published tree, e.g. tree/docs/admin/own-your-domain.md. The reader could not open them only because its export left them out."
             },
             {
               "itemId": "item-2",
               "class": "interpretation",
-              "reason": "This assumes a reader's current stack has no comparable cost. It is a judgment about the reader's situation, not a checkable claim about the docs."
+              "reason": "This is the reader's own baseline for comparing cairn with some other stack. It says nothing about any page being wrong or silent on a fact about cairn."
             },
             {
               "itemId": "item-3",
               "class": "interpretation",
-              "reason": "This is the reviewer's reading of what 'co-editor' means in the scenario. It is a premise, not a claim about the docs."
+              "reason": "The job text names 'you and a co-editor', and the reader chose to treat the co-editor as someone who signs in. before-you-start.md:83-85 states what that requires, so the item makes no claim against the docs."
             },
             {
               "itemId": "item-4",
-              "class": "interpretation",
-              "reason": "This is stated as an assumption made because no price was found. A search of the docs found no stated price for Email Sending either, so it stays an unverified premise."
+              "class": "finding",
+              "subjectGroupId": "g2",
+              "ruling": "false",
+              "reason": "own-your-domain.md:92-101 prices turning on sign-in email as Workers Paid, $5 a month, the plan the site already needs. before-you-start.md:48-79 gives the full cost list and flags only the certificate as unconfirmed. The docs therefore settle that Email Sending adds no separate charge beyond Workers Paid."
             },
             {
               "itemId": "item-5",
-              "class": "interpretation",
-              "reason": "This is an assumption made because no latency figure was given. It is a premise, not a claim about the docs."
+              "class": "finding",
+              "subjectGroupId": "g3",
+              "ruling": "false",
+              "reason": "editors/publish-and-history.md:23-24 answers this: after publishing, 'The live site is rebuilding,' which 'usually takes a moment'. why-cairn.md:23-24 also says the site deploys the way any push does."
             },
             {
               "itemId": "item-6",
-              "class": "interpretation",
-              "reason": "This infers release cadence from the span of the migration record, and the item itself says no cadence is stated. It is an inference, not a verifiable claim."
+              "class": "finding",
+              "subjectGroupId": "g4",
+              "ruling": "false",
+              "reason": "The job needed the day-to-day upgrade cost. admin/what-to-run-and-when.md:17-35 covers it: 'most releases touch nothing you would notice', 'Most weeks, nothing on this page needs your attention', and act only on a 'Consumers must:' changelog line. A fixed release cadence is not needed to judge that cost."
             }
           ],
           "usage": {
-            "input": 14,
-            "output": 1849,
-            "cacheCreation": 7431,
-            "cacheRead": 46868,
-            "counted": 9294
+            "input": 26,
+            "output": 3631,
+            "cacheCreation": 21844,
+            "cacheRead": 202112,
+            "counted": 25501
           },
           "verified": {
             "ok": true,
@@ -248,9 +232,9 @@
             "canaries": true,
             "problems": []
           },
-          "cause": "unverified",
+          "cause": "initial",
           "final": true,
-          "transcript": "transcripts/evaluator-control-2-attempt2.jsonl"
+          "transcript": "transcripts/evaluator-control-2-attempt1.jsonl"
         }
       ]
     },
@@ -264,45 +248,41 @@
         {
           "itemId": "item-1",
           "class": "finding",
-          "subjectGroupId": "bindings-fix-links-lack-send_email",
+          "subjectGroupId": "g1",
           "ruling": "real",
-          "reason": "is-it-working.md:226-227 points to wire-the-delivery-surface.md and reference/cloudflare.md 'for the shape'. Neither page mentions send_email, the EMAIL binding, or even the word email in a binding sense. The actual shape is only in add-cairn-to-a-sveltekit-app.md:131."
+          "reason": "docs/admin/is-it-working.md:224-227 points to wire-the-delivery-surface.md and reference/cloudflare.md 'for the shape', but neither page mentions send_email, EMAIL, d1_databases or AUTH_DB (grep finds none); the shape appears only in add-cairn-to-a-sveltekit-app.md:131 and build-a-site-by-hand.md:612, which the fix section does not link. The page's pointer is wrong."
         },
         {
           "itemId": "item-2",
-          "class": "finding",
-          "subjectGroupId": "harness-bash-permission",
-          "ruling": "harness",
-          "reason": "A Bash call denied by the session's permission settings comes from the test environment, not the docs."
+          "class": "notAClaim",
+          "reason": "Reports only that the sandbox denied a Bash call. It makes no claim that any page was wrong or silent."
         },
         {
           "itemId": "item-3",
           "class": "finding",
-          "subjectGroupId": "report-title-vs-jumplist-title",
+          "subjectGroupId": "g2",
           "ruling": "real",
-          "reason": "is-it-working.md:67 says each report check carries a title 'like `Wrangler bindings`', and the jump list (lines 96-133) uses shortened titles. The doctor prints 'Wrangler bindings are missing' (line 33, conditions.json:107). The same mismatch shows up elsewhere: 'Guard role wiring' vs the printed 'Guard is missing the declared role vocabulary'. So the page's own mapping key doesn't match what readers see."
+          "reason": "is-it-working.md:67 says the report's check title is `Wrangler bindings`, and the jump list at :102 uses that title. The page's own transcript at :33 prints 'Wrangler bindings are missing', which matches the code title in src/lib/diagnostics/conditions.ts:82 and tool/internal/spine/conditions.json:107. The page contradicts itself and the code."
         },
         {
           "itemId": "item-4",
           "class": "finding",
-          "subjectGroupId": "unchecked-actionability",
-          "ruling": "real",
-          "reason": "The page defines UNCHECKED (lines 49-51) but never says whether it needs action. It says that only for INFO ('never a deploy blocker'). The detail 'needs engine 0.97.0 or later, and one build' (tool/internal/doctor/facts.go:19) is explained only in reference/cli-cairn-doctor.md:92, not on this page. The reader had to guess."
+          "subjectGroupId": "g3",
+          "ruling": "false",
+          "reason": "docs/reference/cli-cairn-doctor.md:91-93 explains the 'needs engine 0.97.0 or later, and one build' detail, and :103-105 says UNCHECKED 'is not the same claim as a failure'. is-it-working.md:48-51 also defines UNCHECKED, so the fact is on the reader's own pages."
         },
         {
           "itemId": "item-5",
-          "class": "finding",
-          "subjectGroupId": "volunteer-ask-developer",
-          "ruling": "false",
-          "reason": "The page answers this directly: the config.bindings-missing section (is-it-working.md:224) opens with 'Ask a developer:'. The reader's assumption follows the stated instruction, so there is no gap in the doc."
+          "class": "notAClaim",
+          "reason": "The reader followed the page's own 'Ask a developer' instruction (is-it-working.md:224). This restates guidance the reader relied on and claims no defect."
         }
       ],
       "usage": {
-        "input": 22,
-        "output": 3191,
-        "cacheCreation": 21275,
-        "cacheRead": 136732,
-        "counted": 24488
+        "input": 18,
+        "output": 3120,
+        "cacheCreation": 24738,
+        "cacheRead": 126217,
+        "counted": 27876
       },
       "verified": {
         "ok": true,
@@ -314,76 +294,45 @@
         {
           "initModel": "claude-opus-5-5",
           "outcome": "done",
-          "rulings": [],
-          "usage": {
-            "input": 8,
-            "output": 656,
-            "cacheCreation": 8315,
-            "cacheRead": 16938,
-            "counted": 8979
-          },
-          "verified": {
-            "ok": false,
-            "init": true,
-            "canaries": true,
-            "problems": [
-              "item item-1: no ruling",
-              "item item-2: no ruling",
-              "item item-3: no ruling",
-              "item item-4: no ruling",
-              "item item-5: no ruling"
-            ]
-          },
-          "cause": "initial",
-          "final": false,
-          "transcript": "transcripts/operator-control-1-attempt1.jsonl"
-        },
-        {
-          "initModel": "claude-opus-5-5",
-          "outcome": "done",
           "rulings": [
             {
               "itemId": "item-1",
               "class": "finding",
-              "subjectGroupId": "bindings-fix-links-lack-send_email",
+              "subjectGroupId": "g1",
               "ruling": "real",
-              "reason": "is-it-working.md:226-227 points to wire-the-delivery-surface.md and reference/cloudflare.md 'for the shape'. Neither page mentions send_email, the EMAIL binding, or even the word email in a binding sense. The actual shape is only in add-cairn-to-a-sveltekit-app.md:131."
+              "reason": "docs/admin/is-it-working.md:224-227 points to wire-the-delivery-surface.md and reference/cloudflare.md 'for the shape', but neither page mentions send_email, EMAIL, d1_databases or AUTH_DB (grep finds none); the shape appears only in add-cairn-to-a-sveltekit-app.md:131 and build-a-site-by-hand.md:612, which the fix section does not link. The page's pointer is wrong."
             },
             {
               "itemId": "item-2",
-              "class": "finding",
-              "subjectGroupId": "harness-bash-permission",
-              "ruling": "harness",
-              "reason": "A Bash call denied by the session's permission settings comes from the test environment, not the docs."
+              "class": "notAClaim",
+              "reason": "Reports only that the sandbox denied a Bash call. It makes no claim that any page was wrong or silent."
             },
             {
               "itemId": "item-3",
               "class": "finding",
-              "subjectGroupId": "report-title-vs-jumplist-title",
+              "subjectGroupId": "g2",
               "ruling": "real",
-              "reason": "is-it-working.md:67 says each report check carries a title 'like `Wrangler bindings`', and the jump list (lines 96-133) uses shortened titles. The doctor prints 'Wrangler bindings are missing' (line 33, conditions.json:107). The same mismatch shows up elsewhere: 'Guard role wiring' vs the printed 'Guard is missing the declared role vocabulary'. So the page's own mapping key doesn't match what readers see."
+              "reason": "is-it-working.md:67 says the report's check title is `Wrangler bindings`, and the jump list at :102 uses that title. The page's own transcript at :33 prints 'Wrangler bindings are missing', which matches the code title in src/lib/diagnostics/conditions.ts:82 and tool/internal/spine/conditions.json:107. The page contradicts itself and the code."
             },
             {
               "itemId": "item-4",
               "class": "finding",
-              "subjectGroupId": "unchecked-actionability",
-              "ruling": "real",
-              "reason": "The page defines UNCHECKED (lines 49-51) but never says whether it needs action. It says that only for INFO ('never a deploy blocker'). The detail 'needs engine 0.97.0 or later, and one build' (tool/internal/doctor/facts.go:19) is explained only in reference/cli-cairn-doctor.md:92, not on this page. The reader had to guess."
+              "subjectGroupId": "g3",
+              "ruling": "false",
+              "reason": "docs/reference/cli-cairn-doctor.md:91-93 explains the 'needs engine 0.97.0 or later, and one build' detail, and :103-105 says UNCHECKED 'is not the same claim as a failure'. is-it-working.md:48-51 also defines UNCHECKED, so the fact is on the reader's own pages."
             },
             {
               "itemId": "item-5",
-              "class": "finding",
-              "subjectGroupId": "volunteer-ask-developer",
-              "ruling": "false",
-              "reason": "The page answers this directly: the config.bindings-missing section (is-it-working.md:224) opens with 'Ask a developer:'. The reader's assumption follows the stated instruction, so there is no gap in the doc."
+              "class": "notAClaim",
+              "reason": "The reader followed the page's own 'Ask a developer' instruction (is-it-working.md:224). This restates guidance the reader relied on and claims no defect."
             }
           ],
           "usage": {
-            "input": 22,
-            "output": 3191,
-            "cacheCreation": 21275,
-            "cacheRead": 136732,
-            "counted": 24488
+            "input": 18,
+            "output": 3120,
+            "cacheCreation": 24738,
+            "cacheRead": 126217,
+            "counted": 27876
           },
           "verified": {
             "ok": true,
@@ -391,9 +340,9 @@
             "canaries": true,
             "problems": []
           },
-          "cause": "unverified",
+          "cause": "initial",
           "final": true,
-          "transcript": "transcripts/operator-control-1-attempt2.jsonl"
+          "transcript": "transcripts/operator-control-1-attempt1.jsonl"
         }
       ]
     },
@@ -406,35 +355,35 @@
       "rulings": [
         {
           "itemId": "item-1",
-          "class": "finding",
-          "subjectGroupId": "harness-bash-approval",
-          "ruling": "harness",
-          "reason": "The combined Bash call was denied by the run environment's approval gate (no approval surface), not by anything in cairn or its docs; running `cairn doctor` alone worked."
+          "class": "notAClaim",
+          "reason": "It reports that the environment denied a compound shell command and that running `cairn doctor` by itself worked. It makes no claim that any page was wrong or silent."
         },
         {
           "itemId": "item-2",
-          "class": "interpretation",
-          "reason": "Supported by the docs: cli-cairn-doctor.md says the fix URL is built from the condition's docsAnchor under https://cairn.pub/docs/admin/ with .md removed, and docs/admin/is-it-working.md has the heading 'Deploy the Worker with its bindings' (line 218). Mapping the URL to the local file was a sound reading."
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "false",
+          "reason": "docs/reference/cli-cairn-doctor.md:96-97 says the fix URL is built from the condition's docsAnchor under https://cairn.pub/docs/admin/ with the `.md` removed. That maps the printed URL directly to docs/admin/is-it-working.md, so the pages already settled this."
         },
         {
           "itemId": "item-3",
           "class": "interpretation",
-          "reason": "The config.bindings-missing section (is-it-working.md lines 220-227) says explicitly 'Ask a developer: declare a send_email binding ... in your wrangler.jsonc', so a volunteer reporting the fix instead of editing the file follows the page as written."
+          "reason": "Whether to edit wrangler.jsonc or report the fix is a scope choice the job left open. The reader followed the page's 'Ask a developer' and made no claim against the docs."
         },
         {
           "itemId": "item-4",
           "class": "finding",
-          "subjectGroupId": "is-it-working-unchecked-lines-unexplained",
-          "ruling": "real",
-          "reason": "is-it-working.md explains UNCHECKED only through its example transcript. It says a site installed the ordinary way 'reads PASS or FAIL there instead, never this line' for the node_modules dependency-floor UNCHECKED (lines 53-57), yet the reader got that line. The page never mentions the 'needs engine 0.97.0 or later, and one build' detail, which appears only in reference/cli-cairn-doctor.md lines 91-93. The reader had to guess whether these lines needed action."
+          "subjectGroupId": "g2",
+          "ruling": "false",
+          "reason": "docs/reference/cli-cairn-doctor.md:103-105 says UNCHECKED contributes UNKNOWN and 'is not the same claim as a failure'. Lines 91-93 explain the 'needs engine 0.97.0 or later, and one build' detail, and line 87 covers the missing engine package.json, so the page already answers whether these lines need action."
         }
       ],
       "usage": {
-        "input": 18,
-        "output": 2712,
-        "cacheCreation": 15561,
-        "cacheRead": 79682,
-        "counted": 18291
+        "input": 10,
+        "output": 1414,
+        "cacheCreation": 9897,
+        "cacheRead": 33742,
+        "counted": 11321
       },
       "verified": {
         "ok": true,
@@ -446,64 +395,38 @@
         {
           "initModel": "claude-opus-5-5",
           "outcome": "done",
-          "rulings": [],
-          "usage": {
-            "input": 12,
-            "output": 866,
-            "cacheCreation": 10971,
-            "cacheRead": 38201,
-            "counted": 11849
-          },
-          "verified": {
-            "ok": false,
-            "init": true,
-            "canaries": true,
-            "problems": [
-              "item item-1: no ruling",
-              "item item-2: no ruling",
-              "item item-3: no ruling",
-              "item item-4: no ruling"
-            ]
-          },
-          "cause": "initial",
-          "final": false,
-          "transcript": "transcripts/operator-control-2-attempt1.jsonl"
-        },
-        {
-          "initModel": "claude-opus-5-5",
-          "outcome": "done",
           "rulings": [
             {
               "itemId": "item-1",
-              "class": "finding",
-              "subjectGroupId": "harness-bash-approval",
-              "ruling": "harness",
-              "reason": "The combined Bash call was denied by the run environment's approval gate (no approval surface), not by anything in cairn or its docs; running `cairn doctor` alone worked."
+              "class": "notAClaim",
+              "reason": "It reports that the environment denied a compound shell command and that running `cairn doctor` by itself worked. It makes no claim that any page was wrong or silent."
             },
             {
               "itemId": "item-2",
-              "class": "interpretation",
-              "reason": "Supported by the docs: cli-cairn-doctor.md says the fix URL is built from the condition's docsAnchor under https://cairn.pub/docs/admin/ with .md removed, and docs/admin/is-it-working.md has the heading 'Deploy the Worker with its bindings' (line 218). Mapping the URL to the local file was a sound reading."
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "docs/reference/cli-cairn-doctor.md:96-97 says the fix URL is built from the condition's docsAnchor under https://cairn.pub/docs/admin/ with the `.md` removed. That maps the printed URL directly to docs/admin/is-it-working.md, so the pages already settled this."
             },
             {
               "itemId": "item-3",
               "class": "interpretation",
-              "reason": "The config.bindings-missing section (is-it-working.md lines 220-227) says explicitly 'Ask a developer: declare a send_email binding ... in your wrangler.jsonc', so a volunteer reporting the fix instead of editing the file follows the page as written."
+              "reason": "Whether to edit wrangler.jsonc or report the fix is a scope choice the job left open. The reader followed the page's 'Ask a developer' and made no claim against the docs."
             },
             {
               "itemId": "item-4",
               "class": "finding",
-              "subjectGroupId": "is-it-working-unchecked-lines-unexplained",
-              "ruling": "real",
-              "reason": "is-it-working.md explains UNCHECKED only through its example transcript. It says a site installed the ordinary way 'reads PASS or FAIL there instead, never this line' for the node_modules dependency-floor UNCHECKED (lines 53-57), yet the reader got that line. The page never mentions the 'needs engine 0.97.0 or later, and one build' detail, which appears only in reference/cli-cairn-doctor.md lines 91-93. The reader had to guess whether these lines needed action."
+              "subjectGroupId": "g2",
+              "ruling": "false",
+              "reason": "docs/reference/cli-cairn-doctor.md:103-105 says UNCHECKED contributes UNKNOWN and 'is not the same claim as a failure'. Lines 91-93 explain the 'needs engine 0.97.0 or later, and one build' detail, and line 87 covers the missing engine package.json, so the page already answers whether these lines need action."
             }
           ],
           "usage": {
-            "input": 18,
-            "output": 2712,
-            "cacheCreation": 15561,
-            "cacheRead": 79682,
-            "counted": 18291
+            "input": 10,
+            "output": 1414,
+            "cacheCreation": 9897,
+            "cacheRead": 33742,
+            "counted": 11321
           },
           "verified": {
             "ok": true,
@@ -511,9 +434,9 @@
             "canaries": true,
             "problems": []
           },
-          "cause": "unverified",
+          "cause": "initial",
           "final": true,
-          "transcript": "transcripts/operator-control-2-attempt2.jsonl"
+          "transcript": "transcripts/operator-control-2-attempt1.jsonl"
         }
       ]
     },
@@ -523,83 +446,107 @@
       "model": "claude-opus-5-5",
       "initModel": "claude-opus-5-5",
       "outcome": "done",
-      "rulings": [],
+      "rulings": [
+        {
+          "itemId": "item-1",
+          "class": "notAClaim",
+          "reason": "Reports that the permission layer denied a command with shell expansion and that the plain rerun succeeded; it makes no claim that any page was wrong or silent."
+        },
+        {
+          "itemId": "item-2",
+          "class": "interpretation",
+          "reason": "The job text explicitly leaves the target hue to the reader; picking 160 is a free choice."
+        },
+        {
+          "itemId": "item-3",
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "false",
+          "reason": "docs/extend/design-your-site.md lines 31-32 say the re-skin is 'about fourteen values, light and dark: rotate `--color-primary`'s hue while holding lightness and chroma', so the page does settle that the dark primary is rotated too."
+        },
+        {
+          "itemId": "item-4",
+          "class": "notAClaim",
+          "reason": "The reader followed quoted recipe text in keeping primary-content's hue; it relies on the guidance rather than claiming a gap or error."
+        },
+        {
+          "itemId": "item-5",
+          "class": "interpretation",
+          "reason": "'Build finishes clean' is job text, not a docs claim; tolerating unrelated existing warnings is the reader's reading of the job's own criterion."
+        },
+        {
+          "itemId": "item-6",
+          "class": "notAClaim",
+          "reason": "The reader states they relied on the docs' contrast-stability statement; this restates what the page says and makes no claim that it is wrong or missing."
+        }
+      ],
       "usage": {
-        "input": 10,
-        "output": 653,
-        "cacheCreation": 7205,
-        "cacheRead": 28482,
-        "counted": 7868
+        "input": 12,
+        "output": 1742,
+        "cacheCreation": 5794,
+        "cacheRead": 45531,
+        "counted": 7548
       },
       "verified": {
-        "ok": false,
+        "ok": true,
         "init": true,
         "canaries": true,
-        "problems": [
-          "item item-1: no ruling",
-          "item item-2: no ruling",
-          "item item-3: no ruling",
-          "item item-4: no ruling",
-          "item item-5: no ruling",
-          "item item-6: no ruling"
-        ]
+        "problems": []
       },
       "attempts": [
         {
           "initModel": "claude-opus-5-5",
           "outcome": "done",
-          "rulings": [],
+          "rulings": [
+            {
+              "itemId": "item-1",
+              "class": "notAClaim",
+              "reason": "Reports that the permission layer denied a command with shell expansion and that the plain rerun succeeded; it makes no claim that any page was wrong or silent."
+            },
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "The job text explicitly leaves the target hue to the reader; picking 160 is a free choice."
+            },
+            {
+              "itemId": "item-3",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "docs/extend/design-your-site.md lines 31-32 say the re-skin is 'about fourteen values, light and dark: rotate `--color-primary`'s hue while holding lightness and chroma', so the page does settle that the dark primary is rotated too."
+            },
+            {
+              "itemId": "item-4",
+              "class": "notAClaim",
+              "reason": "The reader followed quoted recipe text in keeping primary-content's hue; it relies on the guidance rather than claiming a gap or error."
+            },
+            {
+              "itemId": "item-5",
+              "class": "interpretation",
+              "reason": "'Build finishes clean' is job text, not a docs claim; tolerating unrelated existing warnings is the reader's reading of the job's own criterion."
+            },
+            {
+              "itemId": "item-6",
+              "class": "notAClaim",
+              "reason": "The reader states they relied on the docs' contrast-stability statement; this restates what the page says and makes no claim that it is wrong or missing."
+            }
+          ],
           "usage": {
-            "input": 10,
-            "output": 658,
-            "cacheCreation": 5593,
-            "cacheRead": 28705,
-            "counted": 6261
+            "input": 12,
+            "output": 1742,
+            "cacheCreation": 5794,
+            "cacheRead": 45531,
+            "counted": 7548
           },
           "verified": {
-            "ok": false,
+            "ok": true,
             "init": true,
             "canaries": true,
-            "problems": [
-              "item item-1: no ruling",
-              "item item-2: no ruling",
-              "item item-3: no ruling",
-              "item item-4: no ruling",
-              "item item-5: no ruling",
-              "item item-6: no ruling"
-            ]
+            "problems": []
           },
           "cause": "initial",
-          "final": false,
-          "transcript": "transcripts/designer-control-1-attempt1.jsonl"
-        },
-        {
-          "initModel": "claude-opus-5-5",
-          "outcome": "done",
-          "rulings": [],
-          "usage": {
-            "input": 10,
-            "output": 653,
-            "cacheCreation": 7205,
-            "cacheRead": 28482,
-            "counted": 7868
-          },
-          "verified": {
-            "ok": false,
-            "init": true,
-            "canaries": true,
-            "problems": [
-              "item item-1: no ruling",
-              "item item-2: no ruling",
-              "item item-3: no ruling",
-              "item item-4: no ruling",
-              "item item-5: no ruling",
-              "item item-6: no ruling"
-            ]
-          },
-          "cause": "unverified",
           "final": true,
-          "transcript": "transcripts/designer-control-1-attempt2.jsonl"
+          "transcript": "transcripts/designer-control-1-attempt1.jsonl"
         }
       ]
     },
@@ -609,80 +556,93 @@
       "model": "claude-opus-5-5",
       "initModel": "claude-opus-5-5",
       "outcome": "done",
-      "rulings": [],
+      "rulings": [
+        {
+          "itemId": "item-1",
+          "class": "notAClaim",
+          "reason": "Reports that the permission layer denied a shell-expansion variant of the build command, and says itself that this was a tooling hiccup, not a documentation gap."
+        },
+        {
+          "itemId": "item-2",
+          "class": "interpretation",
+          "reason": "The job leaves the value of the visual change to the reader. Picking hue 155 is a free choice and makes no claim against the docs."
+        },
+        {
+          "itemId": "item-3",
+          "class": "notAClaim",
+          "reason": "The reader followed the explicit instruction in templates/waymark/src/theme/theme.css lines 21-22 that `--color-primary-content` keeps its light/dark value. The item restates what the reader relied on and does not claim the text is wrong or silent."
+        },
+        {
+          "itemId": "item-4",
+          "class": "notAClaim",
+          "reason": "Applying the rotation to the dark sibling follows theme.css line 19 ('and its dark sibling'). Skipping a dark-mode contrast check was the reader's own choice, not a claim that a page was wrong or silent."
+        },
+        {
+          "itemId": "item-5",
+          "class": "notAClaim",
+          "reason": "The item restates design-your-site.md lines 41-44, which says check:public-tokens and test:reskin do not ship in a scaffolded site's package.json. The job text itself defines 'done' as a clean build, so the item makes no claim that the docs failed."
+        }
+      ],
       "usage": {
-        "input": 10,
-        "output": 736,
-        "cacheCreation": 7702,
-        "cacheRead": 30782,
-        "counted": 8448
+        "input": 12,
+        "output": 1473,
+        "cacheCreation": 10509,
+        "cacheRead": 48341,
+        "counted": 11994
       },
       "verified": {
-        "ok": false,
+        "ok": true,
         "init": true,
         "canaries": true,
-        "problems": [
-          "item item-1: no ruling",
-          "item item-2: no ruling",
-          "item item-3: no ruling",
-          "item item-4: no ruling",
-          "item item-5: no ruling"
-        ]
+        "problems": []
       },
       "attempts": [
         {
           "initModel": "claude-opus-5-5",
           "outcome": "done",
-          "rulings": [],
+          "rulings": [
+            {
+              "itemId": "item-1",
+              "class": "notAClaim",
+              "reason": "Reports that the permission layer denied a shell-expansion variant of the build command, and says itself that this was a tooling hiccup, not a documentation gap."
+            },
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "The job leaves the value of the visual change to the reader. Picking hue 155 is a free choice and makes no claim against the docs."
+            },
+            {
+              "itemId": "item-3",
+              "class": "notAClaim",
+              "reason": "The reader followed the explicit instruction in templates/waymark/src/theme/theme.css lines 21-22 that `--color-primary-content` keeps its light/dark value. The item restates what the reader relied on and does not claim the text is wrong or silent."
+            },
+            {
+              "itemId": "item-4",
+              "class": "notAClaim",
+              "reason": "Applying the rotation to the dark sibling follows theme.css line 19 ('and its dark sibling'). Skipping a dark-mode contrast check was the reader's own choice, not a claim that a page was wrong or silent."
+            },
+            {
+              "itemId": "item-5",
+              "class": "notAClaim",
+              "reason": "The item restates design-your-site.md lines 41-44, which says check:public-tokens and test:reskin do not ship in a scaffolded site's package.json. The job text itself defines 'done' as a clean build, so the item makes no claim that the docs failed."
+            }
+          ],
           "usage": {
-            "input": 10,
-            "output": 475,
-            "cacheCreation": 4985,
-            "cacheRead": 32621,
-            "counted": 5470
+            "input": 12,
+            "output": 1473,
+            "cacheCreation": 10509,
+            "cacheRead": 48341,
+            "counted": 11994
           },
           "verified": {
-            "ok": false,
+            "ok": true,
             "init": true,
             "canaries": true,
-            "problems": [
-              "item item-1: no ruling",
-              "item item-2: no ruling",
-              "item item-3: no ruling",
-              "item item-4: no ruling",
-              "item item-5: no ruling"
-            ]
+            "problems": []
           },
           "cause": "initial",
-          "final": false,
-          "transcript": "transcripts/designer-control-2-attempt1.jsonl"
-        },
-        {
-          "initModel": "claude-opus-5-5",
-          "outcome": "done",
-          "rulings": [],
-          "usage": {
-            "input": 10,
-            "output": 736,
-            "cacheCreation": 7702,
-            "cacheRead": 30782,
-            "counted": 8448
-          },
-          "verified": {
-            "ok": false,
-            "init": true,
-            "canaries": true,
-            "problems": [
-              "item item-1: no ruling",
-              "item item-2: no ruling",
-              "item item-3: no ruling",
-              "item item-4: no ruling",
-              "item item-5: no ruling"
-            ]
-          },
-          "cause": "unverified",
           "final": true,
-          "transcript": "transcripts/designer-control-2-attempt2.jsonl"
+          "transcript": "transcripts/designer-control-2-attempt1.jsonl"
         }
       ]
     },
@@ -695,38 +655,36 @@
       "rulings": [
         {
           "itemId": "item-1",
-          "class": "finding",
-          "subjectGroupId": "harness-bash-heredoc-permission-denied",
-          "ruling": "harness",
-          "reason": "The permission layer auto-denied a bash heredoc. That comes from the test harness and tooling, not from a gap in the docs. The agent worked around it with the Write tool."
+          "class": "notAClaim",
+          "reason": "Reports that the permission layer denied a bash heredoc and that the reader worked around it with the Write tool; it makes no claim that any page was wrong or silent."
         },
         {
           "itemId": "item-2",
           "class": "interpretation",
-          "reason": "The agent mapped 'members-only' to ['editor'] on a site with no declared roles. restrict-admin-access.md lines 11-16 and 38-41 support this: defineAccess(undefined, ...) checks role names against the built-in owner/editor pair, and owner skips the role list. This was a reasonable reading of the task, not a doc defect."
+          "reason": "Which role to admit to the new screen is a choice the job left to the reader; the job text never mentions 'members-only'. The item records the mapping the reader picked and does not claim a page failed to state a needed fact."
         },
         {
           "itemId": "item-3",
           "class": "interpretation",
-          "reason": "The task named no route or content, so choosing the path and placeholder content was up to the agent. The guide's club/events path is only an example."
+          "reason": "The route path and screen content were left open by the job; the item records the reader's choice and makes no claim against the docs."
         },
         {
           "itemId": "item-4",
           "class": "interpretation",
-          "reason": "The screen has no actions, so gating with requireAccess in load alone matches the guide. The guide pairs createSectionAction with actions, not with read-only loads (add-a-custom-admin-screen.md lines 59-62, 77-79)."
+          "reason": "A scope choice: the reader's screen had no form actions, so there was nothing for createSectionAction to wrap. The page's requireAccess-in-load shape (add-a-custom-admin-screen.md:54-62) covers the read gate, and the item makes no claim that the docs are wrong."
         },
         {
           "itemId": "item-5",
           "class": "interpretation",
-          "reason": "The guide makes the sidebar entry optional (add-a-custom-admin-screen.md line 446: 'To also place this screen in the sidebar...'), and the task did not ask for it."
+          "reason": "A scope choice not to add a nav entry, which the job did not require; no claim against the docs."
         }
       ],
       "usage": {
-        "input": 16,
-        "output": 1909,
-        "cacheCreation": 16371,
-        "cacheRead": 82806,
-        "counted": 18296
+        "input": 12,
+        "output": 1757,
+        "cacheCreation": 6091,
+        "cacheRead": 44115,
+        "counted": 7860
       },
       "verified": {
         "ok": true,
@@ -741,38 +699,36 @@
           "rulings": [
             {
               "itemId": "item-1",
-              "class": "finding",
-              "subjectGroupId": "harness-bash-heredoc-permission-denied",
-              "ruling": "harness",
-              "reason": "The permission layer auto-denied a bash heredoc. That comes from the test harness and tooling, not from a gap in the docs. The agent worked around it with the Write tool."
+              "class": "notAClaim",
+              "reason": "Reports that the permission layer denied a bash heredoc and that the reader worked around it with the Write tool; it makes no claim that any page was wrong or silent."
             },
             {
               "itemId": "item-2",
               "class": "interpretation",
-              "reason": "The agent mapped 'members-only' to ['editor'] on a site with no declared roles. restrict-admin-access.md lines 11-16 and 38-41 support this: defineAccess(undefined, ...) checks role names against the built-in owner/editor pair, and owner skips the role list. This was a reasonable reading of the task, not a doc defect."
+              "reason": "Which role to admit to the new screen is a choice the job left to the reader; the job text never mentions 'members-only'. The item records the mapping the reader picked and does not claim a page failed to state a needed fact."
             },
             {
               "itemId": "item-3",
               "class": "interpretation",
-              "reason": "The task named no route or content, so choosing the path and placeholder content was up to the agent. The guide's club/events path is only an example."
+              "reason": "The route path and screen content were left open by the job; the item records the reader's choice and makes no claim against the docs."
             },
             {
               "itemId": "item-4",
               "class": "interpretation",
-              "reason": "The screen has no actions, so gating with requireAccess in load alone matches the guide. The guide pairs createSectionAction with actions, not with read-only loads (add-a-custom-admin-screen.md lines 59-62, 77-79)."
+              "reason": "A scope choice: the reader's screen had no form actions, so there was nothing for createSectionAction to wrap. The page's requireAccess-in-load shape (add-a-custom-admin-screen.md:54-62) covers the read gate, and the item makes no claim that the docs are wrong."
             },
             {
               "itemId": "item-5",
               "class": "interpretation",
-              "reason": "The guide makes the sidebar entry optional (add-a-custom-admin-screen.md line 446: 'To also place this screen in the sidebar...'), and the task did not ask for it."
+              "reason": "A scope choice not to add a nav entry, which the job did not require; no claim against the docs."
             }
           ],
           "usage": {
-            "input": 16,
-            "output": 1909,
-            "cacheCreation": 16371,
-            "cacheRead": 82806,
-            "counted": 18296
+            "input": 12,
+            "output": 1757,
+            "cacheCreation": 6091,
+            "cacheRead": 44115,
+            "counted": 7860
           },
           "verified": {
             "ok": true,
@@ -795,38 +751,36 @@
       "rulings": [
         {
           "itemId": "item-1",
-          "class": "finding",
-          "subjectGroupId": "harness-shell-command-approval-denial",
-          "ruling": "harness",
-          "reason": "The stall happened because the tool-permission layer auto-denied a combined shell command. That's a limit of the run environment, not a gap in the docs under test. The agent worked around it with Write/Edit and lost no content."
+          "class": "notAClaim",
+          "reason": "Reports that the sandbox auto-denied a combined shell command and that the reader worked around it with other tools; it claims nothing about any page."
         },
         {
           "itemId": "item-2",
           "class": "interpretation",
-          "reason": "This is a scope choice by the agent about which role to admit, not a claim about a doc defect. It matches restrict-admin-access.md:14-16: with no declared vocabulary, defineAccess(undefined, ...) validates against the implicit { owner, editor } pair. Lines 38-41 add that owner reaches every mapped target regardless of the list."
+          "reason": "The job left the access policy to the reader. Mapping the gate to the built-in editor role is a choice based on the site's own role declarations, and the item does not say any page was wrong or silent."
         },
         {
           "itemId": "item-3",
           "class": "interpretation",
-          "reason": "The task named no route. Choosing /admin/members is an unconstrained naming decision that add-a-custom-admin-screen.md:16-17 allows ('Add a normal SvelteKit route inside src/routes/admin/'). It says nothing about the docs."
+          "reason": "The job left the route name open, so choosing /admin/members is a naming decision and not a claim against the docs."
         },
         {
           "itemId": "item-4",
           "class": "interpretation",
-          "reason": "This is a scope decision. The guide puts createSectionAction on actions (lines 32-33, 'reused by every action inside it'), the audit sink exists to receive ctx.audit() from actions (lines 141-142), and requireAccess in load is the read gate (lines 77-79). A read-only screen with no actions reasonably leaves both out."
+          "reason": "The reader chose to build a read-only screen, which is a scope choice. The page's action wiring (add-a-custom-admin-screen.md:64-74) applies only when actions exist, so the item claims no doc defect."
         },
         {
           "itemId": "item-5",
           "class": "interpretation",
-          "reason": "This is a scope choice. add-a-custom-admin-screen.md:446 presents a nav entry as optional ('To also place this screen in the sidebar, see Organize your admin nav'), and the task asked only for the screen and its gate."
+          "reason": "Leaving out a nav entry is a scope decision the job text allowed. The item makes no claim that a page was wrong or silent."
         }
       ],
       "usage": {
-        "input": 18,
-        "output": 2307,
-        "cacheCreation": 22944,
-        "cacheRead": 82810,
-        "counted": 25269
+        "input": 10,
+        "output": 1012,
+        "cacheCreation": 5029,
+        "cacheRead": 34846,
+        "counted": 6051
       },
       "verified": {
         "ok": true,
@@ -841,38 +795,36 @@
           "rulings": [
             {
               "itemId": "item-1",
-              "class": "finding",
-              "subjectGroupId": "harness-shell-command-approval-denial",
-              "ruling": "harness",
-              "reason": "The stall happened because the tool-permission layer auto-denied a combined shell command. That's a limit of the run environment, not a gap in the docs under test. The agent worked around it with Write/Edit and lost no content."
+              "class": "notAClaim",
+              "reason": "Reports that the sandbox auto-denied a combined shell command and that the reader worked around it with other tools; it claims nothing about any page."
             },
             {
               "itemId": "item-2",
               "class": "interpretation",
-              "reason": "This is a scope choice by the agent about which role to admit, not a claim about a doc defect. It matches restrict-admin-access.md:14-16: with no declared vocabulary, defineAccess(undefined, ...) validates against the implicit { owner, editor } pair. Lines 38-41 add that owner reaches every mapped target regardless of the list."
+              "reason": "The job left the access policy to the reader. Mapping the gate to the built-in editor role is a choice based on the site's own role declarations, and the item does not say any page was wrong or silent."
             },
             {
               "itemId": "item-3",
               "class": "interpretation",
-              "reason": "The task named no route. Choosing /admin/members is an unconstrained naming decision that add-a-custom-admin-screen.md:16-17 allows ('Add a normal SvelteKit route inside src/routes/admin/'). It says nothing about the docs."
+              "reason": "The job left the route name open, so choosing /admin/members is a naming decision and not a claim against the docs."
             },
             {
               "itemId": "item-4",
               "class": "interpretation",
-              "reason": "This is a scope decision. The guide puts createSectionAction on actions (lines 32-33, 'reused by every action inside it'), the audit sink exists to receive ctx.audit() from actions (lines 141-142), and requireAccess in load is the read gate (lines 77-79). A read-only screen with no actions reasonably leaves both out."
+              "reason": "The reader chose to build a read-only screen, which is a scope choice. The page's action wiring (add-a-custom-admin-screen.md:64-74) applies only when actions exist, so the item claims no doc defect."
             },
             {
               "itemId": "item-5",
               "class": "interpretation",
-              "reason": "This is a scope choice. add-a-custom-admin-screen.md:446 presents a nav entry as optional ('To also place this screen in the sidebar, see Organize your admin nav'), and the task asked only for the screen and its gate."
+              "reason": "Leaving out a nav entry is a scope decision the job text allowed. The item makes no claim that a page was wrong or silent."
             }
           ],
           "usage": {
-            "input": 18,
-            "output": 2307,
-            "cacheCreation": 22944,
-            "cacheRead": 82810,
-            "counted": 25269
+            "input": 10,
+            "output": 1012,
+            "cacheCreation": 5029,
+            "cacheRead": 34846,
+            "counted": 6051
           },
           "verified": {
             "ok": true,
@@ -896,60 +848,58 @@
         {
           "itemId": "item-1",
           "class": "finding",
-          "subjectGroupId": "env-no-fresh-install",
+          "subjectGroupId": "g1",
           "ruling": "harness",
-          "reason": "The reader's environment blocked a fresh `npm install`. Nothing in CONTRIBUTING.md:12-17 is wrong: the guide correctly says `prepare` runs `npm run package` (package.json:77)."
+          "reason": "The reader could not run a fresh `npm install` because of the sandbox. The step is documented at CONTRIBUTING.md:12 and :17, with the prepare script at package.json:77, so the page did not cause this."
         },
         {
           "itemId": "item-2",
           "class": "finding",
-          "subjectGroupId": "playwright-chromium-install-undocumented",
+          "subjectGroupId": "g2",
           "ruling": "real",
-          "reason": "The component project runs in Chromium through @vitest/browser-playwright (vitest.config.ts:149-153), and CI installs it with `npx playwright install --with-deps chromium` (test.yml:38). CONTRIBUTING.md:11-15 never tells a contributor to take that step, so `npm test` fails on a fresh machine. The item's other causes come from the harness: scripts/docs-readers/ is absent, the tree is not a git repo, and docs pages are stripped, which produces the broken-link count. The missing browser-install step is a genuine gap in the docs. The claim about `&&` chaining matches package.json:79."
+          "reason": "CONTRIBUTING.md:13 says `npm test` runs the component project. That project runs in real Chromium through @vitest/browser-playwright (vitest.config.ts:149-153), and CI installs it as a separate step (`npx playwright install --with-deps chromium`, .github/workflows/test.yml:37-38). No published docs page tells a contributor to run that install: I searched docs/ for 'chromium' and 'playwright install', and the only hits are about the audit CLI. The other failures (missing scripts/docs-readers, no git repository) come from the environment, but the missing Chromium setup step is a real gap."
         },
         {
           "itemId": "item-3",
           "class": "finding",
-          "subjectGroupId": "env-tool-timeout",
+          "subjectGroupId": "g3",
           "ruling": "harness",
-          "reason": "The 600s limit belongs to the reader's tool, not to the project. The guide does not promise any runtime."
+          "reason": "The 600-second limit belongs to the reader's tool, not the docs. No page promises a run time."
         },
         {
           "itemId": "item-4",
           "class": "finding",
-          "subjectGroupId": "absent-docs-readers-modules",
+          "subjectGroupId": "g4",
           "ruling": "harness",
-          "reason": "CI runs `npm run check` before the showcase install (test.yml:28-36), and its comment says the templates/waymark module-resolution block is expected noise: the check still exits 0 with 0 errors. The root tsconfig also excludes examples. So the real errors come from tests that import scripts/docs-readers, which the harness deliberately removed (absentList)."
+          "reason": "The errors come from docs-readers tests that import scripts/docs-readers, which this export left out by design (job absentList). The showcase and waymark config-load messages are expected noise: .github/workflows/test.yml:28-35 says the step still exits 0, and tsconfig.json:18 excludes examples."
         },
         {
           "itemId": "item-5",
-          "class": "finding",
-          "subjectGroupId": "env-approval-unavailable",
-          "ruling": "harness",
-          "reason": "The command was denied because the reader's harness had no approver. This says nothing about the docs."
+          "class": "notAClaim",
+          "reason": "The environment refused an approval-gated command. The item makes no claim that a page is wrong or silent."
         },
         {
           "itemId": "item-6",
           "class": "interpretation",
-          "reason": "This assumption about which page counts as 'the guide' is reasonable: the job's page list includes CONTRIBUTING.md, and its setup block is at lines 9-15."
+          "reason": "The reader chose which document counted as 'the guide', a choice the job text left open. The item makes no claim against the docs."
         },
         {
           "itemId": "item-7",
           "class": "interpretation",
-          "reason": "This is the reader's assumption about treating the node_modules already present as a substitute for an install that couldn't run. It is not a claim about the docs."
+          "reason": "The reader chose to treat the existing node_modules and dist/ as a stand-in for install. That is a workaround choice, not a claim that the docs failed."
         },
         {
           "itemId": "item-8",
           "class": "interpretation",
-          "reason": "This is a scoping choice. The setup section (CONTRIBUTING.md:9-15) names only npm test and npm run check, although lines 66-69 point to the workflows for the full gate list."
+          "reason": "This is a scope decision by the reader. CONTRIBUTING.md:66-69 does point to the workflows and the check:* targets, and the item does not claim the page is wrong."
         }
       ],
       "usage": {
         "input": 20,
-        "output": 3613,
-        "cacheCreation": 16701,
-        "cacheRead": 94424,
-        "counted": 20334
+        "output": 3396,
+        "cacheCreation": 10734,
+        "cacheRead": 109228,
+        "counted": 14150
       },
       "verified": {
         "ok": true,
@@ -965,60 +915,58 @@
             {
               "itemId": "item-1",
               "class": "finding",
-              "subjectGroupId": "env-no-fresh-install",
+              "subjectGroupId": "g1",
               "ruling": "harness",
-              "reason": "The reader's environment blocked a fresh `npm install`. Nothing in CONTRIBUTING.md:12-17 is wrong: the guide correctly says `prepare` runs `npm run package` (package.json:77)."
+              "reason": "The reader could not run a fresh `npm install` because of the sandbox. The step is documented at CONTRIBUTING.md:12 and :17, with the prepare script at package.json:77, so the page did not cause this."
             },
             {
               "itemId": "item-2",
               "class": "finding",
-              "subjectGroupId": "playwright-chromium-install-undocumented",
+              "subjectGroupId": "g2",
               "ruling": "real",
-              "reason": "The component project runs in Chromium through @vitest/browser-playwright (vitest.config.ts:149-153), and CI installs it with `npx playwright install --with-deps chromium` (test.yml:38). CONTRIBUTING.md:11-15 never tells a contributor to take that step, so `npm test` fails on a fresh machine. The item's other causes come from the harness: scripts/docs-readers/ is absent, the tree is not a git repo, and docs pages are stripped, which produces the broken-link count. The missing browser-install step is a genuine gap in the docs. The claim about `&&` chaining matches package.json:79."
+              "reason": "CONTRIBUTING.md:13 says `npm test` runs the component project. That project runs in real Chromium through @vitest/browser-playwright (vitest.config.ts:149-153), and CI installs it as a separate step (`npx playwright install --with-deps chromium`, .github/workflows/test.yml:37-38). No published docs page tells a contributor to run that install: I searched docs/ for 'chromium' and 'playwright install', and the only hits are about the audit CLI. The other failures (missing scripts/docs-readers, no git repository) come from the environment, but the missing Chromium setup step is a real gap."
             },
             {
               "itemId": "item-3",
               "class": "finding",
-              "subjectGroupId": "env-tool-timeout",
+              "subjectGroupId": "g3",
               "ruling": "harness",
-              "reason": "The 600s limit belongs to the reader's tool, not to the project. The guide does not promise any runtime."
+              "reason": "The 600-second limit belongs to the reader's tool, not the docs. No page promises a run time."
             },
             {
               "itemId": "item-4",
               "class": "finding",
-              "subjectGroupId": "absent-docs-readers-modules",
+              "subjectGroupId": "g4",
               "ruling": "harness",
-              "reason": "CI runs `npm run check` before the showcase install (test.yml:28-36), and its comment says the templates/waymark module-resolution block is expected noise: the check still exits 0 with 0 errors. The root tsconfig also excludes examples. So the real errors come from tests that import scripts/docs-readers, which the harness deliberately removed (absentList)."
+              "reason": "The errors come from docs-readers tests that import scripts/docs-readers, which this export left out by design (job absentList). The showcase and waymark config-load messages are expected noise: .github/workflows/test.yml:28-35 says the step still exits 0, and tsconfig.json:18 excludes examples."
             },
             {
               "itemId": "item-5",
-              "class": "finding",
-              "subjectGroupId": "env-approval-unavailable",
-              "ruling": "harness",
-              "reason": "The command was denied because the reader's harness had no approver. This says nothing about the docs."
+              "class": "notAClaim",
+              "reason": "The environment refused an approval-gated command. The item makes no claim that a page is wrong or silent."
             },
             {
               "itemId": "item-6",
               "class": "interpretation",
-              "reason": "This assumption about which page counts as 'the guide' is reasonable: the job's page list includes CONTRIBUTING.md, and its setup block is at lines 9-15."
+              "reason": "The reader chose which document counted as 'the guide', a choice the job text left open. The item makes no claim against the docs."
             },
             {
               "itemId": "item-7",
               "class": "interpretation",
-              "reason": "This is the reader's assumption about treating the node_modules already present as a substitute for an install that couldn't run. It is not a claim about the docs."
+              "reason": "The reader chose to treat the existing node_modules and dist/ as a stand-in for install. That is a workaround choice, not a claim that the docs failed."
             },
             {
               "itemId": "item-8",
               "class": "interpretation",
-              "reason": "This is a scoping choice. The setup section (CONTRIBUTING.md:9-15) names only npm test and npm run check, although lines 66-69 point to the workflows for the full gate list."
+              "reason": "This is a scope decision by the reader. CONTRIBUTING.md:66-69 does point to the workflows and the check:* targets, and the item does not claim the page is wrong."
             }
           ],
           "usage": {
             "input": 20,
-            "output": 3613,
-            "cacheCreation": 16701,
-            "cacheRead": 94424,
-            "counted": 20334
+            "output": 3396,
+            "cacheCreation": 10734,
+            "cacheRead": 109228,
+            "counted": 14150
           },
           "verified": {
             "ok": true,
@@ -1041,66 +989,60 @@
       "rulings": [
         {
           "itemId": "item-1",
-          "class": "finding",
-          "subjectGroupId": "env-no-install",
-          "ruling": "harness",
-          "reason": "CONTRIBUTING.md:12 names npm install; the reader could not run it because of the environment, not because of a doc defect."
+          "class": "notAClaim",
+          "reason": "Reports only that the environment made a fresh npm install impossible; it makes no claim that CONTRIBUTING.md lines 11-17 are wrong or silent."
         },
         {
           "itemId": "item-2",
           "class": "finding",
-          "subjectGroupId": "playwright-browser-not-in-guide",
-          "ruling": "real",
-          "reason": "CONTRIBUTING.md:11-15 lists only npm install / npm test / npm run check. CI (test.yml:37-38) runs `npx playwright install --with-deps chromium` before npm test, and unit tests import playwright (e.g. src/tests/unit/admin-css-build.test.ts). Following the guide as written makes npm test fail for a missing browser. The other causes listed (docs-readers modules, superpowers links, no git repo) come from the stripped packet and are harness artifacts. The Playwright omission is a real doc gap."
+          "subjectGroupId": "g1",
+          "ruling": "harness",
+          "reason": "Every cause the reader names comes from its environment: Playwright browsers not installed, scripts/docs-readers/ and docs/superpowers/ left out of the reader's tree by design (job absentList), and a checkout with no git repository. In the real repository, running `npm test` (package.json line 79) would not fail for these reasons."
         },
         {
           "itemId": "item-3",
-          "class": "finding",
-          "subjectGroupId": "playwright-browser-not-in-guide",
-          "ruling": "real",
-          "reason": "package.json:79 chains test:component after the vitest run with &&. Unit tests need the Playwright browser, which the guide never says to install, so the first step fails and the component project never runs. This is downstream of the same gap."
+          "class": "notAClaim",
+          "reason": "Describes the downstream effect of the failure in item 2: the && chain in package.json line 79 stopped before test:component ran. It claims nothing against the docs."
         },
         {
           "itemId": "item-4",
           "class": "finding",
-          "subjectGroupId": "svelte-check-env-errors",
+          "subjectGroupId": "g2",
           "ruling": "harness",
-          "reason": "test.yml:28-36 records that the templates/waymark module-resolution block is expected and that npm run check still reports 0 errors in a real checkout. The 92 errors come from the missing install and the stripped scripts/docs-readers modules (absentList)."
+          "reason": "The svelte-check failures come from dependencies missing in the reader's pre-provisioned environment (adapter-cloudflare, @tailwindcss/vite not installed) and from scripts/docs-readers/, which is absent by design per the job's absentList. The reader claims no page is wrong."
         },
         {
           "itemId": "item-5",
-          "class": "finding",
-          "subjectGroupId": "permission-denied",
-          "ruling": "harness",
-          "reason": "The follow-up command was denied by the harness permission system, not blocked by anything in the docs."
+          "class": "notAClaim",
+          "reason": "Reports that the permission system denied a follow-up command. It is an environment refusal with no claim about the docs."
         },
         {
           "itemId": "item-6",
           "class": "interpretation",
-          "reason": "Reading 'this guide' as CONTRIBUTING.md, which has the 'Set up and run the suite' section, is a reasonable scope choice."
+          "reason": "Choosing which page 'this guide' means is how the reader read the job text, not a claim against the docs."
         },
         {
           "itemId": "item-7",
           "class": "interpretation",
-          "reason": "Treating the existing node_modules/dist as a stand-in for install/prepare is a workaround the reader chose."
+          "reason": "Using the existing node_modules and dist/ in place of the install step is a workaround the reader chose for its environment, not a claim that a page is wrong."
         },
         {
           "itemId": "item-8",
           "class": "interpretation",
-          "reason": "CONTRIBUTING.md:18 frames the showcase as 'To see a change in a running admin', so treating it as optional is a reasonable reading."
+          "reason": "Treating the showcase setup as out of scope is a scope choice the job left open. CONTRIBUTING.md lines 18-19 present the showcase as optional, for seeing a change."
         },
         {
           "itemId": "item-9",
           "class": "interpretation",
-          "reason": "Limiting the run to the three listed commands, and not the check:* gates CONTRIBUTING.md:66-69 points to, is a scope judgment."
+          "reason": "Limiting the work to the three commands under 'Set up and run the suite' is a scope decision the job left open, not a claim of a docs defect."
         }
       ],
       "usage": {
-        "input": 24,
-        "output": 4709,
-        "cacheCreation": 16947,
-        "cacheRead": 131939,
-        "counted": 21680
+        "input": 14,
+        "output": 2424,
+        "cacheCreation": 7258,
+        "cacheRead": 61929,
+        "counted": 9696
       },
       "verified": {
         "ok": true,
@@ -1115,66 +1057,60 @@
           "rulings": [
             {
               "itemId": "item-1",
-              "class": "finding",
-              "subjectGroupId": "env-no-install",
-              "ruling": "harness",
-              "reason": "CONTRIBUTING.md:12 names npm install; the reader could not run it because of the environment, not because of a doc defect."
+              "class": "notAClaim",
+              "reason": "Reports only that the environment made a fresh npm install impossible; it makes no claim that CONTRIBUTING.md lines 11-17 are wrong or silent."
             },
             {
               "itemId": "item-2",
               "class": "finding",
-              "subjectGroupId": "playwright-browser-not-in-guide",
-              "ruling": "real",
-              "reason": "CONTRIBUTING.md:11-15 lists only npm install / npm test / npm run check. CI (test.yml:37-38) runs `npx playwright install --with-deps chromium` before npm test, and unit tests import playwright (e.g. src/tests/unit/admin-css-build.test.ts). Following the guide as written makes npm test fail for a missing browser. The other causes listed (docs-readers modules, superpowers links, no git repo) come from the stripped packet and are harness artifacts. The Playwright omission is a real doc gap."
+              "subjectGroupId": "g1",
+              "ruling": "harness",
+              "reason": "Every cause the reader names comes from its environment: Playwright browsers not installed, scripts/docs-readers/ and docs/superpowers/ left out of the reader's tree by design (job absentList), and a checkout with no git repository. In the real repository, running `npm test` (package.json line 79) would not fail for these reasons."
             },
             {
               "itemId": "item-3",
-              "class": "finding",
-              "subjectGroupId": "playwright-browser-not-in-guide",
-              "ruling": "real",
-              "reason": "package.json:79 chains test:component after the vitest run with &&. Unit tests need the Playwright browser, which the guide never says to install, so the first step fails and the component project never runs. This is downstream of the same gap."
+              "class": "notAClaim",
+              "reason": "Describes the downstream effect of the failure in item 2: the && chain in package.json line 79 stopped before test:component ran. It claims nothing against the docs."
             },
             {
               "itemId": "item-4",
               "class": "finding",
-              "subjectGroupId": "svelte-check-env-errors",
+              "subjectGroupId": "g2",
               "ruling": "harness",
-              "reason": "test.yml:28-36 records that the templates/waymark module-resolution block is expected and that npm run check still reports 0 errors in a real checkout. The 92 errors come from the missing install and the stripped scripts/docs-readers modules (absentList)."
+              "reason": "The svelte-check failures come from dependencies missing in the reader's pre-provisioned environment (adapter-cloudflare, @tailwindcss/vite not installed) and from scripts/docs-readers/, which is absent by design per the job's absentList. The reader claims no page is wrong."
             },
             {
               "itemId": "item-5",
-              "class": "finding",
-              "subjectGroupId": "permission-denied",
-              "ruling": "harness",
-              "reason": "The follow-up command was denied by the harness permission system, not blocked by anything in the docs."
+              "class": "notAClaim",
+              "reason": "Reports that the permission system denied a follow-up command. It is an environment refusal with no claim about the docs."
             },
             {
               "itemId": "item-6",
               "class": "interpretation",
-              "reason": "Reading 'this guide' as CONTRIBUTING.md, which has the 'Set up and run the suite' section, is a reasonable scope choice."
+              "reason": "Choosing which page 'this guide' means is how the reader read the job text, not a claim against the docs."
             },
             {
               "itemId": "item-7",
               "class": "interpretation",
-              "reason": "Treating the existing node_modules/dist as a stand-in for install/prepare is a workaround the reader chose."
+              "reason": "Using the existing node_modules and dist/ in place of the install step is a workaround the reader chose for its environment, not a claim that a page is wrong."
             },
             {
               "itemId": "item-8",
               "class": "interpretation",
-              "reason": "CONTRIBUTING.md:18 frames the showcase as 'To see a change in a running admin', so treating it as optional is a reasonable reading."
+              "reason": "Treating the showcase setup as out of scope is a scope choice the job left open. CONTRIBUTING.md lines 18-19 present the showcase as optional, for seeing a change."
             },
             {
               "itemId": "item-9",
               "class": "interpretation",
-              "reason": "Limiting the run to the three listed commands, and not the check:* gates CONTRIBUTING.md:66-69 points to, is a scope judgment."
+              "reason": "Limiting the work to the three commands under 'Set up and run the suite' is a scope decision the job left open, not a claim of a docs defect."
             }
           ],
           "usage": {
-            "input": 24,
-            "output": 4709,
-            "cacheCreation": 16947,
-            "cacheRead": 131939,
-            "counted": 21680
+            "input": 14,
+            "output": 2424,
+            "cacheCreation": 7258,
+            "cacheRead": 61929,
+            "counted": 9696
           },
           "verified": {
             "ok": true,
@@ -1197,64 +1133,62 @@
       "rulings": [
         {
           "itemId": "item-1",
-          "class": "finding",
-          "subjectGroupId": "harness-shell-denied",
-          "ruling": "harness",
-          "reason": "The reader couldn't run any shell commands because the sandbox denied them. That is a limit of the test environment, not a problem in the documentation."
+          "class": "notAClaim",
+          "reason": "This only reports that the sandbox denied shell commands, so the reader verified by hand. It does not claim any page was wrong or silent."
         },
         {
           "itemId": "item-2",
           "class": "finding",
-          "subjectGroupId": "json-flag-placement",
-          "ruling": "real",
-          "reason": "None of the listed pages says where `--json` must go. The examples only show it at the end (cli-cairn-json-output.md:30-36), and cli-cairn-exit-codes.md:100-101 lists root flags without giving their position. So the reader had to rely on convention."
+          "subjectGroupId": "g1",
+          "ruling": "false",
+          "reason": "The job did not need this fact. cli-cairn-json-output.md lines 30-36 show `--json` at the end of every documented invocation, and that is the placement the wrapper used, so nothing about placement was left to guess."
         },
         {
           "itemId": "item-3",
           "class": "finding",
-          "subjectGroupId": "additional-properties-vs-optional-field-evolution",
+          "subjectGroupId": "g2",
           "ruling": "real",
-          "reason": "The adopt-list schema sets additionalProperties:false at the top level and on each candidate (cairn-adopt-list.schema.json:8,20). But cli-cairn-json-output.md:346-348 says `adoptable` was added within schemaVersion 1, 'so a reader written before it still reads every candidate'. A strict validator built from the pre-`adoptable` schema would reject it. The pages never state a rule for tolerating unknown fields, so the reader was left with a real conflict."
+          "reason": "cli-cairn-json-output.md:346-348 says `adoptable` was added as an optional field within schema version 1 and that 'a reader written before it still reads every candidate'. Yet every published schema is closed (for example cairn-adopt-list.schema.json:8 and :20 set additionalProperties:false), and line 8 calls it a closed contract. I searched docs/ and found no page that states whether a consumer must tolerate unknown fields, so a parser author has to guess."
         },
         {
           "itemId": "item-4",
           "class": "finding",
-          "subjectGroupId": "empty-stdout-meaning",
+          "subjectGroupId": "g3",
           "ruling": "real",
-          "reason": "cli-cairn-doctor.md:121-122 says empty stdout means the invocation was wrong and that a usage error is the only case with no payload. cli-cairn-exit-codes.md:95-97 says empty stdout can mean a usage error, a run that ended before any payload was written, or a tool fault. The exit-codes page also contradicts itself: line 92 says empty stdout 'means the invocation was wrong'."
+          "reason": "cli-cairn-doctor.md:121-122 says a usage error is 'the one case that writes no payload'. In the code, runDoctor returns the error from doctor.NewSnapshot, for example a path that fails EvalSymlinks (doctor.go:55-58, snapshot.go:80-83), and also returns marshal or write errors (doctor.go:100-106). Those paths write no stdout and exit 3 through exitVerdict (main.go:113-116), and a panic does the same (main.go:92-96). The code matches cli-cairn-exit-codes.md:95-97, not the doctor page."
         },
         {
           "itemId": "item-5",
           "class": "interpretation",
-          "reason": "The pages state this directly. cli-cairn-json-output.md:42 says every payload is one compact line, and lines 47-49 say only bare `cairn health --json` streams several site lines plus a summary line. The reader's rule is a design choice that follows from those lines, not a gap in the docs."
+          "reason": "This is the reader's own parser design for detecting a stream. cli-cairn-json-output.md:42-49 already says only bare `cairn health --json` writes multiple lines, and the item does not claim the pages were silent."
         },
         {
           "itemId": "item-6",
-          "class": "interpretation",
-          "reason": "cli-cairn-json-output.md:50-51 states it: 'A stream that ends with no summary line reads UNKNOWN'. Lines 25-26 and 49 say that stream site lines omit exitCode. The reader's handling follows the documented rule."
+          "class": "notAClaim",
+          "reason": "This applies cli-cairn-json-output.md:49-51, which says a stream that ends with no summary line reads UNKNOWN. The reader relied on the page and makes no claim that it is deficient."
         },
         {
           "itemId": "item-7",
           "class": "interpretation",
-          "reason": "cli-cairn-json-output.md:17 says a payload's exitCode is the process exit code. Raising an error when they differ is the reader's own choice of how to enforce that rule, not a claim that the docs are wrong or missing something."
+          "reason": "Choosing to raise an error on a mismatch between the payload's exitCode and the process exit code is error-handling design left to the reader. It does not claim a gap in the docs."
         },
         {
           "itemId": "item-8",
-          "class": "notAClaim",
-          "reason": "Picking a Python version is the reader's own implementation choice. The task didn't specify a language, and this says nothing about the documentation."
+          "class": "interpretation",
+          "reason": "The job left the implementation language and version open, so this is the reader's own choice."
         },
         {
           "itemId": "item-9",
           "class": "interpretation",
-          "reason": "cli-cairn-doctor.md:111-112 states this directly: 'The payload carries no severity field, so a consumer folding a fail reads the severity column above, keyed on checkId.' The doctor schema's check has no severity property (cairn-doctor.schema.json:26-34). The reader's conclusion follows the docs."
+          "reason": "Leaving severity out of the parser is a scope choice. cli-cairn-doctor.md:111-112 already says the payload carries no severity field and names where a consumer gets it."
         }
       ],
       "usage": {
-        "input": 18,
-        "output": 3983,
-        "cacheCreation": 30524,
-        "cacheRead": 101941,
-        "counted": 34525
+        "input": 22,
+        "output": 4185,
+        "cacheCreation": 36992,
+        "cacheRead": 279967,
+        "counted": 41199
       },
       "verified": {
         "ok": true,
@@ -1266,98 +1200,65 @@
         {
           "initModel": "claude-opus-5-5",
           "outcome": "done",
-          "rulings": [],
-          "usage": {
-            "input": 12,
-            "output": 734,
-            "cacheCreation": 7803,
-            "cacheRead": 38885,
-            "counted": 8549
-          },
-          "verified": {
-            "ok": false,
-            "init": true,
-            "canaries": true,
-            "problems": [
-              "item item-1: no ruling",
-              "item item-2: no ruling",
-              "item item-3: no ruling",
-              "item item-4: no ruling",
-              "item item-5: no ruling",
-              "item item-6: no ruling",
-              "item item-7: no ruling",
-              "item item-8: no ruling",
-              "item item-9: no ruling"
-            ]
-          },
-          "cause": "initial",
-          "final": false,
-          "transcript": "transcripts/scripter-control-1-attempt1.jsonl"
-        },
-        {
-          "initModel": "claude-opus-5-5",
-          "outcome": "done",
           "rulings": [
             {
               "itemId": "item-1",
-              "class": "finding",
-              "subjectGroupId": "harness-shell-denied",
-              "ruling": "harness",
-              "reason": "The reader couldn't run any shell commands because the sandbox denied them. That is a limit of the test environment, not a problem in the documentation."
+              "class": "notAClaim",
+              "reason": "This only reports that the sandbox denied shell commands, so the reader verified by hand. It does not claim any page was wrong or silent."
             },
             {
               "itemId": "item-2",
               "class": "finding",
-              "subjectGroupId": "json-flag-placement",
-              "ruling": "real",
-              "reason": "None of the listed pages says where `--json` must go. The examples only show it at the end (cli-cairn-json-output.md:30-36), and cli-cairn-exit-codes.md:100-101 lists root flags without giving their position. So the reader had to rely on convention."
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "The job did not need this fact. cli-cairn-json-output.md lines 30-36 show `--json` at the end of every documented invocation, and that is the placement the wrapper used, so nothing about placement was left to guess."
             },
             {
               "itemId": "item-3",
               "class": "finding",
-              "subjectGroupId": "additional-properties-vs-optional-field-evolution",
+              "subjectGroupId": "g2",
               "ruling": "real",
-              "reason": "The adopt-list schema sets additionalProperties:false at the top level and on each candidate (cairn-adopt-list.schema.json:8,20). But cli-cairn-json-output.md:346-348 says `adoptable` was added within schemaVersion 1, 'so a reader written before it still reads every candidate'. A strict validator built from the pre-`adoptable` schema would reject it. The pages never state a rule for tolerating unknown fields, so the reader was left with a real conflict."
+              "reason": "cli-cairn-json-output.md:346-348 says `adoptable` was added as an optional field within schema version 1 and that 'a reader written before it still reads every candidate'. Yet every published schema is closed (for example cairn-adopt-list.schema.json:8 and :20 set additionalProperties:false), and line 8 calls it a closed contract. I searched docs/ and found no page that states whether a consumer must tolerate unknown fields, so a parser author has to guess."
             },
             {
               "itemId": "item-4",
               "class": "finding",
-              "subjectGroupId": "empty-stdout-meaning",
+              "subjectGroupId": "g3",
               "ruling": "real",
-              "reason": "cli-cairn-doctor.md:121-122 says empty stdout means the invocation was wrong and that a usage error is the only case with no payload. cli-cairn-exit-codes.md:95-97 says empty stdout can mean a usage error, a run that ended before any payload was written, or a tool fault. The exit-codes page also contradicts itself: line 92 says empty stdout 'means the invocation was wrong'."
+              "reason": "cli-cairn-doctor.md:121-122 says a usage error is 'the one case that writes no payload'. In the code, runDoctor returns the error from doctor.NewSnapshot, for example a path that fails EvalSymlinks (doctor.go:55-58, snapshot.go:80-83), and also returns marshal or write errors (doctor.go:100-106). Those paths write no stdout and exit 3 through exitVerdict (main.go:113-116), and a panic does the same (main.go:92-96). The code matches cli-cairn-exit-codes.md:95-97, not the doctor page."
             },
             {
               "itemId": "item-5",
               "class": "interpretation",
-              "reason": "The pages state this directly. cli-cairn-json-output.md:42 says every payload is one compact line, and lines 47-49 say only bare `cairn health --json` streams several site lines plus a summary line. The reader's rule is a design choice that follows from those lines, not a gap in the docs."
+              "reason": "This is the reader's own parser design for detecting a stream. cli-cairn-json-output.md:42-49 already says only bare `cairn health --json` writes multiple lines, and the item does not claim the pages were silent."
             },
             {
               "itemId": "item-6",
-              "class": "interpretation",
-              "reason": "cli-cairn-json-output.md:50-51 states it: 'A stream that ends with no summary line reads UNKNOWN'. Lines 25-26 and 49 say that stream site lines omit exitCode. The reader's handling follows the documented rule."
+              "class": "notAClaim",
+              "reason": "This applies cli-cairn-json-output.md:49-51, which says a stream that ends with no summary line reads UNKNOWN. The reader relied on the page and makes no claim that it is deficient."
             },
             {
               "itemId": "item-7",
               "class": "interpretation",
-              "reason": "cli-cairn-json-output.md:17 says a payload's exitCode is the process exit code. Raising an error when they differ is the reader's own choice of how to enforce that rule, not a claim that the docs are wrong or missing something."
+              "reason": "Choosing to raise an error on a mismatch between the payload's exitCode and the process exit code is error-handling design left to the reader. It does not claim a gap in the docs."
             },
             {
               "itemId": "item-8",
-              "class": "notAClaim",
-              "reason": "Picking a Python version is the reader's own implementation choice. The task didn't specify a language, and this says nothing about the documentation."
+              "class": "interpretation",
+              "reason": "The job left the implementation language and version open, so this is the reader's own choice."
             },
             {
               "itemId": "item-9",
               "class": "interpretation",
-              "reason": "cli-cairn-doctor.md:111-112 states this directly: 'The payload carries no severity field, so a consumer folding a fail reads the severity column above, keyed on checkId.' The doctor schema's check has no severity property (cairn-doctor.schema.json:26-34). The reader's conclusion follows the docs."
+              "reason": "Leaving severity out of the parser is a scope choice. cli-cairn-doctor.md:111-112 already says the payload carries no severity field and names where a consumer gets it."
             }
           ],
           "usage": {
-            "input": 18,
-            "output": 3983,
-            "cacheCreation": 30524,
-            "cacheRead": 101941,
-            "counted": 34525
+            "input": 22,
+            "output": 4185,
+            "cacheCreation": 36992,
+            "cacheRead": 279967,
+            "counted": 41199
           },
           "verified": {
             "ok": true,
@@ -1365,9 +1266,9 @@
             "canaries": true,
             "problems": []
           },
-          "cause": "unverified",
+          "cause": "initial",
           "final": true,
-          "transcript": "transcripts/scripter-control-1-attempt2.jsonl"
+          "transcript": "transcripts/scripter-control-1-attempt1.jsonl"
         }
       ]
     },
@@ -1380,60 +1281,60 @@
       "rulings": [
         {
           "itemId": "item-1",
-          "class": "finding",
-          "subjectGroupId": "g-untested-denied",
-          "ruling": "harness",
-          "reason": "The stall comes from the environment: tool approval was denied and there is no cairn binary. Nothing in the repo contradicts it."
+          "class": "notAClaim",
+          "reason": "Reports that the sandbox denied a python3 run and that no cairn binary was available. It makes no claim that any page is wrong or silent."
         },
         {
           "itemId": "item-2",
-          "class": "finding",
-          "subjectGroupId": "g-doctor-schema-copies",
-          "ruling": "false",
-          "reason": "The tree has only one cairn-doctor.schema.json (docs/reference/schema/). No second copy exists, so the claim that 'the two copies are identical' is unsupported."
+          "class": "notAClaim",
+          "reason": "Reports a denied shell loop and the workaround the reader used, and notes that the two doctor schema copies are identical. It makes no claim against the docs."
         },
         {
           "itemId": "item-3",
           "class": "interpretation",
-          "reason": "The agent picked a language the task left open."
+          "reason": "The job text left the implementation language open, so choosing Python is the reader's own choice."
         },
         {
           "itemId": "item-4",
-          "class": "interpretation",
-          "reason": "A design choice. Its stated grounds hold: exitCode is not in cairn-health.schema.json's required list, and the stream form omits it."
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "false",
+          "reason": "The pages say which invocation streams: bare `cairn health --json` writes NDJSON (cli-cairn-json-output.md:30-31, 47-49). They also say the single-site payload carries `exitCode` while stream lines omit it (cli-cairn-json-output.md:25-26 and 149; cairn-health.schema.json:5). That makes the two forms distinguishable, and the caller already knows its own arguments."
         },
         {
           "itemId": "item-5",
           "class": "interpretation",
-          "reason": "Tolerance policy inferred from the docs. The note that adoptable was 'added as an optional field within schema version 1' exists, even though the schemas set additionalProperties:false."
+          "reason": "Tolerating unknown extra fields is a parsing-strictness choice the reader based on the adoptable-within-v1 note. The item does not claim that a page is wrong or contradictory."
         },
         {
           "itemId": "item-6",
           "class": "interpretation",
-          "reason": "Parsing-policy choice. It matches the docs: seven kinds, and schemaVersion is const 1."
+          "reason": "Treating an unexpected schemaVersion or kind as a parse error is a design choice consistent with the schemas' `const: 1` and the closed list of seven kinds. It makes no claim against the docs."
         },
         {
           "itemId": "item-7",
-          "class": "interpretation",
-          "reason": "Error-handling choice for exit codes outside 0-3. The exit-codes page doesn't mention signals, so 'the pages don't cover it' holds."
+          "class": "finding",
+          "subjectGroupId": "g2",
+          "ruling": "false",
+          "reason": "cli-cairn-exit-codes.md:5 states that every cairn command exits with one of four codes. A signal kill is the operating system ending the process, not an exit code cairn chooses, so it is not a fact the cairn docs could state. Handling it is general process handling, not a gap in the docs."
         },
         {
           "itemId": "item-8",
           "class": "interpretation",
-          "reason": "Design choice. The cited figures match cli-cairn-exit-codes.md: 480s default and min(480 x sites, 1920s) for a sweep."
+          "reason": "Leaving out a subprocess timeout is a wrapper design choice. The item cites the documented `--timeout` bounds and makes no claim that they are wrong."
         },
         {
           "itemId": "item-9",
-          "class": "interpretation",
-          "reason": "Handling choice that matches the docs: a stream ending with no summary line reads UNKNOWN."
+          "class": "notAClaim",
+          "reason": "This restates what the page says: cli-cairn-json-output.md:49-51 says a stream that ends with no summary line reads UNKNOWN. The reader relied on that line and did not report a defect."
         }
       ],
       "usage": {
-        "input": 24,
-        "output": 3281,
-        "cacheCreation": 12569,
-        "cacheRead": 122819,
-        "counted": 15874
+        "input": 10,
+        "output": 2394,
+        "cacheCreation": 21373,
+        "cacheRead": 51312,
+        "counted": 23777
       },
       "verified": {
         "ok": true,
@@ -1448,60 +1349,60 @@
           "rulings": [
             {
               "itemId": "item-1",
-              "class": "finding",
-              "subjectGroupId": "g-untested-denied",
-              "ruling": "harness",
-              "reason": "The stall comes from the environment: tool approval was denied and there is no cairn binary. Nothing in the repo contradicts it."
+              "class": "notAClaim",
+              "reason": "Reports that the sandbox denied a python3 run and that no cairn binary was available. It makes no claim that any page is wrong or silent."
             },
             {
               "itemId": "item-2",
-              "class": "finding",
-              "subjectGroupId": "g-doctor-schema-copies",
-              "ruling": "false",
-              "reason": "The tree has only one cairn-doctor.schema.json (docs/reference/schema/). No second copy exists, so the claim that 'the two copies are identical' is unsupported."
+              "class": "notAClaim",
+              "reason": "Reports a denied shell loop and the workaround the reader used, and notes that the two doctor schema copies are identical. It makes no claim against the docs."
             },
             {
               "itemId": "item-3",
               "class": "interpretation",
-              "reason": "The agent picked a language the task left open."
+              "reason": "The job text left the implementation language open, so choosing Python is the reader's own choice."
             },
             {
               "itemId": "item-4",
-              "class": "interpretation",
-              "reason": "A design choice. Its stated grounds hold: exitCode is not in cairn-health.schema.json's required list, and the stream form omits it."
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "The pages say which invocation streams: bare `cairn health --json` writes NDJSON (cli-cairn-json-output.md:30-31, 47-49). They also say the single-site payload carries `exitCode` while stream lines omit it (cli-cairn-json-output.md:25-26 and 149; cairn-health.schema.json:5). That makes the two forms distinguishable, and the caller already knows its own arguments."
             },
             {
               "itemId": "item-5",
               "class": "interpretation",
-              "reason": "Tolerance policy inferred from the docs. The note that adoptable was 'added as an optional field within schema version 1' exists, even though the schemas set additionalProperties:false."
+              "reason": "Tolerating unknown extra fields is a parsing-strictness choice the reader based on the adoptable-within-v1 note. The item does not claim that a page is wrong or contradictory."
             },
             {
               "itemId": "item-6",
               "class": "interpretation",
-              "reason": "Parsing-policy choice. It matches the docs: seven kinds, and schemaVersion is const 1."
+              "reason": "Treating an unexpected schemaVersion or kind as a parse error is a design choice consistent with the schemas' `const: 1` and the closed list of seven kinds. It makes no claim against the docs."
             },
             {
               "itemId": "item-7",
-              "class": "interpretation",
-              "reason": "Error-handling choice for exit codes outside 0-3. The exit-codes page doesn't mention signals, so 'the pages don't cover it' holds."
+              "class": "finding",
+              "subjectGroupId": "g2",
+              "ruling": "false",
+              "reason": "cli-cairn-exit-codes.md:5 states that every cairn command exits with one of four codes. A signal kill is the operating system ending the process, not an exit code cairn chooses, so it is not a fact the cairn docs could state. Handling it is general process handling, not a gap in the docs."
             },
             {
               "itemId": "item-8",
               "class": "interpretation",
-              "reason": "Design choice. The cited figures match cli-cairn-exit-codes.md: 480s default and min(480 x sites, 1920s) for a sweep."
+              "reason": "Leaving out a subprocess timeout is a wrapper design choice. The item cites the documented `--timeout` bounds and makes no claim that they are wrong."
             },
             {
               "itemId": "item-9",
-              "class": "interpretation",
-              "reason": "Handling choice that matches the docs: a stream ending with no summary line reads UNKNOWN."
+              "class": "notAClaim",
+              "reason": "This restates what the page says: cli-cairn-json-output.md:49-51 says a stream that ends with no summary line reads UNKNOWN. The reader relied on that line and did not report a defect."
             }
           ],
           "usage": {
-            "input": 24,
-            "output": 3281,
-            "cacheCreation": 12569,
-            "cacheRead": 122819,
-            "counted": 15874
+            "input": 10,
+            "output": 2394,
+            "cacheCreation": 21373,
+            "cacheRead": 51312,
+            "counted": 23777
           },
           "verified": {
             "ok": true,
@@ -1516,9 +1417,9 @@
       ]
     }
   ],
-  "verified": false,
+  "verified": true,
   "cliVersion": "2.1.282",
-  "runRoot": "/var/home/glw907/.cache/docs-readers/20260925t174516-7394e3",
+  "runRoot": "/var/home/glw907/.cache/docs-readers/20260925t182654-35eb92",
   "teardown": {
     "runDirRemoved": true,
     "containersLeft": 0,

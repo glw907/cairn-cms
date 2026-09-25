@@ -1,0 +1,980 @@
+{
+  "batch": "round1-adjudicator",
+  "runId": "20260925t183138-9409d6",
+  "kind": "adjudicator",
+  "stopReason": "complete",
+  "budgetTokens": 2000000,
+  "usage": {
+    "input": 3390,
+    "output": 24612,
+    "cacheCreation": 114654,
+    "cacheRead": 1292947,
+    "counted": 142656
+  },
+  "jobs": [
+    {
+      "id": "evaluator-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "item-1",
+          "class": "interpretation",
+          "reason": "The job text never says what the reader's existing stack is, so the reader chose to make the verdict conditional on it. That choice was left open by the job and makes no claim against any page."
+        },
+        {
+          "itemId": "item-2",
+          "class": "notAClaim",
+          "reason": "The reader drew an evaluative inference about adoption from wording on the pages (for example, docs/why-cairn.md:40, 'Every production cairn site I run'). It does not claim that any page is wrong or silent on a fact the job needed."
+        }
+      ],
+      "usage": {
+        "input": 8,
+        "output": 732,
+        "cacheCreation": 352,
+        "cacheRead": 27418,
+        "counted": 1092
+      },
+      "verified": {
+        "ok": false,
+        "init": true,
+        "canaries": true,
+        "problems": [
+          "item item-3: no ruling"
+        ]
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-1",
+              "class": "interpretation",
+              "reason": "The job text never says what the reader's existing stack is, so the reader chose which stack to assume. That is a scope choice the job left open, and it makes no claim against the docs."
+            },
+            {
+              "itemId": "item-2",
+              "class": "notAClaim",
+              "reason": "The reader draws a conclusion about the adopter base from what the pages say (docs/why-cairn.md:40, docs/extend/migration-notes.md:403). It does not say any page is wrong, contradictory, or missing a fact the job needed."
+            }
+          ],
+          "usage": {
+            "input": 8,
+            "output": 690,
+            "cacheCreation": 2787,
+            "cacheRead": 25252,
+            "counted": 3485
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-3: no ruling"
+            ]
+          },
+          "cause": "initial",
+          "final": false,
+          "transcript": "transcripts/evaluator-control-1-attempt1.jsonl"
+        },
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-1",
+              "class": "interpretation",
+              "reason": "The job text never says what the reader's existing stack is, so the reader chose to make the verdict conditional on it. That choice was left open by the job and makes no claim against any page."
+            },
+            {
+              "itemId": "item-2",
+              "class": "notAClaim",
+              "reason": "The reader drew an evaluative inference about adoption from wording on the pages (for example, docs/why-cairn.md:40, 'Every production cairn site I run'). It does not claim that any page is wrong or silent on a fact the job needed."
+            }
+          ],
+          "usage": {
+            "input": 8,
+            "output": 732,
+            "cacheCreation": 352,
+            "cacheRead": 27418,
+            "counted": 1092
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-3: no ruling"
+            ]
+          },
+          "cause": "unverified",
+          "final": true,
+          "transcript": "transcripts/evaluator-control-1-attempt2.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "operator-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "item-2",
+          "class": "interpretation",
+          "reason": "The reader chose to report the fix rather than edit wrangler.jsonc and redeploy. That is a scope decision the job text left open, and the item makes no claim that the docs are wrong or silent."
+        },
+        {
+          "itemId": "item-3",
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "real",
+          "reason": "docs/admin/is-it-working.md:224-227 says to see wire-the-delivery-surface.md and reference/cloudflare.md \"for the shape\" of the `send_email`/`d1_databases` bindings. A grep of both pages finds no `send_email`, `d1_databases`, or Email match. The shape exists only on pages the section doesn't link (add-cairn-to-a-sveltekit-app.md:131, build-a-site-by-hand.md:612), so the page's pointer is false."
+        }
+      ],
+      "usage": {
+        "input": 10,
+        "output": 1428,
+        "cacheCreation": 3448,
+        "cacheRead": 42193,
+        "counted": 4886
+      },
+      "verified": {
+        "ok": false,
+        "init": true,
+        "canaries": true,
+        "problems": [
+          "item item-1: no ruling"
+        ]
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "The reader chose to report the fix rather than edit wrangler.jsonc and redeploy, a scope choice the job left open. It makes no claim that a page is wrong or silent."
+            },
+            {
+              "itemId": "item-3",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "real",
+              "reason": "docs/admin/is-it-working.md:224-227 says to see wire-the-delivery-surface.md and reference/cloudflare.md \"for the shape\" of the send_email binding named EMAIL. A grep shows neither page contains send_email or EMAIL. The shape appears only in add-cairn-to-a-sveltekit-app.md:131 and build-a-site-by-hand.md:612, so the page's pointer is wrong."
+            }
+          ],
+          "usage": {
+            "input": 12,
+            "output": 1278,
+            "cacheCreation": 5900,
+            "cacheRead": 48594,
+            "counted": 7190
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-1: no ruling"
+            ]
+          },
+          "cause": "initial",
+          "final": false,
+          "transcript": "transcripts/operator-control-1-attempt1.jsonl"
+        },
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "The reader chose to report the fix rather than edit wrangler.jsonc and redeploy. That is a scope decision the job text left open, and the item makes no claim that the docs are wrong or silent."
+            },
+            {
+              "itemId": "item-3",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "real",
+              "reason": "docs/admin/is-it-working.md:224-227 says to see wire-the-delivery-surface.md and reference/cloudflare.md \"for the shape\" of the `send_email`/`d1_databases` bindings. A grep of both pages finds no `send_email`, `d1_databases`, or Email match. The shape exists only on pages the section doesn't link (add-cairn-to-a-sveltekit-app.md:131, build-a-site-by-hand.md:612), so the page's pointer is false."
+            }
+          ],
+          "usage": {
+            "input": 10,
+            "output": 1428,
+            "cacheCreation": 3448,
+            "cacheRead": 42193,
+            "counted": 4886
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-1: no ruling"
+            ]
+          },
+          "cause": "unverified",
+          "final": true,
+          "transcript": "transcripts/operator-control-1-attempt2.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "designer-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "item-2",
+          "class": "interpretation",
+          "reason": "Choosing hue 155 was a choice the job left open (\"for example, rotate the primary color's hue\"). The item makes no claim that a page is wrong or silent."
+        },
+        {
+          "itemId": "item-3",
+          "class": "interpretation",
+          "reason": "The reader chose to leave --color-primary-content unchanged, following the theme recipe as it reads. The item describes a scope choice that relies on the page and makes no claim that the page is defective."
+        },
+        {
+          "itemId": "item-5",
+          "class": "notAClaim",
+          "reason": "The reader accepted the docs' contrast statement without measuring it, because the environment had no browser. It does not say the docs are wrong or missing a fact."
+        },
+        {
+          "itemId": "item-6",
+          "class": "notAClaim",
+          "reason": "The reader verified with `npm run build`, which the job asked for, rather than checking by eye, because the session had no browser. The item gives no claim that the page at design-your-site.md:44 is wrong or silent."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 748,
+        "cacheCreation": 0,
+        "cacheRead": 20137,
+        "counted": 754
+      },
+      "verified": {
+        "ok": false,
+        "init": true,
+        "canaries": true,
+        "problems": [
+          "item item-1: no ruling",
+          "item item-4: no ruling"
+        ]
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "The job explicitly left the visual change open (e.g. rotate the primary hue); picking hue 155 is a design choice, not a claim against the docs."
+            },
+            {
+              "itemId": "item-3",
+              "class": "notAClaim",
+              "reason": "The reader followed the theme recipe's statement that the -content value keeps its value; this restates guidance it relied on and claims no defect."
+            },
+            {
+              "itemId": "item-5",
+              "class": "notAClaim",
+              "reason": "The reader relied on the docs' statement that holding lightness and chroma preserves contrast and notes it did not measure it; no claim that the page is wrong or silent."
+            },
+            {
+              "itemId": "item-6",
+              "class": "notAClaim",
+              "reason": "The divergence is because no browser or dev server was available and the job asked for a build check; it reports an environment limit, not a page defect."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 632,
+            "cacheCreation": 2882,
+            "cacheRead": 17255,
+            "counted": 3520
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-1: no ruling",
+              "item item-4: no ruling"
+            ]
+          },
+          "cause": "initial",
+          "final": false,
+          "transcript": "transcripts/designer-control-1-attempt1.jsonl"
+        },
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "Choosing hue 155 was a choice the job left open (\"for example, rotate the primary color's hue\"). The item makes no claim that a page is wrong or silent."
+            },
+            {
+              "itemId": "item-3",
+              "class": "interpretation",
+              "reason": "The reader chose to leave --color-primary-content unchanged, following the theme recipe as it reads. The item describes a scope choice that relies on the page and makes no claim that the page is defective."
+            },
+            {
+              "itemId": "item-5",
+              "class": "notAClaim",
+              "reason": "The reader accepted the docs' contrast statement without measuring it, because the environment had no browser. It does not say the docs are wrong or missing a fact."
+            },
+            {
+              "itemId": "item-6",
+              "class": "notAClaim",
+              "reason": "The reader verified with `npm run build`, which the job asked for, rather than checking by eye, because the session had no browser. The item gives no claim that the page at design-your-site.md:44 is wrong or silent."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 748,
+            "cacheCreation": 0,
+            "cacheRead": 20137,
+            "counted": 754
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-1: no ruling",
+              "item item-4: no ruling"
+            ]
+          },
+          "cause": "unverified",
+          "final": true,
+          "transcript": "transcripts/designer-control-1-attempt2.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "extender-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "item-1",
+          "class": "interpretation",
+          "reason": "Which role the reader chose to admit to the new screen was left open by the job. The item does not claim the docs were wrong or silent; it reports a choice about the site's own access map."
+        },
+        {
+          "itemId": "item-2",
+          "class": "interpretation",
+          "reason": "The route path and eyebrow text were naming choices the job left to the reader, and the reader copied them from the guide's examples. The item makes no claim against the docs."
+        },
+        {
+          "itemId": "item-3",
+          "class": "interpretation",
+          "reason": "Leaving out actions, the section, the database binding and the audit sink was a scope choice for a read-only screen. The reader's remark that createSectionAction only covers actions matches the page (lines 32-33: 'reused by every action inside it'), so it alleges no defect."
+        },
+        {
+          "itemId": "item-4",
+          "class": "interpretation",
+          "reason": "Leaving out a sidebar entry was a scope choice. The page itself presents the nav step as optional (line 446), and the item claims no defect."
+        },
+        {
+          "itemId": "item-5",
+          "class": "interpretation",
+          "reason": "The reader skipped createSectionAction because the screen has no POST and the job did not ask for a database binding. Those are scope and convenience reasons, not a claim that the page is wrong or silent."
+        }
+      ],
+      "usage": {
+        "input": 8,
+        "output": 963,
+        "cacheCreation": 11656,
+        "cacheRead": 26040,
+        "counted": 12627
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-1",
+              "class": "interpretation",
+              "reason": "Which role the reader chose to admit to the new screen was left open by the job. The item does not claim the docs were wrong or silent; it reports a choice about the site's own access map."
+            },
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "The route path and eyebrow text were naming choices the job left to the reader, and the reader copied them from the guide's examples. The item makes no claim against the docs."
+            },
+            {
+              "itemId": "item-3",
+              "class": "interpretation",
+              "reason": "Leaving out actions, the section, the database binding and the audit sink was a scope choice for a read-only screen. The reader's remark that createSectionAction only covers actions matches the page (lines 32-33: 'reused by every action inside it'), so it alleges no defect."
+            },
+            {
+              "itemId": "item-4",
+              "class": "interpretation",
+              "reason": "Leaving out a sidebar entry was a scope choice. The page itself presents the nav step as optional (line 446), and the item claims no defect."
+            },
+            {
+              "itemId": "item-5",
+              "class": "interpretation",
+              "reason": "The reader skipped createSectionAction because the screen has no POST and the job did not ask for a database binding. Those are scope and convenience reasons, not a claim that the page is wrong or silent."
+            }
+          ],
+          "usage": {
+            "input": 8,
+            "output": 963,
+            "cacheCreation": 11656,
+            "cacheRead": 26040,
+            "counted": 12627
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/extender-control-1-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "core-developer-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "item-3",
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "real",
+          "reason": "CONTRIBUTING.md lines 11-15 give npm install / npm test / npm run check with no browser-install step, yet the component project uses the Playwright provider (vitest.config.ts:151) and CI needs a separate `npx playwright install --with-deps chromium` (.github/workflows/test.yml:38); package.json has no postinstall/pretest that installs it, and no published page gives this step for the repo's own suite."
+        },
+        {
+          "itemId": "item-4",
+          "class": "interpretation",
+          "reason": "The reader chose which section to treat as 'the guide', a scope choice the job left open; no claim against the docs."
+        },
+        {
+          "itemId": "item-5",
+          "class": "notAClaim",
+          "reason": "Records reliance on pre-installed node_modules because the task environment prevented npm install; no claim that a page is wrong or silent."
+        },
+        {
+          "itemId": "item-6",
+          "class": "notAClaim",
+          "reason": "Reports that the environment denied `npm --version`; it does not claim the docs failed to state anything."
+        },
+        {
+          "itemId": "item-7",
+          "class": "finding",
+          "subjectGroupId": "g2",
+          "ruling": "harness",
+          "reason": "The broken-link failures come from the reader's partial export (its docs/ held only README.md and why-cairn.md), while the published tree includes docs/admin, editors, extend and reference; this is an environment artifact, not a page defect."
+        },
+        {
+          "itemId": "item-8",
+          "class": "notAClaim",
+          "reason": "Records the reader's guess that a test timeout was flaky; makes no claim about the documentation."
+        },
+        {
+          "itemId": "item-9",
+          "class": "notAClaim",
+          "reason": "The divergence was made because the task text said npm install was impossible in this environment, not because CONTRIBUTING.md line 12 was wrong or silent."
+        }
+      ],
+      "usage": {
+        "input": 12,
+        "output": 2007,
+        "cacheCreation": 7503,
+        "cacheRead": 55782,
+        "counted": 9522
+      },
+      "verified": {
+        "ok": false,
+        "init": true,
+        "canaries": true,
+        "problems": [
+          "item item-1: no ruling",
+          "item item-2: no ruling",
+          "item item-10: no ruling"
+        ]
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-3",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "real",
+              "reason": "CONTRIBUTING.md:11-15 gives only npm install / npm test / npm run check, but package.json:79 makes `npm test` run `test:component`, which needs Chromium. CI installs it in a separate step (.github/workflows/test.yml:37-38, `npx playwright install --with-deps chromium`), and package.json has no postinstall that downloads it. I found no published page that gives contributors this step: docs/reference/cairn-audit.md:203 covers a consumer's audit tool, not the repo suite."
+            },
+            {
+              "itemId": "item-4",
+              "class": "interpretation",
+              "reason": "The reader decided which document counted as 'the guide', a scope choice the job left open. It makes no claim that a page is wrong."
+            },
+            {
+              "itemId": "item-5",
+              "class": "notAClaim",
+              "reason": "The reader used the pre-installed dependencies because the task environment required it. It makes no claim against the docs."
+            },
+            {
+              "itemId": "item-6",
+              "class": "notAClaim",
+              "reason": "This reports that the environment denied `npm --version`. The guide states only a Node requirement (CONTRIBUTING.md:12), and the item does not claim a page was wrong or silent."
+            },
+            {
+              "itemId": "item-7",
+              "class": "finding",
+              "subjectGroupId": "g2",
+              "ruling": "harness",
+              "reason": "The reader itself traces the broken-link failure to its own export, which contained only two docs pages. The published tree has the admin, editors, extend, and reference tracks that check:docs walks (CONTRIBUTING.md:73-74), so the failure comes from the environment, not the page."
+            },
+            {
+              "itemId": "item-8",
+              "class": "notAClaim",
+              "reason": "This notes a flaky test timeout that passed on the second run. It claims nothing about the documentation."
+            },
+            {
+              "itemId": "item-9",
+              "class": "notAClaim",
+              "reason": "The reader skipped npm install because the task said a fresh install was not possible. The divergence rests on environment limits, not on any claim that CONTRIBUTING.md:12 is wrong."
+            }
+          ],
+          "usage": {
+            "input": 10,
+            "output": 1801,
+            "cacheCreation": 9170,
+            "cacheRead": 39622,
+            "counted": 10981
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-1: no ruling",
+              "item item-2: no ruling",
+              "item item-10: no ruling"
+            ]
+          },
+          "cause": "initial",
+          "final": false,
+          "transcript": "transcripts/core-developer-control-1-attempt1.jsonl"
+        },
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-3",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "real",
+              "reason": "CONTRIBUTING.md lines 11-15 give npm install / npm test / npm run check with no browser-install step, yet the component project uses the Playwright provider (vitest.config.ts:151) and CI needs a separate `npx playwright install --with-deps chromium` (.github/workflows/test.yml:38); package.json has no postinstall/pretest that installs it, and no published page gives this step for the repo's own suite."
+            },
+            {
+              "itemId": "item-4",
+              "class": "interpretation",
+              "reason": "The reader chose which section to treat as 'the guide', a scope choice the job left open; no claim against the docs."
+            },
+            {
+              "itemId": "item-5",
+              "class": "notAClaim",
+              "reason": "Records reliance on pre-installed node_modules because the task environment prevented npm install; no claim that a page is wrong or silent."
+            },
+            {
+              "itemId": "item-6",
+              "class": "notAClaim",
+              "reason": "Reports that the environment denied `npm --version`; it does not claim the docs failed to state anything."
+            },
+            {
+              "itemId": "item-7",
+              "class": "finding",
+              "subjectGroupId": "g2",
+              "ruling": "harness",
+              "reason": "The broken-link failures come from the reader's partial export (its docs/ held only README.md and why-cairn.md), while the published tree includes docs/admin, editors, extend and reference; this is an environment artifact, not a page defect."
+            },
+            {
+              "itemId": "item-8",
+              "class": "notAClaim",
+              "reason": "Records the reader's guess that a test timeout was flaky; makes no claim about the documentation."
+            },
+            {
+              "itemId": "item-9",
+              "class": "notAClaim",
+              "reason": "The divergence was made because the task text said npm install was impossible in this environment, not because CONTRIBUTING.md line 12 was wrong or silent."
+            }
+          ],
+          "usage": {
+            "input": 12,
+            "output": 2007,
+            "cacheCreation": 7503,
+            "cacheRead": 55782,
+            "counted": 9522
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-1: no ruling",
+              "item item-2: no ruling",
+              "item item-10: no ruling"
+            ]
+          },
+          "cause": "unverified",
+          "final": true,
+          "transcript": "transcripts/core-developer-control-1-attempt2.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "scripter-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "item-2",
+          "class": "interpretation",
+          "reason": "Choosing Python was up to the reader because the job named no language. The item makes no claim against the docs."
+        },
+        {
+          "itemId": "item-3",
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "false",
+          "reason": "json-output.md lines 25-26 and 47-49 say a per-site NDJSON line omits exitCode, while `cairn health <site>` writes a site payload that carries it (line 149). The rule for telling the two forms apart is stated, and the wrapper also knows which command it ran."
+        },
+        {
+          "itemId": "item-4",
+          "class": "finding",
+          "subjectGroupId": "g2",
+          "ruling": "false",
+          "reason": "cli-cairn-exit-codes.md lines 91-97 say empty stdout under --json means no payload was written, and each such case reports UNKNOWN (exit 3). No documented case pairs empty --json stdout with any other code, so the pages leave nothing to guess."
+        },
+        {
+          "itemId": "item-5",
+          "class": "finding",
+          "subjectGroupId": "g3",
+          "ruling": "false",
+          "reason": "cli-cairn-exit-codes.md lines 79-81 say a cancelled run and a tool fault report UNKNOWN (exit 3), and json-output.md lines 50-52 say a signal-cut site is folded into the summary. In the code, health_sweep.go:111-112 returns an error, a tool fault, before any summary is written. The only remaining case is a process killed from outside, and cairn cannot document that exit code."
+        },
+        {
+          "itemId": "item-6",
+          "class": "interpretation",
+          "reason": "Keeping timestamps as strings is a representation choice, and it rests on what json-output.md line 116 states. The item claims no defect."
+        },
+        {
+          "itemId": "item-7",
+          "class": "finding",
+          "subjectGroupId": "g4",
+          "ruling": "real",
+          "reason": "The exit-codes page (lines 8, 63) says an --expect-sites mismatch exits 3. json-output.md lines 300-302 describe `errors` only as registry reads that could not complete, and no published page says whether a mismatch writes a payload. The code does write one: sites.go:80-81 appends ErrExpectSites to listErrs and writeSites (sites.go:140-153) marshals it into `errors`."
+        },
+        {
+          "itemId": "item-8",
+          "class": "finding",
+          "subjectGroupId": "g5",
+          "ruling": "false",
+          "reason": "json-output.md lines 386-388 say the only password prompt belongs to `cairn auth set`, which is not a --json command. No --json command is documented as reading stdin, and the job did not need this fact to parse output."
+        },
+        {
+          "itemId": "item-9",
+          "class": "finding",
+          "subjectGroupId": "g6",
+          "ruling": "real",
+          "reason": "json-output.md lines 346-348 say `adoptable` was added within schema version 1 and that a reader written before it still reads every candidate. The candidate schema (cairn-adopt-list.schema.json line 20) is closed with additionalProperties:false, and the page calls the payloads a closed contract (line 8), so a validator that follows the normative schema's closedness would reject the added field. The docs never state a forward-compatibility policy that reconciles the two."
+        },
+        {
+          "itemId": "item-10",
+          "class": "finding",
+          "subjectGroupId": "g7",
+          "ruling": "false",
+          "reason": "This is not a contradiction. The doctor schema's state enum (line 28) lists the shared frozen state words (json-output.md line 508), and json-output.md line 402 says doctor never writes `held`. A schema that permits a value the producer never emits does not differ from the page on what gets written."
+        },
+        {
+          "itemId": "item-11",
+          "class": "finding",
+          "subjectGroupId": "g8",
+          "ruling": "false",
+          "reason": "This is not a contradiction. The doctor schema (lines 22, 38) sets a minimum requirement, and cli-cairn-doctor.md lines 95 and 109 describe what the producer always writes. Both hold together: the doctor json.go:47,54 emits condition and fix as optional fields, which conforms to the schema."
+        },
+        {
+          "itemId": "item-12",
+          "class": "finding",
+          "subjectGroupId": "g9",
+          "ruling": "false",
+          "reason": "This is not a contradiction. The auth-check schema (lines 19-25) makes `reason` optional, and json-output.md line 376 says the producer writes it beside every non-pass row. A looser schema that still accepts the stated output does not conflict with the page."
+        },
+        {
+          "itemId": "item-13",
+          "class": "finding",
+          "subjectGroupId": "g10",
+          "ruling": "real",
+          "reason": "cli-cairn-doctor.md lines 121-122 say a usage error is the one case that writes no payload. cli-cairn-exit-codes.md lines 95-97 say empty --json stdout can also come from a run that ended early or from a tool fault. The code matches the exit-codes page: doctor.go:55-58 and 101-103 return errors before any payload is written."
+        }
+      ],
+      "usage": {
+        "input": 30,
+        "output": 6667,
+        "cacheCreation": 30869,
+        "cacheRead": 440397,
+        "counted": 37566
+      },
+      "verified": {
+        "ok": false,
+        "init": true,
+        "canaries": true,
+        "problems": [
+          "item item-1: no ruling"
+        ]
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "The job named no language. Choosing Python with TypedDict is the reader's own choice and makes no claim against the docs."
+            },
+            {
+              "itemId": "item-3",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "The page states the rule. cli-cairn-json-output.md:25-26 says every payload except a per-site NDJSON line carries exitCode, and line 49 says each stream line has exitCode omitted, so a site line with exitCode is the single-site form."
+            },
+            {
+              "itemId": "item-4",
+              "class": "finding",
+              "subjectGroupId": "g2",
+              "ruling": "false",
+              "reason": "The pages settle this. cli-cairn-exit-codes.md:95-97 says empty stdout under --json means no payload was produced and the run reports UNKNOWN, and lines 79-80 and 91 tie that to exit 3. No documented case produces empty stdout with any other code."
+            },
+            {
+              "itemId": "item-5",
+              "class": "finding",
+              "subjectGroupId": "g3",
+              "ruling": "false",
+              "reason": "cli-cairn-json-output.md:49-51 says a stream with no summary line reads UNKNOWN. cli-cairn-exit-codes.md:9-10 and 79-80 say a cancelled run or a tool fault exits 3 (UNKNOWN), so the pages cover how to read a truncated stream."
+            },
+            {
+              "itemId": "item-6",
+              "class": "notAClaim",
+              "reason": "This is a design choice resting on what cli-cairn-json-output.md:115-116 states (the zero time writes an empty string). It makes no claim that a page is wrong or silent."
+            },
+            {
+              "itemId": "item-7",
+              "class": "finding",
+              "subjectGroupId": "g4",
+              "ruling": "false",
+              "reason": "cli-cairn-exit-codes.md:95-97 lists every case of empty stdout under --json: a usage error, a run that ended before any payload, or a tool fault. An --expect-sites mismatch is none of these, and json-output.md:17-19 says the payload's exitCode is the process code. So a payload is written, which matches sites.go:80-88 and 139-153."
+            },
+            {
+              "itemId": "item-8",
+              "class": "interpretation",
+              "reason": "Setting stdin to DEVNULL is the reader's own wrapper choice. The item notes that the piped-line rule applies only to `cairn auth set`, which the job did not need, so it claims no gap."
+            },
+            {
+              "itemId": "item-9",
+              "class": "finding",
+              "subjectGroupId": "g5",
+              "ruling": "real",
+              "reason": "cli-cairn-json-output.md:346-348 says `adoptable` was added as an optional field within schema version 1 and that 'a reader written before it still reads every candidate'. The normative schema closes each candidate with additionalProperties:false (cairn-adopt-list.schema.json:20), so a reader validating against the schema as it was before `adoptable` would reject every candidate that carries it. The page and schema therefore conflict on whether fields can be added within a version."
+            },
+            {
+              "itemId": "item-10",
+              "class": "finding",
+              "subjectGroupId": "g6",
+              "ruling": "false",
+              "reason": "The schema enum (cairn-doctor.schema.json:28) is the shared five-word state set and only permits `held`. The page (json-output.md:402-403 and cli-cairn-doctor.md:107) says `held` is never written. A permissive enum does not contradict a statement that one value never appears."
+            },
+            {
+              "itemId": "item-11",
+              "class": "finding",
+              "subjectGroupId": "g7",
+              "ruling": "false",
+              "reason": "A schema that requires fewer fields than the prose guarantees does not contradict it. cli-cairn-doctor.md:95 and 109 state that `condition` is always present and that a fail carries `fix`, and the schema allows both (cairn-doctor.schema.json:30,33)."
+            },
+            {
+              "itemId": "item-12",
+              "class": "finding",
+              "subjectGroupId": "g8",
+              "ruling": "false",
+              "reason": "cli-cairn-json-output.md:375-376 states that `reason` accompanies every non-pass row, and cairn-auth-check.schema.json:25 allows it. A schema that does not enforce a guarantee is not in conflict with a page that states it."
+            },
+            {
+              "itemId": "item-13",
+              "class": "finding",
+              "subjectGroupId": "g9",
+              "ruling": "real",
+              "reason": "cli-cairn-doctor.md:121-122 says empty stdout means the invocation was wrong and that a usage error is the one case writing no payload. cli-cairn-exit-codes.md:95-97 says empty stdout can also come from a run that ended before any payload or from a tool fault. The code bears out the second page: doctor.go:55-57 and 101-104 return errors from NewSnapshot and Marshal before any payload is written."
+            }
+          ],
+          "usage": {
+            "input": 36,
+            "output": 7625,
+            "cacheCreation": 40087,
+            "cacheRead": 550257,
+            "counted": 47748
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-1: no ruling"
+            ]
+          },
+          "cause": "initial",
+          "final": false,
+          "transcript": "transcripts/scripter-control-1-attempt1.jsonl"
+        },
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-2",
+              "class": "interpretation",
+              "reason": "Choosing Python was up to the reader because the job named no language. The item makes no claim against the docs."
+            },
+            {
+              "itemId": "item-3",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "json-output.md lines 25-26 and 47-49 say a per-site NDJSON line omits exitCode, while `cairn health <site>` writes a site payload that carries it (line 149). The rule for telling the two forms apart is stated, and the wrapper also knows which command it ran."
+            },
+            {
+              "itemId": "item-4",
+              "class": "finding",
+              "subjectGroupId": "g2",
+              "ruling": "false",
+              "reason": "cli-cairn-exit-codes.md lines 91-97 say empty stdout under --json means no payload was written, and each such case reports UNKNOWN (exit 3). No documented case pairs empty --json stdout with any other code, so the pages leave nothing to guess."
+            },
+            {
+              "itemId": "item-5",
+              "class": "finding",
+              "subjectGroupId": "g3",
+              "ruling": "false",
+              "reason": "cli-cairn-exit-codes.md lines 79-81 say a cancelled run and a tool fault report UNKNOWN (exit 3), and json-output.md lines 50-52 say a signal-cut site is folded into the summary. In the code, health_sweep.go:111-112 returns an error, a tool fault, before any summary is written. The only remaining case is a process killed from outside, and cairn cannot document that exit code."
+            },
+            {
+              "itemId": "item-6",
+              "class": "interpretation",
+              "reason": "Keeping timestamps as strings is a representation choice, and it rests on what json-output.md line 116 states. The item claims no defect."
+            },
+            {
+              "itemId": "item-7",
+              "class": "finding",
+              "subjectGroupId": "g4",
+              "ruling": "real",
+              "reason": "The exit-codes page (lines 8, 63) says an --expect-sites mismatch exits 3. json-output.md lines 300-302 describe `errors` only as registry reads that could not complete, and no published page says whether a mismatch writes a payload. The code does write one: sites.go:80-81 appends ErrExpectSites to listErrs and writeSites (sites.go:140-153) marshals it into `errors`."
+            },
+            {
+              "itemId": "item-8",
+              "class": "finding",
+              "subjectGroupId": "g5",
+              "ruling": "false",
+              "reason": "json-output.md lines 386-388 say the only password prompt belongs to `cairn auth set`, which is not a --json command. No --json command is documented as reading stdin, and the job did not need this fact to parse output."
+            },
+            {
+              "itemId": "item-9",
+              "class": "finding",
+              "subjectGroupId": "g6",
+              "ruling": "real",
+              "reason": "json-output.md lines 346-348 say `adoptable` was added within schema version 1 and that a reader written before it still reads every candidate. The candidate schema (cairn-adopt-list.schema.json line 20) is closed with additionalProperties:false, and the page calls the payloads a closed contract (line 8), so a validator that follows the normative schema's closedness would reject the added field. The docs never state a forward-compatibility policy that reconciles the two."
+            },
+            {
+              "itemId": "item-10",
+              "class": "finding",
+              "subjectGroupId": "g7",
+              "ruling": "false",
+              "reason": "This is not a contradiction. The doctor schema's state enum (line 28) lists the shared frozen state words (json-output.md line 508), and json-output.md line 402 says doctor never writes `held`. A schema that permits a value the producer never emits does not differ from the page on what gets written."
+            },
+            {
+              "itemId": "item-11",
+              "class": "finding",
+              "subjectGroupId": "g8",
+              "ruling": "false",
+              "reason": "This is not a contradiction. The doctor schema (lines 22, 38) sets a minimum requirement, and cli-cairn-doctor.md lines 95 and 109 describe what the producer always writes. Both hold together: the doctor json.go:47,54 emits condition and fix as optional fields, which conforms to the schema."
+            },
+            {
+              "itemId": "item-12",
+              "class": "finding",
+              "subjectGroupId": "g9",
+              "ruling": "false",
+              "reason": "This is not a contradiction. The auth-check schema (lines 19-25) makes `reason` optional, and json-output.md line 376 says the producer writes it beside every non-pass row. A looser schema that still accepts the stated output does not conflict with the page."
+            },
+            {
+              "itemId": "item-13",
+              "class": "finding",
+              "subjectGroupId": "g10",
+              "ruling": "real",
+              "reason": "cli-cairn-doctor.md lines 121-122 say a usage error is the one case that writes no payload. cli-cairn-exit-codes.md lines 95-97 say empty --json stdout can also come from a run that ended early or from a tool fault. The code matches the exit-codes page: doctor.go:55-58 and 101-103 return errors before any payload is written."
+            }
+          ],
+          "usage": {
+            "input": 30,
+            "output": 6667,
+            "cacheCreation": 30869,
+            "cacheRead": 440397,
+            "counted": 37566
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "problems": [
+              "item item-1: no ruling"
+            ]
+          },
+          "cause": "unverified",
+          "final": true,
+          "transcript": "transcripts/scripter-control-1-attempt2.jsonl"
+        }
+      ]
+    }
+  ],
+  "verified": false,
+  "cliVersion": "2.1.282",
+  "runRoot": "/var/home/glw907/.cache/docs-readers/20260925t183138-9409d6",
+  "teardown": {
+    "runDirRemoved": true,
+    "containersLeft": 0,
+    "networksLeft": 0
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "name": "round1-adjudicator",
+  "concurrency": 4,
+  "budgetTokens": 2000000,
+  "jobs": [
+    {
+      "id": "evaluator-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/adjudicator/evaluator-control-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "operator-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/adjudicator/operator-control-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "designer-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/adjudicator/designer-control-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "extender-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/adjudicator/extender-control-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "core-developer-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/adjudicator/core-developer-control-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "scripter-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/adjudicator/scripter-control-1/packet",
+      "timeoutMinutes": 30
+    }
+  ]
+}

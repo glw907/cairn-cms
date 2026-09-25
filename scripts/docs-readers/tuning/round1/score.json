@@ -1,0 +1,101 @@
+{
+  "ok": true,
+  "mode": "development",
+  "byJob": {
+    "evaluator": {
+      "job": "evaluator",
+      "onMapPlantCount": 0,
+      "onMapCaught": 0,
+      "verifiedControlRunCount": 1,
+      "totalFalseFindings": 0,
+      "falseFindingsPerVerifiedControlRun": 0
+    },
+    "operator": {
+      "job": "operator",
+      "onMapPlantCount": 2,
+      "onMapCaught": 0,
+      "verifiedControlRunCount": 1,
+      "totalFalseFindings": 0,
+      "falseFindingsPerVerifiedControlRun": 0
+    },
+    "designer": {
+      "job": "designer",
+      "onMapPlantCount": 2,
+      "onMapCaught": 0,
+      "verifiedControlRunCount": 1,
+      "totalFalseFindings": 0,
+      "falseFindingsPerVerifiedControlRun": 0
+    },
+    "extender": {
+      "job": "extender",
+      "onMapPlantCount": 2,
+      "onMapCaught": 0,
+      "verifiedControlRunCount": 1,
+      "totalFalseFindings": 0,
+      "falseFindingsPerVerifiedControlRun": 0
+    },
+    "core-developer": {
+      "job": "core-developer",
+      "onMapPlantCount": 1,
+      "onMapCaught": 0,
+      "verifiedControlRunCount": 1,
+      "totalFalseFindings": 0,
+      "falseFindingsPerVerifiedControlRun": 0
+    },
+    "scripter": {
+      "job": "scripter",
+      "onMapPlantCount": 1,
+      "onMapCaught": 0,
+      "verifiedControlRunCount": 1,
+      "totalFalseFindings": 0,
+      "falseFindingsPerVerifiedControlRun": 0
+    }
+  },
+  "onMapRecall": {
+    "docs-only": {
+      "caught": 0,
+      "total": 0,
+      "rate": null,
+      "interval": null
+    },
+    "docs-and-binary": {
+      "caught": 0,
+      "total": 2,
+      "rate": 0,
+      "interval": {
+        "lower": 0,
+        "upper": 0.8418861169915779
+      }
+    },
+    "docs-and-site": {
+      "caught": 0,
+      "total": 4,
+      "rate": 0,
+      "interval": {
+        "lower": 0,
+        "upper": 0.602364635616482
+      }
+    },
+    "repository": {
+      "caught": 0,
+      "total": 2,
+      "rate": 0,
+      "interval": {
+        "lower": 0,
+        "upper": 0.8418861169915779
+      }
+    }
+  },
+  "notes": [
+    "adjudicator job \"evaluator-control-1\" (reader job \"evaluator-control-1\"): the judge run is unverified",
+    "adjudicator job \"operator-control-1\" (reader job \"operator-control-1\"): the judge run is unverified",
+    "adjudicator job \"designer-control-1\" (reader job \"designer-control-1\"): the judge run is unverified",
+    "adjudicator job \"core-developer-control-1\" (reader job \"core-developer-control-1\"): the judge run is unverified",
+    "adjudicator job \"scripter-control-1\" (reader job \"scripter-control-1\"): the judge run is unverified",
+    "job \"evaluator-control-1\": no adjudicator key and rulings joined for it",
+    "job \"operator-control-1\": no adjudicator key and rulings joined for it",
+    "job \"scripter-control-1\": no adjudicator key and rulings joined for it",
+    "job \"core-developer-control-1\": no adjudicator key and rulings joined for it",
+    "job \"designer-control-1\": no adjudicator key and rulings joined for it"
+  ]
+}

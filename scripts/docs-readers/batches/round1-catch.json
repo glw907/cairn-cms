@@ -1,0 +1,79 @@
+{
+  "name": "round1-catch",
+  "concurrency": 4,
+  "budgetTokens": 2000000,
+  "jobs": [
+    {
+      "id": "evaluator-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/catch/evaluator-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "operator-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/catch/operator-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "designer-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/catch/designer-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "extender-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/catch/extender-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "core-developer-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/catch/core-developer-planted-1/packet",
+      "timeoutMinutes": 30
+    },
+    {
+      "id": "scripter-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/round1/catch/scripter-planted-1/packet",
+      "timeoutMinutes": 30
+    }
+  ]
+}

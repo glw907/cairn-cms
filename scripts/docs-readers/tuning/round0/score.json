@@ -7,24 +7,24 @@
       "onMapPlantCount": 0,
       "onMapCaught": 0,
       "verifiedControlRunCount": 2,
-      "totalFalseFindings": 0,
-      "falseFindingsPerVerifiedControlRun": 0
+      "totalFalseFindings": 3,
+      "falseFindingsPerVerifiedControlRun": 1.5
     },
     "operator": {
       "job": "operator",
       "onMapPlantCount": 2,
       "onMapCaught": 0,
       "verifiedControlRunCount": 2,
-      "totalFalseFindings": 1,
-      "falseFindingsPerVerifiedControlRun": 0.5
+      "totalFalseFindings": 3,
+      "falseFindingsPerVerifiedControlRun": 1.5
     },
     "designer": {
       "job": "designer",
       "onMapPlantCount": 2,
       "onMapCaught": 0,
       "verifiedControlRunCount": 2,
-      "totalFalseFindings": 0,
-      "falseFindingsPerVerifiedControlRun": 0
+      "totalFalseFindings": 1,
+      "falseFindingsPerVerifiedControlRun": 0.5
     },
     "extender": {
       "job": "extender",
@@ -47,8 +47,8 @@
       "onMapPlantCount": 1,
       "onMapCaught": 1,
       "verifiedControlRunCount": 2,
-      "totalFalseFindings": 1,
-      "falseFindingsPerVerifiedControlRun": 0.5
+      "totalFalseFindings": 3,
+      "falseFindingsPerVerifiedControlRun": 1.5
     }
   },
   "onMapRecall": {
@@ -100,11 +100,7 @@
     "job \"core-developer-planted-3\": no catch-judge key and rulings joined for it",
     "job \"scripter-heldout-1\": no catch-judge key and rulings joined for it",
     "job \"scripter-heldout-2\": no catch-judge key and rulings joined for it",
-    "adjudicator job \"designer-control-1\" (reader job \"designer-control-1\"): the judge run is unverified",
-    "adjudicator job \"designer-control-2\" (reader job \"designer-control-2\"): the judge run is unverified",
     "job \"operator-control-3\": no adjudicator key and rulings joined for it",
-    "job \"designer-control-1\": no adjudicator key and rulings joined for it",
-    "job \"designer-control-2\": no adjudicator key and rulings joined for it",
     "job \"extender-control-3\": no adjudicator key and rulings joined for it",
     "job \"core-developer-control-3\": no adjudicator key and rulings joined for it",
     "job \"scripter-control-3\": no adjudicator key and rulings joined for it"

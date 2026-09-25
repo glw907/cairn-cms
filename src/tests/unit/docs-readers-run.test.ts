@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import {
   buildResumeBatch,
   checkGate,
+  checkJudgeKeyIntegrity,
+  checkKeyOutsideMount,
   classifyBatchKind,
   expectedItemsFromKey,
   jobsNeedingResume,
@@ -16,7 +18,7 @@ import {
   type FinishedJudgeReport,
   type FinishedReport,
 } from '../../../scripts/docs-readers/run.js';
-import { buildManifest, writeManifest } from '../../../scripts/docs-readers/freeze.js';
+import { buildManifest, hashFile, writeManifest } from '../../../scripts/docs-readers/freeze.js';
 import { loadClasses } from '../../../scripts/docs-readers/lib/class-schema.js';
 import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
 import type { InstallationToken } from '../../../scripts/docs-readers/lib/github-app-token.js';
@@ -598,5 +600,100 @@ describe('judgeResumeInputs and mergeResumedJudgeReport', () => {
     ]);
     expect(merged.usage.counted).toBe(16);
     expect(merged.verified).toBe(true);
+  });
+});
+
+describe('checkKeyOutsideMount', () => {
+  it('flags a prepared directory that itself carries key.json inside its own mount', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-mount-'));
+    const prepared = join(dir, 'packet');
+    mkdirSync(prepared, { recursive: true });
+    writeFileSync(join(prepared, 'key.json'), '{}');
+    try {
+      expect(checkKeyOutsideMount('job-a', prepared)).toMatch(/carries key\.json inside its own mount/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('passes a prepared directory with no key.json inside', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-mount-'));
+    const prepared = join(dir, 'packet');
+    mkdirSync(prepared, { recursive: true });
+    try {
+      expect(checkKeyOutsideMount('job-a', prepared)).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('checkJudgeKeyIntegrity: the gated judge path’s trust check', () => {
+  /** A `prepared` packet dir with a sibling key.json, for the integrity tests. */
+  function packetWithKey(dir: string, key: unknown): string {
+    const prepared = join(dir, 'packet');
+    mkdirSync(prepared, { recursive: true });
+    writeFileSync(join(dir, 'key.json'), JSON.stringify(key));
+    return prepared;
+  }
+
+  it('refuses a key built through the escape hatch (builtFrom "fixture"), the shape a gated judge batch must never accept', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-'));
+    const prepared = packetWithKey(dir, { builtFrom: 'fixture', inputs: {} });
+    try {
+      const problems = checkJudgeKeyIntegrity('job-a', prepared);
+      expect(problems.some((p) => p.includes('not "sources"'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('passes a key built from sources whose recorded inputs still match their current hash', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-'));
+    const inputFile = join(dir, 'batch.json');
+    writeFileSync(inputFile, '{"jobs":[]}');
+    const prepared = packetWithKey(dir, { builtFrom: 'sources', inputs: { [inputFile]: hashFile(inputFile) } });
+    try {
+      expect(checkJudgeKeyIntegrity('job-a', prepared)).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses when a recorded input has changed since the packet was built', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-'));
+    const inputFile = join(dir, 'batch.json');
+    writeFileSync(inputFile, '{"jobs":[]}');
+    const staleHash = hashFile(inputFile);
+    writeFileSync(inputFile, '{"jobs":[{"id":"changed"}]}');
+    const prepared = packetWithKey(dir, { builtFrom: 'sources', inputs: { [inputFile]: staleHash } });
+    try {
+      const problems = checkJudgeKeyIntegrity('job-a', prepared);
+      expect(problems.some((p) => p.includes('has changed since the packet was built'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('skips a non-absolute or non-existent inputs key, a synthetic label rather than a real path', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-'));
+    const prepared = packetWithKey(dir, { builtFrom: 'sources', inputs: { 'page@abc123:docs/guide.md': 'deadbeef', 'pages/docs/guide.md': 'deadbeef' } });
+    try {
+      expect(checkJudgeKeyIntegrity('job-a', prepared)).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses, naming the job, when no key.json sits beside the packet', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-readers-integrity-'));
+    const prepared = join(dir, 'packet');
+    mkdirSync(prepared, { recursive: true });
+    try {
+      const problems = checkJudgeKeyIntegrity('job-a', prepared);
+      expect(problems.some((p) => p.includes('job-a') && p.includes('no key.json'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

@@ -90,12 +90,14 @@ export interface ResolvedRunSource {
 }
 
 /**
- * Read one job's catch fields out of a saved batch report, at the given (or final) attempt.
- * Reuses `toBlockedEntries`, the same normalizer `lib/transcript.ts` uses for a saved report's
- * `stalls[]`/`assumed[]`, so a pass 1 report's plain-string entries carry their text through
- * instead of resolving to nothing.
+ * Read one job's catch fields out of a saved batch report, at the given attempt or, by default,
+ * the one the runner itself marked `final: true` (never merely the last entry in `attempts[]`,
+ * which need not be the final one). Reuses `toBlockedEntries`, the same normalizer
+ * `lib/transcript.ts` uses for a saved report's `stalls[]`/`assumed[]`, so a pass 1 report's
+ * plain-string entries carry their text through instead of resolving to nothing.
  * @returns The run's allow-listed fields and its traceability.
- * @throws When the report holds no such job, or no such attempt.
+ * @throws When the report holds no such job, the job carries `stoppedBy` (a batch-level stop left
+ *  it with no final attempt), or the requested attempt does not exist.
  */
 export function resolveRunSource({ reportPath, jobId, attempt }: RunSource): ResolvedRunSource {
   const raw = readFileSync(reportPath, 'utf8');
@@ -103,14 +105,22 @@ export function resolveRunSource({ reportPath, jobId, attempt }: RunSource): Res
   const jobs = Array.isArray(report.jobs) ? (report.jobs as Record<string, unknown>[]) : [];
   const job = jobs.find((j) => j.id === jobId);
   if (!job) throw new Error(`report ${reportPath}: no job "${jobId}"`);
+  if (job.stoppedBy !== undefined) throw new Error(`report ${reportPath}: job "${jobId}" carries stoppedBy and has no final attempt`);
   const attempts = Array.isArray(job.attempts) ? (job.attempts as Record<string, unknown>[]) : undefined;
   let attemptNumber: number;
   let fields: Record<string, unknown>;
   if (attempts && attempts.length > 0) {
-    attemptNumber = attempt ?? attempts.length;
-    const found = attempts[attemptNumber - 1];
-    if (!found) throw new Error(`report ${reportPath}: job "${jobId}" has no attempt ${attemptNumber}`);
-    fields = found;
+    if (attempt !== undefined) {
+      const found = attempts[attempt - 1];
+      if (!found) throw new Error(`report ${reportPath}: job "${jobId}" has no attempt ${attempt}`);
+      attemptNumber = attempt;
+      fields = found;
+    } else {
+      const finalIndex = attempts.findIndex((a) => a.final === true);
+      if (finalIndex === -1) throw new Error(`report ${reportPath}: job "${jobId}" has no attempt marked final`);
+      attemptNumber = finalIndex + 1;
+      fields = attempts[finalIndex];
+    }
   } else {
     attemptNumber = attempt ?? 1;
     fields = job;
@@ -129,19 +139,22 @@ export function resolveRunSource({ reportPath, jobId, attempt }: RunSource): Res
 }
 
 /**
- * Read one job's own text out of a batch file (a saved report never echoes it back).
+ * Read one job's own text and page list out of a batch file (a saved report never echoes either
+ * back).
  * @param batchPath - The batch JSON the job came from.
  * @param jobId - The job id whose text to read.
- * @returns The job's text and the batch file's own hash.
+ * @returns The job's text, its `docsSet` (empty when the batch fixture omits it), and the batch
+ *  file's own hash.
  * @throws When the batch holds no such job.
  */
-function resolveJobText(batchPath: string, jobId: string): { text: string; hash: string } {
+function resolveJobText(batchPath: string, jobId: string): { text: string; docsSet: string[]; hash: string } {
   const raw = readFileSync(batchPath, 'utf8');
   const batch = JSON.parse(raw) as { jobs?: unknown };
   const jobs = Array.isArray(batch.jobs) ? (batch.jobs as Record<string, unknown>[]) : [];
   const job = jobs.find((j) => j.id === jobId);
   if (!job || typeof job.job !== 'string') throw new Error(`batch ${batchPath}: no job "${jobId}" carrying job text`);
-  return { text: job.job, hash: sha256(raw) };
+  const docsSet = Array.isArray(job.docsSet) ? job.docsSet.filter((p): p is string => typeof p === 'string') : [];
+  return { text: job.job, docsSet, hash: sha256(raw) };
 }
 
 /**
@@ -158,6 +171,37 @@ function readPageAtCommit(repoRoot: string, commit: string, page: string, runner
   if (result.status !== 0) throw new Error(`git show ${commit}:${page} failed: ${result.stderr}`);
   const content = decoder.decode(result.stdout);
   return { content, hash: sha256(content) };
+}
+
+/**
+ * Read a job's page as the reader actually saw it: from the planted tree when `plantedRoot` holds
+ * that page (a development or real plant overlays its own page there, never the pinned commit),
+ * otherwise from the pinned commit via `git show`. A multi-page job's untouched pages are never in
+ * the planted tree, so they fall through to the commit read, unchanged.
+ * @param repoRoot - The checkout to read an unplanted page from.
+ * @param commit - The pinned commit an unplanted page reads at.
+ * @param page - The page's repository-relative path.
+ * @param plantedRoot - The job's planted tree root, when its plants come from one.
+ * @param runner - The command runner; overridden in tests.
+ * @returns The page's content, its own hash, and the input key to record it under (a real
+ *  filesystem path when read from the planted tree, a synthetic label otherwise).
+ */
+function readJobPage(
+  repoRoot: string,
+  commit: string,
+  page: string,
+  plantedRoot: string | undefined,
+  runner: CommandRunner = spawnRunner,
+): { content: string; hash: string; inputKey: string } {
+  if (plantedRoot) {
+    const plantedPath = join(plantedRoot, page);
+    if (existsSync(plantedPath)) {
+      const content = readFileSync(plantedPath, 'utf8');
+      return { content, hash: sha256(content), inputKey: plantedPath };
+    }
+  }
+  const { content, hash } = readPageAtCommit(repoRoot, commit, page, runner);
+  return { content, hash, inputKey: `page@${commit}:${page}` };
 }
 
 /**
@@ -210,13 +254,16 @@ function pruneUnpublishedDocs(treeDir: string, publishedRoots: readonly string[]
 /**
  * Where one job's plants come from: a development plant, joined to its own criterion by id, never
  * by page (`fixtures/dev-plants.json`'s and `prompts/criteria/dev-plants.json`'s path forms
- * differ for the scripter's bundle jobs); a held-out defect, named by its explicit ids; or a real
- * plant record, filtered to one job.
+ * differ for the scripter's bundle jobs); a held-out defect, named by its explicit ids, read from
+ * the pinned commit alone (a held-out defect is a historical page, never overlaid); or a real
+ * plant record, filtered to one job. A `dev` or `planted` source's `plantedRoot` is the job's
+ * planted tree: the page the reader actually saw, which `git show` at the pinned commit would
+ * miss entirely, since the commit holds the original, unplanted text.
  */
 export type JobPlantSource =
-  | { kind: 'dev'; criteriaPath: string; indexPath: string; jobId: string }
+  | { kind: 'dev'; criteriaPath: string; indexPath: string; jobId: string; plantedRoot: string }
   | { kind: 'heldout'; criteriaPath: string; ids: readonly string[] }
-  | { kind: 'planted'; plantsPath: string; jobId: string };
+  | { kind: 'planted'; plantsPath: string; jobId: string; plantedRoot: string };
 
 /** One development or real plant record's id, page, and (for a held-out defect) its own pre-fix commit. */
 interface PlantRef {
@@ -283,11 +330,15 @@ function resolvePlantsForJob(
   const criteriaPath = source.kind === 'planted' ? source.plantsPath : source.criteriaPath;
   inputs[criteriaPath] = sha256File(criteriaPath);
   if (source.kind === 'dev') inputs[source.indexPath] = sha256File(source.indexPath);
+  // A held-out defect has no planted tree: it is a historical page, read at its own pre-fix
+  // commit alone. A dev or planted plant's page comes from the job's planted tree when that tree
+  // holds it, since the pinned commit carries only the original, unplanted text.
+  const plantedRoot = source.kind === 'dev' || source.kind === 'planted' ? source.plantedRoot : undefined;
   const plants: CatchPlantInput[] = refs.map((ref) => {
     const { subject, criterion, nearMiss } = readCriterionById(criteriaPath, ref.id);
     const commit = ref.commit ?? defaultCommit;
-    const { content, hash } = readPageAtCommit(repoRoot, commit, ref.page, runner);
-    inputs[`page@${commit}:${ref.page}`] = hash;
+    const { content, hash, inputKey } = readJobPage(repoRoot, commit, ref.page, plantedRoot, runner);
+    inputs[inputKey] = hash;
     return { plantId: ref.id, subject, criterion, nearMiss, page: ref.page, pageContent: content };
   });
   return { plants, inputs };
@@ -405,9 +456,9 @@ export function buildCatchFields(run: RawRunFields, idPrefix = 'item'): { fields
   const rawChecks = run.checks ?? [];
   const checks = rawChecks.map((entry, i) => {
     const e = (entry ?? {}) as Record<string, unknown>;
-    const text = typeof e.text === 'string' ? e.text : JSON.stringify(entry);
+    if (typeof e.text !== 'string') throw new Error(`checks[${i}]: no text field; refusing to serialize the entry whole`);
     const blockedBy = typeof e.blockedBy === 'string' ? e.blockedBy : null;
-    return { id: nextId('checks', i), field: 'checks' as const, text, blockedBy };
+    return { id: nextId('checks', i), field: 'checks' as const, text: e.text, blockedBy };
   });
   return { fields: { stalls, assumed, diverged, ...(checks.length > 0 ? { checks } : {}) }, key };
 }
@@ -432,9 +483,18 @@ export interface ReportTrace {
   runId: string;
 }
 
+/**
+ * How a packet's key was built: `'sources'` when a production builder (`buildCatchPacket`,
+ * `buildAdjudicatorPacket`, `buildAgreementPacket`) read every input itself, or `'fixture'` when
+ * the low-level escape hatch (`buildCatchPacketFromResolved`) built it from content a caller
+ * supplied directly. A gated judge batch refuses any packet whose key is not `'sources'`.
+ */
+export type BuiltFrom = 'sources' | 'fixture';
+
 /** The key file a catch packet's builder writes outside the mount. */
 export interface CatchPacketKey {
   kind: 'catch';
+  builtFrom: BuiltFrom;
   report: ReportTrace;
   /** Every plant's opaque id, mapped back to its real plant id. */
   plants: Record<string, { plantId: string }>;
@@ -464,6 +524,7 @@ export function buildCatchPacketFromResolved({
   run,
   report,
   extraInputs = {},
+  builtFrom = 'fixture',
 }: {
   outDir: string;
   jobText: string;
@@ -471,6 +532,8 @@ export function buildCatchPacketFromResolved({
   run: RawRunFields;
   report: ReportTrace;
   extraInputs?: Record<string, string>;
+  /** `buildCatchPacket` passes `'sources'`; a fixture calling this escape hatch directly leaves the default, `'fixture'`, which a gated judge batch refuses. */
+  builtFrom?: BuiltFrom;
 }): { key: CatchPacketKey; expected: ExpectedItem[] } {
   rmSync(outDir, { recursive: true, force: true });
   const packetDir = join(outDir, 'packet');
@@ -502,7 +565,7 @@ export function buildCatchPacketFromResolved({
   writeJson(join(packetDir, 'index.json'), { kind: 'catch', job: 'job.json', plants: 'plants.json', items: 'items.json', pages: 'pages/' });
   inputs['job.json'] = sha256(jobText);
 
-  const key: CatchPacketKey = { kind: 'catch', report, plants: plantKey, items: itemKey, inputs };
+  const key: CatchPacketKey = { kind: 'catch', builtFrom, report, plants: plantKey, items: itemKey, inputs };
   writeJson(join(outDir, 'key.json'), key);
   return { key, expected: plantEntries.map((p) => ({ itemId: p.id })) };
 }
@@ -543,6 +606,7 @@ export function buildCatchPacket({
     plants: resolvedPlants,
     run: run.runFields,
     report: { path: reportPath, jobId, attempt: run.attempt, runId: run.runId },
+    builtFrom: 'sources',
     extraInputs: { [batchPath]: batchHash, [reportPath]: run.reportHash, ...plantInputs },
   });
 }
@@ -550,6 +614,7 @@ export function buildCatchPacket({
 /** The key file an adjudicator packet's builder writes outside the mount. */
 export interface AdjudicatorPacketKey {
   kind: 'adjudicator';
+  builtFrom: BuiltFrom;
   report: ReportTrace;
   items: Record<string, CatchFieldItemLocation>;
   /** Item ids the mechanical harness filter (`harness-filter.ts`, or a caller-supplied stand-in before it merges) excluded before this build. */
@@ -622,6 +687,7 @@ export function buildAdjudicatorPacket({
 
   const key: AdjudicatorPacketKey = {
     kind: 'adjudicator',
+    builtFrom: 'sources',
     report: { path: reportPath, jobId, attempt: run.attempt, runId: run.runId },
     items: itemKey,
     excluded: excludedIds,
@@ -639,6 +705,9 @@ export interface AgreementFindingSource {
   reportPath: string;
   jobId: string;
   attempt?: number;
+  /** Which single catch-field item this finding is: the sample draws one item, never a whole run's worth. */
+  field: CatchFieldItemLocation['field'];
+  sourceIndex: number;
   page: string;
   commit: string;
 }
@@ -652,15 +721,36 @@ export interface AgreementCatchCallSource {
   page: string;
   commit: string;
   plant: SinglePlantSource;
+  /** The job's planted tree root, when its plant comes from one (never set for a held-out defect). */
+  plantedRoot?: string;
 }
 
 /** The key file an agreement packet's builder writes outside the mount. */
 export interface AgreementPacketKey {
   kind: 'agreement';
+  builtFrom: BuiltFrom;
   findings: Record<string, { report: ReportTrace }>;
   catchCalls: Record<string, { report: ReportTrace; plantId: string }>;
   treeCommit?: string;
   inputs: Record<string, string>;
+}
+
+/**
+ * The one catch-field item at a run's given field and source index: an agreement finding samples
+ * one item, never a whole run's catch fields.
+ * @param runFields - The run's raw catch fields.
+ * @param field - Which field the wanted item came from.
+ * @param sourceIndex - The item's own index within that field, before allow-listing.
+ * @returns The single item, under a fresh opaque id of its own.
+ * @throws When no item sits at that field and index.
+ */
+function resolveSingleCatchFieldItem(runFields: RawRunFields, field: CatchFieldItemLocation['field'], sourceIndex: number): CatchFieldItem {
+  const { fields, key } = buildCatchFields(runFields);
+  const all = [...fields.stalls, ...fields.assumed, ...fields.diverged, ...(fields.checks ?? [])];
+  const matchedId = Object.entries(key).find(([, loc]) => loc.field === field && loc.sourceIndex === sourceIndex)?.[0];
+  const matched = all.find((item) => item.id === matchedId);
+  if (!matched) throw new Error(`no catch-field item at ${field}[${sourceIndex}]`);
+  return matched;
 }
 
 /**
@@ -708,14 +798,15 @@ export function buildAgreementPacket({
     if (!src) throw new Error(`agreement packet: no resolved source for finding ${itemId}`);
     assertSafeRelativePagePath(src.page);
     const run = resolveRunSource({ reportPath: src.reportPath, jobId: src.jobId, attempt: src.attempt });
-    const { text: jobText, hash: batchHash } = resolveJobText(src.batchPath, src.jobId);
+    const { text: jobText, docsSet, hash: batchHash } = resolveJobText(src.batchPath, src.jobId);
     const { content: pageContent, hash: pageHash } = readPageAtCommit(repoRoot, src.commit, src.page, runner);
+    // The sample draws one catch-field item, never a whole run's worth.
+    const item = resolveSingleCatchFieldItem(run.runFields, src.field, src.sourceIndex);
     const dir = join(packetDir, 'findings', itemId);
     mkdirSync(dir, { recursive: true });
-    writeJson(join(dir, 'job.json'), { text: jobText, pageList: [src.page] });
+    writeJson(join(dir, 'job.json'), { text: jobText, pageList: docsSet, page: src.page });
     writeFileSync(join(dir, 'page.md'), pageContent);
-    const { fields } = buildCatchFields(run.runFields);
-    writeJson(join(dir, 'item.json'), fields);
+    writeJson(join(dir, 'item.json'), item);
     inputs[src.batchPath] = batchHash;
     inputs[src.reportPath] = run.reportHash;
     inputs[`page@${src.commit}:${src.page}`] = pageHash;
@@ -730,7 +821,7 @@ export function buildAgreementPacket({
     assertSafeRelativePagePath(src.page);
     const run = resolveRunSource({ reportPath: src.reportPath, jobId: src.jobId, attempt: src.attempt });
     const { text: jobText, hash: batchHash } = resolveJobText(src.batchPath, src.jobId);
-    const { content: pageContent, hash: pageHash } = readPageAtCommit(repoRoot, src.commit, src.page, runner);
+    const { content: pageContent, hash: pageHash, inputKey: pageInputKey } = readJobPage(repoRoot, src.commit, src.page, src.plantedRoot, runner);
     const { subject, criterion, nearMiss, sourcePath } = resolveSinglePlantCriterion(src.plant);
     const dir = join(packetDir, 'catchCalls', itemId);
     mkdirSync(dir, { recursive: true });
@@ -744,7 +835,7 @@ export function buildAgreementPacket({
     writeJson(join(dir, 'items.json'), fields);
     inputs[src.batchPath] = batchHash;
     inputs[src.reportPath] = run.reportHash;
-    inputs[`page@${src.commit}:${src.page}`] = pageHash;
+    inputs[pageInputKey] = pageHash;
     inputs[sourcePath] = sha256File(sourcePath);
     catchCallKey[itemId] = { report: { path: src.reportPath, jobId: src.jobId, attempt: run.attempt, runId: run.runId }, plantId: src.plant.id };
     expected.push({ itemId, expectedKind: 'catchCall' });
@@ -762,7 +853,7 @@ export function buildAgreementPacket({
 
   writeJson(join(packetDir, 'index.json'), { kind: 'agreement', items: indexItems, ...(tree ? { tree: 'tree/', publishedRoots } : {}) });
 
-  const key: AgreementPacketKey = { kind: 'agreement', findings: findingKey, catchCalls: catchCallKey, ...(treeCommit ? { treeCommit } : {}), inputs };
+  const key: AgreementPacketKey = { kind: 'agreement', builtFrom: 'sources', findings: findingKey, catchCalls: catchCallKey, ...(treeCommit ? { treeCommit } : {}), inputs };
   writeJson(join(outDir, 'key.json'), key);
   return { key, expected };
 }

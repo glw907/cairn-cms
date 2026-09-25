@@ -31,7 +31,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve, dirname } from 'node:path';
+import { isAbsolute, join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { judgeKindForClass, loadClasses, loadEgress, type JudgeKind } from './lib/class-schema.js';
 import { parseBatch } from './lib/batch.js';
@@ -324,8 +324,9 @@ export function checkGate({
     else commits[job.id] = job.commit;
     if (job.prepared === undefined) {
       problems.push(`job ${job.id}: a gated batch requires a prepared tree, never the working tree`);
-    } else if (kind !== undefined && existsSync(join(job.prepared, 'key.json'))) {
-      problems.push(`job ${job.id}: prepared directory ${job.prepared} carries key.json inside its own mount`);
+    } else if (kind !== undefined) {
+      const mountProblem = checkKeyOutsideMount(job.id, job.prepared);
+      if (mountProblem) problems.push(mountProblem);
     }
   }
   problems.push(...verifyTree({ manifest, root, imageId, cliVersion, jobs: commits, listFiles }));
@@ -382,6 +383,45 @@ export function expectedItemsFromKey(preparedDir: string, kind: JudgeKind): Expe
     ...ids(key.findings).map((itemId) => ({ itemId, expectedKind: 'finding' as const })),
     ...ids(key.catchCalls).map((itemId) => ({ itemId, expectedKind: 'catchCall' as const })),
   ];
+}
+
+/**
+ * Whether a judge job's `prepared` packet itself carries `key.json` inside its own mount: the key
+ * file belongs beside the packet, never inside it, since a judge's container would otherwise read
+ * its own answer key. Checked for every judge batch, gated or not, before any container starts.
+ * @param jobId - The job id, for the problem message.
+ * @param prepared - The job's prepared packet directory.
+ * @returns The problem, or undefined when the mount is clean.
+ */
+export function checkKeyOutsideMount(jobId: string, prepared: string): string | undefined {
+  return existsSync(join(prepared, 'key.json')) ? `job ${jobId}: prepared directory ${prepared} carries key.json inside its own mount` : undefined;
+}
+
+/**
+ * Verify a gated judge job's key.json (the sibling of its `prepared` packet) two ways: it was
+ * built through `buildCatchPacket`'s (or `buildAdjudicatorPacket`'s or `buildAgreementPacket`'s)
+ * real source resolution, never the `buildCatchPacketFromResolved` escape hatch a fixture uses
+ * (`builtFrom === 'sources'`); and every filesystem input it recorded still hashes to what the key
+ * recorded, so nothing the packet was built from has changed since. An `inputs` entry that is not
+ * an existing absolute path (a synthetic label for a `git show` read, or a path inside the packet
+ * itself) is not independently rehashable and is skipped.
+ * @param jobId - The job id, for the problem messages.
+ * @param prepared - The job's prepared packet directory.
+ * @returns Every problem found; empty when the key checks out.
+ */
+export function checkJudgeKeyIntegrity(jobId: string, prepared: string): string[] {
+  const keyPath = join(dirname(prepared), 'key.json');
+  if (!existsSync(keyPath)) return [`job ${jobId}: no key.json beside packet ${prepared}`];
+  const key = JSON.parse(readFileSync(keyPath, 'utf8')) as { builtFrom?: unknown; inputs?: unknown };
+  const problems: string[] = [];
+  if (key.builtFrom !== 'sources') problems.push(`job ${jobId}: key ${keyPath} has builtFrom ${JSON.stringify(key.builtFrom)}, not "sources"`);
+  const inputs = key.inputs && typeof key.inputs === 'object' ? (key.inputs as Record<string, unknown>) : {};
+  for (const [path, expectedHash] of Object.entries(inputs)) {
+    if (typeof expectedHash !== 'string' || !isAbsolute(path) || !existsSync(path)) continue;
+    const currentHash = hashFile(path);
+    if (currentHash !== expectedHash) problems.push(`job ${jobId}: input ${path} has changed since the packet was built`);
+  }
+  return problems;
 }
 
 /**
@@ -509,6 +549,16 @@ export async function runJudgeBatchFile(
   const classes = loadClasses();
   const batch = parseBatch(batchOverride ?? readFileSync(batchFile, 'utf8'), classes);
   const baselines = JSON.parse(readFileSync(join(HERE, 'init-baseline.json'), 'utf8')) as Record<string, InitBaseline>;
+  // The mount check runs for every judge batch, gated or not: a key.json inside a job's own
+  // prepared packet would hand that judge its own answer key, before any container starts.
+  const mountProblems = batch.jobs.flatMap((job) => {
+    if (job.prepared === undefined) throw new Error(`job ${job.id}: a judge job needs a prepared packet directory`);
+    const problem = checkKeyOutsideMount(job.id, job.prepared);
+    return problem ? [problem] : [];
+  });
+  if (mountProblems.length > 0) {
+    throw new Error(`judge batch ${batch.name} refused to start: ${mountProblems.join('; ')}`);
+  }
   const runId = newRunId();
   const { executor, runRoot, cliVersion, image, secrets } = await setUpRun(runId, tokenFor);
   let freeze: GatedFreeze | undefined;
@@ -519,6 +569,14 @@ export async function runJudgeBatchFile(
       throw new Error(`gated judge batch ${batch.name} refused to start: ${gate.problems.join('; ')}`);
     }
     freeze = gate.freeze;
+    // A gated batch also trusts only a key built through real source resolution, with every
+    // filesystem input it recorded still matching what it was built from. Every job's `prepared`
+    // is already known defined, from the mount check above.
+    const integrityProblems = batch.jobs.flatMap((job) => (job.prepared !== undefined ? checkJudgeKeyIntegrity(job.id, job.prepared) : []));
+    if (integrityProblems.length > 0) {
+      await executor.teardown().catch(() => {});
+      throw new Error(`gated judge batch ${batch.name} refused to start: ${integrityProblems.join('; ')}`);
+    }
   }
   const expectedItems: Record<string, ExpectedItem[]> = {};
   for (const job of batch.jobs) {

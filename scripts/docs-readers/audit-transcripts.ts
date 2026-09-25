@@ -8,9 +8,12 @@
  *
  * Every relative path a tool call or a Bash command names is resolved against its own effective
  * working directory before the containment check: a transcript record's own `cwd` field for a
- * tool call, or a Bash command's leading `cd <dir> &&`, falling back to the record's `cwd`. A
- * relative reference from a cwd the audit cannot resolve, or that resolves outside every granted
- * directory, is a hit, the same as an absolute one.
+ * tool call, or every `cd <dir>` in a Bash command's `&&`/`;` chain, tracked in order, falling
+ * back to the record's `cwd` before the first one. A relative reference from a cwd the audit
+ * cannot resolve, or that resolves outside every granted directory, is a hit, the same as an
+ * absolute one. A Bash call that runs interpreter code the audit does not itself read (inline
+ * Python or JavaScript, a heredoc) is listed apart as an unaudited interpreter call, for a person
+ * to review; it is never a hit and never changes the exit code.
  *
  * Usage:
  *   npx tsx scripts/docs-readers/audit-transcripts.ts --transcript FILE --granted DIR [--granted DIR...]
@@ -114,54 +117,97 @@ function globPatternDirPrefix(pattern: string): string {
 /** How many characters of an offending Bash command the report keeps. */
 const COMMAND_EXCERPT_LENGTH = 300;
 
-/**
- * Every path-like token in a Bash command: a crude but effective split, since a forbidden path's
- * mere appearance as a token is the signal, not a full shell parse. A leading redirect operator
- * (`>`, `2>`, `>>`, with an optional file-descriptor number), surrounding quotes, and trailing
- * shell punctuation (a command separator, a closing paren) are stripped, so a path glued to an
- * operator or the next token, as `2>/dev/null;` or `path/to/file),`, is read as the bare path. A
- * token naming a URL (`://`) is dropped: its slashes are not a filesystem path.
- * @param command - The Bash command text, exactly as the tool call gave it.
- * @returns Each candidate path token, with no device path among them.
- */
-function extractPathTokens(command: string): string[] {
-  return command
-    .split(/\s+/)
-    .map((token) => token.replace(/^\d*(>>?|<)&?/, '').replace(/^['"]+|['"]+$/g, '').replace(/[;:,)]+$/, ''))
-    .filter(
-      (token) =>
-        token !== '' &&
-        !token.includes('://') &&
-        !/[*?[]/.test(token) && // a shell glob (*.md, notes/*) expands in place; not a literal path reference
-        looksPathLike(token) &&
-        !BENIGN_PATH_PREFIXES.some((prefix) => token.startsWith(prefix)),
-    );
+/** One path-like or glob token from a command segment: `raw` as written, `effective` what actually gets resolved. */
+interface CommandToken {
+  raw: string;
+  effective: string;
 }
 
 /**
- * Audit one Bash command: every path-like token must resolve, against the command's own effective
- * cwd, inside a granted directory, and the command text must not mention a forbidden root by name.
- * The effective cwd is a leading `cd <dir> &&`'s own target when the command opens with one
- * (itself resolved against the record's cwd, when relative), otherwise the record's own cwd.
+ * Every path-like or glob token in one `&&`/`;`-delimited command segment: a crude but effective
+ * split, since a forbidden path's mere appearance as a token is the signal, not a full shell
+ * parse. A leading redirect operator (`>`, `2>`, `>>`, with an optional file-descriptor number),
+ * surrounding quotes, and trailing shell punctuation (a comma, a closing paren) are stripped, so a
+ * path glued to an operator or the next token, as `2>/dev/null;` or `path/to/file),`, is read as
+ * the bare path. A token naming a URL (`://`) is dropped: its slashes are not a filesystem path. A
+ * glob token (`*.md`, `notes/*`) is kept under its own directory prefix
+ * (`globPatternDirPrefix`), the one part of it that names a real location, and dropped when that
+ * prefix is empty (nothing to check, as a bare `*.md` names no directory of its own).
+ * @param segment - One segment of a Bash command, already split on `&&`/`;`.
+ * @returns Each candidate token, with no device path among them.
+ */
+function extractCommandTokens(segment: string): CommandToken[] {
+  const tokens: CommandToken[] = [];
+  for (const raw of segment.split(/\s+/)) {
+    const cleaned = raw.replace(/^\d*(>>?|<)&?/, '').replace(/^['"]+|['"]+$/g, '').replace(/[;:,)]+$/, '');
+    if (cleaned === '' || cleaned.includes('://')) continue;
+    if (/[*?[]/.test(cleaned)) {
+      const prefix = globPatternDirPrefix(cleaned);
+      if (prefix === '' || BENIGN_PATH_PREFIXES.some((p) => prefix.startsWith(p))) continue;
+      tokens.push({ raw, effective: prefix });
+      continue;
+    }
+    if (!looksPathLike(cleaned) || BENIGN_PATH_PREFIXES.some((p) => cleaned.startsWith(p))) continue;
+    tokens.push({ raw, effective: cleaned });
+  }
+  return tokens;
+}
+
+/** One Bash call whose command runs interpreter code the audit does not itself inspect, listed for a person to review. */
+export interface InterpreterCall {
+  command: string;
+  reason: string;
+}
+
+/**
+ * Whether a Bash command runs code the audit cannot itself read as a separate, reviewable file:
+ * `python3 -c`/`python3 -` (inline or stdin-fed Python), `node -e` (inline JavaScript), or a
+ * heredoc feeding a command its own script text. Such a call is listed, never scored as a hit: the
+ * audit does not parse the interpreter's own source for a forbidden path.
+ * @param command - The Bash command text.
+ * @returns Why the command counts as an interpreter call, or undefined when it does not.
+ */
+function detectInterpreterCall(command: string): string | undefined {
+  if (/\bpython3?\s+-c(\s|$)/.test(command)) return 'python3 -c runs inline Python the audit does not read';
+  if (/\bpython3?\s+-(\s|$)/.test(command)) return 'python3 - runs a Python script fed over stdin';
+  if (/\bnode\s+-e(\s|$)/.test(command)) return 'node -e runs inline JavaScript the audit does not read';
+  if (/<<-?\s*['"]?[A-Za-z_][A-Za-z0-9_]*['"]?/.test(command)) return 'a heredoc feeds a command its own script text';
+  return undefined;
+}
+
+/**
+ * Audit one Bash command: every path-like or glob token, in every `&&`/`;`-delimited segment,
+ * must resolve, against that segment's own effective cwd, inside a granted directory, and the
+ * command text must not mention a forbidden root by name. The effective cwd tracks every `cd`
+ * target in the chain, in order (each resolved against the cwd the chain had reached so far), so
+ * `cd a && cd b && cat x` checks `x` against `a/b`, not `a` alone. A command that runs interpreter
+ * code is listed apart, never scored as a hit.
  * @param command - The Bash command text, exactly as the tool call gave it.
  * @param granted - The granted directories, resolved.
  * @param recordCwd - The transcript record's own `cwd` field, when it carries one.
  * @param homeDir - The home directory `~` expands to.
- * @returns Every hit the command produced.
+ * @returns Every hit the command produced, and any interpreter call it ran.
  */
-function auditBashCommand(command: string, granted: readonly string[], recordCwd: string | undefined, homeDir: string): AuditHit[] {
+function auditBashCommand(command: string, granted: readonly string[], recordCwd: string | undefined, homeDir: string): { hits: AuditHit[]; interpreterCalls: InterpreterCall[] } {
   const excerpt = command.length > COMMAND_EXCERPT_LENGTH ? `${command.slice(0, COMMAND_EXCERPT_LENGTH)}…` : command;
   const hits: AuditHit[] = [];
-  const cdMatch = /^\s*cd\s+(\S+)\s*&&/.exec(command);
-  const effectiveCwd = cdMatch ? (resolvePathValue(cdMatch[1].replace(/^['"]+|['"]+$/g, ''), recordCwd, homeDir) ?? recordCwd) : recordCwd;
-  for (const token of extractPathTokens(command)) {
-    const resolvedPath = resolvePathValue(token, effectiveCwd, homeDir);
-    if (resolvedPath === undefined) {
-      hits.push({ source: 'bash', command: excerpt, reason: `command references relative path "${token}" and this record carries no cwd to resolve it against` });
-      continue;
+  let cwd = recordCwd;
+  for (const segment of command.split(/&&|;/)) {
+    const trimmed = segment.trim();
+    for (const token of extractCommandTokens(trimmed)) {
+      const resolvedPath = resolvePathValue(token.effective, cwd, homeDir);
+      if (resolvedPath === undefined) {
+        hits.push({ source: 'bash', command: excerpt, reason: `command references relative path "${token.raw}" and this record carries no cwd to resolve it against` });
+        continue;
+      }
+      if (!isContainedIn(resolvedPath, granted)) {
+        hits.push({ source: 'bash', command: excerpt, path: resolvedPath, reason: `command references a path outside every granted directory: ${token.raw}` });
+      }
     }
-    if (!isContainedIn(resolvedPath, granted)) {
-      hits.push({ source: 'bash', command: excerpt, path: resolvedPath, reason: `command references a path outside every granted directory: ${token}` });
+    const cdMatch = /^cd\s+(\S+)/.exec(trimmed);
+    if (cdMatch) {
+      const target = cdMatch[1].replace(/^['"]+|['"]+$/g, '');
+      cwd = resolvePathValue(target, cwd, homeDir) ?? cwd;
     }
   }
   for (const marker of applicableMarkers(granted)) {
@@ -169,7 +215,8 @@ function auditBashCommand(command: string, granted: readonly string[], recordCwd
       hits.push({ source: 'bash', command: excerpt, reason: `command mentions the forbidden path "${marker}"` });
     }
   }
-  return hits;
+  const interpreterReason = detectInterpreterCall(command);
+  return { hits, interpreterCalls: interpreterReason ? [{ command: excerpt, reason: interpreterReason }] : [] };
 }
 
 /**
@@ -185,10 +232,16 @@ function auditBashCommand(command: string, granted: readonly string[], recordCwd
  * @param homeDir - The home directory `~` expands to.
  * @returns Every hit the call produced.
  */
-export function auditToolCall(name: string, input: Record<string, unknown>, granted: readonly string[], cwd: string | undefined, homeDir: string = homedir()): AuditHit[] {
+export function auditToolCall(
+  name: string,
+  input: Record<string, unknown>,
+  granted: readonly string[],
+  cwd: string | undefined,
+  homeDir: string = homedir(),
+): { hits: AuditHit[]; interpreterCalls: InterpreterCall[] } {
   if (name === 'Bash') {
     const command = typeof input.command === 'string' ? input.command : '';
-    return command === '' ? [] : auditBashCommand(command, granted, cwd, homeDir);
+    return command === '' ? { hits: [], interpreterCalls: [] } : auditBashCommand(command, granted, cwd, homeDir);
   }
   const hits: AuditHit[] = [];
   const check = (field: string, raw: string | undefined) => {
@@ -215,7 +268,7 @@ export function auditToolCall(name: string, input: Record<string, unknown>, gran
       if (prefix !== '') check(patternField, prefix);
     }
   }
-  return hits;
+  return { hits, interpreterCalls: [] };
 }
 
 /**
@@ -224,11 +277,12 @@ export function auditToolCall(name: string, input: Record<string, unknown>, gran
  * @param path - The transcript's `.jsonl` path.
  * @param granted - The agent's granted directories.
  * @param homeDir - The home directory `~` expands to.
- * @returns Every hit the transcript produced, in file order.
+ * @returns Every hit the transcript produced, and every interpreter call it ran, in file order.
  */
-export function auditTranscript(path: string, granted: readonly string[], homeDir: string = homedir()): AuditHit[] {
+export function auditTranscript(path: string, granted: readonly string[], homeDir: string = homedir()): { hits: AuditHit[]; interpreterCalls: InterpreterCall[] } {
   const resolvedGranted = granted.map((dir) => normalize(resolve(dir)));
   const hits: AuditHit[] = [];
+  const interpreterCalls: InterpreterCall[] = [];
   for (const line of readFileSync(path, 'utf8').split('\n')) {
     if (line.trim() === '') continue;
     let record: Record<string, unknown>;
@@ -247,10 +301,12 @@ export function auditTranscript(path: string, granted: readonly string[], homeDi
       if (b.type !== 'tool_use') continue;
       const name = typeof b.name === 'string' ? b.name : '';
       const input = (b.input ?? {}) as Record<string, unknown>;
-      hits.push(...auditToolCall(name, input, resolvedGranted, cwd, homeDir));
+      const result = auditToolCall(name, input, resolvedGranted, cwd, homeDir);
+      hits.push(...result.hits);
+      interpreterCalls.push(...result.interpreterCalls);
     }
   }
-  return hits;
+  return { hits, interpreterCalls };
 }
 
 /**
@@ -288,8 +344,9 @@ export function main(args: string[]): number {
     process.stderr.write('usage: audit-transcripts.ts --transcript FILE --granted DIR [--granted DIR...]\n');
     return 2;
   }
-  const hits = auditTranscript(resolve(transcript), granted);
+  const { hits, interpreterCalls } = auditTranscript(resolve(transcript), granted);
   for (const hit of hits) process.stdout.write(`${JSON.stringify(hit)}\n`);
+  for (const call of interpreterCalls) process.stdout.write(`unaudited interpreter call: ${JSON.stringify(call)}\n`);
   process.stdout.write(`${hits.length} hit(s)\n`);
   return hits.length > 0 ? 1 : 0;
 }

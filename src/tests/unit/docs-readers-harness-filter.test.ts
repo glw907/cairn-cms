@@ -39,6 +39,31 @@ describe('filterHarnessItems: the path half', () => {
     expect(result.remaining).toEqual(['i1']);
     expect(result.adjudicatorNotes).toEqual([]);
   });
+
+  it('treats a blockedBy key omitted entirely (as a real JSON fixture might give it) the same as null', () => {
+    const items = [JSON.parse('{"itemId":"i1"}') as HarnessCandidate];
+    const result = filterHarnessItems(items, JOB, []);
+    expect(result.excluded).toEqual([]);
+    expect(result.remaining).toEqual(['i1']);
+  });
+
+  it('keeps the bundle-root subfolder prefix a multi-page job like the scripter carries, never stripping it', () => {
+    // The scripter's prepared tree bundles doctor/, json-output/, and exit-codes/ under one
+    // root, so its absent entries (and a reader's blockedBy claim) are bundle-root relative,
+    // prefix included, not repository-root relative.
+    const scripterJob: Pick<Job, 'id' | 'absent'> = { id: 'scripter', absent: ['doctor/docs/reference/cli-cairn-exit-codes.md'] };
+    const items: HarnessCandidate[] = [{ itemId: 'i1', blockedBy: 'doctor/docs/reference/cli-cairn-exit-codes.md' }];
+    const result = filterHarnessItems(items, scripterJob, []);
+    expect(result.excluded).toEqual([{ itemId: 'i1', reason: 'absent path "doctor/docs/reference/cli-cairn-exit-codes.md"' }]);
+  });
+
+  it('does not match a bundle-prefixed absent entry against a claim missing the prefix', () => {
+    const scripterJob: Pick<Job, 'id' | 'absent'> = { id: 'scripter', absent: ['doctor/docs/reference/cli-cairn-exit-codes.md'] };
+    const items: HarnessCandidate[] = [{ itemId: 'i1', blockedBy: 'docs/reference/cli-cairn-exit-codes.md' }];
+    const result = filterHarnessItems(items, scripterJob, []);
+    expect(result.excluded).toEqual([]);
+    expect(result.remaining).toEqual(['i1']);
+  });
 });
 
 describe('filterHarnessItems: the command half', () => {
@@ -67,7 +92,8 @@ describe('filterHarnessItems: the command half', () => {
 
   it('sends the item to the adjudicator with the reason recorded when a denial is truncated before its first argument', () => {
     const items: HarnessCandidate[] = [{ itemId: 'i1', blockedBy: 'npx run-something-very-specific-here' }];
-    // Truncated mid-first-word: the excerpt never reaches a second word at all.
+    // The cut lands inside the first argument itself, part way through it, never reaching a
+    // delimiter that would confirm where the word actually ends.
     const denial = bashDenial('npx run-something-very-specific-here', 25);
     const result = filterHarnessItems(items, JOB, [denial]);
     expect(result.excluded).toEqual([]);

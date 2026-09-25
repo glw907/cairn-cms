@@ -8,18 +8,20 @@
  *
  * Usage:
  *   npx tsx scripts/docs-readers/path-map.ts build --job JOB --docs-set PAGE[,PAGE...]
- *     --pages-root DIR --report FILE [--report FILE...] [--findings FILE] [--proxy] [--out FILE]
+ *     --pages-root DIR --report FILE [--report FILE...] [--run ID...] [--findings FILE]
+ *     [--proxy] [--out FILE]
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { computeCapacity, MAX_PLANTS, parseSections, sectionForSpan, type CapacityRegion, type LineRange, type PageSections, type SectionSpan } from './lib/sections.js';
+import { computeCapacity, headingLines, MAX_PLANTS, parseSections, sectionForSpan, type CapacityRegion, type LineRange, type PageSections, type SectionSpan } from './lib/sections.js';
+import { loadSavedBatchReport } from './lib/transcript.js';
 import type { JobReport, VerifiedQuote } from './lib/types.js';
 
 /** One section as a path map reports it: its span, plus how many quotes and distinct runs reached it. */
 export interface PathMapSection {
   heading: string;
-  level: 2 | 3;
+  level: 1 | 2 | 3;
   start: number;
   end: number;
   quotes: number;
@@ -69,11 +71,13 @@ function isOpusModel(model: string | undefined): boolean {
 
 /**
  * Whether a mapping run counts toward a path map: its report verified, and its model was Opus.
+ * The init event's own reported model (`initModel`) is preferred over the job's requested
+ * `model` when both are present, since the init event is what the run actually used.
  * @param report - One job report.
  * @returns True when the run is a verified Opus run.
  */
-export function isVerifiedOpusRun(report: Pick<JobReport, 'verified' | 'model'>): boolean {
-  return report.verified?.ok === true && isOpusModel(report.model);
+export function isVerifiedOpusRun(report: Pick<JobReport, 'verified' | 'model' | 'initModel'>): boolean {
+  return report.verified?.ok === true && isOpusModel(report.initModel ?? report.model);
 }
 
 /**
@@ -212,19 +216,65 @@ function shareOf(tallies: SectionTally[], pageOrder: string[], pageSections: Map
 }
 
 /**
- * The narrowed line ranges the ceiling's second stage produces: windows of `WIDEN_WINDOW` lines
- * either side of a line at least two runs quoted, clipped to the all-agree sections that contain
- * them and to the page's own bounds, then merged.
+ * Merge a set of inclusive line ranges, sorted ascending, joining any that touch or overlap.
+ * @param windows - The ranges to merge, in any order.
+ * @returns The merged ranges, sorted by start line.
+ */
+function mergeRanges(windows: Array<[number, number]>): Array<[number, number]> {
+  const sorted = [...windows].sort((a, b) => a[0] - b[0]);
+  const merged: Array<[number, number]> = [];
+  for (const [start, end] of sorted) {
+    const last = merged[merged.length - 1];
+    if (last && start <= last[1] + 1) {
+      last[1] = Math.max(last[1], end);
+    } else {
+      merged.push([start, end]);
+    }
+  }
+  return merged;
+}
+
+/**
+ * Sort a set of tallies into page then start-line order.
+ * @param tallies - The tallies to sort.
+ * @param pageOrder - The job's pages, in order.
+ * @returns The tallies, sorted.
+ */
+function inPageOrder(tallies: SectionTally[], pageOrder: string[]): SectionTally[] {
+  return [...tallies].sort((a, b) => {
+    const pageDiff = pageOrder.indexOf(a.page) - pageOrder.indexOf(b.page);
+    return pageDiff !== 0 ? pageDiff : a.section.start - b.section.start;
+  });
+}
+
+/**
+ * The capacity regions a set of tallies' whole sections offer: one region per section, each
+ * holding that section's own single, unnarrowed line range, so the spacing rules' two-per-section
+ * cap applies once per section, never once per page.
+ * @param tallies - The sections to offer as regions.
+ * @param pageOrder - The job's pages, in order, used to sort by page.
+ * @returns One region per tally, sorted by page order then start line.
+ */
+function tallyRegions(tallies: SectionTally[], pageOrder: string[]): CapacityRegion[] {
+  return inPageOrder(tallies, pageOrder).map((tally) => ({ page: tally.page, ranges: [{ start: tally.section.start, end: tally.section.end }] }));
+}
+
+/**
+ * The ceiling's second-stage narrowing: for each all-agree section, the windows of
+ * `WIDEN_WINDOW` lines either side of a line at least `threshold` verified runs quoted, clipped
+ * to that section's own bounds and the page's, merged within the section but never across a
+ * section boundary, so two sections' windows never combine into one even when they touch (each
+ * keeps its own two-per-section budget).
  * @param allAgree - The sections every verified run quoted.
  * @param runs - The verified runs, in the same order the tallies were built from.
  * @param pageSections - Each page's parsed sections and line count.
- * @returns The ranges, keyed by page, sorted and merged, omitting a page with none.
+ * @param pageOrder - The job's pages, in order, used to sort the result.
+ * @param threshold - How many distinct runs a line needs to seed a window (the on-path threshold;
+ * a single verified run above the ceiling still narrows, since that lone run's own threshold is 1).
+ * @returns One region per all-agree section that has at least one window, sorted by page order
+ * then start line; a section with no qualifying line contributes no region.
  */
-function narrowToRanges(
-  allAgree: SectionTally[],
-  runs: JobReport[],
-  pageSections: Map<string, PageSections>,
-): Record<string, Array<[number, number]>> {
+function narrowToRanges(allAgree: SectionTally[], runs: JobReport[], pageSections: Map<string, PageSections>, pageOrder: string[], threshold: number): CapacityRegion[] {
   // Tally, per page and line, how many distinct runs quoted a step span covering that line.
   const lineRuns = new Map<string, Map<number, Set<number>>>();
   runs.forEach((run, runIndex) => {
@@ -247,83 +297,38 @@ function narrowToRanges(
       }
     }
   });
-  const ranges: Record<string, Array<[number, number]>> = {};
-  for (const tally of allAgree) {
+  const regions: CapacityRegion[] = [];
+  for (const tally of inPageOrder(allAgree, pageOrder)) {
     const perLine = lineRuns.get(tally.page);
     if (!perLine) continue;
     const pageLines = pageSections.get(tally.page)?.lines ?? tally.section.end;
     const windows: Array<[number, number]> = [];
     for (let line = tally.section.start; line <= tally.section.end; line += 1) {
-      if ((perLine.get(line)?.size ?? 0) < 2) continue;
+      if ((perLine.get(line)?.size ?? 0) < threshold) continue;
       windows.push([Math.max(tally.section.start, 1, line - WIDEN_WINDOW), Math.min(tally.section.end, pageLines, line + WIDEN_WINDOW)]);
     }
     if (windows.length === 0) continue;
-    ranges[tally.page] = [...(ranges[tally.page] ?? []), ...mergeRanges(windows)];
+    regions.push({ page: tally.page, ranges: mergeRanges(windows).map(([start, end]) => ({ start, end })) });
   }
-  for (const page of Object.keys(ranges)) ranges[page] = mergeRanges(ranges[page]);
-  return ranges;
+  return regions;
 }
 
 /**
- * Merge a set of inclusive line ranges, sorted ascending, joining any that touch or overlap.
- * @param windows - The ranges to merge, in any order.
- * @returns The merged ranges, sorted by start line.
- */
-function mergeRanges(windows: Array<[number, number]>): Array<[number, number]> {
-  const sorted = [...windows].sort((a, b) => a[0] - b[0]);
-  const merged: Array<[number, number]> = [];
-  for (const [start, end] of sorted) {
-    const last = merged[merged.length - 1];
-    if (last && start <= last[1] + 1) {
-      last[1] = Math.max(last[1], end);
-    } else {
-      merged.push([start, end]);
-    }
-  }
-  return merged;
-}
-
-/**
- * The capacity regions a set of tallies' sections offer, one region per section, in page order.
- * @param tallies - The sections to offer as regions.
- * @param pageOrder - The job's pages, in order, used to sort by page.
- * @returns The regions, sorted by page order then start line.
- */
-function tallyRegions(tallies: SectionTally[], pageOrder: string[]): CapacityRegion[] {
-  const byPage = new Map<string, LineRange[]>();
-  for (const page of pageOrder) byPage.set(page, []);
-  for (const tally of [...tallies].sort((a, b) => a.section.start - b.section.start)) {
-    byPage.get(tally.page)?.push({ start: tally.section.start, end: tally.section.end });
-  }
-  return pageOrder.filter((page) => (byPage.get(page)?.length ?? 0) > 0).map((page) => ({ page, ranges: byPage.get(page) ?? [] }));
-}
-
-/**
- * The capacity regions a set of narrowed ranges offer, one region per merged range.
- * @param ranges - The narrowed ranges, keyed by page.
+ * The public `ranges` block a narrowed map reports: each capacity region's own line ranges,
+ * grouped by page, in the order the regions were given. Ranges from different regions (different
+ * sections) are never merged into each other here either, even when they touch, so the report
+ * matches the regions capacity was actually computed from.
+ * @param regions - The narrowed capacity regions, already in the order to report.
  * @param pageOrder - The job's pages, in order.
- * @returns The regions, one per range, in page order.
+ * @returns Each page's ranges, as `[start, end]` tuples, omitting a page with none.
  */
-function rangeRegions(ranges: Record<string, Array<[number, number]>>, pageOrder: string[]): CapacityRegion[] {
-  return pageOrder
-    .filter((page) => (ranges[page]?.length ?? 0) > 0)
-    .map((page) => ({ page, ranges: (ranges[page] ?? []).map(([start, end]) => ({ start, end })) }));
-}
-
-/**
- * The line ranges a set of tallies' sections span, as the `ranges` block of a narrowed map reports
- * them.
- * @param tallies - The sections to report.
- * @param pageOrder - The job's pages, in order.
- * @returns Each page's section spans, sorted by start line, omitting a page with none.
- */
-function sectionRanges(tallies: SectionTally[], pageOrder: string[]): Record<string, Array<[number, number]>> {
-  const ranges: Record<string, Array<[number, number]>> = {};
+function regionsToRangesRecord(regions: CapacityRegion[], pageOrder: string[]): Record<string, Array<[number, number]>> {
+  const result: Record<string, Array<[number, number]>> = {};
   for (const page of pageOrder) {
-    const onPage = tallies.filter((tally) => tally.page === page).sort((a, b) => a.section.start - b.section.start);
-    if (onPage.length > 0) ranges[page] = onPage.map((tally) => [tally.section.start, tally.section.end]);
+    const onPage = regions.filter((region) => region.page === page).flatMap((region) => region.ranges.map((range): [number, number] => [range.start, range.end]));
+    if (onPage.length > 0) result[page] = onPage;
   }
-  return ranges;
+  return result;
 }
 
 /**
@@ -364,6 +369,7 @@ export function buildPathMap(input: BuildPathMapInput): PathMap {
   const multiPage = input.multiPage ?? pageOrder.length > 1;
   const pageSections = new Map(pageOrder.map((page) => [page, parseSections(input.pages[page])]));
   const findingSpans = new Map(pageOrder.map((page) => [page, input.findingSpans?.[page] ?? []]));
+  const headings = new Map(pageOrder.map((page) => [page, headingLines(pageSections.get(page)?.sections ?? [])]));
   const opusVerified = input.runs.filter(isVerifiedOpusRun);
   const verifiedRuns = opusVerified.length;
   const emptyPages = toPagesBlock([], pageOrder, pageSections);
@@ -380,21 +386,17 @@ export function buildPathMap(input: BuildPathMapInput): PathMap {
 
   if (onPathShare > CEILING) {
     narrowed = true;
+    // "Quoted by all three runs" generalizes to "quoted by every verified run" below three.
     const allAgree = onPath.filter((tally) => tally.runIndexes.size === verifiedRuns);
     const allAgreeShare = shareOf(allAgree, pageOrder, pageSections);
-    if (allAgreeShare > CEILING) {
-      ranges = narrowToRanges(allAgree, opusVerified, pageSections);
-      capacityRegions = rangeRegions(ranges, pageOrder);
-    } else {
-      ranges = sectionRanges(allAgree, pageOrder);
-      capacityRegions = tallyRegions(allAgree, pageOrder);
-    }
+    capacityRegions = allAgreeShare > CEILING ? narrowToRanges(allAgree, opusVerified, pageSections, pageOrder, threshold) : tallyRegions(allAgree, pageOrder);
+    ranges = regionsToRangesRecord(capacityRegions, pageOrder);
   }
 
   let widened = false;
   let finalSections = onPath;
   if (!narrowed) {
-    let widenedCapacity = computeCapacity(capacityRegions, findingSpans, multiPage);
+    let widenedCapacity = computeCapacity(capacityRegions, findingSpans, multiPage, headings);
     if (widenedCapacity < MAX_PLANTS) {
       const onPathKeys = new Set(onPath.map((tally) => tallyKey(tally.page, tally.section)));
       const candidates = [...tallies.values()]
@@ -410,12 +412,12 @@ export function buildPathMap(input: BuildPathMapInput): PathMap {
         if (shareOf([...widenedSet, candidate], pageOrder, pageSections) > CEILING) break;
         widenedSet.push(candidate);
         widened = true;
-        widenedCapacity = computeCapacity(tallyRegions(widenedSet, pageOrder), findingSpans, multiPage);
+        widenedCapacity = computeCapacity(tallyRegions(widenedSet, pageOrder), findingSpans, multiPage, headings);
       }
       finalSections = widenedSet;
     }
   }
-  const capacity = computeCapacity(narrowed ? capacityRegions : tallyRegions(finalSections, pageOrder), findingSpans, multiPage);
+  const capacity = computeCapacity(narrowed ? capacityRegions : tallyRegions(finalSections, pageOrder), findingSpans, multiPage, headings);
 
   return {
     job: input.job,
@@ -450,7 +452,8 @@ export function buildProxyMap(input: Pick<BuildPathMapInput, 'job' | 'runs' | 'p
   if (tallies.size === 0) return emptyMap(input.job, verifiedRuns, 'proxy', emptyPages, 'no verified quote in any control run');
   const onPath = [...tallies.values()];
   const onPathShare = shareOf(onPath, pageOrder, pageSections);
-  const capacity = computeCapacity(tallyRegions(onPath, pageOrder), new Map(), pageOrder.length > 1);
+  const headings = new Map(pageOrder.map((page) => [page, headingLines(pageSections.get(page)?.sections ?? [])]));
+  const capacity = computeCapacity(tallyRegions(onPath, pageOrder), new Map(), pageOrder.length > 1, headings);
   return { job: input.job, verifiedRuns, mode: 'proxy', pages: toPagesBlock(onPath, pageOrder, pageSections), onPathShare, narrowed: false, widened: false, capacity, noMap: null };
 }
 
@@ -488,12 +491,62 @@ function readFindingSpans(file: string): FindingSpans {
   return byPage;
 }
 
+/**
+ * Whether parsed JSON is a batch report: it carries a `jobs[]` array.
+ * @param raw - The parsed contents of a `--report` file.
+ * @returns True for a batch report.
+ */
+function isBatchShaped(raw: unknown): raw is { jobs: unknown[] } {
+  return typeof raw === 'object' && raw !== null && Array.isArray((raw as Record<string, unknown>).jobs);
+}
+
+/**
+ * Whether parsed JSON is one job report: it carries the fields every job report always has.
+ * @param raw - The parsed contents of a `--report` file.
+ * @returns True for a single job report.
+ */
+function isJobReportShaped(raw: unknown): raw is JobReport {
+  if (typeof raw !== 'object' || raw === null) return false;
+  const record = raw as Record<string, unknown>;
+  return typeof record.model === 'string' && typeof record.verified === 'object' && record.verified !== null;
+}
+
+/**
+ * Load the mapping runs a `build` invocation reads: each `--report` file is either one job
+ * report, taken directly, or a saved batch report, whose `jobs[]` this reads through the shared
+ * saved-report loader (so an earlier-shape saved report still parses) and filters to the ids
+ * `--run` named, when any were given; with none given, every job in a batch file is taken.
+ * @param files - The `--report` file paths.
+ * @param runIds - The `--run` ids to select from a batch-shaped file, empty for "take every job".
+ * @returns The runs, in file order, batch jobs in their own file order within their file.
+ * @throws When a file is neither shape, naming the file.
+ */
+function loadRuns(files: string[], runIds: string[]): JobReport[] {
+  const wanted = new Set(runIds);
+  const runs: JobReport[] = [];
+  for (const file of files) {
+    const raw = JSON.parse(readFileSync(resolve(file), 'utf8')) as unknown;
+    if (isBatchShaped(raw)) {
+      const batch = loadSavedBatchReport(raw);
+      for (const job of batch.jobs) {
+        if (wanted.size === 0 || wanted.has(job.id)) runs.push(job);
+      }
+    } else if (isJobReportShaped(raw)) {
+      runs.push(raw);
+    } else {
+      throw new Error(`"${file}" is neither a job report nor a batch report`);
+    }
+  }
+  return runs;
+}
+
 /** The `build` subcommand's parsed arguments. */
 interface BuildArgs {
   job: string;
   docsSet: string[];
   pagesRoot: string;
   reportFiles: string[];
+  runIds: string[];
   findingsFile?: string;
   proxy: boolean;
   out?: string;
@@ -507,6 +560,7 @@ interface BuildArgs {
  */
 function parseBuildArgs(argv: string[]): BuildArgs {
   const reportFiles: string[] = [];
+  const runIds: string[] = [];
   let job: string | undefined;
   let docsSet: string[] | undefined;
   let pagesRoot: string | undefined;
@@ -519,6 +573,7 @@ function parseBuildArgs(argv: string[]): BuildArgs {
     else if (arg === '--docs-set') docsSet = parseDocsSet(argv[++i]);
     else if (arg === '--pages-root') pagesRoot = argv[++i];
     else if (arg === '--report') reportFiles.push(argv[++i]);
+    else if (arg === '--run') runIds.push(argv[++i]);
     else if (arg === '--findings') findingsFile = argv[++i];
     else if (arg === '--proxy') proxy = true;
     else if (arg === '--out') out = argv[++i];
@@ -528,7 +583,7 @@ function parseBuildArgs(argv: string[]): BuildArgs {
   if (!docsSet || docsSet.length === 0) throw new Error('--docs-set is required');
   if (!pagesRoot) throw new Error('--pages-root is required');
   if (reportFiles.length === 0) throw new Error('at least one --report is required');
-  return { job, docsSet, pagesRoot, reportFiles, findingsFile, proxy, out };
+  return { job, docsSet, pagesRoot, reportFiles, runIds, findingsFile, proxy, out };
 }
 
 /**
@@ -538,12 +593,14 @@ function parseBuildArgs(argv: string[]): BuildArgs {
  */
 export function main(argv: string[]): number {
   if (argv[0] !== 'build') {
-    process.stderr.write('usage: path-map.ts build --job JOB --docs-set PAGE[,PAGE...] --pages-root DIR --report FILE [--report FILE...] [--findings FILE] [--proxy] [--out FILE]\n');
+    process.stderr.write(
+      'usage: path-map.ts build --job JOB --docs-set PAGE[,PAGE...] --pages-root DIR --report FILE [--report FILE...] [--run ID...] [--findings FILE] [--proxy] [--out FILE]\n',
+    );
     return 1;
   }
   const args = parseBuildArgs(argv.slice(1));
   const pages = readPages(resolve(args.pagesRoot), args.docsSet);
-  const runs: JobReport[] = args.reportFiles.map((file) => JSON.parse(readFileSync(resolve(file), 'utf8')) as JobReport);
+  const runs = loadRuns(args.reportFiles, args.runIds);
   const findingSpans = args.findingsFile ? readFindingSpans(args.findingsFile) : undefined;
   const map = args.proxy ? buildProxyMap({ job: args.job, runs, pages }) : buildPathMap({ job: args.job, runs, pages, findingSpans });
   const json = `${JSON.stringify(map, null, 2)}\n`;

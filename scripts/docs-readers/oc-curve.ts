@@ -78,8 +78,9 @@ const FLOOR_ICC_GRID = Array.from({ length: 71 }, (_, i) => Math.round((ICC_LOW 
 /**
  * A class's sensitivity floor at its achieved plant count: the largest catch count a class at true
  * recall 0.8 reaches with probability at least 0.9, at every intraclass correlation in the range.
- * Unlike the pooled threshold, the floor's own binding intraclass correlation is not always at a
- * grid endpoint, so this sweeps the whole range in steps of 0.01.
+ * The catch probability falls monotonically as the intraclass correlation rises, so the floor's
+ * own binding value is the 0.95 endpoint; this still sweeps the whole range in steps of 0.01,
+ * matching the reference simulation's own grid exactly rather than relying on that monotonicity.
  * @param n - The class's achieved plant count.
  * @returns The floor, or null when a class at one plant has no count that meets the rule.
  */

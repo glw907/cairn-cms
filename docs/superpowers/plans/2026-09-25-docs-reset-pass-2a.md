@@ -303,7 +303,7 @@ Verified against `main` at `3bc3647f`, rechecked by the fold at `2eb96b74`, and 
   is `:786`, `toBlockedEntries` `:739`. `verifyReport` is `lib/verify.ts:192-250`; `diverged[]`'s
   handling (`:167`, `:239-246`, problems prefixed `diverged quote`) is the pattern for the new
   fields, including the unread-page check. `verifyQuoteAgainst` accepts a quote spanning forward up
-  to five lines to its cited line (`:88-91`); `citesUnreadPage` excuses a page outside `docsSet` or
+  to five lines to its cited line (`:81-84`; `:85-91` is a separate one-line off-by-one fallback); `citesUnreadPage` excuses a page outside `docsSet` or
   a Grep-displayed line (`:143-145`).
 - **Comment carries confirmed:** `runner.ts:731-734` and `lib/class-schema.ts:68-69` read as the
   spec says.
@@ -884,5 +884,6 @@ conditional chain still breaches after the deferral, which stops the pass for Ge
 | --- | --- | --- | --- | --- |
 | spec | approved | `598902f3`..`e66bbb21` | brainstorm session | Four lenses, fold, verification, second fold, prose fold. Owner rulings O12, B1 to B4; conductor rulings CR1 to CR10. |
 | plan | reviewed | `9f112c92`, fold `f3d1e4f6`, second fold `2c47bc92`, prose fold uncommitted | plan session | Three lenses (contract, mechanics, risk); fold record `2026-09-25-docs-reset-2a-plan-fold.md` (with its "Second fold" section after the fold verification and its "Prose fold" section after the prose review); rulings R-a to R-i; owner decisions F1, F2 pending. |
+| 0 | done | `12fa7f34`; dotfiles `aa552a2e` | ~0.2M | `T0` 2026-09-25T22:56:11Z; conductor session `0d9876f8-fbf6-4c66-856b-a818fab60e55`. Worktrees `docs-reset-2a`, `docs-reset-2a-audiences` off `0ac8b457`, `npm ci` both. 1b `cmp` exit 0. CLI 2.1.282. `claude-tooling-sync verify` exit 0. Scratch-site teardown heading renamed (CR7), registry line moved; `check:docs` green. Pre-flight: ~55 claims, 4 failed, all moot or amended (verify.ts span cite corrected to `:81-84`; dotfiles 14 ahead; STATUS 61 lines; teardown heading already renamed by step 4). Pins: T1 `ruleCandidates` narrowing is prompt wording only, no filter; T3 new fields append after `checks`; T4 `wilsonInterval` rounds like `clopperPearson`, `--control-ids` checks absent before duplicate; T6 render blocks as `Key:` then hyphen bullets. Human-read sheets went with the approval message (STATUS 0ac8b457); Sheet 1's two blanks are Geoff's. |
 
 ## Post-mortem

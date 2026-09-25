@@ -106,3 +106,39 @@ Budget). The cost arithmetic holds: four build tasks at 2.0M give 15.75M, at 0.9
 | V minor 7 (editor docs version) | Folded by the tag route: Geoff's notes give the help link at `v0.95.0` or `v0.96.0` by club site, with the lookup for a later upgrade. | Sheets, "For Geoff" |
 | V minor 8 (sheets not send-ready) | Folded: Geoff's notes moved to their own unsent section, the entry title and help link are named fill-ins, and the log goes as a reply to Geoff, who pastes it into the pass session or saves it at `docs/superpowers/research/human-reads-2a/sheet-{1-editor,2-evaluator}.md` in the main checkout. Task 8 reads both paths; the close removes the raw copies once recorded. | Sheets; Task 8 step 2; Task 11 |
 | V minor 9 (Ledger, run count) | Folded: the plan row names `f3d1e4f6` and this second fold; Task 5's cost note says 15 runs. | Ledger; Cost lines |
+
+## Prose fold
+
+**Input:** `2026-09-25-docs-reset-2a-plan-prose-review.md` (P), against the plan and the sheets at
+`2c47bc92`. **Fold:** `claude-opus-5-5`, narrow, editing only the plan, the sheets, and this record,
+under the conductor's rulings on findings 1 to 5. **Checked for this fold:** spec §6 names "One
+cold Opus 5.5 lens"; the spec and B4 set only the 12M flag and the 15M ceiling, and no text sets a
+single-task overrun stop; `session-ledger.ts` sums a session and its subagents with no per-task
+or per-agent split. `tellgrader --register editor` on the revised sheets reports 0 findings.
+
+| ID | Disposition | Where |
+| --- | --- | --- |
+| P sheets blocker (fault-finding line) | Folded as proposed. | Sheet 1, "Where you start" |
+| P sheets warning (done-state gives the answer) | Folded as proposed. | Sheet 1, "You're done when" |
+| P sheets warning ("Bring back the version") | Folded as proposed. | Sheet 1, step 2 |
+| P sheets warning ("entry") | Folded: "post or page", then "it"; Geoff's fill-in note says the same. | Sheet 1; "For Geoff" step 4 |
+| P sheets warning ("your club's site editor") | Folded as proposed. | Sheet 1, "Where you start" |
+| P sheets warning (the GitHub link) | Folded: the link opens GitHub, and only the page text matters. | Sheet 1, "Where you start" |
+| P sheets warning (publish by mistake) | Folded as proposed. | Sheet 1, step 3 |
+| P sheets suggestion (one meaning of "stuck") | Folded: the stop rule now says "made no progress for 5 minutes"; "stuck" keeps its defined meaning. | Sheet 1, "Stop early" |
+| P sheets suggestion (setup colon) | Folded: two sentences. | Sheet 1, "Stop early" |
+| P sheets suggestion (nested parentheticals) | Folded: split into two bullets. | Sheet 1, "What to write down" |
+| P sheets suggestion (name cairn.pub and its links) | Folded. | Sheet 2, "Where you start" |
+| P sheets suggestion (work alone, rough notes) | Folded into Sheet 2. | Sheet 2, "Where you start" and "When you're done" |
+| P sheets suggestion (repeated persona sentence) | Folded: the sentence that restated the task is cut. | Sheet 2, "Who you are" |
+| P sheets suggestion ("If you're Geoff:") | Folded as proposed. | Sheet 2, last "write down" bullet |
+| P 1 (Task 9 departs from §6 unsanctioned) | Folded: E3 (three lenses) and E4 (the deferral, only under F2(a)) join the header's exception clause; Task 11 files E1 to E4. | Header "Spec"; Task 9 "Deferral"; Task 11 |
+| P 2 (overrun stop has no ruling) | Folded (conductor ruling): the single-task overrun stop is removed; F2 rules the flag and the ceiling only. | F2; Budget; Stop and ask |
+| P 3 (ledger cannot measure a task) | Folded (conductor ruling): the projection is counted spend at the reading plus open tasks' cost lines, with no per-task measure and no mean repricing; readings run at every task boundary from Task 0. | F2 "The projection"; Budget |
+| P 4 (fallback rerun impossible; R-h calls it a hold) | Folded: on a drift the conductor re-pins and reruns every batch of the same stage already run on the earlier version; R-h states that a declined F1 drops the spec's hold, and E2 records it. | F1 fallback; R-h; Stop and ask |
+| P 5 (pause length, risk of declining) | Folded: one or two sessions, idle gaps included; the risk is reader batches on different CLI versions. | F1 |
+| P 6 (version gate contradicts itself) | Folded: the pinned set is 2.1.280 to 2.1.282 plus any version re-pinned before the first pilot reader batch. | F1, version bullet |
+| P 7 (dry-run listing called attended) | Folded: removed from the attended list; it stays a conductor health check in Task 11. | Unattended execution |
+| P 8 (Budget names one conditional chain) | Folded: both chains named, about 1.0M each. | Budget |
+| P 9 (conductor reads logs; relative paths) | Folded: a `sonnet` copier at `medium` records the logs; the conductor saves a pasted log verbatim without acting on it; the sheets doc uses the absolute paths. | Task 8 step 2; sheets "Where each log goes" and "Logs" |
+| P 10 (Task 7 test edit has no agent) | Folded: the 4b author (step 2) adds the id assertion. | Task 7 step 3 |

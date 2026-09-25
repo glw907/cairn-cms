@@ -21,8 +21,11 @@ Geoff the audience record and the exemplar corpus review.
 **Spec:** [`2026-09-25-docs-reset-pass-2a-design.md`](../specs/2026-09-25-docs-reset-pass-2a-design.md),
 read in full by every executor before its task. The spec is the contract: its fields, pass mark,
 per-class rule, and order are fixed. Where this plan and the spec disagree, the spec wins; stop
-and report, **except for the two errata ruled below (E1, E2)**, which are sanctioned deviations,
-not conflicts. The rulings behind the spec: its "Rulings" section and the fold record
+and report, **except for four errata**, which are sanctioned deviations, not conflicts: E1 (R-f,
+the plants file), E2 (R-h, the CLI hold), E3 (Task 9 runs three lenses split by audience where
+§6 names one, because one lens cannot read the corpus; plan fold record, M m8 and R m11), and E4
+(Task 9's deferral to pass 2b, an erratum only if Geoff rules F2(a)). The rulings behind the
+spec: its "Rulings" section and the fold record
 `docs/superpowers/research/2026-09-25-docs-reset-2a-spec-fold.md`.
 
 **Approved:** pending Geoff's read, with the two owner decisions below.
@@ -42,6 +45,11 @@ enabled, nothing under `/etc` changes, and one start reverses it. The alternativ
 chosen. One caveat: a reboot inside the window re-arms the timer, and because the timer is
 `Persistent=true` it may fire at boot. The session-start check below catches that.
 
+The pause runs from the smoke run through the pilot's scoring, likely one or two sessions, and it
+stays in force while the pass is idle between them, so the host takes no system update in that
+window. The risk of declining: the pilot's reader batches can run on different CLI versions, and
+each drift costs a rerun of the batches already run in that stage.
+
 - Status first (the dry run): `systemctl status uupd.timer uupd.service --no-pager; systemctl list-timers uupd.timer --no-pager; claude --version`.
   Proceed only when `uupd.service` is not `active` or `activating` (no update mid-run; `failed` and
   `inactive` both proceed, and the service was `failed` on 2026-09-25 after its power-saver
@@ -52,42 +60,40 @@ chosen. One caveat: a reboot inside the window re-arms the timer, and because th
   a next run. If a 04:00 run was missed while paused, uupd catches up within about 15 minutes of
   the start. That is intended, and it lands after the hold.
 - `claude --version` runs before every runner batch (the smoke run, Task 3's live check, the five
-  reader batches, both judge batches, and any rerun) and must be in the pinned set (2.1.280 to
-  2.1.282, or the version re-pinned before Task 2). A drift before the first pilot reader batch is
-  re-pinned with `--probe-init`, recorded, and the pass continues. A drift from the first pilot
-  reader batch through the last scoring rerun stops the pass for Geoff.
+  reader batches, both judge batches, and any rerun) and must be in the pinned set: 2.1.280 to
+  2.1.282, plus any version re-pinned before the first pilot reader batch. A drift before that
+  batch is re-pinned with `--probe-init`, recorded, and the pass continues. A drift from the first
+  pilot reader batch through the last scoring rerun stops the pass for Geoff.
 
 **If Geoff declines F1:** no pause. The version check still runs before every batch. On a drift,
-the conductor re-pins the init baseline with `--probe-init` and reruns that batch whole, the pilot
-record names each batch's CLI version, and the pass does not stop for the drift.
+the conductor re-pins the init baseline with `--probe-init` and reruns every batch of the same
+stage already run on the earlier version (the five reader batches are one stage, the two judge
+batches another). The pilot record names each batch's CLI version, and the pass does not stop for
+the drift.
 
-**F2. One pre-ruling for the flag, the overrun stop, and the ceiling (recommended: (a)).** The
-evidence:
+**F2. One pre-ruling for the flag and the ceiling (recommended: (a)).** The evidence:
 - The estimate is about 12.65M, above the 12M flag, so the flag sitting is close to certain.
 - At pass 1b's mean build cost (2.0M against lines of 1.3M and 1.0M), the pass reaches about
   15.75M, over the 15M ceiling with no conditional chain firing (see "Cost lines").
-- At that mean, a build task overruns its line by about 54 percent. That trips the stop for a
-  single task overrunning its cost line by more than half, so the overrun stop will likely fire in
-  segment 1 or 2.
+- Deferring Task 9 (0.8M) brings that mean case to about 14.95M.
 - Nothing yet rules what gives at the ceiling. Tasks 8 to 10 (the audience review, the exemplar
   review, owner stop 1) are the tasks left when it lands.
 
-The ruling covers all three stops at once:
-- **(a) Continue, with a pre-ruled cut (recommended).** The conductor continues past the 12M flag
-  and past a single-task overrun, recording each in the Ledger with a projection to the close. The
-  projection is counted spend plus the cost lines of every task still open, each open build task
-  priced at the pass's observed mean build cost when that is above its line. When the projection
-  first breaches 15M, Task 9 (the exemplar review) defers whole to pass 2b, which already takes the
-  exemplar gap fills (B4); at 1b's mean that brings the pass to about 14.95M. If the projection
-  still breaches after the deferral, or Task 9 has already started, the conductor stops and asks.
-  No review lens in Task 8 is ever cut (parent spec, "no review lens is cut"), and a deferral moves
-  Task 9's lenses to pass 2b whole, cutting none. This builds a pass that likely runs to owner stop
-  1 without a mid-pass sitting, with the audience record reviewed in full, and at worst an
-  exemplar review that lands in pass 2b against its 8M.
-- **(b) Stop and ask at each trigger, as B4 set it.** The conductor stops at the 12M flag and at
-  any single-task overrun above half, and Geoff rules the next step each time, including what gives
-  at the ceiling. This builds the same pass with every cut ruled in person, at the price of likely
-  two or three attended sittings for outcomes (a) already names.
+**The projection**, under either option, is `session-ledger.ts` counted spend at the reading plus
+the cost lines of every task still open. The ledger counts sessions, not tasks, so no per-task
+figure enters it. The conductor takes the reading at every task boundary from Task 0.
+
+- **(a) Continue past the flag, with a pre-ruled cut (recommended).** At the 12M flag the conductor
+  records the reading and the projection in the Ledger and continues. When the projection first
+  breaches 15M, Task 9 (the exemplar review) defers whole to pass 2b (E4), which already takes the
+  exemplar gap fills (B4). If the projection still breaches after the deferral, or Task 9 has
+  already started, the conductor stops and asks. No Task 8 lens is ever cut (parent spec, "no
+  review lens is cut"), and a deferral moves Task 9's lenses to pass 2b whole, cutting none. This
+  builds a pass that likely runs to owner stop 1 without a mid-pass sitting, with the audience
+  record reviewed in full and, at worst, an exemplar review that lands in pass 2b against its 8M.
+- **(b) Stop and ask at the 12M flag, as B4 set it.** The conductor stops at the flag, and Geoff
+  rules the next step, including what gives at the ceiling. This builds the same pass with the cut
+  ruled in person, at the price of a likely mid-pass sitting for an outcome (a) already names.
 
 Under either option, a runner batch that is running when a stop lands finishes, and the pass
 still stops at the ceiling itself.
@@ -142,10 +148,11 @@ disposition.
   to that inventory.
 - **R-h. Erratum E2, the CLI hold.** The spec's parenthetical names `DISABLE_AUTOUPDATER=1` as the
   hold. That setting does not hold a Homebrew install, and a settings `env` entry never reaches a
-  fresh shell, so the plan drops it. The hold is F1's `uupd.timer` pause (or F1's fallback), held
-  through the last judge batch and every scoring rerun. The release comes after Task 5's scoring
-  preconditions and the judge audit settle, since either can call for a rerun. The close files
-  this against the spec as an erratum.
+  fresh shell, so the plan drops it. The hold is F1's `uupd.timer` pause, held through the last
+  judge batch and every scoring rerun. If Geoff declines F1, the spec's hold is dropped, not
+  replaced: F1's fallback reruns batches after a drift but holds nothing, and E2 records that.
+  The release comes after Task 5's scoring preconditions and the judge audit settle, since either
+  can call for a rerun. The close files this against the spec as an erratum.
 - **R-i. The flag.** Put to Geoff as F2.
 
 ## Budget and rhythm
@@ -156,14 +163,15 @@ count; cache reads are reported apart. At Task 0 the conductor records the pass'
 `npx tsx scripts/docs-readers/session-ledger.ts --session <session id> --since <T0>` (run from the
 `docs-reset-2a` worktree), summed across sessions with the runner ledger counted once (pass 1b's
 method: subtract each extra session's runner figure). The conductor runs it at every checkpoint and
-every task boundary from Task 5 on.
+every task boundary from Task 0 on, and each reading feeds F2's projection.
 
 **Budget:** about 12.65M (range 11.6M to 15.75M, the top of it over the 15M ceiling, which F2
-rules; plus about 1.0M if the conditional verifier-fix chain fires); see "Cost lines". Fix rounds
-are budgeted as the norm: every build task in passes 1 and 1b drew at least one `fix`. **At the flag, at a single-task overrun above half, and at a
-projected ceiling breach** the conductor finishes the running task and writes the Ledger with a
-projection to the close (F2 defines it), then follows F2's answer. A runner batch that is running
-when spend reaches the ceiling finishes; no batch runs half.
+rules; plus about 1.0M for each conditional chain that fires, the verifier-fix chain and the
+judge-defect fix chain); see "Cost lines". Fix rounds are budgeted as the norm: every build task
+in passes 1 and 1b drew at least one `fix`. **At the flag and at a projected ceiling breach** the
+conductor finishes the running task and writes the Ledger with a projection to the close (F2
+defines it), then follows F2's answer. A runner batch that is running when spend reaches the
+ceiling finishes; no batch runs half.
 
 **Checkpoints:** every segment boundary (at most four tasks apart), any split, the flag, and before
 any question to Geoff. At each, the conductor writes the Ledger at the foot of this plan (task
@@ -707,7 +715,8 @@ fixture profile and a fixture manifest), `eslint.config.js`, `scripts/checks/che
    `~/.dotfiles/claude/.claude/agents/cairn-docs-drafter.md` to name the format and how the
    rendered profile reaches its prompt (the chain's `profile` argument, one invocation per
    profile).
-3. The schema test gains an assertion that exactly the six pinned profile ids exist.
+3. The step 2 author adds an assertion to the schema test that exactly the six pinned profile ids
+   exist.
 
 **Files.** `docs/internal/audiences/*.md`, `src/tests/unit/docs-audiences-schema.test.ts` (the
 id assertion), the drafter agent file in dotfiles.
@@ -729,13 +738,16 @@ passes. **Gate:** Task 6's gate string run in the `docs-reset-2a` worktree. **Re
    raw sources, never Task 7's scratch extraction. `users` also reads comparable CMSs' public
    evidence (web); `boundaries` the charter and the hat map; `agents` the shipped guidance layer;
    `open` peer docs' audience divisions (web).
-2. The human reads' stall logs, as they arrive, recorded verbatim under "Logs" in
-   `docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md` in the worktree. A log
-   reaches the pass one of two ways: Geoff pastes it into the session running the pass, or he saves
-   it in the main checkout at
+2. The human reads' stall logs, as they arrive, copied verbatim under "Logs" in
+   `docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md` in the worktree by a
+   `sonnet` agent at `medium`, so the conductor never reads a log. A log reaches the pass one of
+   two ways: Geoff saves it in the main checkout at
    `/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-1-editor.md`
-   or `.../sheet-2-evaluator.md` (untracked). The conductor checks both paths at this step and
-   again before Task 10.
+   or `/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-2-evaluator.md`
+   (untracked), or he pastes it into the session running the pass, and the conductor saves it
+   verbatim at the matching path without acting on it. The conductor dispatches the copier at this
+   step and again before Task 10; the copier checks both paths and returns only which logs it
+   recorded.
 3. One fold by `claude-opus-5-5` at `high`: the profiles revised and
    `docs/superpowers/research/2026-09-25-docs-reset-2a-audience-fold.md` written.
 
@@ -764,10 +776,10 @@ test passes, and a profile citing a rejected capture fails it (the fold then rev
 list); a grep for lines containing `**Verdict (` that do not match the pinned form exactly returns
 nothing. The gap fills are pass 2b's. **Gate:** Task 7's. **Reviewer:** `diff-reviewer`.
 
-**Deferral (F2(a) only).** When the projection first breaches 15M before this task starts, it
-defers whole to pass 2b: no lens runs here, Task 10's brief names the deferral, and Task 11 files
-the exemplar review under pass 2b beside the gap fills. Once a lens has started, the task is not
-deferred.
+**Deferral (F2(a) only; erratum E4).** When the projection first breaches 15M before this task
+starts, it defers whole to pass 2b: no lens runs here, Task 10's brief names the deferral, and
+Task 11 files the exemplar review under pass 2b beside the gap fills. Once a lens has started, the
+task is not deferred.
 
 ### Task 10: Owner stop 1 (conductor-run; 0.2M; attended)
 
@@ -798,8 +810,8 @@ independent `diff-reviewer` read over the fold's diff.
   reader-stage jobs, all under the first drafting pass's entry; the exemplar gap fills, the exemplar review if
   F2(a) deferred it, and any human read still open under pass 2b; the scratch-site line pointing at the renamed teardown
   section (CR7).
-- Errata E1 and E2 filed against the spec (a dated "Errata" note appended to the spec, the only
-  spec edit this pass makes).
+- Errata E1 to E4 filed against the spec, E4 only if F2(a) deferred Task 9 (a dated "Errata"
+  note appended to the spec, the only spec edit this pass makes).
 - Once the Logs section carries them verbatim, the untracked raw logs under
   `docs/superpowers/research/human-reads-2a/` in the main checkout are removed.
 - The conductor runs the scratch site's dry-run listing (the record's teardown section, step 1) as
@@ -813,8 +825,7 @@ gate if any code changed after the last green commit. The PR merges only on Geof
 
 After approval, the pass runs unattended except at the attended points: the no-go report (Task 5,
 only on a no-go), the two human reads (Geoff arranges the club-site editor; the sheets go with the
-approval), owner stop 1 (Task 10), and the dry-run listing at the close as a health check. Every
-other decision is the conductor's.
+approval), and owner stop 1 (Task 10). Every other decision is the conductor's.
 
 **At each session start:** read this plan and the spec; run the one-executor check; confirm
 `systemd-inhibit --list` shows `claude-awake`; hold the lid switch
@@ -824,12 +835,11 @@ reboot, stop it again and check `claude --version` before anything else); arm a 
 as the fallback on every wait.
 
 **Stop and ask Geoff** (write the Ledger and STATUS first, one combined question): the 12M flag
-and a single task overrunning its cost line by more than half (both only under F2(b)); under
-F2(a), a projection that still breaches 15M after Task 9's deferral, or once Task 9 has started;
-the ceiling itself; a third
-`fix` on any task; a task that finds the spec unbuildable; a correctness point still hedged after
-an `xhigh` read and one `fable` dispatch; a CLI version drift inside the F1 window from the first
-pilot reader batch on (under F1's fallback, this is re-pinned instead).
+(only under F2(b)); under F2(a), a projection that still breaches 15M after Task 9's deferral, or
+once Task 9 has started; the ceiling itself; a third `fix` on any task; a task that finds the spec
+unbuildable; a correctness point still hedged after an `xhigh` read and one `fable` dispatch; a CLI
+version drift inside the F1 window from the first pilot reader batch on (under F1's fallback, the
+conductor re-pins and reruns the stage's earlier batches instead).
 
 **Never:** merge the PR; push to `main` anything but the STATUS line; move a bar, a denominator, or
 a counting rule; loosen `keyTraceMatches`.
@@ -871,6 +881,6 @@ conditional chain still breaches after the deferral, which stops the pass for Ge
 | Task | State | Commit | Spend | Notes |
 | --- | --- | --- | --- | --- |
 | spec | approved | `598902f3`..`e66bbb21` | brainstorm session | Four lenses, fold, verification, second fold, prose fold. Owner rulings O12, B1 to B4; conductor rulings CR1 to CR10. |
-| plan | reviewed | `9f112c92`, fold `f3d1e4f6`, second fold uncommitted | plan session | Three lenses (contract, mechanics, risk); fold record `2026-09-25-docs-reset-2a-plan-fold.md` (with its "Second fold" section after the fold verification); rulings R-a to R-i; owner decisions F1, F2 pending. |
+| plan | reviewed | `9f112c92`, fold `f3d1e4f6`, second fold `2c47bc92`, prose fold uncommitted | plan session | Three lenses (contract, mechanics, risk); fold record `2026-09-25-docs-reset-2a-plan-fold.md` (with its "Second fold" section after the fold verification and its "Prose fold" section after the prose review); rulings R-a to R-i; owner decisions F1, F2 pending. |
 
 ## Post-mortem

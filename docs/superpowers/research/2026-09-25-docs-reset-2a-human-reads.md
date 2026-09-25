@@ -18,7 +18,8 @@ never sent. Each sheet after it is sent whole, from its heading to the rule belo
    twice.
 2. Check that nobody has unpublished changes on it, because a pending draft blocks the task.
 3. Confirm that the editor can still sign in.
-4. Replace the two bracketed fill-ins in Sheet 1. `[ENTRY TITLE]` becomes the entry's title.
+4. Replace the two bracketed fill-ins in Sheet 1. `[ENTRY TITLE]` becomes the post's or page's
+   title.
    `[HELP LINK]` becomes the editor help pages at the engine version the club site runs, so a
    stall reads against the pages that match the editor's screens:
 
@@ -33,40 +34,47 @@ never sent. Each sheet after it is sent whole, from its heading to the rule belo
 
 **Where each log goes.** The reader replies to you. Add one line on top naming the sheet, the
 reader (or "Geoff"), and for Sheet 1 the club site and its engine version. Then either paste the
-log into the Claude session running pass 2a, or save it verbatim in this checkout at
-`docs/superpowers/research/human-reads-2a/sheet-1-editor.md` or
-`docs/superpowers/research/human-reads-2a/sheet-2-evaluator.md`. The conductor reads both paths at
-Task 8 and before owner stop 1, and records each log under "Logs" at the foot of this file. A log
-that arrives after the audience review's fold still counts, because it goes to pass 2b as an input.
+log into the Claude session running pass 2a, or save it verbatim at
+`/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-1-editor.md`
+or
+`/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-2-evaluator.md`.
+The conductor saves a pasted log verbatim at the matching path. At Task 8 and before owner stop 1,
+a `sonnet` agent at `medium` checks both paths and copies each log under "Logs" at the foot of
+this file, so the conductor never reads a log. A log that arrives after the audience review's fold
+still counts, because it goes to pass 2b as an input.
 
 ---
 
 ## Sheet 1: an editor task
 
-**Where you start.** You're signed in to your club's site editor, as you would be to write a post.
-You also have this link to the editor help pages:
+**Where you start.** You're signed in where you write your club website's posts (your site's
+address followed by /admin). You also have this link to the editor help pages:
 [HELP LINK]
 
-You can use the help pages and the editor's own screens. Please don't ask anyone for help until
-you've finished or stopped, since the point is to find where the help pages fall short.
+The link opens the help pages on GitHub, a site that stores the project's files. Only the page
+text matters. You can ignore the rest of the GitHub screen.
 
-**Your task.** Open the entry called **[ENTRY TITLE]**.
+You can use the help pages and the editor's own screens. Please don't ask anyone for help until
+you've finished or stopped. We're testing the help pages, not you, so every place you get stuck is
+useful to know.
+
+**Your task.** Open the post or page called **[ENTRY TITLE]**.
 
 1. Find out who last published it, and when.
-2. Bring back the version from before that one, and read it in the editor.
+2. Open the text as it was before that publish, so you can read it in the editor.
 3. Put everything back the way it was. The live site shouldn't change at any point, so don't
-   publish anything.
+   publish anything. If you publish something by mistake, stop and tell Geoff right away.
 
-**You're done when** you can say who published it last and when, you've seen the older version's
-text in the editor, and the entry no longer shows any unpublished changes.
+**You're done when** you can say who published it last and when, you've read the older version's
+text in the editor, and the post or page is back to exactly how it was when you started.
 
-**Stop early** if you've spent 20 minutes, or if you've been stuck for 5 minutes. Stopping is
-useful: write down where you stopped.
+**Stop early** if you've spent 20 minutes, or if you've made no progress for 5 minutes. Stopping
+early is still useful. Write down where you stopped.
 
 **What to write down as you go:**
 - The time you start.
-- Each thing you tried, where you looked (which help page and which heading, or which screen and
-  which button), and whether it worked.
+- Each thing you tried, and whether it worked.
+- Where you looked each time. Name the help page and its heading, or the screen and its button.
 - Every time you got stuck. That means you paused for more than a minute, guessed, went back, or
   weren't sure something had worked.
 - Any word or instruction you didn't understand, copied exactly.
@@ -80,13 +88,12 @@ are fine.
 
 ## Sheet 2: an evaluator task
 
-**Where you start.** You have a web browser and 20 minutes. Go to https://cairn.pub/ and use only
-cairn's own pages, including any pages they link to on GitHub. Don't install anything, and don't
-search elsewhere.
+**Where you start.** You have a web browser and 20 minutes. Go to https://cairn.pub/. Use only
+the pages on cairn.pub and the pages they link to, including pages on GitHub. Don't install
+anything, and don't search elsewhere. Please work on your own until you've finished.
 
 **Who you are for this task.** You look after the website for a small volunteer organization,
-such as a club or a nonprofit. A few people who aren't technical write its news and pages. You've
-been asked whether cairn could run the site.
+such as a club or a nonprofit. A few people who aren't technical write its news and pages.
 
 **Your task.** Decide whether cairn could run your organization's site. Write down:
 
@@ -106,15 +113,15 @@ you have and where you were.
 - Any claim you didn't believe or couldn't check, copied exactly.
 - Any question the pages never answered.
 - The time you finish.
-- If you're Geoff: one line on what you already knew that a newcomer wouldn't.
+- If you already know cairn well, one line on what you knew that a newcomer wouldn't.
 
-**When you're done,** send your notes and your four answers to Geoff.
+**When you're done,** send your notes and your four answers to Geoff. Rough notes are fine.
 
 ---
 
 ## Logs
 
-Filled in by the conductor during Task 8 as each log arrives. Each entry has the reader's role,
+Filled in during Task 8 by the `sonnet` copier the conductor dispatches, as each log arrives. Each entry has the reader's role,
 the date, whether the task finished, and the log as sent, unedited.
 
 | Sheet | Reader | Sent | Log received | Finished | Routed to |

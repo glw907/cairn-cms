@@ -361,7 +361,7 @@ function runDev(argv: string[]): number {
   return 0;
 }
 
-/** The gated run's every reported (never gating) measure this scorer computes from real inputs, plus its two named deferrals. */
+/** The gated run's every reported (never gating) measure this scorer computes from real inputs, plus its three named deferrals. */
 interface GatedReportedMeasures {
   recallByClass: Record<ClassId, ReturnType<typeof recallByClass>[ClassId]>;
   recallByPlantKind: ReturnType<typeof recallByPlantKind>;
@@ -554,10 +554,11 @@ function runGated(argv: string[]): number {
 }
 
 /**
- * The reported, never-gated measures this scorer computes from real inputs, plus two named
+ * The reported, never-gated measures this scorer computes from real inputs, plus three named
  * deferrals: `ruleCandidates[]` precision is not ruled by any judge, so only the raw per-run count
- * is reported; and how many the planted runs found again on unplanted sections has no ruling to
- * read, since planted runs score catches only.
+ * is reported; how many the planted runs found again on unplanted sections has no ruling to read,
+ * since planted runs score catches only; and fix confirmation, since the report schema gives
+ * `stalls[]` and `assumed[]` no page location to place a control-run finding at a plant's site.
  * @returns Every measure the assembled inputs support, plus the named `deferred` list.
  */
 function gatedReportedMeasures({
@@ -610,6 +611,7 @@ function gatedReportedMeasures({
     deferred: [
       "ruleCandidates[] precision: not ruled: judges never see ruleCandidates (spec, Scoring); the raw per-run count is reported above instead.",
       "how many the planted runs found again on unplanted sections: planted runs score catches only (spec, Pools); no ruling exists on their other items.",
+      "fix confirmation: stalls[] and assumed[] carry no page location in the report schema, so a control-run finding cannot be placed at a plant's site.",
     ],
   };
 }

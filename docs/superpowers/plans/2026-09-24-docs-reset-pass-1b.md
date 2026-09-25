@@ -139,7 +139,7 @@ score-affecting input.
   sets copy from the working tree.
 - `validateClass` (`lib/class-schema.ts:90`) rejects unknown fields, so absent lists go in batch or
   job files; `BATCH_FIELDS` (`lib/batch.ts:10`) rejects an unknown `gated` key. Run setup lives in
-  `run.ts` `setUpRun` (`:20-48`).
+  `run.ts` `setUpRun` (`:219-245`).
 - The per-run copy (`lib/podman.ts`, `cpSync` in `run`) does not preserve timestamps.
 - `~/.claude/workflows/docs-page-chain-v2.js:389-390` types `stalls` and `assumed` as strings and
   never reads `diverged[]`.
@@ -155,7 +155,7 @@ the ones that fail, plus every open choice a task leaves its implementer. The co
 plan and pins each open choice in the dispatch. The same pre-flight runs again before Tasks 9 and
 12, over their segments. In the same task:
 - One `sonnet` agent at `medium`, which may read the development records, extracts
-  `scripts/docs-readers/fixtures/dev-items.json`: each of the 50 development items' id, one-line
+  `scripts/docs-readers/fixtures/dev-items.json`: each of the 46 development items (D01 to D19, P01 to P17, F1 to F6, R1 to R4)' id, one-line
   subject, and page.
 - The spec folds' scratch simulations are committed at plan approval under
   `docs/superpowers/research/2026-09-24-pass-1b-sims/` (tmpfs would lose them); Task 0 confirms
@@ -166,7 +166,7 @@ plan and pins each open choice in the dispatch. The same pre-flight runs again b
   and the `3a7485dd` pin.
 
 **Acceptance.** The pre-flight report is attached to the ledger; each failed claim is amended or
-recorded as moot. `dev-items.json` has 50 entries, each with a subject and a page. The
+recorded as moot. `dev-items.json` has 46 entries, each with a subject and a page. The
 page-identity check passes, or the ledger records each differing page and the pin is ruled on
 before Task 1.
 
@@ -593,3 +593,4 @@ ceiling.
 | spec | done | `30083f27`..`da97461b` | brainstorm session | Spec drafted, five lens reviews, fold, verification, second fold. Owner rulings O1 to O4 (Geoff, 2026-09-24). |
 | plan | approved | `dc37e38b`, fold at `64ccc784` and after | plan session | Three plan reviews and a spec prose review folded (`2026-09-24-pass-1b-plan-fold.md`). O1 revised; O5 and O6; conductor rulings P1 to P11; then O7 (core gate only) and O8 (ceiling 15M, flag 12M). |
 | plan gate | approved | this commit | planning session: subagents about 2.5M by the Agent tool's figures (cache reads included, so an overstatement under the counting rule); the conductor's figure is in its `/cost` | Geoff approved 2026-09-24 and asked for further adversarial review; the conductor judged more plan review past diminishing returns (findings fell from 70 to 2 majors across rounds) and added one freeze-readiness review to Task 11 instead. Planning questions to Geoff: 12 (not scored). Next: Task 0 in a fresh `claude-opus-5-5` session at `medium`. |
+| 0 | done | this commit | three `sonnet` agents, about 0.38M by the Agent tool's figures (cache reads included) | Pre-flight record `docs/superpowers/research/2026-09-24-pass-1b-preflight.md`: two failed claims amended (`setUpRun` lines; 46 development items, not 50, a planning miss), cross-task pins for Tasks 1 to 7. Sims rerun clean and match the spec. 41 development pages identical between `b2756399` and `3a7485dd`; the pin stands. |

@@ -402,6 +402,7 @@ describe('loadSavedBatchReport', () => {
     expect(job?.diverged).toEqual([]);
     expect(job?.wrong).toEqual([]);
     expect(job?.missing).toEqual([]);
+    expect(job?.verified.ok).toBe(true);
     expect(job?.verified.steps).toEqual([]);
     expect(job?.verified.diverged).toEqual([]);
     expect(job?.verified.wrong).toEqual([]);

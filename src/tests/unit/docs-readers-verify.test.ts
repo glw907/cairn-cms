@@ -414,4 +414,21 @@ describe('verifyReport: steps, diverged, wrong, and missing quotes', () => {
     expect(verified.ok).toBe(false);
     expect(verified.problems).toEqual(['missing quote docs/other.md:3 cites a page the transcript never shows read']);
   });
+
+  it('parses and verifies a report carrying one wrong[] entry and one missing[] entry', () => {
+    const verified = verifyReport({
+      report: {
+        ...baseReport,
+        wrong: [{ quote: cleanQuote, pageSays: 'install after configuring', actual: 'install before configuring', evidence: 'the page states the opposite order' }],
+        missing: [{ quote: cleanQuote, needed: 'a note on the config file location', evidence: 'the job needed the config path and had to guess it' }],
+      },
+      ...baseArgs,
+    });
+    expect(verified.wrong).toHaveLength(1);
+    expect(verified.missing).toHaveLength(1);
+    expect(verified.wrong[0].quote.ok).toBe(true);
+    expect(verified.missing[0].quote.ok).toBe(true);
+    expect(verified.ok).toBe(true);
+    expect(verified.problems).toEqual([]);
+  });
 });

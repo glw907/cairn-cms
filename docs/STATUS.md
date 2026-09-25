@@ -26,7 +26,13 @@ class goes to pass 2a as advisory. Records: `docs/internal/record/2026-09-24-doc
 Post-mortem, ledger (20.07M counted), and a draft program budget (lean pass 2a about 8.5M) are at the
 foot of `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`. Pass 2a's design must first answer
 the catch-field finding: readers file routed-around defects only as rule candidates. Its inputs are
-in `ROADMAP.md`'s docs reset entry. Geoff sets the program ceiling. The CLI hold is released in
+in `ROADMAP.md`'s docs reset entry. Program ruling O12 (Geoff, 2026-09-25): pass 2a has a ceiling of 6M with the flag at 5M. It opens
+with a go/no-go reader pilot on round 1's planted trees (about 0.6M) that tests a reader change for
+routed-around defects: readers join the chain as its reader stage only if on-map recall per plant-run
+rises to a clear majority, and stay advisory otherwise. Then come the profiles and the exemplar
+review, with no formal trial and no freeze. Pass 2b (the outline) gets 8M. Drafting plans at 0.7M
+per page plus 1.5M per pass. The program cap is about 45M counted. After the first drafting pass,
+compare the measured cost per page with 0.7M and cut the chain or the page count, never the cap. The CLI hold is released in
 dotfiles `75f3d96`. Still owed: the `~/.dotfiles` push and `claude-tooling-sync verify`. The lane
 worktrees `docs-reset-1b-{export,runner,pathmap}` can be removed.
 
@@ -56,5 +62,5 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 After PR #89 merges, in a fresh session started with `claude --model claude-opus-5-5` at effort
 `high`, in `/var/home/glw907/Projects/cairn-cms`, brainstorm docs reset pass 2a. Read the parent
 spec (`docs/superpowers/specs/2026-09-23-docs-reset-design.md`, including "Amendments from pass
-1b"), the pass 1b validation record and post-mortem, and `ROADMAP.md`'s docs reset entry. Settle the
-catch-field design and the program ceiling with Geoff before planning.
+1b"), the pass 1b validation record and post-mortem, and `ROADMAP.md`'s docs reset entry. Start from
+program ruling O12 above; settle the pilot's reader change and its pass mark with Geoff before planning.

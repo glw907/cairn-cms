@@ -65,3 +65,27 @@ outright; two are folded with one part refused, noted in place.
 - Dotfiles: restore `DISABLE_AUTOUPDATER=1` before the smoke run and release it after the last
   pilot judge batch.
 - The `claude-tooling-sync verify` owed from pass 1b, cleared before §3.
+
+## Second fold
+
+**Input:** `2026-09-25-docs-reset-2a-spec-fold-verification.md` (a cold verification read of the
+fold at `1f718a2e`): 0 blockers, 2 majors, 8 minors. Each finding was checked against the source
+before folding: `docs-page-chain-v2.js:480`, `:501`, `:586-591`, `:849-864`, and
+`APPLIED_SCHEMA`'s status enum (`:291`); the reader-defect ids in `readerDefects` (`:783-796`);
+`buildCatchRunRecords` (`lib/score-assemble.ts:306-322`); `byJob[*].onMapPlantRunRecall` and
+`onMapRecall` in `score.ts:397-418`; and the pass 1b post-mortem's build-task costs. The M1 and
+M2 dispositions are conductor rulings under B2, recorded in the spec as CR9 and CR10. **Counts:**
+10 folded, none refused.
+
+| ID | Finding | Disposition |
+| --- | --- | --- |
+| M1 | The applied read cannot report a false item as not applied; the redraft must apply every finding | Verified: the redraft prompt says "apply every finding below, blocking or advisory" and the applied read grades only whether a change was made. Folded as option (a), CR9: a new build task 3b adds a decline path. The redrafter may decline any reader item with a quoted source `path:line` or fact id; the applied read rules each decline "evidence holds" (resolved) or "evidence fails" (escalates, in every class). The change is coherent with the chain: one new report field, two new applied statuses, and one branch in the existing escalation check. The unsupported sentence is struck; §3's guard paragraph now names the decline ruling as the per-item judge. Fixture cases: a false `wrong` item declined with evidence that holds (accepted, text unchanged) and a decline whose evidence fails (escalates). The chain became two build tasks (3a, 3b) under the two-deliverable rule. |
+| M2 | The budget range does not reproduce from its basis, and two rows sit below every 1b task | Verified: 1b's seven build tasks run 0.96M to 3.82M, mean 2.0M. Folded, CR10: 1c and 4a lifted to 1.0M, the chain priced as 3a 1.2M and 3b 1.0M, the range computed per build task at 0.96M and 2.0M with the other rows fixed. Full design about 14.5M (13.5M to 19.7M); option (b) about 11.8M (11.0M to 15.2M). Under (b), 4a stays whole, since at the per-task floor splitting it moves no cost out of the pass and adds a task later. Owner ruling rewritten: measured against B3's 7M, (a) raised to 19M flag 15.2M, (b) to 15M flag 12M so each estimate sits below its flag; (c) recomputed. Recommendation stays (b): the numbers move both options up together and leave the placement argument intact. Parent amendment's "about 13M" updated to 14.5M. |
+| m1 | Smoke run's place in the task order unstated | Folded, §1 order line (1a, smoke run, 1b, 1c) and §2's smoke bullet. |
+| m2 | Per-class recall has no source; `onMapRecall` is the wrong measure | Verified (`recallOf` needs two catches). Folded, §2 Per-class outcome names `byJob[<job>].onMapPlantRunRecall` summed over the class's jobs. No scorer change. |
+| m3 | The control-run list has no source | Folded, 1c takes the five expected control ids explicitly and refuses when one is absent; acceptance added. |
+| m4 | Unverified runs' judging unstated | Verified: `buildCatchRunRecords` notes a planted run with no joined key as a problem. Folded, §2: every run is judged, verified or not. |
+| m5 | Verifier-check trigger counts only planted runs | Folded, §2: any control run, or two or more runs in all. "The misses stand" now reads "the runs stand as scored", since control runs have no misses. |
+| m6 | 4a's render fixture cannot use a profile that does not exist | Folded, §4 4a: both tests run on a synthetic fixture profile; 4b's acceptance renders every authored profile; the execution rule names the synthetic profile. |
+| m7 | `gatingClasses` default empty changes current behavior; new defect ids unnamed | Folded, §3 3a: the header documents the default, existing reader-defect fixture cases pass a gating class, and the ids `rd-<jobId>-wrong-<k>`, `-missing-<k>`, `-diverged-<k>` are named. |
+| m8 | Owner-ruling wording | Folded in M2's rewrite: measured against B3's 7M; (b) names the 2.2M landing above the first drafting pass's 1.5M per-pass line and the 0.5M on pass 2b; the render-path mismatch in 4b is gone, since (b) keeps 4a whole. |

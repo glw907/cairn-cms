@@ -1,8 +1,8 @@
 # Docs reset pass 2a: design
 
 **Date:** 2026-09-25. **Status:** approved design, revised by the spec-review fold
-(`docs/superpowers/research/2026-09-25-docs-reset-2a-spec-fold.md`); one owner ruling open (the
-ceiling, below). **Parent:** [`2026-09-23-docs-reset-design.md`](2026-09-23-docs-reset-design.md),
+(`docs/superpowers/research/2026-09-25-docs-reset-2a-spec-fold.md`, with its second fold); one
+owner ruling open (the ceiling, below). **Parent:** [`2026-09-23-docs-reset-design.md`](2026-09-23-docs-reset-design.md),
 whose "Amendments from pass 2a's brainstorm" section points here. **Owner rulings:** O12 (Geoff,
 2026-09-25) and the three brainstorm rulings below. **Inputs:** the pass 1b validation record
 (`docs/internal/record/2026-09-24-docs-reset-1b-validation.md`), its tuning record
@@ -26,7 +26,7 @@ chain's depth follows reader evidence page by page in the drafting passes.
 - **B2: the pass mark and every method call are the conductor's, set on published practice
   (Geoff, 2026-09-25; the `methodology-calls-are-claudes` memory).** CR1 to CR8 are made under it.
 - **B3: ceiling 7M, flag 5.6M (Geoff, 2026-09-25).** No review lens is cut to fit. The honest
-  estimate is now about 13M; owner ruling 1 below asks Geoff to set the ceiling again.
+  estimate is now about 14.5M; owner ruling 1 below asks Geoff to set the ceiling again.
 - **CR1 (conductor): a typed `missing[]` beside `wrong[]`.** Three of the eight on-map plants are
   omissions (P05, P11, P14). With `ruleCandidates[]` unscored, a `wrong[]`-only change caps the
   pilot at 10 of 16 plant-runs, below the recall bar by construction. `missing[]` gives an omission
@@ -53,6 +53,15 @@ chain's depth follows reader evidence page by page in the drafting passes.
 - **CR8 (conductor): a named task owns the profile format and its rendering.** The chain takes
   one profile string per call and cannot read files, so a script renders a profile's frontmatter
   into that string, and a test holds the frontmatter to a schema.
+- **CR9 (conductor, second fold): the redraft may decline a reader item with evidence.** For any
+  reader item, blocking or advisory, the redrafter may decline it by quoting a source `path:line`
+  or a fact id that shows the item false. The applied-findings read rules each decline "declined,
+  evidence holds" or "declined, evidence fails"; the second escalates the page as a not-applied
+  blocking item does. This is the chain's per-item check on a false reader item (item 3).
+- **CR10 (conductor, second fold): the budget is recomputed from 1b's measured build tasks.** No
+  build row sits below 1b's cheapest (0.96M); the range runs from that floor to 1b's mean (2.0M)
+  per build task. Under option (b), 4a stays whole, since at the per-task floor splitting it moves
+  no cost out of this pass and adds a task to the drafting pass.
 
 ## The finding this pass answers
 
@@ -70,6 +79,9 @@ a step the job needed that the page left out. Reporters file in the categories a
 both kinds went into the wish slot, unscored.
 
 ## 1. The reader change (three build tasks)
+
+Order: 1a, the smoke run (§2), 1b, 1c. 1b's packets and 1c's fixtures are built from the smoke
+run's report.
 
 **Shapes.** `wrong[]`: each statement on a page the reader found false, as
 `{ quote, pageSays, actual, evidence }`. `missing[]`: each fact or step the job needed that the
@@ -94,9 +106,10 @@ a `missing[]` item claims the page is silent where the job needed it, and either
 the plant's criterion (catch) or earn its ruling (adjudicator).
 
 **1c. Scorer.** Deliverables: (1) development mode accepts the five pilot batch names
-`pilot-2a-<job>` (explicit names beside R5's three, never a prefix rule); (2) development output
-adds per-plant tallies `{ plantId, job, runsCaught }` and a pooled precision block over a fixed
-list of control runs: an unverified control run stays in the denominator with every item counted
+`pilot-2a-<job>` (explicit names beside R5's three, never a prefix rule), and takes the five
+expected control run ids as an explicit list beside them, refusing when one is absent from the
+reports; (2) development output adds per-plant tallies `{ plantId, job, runsCaught }` and a pooled
+precision block over that list: an unverified control run stays in the denominator with every item counted
 false (R3, `findingCountsForRun`), and false subject groups split into new-field (any item from
 `wrong[]` or `missing[]`) and other. Rounds 0 and 1 verified every control run, so their figures
 do not change.
@@ -116,8 +129,8 @@ check:comments && npm run check'` (pass 1b's chain gate; the light lane's 3G cap
   agreement packets carrying the item under its own field name; an unverified run's `itemCount`
   includes both fields; the packet builder refuses a packet whose key's new-field item counts
   differ from the source report's lengths.
-- 1c: a pilot batch name scores and an unlisted name still refuses; a fixture catch through a
-  new-field item shows in its plant's `runsCaught`; a fixture unverified control run with three
+- 1c: a pilot batch name scores and an unlisted name still refuses; a missing expected control
+  id refuses; a fixture catch through a new-field item shows in its plant's `runsCaught`; a fixture unverified control run with three
   items adds three to the pooled false total and its new-field items to the new-field count.
 
 ## 2. The pilot
@@ -136,19 +149,21 @@ accepts "incomplete or inconsistent", so either field can catch it.
   through the last pilot judge batch. The init baseline is keyed by CLI version and does not depend
   on the prompt; it is re-pinned with `--probe-init` only if the host version is not already pinned
   (2.1.280 to 2.1.282 are).
-- One smoke reader run (a control job, unscored) on the new prompt verifies its init, and its
-  report becomes the pinned fixture for every cross-stage shape. If it files no `wrong[]` or
+- One smoke reader run (a control job, unscored), after 1a and before 1b, on the new prompt
+  verifies its init, and its report becomes the pinned fixture for every cross-stage shape. If it files no `wrong[]` or
   `missing[]` entry, the fixture adds one to the real report's shape and says so.
 - Each planted page's sha256 equals the value its round 1 catch key records under `inputs`; a
   mismatch stops the pilot until the tree is rebuilt through round 1's export path.
 
-**Runs and verification.** Every run gets the runner's one rerun. A planted run unverified after
-its rerun counts as a miss (R9). A control run unverified after its rerun stays in the precision
-denominator with every item false. An unverified run whose only problem is an init-baseline
-mismatch is infrastructure: re-pin and rerun, never counted. If two or more planted runs are
-unverified only because of a new-field quote, the verdict waits while the conductor checks the
-verifier against those quotes: a verifier defect is fixed and the runs rechecked with
-`reverify.ts` (the record names which report it scored); otherwise the misses stand.
+**Runs and verification.** Every run gets the runner's one rerun, and every run is judged,
+verified or not: each planted run gets a catch judge, each control run an adjudication. A planted
+run unverified after its rerun counts as a miss (R9). A control run unverified after its rerun
+stays in the precision denominator with every item false. An unverified run whose only problem is
+an init-baseline mismatch is infrastructure: re-pin and rerun, never counted. If any control run,
+or two or more runs in all, are unverified only because of a new-field quote, the verdict waits
+while the conductor checks the verifier against those quotes: a verifier defect is fixed and the
+runs rechecked with `reverify.ts` (the record names which report it scored); otherwise the runs
+stand as scored.
 
 **Scoring.** One `score.ts dev` invocation over the five batch reports and their judge batches,
 with `--plants scripts/docs-readers/fixtures/dev-plants.json` and
@@ -187,7 +202,9 @@ since only control runs are adjudicated.
 **Per-class outcome.** Classes: operator is `docs-and-binary`; designer and extender are
 `docs-and-site`; core developer and scripter are `repository`. On a pooled go, a class gates if its
 own plant-run recall is at least three quarters (3 of 4, 6 of 8, 3 of 4) and every job in it
-catches at least one plant; otherwise it is advisory. On a pooled no-go every class is advisory.
+catches at least one plant; otherwise it is advisory. A class's recall sums
+`byJob[<job>].onMapPlantRunRecall` over its jobs; `onMapRecall` is the wrong source, since it
+counts a plant only when two runs catch it. On a pooled no-go every class is advisory.
 Precision stays pooled, since one control run per job gives no usable per-class rate. The
 `docs-only` class (evaluator and editor jobs) is advisory whatever the result.
 
@@ -213,10 +230,16 @@ and stage 2, and stage 2 makes every verified job's non-done outcome, stall, and
 blocking reader defect (`readerDefects`, about lines 783-796). It types `stalls` and `assumed` as
 strings where the runner emits `{ text, blockedBy }`, and never reads `diverged[]`.
 
-One build serves both branches. Deliverables: (1) `READER_RESULTS_SCHEMA` and the loader carry
-`stalls`, `assumed`, `diverged`, `wrong`, and `missing` as the runner emits them; (2) a
-`gatingClasses` argument (default empty) sets blocking per reader class, read from the handoff's
-`readerJobs` class for each job id (a job the handoff does not list is advisory).
+One build serves both branches, as two build tasks under the two-deliverable rule.
+
+**3a. Reader input and gating.** Deliverables: (1) `READER_RESULTS_SCHEMA` and the loader carry
+`stalls`, `assumed`, `diverged`, `wrong`, and `missing` as the runner emits them, with new defect
+ids `rd-<jobId>-wrong-<k>`, `rd-<jobId>-missing-<k>`, and `rd-<jobId>-diverged-<k>` beside the
+existing `-outcome`, `-stall-<k>`, and `-assumed-<k>`, since the strike list addresses defects by
+id; (2) a `gatingClasses` argument sets blocking per reader class, read from the handoff's
+`readerJobs` class for each job id (a job the handoff does not list is advisory). It defaults to
+empty, which changes current behavior (today every verified reader's defects block), so the chain
+header documents the default.
 
 - **A gating class:** the outcome, stall, assumption, `wrong[]`, and `missing[]` defects block.
   `diverged[]` is advisory, since it also collects workarounds taken for convenience. A page whose
@@ -225,24 +248,33 @@ One build serves both branches. Deliverables: (1) `READER_RESULTS_SCHEMA` and th
   still receives them, the applied-findings read still grades them, and an unapplied one does not
   escalate the page.
 
-What stands between a reader item and a block, since no judge runs in the chain: the runner's
-verification (a report whose `wrong[]` or `missing[]` quote does not match a page line fails, so
-every blocking item is anchored to a real line), the conductor's strike list between the stages
-(for harness items), and the applied-findings read, which reports a false item as not applied.
-That escalates the page to the conductor rather than changing it. A false item therefore costs
-one conductor ruling, never a wrong page, and the pilot's precision bar bounds how often that
-happens. That is why no judge is added to the chain.
+**3b. The decline path (CR9).** One deliverable: the redraft prompt (today "apply every finding
+below, blocking or advisory", `docs-page-chain-v2.js:480`, `:501`) lets the redrafter decline a
+reader item with quoted evidence, returned as `declined[]` `{ id, evidence }` in its report; the
+applied-findings read (`:586-591`) receives each decline and rules it "declined, evidence holds"
+or "declined, evidence fails" beside its three current statuses; the escalation check (`:849-864`)
+treats "evidence holds" as resolved and "evidence fails" as unresolved, in every class.
 
-**Precondition.** The `claude-tooling-sync verify` pass 1b left owed is cleared before this task,
-so its green check is not confounded.
+What stands between a reader item and a changed page, since no judge stage runs in the chain: the
+runner's verification (every `wrong[]` or `missing[]` item is anchored to a real page line), the
+conductor's strike list between the stages (for harness items), and the decline path, whose
+evidence ruling is the per-item judge. A false item the redrafter does not decline is applied; the
+pilot's precision bar bounds how often a false item reaches the chain.
 
-**Acceptance.** `docs-page-chain-v2.fixture.test.mjs` gains two cases on one fixture report built
-from the smoke run's shape, carrying one entry in each field. With the job's class in
-`gatingClasses`, the `wrong` and `missing` entries yield blocking reader defects, the `diverged`
-entry an advisory one, an unapplied `wrong` defect escalates the page, and a page whose only
-reader jobs are unverified escalates. With `gatingClasses` empty, every reader defect is advisory,
-the redraft prompt still carries each, and the page does not escalate on an unapplied one.
-`claude-tooling-sync verify` is green for the dotfiles commit.
+**Precondition.** The `claude-tooling-sync verify` pass 1b left owed is cleared before 3a, so its
+green check is not confounded.
+
+**Acceptance.** 3a: `docs-page-chain-v2.fixture.test.mjs` gains two cases on one fixture report
+built from the smoke run's shape, carrying one entry in each field. With the job's class in
+`gatingClasses`, the `wrong` and `missing` entries yield blocking reader defects under their new
+ids, the `diverged` entry an advisory one, an unapplied `wrong` defect escalates the page, and a
+page whose only reader jobs are unverified escalates. With `gatingClasses` empty, every reader
+defect is advisory, the redraft prompt still carries each, and the page does not escalate on an
+unapplied one. The existing reader-defect cases pass a gating class and keep their assertions. 3b:
+a case where the redraft declines a false `wrong` item and the applied read rules "declined,
+evidence holds": the page is accepted and the item's text is unchanged; and a case where the
+applied read rules a decline "declined, evidence fails": the page escalates. Each task:
+`claude-tooling-sync verify` is green for its dotfiles commit.
 
 ## 4. The audience record
 
@@ -267,7 +299,9 @@ outside the tarball.
 `docs/internal/audiences/profile.schema.json` and a unit test that parses every profile's
 frontmatter against it, failing on a missing or extra key or an exemplar id with no manifest
 entry; (2) `scripts/docs-audiences/render-profile.ts <profile>`, which prints the chain's
-`profile` string from the frontmatter, pinned by a fixture test. A drafting pass runs one chain
+`profile` string from the frontmatter, pinned by a fixture test. No profile exists at 4a, so both
+tests run on a synthetic fixture profile under the test's fixtures, never in
+`docs/internal/audiences/`. A drafting pass runs one chain
 invocation per profile, since the chain takes one profile string per call.
 
 **4b. Authoring.** Opus 5.5 at `high` authors the record (the parent amendment is the ruling of
@@ -277,8 +311,8 @@ evidence, and the exemplar manifest. The same task updates `cairn-docs-drafter.m
 format and how the rendered profile reaches its prompt.
 
 **Acceptance.** 4a: the schema test fails on a fixture missing a key and on an unknown exemplar
-id, and the render fixture matches. 4b: six profile files and the README exist and pass the schema
-test; only the site designer is provisional, unless a profile carries an evidence note saying why
+id, and the render fixture matches on the synthetic profile. 4b: six profile files and the README exist and pass the schema
+test and render through the script; only the site designer is provisional, unless a profile carries an evidence note saying why
 it is too; `claude-tooling-sync verify` is green for the drafter edit.
 
 ## 5. The audience review
@@ -334,7 +368,8 @@ review's unresolved findings, the human-read outcomes, and the corpus changes.
   the result. `report.json` is copied before any `--resume`.
 - Every cross-stage input shape (the report with both new fields, the judge packets, the chain's
   reader input, the rendered profile) is pinned in the plan with a fixture built from real output:
-  the smoke run's report, or the first profile file.
+  the smoke run's report, or for the rendered profile, 4a's synthetic profile, rechecked on the
+  first authored profile in 4b.
 - Fix rounds are budgeted as the norm.
 
 ## Out of scope
@@ -349,45 +384,49 @@ and the profile-grader comparison, which fall with the trial. The free-floor res
 ## Budget
 
 Counted by `session-ledger.ts` (input, output, and cache creation). Unit costs are pass 1b's
-measured figures: a build task 1M to 3.8M with its fix rounds (1b's smallest were 0.96M to 1.44M),
-a reader run about 35k, a catch judge about 3k, an adjudication about 15k, agent startup 25k to
-60k.
+measured figures (post-mortem, "Spend"): seven build tasks with their fix rounds, reviewers, and
+simplifiers at 0.96M to 3.82M, a mean of 2.0M; a reader run about 35k, a catch judge about 3k, an
+adjudication about 15k, agent startup 25k to 60k. No build row sits below 0.96M (CR10).
 
 | Item | Estimate |
 | --- | --- |
-| The reader change: 1a 1.3M, 1b 1.3M, 1c 0.8M | 3.4M |
+| The reader change: 1a 1.3M, 1b 1.3M, 1c 1.0M | 3.6M |
 | The pilot: smoke run, 15 runs with reruns, 10 catch judges, 5 adjudications, result reads, record | 1.2M |
-| The chain (one build serves both branches) | 1.2M |
-| The audience format (4a) | 0.8M |
+| The chain: 3a 1.2M, 3b 1.0M (one build serves both branches) | 2.2M |
+| The audience format (4a) | 1.0M |
 | The audience record (4b) | 1.5M |
 | The audience review and fold | 2.0M |
-| The exemplar review, gap fills, and fold | 1.2M |
+| The exemplar review 0.7M, gap fills 0.5M, and fold | 1.2M |
 | Owner stop 1 brief | 0.2M |
 | Conductor and close | 1.6M |
-| **Total** | **about 13.1M on either branch (range 11M to 16M)** |
+| **Total** | **about 14.5M on either branch (range 13.5M to 19.7M)** |
 
-The branches cost the same because the chain's per-class setting is one build either way; a no-go
-adds only its short report. The range runs from 1b's cheapest build tasks to its mean.
+The range prices the six build tasks at 1b's cheapest (0.96M each) and at its mean (2.0M each),
+with the other rows fixed. Option (b) below drops 3a, 3b, and the gap fills: about 11.8M (range
+11.0M to 15.2M). The branches cost the same because the per-class setting is one build either way;
+a no-go adds only its short report.
 
 Attended time: plan approval, owner ruling 1, the no-go report if it happens, the two human
 reads, and owner stop 1.
 
 ## Owner rulings needed
 
-1. **The ceiling.** The design as revised is estimated at about 13.1M against B3's 7M. Whatever
-   the ceiling, the scope costs about 6M more than O12 allotted pass 2a; under O12's rule (cut the
-   chain or the page count, never the cap) that comes out of drafting, about 8 pages at 0.7M,
-   unless the cap moves.
-   - **(a) Raise to 15M, flag 12M.** Builds everything above in this pass.
-   - **(b) Cut non-lens scope and raise to 12M, flag 9.6M (estimate about 11M).** Moves the chain
-     task (1.2M) and 4a's render script (0.4M) to the first drafting pass, which first uses both,
-     and the exemplar gap fills (0.5M) to pass 2b's page-shape extension. This pass builds the
-     reader change, the pilot, the profile schema, the record, the review, and the exemplar
-     review. The moved work costs the program the same, in the passes that use it.
-   - **(c) Keep 7M, flag 5.6M.** The flag trips during the chain task (about 6.3M with the
-     conductor's share), and the ceiling arrives near the start of the audience record, which then
-     needs a follow-on pass with its own budget.
+1. **The ceiling.** The full design is estimated at about 14.5M (range 13.5M to 19.7M), 7.5M over
+   B3's 7M. Under O12's rule (cut the chain or the page count, never the cap), that overrun comes
+   out of drafting, about 10 pages at 0.7M, unless the cap moves.
+   - **(a) Raise to 19M, flag 15.2M.** Builds everything above in this pass. The estimate sits
+     below the flag; at 1b's mean (19.7M) the ceiling arrives near the close.
+   - **(b) Cut non-lens scope and raise to 15M, flag 12M (estimate about 11.8M, range 11.0M to
+     15.2M; 4.8M over B3).** Moves the chain tasks 3a and 3b (2.2M) to the first drafting pass,
+     which first uses them, where they sit above that pass's 1.5M per-pass line; and the exemplar
+     gap fills (0.5M) to pass 2b's page-shape extension, against its 8M. 4a stays whole (CR10).
+     This pass builds the reader change, the pilot, the profile format, the record, the review,
+     and the exemplar review. The program total is the same as (a); only placement differs.
+   - **(c) Keep 7M, flag 5.6M.** The flag trips during 3a (about 6.6M with the conductor's share),
+     and the ceiling arrives during 3b, before any audience work, which then needs a follow-on
+     pass with its own budget.
 
    **Recommendation: (b).** It lands the chain build beside its first use, where a real drafted
    page supplies the fixture and the pilot's gating classes are known, and it keeps every review
-   lens. The program cost is the same as (a); only placement differs.
+   lens. Its estimate sits below its flag; at 1b's mean it reaches about 15.2M, just past the
+   ceiling, so the flag is where that case would be caught.

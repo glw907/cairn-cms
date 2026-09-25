@@ -84,7 +84,7 @@ Where a line below and this section disagree, this section wins.
   5) and any freeze. Pass 2a opens with a go/no-go reader pilot, and reader findings block in the
   page chain only for the reader classes the pilot passes.
 - **Pass 2a's ceiling is 7M, flag 5.6M** (Geoff, 2026-09-25), against this spec's 14M; the pass 2a
-  spec's owner ruling 1 asks Geoff to reset it against a revised estimate of about 13M. Pass 2b
+  spec's owner ruling 1 asks Geoff to reset it against a revised estimate of about 14.5M. Pass 2b
   keeps 8M. Drafting passes are budgeted at 0.7M per page plus 1.5M per pass, and the program cap
   is about 45M counted.
 - **Opus 5.5 at `high` authors pass 2a's artifacts;** Fable 5.1 is the escalation only. This

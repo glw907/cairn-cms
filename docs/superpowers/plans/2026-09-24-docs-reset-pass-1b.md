@@ -1,10 +1,10 @@
 # Docs reset pass 1b: the validation redesign
 
-> **For agentic workers:** eighteen tasks (0 to 17) in six segments. Tasks 1 to 7 are implementer
+> **For agentic workers:** seventeen tasks (0 to 16) in five segments. Tasks 1 to 7 are implementer
 > chains: `cairn-implementer` (`sonnet`, `high`) implements test-first, `code-simplifier` refines,
 > the task's gate runs inside the chain through `cairn-run-gate`, and `diff-reviewer`
 > (`claude-opus-5-5`, `high`) reads the diff against the task's acceptance criteria. Tasks 0 and 8
-> to 17 are conductor-run: the conductor dispatches the named agents and the reader runner, and
+> to 16 are conductor-run: the conductor dispatches the named agents and the reader runner, and
 > reads their reports, never diffs, pages, transcripts, or logs. **Execution mode:** segment 2
 > (Tasks 2 to 6, three lanes) runs through the `pass-execute-chains` workflow, invoked by name;
 > Tasks 1 and 7 run as per-task Agent chains. If the auto-mode classifier refuses the workflow, as
@@ -18,7 +18,7 @@
 **Goal:** run the pre-registered validation of the reader instrument that
 [`2026-09-24-docs-reset-pass-1b-validation-design.md`](../specs/2026-09-24-docs-reset-pass-1b-validation-design.md)
 specifies, and record a per-class verdict pass 2a can rely on. The spec is the contract: its bars,
-scoring rules, sequence, freeze, and cuts are fixed. Where this plan and the spec disagree, the spec
+scoring rules, sequence, and freeze are fixed. Where this plan and the spec disagree, the spec
 wins; stop and report.
 
 **Spec:** the pass 1b spec above, read in full by every executor before its task. The parent spec's
@@ -26,28 +26,26 @@ wins; stop and report.
 (`docs/superpowers/research/2026-09-24-pass-1b-spec-fold.md`,
 `docs/superpowers/research/2026-09-24-pass-1b-plan-fold.md`) carry the rulings behind it.
 
-**Token ceiling:** 15M, flag at 12M (owner ruling O1, revised at the plan gate). **Counting rule:**
-input, output, and cache-creation tokens count; cache reads are reported separately. Task 6's
-session ledger script applies the rule across the conductor's session transcript, every subagent
-transcript, and the runner's ledger; the conductor runs it at every checkpoint and every task
-boundary from Task 9 on. Pass 1 recorded "about 9M"; under this rule it counted about 18.7M (the
-mechanics review's measurement), and the estimate below uses measured figures.
+**Scope: core gate only** (O7, Geoff, 2026-09-24). No transfer set, no Sonnet arm, no historical
+mining (the planter synthesizes every plant), one tuning round. Everything that gates stays.
 
-**Budget estimate** (the spec's "Budget" table): about 18.7M before cuts at the mid estimate
-(14.0M low, 24.6M high). At the mid estimate the flag trips at or just after the freeze, early in
-mapping: round 2 has run, so cuts 2 (the Sonnet arm) and 3 (transfer planting and planted runs)
-fire, and the total is about 17.3M. Spend crosses the 15M ceiling during mining and planting,
-before any planted run. At the low estimate the flag trips during the development planted runs
-(total about 13.0M); at the high estimate it trips during the build or round 1 and all three cuts
-fire (about 22M). **O6:** if spend reaches the ceiling during a gated batch, the batch finishes and
-the ledger reports the overrun; no gated batch runs half. Outside a gated batch the conductor stops
-at the next task boundary, writes the ledger, and asks Geoff.
+**Token ceiling:** 15M, flag at 12M (O8: the lower of 15M and the post-cut high estimate rounded
+up to the next whole million, 20M; flag at 80 percent). **Counting rule:** input, output, and
+cache-creation tokens count; cache reads are reported separately. Task 6's session ledger script
+applies the rule across the conductor's session transcript, every subagent transcript, and the
+runner's ledger; the conductor runs it at every checkpoint and every task boundary from Task 9 on.
+Pass 1 recorded "about 9M"; under this rule it counted about 18.7M (the mechanics review's
+measurement), and the estimate below uses measured figures.
 
-**Open for the plan gate (owner):** at the mid estimate the ceiling falls between the maps and the
-planted runs, where stopping spends about 15M for no verdict. Geoff rules before approval between
-(a) authorizing the remaining gated sequence (planting through the record) past the ceiling with
-the overrun reported, (b) a higher ceiling, or (c) stopping at the ceiling as written. The plan
-author recommends (a).
+**Budget estimate** (the spec's "Budget" table): 10.6M low, 14.7M mid, 19.8M high. No cuts remain.
+At the mid estimate spend is about 9.6M at the freeze, the flag trips during the planted runs, and
+the pass closes near 14.7M, under the ceiling with little margin. At the low estimate the flag
+never trips. At the high estimate the flag trips during round 0 or round 1, and spend reaches the
+ceiling during mapping or planting. **At the flag** the conductor finishes the running task,
+writes the ledger with its projection to the close, and asks Geoff one combined question. **O6:**
+if spend reaches the ceiling during a gated batch, the batch finishes and the ledger reports the
+overrun; no gated batch runs half. Outside a gated batch the conductor stops at the next task
+boundary and asks Geoff.
 
 **Checkpoints and STATUS:** at each segment boundary, at any split, at the flag, and before any
 owner question, the conductor writes the ledger at the foot of this plan (task states, decisions,
@@ -55,11 +53,11 @@ the session ledger's counted spend, next task) and commits one STATUS line to `m
 it.
 
 **Segments:** 1: Tasks 0 and 1 (pre-flight, report schema). 2: Tasks 2 to 6 in three lanes, with
-Task 8 alongside (the build and the pre-freeze authoring). 3: Tasks 7, 9, and 10 (scorer, round 0,
-tuning). 4: Tasks 11 and 12 (transfer jobs, the freeze). 5: Tasks 13 to 15 (mapping, planting,
-planted runs). 6: Tasks 16 and 17 (scoring and record, close). Every boundary sits on a commit
-whose gate is green. The freeze (Task 12) is the one irreversible boundary: after its tag, any
-instrument change burns the plants (spec, "Freeze", "Burns").
+Task 8 alongside (the build and the pre-freeze authoring). 3: Tasks 7, 9, 10, and 11 (scorer,
+round 0, round 1, the freeze). 4: Tasks 12 to 14 (mapping, planting, planted runs). 5: Tasks 15
+and 16 (scoring and record, close). Every boundary sits on a commit whose gate is green. The freeze
+(Task 11) is the one irreversible step, and segment 3 ends on it: after its tag, any instrument
+change burns the plants (spec, "Freeze", "Burns").
 
 **Branches:** cairn-cms `docs-reset-1b` in `.claude/worktrees/docs-reset-1b`. Lanes are worktrees
 off `docs-reset-1b` (`docs-reset-1b-export`, `-runner`, `-pathmap`), each carrying its lane's tasks
@@ -68,13 +66,12 @@ task: `pgrep -f` on the worktree path, `git status` for changes this pass did no
 STATUS on `main` for a live session on this branch. A live executor stops the task.
 
 **Models:** implementers `sonnet` at `high`; `diff-reviewer`, the rubric author, the
-planting-prompt author, the tuner, the transfer job author, the miner, the planter, the plant
-check, the record author, and the close fold agent on `claude-opus-5-5` at `high`; readers on
-`claude-opus-5-5` at its default `medium`, and `claude-sonnet-5` for the Sonnet arm only; the
-catch judge and the adjudicator as headless runner classes on `claude-opus-5-5` at `high`, and the
+planting-prompt author, the planter, the plant check, the record author, and the close fold agent
+on `claude-opus-5-5` at `high`; readers on `claude-opus-5-5` at its default `medium`; the catch
+judge and the adjudicator as headless runner classes on `claude-opus-5-5` at `high`, and the
 agreement read as a runner class on `fable` (O2). An `opus` implementer upshift is named per task.
 A hedged verdict on a correctness-critical point is re-run on `claude-opus-5-5` at `xhigh`, then
-goes to one `fable` dispatch; this never applies to a judge ruling (Task 16).
+goes to one `fable` dispatch; this never applies to a judge ruling (Task 15).
 
 **Gate economy:** every gate here launches no browser, so it takes the light lane. Each chain's
 gate is `CAIRN_GATE_LANE=light cairn-run-gate 'npx vitest run --project unit src/tests/unit/docs-readers && npm run check:comments && npm run check'`
@@ -90,9 +87,9 @@ amendment 2). Reader and judge concurrency is 4, backing off on `rateLimit` (pas
   defect, a job fact, or any development-set item (D01 to D19, P01 to P17, F1 to F6, R1 to R4).
   Task 1's ban grep is the mechanical floor over every such text; the `diff-reviewer`, given the
   full development-item list, is the check.
-- **Blindness.** The planting-prompt author, the transfer job author, the miner, and the planter
-  never see a development record (`docs/internal/record/2026-09-23-docs-reset-{validation,planted-defects,baseline}.md`,
-  pass A's plan and ground truth), a reader prompt, or a report. The plant check sees the plant
+- **Blindness.** The planting-prompt author and the planter never see a development record
+  (`docs/internal/record/2026-09-23-docs-reset-{validation,planted-defects,baseline}.md`, pass A's
+  plan and ground truth), a job text, a reader prompt, or a report. The plant check sees the plant
   record, the code export, and the development items' subjects only. Each blind agent works in a
   scratch directory holding copies of its granted inputs, and after it returns, Task 6's transcript
   audit runs over its transcript; a hit invalidates its output (spec, "Blindness is audited").
@@ -109,9 +106,8 @@ amendment 2). Reader and judge concurrency is 4, backing off on `rateLimit` (pas
 - Every new script under `scripts/docs-readers/` carries TSDoc per the repository's comment gate and
   a unit test under `src/tests/unit/docs-readers-*.test.ts`. New fixtures go under
   `scripts/docs-readers/fixtures/`, never under `src/`.
-- **Page pin:** every job's pages, the planter's export, and the miner's mirror come from
-  `3a7485dd` (`main` at the pass's start, before any pass 1b file), except the held-out pre-fix
-  pins. Task 0 confirms it.
+- **Page pin:** every job's pages and the planter's export come from `3a7485dd` (`main` at the
+  pass's start, before any pass 1b file), except the held-out pre-fix pins. Task 0 confirms it.
 
 ## Review focus
 
@@ -136,17 +132,15 @@ score-affecting input.
 - `lib/prepare-class.ts:414` excludes `docs/internal/record`, `docs/superpowers`, and
   `scripts/docs-readers` and rejects any `.git` (`:486`, `:573`), but not
   `src/tests/unit/docs-readers-*` (17 files). `prepare-validation.ts:51` pins the scripter's
-  current pages to `HEAD`, `:84` throws with no planted directory, and `STEPS` (`:208-214`)
-  hard-codes the six jobs. `prepare-baseline.ts:143` pins the core developer to `HEAD`;
-  `CONTRACT_PAGES` (`:45-62`) pins the pre-fix commits. Docs sets copy from the working tree.
+  current pages to `HEAD`, and `:84` throws with no planted directory. `prepare-baseline.ts:143`
+  pins the core developer to `HEAD`; `CONTRACT_PAGES` (`:45-62`) pins the pre-fix commits. Docs
+  sets copy from the working tree.
 - `validateClass` (`lib/class-schema.ts:90`) rejects unknown fields, so absent lists go in batch or
   job files; `BATCH_FIELDS` (`lib/batch.ts:10`) rejects an unknown `gated` key. Run setup lives in
   `run.ts` `setUpRun` (`:20-48`).
 - The per-run copy (`lib/podman.ts`, `cpSync` in `run`) does not preserve timestamps.
-- `derivePagesRead` (`lib/transcript.ts:388-409`) counts only pages in the job's docs set.
 - `~/.claude/workflows/docs-page-chain-v2.js:389-390` types `stalls` and `assumed` as strings and
   never reads `diverged[]`.
-- `git filter-repo` is not installed on the workstation.
 - Pass 1's saved reports: `~/.cache/docs-readers/results/validation-20260924/report.json` and
   `validation-rerun-20260924/report.json`; its prepared trees sit in
   `~/.cache/docs-readers/prepared/validation/`.
@@ -157,19 +151,17 @@ score-affecting input.
 7 (paths, line numbers, function names, current behaviors) and checks each against HEAD, returning
 the ones that fail, plus every open choice a task leaves its implementer. The conductor amends the
 plan and pins each open choice in the dispatch. The same pre-flight runs again before Tasks 9 and
-13, over their segments. In the same task:
+12, over their segments. In the same task:
 - One `sonnet` agent at `medium`, which may read the development records, extracts
   `scripts/docs-readers/fixtures/dev-items.json`: each of the 50 development items' id, one-line
-  subject, page, line span, and the commit its record cites.
+  subject, and page.
 - The spec folds' scratch simulations (`/tmp/claude-1000/fold2/*.py`) and the mechanics review's
   probes are copied under `docs/superpowers/research/2026-09-24-pass-1b-sims/` and committed.
-- `git filter-repo` is installed through the workstation's software tiers and recorded in its
-  manifest.
 - A script confirms every development page is byte-identical between pass 1's validation commit
   and the `3a7485dd` pin.
 
 **Acceptance.** The pre-flight report is attached to the ledger; each failed claim is amended or
-recorded as moot. `dev-items.json` has 50 entries, each with a subject and a location. The
+recorded as moot. `dev-items.json` has 50 entries, each with a subject and a page. The
 page-identity check passes, or the ledger records each differing page and the pin is ruled on
 before Task 1.
 
@@ -210,7 +202,7 @@ only), `lib/transcript.ts`, `lib/verify.ts`, a ban-grep module, their tests.
   shipped prompt.
 - Gate: the chain gate in the header.
 
-### Task 2: Export and preparation (lane `docs-reset-1b-export`; 4 deliverables)
+### Task 2: Export and preparation (lane `docs-reset-1b-export`; 3 deliverables)
 
 **Outcome.** Every rule in the spec's "The export":
 1. **The commit.** Git is in the reader image. Each prepared tree is built in this order: overlay,
@@ -222,17 +214,15 @@ only), `lib/transcript.ts`, `lib/verify.ts`, a ban-grep module, their tests.
    `scripts/docs-readers/fixtures/` join the gated repository export's and the planter's export's
    exclusions. The planter's export is its own entry point. Each job's absent list is derived from
    its builder's exclusions and written into its batch or job file.
-3. **Pins.** Every job's pages come from `git archive` at a named commit (the header's page pin),
-   the scripter's current pages and the core developer's tree included; neither `HEAD` nor the
-   working tree is ever a source.
-4. **A generic preparer.** One entry point prepares a control-only or planted tree from a job
-   specification (class, docs set, commit, plant root), replacing the six hard-coded steps, so a
-   transfer job of any class prepares like a development job. Development plants stay at
-   `planted/<job>/`; test and transfer plants go to `$XDG_CACHE_HOME/docs-readers/planted-1b/<job>/`.
+3. **Pins and trees.** Every job's pages come from `git archive` at a named commit (the header's
+   page pin), the scripter's current pages and the core developer's tree included; neither `HEAD`
+   nor the working tree is ever a source. Each of the six development jobs builds a control-only
+   tree when no planted directory exists. Development plants stay at `planted/<job>/`; test plants
+   go to `$XDG_CACHE_HOME/docs-readers/planted-1b/<job>/`.
 
 **Files.** `scripts/docs-readers/Containerfile`, `lib/prepare-class.ts`, `prepare-validation.ts`,
-`prepare-baseline.ts`, a new preparer module, their tests. **Upshift:** `model: opus`, since the
-commit-after-overlay ordering is the one leak the mechanics review found.
+`prepare-baseline.ts`, their tests. **Upshift:** `model: opus`, since the commit-after-overlay
+ordering is the one leak the mechanics review found.
 
 **Acceptance.**
 - A planted tree, inspected with `git log` and `git diff` inside the image, shows one commit, a
@@ -245,9 +235,8 @@ commit-after-overlay ordering is the one leak the mechanics review found.
   list, and neither path is in its tree. A repository export and the planter's export contain none
   of the excluded paths above, no `docs/internal/record/` file, and no `docs-readers` test file;
   the planter's export has no `.git`.
-- For each of the six development jobs, a test fails on a `HEAD` pin or a working-tree source.
-- A fixture job of each class prepares from a specification file alone, and a control-only tree
-  builds when no planted directory exists.
+- For each of the six development jobs, a test fails on a `HEAD` pin or a working-tree source, and
+  a control-only tree builds with no planted directory.
 - The image rebuilds, and its digest is in the task report for the freeze.
 - Gate: the chain gate, then one live preparation of a planted and a control tree into a scratch
   root, never `prepared/validation/` (pass 1's trees stay intact for round 0), run once.
@@ -329,36 +318,24 @@ tests.
   8 of 12; no floor at one plant).
 - Gate: the chain gate.
 
-### Task 5: Planting tools and the chain (lane `docs-reset-1b-pathmap`, after Task 4; 4 deliverables)
+### Task 5: The validity script and the chain (lane `docs-reset-1b-pathmap`, after Task 4; 2 deliverables)
 
 **Outcome.**
 1. **`plant-validity.ts`:** the spec's validity check: each plant inside the plantable region (the
    on-path sections, or the narrowed line ranges), the spacing rules, no stale-path plant on an
    absent-list path, no plant on a mapping-run finding span, and a difference from the control page
    at its line.
-2. **`exclude-candidates.ts`:** drops every commit cited in pass 1's records or pass A's plan and
-   ground truth (`0e7f4eb9`), and every hunk overlapping a `dev-items.json` location, with spans
-   carried to a common commit through git's line mapping. It reads the mirror's commit map, so a
-   rewritten commit id maps back to its original.
-3. **`read-pages.ts`:** the list of pages no transfer job may use: the union of every development
-   and tuning docs set and every published page any saved pass 1 or tuning transcript opened
-   (Read, Grep, and Bash file paths), not only `pagesRead`.
-4. **`lib/chain.ts` and its CLI:** the spec's post-freeze chain: append an entry (path, sha256,
+2. **`lib/chain.ts` and its CLI:** the spec's post-freeze chain: append an entry (path, sha256,
    commit, prior entry hash), verify every entry against its file and the linkage, and return a
    path's latest entry. Entries never change.
 
-**Files.** The four modules, their tests, fixtures.
+**Files.** The two modules, their tests, fixtures.
 
 **Acceptance.**
 - Validity: one violating fixture per rule is rejected (outside the region, including outside a
   narrowed range inside an on-path section; three plants in a section; two within ten lines; five
   on one page; a stale path on the absent list; a plant on a finding span; no difference from
   control), and a valid fixture set passes.
-- Exclusion: a hunk overlapping a recorded span after a later commit shifted it by N lines is
-  dropped; a cited commit is dropped, including by its rewritten id; an adjacent non-overlapping
-  hunk survives.
-- Read pages: a fixture transcript opening a page outside its job's docs set puts that page on
-  the list.
 - Chain: an entry whose file changes after append fails verification with the path named; a
   broken link fails; a second entry for a path is returned as latest and the first stays.
 - Gate: the chain gate.
@@ -405,11 +382,10 @@ tests.
 
 **Outcome.** `score.ts`, in the spec's terms:
 1. **Modes and integrity.** Development mode is the only way to score an unstamped report; it reads
-   only development batches (pass 1's saved reports and the tuning rounds), labels its output, and
-   can never emit a bar or class verdict. Gated mode requires a gated batch, a stamp matching the
-   manifest at the tag, and a verified chain (every input it reads matches its latest entry, and no
-   entry postdates a report that read it). Both modes read final attempts and apply the rerun
-   outcomes.
+   only development batches (pass 1's saved reports and round 1), labels its output, and can never
+   emit a bar or class verdict. Gated mode requires a gated batch, a stamp matching the manifest at
+   the tag, and a verified chain (every input it reads matches its latest entry, and no entry
+   postdates a report that read it). Both modes read final attempts and apply the rerun outcomes.
 2. **Bars and verdicts.** The pools as the spec states them; thresholds read from the thresholds
    file; the no-threshold branches; precision over every planned Opus mapping run, an unverified
    one counting every catch-field item false; the per-class verdict; an all-classes-failed flag
@@ -419,9 +395,8 @@ tests.
    defines it; the five-item test and its fallback; then Fable's replacements, after which the bars
    are computed.
 4. **Development and reported measures.** On-map catches and false findings per verified Opus
-   control run, the keep rule, and the round 2 trigger; the held-out found rule; the Sonnet
-   decision; the transfer measures, outside every class verdict; every reported measure in the
-   spec's list.
+   control run for rounds 0 and 1; the held-out found rule; every reported measure in the spec's
+   list.
 
 **Files.** `scripts/docs-readers/score.ts`, any `lib/score-*.ts` modules, their tests, fixtures.
 
@@ -432,18 +407,16 @@ tests.
   entry makes the scorer refuse and name it.
 - A fixture set reproduces a hand-computed pass and fail on each bar. An agreement failure marks
   all four classes advisory; one class's precision failure marks only that class advisory. A false
-  finding placed in a transfer run, a Sonnet run, and a tuning control run changes no class's
-  precision. Zero findings on a class is a precision pass reported as zero, never a divide by zero.
-  An unverified mapping run with three items counts three false findings.
+  finding placed in a tuning control run changes no class's precision. Zero findings on a class is
+  a precision pass reported as zero, never a divide by zero. An unverified mapping run with three
+  items counts three false findings.
 - At 40 plants the scorer applies the fixture thresholds file's value; at 34 plants every class is
   advisory and the achieved count is given; a class with one plant has its floor reported and
   validates on the rest.
 - A stratum with fewer than five off-mode items falls back to raw agreement and says so; a pool too
   small to balance is drawn unbalanced and says so; agreement is computed before replacement and
   the bars after.
-- The keep rule keeps a +2 catches, +0.5 false-findings fixture and drops +1 and +0.6 fixtures.
-  The Sonnet decision fails 4 of 6 verified, fails 5 of 6 at 11 points below Opus, and passes 5 of
-  6 at 9 points; a cut arm yields "Opus only".
+- A held-out defect caught in two of three runs is found; in one of three it is not.
 - Gate: the chain gate.
 
 ### Task 8: Pre-freeze authoring (conductor-run; runs alongside segment 2, after Task 1)
@@ -456,8 +429,8 @@ tests.
   spec's "Real defect" definition verbatim), fitted to Task 1's rulings shape; a catch criterion,
   a one-line subject, and a near miss for each of pass 1's 17 plants and each of the nine held-out
   defects; and `dev-plants.json` (page, line, id per pass 1 plant) for the proxy scoring.
-- **The planting-prompt author** (`claude-opus-5-5`, `high`, blind): the miner's, the planter's, and
-  the plant check's prompts and the plant-type definitions, from the spec alone.
+- **The planting-prompt author** (`claude-opus-5-5`, `high`, blind): the planter's and the plant
+  check's prompts and the plant-type definitions, from the spec alone.
 
 **Acceptance.**
 - The ban grep passes every judge and planting prompt; the criteria files are development inputs,
@@ -479,116 +452,83 @@ rescores them under the proxy map.
 - Any judge-prompt defect found is fixed, logged with the misruling it fixes, reviewed by a
   `diff-reviewer` for the bans, and round 0 is rescored.
 
-### Task 10: Tuning
+### Task 10: Round 1
 
 **Conductor-run.** Round 1 runs the four adopted changes (Tasks 1 and 2) on the development batch:
 each development job once planted (pass 1's plants) and once on control, `claude-opus-5-5`, 12 runs,
-judged and scored in development mode. Round 2 runs only when the scorer's round 2 trigger fires
-and the flag has not tripped: one `claude-opus-5-5` tuner at `high`, which may read the development
-set, proposes one bundle of reader-instruction changes under the bans (absent lists and allowlists
-are not levers); a `diff-reviewer` checks the bundle; the scorer's keep rule decides.
+judged and scored in development mode. No further change is tried (O7).
 
 **Acceptance.**
-- Every round's reports verify or carry the runner's rerun; the record states each round's on-map
+- Every run verifies or carries the runner's rerun; the tuning record states round 1's on-map
   catches and false findings per control run beside round 0's, from the scorer's output.
-- The kept instruction set is committed; the ban grep and the ban check's verdict are in the
-  ledger.
-- If the flag trips before round 2 starts, round 2 is skipped and the ledger says so; a judge
-  change during tuning is applied to every round.
+- A judge change made here is applied to rounds 0 and 1 alike and logged.
 
-### Task 11: Transfer jobs
+### Task 11: The freeze
 
-**Conductor-run.** `read-pages.ts` builds the excluded-page list from every saved pass 1 and tuning
-transcript and docs set. One fresh blind `claude-opus-5-5` agent at `high` gets the list, the
-published pages outside it, and the classes' contents (never a job text or a finding), and writes
-up to four transfer job texts, one per class, each with an arrival state and a done signal. A class
-with no eligible page gets no job, and the ledger records it. A page a job's pages link to that is
-on the excluded list stays out of its docs set and enters its absent list. The texts go into batch
-files with their absent lists.
-
-**Acceptance.**
-- Each job's whole docs set is disjoint from the excluded-page list (script check).
-- Each text carries an arrival state and a done signal, and each batch file carries an absent
-  list.
-- The author's transcript audit is clean, and the ban grep passes every text.
-- A `diff-reviewer` read confirms each text is a real task for its class's reader and names no
-  development-set item.
-
-### Task 12: The freeze
-
-**Conductor-run.** Build the development and transfer mapping batches (control-only trees at the
-page pin, absent lists) and the held-out batch, run `freeze.ts` over every input, commit the
-manifest, and tag `docs-reset-1b-freeze`. Every gated batch sets `budgetTokens` above its expected
-spend, so the spec's cuts are the only budget mechanism. A `diff-reviewer` reads the manifest against the spec's
-"Freeze" list.
+**Conductor-run.** Build the development mapping batch (control-only trees at the page pin, absent
+lists) and the held-out batch, run `freeze.ts` over every input, commit the manifest, and tag
+`docs-reset-1b-freeze`. Every gated batch sets `budgetTokens` above its expected spend, so the
+ledger and the flag, not the runner, govern spend. A `diff-reviewer` reads the manifest against the
+spec's "Freeze" list.
 
 **Acceptance.**
 - The manifest lists by path every input in the spec's list, including each prompt, rubric,
-  criteria file, and script from Tasks 1 to 8 and 11; the reviewer names none missing.
+  criteria file, and script from Tasks 1 to 8; the reviewer names none missing.
 - A dry `freeze.ts --verify` passes on the tagged tree.
-- Checkpoint: ledger with the session ledger's figure, STATUS line, and the flag check; cuts that
-  fire are recorded.
+- Checkpoint: ledger with the session ledger's figure, STATUS line, and the flag check.
 
-### Task 13: Mapping
+### Task 12: Mapping
 
-**Conductor-run.** The runner runs the gated mapping batch: each development and transfer job
-three times on `claude-opus-5-5` on control pages, plus the scripter's three held-out runs on the
-pre-fix pins. `path-map.ts` builds each job's map, and the maps, each batch's results index, and
-the finding spans to avoid enter the chain.
+**Conductor-run.** The runner runs the gated mapping batch: each development job three times on
+`claude-opus-5-5` on control pages, plus the scripter's three held-out runs on the pre-fix pins.
+`path-map.ts` builds each job's map, and the maps, the batch's results index, and the finding spans
+to avoid enter the chain.
 
 **Acceptance.**
 - Every gated report carries the stamp; every rerun and stop is the runner's and is listed.
 - Each job's map, on-path share, capacity, and any ceiling or thin-map action is recorded.
 
-### Task 14: Mine and plant
+### Task 13: Plant
 
 **Conductor-run.**
-1. Build the miner's mirror at the page pin with `git filter-repo`, removing from all history
-   `docs/internal/record`, `docs/superpowers`, `scripts/docs-readers`, `docs/HISTORY.md`,
-   `docs/STATUS.md`, `ROADMAP.md`, `docs/internal/docs-friction-log.md`, and
-   `src/tests/unit/docs-readers-*`; the mirror head and commit map enter the chain.
-2. The miner (blind wrapper) lists candidates; its audit runs; `exclude-candidates.ts` filters.
-3. The planter (blind wrapper; the planter's export, the maps, the filtered list, the spans to
-   avoid) plants the development jobs, writing the test plant record
-   `docs/internal/record/2026-09-24-docs-reset-1b-planted-defects.md`. Then the conductor checks
-   the flag; if cut 3 has not fired, the planter plants the transfer jobs.
-4. `plant-validity.ts` runs; the plant check (blind wrapper) verifies each proof and the
-   no-shared-subject rule; audits run; failing plants are replaced by the planter.
-5. The generic preparer builds each planted tree. The planted batch files, each tree's digest, and
+1. The planter (blind wrapper; the planter's export, the maps, the spans to avoid) synthesizes the
+   plants and writes the test plant record
+   `docs/internal/record/2026-09-24-docs-reset-1b-planted-defects.md`.
+2. `plant-validity.ts` runs; the plant check (blind wrapper) verifies each proof and the
+   no-shared-subject rule; both agents' audits run; failing plants are replaced by the planter.
+3. Task 2's preparation builds each planted tree. The planted batch file, each tree's digest, and
    the plant record enter the chain.
-6. `oc-curve.ts` recomputes every threshold at the achieved counts; the thresholds file enters the
-   chain before Task 15.
+4. `oc-curve.ts` recomputes every threshold at the achieved counts; the thresholds file enters the
+   chain before Task 14.
 
 **Acceptance.**
 - Every plant passes the validity script and the plant check; the record lists replacements and
-  each plant's source and subject.
+  each plant's subject.
 - Each job carries seven plants, or the count its map record allows; at least four of seven are
   semantic, and a job short of seven loses token plants first.
 - Every blind agent's audit is clean or its output was redone.
 - One planted tree, inspected inside the image, shows one commit and a clean `git diff`.
 - The thresholds file and every artifact above verify against the chain.
 
-### Task 15: Planted runs
+### Task 14: Planted runs
 
-**Conductor-run.** Three batches, in order: the gated development planted batch (three
-`claude-opus-5-5` runs per development job); the transfer planted batch, unless cut 3 has fired;
-the Sonnet batch (one `claude-sonnet-5` run per development job), unless cut 2 has fired. The flag
-is checked between batches, and O6 governs the ceiling.
+**Conductor-run.** The runner runs the gated planted batch: three `claude-opus-5-5` runs per
+development job. O6 governs the ceiling.
 
-**Acceptance.** Every gated report is stamped; reruns and stops are listed; each batch's
-`stopReason` is `complete`, or the ledger records the cut; each results index enters the chain.
+**Acceptance.** Every gated report is stamped; reruns and stops are listed; the batch's
+`stopReason` is `complete`; its results index enters the chain.
 
-### Task 16: Scoring and the record
+### Task 15: Scoring and the record
 
-**Conductor-run.** The judges run as runner batches (gated where they rule gated runs): the catch
-judge on every planted and held-out run, the adjudicator on every mapping run. Their rulings enter
-the chain. The scorer, in gated mode, writes the agreement sample file, which enters the chain; the
-agreement read rules it; the scorer computes every bar and reported measure. One `claude-opus-5-5`
-record author at `high` writes `docs/internal/record/2026-09-24-docs-reset-1b-validation.md`: the
-per-class verdict under the spec's failure rule, every bar with its numbers, every reported
-measure, each cut, rerun, and stop, and the in-sample and contamination labels the spec requires.
-A `diff-reviewer` checks the record against the scorer's output only. No ruling or verdict is
-re-litigated: a suspected judge defect is recorded as a finding for pass 2a.
+**Conductor-run.** The judges run as gated runner batches: the catch judge on every planted and
+held-out run, the adjudicator on every mapping run. Their rulings enter the chain. The scorer, in
+gated mode, writes the agreement sample file, which enters the chain; the agreement read rules it;
+the scorer computes every bar and reported measure. One `claude-opus-5-5` record author at `high`
+writes `docs/internal/record/2026-09-24-docs-reset-1b-validation.md`: the per-class verdict under
+the spec's failure rule, every bar with its numbers, every reported measure, each rerun and stop,
+and the in-sample, synthesized-only, and contamination labels the spec requires. A `diff-reviewer`
+checks the record against the scorer's output only. No ruling or verdict is re-litigated: a
+suspected judge defect is recorded as a finding for pass 2a.
 
 **Acceptance.**
 - Every number in the record traces to the scorer's committed output file.
@@ -596,21 +536,27 @@ re-litigated: a suspected judge defect is recorded as a finding for pass 2a.
 - If every class failed, the pass stops here and reports to Geoff before pass 2a (O5).
 - Checkpoint.
 
-### Task 17: Close
+### Task 16: Close
 
 **Conductor-run, one fold agent** (`claude-opus-5-5`, `high`), one independent `diff-reviewer`
 read. The post-mortem at the foot of this plan (built, verified, decisions, planning misses and
 attended-time counts, the session ledger's final figure); the `docs/HISTORY.md` entry, which also
 corrects pass 1's recorded spend to about 18.7M counted; `ROADMAP.md`'s docs reset entry (pass 1b
-done, pass 2a next with its inputs: the per-class verdicts, the Sonnet decision, the labeled set,
-the trial redesign the spec hands it, and the v2 chain's string-typed `stalls` and `assumed` that
-ignore `diverged[]`); STATUS naming pass 2a; the `docs-reset-initiative` memory.
+done, pass 2a next with its inputs: the per-class verdicts, Opus-only trial readers, the labeled
+set, the trial redesign the spec hands it, and the v2 chain's string-typed `stalls` and `assumed`
+that ignore `diverged[]`); STATUS naming pass 2a; the `docs-reset-initiative` memory. The conductor
+then brings Geoff a program budget for the rest of the reset (parent amendment): a lean default of
+pass 2a without the formal chain-depth trial, a minimal page chain that grows only on reader
+evidence, and a measured per-page target, drawn from this pass's ledger. Geoff sets the program
+ceiling.
 
 **Acceptance.**
 - The regression batch passes a dry check: its batch files parse and every prepared tree exists.
   No reader runs.
 - `git diff --name-only docs-reset-1b-freeze..HEAD` intersected with the manifest's paths is empty,
   and `freeze.ts --verify` passes at HEAD; the `diff-reviewer` confirms both.
+- The program budget, with its per-page figures from this pass's ledger, is in the ledger and put
+  to Geoff.
 - Gates: `npm run check:docs`, `npm run check:arm-indexes`, and the chain gate.
 - The PR merges only on Geoff's word.
 
@@ -619,4 +565,4 @@ ignore `diverged[]`); STATUS naming pass 2a; the `docs-reset-initiative` memory.
 | Task | State | Commit | Spend | Notes |
 | --- | --- | --- | --- | --- |
 | spec | done | `30083f27`..`da97461b` | brainstorm session | Spec drafted, five lens reviews, fold, verification, second fold. Owner rulings O1 to O4 (Geoff, 2026-09-24). |
-| plan | drafted | `dc37e38b`, fold uncommitted | plan session | Three plan reviews and a spec prose review folded (`2026-09-24-pass-1b-plan-fold.md`). O1 revised to 15M and 12M; O5 and O6; conductor rulings P1 to P11. |
+| plan | drafted | `dc37e38b`, fold at `64ccc784` and after | plan session | Three plan reviews and a spec prose review folded (`2026-09-24-pass-1b-plan-fold.md`). O1 revised; O5 and O6; conductor rulings P1 to P11; then O7 (core gate only) and O8 (ceiling 15M, flag 12M). |

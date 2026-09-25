@@ -12,7 +12,6 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import matter from 'gray-matter';
 import { type JsonSchema } from './lib/profile-schema.js';
 import { checkProfileFile } from './lib/check-profile-file.js';
 
@@ -82,12 +81,11 @@ export function main(args: string[]): number {
   }
   const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8')) as JsonSchema;
   const manifestText = readFileSync(MANIFEST_PATH, 'utf8');
-  const errors = checkProfileFile(profilePath, schema, manifestText);
-  if (errors.length > 0) {
-    process.stderr.write(`${profilePath} fails its schema:\n${errors.map((e) => `  ${e}`).join('\n')}\n`);
+  const { errors, data } = checkProfileFile(profilePath, schema, manifestText);
+  if (errors.length > 0 || !data) {
+    process.stderr.write(`${profilePath} fails its checks:\n${errors.map((e) => `  ${e}`).join('\n')}\n`);
     return 1;
   }
-  const { data } = matter(readFileSync(resolve(profilePath), 'utf8'));
   process.stdout.write(`${renderProfile(data, schema)}\n`);
   return 0;
 }

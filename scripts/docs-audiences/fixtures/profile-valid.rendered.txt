@@ -1,4 +1,4 @@
-synthetic-profile: A reader used only by the schema and render fixtures, never a real audience.
+profile-valid: A reader used only by the schema and render fixtures, never a real audience.
 
 Vocabulary:
   Use:

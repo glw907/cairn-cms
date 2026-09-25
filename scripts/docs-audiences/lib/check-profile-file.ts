@@ -8,14 +8,25 @@ import { validateAgainstSchema, type JsonSchema } from './profile-schema.js';
 import { unresolvedExemplarIds } from './exemplar-manifest.js';
 
 /**
+ * The result of {@link checkProfileFile}: every check violation, and the parsed frontmatter when
+ * there is one to hand back.
+ */
+export interface ProfileCheckResult {
+  /** One error string per violation, each prefixed with the checked file's path; empty means the file passes every check. */
+  errors: string[];
+  /** The parsed frontmatter, present whenever it parsed (even if a later check on it fails); absent only when the frontmatter itself failed to parse. */
+  data?: Record<string, unknown>;
+}
+
+/**
  * Reads the profile markdown file at `path`, then runs every check a profile must pass: its
  * frontmatter parses, it conforms to `schema`, its `id` matches the file's own basename, and its
- * `exemplars` ids all resolve against `manifestText`. Returns one error string per violation, each
- * prefixed with `path`; an empty array means the file passes every check. A frontmatter parse
- * failure (broken YAML) short-circuits the other checks, since there is no parsed data left to run
- * them against.
+ * `exemplars` ids all resolve against `manifestText`. A caller that also needs the parsed
+ * frontmatter (to render it, say) reads it off the result instead of parsing the file again. A
+ * frontmatter parse failure (broken YAML) short-circuits the other checks, since there is no
+ * parsed data left to run them against.
  */
-export function checkProfileFile(path: string, schema: JsonSchema, manifestText: string): string[] {
+export function checkProfileFile(path: string, schema: JsonSchema, manifestText: string): ProfileCheckResult {
   let data: Record<string, unknown>;
   try {
     // gray-matter caches a parse by its exact input string, keyed off the module-level
@@ -27,7 +38,7 @@ export function checkProfileFile(path: string, schema: JsonSchema, manifestText:
     ({ data } = matter(readFileSync(resolve(path), 'utf8'), {}));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return [`${path}: frontmatter does not parse: ${message}`];
+    return { errors: [`${path}: frontmatter does not parse: ${message}`] };
   }
 
   const errors = validateAgainstSchema(data, schema).map((error) => `${path}: ${error}`);
@@ -45,5 +56,5 @@ export function checkProfileFile(path: string, schema: JsonSchema, manifestText:
     );
   }
 
-  return errors;
+  return { errors, data };
 }

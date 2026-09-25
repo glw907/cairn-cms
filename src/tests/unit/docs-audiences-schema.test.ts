@@ -65,10 +65,9 @@ describe('validateAgainstSchema, on the synthetic fixture profile', () => {
   });
 
   it('passes the full check (schema plus exemplar resolution) against the fixture manifest', () => {
-    const { data } = matter(readFixture('profile-valid.md'));
-    expect(validateAgainstSchema(data, schema)).toEqual([]);
     const manifest = readFixture('manifest-fixture.md');
-    expect(unresolvedExemplarIds(data.exemplars as string[], manifest)).toEqual([]);
+    const { errors } = checkProfileFile(fixturePath('profile-valid.md'), schema, manifest);
+    expect(errors).toEqual([]);
   });
 
   it('fails a profile missing a required key, naming it', () => {
@@ -118,34 +117,41 @@ describe('checkProfileFile, on the fixture profiles', () => {
 
   it('fails a profile missing a required key, naming both the key and the file', () => {
     const path = fixturePath('profile-missing-key.md');
-    const errors = checkProfileFile(path, schema, manifest);
+    const { errors } = checkProfileFile(path, schema, manifest);
     expect(errors).toContain(`${path}: frontmatter: missing required key "success"`);
   });
 
   it('fails a profile carrying an unknown key, naming both the key and the file', () => {
     const path = fixturePath('profile-extra-key.md');
-    const errors = checkProfileFile(path, schema, manifest);
+    const { errors } = checkProfileFile(path, schema, manifest);
     expect(errors).toContain(`${path}: frontmatter: unknown key "unexpected-extra-key"`);
   });
 
   it('fails a profile with no frontmatter block, naming the file on every missing key', () => {
     const path = fixturePath('profile-no-frontmatter.md');
-    const errors = checkProfileFile(path, schema, manifest);
+    const { errors } = checkProfileFile(path, schema, manifest);
     expect(errors.length).toBe((schema.required ?? []).length);
     for (const error of errors) expect(error.startsWith(`${path}:`)).toBe(true);
   });
 
   it('fails a profile whose frontmatter is broken YAML, naming the file instead of throwing', () => {
     const path = fixturePath('profile-broken-yaml.md');
-    const errors = checkProfileFile(path, schema, manifest);
+    const { errors, data } = checkProfileFile(path, schema, manifest);
     expect(errors.length).toBe(1);
     expect(errors[0]).toContain(`${path}: frontmatter does not parse:`);
+    expect(data).toBeUndefined();
   });
 
   it('fails a profile whose id does not match its file name, naming the file', () => {
     const path = fixturePath('profile-id-mismatch.md');
-    const errors = checkProfileFile(path, schema, manifest);
+    const { errors } = checkProfileFile(path, schema, manifest);
     expect(errors).toContain(`${path}: id "not-the-file-name" does not match file name "profile-id-mismatch"`);
+  });
+
+  it('returns the parsed frontmatter alongside an empty errors array for a profile that passes every check', () => {
+    const { errors, data } = checkProfileFile(fixturePath('profile-valid.md'), schema, manifest);
+    expect(errors).toEqual([]);
+    expect(data?.id).toBe('profile-valid');
   });
 });
 
@@ -163,9 +169,10 @@ describe('every real audience profile (none exist yet at Task 6)', () => {
     it(`${file} conforms to profile.schema.json, its exemplar ids resolve, and its id matches its file name`, () => {
       const path = join(AUDIENCES_DIR, file);
       const manifest = readFileSync(REAL_MANIFEST_PATH, 'utf8');
-      expect(checkProfileFile(path, schema, manifest)).toEqual([]);
-      const { data } = matter(readFileSync(path, 'utf8'));
-      expect(data.id).toBe(file.replace(/\.md$/, ''));
+      // checkProfileFile's own id-basename check already fails naming the file on a mismatch,
+      // so an empty `errors` array here proves the id matches too; no separate assertion needed.
+      const { errors } = checkProfileFile(path, schema, manifest);
+      expect(errors).toEqual([]);
     });
   }
 });

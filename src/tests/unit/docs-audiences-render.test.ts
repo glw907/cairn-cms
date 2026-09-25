@@ -28,7 +28,7 @@ describe('renderProfile', () => {
   it('names the profile id and persona on the first line', () => {
     const { data } = matter(readFixture('profile-valid.md'));
     expect(renderProfile(data, schema).split('\n')[0]).toBe(
-      'synthetic-profile: A reader used only by the schema and render fixtures, never a real audience.',
+      'profile-valid: A reader used only by the schema and render fixtures, never a real audience.',
     );
   });
 
@@ -61,6 +61,25 @@ describe('renderProfile', () => {
 });
 
 describe('main (the CLI entry point)', () => {
+  it('returns 0 and prints the rendered profile for a profile that passes every check', () => {
+    const path = join(FIXTURES_DIR, 'profile-valid.md');
+    const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    let exitCode = -1;
+    let written = '';
+    try {
+      exitCode = main([path]);
+      // Read the call history before mockRestore(), which also clears it (mockRestore is
+      // mockReset plus restoring the original implementation).
+      written = stdoutSpy.mock.calls.map((call) => String(call[0])).join('');
+    } finally {
+      stdoutSpy.mockRestore();
+    }
+    expect(exitCode).toBe(0);
+    expect(written).toContain(
+      'profile-valid: A reader used only by the schema and render fixtures, never a real audience.',
+    );
+  });
+
   it('exits 1 and names the file on broken YAML frontmatter, without throwing an uncaught stack trace', () => {
     const path = join(FIXTURES_DIR, 'profile-broken-yaml.md');
     const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
@@ -75,7 +94,7 @@ describe('main (the CLI entry point)', () => {
       stderrSpy.mockRestore();
     }
     expect(exitCode).toBe(1);
-    expect(written).toContain(`${path} fails its schema:`);
+    expect(written).toContain(`${path} fails its checks:`);
     expect(written).toContain('frontmatter does not parse:');
   });
 });

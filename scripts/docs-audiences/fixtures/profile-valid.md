@@ -1,5 +1,5 @@
 ---
-id: synthetic-profile
+id: profile-valid
 persona: A reader used only by the schema and render fixtures, never a real audience.
 vocabulary:
   use:

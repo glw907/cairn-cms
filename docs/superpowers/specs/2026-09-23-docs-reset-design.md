@@ -79,14 +79,21 @@ Where a line below and this section disagree, this section wins.
 
 - **Pass 2a has its own spec,
   [`2026-09-25-docs-reset-pass-2a-design.md`](2026-09-25-docs-reset-pass-2a-design.md), which
-  replaces the pass 2a section below.** Program ruling O12 (Geoff, 2026-09-25) drops the
-  calibration trial (items 4 and 5) and any freeze. Pass 2a opens with a go/no-go reader pilot,
-  and readers join the page chain as a gating stage only on a go.
-- **Pass 2a's ceiling is 7M, flag 5.6M** (Geoff, 2026-09-25), against this spec's 14M. Pass 2b
+  replaces the pass 2a section below, except item 3's exemplar selection rules, which pass 2a's
+  spec applies.** Program ruling O12 (Geoff, 2026-09-25) drops the calibration trial (items 4 and
+  5) and any freeze. Pass 2a opens with a go/no-go reader pilot, and reader findings block in the
+  page chain only for the reader classes the pilot passes.
+- **Pass 2a's ceiling is 7M, flag 5.6M** (Geoff, 2026-09-25), against this spec's 14M; the pass 2a
+  spec's owner ruling 1 asks Geoff to reset it against a revised estimate of about 13M. Pass 2b
   keeps 8M. Drafting passes are budgeted at 0.7M per page plus 1.5M per pass, and the program cap
   is about 45M counted.
-- **Opus 5.5 at `high` authors pass 2a's artifacts** (the 2026-09-23 model ruling); Fable 5.1 is
-  the escalation only.
+- **Opus 5.5 at `high` authors pass 2a's artifacts;** Fable 5.1 is the escalation only. This
+  amendment is the ruling of record. Pass 2b's Fable lines (items 1, 2, and 4) stand until pass
+  2b's own spec rules on them.
+- **The scratch site stays up past pass 2a** (pass 2a spec, CR7). Pass 1 item 0's "torn down at
+  pass 2a's close" becomes: torn down at the close of the last drafting pass that runs
+  `docs-and-binary` readers, since the operator reader class needs it. Pass 2a's close runs the
+  dry-run listing as a health check only.
 
 ## Why now
 

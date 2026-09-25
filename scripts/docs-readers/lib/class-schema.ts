@@ -26,6 +26,56 @@ export const EGRESS_CONFIG = join(READERS_ROOT, 'egress.json');
  */
 export const KNOWN_TOOLS = ['Read', 'Write', 'Edit', 'Grep', 'Glob', 'Bash'];
 
+/**
+ * The three judge kinds a runner batch can run, and the freeze manifest key each one's frozen
+ * model id lives under (`Manifest.models`, never `models.reader`).
+ */
+export type JudgeKind = 'catchJudge' | 'adjudicator' | 'agreement';
+
+/**
+ * Every judge class's name, mapped to the kind of rulings its packets carry. `ClassDecl` itself
+ * carries no `judgeKind` field (ordinary classes never need one), so a judge batch's caller reads
+ * the kind from the class name here instead of adding a runtime field `loadClasses` would have to
+ * validate.
+ */
+export const JUDGE_CLASSES: Readonly<Record<string, JudgeKind>> = {
+  'judge-catch': 'catchJudge',
+  'judge-adjudicator': 'adjudicator',
+  'judge-agreement': 'agreement',
+};
+
+/**
+ * The judge kind a class name runs as, or undefined when the name is not a judge class.
+ * @param className - A class declaration's `name`.
+ * @returns The judge kind, or undefined for an ordinary reader class.
+ */
+export function judgeKindForClass(className: string): JudgeKind | undefined {
+  return JUDGE_CLASSES[className];
+}
+
+/** Where every judge kind's frozen prompt lives. */
+export const PROMPTS_DIR = join(READERS_ROOT, 'prompts');
+
+/** Each judge kind's own frozen prompt file, under `PROMPTS_DIR`. */
+export const JUDGE_PROMPT_FILES: Readonly<Record<JudgeKind, string>> = {
+  catchJudge: join(PROMPTS_DIR, 'catch-judge.md'),
+  adjudicator: join(PROMPTS_DIR, 'adjudicator.md'),
+  agreement: join(PROMPTS_DIR, 'agreement.md'),
+};
+
+/**
+ * A judge kind's frozen prompt, read fresh from disk on every call rather than cached at import
+ * time, so a caller taken before a gated batch's manifest hash (which covers every file under
+ * `PROMPTS_DIR`) pins the bytes a run must match never serves a copy from before that pin.
+ * `runJudgeBatch` itself calls this once per batch, right after that hash is checked, and reuses
+ * the one string it gets back for every job, so an edit landing mid-batch cannot reach a later job.
+ * @param kind - Which of the three judge kinds' prompt files to read.
+ * @returns The prompt file's raw text.
+ */
+export function loadJudgePrompt(kind: JudgeKind): string {
+  return readFileSync(JUDGE_PROMPT_FILES[kind], 'utf8');
+}
+
 /** How a class fills its per-run directory: copied docs-set paths, or a prepared tree. */
 export const CONTENTS_KINDS = ['docs-set', 'prepared'];
 
@@ -175,7 +225,19 @@ export function loadClasses(dir = CLASSES_DIR, egress = loadEgress()): Map<strin
 }
 
 /**
- * The `claude` flags a class implies. The job text never appears here; it goes on stdin.
+ * The minimal system prompt every judge class runs under, replacing Claude Code's default one: a
+ * judge only ever reads the packet in its working directory and returns the JSON its own frozen
+ * prompt and `--json-schema` ask for, so the default prompt's tool-use and git conventions, aimed
+ * at an interactive coding session, cost tokens a headless judge never uses.
+ */
+export const JUDGE_SYSTEM_PROMPT =
+  'You judge material in your working directory against the instructions on your stdin. Read what you need, then follow those instructions exactly and return only the JSON object they and the response schema ask for.';
+
+/**
+ * The `claude` flags a class implies. The job text never appears here; it goes on stdin. A judge
+ * class (`judgeKindForClass(decl.name)` set) also gets `--system-prompt`, replacing the default
+ * with `JUDGE_SYSTEM_PROMPT`; this does not touch `init.skills`, `init.tools`, `init.mcp_servers`,
+ * or `init.apiKeySource`, so the existing init check applies unchanged.
  * @param decl - A validated class declaration.
  * @param model - The reader model for this job.
  * @param reportSchema - The JSON schema the reader's structured report must match.
@@ -203,6 +265,9 @@ export function claudeArgs(decl: ClassDecl, model: string, reportSchema: object)
     '--json-schema',
     JSON.stringify(reportSchema),
   ];
+  if (judgeKindForClass(decl.name)) {
+    args.push('--system-prompt', JUDGE_SYSTEM_PROMPT);
+  }
   if (decl.bashAllowlist.length > 0) {
     // Variadic, so it goes last: one argument per pattern, and nothing follows it to swallow.
     args.push('--allowedTools', ...decl.bashAllowlist.map((p) => `Bash(${p})`));

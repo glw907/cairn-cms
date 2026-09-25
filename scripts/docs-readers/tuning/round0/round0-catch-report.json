@@ -1,0 +1,916 @@
+{
+  "batch": "round0-catch",
+  "runId": "20260925t182606-305361",
+  "kind": "catchJudge",
+  "stopReason": "complete",
+  "budgetTokens": 2000000,
+  "usage": {
+    "input": 3316,
+    "output": 8094,
+    "cacheCreation": 21135,
+    "cacheRead": 190387,
+    "counted": 32545
+  },
+  "jobs": [
+    {
+      "id": "evaluator-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "caught",
+          "reason": "item-3 lists 'hold ref' (why-cairn.md:22) as a term the reader had to guess, mapping it to 'Holding branch' from another page. In an assumed[] item, that counts as a claim that the page leaves the term undefined."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "caught",
+          "reason": "item-2 says the default editor sign-in is 'the email magic link ... not the 'own GitHub account' sign-in why-cairn.md:20 describes'. That goes against the page's wording and matches the criterion's alternative that the zero-config sign-in is really an emailed link needing no GitHub account."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 754,
+        "cacheCreation": 0,
+        "cacheRead": 17357,
+        "counted": 760
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "caught",
+              "reason": "item-3 lists 'hold ref' (why-cairn.md:22) as a term the reader had to guess, mapping it to 'Holding branch' from another page. In an assumed[] item, that counts as a claim that the page leaves the term undefined."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "caught",
+              "reason": "item-2 says the default editor sign-in is 'the email magic link ... not the 'own GitHub account' sign-in why-cairn.md:20 describes'. That goes against the page's wording and matches the criterion's alternative that the zero-config sign-in is really an emailed link needing no GitHub account."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 754,
+            "cacheCreation": 0,
+            "cacheRead": 17357,
+            "counted": 760
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/evaluator-planted-1-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "evaluator-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "caught",
+          "reason": "item-4 is an assumed[] entry that names the meaning of 'hold ref' in why-cairn.md as something the reader had to guess. It reads it as 'Holding branch' from another page, so it treats the term as undefined where it appears rather than as understood. It does not attribute its belief to the page."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "caught",
+          "reason": "item-1 says the reader 'Could not reconcile how editors sign in: why-cairn.md says GitHub accounts, before-you-start.md and editors/welcome.md say email magic link with no GitHub account.' That is a direct claim that the pages contradict each other on whether editors need a GitHub account."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 779,
+        "cacheCreation": 1720,
+        "cacheRead": 15730,
+        "counted": 2505
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "caught",
+              "reason": "item-4 is an assumed[] entry that names the meaning of 'hold ref' in why-cairn.md as something the reader had to guess. It reads it as 'Holding branch' from another page, so it treats the term as undefined where it appears rather than as understood. It does not attribute its belief to the page."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "caught",
+              "reason": "item-1 says the reader 'Could not reconcile how editors sign in: why-cairn.md says GitHub accounts, before-you-start.md and editors/welcome.md say email magic link with no GitHub account.' That is a direct claim that the pages contradict each other on whether editors need a GitHub account."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 779,
+            "cacheCreation": 1720,
+            "cacheRead": 15730,
+            "counted": 2505
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/evaluator-planted-2-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "operator-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "missed",
+          "reason": "Closest is item-2, which notes the doc says `cairn doctor --dir .` while the example shows `cairn doctor .`. It never says `--dir` is wrong, unaccepted, or should be dropped; it only explains why the reader ran plain `cairn doctor` and assumed the default directory. So it does not meet the criterion's literal claim."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "missed",
+          "reason": "No item mentions the nonce migration or its `dist/migrations/` path."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "Items item-4 and item-5 touch the missing-bindings condition but only cover title matching and whether to edit wrangler.jsonc. Neither says the page's remedy leaves out the `AUTH_DB` D1 binding."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 1080,
+        "cacheCreation": 2013,
+        "cacheRead": 15730,
+        "counted": 3099
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "missed",
+              "reason": "Closest is item-2, which notes the doc says `cairn doctor --dir .` while the example shows `cairn doctor .`. It never says `--dir` is wrong, unaccepted, or should be dropped; it only explains why the reader ran plain `cairn doctor` and assumed the default directory. So it does not meet the criterion's literal claim."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "missed",
+              "reason": "No item mentions the nonce migration or its `dist/migrations/` path."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "Items item-4 and item-5 touch the missing-bindings condition but only cover title matching and whether to edit wrangler.jsonc. Neither says the page's remedy leaves out the `AUTH_DB` D1 binding."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 1080,
+            "cacheCreation": 2013,
+            "cacheRead": 15730,
+            "counted": 3099
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/operator-planted-1-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "operator-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "missed",
+          "reason": "Closest is item-1, which reports running plain `cairn doctor` after a denied compound command. It never says the page's `--dir .` form is wrong or that the directory is positional, so it fails the criterion and is not a finding against the page."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "missed",
+          "reason": "No item mentions the nonce migration or its path `dist/migrations/0004_login_nonce.sql`, so no item touches this subject."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "Closest are item-2 and item-5, which concern the `EMAIL` send_email binding: item-2 says the linked pages don't show its shape, and item-5 explains why it is missing. Neither says the page's remedy leaves out the `AUTH_DB` D1 binding, so neither meets the criterion."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 593,
+        "cacheCreation": 1757,
+        "cacheRead": 15730,
+        "counted": 2356
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "missed",
+              "reason": "Closest is item-1, which reports running plain `cairn doctor` after a denied compound command. It never says the page's `--dir .` form is wrong or that the directory is positional, so it fails the criterion and is not a finding against the page."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "missed",
+              "reason": "No item mentions the nonce migration or its path `dist/migrations/0004_login_nonce.sql`, so no item touches this subject."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "Closest are item-2 and item-5, which concern the `EMAIL` send_email binding: item-2 says the linked pages don't show its shape, and item-5 explains why it is missing. Neither says the page's remedy leaves out the `AUTH_DB` D1 binding, so neither meets the criterion."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 593,
+            "cacheCreation": 1757,
+            "cacheRead": 15730,
+            "counted": 2356
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/operator-planted-2-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "designer-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "missed",
+          "reason": "No item mentions the style guide route or says `/style-guide` is wrong. The items only cover hue choice, the content token, build warnings, and admin CSS."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "missed",
+          "reason": "No item mentions the `$lib/chassis` alias or chassis imports at all, so nothing meets the criterion."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "No item mentions the feed chassis piece, deleting it, or the feed routes importing it."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 476,
+        "cacheCreation": 1772,
+        "cacheRead": 15730,
+        "counted": 2254
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "missed",
+              "reason": "No item mentions the style guide route or says `/style-guide` is wrong. The items only cover hue choice, the content token, build warnings, and admin CSS."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "missed",
+              "reason": "No item mentions the `$lib/chassis` alias or chassis imports at all, so nothing meets the criterion."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "No item mentions the feed chassis piece, deleting it, or the feed routes importing it."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 476,
+            "cacheCreation": 1772,
+            "cacheRead": 15730,
+            "counted": 2254
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/designer-planted-1-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "designer-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "missed",
+          "reason": "No item mentions the `/style-guide` route or says it is wrong. The closest is item-4, which only says the reader could not open a browser, so it fails the criterion."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "missed",
+          "reason": "No item mentions the `$lib/chassis` alias or chassis imports at all."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "No item mentions the feed chassis piece, removing it, or the feed routes breaking the build."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 420,
+        "cacheCreation": 1538,
+        "cacheRead": 15730,
+        "counted": 1964
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "missed",
+              "reason": "No item mentions the `/style-guide` route or says it is wrong. The closest is item-4, which only says the reader could not open a browser, so it fails the criterion."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "missed",
+              "reason": "No item mentions the `$lib/chassis` alias or chassis imports at all."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "No item mentions the feed chassis piece, removing it, or the feed routes breaking the build."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 420,
+            "cacheCreation": 1538,
+            "cacheRead": 15730,
+            "counted": 1964
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/designer-planted-2-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "extender-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "missed",
+          "reason": "No item mentions the section module's file path or the `$lib/club/section.js` import. The closest item is item-4, which only says createSectionAction was not wired, so it does not touch the path conflict."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "missed",
+          "reason": "No item mentions the audit sink, `createAuditSink`, or `createD1AuditSink`, so nothing touches this subject."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "Item-2 reports mapping `'/admin/members': ['editor']`, but its stated reason is how to interpret 'members-only' given that no role vocabulary exists. It never says the page failed to require an access-map rule, or that without one every session is refused, so it fails the criterion and is not a finding against the page."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 656,
+        "cacheCreation": 1746,
+        "cacheRead": 15730,
+        "counted": 2408
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "missed",
+              "reason": "No item mentions the section module's file path or the `$lib/club/section.js` import. The closest item is item-4, which only says createSectionAction was not wired, so it does not touch the path conflict."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "missed",
+              "reason": "No item mentions the audit sink, `createAuditSink`, or `createD1AuditSink`, so nothing touches this subject."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "Item-2 reports mapping `'/admin/members': ['editor']`, but its stated reason is how to interpret 'members-only' given that no role vocabulary exists. It never says the page failed to require an access-map rule, or that without one every session is refused, so it fails the criterion and is not a finding against the page."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 656,
+            "cacheCreation": 1746,
+            "cacheRead": 15730,
+            "counted": 2408
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/extender-planted-1-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "extender-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "missed",
+          "reason": "No item mentions the section module's file path or a conflict between the `src/club/section.ts` comment and the `$lib/club/section.js` import. Item-5 says no section actions were added at all."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "missed",
+          "reason": "No item mentions `createAuditSink`, `createD1AuditSink`, or the audit sink export. No item touches this subject."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "The closest item is item-2, which reports adding `'/admin/members': ['editor']` in src/access.ts. Its stated reason is how it interpreted 'Members-only' and the missing role vocabulary. It never says the page fails to mention declaring an access-map rule, or that without one every session is refused, so it meets neither the criterion nor the finding condition."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 706,
+        "cacheCreation": 1724,
+        "cacheRead": 15730,
+        "counted": 2436
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "missed",
+              "reason": "No item mentions the section module's file path or a conflict between the `src/club/section.ts` comment and the `$lib/club/section.js` import. Item-5 says no section actions were added at all."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "missed",
+              "reason": "No item mentions `createAuditSink`, `createD1AuditSink`, or the audit sink export. No item touches this subject."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "The closest item is item-2, which reports adding `'/admin/members': ['editor']` in src/access.ts. Its stated reason is how it interpreted 'Members-only' and the missing role vocabulary. It never says the page fails to mention declaring an access-map rule, or that without one every session is refused, so it meets neither the criterion nor the finding condition."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 706,
+            "cacheCreation": 1724,
+            "cacheRead": 15730,
+            "counted": 2436
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/extender-planted-2-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "core-developer-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "missed",
+          "reason": "No item mentions `lint:comments`, `check:comments`, or the comment linter at all. The closest is item-3 (`npm run check` errors), which is about a different command and missing dependencies."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "missed",
+          "reason": "No item mentions `vitest.workspace.ts`, `vitest.config.ts`, or where the test globs are defined. Item-2 reports test failures from missing browsers and directories, not a wrong config file name."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "The closest items are item-1 and item-6, which say the existing dist/ stood in for the install/package build. They are about skipping a fresh install, like the near miss. Neither says the page leaves out a rebuild after changing src/lib, or that the showcase reads the built output."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 636,
+        "cacheCreation": 2037,
+        "cacheRead": 15730,
+        "counted": 2679
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "missed",
+              "reason": "No item mentions `lint:comments`, `check:comments`, or the comment linter at all. The closest is item-3 (`npm run check` errors), which is about a different command and missing dependencies."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "missed",
+              "reason": "No item mentions `vitest.workspace.ts`, `vitest.config.ts`, or where the test globs are defined. Item-2 reports test failures from missing browsers and directories, not a wrong config file name."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "The closest items are item-1 and item-6, which say the existing dist/ stood in for the install/package build. They are about skipping a fresh install, like the near miss. Neither says the page leaves out a rebuild after changing src/lib, or that the showcase reads the built output."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 636,
+            "cacheCreation": 2037,
+            "cacheRead": 15730,
+            "counted": 2679
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/core-developer-planted-1-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "core-developer-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "missed",
+          "reason": "No item mentions `lint:comments`, `check:comments`, or the comment linter at all. item-6 reports on `npm run check`, which is a different script, so nothing touches this subject."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "missed",
+          "reason": "No item mentions `vitest.workspace.ts`, `vitest.config.ts`, or where the test globs are defined. item-2 reports vitest test failures but says nothing about which file names the globs."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "The closest items are item-1 and item-8, which mention dist/ only in the context of the `npm install` prepare build. That is the install-related kind of claim the near miss excludes. Neither item says the showcase needs `npm run package` after a `src/lib` change, or that the page leaves out that step."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 625,
+        "cacheCreation": 2139,
+        "cacheRead": 15730,
+        "counted": 2770
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "missed",
+              "reason": "No item mentions `lint:comments`, `check:comments`, or the comment linter at all. item-6 reports on `npm run check`, which is a different script, so nothing touches this subject."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "missed",
+              "reason": "No item mentions `vitest.workspace.ts`, `vitest.config.ts`, or where the test globs are defined. item-2 reports vitest test failures but says nothing about which file names the globs."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "The closest items are item-1 and item-8, which mention dist/ only in the context of the `npm install` prepare build. That is the install-related kind of claim the near miss excludes. Neither item says the showcase needs `npm run package` after a `src/lib` change, or that the page leaves out that step."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 625,
+            "cacheCreation": 2139,
+            "cacheRead": 15730,
+            "counted": 2770
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/core-developer-planted-2-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "scripter-planted-1",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "caught",
+          "reason": "item-4 says \"fix.actor accepts `registrar` because the schema is declared normative over the page\". That names the value the page omits and sets the schema against the page's list, so it claims the page's enumeration is incomplete."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "caught",
+          "reason": "item-3 says a doctor INFO result \"is identified by `note` (JSON page + schema), not `info` (doctor page)\". That states the doctor page's `info` field is wrong and names `note` as the discriminator."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "missed",
+          "reason": "No item addresses the exit code of bare `cairn health` on an empty registry. item-6, the closest, is about pages disagreeing on what empty stdout means, which is a different fact, and it never says the page's exit 0 is wrong or that the run exits 3."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 762,
+        "cacheCreation": 2232,
+        "cacheRead": 15730,
+        "counted": 3000
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "caught",
+              "reason": "item-4 says \"fix.actor accepts `registrar` because the schema is declared normative over the page\". That names the value the page omits and sets the schema against the page's list, so it claims the page's enumeration is incomplete."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "caught",
+              "reason": "item-3 says a doctor INFO result \"is identified by `note` (JSON page + schema), not `info` (doctor page)\". That states the doctor page's `info` field is wrong and names `note` as the discriminator."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "missed",
+              "reason": "No item addresses the exit code of bare `cairn health` on an empty registry. item-6, the closest, is about pages disagreeing on what empty stdout means, which is a different fact, and it never says the page's exit 0 is wrong or that the run exits 3."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 762,
+            "cacheCreation": 2232,
+            "cacheRead": 15730,
+            "counted": 3000
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/scripter-planted-1-attempt1.jsonl"
+        }
+      ]
+    },
+    {
+      "id": "scripter-planted-2",
+      "class": "judge-catch",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "plant-1",
+          "ruling": "caught",
+          "reason": "item-8 says actor `registrar` is accepted \"because the schema enums include them, even though the prose excludes them\", which states that the page's list and the schema disagree."
+        },
+        {
+          "itemId": "plant-2",
+          "ruling": "caught",
+          "reason": "item-7 says info results are identified by \"`note` (schema) rather than `info` (doctor page)\". That names the page/schema conflict and gives `note` as the discriminator."
+        },
+        {
+          "itemId": "plant-3",
+          "ruling": "caught",
+          "reason": "item-2 says the JSON page shows \"UNKNOWN/exitCode 3 for an empty registry, while the exit-codes page says bare `cairn health` on an empty registry exits 0\" and calls the two pages conflicting, which is a finding against the page's exit 0."
+        }
+      ],
+      "usage": {
+        "input": 6,
+        "output": 566,
+        "cacheCreation": 2457,
+        "cacheRead": 15730,
+        "counted": 3029
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "plant-1",
+              "ruling": "caught",
+              "reason": "item-8 says actor `registrar` is accepted \"because the schema enums include them, even though the prose excludes them\", which states that the page's list and the schema disagree."
+            },
+            {
+              "itemId": "plant-2",
+              "ruling": "caught",
+              "reason": "item-7 says info results are identified by \"`note` (schema) rather than `info` (doctor page)\". That names the page/schema conflict and gives `note` as the discriminator."
+            },
+            {
+              "itemId": "plant-3",
+              "ruling": "caught",
+              "reason": "item-2 says the JSON page shows \"UNKNOWN/exitCode 3 for an empty registry, while the exit-codes page says bare `cairn health` on an empty registry exits 0\" and calls the two pages conflicting, which is a finding against the page's exit 0."
+            }
+          ],
+          "usage": {
+            "input": 6,
+            "output": 566,
+            "cacheCreation": 2457,
+            "cacheRead": 15730,
+            "counted": 3029
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/scripter-planted-2-attempt1.jsonl"
+        }
+      ]
+    }
+  ],
+  "verified": true,
+  "cliVersion": "2.1.282",
+  "runRoot": "/var/home/glw907/.cache/docs-readers/20260925t182606-305361",
+  "teardown": {
+    "runDirRemoved": true,
+    "containersLeft": 0,
+    "networksLeft": 0
+  }
+}

@@ -63,4 +63,19 @@ describe('parseBatch', () => {
     expect(() => parseBatch(batch([{ ...docsJob, extra: true }]), classes)).toThrow(/unknown field "extra"/);
     expect(() => parseBatch(batch([{ ...docsJob, job: '  ' }]), classes)).toThrow(/job must be a non-empty string/);
   });
+
+  it('accepts a gated batch and a job carrying absent and commit, and rejects an unknown batch field', () => {
+    const gatedJob = { ...docsJob, absent: ['docs/internal/record/', 'CHANGELOG.md'], commit: '3a7485dd' };
+    const parsed = parseBatch(batch([gatedJob], { gated: true }), classes);
+    expect(parsed.gated).toBe(true);
+    expect(parsed.jobs[0].absent).toEqual(['docs/internal/record/', 'CHANGELOG.md']);
+    expect(parsed.jobs[0].commit).toBe('3a7485dd');
+    expect(() => parseBatch(batch([docsJob], { gated: 'yes' }), classes)).toThrow(/gated, when given, must be a boolean/);
+    expect(() => parseBatch(batch([docsJob], { schedule: 'nightly' }), classes)).toThrow(/unknown batch field "schedule"/);
+  });
+
+  it('rejects a job whose absent path climbs out of the tree, and an empty commit', () => {
+    expect(() => parseBatch(batch([{ ...docsJob, absent: ['../secrets.md'] }]), classes)).toThrow(/absent, when given, must be an array/);
+    expect(() => parseBatch(batch([{ ...docsJob, commit: '  ' }]), classes)).toThrow(/commit, when given, must be a non-empty string/);
+  });
 });

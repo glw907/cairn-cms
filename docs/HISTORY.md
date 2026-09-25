@@ -7,6 +7,66 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Docs reset pass 1b, the validation redesign, closed on tuning, 2026-09-24 to 25
+
+Branch `docs-reset-1b`. Plan, ledger, post-mortem, and the program budget draft:
+`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`. Spec:
+`docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`. Records:
+`docs/internal/record/2026-09-24-docs-reset-1b-tuning.md` and
+`2026-09-24-docs-reset-1b-validation.md`. Geoff closed the pass on its tuning record before the
+freeze (O11, 2026-09-25). Tasks 11 to 15 did not run, no freeze tag exists, and every reader class
+goes to pass 2a as advisory.
+
+**What landed.** A pre-registered validation instrument, built and tested but never frozen. The
+reader report gained `steps[]`, `diverged[]`, and `blockedBy`. Prepared trees are git exports
+with one synthetic commit, fixed mtimes, and derived absent lists. The runner gained a freeze
+tool, gated-batch refusal and stamping, an automatic rerun, and three headless judge classes (a
+catch judge, an adjudicator, and a Fable agreement read) over opaque-id packets. New scripts:
+`path-map.ts` (with a proxy mode), `harness-filter.ts`, `oc-curve.ts`, `plant-validity.ts`,
+`lib/chain.ts`, `score.ts`, `session-ledger.ts`, and `audit-transcripts.ts`. Two tuning rounds
+ran: round 0 re-judged pass 1's saved reports, and round 1 ran 12 new Opus reader runs, all
+verified on the first attempt.
+
+**The result.** On-map recall per plant-run was 2 of 16 in round 0 and 1 of 8 in round 1, all
+three catches on one scripter plant. The gated bar needs per-run recall near 0.8. A read-only
+audit of every catch ruling found no judge or criterion defect: of 21 misses, 11 were true misses
+and 10 were noticed only in `ruleCandidates[]`. Readers routed around the defect and filed a
+"the page should say X" candidate, which the spec counts as neither a catch nor a finding.
+Development false findings per control run were 0 in round 1 for five jobs; the scripter's
+rose from 1.5 to 7.
+
+**What the gates caught.** Every build task (Tasks 1 to 7) drew at least one `diff-reviewer`
+fix, with about 44 blocking findings in Tasks 1 to 6 (36 by the segment 2 checkpoint, then 6 and 2
+in Task 6's later reads), each a real defect. Plants leaked through git
+auto-maintenance and index inodes. A stale-path check never fired on a real plant. Catch
+packets showed the unplanted page. Task 7 took four reads, and its third `fix` stopped the
+unattended run for Geoff. Tuning then found three defects no test had caught. Judges never
+received their frozen prompt (`f618743a`), which voided every first-run round 0 ruling. The
+expected rulings included harness-excluded items (`6d5d2e18`). Development mode applied the gated
+two-of-three rule (`407dbb2a`).
+
+**What a later pass would be wrong to rediscover.**
+
+- A job-doing reader routes around a defect and files it as a rule candidate. A scoring rule
+  that counts only `stalls[]`, `assumed[]`, and `diverged[]` misses these by design. The catch
+  field is a design question, not a tuning lever.
+- A live check that a judge "returned rulings" proves nothing about its instructions. An
+  uninstructed judge still emits a well-formed ruling per item. Assert that the prompt reached
+  stdin.
+- A development-mode score must not reuse a gated rule that its run count cannot reach.
+- Resuming a large agent after its prompt cache expires rewrites its whole context. About 7.9M of
+  this pass's 20.07M was such rewrites. Fix rounds after a gap go to a fresh agent with the
+  finding list.
+- Hold the host CLI version from the start of any pass whose runner pins an init baseline per
+  version.
+- Readers cost about 35k per run and judges 3k to 15k. The instrument is cheap; the build
+  chains around it are not.
+
+**Budgets.** Tokens: 20.07M counted by `session-ledger.ts` (conductors 1.57M, subagents 17.16M,
+runner 1.33M; cache reads about 1,006M apart), against a ceiling Geoff raised from 15M to 21M
+(O9) and then 25M (O10). Attended time: 10 planning misses; 4 execution sittings (the O9 and O10
+questions, the third-`fix` stop, and the pre-freeze question).
+
 ## Docs reset pass 1, the writing system, thirteen tasks, 2026-09-23 to 24
 
 Branch `docs-reset-system`, off `main` after the `docs-reset` spec merge. Plan, ledger, and
@@ -84,6 +144,9 @@ the auto-mode classifier. (12) The `xhigh` escalation path is not settable throu
 include cache reads, which the counting rule excludes, so the sum overstates. Reader runs, measured
 by the runner under the rule, total about 2.7M counted. The conductor's estimate is about 9M
 counted, under the raised 16M ceiling (flag 12.8M) and just under the original 9.6M flag. Several rows (pre-flights, some reviews, Task 11's scoring) have no figure.
+**Corrected at pass 1b's close:** the 9M estimate undercounted. Measured from transcripts under the
+counting rule, pass 1 counted about 18.7M (2.32M conductor, 13.64M subagents, about 2.7M readers),
+over the raised 16M ceiling.
 Attended time: 12 planning misses; 4 execution sittings: the planned Task 0 owner sitting, the
 post-Task 2 execution amendments, the ceiling raise, and the Task 11 decision.
 

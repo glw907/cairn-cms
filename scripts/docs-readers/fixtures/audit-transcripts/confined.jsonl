@@ -1,0 +1,3 @@
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "Read", "input": {"file_path": "/tmp/granted-fixture/spec.md"}}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t2", "name": "Bash", "input": {"command": "cd /tmp/granted-fixture/out && ls -la && wc -l *.md", "description": "list output"}}]}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t3", "name": "Write", "input": {"file_path": "/tmp/granted-fixture/out/planter.md", "content": "..."}}]}}

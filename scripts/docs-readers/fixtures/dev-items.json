@@ -1,0 +1,240 @@
+[
+  {
+    "id": "D01",
+    "subject": "verdict and exitCode always agree, left unstated",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D02",
+    "subject": "each JSON payload is one compact line, not pretty-printed",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D03",
+    "subject": "a check reads held only until hold.expired, then fail",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D04",
+    "subject": "errorCount and errorCountTruncated placement inside fields unstated",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D05",
+    "subject": "the errors check does not always carry an errorCount field",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D06",
+    "subject": "topEvents placement and shape inside observed unstated",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D07",
+    "subject": "every held check is named in the acknowledged array",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D08",
+    "subject": "sort collation for checks and acknowledged is byte-wise",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D09",
+    "subject": "degraded meaning: true when a check carries reason.cred-missing",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D10",
+    "subject": "worstFirst ranks by severity class of the worst unacknowledged failure",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D11",
+    "subject": "worstFirst tie order when severity classes match unstated",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D12",
+    "subject": "authCheck row's wire state mapped to its exit contribution",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D13",
+    "subject": "the dir field is symlink-resolved only, not always absolute",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D14",
+    "subject": "a doctor check's fix requires only summary; url is optional",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D15",
+    "subject": "condition-id vocabulary frozen at 1.0 but not located",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "D16",
+    "subject": "the payload carries no severity field for folding a fail",
+    "page": "docs/reference/cli-cairn-doctor.md"
+  },
+  {
+    "id": "D17",
+    "subject": "no discriminator named for the three --json exit-3 cases",
+    "page": "docs/reference/cli-cairn-doctor.md"
+  },
+  {
+    "id": "D18",
+    "subject": "empty stdout under --json can also mean a tool fault",
+    "page": "docs/reference/cli-cairn-exit-codes.md"
+  },
+  {
+    "id": "D19",
+    "subject": "--quiet, --timeout, --color, --theme, --width are root flags on every command",
+    "page": "docs/reference/cli-cairn-exit-codes.md"
+  },
+  {
+    "id": "F1",
+    "subject": "doctor report's jump-list title vs the printed condition phrase",
+    "page": "docs/admin/is-it-working.md"
+  },
+  {
+    "id": "F2",
+    "subject": "whether --color-primary-content's hue rotates along with --color-primary",
+    "page": "docs/extend/design-your-site.md"
+  },
+  {
+    "id": "F3",
+    "subject": "the access map's file path: src/lib/cairn.access.ts vs src/access.ts",
+    "page": "docs/extend/restrict-admin-access.md"
+  },
+  {
+    "id": "F4",
+    "subject": "the setup steps omit the Playwright browser install npm test needs",
+    "page": "CONTRIBUTING.md"
+  },
+  {
+    "id": "F5",
+    "subject": "no page in the docs set states the current published version",
+    "page": "docs/why-cairn.md",
+    "pages": [
+      "docs/why-cairn.md",
+      "docs/admin/before-you-start.md"
+    ]
+  },
+  {
+    "id": "F6",
+    "subject": "npm run check needs the showcase installed first, left unstated",
+    "page": "CONTRIBUTING.md"
+  },
+  {
+    "id": "P01",
+    "subject": "the term for where a save lives before publish (the per-entry branch)",
+    "page": "docs/why-cairn.md"
+  },
+  {
+    "id": "P02",
+    "subject": "whether an editor needs a GitHub account to sign in",
+    "page": "docs/why-cairn.md"
+  },
+  {
+    "id": "P03",
+    "subject": "cairn doctor's directory argument is positional, not a flag",
+    "page": "docs/admin/is-it-working.md"
+  },
+  {
+    "id": "P04",
+    "subject": "the path to migrations/0004_login_nonce.sql inside the npm package",
+    "page": "docs/admin/is-it-working.md"
+  },
+  {
+    "id": "P05",
+    "subject": "wrangler.jsonc bindings required: EMAIL and AUTH_DB d1_databases",
+    "page": "docs/admin/is-it-working.md"
+  },
+  {
+    "id": "P06",
+    "subject": "the /styleguide route path for the live demo surface",
+    "page": "docs/extend/design-your-site.md"
+  },
+  {
+    "id": "P07",
+    "subject": "the $chassis import alias name",
+    "page": "docs/extend/design-your-site.md"
+  },
+  {
+    "id": "P08",
+    "subject": "deleting chassis/feed.ts also requires updating two importing routes",
+    "page": "docs/extend/design-your-site.md"
+  },
+  {
+    "id": "P09",
+    "subject": "the file path for the custom admin screen's section.ts",
+    "page": "docs/extend/add-a-custom-admin-screen.md"
+  },
+  {
+    "id": "P10",
+    "subject": "the createD1AuditSink export name from the sveltekit subpath",
+    "page": "docs/extend/add-a-custom-admin-screen.md"
+  },
+  {
+    "id": "P11",
+    "subject": "declaring an access-map rule for a new admin route",
+    "page": "docs/extend/add-a-custom-admin-screen.md"
+  },
+  {
+    "id": "P12",
+    "subject": "the npm script name check:comments",
+    "page": "CONTRIBUTING.md"
+  },
+  {
+    "id": "P13",
+    "subject": "vitest.config.ts, not a workspace file, names the test globs",
+    "page": "CONTRIBUTING.md"
+  },
+  {
+    "id": "P14",
+    "subject": "npm run package is needed after editing src/lib for the showcase",
+    "page": "CONTRIBUTING.md"
+  },
+  {
+    "id": "P15",
+    "subject": "the actor field has four values, including registrar",
+    "page": "docs/reference/cli-cairn-json-output.md"
+  },
+  {
+    "id": "P16",
+    "subject": "an info check's discriminator is the note field, not info",
+    "page": "docs/reference/cli-cairn-doctor.md"
+  },
+  {
+    "id": "P17",
+    "subject": "the exit code for cairn health on an empty registry",
+    "page": "docs/reference/cli-cairn-exit-codes.md"
+  },
+  {
+    "id": "R1",
+    "subject": "a free-tier claim contradicts the $5/month Workers Paid plan requirement",
+    "page": "docs/why-cairn.md",
+    "pages": [
+      "docs/why-cairn.md",
+      "docs/admin/before-you-start.md"
+    ]
+  },
+  {
+    "id": "R2",
+    "subject": "the 0.96.0 changelog section still carries a release-process placeholder",
+    "page": "docs/extend/migration-notes.md"
+  },
+  {
+    "id": "R3",
+    "subject": "self-contradictory sentence on whether createGithubApp is the only provider",
+    "page": "docs/extend/sign-in-through-your-organization.md"
+  },
+  {
+    "id": "R4",
+    "subject": "doctor sample's stated skip title vs its printed skip text",
+    "page": "docs/admin/is-it-working.md"
+  }
+]

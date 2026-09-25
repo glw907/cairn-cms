@@ -283,25 +283,55 @@ The original decision framing, for the record:
 ## Now
 
 - **The docs reset (spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`, Geoff,
-  2026-09-22 to 24).** cairn's docs are rebuilt from scratch on a writing system that is tested by
+  2026-09-22 to 25).** cairn's docs are rebuilt from scratch on a writing system that is tested by
   confined reader agents. Pass 1 built that system and closed on 2026-09-24 (plan and post-mortem:
-  `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`). Its validation failed on the
-  validation's own design, not on the system
-  (`docs/internal/record/2026-09-23-docs-reset-validation.md`). The sequence now runs:
-  - **Pass 1b, the validation redesign (next).** A brainstorm, then a pre-registered plan, then a
-    rerun on the merged system. Its open questions: where plants go, since "on the job's path"
-    conflicts with a planter blind to readers (candidate: derive each job's path from the pages
-    baseline readers opened); counting rule candidates apart from findings, under a new
-    pre-registered false-positive cap; whether the bar measures what a job tester should catch
-    rather than exhaustive detection; and whether runs stay two Opus plus one Sonnet, since Sonnet
-    readers verified 8 of 13. Detail: the pass 1 ledger's "decision" row.
-  - **Pass 2a, the audience record and the trial,** only after pass 1b passes. It defines the
-    profile-file format together with the profiles (the spec's pass 1 amendment). Its inputs are
-    ready: the exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
-    `docs/internal/record/docs-exemplars.md`) and the readers' plan token. One content input for
-    the designer's theme task guide (Geoff, 2026-09-24): a short general section on giving a
-    DaisyUI-built site its own identity through a theme, so it does not read as stock DaisyUI.
-    It links to DaisyUI's theme docs rather than restating them.
+  `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`). Pass 1b built a pre-registered
+  validation instrument and closed on its tuning record on 2026-09-25, before the freeze (O11;
+  plan, post-mortem, and a draft program budget:
+  `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`). No gated verdict exists. The
+  sequence now runs:
+  - **Pass 2a, the audience record and the trial (next).** It defines the profile-file format
+    together with the profiles (the spec's pass 1 amendment). Its inputs:
+    - **Every reader class is advisory** (`docs/internal/record/2026-09-24-docs-reset-1b-validation.md`,
+      with the cause per class). Development on-map recall per plant-run, on the tuning proxy map, was 2 of 16 and 1 of 8,
+      against a gated bar needing about 0.8.
+    - **Trial readers are Opus only.** No Sonnet share is validated.
+    - **The labeled defect set is empty.** The spec assigned it pass 1b's test plants, and the
+      planter never ran, so pass 2a supplies its own labeled set for the grader comparison.
+    - **The trial redesign the pass 1b spec hands over** ("Finding for pass 2a"). As fixed, the
+      trial keeps a truly one-third-better chain about half the time, so pass 2a resizes it or
+      restates its decision rule. Its measuring jobs must be disjoint from the chain's
+      reader-stage jobs, or it adds an independent measure. Program ruling O12 (Geoff, 2026-09-25)
+      drops the formal chain-depth trial: pass 2a runs at a ceiling of 6M and opens with a go/no-go
+      reader pilot, and the chain's depth follows reader evidence page by page (STATUS).
+    - **The catch-field design finding.** Readers route around a defect and file it only as a
+      rule candidate (10 of 21 audited misses), which the spec counts as neither a catch nor a
+      finding. Any instrument pass 2a gates on needs a field design that captures a
+      routed-around defect as a claim.
+    - **The v2 page chain ignores the new report fields.** `docs-page-chain-v2.js` types `stalls`
+      and `assumed` as strings and never reads `diverged[]` (`~/.claude/workflows/`, lines
+      389 to 390 at pass 1b's pre-flight).
+    - **Carried notes from pass 1b's last review** (comment-only, open in
+      `scripts/docs-readers/`): the comment at `lib/runner.ts:731-734` implies a prompt hash match
+      that nothing enforces; the comment at `lib/class-schema.ts:68-69` is garbled; the
+      development catch test uses one on-map plant, so an off-map plant or a non-Opus run in its
+      fixture would pin those filters.
+    - **Freeze-readiness items,** moot without a freeze but open if pass 2a freezes the
+      instrument (full list: `docs/superpowers/research/2026-09-24-pass-1b-carries.md`). Packet
+      `tree/` directories carry no digest, and a file added to a packet after the build goes
+      unnoticed. The chain cannot detect an edit to its own last line and does not check the
+      genesis path. A gated batch file can live outside the manifest and the chain. The planted
+      batch file and tree digests are not order-checked against the chain. The held-out job's one
+      `commit` must map to its two page pins. The once-read judge prompt is not compared with its
+      manifest hash. The transcript audit does not follow `cd` in a subshell or `pushd`. Build the
+      freeze with `--seed oc-curve=20260924`, pass the nine held-out ids as `--heldout-ids` in
+      gated scoring, include unverified mapping runs in the adjudicator batch, and name the
+      published docs roots in the planter's input directory.
+    - The exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
+      `docs/internal/record/docs-exemplars.md`) and the readers' plan token are ready.
+    - One content input for the designer's theme task guide (Geoff, 2026-09-24): a short general
+      section on giving a DaisyUI-built site its own identity through a theme, so it does not read
+      as stock DaisyUI. It links to DaisyUI's theme docs rather than restating them.
   - **Pass 2b, the ledger, the structure, and the outline.** Two carry-forwards from pass 1 land
     here. A multi-page chain run shares one retag list across its pages, since a stage-1 fact read
     on one page can undo a legitimate retag another page's read made. A scaffolded-site reader

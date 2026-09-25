@@ -1,0 +1,168 @@
+{
+  "ok": true,
+  "mode": "development",
+  "byJob": {
+    "evaluator": {
+      "job": "evaluator",
+      "onMapPlantCount": 0,
+      "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 0,
+        "rate": null,
+        "interval": null
+      },
+      "verifiedControlRunCount": 2,
+      "totalFalseFindings": 3,
+      "falseFindingsPerVerifiedControlRun": 1.5
+    },
+    "operator": {
+      "job": "operator",
+      "onMapPlantCount": 2,
+      "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 4,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.602364635616482
+        }
+      },
+      "verifiedControlRunCount": 2,
+      "totalFalseFindings": 3,
+      "falseFindingsPerVerifiedControlRun": 1.5
+    },
+    "designer": {
+      "job": "designer",
+      "onMapPlantCount": 2,
+      "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 4,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.602364635616482
+        }
+      },
+      "verifiedControlRunCount": 2,
+      "totalFalseFindings": 1,
+      "falseFindingsPerVerifiedControlRun": 0.5
+    },
+    "extender": {
+      "job": "extender",
+      "onMapPlantCount": 2,
+      "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 4,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.602364635616482
+        }
+      },
+      "verifiedControlRunCount": 2,
+      "totalFalseFindings": 0,
+      "falseFindingsPerVerifiedControlRun": 0
+    },
+    "core-developer": {
+      "job": "core-developer",
+      "onMapPlantCount": 1,
+      "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 2,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.8418861169915779
+        }
+      },
+      "verifiedControlRunCount": 2,
+      "totalFalseFindings": 0,
+      "falseFindingsPerVerifiedControlRun": 0
+    },
+    "scripter": {
+      "job": "scripter",
+      "onMapPlantCount": 1,
+      "onMapCaught": 1,
+      "onMapPlantRunRecall": {
+        "caught": 2,
+        "total": 2,
+        "rate": 1,
+        "interval": {
+          "lower": 0.1581138830084189,
+          "upper": 1
+        }
+      },
+      "verifiedControlRunCount": 2,
+      "totalFalseFindings": 3,
+      "falseFindingsPerVerifiedControlRun": 1.5
+    }
+  },
+  "onMapRecall": {
+    "docs-only": {
+      "caught": 0,
+      "total": 0,
+      "rate": null,
+      "interval": null
+    },
+    "docs-and-binary": {
+      "caught": 0,
+      "total": 2,
+      "rate": 0,
+      "interval": {
+        "lower": 0,
+        "upper": 0.8418861169915779
+      }
+    },
+    "docs-and-site": {
+      "caught": 0,
+      "total": 4,
+      "rate": 0,
+      "interval": {
+        "lower": 0,
+        "upper": 0.602364635616482
+      }
+    },
+    "repository": {
+      "caught": 1,
+      "total": 2,
+      "rate": 0.5,
+      "interval": {
+        "lower": 0.012579117093425029,
+        "upper": 0.9874208829065745
+      }
+    }
+  },
+  "onMapPlantRunRecall": {
+    "caught": 2,
+    "total": 16,
+    "rate": 0.125,
+    "interval": {
+      "lower": 0.015513603815413918,
+      "upper": 0.38347623684927457
+    }
+  },
+  "notes": [
+    "job \"evaluator-control-3\": appears in 2 reports (/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json, /var/home/glw907/.cache/docs-readers/results/validation-rerun-20260924/report.json) with no judge key to resolve which copy to score; no copy is an Opus run, so every copy is dropped",
+    "job \"operator-planted-2\": superseded copy from \"/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json\" (runId \"20260924t081831-4ca4ee\") dropped in favor of \"/var/home/glw907/.cache/docs-readers/results/validation-rerun-20260924/report.json\" (runId \"20260924t085430-908783\")",
+    "job \"operator-control-1\": superseded copy from \"/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json\" (runId \"20260924t081831-4ca4ee\") dropped in favor of \"/var/home/glw907/.cache/docs-readers/results/validation-rerun-20260924/report.json\" (runId \"20260924t085430-908783\")",
+    "job \"designer-planted-3\": appears in 2 reports (/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json, /var/home/glw907/.cache/docs-readers/results/validation-rerun-20260924/report.json) with no judge key to resolve which copy to score; no copy is an Opus run, so every copy is dropped",
+    "job \"designer-control-3\": appears in 2 reports (/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json, /var/home/glw907/.cache/docs-readers/results/validation-rerun-20260924/report.json) with no judge key to resolve which copy to score; no copy is an Opus run, so every copy is dropped",
+    "job \"extender-planted-3\": appears in 2 reports (/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json, /var/home/glw907/.cache/docs-readers/results/validation-rerun-20260924/report.json) with no judge key to resolve which copy to score; no copy is an Opus run, so every copy is dropped",
+    "job \"scripter-planted-3\": appears in 2 reports (/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json, /var/home/glw907/.cache/docs-readers/results/validation-rerun-20260924/report.json) with no judge key to resolve which copy to score; no copy is an Opus run, so every copy is dropped",
+    "job \"scripter-heldout-3\": appears in 2 reports (/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json, /var/home/glw907/.cache/docs-readers/results/validation-rerun-20260924/report.json) with no judge key to resolve which copy to score; no copy is an Opus run, so every copy is dropped",
+    "job \"evaluator-planted-3\": no catch-judge key and rulings joined for it",
+    "job \"operator-planted-3\": no catch-judge key and rulings joined for it",
+    "job \"core-developer-planted-3\": no catch-judge key and rulings joined for it",
+    "job \"scripter-heldout-1\": no catch-judge key and rulings joined for it",
+    "job \"scripter-heldout-2\": no catch-judge key and rulings joined for it",
+    "job \"operator-control-3\": no adjudicator key and rulings joined for it",
+    "job \"extender-control-3\": no adjudicator key and rulings joined for it",
+    "job \"core-developer-control-3\": no adjudicator key and rulings joined for it",
+    "job \"scripter-control-3\": no adjudicator key and rulings joined for it"
+  ]
+}

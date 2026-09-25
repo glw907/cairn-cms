@@ -1,0 +1,2 @@
+{"type": "assistant", "message": {"id": "msg-2", "usage": {"input_tokens": 20, "output_tokens": 8, "cache_creation_input_tokens": 4, "cache_read_input_tokens": 50}}, "timestamp": "2026-09-24T00:00:02.000Z"}
+{"type": "assistant", "message": {"id": "sub-msg-1", "usage": {"input_tokens": 3, "output_tokens": 1, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0}}, "timestamp": "2026-09-24T00:05:00.000Z"}

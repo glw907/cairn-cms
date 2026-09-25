@@ -20,13 +20,15 @@ function savedJob(verified: Partial<JobReport['verified']> = {}): JobReport {
     assumed: [],
     pagesRead: [],
     quotes: [],
+    steps: [],
+    diverged: [],
     checks: [],
     ruleCandidates: [],
     denials: [],
     proxyBlocked: [],
     packageFetches: [],
     usage: { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, counted: 0 },
-    verified: { ok: true, init: true, canaries: true, quotes: [], problems: [], ...verified },
+    verified: { ok: true, init: true, canaries: true, quotes: [], steps: [], diverged: [], problems: [], ...verified },
   };
 }
 

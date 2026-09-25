@@ -1,0 +1,57 @@
+[
+  {
+    "jobId": "evaluator-control-1",
+    "excluded": 1,
+    "remaining": 2,
+    "adjudicatorNotes": 0,
+    "excludedReasons": [
+      "item-3: absent path \"docs/admin/own-your-domain.md\""
+    ]
+  },
+  {
+    "jobId": "operator-control-1",
+    "excluded": 1,
+    "remaining": 2,
+    "adjudicatorNotes": 0,
+    "excludedReasons": [
+      "item-1: denied command \"ls -la\""
+    ]
+  },
+  {
+    "jobId": "designer-control-1",
+    "excluded": 2,
+    "remaining": 4,
+    "adjudicatorNotes": 0,
+    "excludedReasons": [
+      "item-1: denied command \"npm run\"",
+      "item-4: denied command \"npm run\""
+    ]
+  },
+  {
+    "jobId": "extender-control-1",
+    "excluded": 0,
+    "remaining": 5,
+    "adjudicatorNotes": 0,
+    "excludedReasons": []
+  },
+  {
+    "jobId": "core-developer-control-1",
+    "excluded": 3,
+    "remaining": 7,
+    "adjudicatorNotes": 0,
+    "excludedReasons": [
+      "item-1: denied command \"npm run\"",
+      "item-2: denied command \"npx vitest\"",
+      "item-10: denied command \"npm run\""
+    ]
+  },
+  {
+    "jobId": "scripter-control-1",
+    "excluded": 1,
+    "remaining": 12,
+    "adjudicatorNotes": 0,
+    "excludedReasons": [
+      "item-1: denied command \"python3 /reader/job/check_cairn_json.py\""
+    ]
+  }
+]

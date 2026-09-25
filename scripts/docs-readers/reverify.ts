@@ -48,6 +48,18 @@ export function reverifyRoot(prepared: string | undefined, repoRoot: string): st
 }
 
 /**
+ * The path to a saved job's final attempt's transcript, relative to the results directory. A
+ * report with no `attempts` (the shape a run saved before attempts existed carries) falls back to
+ * the single transcript a job's own id once named.
+ * @param job - The saved report's own job entry.
+ * @returns The transcript file's path, relative to the results directory.
+ */
+export function transcriptPathFor(job: JobReport): string {
+  const last = job.attempts?.at(-1);
+  return last ? last.transcript : `transcripts/${job.id}.jsonl`;
+}
+
+/**
  * Re-derive one job's verified status from its saved transcript. Its init and canary verdicts are
  * carried over from the original report unchanged, since re-verification only re-runs the
  * transcript-derived parts (pages read and quote verification) a fix to that logic would change.
@@ -100,7 +112,7 @@ async function main(args: string[]): Promise<number> {
   const rewritten: JobReport[] = [];
   for (const job of original.jobs) {
     const batchJob = jobsById.get(job.id);
-    const transcriptPath = join(resultsDir, 'transcripts', `${job.id}.jsonl`);
+    const transcriptPath = join(resultsDir, transcriptPathFor(job));
     if (!batchJob || !existsSync(transcriptPath)) {
       process.stdout.write(`${job.id}: SKIPPED (${!batchJob ? `not found in ${batchFile}` : 'no saved transcript'})\n`);
       rewritten.push(job);

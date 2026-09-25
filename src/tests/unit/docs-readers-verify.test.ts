@@ -123,7 +123,15 @@ describe('verifyReport against fixture transcripts', () => {
     const cwd = effectiveCwd(buildCalls);
     expect(cwd).toBe('/reader/job/site');
     const verified = verifyReport({
-      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: '../docs/guide.md', line: 3, text: 'Install the tool before you begin.' }], ruleCandidates: [] },
+      report: {
+        outcome: 'done',
+        stalls: [],
+        assumed: [],
+        quotes: [{ path: '../docs/guide.md', line: 3, text: 'Install the tool before you begin.' }],
+        ruleCandidates: [],
+        steps: [],
+        diverged: [],
+      },
       pagesRead: ['docs/guide.md'],
       docsSet: ['docs'],
       root: PREPARED,
@@ -158,6 +166,8 @@ describe('verifyReport against fixture transcripts', () => {
           { path: 'docs/other.md', line: 3, text: 'Change the settings file here.' },
         ],
         ruleCandidates: [],
+        steps: [],
+        diverged: [],
       },
       pagesRead: ['docs/guide.md'],
       docsSet: ['docs'],
@@ -173,7 +183,7 @@ describe('verifyReport against fixture transcripts', () => {
     // A hit on line 1 of docs/other.md must not excuse a quote of line 3 on the very same page:
     // the overlap check runs line by line, never at the whole-page grain.
     const verified = verifyReport({
-      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }], ruleCandidates: [] },
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }], ruleCandidates: [], steps: [], diverged: [] },
       pagesRead: [],
       docsSet: ['docs'],
       root: PREPARED,
@@ -191,7 +201,7 @@ describe('verifyReport against fixture transcripts', () => {
     const contextOnly = { id: 't', name: 'Grep', input: { pattern: 'x', output_mode: 'content', path: '/reader/job/docs' }, result: { isError: false, text: 'docs/other.md-3-Change the settings file here.' } };
     const grepHits = grepHitPages([contextOnly], ['docs']);
     const verified = verifyReport({
-      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }], ruleCandidates: [] },
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }], ruleCandidates: [], steps: [], diverged: [] },
       pagesRead: [],
       docsSet: ['docs'],
       root: PREPARED,
@@ -204,7 +214,7 @@ describe('verifyReport against fixture transcripts', () => {
 
   it('does not force a page a broadly-scoped Grep only surfaced, but the report never quoted, to carry a quote', () => {
     const verified = verifyReport({
-      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/guide.md', line: 3, text: 'Install the tool before you begin.' }], ruleCandidates: [] },
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/guide.md', line: 3, text: 'Install the tool before you begin.' }], ruleCandidates: [], steps: [], diverged: [] },
       pagesRead: ['docs/guide.md'],
       docsSet: ['docs'],
       root: PREPARED,
@@ -217,7 +227,7 @@ describe('verifyReport against fixture transcripts', () => {
 
   it('does not excuse an unverified quote just because its page appeared in a Grep hit', () => {
     const verified = verifyReport({
-      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Invented text.' }], ruleCandidates: [] },
+      report: { outcome: 'done', stalls: [], assumed: [], quotes: [{ path: 'docs/other.md', line: 3, text: 'Invented text.' }], ruleCandidates: [], steps: [], diverged: [] },
       pagesRead: [],
       docsSet: ['docs'],
       root: PREPARED,
@@ -244,5 +254,90 @@ describe('verifyReport against fixture transcripts', () => {
       'canary loaded: 1 canary string(s) in the transcript',
       'no structured report',
     ]);
+  });
+});
+
+describe('verifyReport: steps and diverged quotes', () => {
+  const cleanQuote = { path: 'docs/guide.md', line: 3, text: 'Install the tool before you begin.' };
+  const baseReport = { outcome: 'done' as const, stalls: [], assumed: [], quotes: [cleanQuote], ruleCandidates: [] };
+  const baseArgs = { pagesRead: ['docs/guide.md'], docsSet: ['docs'], root: PREPARED, init: passingInit, canariesFound: [] };
+
+  it('verifies a steps[] quote cited one line off, the same tolerance a top-level quote gets', () => {
+    const verified = verifyReport({
+      report: {
+        ...baseReport,
+        steps: [{ quote: { path: 'docs/guide.md', line: 4, text: 'Install the tool before you begin.' }, decision: 'installed first' }],
+        diverged: [],
+      },
+      ...baseArgs,
+    });
+    expect(verified.steps[0].quote.ok).toBe(true);
+    expect(verified.ok).toBe(true);
+    expect(verified.problems).toEqual([]);
+  });
+
+  it('fails the run when a steps[] quote is two lines off, past the one-line tolerance', () => {
+    const verified = verifyReport({
+      report: {
+        ...baseReport,
+        steps: [{ quote: { path: 'docs/guide.md', line: 5, text: 'Install the tool before you begin.' }, decision: 'installed first' }],
+        diverged: [],
+      },
+      ...baseArgs,
+    });
+    expect(verified.ok).toBe(false);
+    expect(verified.problems).toEqual(['step quote docs/guide.md:5 unverified: text starts on line 3, not 5']);
+  });
+
+  it('verifies a diverged[] quote cited one line off, and fails the run two lines off', () => {
+    const oneOff = verifyReport({
+      report: {
+        ...baseReport,
+        steps: [],
+        diverged: [{ quote: { path: 'docs/guide.md', line: 2, text: 'Install the tool' }, didInstead: 'skipped ahead', why: 'not covered', blockedBy: null }],
+      },
+      ...baseArgs,
+    });
+    expect(oneOff.diverged[0].quote.ok).toBe(true);
+    expect(oneOff.ok).toBe(true);
+
+    const twoOff = verifyReport({
+      report: {
+        ...baseReport,
+        steps: [],
+        diverged: [{ quote: { path: 'docs/guide.md', line: 1, text: 'Install the tool' }, didInstead: 'skipped ahead', why: 'not covered', blockedBy: null }],
+      },
+      ...baseArgs,
+    });
+    expect(twoOff.ok).toBe(false);
+    expect(twoOff.problems).toEqual(['diverged quote docs/guide.md:1 unverified: text starts on line 3, not 1']);
+  });
+
+  it('fails the run when a steps[] quote verifies but cites a docs-set page the transcript never shows read', () => {
+    const verified = verifyReport({
+      report: {
+        ...baseReport,
+        steps: [{ quote: { path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }, decision: 'used the settings page' }],
+        diverged: [],
+      },
+      ...baseArgs,
+    });
+    expect(verified.steps[0].quote.ok).toBe(true);
+    expect(verified.ok).toBe(false);
+    expect(verified.problems).toEqual(['step quote docs/other.md:3 cites a page the transcript never shows read']);
+  });
+
+  it('fails the run when a diverged[] quote verifies but cites a docs-set page the transcript never shows read', () => {
+    const verified = verifyReport({
+      report: {
+        ...baseReport,
+        steps: [],
+        diverged: [{ quote: { path: 'docs/other.md', line: 3, text: 'Change the settings file here.' }, didInstead: 'skipped ahead', why: 'not covered', blockedBy: null }],
+      },
+      ...baseArgs,
+    });
+    expect(verified.diverged[0].quote.ok).toBe(true);
+    expect(verified.ok).toBe(false);
+    expect(verified.problems).toEqual(['diverged quote docs/other.md:3 cites a page the transcript never shows read']);
   });
 });

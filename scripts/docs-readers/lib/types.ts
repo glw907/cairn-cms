@@ -29,6 +29,10 @@ export interface Job {
   docsSet: string[];
   prepared?: string;
   timeoutMinutes: number;
+  /** Repository-relative paths this job's tree excludes, a directory given with a trailing slash. */
+  absent?: string[];
+  /** The commit this job's pages were pinned to. */
+  commit?: string;
 }
 
 /** A parsed batch. */
@@ -37,6 +41,8 @@ export interface Batch {
   concurrency: number;
   budgetTokens: number;
   jobs: Job[];
+  /** Whether this batch's inputs must verify against the freeze manifest before any container starts. */
+  gated?: boolean;
 }
 
 /** An Anthropic API `usage` block. */
@@ -79,6 +85,8 @@ export interface StreamEvent {
   is_error?: boolean;
   api_error_status?: number | null;
   message?: { id?: string; content?: ContentBlock[] | string; usage?: ApiUsage };
+  /** The model id the init event reports for the session (the `system`/`init` event only). */
+  model?: string;
   rate_limit_info?: { status?: string };
   permission_denials?: Array<{ tool_name: string; tool_use_id?: string; tool_input?: unknown }>;
   modelUsage?: Record<string, ModelUsage>;
@@ -141,13 +149,49 @@ export interface VerifiedQuote {
   endLine?: number;
 }
 
+/** A stall or assumption entry: its text, and what blocked the reader there, when anything did. */
+export interface BlockedEntry {
+  text: string;
+  blockedBy: string | null;
+}
+
+/** One instruction the reader followed or statement it relied on, and the decision it supported. */
+export interface Step {
+  quote: Quote;
+  decision: string;
+}
+
+/** A step whose quote has gone through verification. */
+export interface VerifiedStep {
+  quote: VerifiedQuote;
+  decision: string;
+}
+
+/** A place the reader did something other than what a page said, including a workaround that worked. */
+export interface Diverged {
+  quote: Quote;
+  didInstead: string;
+  why: string;
+  blockedBy: string | null;
+}
+
+/** A divergence entry whose quote has gone through verification. */
+export interface VerifiedDiverged {
+  quote: VerifiedQuote;
+  didInstead: string;
+  why: string;
+  blockedBy: string | null;
+}
+
 /** The reader's structured report. */
 export interface ReaderReport {
   outcome: 'done' | 'stalled' | 'refused';
-  stalls: string[];
-  assumed: string[];
+  stalls: BlockedEntry[];
+  assumed: BlockedEntry[];
   quotes: Quote[];
   ruleCandidates: string[];
+  steps: Step[];
+  diverged: Diverged[];
 }
 
 /** The init check's result. */
@@ -168,6 +212,8 @@ export interface Verified {
   init: boolean;
   canaries: boolean;
   quotes: VerifiedQuote[];
+  steps: VerifiedStep[];
+  diverged: VerifiedDiverged[];
   problems: string[];
 }
 
@@ -194,17 +240,23 @@ export interface ProxyRecord {
   time?: string;
 }
 
-/** A job report: outcome `aborted` and `error` are the runner's, the other three the reader's. */
-export interface JobReport {
-  id: string;
-  class: string;
-  model: string;
+/**
+ * The fields one run attempt at a job produces: outcome `aborted` and `error` are the runner's,
+ * the other three the reader's. A `JobReport`'s own top-level fields carry this shape too,
+ * mirroring the final attempt, so a caller that never needs per-attempt detail reads them the
+ * same way it always has.
+ */
+export interface RunOutcome {
+  /** The model id the init event reported for this run, when the run started at all. */
+  initModel?: string;
   outcome: 'done' | 'stalled' | 'refused' | 'aborted' | 'error';
   abortReason?: string;
-  stalls: string[];
-  assumed: string[];
+  stalls: BlockedEntry[];
+  assumed: BlockedEntry[];
   pagesRead: string[];
   quotes: VerifiedQuote[];
+  steps: VerifiedStep[];
+  diverged: VerifiedDiverged[];
   checks: unknown[];
   ruleCandidates: string[];
   denials: Denial[];
@@ -212,6 +264,104 @@ export interface JobReport {
   packageFetches: PackageFetch[];
   usage: ReportUsage;
   verified: Verified;
+}
+
+/** Why one attempt at a job ran. */
+export type AttemptCause = 'initial' | 'unverified' | 'crashed' | 'timedOut' | 'noReport';
+
+/**
+ * One run attempt at a job, with its own full outcome (a non-final attempt's result is kept, not
+ * discarded). The runner keeps every attempt it made; exactly one is `final`.
+ */
+export interface Attempt extends RunOutcome {
+  cause: AttemptCause;
+  final: boolean;
+  /** This attempt's own transcript file, relative to the results directory. */
+  transcript: string;
+}
+
+/** The freeze manifest a gated batch's report was stamped against. */
+export interface FreezeStamp {
+  tag: string;
+  manifestHash: string;
+  chainHead: string;
+}
+
+/** A job report: its top-level fields mirror the final attempt (see `RunOutcome`). */
+export interface JobReport extends RunOutcome {
+  id: string;
+  class: string;
+  model: string;
+  /**
+   * Every counted attempt the runner made at this job. A fresh, unstopped run's report always
+   * carries at least one entry, even a single successful attempt; a report loaded from before
+   * attempts existed (the earlier saved shape) may omit it, and so does a `stoppedBy` report with
+   * zero counted attempts.
+   */
+  attempts?: Attempt[];
+  /**
+   * Set when a batch-level stop (a rate limit, an authentication failure, or a budget stop) left
+   * this job with no final attempt: it never started, an attempt in flight was cut short, or a
+   * warranted rerun never got to start. `pendingCause` names the cause its next attempt runs
+   * under, on resume.
+   */
+  stoppedBy?: 'rateLimit' | 'auth' | 'budget';
+  /** The cause a resumed attempt at this job runs under. Set only alongside `stoppedBy`. */
+  pendingCause?: AttemptCause;
+  /** The freeze manifest this report was gated against. Set only on a gated batch's report. */
+  freeze?: FreezeStamp;
+}
+
+/** One catch judge ruling for a plant item in its packet. */
+export interface CatchRuling {
+  itemId: string;
+  ruling: 'caught' | 'missed';
+  reason: string;
+}
+
+/** The catch judge's structured output: one ruling per plant item its packet carried. */
+export interface CatchJudgeOutput {
+  rulings: CatchRuling[];
+}
+
+/** How the adjudicator classified one catch-field item before ruling it. */
+export type AdjudicationClass = 'finding' | 'interpretation' | 'notAClaim';
+
+/** An adjudication that classified its item as a finding: it also carries the real/false/harness ruling and the subject group the finding pools under. */
+export interface FindingAdjudication {
+  itemId: string;
+  class: 'finding';
+  /** The group items sharing a subject (same page, same claimed fact) are pooled under. */
+  subjectGroupId: string;
+  ruling: 'real' | 'false' | 'harness';
+  reason: string;
+}
+
+/** An adjudication that classified its item as an interpretation choice or not a claim at all. */
+export interface NonFindingAdjudication {
+  itemId: string;
+  class: 'interpretation' | 'notAClaim';
+  reason: string;
+}
+
+/** One adjudicator ruling for a catch-field item in its packet. */
+export type Adjudication = FindingAdjudication | NonFindingAdjudication;
+
+/** The adjudicator's structured output: one adjudication per catch-field item its packet carried. */
+export interface AdjudicatorOutput {
+  adjudications: Adjudication[];
+}
+
+/** One agreement read's ruling over a re-ruled finding or catch call the scorer's sample drew. */
+export interface AgreementRuling {
+  itemId: string;
+  ruling: 'real' | 'false' | 'harness' | 'caught' | 'missed';
+  reason: string;
+}
+
+/** The agreement read's structured output: one ruling per sampled item. */
+export interface AgreementOutput {
+  rulings: AgreementRuling[];
 }
 
 /** Why a batch stopped. */

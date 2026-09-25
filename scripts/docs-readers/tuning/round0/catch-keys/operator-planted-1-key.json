@@ -1,0 +1,59 @@
+{
+  "kind": "catch",
+  "builtFrom": "sources",
+  "report": {
+    "path": "/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json",
+    "jobId": "operator-planted-1",
+    "attempt": 1,
+    "runId": "20260924t081831-4ca4ee"
+  },
+  "plants": {
+    "plant-1": {
+      "plantId": "P03"
+    },
+    "plant-2": {
+      "plantId": "P04"
+    },
+    "plant-3": {
+      "plantId": "P05"
+    }
+  },
+  "items": {
+    "item-1": {
+      "field": "stalls",
+      "sourceIndex": 0
+    },
+    "item-2": {
+      "field": "assumed",
+      "sourceIndex": 0
+    },
+    "item-3": {
+      "field": "assumed",
+      "sourceIndex": 1
+    },
+    "item-4": {
+      "field": "assumed",
+      "sourceIndex": 2
+    },
+    "item-5": {
+      "field": "assumed",
+      "sourceIndex": 3
+    },
+    "item-6": {
+      "field": "assumed",
+      "sourceIndex": 4
+    }
+  },
+  "inputs": {
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/batches/validation.json": "db9459a82d206590b6c927dbcb0489d190743c8b2d67c216a90c9f687c014162",
+    "/var/home/glw907/.cache/docs-readers/results/validation-20260924/report.json": "a53c0eb33ed834afeb6e90424a17fe50d621934306c9fa511e2515c01e106556",
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/prompts/criteria/dev-plants.json": "32ed43880954bc6d4da04a0e8390ddef12b5aeaa4f7a7f63db2017184b0d6f7f",
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/fixtures/dev-plants.json": "f166fb31526a5918966f4c96f2368c76a6523283b5664ab56fa7f44fdba1aac3",
+    "/var/home/glw907/.cache/docs-readers/prepared/validation/operator-planted/docs/admin/is-it-working.md": "bd6c436672773ca3caf438518c9a3f950d3e765b5d7b8d4a9abf5a99b2934a7e",
+    "index.json": "841eb93e74116c9c1ad7e9802dc87920932dbcc5bba786fd21483b71a0e2c094",
+    "items.json": "198a664b3107cf54d592acdc4627b2d54e169bd5b6e7212c4f8c12550905cc1d",
+    "job.json": "625b36c88319a1a974897f78612e4d2b050f07cd25c75a3f19bba41672095265",
+    "pages/docs/admin/is-it-working.md": "bd6c436672773ca3caf438518c9a3f950d3e765b5d7b8d4a9abf5a99b2934a7e",
+    "plants.json": "b38eeca61762594024bf43433ad90ebf246739170ac035632aa9de9448fc4b52"
+  }
+}

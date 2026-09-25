@@ -4,14 +4,26 @@
  *
  * Usage:
  *   npx tsx scripts/docs-readers/run.ts BATCH_JSON [--out DIR] [--ledger FILE]
+ *   npx tsx scripts/docs-readers/run.ts BATCH_JSON --resume DIR
  *   npx tsx scripts/docs-readers/run.ts --probe-init [--class NAME]
  *   npx tsx scripts/docs-readers/run.ts --ledger-total [--ledger FILE]
  *
  * A batch run checks the reader token, runs every job in its own confined container, writes the
  * scrubbed batch report and transcripts under `--out`, appends usage to the ledger, and tears
  * every container, network, and per-run directory down. It exits 0 only when the batch completed,
- * every report verified, and teardown left nothing behind. `--probe-init` prints the init fields
- * a class's session shows under this CLI version, for pinning in `init-baseline.json`.
+ * every report verified, and teardown left nothing behind. A batch marked `gated` is checked
+ * against the freeze manifest before any container starts, and its reports carry the stamp;
+ * `--resume DIR` re-runs only the jobs a prior run there left `stoppedBy` a rate limit, an
+ * authentication failure, or a budget stop, and merges the result back into that run's
+ * `report.json`. `--probe-init` prints the init fields a class's session shows under this CLI
+ * version, for pinning in `init-baseline.json`.
+ *
+ * A batch whose every job's class is a judge class (`judge-catch`, `judge-adjudicator`, or
+ * `judge-agreement`) runs through the judge path instead: the catch judge, the adjudicator, or
+ * the agreement read, gated against the freeze manifest's `models.catchJudge`, `.adjudicator`, or
+ * `.agreement` in place of `.reader`, with each job's expected items read from the `key.json`
+ * beside its packet. A batch mixing a judge class with a reader class, or mixing two judge kinds,
+ * is refused before any container starts.
  *
  * The reader token is read from `CAIRN_DOCS_READER_OAUTH_TOKEN`, or from `~/.local/secrets` when
  * that is unset, and is never printed.
@@ -19,19 +31,21 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve, dirname } from 'node:path';
+import { isAbsolute, join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadClasses, loadEgress } from './lib/class-schema.js';
+import { judgeKindForClass, loadClasses, loadEgress, type JudgeKind } from './lib/class-schema.js';
 import { parseBatch } from './lib/batch.js';
-import { appendLedger, ledgerTotal, readLedger } from './lib/ledger.js';
+import { addUsage, appendLedger, ledgerTotal, readLedger, reportUsage } from './lib/ledger.js';
 import { mintInstallationToken, type InstallationToken } from './lib/github-app-token.js';
-import { createPodmanExecutor, ensureImage, hostCliVersion, podman, type TeardownResult } from './lib/podman.js';
-import { REPORT_SCHEMA, runBatch } from './lib/runner.js';
+import { createPodmanExecutor, ensureImage, hostCliVersion, imageId as currentImageId, podman, type TeardownResult } from './lib/podman.js';
+import { REPORT_SCHEMA, runBatch, runJudgeBatch, type GatedFreeze, type JudgeBatchReport } from './lib/runner.js';
+import type { ExpectedItem } from './lib/judge-verify.js';
 import { sweepOrphans, writeOwnerMarker } from './lib/sweep.js';
 import { findInit } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
+import { gitTrackedFiles, hashFile, loadManifest, verifyTree } from './freeze.js';
 import type { ScratchSiteRecord } from './lib/prepare-class.js';
-import type { BatchReport, InitBaseline } from './lib/types.js';
+import type { Batch, BatchReport, ClassDecl, InitBaseline, Job } from './lib/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -59,6 +73,13 @@ const DEFAULT_LEDGER = join(CACHE_ROOT, 'ledger.jsonl');
 
 /** A batch report with the CLI version, run root, and teardown result the CLI adds. */
 export interface FinishedReport extends BatchReport {
+  cliVersion: string;
+  runRoot: string;
+  teardown: TeardownResult;
+}
+
+/** A judge batch report with the same wrapper fields `FinishedReport` gives a reader's. */
+export interface FinishedJudgeReport extends JudgeBatchReport {
   cliVersion: string;
   runRoot: string;
   teardown: TeardownResult;
@@ -214,7 +235,7 @@ export function operatorSecretResolver({
  * run directory.
  * @param runId - Names the per-run directory and labels its containers.
  * @param tokenFor - Returns the token for the next container; defaults to the stored token.
- * @returns The executor, the run root, and the secret values to scrub.
+ * @returns The executor, the run root, the ensured image tag, and the secret values to scrub.
  */
 export async function setUpRun(runId: string, tokenFor?: () => string) {
   const stored = readSecret(TOKEN_NAME);
@@ -243,7 +264,185 @@ export async function setUpRun(runId: string, tokenFor?: () => string) {
       return value;
     },
   });
-  return { executor, runRoot, cliVersion, secrets: () => [stored, ...secretValues.values()] };
+  return { executor, runRoot, cliVersion, image, secrets: () => [stored, ...secretValues.values()] };
+}
+
+/** Where the freeze manifest and the post-freeze chain live, under this script's own directory. */
+const DEFAULT_MANIFEST_PATH = join(HERE, 'post-freeze', 'manifest.json');
+const DEFAULT_CHAIN_PATH = join(HERE, 'post-freeze', 'chain.jsonl');
+
+/**
+ * Check a gated batch against the freeze manifest before any container starts: every file the
+ * manifest hashes, the image id, the CLI version, and this batch's own job commits, plus (since
+ * neither is caught by a plain commit-vs-manifest comparison) that every job carries both a
+ * pinned `commit` and a `prepared` tree, never defaulting to a live copy of the working tree, and
+ * that the manifest's own frozen model for this batch's kind is not empty (an empty expected
+ * model would silently disable the runner's own init-model check). A judge batch's `prepared`
+ * directory (its mounted packet) must never itself carry `key.json`: that file lives beside the
+ * packet, never inside its mount, and a job whose `prepared` carries it would hand the judge its
+ * own answer key. A gate that passes also requires the post-freeze chain file to exist, since a
+ * gated report's stamp always carries a chain head; the returned `chainHead` is taken once, here,
+ * from the chain as it stands right now, since every input a batch (or a resume of it) reads must
+ * already be chained before it starts, never appended mid-batch. `manifestPath` and `chainPath`
+ * are the freeze manifest and the post-freeze chain file; `root` is the directory the manifest's
+ * files are relative to; `imageId` and `cliVersion` are the current reader image's digest and the
+ * current CLI version; `jobs` are the batch's own jobs to check; `listFiles` returns the current
+ * tree's files, relative to `root`, defaulting to the real git file listing (tracked and
+ * untracked, ignored paths excluded), overridable in tests; `kind` is the judge kind this batch
+ * runs as, when it is a judge batch, which picks `manifest.models[kind]` over `models.reader`.
+ * @returns Every drifted input's name when the gate refuses; the freeze stamp to run under
+ *  otherwise.
+ */
+export function checkGate({
+  manifestPath,
+  chainPath,
+  root,
+  imageId,
+  cliVersion,
+  jobs,
+  listFiles = gitTrackedFiles,
+  kind,
+}: {
+  manifestPath: string;
+  chainPath: string;
+  root: string;
+  imageId: string;
+  cliVersion: string;
+  jobs: readonly Pick<Job, 'id' | 'commit' | 'prepared'>[];
+  listFiles?: (root: string) => string[];
+  kind?: JudgeKind;
+}): { ok: true; freeze: GatedFreeze } | { ok: false; problems: string[] } {
+  if (!existsSync(manifestPath)) return { ok: false, problems: [`no freeze manifest at ${manifestPath}`] };
+  const { manifest, hash: manifestHash } = loadManifest(manifestPath);
+  const problems: string[] = [];
+  const modelKey = kind ?? 'reader';
+  const expectedModel = manifest.models[modelKey];
+  if (!expectedModel) problems.push(`manifest models.${modelKey} is empty`);
+  const commits: Record<string, string> = {};
+  for (const job of jobs) {
+    if (job.commit === undefined) problems.push(`job ${job.id}: a gated batch requires a pinned commit`);
+    else commits[job.id] = job.commit;
+    if (job.prepared === undefined) {
+      problems.push(`job ${job.id}: a gated batch requires a prepared tree, never the working tree`);
+    } else if (kind !== undefined) {
+      const mountProblem = checkKeyOutsideMount(job.id, job.prepared);
+      if (mountProblem) problems.push(mountProblem);
+    }
+  }
+  problems.push(...verifyTree({ manifest, root, imageId, cliVersion, jobs: commits, listFiles }));
+  if (!existsSync(chainPath)) problems.push(`no chain file at ${chainPath}`);
+  if (problems.length > 0) return { ok: false, problems };
+  return { ok: true, freeze: { tag: manifest.tag, manifestHash, chainHead: hashFile(chainPath), expectedModel } };
+}
+
+/**
+ * Classify a batch as a reader batch or one judge kind, from its jobs' own classes: `reader` when
+ * no job's class is a judge class, one judge kind when every job's class is that same judge kind,
+ * and a refusal when the batch mixes a judge class with a reader class or mixes two judge kinds.
+ * A batch this refuses never starts a container.
+ * @param batch - The parsed batch.
+ * @param classes - The loaded class declarations, keyed by name.
+ * @returns The batch's one kind, or every mixed kind found, in the batch's own job order.
+ */
+export function classifyBatchKind(
+  batch: Batch,
+  classes: Map<string, ClassDecl>,
+): { ok: true; kind: 'reader' | JudgeKind } | { ok: false; problems: string[] } {
+  const kinds: ('reader' | JudgeKind)[] = [];
+  for (const job of batch.jobs) {
+    const decl = classes.get(job.class);
+    kinds.push(decl ? (judgeKindForClass(decl.name) ?? 'reader') : 'reader');
+  }
+  const distinct = [...new Set(kinds)];
+  if (distinct.length > 1) {
+    return { ok: false, problems: [`batch ${batch.name} mixes job kinds: ${distinct.join(', ')}; every job must share one reader class or one judge kind`] };
+  }
+  return { ok: true, kind: distinct[0] ?? 'reader' };
+}
+
+/**
+ * A judge job's expected items, read from the `key.json` a judge packet's builder wrote beside
+ * its mounted packet: `job.prepared` is the packet's own mount (`<dir>/packet`), and its key file
+ * is `<dir>/key.json`, the sibling `checkGate` already refuses to see duplicated inside the mount.
+ * Ids come from the key's own maps, never re-derived: `plants` for a catch packet, `items` minus
+ * `excluded` for an adjudicator packet (the harness-filtered items `buildAdjudicatorPacket` left
+ * out of `packet/items.json`, so the judge never sees them and must never be asked to rule them),
+ * and `findings` plus `catchCalls` (labeled by kind) for an agreement packet.
+ * @param preparedDir - The job's `prepared` directory (the packet mount itself, its parent's
+ *  `key.json` sibling).
+ * @param kind - The judge kind, which picks which of the key's maps to read.
+ * @returns Every item this job's rulings must cover exactly once.
+ * @throws When the key file is missing or does not parse.
+ */
+export function expectedItemsFromKey(preparedDir: string, kind: JudgeKind): ExpectedItem[] {
+  const keyPath = join(dirname(preparedDir), 'key.json');
+  if (!existsSync(keyPath)) throw new Error(`no key.json beside packet ${preparedDir} (expected at ${keyPath})`);
+  const key = JSON.parse(readFileSync(keyPath, 'utf8')) as Record<string, unknown>;
+  const ids = (map: unknown): string[] => (map && typeof map === 'object' ? Object.keys(map) : []);
+  if (kind === 'catchJudge') return ids(key.plants).map((itemId) => ({ itemId }));
+  if (kind === 'adjudicator') {
+    const excluded = new Set(Array.isArray(key.excluded) ? (key.excluded as unknown[]) : []);
+    return ids(key.items)
+      .filter((itemId) => !excluded.has(itemId))
+      .map((itemId) => ({ itemId }));
+  }
+  return [
+    ...ids(key.findings).map((itemId) => ({ itemId, expectedKind: 'finding' as const })),
+    ...ids(key.catchCalls).map((itemId) => ({ itemId, expectedKind: 'catchCall' as const })),
+  ];
+}
+
+/**
+ * Whether a judge job's `prepared` packet itself carries `key.json` inside its own mount: the key
+ * file belongs beside the packet, never inside it, since a judge's container would otherwise read
+ * its own answer key. Checked for every judge batch, gated or not, before any container starts.
+ * @param jobId - The job id, for the problem message.
+ * @param prepared - The job's prepared packet directory.
+ * @returns The problem, or undefined when the mount is clean.
+ */
+export function checkKeyOutsideMount(jobId: string, prepared: string): string | undefined {
+  return existsSync(join(prepared, 'key.json')) ? `job ${jobId}: prepared directory ${prepared} carries key.json inside its own mount` : undefined;
+}
+
+/**
+ * Verify a gated judge job's key.json (the sibling of its `prepared` packet) two ways: it was
+ * built through `buildCatchPacket`'s (or `buildAdjudicatorPacket`'s or `buildAgreementPacket`'s)
+ * real source resolution, never the `buildCatchPacketFromResolved` escape hatch a fixture uses
+ * (`builtFrom === 'sources'`); and every filesystem input it recorded still hashes to what the key
+ * recorded, so nothing the packet was built from, or the packet itself, has changed since. An
+ * `inputs` key falls into exactly one of three buckets, and every bucket is checked, never
+ * skipped: a `page@<commit>:<page>` synthetic label names a `git show` read, not independently
+ * rehashable, and is the only kind this check does not re-verify; a non-absolute key is
+ * packet-relative (`job.json`, `pages/...`, `findings/...`, `catchCalls/...`, `index.json`, and
+ * so on) and is rehashed against that file under `prepared`; every other key is a required
+ * absolute external source path, rehashed directly. A missing file, a hash mismatch, or (for a
+ * packet-relative key) a file the build never wrote is each a named problem.
+ * @param jobId - The job id, for the problem messages.
+ * @param prepared - The job's prepared packet directory.
+ * @returns Every problem found; empty when the key checks out.
+ */
+export function checkJudgeKeyIntegrity(jobId: string, prepared: string): string[] {
+  const keyPath = join(dirname(prepared), 'key.json');
+  if (!existsSync(keyPath)) return [`job ${jobId}: no key.json beside packet ${prepared}`];
+  const key = JSON.parse(readFileSync(keyPath, 'utf8')) as { builtFrom?: unknown; inputs?: unknown };
+  const problems: string[] = [];
+  if (key.builtFrom !== 'sources') problems.push(`job ${jobId}: key ${keyPath} has builtFrom ${JSON.stringify(key.builtFrom)}, not "sources"`);
+  const inputs = key.inputs && typeof key.inputs === 'object' ? (key.inputs as Record<string, unknown>) : {};
+  for (const [inputKey, expectedHash] of Object.entries(inputs)) {
+    if (typeof expectedHash !== 'string') {
+      problems.push(`job ${jobId}: input ${inputKey} in ${keyPath} carries a non-string hash`);
+      continue;
+    }
+    if (inputKey.startsWith('page@')) continue;
+    const path = isAbsolute(inputKey) ? inputKey : join(prepared, inputKey);
+    if (!existsSync(path)) {
+      problems.push(`job ${jobId}: input ${inputKey} (expected at ${path}) no longer exists`);
+      continue;
+    }
+    const currentHash = hashFile(path);
+    if (currentHash !== expectedHash) problems.push(`job ${jobId}: input ${inputKey} has changed since the packet was built`);
+  }
+  return problems;
 }
 
 /**
@@ -251,9 +450,13 @@ export async function setUpRun(runId: string, tokenFor?: () => string) {
  * The options override the output directory (`out`) and the ledger path (`ledgerFile`), both
  * defaulting under the cache root; `tokenFor` returns the token for each container, which the live
  * credential check uses to swap in an invalid token mid-batch; `batchOverride` is batch JSON to
- * run in place of the file's contents.
+ * run in place of the file's contents; `manifestPath` and `chainPath` override the freeze
+ * manifest and chain a gated batch checks against; `resumeFrom` carries each resumed job's saved
+ * attempts and pending cause through to the runner.
  * @param batchFile - The batch JSON path.
  * @returns The batch report, with its teardown result.
+ * @throws When the batch is gated and its gate check finds any drifted input; no container has
+ *  started by then.
  */
 export async function runBatchFile(
   batchFile: string,
@@ -262,16 +465,36 @@ export async function runBatchFile(
     ledgerFile,
     tokenFor,
     batchOverride,
-  }: { out?: string; ledgerFile?: string; tokenFor?: () => string; batchOverride?: string } = {},
+    manifestPath = DEFAULT_MANIFEST_PATH,
+    chainPath = DEFAULT_CHAIN_PATH,
+    resumeFrom,
+  }: {
+    out?: string;
+    ledgerFile?: string;
+    tokenFor?: () => string;
+    batchOverride?: string;
+    manifestPath?: string;
+    chainPath?: string;
+    resumeFrom?: Parameters<typeof runBatch>[0]['resumeFrom'];
+  } = {},
 ): Promise<{ report: FinishedReport; outDir: string }> {
   const classes = loadClasses();
   const batch = parseBatch(batchOverride ?? readFileSync(batchFile, 'utf8'), classes);
   const baselines = JSON.parse(readFileSync(join(HERE, 'init-baseline.json'), 'utf8')) as Record<string, InitBaseline>;
   const runId = newRunId();
-  const { executor, runRoot, cliVersion, secrets } = await setUpRun(runId, tokenFor);
+  const { executor, runRoot, cliVersion, image, secrets } = await setUpRun(runId, tokenFor);
+  let freeze: GatedFreeze | undefined;
+  if (batch.gated) {
+    const gate = checkGate({ manifestPath, chainPath, root: HERE, imageId: await currentImageId(image), cliVersion, jobs: batch.jobs });
+    if (!gate.ok) {
+      await executor.teardown().catch(() => {});
+      throw new Error(`gated batch ${batch.name} refused to start: ${gate.problems.join('; ')}`);
+    }
+    freeze = gate.freeze;
+  }
   const outDir = out ?? join(CACHE_ROOT, 'results', `${batch.name}-${runId}`);
   const ledgerPath = ledgerFile ?? DEFAULT_LEDGER;
-  log(`run ${runId}: batch ${batch.name}, ${batch.jobs.length} job(s), CLI ${cliVersion}`);
+  log(`run ${runId}: batch ${batch.name}, ${batch.jobs.length} job(s), CLI ${cliVersion}${freeze ? ', gated' : ''}`);
   let result: Awaited<ReturnType<typeof runBatch>>;
   let teardown: FinishedReport['teardown'];
   // A killed runner halts the batch, waits for every worker to settle, and only then tears down
@@ -293,6 +516,8 @@ export async function runBatchFile(
       secrets: secrets(),
       ledger: { append: (entry) => appendLedger(ledgerPath, entry) },
       halt: halt.signal,
+      freeze,
+      resumeFrom,
     });
   } finally {
     process.off('SIGINT', onSignal);
@@ -304,11 +529,231 @@ export async function runBatchFile(
   report.verified = report.verified && teardown.runDirRemoved && teardown.containersLeft === 0 && teardown.networksLeft === 0;
   mkdirSync(join(outDir, 'transcripts'), { recursive: true });
   writeFileSync(join(outDir, 'report.json'), `${scrub(JSON.stringify(report, null, 2), secrets())}\n`);
-  for (const [jobId, text] of Object.entries(result.transcripts)) {
-    writeFileSync(join(outDir, 'transcripts', `${jobId}.jsonl`), text);
+  for (const [name, text] of Object.entries(result.transcripts)) {
+    writeFileSync(join(outDir, 'transcripts', name), text);
   }
   log(`wrote ${outDir}`);
   return { report, outDir };
+}
+
+/**
+ * Run a judge batch file end to end and write its outputs, the judge analogue of `runBatchFile`:
+ * the catch judge, the adjudicator, or the agreement read, all headless. `kind` picks the report
+ * schema and the manifest's frozen model for gating; each job's expected items come from the
+ * `key.json` beside its own packet (`expectedItemsFromKey`), never passed in by hand.
+ * @param batchFile - The batch JSON path.
+ * @returns The judge batch report, with its teardown result.
+ * @throws When the batch is gated and its gate check finds any drifted input, or a job's packet
+ *  carries no `key.json`; no container has started by then.
+ */
+export async function runJudgeBatchFile(
+  batchFile: string,
+  kind: JudgeKind,
+  {
+    out,
+    ledgerFile,
+    tokenFor,
+    batchOverride,
+    manifestPath = DEFAULT_MANIFEST_PATH,
+    chainPath = DEFAULT_CHAIN_PATH,
+    resumeFrom,
+  }: {
+    out?: string;
+    ledgerFile?: string;
+    tokenFor?: () => string;
+    batchOverride?: string;
+    manifestPath?: string;
+    chainPath?: string;
+    resumeFrom?: Parameters<typeof runJudgeBatch>[0]['resumeFrom'];
+  } = {},
+): Promise<{ report: FinishedJudgeReport; outDir: string }> {
+  const classes = loadClasses();
+  const batch = parseBatch(batchOverride ?? readFileSync(batchFile, 'utf8'), classes);
+  const baselines = JSON.parse(readFileSync(join(HERE, 'init-baseline.json'), 'utf8')) as Record<string, InitBaseline>;
+  // The mount check runs for every judge batch, gated or not: a key.json inside a job's own
+  // prepared packet would hand that judge its own answer key, before any container starts.
+  const mountProblems = batch.jobs.flatMap((job) => {
+    if (job.prepared === undefined) throw new Error(`job ${job.id}: a judge job needs a prepared packet directory`);
+    const problem = checkKeyOutsideMount(job.id, job.prepared);
+    return problem ? [problem] : [];
+  });
+  if (mountProblems.length > 0) {
+    throw new Error(`judge batch ${batch.name} refused to start: ${mountProblems.join('; ')}`);
+  }
+  const runId = newRunId();
+  const { executor, runRoot, cliVersion, image, secrets } = await setUpRun(runId, tokenFor);
+  let freeze: GatedFreeze | undefined;
+  if (batch.gated) {
+    const gate = checkGate({ manifestPath, chainPath, root: HERE, imageId: await currentImageId(image), cliVersion, jobs: batch.jobs, kind });
+    if (!gate.ok) {
+      await executor.teardown().catch(() => {});
+      throw new Error(`gated judge batch ${batch.name} refused to start: ${gate.problems.join('; ')}`);
+    }
+    freeze = gate.freeze;
+    // A gated batch also trusts only a key built through real source resolution, with every
+    // filesystem input it recorded still matching what it was built from. Every job's `prepared`
+    // is already known defined, from the mount check above.
+    const integrityProblems = batch.jobs.flatMap((job) => (job.prepared !== undefined ? checkJudgeKeyIntegrity(job.id, job.prepared) : []));
+    if (integrityProblems.length > 0) {
+      await executor.teardown().catch(() => {});
+      throw new Error(`gated judge batch ${batch.name} refused to start: ${integrityProblems.join('; ')}`);
+    }
+  }
+  const expectedItems: Record<string, ExpectedItem[]> = {};
+  for (const job of batch.jobs) {
+    if (job.prepared === undefined) throw new Error(`job ${job.id}: a judge job needs a prepared packet directory`);
+    expectedItems[job.id] = expectedItemsFromKey(job.prepared, kind);
+  }
+  const outDir = out ?? join(CACHE_ROOT, 'results', `${batch.name}-${runId}`);
+  const ledgerPath = ledgerFile ?? DEFAULT_LEDGER;
+  log(`run ${runId}: judge batch ${batch.name} (${kind}), ${batch.jobs.length} job(s), CLI ${cliVersion}${freeze ? ', gated' : ''}`);
+  let result: Awaited<ReturnType<typeof runJudgeBatch>>;
+  let teardown: FinishedJudgeReport['teardown'];
+  const halt = new AbortController();
+  const onSignal = () => {
+    log('signal received; halting the batch before teardown');
+    halt.abort();
+  };
+  process.once('SIGINT', onSignal);
+  process.once('SIGTERM', onSignal);
+  try {
+    result = await runJudgeBatch({
+      batch,
+      classes,
+      baselines,
+      executor,
+      runId,
+      kind,
+      expectedItems,
+      secrets: secrets(),
+      ledger: { append: (entry) => appendLedger(ledgerPath, entry) },
+      halt: halt.signal,
+      freeze,
+      resumeFrom,
+    });
+  } finally {
+    process.off('SIGINT', onSignal);
+    process.off('SIGTERM', onSignal);
+    teardown = await executor.teardown();
+    if (halt.signal.aborted) process.exit(130);
+  }
+  const report: FinishedJudgeReport = { ...result.report, cliVersion, runRoot, teardown };
+  report.verified = report.verified && teardown.runDirRemoved && teardown.containersLeft === 0 && teardown.networksLeft === 0;
+  mkdirSync(join(outDir, 'transcripts'), { recursive: true });
+  writeFileSync(join(outDir, 'report.json'), `${scrub(JSON.stringify(report, null, 2), secrets())}\n`);
+  for (const [name, text] of Object.entries(result.transcripts)) {
+    writeFileSync(join(outDir, 'transcripts', name), text);
+  }
+  log(`wrote ${outDir}`);
+  return { report, outDir };
+}
+
+/** The minimal shape `jobsNeedingResume` needs from a saved report, reader or judge, never `Pick<BatchReport, 'jobs'>`. */
+interface ResumableReport {
+  jobs: readonly { id: string; stoppedBy?: unknown }[];
+}
+
+/**
+ * The ids of every job a saved report shows left unstarted or unfinished by a batch-level stop.
+ * @param report - A batch's saved report, reader or judge.
+ * @returns The stopped jobs' ids, in the report's own order.
+ */
+export function jobsNeedingResume(report: ResumableReport): string[] {
+  return report.jobs.filter((job) => job.stoppedBy !== undefined).map((job) => job.id);
+}
+
+/**
+ * Each stopped job's saved attempts and pending cause, keyed by job id, in the shape `runBatch`'s
+ * own `resumeFrom` takes. A job whose report carries no `attempts` (cut on its very first attempt,
+ * or never started at all) resumes with none; a report saved before `pendingCause` existed
+ * resumes as `initial`, the same cause a job with zero attempts would carry.
+ * @param report - A batch's saved report.
+ * @returns The resume input for every job `jobsNeedingResume` would name.
+ */
+export function resumeInputs(report: Pick<BatchReport, 'jobs'>): Parameters<typeof runBatch>[0]['resumeFrom'] {
+  const result: NonNullable<Parameters<typeof runBatch>[0]['resumeFrom']> = {};
+  for (const job of report.jobs) {
+    if (job.stoppedBy === undefined) continue;
+    result[job.id] = { attempts: job.attempts ?? [], pendingCause: job.pendingCause ?? 'initial' };
+  }
+  return result;
+}
+
+/**
+ * The judge analogue of `resumeInputs`: each stopped job's saved attempts and pending cause, in
+ * the shape `runJudgeBatch`'s own `resumeFrom` takes.
+ * @param report - A judge batch's saved report.
+ * @returns The resume input for every job `jobsNeedingResume` would name.
+ */
+export function judgeResumeInputs(report: Pick<JudgeBatchReport, 'jobs'>): Parameters<typeof runJudgeBatch>[0]['resumeFrom'] {
+  const result: NonNullable<Parameters<typeof runJudgeBatch>[0]['resumeFrom']> = {};
+  for (const job of report.jobs) {
+    if (job.stoppedBy === undefined) continue;
+    result[job.id] = { attempts: job.attempts ?? [], pendingCause: job.pendingCause ?? 'initial' };
+  }
+  return result;
+}
+
+/**
+ * The subset of a batch that carries only the given job ids, in the full batch's own order and
+ * carrying its own name, concurrency, budget, and gating.
+ * @param batch - The full parsed batch a stopped run was given.
+ * @param jobIds - The ids to keep.
+ * @returns The narrowed batch.
+ */
+export function buildResumeBatch(batch: Batch, jobIds: readonly string[]): Batch {
+  const keep = new Set(jobIds);
+  return { ...batch, jobs: batch.jobs.filter((job) => keep.has(job.id)) };
+}
+
+/**
+ * Whether a run's own teardown left nothing behind.
+ * @param teardown - The teardown result to check.
+ * @returns Whether every condition it checks passed.
+ */
+function teardownClean(teardown: TeardownResult): boolean {
+  return teardown.runDirRemoved && teardown.containersLeft === 0 && teardown.networksLeft === 0;
+}
+
+/**
+ * Merge a resumed sub-batch's report back into the original: each resumed job's own report
+ * replaces its `stoppedBy` placeholder, the token totals add, the record's own `teardown` becomes
+ * the resumed run's (the more recent of the two), and the merged report is verified only when
+ * every job, resumed ones included, now verifies clean and both runs' own teardown was clean.
+ * @param original - The report a batch-level stop left behind.
+ * @param resumed - The report from running only the jobs it stopped before starting.
+ * @returns The merged report.
+ */
+export function mergeResumedReport(original: FinishedReport, resumed: FinishedReport): FinishedReport {
+  const byId = new Map(resumed.jobs.map((job) => [job.id, job]));
+  const jobs = original.jobs.map((job) => byId.get(job.id) ?? job);
+  return {
+    ...original,
+    jobs,
+    usage: reportUsage(addUsage(original.usage, resumed.usage)),
+    stopReason: resumed.stopReason,
+    teardown: resumed.teardown,
+    verified: jobs.every((job) => job.stoppedBy === undefined && job.verified.ok) && teardownClean(original.teardown) && teardownClean(resumed.teardown),
+  };
+}
+
+/**
+ * The judge analogue of `mergeResumedReport`.
+ * @param original - The judge report a batch-level stop left behind.
+ * @param resumed - The judge report from running only the jobs it stopped before starting.
+ * @returns The merged report.
+ */
+export function mergeResumedJudgeReport(original: FinishedJudgeReport, resumed: FinishedJudgeReport): FinishedJudgeReport {
+  const byId = new Map(resumed.jobs.map((job) => [job.id, job]));
+  const jobs = original.jobs.map((job) => byId.get(job.id) ?? job);
+  return {
+    ...original,
+    jobs,
+    usage: reportUsage(addUsage(original.usage, resumed.usage)),
+    stopReason: resumed.stopReason,
+    teardown: resumed.teardown,
+    verified: jobs.every((job) => job.stoppedBy === undefined && job.verified.ok) && teardownClean(original.teardown) && teardownClean(resumed.teardown),
+  };
 }
 
 /**
@@ -348,14 +793,88 @@ async function main(args: string[]): Promise<number> {
     await probeInit(option(args, '--class') ?? 'docs-only');
     return 0;
   }
-  const batchFile = args.find((a) => !a.startsWith('--') && a !== option(args, '--out') && a !== option(args, '--ledger'));
+  const batchFile = args.find(
+    (a) => !a.startsWith('--') && a !== option(args, '--out') && a !== option(args, '--ledger') && a !== option(args, '--resume'),
+  );
   if (!batchFile) {
-    log('usage: npx tsx scripts/docs-readers/run.ts BATCH_JSON [--out DIR] [--ledger FILE] | --probe-init [--class NAME] | --ledger-total');
+    log(
+      'usage: npx tsx scripts/docs-readers/run.ts BATCH_JSON [--out DIR] [--ledger FILE] | BATCH_JSON --resume DIR | --probe-init [--class NAME] | --ledger-total',
+    );
     return 2;
   }
-  const { report } = await runBatchFile(resolve(batchFile), { out: option(args, '--out'), ledgerFile });
+  const classes = loadClasses();
+  const fullBatch = parseBatch(readFileSync(resolve(batchFile), 'utf8'), classes);
+  const classification = classifyBatchKind(fullBatch, classes);
+  if (!classification.ok) {
+    log(classification.problems.join('; '));
+    return 2;
+  }
+  const { kind } = classification;
+
+  if (args.includes('--resume')) {
+    const resumeDir = option(args, '--resume');
+    if (!resumeDir) {
+      log('usage: npx tsx scripts/docs-readers/run.ts BATCH_JSON --resume DIR');
+      return 2;
+    }
+    const reportPath = join(resumeDir, 'report.json');
+    if (kind === 'reader') {
+      const original = JSON.parse(readFileSync(reportPath, 'utf8')) as FinishedReport;
+      if (fullBatch.name !== original.batch) {
+        log(`batch name mismatch: ${resumeDir} holds a report for "${original.batch}", but ${batchFile} names "${fullBatch.name}"`);
+        return 2;
+      }
+      const jobIds = jobsNeedingResume(original);
+      if (jobIds.length === 0) {
+        log('nothing to resume: no job in the saved report carries stoppedBy');
+        return original.verified ? 0 : 1;
+      }
+      const subBatch = buildResumeBatch(fullBatch, jobIds);
+      const { report: resumedReport } = await runBatchFile(resolve(batchFile), {
+        out: resumeDir,
+        ledgerFile,
+        batchOverride: JSON.stringify(subBatch),
+        resumeFrom: resumeInputs(original),
+      });
+      const merged = mergeResumedReport(original, resumedReport);
+      writeFileSync(reportPath, `${scrub(JSON.stringify(merged, null, 2), [])}\n`);
+      log(`resumed ${jobIds.length} job(s); wrote ${reportPath}`);
+      return merged.verified ? 0 : 1;
+    }
+    const original = JSON.parse(readFileSync(reportPath, 'utf8')) as FinishedJudgeReport;
+    if (fullBatch.name !== original.batch) {
+      log(`batch name mismatch: ${resumeDir} holds a report for "${original.batch}", but ${batchFile} names "${fullBatch.name}"`);
+      return 2;
+    }
+    const jobIds = jobsNeedingResume(original);
+    if (jobIds.length === 0) {
+      log('nothing to resume: no job in the saved report carries stoppedBy');
+      return original.verified ? 0 : 1;
+    }
+    const subBatch = buildResumeBatch(fullBatch, jobIds);
+    const { report: resumedReport } = await runJudgeBatchFile(resolve(batchFile), kind, {
+      out: resumeDir,
+      ledgerFile,
+      batchOverride: JSON.stringify(subBatch),
+      resumeFrom: judgeResumeInputs(original),
+    });
+    const merged = mergeResumedJudgeReport(original, resumedReport);
+    writeFileSync(reportPath, `${scrub(JSON.stringify(merged, null, 2), [])}\n`);
+    log(`resumed ${jobIds.length} job(s); wrote ${reportPath}`);
+    return merged.verified ? 0 : 1;
+  }
+
+  if (kind === 'reader') {
+    const { report } = await runBatchFile(resolve(batchFile), { out: option(args, '--out'), ledgerFile });
+    for (const job of report.jobs) {
+      log(`${job.id}: ${job.outcome}${job.abortReason ? ` (${job.abortReason})` : ''}, verified ${job.verified.ok}, counted ${job.usage.counted}`);
+    }
+    log(`stopReason ${report.stopReason}; counted ${report.usage.counted}, cache read ${report.usage.cacheRead}; teardown ${JSON.stringify(report.teardown)}`);
+    return report.verified ? 0 : 1;
+  }
+  const { report } = await runJudgeBatchFile(resolve(batchFile), kind, { out: option(args, '--out'), ledgerFile });
   for (const job of report.jobs) {
-    log(`${job.id}: ${job.outcome}${job.abortReason ? ` (${job.abortReason})` : ''}, verified ${job.verified.ok}, counted ${job.usage.counted}`);
+    log(`${job.id}: ${job.outcome}${job.abortReason ? ` (${job.abortReason})` : ''}, verified ${job.verified.ok}, counted ${job.usage.counted}, rulings ${job.rulings.length}`);
   }
   log(`stopReason ${report.stopReason}; counted ${report.usage.counted}, cache read ${report.usage.cacheRead}; teardown ${JSON.stringify(report.teardown)}`);
   return report.verified ? 0 : 1;

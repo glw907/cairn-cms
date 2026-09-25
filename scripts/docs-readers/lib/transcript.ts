@@ -5,16 +5,24 @@
  */
 import { posix } from 'node:path';
 import type {
+  BatchReport,
+  BlockedEntry,
   ContentBlock,
   Denial,
+  Diverged,
   Failure,
   InitBaseline,
   InitCheck,
+  JobReport,
   PackageFetch,
   ReaderReport,
+  Step,
   StreamEvent,
   ToolCall,
   Usage,
+  Verified,
+  VerifiedDiverged,
+  VerifiedStep,
 } from './types.js';
 
 /** The working directory every reader runs in, inside its container. */
@@ -631,7 +639,66 @@ export function classifyFailure(events: StreamEvent[]): Failure | undefined {
 }
 
 /**
- * The reader's structured report, when it returned one of the right shape.
+ * Whether a raw value is a non-null object whose fields can be read by name.
+ * @param value - Any parsed JSON value.
+ * @returns Whether the value is an object other than `null`.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Whether an entry carries a well-formed `blockedBy`: the key present, as either a string or
+ * `null` (an item the reader never marked blocked still carries the key, set to `null`; an item
+ * missing the key entirely is malformed).
+ * @param entry - One raw report entry.
+ * @returns Whether the entry's `blockedBy` has the shape a new run's report must give.
+ */
+function hasBlockedBy(entry: Record<string, unknown>): boolean {
+  return 'blockedBy' in entry && (entry.blockedBy === null || typeof entry.blockedBy === 'string');
+}
+
+/**
+ * Whether a raw list item is a well-formed stall or assumption entry: its own `text`, and a
+ * well-formed `blockedBy`.
+ * @param item - One raw `stalls[]`/`assumed[]` entry.
+ * @returns Whether the item has the shape a new run's report must give.
+ */
+function isBlockedEntry(item: unknown): item is BlockedEntry {
+  return isRecord(item) && typeof item.text === 'string' && hasBlockedBy(item);
+}
+
+/**
+ * Whether a raw list item is a well-formed step entry: a quote object it rests on and the
+ * decision, as a string, that quote supported.
+ * @param item - One raw `steps[]` entry.
+ * @returns Whether the item has the shape a new run's report must give.
+ */
+function isStepEntry(item: unknown): item is Step {
+  return isRecord(item) && typeof item.decision === 'string' && isRecord(item.quote);
+}
+
+/**
+ * Whether a raw list item is a well-formed divergence entry: a quote for the page the reader
+ * diverged from, what it did instead, why, and a well-formed `blockedBy`.
+ * @param item - One raw `diverged[]` entry.
+ * @returns Whether the item has the shape a new run's report must give.
+ */
+function isDivergedEntry(item: unknown): item is Diverged {
+  return (
+    isRecord(item) &&
+    typeof item.didInstead === 'string' &&
+    typeof item.why === 'string' &&
+    hasBlockedBy(item) &&
+    isRecord(item.quote)
+  );
+}
+
+/**
+ * The reader's structured report, when it returned one of the right shape. Every field the
+ * report's schema requires must be present, and every `stalls[]`, `assumed[]`, `steps[]`, and
+ * `diverged[]` entry must carry its own required fields; a report missing any of it, at the top
+ * level or inside one entry, is not a report a fresh run can hand back and is treated as none.
  * @param events - The parsed stream.
  * @returns The report fields, or undefined.
  */
@@ -645,8 +712,82 @@ export function readerReport(events: StreamEvent[]): ReaderReport | undefined {
   const assumed = list(output.assumed);
   const quotes = list(output.quotes);
   const ruleCandidates = list(output.ruleCandidates);
-  if (!stalls || !assumed || !quotes || !ruleCandidates) return undefined;
-  return { outcome: output.outcome, stalls, assumed, quotes, ruleCandidates };
+  const steps = list(output.steps);
+  const diverged = list(output.diverged);
+  if (!stalls || !assumed || !quotes || !ruleCandidates || !steps || !diverged) return undefined;
+  if (!stalls.every(isBlockedEntry) || !assumed.every(isBlockedEntry)) return undefined;
+  if (!steps.every(isStepEntry) || !diverged.every(isDivergedEntry)) return undefined;
+  return { outcome: output.outcome, stalls, assumed, quotes, ruleCandidates, steps, diverged };
+}
+
+/**
+ * The model id the init event reported for a run.
+ * @param events - The parsed stream.
+ * @returns The model id, or undefined when the run never started.
+ */
+export function initModel(events: StreamEvent[]): string | undefined {
+  return findInit(events)?.model;
+}
+
+/**
+ * Turn one saved job report's `stalls[]`/`assumed[]` entries into blocked entries, a plain string
+ * (the earlier report shape) becoming `{ text, blockedBy: null }` and an already-structured entry
+ * passing through unchanged.
+ * @param value - A saved job report's raw `stalls` or `assumed` field.
+ * @returns The field in the current, structured shape.
+ */
+export function toBlockedEntries(value: unknown): BlockedEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => (typeof item === 'string' ? { text: item, blockedBy: null } : (item as BlockedEntry)));
+}
+
+/**
+ * Bring one saved job report's `verified` block up to the current shape: the earlier report shape
+ * predates its own `steps[]`/`diverged[]` fields, filled with empty arrays here.
+ * @param value - A saved job report's raw `verified` field.
+ * @returns The `verified` block with every field in the current shape.
+ */
+function normalizeSavedVerified(value: unknown): Verified {
+  const verified = (value ?? {}) as Record<string, unknown>;
+  return {
+    ...(verified as unknown as Verified),
+    steps: Array.isArray(verified.steps) ? (verified.steps as VerifiedStep[]) : [],
+    diverged: Array.isArray(verified.diverged) ? (verified.diverged as VerifiedDiverged[]) : [],
+  };
+}
+
+/**
+ * Bring one saved job report up to the current shape: the earlier report shape predates
+ * `steps[]` and `diverged[]`, at both the job report's own level and inside `verified` (filled
+ * with empty arrays here), and gave `stalls[]`/`assumed[]` as plain strings.
+ * @param raw - One job entry from a saved batch report.
+ * @returns The job report with every field in the current shape.
+ */
+function normalizeSavedJobReport(raw: unknown): JobReport {
+  const job = (raw ?? {}) as Record<string, unknown>;
+  return {
+    ...(job as unknown as JobReport),
+    stalls: toBlockedEntries(job.stalls),
+    assumed: toBlockedEntries(job.assumed),
+    steps: Array.isArray(job.steps) ? (job.steps as VerifiedStep[]) : [],
+    diverged: Array.isArray(job.diverged) ? (job.diverged as VerifiedDiverged[]) : [],
+    verified: normalizeSavedVerified(job.verified),
+  };
+}
+
+/**
+ * Read a batch report saved in the earlier report shape (before `steps[]` and `diverged[]`
+ * existed), the shared loader every later saved-report reader uses: it brings every job up to the
+ * current `JobReport` shape, tolerating a missing `steps[]`/`diverged[]` and a plain-string
+ * `stalls[]`/`assumed[]`.
+ * @param raw - The parsed contents of a saved `report.json`, or its JSON text.
+ * @returns The batch report with every job in the current shape.
+ */
+export function loadSavedBatchReport(raw: unknown): BatchReport {
+  const parsed = typeof raw === 'string' ? (JSON.parse(raw) as unknown) : raw;
+  const batch = (parsed ?? {}) as Record<string, unknown>;
+  const jobs = Array.isArray(batch.jobs) ? batch.jobs.map(normalizeSavedJobReport) : [];
+  return { ...(batch as unknown as BatchReport), jobs };
 }
 
 /**

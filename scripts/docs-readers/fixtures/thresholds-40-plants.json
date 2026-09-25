@@ -1,0 +1,35 @@
+{
+  "seed": 20260924,
+  "achieved": {
+    "pooled": 40,
+    "perClass": {
+      "docs-only": 7,
+      "docs-and-binary": 7,
+      "docs-and-site": 13,
+      "repository": 13
+    }
+  },
+  "pooled": {
+    "threshold": 30,
+    "recall60PassMax": 0.06247299972097382,
+    "recall80PassMin": 0.8397263725557058
+  },
+  "floors": {
+    "docs-only": {
+      "plants": 7,
+      "floor": 4
+    },
+    "docs-and-binary": {
+      "plants": 7,
+      "floor": 4
+    },
+    "docs-and-site": {
+      "plants": 13,
+      "floor": 9
+    },
+    "repository": {
+      "plants": 13,
+      "floor": 9
+    }
+  }
+}

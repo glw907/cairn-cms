@@ -1,0 +1,67 @@
+{
+  "kind": "adjudicator",
+  "builtFrom": "sources",
+  "report": {
+    "path": "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/tuning/round1/reader-report.json",
+    "jobId": "extender-control-1",
+    "attempt": 1,
+    "runId": "20260925t180330-4a4885"
+  },
+  "items": {
+    "item-1": {
+      "field": "assumed",
+      "sourceIndex": 0
+    },
+    "item-2": {
+      "field": "assumed",
+      "sourceIndex": 1
+    },
+    "item-3": {
+      "field": "assumed",
+      "sourceIndex": 2
+    },
+    "item-4": {
+      "field": "assumed",
+      "sourceIndex": 3
+    },
+    "item-5": {
+      "field": "diverged",
+      "sourceIndex": 0
+    }
+  },
+  "excluded": [],
+  "treeCommit": "3a7485ddba2f8e446beb6d93e60f522acaf51893",
+  "treeAbsent": [
+    "docs/internal/record/",
+    "docs/superpowers/",
+    "scripts/docs-readers/",
+    "src/tests/unit/docs-readers-baseline-docsset.test.ts",
+    "src/tests/unit/docs-readers-batch.test.ts",
+    "src/tests/unit/docs-readers-classes.test.ts",
+    "src/tests/unit/docs-readers-github-app-token.test.ts",
+    "src/tests/unit/docs-readers-harness.test.ts",
+    "src/tests/unit/docs-readers-ledger.test.ts",
+    "src/tests/unit/docs-readers-podman.test.ts",
+    "src/tests/unit/docs-readers-prepare-class.test.ts",
+    "src/tests/unit/docs-readers-prepare-validation.test.ts",
+    "src/tests/unit/docs-readers-reverify.test.ts",
+    "src/tests/unit/docs-readers-rot.test.ts",
+    "src/tests/unit/docs-readers-run.test.ts",
+    "src/tests/unit/docs-readers-runner.test.ts",
+    "src/tests/unit/docs-readers-scrub.test.ts",
+    "src/tests/unit/docs-readers-sweep.test.ts",
+    "src/tests/unit/docs-readers-transcript.test.ts",
+    "src/tests/unit/docs-readers-verify.test.ts",
+    "docs/HISTORY.md",
+    "docs/STATUS.md",
+    "ROADMAP.md",
+    "docs/internal/docs-friction-log.md"
+  ],
+  "inputs": {
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/batches/round1.json": "f1595e04f05fec97d03f360723404cf2f190e93c5539317f03195de140aa1b4a",
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/tuning/round1/reader-report.json": "62827a319ef38c9135ff82ee8a60b079c04ec2df8449b429d730964c29c4492b",
+    "index.json": "0cfc89806182f711aad7e95e90f5e5ad5937b4c56cbc32a366412a487a427489",
+    "items.json": "df4ef69afba70796246826bbbdafdf681410507de2a005f1fd119618a9ff8f2f",
+    "job.json": "ff75b978b7bc0f483ed403de3529978a11a84914577afdb6e816a113890341c4"
+  }
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "jobId": "evaluator-control-1",
+    "excluded": 0,
+    "remaining": 5,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "evaluator-control-2",
+    "excluded": 0,
+    "remaining": 6,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "operator-control-1",
+    "excluded": 0,
+    "remaining": 5,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "operator-control-2",
+    "excluded": 0,
+    "remaining": 4,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "designer-control-1",
+    "excluded": 0,
+    "remaining": 6,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "designer-control-2",
+    "excluded": 0,
+    "remaining": 5,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "extender-control-1",
+    "excluded": 0,
+    "remaining": 5,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "extender-control-2",
+    "excluded": 0,
+    "remaining": 5,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "core-developer-control-1",
+    "excluded": 0,
+    "remaining": 8,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "core-developer-control-2",
+    "excluded": 0,
+    "remaining": 9,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "scripter-control-1",
+    "excluded": 0,
+    "remaining": 9,
+    "adjudicatorNotes": 0
+  },
+  {
+    "jobId": "scripter-control-2",
+    "excluded": 0,
+    "remaining": 9,
+    "adjudicatorNotes": 0
+  }
+]

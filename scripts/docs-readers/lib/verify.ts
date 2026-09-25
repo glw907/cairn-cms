@@ -6,7 +6,7 @@
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { isPage, pageLineKey, READER_CWD, toReaderRelative } from './transcript.js';
-import type { InitCheck, RawQuote, ReaderReport, Verified, VerifiedQuote } from './types.js';
+import type { Diverged, InitCheck, RawQuote, ReaderReport, Step, Verified, VerifiedDiverged, VerifiedQuote, VerifiedStep } from './types.js';
 
 /** How many lines a quote may run past its cited line when the reader joined a wrapped sentence. */
 const SPAN_LINES = 5;
@@ -132,6 +132,48 @@ function overlapsGrepHit(quote: VerifiedQuote, grepHits: Set<string>): boolean {
 }
 
 /**
+ * Whether a verified quote cites a docs-set page the transcript never shows read: an already
+ * failing quote never counts (its own reason is problem enough), and a page a Grep call
+ * displayed a line of is excused, the same way `overlapsGrepHit` excuses a top-level quote.
+ * @param quote - A quote, verified by `verifyQuote`.
+ * @param docsSet - The job's docs-set entries.
+ * @param read - The set of pages the transcript shows the reader actually opened.
+ * @param grepHits - The `page:line` pairs a Grep call displayed.
+ * @returns Whether the quote cites a page this run never shows read.
+ */
+function citesUnreadPage(quote: VerifiedQuote, docsSet: string[], read: Set<string>, grepHits: Set<string>): boolean {
+  return quote.ok && isPage(quote.path, docsSet) && !read.has(quote.path) && !overlapsGrepHit(quote, grepHits);
+}
+
+/**
+ * Verify every step's quote, the way a top-level quote is verified: at its cited line, inside the
+ * five-line wrap, or one line off.
+ * @param steps - The report's raw `steps[]`, when it gave any.
+ * @param root - The pristine prepared directory.
+ * @param cwd - The directory a relative quote path is resolved against.
+ * @returns Each step with its quote's verified form.
+ */
+function verifySteps(steps: Step[], root: string, cwd: string | undefined): VerifiedStep[] {
+  return steps.map((step) => ({ quote: verifyQuote(step.quote ?? {}, root, cwd), decision: step.decision }));
+}
+
+/**
+ * Verify every divergence entry's quote, the way `verifySteps` verifies a step's.
+ * @param diverged - The report's raw `diverged[]`, when it gave any.
+ * @param root - The pristine prepared directory.
+ * @param cwd - The directory a relative quote path is resolved against.
+ * @returns Each divergence entry with its quote's verified form.
+ */
+function verifyDiverged(diverged: Diverged[], root: string, cwd: string | undefined): VerifiedDiverged[] {
+  return diverged.map((entry) => ({
+    quote: verifyQuote(entry.quote ?? {}, root, cwd),
+    didInstead: entry.didInstead,
+    why: entry.why,
+    blockedBy: entry.blockedBy,
+  }));
+}
+
+/**
  * Decide whether a job's report is verified, from the reader's structured `report` (undefined when
  * it gave none), the `pagesRead` the transcript shows, the job's `docsSet`, the pristine prepared
  * `root`, the `init` check's result, the `canariesFound` in the transcript, the reader's `cwd`
@@ -139,10 +181,12 @@ function overlapsGrepHit(quote: VerifiedQuote, grepHits: Set<string>): boolean {
  * relative quote path resolves, and the `page:line` pairs any Grep call displayed (`grepHitPages`,
  * defaulting to none). Every page read must carry a verified quote, and every quoted page must
  * have been read: a quote on a docs-set page the transcript never shows opened, and whose own span
- * never overlapped a displayed Grep line either, was not read in this run. A quote whose span
- * overlaps a line a Grep call displayed (`grepHits`, checked by `overlapsGrepHit`) is excused from
- * that last check, since the reader's own tool output did show that line; the quote still must
- * verify on its own, and an unrelated line elsewhere on the same page excuses nothing.
+ * never overlapped a displayed Grep line either, was not read in this run. The same unread-page
+ * check applies to every verified `steps[]` and `diverged[]` quote, not only the top-level ones. A
+ * quote whose span overlaps a line a Grep call displayed (`grepHits`, checked by `overlapsGrepHit`)
+ * is excused from that last check, since the reader's own tool output did show that line; the
+ * quote still must verify on its own, and an unrelated line elsewhere on the same page excuses
+ * nothing.
  * @returns The `verified` block for the job report.
  */
 export function verifyReport({
@@ -168,6 +212,8 @@ export function verifyReport({
   if (!init.ok) problems.push(...init.problems.map((p) => `init: ${p}`));
   if (canariesFound.length > 0) problems.push(`canary loaded: ${canariesFound.length} canary string(s) in the transcript`);
   let quotes: VerifiedQuote[] = [];
+  let steps: VerifiedStep[] = [];
+  let diverged: VerifiedDiverged[] = [];
   if (!report) {
     problems.push('no structured report');
   } else {
@@ -182,10 +228,24 @@ export function verifyReport({
     }
     const read = new Set(pagesRead);
     for (const q of quotes) {
-      if (q.ok && isPage(q.path, docsSet) && !read.has(q.path) && !overlapsGrepHit(q, grepHits)) {
+      if (citesUnreadPage(q, docsSet, read, grepHits)) {
         problems.push(`quote ${q.path}:${String(q.line)} cites a page the transcript never shows read`);
       }
     }
+    steps = verifySteps(report.steps ?? [], root, cwd);
+    for (const step of steps) {
+      if (!step.quote.ok) problems.push(`step quote ${step.quote.path}:${String(step.quote.line)} unverified: ${step.quote.reason}`);
+      else if (citesUnreadPage(step.quote, docsSet, read, grepHits)) {
+        problems.push(`step quote ${step.quote.path}:${String(step.quote.line)} cites a page the transcript never shows read`);
+      }
+    }
+    diverged = verifyDiverged(report.diverged ?? [], root, cwd);
+    for (const entry of diverged) {
+      if (!entry.quote.ok) problems.push(`diverged quote ${entry.quote.path}:${String(entry.quote.line)} unverified: ${entry.quote.reason}`);
+      else if (citesUnreadPage(entry.quote, docsSet, read, grepHits)) {
+        problems.push(`diverged quote ${entry.quote.path}:${String(entry.quote.line)} cites a page the transcript never shows read`);
+      }
+    }
   }
-  return { ok: problems.length === 0, init: init.ok, canaries: canariesFound.length === 0, quotes, problems };
+  return { ok: problems.length === 0, init: init.ok, canaries: canariesFound.length === 0, quotes, steps, diverged, problems };
 }

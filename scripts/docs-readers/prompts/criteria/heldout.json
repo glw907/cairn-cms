@@ -1,0 +1,74 @@
+[
+  {
+    "id": "D01",
+    "page": "docs/reference/cli-cairn-json-output.md",
+    "commit": "29a03eff",
+    "subject": "The page never says a payload's `verdict` and `exitCode` always agree, so a parser cannot assert one from the other.",
+    "criterion": "The item must say that the page does not state whether a payload's `verdict` and its `exitCode` always agree (map one to one), or that the reader had to guess that relation. Relating `exitCode` to the process's own exit status, or listing the verdict words and exit codes separately, without naming the `verdict`-to-`exitCode` relation as unstated or contradicted, does not count.",
+    "nearMiss": "assumed: \"A payload's `exitCode` equals the exit status the process returns, so the wrapper reads either one.\""
+  },
+  {
+    "id": "D03",
+    "page": "docs/reference/cli-cairn-json-output.md",
+    "commit": "29a03eff",
+    "subject": "The page never says a check reads `held` only while its hold is unexpired and reads `fail` once `hold.expired` is true.",
+    "criterion": "The item must say that the page does not state which `state` a check carries once its hold has expired (whether it still reads `held` or reads `fail`), or that the relation between a check's `held` state and `hold.expired` is unstated or unclear. Describing the `hold` object's fields, or how an expired hold counts toward the exit, without naming the expired check's own state as unstated, does not count.",
+    "nearMiss": "assumed: \"`hold.until` is an ISO 8601 UTC timestamp, so the parser compares it against the current time.\""
+  },
+  {
+    "id": "D06",
+    "page": "docs/reference/cli-cairn-json-output.md",
+    "commit": "29a03eff",
+    "subject": "The page names `topEvents` without saying where it sits (a key inside `observed`) or what shape it has.",
+    "criterion": "The item must say that the page does not state where `topEvents` appears in the payload (which object carries it) or what its shape is. Treating `topEvents` as optional because it appears only on verbose runs, without saying its placement or shape is unstated, does not count.",
+    "nearMiss": "assumed: \"`topEvents` appears only on a verbose run, so the parser treats it as optional.\""
+  },
+  {
+    "id": "D08",
+    "page": "docs/reference/cli-cairn-json-output.md",
+    "commit": "29a03eff",
+    "subject": "The page gives the sort keys for `checks` and `acknowledged` without the collation, which is byte-wise, not locale-aware.",
+    "criterion": "The item must say that the page does not define how `checks` or `acknowledged` are compared when sorted: the collation or comparison rule (byte-wise, code-point, locale-aware, or case handling), including that \"alphabetically\" is ambiguous. An item about which key the arrays sort by, or relying on the order, without naming the comparison rule as unstated, does not count.",
+    "nearMiss": "assumed: \"A site's `checks` arrive sorted by `checkId`, so the parser keeps them in the order received.\""
+  },
+  {
+    "id": "D09",
+    "page": "docs/reference/cli-cairn-json-output.md",
+    "commit": "29a03eff",
+    "subject": "The page names the `degraded` field with no meaning; it is true when any check could not run for want of a credential.",
+    "criterion": "The item must say that the page does not state what `degraded` means or when it is true, or that the reader had to guess its meaning. Noting `degraded`'s type or presence on a site payload, without naming its meaning as unstated, does not count.",
+    "nearMiss": "assumed: \"`degraded` is a boolean always present on a `site` payload, so the parser requires it.\""
+  },
+  {
+    "id": "D10",
+    "page": "docs/reference/cli-cairn-json-output.md",
+    "commit": "29a03eff",
+    "subject": "The page says `worstFirst` lists the sites by verdict, but it ranks them by the severity class of each site's worst unacknowledged failure.",
+    "criterion": "The item must challenge the sort key the page gives for `worstFirst`: that ordering \"by verdict\" is wrong, or disagrees with the code, for example that the ranking follows each site's worst unacknowledged failure or some other severity measure. An item asking only how sites that share a verdict or class are ordered among themselves (the tie order) does not count, nor does an item that relies on the verdict ordering.",
+    "nearMiss": "assumed: \"The page does not say how `worstFirst` orders sites that share the same verdict, so the parser keeps them in the order received.\""
+  },
+  {
+    "id": "D12",
+    "page": "docs/reference/cli-cairn-json-output.md",
+    "commit": "29a03eff",
+    "subject": "The page never maps an `authCheck` row's wire state to its exit contribution, and never says an unset credential or a site-scoped row on a run without a site reads `skip`.",
+    "criterion": "The item must say that the page does not state how an `authCheck` row's `state` contributes to the run's exit code (which state folds to which verdict), or that the page does not say which state an unset credential, or a site-scoped row on a run given no site, reads. An item about a row's `reason` text, or about the row's fields in general, without naming the state-to-exit mapping or the unset-credential state as unstated, does not count.",
+    "nearMiss": "assumed: \"An `authCheck` row's `reason` is display text for a person, so the parser keeps it as an opaque string.\""
+  },
+  {
+    "id": "D16",
+    "page": "docs/reference/cli-cairn-doctor.md",
+    "commit": "3453668f",
+    "subject": "The doctor payload carries no severity field, and the page never says so or how a consumer folds a `fail` (by the page's severity column, keyed on `checkId`).",
+    "criterion": "The item must say that the page does not state whether the `--json` payload carries a check's severity, or how a consumer tells a blocker `fail` from a warning `fail` from the payload (for example by the page's severity column, keyed on `checkId`). An item about the exit code a warning-only run returns, or about the precedence fold in general, without naming the missing severity in the payload or the way to recover it, does not count.",
+    "nearMiss": "assumed: \"A doctor run whose only failures are warning-severity checks exits 1, so the wrapper maps exit 1 to warnings.\""
+  },
+  {
+    "id": "D18",
+    "page": "docs/reference/cli-cairn-exit-codes.md",
+    "commit": "29a03eff",
+    "subject": "\"Empty stdout under `--json` means the invocation was wrong\" is incomplete: a run that ends before any payload is written, or a tool fault, also exits 3 with empty stdout.",
+    "criterion": "The item must say that the page's rule that empty stdout under `--json` means a wrong invocation is incomplete or wrong, naming or asking about another cause of empty stdout (a tool fault, a crash, an internal error, or a run cut short before its first payload, including a cancellation), or it must say the page does not state whether such runs write a payload. Restating that a usage error writes nothing to stdout, or relying on the rule, does not count.",
+    "nearMiss": "assumed: \"A usage error writes its message to stderr and nothing to stdout, so the wrapper treats empty stdout as a bad invocation.\""
+  }
+]

@@ -1,0 +1,68 @@
+{
+  "kind": "catch",
+  "builtFrom": "sources",
+  "report": {
+    "path": "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/tuning/round1/reader-report.json",
+    "jobId": "evaluator-planted-1",
+    "attempt": 1,
+    "runId": "20260925t180330-4a4885"
+  },
+  "plants": {
+    "plant-1": {
+      "plantId": "P01"
+    },
+    "plant-2": {
+      "plantId": "P02"
+    }
+  },
+  "items": {
+    "item-1": {
+      "field": "stalls",
+      "sourceIndex": 0
+    },
+    "item-2": {
+      "field": "stalls",
+      "sourceIndex": 1
+    },
+    "item-3": {
+      "field": "stalls",
+      "sourceIndex": 2
+    },
+    "item-4": {
+      "field": "assumed",
+      "sourceIndex": 0
+    },
+    "item-5": {
+      "field": "assumed",
+      "sourceIndex": 1
+    },
+    "item-6": {
+      "field": "assumed",
+      "sourceIndex": 2
+    },
+    "item-7": {
+      "field": "assumed",
+      "sourceIndex": 3
+    },
+    "item-8": {
+      "field": "diverged",
+      "sourceIndex": 0
+    },
+    "item-9": {
+      "field": "diverged",
+      "sourceIndex": 1
+    }
+  },
+  "inputs": {
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/batches/round1.json": "f1595e04f05fec97d03f360723404cf2f190e93c5539317f03195de140aa1b4a",
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/tuning/round1/reader-report.json": "62827a319ef38c9135ff82ee8a60b079c04ec2df8449b429d730964c29c4492b",
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/prompts/criteria/dev-plants.json": "32ed43880954bc6d4da04a0e8390ddef12b5aeaa4f7a7f63db2017184b0d6f7f",
+    "/var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-1b/scripts/docs-readers/fixtures/dev-plants.json": "f166fb31526a5918966f4c96f2368c76a6523283b5664ab56fa7f44fdba1aac3",
+    "/var/home/glw907/.cache/docs-readers/prepared/round1/evaluator-planted/docs/why-cairn.md": "fb3ea3135d1d9e0eaa13c8d6e60c66de9ae136dbeb388c5c87f463c0ff4afe35",
+    "index.json": "841eb93e74116c9c1ad7e9802dc87920932dbcc5bba786fd21483b71a0e2c094",
+    "items.json": "0824c5ae29d972e3d098f5121f06415bd01b1a377cbd50cf8825d40b0566efeb",
+    "job.json": "9c713033d7271adc4215a6f29d11f9a2d4830e9fc966b38a7f48239b43a8dc31",
+    "pages/docs/why-cairn.md": "fb3ea3135d1d9e0eaa13c8d6e60c66de9ae136dbeb388c5c87f463c0ff4afe35",
+    "plants.json": "f619f88b681d1f43e4a316f99fbc769be8556ed82086daecec7d45bd07aeacbc"
+  }
+}

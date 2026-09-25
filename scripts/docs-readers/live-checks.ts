@@ -21,16 +21,30 @@
  * and `cairn auth check`, and that `cairn auth set` and a production site name are both refused.
  * All print scrubbed summaries only.
  */
-import { randomBytes } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CACHE_ROOT, SCRATCH_SITE, readSecret, runBatchFile, type FinishedReport } from './run.js';
-import { packEngineTarballs, prepareDocsAndBinary, prepareDocsAndSite, prepareRepositoryExport } from './lib/prepare-class.js';
+import { assertOneCleanCommit, packEngineTarballs, prepareDocsAndBinary, prepareDocsAndSite, prepareRepositoryExport, resolveCommit } from './lib/prepare-class.js';
 import { writeOwnerMarker } from './lib/sweep.js';
 import { findInit, parseStream, toolCalls } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
 import type { JobReport, ToolCall } from './lib/types.js';
+
+/**
+ * A random hex string of a given length, built from `randomUUID()` rather than
+ * `randomBytes(...).toString('hex')`, which sidesteps an svelte-check overload-resolution quirk
+ * this module's own test file triggers once anything imports it (the same fix `run.ts`'s
+ * `newRunId` and `lib/podman.ts`'s canary marker already took).
+ * @param length - How many hex characters to return.
+ * @returns The hex string.
+ */
+function hex(length: number): string {
+  let out = '';
+  while (out.length < length) out += randomUUID().replace(/-/g, '');
+  return out.slice(0, length);
+}
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -51,18 +65,31 @@ function printScrubbed(summary: object): void {
  * @param values - The values by name.
  * @returns The filled text.
  */
-function fill(text: string, values: Record<string, string>): string {
+export function fill(text: string, values: Record<string, string>): string {
   return text.replace(/\{\{(\w+)\}\}/g, (whole, key) => values[key] ?? whole);
+}
+
+/**
+ * The path to a job's final attempt's transcript, relative to the batch output directory. A
+ * report with no `attempts` (the shape a run saved before attempts existed carries) falls back to
+ * the single transcript a job's own id once named.
+ * @param outDir - The batch output directory.
+ * @param job - The job report.
+ * @returns The transcript file's path.
+ */
+function transcriptPath(outDir: string, job: JobReport): string {
+  const last = job.attempts?.at(-1);
+  return join(outDir, last ? last.transcript : `transcripts/${job.id}.jsonl`);
 }
 
 /**
  * Read a job's scrubbed transcript back.
  * @param outDir - The batch output directory.
- * @param jobId - Names the transcript file.
+ * @param job - The job report.
  * @returns The raw text, its events, and its tool calls.
  */
-function transcriptOf(outDir: string, jobId: string) {
-  const text = readFileSync(join(outDir, 'transcripts', `${jobId}.jsonl`), 'utf8');
+function transcriptOf(outDir: string, job: JobReport) {
+  const text = readFileSync(transcriptPath(outDir, job), 'utf8');
   const { events } = parseStream(text);
   return { text, events, calls: toolCalls(events) };
 }
@@ -73,7 +100,7 @@ function transcriptOf(outDir: string, jobId: string) {
  * @param match - Tests one denial.
  * @returns Report locations such as `denials[0]`.
  */
-function denialsWhere(job: JobReport, match: (denial: JobReport['denials'][number]) => boolean): string[] {
+export function denialsWhere(job: JobReport, match: (denial: JobReport['denials'][number]) => boolean): string[] {
   return job.denials.flatMap((d, i) => (match(d) ? [`denials[${i}] (${d.source}: ${d.tool})`] : []));
 }
 
@@ -101,7 +128,7 @@ function batchSummary(report: FinishedReport) {
  * @param report - The finished batch report.
  * @returns True when nothing the run created is left.
  */
-function tornDown(report: FinishedReport): boolean {
+export function tornDown(report: FinishedReport): boolean {
   return report.teardown.runDirRemoved && report.teardown.containersLeft === 0;
 }
 
@@ -129,7 +156,7 @@ function hostReadCheck(job: JobReport, calls: ToolCall[], hostPath: string) {
  * @returns One entry per check.
  */
 function escapeChecks(job: JobReport, outDir: string, hostPath: string, hostSecret: string) {
-  const { text, events, calls } = transcriptOf(outDir, job.id);
+  const { text, events, calls } = transcriptOf(outDir, job);
   const tools = findInit(events)?.tools ?? [];
   const hasBash = tools.includes('Bash');
   const checks: Array<{ check: string; pass: boolean; where: string }> = [];
@@ -175,9 +202,9 @@ function escapeChecks(job: JobReport, outDir: string, hostPath: string, hostSecr
  * @returns The exit code.
  */
 async function escape(): Promise<number> {
-  const id = randomBytes(4).toString('hex');
+  const id = hex(8);
   const scratch = join(CACHE_ROOT, `escape-${id}`);
-  const hostSecret = `ops-${randomBytes(6).toString('hex')}@example.net`;
+  const hostSecret = `ops-${hex(12)}@example.net`;
   const hostPath = join(scratch, 'ops-notes.txt');
   claimScratch(scratch);
   writeFileSync(hostPath, `Team ops notes\nAlert address: ${hostSecret}\n`);
@@ -221,7 +248,7 @@ async function auth(): Promise<number> {
   const real = readSecret('CAIRN_DOCS_READER_OAUTH_TOKEN');
   if (!real) throw new Error('CAIRN_DOCS_READER_OAUTH_TOKEN is not available');
   // A token-shaped value that the API rejects; the real token is never revoked or altered.
-  const invalid = `${['sk', 'ant', 'oat01'].join('-')}-${randomBytes(24).toString('hex')}`;
+  const invalid = `${['sk', 'ant', 'oat01'].join('-')}-${hex(48)}`;
   let handed = 0;
   // Call 1 is the pre-batch token check and call 2 the first job; every later job gets the bad one.
   const tokenFor = () => {
@@ -257,9 +284,9 @@ async function auth(): Promise<number> {
  * @returns The exit code.
  */
 async function site(): Promise<number> {
-  const scratch = join(CACHE_ROOT, `site-${randomBytes(4).toString('hex')}`);
+  const scratch = join(CACHE_ROOT, `site-${hex(8)}`);
   const prepared = join(scratch, 'prepared');
-  const hostSecret = `rollout-${randomBytes(6).toString('hex')}@example.net`;
+  const hostSecret = `rollout-${hex(12)}@example.net`;
   const hostPath = join(scratch, 'rollout-notes.txt');
   try {
     claimScratch(scratch);
@@ -267,6 +294,7 @@ async function site(): Promise<number> {
     const tarballs = packEngineTarballs(REPO_ROOT, join(scratch, 'pack'), undefined, CACHE_ROOT);
     prepareDocsAndSite({
       sourceRoot: REPO_ROOT,
+      commit: resolveCommit(REPO_ROOT, 'HEAD'),
       docsSet: ['docs/extend/design-your-site.md'],
       tarballs,
       dest: prepared,
@@ -302,7 +330,7 @@ async function site(): Promise<number> {
     });
     const { report, outDir } = await runBatchFile('docs-and-site-smoke', { batchOverride: batch });
     const job = report.jobs[0];
-    const { text, calls } = transcriptOf(outDir, job.id);
+    const { text, calls } = transcriptOf(outDir, job);
     const ranNpmScript = calls.some((c) => c.name === 'Bash' && /npm run --prefix site\b/.test(String(c.input.command)));
     const npmInstallBlocked = job.proxyBlocked.length > 0;
     const outsideReadRefused = hostReadCheck(job, calls, hostPath).refused;
@@ -343,13 +371,14 @@ async function site(): Promise<number> {
  * @returns The exit code.
  */
 async function repository(): Promise<number> {
-  const scratch = join(CACHE_ROOT, `repository-${randomBytes(4).toString('hex')}`);
+  const scratch = join(CACHE_ROOT, `repository-${hex(8)}`);
   const prepared = join(scratch, 'prepared');
   try {
     claimScratch(scratch);
-    prepareRepositoryExport({ repoRoot: REPO_ROOT, commit: 'HEAD', dest: prepared });
-    const answerKeyAbsent =
-      !existsSync(join(prepared, 'docs/internal/record')) && !existsSync(join(prepared, 'docs/superpowers')) && !existsSync(join(prepared, '.git'));
+    prepareRepositoryExport({ repoRoot: REPO_ROOT, commit: resolveCommit(REPO_ROOT, 'HEAD'), dest: prepared });
+    // The export's own history is its one synthetic commit, which assertOneCleanCommit re-proves.
+    assertOneCleanCommit(prepared);
+    const answerKeyAbsent = !existsSync(join(prepared, 'docs/internal/record')) && !existsSync(join(prepared, 'docs/superpowers'));
     const batch = JSON.stringify({
       name: 'repository-smoke',
       concurrency: 1,
@@ -369,7 +398,7 @@ async function repository(): Promise<number> {
     });
     const { report, outDir } = await runBatchFile('repository-smoke', { batchOverride: batch });
     const job = report.jobs[0];
-    const { calls } = transcriptOf(outDir, job.id);
+    const { calls } = transcriptOf(outDir, job);
     const ranCheckFacts = calls.some((c) => c.name === 'Bash' && /npm run check:facts\b/.test(String(c.input.command)));
     const summary = {
       ...batchSummary(report),
@@ -404,12 +433,13 @@ async function repository(): Promise<number> {
  * @returns The exit code.
  */
 async function docsAndBinary(): Promise<number> {
-  const scratch = join(CACHE_ROOT, `docs-and-binary-${randomBytes(4).toString('hex')}`);
+  const scratch = join(CACHE_ROOT, `docs-and-binary-${hex(8)}`);
   const prepared = join(scratch, 'prepared');
   try {
     claimScratch(scratch);
     prepareDocsAndBinary({
       sourceRoot: REPO_ROOT,
+      commit: resolveCommit(REPO_ROOT, 'HEAD'),
       docsSet: ['docs/admin/troubleshooting.md'],
       siteId: SCRATCH_SITE.siteId,
       record: SCRATCH_SITE.record,
@@ -444,7 +474,7 @@ async function docsAndBinary(): Promise<number> {
     });
     const { report, outDir } = await runBatchFile('docs-and-binary-smoke', { batchOverride: batch });
     const job = report.jobs[0];
-    const { calls } = transcriptOf(outDir, job.id);
+    const { calls } = transcriptOf(outDir, job);
     const authSetCalls = calls.filter((c) => c.name === 'Bash' && /cairn auth set/.test(String(c.input.command)));
     const authSetDenied = denialsWhere(job, (d) => d.tool === 'Bash' && /cairn auth set/.test(d.input));
     const authSetFailed = authSetCalls.some(
@@ -494,16 +524,19 @@ async function docsAndBinary(): Promise<number> {
   }
 }
 
-const mode = process.argv[2];
 const modes: Record<string, () => Promise<number>> = { escape, auth, site, repository, 'docs-and-binary': docsAndBinary };
-if (!mode || !modes[mode]) {
-  process.stderr.write('usage: npx tsx scripts/docs-readers/live-checks.ts escape|auth|site|repository|docs-and-binary\n');
-  process.exit(2);
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const mode = process.argv[2];
+  if (!mode || !modes[mode]) {
+    process.stderr.write('usage: npx tsx scripts/docs-readers/live-checks.ts escape|auth|site|repository|docs-and-binary\n');
+    process.exit(2);
+  }
+  modes[mode]().then(
+    (code) => process.exit(code),
+    (error) => {
+      process.stderr.write(`live-checks: ${error instanceof Error ? error.message : String(error)}\n`);
+      process.exit(1);
+    },
+  );
 }
-modes[mode]().then(
-  (code) => process.exit(code),
-  (error) => {
-    process.stderr.write(`live-checks: ${error instanceof Error ? error.message : String(error)}\n`);
-    process.exit(1);
-  },
-);

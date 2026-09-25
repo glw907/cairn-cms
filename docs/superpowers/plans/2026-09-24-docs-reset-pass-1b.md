@@ -26,6 +26,8 @@ wins; stop and report.
 (`docs/superpowers/research/2026-09-24-pass-1b-spec-fold.md`,
 `docs/superpowers/research/2026-09-24-pass-1b-plan-fold.md`) carry the rulings behind it.
 
+**Approved:** Geoff, 2026-09-24, with the freeze-readiness review added to Task 11.
+
 **Scope: core gate only** (O7, Geoff, 2026-09-24). No transfer set, no Sonnet arm, no historical
 mining (the planter synthesizes every plant), one tuning round. Everything that gates stays.
 
@@ -479,9 +481,20 @@ lists) and the held-out batch, run `freeze.ts` over every input, commit the mani
 ledger and the flag, not the runner, govern spend. A `diff-reviewer` reads the manifest against the
 spec's "Freeze" list.
 
+**Freeze-readiness review (Geoff, 2026-09-24),** before the tag: one adversarial
+`claude-opus-5-5` reviewer at `high`, which had no part in the build, reads the built code and
+the authored prompts against the spec. It tries to break the gate, not to list polish:
+whether each blind agent's inputs actually exclude the development records; whether the
+runner's refusal, the stamp, the chain, and the scorer's gated mode reject drifted, unstamped,
+or out-of-chain input (it runs each check against a crafted bad fixture); whether any prompt,
+rubric, or packet leaks a development item or a reader's model or run id; and whether the
+export leaks a plant through git, mtimes, or an excluded path. A blocker is fixed and re-read
+before the tag. Findings go to `docs/superpowers/research/2026-09-24-pass-1b-freeze-readiness.md`.
+
 **Acceptance.**
 - The manifest lists by path every input in the spec's list, including each prompt, rubric,
   criteria file, and script from Tasks 1 to 8; the reviewer names none missing.
+- The freeze-readiness review returns no open blocker, and its file is committed before the tag.
 - A dry `freeze.ts --verify` passes on the tagged tree.
 - The chain file exists with a genesis entry (the manifest hash) committed with the tag, and a
   fixture report stamped against it passes the scorer's gated-mode integrity check.
@@ -578,4 +591,5 @@ ceiling.
 | Task | State | Commit | Spend | Notes |
 | --- | --- | --- | --- | --- |
 | spec | done | `30083f27`..`da97461b` | brainstorm session | Spec drafted, five lens reviews, fold, verification, second fold. Owner rulings O1 to O4 (Geoff, 2026-09-24). |
-| plan | drafted | `dc37e38b`, fold at `64ccc784` and after | plan session | Three plan reviews and a spec prose review folded (`2026-09-24-pass-1b-plan-fold.md`). O1 revised; O5 and O6; conductor rulings P1 to P11; then O7 (core gate only) and O8 (ceiling 15M, flag 12M). |
+| plan | approved | `dc37e38b`, fold at `64ccc784` and after | plan session | Three plan reviews and a spec prose review folded (`2026-09-24-pass-1b-plan-fold.md`). O1 revised; O5 and O6; conductor rulings P1 to P11; then O7 (core gate only) and O8 (ceiling 15M, flag 12M). |
+| plan gate | approved | this commit | planning session: subagents about 2.5M by the Agent tool's figures (cache reads included, so an overstatement under the counting rule); the conductor's figure is in its `/cost` | Geoff approved 2026-09-24 and asked for further adversarial review; the conductor judged more plan review past diminishing returns (findings fell from 70 to 2 majors across rounds) and added one freeze-readiness review to Task 11 instead. Planning questions to Geoff: 12 (not scored). Next: Task 0 in a fresh `claude-opus-5-5` session at `medium`. |

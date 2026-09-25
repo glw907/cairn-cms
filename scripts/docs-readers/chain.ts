@@ -6,7 +6,7 @@
  *
  * Usage:
  *   npx tsx scripts/docs-readers/chain.ts append --chain FILE --path PATH --commit SHA
- *     (--sha256 HEX | --file FILE) [--root DIR]
+ *     [--sha256 HEX] [--root DIR] [--file FILE]
  *   npx tsx scripts/docs-readers/chain.ts verify --chain FILE --root DIR
  *   npx tsx scripts/docs-readers/chain.ts latest --chain FILE --path PATH
  *   npx tsx scripts/docs-readers/chain.ts prefix --chain FILE --head HEX
@@ -38,11 +38,13 @@ export function main(argv: string[]): number {
   const [command, ...rest] = argv;
   const flags = parseFlags(rest);
   if (command === 'append') {
-    if (!flags.chain || !flags.path || !flags.commit || (!flags.sha256 && !flags.file)) {
-      process.stderr.write('usage: chain.ts append --chain FILE --path PATH --commit SHA (--sha256 HEX | --file FILE) [--root DIR]\n');
+    if (!flags.chain || !flags.path || !flags.commit) {
+      process.stderr.write('usage: chain.ts append --chain FILE --path PATH --commit SHA [--sha256 HEX] [--root DIR] [--file FILE]\n');
       return 1;
     }
-    const sha256 = flags.sha256 ?? hashFile(resolve(flags.root ?? '.', flags.file as string));
+    // Hashing the path's own file by default, rather than requiring a separate --file, keeps an
+    // entry's path and the file it was hashed from from ever drifting apart by accident.
+    const sha256 = flags.sha256 ?? hashFile(resolve(flags.root ?? '.', flags.file ?? flags.path));
     const entry = appendEntry(resolve(flags.chain), { path: flags.path, sha256, commit: flags.commit });
     process.stdout.write(`${JSON.stringify(entry, null, 2)}\n`);
     return 0;

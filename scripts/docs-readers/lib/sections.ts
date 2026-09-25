@@ -120,6 +120,18 @@ export function headingLines(sections: SectionSpan[]): Set<number> {
   return new Set(sections.filter((section) => section.level !== 1).map((section) => section.start));
 }
 
+/**
+ * Every heading line a page carries, at any level (H1 through H6), fence-aware. This is broader
+ * than `headingLines`, which lists only the H2/H3 section starts the capacity packer treats as a
+ * boundary: a plant may never touch any heading line at all, an H4 through H6 included, since the
+ * planter may not edit, add, or remove one.
+ * @param text - The page's raw markdown.
+ * @returns Every heading's 1-based line number.
+ */
+export function allHeadingLines(text: string): Set<number> {
+  return new Set(findHeadings(text.split('\n')).map((heading) => heading.line));
+}
+
 /** A 1-based inclusive line span. */
 export interface LineRange {
   start: number;

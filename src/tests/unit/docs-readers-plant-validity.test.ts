@@ -39,6 +39,20 @@ function lineText(text: string, line: number): string {
   return text.split('\n')[line - 1];
 }
 
+/** `ONE_SECTION_PAGE` with its line 10 replaced by a given prose line, for a plant embedded in a sentence rather than a bare field. */
+function pageWithLine10(prose: string): string {
+  const lines = ONE_SECTION_PAGE.split('\n');
+  lines[9] = prose;
+  return lines.join('\n');
+}
+
+/** A page's 1-based line number for a line matching exactly, or a thrown error naming the search. */
+function lineOf(text: string, needle: string): number {
+  const index = text.split('\n').indexOf(needle);
+  if (index === -1) throw new Error(`fixture page carries no line "${needle}"`);
+  return index + 1;
+}
+
 /** A section's own 1-based line span, by heading text, parsed from a page's real text. */
 function sectionSpan(pageText: string, heading: string): { start: number; end: number } {
   const section = parseSections(pageText).sections.find((s) => s.heading === heading);
@@ -230,12 +244,8 @@ describe('checkJobPlants: the spacing rules', () => {
 });
 
 describe('checkJobPlants: the stale-path rule', () => {
-  it('rejects a stale-path plant whose planted path lies on the absent list', () => {
-    // The control page carries the correct path at line 10; the fixture builds it directly so
-    // `original` and the control text agree without a second overlay pass.
-    const controlLines = ONE_SECTION_PAGE.split('\n');
-    controlLines[9] = '`docs/reference/log.md`';
-    const control = controlLines.join('\n');
+  it('rejects a stale-path plant whose original path already lies on the absent list', () => {
+    const control = pageWithLine10('Open `docs/internal/record/2026-09-24-x.md` and add the event.');
     const controlPages = { 'page.md': control };
     const map = buildMap(controlPages, { 'page.md': ['Section A'] });
     const plant = makePlant({
@@ -243,21 +253,125 @@ describe('checkJobPlants: the stale-path rule', () => {
       page: 'page.md',
       line: 10,
       type: 'stale-path',
-      original: '`docs/reference/log.md`',
-      planted: '`docs/internal/record/2026-09-24-x.md`',
+      original: 'Open `docs/internal/record/2026-09-24-x.md` and add the event.',
+      planted: 'Open `docs/reference/log.md` and add the event.',
+    });
+    const input = { job: 'job1', map, absent: ['docs/internal/record/'], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(control, [plant]) }, plants: [plant] };
+    const result = checkJobPlants(input);
+    expect(result.plants[0].valid).toBe(false);
+    expect(result.plants[0].reasons).toContain('stale-path plant targets an absent-list path "docs/internal/record/2026-09-24-x.md"');
+  });
+
+  it('rejects a stale-path plant whose planted path lies under an absent-list directory', () => {
+    const control = pageWithLine10('Open `docs/reference/log.md` and add the event.');
+    const controlPages = { 'page.md': control };
+    const map = buildMap(controlPages, { 'page.md': ['Section A'] });
+    const plant = makePlant({
+      id: 'p1',
+      page: 'page.md',
+      line: 10,
+      type: 'stale-path',
+      original: 'Open `docs/reference/log.md` and add the event.',
+      planted: 'Open `docs/internal/record/2026-09-24-x.md` and add the event.',
+    });
+    const input = { job: 'job1', map, absent: ['docs/internal/record/'], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(control, [plant]) }, plants: [plant] };
+    const result = checkJobPlants(input);
+    expect(result.plants[0].valid).toBe(false);
+    expect(result.plants[0].reasons).toContain('stale-path plant targets an absent-list path "docs/internal/record/2026-09-24-x.md"');
+  });
+
+  it('passes a near miss: a path sharing a prefix with the absent directory, but not nested under it', () => {
+    const control = pageWithLine10('Open `docs/reference/log.md` and add the event.');
+    const controlPages = { 'page.md': control };
+    const map = buildMap(controlPages, { 'page.md': ['Section A'] });
+    const plant = makePlant({
+      id: 'p1',
+      page: 'page.md',
+      line: 10,
+      type: 'stale-path',
+      original: 'Open `docs/reference/log.md` and add the event.',
+      planted: 'Open `docs/internal/recordings/x.md` and add the event.',
+    });
+    const input = { job: 'job1', map, absent: ['docs/internal/record/'], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(control, [plant]) }, plants: [plant] };
+    const result = checkJobPlants(input);
+    expect(result.plants[0].valid).toBe(true);
+  });
+
+  it("joins a token under the plant page's bundle folder for a bundled job like the scripter, whose absent entries are bundle-prefixed", () => {
+    const pagePath = 'doctor/docs/reference/cli-cairn-doctor.md';
+    const control = pageWithLine10('See `docs/reference/cli-cairn-exit-codes.md` for exit codes.');
+    const controlPages = { [pagePath]: control };
+    const map = buildMap(controlPages, { [pagePath]: ['Section A'] });
+    const plant = makePlant({
+      id: 'p1',
+      page: pagePath,
+      line: 10,
+      type: 'stale-path',
+      original: 'See `docs/reference/cli-cairn-exit-codes.md` for exit codes.',
+      planted: 'See `docs/reference/cli-cairn-json-output.md` for exit codes.',
     });
     const input = {
-      job: 'job1',
+      job: 'scripter',
       map,
-      absent: ['docs/internal/record/'],
+      absent: ['doctor/docs/reference/cli-cairn-exit-codes.md'],
       findingSpans: {},
       controlPages,
-      plantedPages: { 'page.md': applyPlants(control, [plant]) },
+      plantedPages: { [pagePath]: applyPlants(control, [plant]) },
       plants: [plant],
     };
     const result = checkJobPlants(input);
     expect(result.plants[0].valid).toBe(false);
-    expect(result.plants[0].reasons).toContain('stale-path plant targets an absent-list path "docs/internal/record/2026-09-24-x.md"');
+    expect(result.plants[0].reasons).toContain('stale-path plant targets an absent-list path "docs/reference/cli-cairn-exit-codes.md"');
+  });
+});
+
+describe('checkJobPlants: the heading rule at any level', () => {
+  it('rejects a span landing on an H4 heading line nested inside an on-path H3 section', () => {
+    const page = ['# Title', '', '## Section A', '', '### Sub A1', '', '#### Deep heading', '', ...numberedBody('D', 10)].join('\n');
+    const controlPages = { 'page.md': page };
+    const map = buildMap(controlPages, { 'page.md': ['Sub A1'] });
+    const headingLine = lineOf(page, '#### Deep heading');
+    const plant = makePlant({ id: 'p1', page: 'page.md', line: headingLine, original: '#### Deep heading', planted: '#### Renamed heading' });
+    const input = { job: 'job1', map, absent: [], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(page, [plant]) }, plants: [plant] };
+    const result = checkJobPlants(input);
+    expect(result.plants[0].valid).toBe(false);
+    expect(result.plants[0].reasons).toContain('plant span includes a heading line');
+  });
+
+  it('rejects a span whose planted text adds a heading-shaped line the control never had', () => {
+    const controlPages = { 'page.md': ONE_SECTION_PAGE };
+    const map = buildMap(controlPages, { 'page.md': ['Section A'] });
+    const plant = makePlant({ id: 'p1', page: 'page.md', line: 10, original: lineText(ONE_SECTION_PAGE, 10), planted: '### Inserted heading' });
+    const input = { job: 'job1', map, absent: [], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(ONE_SECTION_PAGE, [plant]) }, plants: [plant] };
+    const result = checkJobPlants(input);
+    expect(result.plants[0].valid).toBe(false);
+    expect(result.plants[0].reasons).toContain('plant span includes a heading line');
+  });
+});
+
+describe("checkJobPlants: the plant record must match the page", () => {
+  it("rejects a plant whose recorded original text does not match the control page at its span", () => {
+    const controlPages = { 'page.md': ONE_SECTION_PAGE };
+    const map = buildMap(controlPages, { 'page.md': ['Section A'] });
+    const plant = makePlant({ id: 'p1', page: 'page.md', line: 10, original: 'A line that was never actually there.', planted: 'A replaced line 10.' });
+    const input = { job: 'job1', map, absent: [], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(ONE_SECTION_PAGE, [plant]) }, plants: [plant] };
+    const result = checkJobPlants(input);
+    expect(result.plants[0].valid).toBe(false);
+    expect(result.plants[0].reasons).toContain("the control page's span does not match the plant's recorded original text");
+  });
+
+  it("rejects a plant whose recorded planted text does not match the planted page at its span", () => {
+    const controlPages = { 'page.md': ONE_SECTION_PAGE };
+    const map = buildMap(controlPages, { 'page.md': ['Section A'] });
+    const plant = makePlant({ id: 'p1', page: 'page.md', line: 10, original: lineText(ONE_SECTION_PAGE, 10), planted: 'A replaced line 10.' });
+    // A hand-edited or stale planted tree: its own line 10 disagrees with what the plant record
+    // claims it planted there.
+    const plantedLines = ONE_SECTION_PAGE.split('\n');
+    plantedLines[9] = 'A different replacement entirely.';
+    const input = { job: 'job1', map, absent: [], findingSpans: {}, controlPages, plantedPages: { 'page.md': plantedLines.join('\n') }, plants: [plant] };
+    const result = checkJobPlants(input);
+    expect(result.plants[0].valid).toBe(false);
+    expect(result.plants[0].reasons).toContain("the planted page's span does not match the plant's recorded planted text");
   });
 });
 
@@ -323,13 +437,55 @@ describe('checkJobPlants: the semantic-mix and count flags', () => {
     const map = buildMap(controlPages, { 'page.md': ['Section A'] });
     const lines = [10, 21, 32, 43];
     const plants = lines.map((line, i) =>
-      makePlant({ id: `p${i}`, page: 'page.md', line, semantic: i === 0, original: lineText(ONE_SECTION_PAGE, line), planted: `A replaced line ${line}.` }),
+      makePlant({
+        id: `p${i}`,
+        page: 'page.md',
+        line,
+        type: i === 0 ? 'contradiction' : 'wrong-name',
+        semantic: i === 0,
+        original: lineText(ONE_SECTION_PAGE, line),
+        planted: `A replaced line ${line}.`,
+      }),
     );
     const input = { job: 'job1', map, absent: [], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(ONE_SECTION_PAGE, plants) }, plants };
     const result = checkJobPlants(input);
     expect(result.counts).toEqual({ total: 4, semantic: 1, token: 3 });
     expect(result.fewSemantic).toBe(true);
     expect(result.tooMany).toBe(false);
+  });
+
+  it('does not flag a short job whose every plant is semantic', () => {
+    const controlPages = { 'page.md': ONE_SECTION_PAGE };
+    const map = buildMap(controlPages, { 'page.md': ['Section A'] });
+    const plants = [10, 21].map((line) =>
+      makePlant({ id: `p${line}`, page: 'page.md', line, type: 'contradiction', semantic: true, original: lineText(ONE_SECTION_PAGE, line), planted: `A replaced line ${line}.` }),
+    );
+    const input = { job: 'job1', map, absent: [], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(ONE_SECTION_PAGE, plants) }, plants };
+    const result = checkJobPlants(input);
+    expect(result.fewSemantic).toBe(false);
+  });
+
+  it('flags a short job when not every plant is semantic', () => {
+    const controlPages = { 'page.md': ONE_SECTION_PAGE };
+    const map = buildMap(controlPages, { 'page.md': ['Section A'] });
+    const plants = [
+      makePlant({ id: 'p0', page: 'page.md', line: 10, type: 'contradiction', semantic: true, original: lineText(ONE_SECTION_PAGE, 10), planted: 'A replaced line 10.' }),
+      makePlant({ id: 'p1', page: 'page.md', line: 21, type: 'wrong-name', semantic: false, original: lineText(ONE_SECTION_PAGE, 21), planted: 'A replaced line 21.' }),
+    ];
+    const input = { job: 'job1', map, absent: [], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(ONE_SECTION_PAGE, plants) }, plants };
+    const result = checkJobPlants(input);
+    expect(result.counts).toEqual({ total: 2, semantic: 1, token: 1 });
+    expect(result.fewSemantic).toBe(true);
+  });
+
+  it("rejects a plant whose semantic flag disagrees with its type", () => {
+    const controlPages = { 'page.md': ONE_SECTION_PAGE };
+    const map = buildMap(controlPages, { 'page.md': ['Section A'] });
+    const plant = makePlant({ id: 'p1', page: 'page.md', line: 10, type: 'contradiction', semantic: false, original: lineText(ONE_SECTION_PAGE, 10), planted: 'A replaced line 10.' });
+    const input = { job: 'job1', map, absent: [], findingSpans: {}, controlPages, plantedPages: { 'page.md': applyPlants(ONE_SECTION_PAGE, [plant]) }, plants: [plant] };
+    const result = checkJobPlants(input);
+    expect(result.plants[0].valid).toBe(false);
+    expect(result.plants[0].reasons).toContain('semantic flag disagrees with its type "contradiction"');
   });
 
   it('flags a job with more than seven plants', () => {

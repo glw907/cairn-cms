@@ -90,6 +90,24 @@ describe('verifyChain', () => {
     expect(result.brokenLinks).toHaveLength(1);
     expect(result.brokenLinks[0].line).toBe(2);
   });
+
+  it('passes against a superseding entry, then fails once the file is swapped with no new entry', () => {
+    // A path's first entry (the older version) stays in the chain even after a second entry
+    // supersedes it; verify must check the file against the latest entry, not the first.
+    writeFileSync(join(dir, 'a.json'), '{"a":1}');
+    appendEntry(chainFile, { path: 'a.json', sha256: hashFile(join(dir, 'a.json')), commit: 'c1' });
+    writeFileSync(join(dir, 'a.json'), '{"a":2}');
+    appendEntry(chainFile, { path: 'a.json', sha256: hashFile(join(dir, 'a.json')), commit: 'c2' });
+    expect(verifyChain(chainFile, dir).ok).toBe(true);
+
+    // Swap the file back to the superseded version, without a new chain entry: the latest entry
+    // (c2's hash) no longer matches what is on disk.
+    writeFileSync(join(dir, 'a.json'), '{"a":1}');
+    const result = verifyChain(chainFile, dir);
+    expect(result.ok).toBe(false);
+    expect(result.fileMismatches).toHaveLength(1);
+    expect(result.fileMismatches[0].path).toBe('a.json');
+  });
 });
 
 describe('latestEntry', () => {

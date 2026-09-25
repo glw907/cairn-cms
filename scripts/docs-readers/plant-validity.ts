@@ -12,11 +12,23 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { headingLines, parseSections, sectionForSpan, type LineRange } from './lib/sections.js';
+import { allHeadingLines, parseSections, sectionForSpan, type LineRange } from './lib/sections.js';
 import type { FindingSpans, PathMap } from './path-map.js';
 
 /** A plant type, as the planter records it; `semantic` is true for the first three. */
 export type PlantType = 'false-behavior' | 'contradiction' | 'precondition-or-ordering' | 'removed-step' | 'undefined-term' | 'wrong-name' | 'stale-path';
+
+/** The three plant types a plant's `semantic` flag must be true for. */
+const SEMANTIC_TYPES: ReadonlySet<PlantType> = new Set(['false-behavior', 'contradiction', 'precondition-or-ordering']);
+
+/**
+ * Whether a plant type is one of the three semantic types.
+ * @param type - A plant's `type` field.
+ * @returns True for `false-behavior`, `contradiction`, or `precondition-or-ordering`.
+ */
+function isSemanticType(type: PlantType): boolean {
+  return SEMANTIC_TYPES.has(type);
+}
 
 /** One synthesized plant, in the shape `plants.json` carries. */
 export interface Plant {
@@ -62,7 +74,11 @@ export interface JobValidityResult {
   plants: PlantVerdict[];
   pages: PageVerdict[];
   counts: PlantCounts;
-  /** True when the job has at least four plants but fewer than four are semantic. */
+  /**
+   * True when fewer of the job's plants are semantic than the spec requires: four when the job
+   * has at least four plants, or all of them when it has fewer (a short job loses token plants
+   * first, so a shortfall should never cost a semantic one).
+   */
   fewSemantic: boolean;
   /** True when the job carries more than seven plants. */
   tooMany: boolean;
@@ -178,6 +194,19 @@ function lineAt(lines: string[], line: number): string | undefined {
 }
 
 /**
+ * A span's own text, read from an already-split page: each of its lines, joined the same way a
+ * plant's `original` or `planted` field joins a multi-line span.
+ * @param lines - The page, already split into lines.
+ * @param span - The span to read.
+ * @returns The span's text; a line past the page's end reads as empty.
+ */
+function spanText(lines: string[], span: LineRange): string {
+  const slice: string[] = [];
+  for (let line = span.start; line <= span.end; line += 1) slice.push(lineAt(lines, line) ?? '');
+  return slice.join('\n');
+}
+
+/**
  * Whether the planted page actually differs from the control page somewhere inside a span.
  * @param controlLines - The control page, split into lines.
  * @param plantedLines - The planted page, split into lines.
@@ -192,16 +221,46 @@ function spanDiffers(controlLines: string[], plantedLines: string[], span: LineR
 }
 
 /**
- * Read a stale-path plant's original or planted field as a bare repository-relative path: its
- * text is the path itself, stripped of surrounding whitespace and, when present, the backticks a
- * doc page wraps a path in.
- * @param text - The plant's `original` or `planted` field.
- * @returns The path the field names.
+ * Strip a path-shaped token's trailing sentence punctuation and a leading `./` or `/`.
+ * @param token - A raw token `pathTokens` collected.
+ * @returns The cleaned token.
  */
-function asPath(text: string): string {
-  const trimmed = text.trim();
-  const unwrapped = trimmed.startsWith('`') && trimmed.endsWith('`') && trimmed.length >= 2 ? trimmed.slice(1, -1) : trimmed;
-  return unwrapped.replace(/^\.\//, '');
+function cleanPathToken(token: string): string {
+  return token.replace(/[.,;:)]+$/, '').replace(/^(?:\.\/|\/)/, '');
+}
+
+/**
+ * Every path-shaped token a plant's `original` or `planted` text carries: an inline code span's
+ * contents, a markdown link's target, and any bare whitespace-delimited word that contains a
+ * slash. A stale-path plant's own snippet is prose, such as a sentence naming a backtick-quoted
+ * path, so the offending path has to be found inside it, not assumed to be the whole field.
+ * @param text - The plant's `original` or `planted` field.
+ * @returns Every path-shaped token found, cleaned, duplicates included.
+ */
+function pathTokens(text: string): string[] {
+  const tokens: string[] = [];
+  for (const match of text.matchAll(/`([^`]+)`/g)) tokens.push(match[1]);
+  for (const match of text.matchAll(/\]\(([^)]+)\)/g)) tokens.push(match[1]);
+  for (const word of text.split(/\s+/)) {
+    if (word.includes('/')) tokens.push(word);
+  }
+  return tokens.map(cleanPathToken).filter((token) => token.length > 0);
+}
+
+/**
+ * The path-shaped tokens a stale-path plant actually changed: those in `original` but not
+ * `planted`, and those in `planted` but not `original`. When nothing changed (the fixture's own
+ * two fields carry the same tokens), every token either field carries is returned instead, so the
+ * check still has something to test.
+ * @param original - The plant's `original` field.
+ * @param planted - The plant's `planted` field.
+ * @returns The tokens to test against the absent list.
+ */
+function changedPathTokens(original: string, planted: string): string[] {
+  const originalTokens = new Set(pathTokens(original));
+  const plantedTokens = new Set(pathTokens(planted));
+  const changed = [...originalTokens].filter((token) => !plantedTokens.has(token)).concat([...plantedTokens].filter((token) => !originalTokens.has(token)));
+  return changed.length > 0 ? changed : [...new Set([...originalTokens, ...plantedTokens])];
 }
 
 /**
@@ -216,16 +275,21 @@ function pathIsAbsent(path: string, absent: string[]): boolean {
 }
 
 /**
- * For a stale-path plant, the first of its original or planted path that lands on the job's
- * absent list.
+ * For a stale-path plant, the first changed path-shaped token that lands on the job's absent
+ * list. A token is also tried joined under the plant's own bundle folder (the first path segment
+ * of `plant.page`), since a bundled job like the scripter's carries bundle-prefixed absent
+ * entries while a path written inside a doc page's own prose stays repository-relative.
  * @param plant - The plant, expected to be a stale-path plant.
  * @param absent - The job's absent list.
- * @returns The offending path, or undefined when neither is absent.
+ * @returns The offending token (as found in the text, not bundle-joined), or undefined when none
+ * of its changed tokens are absent.
  */
 function stalePathOnAbsentList(plant: Plant, absent: string[]): string | undefined {
-  for (const text of [plant.original, plant.planted]) {
-    const path = asPath(text);
-    if (pathIsAbsent(path, absent)) return path;
+  const bundleSlash = plant.page.indexOf('/');
+  const bundle = bundleSlash === -1 ? undefined : plant.page.slice(0, bundleSlash + 1);
+  for (const token of changedPathTokens(plant.original, plant.planted)) {
+    if (pathIsAbsent(token, absent)) return token;
+    if (bundle !== undefined && pathIsAbsent(`${bundle}${token}`, absent)) return token;
   }
   return undefined;
 }
@@ -315,11 +379,13 @@ function checkPage(page: string, control: string, planted: string, declaredLines
 
 /**
  * Check every one of a job's plants and every page they touch, against the spec's "Validity
- * check": each plant sits inside the plantable region, with no line on a heading; the spacing
- * rules hold; a stale-path plant never targets an absent-list path; no plant sits on a
- * mapping-run finding span; the planted page differs from the control page somewhere in the
- * plant's own span; and, per page, the planted copy matches the control copy's line count with no
- * undeclared change.
+ * check": the plant's `semantic` flag matches its type; it sits inside the plantable region, with
+ * no line on a heading of any level, on either the control or the planted page; the spacing rules
+ * hold; a stale-path plant never targets an absent-list path; no plant sits on a mapping-run
+ * finding span; the control and planted pages' own span text match the plant's recorded
+ * `original` and `planted` fields; the planted page differs from the control page somewhere in
+ * the plant's own span; and, per page, the planted copy matches the control copy's line count
+ * with no undeclared change.
  * @param input - The job, its map, absent list, finding spans, its pages, and its plants.
  * @returns The job's full validity result.
  */
@@ -339,18 +405,33 @@ export function checkJobPlants(input: CheckJobPlantsInput): JobValidityResult {
     const span = spans.get(plant.id) as LineRange;
     const control = controlPages[plant.page];
     const planted = plantedPages[plant.page];
+    if (plant.semantic !== isSemanticType(plant.type)) {
+      reasons.push(`semantic flag disagrees with its type "${plant.type}"`);
+    }
     if (control === undefined) reasons.push(`no control page for "${plant.page}"`);
     if (planted === undefined) reasons.push(`no planted page for "${plant.page}"`);
     if (control !== undefined) {
+      const controlLines = control.split('\n');
       if (!withinRanges(span, plantableRanges(map, plant.page))) reasons.push('outside the plantable region');
-      if (spanIncludesAny(span, headingLines(parseSections(control).sections))) reasons.push('plant span includes a heading line');
+      const onControlHeading = spanIncludesAny(span, allHeadingLines(control));
+      const onPlantedHeading = planted !== undefined && spanIncludesAny(span, allHeadingLines(planted));
+      if (onControlHeading || onPlantedHeading) reasons.push('plant span includes a heading line');
       if ((findingSpans[plant.page] ?? []).some((finding) => overlaps(span, finding))) reasons.push('plant sits on a mapping-run finding span');
       if (plant.type === 'stale-path') {
         const bad = stalePathOnAbsentList(plant, absent);
         if (bad !== undefined) reasons.push(`stale-path plant targets an absent-list path "${bad}"`);
       }
-      if (planted !== undefined && !spanDiffers(control.split('\n'), planted.split('\n'), span)) {
-        reasons.push('planted page does not differ from the control page within the plant span');
+      if (spanText(controlLines, span) !== plant.original) {
+        reasons.push("the control page's span does not match the plant's recorded original text");
+      }
+      if (planted !== undefined) {
+        const plantedLines = planted.split('\n');
+        if (!spanDiffers(controlLines, plantedLines, span)) {
+          reasons.push('planted page does not differ from the control page within the plant span');
+        }
+        if (spanText(plantedLines, span) !== plant.planted) {
+          reasons.push("the planted page's span does not match the plant's recorded planted text");
+        }
       }
     }
     reasons.push(...(spacingViolations.get(plant.id) ?? []));
@@ -380,7 +461,7 @@ export function checkJobPlants(input: CheckJobPlantsInput): JobValidityResult {
     plants: plantVerdicts,
     pages,
     counts: { total, semantic, token: total - semantic },
-    fewSemantic: total >= 4 && semantic < 4,
+    fewSemantic: semantic < Math.min(total, 4),
     tooMany: total > 7,
   };
 }

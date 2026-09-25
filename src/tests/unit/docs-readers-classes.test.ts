@@ -25,7 +25,8 @@ describe('class declarations', () => {
   it('loads the docs-only and repository classes from the classes directory', () => {
     const classes = loadClasses();
     expect(classes.get('docs-only')?.tools).toEqual(['Read', 'Grep', 'Glob']);
-    expect(classes.get('repository')?.bashAllowlist).toEqual(['npm run check*', 'npm test']);
+    // Read-only git subcommands only, each listed bare and with arguments.
+    expect(classes.get('repository')?.bashAllowlist).toEqual(['npm run check*', 'npm test', 'git log', 'git log *', 'git status', 'git status *', 'git diff', 'git diff *', 'git show', 'git show *', 'git ls-files', 'git ls-files *', 'git grep', 'git grep *']);
     expect(classes.get('repository')?.egress).toBe('anthropic');
   });
 
@@ -89,7 +90,7 @@ describe('class declarations', () => {
     expect(args).toContain('--disallowedTools=WebFetch,WebSearch');
     expect(args[args.indexOf('--permission-prompts') + 1]).toBe('none');
     expect(args[args.indexOf('--output-format') + 1]).toBe('stream-json');
-    expect(args.slice(args.indexOf('--allowedTools'))).toEqual(['--allowedTools', 'Bash(npm run check*)', 'Bash(npm test)']);
+    expect(args.slice(args.indexOf('--allowedTools'))).toEqual(['--allowedTools', 'Bash(npm run check*)', 'Bash(npm test)', 'Bash(git log)', 'Bash(git log *)', 'Bash(git status)', 'Bash(git status *)', 'Bash(git diff)', 'Bash(git diff *)', 'Bash(git show)', 'Bash(git show *)', 'Bash(git ls-files)', 'Bash(git ls-files *)', 'Bash(git grep)', 'Bash(git grep *)']);
     expect(claudeArgs(docsOnly, 'm', {})).not.toContain('--allowedTools');
   });
 

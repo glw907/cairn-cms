@@ -4,27 +4,35 @@
  * (`batches/baseline.json`) references, at the fixed paths its jobs' own `prepared` fields name.
  * Run this once before `run.ts batches/baseline.json`: a batch run only ever copies a directory
  * this script already finished, since none of `git clone`, `git archive`, or `npm install` may run
- * inside a reader's own confined network.
+ * inside a reader's own confined network. Every page comes from `git archive` at the commit
+ * `--commit` names, never from `HEAD` or the working tree; the scripter's contract pages keep their
+ * own pinned commits.
  *
  * Usage:
- *   npx tsx scripts/docs-readers/prepare-baseline.ts [--only NAME,NAME,...]
+ *   npx tsx scripts/docs-readers/prepare-baseline.ts --commit SHA [--only NAME,NAME,...]
  *
  * `--only` limits the build to the named steps (`operator`, `scripter`, `core-developer`,
- * `designer`, `extender`), for a partial rebuild; omitted, every step runs.
+ * `designer`, `extender`), for a partial rebuild; omitted, every step runs. `--commit` is required
+ * by every step but `scripter`.
  */
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { CACHE_ROOT, SCRATCH_SITE } from './run.js';
 import {
   archiveCommit,
   ensureScratchSiteCommit,
-  packEngineTarballs,
+  packPinnedEngineTarballs,
   prepareContractPagesBundle,
   prepareDocsAndBinary,
   prepareDocsAndSite,
   prepareRepositoryExportWithDependencies,
+  spawnRunner,
+  type CommandRunner,
   type ContractPageSpec,
+  type PreparedTree,
+  type TreeVariant,
 } from './lib/prepare-class.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -33,8 +41,22 @@ const REPO_ROOT = resolve(HERE, '..', '..');
 /** Where every baseline job's prepared directory lands, under the runner's own cache root. */
 export const BASELINE_PREPARED_ROOT = join(CACHE_ROOT, 'prepared', 'baseline');
 
-/** The scratch site's own repository, pinned to the commit Task 3 scaffolded (docs reset pass 1). */
+/** The scratch site's own repository, pinned to the commit its scaffold landed on. */
 export const SCRATCH_SITE_COMMIT = '5ed23f8bdbe745de02472ea99a86f6cf08510d37';
+
+/** What every job builder here takes beyond its own destination. */
+export interface JobBuildOptions {
+  /** The commit id every page in the tree is exported at. */
+  commit: string;
+  /** Where the tree lands; each builder names its own baseline default. */
+  dest?: string;
+  /** The checkout pages are exported from; defaults to this repository. */
+  repoRoot?: string;
+  /** The command runner; overridden in tests. */
+  runner?: CommandRunner;
+  /** Trees built from this one, each with its own overlay. */
+  variants?: TreeVariant[];
+}
 
 /**
  * Pass A's three contract pages, each pinned to its own commit: `cli-cairn-json-output.md` and
@@ -102,76 +124,146 @@ export const EXTENDER_DOCS_SET = [
 
 /**
  * Build the operator job's prepared tree: the scratch site's own commit, cloned and archived, with
- * the `is-it-working` docs page and the site's registry record layered on top. Exported so
- * `prepare-validation.ts` can build the same tree at its own destination, ahead of planting.
- * @param dest - Where the prepared tree lands; defaults to the baseline's own path.
+ * the operator docs set, exported at `commit`, and the site's registry record layered on top.
+ * Takes `JobBuildOptions`, plus `siteClone` and `siteCommit`, the scratch site's local clone and
+ * its pinned commit.
+ * @returns The tree's absent list.
  */
-export async function prepareOperator(dest: string = join(BASELINE_PREPARED_ROOT, 'operator-is-it-working')): Promise<void> {
-  const scratchClone = join(CACHE_ROOT, 'scratch-site-repo');
-  ensureScratchSiteCommit({ cloneDir: scratchClone, commit: SCRATCH_SITE_COMMIT });
-  const siteExportDir = join(BASELINE_PREPARED_ROOT, 'operator-site-export');
-  archiveCommit({ repoRoot: scratchClone, commit: SCRATCH_SITE_COMMIT, dest: siteExportDir });
-  prepareDocsAndBinary({
-    sourceRoot: REPO_ROOT,
-    docsSet: OPERATOR_DOCS_SET,
-    siteId: SCRATCH_SITE.siteId,
-    record: SCRATCH_SITE.record,
-    dest,
-    siteExportDir,
-  });
+export function prepareOperator({
+  commit,
+  dest = join(BASELINE_PREPARED_ROOT, 'operator-is-it-working'),
+  repoRoot = REPO_ROOT,
+  runner = spawnRunner,
+  variants,
+  siteClone = join(CACHE_ROOT, 'scratch-site-repo'),
+  siteCommit = SCRATCH_SITE_COMMIT,
+}: JobBuildOptions & { siteClone?: string; siteCommit?: string }): PreparedTree {
+  ensureScratchSiteCommit({ cloneDir: siteClone, commit: siteCommit, runner });
+  const siteExportDir = mkdtempSync(join(tmpdir(), 'docs-readers-site-export-'));
+  try {
+    archiveCommit({ repoRoot: siteClone, commit: siteCommit, dest: siteExportDir, runner });
+    return prepareDocsAndBinary({
+      sourceRoot: repoRoot,
+      commit,
+      docsSet: OPERATOR_DOCS_SET,
+      siteId: SCRATCH_SITE.siteId,
+      record: SCRATCH_SITE.record,
+      dest,
+      siteExportDir,
+      runner,
+      variants,
+    });
+  } finally {
+    rmSync(siteExportDir, { recursive: true, force: true });
+  }
 }
 
 /**
- * Build the scripter job's prepared tree: three contract pages, each from its own commit. Exported
- * so `prepare-validation.ts` can build the same shape at its own destination and commits (the
- * validation batch pins all three to `HEAD` rather than pass A's commits).
- * @param dest - Where the bundle lands; defaults to the baseline's own path.
- * @param pages - The bundle's own page specs; defaults to the baseline's `CONTRACT_PAGES`.
+ * Build the scripter job's prepared tree: the contract pages, each from its own commit. `dest` is
+ * where the bundle lands; `pages` are the page specs, each carrying its own commit; `repoRoot`,
+ * `runner`, and `variants` are as `JobBuildOptions` names them.
+ * @returns The bundle's absent list.
  */
-export async function prepareScripter(dest: string = join(BASELINE_PREPARED_ROOT, 'scripter-contract-pages'), pages: ContractPageSpec[] = CONTRACT_PAGES): Promise<void> {
-  prepareContractPagesBundle({ repoRoot: REPO_ROOT, dest, pages });
+export function prepareScripter({
+  dest = join(BASELINE_PREPARED_ROOT, 'scripter-contract-pages'),
+  pages = CONTRACT_PAGES,
+  repoRoot = REPO_ROOT,
+  runner = spawnRunner,
+  variants,
+}: Omit<JobBuildOptions, 'commit'> & { pages?: ContractPageSpec[] } = {}): PreparedTree {
+  return prepareContractPagesBundle({ repoRoot, pages, dest, runner, variants });
 }
 
 /**
- * Build the core-developer job's prepared tree: this worktree's own `HEAD`, with its own
+ * Build the core-developer job's prepared tree: the repository at `commit`, with its own
  * dependencies already installed, since the job's arrival tells the reader a fresh `npm install`
- * is not possible in this environment. Exported so `prepare-validation.ts` can build the same
- * tree at its own destination.
- * @param dest - Where the prepared tree lands; defaults to the baseline's own path.
+ * is not possible in this environment. Takes `JobBuildOptions`.
+ * @returns The tree's absent list.
  */
-export async function prepareCoreDeveloper(dest: string = join(BASELINE_PREPARED_ROOT, 'core-developer-head')): Promise<void> {
-  prepareRepositoryExportWithDependencies({ repoRoot: REPO_ROOT, commit: 'HEAD', dest });
+export function prepareCoreDeveloper({
+  commit,
+  dest = join(BASELINE_PREPARED_ROOT, 'core-developer-head'),
+  repoRoot = REPO_ROOT,
+  runner = spawnRunner,
+  variants,
+}: JobBuildOptions): PreparedTree {
+  return prepareRepositoryExportWithDependencies({ repoRoot, commit, dest, runner, variants });
 }
 
 /**
- * Build the designer and extender jobs' prepared trees: one packed engine tarball pair, reused for
- * both scaffolded sites, since neither job's own docs set changes what the site scaffold needs. A
- * freshly built pair (a cache miss) lands under a neutral scratch directory, never under
- * `BASELINE_PREPARED_ROOT`: `scaffoldSite` writes the returned tarball path straight into the
- * scaffolded site's own `package.json`, which a reader can read, so that path must never name this
- * batch. Exported so `prepare-validation.ts` can build the same two trees at its own destinations.
- * @param destDesigner - Where the designer tree lands; defaults to the baseline's own path.
- * @param destExtender - Where the extender tree lands; defaults to the baseline's own path.
+ * Pack the engine and dev backend at `commit` for the designer and extender trees. A freshly built
+ * pair lands under a neutral scratch directory and the cache, never under a prepared root:
+ * `scaffoldSite` writes the returned tarball path straight into the scaffolded site's own
+ * `package.json`, which a reader can read, so that path must never name a batch. `commit`,
+ * `repoRoot`, and `runner` are as `JobBuildOptions` names them.
+ * @returns The tarball pair.
  */
-export async function prepareDesignerAndExtender(
-  destDesigner: string = join(BASELINE_PREPARED_ROOT, 'designer-design-your-site'),
-  destExtender: string = join(BASELINE_PREPARED_ROOT, 'extender-add-a-custom-admin-screen'),
-): Promise<void> {
-  const tarballs = packEngineTarballs(REPO_ROOT, join(CACHE_ROOT, 'pack-scratch'), undefined, CACHE_ROOT);
-  prepareDocsAndSite({ sourceRoot: REPO_ROOT, docsSet: DESIGNER_DOCS_SET, tarballs, dest: destDesigner });
-  prepareDocsAndSite({ sourceRoot: REPO_ROOT, docsSet: EXTENDER_DOCS_SET, tarballs, dest: destExtender });
+export function pinnedEngineTarballs({ commit, repoRoot = REPO_ROOT, runner = spawnRunner }: Pick<JobBuildOptions, 'commit' | 'repoRoot' | 'runner'>): { engine: string; dev: string } {
+  return packPinnedEngineTarballs({ repoRoot, commit, scratchDir: join(CACHE_ROOT, 'pack-scratch'), cacheRoot: CACHE_ROOT, runner });
+}
+
+/**
+ * Build the designer job's prepared tree: its docs set and a scaffolded site, both at `commit`,
+ * with the engine installed from `tarballs`. Takes `JobBuildOptions`, plus the packed tarball pair.
+ * @returns The tree's absent list.
+ */
+export function prepareDesigner({
+  commit,
+  dest = join(BASELINE_PREPARED_ROOT, 'designer-design-your-site'),
+  repoRoot = REPO_ROOT,
+  runner = spawnRunner,
+  variants,
+  tarballs,
+}: JobBuildOptions & { tarballs: { engine: string; dev: string } }): PreparedTree {
+  return prepareDocsAndSite({ sourceRoot: repoRoot, commit, docsSet: DESIGNER_DOCS_SET, tarballs, dest, runner, variants });
+}
+
+/**
+ * Build the extender job's prepared tree: its docs set and a scaffolded site, both at `commit`,
+ * with the engine installed from `tarballs`. Takes `JobBuildOptions`, plus the packed tarball pair.
+ * @returns The tree's absent list.
+ */
+export function prepareExtender({
+  commit,
+  dest = join(BASELINE_PREPARED_ROOT, 'extender-add-a-custom-admin-screen'),
+  repoRoot = REPO_ROOT,
+  runner = spawnRunner,
+  variants,
+  tarballs,
+}: JobBuildOptions & { tarballs: { engine: string; dev: string } }): PreparedTree {
+  return prepareDocsAndSite({ sourceRoot: repoRoot, commit, docsSet: EXTENDER_DOCS_SET, tarballs, dest, runner, variants });
 }
 
 /**
  * Every named build step, in the order they log; `designer` and `extender` name the same step,
- * since one packed engine tarball pair serves both scaffolded sites.
+ * since one packed engine tarball pair serves both scaffolded sites. Each takes the `--commit`
+ * value, which only the scripter step may go without.
  */
-const STEPS: Array<{ names: string[]; run: () => Promise<void> }> = [
-  { names: ['operator'], run: prepareOperator },
-  { names: ['scripter'], run: prepareScripter },
-  { names: ['core-developer'], run: prepareCoreDeveloper },
-  { names: ['designer', 'extender'], run: prepareDesignerAndExtender },
+const STEPS: Array<{ names: string[]; run: (commit: string | undefined) => void }> = [
+  { names: ['operator'], run: (commit) => prepareOperator({ commit: requireCommit(commit) }) },
+  { names: ['scripter'], run: () => prepareScripter() },
+  { names: ['core-developer'], run: (commit) => prepareCoreDeveloper({ commit: requireCommit(commit) }) },
+  {
+    names: ['designer', 'extender'],
+    run: (commit) => {
+      const pinned = requireCommit(commit);
+      const tarballs = pinnedEngineTarballs({ commit: pinned });
+      prepareDesigner({ commit: pinned, tarballs });
+      prepareExtender({ commit: pinned, tarballs });
+    },
+  },
 ];
+
+/**
+ * Refuse a missing `--commit`: no step falls back to `HEAD` or the working tree.
+ * @param commit - The `--commit` value, if any.
+ * @returns The same value, known to be present.
+ * @throws When no commit was given.
+ */
+function requireCommit(commit: string | undefined): string {
+  if (!commit) throw new Error('--commit SHA is required: every page is exported at a named commit');
+  return commit;
+}
 
 /**
  * Pull a flag's value out of an argument list, the same `--flag value` form `run.ts` uses.
@@ -188,20 +280,23 @@ function option(args: string[], flag: string): string | undefined {
  * The command-line entry point.
  * @param args - The arguments after the script name.
  */
-async function main(args: string[]): Promise<void> {
+function main(args: string[]): void {
   mkdirSync(BASELINE_PREPARED_ROOT, { recursive: true });
   const only = option(args, '--only')?.split(',');
+  const commit = option(args, '--commit');
   for (const { names, run } of STEPS) {
     if (only && !names.some((name) => only.includes(name))) continue;
     console.log(`preparing: ${names.join('/')}`);
-    await run();
+    run(commit);
   }
   console.log(`done: ${BASELINE_PREPARED_ROOT}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main(process.argv.slice(2)).catch((error) => {
+  try {
+    main(process.argv.slice(2));
+  } catch (error) {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exit(1);
-  });
+  }
 }

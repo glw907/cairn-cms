@@ -4,8 +4,10 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  DOCS_AND_SITE_EXCLUDED_PATHS,
   archiveCommit,
   assertNoExcludedPaths,
+  assertOneCleanCommit,
   assertNoUnsafeSymlinks,
   assertSiteAnswerKeyAbsent,
   copyDocsSet,
@@ -39,15 +41,29 @@ function write(file: string, content: string): void {
   writeFileSync(file, content);
 }
 
-/** Commit every file under `repoRoot` to a fresh git history, for a real `git archive` round trip. */
-function commitAll(repoRoot: string): void {
+/**
+ * Commit every file under `repoRoot` to a fresh git history, for a real `git archive` round trip.
+ * @returns The commit's full id, the pinned id every export takes.
+ */
+function commitAll(repoRoot: string): string {
   const git = (args: string[]) => execFileSync('git', args, { cwd: repoRoot });
   git(['init', '-q']);
   git(['config', 'user.email', 'test@example.com']);
   git(['config', 'user.name', 'Test']);
   git(['add', '.']);
   git(['commit', '-q', '-m', 'initial']);
+  return git(['rev-parse', 'HEAD']).toString().trim();
 }
+
+/** A runner that runs git and tar for real and fakes `npm install` with an installed engine carrying its docs. */
+const realGitFakeInstall: CommandRunner = (command, args, options) => {
+  if (command === 'npm' && args[0] === 'install') {
+    write(join(options.cwd, 'node_modules/@glw907/cairn-cms/dist/index.js'), 'export {};');
+    write(join(options.cwd, 'node_modules/@glw907/cairn-cms/docs/index.md'), 'answer key');
+    return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
+  }
+  return spawnRunner(command, args, options);
+};
 
 describe('copyDocsSet', () => {
   it('copies each docs-set page to its doc-relative path', () => {
@@ -152,8 +168,8 @@ describe('scaffoldSite', () => {
       write(join(repoRoot, 'templates/waymark/src/routes/+page.svelte'), '<h1>hi</h1>');
       write(join(repoRoot, 'templates/waymark/CLAUDE.md'), 'setup guidance');
       write(join(repoRoot, 'templates/waymark/.claude/agents/x.md'), 'agent');
-      commitAll(repoRoot);
-      scaffoldSite({ repoRoot, dest, tarballs: { engine: '/cache/engine-abc123.tgz', dev: '/cache/dev-def456.tgz' } });
+      const commit = commitAll(repoRoot);
+      scaffoldSite({ repoRoot, commit, dest, tarballs: { engine: '/cache/engine-abc123.tgz', dev: '/cache/dev-def456.tgz' } });
       expect(existsSync(join(dest, 'CLAUDE.md'))).toBe(false);
       expect(existsSync(join(dest, '.claude'))).toBe(false);
       expect(readFileSync(join(dest, 'src/routes/+page.svelte'), 'utf8')).toBe('<h1>hi</h1>');
@@ -170,7 +186,7 @@ describe('scaffoldSite', () => {
     const dest = tmp('waymark-fail');
     try {
       const runner: CommandRunner = () => ({ status: 128, stdout: Buffer.alloc(0), stderr: 'unknown revision' });
-      expect(() => scaffoldSite({ repoRoot: '/unused', dest, tarballs: { engine: 'e', dev: 'd' }, runner })).toThrow(/unknown revision/);
+      expect(() => scaffoldSite({ repoRoot: '/unused', commit: 'abc1234', dest, tarballs: { engine: 'e', dev: 'd' }, runner })).toThrow(/unknown revision/);
     } finally {
       rmSync(dest, { recursive: true, force: true });
     }
@@ -478,39 +494,29 @@ describe('packEngineTarballs: the tarball cache', () => {
   });
 });
 
-/** A runner that fakes the templates/waymark export and a clean install, for `prepareDocsAndSite`. */
-function fakeSiteRunner(): CommandRunner {
-  return (command, args, { cwd }) => {
-    if (command === 'git') return { status: 0, stdout: Buffer.from('fake-archive'), stderr: '' };
-    if (command === 'tar') {
-      // What the real `git archive templates/waymark | tar --strip-components=2` would leave.
-      write(join(cwd, 'package.json'), JSON.stringify({ name: 'site', dependencies: {}, devDependencies: {} }));
-      write(join(cwd, 'CLAUDE.md'), 'setup guidance');
-      write(join(cwd, '.claude/agents/x.md'), 'agent');
-      write(join(cwd, 'src/routes/+page.svelte'), '<h1>hi</h1>');
-      return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
-    }
-    if (command === 'npm' && args[0] === 'install') {
-      write(join(cwd, 'node_modules/@glw907/cairn-cms/dist/index.js'), 'export {};');
-      write(join(cwd, 'node_modules/@glw907/cairn-cms/docs/index.md'), 'answer key');
-      return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
-    }
-    throw new Error(`unexpected command: ${command} ${args.join(' ')}`);
-  };
+/** A source checkout holding one docs page and a `templates/waymark` scaffold with its own guidance. */
+function siteSourceRepo(prefix: string): { repoRoot: string; commit: string } {
+  const repoRoot = tmp(prefix);
+  write(join(repoRoot, 'docs/extend/design-your-site.md'), '# design\n');
+  write(join(repoRoot, 'templates/waymark/package.json'), JSON.stringify({ name: 'site', dependencies: {}, devDependencies: {} }));
+  write(join(repoRoot, 'templates/waymark/CLAUDE.md'), 'setup guidance');
+  write(join(repoRoot, 'templates/waymark/.claude/agents/x.md'), 'agent');
+  write(join(repoRoot, 'templates/waymark/src/routes/+page.svelte'), '<h1>hi</h1>');
+  return { repoRoot, commit: commitAll(repoRoot) };
 }
 
 describe('prepareDocsAndSite', () => {
   it('builds the docs subtree and the scaffolded, installed site together, with the answer key stripped', () => {
-    const sourceRoot = tmp('source-int');
+    const { repoRoot, commit } = siteSourceRepo('source-int');
     const dest = tmp('dest-int');
     try {
-      write(join(sourceRoot, 'docs/extend/design-your-site.md'), '# design\n');
-      prepareDocsAndSite({
-        sourceRoot,
+      const { absent } = prepareDocsAndSite({
+        sourceRoot: repoRoot,
+        commit,
         docsSet: ['docs/extend/design-your-site.md'],
         tarballs: { engine: '/cache/engine-x.tgz', dev: '/cache/dev-y.tgz' },
         dest,
-        runner: fakeSiteRunner(),
+        runner: realGitFakeInstall,
       });
       expect(readFileSync(join(dest, 'docs/extend/design-your-site.md'), 'utf8')).toBe('# design\n');
       expect(existsSync(join(dest, 'site/CLAUDE.md'))).toBe(false);
@@ -520,29 +526,25 @@ describe('prepareDocsAndSite', () => {
       const pkg = JSON.parse(readFileSync(join(dest, 'site/package.json'), 'utf8'));
       expect(pkg.dependencies['@glw907/cairn-cms']).toBe('file:/cache/engine-x.tgz');
       expect(pkg.devDependencies['@glw907/cairn-cms-dev']).toBe('file:/cache/dev-y.tgz');
+      expect(absent).toEqual(['templates/', ...DOCS_AND_SITE_EXCLUDED_PATHS]);
+      for (const path of absent) expect(existsSync(join(dest, path))).toBe(false);
     } finally {
-      for (const dir of [sourceRoot, dest]) rmSync(dir, { recursive: true, force: true });
+      for (const dir of [repoRoot, dest]) rmSync(dir, { recursive: true, force: true });
     }
   });
 
   it('removes dest before rethrowing when a step fails partway through', () => {
-    const sourceRoot = tmp('source-fail');
+    const { repoRoot, commit } = siteSourceRepo('source-fail');
     const dest = tmp('dest-fail');
     try {
-      write(join(sourceRoot, 'docs/extend/design-your-site.md'), '# design\n');
-      const runner: CommandRunner = (command, args, { cwd }) => {
-        if (command === 'git') return { status: 0, stdout: Buffer.from('fake-archive'), stderr: '' };
-        if (command === 'tar') {
-          // The scaffold's package.json lands before the install that fails next, so this proves
-          // cleanup removes a partially built tree, not only one that never started.
-          write(join(cwd, 'package.json'), JSON.stringify({ name: 'site' }));
-          return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
-        }
-        return { status: 1, stdout: Buffer.alloc(0), stderr: 'ETARGET' };
-      };
+      // The docs page and the scaffold land before the install that fails next, so this proves
+      // cleanup removes a partially built tree, not only one that never started.
+      const runner: CommandRunner = (command, args, options) =>
+        command === 'npm' ? { status: 1, stdout: Buffer.alloc(0), stderr: 'ETARGET' } : spawnRunner(command, args, options);
       expect(() =>
         prepareDocsAndSite({
-          sourceRoot,
+          sourceRoot: repoRoot,
+          commit,
           docsSet: ['docs/extend/design-your-site.md'],
           tarballs: { engine: '/cache/engine-x.tgz', dev: '/cache/dev-y.tgz' },
           dest,
@@ -551,7 +553,7 @@ describe('prepareDocsAndSite', () => {
       ).toThrow(/ETARGET/);
       expect(existsSync(dest)).toBe(false);
     } finally {
-      for (const dir of [sourceRoot, dest]) rmSync(dir, { recursive: true, force: true });
+      for (const dir of [repoRoot, dest]) rmSync(dir, { recursive: true, force: true });
     }
   });
 });
@@ -571,8 +573,8 @@ describe('assertNoExcludedPaths', () => {
     const dir = tmp('dirty-export');
     try {
       write(join(dir, 'docs/superpowers/plan.md'), 'answer key');
-      write(join(dir, '.git/HEAD'), 'ref: refs/heads/main');
-      expect(() => assertNoExcludedPaths(dir)).toThrow(/docs\/superpowers.*\.git|\.git.*docs\/superpowers/);
+      write(join(dir, 'ROADMAP.md'), 'the roadmap');
+      expect(() => assertNoExcludedPaths(dir)).toThrow(/docs\/superpowers\/.*ROADMAP\.md/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -624,13 +626,13 @@ describe('prepareRepositoryExport', () => {
       write(join(repoRoot, 'docs/internal/record/2026-01-01-note.md'), 'harvest note');
       write(join(repoRoot, 'docs/superpowers/plans/plan.md'), 'the answer key');
       write(join(repoRoot, 'scripts/docs-readers/batches/baseline.json'), '{}');
-      commitAll(repoRoot);
-      prepareRepositoryExport({ repoRoot, commit: 'HEAD', dest });
+      const commit = commitAll(repoRoot);
+      prepareRepositoryExport({ repoRoot, commit, dest });
       expect(readFileSync(join(dest, 'README.md'), 'utf8')).toBe('# a project\n');
       expect(existsSync(join(dest, 'docs/internal/record'))).toBe(false);
       expect(existsSync(join(dest, 'docs/superpowers'))).toBe(false);
       expect(existsSync(join(dest, 'scripts/docs-readers'))).toBe(false);
-      expect(existsSync(join(dest, '.git'))).toBe(false);
+      expect(() => assertOneCleanCommit(dest)).not.toThrow();
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
       rmSync(dest, { recursive: true, force: true });
@@ -652,7 +654,7 @@ describe('prepareRepositoryExport', () => {
         }
         throw new Error(`unexpected command: ${command} ${args.join(' ')}`);
       };
-      expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'HEAD', dest, runner })).toThrow(/docs\/superpowers/);
+      expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'abc1234', dest, runner })).toThrow(/docs\/superpowers/);
       expect(existsSync(dest)).toBe(false);
     } finally {
       rmSync(dest, { recursive: true, force: true });
@@ -673,7 +675,7 @@ describe('prepareRepositoryExport', () => {
         }
         throw new Error(`unexpected command: ${command} ${args.join(' ')}`);
       };
-      expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'HEAD', dest, runner })).toThrow(/scripts\/docs-readers/);
+      expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'abc1234', dest, runner })).toThrow(/scripts\/docs-readers/);
       expect(existsSync(dest)).toBe(false);
     } finally {
       rmSync(dest, { recursive: true, force: true });
@@ -684,7 +686,7 @@ describe('prepareRepositoryExport', () => {
     const dest = tmp('archive-fail');
     try {
       const runner: CommandRunner = (command) => (command === 'git' ? { status: 128, stdout: Buffer.alloc(0), stderr: 'bad revision' } : { status: 0, stdout: Buffer.alloc(0), stderr: '' });
-      expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'not-a-commit', dest, runner })).toThrow(/bad revision/);
+      expect(() => prepareRepositoryExport({ repoRoot: '/unused', commit: 'abc1234', dest, runner })).toThrow(/bad revision/);
       expect(existsSync(dest)).toBe(false);
     } finally {
       rmSync(dest, { recursive: true, force: true });
@@ -698,7 +700,7 @@ describe('prepareRepositoryExportWithDependencies', () => {
     const dest = tmp('deps-dest');
     try {
       write(join(repoRoot, 'README.md'), '# a project\n');
-      commitAll(repoRoot);
+      const commit = commitAll(repoRoot);
       const installCalls: Array<{ command: string; args: string[]; cwd: string }> = [];
       const runner: CommandRunner = (command, args, options) => {
         if (command === 'npm') installCalls.push({ command, args, cwd: options.cwd });
@@ -709,7 +711,7 @@ describe('prepareRepositoryExportWithDependencies', () => {
         // git/tar fall through to the real spawnRunner behaviour for the export step.
         return spawnRunner(command, args, options);
       };
-      prepareRepositoryExportWithDependencies({ repoRoot, commit: 'HEAD', dest, runner });
+      prepareRepositoryExportWithDependencies({ repoRoot, commit, dest, runner });
       expect(readFileSync(join(dest, 'README.md'), 'utf8')).toBe('# a project\n');
       expect(existsSync(join(dest, 'node_modules/.installed'))).toBe(true);
       expect(installCalls).toEqual([{ command: 'npm', args: ['ci', '--no-audit', '--no-fund'], cwd: dest }]);
@@ -724,10 +726,10 @@ describe('prepareRepositoryExportWithDependencies', () => {
     const dest = tmp('deps-dest-fail');
     try {
       write(join(repoRoot, 'README.md'), '# a project\n');
-      commitAll(repoRoot);
+      const commit = commitAll(repoRoot);
       const runner: CommandRunner = (command, args, options) =>
         command === 'npm' ? { status: 1, stdout: Buffer.alloc(0), stderr: 'npm ERR! network' } : spawnRunner(command, args, options);
-      expect(() => prepareRepositoryExportWithDependencies({ repoRoot, commit: 'HEAD', dest, runner })).toThrow(/npm ERR! network/);
+      expect(() => prepareRepositoryExportWithDependencies({ repoRoot, commit, dest, runner })).toThrow(/npm ERR! network/);
       expect(existsSync(dest)).toBe(false);
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
@@ -744,8 +746,8 @@ describe('archiveCommit', () => {
       write(join(repoRoot, 'kept.md'), '# kept\n');
       write(join(repoRoot, 'schema/kept.schema.json'), '{}');
       write(join(repoRoot, 'dropped.md'), '# dropped\n');
-      commitAll(repoRoot);
-      archiveCommit({ repoRoot, commit: 'HEAD', dest, pathspec: ['--', 'kept.md', 'schema/kept.schema.json'] });
+      const commit = commitAll(repoRoot);
+      archiveCommit({ repoRoot, commit, dest, pathspec: ['--', 'kept.md', 'schema/kept.schema.json'] });
       expect(readFileSync(join(dest, 'kept.md'), 'utf8')).toBe('# kept\n');
       expect(existsSync(join(dest, 'schema/kept.schema.json'))).toBe(true);
       expect(existsSync(join(dest, 'dropped.md'))).toBe(false);
@@ -760,7 +762,7 @@ describe('archiveCommit', () => {
     try {
       const runner: CommandRunner = (command) =>
         command === 'git' ? { status: 0, stdout: Buffer.from('fake-archive'), stderr: '' } : { status: 1, stdout: Buffer.alloc(0), stderr: 'tar: corrupt archive' };
-      expect(() => archiveCommit({ repoRoot: '/unused', commit: 'HEAD', dest, runner })).toThrow(/corrupt archive/);
+      expect(() => archiveCommit({ repoRoot: '/unused', commit: 'abc1234', dest, runner })).toThrow(/corrupt archive/);
     } finally {
       rmSync(dest, { recursive: true, force: true });
     }
@@ -797,6 +799,7 @@ describe('prepareContractPagesBundle', () => {
       expect(readFileSync(join(dest, 'b/docs/page-b.md'), 'utf8')).toBe('# page b\n');
       expect(existsSync(join(dest, 'a/.git'))).toBe(false);
       expect(existsSync(join(dest, 'b/.git'))).toBe(false);
+      expect(() => assertOneCleanCommit(dest)).not.toThrow();
     } finally {
       rmSync(repoRoot, { recursive: true, force: true });
       rmSync(dest, { recursive: true, force: true });
@@ -821,8 +824,8 @@ describe('prepareContractPagesBundle', () => {
           repoRoot: '/unused',
           dest,
           pages: [
-            { name: 'a', commit: 'HEAD', page: 'docs/page.md', schemas: [] },
-            { name: 'b', commit: 'HEAD', page: 'docs/page.md', schemas: [] },
+            { name: 'a', commit: 'abc1234', page: 'docs/page.md', schemas: [] },
+            { name: 'b', commit: 'abc1234', page: 'docs/page.md', schemas: [] },
           ],
           runner,
         }),
@@ -977,6 +980,7 @@ describe('prepareDocsAndBinary', () => {
       write(join(sourceRoot, 'docs/admin/troubleshooting.md'), '# troubleshooting\n');
       prepareDocsAndBinary({
         sourceRoot,
+        commit: commitAll(sourceRoot),
         docsSet: ['docs/admin/troubleshooting.md'],
         siteId: 'cairn-scratch-b-9f21ac',
         record: scratchRecord,
@@ -995,15 +999,18 @@ describe('prepareDocsAndBinary', () => {
     const sourceRoot = tmp('binary-source-fail');
     const dest = tmp('binary-dest-fail');
     try {
+      write(join(sourceRoot, 'docs/admin/troubleshooting.md'), '# troubleshooting\n');
+      const commit = commitAll(sourceRoot);
       expect(() =>
         prepareDocsAndBinary({
           sourceRoot,
+          commit,
           docsSet: ['docs/admin/missing.md'],
           siteId: 'cairn-scratch-b-9f21ac',
           record: scratchRecord,
           dest,
         }),
-      ).toThrow(/does not exist/);
+      ).toThrow(/did not match/);
       expect(existsSync(dest)).toBe(false);
     } finally {
       rmSync(sourceRoot, { recursive: true, force: true });
@@ -1021,6 +1028,7 @@ describe('prepareDocsAndBinary', () => {
       write(join(siteExportDir, 'src/hooks.server.ts'), '// hooks\n');
       prepareDocsAndBinary({
         sourceRoot,
+        commit: commitAll(sourceRoot),
         docsSet: ['docs/admin/is-it-working.md'],
         siteId: 'cairn-scratch-b-9f21ac',
         record: scratchRecord,

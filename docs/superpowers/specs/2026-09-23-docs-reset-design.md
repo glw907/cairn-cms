@@ -48,19 +48,30 @@ Where a line below and the body or the section above disagree, this section wins
 - **Pass 1b's spec
   ([`2026-09-24-docs-reset-pass-1b-validation-design.md`](2026-09-24-docs-reset-pass-1b-validation-design.md))
   replaces pass 1 items 8 and 9 and changes pass 2a item 5.** Validation gates on-path
-  sensitivity, precision, and adjudicator agreement over fresh plants on frozen path maps, and
-  reports stability, with a per-class outcome: a class that fails runs its readers in pass 2a as advisory
-  only, so pass 2a no longer waits on every class passing. Item 8's standing regression floor is
-  now pass 1b's frozen test batch, and the baseline failures (F1 to F6, R1 to R4) move from a
-  gate to a report, since the instrument was tuned on them. In pass 2a item 5, the Opus and
-  Sonnet split holds only if Sonnet meets pass 1b's pre-fixed threshold (at least 5 of 6 planted
-  runs verified, per-run recall within 10 points of Opus's); otherwise the trial's reader runs
-  are Opus only. The grader comparison's labeled defect set is pass 1b's test plants only, since
-  pass 1's plants and pass A's defects are development items the reader was tuned on. The trial
-  as fixed is underpowered (at three pages it keeps a truly one-third-better chain about half the
-  time), and it measures a chain with the reader that chain redrafted against; pass 2a resizes
-  the trial or restates its decision rule, and separates the measuring jobs from the chain's
-  reader-stage jobs or adds an independent measure, before it runs.
+  sensitivity over fresh synthesized plants on frozen path maps, precision over the maps' control
+  runs, and judge agreement, and reports stability, with a per-class outcome: a class that fails
+  runs its readers in pass 2a as advisory only, so pass 2a no longer waits on every class passing.
+  This supersedes the section above's "pass 2a starts only after pass 1b passes" for the partial
+  case only. If every class fails, that line is restored: pass 1b stops and reports to Geoff
+  before pass 2a starts (Geoff, 2026-09-24). Pass 1b runs the core gate only (Geoff, 2026-09-24):
+  one tuning round, no transfer set, no Sonnet arm, and no historical mining. Item 8's standing
+  regression floor is now pass 1b's frozen test batch, and the baseline failures (F1 to F6, R1 to
+  R4) move from a gate to a report, since the instrument was tuned on them. In pass 2a item 5,
+  the trial's reader runs are Opus only; pass 1b validates no Sonnet share. The grader
+  comparison's labeled defect set is pass 1b's test plants only, since pass 1's plants and pass
+  A's defects are development items the reader was tuned on. The trial as fixed is underpowered
+  (at three pages it keeps a truly one-third-better chain about half the time), and it measures a
+  chain with the reader that chain redrafted against; pass 2a resizes the trial or restates its
+  decision rule, and separates the measuring jobs from the chain's reader-stage jobs or adds an
+  independent measure, before it runs.
+- **Pass 1b's ceiling is 15M, flag at 12M** (Geoff, 2026-09-24: the lower of 15M and the post-cut
+  high estimate rounded up, flag at 80 percent), counted by a session ledger script. Pass 1's
+  recorded "about 9M" undercounted: under the counting rule (input, output, and cache creation)
+  it spent about 18.7M.
+- **A program budget for the rest of the reset** (Geoff, 2026-09-24). At pass 1b's close the
+  conductor brings Geoff a program budget for the remaining passes, with a lean default: pass 2a
+  without the formal chain-depth trial, a minimal page chain that grows only on reader evidence,
+  and a measured per-page target. Geoff sets a program ceiling.
 
 ## Why now
 

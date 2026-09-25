@@ -43,8 +43,9 @@ chosen. One caveat: a reboot inside the window re-arms the timer, and because th
 `Persistent=true` it may fire at boot. The session-start check below catches that.
 
 - Status first (the dry run): `systemctl status uupd.timer uupd.service --no-pager; systemctl list-timers uupd.timer --no-pager; claude --version`.
-  Proceed only when `uupd.service` is inactive (no update mid-run) and the version is in the
-  pinned set.
+  Proceed only when `uupd.service` is not `active` or `activating` (no update mid-run; `failed` and
+  `inactive` both proceed, and the service was `failed` on 2026-09-25 after its power-saver
+  hardware check) and the version is in the pinned set.
 - Pause: `sudo -A systemctl stop uupd.timer && systemctl is-active uupd.timer` prints `inactive`.
   The Ledger records the instant.
 - Resume: `sudo -A systemctl start uupd.timer && systemctl list-timers uupd.timer --no-pager` shows
@@ -60,13 +61,36 @@ chosen. One caveat: a reboot inside the window re-arms the timer, and because th
 the conductor re-pins the init baseline with `--probe-init` and reruns that batch whole, the pilot
 record names each batch's CLI version, and the pass does not stop for the drift.
 
-**F2. Pre-answer the 12M flag (recommended: continue).** This revision's estimate is about 12.65M,
-above the 12M flag and under the 15M ceiling (see "Cost lines"), so the flag sitting is close to
-certain and its answer is predictable. Stopping costs an attended sitting for a known outcome.
-Options: **(a) continue past the flag to the ceiling** unless a single task overruns its cost line
-by more than half, in which case the conductor stops and asks as usual; or **(b) stop and ask at
-the flag**, as B4 set it. Under (a), the conductor still writes the Ledger with a projection to the
-close at the flag, and still stops at the ceiling.
+**F2. One pre-ruling for the flag, the overrun stop, and the ceiling (recommended: (a)).** The
+evidence:
+- The estimate is about 12.65M, above the 12M flag, so the flag sitting is close to certain.
+- At pass 1b's mean build cost (2.0M against lines of 1.3M and 1.0M), the pass reaches about
+  15.75M, over the 15M ceiling with no conditional chain firing (see "Cost lines").
+- At that mean, a build task overruns its line by about 54 percent. That trips the stop for a
+  single task overrunning its cost line by more than half, so the overrun stop will likely fire in
+  segment 1 or 2.
+- Nothing yet rules what gives at the ceiling. Tasks 8 to 10 (the audience review, the exemplar
+  review, owner stop 1) are the tasks left when it lands.
+
+The ruling covers all three stops at once:
+- **(a) Continue, with a pre-ruled cut (recommended).** The conductor continues past the 12M flag
+  and past a single-task overrun, recording each in the Ledger with a projection to the close. The
+  projection is counted spend plus the cost lines of every task still open, each open build task
+  priced at the pass's observed mean build cost when that is above its line. When the projection
+  first breaches 15M, Task 9 (the exemplar review) defers whole to pass 2b, which already takes the
+  exemplar gap fills (B4); at 1b's mean that brings the pass to about 14.95M. If the projection
+  still breaches after the deferral, or Task 9 has already started, the conductor stops and asks.
+  No review lens in Task 8 is ever cut (parent spec, "no review lens is cut"), and a deferral moves
+  Task 9's lenses to pass 2b whole, cutting none. This builds a pass that likely runs to owner stop
+  1 without a mid-pass sitting, with the audience record reviewed in full, and at worst an
+  exemplar review that lands in pass 2b against its 8M.
+- **(b) Stop and ask at each trigger, as B4 set it.** The conductor stops at the 12M flag and at
+  any single-task overrun above half, and Geoff rules the next step each time, including what gives
+  at the ceiling. This builds the same pass with every cut ruled in person, at the price of likely
+  two or three attended sittings for outcomes (a) already names.
+
+Under either option, a runner batch that is running when a stop lands finishes, and the pass
+still stops at the ceiling itself.
 
 ## Conductor rulings at plan review (B2)
 
@@ -134,10 +158,11 @@ count; cache reads are reported apart. At Task 0 the conductor records the pass'
 method: subtract each extra session's runner figure). The conductor runs it at every checkpoint and
 every task boundary from Task 5 on.
 
-**Budget:** about 12.65M (range 11.6M to 15.75M, plus about 1.0M if the conditional verifier-fix
-chain fires); see "Cost lines". Fix rounds are budgeted as the norm: every build task in passes 1
-and 1b drew at least one `fix`. **At the flag** the conductor finishes the running task and writes
-the Ledger with a projection to the close, then follows F2's answer. A runner batch that is running
+**Budget:** about 12.65M (range 11.6M to 15.75M, the top of it over the 15M ceiling, which F2
+rules; plus about 1.0M if the conditional verifier-fix chain fires); see "Cost lines". Fix rounds
+are budgeted as the norm: every build task in passes 1 and 1b drew at least one `fix`. **At the flag, at a single-task overrun above half, and at a
+projected ceiling breach** the conductor finishes the running task and writes the Ledger with a
+projection to the close (F2 defines it), then follows F2's answer. A runner batch that is running
 when spend reaches the ceiling finishes; no batch runs half.
 
 **Checkpoints:** every segment boundary (at most four tasks apart), any split, the flag, and before
@@ -155,7 +180,8 @@ live STATUS line, naming the Ledger's worktree path. It never adds a second line
 | 4 | 11 close | PR opened. |
 
 **Independent task:** Task 6 (4a, the audience format) shares no file with Tasks 1 to 5. It runs in
-its own lane beside segments 1 and 2, starting after Task 0, and merges at segment 2's boundary.
+its own lane beside segments 1 and 2, starting after Task 0, and merges at segment 2's boundary. It
+never overlaps a runner batch (see "Gates").
 
 **Execution mode:** per-task Agent chains, fewer than six tasks per segment, the lane run as its own
 Agent chain in its own worktree. Neither `pass-execute` workflow can run these tasks: both run
@@ -194,7 +220,13 @@ cd /var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-2a && CAIRN_
 The light lane's 3G cap runs `svelte-check` out of memory, so the memory override is required. On
 exit 75, re-issue the same command until it prints `gate exit:`; never poll a log. No gate runs
 while a runner batch is running (the 6G cap beside another session's heavy gate and a batch nears
-the machine's memory). Task 6's and the merged gates are named in their tasks.
+the machine's memory). The rule covers Task 6's lane too: its gate carries the same 6G override,
+and the light lane's own lock serializes it against this pass's gates but not against a batch,
+which is not a gate. The conductor enforces it at dispatch, since it cannot pause a chain
+mid-gate: it starts no runner batch (the smoke run, Task 3's live check, any Task 5 batch) while
+the lane's chain is in flight, and it dispatches no lane work, a fix round included, while a batch
+runs. The lane starts right after Task 0, well before the first batch. Task 6's and the merged
+gates are named in their tasks.
 
 ## Global constraints
 
@@ -435,8 +467,11 @@ if the item field type lives there), `prompts/catch-judge.md`, `prompts/adjudica
   adjudicator packet through R-c's filter step and writes `batches/pilot-2a-live-adjudicator.json`
   (one job, `scripter-control-1`). The conductor checks `claude --version`, then runs it from the
   worktree under `awake --`; every item is ruled. Its key and rulings are committed as
-  `scripts/docs-readers/fixtures/pilot-2a-judge/`, with the key's `report.path` rewritten at test
-  time by any test that joins it.
+  `scripts/docs-readers/fixtures/pilot-2a-judge/`. Before the commit, every absolute path in the
+  key (`report.path` and each `inputs` key, which round 1's keys show are absolute) is rewritten
+  repository-relative; no scorer path reads `inputs` (only `run.ts` and `judge-packets.ts` write
+  it). Any test that joins the key rewrites `report.path` to the fixture report's absolute path at
+  test time.
 
 **Gate:** the reader chain gate. **Reviewer:** `diff-reviewer`, given the development-item list and
 the spec's quoted plant wordings.
@@ -504,12 +539,18 @@ cd /var/home/glw907/Projects/cairn-cms/.claude/worktrees/docs-reset-2a && W=$PWD
 - **Rehearsal (a recorded command):** the pilot scoring command with `P` at a scratch directory
   holding five fixture reports named `pilot-2a-<job>` built from `smoke-2a.json`'s shape (two
   planted runs and one control run per job), synthetic catch keys and rulings for the ten planted
-  runs whose traces match those reports' paths, `runId`, and `attempt`, and adjudicator keys copied
-  from the Task 3 fixture with traces rewritten, and `OUT` in the scratchpad. It asserts `ok: true`,
+  runs whose traces match those reports' paths, `runId`, and `attempt`, five synthetic adjudicator
+  keys (one per control run, each built from the Task 3 fixture key with `report.path`, `jobId`
+  `<job>-control-1`, `runId`, and `attempt` rewritten to match its fixture report, and `items`
+  matching that run's report), an adjudicator rulings report with a ruling for every item of all
+  five control jobs, and `OUT` in the scratchpad. Without all five, `buildPrecisionRunRecords`
+  notes a control run with no key and rulings joined, and `notes` is not empty. It asserts `ok: true`,
   `notes: []`, `onMapPlantRunRecall.total` 16, per-job `onMapPlantCount` 2, 2, 2, 1, 1,
   `pooledPrecision.controlRunIds.length` 5, and a nonzero caught count.
-- A catch key copied from a round 1 key with one item moved into `wrong[]` loads and joins (a
-  loader test; a catch ruling is per plant, so the field never changes `runsCaught`).
+- A catch key copied from a round 1 key with one item moved into `wrong[]` loads and joins, and
+  with a `caught` ruling whose reason cites that item, the plant's `plantTallies` entry holds
+  `true` in `runsCaught` for that run (spec 1c: a catch through a new-field item shows in its
+  plant's `runsCaught`). A catch ruling is per plant, so the field never changes the outcome.
 - `git diff --name-only` shows no path under `tuning/round0/` or `tuning/round1/`.
 
 **Gate:** the reader chain gate. **Reviewer:** `diff-reviewer`.
@@ -609,11 +650,20 @@ ceiling, stated positively), `arrivalStates` (list), `success` (the success crit
 | Core | `core` |
 | Evaluators | `evaluators` |
 
-An id `<dir>/<slug>` resolves when a top-level entry line (starting `- ` at column 0) in that
-section holds a backticked `` `<slug>/` `` or `` `<dir>/<slug>/` ``, in any of the forms the
-pre-flight lists, and no line in the section carries `` Verdict (`<slug>/`): rejected ``. The
-section's opening line is not read, so its wording does not matter. This excludes the method source
-(named only in an opening paragraph) and indented prose.
+**The verdict line form, pinned here and written by Task 9.** Every verdict line is exactly
+`` - **Verdict (`<slug>/`):** kept `` or `` - **Verdict (`<slug>/`):** rejected (<reason>) ``,
+indented two spaces, with the bare slug (never `<dir>/<slug>/`) and the bold marks as shown.
+
+An id `<dir>/<slug>` resolves when both hold:
+1. A top-level entry line (starting `- ` at column 0) in that section holds a backticked
+   `` `<slug>/` `` or `` `<dir>/<slug>/` ``, in any of the forms the pre-flight lists. A line
+   containing `**Verdict (` is never an entry line, whatever its indentation, so a verdict line
+   never makes an id resolve.
+2. No line in the section contains the literal `` **Verdict (`<slug>/`):** rejected ``.
+
+The section's opening line is not read, so its wording does not matter. This excludes the method
+source (named only in an opening paragraph, and its verdict line skipped by rule 1) and indented
+prose. The method source `editors/mozilla-kb-writing-guide` never resolves.
 
 The rendered `profile` string is plain text: a first line naming the profile id and persona, then
 one labeled block per key in the schema's key order, lists as hyphen bullets, exemplar ids as ids
@@ -626,10 +676,15 @@ fixture profile and a fixture manifest), `eslint.config.js`, `scripts/checks/che
 - The fixture manifest is cut from the real manifest's lines: all four opening-line variants
   (`Root:`, "Captures live under", "Base path:", "Local root:"), every slug form (including the
   two-slug `Local paths:` entry and `<dir>/<slug>/`), the method-source paragraph, an indented
-  prose `` `tool/` ``, and one `` Verdict (`<slug>/`): rejected `` line.
+  prose `` `tool/` ``, and verdict lines in the pinned form copied byte for byte: one
+  `` - **Verdict (`<slug>/`):** rejected (<reason>) `` and one `` - **Verdict (`<slug>/`):** kept ``,
+  both indented two spaces under their entries, plus the method source's
+  `` - **Verdict (`mozilla-kb-writing-guide/`):** kept `` at column 0.
 - Cases: a missing key, an extra key, missing frontmatter, and broken YAML each fail naming the
   file; `provisional: true` with no `provisionalReason` fails; a method-source id, an indented-prose
-  id, and a rejected id each fail; each slug form resolves.
+  id, and a rejected id (its line in the exact pinned form, bold marks included) each fail; the
+  method source still fails with its column-0 verdict line present; an id whose verdict line says
+  `kept` resolves; each slug form resolves.
 - The real `docs/internal/record/docs-exemplars.md` resolves one known id per directory.
 - `npm run check:comments` lints `scripts/docs-audiences/`.
 
@@ -674,8 +729,13 @@ passes. **Gate:** Task 6's gate string run in the `docs-reset-2a` worktree. **Re
    raw sources, never Task 7's scratch extraction. `users` also reads comparable CMSs' public
    evidence (web); `boundaries` the charter and the hat map; `agents` the shipped guidance layer;
    `open` peer docs' audience divisions (web).
-2. The human reads' stall logs, as they arrive, recorded in
-   `docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md`.
+2. The human reads' stall logs, as they arrive, recorded verbatim under "Logs" in
+   `docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md` in the worktree. A log
+   reaches the pass one of two ways: Geoff pastes it into the session running the pass, or he saves
+   it in the main checkout at
+   `/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-1-editor.md`
+   or `.../sheet-2-evaluator.md` (untracked). The conductor checks both paths at this step and
+   again before Task 10.
 3. One fold by `claude-opus-5-5` at `high`: the profiles revised and
    `docs/superpowers/research/2026-09-25-docs-reset-2a-audience-fold.md` written.
 
@@ -691,15 +751,23 @@ audience (editors and evaluators; operators and core; designers and extenders), 
 capture's `page.md` and `meta.json` in its two directories (about 75k tokens of page text each,
 never `page.html`) against the manifest entry and the matching profile, write one shared review,
 `docs/superpowers/research/2026-09-25-docs-reset-2a-exemplar-review.md`, one section per lens. One
-fold marks the manifest: each of the 68 captures gains one indented line under its entry,
+fold marks the manifest: each of the 68 captures gains one verdict line under its entry, in the
+form Task 6 pins (indented two spaces, bare slug, bold marks as shown):
 `` - **Verdict (`<slug>/`):** kept `` or `` - **Verdict (`<slug>/`):** rejected (<reason>) ``. The
 two-slug Substack entry carries two lines; the method source `mozilla-kb-writing-guide/` carries
-its line under the Editors opening paragraph. Nothing is deleted from the store.
+its line, indented the same way, under the Editors opening paragraph. Nothing is deleted from the
+store.
 
 **Acceptance.** The spec's §6 line for this pass; a count check shows 68 capture directories and
 68 verdict lines, and the set of slugs in verdict lines equals the directory listing; the schema
 test passes, and a profile citing a rejected capture fails it (the fold then revises that profile's
-list). The gap fills are pass 2b's. **Gate:** Task 7's. **Reviewer:** `diff-reviewer`.
+list); a grep for lines containing `**Verdict (` that do not match the pinned form exactly returns
+nothing. The gap fills are pass 2b's. **Gate:** Task 7's. **Reviewer:** `diff-reviewer`.
+
+**Deferral (F2(a) only).** When the projection first breaches 15M before this task starts, it
+defers whole to pass 2b: no lens runs here, Task 10's brief names the deferral, and Task 11 files
+the exemplar review under pass 2b beside the gap fills. Once a lens has started, the task is not
+deferred.
 
 ### Task 10: Owner stop 1 (conductor-run; 0.2M; attended)
 
@@ -710,8 +778,8 @@ or the manifest goes to one `claude-opus-5-5` fold dispatch before the close; a 
 filed to pass 2b.
 
 **Acceptance.** The brief fits one page and names every unresolved lens finding, each human read's
-outcome or open state (an open read listed as routed to pass 2b), and how many profiles are
-provisional and why.
+outcome or open state (an open read listed as routed to pass 2b), how many profiles are
+provisional and why, and Task 9's deferral if F2(a) triggered it.
 
 ### Task 11: Close (conductor-run; one fold agent; 0.6M)
 
@@ -727,11 +795,13 @@ independent `diff-reviewer` read over the fold's diff.
 - `ROADMAP.md`: pass 2a marked done and out of the live tier; the chain build (§3, with CR9, its
   precondition, and the pilot's gating-class list), the designer theme-guide input, the parent's
   three trial pages, and pass 1b's rule that measuring jobs stay disjoint from the chain's
-  reader-stage jobs, all under the first drafting pass's entry; the exemplar gap fills and any
-  human read still open under pass 2b; the scratch-site line pointing at the renamed teardown
+  reader-stage jobs, all under the first drafting pass's entry; the exemplar gap fills, the exemplar review if
+  F2(a) deferred it, and any human read still open under pass 2b; the scratch-site line pointing at the renamed teardown
   section (CR7).
 - Errata E1 and E2 filed against the spec (a dated "Errata" note appended to the spec, the only
   spec edit this pass makes).
+- Once the Logs section carries them verbatim, the untracked raw logs under
+  `docs/superpowers/research/human-reads-2a/` in the main checkout are removed.
 - The conductor runs the scratch site's dry-run listing (the record's teardown section, step 1) as
   a health check, deleting nothing, and records the result; confirms `uupd.timer` is active again;
   updates the `docs-reset-initiative` memory; opens the PR.
@@ -754,7 +824,9 @@ reboot, stop it again and check `claude --version` before anything else); arm a 
 as the fallback on every wait.
 
 **Stop and ask Geoff** (write the Ledger and STATUS first, one combined question): the 12M flag
-(unless F2 pre-answered it); a single task overrunning its cost line by more than half; a third
+and a single task overrunning its cost line by more than half (both only under F2(b)); under
+F2(a), a projection that still breaches 15M after Task 9's deferral, or once Task 9 has started;
+the ceiling itself; a third
 `fix` on any task; a task that finds the spec unbuildable; a correctness point still hedged after
 an `xhigh` read and one `fable` dispatch; a CLI version drift inside the F1 window from the first
 pilot reader batch on (under F1's fallback, this is re-pinned instead).
@@ -777,7 +849,7 @@ about 15k, agent startup 25k to 60k, build task 0.96M to 3.82M).
 | 2 | The pilot (smoke run) | 0.2M | Key check and fixture marking (+0.05M). |
 | 3 | 1b | 1.3M | |
 | 4 | 1c | 1.3M | Precision split across two more files, Wilson, flag states, keyed rehearsal (+0.3M). |
-| 5 | The pilot (runs, packets, judges, audit, record) | 1.45M | 16 runs about 0.65M with reruns, about eight dispatches about 0.4M, audit 0.15M, record and read 0.25M (+0.4M). |
+| 5 | The pilot (runs, packets, judges, audit, record) | 1.45M | 15 runs about 0.65M with reruns, about eight dispatches about 0.4M, audit 0.15M, record and read 0.25M (+0.4M). |
 | 6 | The audience format (4a) | 1.0M | |
 | 7 | The audience record (4b) | 1.5M | |
 | 8 | The audience review and fold | 2.0M | |
@@ -788,15 +860,17 @@ about 15k, agent startup 25k to 60k, build task 0.96M to 3.82M).
 | **Total** | | **12.65M** | +0.85M; above the 12M flag (F2), under the 15M ceiling. |
 
 **Range:** 11.6M with the four build tasks at 1b's floor (0.96M each), 15.75M at 1b's mean (2.0M
-each). **Conditional:** the verifier-fix chain (Task 5 acceptance) and a judge-defect fix chain
-(step 6) each cost about 1.0M (1b's floor) plus the reruns, and fire only on their triggers; the
-mean case with one of them passes the 15M ceiling, which stops the pass under the ceiling rule.
+each), which is over the 15M ceiling with no conditional chain firing; F2 rules what gives.
+**Conditional:** the verifier-fix chain (Task 5 acceptance) and a judge-defect fix chain (step 6)
+each cost about 1.0M (1b's floor) plus the reruns, and fire only on their triggers. Deferring
+Task 9 under F2(a) saves its 0.8M, which brings the mean case to about 14.95M; the mean case with a
+conditional chain still breaches after the deferral, which stops the pass for Geoff.
 
 ## Ledger
 
 | Task | State | Commit | Spend | Notes |
 | --- | --- | --- | --- | --- |
 | spec | approved | `598902f3`..`e66bbb21` | brainstorm session | Four lenses, fold, verification, second fold, prose fold. Owner rulings O12, B1 to B4; conductor rulings CR1 to CR10. |
-| plan | reviewed | `9f112c92`, fold uncommitted | plan session | Three lenses (contract, mechanics, risk); fold record `2026-09-25-docs-reset-2a-plan-fold.md`; rulings R-a to R-i; owner decisions F1, F2 pending. |
+| plan | reviewed | `9f112c92`, fold `f3d1e4f6`, second fold uncommitted | plan session | Three lenses (contract, mechanics, risk); fold record `2026-09-25-docs-reset-2a-plan-fold.md` (with its "Second fold" section after the fold verification); rulings R-a to R-i; owner decisions F1, F2 pending. |
 
 ## Post-mortem

@@ -78,3 +78,31 @@ These were checked by the fold, beyond the reviewers' own probes.
 | Review lenses' inputs and tools unnamed | R m10 | Folded | Task 8 step 1 |
 | The flag sitting is near certain | R m14 | **Owner fork F2** (recommended: continue past the flag unless a single task overruns its line by more than half) | Owner decisions F2; R-i |
 | Credential precondition for the operator batch | R note | Folded as a name-only check of `CAIRN_SCRATCH_CF_TOKEN` beside `/healthz`. `cairn auth check` is not adopted, because the fold did not verify that command. | Task 5 step 1; Review focus 4 |
+
+## Second fold
+
+**Input:** `2026-09-25-docs-reset-2a-plan-fold-verification.md` (V), 2 majors and 9 minors, against
+the plan at `f3d1e4f6`. **Fold:** `claude-opus-5-5`, narrow, editing only the plan, the human-read
+sheets, and this record. Each finding was checked against source before it was folded.
+
+**Checked for this fold:** `systemctl is-active uupd.service` prints `failed`. The scorer reads no
+key's `inputs` (only `run.ts` and `judge-packets.ts` write it). Tags `v0.95.0` and `v0.96.0` exist
+locally and on `origin`, and each carries `docs/editors/README.md` and `publish-and-history.md`.
+The club sites' lockfiles install 0.95.0 (ecxc-ski) and 0.96.0 (aksailingclub-org,
+xcathletes-org). The parent spec says "no review lens is cut" (`2026-09-23-docs-reset-design.md`,
+Budget). The cost arithmetic holds: four build tasks at 2.0M give 15.75M, at 0.96M 11.59M, and
+15.75M less Task 9's 0.8M is 14.95M.
+
+| ID | Disposition | Where |
+| --- | --- | --- |
+| V major 1 (verdict line form) | Folded. One form pinned in Task 6 and written by Task 9: `` - **Verdict (`<slug>/`):** kept `` or `` - **Verdict (`<slug>/`):** rejected (<reason>) ``, indented two spaces, bare slug, bold marks kept. The rejection check matches the literal `` **Verdict (`<slug>/`):** rejected ``. The fixture carries the exact form, and a test case asserts a rejected id in that form fails. Task 9's acceptance greps for any verdict line off the form. | Task 6 "Exemplar-id resolution", fixture and cases; Task 9 Outcome and acceptance |
+| V major 2 (F2 evidence) | Folded. The range line is corrected: at 1b's mean the pass reaches about 15.75M, over the ceiling with no conditional chain. F2 is rewritten as one pre-ruling for the flag, the overrun stop, and the ceiling. Option (a) continues past both and, at a projected breach, defers Task 9 whole to pass 2b (about 14.95M at the mean), then stops and asks. Option (b) stops at each trigger. Task 8's lenses are never cut. Task 9 gains the deferral rule; Tasks 10 and 11 carry it. | Owner decisions F2; Budget; Task 9 "Deferral"; Task 10 and 11; Unattended execution "Stop and ask"; Cost lines "Range" |
+| V minor 1 (F1 predicate) | Folded: proceed when `uupd.service` is not `active` or `activating`; `failed` and `inactive` both proceed. | Owner decisions F1, status step |
+| V minor 2 (lane gate against batches) | Folded: the rule covers the lane. Its gate carries the same 6G override, and the light lane's lock does not see a batch. The conductor starts no batch while the lane's chain is in flight and dispatches no lane work while a batch runs. | Gates; Independent task |
+| V minor 3 (method source can resolve) | Folded with major 1: a line containing `**Verdict (` is never an entry line at any indentation. The fixture carries the method source's verdict line at column 0, and a case asserts it still fails. | Task 6 rule 1 and cases |
+| V minor 4 (rehearsal adjudicator side) | Folded: five synthetic adjudicator keys, one per control run, with trace fields rewritten, and rulings for every item of all five control jobs. | Task 4 rehearsal |
+| V minor 5 (fixture `inputs` paths) | Folded: every absolute path in the committed key, `inputs` keys included, is rewritten repository-relative before commit. `report.path` is rewritten again at test time by a joining test. | Task 3 live check |
+| V minor 6 (new-field catch test) | Folded: the test also asserts `true` in the plant's `runsCaught` for that run, as spec 1c states. | Task 4 acceptance |
+| V minor 7 (editor docs version) | Folded by the tag route: Geoff's notes give the help link at `v0.95.0` or `v0.96.0` by club site, with the lookup for a later upgrade. | Sheets, "For Geoff" |
+| V minor 8 (sheets not send-ready) | Folded: Geoff's notes moved to their own unsent section, the entry title and help link are named fill-ins, and the log goes as a reply to Geoff, who pastes it into the pass session or saves it at `docs/superpowers/research/human-reads-2a/sheet-{1-editor,2-evaluator}.md` in the main checkout. Task 8 reads both paths; the close removes the raw copies once recorded. | Sheets; Task 8 step 2; Task 11 |
+| V minor 9 (Ledger, run count) | Folded: the plan row names `f3d1e4f6` and this second fold; Task 5's cost note says 15 runs. | Ledger; Cost lines |

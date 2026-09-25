@@ -2,36 +2,55 @@
 
 Two short tasks for real readers. Their stall logs go into pass 2a's audience review, where they
 are the only evidence that does not come from a model (spec §5, "Human reads"). They go to Geoff
-with the plan approval, so the editor's read has lead time.
+with the plan approval, so the editor's read has lead time. The first section is Geoff's and is
+never sent. Each sheet after it is sent whole, from its heading to the rule below it.
 
-**What Geoff arranges:**
+## For Geoff (not sent)
+
+**Readers.**
 - **Sheet 1:** one editor who already writes on a club site that runs on cairn. Pick someone other
   than yourself.
 - **Sheet 2:** yourself or an outside reader. An outside reader is better, since you know cairn
   from the inside. If you take it, say so in the log.
 
-Each sheet below can go to its reader as is. Send each finished log back into the pass session.
-The conductor records it under "Logs" at the foot of this file. A log that arrives after the
-audience review's fold still counts, because it goes to pass 2b as an input.
+**Before you send Sheet 1:**
+1. Pick one published post or page on that editor's club site that has been published at least
+   twice.
+2. Check that nobody has unpublished changes on it, because a pending draft blocks the task.
+3. Confirm that the editor can still sign in.
+4. Replace the two bracketed fill-ins in Sheet 1. `[ENTRY TITLE]` becomes the entry's title.
+   `[HELP LINK]` becomes the editor help pages at the engine version the club site runs, so a
+   stall reads against the pages that match the editor's screens:
+
+   | Club site | Engine (installed, 2026-09-25) | Help link |
+   | --- | --- | --- |
+   | ecxc-ski | 0.95.0 | https://github.com/glw907/cairn-cms/blob/v0.95.0/docs/editors/README.md |
+   | aksailingclub-org | 0.96.0 | https://github.com/glw907/cairn-cms/blob/v0.96.0/docs/editors/README.md |
+   | xcathletes-org | 0.96.0 | https://github.com/glw907/cairn-cms/blob/v0.96.0/docs/editors/README.md |
+
+   If the site has upgraded since, use tag `v<installed version>` in the same address
+   (`npm ls @glw907/cairn-cms` in the site repository prints it).
+
+**Where each log goes.** The reader replies to you. Add one line on top naming the sheet, the
+reader (or "Geoff"), and for Sheet 1 the club site and its engine version. Then either paste the
+log into the Claude session running pass 2a, or save it verbatim in this checkout at
+`docs/superpowers/research/human-reads-2a/sheet-1-editor.md` or
+`docs/superpowers/research/human-reads-2a/sheet-2-evaluator.md`. The conductor reads both paths at
+Task 8 and before owner stop 1, and records each log under "Logs" at the foot of this file. A log
+that arrives after the audience review's fold still counts, because it goes to pass 2b as an input.
 
 ---
 
 ## Sheet 1: an editor task
 
-**For Geoff, before you send this:**
-- Pick one published post or page on the club site that has been published at least twice.
-- Check that nobody has unpublished changes on it, because a pending draft blocks the task.
-- Fill in the entry's title below.
-- Confirm that the editor can still sign in.
-
 **Where you start.** You're signed in to your club's site editor, as you would be to write a post.
 You also have this link to the editor help pages:
-https://github.com/glw907/cairn-cms/blob/main/docs/editors/README.md
+[HELP LINK]
 
 You can use the help pages and the editor's own screens. Please don't ask anyone for help until
 you've finished or stopped, since the point is to find where the help pages fall short.
 
-**Your task.** Open the entry called **\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_**.
+**Your task.** Open the entry called **[ENTRY TITLE]**.
 
 1. Find out who last published it, and when.
 2. Bring back the version from before that one, and read it in the editor.

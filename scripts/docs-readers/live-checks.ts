@@ -26,7 +26,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CACHE_ROOT, SCRATCH_SITE, readSecret, runBatchFile, type FinishedReport } from './run.js';
-import { packEngineTarballs, prepareDocsAndBinary, prepareDocsAndSite, prepareRepositoryExport } from './lib/prepare-class.js';
+import { assertOneCleanCommit, packEngineTarballs, prepareDocsAndBinary, prepareDocsAndSite, prepareRepositoryExport, resolveCommit } from './lib/prepare-class.js';
 import { writeOwnerMarker } from './lib/sweep.js';
 import { findInit, parseStream, toolCalls } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
@@ -267,6 +267,7 @@ async function site(): Promise<number> {
     const tarballs = packEngineTarballs(REPO_ROOT, join(scratch, 'pack'), undefined, CACHE_ROOT);
     prepareDocsAndSite({
       sourceRoot: REPO_ROOT,
+      commit: resolveCommit(REPO_ROOT, 'HEAD'),
       docsSet: ['docs/extend/design-your-site.md'],
       tarballs,
       dest: prepared,
@@ -347,9 +348,10 @@ async function repository(): Promise<number> {
   const prepared = join(scratch, 'prepared');
   try {
     claimScratch(scratch);
-    prepareRepositoryExport({ repoRoot: REPO_ROOT, commit: 'HEAD', dest: prepared });
-    const answerKeyAbsent =
-      !existsSync(join(prepared, 'docs/internal/record')) && !existsSync(join(prepared, 'docs/superpowers')) && !existsSync(join(prepared, '.git'));
+    prepareRepositoryExport({ repoRoot: REPO_ROOT, commit: resolveCommit(REPO_ROOT, 'HEAD'), dest: prepared });
+    // The export's own history is its one synthetic commit, which assertOneCleanCommit re-proves.
+    assertOneCleanCommit(prepared);
+    const answerKeyAbsent = !existsSync(join(prepared, 'docs/internal/record')) && !existsSync(join(prepared, 'docs/superpowers'));
     const batch = JSON.stringify({
       name: 'repository-smoke',
       concurrency: 1,
@@ -410,6 +412,7 @@ async function docsAndBinary(): Promise<number> {
     claimScratch(scratch);
     prepareDocsAndBinary({
       sourceRoot: REPO_ROOT,
+      commit: resolveCommit(REPO_ROOT, 'HEAD'),
       docsSet: ['docs/admin/troubleshooting.md'],
       siteId: SCRATCH_SITE.siteId,
       record: SCRATCH_SITE.record,

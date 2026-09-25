@@ -1,34 +1,51 @@
 #!/usr/bin/env -S npx tsx
 /**
- * Builds the validation batch's trees: for each of the six baseline jobs (evaluator, operator,
- * scripter, core-developer, designer, extender), a CONTROL prepared directory built the same way
- * `prepare-baseline.ts` builds that job's own tree, and a PLANTED variant of it, the control tree
- * copied once more and then overlaid with that job's own planted pages from
- * `$XDG_CACHE_HOME/docs-readers/planted/<job>/`. Run this once the planter has written its pages,
- * before `run.ts batches/validation.json`: a validation run only ever copies a directory this
- * script already finished, the same rule `prepare-baseline.ts` follows for the live baseline.
+ * Builds the validation trees a batch file names. For each of the six development jobs
+ * (evaluator, operator, scripter, core-developer, designer, extender) the batch references, a
+ * CONTROL tree is built the same way `prepare-baseline.ts` builds that job's own tree, at the
+ * commit the job's `commit` field names; when the batch also references the job's PLANTED tree,
+ * that tree is a copy of the control overlaid with the job's planted pages, then finished on its
+ * own. A job with no planted directory builds a control-only tree. Each tree lands at the path its
+ * batch job's `prepared` field names (`<root>/<job>-control` or `<root>/<job>-planted`), and each
+ * job's absent list is written back into the batch file as its `absent` field. Run this before
+ * `run.ts` on that batch: a run only ever copies a directory this script already finished.
  *
  * Usage:
- *   npx tsx scripts/docs-readers/prepare-validation.ts [--only NAME,NAME,...]
+ *   npx tsx scripts/docs-readers/prepare-validation.ts BATCH.json [--plants development|test] [--only NAME,NAME,...]
  *
- * `--only` limits the build to the named jobs (`evaluator`, `operator`, `scripter`,
- * `core-developer`, `designer`, `extender`), for a partial rebuild; omitted, every job runs.
+ * `--plants` picks where planted pages come from: `development` (the default) reads
+ * `PLANTED_ROOT`, `test` reads `TEST_PLANTED_ROOT`. `--only` limits the build to the named jobs.
+ * Every referenced job must carry a `commit`, and it must be a commit id, never `HEAD`.
  */
-import { dirname, join, relative, resolve } from 'node:path';
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CACHE_ROOT } from './run.js';
-import { CONTRACT_PAGES, prepareCoreDeveloper, prepareDesignerAndExtender, prepareOperator, prepareScripter } from './prepare-baseline.js';
-import { copyDocsSet, type ContractPageSpec } from './lib/prepare-class.js';
+import {
+  CONTRACT_PAGES,
+  pinnedEngineTarballs,
+  prepareCoreDeveloper,
+  prepareDesigner,
+  prepareExtender,
+  prepareOperator,
+  prepareScripter,
+} from './prepare-baseline.js';
+import { prepareDocsOnly, spawnRunner, type CommandRunner, type ContractPageSpec, type PreparedTree, type TreeVariant } from './lib/prepare-class.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
 
-/** Where every validation job's control and planted directories land, under the runner's own neutral cache root. */
-export const VALIDATION_PREPARED_ROOT = join(CACHE_ROOT, 'prepared', 'validation');
+/** The six development jobs, each with a control tree and, when planted pages exist, a planted one. */
+export const DEVELOPMENT_JOBS = ['evaluator', 'operator', 'scripter', 'core-developer', 'designer', 'extender'] as const;
 
-/** Where the planter writes each job's own planted pages, one subdirectory per job, mirroring that job's own prepared-tree paths. */
+/** One of the six development jobs. */
+export type DevelopmentJob = (typeof DEVELOPMENT_JOBS)[number];
+
+/** Where the development plants live, one subdirectory per job, mirroring that job's own prepared-tree paths. */
 export const PLANTED_ROOT = join(CACHE_ROOT, 'planted');
+
+/** Where the test plants live, one subdirectory per job, kept apart from the development plants. */
+export const TEST_PLANTED_ROOT = join(CACHE_ROOT, 'planted-1b');
 
 /** The evaluator job's docs set, kept in sync by hand with `batches/baseline.json`'s evaluator job. */
 export const EVALUATOR_DOCS_SET = [
@@ -43,12 +60,15 @@ export const EVALUATOR_DOCS_SET = [
 ];
 
 /**
- * The scripter's three contract pages, pinned to `HEAD` rather than pass A's own commits
- * (`prepare-baseline.ts`'s `CONTRACT_PAGES`): validation scores a reader against the pages as
- * they stand today, not as they stood when pass A's fixes landed, so both the scripter's control
- * and planted bundles are built from the current tree.
+ * The scripter's three contract pages, all pinned to one commit rather than each page's own
+ * earlier commit (`prepare-baseline.ts`'s `CONTRACT_PAGES`, which the held-out runs keep):
+ * validation scores a reader against the pages as they stand at the job's page pin.
+ * @param commit - The job's page pin.
+ * @returns The page specs, every field but `commit` kept from `CONTRACT_PAGES`.
  */
-export const VALIDATION_CONTRACT_PAGES: ContractPageSpec[] = CONTRACT_PAGES.map((spec) => ({ ...spec, commit: 'HEAD' }));
+export function validationContractPages(commit: string): ContractPageSpec[] {
+  return CONTRACT_PAGES.map((spec) => ({ ...spec, commit }));
+}
 
 /** Every file (never a directory) under `dir`, as paths relative to `dir`. */
 function listFiles(dir: string): string[] {
@@ -115,11 +135,11 @@ function scripterBundleTargets(relRepoPath: string, pages: ContractPageSpec[]): 
  * subdirectory's own copy of that path is missing.
  * @param plantedDir - The scripter job's own planted directory, keyed by real repo path.
  * @param dest - The contract bundle's own root, built by `prepareContractPagesBundle`.
- * @param pages - The bundle's own page specs; defaults to `VALIDATION_CONTRACT_PAGES`.
+ * @param pages - The bundle's own page specs.
  * @throws When `plantedDir` does not exist or contains no files, when a planted path matches no
  * bundle page or schema, or when a matched subdirectory's own copy of that path is missing.
  */
-export function applyScripterPlantedOverlay(plantedDir: string, dest: string, pages: ContractPageSpec[] = VALIDATION_CONTRACT_PAGES): void {
+export function applyScripterPlantedOverlay(plantedDir: string, dest: string, pages: ContractPageSpec[]): void {
   if (!existsSync(plantedDir)) throw new Error(`planted directory does not exist: ${plantedDir}`);
   const files = listFiles(plantedDir);
   if (files.length === 0) throw new Error(`planted directory is empty: ${plantedDir}`);
@@ -134,84 +154,149 @@ export function applyScripterPlantedOverlay(plantedDir: string, dest: string, pa
   }
 }
 
-/**
- * Build one job's PLANTED variant from its already-built CONTROL directory: a fresh copy of the
- * control tree, then `applyPlantedOverlay` on top from that job's own planted subdirectory under
- * `PLANTED_ROOT`.
- * @param job - The job name (`evaluator`, `operator`, `core-developer`, `designer`, or `extender`).
- * @param controlDir - The job's already-built control directory.
- * @param docsSet - The job's own docs set, passed through to `applyPlantedOverlay` for a
- * docs-set-class job; omitted for a prepared-tree job.
- * @returns The planted directory's own path.
- */
-function plantOverlayOnto(job: string, controlDir: string, docsSet?: string[]): string {
-  const planted = join(VALIDATION_PREPARED_ROOT, `${job}-planted`);
-  rmSync(planted, { recursive: true, force: true });
-  cpSync(controlDir, planted, { recursive: true, verbatimSymlinks: true });
-  applyPlantedOverlay(join(PLANTED_ROOT, job), planted, docsSet);
-  return planted;
-}
-
-/** Build the evaluator job's control and planted trees: the published docs set, copied and then overlaid. */
-async function prepareValidationEvaluator(): Promise<void> {
-  const control = join(VALIDATION_PREPARED_ROOT, 'evaluator-control');
-  rmSync(control, { recursive: true, force: true });
-  copyDocsSet(REPO_ROOT, EVALUATOR_DOCS_SET, control);
-  plantOverlayOnto('evaluator', control, EVALUATOR_DOCS_SET);
-}
-
-/** Build the operator job's control and planted trees, the same way `prepare-baseline.ts` builds its own. */
-async function prepareValidationOperator(): Promise<void> {
-  const control = join(VALIDATION_PREPARED_ROOT, 'operator-control');
-  await prepareOperator(control);
-  plantOverlayOnto('operator', control);
+/** What `prepareValidationJob` takes. */
+export interface ValidationJobOptions {
+  /** The commit id every page in the job's trees is exported at. */
+  commit: string;
+  /** Where the control tree lands. */
+  controlDest: string;
+  /** Where the planted tree lands; omitted, only the control tree is built. */
+  plantedDest?: string;
+  /** The job's own planted pages; when this directory does not exist, only the control tree is built. */
+  plantsDir: string;
+  /** The checkout pages are exported from; defaults to this repository. */
+  repoRoot?: string;
+  /** The command runner; overridden in tests. */
+  runner?: CommandRunner;
+  /** Supplies the packed engine pair for the designer and extender; defaults to packing at `commit`. */
+  tarballs?: () => { engine: string; dev: string };
+  /** The operator's scratch-site clone and pinned commit; defaults to `prepare-baseline.ts`'s. */
+  site?: { clone: string; commit: string };
 }
 
 /**
- * Build the scripter job's control and planted trees, from `VALIDATION_CONTRACT_PAGES` (the
- * current `HEAD`, not pass A's pinned commits). The planted tree is overlaid with
- * `applyScripterPlantedOverlay`, never the generic `applyPlantedOverlay`: the scripter's own
- * planted files are keyed by real repo path, but the bundle copies each page and schema into its
- * own per-page subdirectory, so a direct path-for-path overlay would land at the bundle's top
- * level instead of inside it.
+ * Build one development job's control tree and, when its planted pages exist and a planted
+ * destination is named, its planted tree: a copy of the control, overlaid, then finished on its
+ * own, so each carries its own mtimes and, for a repository-class job, its own one commit.
+ * @param job - The development job.
+ * @param options - The job's commit, destinations, and planted pages.
+ * @returns The job's absent list, and whether a planted tree was built.
  */
-async function prepareValidationScripter(): Promise<void> {
-  const control = join(VALIDATION_PREPARED_ROOT, 'scripter-control');
-  await prepareScripter(control, VALIDATION_CONTRACT_PAGES);
-  const planted = join(VALIDATION_PREPARED_ROOT, 'scripter-planted');
-  rmSync(planted, { recursive: true, force: true });
-  cpSync(control, planted, { recursive: true, verbatimSymlinks: true });
-  applyScripterPlantedOverlay(join(PLANTED_ROOT, 'scripter'), planted, VALIDATION_CONTRACT_PAGES);
+export function prepareValidationJob(job: DevelopmentJob, options: ValidationJobOptions): PreparedTree & { planted: boolean } {
+  const { commit, controlDest: dest, plantedDest, plantsDir, repoRoot = REPO_ROOT, runner = spawnRunner } = options;
+  const planted = plantedDest !== undefined && existsSync(plantsDir);
+  const variant = (overlay: (dir: string) => void): TreeVariant[] => (planted && plantedDest ? [{ dest: plantedDest, overlay }] : []);
+  const shared = { commit, dest, repoRoot, runner };
+  const tarballs = (): { engine: string; dev: string } => options.tarballs?.() ?? pinnedEngineTarballs({ commit, repoRoot, runner });
+  const built = ((): PreparedTree => {
+    switch (job) {
+      case 'evaluator':
+        return prepareDocsOnly({
+          sourceRoot: repoRoot,
+          commit,
+          docsSet: EVALUATOR_DOCS_SET,
+          dest,
+          runner,
+          variants: variant((dir) => applyPlantedOverlay(plantsDir, dir, EVALUATOR_DOCS_SET)),
+        });
+      case 'operator':
+        return prepareOperator({
+          ...shared,
+          siteClone: options.site?.clone,
+          siteCommit: options.site?.commit,
+          variants: variant((dir) => applyPlantedOverlay(plantsDir, dir)),
+        });
+      case 'scripter': {
+        const pages = validationContractPages(commit);
+        return prepareScripter({ dest, pages, repoRoot, runner, variants: variant((dir) => applyScripterPlantedOverlay(plantsDir, dir, pages)) });
+      }
+      case 'core-developer':
+        return prepareCoreDeveloper({ ...shared, variants: variant((dir) => applyPlantedOverlay(plantsDir, dir)) });
+      case 'designer':
+        return prepareDesigner({ ...shared, tarballs: tarballs(), variants: variant((dir) => applyPlantedOverlay(plantsDir, dir)) });
+      case 'extender':
+        return prepareExtender({ ...shared, tarballs: tarballs(), variants: variant((dir) => applyPlantedOverlay(plantsDir, dir)) });
+    }
+  })();
+  return { ...built, planted };
 }
 
-/** Build the core-developer job's control and planted trees, the same way `prepare-baseline.ts` builds its own. */
-async function prepareValidationCoreDeveloper(): Promise<void> {
-  const control = join(VALIDATION_PREPARED_ROOT, 'core-developer-control');
-  await prepareCoreDeveloper(control);
-  plantOverlayOnto('core-developer', control);
+/** The batch-file fields `prepareValidationBatch` reads and writes, every other field kept as it stands. */
+interface BatchFileJob {
+  prepared?: unknown;
+  commit?: unknown;
+  absent?: string[];
 }
 
 /**
- * Build the designer and extender jobs' control and planted trees. Both controls share one packed
- * engine tarball pair, built once by `prepareDesignerAndExtender`, then each gets its own planted
- * overlay.
+ * Write each job's absent list into a batch file, as the `absent` field of every job whose
+ * `prepared` path is a key of `absentByPrepared`, leaving every other field and job as it stands.
+ * @param batchPath - The batch file to rewrite.
+ * @param absentByPrepared - Each prepared tree's absolute path, mapped to its absent list.
  */
-async function prepareValidationDesignerAndExtender(): Promise<void> {
-  const designerControl = join(VALIDATION_PREPARED_ROOT, 'designer-control');
-  const extenderControl = join(VALIDATION_PREPARED_ROOT, 'extender-control');
-  await prepareDesignerAndExtender(designerControl, extenderControl);
-  plantOverlayOnto('designer', designerControl);
-  plantOverlayOnto('extender', extenderControl);
+export function recordAbsentLists(batchPath: string, absentByPrepared: Map<string, string[]>): void {
+  const batch = JSON.parse(readFileSync(batchPath, 'utf8')) as { jobs: BatchFileJob[] };
+  for (const job of batch.jobs) {
+    if (typeof job.prepared !== 'string') continue;
+    const absent = absentByPrepared.get(resolve(job.prepared));
+    if (absent) job.absent = [...absent];
+  }
+  writeFileSync(batchPath, `${JSON.stringify(batch, null, 2)}\n`);
 }
 
-/** Every named build step, in the order they log; `designer` and `extender` name the same step. */
-const STEPS: Array<{ names: string[]; run: () => Promise<void> }> = [
-  { names: ['evaluator'], run: prepareValidationEvaluator },
-  { names: ['operator'], run: prepareValidationOperator },
-  { names: ['scripter'], run: prepareValidationScripter },
-  { names: ['core-developer'], run: prepareValidationCoreDeveloper },
-  { names: ['designer', 'extender'], run: prepareValidationDesignerAndExtender },
-];
+/** What `prepareValidationBatch` takes beyond the batch file. */
+export interface ValidationBatchOptions extends Pick<ValidationJobOptions, 'repoRoot' | 'runner' | 'tarballs' | 'site'> {
+  /** The root the planted pages come from, one subdirectory per job; defaults to `PLANTED_ROOT`. */
+  plantsRoot?: string;
+  /** The jobs to build; omitted, every development job the batch references. */
+  only?: string[];
+}
+
+/**
+ * Build every development job's trees a batch file references, then record each job's absent list
+ * back into the file. A job is referenced when a batch job's `prepared` path ends in
+ * `<job>-control` or `<job>-planted`. Every check runs before any tree is built: each referenced
+ * batch job must carry a `commit`, one job's batch entries must agree on it, and a referenced
+ * planted tree needs its planted pages to exist.
+ * @param batchPath - The batch file.
+ * @param options - Where plants come from, which jobs to build, and the test seams.
+ * @throws When a check fails, or any build does.
+ */
+export function prepareValidationBatch(batchPath: string, options: ValidationBatchOptions = {}): void {
+  const { plantsRoot = PLANTED_ROOT, only } = options;
+  const batch = JSON.parse(readFileSync(batchPath, 'utf8')) as { jobs: BatchFileJob[] };
+  const plans = DEVELOPMENT_JOBS.filter((job) => !only || only.includes(job)).flatMap((job) => {
+    const entries = batch.jobs.filter((entry) => typeof entry.prepared === 'string' && [`${job}-control`, `${job}-planted`].includes(basename(entry.prepared)));
+    if (entries.length === 0) return [];
+    const commits = new Set(entries.map((entry) => entry.commit));
+    if (commits.has(undefined) || [...commits].some((commit) => typeof commit !== 'string' || commit.trim() === '')) {
+      throw new Error(`${job}: every batch job that names its tree must carry a commit`);
+    }
+    if (commits.size > 1) throw new Error(`${job}: batch jobs disagree on the commit (${[...commits].join(', ')})`);
+    const paths = entries.map((entry) => resolve(entry.prepared as string));
+    const plantedDest = paths.find((path) => basename(path) === `${job}-planted`);
+    const controlDest = paths.find((path) => basename(path) === `${job}-control`) ?? join(dirname(plantedDest as string), `${job}-control`);
+    const plantsDir = join(plantsRoot, job);
+    if (plantedDest && !existsSync(plantsDir)) throw new Error(`${job}: the batch names a planted tree, but ${plantsDir} does not exist`);
+    return [{ job, commit: [...commits][0] as string, controlDest, plantedDest, plantsDir }];
+  });
+  const absentByPrepared = new Map<string, string[]>();
+  const pairs = new Map<string, { engine: string; dev: string }>();
+  for (const plan of plans) {
+    console.log(`preparing: ${plan.job} at ${plan.commit}`);
+    const tarballs =
+      options.tarballs ??
+      ((): { engine: string; dev: string } => {
+        const cached = pairs.get(plan.commit) ?? pinnedEngineTarballs({ commit: plan.commit, repoRoot: options.repoRoot, runner: options.runner });
+        pairs.set(plan.commit, cached);
+        return cached;
+      });
+    const { absent } = prepareValidationJob(plan.job, { ...options, ...plan, tarballs });
+    absentByPrepared.set(plan.controlDest, absent);
+    if (plan.plantedDest) absentByPrepared.set(plan.plantedDest, absent);
+  }
+  recordAbsentLists(batchPath, absentByPrepared);
+}
 
 /**
  * Pull a flag's value out of an argument list, the same `--flag value` form `run.ts` uses.
@@ -227,21 +312,25 @@ function option(args: string[], flag: string): string | undefined {
 /**
  * The command-line entry point.
  * @param args - The arguments after the script name.
+ * @throws When the batch path is missing or `--plants` names an unknown root.
  */
-async function main(args: string[]): Promise<void> {
-  mkdirSync(VALIDATION_PREPARED_ROOT, { recursive: true });
-  const only = option(args, '--only')?.split(',');
-  for (const { names, run } of STEPS) {
-    if (only && !names.some((name) => only.includes(name))) continue;
-    console.log(`preparing: ${names.join('/')}`);
-    await run();
-  }
-  console.log(`done: ${VALIDATION_PREPARED_ROOT}`);
+function main(args: string[]): void {
+  const batchPath = args[0];
+  if (!batchPath || batchPath.startsWith('--')) throw new Error('usage: prepare-validation.ts BATCH.json [--plants development|test] [--only NAME,...]');
+  const plants = option(args, '--plants') ?? 'development';
+  if (plants !== 'development' && plants !== 'test') throw new Error(`--plants must be development or test, not ${plants}`);
+  prepareValidationBatch(resolve(batchPath), {
+    plantsRoot: plants === 'test' ? TEST_PLANTED_ROOT : PLANTED_ROOT,
+    only: option(args, '--only')?.split(','),
+  });
+  console.log(`done: ${batchPath}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main(process.argv.slice(2)).catch((error) => {
+  try {
+    main(process.argv.slice(2));
+  } catch (error) {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exit(1);
-  });
+  }
 }

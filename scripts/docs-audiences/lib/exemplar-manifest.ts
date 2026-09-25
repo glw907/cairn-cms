@@ -61,3 +61,12 @@ export function idResolves(manifestText: string, id: string): boolean {
 
   return found && !rejected;
 }
+
+/**
+ * The ids in `exemplars` that do not resolve against `manifestText`: the check a profile's schema
+ * validation runs alongside `validateAgainstSchema`, since an unresolved exemplar id is a shape
+ * `profile.schema.json` itself cannot express. An empty result means every id resolves.
+ */
+export function unresolvedExemplarIds(exemplars: string[], manifestText: string): string[] {
+  return exemplars.filter((id) => !idResolves(manifestText, id));
+}

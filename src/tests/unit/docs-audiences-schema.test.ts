@@ -8,7 +8,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { validateAgainstSchema, type JsonSchema } from '../../../scripts/docs-audiences/lib/profile-schema.js';
-import { idResolves } from '../../../scripts/docs-audiences/lib/exemplar-manifest.js';
+import { idResolves, unresolvedExemplarIds } from '../../../scripts/docs-audiences/lib/exemplar-manifest.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const SCHEMA_PATH = join(ROOT, 'docs/internal/audiences/profile.schema.json');
@@ -86,6 +86,13 @@ describe('validateAgainstSchema, on the synthetic fixture profile', () => {
     const errors = validateAgainstSchema(data, schema);
     expect(errors).toContain('frontmatter: missing required key "provisionalReason" (conditionally required)');
   });
+
+  it('passes the shape check but fails on an exemplar id with no manifest entry', () => {
+    const { data } = matter(readFixture('profile-unknown-exemplar.md'));
+    expect(validateAgainstSchema(data, schema)).toEqual([]);
+    const manifest = readFixture('manifest-fixture.md');
+    expect(unresolvedExemplarIds(data.exemplars as string[], manifest)).toEqual(['editors/no-such-capture']);
+  });
 });
 
 describe('every real audience profile (none exist yet at Task 6)', () => {
@@ -99,9 +106,11 @@ describe('every real audience profile (none exist yet at Task 6)', () => {
     });
   }
   for (const file of files) {
-    it(`${file} conforms to profile.schema.json`, () => {
+    it(`${file} conforms to profile.schema.json and its exemplar ids all resolve`, () => {
       const { data } = matter(readFileSync(join(AUDIENCES_DIR, file), 'utf8'));
       expect(validateAgainstSchema(data, schema)).toEqual([]);
+      const manifest = readFileSync(REAL_MANIFEST_PATH, 'utf8');
+      expect(unresolvedExemplarIds((data.exemplars ?? []) as string[], manifest)).toEqual([]);
     });
   }
 });

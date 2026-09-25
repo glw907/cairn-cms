@@ -56,8 +56,7 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` at effort
-`high`, in `/var/home/glw907/Projects/cairn-cms`, brainstorm docs reset pass 2a. Read the parent
-spec (`docs/superpowers/specs/2026-09-23-docs-reset-design.md`, including "Amendments from pass
-1b"), the pass 1b validation record and post-mortem, and `ROADMAP.md`'s docs reset entry. Start from
-program ruling O12 above; settle the pilot's reader change and its pass mark with Geoff before planning.
+In a fresh session started with `claude --model claude-opus-5-5` at effort `high`, in
+`/var/home/glw907/Projects/cairn-cms`, write the docs reset pass 2a plan from the approved spec
+`docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md` (its "Order" section sets the
+segments), then run it through `spec-plan-review`. Method calls are the conductor's (B2).

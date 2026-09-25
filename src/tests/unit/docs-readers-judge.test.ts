@@ -103,17 +103,16 @@ describe('composeJudgePrompt', () => {
   });
 
   it('maps each of the three judge kinds to its own distinct frozen prompt', () => {
-    const prompts = {
-      catchJudge: composeJudgePrompt('catchJudge'),
-      adjudicator: composeJudgePrompt('adjudicator'),
-      agreement: composeJudgePrompt('agreement'),
-    };
-    expect(prompts.catchJudge).toContain(loadJudgePrompt('catchJudge').trim());
-    expect(prompts.adjudicator).toContain(loadJudgePrompt('adjudicator').trim());
-    expect(prompts.agreement).toContain(loadJudgePrompt('agreement').trim());
-    expect(new Set(Object.values(prompts)).size).toBe(3);
+    const kinds = ['catchJudge', 'adjudicator', 'agreement'] as const;
+    for (const kind of kinds) {
+      expect(composeJudgePrompt(kind)).toContain(loadJudgePrompt(kind).trim());
+    }
+    expect(new Set(kinds.map((kind) => composeJudgePrompt(kind))).size).toBe(3);
   });
 });
+
+/** The placeholder the round-0 judge batches once carried in both `arrival` and `job`. */
+const OLD_PLACEHOLDER = 'n/a: judge class, packet-driven';
 
 describe('checkJudgeJobField', () => {
   it('accepts the JUDGE_FIELD_UNUSED marker', () => {
@@ -125,7 +124,7 @@ describe('checkJudgeJobField', () => {
   });
 
   it('refuses a placeholder that is neither the marker nor the frozen prompt, naming the job', () => {
-    const problem = checkJudgeJobField({ id: 'evaluator-planted-1', job: 'n/a: judge class, packet-driven' }, 'catchJudge');
+    const problem = checkJudgeJobField({ id: 'evaluator-planted-1', job: OLD_PLACEHOLDER }, 'catchJudge');
     expect(problem).toContain('job evaluator-planted-1');
   });
 
@@ -156,7 +155,7 @@ describe('runJudgeBatch: the job field gate', () => {
   it('refuses the whole batch, naming the job, before any container starts, when a job carries the old placeholder', async () => {
     const { executor, ledger } = replayExecutor({});
     const batch = judgeBatchOf(['evaluator-planted-1'], 'judge-catch', {
-      jobs: [{ id: 'evaluator-planted-1', class: 'judge-catch', model: 'claude-opus-5-5', arrival: 'n/a: judge class, packet-driven', job: 'n/a: judge class, packet-driven', docsSet: ['.'], prepared: '/dev/null' }],
+      jobs: [{ id: 'evaluator-planted-1', class: 'judge-catch', model: 'claude-opus-5-5', arrival: OLD_PLACEHOLDER, job: OLD_PLACEHOLDER, docsSet: ['.'], prepared: '/dev/null' }],
     });
     const run = runJudgeBatch({
       batch,

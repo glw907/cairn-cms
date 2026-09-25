@@ -54,3 +54,9 @@ Review findings routed from one task to a later one during segments 1 and 2. Eac
 - Task 15: gated mode requires an adjudicator key and rulings for every mapping run, including one left unverified after its rerun (whose raw items R3 counts); include unverified mapping runs in the adjudicator batch.
 - Task 15 record author: the class-level reason for a null pooled threshold is generic (`score-verdict.ts:43`); the specific reason is on `pooledSensitivity.reason`.
 - Gate: every chain gate in this pass adds `CAIRN_GATE_MEMORY_MAX=6G CAIRN_GATE_MEMORY_HIGH=5G`; the light lane's 3G cap OOMs `svelte-check` at this repository's size.
+
+## Carried from the judge-prompt fix review (to the pre-freeze cleanup, before Task 11's manifest)
+- `lib/class-schema.ts:66-74`, `lib/runner.ts:555`: `loadJudgePrompt` re-reads the prompt for every job, while the gated check hashes it once at batch start. Read each kind's prompt once after the gate (or compare it with the manifest's hash when composing).
+- `lib/runner.ts:511-512`: the `JUDGE_PACKET_INDEX` comment misplaces `index.json` (it sits at the judge's cwd root, `/reader/job`); reword it.
+- `lib/runner.ts:524-530`: say that only `job` is checked for the marker, or enforce it on `arrival` too.
+- Tests: pin that the composed judge prompt carries no report request and no batch arrival text; assert that `gitTrackedFiles(scripts/docs-readers)` lists the three prompt files.

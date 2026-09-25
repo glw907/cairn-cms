@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "cairn docs audience profile frontmatter",
+  "description": "The frontmatter shape for one docs/internal/audiences/<profile>.md audience record (docs reset pass 2a, spec section 4). Property order here is also the order render-profile.ts renders in.",
+  "type": "object",
+  "required": [
+    "id",
+    "persona",
+    "vocabulary",
+    "ceiling",
+    "arrivalStates",
+    "success",
+    "exemplars",
+    "provisional"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The profile's own id, the file's basename (evaluator, editor, site-operator, site-designer, admin-extender, or core-developer)."
+    },
+    "persona": {
+      "type": "string",
+      "description": "One sentence naming who this reader is."
+    },
+    "vocabulary": {
+      "type": "object",
+      "description": "The vocabulary contract: terms this profile's pages may use, and terms they must avoid.",
+      "required": ["use", "avoid"],
+      "additionalProperties": false,
+      "properties": {
+        "use": { "type": "array", "items": { "type": "string" } },
+        "avoid": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ceiling": {
+      "type": "string",
+      "description": "The knowledge and tool ceiling, stated positively (what this reader knows and can run, not what they lack)."
+    },
+    "arrivalStates": {
+      "type": "array",
+      "description": "The states a reader arrives in (for example, from a search result or mid-task).",
+      "items": { "type": "string" }
+    },
+    "success": {
+      "type": "string",
+      "description": "The success criterion: what tells this reader, or an agent reading on their behalf, that the page did its job."
+    },
+    "exemplars": {
+      "type": "array",
+      "description": "Exemplar ids (<dir>/<slug>) into docs/internal/record/docs-exemplars.md, each naming a manifest entry and a capture under ~/.local/share/cairn/exemplars/<id>/.",
+      "items": { "type": "string" }
+    },
+    "provisional": {
+      "type": "boolean",
+      "description": "True when this profile rests on no direct evidence yet and the audience review may still revise it."
+    },
+    "provisionalReason": {
+      "type": "string",
+      "description": "Required exactly when provisional is true: why this profile is provisional."
+    }
+  },
+  "additionalProperties": false,
+  "if": {
+    "properties": { "provisional": { "const": true } }
+  },
+  "then": {
+    "required": ["provisionalReason"]
+  }
+}

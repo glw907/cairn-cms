@@ -1,0 +1,22 @@
+synthetic-profile: A reader used only by the schema and render fixtures, never a real audience.
+
+Vocabulary:
+  Use:
+  - term one
+  - term two
+  Avoid:
+  - jargon one
+
+Ceiling: Knows how to open a saved draft and click a button, and nothing about git or YAML.
+
+Arrival states:
+- arrived from a support email
+- arrived from a search result
+
+Success: Finishes the task without opening a support ticket.
+
+Exemplars:
+- editors/govuk-publishing-guidance-home
+- operators/github-pat
+
+Provisional: false

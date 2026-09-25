@@ -76,6 +76,7 @@ import {
   recallByBucket,
   recallByClass,
   recallByPlantKind,
+  recallByPlantRun,
   scoreClassSensitivity,
   scoreHeldOut,
   scorePooledSensitivity,
@@ -84,6 +85,7 @@ import {
   type ClassSensitivityResult,
   type PlantCatchTally,
   type PooledSensitivityResult,
+  type RecallReport,
 } from './lib/score-catch.js';
 import { findingCountsForRun, missingPlannedRuns, precisionByClass, type ClassPrecisionResult } from './lib/score-precision.js';
 import {
@@ -319,7 +321,14 @@ function runSample(argv: string[]): number {
 interface DevJobResult {
   job: string;
   onMapPlantCount: number;
+  /**
+   * Plants caught under the gated two-of-three rule: kept for continuity, but a development
+   * bundle's own one-planted-run-per-job norm means this can stay zero even when that one run
+   * caught the plant, since the rule needs at least two counted runs to ever register a catch.
+   */
   onMapCaught: number;
+  /** This job's on-map catches, counted per plant-run rather than gated by the two-of-three rule. */
+  onMapPlantRunRecall: RecallReport;
   verifiedControlRunCount: number;
   totalFalseFindings: number;
   falseFindingsPerVerifiedControlRun: number | null;
@@ -332,7 +341,10 @@ interface DevJobResult {
  * nothing joined to it, an unverified judge job, and so on) is carried as a `notes` entry here,
  * never fatal. Development precision restricts both its numerator and its denominator to verified
  * Opus runs: an unverified run's items are never counted, and the run itself is dropped from the
- * denominator, unlike gated mode's rerun-failure rule. Never emits a bar or a class verdict.
+ * denominator, unlike gated mode's rerun-failure rule. On-map catches are reported per plant-run
+ * (`onMapPlantRunRecall`, per job and pooled), since a development bundle carries as few as one
+ * planted run per job, where `onMapCaught`'s gated two-of-three rule can never register a catch;
+ * `onMapCaught` stays for continuity. Never emits a bar or a class verdict.
  * @param argv - The arguments after `dev`.
  * @returns The process exit code.
  */
@@ -391,13 +403,21 @@ function runDev(argv: string[]): number {
       job,
       onMapPlantCount: jobOnMap.length,
       onMapCaught: jobOnMap.filter((tally) => tally.caught).length,
+      onMapPlantRunRecall: recallByPlantRun(jobOnMap),
       verifiedControlRunCount: controlRuns.length,
       totalFalseFindings,
       falseFindingsPerVerifiedControlRun: controlRuns.length === 0 ? null : totalFalseFindings / controlRuns.length,
     };
   }
 
-  writeJson(out, { ok: true, mode: 'development', byJob, onMapRecall: recallByClass(onMapTallies), notes: [...indexNotes, ...assembled.problems] });
+  writeJson(out, {
+    ok: true,
+    mode: 'development',
+    byJob,
+    onMapRecall: recallByClass(onMapTallies),
+    onMapPlantRunRecall: recallByPlantRun(onMapTallies),
+    notes: [...indexNotes, ...assembled.problems],
+  });
   return 0;
 }
 

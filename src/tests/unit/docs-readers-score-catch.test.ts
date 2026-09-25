@@ -12,6 +12,7 @@ import {
   recallByBucket,
   recallByClass,
   recallByPlantKind,
+  recallByPlantRun,
   recallOf,
   scoreClassSensitivity,
   scoreHeldOut,
@@ -217,6 +218,26 @@ describe('clopperPearson and recallOf', () => {
   it('gives a zero lower bound at zero successes and a one upper bound at all successes', () => {
     expect(clopperPearson(0, 5).lower).toBe(0);
     expect(clopperPearson(5, 5).upper).toBe(1);
+  });
+});
+
+describe('recallByPlantRun', () => {
+  it('reports a null rate and interval when no tally carries a counted run, never a 0 / 0 division', () => {
+    const tallies: PlantCatchTally[] = [{ plantId: 'P1', job: 'evaluator', classId: 'docs-only', type: 'false-behavior', semantic: true, runsCaught: [], caughtCount: 0, caught: false }];
+    expect(recallByPlantRun(tallies)).toEqual({ caught: 0, total: 0, rate: null, interval: null });
+  });
+
+  it('counts a plant\'s single counted run caught, where the gated two-of-three rule (caught) would score it missed', () => {
+    const tallies: PlantCatchTally[] = [{ plantId: 'P1', job: 'evaluator', classId: 'docs-only', type: 'false-behavior', semantic: true, runsCaught: [true], caughtCount: 1, caught: false }];
+    expect(recallByPlantRun(tallies)).toEqual({ caught: 1, total: 1, rate: 1, interval: clopperPearson(1, 1) });
+  });
+
+  it('sums caught and counted runs across every tally, not just the caught plants', () => {
+    const tallies: PlantCatchTally[] = [
+      { plantId: 'P1', job: 'evaluator', classId: 'docs-only', type: 'false-behavior', semantic: true, runsCaught: [true, true, false], caughtCount: 2, caught: true },
+      { plantId: 'P2', job: 'evaluator', classId: 'docs-only', type: 'false-behavior', semantic: true, runsCaught: [false, true], caughtCount: 1, caught: false },
+    ];
+    expect(recallByPlantRun(tallies)).toEqual({ caught: 3, total: 5, rate: 3 / 5, interval: clopperPearson(3, 5) });
   });
 });
 

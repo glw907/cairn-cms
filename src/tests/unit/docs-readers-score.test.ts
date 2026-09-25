@@ -113,6 +113,49 @@ describe('score.ts dev', () => {
     expect(byJob.evaluator.onMapCaught).toBe(1);
   });
 
+  it('reports on-map catches per plant-run: one planted run per job that caught the plant reports 1 of 1, though the gated two-of-three rule scores 0', () => {
+    const report = writeJsonFile('round1-single-run-report.json', {
+      batch: 'round1',
+      runId: 'r',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED }],
+    });
+    const rulingsPath = writeJsonFile('single-run-catch-rulings.json', catchJudgeRulings(['evaluator-planted-1']));
+    const keyPath = writeJsonFile('single-run-catch-key.json', { kind: 'catch', builtFrom: 'sources', report: { path: report, jobId: 'evaluator-planted-1', attempt: 1, runId: 'r' }, plants: { 'plant-1': { plantId: 'PLANT-X1' } }, items: {}, inputs: {} });
+    const plantsPath = writeJsonFile('single-run-plants.json', [{ id: 'PLANT-X1', job: 'evaluator', page: 'docs/fixture-page.md', line: 12 }]);
+    const mapPath = writeJsonFile('single-run-evaluator-map.json', {
+      job: 'evaluator',
+      verifiedRuns: 1,
+      mode: 'proxy',
+      pages: { 'docs/fixture-page.md': { lines: 100, sections: [{ heading: 'lead', level: 1, start: 1, end: 30, quotes: 2, runs: 2 }] } },
+      onPathShare: 0.3,
+      narrowed: false,
+      widened: false,
+      capacity: 7,
+      noMap: null,
+    });
+    const outPath = join(dir, 'dev-out-single-run.json');
+    const code = main([
+      'dev',
+      '--report', report,
+      '--catch-rulings', rulingsPath,
+      '--catch-key', keyPath,
+      '--plants', plantsPath,
+      '--map', `evaluator=${mapPath}`,
+      '--out', outPath,
+    ]);
+    expect(code).toBe(0);
+    const result = readOut(outPath);
+    const byJob = result.byJob as Record<string, { onMapCaught: number; onMapPlantRunRecall: { caught: number; total: number; rate: number | null } }>;
+    // The gated two-of-three rule (onMapCaught) can never register a catch on one counted run.
+    expect(byJob.evaluator.onMapCaught).toBe(0);
+    expect(byJob.evaluator.onMapPlantRunRecall).toMatchObject({ caught: 1, total: 1, rate: 1 });
+    expect(result.onMapPlantRunRecall).toMatchObject({ caught: 1, total: 1, rate: 1 });
+  });
+
   it('refuses a test-set batch, naming it, and never reads the plants file', () => {
     const testSetReport = writeJsonFile('test-set-report.json', { batch: 'test-set', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [] });
     const outPath = join(dir, 'dev-out.json');

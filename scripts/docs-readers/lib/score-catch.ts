@@ -232,6 +232,22 @@ export function recallOf(tallies: readonly PlantCatchTally[]): RecallReport {
 }
 
 /**
+ * A recall report counted per plant-run rather than per plant: each of a plant's counted runs
+ * (never gated by `caught`'s own two-of-three rule) contributes its own caught or missed outcome.
+ * Development mode reports this alongside `recallOf`'s plant-level count, since a development
+ * bundle can carry as few as one planted run per job, where the two-of-three rule can never
+ * register a catch even when that one run did catch the plant.
+ * @param tallies - The tallies to summarize.
+ * @returns The recall report, its total the sum of every tally's own counted run count.
+ */
+export function recallByPlantRun(tallies: readonly PlantCatchTally[]): RecallReport {
+  const total = tallies.reduce((sum, tally) => sum + tally.runsCaught.length, 0);
+  if (total === 0) return { caught: 0, total: 0, rate: null, interval: null };
+  const caught = tallies.reduce((sum, tally) => sum + tally.caughtCount, 0);
+  return { caught, total, rate: caught / total, interval: clopperPearson(caught, total) };
+}
+
+/**
  * Per-class recall, over every class id, even one with no tallies at all.
  * @param tallies - Every plant's catch tally.
  * @returns One recall report per class id.

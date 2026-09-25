@@ -20,7 +20,7 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Next: merge docs reset pass 1b (PR #89) on Geoff's word, then brainstorm pass 2a.** Pass 1b
+**Next: brainstorm docs reset pass 2a.** Pass 1b (PR #89, merged as `1e4a7c31`)
 closed on its tuning record (O11, Geoff 2026-09-25): no freeze and no gated runs, so every reader
 class goes to pass 2a as advisory. Records: `docs/internal/record/2026-09-24-docs-reset-1b-{tuning,validation}.md`.
 Post-mortem, ledger (20.07M counted), and a draft program budget (lean pass 2a about 8.5M) are at the
@@ -59,7 +59,7 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 
 ## Resume prompt
 
-After PR #89 merges, in a fresh session started with `claude --model claude-opus-5-5` at effort
+In a fresh session started with `claude --model claude-opus-5-5` at effort
 `high`, in `/var/home/glw907/Projects/cairn-cms`, brainstorm docs reset pass 2a. Read the parent
 spec (`docs/superpowers/specs/2026-09-23-docs-reset-design.md`, including "Amendments from pass
 1b"), the pass 1b validation record and post-mortem, and `ROADMAP.md`'s docs reset entry. Start from

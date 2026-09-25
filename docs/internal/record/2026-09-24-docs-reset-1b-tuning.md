@@ -104,17 +104,20 @@ built from pass 1's control-run quotes, not the pinned `steps[]` instrument's ow
 off-map development plants are reported only, never counted against recall.**
 
 All figures below are from `scripts/docs-readers/tuning/round0/score.json`, `byJob.<job>`
-(fixed-runner run):
+(fixed-runner run). `onMapCaught` is the gated sensitivity bar's own two-of-three rule
+(`caughtCount >= 2`); `onMapPlantRunRecall` (added by `407dbb2a`, R8) is the un-gated recall
+summed over every counted plant-run, the figure round 1's one-run-per-job jobs need:
 
-| Job (`byJob.<job>`) | On-map plants (of total) | On-map catches | Verified control runs | Total false findings | False findings / verified control run |
-| --- | --- | --- | --- | --- | --- |
-| evaluator | 0 of 2 (`onMapPlantCount`/17 total dev plants for this job) | 0 (`onMapCaught`) | 2 (`verifiedControlRunCount`) | 3 (`totalFalseFindings`) | 1.5 (`falseFindingsPerVerifiedControlRun`) |
-| operator | 2 of 3 | 0 | 2 | 3 | 1.5 |
-| designer | 2 of 3 | 0 | 2 | 1 | 0.5 |
-| extender | 2 of 3 | 0 | 2 | 0 | 0 |
-| core-developer | 1 of 3 | 0 | 2 | 0 | 0 |
-| scripter | 1 of 3 | 1 | 2 | 3 | 1.5 |
+| Job (`byJob.<job>`) | On-map plants (of total) | On-map catches (`onMapCaught`) | On-map plant-run recall (`onMapPlantRunRecall`) | Verified control runs | Total false findings | False findings / verified control run |
+| --- | --- | --- | --- | --- | --- | --- |
+| evaluator | 0 of 2 (17 total dev plants for this job) | 0 | 0/0 (null) | 2 | 3 | 1.5 |
+| operator | 2 of 3 | 0 | 0/4 | 2 | 3 | 1.5 |
+| designer | 2 of 3 | 0 | 0/4 | 2 | 1 | 0.5 |
+| extender | 2 of 3 | 0 | 0/4 | 2 | 0 | 0 |
+| core-developer | 1 of 3 | 0 | 0/2 | 2 | 0 | 0 |
+| scripter | 1 of 3 | 1 | 2/2 (rate 1) | 2 | 3 | 1.5 |
 
+Pooled (sum of `caught`/`total` across all six jobs): 2/16 on-map plant-runs caught in round 0.
 With the judge correctly instructed, every job's two verified Opus control runs now score (no
 job is excluded for an unverified adjudicator this round); designer's true false-finding rate,
 unmeasured in the first (void) run, is 0.5 per verified control run.
@@ -150,6 +153,30 @@ defect that silently affected all twenty-four round-0 judge runs.
   and rerun from the same packets; every number in this record's "Round 0" section above is from
   the rerun.
 
+**The harness-exclusion verification defect (round 1).** `run.ts`'s `expectedItemsFromKey` read
+an adjudicator packet key's full, unfiltered `items` map to decide what a run's rulings must
+cover, rather than that map minus `key.excluded`; a judge's container never sees a harness-filtered
+item (`buildAdjudicatorPacket` already leaves it out of `packet/items.json`), so a run could never
+verify once it had even one excluded item. It affected five of round 1's six adjudicator
+rulings (`evaluator-control-1`, `operator-control-1`, `designer-control-1`,
+`core-developer-control-1`, `scripter-control-1`); only `extender-control-1`, with zero harness
+exclusions, was unaffected. Fixed by `6d5d2e18`: `expectedItemsFromKey` now subtracts
+`key.excluded` from `key.items`. All six round-1 adjudicator jobs verified once re-run on the
+fixed runner (see "Round 1" below); the judge's own rulings, read against every item it was shown
+before the fix, were already sound.
+
+**The development catch-count defect (round 1).** `runDev` passed `tallyPlantCatches`'s result
+straight through as the only development-mode catch figure, and that tally's `caught` field is
+gated sensitivity's own two-of-three rule (`caughtCount >= 2`). Round 1 carries exactly one
+planted run per job, so a plant caught on that single run could never register as caught in
+development mode, even when it genuinely was: a read-only audit of every round-1 catch ruling
+(see "Catch-ruling audit" below) found the scripter map's on-path plant P16 caught in round 1, yet
+`onMapCaught` reported 0 because a single catch never reaches the two-of-three threshold. Fixed by
+`407dbb2a` (conductor ruling R8): `score-catch.ts` adds `recallByPlantRun`, a recall figure summed
+over every tally's own counted runs, never gated by the two-of-three rule; `runDev` now reports it
+as `onMapPlantRunRecall` per job and pooled, beside the unchanged, still-gated `onMapCaught`.
+Gated mode is unchanged.
+
 ### Non-findings (expected, not defects)
 
 Every other `score.json` note is an expected exclusion, not a judge or scorer defect:
@@ -181,17 +208,22 @@ control-run quotes and this instrument's own path-map mode is a later task's con
 
 ### Judge runs
 
+Round 1's adjudicator ran twice, for the same reason round 0 did. The first run (superseded)
+predates `6d5d2e18` (the harness-exclusion verification fix; see "Judge fixes" above): only
+`extender-control-1` (0 harness exclusions) verified; the other five all failed verification on
+both the original attempt and the runner's one automatic rerun, each missing a ruling for exactly
+its harness-excluded item id(s) — the judge was never shown those items, so it could never rule on
+them. The numbers below are from the second, fixed-runner run.
+
 - Catch judge batch `round1-catch` (`scripts/docs-readers/batches/round1-catch.json`, ungated,
   concurrency 4): 6 jobs, all verified on the first attempt, no reruns, `stopReason: complete`.
-  Counted tokens: 21,529 (cache read 94,380 apart).
+  Counted tokens: 21,529 (cache read 94,380 apart). Not re-run for the fix (the defect was
+  adjudicator-only; the catch batch needed no changes).
 - Adjudicator batch `round1-adjudicator` (`scripts/docs-readers/batches/round1-adjudicator.json`,
-  ungated, concurrency 4): 6 jobs. Only `extender-control-1` verified on the first attempt; the
-  other five (`evaluator-control-1`, `operator-control-1`, `designer-control-1`,
-  `core-developer-control-1`, `scripter-control-1`) failed verification on both the original
-  attempt and the runner's one automatic rerun. `stopReason: complete`. Counted tokens: 142,656
-  (cache read 1,292,947 apart). **See "Judge-defect watch" below: this is a newly discovered,
-  distinct tool defect, not the `f618743a` prompt defect (already fixed) recurring.**
-- Total round 1 judge spend: 164,185 counted tokens, 1,387,327 cache read.
+  ungated, concurrency 4, fixed runner): 6 jobs, **all verified on the first attempt, no
+  reruns**, `stopReason: complete`. Counted tokens: 69,561 (cache read 610,909 apart).
+- Total round 1 judge spend (fixed-runner adjudicator run): 91,090 counted tokens, 705,289 cache
+  read.
 
 ### Harness-excluded items
 
@@ -230,57 +262,40 @@ From `scripts/docs-readers/tuning/round1/reader-report.json`:
 ### Round 0 vs round 1, per job
 
 All figures from the two `score.json` files' `byJob.<job>`
-(`tuning/round0/score.json`, `tuning/round1/score.json`):
+(`tuning/round0/score.json`, `tuning/round1/score.json`), after both fixes:
 
-| Job | Round 0 on-map catches | Round 1 on-map catches | Round 0 false / verified control run | Round 1 false / verified control run |
-| --- | --- | --- | --- | --- |
-| evaluator | 0 | 0 | 1.5 | 0† |
-| operator | 0 | 0 | 1.5 | 0† |
-| designer | 0 | 0 | 0.5 | 0† |
-| extender | 0 | 0 | 0 | 0 (measured) |
-| core-developer | 0 | 0 | 0 | 0† |
-| scripter | 1 | 0 | 1.5 | 0† |
+| Job | R0 on-map catches | R1 on-map catches | R0 plant-run recall | R1 plant-run recall | R0 false / control run | R1 false / control run |
+| --- | --- | --- | --- | --- | --- | --- |
+| evaluator | 0 | 0 | 0/0 (null) | 0/0 (null) | 1.5 | 0 |
+| operator | 0 | 0 | 0/4 | 0/2 | 1.5 | 0 |
+| designer | 0 | 0 | 0/4 | 0/2 | 0.5 | 0 |
+| extender | 0 | 0 | 0/4 | 0/2 | 0 | 0 |
+| core-developer | 0 | 0 | 0/2 | 0/1 | 0 | 0 |
+| scripter | 1 | 0 | 2/2 (rate 1) | 1/1 (rate 1) | 1.5 | 7 |
 
-† **Not a real zero.** For every job but extender, round 1's adjudicator run is unverified (the
-defect below), and `score.ts dev` excludes an unverified adjudicator job from the precision count
-entirely, the same behavior round 0 showed for designer before its fix. Round 1's true
-false-finding rate is **unmeasured** for evaluator, operator, designer, core-developer, and
-scripter; only extender's 0 is a real measurement. On-map catches are genuine zeros: the catch
-judge batch fully verified for all six jobs, and none of round 1's caught plants (evaluator 2/2
-caught, core-developer 1/3, scripter 3/3, per `round1-catch-report.json`'s `rulings`) happen to
-fall on the (round-0-derived) proxy map's on-path sections this round; only round 0's scripter
-plant was on-map and caught.
+Pooled round 1 plant-run recall: 1/8 on-map plant-runs caught (scripter's P16; see the audit
+below). Every job's control run verified in both rounds this time (`score.json` `notes` is empty
+for round 1), so every false-finding figure above is a real measurement, not a drop. Round 1's
+scripter false-finding rate (7 per its one verified control run) is markedly higher than round
+0's (1.5 per run, averaged over two runs); this is in-scope reader-behavior variance across the
+tuning change, not a judge or scorer defect, and O7 permits no further tuning change to
+investigate it inside this pass.
 
-### Judge-defect watch (not fixed; for the conductor's ruling)
+### Catch-ruling audit (round 0 and round 1)
 
-**A new, distinct defect from `f618743a`: `expectedItemsFromKey` (`run.ts`) reads an adjudicator
-packet key's full, unfiltered `items` map, not the packet's own filtered `items.json`, so a
-verification run always expects a ruling for every harness-excluded item even though the judge's
-container never receives it.** `buildAdjudicatorPacket` (`judge-packets.ts`) correctly builds
-`packet/items.json` from only the non-excluded items (`items = all.filter((item) =>
-!excludedIdSet.has(item.id))`), but its `key.items` field is set to the full, pre-filter
-`itemKey` from `buildCatchFields(run.runFields)` before the exclusion filter runs. `run.ts`'s
-`expectedItemsFromKey` then derives what a run's rulings "must cover exactly once" from
-`Object.keys(key.items)` — the full set, excluded items included — while `expected` (used by
-`buildAdjudicatorPacket`'s own return value, not by the runner's live verification) correctly
-uses the filtered `items`. Evidence: every one of round 1's five unverified adjudicator runs is
-missing a ruling for exactly its harness-excluded item id(s), and no others:
-
-| Job | Excluded item id(s) (harness filter) | Missing ruling(s) (`verified.problems`) |
-| --- | --- | --- |
-| evaluator-control-1 | item-3 | item-3 |
-| operator-control-1 | item-1 | item-1 |
-| designer-control-1 | item-1, item-4 | item-1, item-4 |
-| core-developer-control-1 | item-1, item-2, item-10 | item-1, item-2, item-10 |
-| scripter-control-1 | item-1 | item-1 |
-
-`extender-control-1` (0 harness exclusions) is the only round-1 adjudicator run that verified.
-The judge's own rulings are sound for every item it was actually shown (real `finding`/`real`,
-`finding`/`false`, `interpretation`, and `notAClaim` classifications appear, with cited evidence,
-across all six runs); this is a runner/packet-builder wiring defect, not a judge behavior defect,
-and it is deterministic (both the original attempt and the automatic rerun failed identically).
-Effect: `score.ts dev` drops every affected job from the precision count (see the † note above),
-so round 1's false-finding measurements are unmeasured for five of six jobs, not the "0" a
-first read of `score.json` might suggest. No packet, key, prompt, or runner code was changed to
-work around this — per the plan, it is listed here for the conductor's ruling, never fixed inside
-this task.
+A read-only audit read every catch ruling both rounds' catch judge made against the 24 on-map
+development plant-runs (round 0's twelve plus round 1's twelve, `onMapPlantCount` summed with
+each job's own count of verified/counted planted runs). It found **no judge or criterion
+defect.** 21 of the 24 were missed, 3 were caught (all 3 correct catches, matching real plants
+against their own criteria). Of the 21 misses, 11 were true misses (the reader's report never
+addressed the plant's subject at all), and 10 were noticed only in `ruleCandidates[]` — four
+plants, each across two or three runs, where the reader routed around the planted defect and
+filed a "the page should say X" candidate rather than a `stalls[]`/`assumed[]`/`diverged[]` claim
+the catch judge could rule on. The spec counts `ruleCandidates[]` as neither a catch nor a
+finding (see "Scoring" in the pass 1b spec), so these 10 correctly score as misses under the
+pinned instrument, even though the reader in some sense noticed the defect. The audit confirmed
+the reader reached every on-map plant's section in every run it read (the map itself is sound;
+the gap is between what a reader notices and what it routes into a scored field). **This finding
+goes to pass 2a**, not to a tuning change here: O7 allows one tuning round only, already spent,
+and `ruleCandidates[]`'s scoring treatment is a spec-level question, not a fixable defect in this
+pass's instrument or judges.

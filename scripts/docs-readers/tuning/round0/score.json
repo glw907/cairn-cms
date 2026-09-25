@@ -6,6 +6,12 @@
       "job": "evaluator",
       "onMapPlantCount": 0,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 0,
+        "rate": null,
+        "interval": null
+      },
       "verifiedControlRunCount": 2,
       "totalFalseFindings": 3,
       "falseFindingsPerVerifiedControlRun": 1.5
@@ -14,6 +20,15 @@
       "job": "operator",
       "onMapPlantCount": 2,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 4,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.602364635616482
+        }
+      },
       "verifiedControlRunCount": 2,
       "totalFalseFindings": 3,
       "falseFindingsPerVerifiedControlRun": 1.5
@@ -22,6 +37,15 @@
       "job": "designer",
       "onMapPlantCount": 2,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 4,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.602364635616482
+        }
+      },
       "verifiedControlRunCount": 2,
       "totalFalseFindings": 1,
       "falseFindingsPerVerifiedControlRun": 0.5
@@ -30,6 +54,15 @@
       "job": "extender",
       "onMapPlantCount": 2,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 4,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.602364635616482
+        }
+      },
       "verifiedControlRunCount": 2,
       "totalFalseFindings": 0,
       "falseFindingsPerVerifiedControlRun": 0
@@ -38,6 +71,15 @@
       "job": "core-developer",
       "onMapPlantCount": 1,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 2,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.8418861169915779
+        }
+      },
       "verifiedControlRunCount": 2,
       "totalFalseFindings": 0,
       "falseFindingsPerVerifiedControlRun": 0
@@ -46,6 +88,15 @@
       "job": "scripter",
       "onMapPlantCount": 1,
       "onMapCaught": 1,
+      "onMapPlantRunRecall": {
+        "caught": 2,
+        "total": 2,
+        "rate": 1,
+        "interval": {
+          "lower": 0.1581138830084189,
+          "upper": 1
+        }
+      },
       "verifiedControlRunCount": 2,
       "totalFalseFindings": 3,
       "falseFindingsPerVerifiedControlRun": 1.5
@@ -84,6 +135,15 @@
         "lower": 0.012579117093425029,
         "upper": 0.9874208829065745
       }
+    }
+  },
+  "onMapPlantRunRecall": {
+    "caught": 2,
+    "total": 16,
+    "rate": 0.125,
+    "interval": {
+      "lower": 0.015513603815413918,
+      "upper": 0.38347623684927457
     }
   },
   "notes": [

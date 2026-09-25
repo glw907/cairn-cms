@@ -6,6 +6,12 @@
       "job": "evaluator",
       "onMapPlantCount": 0,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 0,
+        "rate": null,
+        "interval": null
+      },
       "verifiedControlRunCount": 1,
       "totalFalseFindings": 0,
       "falseFindingsPerVerifiedControlRun": 0
@@ -14,6 +20,15 @@
       "job": "operator",
       "onMapPlantCount": 2,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 2,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.8418861169915779
+        }
+      },
       "verifiedControlRunCount": 1,
       "totalFalseFindings": 0,
       "falseFindingsPerVerifiedControlRun": 0
@@ -22,6 +37,15 @@
       "job": "designer",
       "onMapPlantCount": 2,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 2,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.8418861169915779
+        }
+      },
       "verifiedControlRunCount": 1,
       "totalFalseFindings": 0,
       "falseFindingsPerVerifiedControlRun": 0
@@ -30,6 +54,15 @@
       "job": "extender",
       "onMapPlantCount": 2,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 2,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.8418861169915779
+        }
+      },
       "verifiedControlRunCount": 1,
       "totalFalseFindings": 0,
       "falseFindingsPerVerifiedControlRun": 0
@@ -38,6 +71,15 @@
       "job": "core-developer",
       "onMapPlantCount": 1,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 0,
+        "total": 1,
+        "rate": 0,
+        "interval": {
+          "lower": 0,
+          "upper": 0.974999999999999
+        }
+      },
       "verifiedControlRunCount": 1,
       "totalFalseFindings": 0,
       "falseFindingsPerVerifiedControlRun": 0
@@ -46,9 +88,18 @@
       "job": "scripter",
       "onMapPlantCount": 1,
       "onMapCaught": 0,
+      "onMapPlantRunRecall": {
+        "caught": 1,
+        "total": 1,
+        "rate": 1,
+        "interval": {
+          "lower": 0.024999999999999974,
+          "upper": 1
+        }
+      },
       "verifiedControlRunCount": 1,
-      "totalFalseFindings": 0,
-      "falseFindingsPerVerifiedControlRun": 0
+      "totalFalseFindings": 7,
+      "falseFindingsPerVerifiedControlRun": 7
     }
   },
   "onMapRecall": {
@@ -86,16 +137,14 @@
       }
     }
   },
-  "notes": [
-    "adjudicator job \"evaluator-control-1\" (reader job \"evaluator-control-1\"): the judge run is unverified",
-    "adjudicator job \"operator-control-1\" (reader job \"operator-control-1\"): the judge run is unverified",
-    "adjudicator job \"designer-control-1\" (reader job \"designer-control-1\"): the judge run is unverified",
-    "adjudicator job \"core-developer-control-1\" (reader job \"core-developer-control-1\"): the judge run is unverified",
-    "adjudicator job \"scripter-control-1\" (reader job \"scripter-control-1\"): the judge run is unverified",
-    "job \"evaluator-control-1\": no adjudicator key and rulings joined for it",
-    "job \"operator-control-1\": no adjudicator key and rulings joined for it",
-    "job \"scripter-control-1\": no adjudicator key and rulings joined for it",
-    "job \"core-developer-control-1\": no adjudicator key and rulings joined for it",
-    "job \"designer-control-1\": no adjudicator key and rulings joined for it"
-  ]
+  "onMapPlantRunRecall": {
+    "caught": 1,
+    "total": 8,
+    "rate": 0.125,
+    "interval": {
+      "lower": 0.003159723531251911,
+      "upper": 0.5265096708752015
+    }
+  },
+  "notes": []
 }

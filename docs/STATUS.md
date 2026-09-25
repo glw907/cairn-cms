@@ -20,18 +20,16 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Live (2026-09-24): pass 1b executing on `docs-reset-1b`. Tasks 0 to 5 and 8 accepted, Task 6 in its fix round; counted spend about 8.7M, projected about 19.5M against the 15M ceiling, question put to Geoff. Ledger at the foot of the plan. A second session must not execute this branch.**
-
-**Next: execute docs reset pass 1b, the validation redesign (plan approved by Geoff,
-2026-09-24).** Plan `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` and spec
-`docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` live on branch
-`docs-reset-1b` (worktree `.claude/worktrees/docs-reset-1b`, pushed, head `34d70f67`); they reach
-`main` with the pass's PR. Seventeen tasks in five segments, core gate only; ceiling 15M, flag
-12M, spend measured by the plan's session-ledger script (pass 1's recorded 9M was about 18.7M
-measured). Start at Task 0. Pass 2a waits for pass 1b's per-class verdict and the program budget
-its close brings to Geoff. The scratch site stands through pass 2a, teardown in
-`docs/internal/record/2026-09-23-scratch-site.md`. Still owed from pass 1: the `~/.dotfiles` push
-and `claude-tooling-sync verify`.
+**Next: continue docs reset pass 1b unattended from Task 7 (segments 3 to 5).** Plan
+`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` on branch `docs-reset-1b` (worktree
+`.claude/worktrees/docs-reset-1b`, head `4239b2a5`, pushed). Tasks 0 to 6 and 8 are accepted and
+merged (gate green at 570 tests). The plan's "Unattended execution" section governs the rest: start
+guards, per-task Agent chains (never the `pass-execute` workflows), stop-and-ask conditions, the CLI
+hold at 2.1.282 with its init-baseline pin before Task 9, and checkpoints. Carry notes:
+`docs/superpowers/research/2026-09-24-pass-1b-carries.md`. Spend 12.50M counted at the handoff;
+ceiling 25M, flag 21M (O10). The lane worktrees `docs-reset-1b-{export,runner,pathmap}` are merged and
+can be removed. The scratch site stands through pass 2a. Still owed from pass 1: the `~/.dotfiles`
+push and `claude-tooling-sync verify`.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`
@@ -57,7 +55,8 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 ## Resume prompt
 
 In a fresh session started with `claude --model claude-opus-5-5` at effort `medium`, in
-`/var/home/glw907/Projects/cairn-cms`, execute docs reset pass 1b from
-`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` on branch `docs-reset-1b` (worktree
-`.claude/worktrees/docs-reset-1b`), starting at Task 0. Read the plan and the spec in full, and
-follow the plan's header for models, lanes, gates, checkpoints, and the ledger.
+`/var/home/glw907/Projects/cairn-cms`, continue docs reset pass 1b unattended from Task 7 on branch
+`docs-reset-1b` (worktree `.claude/worktrees/docs-reset-1b`). Read the plan
+(`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`) and the spec in full, then the carry
+notes, and follow the plan's "Unattended execution" section for guards, mode, spend, checkpoints,
+and the conditions that stop the run for Geoff.

@@ -69,8 +69,9 @@ function commitAll(repoRoot: string, message = 'source commit'): string {
 function offTimePaths(dir: string): string[] {
   const off: string[] = [];
   const walk = (current: string): void => {
-    if (lstatSync(current).mtimeMs !== FIXED_MS) off.push(current);
-    if (!lstatSync(current).isDirectory()) return;
+    const stat = lstatSync(current);
+    if (stat.mtimeMs !== FIXED_MS) off.push(current);
+    if (!stat.isDirectory()) return;
     for (const name of readdirSync(current)) walk(join(current, name));
   };
   walk(dir);

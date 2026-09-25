@@ -446,13 +446,15 @@ function pruneTarballCache(cacheRoot: string, keep: number = TARBALL_CACHE_KEEP)
  * Copy a freshly built tarball pair into the cache under `key`, then prune older keys. `cacheRoot`
  * is the runner's neutral cache root; `key` is a `tarballCacheKey` result; `tarballs` are the
  * freshly packed engine and dev-backend tarball paths.
+ * @returns The cached copies' paths.
  */
-function writeTarballCache(cacheRoot: string, key: string, tarballs: { engine: string; dev: string }): void {
+function writeTarballCache(cacheRoot: string, key: string, tarballs: { engine: string; dev: string }): { engine: string; dev: string } {
   const { dir, engine, dev } = tarballCachePaths(cacheRoot, key);
   mkdirSync(dir, { recursive: true });
   cpSync(tarballs.engine, engine);
   cpSync(tarballs.dev, dev);
   pruneTarballCache(cacheRoot);
+  return { engine, dev };
 }
 
 /**
@@ -530,10 +532,7 @@ export function packPinnedEngineTarballs({
     if (built.status !== 0) throw new Error(`npm run package failed in ${source}: ${built.stderr}`);
     const packDir = join(scratchDir, 'pack');
     const tarballs = { engine: packTarball(source, packDir, runner), dev: packTarball(join(source, 'packages/cairn-cms-dev'), packDir, runner) };
-    if (!cacheRoot) return tarballs;
-    writeTarballCache(cacheRoot, key, tarballs);
-    const { engine, dev } = tarballCachePaths(cacheRoot, key);
-    return { engine, dev };
+    return cacheRoot ? writeTarballCache(cacheRoot, key, tarballs) : tarballs;
   } finally {
     rmSync(source, { recursive: true, force: true });
   }

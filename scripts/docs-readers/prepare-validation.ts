@@ -184,8 +184,9 @@ export interface ValidationJobOptions {
  */
 export function prepareValidationJob(job: DevelopmentJob, options: ValidationJobOptions): PreparedTree & { planted: boolean } {
   const { commit, controlDest: dest, plantedDest, plantsDir, repoRoot = REPO_ROOT, runner = spawnRunner } = options;
-  const planted = plantedDest !== undefined && existsSync(plantsDir);
-  const variant = (overlay: (dir: string) => void): TreeVariant[] => (planted && plantedDest ? [{ dest: plantedDest, overlay }] : []);
+  const plantedTarget = plantedDest !== undefined && existsSync(plantsDir) ? plantedDest : undefined;
+  const variant = (overlay: (dir: string) => void): TreeVariant[] => (plantedTarget ? [{ dest: plantedTarget, overlay }] : []);
+  const plantedVariants = variant((dir) => applyPlantedOverlay(plantsDir, dir));
   const shared = { commit, dest, repoRoot, runner };
   const tarballs = (): { engine: string; dev: string } => options.tarballs?.() ?? pinnedEngineTarballs({ commit, repoRoot, runner });
   const built = ((): PreparedTree => {
@@ -204,21 +205,21 @@ export function prepareValidationJob(job: DevelopmentJob, options: ValidationJob
           ...shared,
           siteClone: options.site?.clone,
           siteCommit: options.site?.commit,
-          variants: variant((dir) => applyPlantedOverlay(plantsDir, dir)),
+          variants: plantedVariants,
         });
       case 'scripter': {
         const pages = validationContractPages(commit);
         return prepareScripter({ dest, pages, repoRoot, runner, variants: variant((dir) => applyScripterPlantedOverlay(plantsDir, dir, pages)) });
       }
       case 'core-developer':
-        return prepareCoreDeveloper({ ...shared, variants: variant((dir) => applyPlantedOverlay(plantsDir, dir)) });
+        return prepareCoreDeveloper({ ...shared, variants: plantedVariants });
       case 'designer':
-        return prepareDesigner({ ...shared, tarballs: tarballs(), variants: variant((dir) => applyPlantedOverlay(plantsDir, dir)) });
+        return prepareDesigner({ ...shared, tarballs: tarballs(), variants: plantedVariants });
       case 'extender':
-        return prepareExtender({ ...shared, tarballs: tarballs(), variants: variant((dir) => applyPlantedOverlay(plantsDir, dir)) });
+        return prepareExtender({ ...shared, tarballs: tarballs(), variants: plantedVariants });
     }
   })();
-  return { ...built, planted };
+  return { ...built, planted: plantedTarget !== undefined };
 }
 
 /** The batch-file fields `prepareValidationBatch` reads and writes, every other field kept as it stands. */
@@ -269,7 +270,7 @@ export function prepareValidationBatch(batchPath: string, options: ValidationBat
     const entries = batch.jobs.filter((entry) => typeof entry.prepared === 'string' && [`${job}-control`, `${job}-planted`].includes(basename(entry.prepared)));
     if (entries.length === 0) return [];
     const commits = new Set(entries.map((entry) => entry.commit));
-    if (commits.has(undefined) || [...commits].some((commit) => typeof commit !== 'string' || commit.trim() === '')) {
+    if ([...commits].some((commit) => typeof commit !== 'string' || commit.trim() === '')) {
       throw new Error(`${job}: every batch job that names its tree must carry a commit`);
     }
     if (commits.size > 1) throw new Error(`${job}: batch jobs disagree on the commit (${[...commits].join(', ')})`);

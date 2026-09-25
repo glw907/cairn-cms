@@ -32,6 +32,8 @@ spec: its "Rulings" section and the fold record
 
 ## Owner decisions at approval
 
+**Ruled (Geoff, 2026-09-25, plan approval): F1 approved (pause `uupd.timer` for the pilot window); F2 (a) (continue past the 12M flag; at a projected 15M breach, Task 9 defers to pass 2b under E4; stop and ask if it still breaches).** The texts below are kept as the record of what was ruled.
+
 **F1. Pause the system updater for the pilot window (recommended: approve).** The host `claude` is
 the Homebrew cask `claude-code@latest`. Homebrew installs do not update themselves, so
 `DISABLE_AUTOUPDATER` holds nothing on this machine. What moves the CLI is `uupd.timer`, which runs

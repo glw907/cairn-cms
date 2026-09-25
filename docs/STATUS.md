@@ -20,18 +20,16 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Next: write the docs reset pass 2a plan, after Geoff's read of the spec.** The spec is
-`docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`, reviewed through
-`spec-plan-review` (four lenses, fold, verification, second fold, prose review; records under
-`docs/superpowers/research/2026-09-25-docs-reset-2a-spec-*.md`). Pass 2a adds scored `wrong[]` and
-`missing[]` reader fields, runs a pre-registered go/no-go pilot per reader class (12 of 16 on-map
-plant-runs, breadth, and precision), writes and reviews the audience record, and reviews the
-exemplar corpus. Ceiling 15M, flag 12M (B4, Geoff 2026-09-25, replacing O12's 6M); the chain build
-moves to the first drafting pass and the exemplar gap fills to pass 2b. Pass 2b gets 8M; drafting
-plans at 0.7M per page plus 1.5M per pass; the program cap stays about 45M counted. Pass 1b's
-records: `docs/internal/record/2026-09-24-docs-reset-1b-{tuning,validation}.md`. The CLI hold is released in
-dotfiles `75f3d96`. Still owed: the `~/.dotfiles` push and `claude-tooling-sync verify`. The lane
-worktrees `docs-reset-1b-{export,runner,pathmap}` can be removed.
+**Next: execute docs reset pass 2a, Task 0.** Plan `docs/superpowers/plans/2026-09-25-docs-reset-pass-2a.md`
+(approved by Geoff 2026-09-25; spec `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`;
+review records under `docs/superpowers/research/2026-09-25-docs-reset-2a-*.md`). Twelve tasks in four
+segments, per-task Agent chains, estimate 12.65M against ceiling 15M, flag 12M (B4). Owner rulings at
+approval: F1, pause `uupd.timer` from the smoke run through the pilot's scoring; F2 (a), continue past
+the flag, and at a projected 15M breach defer Task 9 to pass 2b. The human-read sheets
+(`docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md`) go out now; Geoff fills Sheet 1's
+two blanks. Keep the `docs-reset-1b` worktree: Task 4's round 1 regression scores from its path. The
+lane worktrees `docs-reset-1b-{export,runner,pathmap}` can be removed. Still owed: the `~/.dotfiles`
+push.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`
@@ -56,7 +54,8 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` at effort `high`, in
-`/var/home/glw907/Projects/cairn-cms`, write the docs reset pass 2a plan from the approved spec
-`docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md` (its "Order" section sets the
-segments), then run it through `spec-plan-review`. Method calls are the conductor's (B2).
+In a fresh session started with `claude --model claude-opus-5-5` at effort `medium`, in
+`/var/home/glw907/Projects/cairn-cms`, execute docs reset pass 2a from Task 0 of the approved plan
+`docs/superpowers/plans/2026-09-25-docs-reset-pass-2a.md`. Conduct thin: dispatch each task's chain,
+read structured reports, and never read diffs or logs. Owner rulings F1 and F2 (a) are recorded in the
+plan's "Owner decisions at approval".

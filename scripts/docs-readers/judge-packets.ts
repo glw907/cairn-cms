@@ -3,12 +3,14 @@
  * Builds a judge packet: a mounted directory holding exactly what a catch-judge, adjudicator, or
  * agreement run is allowed to see, plus a key file outside the mount that joins the packet's
  * opaque ids back to runs, fields, and plants. A production builder reads every input from its own
- * source (a saved report, a batch file, a criteria or plant record, a page at its pinned commit
- * via `git show`), never from pre-extracted content a caller hands it, and records each source's
- * path and sha256, the run id, the job id, and the attempt in the key file, so a later step can
- * trace any item back to where it came from. Every builder reads its inputs by allow-list, never
- * by block-list, so a field the run report added later (a model id, a run id, `modelUsage`,
- * `ruleCandidates[]`) can never reach a packet by accident.
+ * source (a saved report, a batch file, a criteria or plant record, a page read at its pinned
+ * commit via `git show`, or, for a development or real plant, from the job's own planted tree when
+ * it holds that page, since the pinned commit carries only the original, unplanted text), never
+ * from pre-extracted content a caller hands it, and records each source's path and sha256, the run
+ * id, the job id, and the attempt in the key file, so a later step can trace any item back to
+ * where it came from. Every builder reads its inputs by allow-list, never by block-list, so a
+ * field the run report added later (a model id, a run id, `modelUsage`, `ruleCandidates[]`) can
+ * never reach a packet by accident.
  *
  * Usage:
  *   npx tsx scripts/docs-readers/judge-packets.ts catch --out DIR --spec SPEC.json

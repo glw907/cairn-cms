@@ -23,9 +23,9 @@ import { buildManifest, hashFile, writeManifest } from '../../../scripts/docs-re
 import { loadClasses } from '../../../scripts/docs-readers/lib/class-schema.js';
 import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
 import type { InstallationToken } from '../../../scripts/docs-readers/lib/github-app-token.js';
-import type { BatchReport, JobReport, Verified } from '../../../scripts/docs-readers/lib/types.js';
+import type { AdjudicatorOutput, BatchReport, InitCheck, JobReport, Verified } from '../../../scripts/docs-readers/lib/types.js';
 import type { JudgeJobReport } from '../../../scripts/docs-readers/lib/runner.js';
-import type { JudgeVerified } from '../../../scripts/docs-readers/lib/judge-verify.js';
+import { verifyJudgeRulings, type JudgeVerified } from '../../../scripts/docs-readers/lib/judge-verify.js';
 
 /** A fake clock: `now()` reads a mutable box, so a test advances time without a real delay. */
 function fakeClock(startMs: number): { now: () => number; advance: (ms: number) => void } {
@@ -551,6 +551,22 @@ describe('expectedItemsFromKey', () => {
     }
   });
 
+  it('omits an adjudicator packet key’s excluded items, since the packet never shows them to the judge', () => {
+    const { dir, prepared } = packetWithKey({
+      kind: 'adjudicator',
+      items: { 'item-1': { field: 'stalls', sourceIndex: 0 }, 'item-2': { field: 'stalls', sourceIndex: 1 }, 'item-3': { field: 'assumed', sourceIndex: 0 } },
+      excluded: ['item-3'],
+      treeCommit: 'deadbeef',
+      treeAbsent: [],
+      inputs: {},
+    });
+    try {
+      expect(expectedItemsFromKey(prepared, 'adjudicator')).toEqual([{ itemId: 'item-1' }, { itemId: 'item-2' }]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('reads findings and catch calls, labeled by kind, for an agreement packet', () => {
     const { dir, prepared } = packetWithKey({ kind: 'agreement', findings: { 'f-1': { resolved: true } }, catchCalls: { 'c-1': { resolved: true } }, inputs: {} });
     try {
@@ -569,6 +585,73 @@ describe('expectedItemsFromKey', () => {
     mkdirSync(prepared, { recursive: true });
     try {
       expect(() => expectedItemsFromKey(prepared, 'catchJudge')).toThrow(/no key\.json beside packet/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  /** An init check that always passes, for the verification tests below. */
+  const OK_INIT: InitCheck = { ok: true, problems: [] };
+
+  it('verifies an adjudicator run that rules every packet item, once the excluded item is left out of expected', () => {
+    const { dir, prepared } = packetWithKey({
+      kind: 'adjudicator',
+      items: { 'item-1': { field: 'stalls', sourceIndex: 0 }, 'item-2': { field: 'assumed', sourceIndex: 0 } },
+      excluded: ['item-2'],
+      treeCommit: 'deadbeef',
+      treeAbsent: [],
+      inputs: {},
+    });
+    try {
+      const expected = expectedItemsFromKey(prepared, 'adjudicator');
+      const output: AdjudicatorOutput = { adjudications: [{ itemId: 'item-1', class: 'interpretation', reason: 'fine' }] };
+      const verified = verifyJudgeRulings({ output, kind: 'adjudicator', expected, init: OK_INIT, canariesFound: [] });
+      expect(verified).toEqual({ ok: true, init: true, canaries: true, problems: [] });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails an adjudicator run that also rules the excluded item, since the judge packet never showed it', () => {
+    const { dir, prepared } = packetWithKey({
+      kind: 'adjudicator',
+      items: { 'item-1': { field: 'stalls', sourceIndex: 0 }, 'item-2': { field: 'assumed', sourceIndex: 0 } },
+      excluded: ['item-2'],
+      treeCommit: 'deadbeef',
+      treeAbsent: [],
+      inputs: {},
+    });
+    try {
+      const expected = expectedItemsFromKey(prepared, 'adjudicator');
+      const output: AdjudicatorOutput = {
+        adjudications: [
+          { itemId: 'item-1', class: 'interpretation', reason: 'fine' },
+          { itemId: 'item-2', class: 'interpretation', reason: 'should not have been ruled' },
+        ],
+      };
+      const verified = verifyJudgeRulings({ output, kind: 'adjudicator', expected, init: OK_INIT, canariesFound: [] });
+      expect(verified.ok).toBe(false);
+      expect(verified.problems).toEqual(['item item-2: ruled, but is not in the packet']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails an adjudicator run that misses a packet item', () => {
+    const { dir, prepared } = packetWithKey({
+      kind: 'adjudicator',
+      items: { 'item-1': { field: 'stalls', sourceIndex: 0 }, 'item-2': { field: 'assumed', sourceIndex: 0 } },
+      excluded: ['item-2'],
+      treeCommit: 'deadbeef',
+      treeAbsent: [],
+      inputs: {},
+    });
+    try {
+      const expected = expectedItemsFromKey(prepared, 'adjudicator');
+      const output: AdjudicatorOutput = { adjudications: [] };
+      const verified = verifyJudgeRulings({ output, kind: 'adjudicator', expected, init: OK_INIT, canariesFound: [] });
+      expect(verified.ok).toBe(false);
+      expect(verified.problems).toEqual(['item item-1: no ruling']);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

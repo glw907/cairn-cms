@@ -364,8 +364,10 @@ export function classifyBatchKind(
  * A judge job's expected items, read from the `key.json` a judge packet's builder wrote beside
  * its mounted packet: `job.prepared` is the packet's own mount (`<dir>/packet`), and its key file
  * is `<dir>/key.json`, the sibling `checkGate` already refuses to see duplicated inside the mount.
- * Ids come from the key's own maps, never re-derived: `plants` for a catch packet, `items` for an
- * adjudicator packet, and `findings` plus `catchCalls` (labeled by kind) for an agreement packet.
+ * Ids come from the key's own maps, never re-derived: `plants` for a catch packet, `items` minus
+ * `excluded` for an adjudicator packet (the harness-filtered items `buildAdjudicatorPacket` left
+ * out of `packet/items.json`, so the judge never sees them and must never be asked to rule them),
+ * and `findings` plus `catchCalls` (labeled by kind) for an agreement packet.
  * @param preparedDir - The job's `prepared` directory (the packet mount itself, its parent's
  *  `key.json` sibling).
  * @param kind - The judge kind, which picks which of the key's maps to read.
@@ -378,7 +380,12 @@ export function expectedItemsFromKey(preparedDir: string, kind: JudgeKind): Expe
   const key = JSON.parse(readFileSync(keyPath, 'utf8')) as Record<string, unknown>;
   const ids = (map: unknown): string[] => (map && typeof map === 'object' ? Object.keys(map) : []);
   if (kind === 'catchJudge') return ids(key.plants).map((itemId) => ({ itemId }));
-  if (kind === 'adjudicator') return ids(key.items).map((itemId) => ({ itemId }));
+  if (kind === 'adjudicator') {
+    const excluded = new Set(Array.isArray(key.excluded) ? (key.excluded as unknown[]) : []);
+    return ids(key.items)
+      .filter((itemId) => !excluded.has(itemId))
+      .map((itemId) => ({ itemId }));
+  }
   return [
     ...ids(key.findings).map((itemId) => ({ itemId, expectedKind: 'finding' as const })),
     ...ids(key.catchCalls).map((itemId) => ({ itemId, expectedKind: 'catchCall' as const })),

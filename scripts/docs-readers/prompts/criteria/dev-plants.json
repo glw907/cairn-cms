@@ -1,0 +1,138 @@
+[
+  {
+    "id": "P01",
+    "page": "docs/why-cairn.md",
+    "line": 22,
+    "subject": "Where a saved, unpublished edit lives: the page names an undefined \"hold ref\" instead of a per-entry branch.",
+    "criterion": "The item must say that the page's term \"hold ref\" is undefined, unexplained, or not found anywhere in the docs, or that the page does not say where a saved but unpublished edit is kept before a publish. An item stating that a save actually lands on a per-entry branch, against the page's wording, also counts. Repeating that a save is held until a deliberate publish, or using \"hold ref\" as though it were understood, does not count.",
+    "nearMiss": "assumed: \"A save is held back from the live site until someone deliberately publishes it, so editors can draft safely.\""
+  },
+  {
+    "id": "P02",
+    "page": "docs/why-cairn.md",
+    "line": 19,
+    "subject": "Whether editors need a GitHub account: the sign-in sentence says they use their own GitHub account, which the page's later claim that editors never see GitHub contradicts.",
+    "criterion": "The item must say that the page is contradictory or unclear about whether each editor needs a GitHub account to sign in, for example that the sign-in sentence (editors use their own GitHub account) conflicts with the page's statement that editors never see the GitHub repository, or that the zero-config sign-in is really an emailed link needing no GitHub account. Restating that editors sign in with GitHub, or planning GitHub accounts for editors without questioning the page, does not count.",
+    "nearMiss": "assumed: \"Each volunteer editor signs in with their own GitHub account, so the club would have to create GitHub accounts for them.\""
+  },
+  {
+    "id": "P03",
+    "page": "docs/admin/is-it-working.md",
+    "line": 16,
+    "subject": "The first command, `cairn doctor --dir .`, passes the directory as a flag the command does not accept; the directory is a positional argument.",
+    "criterion": "The item must say that the page's `cairn doctor --dir .` command is wrong: that `--dir` is not a flag `cairn doctor` accepts, that running it fails with a usage error, that the directory is a positional argument, or that the page's command form disagrees with how the command is invoked elsewhere and should drop the flag. Running plain `cairn doctor`, or noting the command without saying its form is wrong, does not count.",
+    "nearMiss": "assumed: \"The `.` in the page's first command means the current directory, so I ran the check from the site's root.\""
+  },
+  {
+    "id": "P04",
+    "page": "docs/admin/is-it-working.md",
+    "line": 375,
+    "subject": "The path of the nonce migration inside the installed package: the page says `dist/migrations/`, but the file ships under the package root's `migrations/`.",
+    "criterion": "The item must say that the page's path `dist/migrations/0004_login_nonce.sql` is wrong or does not exist in the installed package, or that the migration file sits somewhere other than the page says (under `migrations/` at the package root). Describing the need to copy and apply the migration, without questioning the path, does not count.",
+    "nearMiss": "assumed: \"The nonce migration has to be copied into the site's own migrations folder and applied with wrangler before sign-in works.\""
+  },
+  {
+    "id": "P05",
+    "page": "docs/admin/is-it-working.md",
+    "line": 224,
+    "subject": "The remedy for the missing-bindings condition names only the `EMAIL` send_email binding and omits the `AUTH_DB` D1 binding the check also requires.",
+    "criterion": "The item must say that the page's fix for the missing-bindings condition is incomplete or inconsistent: that it tells the reader to declare only the `EMAIL` binding while the condition (or the section's own lead) also requires the `AUTH_DB` D1 binding, so a site missing `AUTH_DB` still fails after following it. An item about the doctor tool's own printed output rather than the page's remedy, or one that only reports adding `EMAIL`, does not count.",
+    "nearMiss": "assumed: \"Only the EMAIL binding was missing on this site, so I added the send_email binding the fix names and redeployed.\""
+  },
+  {
+    "id": "P06",
+    "page": "docs/extend/design-your-site.md",
+    "line": 45,
+    "subject": "The live demo route: the page says `/style-guide`, but the scaffold serves `/styleguide`.",
+    "criterion": "The item must say that the `/style-guide` route the page names does not exist, returns a 404, or differs from the scaffold's actual route (`/styleguide`). Using the style guide page as a checking surface, or referring to it by name without saying the path is wrong, does not count.",
+    "nearMiss": "assumed: \"I checked the new palette's contrast by eye against the style guide page with a browser contrast checker, as the page suggests.\""
+  },
+  {
+    "id": "P07",
+    "page": "docs/extend/design-your-site.md",
+    "line": 17,
+    "subject": "The chassis import alias: the page names `$lib/chassis`, but the scaffold declares `$chassis` for `src/chassis`.",
+    "criterion": "The item must say that the `$lib/chassis` alias the page names does not resolve or is not declared, that the chassis does not live under `src/lib`, or that the scaffold's alias is `$chassis`. Importing chassis pieces through an alias, or noting that theme code should use the exported seams, without saying the named alias is wrong, does not count.",
+    "nearMiss": "assumed: \"Theme files should import chassis pieces through the alias rather than by relative path, so I kept my imports on the alias.\""
+  },
+  {
+    "id": "P08",
+    "page": "docs/extend/design-your-site.md",
+    "line": 116,
+    "subject": "Removing the feed chassis piece: the page says deleting the file changes nothing else, but the two feed routes import it and the build breaks.",
+    "criterion": "The item must say that deleting the feed file alone, as the page says, breaks the build or leaves broken imports, because the two feed routes import it, or that the page omits the step of removing or editing those route bodies. Noting that the feed piece is optional or removable, without saying the stated deletion is incomplete, does not count.",
+    "nearMiss": "assumed: \"The feed module is an optional chassis piece, so a site that does not publish feeds can drop it.\""
+  },
+  {
+    "id": "P09",
+    "page": "docs/extend/add-a-custom-admin-screen.md",
+    "line": 38,
+    "subject": "Where the section module goes: the file-path comment says `src/club/section.ts`, but the page imports it as `$lib/club/section.js`, which resolves under `src/lib`.",
+    "criterion": "The item must say that the file-path comment (`src/club/section.ts`) and the page's import (`$lib/club/section.js`) disagree, that a file created where the comment says is not found by that import, or that the module belongs under `src/lib/club/`. Creating the file at some path, or treating the folder name as an example, without saying the page's path and import conflict, does not count.",
+    "nearMiss": "assumed: \"The `club` folder name in the snippet is only an example, so I named the feature folder after my own section.\""
+  },
+  {
+    "id": "P10",
+    "page": "docs/extend/add-a-custom-admin-screen.md",
+    "line": 140,
+    "subject": "The audit sink export: the page imports `createAuditSink` from the sveltekit subpath, which exports `createD1AuditSink` and no `createAuditSink`.",
+    "criterion": "The item must say that `createAuditSink` is not exported from `@glw907/cairn-cms/sveltekit`, that importing it fails type checking or the build, that the export is named `createD1AuditSink`, or that the page's name disagrees with the reference entry it links. Describing where or how the audit sink is created, without saying the name is wrong, does not count.",
+    "nearMiss": "assumed: \"The audit sink is created once in hooks.server.ts and shared by every section action, so I wired it there.\""
+  },
+  {
+    "id": "P11",
+    "page": "docs/extend/add-a-custom-admin-screen.md",
+    "line": 79,
+    "subject": "The page never tells the reader to declare an access-map rule for the new route, without which the access check refuses every session, owner included.",
+    "criterion": "The item must say that the page omits declaring an access-map rule for the new screen's route, or that without such a rule the access check refuses every session (a 403, the owner included), or it must report adding a rule the page never asked for because the page was silent or the screen was refused. Calling the access check on the route, or assuming a role may or may not reach the screen, without saying a rule is required and missing from the page, does not count.",
+    "nearMiss": "assumed: \"The owner role can reach every admin route, so the new screen needs no role-specific handling for the owner.\""
+  },
+  {
+    "id": "P12",
+    "page": "CONTRIBUTING.md",
+    "line": 101,
+    "subject": "The comment lint command: the page names `npm run lint:comments`, but the root package defines `check:comments` and no `lint:comments`.",
+    "criterion": "The item must say that `npm run lint:comments` does not exist or fails (npm's missing-script error), or that the script is actually named `check:comments`. Describing what the comment linter enforces or covers, without saying the named script is wrong, does not count.",
+    "nearMiss": "assumed: \"The comment lint only covers src/lib and not the showcase, so I did not check comments in the showcase files I touched.\""
+  },
+  {
+    "id": "P13",
+    "page": "CONTRIBUTING.md",
+    "line": 98,
+    "subject": "The file that names the test globs: the page says `vitest.workspace.ts`, but the root holds only `vitest.config.ts`.",
+    "criterion": "The item must say that `vitest.workspace.ts` does not exist at the repository root, or that the globs are named in `vitest.config.ts` instead. Placing a test under an existing glob, or asking which glob a test belongs under, without saying the named file is wrong, does not count.",
+    "nearMiss": "assumed: \"A new test file under src/tests/unit is picked up by the existing globs, so I added no configuration.\""
+  },
+  {
+    "id": "P14",
+    "page": "CONTRIBUTING.md",
+    "line": 20,
+    "subject": "The showcase reads the built `dist/` output, so a change to `src/lib` needs `npm run package` before the showcase shows it; the page omits that step.",
+    "criterion": "The item must say that the page does not tell the reader to rebuild the package (`npm run package`) after changing `src/lib` for the showcase to pick the change up, or that the showcase resolves the engine through its built output so a source edit does not appear there, or it must report that a `src/lib` change did not show in the showcase and the page did not say why. An item about installing dependencies, or about running the showcase at all, does not count.",
+    "nearMiss": "stalls: \"`npm install` in examples/showcase could not run in this environment, so the showcase's dependencies were used as prepared.\""
+  },
+  {
+    "id": "P15",
+    "page": "docs/reference/cli-cairn-json-output.md",
+    "line": 88,
+    "subject": "The `actor` enumeration: the page lists three words, but the schema and the code add a fourth, `registrar`.",
+    "criterion": "The item must say that the page's list of `actor` values is incomplete or wrong, for example that the health schema's enumeration or the code carries a value the page omits (`registrar`), or that the page and the schema disagree on the set. Modeling `actor` as the listed values, or asking whether the list may grow, without saying the page's list disagrees with the schema or the code, does not count.",
+    "nearMiss": "assumed: \"`actor` is a closed enum, so the parser models it as exactly the three words the page lists.\""
+  },
+  {
+    "id": "P16",
+    "page": "docs/reference/cli-cairn-doctor.md",
+    "line": 109,
+    "subject": "How an info check is told apart under `--json`: the page names an `info` field, but the payload and schema carry `note`.",
+    "criterion": "The item must say that the page's `info` field does not exist in the doctor payload or schema, that the discriminator for an info check is `note`, or that the page and the doctor schema disagree on how an info check is marked. Handling an info check as a pass, or asking how info checks are counted in the exit code, without saying the named field is wrong, does not count.",
+    "nearMiss": "assumed: \"An INFO check writes the wire state `pass`, so the parser treats it the same as a passing check.\""
+  },
+  {
+    "id": "P17",
+    "page": "docs/reference/cli-cairn-exit-codes.md",
+    "line": 64,
+    "subject": "The exit code of bare `cairn health` on an empty registry: the page says 0, but the run exits 3 (`UNKNOWN`).",
+    "criterion": "The item must say that the page's exit 0 for bare `cairn health` on an empty registry is wrong or contradicted elsewhere, for example that the run reports `UNKNOWN` and exits 3, or that the page conflicts with another page's or the code's account of an empty sweep. Treating an empty registry as healthy, or handling exit 0 in a wrapper, without saying the page's code is wrong, does not count.",
+    "nearMiss": "assumed: \"An empty registry is a valid state, so the wrapper reports success when bare `cairn health` exits 0 with no sites.\""
+  }
+]

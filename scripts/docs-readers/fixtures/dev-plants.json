@@ -1,0 +1,19 @@
+[
+  { "id": "P01", "job": "evaluator", "page": "docs/why-cairn.md", "line": 22 },
+  { "id": "P02", "job": "evaluator", "page": "docs/why-cairn.md", "line": 19 },
+  { "id": "P03", "job": "operator", "page": "docs/admin/is-it-working.md", "line": 16 },
+  { "id": "P04", "job": "operator", "page": "docs/admin/is-it-working.md", "line": 375 },
+  { "id": "P05", "job": "operator", "page": "docs/admin/is-it-working.md", "line": 224 },
+  { "id": "P06", "job": "designer", "page": "docs/extend/design-your-site.md", "line": 45 },
+  { "id": "P07", "job": "designer", "page": "docs/extend/design-your-site.md", "line": 17 },
+  { "id": "P08", "job": "designer", "page": "docs/extend/design-your-site.md", "line": 116 },
+  { "id": "P09", "job": "extender", "page": "docs/extend/add-a-custom-admin-screen.md", "line": 38 },
+  { "id": "P10", "job": "extender", "page": "docs/extend/add-a-custom-admin-screen.md", "line": 140 },
+  { "id": "P11", "job": "extender", "page": "docs/extend/add-a-custom-admin-screen.md", "line": 79 },
+  { "id": "P12", "job": "core-developer", "page": "CONTRIBUTING.md", "line": 101 },
+  { "id": "P13", "job": "core-developer", "page": "CONTRIBUTING.md", "line": 98 },
+  { "id": "P14", "job": "core-developer", "page": "CONTRIBUTING.md", "line": 20 },
+  { "id": "P15", "job": "scripter", "page": "json-output/docs/reference/cli-cairn-json-output.md", "line": 88 },
+  { "id": "P16", "job": "scripter", "page": "doctor/docs/reference/cli-cairn-doctor.md", "line": 109 },
+  { "id": "P17", "job": "scripter", "page": "exit-codes/docs/reference/cli-cairn-exit-codes.md", "line": 64 }
+]

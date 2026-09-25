@@ -44,7 +44,7 @@
     "page": "docs/reference/cli-cairn-json-output.md",
     "commit": "29a03eff",
     "subject": "The page says `worstFirst` lists the sites by verdict, but it ranks them by the severity class of each site's worst unacknowledged failure.",
-    "criterion": "The item must challenge the sort key the page gives for `worstFirst`: that ordering \"by verdict\" is wrong, disagrees with the code, or does not define the ranking, for example that the ranking follows each site's worst unacknowledged failure or some other severity measure. An item asking only how sites that share a verdict or class are ordered among themselves (the tie order) does not count, nor does an item that relies on the verdict ordering.",
+    "criterion": "The item must challenge the sort key the page gives for `worstFirst`: that ordering \"by verdict\" is wrong, or disagrees with the code, for example that the ranking follows each site's worst unacknowledged failure or some other severity measure. An item asking only how sites that share a verdict or class are ordered among themselves (the tie order) does not count, nor does an item that relies on the verdict ordering.",
     "nearMiss": "assumed: \"The page does not say how `worstFirst` orders sites that share the same verdict, so the parser keeps them in the order received.\""
   },
   {

@@ -71,13 +71,13 @@ Rule each group `real`, `false`, or `harness`, testing in this order.
 
 **Harness.** Rule `harness` when the claim exists only because of the environment the reader ran
 in, not because of the page: the export or the sandbox blocked the reader. Examples: a path absent
-by design from the reader's tree, a denied command, a tool, browser, or binary the reader's image
-lacks, missing version-control history, or a linked page the reader could not open because its
-tree left it out (the claim is that the link is broken or the page absent). A claim that a fact is
-missing, when a published page outside the reader's set states it, is false, not harness.
-Rule `harness` only when the page, read in the published tree with the real repository behind
-it, would not have produced the claim. A page
-that is wrong regardless of the environment is not harness because the reader also hit a denial.
+by design from the reader's tree, a denied command, a tool or binary the reader's image lacks,
+missing version-control history, or a linked page the reader could not open because its tree left
+it out (the claim is that the link is broken or the page absent). A claim that a fact is missing,
+when a published page outside the reader's set states it, is false, not harness. Rule `harness`
+only when the page, read in the published tree with the real repository behind it, would not have
+produced the claim. A page that is wrong regardless of the environment is not harness because the
+reader also hit a denial.
 
 **False.** A false finding is one answered elsewhere in the published docs, wrong, or asking for
 a fact that does not exist.
@@ -88,8 +88,7 @@ a fact that does not exist.
 - *Wrong:* the claim does not hold. The page says what the item says it omits, the page matches
   the code where the item says it does not, the claimed contradiction is not a contradiction, or
   the premise fails (including the premise that the job needed the fact).
-- *A fact that does not exist:* the item asks for something no one could state, such as a
-  schedule the project does not keep or a figure a vendor does not publish.
+- *A fact that does not exist:* the item asks for something no one could state.
 
 **Real.** A real defect: the page states something false or self-contradictory against the code,
 or omits a fact the job needs that no published page supplies.

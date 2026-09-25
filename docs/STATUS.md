@@ -20,16 +20,16 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Next: continue docs reset pass 1b unattended from Task 7 (segments 3 to 5).** Plan
-`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` on branch `docs-reset-1b` (worktree
-`.claude/worktrees/docs-reset-1b`, head `4239b2a5`, pushed). Tasks 0 to 6 and 8 are accepted and
-merged (gate green at 570 tests). The plan's "Unattended execution" section governs the rest: start
-guards, per-task Agent chains (never the `pass-execute` workflows), stop-and-ask conditions, the CLI
-hold at 2.1.282 with its init-baseline pin before Task 9, and checkpoints. Carry notes:
-`docs/superpowers/research/2026-09-24-pass-1b-carries.md`. Spend 12.50M counted at the handoff;
-ceiling 25M, flag 21M (O10). The lane worktrees `docs-reset-1b-{export,runner,pathmap}` are merged and
-can be removed. The scratch site stands through pass 2a. Still owed from pass 1: the `~/.dotfiles`
-push and `claude-tooling-sync verify`.
+**Stopped for Geoff: pass 1b Task 7 drew a third `fix` (2026-09-25).** Plan
+`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`, branch `docs-reset-1b` (worktree
+`.claude/worktrees/docs-reset-1b`, head `c4e4ae41`, pushed). The scorer is built and gated green
+(`089e4707`); its third review found two one-line defects, recorded with their fixes in the plan's
+ledger. The 2.1.282 init baseline is pinned (`243a0bd3`). Spend 15.28M counted, ceiling 25M, flag
+21M. On Geoff's word: send the two fixes to a fresh `cairn-implementer`, a fourth `diff-reviewer`
+read, then Task 9 under the plan's "Unattended execution" rules. Carry notes:
+`docs/superpowers/research/2026-09-24-pass-1b-carries.md`. The lane worktrees
+`docs-reset-1b-{export,runner,pathmap}` are merged and can be removed. Still owed from pass 1: the
+`~/.dotfiles` push and `claude-tooling-sync verify`.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`

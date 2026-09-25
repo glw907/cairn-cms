@@ -12,7 +12,7 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { passProbability, refitBetaBinomial, type RefitResult } from './lib/beta-binomial.js';
+import { betaBinomialShape, passProbability, refitBetaBinomial, type RefitResult } from './lib/beta-binomial.js';
 import { mulberry32, randomBeta } from './lib/random.js';
 
 /** The seed every simulated figure here is drawn under. */
@@ -134,9 +134,7 @@ export function simulateStability(options: { seed: number; n?: number; draws?: n
   const { seed, n = 42, draws = 5000, iccs = [0.95, 0.72, 0.5, 0.35, 0.25, 0.2], trueRecall = 0.8 } = options;
   const rng = mulberry32(seed);
   return iccs.map((icc) => {
-    const s = (1 - icc) / icc;
-    const a = trueRecall * s;
-    const b = (1 - trueRecall) * s;
+    const { a, b } = betaBinomialShape(trueRecall, icc);
     let passCount = 0;
     for (let draw = 0; draw < draws; draw += 1) {
       const matrix: number[][] = [];

@@ -13,7 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { computeCapacity, parseSections, sectionForSpan, type CapacityRegion, type LineRange, type SectionSpan } from './lib/sections.js';
+import { computeCapacity, MAX_PLANTS, parseSections, sectionForSpan, type CapacityRegion, type LineRange, type PageSections, type SectionSpan } from './lib/sections.js';
 import type { JobReport, VerifiedQuote } from './lib/types.js';
 
 /** One section as a path map reports it: its span, plus how many quotes and distinct runs reached it. */
@@ -90,8 +90,8 @@ function allVerifiedQuotes(report: JobReport): VerifiedQuote[] {
   return quotes;
 }
 
-/** A quote's own verified line span, falling back to nothing when neither bound was recorded. */
-function quoteSpan(quote: VerifiedQuote): { start: number; end: number } | undefined {
+/** A quote's own verified line span, or undefined when neither bound was recorded. */
+function quoteSpan(quote: VerifiedQuote): LineRange | undefined {
   const start = quote.startLine ?? (typeof quote.line === 'number' ? quote.line : undefined);
   const end = quote.endLine ?? start;
   if (start === undefined || end === undefined) return undefined;
@@ -107,9 +107,8 @@ interface SectionTally {
 }
 
 /**
- * The key a section is tallied under: its page and its own identity (heading, level, and start
- * line, since two sections on one page can share a heading text after a rewrite pass, though not
- * within one page's own headings here).
+ * The key a section is tallied under: its page, level, and start line. The heading text is left
+ * out, since two sections on one page can share it.
  */
 function tallyKey(page: string, section: SectionSpan): string {
   return `${page}\u0000${section.level}\u0000${section.start}`;
@@ -124,7 +123,7 @@ function tallyKey(page: string, section: SectionSpan): string {
  */
 function tallySections(
   runs: JobReport[],
-  pageSections: Map<string, ReturnType<typeof parseSections>>,
+  pageSections: Map<string, PageSections>,
   quotesOf: (report: JobReport) => VerifiedQuote[],
 ): Map<string, SectionTally> {
   const tallies = new Map<string, SectionTally>();
@@ -177,7 +176,7 @@ function toPathMapSection(tally: SectionTally): PathMapSection {
  * @param pageSections - Each page's parsed sections and line count.
  * @returns Every page keyed to its line count and the tallies that landed on it.
  */
-function toPagesBlock(tallies: SectionTally[], pageOrder: string[], pageSections: Map<string, ReturnType<typeof parseSections>>): Record<string, PathMapPage> {
+function toPagesBlock(tallies: SectionTally[], pageOrder: string[], pageSections: Map<string, PageSections>): Record<string, PathMapPage> {
   const pages: Record<string, PathMapPage> = {};
   for (const page of pageOrder) {
     pages[page] = { lines: pageSections.get(page)?.lines ?? 0, sections: [] };
@@ -207,7 +206,7 @@ function totalLines(tallies: SectionTally[]): number {
  * @param pageSections - Each page's parsed sections and line count.
  * @returns The share, from 0 to 1 (0 when the job's pages carry no lines at all).
  */
-function shareOf(tallies: SectionTally[], pageOrder: string[], pageSections: Map<string, ReturnType<typeof parseSections>>): number {
+function shareOf(tallies: SectionTally[], pageOrder: string[], pageSections: Map<string, PageSections>): number {
   const total = pageOrder.reduce((sum, page) => sum + (pageSections.get(page)?.lines ?? 0), 0);
   return total === 0 ? 0 : totalLines(tallies) / total;
 }
@@ -224,7 +223,7 @@ function shareOf(tallies: SectionTally[], pageOrder: string[], pageSections: Map
 function narrowToRanges(
   allAgree: SectionTally[],
   runs: JobReport[],
-  pageSections: Map<string, ReturnType<typeof parseSections>>,
+  pageSections: Map<string, PageSections>,
 ): Record<string, Array<[number, number]>> {
   // Tally, per page and line, how many distinct runs quoted a step span covering that line.
   const lineRuns = new Map<string, Map<number, Set<number>>>();
@@ -251,16 +250,15 @@ function narrowToRanges(
   const ranges: Record<string, Array<[number, number]>> = {};
   for (const tally of allAgree) {
     const perLine = lineRuns.get(tally.page);
-    const pageLines = pageSections.get(tally.page)?.lines ?? tally.section.end;
     if (!perLine) continue;
+    const pageLines = pageSections.get(tally.page)?.lines ?? tally.section.end;
     const windows: Array<[number, number]> = [];
     for (let line = tally.section.start; line <= tally.section.end; line += 1) {
       if ((perLine.get(line)?.size ?? 0) < 2) continue;
       windows.push([Math.max(tally.section.start, 1, line - WIDEN_WINDOW), Math.min(tally.section.end, pageLines, line + WIDEN_WINDOW)]);
     }
     if (windows.length === 0) continue;
-    const merged = mergeRanges(windows);
-    ranges[tally.page] = [...(ranges[tally.page] ?? []), ...merged];
+    ranges[tally.page] = [...(ranges[tally.page] ?? []), ...mergeRanges(windows)];
   }
   for (const page of Object.keys(ranges)) ranges[page] = mergeRanges(ranges[page]);
   return ranges;
@@ -312,6 +310,36 @@ function rangeRegions(ranges: Record<string, Array<[number, number]>>, pageOrder
     .map((page) => ({ page, ranges: (ranges[page] ?? []).map(([start, end]) => ({ start, end })) }));
 }
 
+/**
+ * The line ranges a set of tallies' sections span, as the `ranges` block of a narrowed map reports
+ * them.
+ * @param tallies - The sections to report.
+ * @param pageOrder - The job's pages, in order.
+ * @returns Each page's section spans, sorted by start line, omitting a page with none.
+ */
+function sectionRanges(tallies: SectionTally[], pageOrder: string[]): Record<string, Array<[number, number]>> {
+  const ranges: Record<string, Array<[number, number]>> = {};
+  for (const page of pageOrder) {
+    const onPage = tallies.filter((tally) => tally.page === page).sort((a, b) => a.section.start - b.section.start);
+    if (onPage.length > 0) ranges[page] = onPage.map((tally) => [tally.section.start, tally.section.end]);
+  }
+  return ranges;
+}
+
+/**
+ * The path map a job gets when it has no usable mapping run: every page listed with no sections,
+ * and the reason there is no map.
+ * @param job - The job the map describes.
+ * @param verifiedRuns - The count of verified Opus runs found.
+ * @param mode - Whether the map was built from `steps[]` or as a proxy.
+ * @param pages - Every page, at zero sections.
+ * @param noMap - Why the map is empty.
+ * @returns The empty path map.
+ */
+function emptyMap(job: string, verifiedRuns: number, mode: PathMap['mode'], pages: Record<string, PathMapPage>, noMap: string): PathMap {
+  return { job, verifiedRuns, mode, pages, onPathShare: 0, narrowed: false, widened: false, capacity: 0, noMap };
+}
+
 /** The inputs one path map is built from. */
 export interface BuildPathMapInput {
   job: string;
@@ -339,13 +367,9 @@ export function buildPathMap(input: BuildPathMapInput): PathMap {
   const opusVerified = input.runs.filter(isVerifiedOpusRun);
   const verifiedRuns = opusVerified.length;
   const emptyPages = toPagesBlock([], pageOrder, pageSections);
-  if (verifiedRuns === 0) {
-    return { job: input.job, verifiedRuns: 0, mode: 'steps', pages: emptyPages, onPathShare: 0, narrowed: false, widened: false, capacity: 0, noMap: 'no verified Opus mapping run' };
-  }
+  if (verifiedRuns === 0) return emptyMap(input.job, 0, 'steps', emptyPages, 'no verified Opus mapping run');
   const tallies = tallySections(opusVerified, pageSections, (report) => (report.steps ?? []).filter((step) => step.quote.ok).map((step) => step.quote));
-  if (tallies.size === 0) {
-    return { job: input.job, verifiedRuns, mode: 'steps', pages: emptyPages, onPathShare: 0, narrowed: false, widened: false, capacity: 0, noMap: 'no verified steps[] quote in any mapping run' };
-  }
+  if (tallies.size === 0) return emptyMap(input.job, verifiedRuns, 'steps', emptyPages, 'no verified steps[] quote in any mapping run');
   const threshold = onPathThreshold(verifiedRuns);
   const onPath = [...tallies.values()].filter((tally) => tally.runIndexes.size >= threshold);
   const onPathShare = shareOf(onPath, pageOrder, pageSections);
@@ -362,11 +386,7 @@ export function buildPathMap(input: BuildPathMapInput): PathMap {
       ranges = narrowToRanges(allAgree, opusVerified, pageSections);
       capacityRegions = rangeRegions(ranges, pageOrder);
     } else {
-      ranges = Object.fromEntries(
-        pageOrder
-          .filter((page) => allAgree.some((tally) => tally.page === page))
-          .map((page) => [page, allAgree.filter((tally) => tally.page === page).sort((a, b) => a.section.start - b.section.start).map((tally): [number, number] => [tally.section.start, tally.section.end])]),
-      );
+      ranges = sectionRanges(allAgree, pageOrder);
       capacityRegions = tallyRegions(allAgree, pageOrder);
     }
   }
@@ -374,8 +394,8 @@ export function buildPathMap(input: BuildPathMapInput): PathMap {
   let widened = false;
   let finalSections = onPath;
   if (!narrowed) {
-    let capacity = computeCapacity(capacityRegions, findingSpans, multiPage);
-    if (capacity < 7) {
+    let widenedCapacity = computeCapacity(capacityRegions, findingSpans, multiPage);
+    if (widenedCapacity < MAX_PLANTS) {
       const onPathKeys = new Set(onPath.map((tally) => tallyKey(tally.page, tally.section)));
       const candidates = [...tallies.values()]
         .filter((tally) => !onPathKeys.has(tallyKey(tally.page, tally.section)))
@@ -386,12 +406,11 @@ export function buildPathMap(input: BuildPathMapInput): PathMap {
         });
       const widenedSet = [...onPath];
       for (const candidate of candidates) {
-        if (capacity >= 7) break;
-        const trialShare = shareOf([...widenedSet, candidate], pageOrder, pageSections);
-        if (trialShare > CEILING) break;
+        if (widenedCapacity >= MAX_PLANTS) break;
+        if (shareOf([...widenedSet, candidate], pageOrder, pageSections) > CEILING) break;
         widenedSet.push(candidate);
         widened = true;
-        capacity = computeCapacity(tallyRegions(widenedSet, pageOrder), findingSpans, multiPage);
+        widenedCapacity = computeCapacity(tallyRegions(widenedSet, pageOrder), findingSpans, multiPage);
       }
       finalSections = widenedSet;
     }
@@ -426,13 +445,9 @@ export function buildProxyMap(input: Pick<BuildPathMapInput, 'job' | 'runs' | 'p
   const opusVerified = input.runs.filter(isVerifiedOpusRun);
   const verifiedRuns = opusVerified.length;
   const emptyPages = toPagesBlock([], pageOrder, pageSections);
-  if (verifiedRuns === 0) {
-    return { job: input.job, verifiedRuns: 0, mode: 'proxy', pages: emptyPages, onPathShare: 0, narrowed: false, widened: false, capacity: 0, noMap: 'no verified Opus control run' };
-  }
+  if (verifiedRuns === 0) return emptyMap(input.job, 0, 'proxy', emptyPages, 'no verified Opus control run');
   const tallies = tallySections(opusVerified, pageSections, allVerifiedQuotes);
-  if (tallies.size === 0) {
-    return { job: input.job, verifiedRuns, mode: 'proxy', pages: emptyPages, onPathShare: 0, narrowed: false, widened: false, capacity: 0, noMap: 'no verified quote in any control run' };
-  }
+  if (tallies.size === 0) return emptyMap(input.job, verifiedRuns, 'proxy', emptyPages, 'no verified quote in any control run');
   const onPath = [...tallies.values()];
   const onPathShare = shareOf(onPath, pageOrder, pageSections);
   const capacity = computeCapacity(tallyRegions(onPath, pageOrder), new Map(), pageOrder.length > 1);
@@ -459,6 +474,18 @@ function readPages(root: string, docsSet: string[]): JobPages {
   const pages: JobPages = {};
   for (const page of docsSet) pages[page] = readFileSync(join(root, page), 'utf8');
   return pages;
+}
+
+/**
+ * Read a findings file (`{ spans: [{ page, start, end }] }`) into finding spans keyed by page.
+ * @param file - The findings file path.
+ * @returns Each page's finding spans, in file order.
+ */
+function readFindingSpans(file: string): FindingSpans {
+  const { spans } = JSON.parse(readFileSync(resolve(file), 'utf8')) as { spans: Array<{ page: string; start: number; end: number }> };
+  const byPage: FindingSpans = {};
+  for (const { page, start, end } of spans) (byPage[page] ??= []).push({ start, end });
+  return byPage;
 }
 
 /** The `build` subcommand's parsed arguments. */
@@ -517,14 +544,7 @@ export function main(argv: string[]): number {
   const args = parseBuildArgs(argv.slice(1));
   const pages = readPages(resolve(args.pagesRoot), args.docsSet);
   const runs: JobReport[] = args.reportFiles.map((file) => JSON.parse(readFileSync(resolve(file), 'utf8')) as JobReport);
-  const findingSpans: FindingSpans | undefined = args.findingsFile
-    ? Object.fromEntries((JSON.parse(readFileSync(resolve(args.findingsFile), 'utf8')) as { spans: Array<{ page: string; start: number; end: number }> }).spans.reduce((byPage, span) => {
-        const list = byPage.get(span.page) ?? [];
-        list.push({ start: span.start, end: span.end });
-        byPage.set(span.page, list);
-        return byPage;
-      }, new Map<string, LineRange[]>()))
-    : undefined;
+  const findingSpans = args.findingsFile ? readFindingSpans(args.findingsFile) : undefined;
   const map = args.proxy ? buildProxyMap({ job: args.job, runs, pages }) : buildPathMap({ job: args.job, runs, pages, findingSpans });
   const json = `${JSON.stringify(map, null, 2)}\n`;
   if (args.out) writeFileSync(resolve(args.out), json);

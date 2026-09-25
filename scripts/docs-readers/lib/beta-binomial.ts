@@ -59,7 +59,7 @@ export function logChoose(n: number, k: number): number {
  * @param icc - The intraclass correlation, between 0 and 1 exclusive.
  * @returns The beta prior's `a` and `b` shape parameters.
  */
-function betaBinomialShape(mean: number, icc: number): { a: number; b: number } {
+export function betaBinomialShape(mean: number, icc: number): { a: number; b: number } {
   const s = (1 - icc) / icc;
   return { a: mean * s, b: (1 - mean) * s };
 }

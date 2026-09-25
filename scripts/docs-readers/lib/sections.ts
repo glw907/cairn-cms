@@ -66,7 +66,7 @@ function findHeadings(lines: string[]): RawHeading[] {
  */
 export function parseSections(text: string): PageSections {
   const rawLines = text.split('\n');
-  const lines = rawLines.length > 0 && rawLines[rawLines.length - 1] === '' ? rawLines.length - 1 : rawLines.length;
+  const lines = rawLines.at(-1) === '' ? rawLines.length - 1 : rawLines.length;
   const headings = findHeadings(rawLines);
   const sections: SectionSpan[] = [];
   for (let i = 0; i < headings.length; i += 1) {
@@ -89,10 +89,8 @@ export function parseSections(text: string): PageSections {
  * @returns The single section containing the whole span, or undefined.
  */
 export function sectionForSpan(sections: SectionSpan[], startLine: number, endLine: number): SectionSpan | undefined {
-  const start = sections.find((section) => startLine >= section.start && startLine <= section.end);
-  const end = sections.find((section) => endLine >= section.start && endLine <= section.end);
-  if (!start || !end || start !== end) return undefined;
-  return start;
+  const containing = sections.find((section) => startLine >= section.start && startLine <= section.end);
+  return containing && endLine >= containing.start && endLine <= containing.end ? containing : undefined;
 }
 
 /** A 1-based inclusive line span. */
@@ -111,7 +109,9 @@ export interface CapacityRegion {
 const MIN_GAP_LINES = 10;
 const MAX_PER_SECTION = 2;
 const MAX_PER_PAGE = 4;
-const MAX_TOTAL = 7;
+
+/** The most plants one job carries; a path map whose capacity reaches this needs no widening. */
+export const MAX_PLANTS = 7;
 
 /**
  * The greatest number of plants a set of per-page regions can hold under the spacing rules,
@@ -129,14 +129,14 @@ const MAX_TOTAL = 7;
 export function computeCapacity(regions: CapacityRegion[], findingSpans: Map<string, LineRange[]>, multiPage: boolean): number {
   let total = 0;
   for (const { page, ranges } of regions) {
-    if (total >= MAX_TOTAL) break;
+    if (total >= MAX_PLANTS) break;
     const spans = findingSpans.get(page) ?? [];
     const chosen: number[] = [];
     let pageCount = 0;
     for (const range of ranges) {
       let sectionCount = 0;
       for (let line = range.start; line <= range.end; line += 1) {
-        if (sectionCount >= MAX_PER_SECTION || total >= MAX_TOTAL) break;
+        if (sectionCount >= MAX_PER_SECTION || total >= MAX_PLANTS) break;
         if (multiPage && pageCount >= MAX_PER_PAGE) break;
         if (spans.some((span) => line >= span.start && line <= span.end)) continue;
         if (chosen.some((c) => Math.abs(c - line) <= MIN_GAP_LINES)) continue;
@@ -147,5 +147,5 @@ export function computeCapacity(regions: CapacityRegion[], findingSpans: Map<str
       }
     }
   }
-  return Math.min(total, MAX_TOTAL);
+  return total;
 }

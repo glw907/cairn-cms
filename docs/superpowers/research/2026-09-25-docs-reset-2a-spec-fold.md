@@ -89,3 +89,30 @@ M2 dispositions are conductor rulings under B2, recorded in the spec as CR9 and 
 | m6 | 4a's render fixture cannot use a profile that does not exist | Folded, §4 4a: both tests run on a synthetic fixture profile; 4b's acceptance renders every authored profile; the execution rule names the synthetic profile. |
 | m7 | `gatingClasses` default empty changes current behavior; new defect ids unnamed | Folded, §3 3a: the header documents the default, existing reader-defect fixture cases pass a gating class, and the ids `rd-<jobId>-wrong-<k>`, `-missing-<k>`, `-diverged-<k>` are named. |
 | m8 | Owner-ruling wording | Folded in M2's rewrite: measured against B3's 7M; (b) names the 2.2M landing above the first drafting pass's 1.5M per-pass line and the 0.5M on pass 2b; the render-path mismatch in 4b is gone, since (b) keeps 4a whole. |
+
+## Prose fold
+
+**Input:** `2026-09-25-docs-reset-2a-spec-prose-review.md` (the `prose-voice-reviewer` read at
+`73e09d7b`): 3 high, 5 medium, 6 low, and 1 parent finding, plus Geoff's owner ruling 1 (option
+(b), 2026-09-25), recorded as B4. Each finding was checked against the spec and its sources first:
+the parent's pass 1 amendment (19 defects), STATUS line 29 and ROADMAP's pass 2a bullet (O12's 6M,
+flag 5M, pilot about 0.6M), the exemplar store's directories and the manifest's Local path fields,
+and `rerunCause` in `lib/runner.ts`. **Counts:** 15 folded, none refused.
+
+| ID | Disposition |
+| --- | --- |
+| H1 | Verified (3a's fixture comes from the smoke run; CR5 makes the class list an argument). Folded, B4: the rationale is now a plain deferral of 2.2M to the pass that first uses the chain, with no lens cut. |
+| H2 | Verified. Folded: O12 quoted with 6M, flag 5M, and its 0.6M pilot; B3 replaces O12's figures and B4 replaces B3; the pilot's 1.2M explained in one parenthesis; §8 updates STATUS and ROADMAP to 15M and 12M; parent ceiling line reads B4. Supersedes the owed-errata line's "7M and 5.6M". |
+| H3 | Verified against the parent's pass 1 amendment. Folded, §2 fork: 19 defects. |
+| M1 | Folded as option (a): "evidence fails" escalates a gating-class item and is recorded for an advisory one (CR9, 3b); 3b acceptance adds the advisory case. |
+| M2 | Folded, §3: on a go the precision bar is the only estimate; on a no-go the decline path is the only per-item check. |
+| M3 | Folded, B4: moved costs placed (2.2M to the first drafting pass, 0.5M to pass 2b), cap stays about 45M, 7.5M is about 11 pages at 0.7M, the flag defined once. |
+| M4 | Folded: a "Moved by B4" line at §3's head and in §6 (precondition, CR9, and acceptance travel); §2's record hands over the gating classes; budget table carries this pass's rows (11.8M). |
+| M5 | Folded, new "Order" section; the execution rule no longer pins the chain's reader input in this pass. |
+| L1 | Folded, CR1: 10 of 16, or 12 if a `wrong[]` item meets P05's criterion. |
+| L2 | Verified (directories `core`, `designers`, ...; Local path is the bare slug). Folded, §4: id is `<dir>/<slug>`. |
+| L3 | Verified (`rerunCause`: crash, timeout, unverified). Folded, §2. |
+| L4 | Folded, CR3: the bar is the count, chosen from the Wilson interval. |
+| L5 | Size accepted, stated at 1a: the second deliverable is comment-only, and moving it would make 1b the heavier task. |
+| L6 | Folded: the opening says why the pass exists and what B4 moved; "the honest estimate" is gone with B3's rewrite; 1c deliverable (2) split into three sentences. Also B2 now covers CR1 to CR10, and CR5 and CR2 cite §3 and §2. |
+| P1 | Folded, parent precedence clause as proposed. |

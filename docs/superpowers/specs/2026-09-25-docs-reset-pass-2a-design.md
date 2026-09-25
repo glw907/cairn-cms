@@ -1,46 +1,65 @@
 # Docs reset pass 2a: design
 
 **Date:** 2026-09-25. **Status:** approved design, revised by the spec-review fold
-(`docs/superpowers/research/2026-09-25-docs-reset-2a-spec-fold.md`, with its second fold); one
-owner ruling open (the ceiling, below). **Parent:** [`2026-09-23-docs-reset-design.md`](2026-09-23-docs-reset-design.md),
-whose "Amendments from pass 2a's brainstorm" section points here. **Owner rulings:** O12 (Geoff,
-2026-09-25) and the three brainstorm rulings below. **Inputs:** the pass 1b validation record
+(`docs/superpowers/research/2026-09-25-docs-reset-2a-spec-fold.md`, with its second and prose
+folds); the ceiling ruled as B4. **Parent:**
+[`2026-09-23-docs-reset-design.md`](2026-09-23-docs-reset-design.md), whose "Amendments from pass
+2a's brainstorm" section points here. **Owner rulings:** O12 and B1 to B4 (Geoff, 2026-09-25),
+below. **Inputs:** the pass 1b validation record
 (`docs/internal/record/2026-09-24-docs-reset-1b-validation.md`), its tuning record
 (`docs/internal/record/2026-09-24-docs-reset-1b-tuning.md`), the pass 1b post-mortem (foot of
 `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`), and `ROADMAP.md`'s docs reset entry.
 
-Pass 2a changes what readers report, tests the change in a go/no-go pilot, sets per reader class
-whether reader findings block in the page chain, writes the audience record, and reviews it and
-the exemplar corpus. The formal chain-depth trial, the freeze, and all page drafting are out; the
-chain's depth follows reader evidence page by page in the drafting passes.
+Pass 1b's readers caught 2 of 16 on-map plant-runs. About half the misses were defects the reader
+noticed and filed where the judge never looks, because the report had no field for them. Pass 2a
+changes what readers report and tests the change in a go/no-go pilot. The pilot sets, per reader
+class, whether reader findings block in the page chain. The pass then writes the audience record
+and reviews it and the exemplar corpus. Under B4, the chain build that applies the pilot's class
+list (§3) moves to the first drafting pass, and the exemplar gap fills (§6) move to pass 2b. The
+formal chain-depth trial, the freeze, and all page drafting are out; the chain's depth follows
+reader evidence page by page in the drafting passes.
 
 ## Rulings
 
-- **O12 (Geoff, 2026-09-25).** Pass 2a opens with a go/no-go reader pilot on round 1's planted
-  trees. Readers join the chain as its reader stage only if on-map recall per plant-run rises to a
-  clear majority, and stay advisory otherwise. Then the profiles and the exemplar review, with no
+- **O12 (Geoff, 2026-09-25).** Pass 2a runs at a ceiling of 6M, flag 5M, and opens with a
+  go/no-go reader pilot (about 0.6M) on round 1's planted trees. Readers join the chain as its
+  reader stage only if on-map recall per plant-run rises to a clear majority, and stay advisory
+  otherwise. Then the profiles and the exemplar review, with no
   formal trial and no freeze. Pass 2b gets 8M; drafting passes are budgeted at 0.7M per page plus
   1.5M per pass; the program cap is about 45M counted. After the first drafting pass, the measured
   cost per page is compared with 0.7M, and the chain or the page count is cut, never the cap.
 - **B1: the reader change is a typed `wrong[]` field (Geoff, 2026-09-25).**
 - **B2: the pass mark and every method call are the conductor's, set on published practice
-  (Geoff, 2026-09-25; the `methodology-calls-are-claudes` memory).** CR1 to CR8 are made under it.
-- **B3: ceiling 7M, flag 5.6M (Geoff, 2026-09-25).** No review lens is cut to fit. The honest
-  estimate is now about 14.5M; owner ruling 1 below asks Geoff to set the ceiling again.
+  (Geoff, 2026-09-25; the `methodology-calls-are-claudes` memory).** CR1 to CR10 are made under it.
+- **B3: ceiling 7M, flag 5.6M (Geoff, 2026-09-25), replacing O12's 6M and 5M.** No review lens
+  is cut to fit. B4 replaced it.
+- **B4: ceiling 15M, flag 12M (Geoff, 2026-09-25, owner ruling 1, option (b)), replacing B3.** The
+  flag is where the conductor stops and asks. The recomputed estimate for the full design was
+  about 14.5M (range 13.5M to 19.7M), 7.5M over B3. B4 cuts no review lens; it defers two costs to
+  the passes that first use them. The chain build (§3: 3a and 3b, 2.2M) moves to the first
+  drafting pass, where it sits above that pass's 1.5M per-pass line. The exemplar gap fills (§6,
+  0.5M) move to pass 2b, against its 8M. The chain's fixture and its class setting are the same in
+  either pass (CR5), so the build itself does not change. This pass's estimate is about 11.8M
+  (range 11.0M to 15.2M). The program total does not change, and the cap stays about 45M: under
+  O12's rule, the 7.5M over B3 comes out of drafting, about 11 pages at 0.7M. (The pilot's 1.2M
+  row, against O12's 0.6M, prices the smoke run, the reruns, every judge, and the record.) Not
+  taken: (a) 19M, flag 15.2M, building everything in this pass; (c) keep 7M, where the ceiling
+  arrived during the chain build, before any audience work.
 - **CR1 (conductor): a typed `missing[]` beside `wrong[]`.** Three of the eight on-map plants are
   omissions (P05, P11, P14). With `ruleCandidates[]` unscored, a `wrong[]`-only change caps the
-  pilot at 10 of 16 plant-runs, below the recall bar by construction. `missing[]` gives an omission
-  a scored, quoted home. `ruleCandidates[]` stays an unscored wish list.
+  pilot at 10 of 16 plant-runs, below the recall bar. The cap is 12 if a `wrong[]` item meets P05's
+  "incomplete or inconsistent" criterion, and then the bar needs every other plant-run caught.
+  `missing[]` gives an omission a scored, quoted home. `ruleCandidates[]` stays an unscored wish list.
 - **CR2 (conductor): the precision bar tests the new fields, with the denominator fixed at 5.**
   The earlier bar could pass vacuously (an unverified control run dropped out) and sat on a
-  misquoted baseline (about 1.2, where the five pilot jobs give 1.4). Reasoning under item 2.
-- **CR3 (conductor): the recall bar stays 12 of 16 on the Wilson interval**, and the record
-  reports the scorer's Clopper-Pearson interval beside it, because a pre-registered count should
-  not move with the choice of interval.
+  misquoted baseline (about 1.2, where the five pilot jobs give 1.4). Reasoning in §2.
+- **CR3 (conductor): the recall bar is the count, 12 of 16**, chosen as the smallest count whose
+  Wilson interval clears one half. The record reports the scorer's Clopper-Pearson interval beside
+  it, because a pre-registered count should not move with the choice of interval.
 - **CR4 (conductor): the outcome is per reader class, as pass 1b's O4 was.** A pooled go is
   necessary; each class then gates only on its own jobs' catches. The docs-only class stays
   advisory, since it has no measurable plants.
-- **CR5 (conductor): item 3 describes the chain as it is.** `docs-page-chain-v2.js` already runs
+- **CR5 (conductor): §3 describes the chain as it is.** `docs-page-chain-v2.js` already runs
   a reader stage whose stalls and assumptions block. The task makes blocking a per-class setting,
   so the go and no-go branches are one build with a different class list.
 - **CR6 (conductor): no free-floor rescore.** It needed a packet mode and a prompt variant for a
@@ -56,11 +75,12 @@ chain's depth follows reader evidence page by page in the drafting passes.
 - **CR9 (conductor, second fold): the redraft may decline a reader item with evidence.** For any
   reader item, blocking or advisory, the redrafter may decline it by quoting a source `path:line`
   or a fact id that shows the item false. The applied-findings read rules each decline "declined,
-  evidence holds" or "declined, evidence fails"; the second escalates the page as a not-applied
-  blocking item does. This is the chain's per-item check on a false reader item (item 3).
+  evidence holds" or "declined, evidence fails". For a gating-class item the second escalates the
+  page as a not-applied blocking item does; for an advisory item it is recorded, as an unapplied
+  advisory item is. This is the chain's per-item check on a false reader item (§3).
 - **CR10 (conductor, second fold): the budget is recomputed from 1b's measured build tasks.** No
   build row sits below 1b's cheapest (0.96M); the range runs from that floor to 1b's mean (2.0M)
-  per build task. Under option (b), 4a stays whole, since at the per-task floor splitting it moves
+  per build task. Under B4, 4a stays whole, since at the per-task floor splitting it moves
   no cost out of this pass and adds a task to the drafting pass.
 
 ## The finding this pass answers
@@ -78,10 +98,15 @@ offers a slot for what the docs "should have told you" and none for a statement 
 a step the job needed that the page left out. Reporters file in the categories a form offers, so
 both kinds went into the wish slot, unscored.
 
+## Order
+
+1a, the smoke run (§2), 1b, 1c, and the pilot run in that order. A segment boundary follows, on a
+commit the gate proved green, where a fresh session may start. 4a is independent of §1 and §2 and
+may run beside them. Then 4b, §5, §6's review, owner stop 1, and the close.
+
 ## 1. The reader change (three build tasks)
 
-Order: 1a, the smoke run (§2), 1b, 1c. 1b's packets and 1c's fixtures are built from the smoke
-run's report.
+1b's packets and 1c's fixtures are built from the smoke run's report.
 
 **Shapes.** `wrong[]`: each statement on a page the reader found false, as
 `{ quote, pageSays, actual, evidence }`. `missing[]`: each fact or step the job needed that the
@@ -97,6 +122,8 @@ the transcript parser, the saved-report loader (both fields optional on read, de
 so rounds 0 and 1 still load), and `lib/verify.ts`; (2) pass 1b's three comment-only carries: the
 comment at `lib/runner.ts:731-734` implying an unenforced prompt-hash match, the garbled comment
 at `lib/class-schema.ts:68-69`, and a note on the development catch test's one-plant fixture.
+The two-deliverable rule is met here by count: the second deliverable is comment-only, and moving
+it into 1b would make 1b the heavier task.
 
 **1b. Judge side.** Deliverables: (1) the catch, adjudicator, and agreement packet builders, the
 field union and raw-field allow-list in `judge-packets.ts`, and `itemCount` in
@@ -109,9 +136,9 @@ the plant's criterion (catch) or earn its ruling (adjudicator).
 `pilot-2a-<job>` (explicit names beside R5's three, never a prefix rule), and takes the five
 expected control run ids as an explicit list beside them, refusing when one is absent from the
 reports; (2) development output adds per-plant tallies `{ plantId, job, runsCaught }` and a pooled
-precision block over that list: an unverified control run stays in the denominator with every item counted
-false (R3, `findingCountsForRun`), and false subject groups split into new-field (any item from
-`wrong[]` or `missing[]`) and other. Rounds 0 and 1 verified every control run, so their figures
+precision block over that control list. In the precision block, an unverified control run stays
+in the denominator with every item counted false (R3, `findingCountsForRun`). False subject
+groups split into new-field (any item from `wrong[]` or `missing[]`) and other. Rounds 0 and 1 verified every control run, so their figures
 do not change.
 
 **Gate for all three:** `CAIRN_GATE_LANE=light CAIRN_GATE_MEMORY_MAX=6G CAIRN_GATE_MEMORY_HIGH=5G
@@ -155,8 +182,8 @@ accepts "incomplete or inconsistent", so either field can catch it.
 - Each planted page's sha256 equals the value its round 1 catch key records under `inputs`; a
   mismatch stops the pilot until the tree is rebuilt through round 1's export path.
 
-**Runs and verification.** Every run gets the runner's one rerun, and every run is judged,
-verified or not: each planted run gets a catch judge, each control run an adjudication. A planted
+**Runs and verification.** A run that crashes, times out, or fails verification gets the
+runner's one automatic rerun. Every run is judged, verified or not: each planted run gets a catch judge, each control run an adjudication. A planted
 run unverified after its rerun counts as a miss (R9). A control run unverified after its rerun
 stays in the precision denominator with every item false. An unverified run whose only problem is
 an init-baseline mismatch is infrastructure: re-pin and rerun, never counted. If any control run,
@@ -216,14 +243,19 @@ floor does not exist, so the five control runs are the change's only regression 
 three conditions with figures and their `score.json` sources; per-job, per-class, and per-plant
 tables; the field that carried each catch (from the catch key); each run's verification outcome,
 reruns included; both intervals; the audit's 13 of 24 as the comparison, labeled as the 1b
-audit's reading and not a scored measure; the verdict and the list of gating classes item 3 takes.
+audit's reading and not a scored measure; the verdict; and the list of gating classes, which the
+record hands to the chain build in the first drafting pass (§3).
 
 **The fork.** On a pooled go, the pass continues unattended. On a no-go, the conductor sends
 Geoff one short report (the figures, what the misses were, and the evidence gap a no-go chain
-carries: no profile grader and no gating reader, against pass A's 14 defects that the other stages
+carries: no profile grader and no gating reader, against pass A's 19 defects that the other stages
 accepted), then continues with every class advisory unless Geoff redirects.
 
 ## 3. The chain
+
+**Moved by B4.** This section moves whole to the first drafting pass, with its precondition, CR9,
+and its acceptance. It stays here as the design that pass builds, and the pilot record supplies
+its gating classes.
 
 `docs-page-chain-v2.js` (`~/.claude/workflows/`) already runs the reader runner between stage 1
 and stage 2, and stage 2 makes every verified job's non-done outcome, stall, and assumption a
@@ -253,13 +285,15 @@ below, blocking or advisory", `docs-page-chain-v2.js:480`, `:501`) lets the redr
 reader item with quoted evidence, returned as `declined[]` `{ id, evidence }` in its report; the
 applied-findings read (`:586-591`) receives each decline and rules it "declined, evidence holds"
 or "declined, evidence fails" beside its three current statuses; the escalation check (`:849-864`)
-treats "evidence holds" as resolved and "evidence fails" as unresolved, in every class.
+treats "evidence holds" as resolved. "Evidence fails" escalates for a gating-class item; for an
+advisory item it is recorded, as an unapplied advisory item is.
 
 What stands between a reader item and a changed page, since no judge stage runs in the chain: the
 runner's verification (every `wrong[]` or `missing[]` item is anchored to a real page line), the
 conductor's strike list between the stages (for harness items), and the decline path, whose
-evidence ruling is the per-item judge. A false item the redrafter does not decline is applied; the
-pilot's precision bar bounds how often a false item reaches the chain.
+evidence ruling is the per-item judge. A false item the redrafter does not decline is applied. On
+a go, the pilot's precision bar is the only estimate of how often a false item reaches the chain;
+on a no-go, the decline path is the only per-item check.
 
 **Precondition.** The `claude-tooling-sync verify` pass 1b left owed is cleared before 3a, so its
 green check is not confounded.
@@ -273,7 +307,9 @@ defect is advisory, the redraft prompt still carries each, and the page does not
 unapplied one. The existing reader-defect cases pass a gating class and keep their assertions. 3b:
 a case where the redraft declines a false `wrong` item and the applied read rules "declined,
 evidence holds": the page is accepted and the item's text is unchanged; and a case where the
-applied read rules a decline "declined, evidence fails": the page escalates. Each task:
+applied read rules a decline of a gating-class item "declined, evidence fails": the page
+escalates; and the same ruling on an advisory-class item: the page does not escalate, and the
+item is reported as an unapplied advisory item is. Each task:
 `claude-tooling-sync verify` is green for its dotfiles commit.
 
 ## 4. The audience record
@@ -284,8 +320,10 @@ outside the tarball.
 
 - **Frontmatter** holds what the drafter needs: a one-sentence persona, the vocabulary contract,
   the knowledge and tool ceiling stated positively, arrival states, the success criterion, and
-  exemplar ids. An exemplar id is `<audience>/<slug>`, the manifest's own local-path key, so it
-  names both the manifest entry and the capture at `~/.local/share/cairn/exemplars/<id>/`.
+  exemplar ids. An exemplar id is `<dir>/<slug>`: `<dir>` is the store's audience directory
+  (`core`, `designers`, `editors`, `evaluators`, `extenders`, or `operators`), and `<slug>` is the
+  manifest entry's Local path. The id names both the manifest entry and the capture at
+  `~/.local/share/cairn/exemplars/<id>/`.
 - **The body** is the narrative record: who the reader is and the organization around them, what
   they arrive knowing, the agent half's arrival and precision needs (all but the evaluator and
   editor), and the people or evidence the profile rests on. The site designer is marked
@@ -335,16 +373,18 @@ recorded or listed open; the profiles still pass the schema test.
 
 ## 6. The exemplar review
 
-One cold Opus 5.5 lens over the 68 captures at `~/.local/share/cairn/exemplars/` asks whether each
-serves its profile or only looks polished. Gaps are filled per profile under the selection rules
-in parent pass 2a item 3 (kept by the parent amendment), captured locally, and entered in
-`docs/internal/record/docs-exemplars.md`. A rejected capture is marked in the manifest, never
-deleted, since the store is outside git and a recapture is not a restore. Extension by page shape
-stays in pass 2b, once the outline fixes shapes.
+**Gap fills moved by B4.** This pass runs the review and its fold. The gap fills move whole to
+pass 2b, beside its extension by page shape, with their acceptance line.
 
-**Acceptance.** Each of the 68 captures carries a verdict in the manifest; each gap fill has a
-manifest entry and a capture directory; the fold reruns the schema test so every profile's
-exemplar ids still resolve.
+One cold Opus 5.5 lens over the 68 captures at `~/.local/share/cairn/exemplars/` asks whether each
+serves its profile or only looks polished. A rejected capture is marked in the manifest, never
+deleted, since the store is outside git and a recapture is not a restore. In pass 2b, gaps are
+filled per profile under the selection rules in parent pass 2a item 3 (kept by the parent
+amendment), captured locally, and entered in `docs/internal/record/docs-exemplars.md`.
+
+**Acceptance.** Each of the 68 captures carries a verdict in the manifest; the fold reruns the
+schema test so every profile's exemplar ids still resolve. In pass 2b: each gap fill has a
+manifest entry and a capture directory.
 
 ## 7. Owner stop 1
 
@@ -356,7 +396,8 @@ review's unresolved findings, the human-read outcomes, and the corpus changes.
 - The scratch site's dry-run listing (`docs/internal/record/2026-09-23-scratch-site.md`, the
   teardown section, step 1) runs as a health check: the repository, Worker, D1, and token still
   exist and work. No deletion (CR7).
-- STATUS, HISTORY, and ROADMAP; the post-mortem with both budgets scored; the pass 2b resume
+- STATUS, HISTORY, and ROADMAP, with the ceiling in STATUS and ROADMAP updated from O12's 6M and
+  5M to B4's 15M and 12M; the post-mortem with both budgets scored; the pass 2b resume
   prompt.
 
 ## Execution rules from pass 1b's post-mortem
@@ -366,10 +407,10 @@ review's unresolved findings, the human-read outcomes, and the corpus changes.
   gets the finding list and the diff range.
 - Runner batches run as background commands with the sleep inhibitor armed; a fresh agent reads
   the result. `report.json` is copied before any `--resume`.
-- Every cross-stage input shape (the report with both new fields, the judge packets, the chain's
-  reader input, the rendered profile) is pinned in the plan with a fixture built from real output:
-  the smoke run's report, or for the rendered profile, 4a's synthetic profile, rechecked on the
-  first authored profile in 4b.
+- Every cross-stage input shape (the report with both new fields, the judge packets, the rendered
+  profile) is pinned in the plan with a fixture built from real output: the smoke run's report, or
+  for the rendered profile, 4a's synthetic profile, rechecked on the first authored profile in 4b.
+  The chain's reader input moves with §3; the smoke run's report is kept for its fixture.
 - Fix rounds are budgeted as the norm.
 
 ## Out of scope
@@ -386,47 +427,25 @@ and the profile-grader comparison, which fall with the trial. The free-floor res
 Counted by `session-ledger.ts` (input, output, and cache creation). Unit costs are pass 1b's
 measured figures (post-mortem, "Spend"): seven build tasks with their fix rounds, reviewers, and
 simplifiers at 0.96M to 3.82M, a mean of 2.0M; a reader run about 35k, a catch judge about 3k, an
-adjudication about 15k, agent startup 25k to 60k. No build row sits below 0.96M (CR10).
+adjudication about 15k, agent startup 25k to 60k. No build row sits below 0.96M (CR10). The rows
+are this pass's under B4.
 
 | Item | Estimate |
 | --- | --- |
 | The reader change: 1a 1.3M, 1b 1.3M, 1c 1.0M | 3.6M |
 | The pilot: smoke run, 15 runs with reruns, 10 catch judges, 5 adjudications, result reads, record | 1.2M |
-| The chain: 3a 1.2M, 3b 1.0M (one build serves both branches) | 2.2M |
 | The audience format (4a) | 1.0M |
 | The audience record (4b) | 1.5M |
 | The audience review and fold | 2.0M |
-| The exemplar review 0.7M, gap fills 0.5M, and fold | 1.2M |
+| The exemplar review and fold | 0.7M |
 | Owner stop 1 brief | 0.2M |
 | Conductor and close | 1.6M |
-| **Total** | **about 14.5M on either branch (range 13.5M to 19.7M)** |
+| **Total** | **about 11.8M on either branch (range 11.0M to 15.2M)** |
 
-The range prices the six build tasks at 1b's cheapest (0.96M each) and at its mean (2.0M each),
-with the other rows fixed. Option (b) below drops 3a, 3b, and the gap fills: about 11.8M (range
-11.0M to 15.2M). The branches cost the same because the per-class setting is one build either way;
-a no-go adds only its short report.
+The range prices the four build tasks at 1b's cheapest (0.96M each) and at its mean (2.0M each),
+with the other rows fixed. At the mean the pass passes the 12M flag and nears the 15M ceiling.
+Moved by B4: the chain (3a 1.2M, 3b 1.0M) to the first drafting pass, and the gap fills (0.5M) to
+pass 2b. The branches cost the same; a no-go adds only its short report.
 
-Attended time: plan approval, owner ruling 1, the no-go report if it happens, the two human
-reads, and owner stop 1.
-
-## Owner rulings needed
-
-1. **The ceiling.** The full design is estimated at about 14.5M (range 13.5M to 19.7M), 7.5M over
-   B3's 7M. Under O12's rule (cut the chain or the page count, never the cap), that overrun comes
-   out of drafting, about 10 pages at 0.7M, unless the cap moves.
-   - **(a) Raise to 19M, flag 15.2M.** Builds everything above in this pass. The estimate sits
-     below the flag; at 1b's mean (19.7M) the ceiling arrives near the close.
-   - **(b) Cut non-lens scope and raise to 15M, flag 12M (estimate about 11.8M, range 11.0M to
-     15.2M; 4.8M over B3).** Moves the chain tasks 3a and 3b (2.2M) to the first drafting pass,
-     which first uses them, where they sit above that pass's 1.5M per-pass line; and the exemplar
-     gap fills (0.5M) to pass 2b's page-shape extension, against its 8M. 4a stays whole (CR10).
-     This pass builds the reader change, the pilot, the profile format, the record, the review,
-     and the exemplar review. The program total is the same as (a); only placement differs.
-   - **(c) Keep 7M, flag 5.6M.** The flag trips during 3a (about 6.6M with the conductor's share),
-     and the ceiling arrives during 3b, before any audience work, which then needs a follow-on
-     pass with its own budget.
-
-   **Recommendation: (b).** It lands the chain build beside its first use, where a real drafted
-   page supplies the fixture and the pilot's gating classes are known, and it keeps every review
-   lens. Its estimate sits below its flag; at 1b's mean it reaches about 15.2M, just past the
-   ceiling, so the flag is where that case would be caught.
+Attended time: plan approval, the no-go report if it happens, the two human reads, and owner
+stop 1.

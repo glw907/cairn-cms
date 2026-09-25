@@ -75,7 +75,8 @@ Where a line below and the body or the section above disagree, this section wins
 
 ## Amendments from pass 2a's brainstorm (2026-09-25)
 
-Where a line below and this section disagree, this section wins.
+Where this section and any other line of this spec disagree, the amendment sections above
+included, this section wins.
 
 - **Pass 2a has its own spec,
   [`2026-09-25-docs-reset-pass-2a-design.md`](2026-09-25-docs-reset-pass-2a-design.md), which
@@ -83,10 +84,10 @@ Where a line below and this section disagree, this section wins.
   spec applies.** Program ruling O12 (Geoff, 2026-09-25) drops the calibration trial (items 4 and
   5) and any freeze. Pass 2a opens with a go/no-go reader pilot, and reader findings block in the
   page chain only for the reader classes the pilot passes.
-- **Pass 2a's ceiling is 7M, flag 5.6M** (Geoff, 2026-09-25), against this spec's 14M; the pass 2a
-  spec's owner ruling 1 asks Geoff to reset it against a revised estimate of about 14.5M. Pass 2b
-  keeps 8M. Drafting passes are budgeted at 0.7M per page plus 1.5M per pass, and the program cap
-  is about 45M counted.
+- **Pass 2a's ceiling is 15M, flag 12M** (Geoff, 2026-09-25, pass 2a spec ruling B4), against
+  this spec's 14M. B4 moves pass 2a's chain build to the first drafting pass and its exemplar gap
+  fills to pass 2b. Pass 2b keeps 8M. Drafting passes are budgeted at 0.7M per page plus 1.5M per
+  pass, and the program cap is about 45M counted.
 - **Opus 5.5 at `high` authors pass 2a's artifacts;** Fable 5.1 is the escalation only. This
   amendment is the ruling of record. Pass 2b's Fable lines (items 1, 2, and 4) stand until pass
   2b's own spec rules on them.

@@ -293,13 +293,21 @@ export interface JobReport extends RunOutcome {
   class: string;
   model: string;
   /**
-   * Every attempt the runner made at this job. A fresh run's report always carries at least one
-   * entry, even a single successful attempt; only a report loaded from before attempts existed
-   * (the earlier saved shape) may omit it.
+   * Every counted attempt the runner made at this job. A fresh, unstopped run's report always
+   * carries at least one entry, even a single successful attempt; a report loaded from before
+   * attempts existed (the earlier saved shape) may omit it, and so does a `stoppedBy` report with
+   * zero counted attempts.
    */
   attempts?: Attempt[];
-  /** Set when a batch-level stop left this job unstarted, naming what stopped the batch. */
+  /**
+   * Set when a batch-level stop (a rate limit, an authentication failure, or a budget stop) left
+   * this job with no final attempt: it never started, an attempt in flight was cut short, or a
+   * warranted rerun never got to start. `pendingCause` names the cause its next attempt runs
+   * under, on resume.
+   */
   stoppedBy?: 'rateLimit' | 'auth' | 'budget';
+  /** The cause a resumed attempt at this job runs under. Set only alongside `stoppedBy`. */
+  pendingCause?: AttemptCause;
   /** The freeze manifest this report was gated against. Set only on a gated batch's report. */
   freeze?: FreezeStamp;
 }

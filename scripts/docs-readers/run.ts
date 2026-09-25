@@ -37,7 +37,7 @@ import { findInit } from './lib/transcript.js';
 import { scrub } from './lib/scrub.js';
 import { gitTrackedFiles, hashFile, loadManifest, verifyTree } from './freeze.js';
 import type { ScratchSiteRecord } from './lib/prepare-class.js';
-import type { Batch, BatchReport, InitBaseline } from './lib/types.js';
+import type { Batch, BatchReport, InitBaseline, Job } from './lib/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -258,14 +258,19 @@ const DEFAULT_CHAIN_PATH = join(HERE, 'post-freeze', 'chain.jsonl');
 
 /**
  * Check a gated batch against the freeze manifest before any container starts: every file the
- * manifest hashes, the image id, the CLI version, and this batch's own job commits. A gate that
- * passes also requires the post-freeze chain file to exist, since a gated report's stamp always
- * carries a chain head. `manifestPath` and `chainPath` are the freeze manifest and the
- * post-freeze chain file, whose bytes become the stamp's chain head; `root` is the directory the
- * manifest's files are relative to; `imageId` and `cliVersion` are the current reader image's
- * digest and the current CLI version; `jobs` are the batch's own job commits to check, by job id;
- * `listFiles` returns the current tree's files, relative to `root`, defaulting to the real
- * git-tracked-file listing, overridable in tests.
+ * manifest hashes, the image id, the CLI version, and this batch's own job commits, plus (since
+ * neither is caught by a plain commit-vs-manifest comparison) that every job carries both a
+ * pinned `commit` and a `prepared` tree, never defaulting to a live copy of the working tree, and
+ * that the manifest's own `models.reader` is not empty (an empty expected model would silently
+ * disable the runner's own init-model check). A gate that passes also requires the post-freeze
+ * chain file to exist, since a gated report's stamp always carries a chain head; the returned
+ * `chainHead` is taken once, here, from the chain as it stands right now, since every input a
+ * batch (or a resume of it) reads must already be chained before it starts, never appended
+ * mid-batch. `manifestPath` and `chainPath` are the freeze manifest and the post-freeze chain
+ * file; `root` is the directory the manifest's files are relative to; `imageId` and `cliVersion`
+ * are the current reader image's digest and the current CLI version; `jobs` are the batch's own
+ * jobs to check; `listFiles` returns the current tree's files, relative to `root`, defaulting to
+ * the real git file listing (tracked and untracked, ignored paths excluded), overridable in tests.
  * @returns Every drifted input's name when the gate refuses; the freeze stamp to run under
  *  otherwise.
  */
@@ -283,12 +288,20 @@ export function checkGate({
   root: string;
   imageId: string;
   cliVersion: string;
-  jobs: Record<string, string>;
+  jobs: readonly Pick<Job, 'id' | 'commit' | 'prepared'>[];
   listFiles?: (root: string) => string[];
 }): { ok: true; freeze: GatedFreeze } | { ok: false; problems: string[] } {
   if (!existsSync(manifestPath)) return { ok: false, problems: [`no freeze manifest at ${manifestPath}`] };
   const { manifest, hash: manifestHash } = loadManifest(manifestPath);
-  const problems = verifyTree({ manifest, root, imageId, cliVersion, jobs, listFiles });
+  const problems: string[] = [];
+  if (!manifest.models.reader) problems.push('manifest models.reader is empty');
+  const commits: Record<string, string> = {};
+  for (const job of jobs) {
+    if (job.commit === undefined) problems.push(`job ${job.id}: a gated batch requires a pinned commit`);
+    else commits[job.id] = job.commit;
+    if (job.prepared === undefined) problems.push(`job ${job.id}: a gated batch requires a prepared tree, never the working tree`);
+  }
+  problems.push(...verifyTree({ manifest, root, imageId, cliVersion, jobs: commits, listFiles }));
   if (!existsSync(chainPath)) problems.push(`no chain file at ${chainPath}`);
   if (problems.length > 0) return { ok: false, problems };
   return { ok: true, freeze: { tag: manifest.tag, manifestHash, chainHead: hashFile(chainPath), expectedModel: manifest.models.reader } };
@@ -300,7 +313,8 @@ export function checkGate({
  * defaulting under the cache root; `tokenFor` returns the token for each container, which the live
  * credential check uses to swap in an invalid token mid-batch; `batchOverride` is batch JSON to
  * run in place of the file's contents; `manifestPath` and `chainPath` override the freeze
- * manifest and chain a gated batch checks against.
+ * manifest and chain a gated batch checks against; `resumeFrom` carries each resumed job's saved
+ * attempts and pending cause through to the runner.
  * @param batchFile - The batch JSON path.
  * @returns The batch report, with its teardown result.
  * @throws When the batch is gated and its gate check finds any drifted input; no container has
@@ -315,6 +329,7 @@ export async function runBatchFile(
     batchOverride,
     manifestPath = DEFAULT_MANIFEST_PATH,
     chainPath = DEFAULT_CHAIN_PATH,
+    resumeFrom,
   }: {
     out?: string;
     ledgerFile?: string;
@@ -322,6 +337,7 @@ export async function runBatchFile(
     batchOverride?: string;
     manifestPath?: string;
     chainPath?: string;
+    resumeFrom?: Parameters<typeof runBatch>[0]['resumeFrom'];
   } = {},
 ): Promise<{ report: FinishedReport; outDir: string }> {
   const classes = loadClasses();
@@ -331,8 +347,7 @@ export async function runBatchFile(
   const { executor, runRoot, cliVersion, image, secrets } = await setUpRun(runId, tokenFor);
   let freeze: GatedFreeze | undefined;
   if (batch.gated) {
-    const jobs = Object.fromEntries(batch.jobs.filter((j) => j.commit !== undefined).map((j) => [j.id, j.commit as string]));
-    const gate = checkGate({ manifestPath, chainPath, root: HERE, imageId: await currentImageId(image), cliVersion, jobs });
+    const gate = checkGate({ manifestPath, chainPath, root: HERE, imageId: await currentImageId(image), cliVersion, jobs: batch.jobs });
     if (!gate.ok) {
       await executor.teardown().catch(() => {});
       throw new Error(`gated batch ${batch.name} refused to start: ${gate.problems.join('; ')}`);
@@ -364,6 +379,7 @@ export async function runBatchFile(
       ledger: { append: (entry) => appendLedger(ledgerPath, entry) },
       halt: halt.signal,
       freeze,
+      resumeFrom,
     });
   } finally {
     process.off('SIGINT', onSignal);
@@ -383,12 +399,29 @@ export async function runBatchFile(
 }
 
 /**
- * The ids of every job a saved report shows left unstarted by a batch-level stop.
+ * The ids of every job a saved report shows left unstarted or unfinished by a batch-level stop.
  * @param report - A batch's saved report.
  * @returns The stopped jobs' ids, in the report's own order.
  */
 export function jobsNeedingResume(report: Pick<BatchReport, 'jobs'>): string[] {
   return report.jobs.filter((job) => job.stoppedBy !== undefined).map((job) => job.id);
+}
+
+/**
+ * Each stopped job's saved attempts and pending cause, keyed by job id, in the shape `runBatch`'s
+ * own `resumeFrom` takes. A job whose report carries no `attempts` (cut on its very first attempt,
+ * or never started at all) resumes with none; a report saved before `pendingCause` existed
+ * resumes as `initial`, the same cause a job with zero attempts would carry.
+ * @param report - A batch's saved report.
+ * @returns The resume input for every job `jobsNeedingResume` would name.
+ */
+export function resumeInputs(report: Pick<BatchReport, 'jobs'>): Parameters<typeof runBatch>[0]['resumeFrom'] {
+  const result: NonNullable<Parameters<typeof runBatch>[0]['resumeFrom']> = {};
+  for (const job of report.jobs) {
+    if (job.stoppedBy === undefined) continue;
+    result[job.id] = { attempts: job.attempts ?? [], pendingCause: job.pendingCause ?? 'initial' };
+  }
+  return result;
 }
 
 /**
@@ -404,14 +437,24 @@ export function buildResumeBatch(batch: Batch, jobIds: readonly string[]): Batch
 }
 
 /**
+ * Whether a run's own teardown left nothing behind.
+ * @param teardown - The teardown result to check.
+ * @returns Whether every condition it checks passed.
+ */
+function teardownClean(teardown: TeardownResult): boolean {
+  return teardown.runDirRemoved && teardown.containersLeft === 0 && teardown.networksLeft === 0;
+}
+
+/**
  * Merge a resumed sub-batch's report back into the original: each resumed job's own report
- * replaces its `stoppedBy` placeholder, the token totals add, and the merged report is verified
- * only when every job, resumed ones included, now verifies clean.
+ * replaces its `stoppedBy` placeholder, the token totals add, the record's own `teardown` becomes
+ * the resumed run's (the more recent of the two), and the merged report is verified only when
+ * every job, resumed ones included, now verifies clean and both runs' own teardown was clean.
  * @param original - The report a batch-level stop left behind.
  * @param resumed - The report from running only the jobs it stopped before starting.
  * @returns The merged report.
  */
-export function mergeResumedReport<T extends BatchReport>(original: T, resumed: BatchReport): T {
+export function mergeResumedReport(original: FinishedReport, resumed: FinishedReport): FinishedReport {
   const byId = new Map(resumed.jobs.map((job) => [job.id, job]));
   const jobs = original.jobs.map((job) => byId.get(job.id) ?? job);
   return {
@@ -419,7 +462,8 @@ export function mergeResumedReport<T extends BatchReport>(original: T, resumed: 
     jobs,
     usage: reportUsage(addUsage(original.usage, resumed.usage)),
     stopReason: resumed.stopReason,
-    verified: jobs.every((job) => job.stoppedBy === undefined && job.verified.ok),
+    teardown: resumed.teardown,
+    verified: jobs.every((job) => job.stoppedBy === undefined && job.verified.ok) && teardownClean(original.teardown) && teardownClean(resumed.teardown),
   };
 }
 
@@ -479,6 +523,10 @@ async function main(args: string[]): Promise<number> {
     const original = JSON.parse(readFileSync(reportPath, 'utf8')) as FinishedReport;
     const classes = loadClasses();
     const fullBatch = parseBatch(readFileSync(resolve(batchFile), 'utf8'), classes);
+    if (fullBatch.name !== original.batch) {
+      log(`batch name mismatch: ${resumeDir} holds a report for "${original.batch}", but ${batchFile} names "${fullBatch.name}"`);
+      return 2;
+    }
     const jobIds = jobsNeedingResume(original);
     if (jobIds.length === 0) {
       log('nothing to resume: no job in the saved report carries stoppedBy');
@@ -489,6 +537,7 @@ async function main(args: string[]): Promise<number> {
       out: resumeDir,
       ledgerFile,
       batchOverride: JSON.stringify(subBatch),
+      resumeFrom: resumeInputs(original),
     });
     const merged = mergeResumedReport(original, resumedReport);
     writeFileSync(reportPath, `${scrub(JSON.stringify(merged, null, 2), [])}\n`);

@@ -5,21 +5,25 @@
  *
  * Usage:
  *   npx tsx scripts/docs-readers/freeze.ts build --tag NAME --out FILE
- *     [--image ID] [--cli-version VERSION]
- *     [--model reader=ID] [--model catchJudge=ID] [--model adjudicator=ID] [--model agreement=ID]
+ *     --image ID --cli-version VERSION
+ *     --model reader=ID --model catchJudge=ID --model adjudicator=ID --model agreement=ID
  *     [--job ID=COMMIT ...] [--held-out PATH=COMMIT ...] [--seed NAME=VALUE ...]
  *   npx tsx scripts/docs-readers/freeze.ts verify --manifest FILE --image ID --cli-version VERSION
  *     [--job ID=COMMIT ...]
  *
- * `build` hashes every git-tracked file under `scripts/docs-readers/` except `post-freeze/`,
- * writes the manifest, and prints its path and the sha256 of its own bytes (the report the
- * runner stamps into a gated batch's reports). `verify` recomputes the same tree hash and checks
- * it, the image id, the CLI version, and any given job commits against the manifest, printing
- * every drifted input and exiting 1 when one differs.
+ * `--build` and `--verify` are accepted as aliases of the `build` and `verify` subcommands, so a
+ * caller that always passes flags (the plan's own `freeze.ts --verify`) does not need to know the
+ * bare-word form.
+ *
+ * `build` hashes every file git would track under `scripts/docs-readers/` except `post-freeze/`,
+ * writes the manifest, and prints its path and the sha256 of its own bytes (the value the runner
+ * stamps into a gated batch's reports). `verify` recomputes the same tree hash and checks it, the
+ * image id, the CLI version, and any given job commits against the manifest, printing every
+ * drifted input and exiting 1 when one differs.
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -39,7 +43,7 @@ export interface FrozenModels {
 /** The freeze manifest: every score-affecting input, by sha256. */
 export interface Manifest {
   tag: string;
-  /** Every git-tracked file under `scripts/docs-readers/` except `post-freeze/`, by sha256, sorted by path. */
+  /** Every file git tracks under `scripts/docs-readers/` except `post-freeze/`, by sha256, sorted by path. */
   files: Record<string, string>;
   imageId: string;
   cliVersion: string;
@@ -48,7 +52,8 @@ export interface Manifest {
   jobs: Record<string, string>;
   /** The held-out defects' pre-fix pins, by page path. */
   heldOutPins: Record<string, string>;
-  seeds: Record<string, number>;
+  /** Every seed the instrument fixes; numeric text is kept as a number, anything else as a string (the agreement sample's ordering label, `docs-reset-1b-agreement`, is one). */
+  seeds: Record<string, number | string>;
 }
 
 /**
@@ -71,16 +76,22 @@ export function hashFile(path: string): string {
 }
 
 /**
- * Every git-tracked file under a directory, except anything under `post-freeze/`.
+ * Every file git would commit under a directory if asked right now, tracked or not, except
+ * anything under `post-freeze/`: `--cached` alone would miss an untracked file (one a class JSON
+ * loader would still read straight off disk), so this also lists `--others`, bounded by
+ * `--exclude-standard` to the files git itself would not ignore. A listed path missing from disk
+ * (removed from the working tree but still in the index) is dropped here, so a caller hashing
+ * these paths never has to handle a path that does not exist.
  * @param root - The directory to list, normally `scripts/docs-readers`.
  * @returns Paths relative to `root`, sorted.
  */
 export function gitTrackedFiles(root: string): string[] {
-  const out = execFileSync('git', ['-C', root, 'ls-files'], { encoding: 'utf8' });
+  const out = execFileSync('git', ['-C', root, 'ls-files', '--cached', '--others', '--exclude-standard'], { encoding: 'utf8' });
   return out
     .split('\n')
     .filter((line) => line.trim() !== '')
     .filter((path) => path !== 'post-freeze' && !path.startsWith('post-freeze/'))
+    .filter((path) => existsSync(join(root, path)))
     .sort();
 }
 
@@ -111,7 +122,7 @@ export function buildManifest({
   models: FrozenModels;
   jobs: Record<string, string>;
   heldOutPins: Record<string, string>;
-  seeds: Record<string, number>;
+  seeds: Record<string, number | string>;
   listFiles?: (root: string) => string[];
 }): Manifest {
   const files: Record<string, string> = {};
@@ -222,21 +233,32 @@ function option(args: string[], flag: string): string | undefined {
 }
 
 /**
- * The command-line entry point.
+ * Turn one `--seed` value into the manifest's own seed shape: numeric text becomes a number
+ * (never `NaN`, which `JSON.stringify` would otherwise silently write as `null`), and anything
+ * else, blank text included, is kept as its own string.
+ * @param value - The raw text after `NAME=`.
+ * @returns The seed value the manifest carries.
+ */
+function parseSeed(value: string): number | string {
+  if (value.trim() === '') return value;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? value : parsed;
+}
+
+/**
+ * The command-line entry point. `--build` and `--verify` are accepted as aliases of the `build`
+ * and `verify` subcommands.
  * @param args - The arguments after the script name.
  * @returns The process exit code.
  */
-function main(args: string[]): number {
-  const mode = args[0];
+export function main(args: string[]): number {
+  const rawMode = args[0];
+  const mode = rawMode === '--build' ? 'build' : rawMode === '--verify' ? 'verify' : rawMode;
   if (mode === 'build') {
     const tag = option(args, '--tag') ?? FREEZE_TAG;
     const out = option(args, '--out');
     const imageId = option(args, '--image');
     const cliVersion = option(args, '--cli-version');
-    if (!out || !imageId || !cliVersion) {
-      process.stderr.write('usage: freeze.ts build --tag NAME --out FILE --image ID --cli-version VERSION [...]\n');
-      return 2;
-    }
     const modelPairs = collectPairs(args, '--model');
     const models: FrozenModels = {
       reader: modelPairs.reader ?? '',
@@ -244,9 +266,15 @@ function main(args: string[]): number {
       adjudicator: modelPairs.adjudicator ?? '',
       agreement: modelPairs.agreement ?? '',
     };
-    const seeds = Object.fromEntries(
-      Object.entries(collectPairs(args, '--seed')).map(([name, value]) => [name, Number(value)]),
-    );
+    if (!out || !imageId || !cliVersion || !models.reader || !models.catchJudge || !models.adjudicator || !models.agreement) {
+      process.stderr.write(
+        'usage: freeze.ts build --tag NAME --out FILE --image ID --cli-version VERSION ' +
+          '--model reader=ID --model catchJudge=ID --model adjudicator=ID --model agreement=ID [...]\n',
+      );
+      return 2;
+    }
+    const seeds: Record<string, number | string> = {};
+    for (const [name, value] of Object.entries(collectPairs(args, '--seed'))) seeds[name] = parseSeed(value);
     const manifest = buildManifest({
       tag,
       root: HERE,
@@ -274,7 +302,7 @@ function main(args: string[]): number {
     for (const problem of problems) process.stdout.write(`${problem}\n`);
     return problems.length > 0 ? 1 : 0;
   }
-  process.stderr.write('usage: freeze.ts build|verify ...\n');
+  process.stderr.write('usage: freeze.ts build|verify|--build|--verify ...\n');
   return 2;
 }
 

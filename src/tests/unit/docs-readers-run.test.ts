@@ -2,7 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildResumeBatch, checkGate, jobsNeedingResume, mergeResumedReport, operatorSecretResolver } from '../../../scripts/docs-readers/run.js';
+import {
+  buildResumeBatch,
+  checkGate,
+  jobsNeedingResume,
+  mergeResumedReport,
+  operatorSecretResolver,
+  resumeInputs,
+  type FinishedReport,
+} from '../../../scripts/docs-readers/run.js';
 import { buildManifest, writeManifest } from '../../../scripts/docs-readers/freeze.js';
 import { loadClasses } from '../../../scripts/docs-readers/lib/class-schema.js';
 import { parseBatch } from '../../../scripts/docs-readers/lib/batch.js';
@@ -104,8 +112,14 @@ describe('operatorSecretResolver: CAIRN_GH_READ_TOKEN re-minting', () => {
   });
 });
 
-/** A fixture tree of one tracked file, its manifest, and its post-freeze chain, for `checkGate`. */
-function gatedFixture() {
+/** One gated job, carrying both the pinned commit and the prepared tree a gated batch requires. */
+const GATED_JOB = { id: 'job-a', commit: 'deadbeef', prepared: 'planted/job-a' };
+
+/**
+ * A fixture tree of one tracked file, its manifest, and its post-freeze chain, for `checkGate`.
+ * `models` overrides the manifest's frozen models, for the empty-`models.reader` case.
+ */
+function gatedFixture(models = { reader: 'claude-opus-5-5', catchJudge: 'claude-opus-5-5', adjudicator: 'claude-opus-5-5', agreement: 'fable' }) {
   const root = mkdtempSync(join(tmpdir(), 'docs-readers-gate-'));
   writeFileSync(join(root, 'run.ts'), 'export {};\n');
   const listFiles = () => ['run.ts'];
@@ -114,7 +128,7 @@ function gatedFixture() {
     root,
     imageId: 'sha256:image',
     cliVersion: '2.1.280',
-    models: { reader: 'claude-opus-5-5', catchJudge: 'claude-opus-5-5', adjudicator: 'claude-opus-5-5', agreement: 'fable' },
+    models,
     jobs: { 'job-a': 'deadbeef' },
     heldOutPins: {},
     seeds: {},
@@ -131,7 +145,7 @@ describe('checkGate', () => {
   it('passes and returns the freeze stamp when nothing has drifted', () => {
     const { root, manifestPath, chainPath, listFiles } = gatedFixture();
     try {
-      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: { 'job-a': 'deadbeef' }, listFiles });
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [GATED_JOB], listFiles });
       expect(gate.ok).toBe(true);
       if (gate.ok) {
         expect(gate.freeze).toMatchObject({ tag: 'docs-reset-1b-freeze', expectedModel: 'claude-opus-5-5' });
@@ -147,7 +161,7 @@ describe('checkGate', () => {
     const { root, manifestPath, chainPath, listFiles } = gatedFixture();
     try {
       writeFileSync(join(root, 'run.ts'), 'export const x = 1;\n');
-      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: { 'job-a': 'deadbeef' }, listFiles });
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [GATED_JOB], listFiles });
       expect(gate.ok).toBe(false);
       if (!gate.ok) expect(gate.problems).toEqual(['file changed: run.ts']);
     } finally {
@@ -158,12 +172,61 @@ describe('checkGate', () => {
   it('refuses naming a missing manifest, and a missing chain file, without reading either as drift', () => {
     const { root, manifestPath, chainPath, listFiles } = gatedFixture();
     try {
-      const noManifest = checkGate({ manifestPath: join(root, 'absent.json'), chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: {}, listFiles });
+      const noManifest = checkGate({ manifestPath: join(root, 'absent.json'), chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [], listFiles });
       expect(noManifest.ok).toBe(false);
       rmSync(chainPath);
-      const noChain = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: { 'job-a': 'deadbeef' }, listFiles });
+      const noChain = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [GATED_JOB], listFiles });
       expect(noChain.ok).toBe(false);
       if (!noChain.ok) expect(noChain.problems).toEqual([`no chain file at ${chainPath}`]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses, naming the job, when a gated job carries no commit', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture();
+    try {
+      const gate = checkGate({
+        manifestPath,
+        chainPath,
+        root,
+        imageId: 'sha256:image',
+        cliVersion: '2.1.280',
+        jobs: [{ id: 'job-a', prepared: 'planted/job-a' }],
+        listFiles,
+      });
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.problems).toContain('job job-a: a gated batch requires a pinned commit');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses, naming the job, when a gated job carries no prepared tree (it would otherwise copy live from the working tree)', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture();
+    try {
+      const gate = checkGate({
+        manifestPath,
+        chainPath,
+        root,
+        imageId: 'sha256:image',
+        cliVersion: '2.1.280',
+        jobs: [{ id: 'job-a', commit: 'deadbeef' }],
+        listFiles,
+      });
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.problems).toContain('job job-a: a gated batch requires a prepared tree, never the working tree');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses when the manifest freezes an empty reader model', () => {
+    const { root, manifestPath, chainPath, listFiles } = gatedFixture({ reader: '', catchJudge: 'claude-opus-5-5', adjudicator: 'claude-opus-5-5', agreement: 'fable' });
+    try {
+      const gate = checkGate({ manifestPath, chainPath, root, imageId: 'sha256:image', cliVersion: '2.1.280', jobs: [GATED_JOB], listFiles });
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.problems).toContain('manifest models.reader is empty');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -196,12 +259,38 @@ function jobReport(id: string, overrides: Partial<JobReport> = {}): JobReport {
   };
 }
 
-describe('jobsNeedingResume, buildResumeBatch, and mergeResumedReport', () => {
-  it('names only the jobs a batch-level stop left unstarted', () => {
+/** A clean `FinishedReport` wrapping the given jobs, for the merge tests below. */
+function finishedReport(overrides: Partial<FinishedReport> & Pick<FinishedReport, 'jobs' | 'runId' | 'stopReason' | 'usage' | 'verified'>): FinishedReport {
+  return {
+    batch: 'fixture',
+    budgetTokens: 1000,
+    cliVersion: '2.1.280',
+    runRoot: '/tmp/does-not-matter',
+    teardown: { runDirRemoved: true, containersLeft: 0, networksLeft: 0 },
+    ...overrides,
+  };
+}
+
+describe('jobsNeedingResume, resumeInputs, buildResumeBatch, and mergeResumedReport', () => {
+  it('names only the jobs a batch-level stop left unstarted or unfinished', () => {
     const report: Pick<BatchReport, 'jobs'> = {
       jobs: [jobReport('a'), jobReport('b', { stoppedBy: 'rateLimit', attempts: undefined }), jobReport('c', { stoppedBy: 'rateLimit', attempts: undefined })],
     };
     expect(jobsNeedingResume(report)).toEqual(['b', 'c']);
+  });
+
+  it('carries each stopped job’s saved attempts and pending cause, and defaults a missing pendingCause to initial', () => {
+    const report: Pick<BatchReport, 'jobs'> = {
+      jobs: [
+        jobReport('a'),
+        jobReport('b', { stoppedBy: 'rateLimit', pendingCause: 'unverified', attempts: [] }),
+        jobReport('c', { stoppedBy: 'budget', attempts: undefined }),
+      ],
+    };
+    expect(resumeInputs(report)).toEqual({
+      b: { attempts: [], pendingCause: 'unverified' },
+      c: { attempts: [], pendingCause: 'initial' },
+    });
   });
 
   it('narrows a batch to the given job ids, keeping the batch’s own name, concurrency, budget, and gating', () => {
@@ -222,24 +311,20 @@ describe('jobsNeedingResume, buildResumeBatch, and mergeResumedReport', () => {
   });
 
   it('merges a resumed sub-batch’s reports back in place, without consuming an attempt for the stop itself', () => {
-    const original: BatchReport = {
-      batch: 'fixture',
+    const original = finishedReport({
       runId: 'r1',
       stopReason: 'rateLimit',
-      budgetTokens: 1000,
       usage: { input: 5, output: 5, cacheCreation: 0, cacheRead: 0, counted: 10 },
       jobs: [jobReport('a'), jobReport('b', { stoppedBy: 'rateLimit', attempts: undefined })],
       verified: false,
-    };
-    const resumed: BatchReport = {
-      batch: 'fixture',
+    });
+    const resumed = finishedReport({
       runId: 'r2',
       stopReason: 'complete',
-      budgetTokens: 1000,
       usage: { input: 3, output: 3, cacheCreation: 0, cacheRead: 0, counted: 6 },
       jobs: [jobReport('b')],
       verified: true,
-    };
+    });
     const merged = mergeResumedReport(original, resumed);
     expect(merged.jobs.map((j) => [j.id, j.stoppedBy])).toEqual([
       ['a', undefined],
@@ -248,5 +333,27 @@ describe('jobsNeedingResume, buildResumeBatch, and mergeResumedReport', () => {
     expect(merged.usage.counted).toBe(16);
     expect(merged.stopReason).toBe('complete');
     expect(merged.verified).toBe(true);
+    expect(merged.teardown).toEqual(resumed.teardown);
+  });
+
+  it('keeps the merge unverified when either run’s own teardown left something behind, even though every job verified', () => {
+    const original = finishedReport({
+      runId: 'r1',
+      stopReason: 'rateLimit',
+      usage: { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, counted: 0 },
+      jobs: [jobReport('a', { stoppedBy: 'rateLimit', attempts: undefined })],
+      verified: false,
+      teardown: { runDirRemoved: false, containersLeft: 1, networksLeft: 0 },
+    });
+    const resumed = finishedReport({
+      runId: 'r2',
+      stopReason: 'complete',
+      usage: { input: 0, output: 0, cacheCreation: 0, cacheRead: 0, counted: 0 },
+      jobs: [jobReport('a')],
+      verified: true,
+    });
+    const merged = mergeResumedReport(original, resumed);
+    expect(merged.jobs.every((j) => j.verified.ok)).toBe(true);
+    expect(merged.verified).toBe(false);
   });
 });

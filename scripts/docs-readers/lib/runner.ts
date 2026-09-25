@@ -48,7 +48,11 @@ import type {
 /**
  * The freeze a gated batch runs under: the stamp every report carries, plus the model id the
  * init event of a run under this batch's kind (reader, catch judge, adjudicator, or agreement)
- * must report. Undefined when the batch is not gated.
+ * must report. Undefined when the batch is not gated. `chainHead` is taken once, at the gate
+ * check that runs before any container in this batch (or a resume of it) starts, since every
+ * input this batch reads must already be in the chain before the batch starts: an entry appended
+ * mid-batch would postdate the reports that read it, which is exactly what the chain's own
+ * verification rejects.
  */
 export interface GatedFreeze extends FreezeStamp {
   /** The manifest's model id for this batch's kind; a run whose init event reports a different one is unverified. */
@@ -197,13 +201,20 @@ export function buildRunOutcome({
 }
 
 /**
- * Mark an outcome unverified when its init event reported a model other than the one a gated
- * batch freezes for this kind of run.
- * @param outcome - The outcome to check, mutated in place when the model differs.
+ * Mark an outcome unverified when it carries no init model at all, or when its init event
+ * reported a model other than the one a gated batch freezes for this kind of run. A missing
+ * `expectedModel` means the batch is not gated, so the check never applies.
+ * @param outcome - The outcome to check, mutated in place when the model is missing or differs.
  * @param expectedModel - The manifest's model id for this batch's kind, when the batch is gated.
  */
 function checkFrozenModel(outcome: RunOutcome, expectedModel: string | undefined): void {
-  if (!expectedModel || outcome.initModel === undefined || outcome.initModel === expectedModel) return;
+  if (!expectedModel) return;
+  if (outcome.initModel === undefined) {
+    outcome.verified.ok = false;
+    outcome.verified.problems.push('init model missing: the run reported no init event to check against the manifest');
+    return;
+  }
+  if (outcome.initModel === expectedModel) return;
   outcome.verified.ok = false;
   outcome.verified.problems.push(`init model ${outcome.initModel} differs from the manifest's ${expectedModel}`);
 }
@@ -221,15 +232,20 @@ function rerunCause(outcome: RunOutcome, run: RunResult): AttemptCause | undefin
 }
 
 /**
- * A report for a job the batch never started, because a batch-level stop (a rate limit, an
- * authentication failure, or a budget stop) reached it first. This carries `stoppedBy`, never an
- * attempt: a batch-level stop is the runner's own event, not a run the job made.
+ * A report for a job a batch-level stop (a rate limit, an authentication failure, or a budget
+ * stop) left without a final attempt: it never started, an attempt already in flight was cut
+ * short, or a warranted rerun never got to start. This carries `stoppedBy` and `pendingCause`,
+ * never a final attempt: a batch-level stop is the runner's own event, not a run the job made.
+ * `attempts` lists whatever counted attempts this job did complete before the stop, omitted when
+ * there are none.
  * @param job - The parsed batch job.
- * @param stoppedBy - What stopped the batch before this job started.
+ * @param stoppedBy - What stopped the batch before this job settled.
+ * @param pendingCause - The cause a resumed attempt at this job runs under.
+ * @param attempts - The job's counted attempts so far, in order.
  * @param freeze - The gated batch's stamp, when the batch is gated.
  * @returns The job report.
  */
-function notStartedReport(job: Job, stoppedBy: BatchStop, freeze?: GatedFreeze): JobReport {
+function stoppedReport(job: Job, stoppedBy: BatchStop, pendingCause: AttemptCause, attempts: Attempt[], freeze?: GatedFreeze): JobReport {
   return {
     id: job.id,
     class: job.class,
@@ -248,8 +264,18 @@ function notStartedReport(job: Job, stoppedBy: BatchStop, freeze?: GatedFreeze):
     proxyBlocked: [],
     packageFetches: [],
     usage: reportUsage(emptyUsage()),
-    verified: { ok: false, init: false, canaries: true, quotes: [], steps: [], diverged: [], problems: [`aborted: ${stoppedBy}`, 'not started'] },
+    verified: {
+      ok: false,
+      init: false,
+      canaries: true,
+      quotes: [],
+      steps: [],
+      diverged: [],
+      problems: [`aborted: ${stoppedBy}`, attempts.length > 0 ? 'stopped before its rerun started' : 'not started'],
+    },
     stoppedBy,
+    pendingCause,
+    ...(attempts.length > 0 ? { attempts } : {}),
     ...(freeze ? { freeze: freezeStamp(freeze) } : {}),
   };
 }
@@ -273,6 +299,7 @@ export async function runBatch({
   secrets = [],
   halt,
   freeze,
+  resumeFrom,
 }: {
   batch: Batch;
   classes: Map<string, ClassDecl>;
@@ -284,6 +311,13 @@ export async function runBatch({
   halt?: AbortSignal;
   /** The gated batch's freeze stamp and expected model, when this batch is gated; absent otherwise. */
   freeze?: GatedFreeze;
+  /**
+   * Each resumed job's counted attempts so far and the cause its next attempt runs under. A job
+   * named here starts its loop at `attempts.length + 1` and prepends these attempts to its own, so
+   * it never exceeds {@link MAX_ATTEMPTS} counted attempts and a transcript number never collides
+   * with one the stopped run already wrote.
+   */
+  resumeFrom?: Record<string, { attempts: Attempt[]; pendingCause: AttemptCause }>;
 }): Promise<{ report: BatchReport; transcripts: Record<string, string> }> {
   let stopReason: StopReason | undefined;
   let spent = 0;
@@ -331,20 +365,34 @@ export async function runBatch({
       const index = next;
       next += 1;
       const job = batch.jobs[index];
+      const resumed = resumeFrom?.[job.id];
+      const priorAttempts = resumed?.attempts ?? [];
       if (!stopReason && spent + liveSpend() >= batch.budgetTokens) stop('budget');
       if (stopReason) {
         // A batch-level stop is the runner's own event, never an attempt at the job: `stopReason`
         // is 'complete' only after every job has settled, so it is always one of the three stop
         // kinds here.
-        reports[index] = notStartedReport(job, stopReason as BatchStop, freeze);
+        reports[index] = stoppedReport(job, stopReason as BatchStop, resumed?.pendingCause ?? 'initial', priorAttempts, freeze);
         continue;
       }
       const decl = classes.get(job.class);
       if (!decl) throw new Error(`job ${job.id}: class ${job.class} is not declared`);
 
-      const attempts: Attempt[] = [];
-      let cause: AttemptCause = 'initial';
-      for (let attemptNumber = 1; attemptNumber <= MAX_ATTEMPTS; attemptNumber += 1) {
+      const attempts: Attempt[] = [...priorAttempts];
+      let cause: AttemptCause = resumed?.pendingCause ?? 'initial';
+      const startAttempt = priorAttempts.length + 1;
+      let stopped: { stoppedBy: BatchStop; pendingCause: AttemptCause } | undefined;
+
+      for (let attemptNumber = startAttempt; attemptNumber <= MAX_ATTEMPTS; attemptNumber += 1) {
+        if (attemptNumber > startAttempt) {
+          // The same budget pre-check a job's own first attempt gets in this run, applied before
+          // its rerun too, so a rerun cannot silently start once the batch is already over budget.
+          if (!stopReason && spent + liveSpend() >= batch.budgetTokens) stop('budget');
+          if (stopReason) {
+            stopped = { stoppedBy: stopReason as BatchStop, pendingCause: cause };
+            break;
+          }
+        }
         const flight = { controller: new AbortController(), live: 0, seen: [] as StreamEvent[] };
         inFlight.set(job.id, flight);
         const onEvent = (event: StreamEvent) => {
@@ -373,17 +421,31 @@ export async function runBatch({
         record(job.id, job.model, usageFromEvents(run.events));
         const failure = classifyFailure(run.events);
         if (failure) stop(failure);
-        const abortReason = run.aborted ? (stopReason ?? 'aborted') : undefined;
+        // A batch-level stop cut this very run short, either because it triggered the stop
+        // itself or because a sibling job's stop aborted it in flight: neither is a counted
+        // attempt (the runner's own stop, not a run the job made), so it never joins attempts[].
+        if (stopReason !== undefined && (run.aborted || failure !== undefined)) {
+          transcripts[`${job.id}-stopped-${runId}.jsonl`] = scrub(run.stdout, secrets);
+          await executor.release?.(job);
+          stopped = { stoppedBy: stopReason as BatchStop, pendingCause: cause };
+          break;
+        }
+        const abortReason = run.aborted ? 'aborted' : undefined;
         const outcome = buildRunOutcome({ job, decl, baselines, run, abortReason });
         checkFrozenModel(outcome, freeze?.expectedModel);
         const transcriptName = `${job.id}-attempt${attemptNumber}.jsonl`;
         transcripts[transcriptName] = scrub(run.stdout, secrets);
         const nextCause = rerunCause(outcome, run);
-        const rerun = nextCause !== undefined && attemptNumber < MAX_ATTEMPTS && !stopReason && !halted;
-        attempts.push({ ...outcome, cause, final: !rerun, transcript: `transcripts/${transcriptName}` });
+        const wantsRerun = nextCause !== undefined && attemptNumber < MAX_ATTEMPTS;
+        attempts.push({ ...outcome, cause, final: !wantsRerun, transcript: `transcripts/${transcriptName}` });
         await executor.release?.(job);
-        if (!rerun) break;
+        if (!wantsRerun) break;
         cause = nextCause;
+      }
+
+      if (stopped) {
+        reports[index] = stoppedReport(job, stopped.stoppedBy, stopped.pendingCause, attempts, freeze);
+        continue;
       }
       const last = attempts[attempts.length - 1];
       const { cause: _cause, final: _final, transcript: _transcript, ...outcomeFields } = last;

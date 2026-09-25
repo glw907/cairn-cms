@@ -56,13 +56,26 @@ function fill(text: string, values: Record<string, string>): string {
 }
 
 /**
+ * The path to a job's final attempt's transcript, relative to the batch output directory. A
+ * report with no `attempts` (the shape a run saved before attempts existed carries) falls back to
+ * the single transcript a job's own id once named.
+ * @param outDir - The batch output directory.
+ * @param job - The job report.
+ * @returns The transcript file's path.
+ */
+function transcriptPath(outDir: string, job: JobReport): string {
+  const last = job.attempts?.at(-1);
+  return join(outDir, last ? last.transcript : `transcripts/${job.id}.jsonl`);
+}
+
+/**
  * Read a job's scrubbed transcript back.
  * @param outDir - The batch output directory.
- * @param jobId - Names the transcript file.
+ * @param job - The job report.
  * @returns The raw text, its events, and its tool calls.
  */
-function transcriptOf(outDir: string, jobId: string) {
-  const text = readFileSync(join(outDir, 'transcripts', `${jobId}.jsonl`), 'utf8');
+function transcriptOf(outDir: string, job: JobReport) {
+  const text = readFileSync(transcriptPath(outDir, job), 'utf8');
   const { events } = parseStream(text);
   return { text, events, calls: toolCalls(events) };
 }
@@ -129,7 +142,7 @@ function hostReadCheck(job: JobReport, calls: ToolCall[], hostPath: string) {
  * @returns One entry per check.
  */
 function escapeChecks(job: JobReport, outDir: string, hostPath: string, hostSecret: string) {
-  const { text, events, calls } = transcriptOf(outDir, job.id);
+  const { text, events, calls } = transcriptOf(outDir, job);
   const tools = findInit(events)?.tools ?? [];
   const hasBash = tools.includes('Bash');
   const checks: Array<{ check: string; pass: boolean; where: string }> = [];
@@ -302,7 +315,7 @@ async function site(): Promise<number> {
     });
     const { report, outDir } = await runBatchFile('docs-and-site-smoke', { batchOverride: batch });
     const job = report.jobs[0];
-    const { text, calls } = transcriptOf(outDir, job.id);
+    const { text, calls } = transcriptOf(outDir, job);
     const ranNpmScript = calls.some((c) => c.name === 'Bash' && /npm run --prefix site\b/.test(String(c.input.command)));
     const npmInstallBlocked = job.proxyBlocked.length > 0;
     const outsideReadRefused = hostReadCheck(job, calls, hostPath).refused;
@@ -369,7 +382,7 @@ async function repository(): Promise<number> {
     });
     const { report, outDir } = await runBatchFile('repository-smoke', { batchOverride: batch });
     const job = report.jobs[0];
-    const { calls } = transcriptOf(outDir, job.id);
+    const { calls } = transcriptOf(outDir, job);
     const ranCheckFacts = calls.some((c) => c.name === 'Bash' && /npm run check:facts\b/.test(String(c.input.command)));
     const summary = {
       ...batchSummary(report),
@@ -444,7 +457,7 @@ async function docsAndBinary(): Promise<number> {
     });
     const { report, outDir } = await runBatchFile('docs-and-binary-smoke', { batchOverride: batch });
     const job = report.jobs[0];
-    const { calls } = transcriptOf(outDir, job.id);
+    const { calls } = transcriptOf(outDir, job);
     const authSetCalls = calls.filter((c) => c.name === 'Bash' && /cairn auth set/.test(String(c.input.command)));
     const authSetDenied = denialsWhere(job, (d) => d.tool === 'Bash' && /cairn auth set/.test(d.input));
     const authSetFailed = authSetCalls.some(

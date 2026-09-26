@@ -39,12 +39,12 @@ export function findingCountsForRun(run: PrecisionRunRecord): RunFindingCounts {
   }
   const items = run.items ?? [];
   const groupRulings = new Map<string, 'real' | 'false' | 'harness'>();
-  const groupIsNewField = new Map<string, boolean>();
+  const newFieldGroupIds = new Set<string>();
   for (const item of items) {
     if (item.harnessFiltered || !item.adjudication || item.adjudication.class !== 'finding') continue;
     const { subjectGroupId, ruling } = item.adjudication;
     if (!groupRulings.has(subjectGroupId)) groupRulings.set(subjectGroupId, ruling);
-    if (item.field === 'wrong' || item.field === 'missing') groupIsNewField.set(subjectGroupId, true);
+    if (item.field === 'wrong' || item.field === 'missing') newFieldGroupIds.add(subjectGroupId);
   }
   let falseFindings = 0;
   let realFindings = 0;
@@ -52,7 +52,7 @@ export function findingCountsForRun(run: PrecisionRunRecord): RunFindingCounts {
   for (const [subjectGroupId, ruling] of groupRulings) {
     if (ruling === 'false') {
       falseFindings += 1;
-      if (groupIsNewField.get(subjectGroupId)) newFieldFalseFindings += 1;
+      if (newFieldGroupIds.has(subjectGroupId)) newFieldFalseFindings += 1;
     } else if (ruling === 'real') {
       realFindings += 1;
     }

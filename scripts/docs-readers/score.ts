@@ -349,24 +349,17 @@ interface PooledPrecision {
 function validateControlIds(raw: string | undefined, indexed: ReadonlyMap<string, IndexedReaderJob>, batchNames: readonly string[]): { ok: true; ids?: string[] } | { ok: false; problem: string } {
   if (raw === undefined) return { ok: true };
   const ids = raw.split(',');
-  for (const id of ids) {
-    if (id === '') return { ok: false, problem: '--control-ids: the list carries an empty id' };
-  }
-  for (const id of ids) {
-    if (!indexed.has(id)) return { ok: false, problem: `--control-ids: id "${id}" is absent from the reports` };
-  }
-  const seen = new Set<string>();
-  for (const id of ids) {
-    if (seen.has(id)) return { ok: false, problem: `--control-ids: id "${id}" is a duplicate` };
-    seen.add(id);
-  }
-  for (const id of ids) {
-    if (indexed.get(id)!.parsed.role !== 'control') return { ok: false, problem: `--control-ids: id "${id}" does not parse as a control-role job` };
-  }
+  if (ids.includes('')) return { ok: false, problem: '--control-ids: the list carries an empty id' };
+  const absent = ids.find((id) => !indexed.has(id));
+  if (absent !== undefined) return { ok: false, problem: `--control-ids: id "${absent}" is absent from the reports` };
+  const duplicate = ids.find((id, index) => ids.indexOf(id) !== index);
+  if (duplicate !== undefined) return { ok: false, problem: `--control-ids: id "${duplicate}" is a duplicate` };
+  const nonControl = ids.find((id) => indexed.get(id)!.parsed.role !== 'control');
+  if (nonControl !== undefined) return { ok: false, problem: `--control-ids: id "${nonControl}" does not parse as a control-role job` };
   if (batchNames.some((batch) => batch.startsWith('pilot-2a-'))) {
-    for (const job of indexed.values()) {
-      if (job.parsed.role === 'control' && !seen.has(job.id)) return { ok: false, problem: `--control-ids: control job "${job.id}" is not listed` };
-    }
+    const listed = new Set(ids);
+    const unlisted = [...indexed.values()].find((job) => job.parsed.role === 'control' && !listed.has(job.id));
+    if (unlisted) return { ok: false, problem: `--control-ids: control job "${unlisted.id}" is not listed` };
   }
   return { ok: true, ids };
 }

@@ -721,11 +721,10 @@ export function buildCatchPacket({
 /**
  * Refuse a composed catch-field item list that drops or duplicates a run's `wrong[]` or
  * `missing[]` entries: the count of `wrong`-field and `missing`-field items in `items` must equal
- * the raw run's own `wrong[]` and `missing[]` lengths. Guards the one risk `buildCatchFields`'s
- * typed return does not: a hand-composed item list, built by spreading each field's own array,
- * that forgets one of the two fields compiles cleanly, since nothing forces every field onto the
- * list, and would otherwise starve a judge of exactly the findings the two fields exist to
- * measure.
+ * the raw run's own `wrong[]` and `missing[]` lengths. Guards `flattenCatchFields` and
+ * `buildCatchFields` against silently dropping a new field: nothing in either function's typed
+ * return forces every field onto the flattened list, so a future field added to one but not the
+ * other would starve a judge of exactly the findings that field exists to measure.
  * @param run - The run's raw fields, the source of truth for how many entries each field carries.
  * @param items - The composed catch-field items a packet is about to carry.
  * @throws When either field's item count does not match the source run's own array length.

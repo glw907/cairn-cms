@@ -1,0 +1,19 @@
+{
+  "name": "pilot-2a-live-adjudicator",
+  "concurrency": 1,
+  "budgetTokens": 2000000,
+  "jobs": [
+    {
+      "id": "scripter-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "arrival": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "job": "unused: the runner supplies this job's arrival line and frozen prompt",
+      "docsSet": [
+        "index.json"
+      ],
+      "prepared": "/var/home/glw907/.cache/docs-readers/packets/pilot-2a-live/adjudicator/scripter-control-1/packet",
+      "timeoutMinutes": 30
+    }
+  ]
+}

@@ -398,7 +398,7 @@ export function joinAdjudications(
 /**
  * Build every job's `PrecisionRunRecord`s (control/mapping runs), joined from the indexed reader
  * jobs and the adjudicator's resolved items. `itemCount` is taken from the run's own final outcome
- * (its `stalls[]`, `assumed[]`, `diverged[]`, `wrong[]`, `missing[]`, and `checks[]` counts), never
+ * (its `stalls[]`, `assumed[]`, `diverged[]`, `checks[]`, `wrong[]`, and `missing[]` counts), never
  * from the key, since an unverified run's rerun-rule fallback must reflect what the reader itself
  * actually recorded, not however many items a (possibly stale or absent) key happened to carry.
  * @param indexed - Every indexed reader job.

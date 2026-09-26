@@ -145,3 +145,53 @@ dispositions below, all folded, 0 refused.
    restore only stash entries that differ from the reloaded state, with a successful-publish
    no-restore case added; task 7's acceptance adds that the dispatch gives `diff-reviewer` both
    repos' base SHAs.
+
+## Prose review fold
+
+**Source:** `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-prose-review.md`
+(`prose-voice-reviewer`, plan at `f334a30a`). All 16 findings folded as the review proposed, no
+refusals, no owner forks.
+
+1. **B1 (plan:450).** Folded: task 11's `HISTORY.md` line now reads "against the about 9.6M
+   ceiling and the about 7.7M planned spend" in place of "the 8M ceiling".
+2. **W1 (plan:8-9).** Folded: the header now names the intended departures from the spec next to
+   the "stop and report" line — task 10's read-only fact-read agents with per-batch apply, the
+   section split on the five largest reference pages, and reporting (never editing) released tool
+   contract content.
+3. **W2 (plan:192-204).** Folded: task 3's outcome defines subcommand position as the first word
+   after the matched command path, read only when that command has subcommands of its own, and
+   states that `cairn help` takes a command path or a root help topic, neither a subcommand-position
+   word.
+4. **W3 (plan:54-55).** Folded: the ledger paragraph now states it governs conductor writes only,
+   and names tasks 1 and 9's own STATUS edits as exceptions to the "no `STATUS.md` until task 11"
+   rule.
+5. **W4 (plan:48-50, 284-285, 454-455).** Folded: the segment B boundary, task 6's acceptance, and
+   task 11's outcome each now name the conductor as the one who pushes `draft-docs-0` before the
+   `gh pr checks` read and before the final merge.
+6. **W5 (plan:122-128).** Folded: task 1's outcome now says to drop only the frozen-prose reason on
+   `facts/README.md:86`'s `[candidate]` rule, keeping the rule itself.
+7. **W6 (plan:305, 331).** Folded: task 7's outcome adds that the `cairn-docs-drafter` agent
+   definition drops its own reset profile-file input and v2-chain description, so a register track
+   profile reaches the drafter only inside the page-inputs output; the acceptance grep now covers
+   the drafter definition alongside the runner and the two docs.
+8. **W7 (plan:304).** Folded: task 7's outcome states the runner substitutes `{page}` and `{brief}`
+   per page into the conductor's gate string, covered by the derivation test.
+9. **W8 (plan:420-426).** Folded: task 10's outcome now defines the split as whole H2 sections
+   chunked near 5K words (about 37 agents total) and a batch as up to six pages with a split page's
+   chunks kept together.
+10. **S1.** Folded: the token-ceiling paragraph cites
+    `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-fold.md:110` for the 4.5M stage 1
+    figure.
+11. **S2.** Folded: the token-ceiling paragraph now states the narrowed headroom as "about 1.3M" in
+    place of "roughly 1M".
+12. **S3.** Folded: task 6's acceptance corrects the CI trigger to `pull_request` (drafts included)
+    plus push to `main`/`rebuild`, in place of "pull requests only".
+13. **S4.** Folded: task 3's last acceptance bullet now states plainly that the task is accepted
+    only once `check:symbols` is green.
+14. **S5.** Folded: task 9 step 3 now names the proof branch (`draft-docs-0-proof`) as the diff and
+    apply target, and notes the apply is disposable since the proof worktree and branch are removed
+    after the record is committed.
+15. **S6.** Folded: task 7's outcome states the derivation function's return shape (`true`, `false`,
+    or `'not-measured'`).
+16. **S7.** Folded: task 10's outcome and acceptance add that each apply batch's commit gets a
+    `diff-reviewer` read before the next batch dispatches.

@@ -299,6 +299,12 @@ describe('score.ts dev', () => {
       expect(problems![0]).toContain('duplicate');
     });
 
+    it('refuses a list that repeats an id absent from the reports as absent, not as a duplicate: the absent check runs before the duplicate check', () => {
+      const { code, problems } = runWithControlIds('ghost-control-1,ghost-control-1', 'absent-repeat-out.json');
+      expect(code).toBe(1);
+      expect(problems![0]).toBe('--control-ids: id "ghost-control-1" is absent from the reports');
+    });
+
     it('refuses an id whose role does not parse as control, naming it', () => {
       const { code, problems } = runWithControlIds('job-a-planted-1,job-b-control-1', 'role-out.json');
       expect(code).toBe(1);
@@ -455,13 +461,39 @@ describe('score.ts dev', () => {
       capacity: 7,
       noMap: null,
     });
-    const rulingsPath = writeJsonFile('new-field-catch-rulings.json', catchJudgeRulings(['evaluator-planted-1']));
+    // Rebuilt from a real round 1 catch key (evaluator-planted-1-key.json) rather than a
+    // hand-rolled stub, so this test proves against the key file's actual shape: item-1
+    // (originally a stalls[] item at sourceIndex 0) is moved into the new wrong[] field, and the
+    // report gains a matching wrong[] entry at that index.
+    const round1Key = JSON.parse(
+      readFileSync(resolve(ROOT, 'scripts/docs-readers/tuning/round1/catch-keys/evaluator-planted-1-key.json'), 'utf8'),
+    ) as { items: Record<string, unknown> };
+    const rulingsPath = writeJsonFile('new-field-catch-rulings.json', {
+      batch: 'catch-round0',
+      runId: 'r',
+      kind: 'catchJudge',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [
+        {
+          id: 'evaluator-planted-1',
+          class: 'judge-catch',
+          model: 'claude-opus-5-5',
+          outcome: 'done',
+          rulings: [{ itemId: 'plant-1', ruling: 'caught', reason: 'caught PLANT-X1; see item-1, the new wrong[] entry' }],
+          usage: USAGE,
+          verified: { ok: true, init: true, canaries: true, problems: [] },
+        },
+      ],
+    });
     const keyPath = writeJsonFile('new-field-catch-key.json', {
       kind: 'catch',
       builtFrom: 'sources',
       report: { path: report, jobId: 'evaluator-planted-1', attempt: 1, runId: 'r' },
       plants: { 'plant-1': { plantId: 'PLANT-X1' } },
-      items: {},
+      items: { ...round1Key.items, 'item-1': { field: 'wrong', sourceIndex: 0 } },
       inputs: {},
     });
     const outPath = join(dir, 'new-field-catch-out.json');

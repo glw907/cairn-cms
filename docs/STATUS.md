@@ -20,20 +20,21 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-The docs reset's reader-validation line is stopped by owner ruling: the reader instrument failed
-its validation across three passes (HISTORY, "Docs reset pass 2a"). Next is Geoff's new
-draft-documentation approach, designed from conventional practice. The branches `docs-reset-2a`
-and `docs-reset-2a-audiences` are archived on origin, unmerged; the `docs-reset-1b` and
-`docs-reset-2a` worktrees are kept. Still owed: the `~/.dotfiles` push.
+The docs reset's reader-validation line is stopped by owner ruling (HISTORY, top entry). Next is
+Geoff's new draft-documentation approach, designed from conventional practice; start from
+[the handoff](internal/record/2026-09-26-docs-approach-handoff.md). The branches `docs-reset-2a`
+and `docs-reset-2a-audiences` are archived on origin, unmerged. Still owed: the `~/.dotfiles`
+push.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`
 (published version `0.96.0`) and `f:75hawi` (free tier), and `docs/why-cairn.md:41` against its
-line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` over its 6k budget;
-the reader harness (`scripts/docs-readers/`, its tests, the reader classes), the v2 page chain's
-reader stage in `~/.dotfiles`, the scratch Worker `cairn-scratch-b`, and
-`CAIRN_DOCS_READER_OAUTH_TOKEN`, which stay in place until the new approach decides whether any
-part survives.
+line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` over its 6k budget.
+
+The reader harness is removed. Still Geoff's: revoke `CAIRN_SCRATCH_CF_TOKEN` (Cloudflare
+dashboard) and `CAIRN_DOCS_READER_OAUTH_TOKEN` (claude.ai settings), then drop both from the age
+store and `~/.dotfiles/secrets/registry.md`; the scratch site `cairn-scratch-b` (Worker, D1,
+GitHub repo) awaits his delete confirmation.
 
 ## Open decisions and watches
 
@@ -54,7 +55,6 @@ part survives.
 ## Resume prompt
 
 In a fresh session started with `claude --model claude-opus-5-5` at effort `high`, in
-`/var/home/glw907/Projects/cairn-cms`, brainstorm a draft-documentation approach from conventional
-practice (a published style guide with a linter, SME review, docs-as-tests for procedures, human
-task-based usability testing). Read the HISTORY entry "Docs reset pass 2a" first; it records why
-the reader-validation line stopped and which assets survive as inputs.
+`/var/home/glw907/Projects/cairn-cms`, brainstorm a draft-documentation approach with Geoff from
+conventional practice. Read `docs/internal/record/2026-09-26-docs-approach-handoff.md` first: it
+carries the documentation need, the reader-validation failure, and the open questions.

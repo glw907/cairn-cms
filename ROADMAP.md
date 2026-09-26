@@ -293,18 +293,15 @@ The original decision framing, for the record:
     `docs/internal/record/docs-exemplars.md`), never reviewed as a set.
   - The six-audience ruling and the audience-profile format on the unmerged branch
     `docs-reset-2a-audiences` (on origin). The profiles themselves were never written.
-  - Pass 1's docs-as-tests harness for `docs/admin/` procedures, and fact ids with
-    `check:provenance` and page briefs under `docs/internal/briefs/`.
+  - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
   - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
     on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
     DaisyUI. It links to DaisyUI's theme docs rather than restating them.
   - Job-doing readers as an optional advisory pass, about 35k tokens per page: they find real
     defects on their own path and miss what sits off it. They are not a measured gate.
-  - Parked until the approach rules on them, undeleted: the reader harness
-    (`scripts/docs-readers/`, its tests, the reader classes), the v2 page chain's reader stage in
-    `~/.dotfiles`, the branch `docs-reset-2a` (on origin, unmerged), the scratch site
-    (`glw907/cairn-scratch-b`, its Worker and D1, two scoped tokens; teardown in
-    `docs/internal/record/2026-09-23-scratch-site.md`), and `CAIRN_DOCS_READER_OAUTH_TOKEN`.
+  - The reader harness and its clade infrastructure are retired (Geoff, 2026-09-26); the
+    conductor's cleanup commit records what was removed, and the branch `docs-reset-2a` (on
+    origin, unmerged) keeps the last working copy.
 
 - **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
   and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
@@ -2515,9 +2512,9 @@ the named human gates only):**
   package-level constant through `go/parser` and `go/ast`, run as a small helper binary or a
   `go run` from the gate, and check the anchor against the declaration's own lines the way the
   TypeScript form does. The baseline's exact-line rot sat in `src/` (fourteen of sixteen off-line
-  pointers, none in `tool/`), so the Go half was filed rather than built. Trigger: the rot measure
-  (`npx tsx scripts/docs-readers/rot.ts`) reports an off-line `tool/` pointer, or a pass files
-  facts against `tool/` source in bulk.
+  pointers, none in `tool/`), so the Go half was filed rather than built. Trigger: an off-line `tool/`
+  pointer turns up (the rot measure retired with the reader harness; its code is on branch
+  `docs-reset-2a`), or a pass files facts against `tool/` source in bulk.
 
 - **Five small simplifications the pre-cut dependency sweep found and filed, none taken (Task 1,
   2026-09-20).** Ruling 3 defaults every survey finding to "file" unless it is zero-behavior-change

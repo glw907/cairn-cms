@@ -15,7 +15,7 @@ pages, and the narrative arms have been frozen against rewrites while waiting fo
 The last attempt, the docs reset, spent about 43M tokens across three passes building an automated
 simulated-reader instrument meant to gate drafts. The instrument never cleared its own validation,
 and no page was drafted. Geoff stopped it on 2026-09-25 and asked for draft documentation built on
-a conventional, proven approach (`docs/HISTORY.md:17-19`; `ROADMAP.md:285-291`). This brainstorm
+a conventional, proven approach (`docs/HISTORY.md`; `ROADMAP.md:285-291`). This brainstorm
 designs that approach.
 
 ## The need
@@ -35,7 +35,7 @@ designs that approach.
 - **The track structure is reopened** (ruling 2, `:120`). The four-arm layout in `CLAUDE.md` and
   `docs/internal/docs-register.md:260-343` is today's shape, not a settled target.
 - **The scripter-or-agent profile** for the `cairn` CLI's contract pages lives in the register
-  (`docs/internal/docs-register.md:375`), written by draft docs pass A (`docs/HISTORY.md:407`).
+  (`docs/internal/docs-register.md:375`), written by draft docs pass A (`docs/HISTORY.md`).
 
 ### What is shipped, frozen, and gated
 
@@ -85,7 +85,7 @@ values in `conditions.ts` read arm pages directly (memory `docs-to-facts-reshape
 
 - **Facts, fact ids, and `check:provenance`.** Every bullet has an opaque id; `check:provenance`
   checks that each drafted sentence in a page brief cites a ledger id or `no-claim`
-  (`docs/HISTORY.md:161-163`; reset spec `:259-273`). `docs/internal/briefs/` holds only its
+  (`docs/HISTORY.md`; reset spec `:259-273`). `docs/internal/briefs/` holds only its
   README; no page brief exists yet.
 - **The exemplar corpus:** 68 captures at `~/.local/share/cairn/exemplars/`, manifest
   `docs/internal/record/docs-exemplars.md`. Only the editor slice's GOV.UK guidance has published
@@ -96,15 +96,15 @@ values in `conditions.ts` read arm pages directly (memory `docs-to-facts-reshape
   `vocabulary` (`use`, `avoid`), `ceiling`, `arrivalStates`, `success`, `exemplars`, and
   `provisional` (with `provisionalReason` required when true), plus a checker and renderer under
   `scripts/docs-audiences/`. The profiles themselves were never written (`ROADMAP.md:294-295`).
-- **Pass 1's docs-as-tests harness** for `docs/admin/` procedures: read-only `cairn` commands run
-  literally, state-changing ones checked against `--help` (`scripts/docs-readers/harness/run.ts:1-7`).
-  Doc Detective was spiked and rejected in its favor
-  (`docs/internal/record/2026-09-23-doc-detective-spike.md:3,49-78`). It lives inside the reader
-  harness directory and uses the reader container; see open question 7.
+- **Pass 1's docs-as-tests harness** ran `docs/admin/` procedures (read-only `cairn` commands
+  literally, state-changing ones checked against `--help`). It lived inside the reader harness and
+  ran in the reader container, so it was retired with it; the code is in git history on branch
+  `docs-reset-2a`. Doc Detective was spiked and rejected in its favor
+  (`docs/internal/record/2026-09-23-doc-detective-spike.md:3,49-78`); see open question 7.
 - **Draft docs pass A's output:** three reference pages for the `cairn` CLI's contracts
   (`cli-cairn-exit-codes.md`, `cli-cairn-json-output.md`, `cli-cairn-doctor.md`), shipped in
-  `0.97.0`, whose structure Go drift tests pin (`docs/HISTORY.md:404-451`). Pass A measured the
-  old page chain at about 900K tokens per page over three rounds (`docs/HISTORY.md:469-472`).
+  `0.97.0`, whose structure Go drift tests pin (`docs/HISTORY.md`). Pass A measured the
+  old page chain at about 900K tokens per page over three rounds (`docs/HISTORY.md`).
 - **Two human-read task sheets**, an editor task and an evaluator task, written for pass 2a and
   never sent back with logs (`docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md`,
   Sheet 1 at `:48`, Sheet 2 at `:89`, empty Logs table at `:122`).
@@ -126,46 +126,20 @@ values in `conditions.ts` read arm pages directly (memory `docs-to-facts-reshape
 
 ## The failure
 
-Detail: `docs/HISTORY.md:10-229` (pass 2a, 1b, and 1 entries), and the pass 2a post-mortem at
-`git show docs-reset-2a:docs/superpowers/plans/2026-09-25-docs-reset-pass-2a.md` (`## Post-mortem`).
-
-**What was tried.** Simulated readers: headless Claude sessions in podman behind an egress proxy,
-one per audience job, would use a page and report stalls and errors. Their reports would gate a
-drafting chain, once each reader class proved it caught planted defects (`docs/HISTORY.md:21-24`).
-
-**The numbers.**
-
-| Pass | Measure | Result |
-| --- | --- | --- |
-| 1 | Held-out defects caught | 1 of 9; all four classes failed (`docs/HISTORY.md:168-171`) |
-| 1b | On-map recall per plant-run | 3 of 24, about 12 percent (`docs/HISTORY.md:38-41`) |
-| 2a | Pre-registered pilot bar | 12 of 16 (75 percent); best case from 1b's audit was 13 of 24, about 54 percent (`docs/HISTORY.md:31-44`) |
-
-**The cost.** About 43M tokens counted: pass 1 about 18.7M, 1b 20.07M, 2a 4.53M
-(`docs/HISTORY.md:66-68`). No page was drafted.
-
-**Why it failed, method.** A bespoke instrument was built where a conventional method existed. A
-job-doing reader reports what its job touches, so blind plants off its path measure plant
-placement more than the reader (`docs/HISTORY.md:186-188`). Readers routed around defects and
-filed "the page should say X" wishes that the scoring excluded (`docs/HISTORY.md:127-129`).
-
-**Why it failed, process.** The 2a bar was never checked against prior evidence; the 54 percent
-ceiling was computable before planning (`docs/HISTORY.md:63-65`; post-mortem, planning miss 1).
-Machinery dominated cost: one reader run is about 35k tokens, and every build task drew at least
-one reviewer `fix` (`docs/HISTORY.md:66-69,115-116`). Budgets ran 1.3 to 1.5 times low (memory
-`docs-reset-initiative`, ruling O12).
-
-**What the readers did show.** Real defects on their own path: pass A's scripter reader found
-defects that three graders had passed (19 itemized, `docs/HISTORY.md:199-200`), and round 1
-control runs showed 0 false findings in five of six jobs (`docs/HISTORY.md:59-62`).
+The docs reset built simulated readers, headless Claude sessions in podman, one per audience job,
+meant to gate drafts once they proved they catch planted defects. Recall was 1 of 9 in pass 1 and
+3 of 24 in pass 1b; the pass 2a pilot needed 12 of 16, and 1b's own audit capped its best case near
+54 percent. About 43M tokens went into the instrument and no page was drafted. Readers did find
+real defects on their own path with little noise, so they are at most a cheap advisory pass. The
+summary is in `docs/HISTORY.md`, top entry.
 
 ## Lessons, as constraints for the new approach
 
 1. **Conventional method first.** "When a design fork has a widely used convention or a published
    standard on one side, take it" (memory `conform-to-conventions`; restated for docs at
-   `docs/HISTORY.md:68-69`).
+   `docs/HISTORY.md`).
 2. **Check that a success bar is reachable from existing evidence before planning toward it**
-   (`docs/HISTORY.md:63-65`).
+   (`docs/HISTORY.md`).
 3. **Spend on pages, not machinery.** The instrument cost tokens; the pages got none. This inverts
    reset ruling 7, "Spend on the system, not the pages" (`2026-09-23-docs-reset-design.md:132`);
    see open question 3.
@@ -173,7 +147,7 @@ control runs showed 0 false findings in five of six jobs (`docs/HISTORY.md:59-62
    (`2026-09-25-docs-reset-2a-human-reads.md:8-46`); the reset planned human reads for editors and
    evaluators because model reports are only a floor there (`2026-09-23-docs-reset-design.md:188`).
 5. **Docs-as-tests suits procedural pages.** Commands and `--json` output on operator pages can run
-   literally (reset spec `:291-293`; the harness above).
+   literally (reset spec `:291-293`); see open question 7.
 6. **Method calls are Claude's.** Bring a whole evidence-based method design for one approval; ask
    Geoff one at a time only on product, priority, scope, and budget forks (memory
    `methodology-calls-are-claudes`).
@@ -186,7 +160,7 @@ Candidates for the brainstorm, not decisions.
 | --- | --- |
 | Published style guide plus linter | In place: Google and Microsoft via Vale, `Cairn.Names`, the register (`CLAUDE.md:305-314`) |
 | SME or owner review of each page | Geoff is the owner; no per-page review step exists today |
-| Docs-as-tests for procedures (Doc Detective style execution) | Pass 1's harness; Doc Detective spiked and rejected for this CLI (`2026-09-23-doc-detective-spike.md`) |
+| Docs-as-tests for procedures (Doc Detective style execution) | Nothing live: pass 1's harness retired with the readers; Doc Detective spiked and rejected (`2026-09-23-doc-detective-spike.md`) |
 | Task-based usability testing with real users | Two sheets written, never sent; the editor slice's GOV.UK exemplar was itself user-tested |
 | Exemplar-led drafting | The 68-capture corpus, unreviewed; the reset favored "exemplars over personas" (reset spec `:158-159`) |
 | Review checklist from the register | The register's universal contract and reviewer section (`docs-register.md:44,476`); the `cairn-register-editor` agent |
@@ -200,27 +174,27 @@ Candidates for the brainstorm, not decisions.
    next action with no site round first (`docs/STATUS.md:23-25`); the reset said the site round
    does not wait for it (reset spec `:207-208`). The order is unstated.
 2. **Does the six-audience ruling stand?** HISTORY lists it as a surviving input
-   (`docs/HISTORY.md:71`); ROADMAP says each input is "to keep or drop on its own merits"
+   (`docs/HISTORY.md`); ROADMAP says each input is "to keep or drop on its own merits"
    (`ROADMAP.md:291`). The friction log still tags five older profiles
    (`docs-friction-log.md:10-18`), and the register still describes four tracks (`:260`).
 3. **Does reset ruling 7 ("spend on the system, not the pages") survive?** The failure record
-   argues against it (`docs/HISTORY.md:66-69`); no owner line retires it.
+   argues against it (`docs/HISTORY.md`); no owner line retires it.
 4. **Which arm is drafted first?** The 2026-09-08 staged order ran reference, extend, admin,
    editors, front door last, "easiest first" (memory `docs-rebuild-not-edit`). The reset reopened
    structure and never set a new order.
 5. **What does "proven" mean to Geoff?** He asked for "a better proven approach"
-   (`docs/HISTORY.md:18-19`) and "conventional practice" (`ROADMAP.md:289-291`). No source says
+   (`docs/HISTORY.md`) and "conventional practice" (`ROADMAP.md:289-291`). No source says
    whether proof means published industry practice, a measured result on cairn pages, or a human
    read.
 6. **How does the facts container feed drafting?** Pass A found the container reproduced only 40
    percent of actionable claims on two admin pages, so mining ran per page (memory
    `draft-docs-initiative`). The reset then ruled that no mining step reads an old page for prose
    (ruling 1). Whether a per-page harvest precedes each draft is unsettled.
-7. **Does the docs-as-tests harness survive the reader retirement?** HISTORY lists it as a
-   surviving input (`docs/HISTORY.md:72`), but it lives under `scripts/docs-readers/harness/` and
-   runs in the reader container, which the retirement removes (`docs/HISTORY.md:74-78`).
+7. **How are procedural pages tested now?** Pass 1's docs-as-tests harness was retired with the
+   reader container, and Doc Detective was rejected for this CLI. Rebuild a lean runner, revisit
+   Doc Detective, or rely on human reads for procedures.
 8. **What page chain drafts a page, and at what cost?** The old chain cost about 900K per page
-   (`docs/HISTORY.md:469`); O12 budgeted drafting at 0.7M per page plus 1.5M per pass, under a
+   (`docs/HISTORY.md`); O12 budgeted drafting at 0.7M per page plus 1.5M per pass, under a
    program cap of about 45M (memory `docs-reset-initiative`). About 43M of that cap is spent; no
    source says whether the cap still applies.
 9. **Who are the human readers, and when?** Sheet 1 needs a club-site editor Geoff arranges; Sheet
@@ -239,10 +213,6 @@ Candidates for the brainstorm, not decisions.
 
 ## State of the infrastructure
 
-The reader harness (`scripts/docs-readers/`, its tests, the reader classes) and its clade
-infrastructure (the v2 page chain's reader stage in `~/.dotfiles`, the scratch Worker
-`cairn-scratch-b`, `CAIRN_DOCS_READER_OAUTH_TOKEN`) are being retired in a cleanup commit the
-conductor lands separately (`docs/HISTORY.md:74-78`; `docs/STATUS.md:34-35`). Do not plan around
-any of it. The branches `docs-reset-2a` (report fields, judge changes, scorer, the post-mortem)
-and `docs-reset-2a-audiences` (the profile format) are archived on origin, unmerged
-(`docs/STATUS.md:25-27`).
+The reader harness, its docs-as-tests runner, the v2 page chain, the reader worktrees, and the
+caches are removed. Do not plan around any of it. The branches `docs-reset-2a` and
+`docs-reset-2a-audiences` (the profile format) are archived on origin, unmerged.

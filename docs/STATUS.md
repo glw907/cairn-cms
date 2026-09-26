@@ -20,16 +20,7 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Next: execute docs reset pass 2a, Task 0.** Plan `docs/superpowers/plans/2026-09-25-docs-reset-pass-2a.md`
-(approved by Geoff 2026-09-25; spec `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`;
-review records under `docs/superpowers/research/2026-09-25-docs-reset-2a-*.md`). Twelve tasks in four
-segments, per-task Agent chains, estimate 12.65M against ceiling 15M, flag 12M (B4). Owner rulings at
-approval: F1, pause `uupd.timer` from the smoke run through the pilot's scoring; F2 (a), continue past
-the flag, and at a projected 15M breach defer Task 9 to pass 2b. The human-read sheets
-(`docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md`) go out now; Geoff fills Sheet 1's
-two blanks. Keep the `docs-reset-1b` worktree: Task 4's round 1 regression scores from its path. The
-lane worktrees `docs-reset-1b-{export,runner,pathmap}` can be removed. Still owed: the `~/.dotfiles`
-push.
+**Live: docs reset pass 2a, segment 2 from Task 3.** Ledger at the foot of the plan in the `.claude/worktrees/docs-reset-2a` worktree (branch `docs-reset-2a`, segment 1 green at `d3438e31`; lane `docs-reset-2a-audiences` accepted, merges at segment 2's boundary). Spend 2.22M counted. Blocked on Geoff before the pilot's reader batches: `uupd.timer` is not paused (`sudo -A` fails, 1Password locked); run `sudo systemctl stop uupd.timer`. Keep the `docs-reset-1b` worktree until the close. Still owed: the `~/.dotfiles` push.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`

@@ -6,7 +6,7 @@ and check every reference page's claims in place.
 
 **Spec:** `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` (commit `0fbbaa13`),
 "Stage 0 acceptance" and "Stage 1: reference". Executors read both. Where this plan and the spec
-disagree, stop and report.
+disagree, stop and report. Review record: `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-fold.md`.
 
 **Approach:** Land the rules and the checks first, since every later task gates on them. Then
 the chain and the review page, proven together on one scratch page in one owner sitting that
@@ -14,23 +14,32 @@ also settles the owner facts. Stage 1 runs last, on the finished docs gate. Plan
 outcomes and acceptance, never implementation code.
 
 **Execution mode:** `pass-execute` (by name) for the cairn-cms tasks 1, 3, 4, 5, 6, and 8, in the
-segments below, with `implementer: "cairn-implementer"`, `reviewer: "diff-reviewer"`, and
-`commonNotes` carrying the global constraints and the `code-simplifier` step. Tasks 2 and 7 touch
-`~/.dotfiles`, which the runner's single `repo` cannot hold, so each runs as an Agent-tool chain
-(a Sonnet implementer at `high`, then `diff-reviewer`), task 2 alongside segment A and task 7
-after task 6. Task 9 is conductor-led,
-because it needs the Artifact tool and one owner sitting. Task 10 is a conductor fan-out of
-fact-read agents through the Agent tool. Task 11 is the close, authored by one fold agent with
-one independent `diff-reviewer` read.
+segments below, **sequential** (`parallel` unset): the runner does no worktree isolation (`repo`
+is "prompt text only", `pass-execute.js:32-33`), so parallel tasks would share one index, one
+`base..HEAD` range, and one `cairn-run-gate` key, and every heavy gate queues on one machine-wide
+lock anyway. `pass-execute-chains` would isolate them but needs a worktree, an `npm ci`, and a
+merge per chain, which costs more than the lock-bound parallelism saves. Args:
+`implementer: "cairn-implementer"`, `reviewer: "diff-reviewer"`, `commonNotes` carrying the global
+constraints and the `code-simplifier` step, and `gate` as the bare string (the runner wraps it in
+`cairn-run-gate` itself). Tasks 2 and 7 touch `~/.dotfiles`, which the runner's single `repo`
+cannot hold, so each runs as an Agent-tool chain (a Sonnet implementer at `high`, then
+`diff-reviewer`); task 2 runs alongside segment A (separate repo, separate gate), task 7 after
+task 6. Task 9 is conductor-led, because it needs the Artifact tool and one owner sitting. Task 10
+is a conductor fan-out of read-only fact-read agents plus one apply implementer per batch. Task 11
+is the close, authored by one fold agent with one independent `diff-reviewer` read.
 
-**Token ceiling:** 6M (stage 0's 2.5M plus stage 1's 3.5M), flag at 4.8M. **Counting rule:** what
-`/cost` reports for the conductor session (spec, "Budget"). Task 1's pre-flight records whether
-`/cost` includes subagent and workflow agents; if not, the conductor names the counter it uses
-instead in the ledger at the foot of this file before task 2.
+**Token ceiling:** 8M, flag at 6.4M. Derivation: stage 0's 2.5M share plus task 9's chain proof
+(one short extend page on the lean path, about 0.65M, which the spec's 0.2M review-page line does
+not cover), so about 3.2M; stage 1 at about 4.5M (below). This is a method call inside R8's 30M
+initiative ceiling: it moves stages 0 and 1 from 6M to 8M, which narrows the spec's roughly 3M
+arm-page headroom to roughly 1M. The spec resets every share from measured cost and puts the
+scope gap to Geoff at the stage 2 pilot checkpoint, so the close carries this into STATUS as an
+input to that question, not a new one. **Counting rule:** what `/cost` reports for the conductor
+session (spec, "Budget"). Before segment A, the conductor itself records in the ledger whether
+`/cost` includes subagent and workflow agents; if not, it names the counter it uses instead.
 
 **Segments and checkpoints:** four segments, each boundary on a gate-green commit:
-- Segment A: tasks 1, 3, 4, and 5 (independent; `parallel: true`, disjoint files), with task 2's
-  chain alongside.
+- Segment A: tasks 1, 3, 4, and 5 through `pass-execute`, sequential, with task 2's chain alongside.
 - Segment B: tasks 6 and 8 through `pass-execute`, then task 7's chain (it needs 6's gate script).
 - Segment C: task 9 (conductor-led, the one owner sitting).
 - Segment D: tasks 10 and 11.
@@ -39,34 +48,45 @@ At each boundary the conductor writes the ledger at the foot of this file (tasks
 next task), never `docs/STATUS.md` until task 11.
 
 **Worktrees:** cairn-cms work runs in `.claude/worktrees/draft-docs-0`, branch `draft-docs-0`, off
-`main`, `npm ci` once before task 1. Workstation files (skills, the workflow, the agent, the global
-`CLAUDE.md`) live in `~/.dotfiles` on `main` and commit there, path-limited. Before segment A,
-the conductor checks `~/.dotfiles` for warm changes it did not author (at plan time:
+`main`, `npm ci` once before task 1. Task 9's proof runs in its own worktree (below). Workstation
+files (skills, the workflow, the agent, the docs, the global `CLAUDE.md`) live in `~/.dotfiles` on
+`main` and commit there, path-limited. They are stow symlinks, so an edit reaches every live
+session when written: tasks 2 and 7 write each file once, whole, never incrementally. Before
+segment A, the conductor checks `~/.dotfiles` for warm changes it did not author (at plan time:
 `claude/.claude/skills/spec-plan-review/SKILL.md` modified and `claude/.claude/skills/synced/`
 untracked); no task touches or commits those paths. Tasks 2 and 7 are the only dotfiles tasks and
 never run at the same time.
 
 **Models:** Sonnet implementers at `high`; `claude-opus-5-5` for every `diff-reviewer`, the fact
-reads in task 10, and task 11's fold. Tasks 3 and 5 touch Go under `tool/`: `go-conventions`
-applies, and `golang-spf13-cobra` for anything under `tool/cmd/cairn`.
+reads in task 10, and task 11's fold. Task 3 touches Go under `tool/cmd/cairn`: `go-conventions`
+and `golang-spf13-cobra` apply. Task 5 only reads Go.
 
-**Gates:** cairn-cms: `cairn-run-gate 'npm run check && npm test'` for script tasks, plus
-`make -C tool check` with `CAIRN_GATE_LANE=light` for tasks touching `tool/`. Once task 6 lands,
-`npm run check:docs-gate` (task 6's script name) joins every docs-touching task. Dotfiles:
-`scripts/check.sh`. `code-simplifier` runs over each code task's diff before its commit.
+**Gates:** `pass-execute` runs the string `scripts/checks/gate-tier.mjs` prints for each task's
+diff, not the plan's; the plan's `npm run check && npm test` is the fallback when the classifier
+prints nothing. Task 6 makes the classifier's docs tier call `check:docs-gate`, so from segment B
+on every docs-touching task runs the one docs gate. The light lane (`gateLane: "light"`) applies
+only to a gate that is `make -C tool check` alone; a mixed diff (task 3: `tool/` plus scripts,
+tier `scripts+tool`) runs the heavy lane, since its `npm test` launches a browser suite. Task 6
+touches `package.json` and `.github/` and so runs the `full` tier; that is accepted. Conductor-run
+gates (tasks 9 and 10) call `cairn-run-gate` directly. Dotfiles: `scripts/check.sh`.
+`code-simplifier` runs over each code task's diff before its commit.
 
 ## Global constraints
 
 - The narrative arms (`docs/admin/`, `docs/editors/`, `docs/extend/`, `why-cairn.md`) get no prose
-  rewrites in this pass. Task 10 edits `docs/reference/` in place only.
+  rewrites in this pass. Sanctioned exceptions: a discovered deficiency (a wrong fact, a stale
+  command) fixed on the page per `CLAUDE.md`, which includes the `why-cairn.md:41` owner-fact fix
+  in task 9. Task 10 edits `docs/reference/` in place only.
 - No release, no version bump, no `package.json` version change. `## Unreleased` gets entries only
   for public behavior changes (none expected; the check extensions are internal).
 - Every new or changed check fails loud on its own planted defect in a unit test. No check passes
-  on an empty input it is meant to guard (spec, "Brief coverage", "Flag pairing").
+  on an empty or absent input it is meant to guard (spec, "Brief coverage", "Flag pairing").
+- No committed check or test reads a git ref or tag: CI checks out at depth 1 with no tags.
 - Code comments follow TSDoc (scripts) or Go Doc Comments (tool); no em dash in comments.
 - Facts edits pass `check:facts`; facts are written with the Edit tool, never a shell append.
 - Memory files under `~/.claude/projects/-var-home-glw907-Projects-cairn-cms/memory/` are edited
-  in place; `MEMORY.md` lines stay one per memory.
+  in place; `MEMORY.md` lines stay one per memory. That directory is in no git repo, so the task
+  report quotes each memory edit's before and after lines for the reviewer.
 
 ## Review focus
 
@@ -79,9 +99,11 @@ applies, and `golang-spf13-cobra` for anything under `tool/cmd/cairn`.
    the check reports the stale list entry, not a missing brief. Task 4 plants it.
 4. A released tag's anchor removed from `is-it-working.md` in the same change as its
    `conditions.ts` entry: `check:readiness` must still fail. Task 5 plants it.
-5. The R10 page saved by a viewer who is not a writer, or a save that conflicts: the page shows a
-   read-only view or reloads, and the conductor never applies a partial version. Task 8 covers the
-   read-only branch; task 9's round-trip record notes the version it applied.
+5. The R10 page saved by a viewer who is not a writer, or a save that conflicts: writability is
+   learned only from the first `not_writer` or `not_granted` rejection, after which the page turns
+   read-only; on `conflict` the shell reloads, and the page restores unsaved edits it stashed
+   before publishing. The conductor never applies a partial version. Task 8 tests both; task 9's
+   record notes the version it applied.
 
 ---
 
@@ -94,16 +116,21 @@ applies, and `golang-spf13-cobra` for anything under `tool/cmd/cairn`.
 agent never edits the cairn-cms checkout" rule states the new rule (spec, "Stage 0 acceptance",
 "Freeze lift" and "Site-pass rule"): the freeze lifts per arm at its stage merge (extend's at the
 2b merge), and site-pass agents edit on a `site-docs/<site>-<pass>` branch off `main`, merged by PR
-under the docs gate; a site edit to an arm whose stage is in flight is filed, never fixed.
-`CLAUDE.md` stops citing the missing `docs-is-a-pass-dimension` memory. The ROADMAP "Now" entry
-names the spec, drops the retired inputs (the six-audience ruling, the profile format, the reader
-harness line), moves the designer theme-guide input into "stage 2 outline, required topic", and
-leaves the Toward 1.0 claims audit as its own gate. STATUS's "Immediate next action" points at
-this plan.
+under the docs gate; a site edit to an arm whose stage is in flight is filed, never fixed, and
+feeds that stage's page inputs. Known carriers include `docs-register.md:225-226` ("swept at the
+docs rebuild, never before"), `facts/README.md:86`, and `ROADMAP.md:889` and `:1095`. `CLAUDE.md`
+stops citing the missing `docs-is-a-pass-dimension` memory. The ROADMAP "Now" entry names the
+spec, drops the retired inputs (the six-audience ruling, the profile format, the reader harness
+line), moves the designer theme-guide input into "stage 2 outline, required topic", and leaves the
+Toward 1.0 claims audit as its own gate. STATUS's "Immediate next action" points at this plan.
 
 **Acceptance:**
-- `grep -rn` for the old freeze and cross-repo wording ("frozen against rewrites", "never edits the
-  cairn-cms checkout", "after the site round") across these five files returns only new text.
+- Absence: `grep -rnE 'frozen|freeze|never edits the cairn-cms checkout|after the site round|never before'`
+  over these five files; the report lists every remaining hit with a keep reason (for example
+  ROADMAP's unrelated "frozen contract").
+- Presence: each carrier that stated the freeze now states the per-arm lift and the
+  `site-docs/<site>-<pass>` write path (report quotes the new line per file);
+  `docs-is-a-pass-dimension` returns nothing in `CLAUDE.md`.
 - The "Documentation is a pass dimension" section still says the reference arm is maintained
   every pass under `check:reference`.
 - `check:docs` and `check:vale` green on the changed files.
@@ -112,7 +139,8 @@ this plan.
 
 **Files (in `~/.dotfiles/claude/.claude/`):** `skills/site-pass/SKILL.md`,
 `skills/engine-consult/SKILL.md`, `skills/cairn-pass/SKILL.md`, `skills/writing-voice/SKILL.md`,
-`CLAUDE.md`. Memory files: `docs-rebuild-not-edit.md`, `docs-reset-initiative.md`, and their
+`CLAUDE.md`. Memory files: `docs-rebuild-not-edit.md`, `docs-reset-initiative.md`,
+`docs-to-facts-reshape.md` (line 29), `one-release-then-model-sites.md` (line 34), and their
 `MEMORY.md` lines.
 
 **Outcome:** The same freeze and write-path rule as task 1, in the skills that execute it. The
@@ -123,194 +151,284 @@ agent). Rule 2 scope (R9): the `writing-voice` skill's "stop after each section"
 global `CLAUDE.md` Writing voice summary say section-by-section drafting governs cairn front-door
 drafting only, and the `CLAUDE.md` line stops reading as a page-structure rule. The
 `docs-reset-initiative` memory drops "the six-audience ruling" as a survivor and points at the
-spec; `docs-rebuild-not-edit`'s freeze rule says the freeze lifts per arm.
+spec; the three other memories' freeze lines say the freeze lifts per arm.
 
 **Acceptance:**
-- The same grep as task 1 across these files returns only new text.
+- Absence: the same grep as task 1 across these files, remaining hits listed with a keep reason;
+  "six-audience" returns nothing in `docs-reset-initiative.md`.
+- Presence: `site-pass` carries each clause (follow the pages exactly; fix or file; the
+  `site-docs/<site>-<pass>` branch; in-flight arms filed only and feeding page inputs; "Edits after
+  the chain"); `writing-voice` and the global `CLAUDE.md` Writing voice line name the front-door
+  scope. The report quotes each.
+- The report quotes before and after for every memory edit.
 - `~/.dotfiles/scripts/check.sh` green; `claude-tooling-sync verify` green.
 - Commit is path-limited and touches none of the warm paths named in the header.
 
 ### Task 3: Flag pairing for `check:symbols`
 
-**Files:** the Go test that writes `tool/testdata/flags.json`
-(`TestCommittedFlagListMatchesTheCommandTree`, run by `make -C tool flags`), `tool/testdata/flags.json`,
-`scripts/checks/check-symbols.mjs`, and its unit tests under `src/tests/unit/`.
+**Files:** `tool/cmd/cairn/flags_test.go` (`TestCommittedFlagListMatchesTheCommandTree`, run by
+`make -C tool flags`), `tool/testdata/flags.json`, `scripts/checks/check-symbols.mjs`, and its unit
+tests under `src/tests/unit/`.
 
 **Outcome:** `flags.json` carries, alongside its existing flag list, a map from each command path
-to the long flags it accepts, inherited ones included, written by the same Go test and checked by
-it against the cobra tree. `check:symbols` resolves each `cairn` line in a shell-tagged fence: the
-command path is the longest run of leading words that matches the map; the line fails when its
-first word is not a command (with or without flags) and when a flag is not accepted on the matched
-path. Non-shell fences are not read. `npx create-cairn-site` flag handling is unchanged.
+to the long flags it accepts, inherited ones included, written by the same Go test and compared by
+it against the cobra tree on every `make -C tool check`. The map includes cobra's lazily added
+`help` and `completion` commands (the walk initializes them the same way it already calls
+`InitDefaultHelpFlag`, `flags_test.go:47-51`), or the report records that the tree disables them.
+
+A **`cairn` line** is a line in a shell-tagged fence whose first token, after an optional `$ `
+prompt and any leading `NAME=value` assignments, is exactly `cairn`; `\` continuations are joined
+first. `npx cairn-audit`, `npm run cairn:manifest`, and `my-cairn-site` are not `cairn` lines.
+`check:symbols` resolves each: the command path is the longest run of leading words that matches
+the map; a line with no subcommand word (`cairn`, `cairn --version`, `cairn --help`) resolves to
+the root path. The line fails when a word in subcommand position is not a command and when a flag
+is not accepted on the matched path. Non-shell fences are not read. `npx create-cairn-site` flag
+handling is unchanged.
 
 **Acceptance:**
-- Unit tests plant, each failing with a message naming file and line: an unknown subcommand with no
-  flags; a real flag on the wrong command; a prefix path where the longer match is correct (Review
-  focus 2); a `cairn` line in a `text` fence that must be ignored and one in a `sh` fence that must
-  be read (Review focus 1).
-- `make -C tool flags` regenerates the file byte-identically on a clean tree; `make -C tool check`
-  green (light lane).
-- `npm run check:symbols` green over today's docs, or each failure it finds is a real doc defect
-  listed in the report (fixed in `docs/reference/` only; narrative-arm defects are filed as facts
-  `[docs-drift]`).
+- Go: a planted drift (the committed map with one flag removed from one path, and one path
+  renamed) makes `make -C tool check` fail with a message naming the path and the
+  `make -C tool flags` fix. `make -C tool flags` regenerates the file byte-identically on a clean
+  tree.
+- Unit tests, each failing case naming file and line: an unknown subcommand with no flags; a real
+  flag on the wrong command; a prefix path where the longer match is correct (Review focus 2); a
+  continuation line carrying a wrong flag. Passing: `cairn --version`, `cairn help agents`, an
+  inherited flag on a subcommand, `$ cairn doctor`. Ignored: a `cairn` line in a `text` fence,
+  `npx cairn-audit --rendered`, `npm run cairn:manifest`. Read: a `cairn` line in a `sh` fence
+  (Review focus 1).
+- `npm run check:symbols` green over today's docs. Any failure it finds is fixed where it lives
+  (a narrative-arm defect is a sanctioned deficiency fix), or the check does not land.
 
 ### Task 4: Brief coverage for `check:provenance`
 
-**Files:** `scripts/checks/check-provenance.mjs`, a new committed list (for example
-`docs/internal/briefs/rebuilt.json`), `docs/internal/briefs/README.md`, unit tests.
+**Files:** `scripts/checks/check-provenance.mjs`, a new committed list at
+`docs/internal/briefs-rebuilt.json` (outside `briefs/`, since `findBriefs` reads every `.json`
+under it as a brief), `docs/internal/briefs/README.md`, unit tests.
 
-**Outcome:** `check:provenance` reads a committed list of rebuilt page paths and fails any listed
-path with no brief. The list starts empty. The README documents the list, that each stage merge
-appends its rebuilt paths, and the brief naming rule: arm READMEs brief under their own arm's
-track (`briefs/admin/README.json`), and only `why-cairn.md` and `docs/README.md` use
-`front-door`.
+**Outcome:** `check:provenance` reads the committed list of rebuilt page paths and fails any listed
+path that no brief's `page` field names (coverage matches the `page` field, never a file name, so
+`briefs/front-door/README.json` for `docs/README.md` cannot cover `docs/admin/README.md`). The
+coverage check runs before the zero-brief early return. The list starts empty. A list that is
+absent, not valid JSON, not an array, or holds a path outside `docs/` fails with a message saying
+which. The README documents the list, that each stage merge appends its rebuilt paths, and the
+brief naming rule: arm READMEs brief under their own arm's track (`briefs/admin/README.json`), and
+only `why-cairn.md` and `docs/README.md` use `front-door`.
 
 **Acceptance:**
 - Unit tests plant: a listed path with no brief (fails); a listed path whose page no longer exists
-  (fails, reported as a stale list entry, Review focus 3); an empty list with no briefs (passes and
-  prints that nothing is rebuilt yet).
+  (fails, reported as a stale list entry, Review focus 3); a listed `docs/admin/README.md` whose
+  only README brief names `docs/README.md` (fails); an absent list and a malformed list (each
+  fails); an empty list with no briefs (passes and prints that nothing is rebuilt yet).
 - Per-brief mode (`npm run check:provenance -- <brief>`) behaves as before.
 
 ### Task 5: Shipped-anchor list for `check:readiness`
 
 **Files:** `scripts/checks/check-readiness.mjs`, a new committed append-only anchor list, unit
 tests. Read, not changed: `tool/internal/health/fixes_test.go`, `tool/internal/doctor/check_referrer.go`,
-tag `tool/v1.1.0`'s `conditions.json`.
+tag `tool/v1.1.0`'s `tool/internal/spine/conditions.json`.
 
 **Outcome:** A committed append-only list snapshots the `is-it-working` fragments released binaries
-print: the `docsAnchor` values in `tool/v1.1.0`'s `conditions.json` (from `git show`), plus
-`check_referrer.go`'s one. `check:readiness` also fails when any listed anchor does not resolve as
-a heading slug in `docs/admin/is-it-working.md`. A header comment in the list says a new tool tag
-appends its anchors and nothing is ever removed.
+print: the `docsAnchor` values in `tool/v1.1.0`'s `conditions.json` plus `check_referrer.go`'s one,
+normalized to one form (the two sources spell the prefix differently). That is 20 unique anchors:
+the referrer anchor is already among them, and `tool/v1.0.0` and `v1.0.1` print none outside the
+set. The implementer reads the tag once, at implementation time; nothing committed reads it.
+`check:readiness` also fails when any listed anchor does not resolve as a heading slug in
+`docs/admin/is-it-working.md`, and fails when the list is absent, malformed, or empty. A header
+comment in the list says a new tool tag appends its anchors and nothing is ever removed.
 
 **Acceptance:**
 - A unit test renames a heading and its `conditions.ts` entry together and `check:readiness` fails
   (Review focus 4).
-- The list's entries equal the set extracted from the tag at plan time (the spec records it equal
-  to today's `conditions.ts` set); the task report states the count.
-- `npm run check:readiness` green on today's tree.
+- A test through the script's own loader (not an injected fixture) reads the committed list and
+  finds 20 entries; tests plant an absent, a malformed, and an empty list, each failing.
+- The report states the one-time comparison against the tag. `npm run check:readiness` green on
+  today's tree.
 
 ### Task 6: The docs gate script, and the editor-quotes floor
 
-**Files:** `package.json`, `.github/workflows/test.yml`, `scripts/checks/check-editor-quotes.mjs`,
-its unit test.
+**Files:** `package.json`, `.github/workflows/test.yml`, a gate runner script under
+`scripts/checks/`, `scripts/checks/gate-tier.mjs`, `src/tests/unit/gate-tier.test.ts`,
+`docs/internal/pass-gate-tiers.md`, `scripts/checks/check-editor-quotes.mjs`, its unit test.
 
-**Outcome:** One script, `check:docs-gate`, runs the checks the spec lists under "Docs gate":
-`check:docs`, `check:vale`, `check:facts`, `check:provenance`, `check:symbols`, `check:snippets`,
+**Outcome:** `check:docs-gate` runs the checks the spec lists under "Docs gate": `check:docs`,
+`check:vale`, `check:facts`, `check:provenance`, `check:symbols`, `check:snippets`,
 `check:transcripts`, `check:visuals`, `check:arm-indexes`, `check:editor-quotes`,
 `check:readiness`, `check:tool-conditions`, `check:target-stack`, `check:reference`, and
-`check:reference:signatures`. `test.yml` calls it in place of those separate steps; `check:package`
-keeps its own step. `check:editor-quotes` fails when the page it pins carries zero quotes.
+`check:reference:signatures`. It is one `node` command, so arguments after `--` reach it (the
+precedent is `npm run check:provenance -- <brief>`, which works because that script is one
+command reading `process.argv.slice(2)`, `check-provenance.mjs:607`; a chained `a && b` script
+hands `--` arguments to its last command only). Scoping interface: `--page <path>` narrows Vale to
+that path (today `check:vale` is a fixed path list, `package.json:50`) and `--brief <path>` narrows
+provenance to that brief; every other component reads the whole tree. The runner builds `dist`
+once per run, not once per component. `gate-tier.mjs`'s docs tier becomes `npm run check:docs-gate`,
+and the full tier drops the components the docs gate now carries, so there is one list.
+`test.yml` calls `check:docs-gate` in place of those separate steps, placed after the "Install
+Vale" step; `check:package` keeps its own step. `check:editor-quotes` fails when the page it pins
+carries zero quotes.
 
 **Acceptance:**
-- `npm run check:docs-gate` green on the worktree after tasks 3 to 5 merge in.
-- Every check that `test.yml` ran before still runs in CI (the task report lists the before and
-  after step names).
+- `npm run check:docs-gate` green on the worktree after tasks 3 to 5.
+- One scoped run (`-- --page <one page> --brief <one brief>`) whose output shows Vale and
+  provenance read only those files.
+- `gate-tier.test.ts` asserts the docs tier string is `npm run check:docs-gate` and that no check
+  runs twice in the full tier.
+- Every check `test.yml` ran before still runs in CI (report lists before and after step names),
+  proven by a green `test` run: `test.yml` fires on pull requests only, so this task opens the pass
+  PR from `draft-docs-0` as a draft, and task 11 takes it out of draft.
 - A unit test for the zero-quote floor fails on a page stripped of its quotes.
 
 ### Task 7: The lean page chain and the drafter
 
-**Files:** `~/.dotfiles/claude/.claude/workflows/docs-page-chain.js`,
-`~/.dotfiles/claude/.claude/agents/cairn-docs-drafter.md`; in cairn-cms,
-`docs/internal/briefs/README.md` and `docs/internal/facts/README.md` ("New facts from the page
-chain").
+**Files:** in `~/.dotfiles/claude/.claude/`: `workflows/docs-page-chain.js`,
+`agents/cairn-docs-drafter.md`, `docs/claude-tooling.md` (lines 54-59), `docs/model-economy.md`
+(lines 323-324), a new node test under `~/.dotfiles/tests/`, and the `scripts/check.sh` line that
+runs it; in cairn-cms, `docs/internal/briefs/README.md` and `docs/internal/facts/README.md` ("New
+facts from the page chain"). Deliverables: the runner, the drafter, two workstation docs, the
+derivation test, two READMEs.
 
 **Outcome:** The runner matches the spec's "The page chain" and "Scoped re-review": no
-`args.profile` and no profile grader; a page-inputs step (job, type, two trimmed exemplar excerpts,
-fact ids, a claim inventory with a disposition per claim, new facts filed `[verified]` or
-`[external]` with the Edit tool); `cairn-docs-drafter` as the drafter, filing no facts; the gate
-string from `args.gate` (the conductor passes `check:docs-gate` with Vale and provenance scoped to
-the page); the two reviews in parallel, the fact read also checking every inventory claim marked
-carried or filed; one redraft; by default only the reviewer that returned `fix` re-reads, with an
-`args.bothReviewers` switch; when both re-read, a per-page cross-regression flag derived from
-`record.rounds[].reads`; a per-page record carrying the brief path and the page-inputs output. The
-drafter definition drops the audience-profile input and files no facts. Both READMEs stop naming
-`docs-page-chain-v2.js`; the facts README says the page-inputs agent files new facts and the
-drafter never does, and the fact read is independent of the drafter.
+`args.profile`, no profile grader, no "Profile" section in the editor prompt; a page-inputs step
+(job, type, two trimmed exemplar excerpts, fact ids, a claim inventory with a disposition per
+claim, new facts filed `[verified]` or `[external]` with the Edit tool); `cairn-docs-drafter` as
+the default drafter, filing no facts. The drafter runs the gate as its last act and reports it
+(step 3): the gate string from `args.gate`, which the conductor sets to
+`npm run check:docs-gate -- --page <path> --brief <brief>` (task 6), plus the tool gate for a page
+with pinned slugs; the drafter definition's "Do not run the page gate" and `[candidate]` lines go.
+The two reviews run in parallel, the fact read also checking every inventory claim marked carried
+or filed; a page with a figure also gets a `figure-verifier` read. One redraft; by default only the
+reviewer that returned `fix` re-reads, with an `args.bothReviewers` switch; a second `fix`
+escalates to the conductor with no third round. The per-page record carries the brief path, the
+page-inputs output, and a cross-regression flag derived from `record.rounds[].reads`: set when both
+re-read and a reviewer that accepted in round 1 returns `fix`, recorded as not measured (never
+`false`) in lean mode. The derivation is one pure, self-contained function between named marker
+comments, because the workflow runtime has no filesystem access and the script's top-level
+`return` keeps node from importing it; the node test extracts that function and runs it. The
+header documents every arg and says to invoke the runner by name (drop the "copy this file to the
+session scratchpad" line); the `description` meta and both workstation docs stop describing the
+grader and the v2 chain. Both READMEs stop naming `docs-page-chain-v2.js`; the facts README says the
+page-inputs agent files new facts and the drafter never does, and the fact read is independent of
+the drafter.
 
 **Acceptance:**
-- The runner's header comment documents every arg it reads; `grep` finds no `profile` arg or
-  grader stage.
+- The derivation test covers synthetic round records, each with its expected output: both accept
+  in round 1 (no round 2, flag absent); one `fix`, both re-read, the other flips to `fix` (flag set,
+  page qualifies); the same in lean mode (not measured); a second `fix` from a re-reader
+  (escalation, no third round). The test fails when the markers are missing.
+- `grep` finds no `profile` arg, grader stage, or "Profile" prompt section in the runner, and no
+  grader or v2 description in the two docs.
 - `~/.dotfiles/scripts/check.sh` green; cairn-cms docs gate green on the two READMEs.
-- The live proof is task 9's scratch-page run; this task's report names what that run must show.
+- The report names what task 9's live run must show.
 
 ### Task 8: The R10 review page template
 
 **Files:** a new directory `scripts/docs-review/` in cairn-cms: one HTML template and one small Node
 script that embeds a batch of markdown files (paths and contents) into a copy of the template for
-publishing. Unit test for the embed script.
+publishing; unit tests.
 
-**Outcome:** The implementer has no Skill tool, so the conductor pre-extracts into the task notes
-the page contract from the `artifact-design` skill and the `artifact` and `comments` sections of
-the `artifact-capabilities` skill, with the paths of its `artifact.d.ts` and `comments.d.ts` type
-definitions for the implementer to read. The page shows each file in the batch rendered, with an edit mode per file; a save regenerates the
-whole document from its embedded state and publishes it through the `artifact` capability; it
-declares `comments` with `composer_only` for passage comments. It follows the Artifact page
-contract (title, `:root` tokens with dark mode, phone-width layout). A viewer who cannot write sees
-a read-only view (Review focus 5). The embedded state keeps each file's path and exact markdown,
-so a read-back yields the files byte for byte.
+**Task notes (conductor pre-extract; the implementer has no Skill tool):** the page contract from
+the `artifact-design` skill; the `artifact` and `comments` sections of `artifact-capabilities`;
+and the full text of its `artifact.d.ts` and `comments.d.ts`, copied into the notes (their path
+sits under a versioned bundled-skills directory that a Claude Code update moves). The contract
+lines to quote: "Member presence does NOT signal writability ... treat its first `not_writer` or
+`not_granted` rejection as the read-only signal"; on `conflict` "the shell is already reloading
+every open view"; and a self-publish must match the tool's document skeleton exactly, or the next
+publish nests it.
+
+**Outcome:** The page shows each file in the batch rendered, with an edit mode per file. A save
+stashes unsaved edits in `sessionStorage`, regenerates the whole document from its embedded state,
+and publishes it through the `artifact` capability; after a `conflict` reload the page restores the
+stash. The first `not_writer` or `not_granted` rejection turns the page read-only (write controls
+disabled, copy says so). It declares `comments` with `composer_only` for passage comments. It
+follows the Artifact page contract (title, `:root` tokens with dark mode, phone-width layout). The
+embedded state keeps each file's path and exact markdown, so a read-back yields the files byte for
+byte, and the Node embed and the page's regenerate share one encode path.
 
 **Acceptance:**
-- The embed script's test round-trips three markdown files carrying a code fence, a table, and a
-  backtick span through embed then extract, byte-identical.
+- Round trip: three markdown files carrying a code fence, a table, a backtick span, a `svelte`
+  fence containing `<script>...</script>`, an HTML comment, and non-ASCII text (curly quotes)
+  survive embed, the page's own regenerate, then extract, byte-identical.
+- With the capability stubbed: a `not_writer` rejection leaves the page read-only; a `conflict`
+  followed by reload restores the stashed edits.
 - The template passes the Artifact contract checklist in `artifact-design` (the report lists it).
 
 ### Task 9: Chain proof, review-page round trip, and owner facts (conductor-led)
 
-**Outcome:** Three things, one owner sitting.
-1. **Owner facts, verified first.** A Sonnet implementer checks each of the four STATUS items
-   against its source and reports the fact and a proposed edit: the rule count in
+**Outcome:** Three things, one owner sitting, in this order.
+1. **Owner facts, verified and committed first.** A Sonnet `general-purpose` agent (it needs
+   WebFetch, which `cairn-implementer` lacks) checks each of the four STATUS items against its
+   source and reports the fact and a proposed edit: the rule count in
    `docs/internal/what-cairn-is-and-is-not.md:49` against the audit's rule modules; `f:ab9kzr`
-   against the registry (`npm view @glw907/cairn-cms version`); `f:75hawi` against Cloudflare's
-   published free-tier limits; `docs/why-cairn.md:41` against its line 84. Items whose fix is a
-   plain fact are applied; only owner wording goes to Geoff.
-2. **Chain proof.** The conductor runs `docs-page-chain` (by name) on one scratch page on a
-   throwaway branch off `draft-docs-0`: one extend page chosen by the conductor, drafted to its
-   real path, never merged. The per-page record shows the brief path, the page-inputs output with
-   its claim inventory, both reviews, and no grader read.
-3. **Review-page round trip.** The conductor publishes the scratch page through task 8's template,
-   Geoff edits one sentence and leaves one comment, and the conductor reads back the saved
-   version, diffs it against the branch, applies the diff with the brief updated, and runs
-   `check:provenance` on that brief.
+   against the registry (`npm view @glw907/cairn-cms version`); `f:75hawi`
+   (`docs/internal/facts/extend.md:104`) against Cloudflare's published free-tier limits, quoting
+   the limit text with its URL; `docs/why-cairn.md:41` against its line 84. Items whose fix is a
+   plain fact are applied on `draft-docs-0` by a `cairn-implementer` and committed before step 2;
+   only owner wording goes to Geoff.
+2. **Chain proof.** In its own worktree (`.claude/worktrees/draft-docs-0-proof`, a throwaway branch
+   off `draft-docs-0`), the conductor runs `docs-page-chain` (by name) on one short extend page it
+   chooses, drafted to its real path, never merged. The per-page record shows the brief path, the
+   page-inputs output with its claim inventory, both reviews, and no grader read.
+3. **Review-page round trip.** The conductor publishes the scratch page through task 8's template
+   and asks Geoff to edit one sentence the brief lists as a claim and leave one comment. It reads
+   back the saved version, reads the comment with the `ArtifactComments` tool, diffs the saved page
+   against the branch, applies the diff with the brief updated, and runs `check:provenance` on
+   that brief.
 
 The sitting is one combined message to Geoff: the review page link, with the owner-wording
 question for the facts on the same page or alongside it.
 
 **Acceptance:**
 - A record at `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-proof.md` with the chain
-  record's summary, the chain's measured cost, the published and saved version ids, the applied
-  diff, and `check:provenance` green. If the round trip was clumsy, the record says how, and the
+  record's summary, which chain branch the run took and which branches only task 7's synthetic
+  test covers, the chain's measured cost, the published and saved version ids, the comment read
+  back, the applied diff, and `check:provenance` green. A no-op edit or an edit to a sentence the
+  brief does not list fails the proof. If the round trip was clumsy, the record says how, and the
   conductor asks Geoff before switching to PR review.
 - The four owner-fact items are edited and retagged, `check:facts` green, and their STATUS line is
-  gone (applied on `draft-docs-0`, not the throwaway branch).
-- The throwaway branch is deleted after the record is committed.
+  gone (on `draft-docs-0`).
+- No leak: `git diff main...draft-docs-0` touches no `docs/extend/` page, no
+  `docs/internal/briefs/extend/`, and no `briefs-rebuilt.json` entry, and `facts/extend.md` changes
+  only at `f:75hawi`.
+- The proof worktree and throwaway branch are removed after the record is committed.
 
 ### Task 10: Stage 1, reference claim check
 
 **Outcome:** One `claude-opus-5-5` fact-read agent per page for the 29 pages in `docs/reference/`
-other than its README, dispatched by the conductor in parallel batches of up to six. Each agent
-checks every prose claim on its page against the facts container, the export surface
-(`npm run package` output), and the code; fixes each discrepancy in place on `draft-docs-0`; files
-or retags facts where the container is stale; and returns a per-page record: claims checked,
-discrepancies found, fixes made, anything it could not settle. The three CLI contract pages
-(`cli-cairn-*.md`) also gate on `make -C tool check`.
+other than its README; the five largest (`sveltekit.md`, `core.md`, `admin-toolkit.md`,
+`cairn-audit.md`, `components.md`) split by section, one agent per section of roughly 5K words.
+Before the fan-out the conductor runs `npm run package` once. Fact-read agents are read-only: no
+`package`, no gate, no commit, no file edit. Each checks every prose claim on its page against the
+facts container, `dist` and `docs/internal/api-surface.md`, and the code, and returns a record:
+claims checked, discrepancies found, proposed page edits and fact edits (file or retag), and
+anything it could not settle. Batches of up to six run sequentially: after each batch one
+`cairn-implementer` applies that batch's proposed edits, runs `check:docs-gate` and
+`make -C tool check`, and commits, before the next batch dispatches. The conductor projects stage
+1's cost from the first batch; a projection past 4.5M is the checkpoint question.
+
+Released tool contract content is reported, never edited: `docs/reference/schema/**`, and the exit
+codes, payloads, and check ids on `cli-cairn-doctor.md`, `cli-cairn-exit-codes.md`, and
+`cli-cairn-json-output.md` (the pages `tool.yml` and the Go contract tests read). The other two
+`cli-cairn-*` pages (`manifest`, `media-seed`) are checked like any page.
 
 **Acceptance:**
 - A stage record at `docs/superpowers/research/2026-09-26-draft-docs-stage-1-record.md` lists all
-  29 pages; a page missing from it fails the task.
-- `npm run check:docs-gate` and `make -C tool check` green after the fixes.
-- Any structural problem found (a page that needs a rebuild, not a fix) is listed for Geoff in the
-  close, not fixed.
+  29 pages, each with a nonzero claim count or a stated reason; the conductor diffs the list
+  against `docs/reference/*.md` less the README, and a missing page fails the task.
+- No fact-read agent ran `npm run package`, a gate, or a commit (their records state it; every
+  commit on the branch in this task is an apply commit).
+- `npm run check:docs-gate` and `make -C tool check` green after the last batch.
+- Any structural problem found (a page that needs a rebuild, not a fix) and any contract
+  discrepancy is listed for Geoff in the close, not fixed.
 
 ### Task 11: Close
 
 **Outcome:** One fold agent authors the close and one independent `diff-reviewer` reads its diff.
 `docs/HISTORY.md` gets the pass entry (what landed, what the gates caught, measured cost against
-the 6M ceiling, the chain proof's per-page cost, and what a later pass would be wrong to
-rediscover). `docs/STATUS.md` carries the current shares, reset from the measured cost, and the
-next action: the stage 2a plan, with its extend outline, to be written and reviewed on an R10
-page. `CHANGELOG.md` `## Unreleased` gets entries only if a public behavior changed. The PR merges
-`draft-docs-0` to `main` after the docs gate and `make -C tool check` pass in CI.
+the 8M ceiling, the chain proof's per-page cost, and what a later pass would be wrong to
+rediscover). `docs/STATUS.md` carries the current shares, reset from the measured cost (including
+the narrowed arm-page headroom as a pilot-checkpoint input), and the next action: the stage 2a
+plan, with its extend outline, to be written and reviewed on an R10 page. `CHANGELOG.md`
+`## Unreleased` gets entries only if a public behavior changed. The draft PR from task 6 leaves
+draft and merges `draft-docs-0` to `main` after the docs gate and `make -C tool check` pass in CI.
 
 **Acceptance:** STATUS at or under 60 lines; the memory index points at the spec; the pass score
 records tokens against the ceiling, planning misses, and execution sittings (task 9's sitting

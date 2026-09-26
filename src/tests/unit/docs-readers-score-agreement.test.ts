@@ -245,15 +245,16 @@ describe('applyPrecisionReplacements', () => {
         verified: true,
         opus: true,
         itemCount: 1,
-        items: [{ itemId: 'i1', harnessFiltered: false, adjudication: { class: 'finding', subjectGroupId: 'subject-a', ruling: 'false' } }],
+        newFieldItemCount: 0,
+        items: [{ itemId: 'i1', harnessFiltered: false, field: 'stalls', adjudication: { class: 'finding', subjectGroupId: 'subject-a', ruling: 'false' } }],
       },
     ];
     const result = applyPrecisionReplacements(runs, [{ kind: 'finding', runId: 'r1', refId: 'i1', label: 'real' }]);
-    expect(result[0].items?.[0]).toEqual({ itemId: 'i1', harnessFiltered: false, adjudication: { class: 'finding', subjectGroupId: 'subject-a', ruling: 'real' } });
+    expect(result[0].items?.[0]).toEqual({ itemId: 'i1', harnessFiltered: false, field: 'stalls', adjudication: { class: 'finding', subjectGroupId: 'subject-a', ruling: 'real' } });
   });
 
   it('leaves a run with no items untouched', () => {
-    const runs: PrecisionRunRecord[] = [{ runId: 'r1', job: 'evaluator', classId: 'docs-only', verified: false, opus: true, itemCount: 2 }];
+    const runs: PrecisionRunRecord[] = [{ runId: 'r1', job: 'evaluator', classId: 'docs-only', verified: false, opus: true, itemCount: 2, newFieldItemCount: 0 }];
     const result = applyPrecisionReplacements(runs, [{ kind: 'finding', runId: 'r1', refId: 'i1', label: 'real' }]);
     expect(result[0]).toEqual(runs[0]);
   });

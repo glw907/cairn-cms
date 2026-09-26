@@ -6,40 +6,58 @@
  */
 import { CLASS_IDS, type ClassId, type PrecisionRunRecord } from './score-types.js';
 
-/** One run's own false and real finding counts (each a subject group, not an item) and its total examined items. */
+/**
+ * One run's own false and real finding counts (each a subject group, not an item), its total
+ * examined items, and how many of its false findings are new-field: a subject group is new-field
+ * when any of its items carries `field` `wrong` or `missing`, and the unverified-run fallback
+ * counts the run's own `newFieldItemCount` the same way `itemCount` falls back for `falseFindings`.
+ */
 export interface RunFindingCounts {
   runId: string;
   falseFindings: number;
   realFindings: number;
   totalItems: number;
+  newFieldFalseFindings: number;
 }
 
 /**
  * One run's finding counts. An unverified run (still failing after its rerun) counts every item in
  * its catch fields as a false finding, one per item, per the rerun rule; there is no subject
- * grouping to count by, since the adjudicator never ran against a working report. A verified run's
- * items are grouped by `subjectGroupId` (a `finding`-classified, non-harness-filtered item only,
- * and never a `harness`-ruled one), and each group counts once, by its own ruling; every item in a
+ * grouping to count by, since the adjudicator never ran against a working report, so
+ * `newFieldFalseFindings` falls back to the run's own `newFieldItemCount`. A verified run's items
+ * are grouped by `subjectGroupId` (a `finding`-classified, non-harness-filtered item only, and
+ * never a `harness`-ruled one), and each group counts once, by its own ruling; every item in a
  * group is expected to share that group's ruling, so the first item found for a group decides it.
+ * A false-ruled group counts as new-field when any of its items carries `field` `wrong` or
+ * `missing`.
  * @param run - The run to count.
- * @returns The run's false, real, and total item counts.
+ * @returns The run's false, real, total item, and new-field false-finding counts.
  */
 export function findingCountsForRun(run: PrecisionRunRecord): RunFindingCounts {
-  if (!run.verified) return { runId: run.runId, falseFindings: run.itemCount, realFindings: 0, totalItems: run.itemCount };
+  if (!run.verified) {
+    return { runId: run.runId, falseFindings: run.itemCount, realFindings: 0, totalItems: run.itemCount, newFieldFalseFindings: run.newFieldItemCount };
+  }
   const items = run.items ?? [];
   const groupRulings = new Map<string, 'real' | 'false' | 'harness'>();
+  const groupIsNewField = new Map<string, boolean>();
   for (const item of items) {
     if (item.harnessFiltered || !item.adjudication || item.adjudication.class !== 'finding') continue;
     const { subjectGroupId, ruling } = item.adjudication;
     if (!groupRulings.has(subjectGroupId)) groupRulings.set(subjectGroupId, ruling);
+    if (item.field === 'wrong' || item.field === 'missing') groupIsNewField.set(subjectGroupId, true);
   }
   let falseFindings = 0;
   let realFindings = 0;
-  for (const ruling of groupRulings.values()) {
-    if (ruling === 'false') falseFindings += 1;
-    else if (ruling === 'real') realFindings += 1;
+  let newFieldFalseFindings = 0;
+  for (const [subjectGroupId, ruling] of groupRulings) {
+    if (ruling === 'false') {
+      falseFindings += 1;
+      if (groupIsNewField.get(subjectGroupId)) newFieldFalseFindings += 1;
+    } else if (ruling === 'real') {
+      realFindings += 1;
+    }
   }
-  return { runId: run.runId, falseFindings, realFindings, totalItems: items.length };
+  return { runId: run.runId, falseFindings, realFindings, totalItems: items.length, newFieldFalseFindings };
 }
 
 /** The planned mapping-run pool size for a class: three runs per job, one job for a one-job class, two for a two-job class. */

@@ -8,12 +8,22 @@ import type { FreezeStamp } from './types.js';
 
 /**
  * The batch names development mode may score: pass 1's validation batch and its rerun, rescored
- * under this spec's rules, and round 1's own batch (O7 ruling: no other pass 1 batch is a
- * development batch for this spec's purposes). A batch outside this set is either a live gated
- * batch or a caller's mistake, and development mode refuses either way, since it can never emit a
- * bar or a class verdict.
+ * under this spec's rules, round 1's own batch (O7 ruling: no other pass 1 batch is a development
+ * batch for this spec's purposes), and pass 2a's five pilot batches, one per job, named explicitly
+ * (never by a `pilot-2a-` prefix rule, so the unscored smoke batch `pilot-2a-smoke` stays refused).
+ * A batch outside this set is either a live gated batch or a caller's mistake, and development mode
+ * refuses either way, since it can never emit a bar or a class verdict.
  */
-export const DEVELOPMENT_BATCH_NAMES: ReadonlySet<string> = new Set(['validation', 'validation-rerun', 'round1']);
+export const DEVELOPMENT_BATCH_NAMES: ReadonlySet<string> = new Set([
+  'validation',
+  'validation-rerun',
+  'round1',
+  'pilot-2a-operator',
+  'pilot-2a-designer',
+  'pilot-2a-extender',
+  'pilot-2a-core-developer',
+  'pilot-2a-scripter',
+]);
 
 /** A report development mode is asked to score: its batch name and every job's own freeze stamp. */
 export interface DevelopmentModeReport {

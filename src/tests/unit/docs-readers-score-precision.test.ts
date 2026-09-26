@@ -9,37 +9,46 @@ const RUN = (runId: string, classId: PrecisionRunRecord['classId'], overrides: P
   verified: true,
   opus: true,
   itemCount: 0,
+  newFieldItemCount: 0,
   ...overrides,
 });
 
-const FINDING = (itemId: string, subjectGroupId: string, ruling: 'real' | 'false' | 'harness'): PrecisionItem => ({
+const FINDING = (itemId: string, subjectGroupId: string, ruling: 'real' | 'false' | 'harness', field: PrecisionItem['field'] = 'stalls'): PrecisionItem => ({
   itemId,
   harnessFiltered: false,
+  field,
   adjudication: { class: 'finding', subjectGroupId, ruling },
 });
 
 describe('findingCountsForRun', () => {
-  it('counts every catch-field item as a false finding when the run is unverified, per the rerun rule', () => {
-    const run = RUN('r1', 'docs-only', { verified: false, itemCount: 3 });
-    expect(findingCountsForRun(run)).toEqual({ runId: 'r1', falseFindings: 3, realFindings: 0, totalItems: 3 });
+  it('counts every catch-field item as a false finding when the run is unverified, per the rerun rule, and falls back to newFieldItemCount for the new-field split', () => {
+    const run = RUN('r1', 'docs-only', { verified: false, itemCount: 3, newFieldItemCount: 1 });
+    expect(findingCountsForRun(run)).toEqual({ runId: 'r1', falseFindings: 3, realFindings: 0, totalItems: 3, newFieldFalseFindings: 1 });
   });
 
   it('counts one false finding per subject group, not per item: two items sharing a subject count once', () => {
     const run = RUN('r1', 'docs-only', {
       items: [FINDING('i1', 'subject-a', 'false'), FINDING('i2', 'subject-a', 'false'), FINDING('i3', 'subject-b', 'real')],
     });
-    expect(findingCountsForRun(run)).toEqual({ runId: 'r1', falseFindings: 1, realFindings: 1, totalItems: 3 });
+    expect(findingCountsForRun(run)).toEqual({ runId: 'r1', falseFindings: 1, realFindings: 1, totalItems: 3, newFieldFalseFindings: 0 });
   });
 
   it('excludes a harness-filtered item and a harness-ruled finding from both counts', () => {
     const run = RUN('r1', 'docs-only', {
-      items: [{ itemId: 'i1', harnessFiltered: true }, FINDING('i2', 'subject-b', 'harness'), { itemId: 'i3', harnessFiltered: false, adjudication: { class: 'interpretation' } }],
+      items: [{ itemId: 'i1', harnessFiltered: true, field: 'stalls' }, FINDING('i2', 'subject-b', 'harness'), { itemId: 'i3', harnessFiltered: false, field: 'stalls', adjudication: { class: 'interpretation' } }],
     });
-    expect(findingCountsForRun(run)).toEqual({ runId: 'r1', falseFindings: 0, realFindings: 0, totalItems: 3 });
+    expect(findingCountsForRun(run)).toEqual({ runId: 'r1', falseFindings: 0, realFindings: 0, totalItems: 3, newFieldFalseFindings: 0 });
   });
 
   it('reports zero findings for a run with no catch-field items, never a divide by zero', () => {
-    expect(findingCountsForRun(RUN('r1', 'docs-only', { items: [] }))).toEqual({ runId: 'r1', falseFindings: 0, realFindings: 0, totalItems: 0 });
+    expect(findingCountsForRun(RUN('r1', 'docs-only', { items: [] }))).toEqual({ runId: 'r1', falseFindings: 0, realFindings: 0, totalItems: 0, newFieldFalseFindings: 0 });
+  });
+
+  it('marks a false-ruled subject group new-field when any of its items carries field "wrong" or "missing"', () => {
+    const run = RUN('r1', 'docs-only', {
+      items: [FINDING('i1', 'subject-a', 'false', 'stalls'), FINDING('i2', 'subject-a', 'false', 'missing'), FINDING('i3', 'subject-b', 'false', 'stalls')],
+    });
+    expect(findingCountsForRun(run)).toEqual({ runId: 'r1', falseFindings: 2, realFindings: 0, totalItems: 3, newFieldFalseFindings: 1 });
   });
 });
 

@@ -19,6 +19,7 @@ import {
   scorePooledSensitivity,
   stabilityKappa,
   tallyPlantCatches,
+  wilsonInterval,
   type PlantCatchTally,
 } from '../../../scripts/docs-readers/lib/score-catch.js';
 import type { CatchRunRecord, PlantSpec } from '../../../scripts/docs-readers/lib/score-types.js';
@@ -218,6 +219,26 @@ describe('clopperPearson and recallOf', () => {
   it('gives a zero lower bound at zero successes and a one upper bound at all successes', () => {
     expect(clopperPearson(0, 5).lower).toBe(0);
     expect(clopperPearson(5, 5).upper).toBe(1);
+  });
+});
+
+describe('wilsonInterval', () => {
+  it('matches the pass 2a pilot\'s pre-registered bar: 12 of 16 clears one half, 11 of 16 does not', () => {
+    const twelve = wilsonInterval(12, 16);
+    expect(twelve.lower).toBeCloseTo(0.505, 3);
+    expect(twelve.upper).toBeCloseTo(0.898, 3);
+    const eleven = wilsonInterval(11, 16);
+    expect(eleven.lower).toBeCloseTo(0.444, 3);
+    expect(eleven.upper).toBeCloseTo(0.858, 3);
+  });
+
+  it('gives a zero lower bound at zero successes and a one upper bound at all successes, the same edge-case handling as clopperPearson', () => {
+    expect(wilsonInterval(0, 5).lower).toBe(0);
+    expect(wilsonInterval(5, 5).upper).toBe(1);
+  });
+
+  it('reports the full [0, 1] interval for zero trials, never a 0 / 0 division', () => {
+    expect(wilsonInterval(0, 0)).toEqual({ lower: 0, upper: 1 });
   });
 });
 

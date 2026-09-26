@@ -7,6 +7,7 @@ import { appendEntry, hashFile } from '../../../scripts/docs-readers/lib/chain.j
 import { loadManifest } from '../../../scripts/docs-readers/freeze.js';
 import { main } from '../../../scripts/docs-readers/score.js';
 import { recomputeThresholds } from '../../../scripts/docs-readers/oc-curve.js';
+import { wilsonInterval } from '../../../scripts/docs-readers/lib/score-catch.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const OC_CURVE_SEED_KEY = 'oc-curve';
@@ -230,6 +231,334 @@ describe('score.ts dev', () => {
     expect(byJob.evaluator.verifiedControlRunCount).toBe(1);
     expect(byJob.evaluator.totalFalseFindings).toBe(0);
     expect(byJob.evaluator.falseFindingsPerVerifiedControlRun).toBe(0);
+  });
+
+  it('scores a pilot-2a batch name, but refuses the unscored smoke batch name, naming it', () => {
+    const report = writeJsonFile('pilot-report.json', {
+      batch: 'pilot-2a-operator',
+      runId: 'r',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [{ id: 'operator-control-1', class: 'docs-and-binary', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED }],
+    });
+    const outPath = join(dir, 'pilot-out.json');
+    expect(main(['dev', '--report', report, '--plants', writeJsonFile('empty-plants-1.json', []), '--out', outPath])).toBe(0);
+    expect(readOut(outPath).ok).toBe(true);
+
+    const smokeReport = writeJsonFile('smoke-report.json', { batch: 'pilot-2a-smoke', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [] });
+    const smokeOut = join(dir, 'smoke-out.json');
+    expect(main(['dev', '--report', smokeReport, '--plants', '/does/not/exist.json', '--out', smokeOut])).toBe(1);
+    expect((readOut(smokeOut).problems as string[])[0]).toContain('pilot-2a-smoke');
+  });
+
+  describe('--control-ids', () => {
+    // Two control jobs (job-a-control-1, job-b-control-1) and one planted job (job-a-planted-1,
+    // never a valid --control-ids value), all in one pilot-2a batch, so the "unlisted control
+    // job" check has something to catch.
+    function controlIdsReport(): string {
+      return writeJsonFile('control-ids-report.json', {
+        batch: 'pilot-2a-operator',
+        runId: 'r',
+        stopReason: 'complete',
+        budgetTokens: 0,
+        usage: USAGE,
+        verified: true,
+        jobs: [
+          { id: 'job-a-control-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED },
+          { id: 'job-a-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED },
+          { id: 'job-b-control-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED },
+        ],
+      });
+    }
+
+    function runWithControlIds(controlIds: string, outName: string): { code: number; problems?: string[] } {
+      const outPath = join(dir, outName);
+      const code = main(['dev', '--report', controlIdsReport(), '--plants', writeJsonFile(`${outName}-plants.json`, []), '--control-ids', controlIds, '--out', outPath]);
+      const result = readOut(outPath);
+      return { code, problems: result.problems as string[] | undefined };
+    }
+
+    it('refuses an empty id in the list', () => {
+      const { code, problems } = runWithControlIds('job-a-control-1,', 'empty-out.json');
+      expect(code).toBe(1);
+      expect(problems![0]).toContain('empty');
+    });
+
+    it('refuses an id absent from the reports, naming it', () => {
+      const { code, problems } = runWithControlIds('job-a-control-1,unknown-control-1', 'absent-out.json');
+      expect(code).toBe(1);
+      expect(problems![0]).toContain('unknown-control-1');
+    });
+
+    it('refuses a duplicate id, naming it', () => {
+      const { code, problems } = runWithControlIds('job-a-control-1,job-b-control-1,job-a-control-1', 'dup-out.json');
+      expect(code).toBe(1);
+      expect(problems![0]).toContain('job-a-control-1');
+      expect(problems![0]).toContain('duplicate');
+    });
+
+    it('refuses an id whose role does not parse as control, naming it', () => {
+      const { code, problems } = runWithControlIds('job-a-planted-1,job-b-control-1', 'role-out.json');
+      expect(code).toBe(1);
+      expect(problems![0]).toContain('job-a-planted-1');
+    });
+
+    it('refuses a control job the list leaves out, when a pilot-2a-* batch is present', () => {
+      const { code, problems } = runWithControlIds('job-a-control-1', 'unlisted-out.json');
+      expect(code).toBe(1);
+      expect(problems![0]).toContain('job-b-control-1');
+    });
+
+    it('accepts every control job listed, with none left out', () => {
+      const { code } = runWithControlIds('job-a-control-1,job-b-control-1', 'ok-out.json');
+      expect(code).toBe(0);
+    });
+  });
+
+  it('reports plantTallies from on-map tallies only, and onMapPlantRunWilson beside onMapPlantRunRecall', () => {
+    // evaluator-planted-1 and -2 join no catch-judge rulings at all, so every plant's catch
+    // defaults to missed for both counted runs: runsCaught is [false, false].
+    const report = writeJsonFile('plant-tallies-report.json', {
+      batch: 'round1',
+      runId: 'r',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [
+        { id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED },
+        { id: 'evaluator-planted-2', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED },
+      ],
+    });
+    const plantsPath = writeJsonFile('plant-tallies-plants.json', [
+      { id: 'PLANT-ON', job: 'evaluator', page: 'docs/fixture-page.md', line: 12 },
+      { id: 'PLANT-OFF', job: 'evaluator', page: 'docs/fixture-page.md', line: 900 },
+    ]);
+    const mapPath = writeJsonFile('plant-tallies-map.json', {
+      job: 'evaluator',
+      verifiedRuns: 2,
+      mode: 'proxy',
+      pages: { 'docs/fixture-page.md': { lines: 1000, sections: [{ heading: 'lead', level: 1, start: 1, end: 30, quotes: 2, runs: 2 }] } },
+      onPathShare: 0.3,
+      narrowed: false,
+      widened: false,
+      capacity: 7,
+      noMap: null,
+    });
+    const outPath = join(dir, 'plant-tallies-out.json');
+    const code = main(['dev', '--report', report, '--plants', plantsPath, '--map', `evaluator=${mapPath}`, '--out', outPath]);
+    expect(code).toBe(0);
+    const result = readOut(outPath);
+    const plantTallies = result.plantTallies as Array<{ plantId: string; job: string; runsCaught: boolean[] }>;
+    expect(plantTallies).toHaveLength(1);
+    expect(plantTallies[0]).toEqual({ plantId: 'PLANT-ON', job: 'evaluator', runsCaught: [false, false] });
+    expect(plantTallies[0].runsCaught.some(Boolean)).toBe(false);
+    const onMapPlantRunRecall = result.onMapPlantRunRecall as { caught: number; total: number };
+    const wilson = result.onMapPlantRunWilson as { lower: number; upper: number };
+    expect(wilson).toEqual(wilsonInterval(onMapPlantRunRecall.caught, onMapPlantRunRecall.total));
+  });
+
+  it('excludes an off-map plant from plantTallies even when its catch judge rules it caught', () => {
+    const report = writeJsonFile('off-map-caught-report.json', {
+      batch: 'round1',
+      runId: 'r',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [{ id: 'evaluator-planted-1', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED }],
+    });
+    const plantsPath = writeJsonFile('off-map-caught-plants.json', [
+      { id: 'PLANT-ON', job: 'evaluator', page: 'docs/fixture-page.md', line: 12 },
+      { id: 'PLANT-OFF', job: 'evaluator', page: 'docs/fixture-page.md', line: 900 },
+    ]);
+    const mapPath = writeJsonFile('off-map-caught-map.json', {
+      job: 'evaluator',
+      verifiedRuns: 1,
+      mode: 'proxy',
+      pages: { 'docs/fixture-page.md': { lines: 1000, sections: [{ heading: 'lead', level: 1, start: 1, end: 30, quotes: 2, runs: 2 }] } },
+      onPathShare: 0.3,
+      narrowed: false,
+      widened: false,
+      capacity: 7,
+      noMap: null,
+    });
+    const rulingsPath = writeJsonFile('off-map-caught-rulings.json', {
+      batch: 'catch-round0',
+      runId: 'r',
+      kind: 'catchJudge',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [
+        {
+          id: 'evaluator-planted-1',
+          class: 'judge-catch',
+          model: 'claude-opus-5-5',
+          outcome: 'done',
+          rulings: [
+            { itemId: 'plant-on-item', ruling: 'caught', reason: 'r' },
+            { itemId: 'plant-off-item', ruling: 'caught', reason: 'r' },
+          ],
+          usage: USAGE,
+          verified: { ok: true, init: true, canaries: true, problems: [] },
+        },
+      ],
+    });
+    const keyPath = writeJsonFile('off-map-caught-key.json', {
+      kind: 'catch',
+      builtFrom: 'sources',
+      report: { path: report, jobId: 'evaluator-planted-1', attempt: 1, runId: 'r' },
+      plants: { 'plant-on-item': { plantId: 'PLANT-ON' }, 'plant-off-item': { plantId: 'PLANT-OFF' } },
+      items: {},
+      inputs: {},
+    });
+    const outPath = join(dir, 'off-map-caught-out.json');
+    const code = main(['dev', '--report', report, '--catch-rulings', rulingsPath, '--catch-key', keyPath, '--plants', plantsPath, '--map', `evaluator=${mapPath}`, '--out', outPath]);
+    expect(code).toBe(0);
+    const plantTallies = readOut(outPath).plantTallies as Array<{ plantId: string; job: string; runsCaught: boolean[] }>;
+    // PLANT-OFF is caught (both catch keys rule 'caught'), but only PLANT-ON, the on-map plant, appears.
+    expect(plantTallies).toEqual([{ plantId: 'PLANT-ON', job: 'evaluator', runsCaught: [true] }]);
+  });
+
+  it('shows a catch through a new-field (wrong[]) item in its plant\'s plantTallies runsCaught, since a catch ruling is per plant, not per field', () => {
+    const report = writeJsonFile('new-field-catch-report.json', {
+      batch: 'round1',
+      runId: 'r',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [
+        {
+          id: 'evaluator-planted-1',
+          class: 'docs-only',
+          model: 'claude-opus-5-5',
+          outcome: 'done',
+          wrong: [{ quote: { path: 'docs/fixture-page.md', line: 12, text: 't', ok: true }, pageSays: 'a', actual: 'b', evidence: 'c' }],
+          verified: VERIFIED,
+        },
+      ],
+    });
+    const plantsPath = writeJsonFile('new-field-catch-plants.json', [{ id: 'PLANT-X1', job: 'evaluator', page: 'docs/fixture-page.md', line: 12 }]);
+    const mapPath = writeJsonFile('new-field-catch-map.json', {
+      job: 'evaluator',
+      verifiedRuns: 1,
+      mode: 'proxy',
+      pages: { 'docs/fixture-page.md': { lines: 100, sections: [{ heading: 'lead', level: 1, start: 1, end: 30, quotes: 2, runs: 2 }] } },
+      onPathShare: 0.3,
+      narrowed: false,
+      widened: false,
+      capacity: 7,
+      noMap: null,
+    });
+    const rulingsPath = writeJsonFile('new-field-catch-rulings.json', catchJudgeRulings(['evaluator-planted-1']));
+    const keyPath = writeJsonFile('new-field-catch-key.json', {
+      kind: 'catch',
+      builtFrom: 'sources',
+      report: { path: report, jobId: 'evaluator-planted-1', attempt: 1, runId: 'r' },
+      plants: { 'plant-1': { plantId: 'PLANT-X1' } },
+      items: {},
+      inputs: {},
+    });
+    const outPath = join(dir, 'new-field-catch-out.json');
+    const code = main(['dev', '--report', report, '--catch-rulings', rulingsPath, '--catch-key', keyPath, '--plants', plantsPath, '--map', `evaluator=${mapPath}`, '--out', outPath]);
+    expect(code).toBe(0);
+    const plantTallies = readOut(outPath).plantTallies as Array<{ plantId: string; job: string; runsCaught: boolean[] }>;
+    expect(plantTallies[0]).toEqual({ plantId: 'PLANT-X1', job: 'evaluator', runsCaught: [true] });
+  });
+
+  it('builds pooledPrecision over --control-ids: an unverified run falls back to itemCount/newFieldItemCount, and a verified run\'s false group holding a missing[] item counts as new-field', () => {
+    const report = writeJsonFile('pooled-precision-report.json', {
+      batch: 'pilot-2a-operator',
+      runId: 'r',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [
+        {
+          id: 'evaluator-control-1',
+          class: 'docs-only',
+          model: 'claude-opus-5-5',
+          outcome: 'done',
+          stalls: [{ text: 's1', blockedBy: null }, { text: 's2', blockedBy: null }],
+          wrong: [{ quote: { path: 'p', line: 1, text: 't', ok: true }, pageSays: 'a', actual: 'b', evidence: 'c' }],
+          verified: { ...VERIFIED, ok: false },
+        },
+        { id: 'evaluator-control-2', class: 'docs-only', model: 'claude-opus-5-5', outcome: 'done', verified: VERIFIED },
+      ],
+    });
+    const adjudicatorRulings = {
+      batch: 'adjudicator-pilot',
+      runId: 'r',
+      kind: 'adjudicator',
+      stopReason: 'complete',
+      budgetTokens: 0,
+      usage: USAGE,
+      verified: true,
+      jobs: [
+        {
+          id: 'evaluator-control-2',
+          class: 'judge-adjudicator',
+          model: 'claude-opus-5-5',
+          outcome: 'done',
+          rulings: [
+            { itemId: 'item-1', class: 'finding', subjectGroupId: 'g1', ruling: 'false', reason: 'r' },
+            { itemId: 'item-2', class: 'finding', subjectGroupId: 'g2', ruling: 'false', reason: 'r' },
+          ],
+          usage: USAGE,
+          verified: { ok: true, init: true, canaries: true, problems: [] },
+        },
+      ],
+    };
+    const rulingsPath = writeJsonFile('pooled-precision-adjudicator-rulings.json', adjudicatorRulings);
+    const keyPath = writeJsonFile('pooled-precision-key.json', {
+      kind: 'adjudicator',
+      builtFrom: 'sources',
+      report: { path: report, jobId: 'evaluator-control-2', attempt: 1, runId: 'r' },
+      items: { 'item-1': { field: 'missing', sourceIndex: 0 }, 'item-2': { field: 'stalls', sourceIndex: 0 } },
+      excluded: [],
+      treeCommit: 'c',
+      treeAbsent: [],
+      inputs: {},
+    });
+    const outPath = join(dir, 'pooled-precision-out.json');
+    const code = main([
+      'dev',
+      '--report', report,
+      '--adjudicator-rulings', rulingsPath,
+      '--adjudicator-key', keyPath,
+      '--plants', writeJsonFile('pooled-precision-plants.json', []),
+      '--control-ids', 'evaluator-control-1,evaluator-control-2',
+      '--out', outPath,
+    ]);
+    expect(code).toBe(0);
+    const pooled = readOut(outPath).pooledPrecision as {
+      controlRunIds: string[];
+      falseFindings: number;
+      newFieldFalseFindings: number;
+      otherFalseFindings: number;
+      perRun: Array<{ runId: string; verified: boolean; falseFindings: number; newFieldFalseFindings: number }>;
+    };
+    expect(pooled.controlRunIds).toEqual(['evaluator-control-1', 'evaluator-control-2']);
+    expect(pooled.perRun).toEqual([
+      { runId: 'evaluator-control-1', verified: false, falseFindings: 3, newFieldFalseFindings: 1 },
+      { runId: 'evaluator-control-2', verified: true, falseFindings: 2, newFieldFalseFindings: 1 },
+    ]);
+    expect(pooled.falseFindings).toBe(5);
+    expect(pooled.newFieldFalseFindings).toBe(2);
+    expect(pooled.otherFalseFindings).toBe(3);
+  });
+
+  it('omits pooledPrecision when --control-ids is absent', () => {
+    const report = writeJsonFile('no-control-ids-report.json', { batch: 'round1', runId: 'r', stopReason: 'complete', budgetTokens: 0, usage: USAGE, verified: true, jobs: [] });
+    const outPath = join(dir, 'no-control-ids-out.json');
+    expect(main(['dev', '--report', report, '--plants', writeJsonFile('no-control-ids-plants.json', []), '--out', outPath])).toBe(0);
+    expect(readOut(outPath)).not.toHaveProperty('pooledPrecision');
   });
 });
 

@@ -5,6 +5,7 @@
  * flags set) by the assembler in `score.ts`, which is the only place a report, packet, or key file
  * is ever read; these modules score already-resolved records, never raw artifacts.
  */
+import type { CatchFieldItemLocation } from '../judge-packets.js';
 
 /** The four reader classes the bars gate over, matching `scripts/docs-readers/classes/*.json`. */
 export type ClassId = 'docs-only' | 'docs-and-binary' | 'docs-and-site' | 'repository';
@@ -61,11 +62,14 @@ export interface CatchRunRecord {
  * ever saw the item; `adjudication` is the adjudicator's classification, read only when the item
  * was not harness-filtered. A `finding` classification carries the `subjectGroupId` every item
  * sharing its subject pools under, since the counting unit is the group, not the item (spec,
- * "Scoring": "groups the run's findings by subject ... then rules each subject").
+ * "Scoring": "groups the run's findings by subject ... then rules each subject"). `field` is the
+ * item's own source field (the adjudicator key's `items[itemId].field`), which splits a false
+ * subject group into new-field (`wrong` or `missing`) and other.
  */
 export interface PrecisionItem {
   itemId: string;
   harnessFiltered: boolean;
+  field: CatchFieldItemLocation['field'];
   adjudication?: { class: 'finding'; subjectGroupId: string; ruling: 'real' | 'false' | 'harness' } | { class: 'interpretation' | 'notAClaim' };
 }
 
@@ -73,8 +77,9 @@ export interface PrecisionItem {
  * One control or mapping run's already-resolved precision items. `itemCount` is the run's total
  * catch-field item count before any filtering, the count an unverified run's rerun rule falls back
  * to (every item counts as a false finding, one per item, since there is no adjudicated subject
- * grouping for a run the adjudicator never got a working report from); `items` carries the resolved
- * rulings and is read only when `verified`.
+ * grouping for a run the adjudicator never got a working report from); `newFieldItemCount` is the
+ * run's own `wrong[]` plus `missing[]` length, the same rerun-rule fallback restricted to the new
+ * fields; `items` carries the resolved rulings and is read only when `verified`.
  */
 export interface PrecisionRunRecord {
   runId: string;
@@ -83,5 +88,6 @@ export interface PrecisionRunRecord {
   verified: boolean;
   opus: boolean;
   itemCount: number;
+  newFieldItemCount: number;
   items?: PrecisionItem[];
 }

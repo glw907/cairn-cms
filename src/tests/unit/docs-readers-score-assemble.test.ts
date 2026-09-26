@@ -323,8 +323,8 @@ describe('joinAdjudications', () => {
     expect(problems).toHaveLength(0);
     const items = byReaderJobId.get('evaluator-control-1');
     expect(items).toEqual([
-      { itemId: 'item-1', harnessFiltered: false, adjudication: { class: 'finding', subjectGroupId: 'subject-a', ruling: 'false' } },
-      { itemId: 'item-2', harnessFiltered: true },
+      { itemId: 'item-1', harnessFiltered: false, field: 'stalls', adjudication: { class: 'finding', subjectGroupId: 'subject-a', ruling: 'false' } },
+      { itemId: 'item-2', harnessFiltered: true, field: 'assumed' },
     ]);
   });
 
@@ -368,7 +368,7 @@ describe('joinAdjudications', () => {
 describe('buildPrecisionRunRecords', () => {
   it('builds a precision run only for a control-role job', () => {
     const { byId: indexed } = indexReaderJobs([at('r.json', batchReport([job({ id: 'evaluator-control-1' }), job({ id: 'evaluator-planted-1' })]))], VALID_CLASSES);
-    const itemsByReaderJobId = new Map([['evaluator-control-1', [{ itemId: 'i1', harnessFiltered: false, adjudication: { class: 'finding' as const, subjectGroupId: 's', ruling: 'false' as const } }]]]);
+    const itemsByReaderJobId = new Map([['evaluator-control-1', [{ itemId: 'i1', harnessFiltered: false, field: 'stalls' as const, adjudication: { class: 'finding' as const, subjectGroupId: 's', ruling: 'false' as const } }]]]);
     const { runs, problems } = buildPrecisionRunRecords(indexed, itemsByReaderJobId);
     expect(runs).toHaveLength(1);
     expect(runs[0].runId).toBe('evaluator-control-1');
@@ -385,12 +385,12 @@ describe('buildPrecisionRunRecords', () => {
     const { byId: indexed } = indexReaderJobs([at('r.json', batchReport([readerJob]))], VALID_CLASSES);
     // The key (via itemsByReaderJobId) resolves only one item, far fewer than the run's own three
     // catch-field entries; itemCount must still read three, from the outcome, not one.
-    const itemsByReaderJobId = new Map([['evaluator-control-1', [{ itemId: 'i1', harnessFiltered: false, adjudication: { class: 'finding' as const, subjectGroupId: 's', ruling: 'false' as const } }]]]);
+    const itemsByReaderJobId = new Map([['evaluator-control-1', [{ itemId: 'i1', harnessFiltered: false, field: 'stalls' as const, adjudication: { class: 'finding' as const, subjectGroupId: 's', ruling: 'false' as const } }]]]);
     const { runs } = buildPrecisionRunRecords(indexed, itemsByReaderJobId);
     expect(runs[0].itemCount).toBe(3);
   });
 
-  it('folds wrong[] and missing[] into itemCount beside stalls, assumed, and diverged', () => {
+  it('folds wrong[] and missing[] into itemCount beside stalls, assumed, and diverged, and sums them alone into newFieldItemCount', () => {
     const readerJob = job({
       id: 'evaluator-control-1',
       wrong: [{ quote: { path: 'p', line: 1, text: 't', ok: true }, pageSays: 'a', actual: 'b', evidence: 'c' }],
@@ -402,6 +402,7 @@ describe('buildPrecisionRunRecords', () => {
     const { byId: indexed } = indexReaderJobs([at('r.json', batchReport([readerJob]))], VALID_CLASSES);
     const { runs } = buildPrecisionRunRecords(indexed, new Map([['evaluator-control-1', []]]));
     expect(runs[0].itemCount).toBe(3);
+    expect(runs[0].newFieldItemCount).toBe(3);
   });
 
   it('is a problem, never silently scored with zero items, for a control job with no joined adjudicator items', () => {

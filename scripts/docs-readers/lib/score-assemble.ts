@@ -374,8 +374,9 @@ export function joinAdjudications(
     }
     const items: PrecisionItem[] = [];
     for (const itemId of Object.keys(key.items)) {
+      const { field } = key.items[itemId];
       if (excluded.has(itemId)) {
-        items.push({ itemId, harnessFiltered: true });
+        items.push({ itemId, harnessFiltered: true, field });
         continue;
       }
       const matching = adjudicationsByItemId.get(itemId) ?? [];
@@ -385,9 +386,9 @@ export function joinAdjudications(
       }
       const adjudication = matching[0];
       if (adjudication.class === 'finding') {
-        items.push({ itemId, harnessFiltered: false, adjudication: { class: 'finding', subjectGroupId: adjudication.subjectGroupId, ruling: adjudication.ruling } });
+        items.push({ itemId, harnessFiltered: false, field, adjudication: { class: 'finding', subjectGroupId: adjudication.subjectGroupId, ruling: adjudication.ruling } });
       } else {
-        items.push({ itemId, harnessFiltered: false, adjudication: { class: adjudication.class } });
+        items.push({ itemId, harnessFiltered: false, field, adjudication: { class: adjudication.class } });
       }
     }
     byReaderJobId.set(key.report.jobId, items);
@@ -401,6 +402,8 @@ export function joinAdjudications(
  * (its `stalls[]`, `assumed[]`, `diverged[]`, `checks[]`, `wrong[]`, and `missing[]` counts), never
  * from the key, since an unverified run's rerun-rule fallback must reflect what the reader itself
  * actually recorded, not however many items a (possibly stale or absent) key happened to carry.
+ * `newFieldItemCount` is the same outcome's `wrong[]` plus `missing[]` length alone, the rerun
+ * rule's own fallback restricted to the new fields.
  * @param indexed - Every indexed reader job.
  * @param itemsByReaderJobId - Each reader job id's own resolved `PrecisionItem[]`.
  * @returns Every control-role precision run, and every problem found (a control job with no joined items).
@@ -416,8 +419,8 @@ export function buildPrecisionRunRecords(
     const items = itemsByReaderJobId.get(job.id);
     if (!items) problems.push(`job "${job.id}": no adjudicator key and rulings joined for it`);
     const outcome = job.outcome;
-    const itemCount =
-      outcome.stalls.length + outcome.assumed.length + outcome.diverged.length + outcome.wrong.length + outcome.missing.length + (outcome.checks?.length ?? 0);
+    const newFieldItemCount = outcome.wrong.length + outcome.missing.length;
+    const itemCount = outcome.stalls.length + outcome.assumed.length + outcome.diverged.length + newFieldItemCount + (outcome.checks?.length ?? 0);
     runs.push({
       runId: job.id,
       job: job.parsed.job,
@@ -425,6 +428,7 @@ export function buildPrecisionRunRecords(
       verified: job.outcome.verified.ok,
       opus: job.opus,
       itemCount,
+      newFieldItemCount,
       items: items ?? [],
     });
   }

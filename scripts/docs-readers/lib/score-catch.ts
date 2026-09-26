@@ -219,6 +219,30 @@ export function clopperPearson(k: number, n: number, alpha = 0.05): { lower: num
 }
 
 /**
+ * The Wilson score confidence interval for `k` successes in `n` trials, reported beside
+ * `clopperPearson`'s exact interval because a pre-registered pass mark should not move with the
+ * choice of interval: Wilson holds coverage near the nominal level on average, where
+ * Clopper-Pearson guarantees at least it and so runs wider. The same edge-case handling as
+ * `clopperPearson` applies at `n`, `k` zero, and `k` equal to `n`, rather than trusting the score
+ * formula's own algebra at the boundary.
+ * @param k - The success count.
+ * @param n - The trial count.
+ * @param z - The z-score for the desired confidence (defaults to 1.96, about 95 percent).
+ * @returns The interval's lower and upper bound.
+ */
+export function wilsonInterval(k: number, n: number, z = 1.96): { lower: number; upper: number } {
+  if (n === 0) return { lower: 0, upper: 1 };
+  if (k === 0) return { lower: 0, upper: (z * z) / (n + z * z) };
+  if (k === n) return { lower: n / (n + z * z), upper: 1 };
+  const p = k / n;
+  const z2 = z * z;
+  const denominator = 1 + z2 / n;
+  const center = (p + z2 / (2 * n)) / denominator;
+  const halfWidth = (z / denominator) * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n));
+  return { lower: center - halfWidth, upper: center + halfWidth };
+}
+
+/**
  * A recall report over a set of tallies: the caught count, the total, the rate, and its exact
  * interval. A tally-free set reports a null rate and interval rather than a `0 / 0` division.
  * @param tallies - The tallies to summarize.

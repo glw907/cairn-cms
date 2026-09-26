@@ -33,7 +33,7 @@
  *     --report FILE [--report FILE...]
  *     [--catch-rulings FILE...] [--catch-key FILE...]
  *     [--adjudicator-rulings FILE...] [--adjudicator-key FILE...]
- *     --plants FILE [--map JOB=FILE...] --out FILE
+ *     --plants FILE [--map JOB=FILE...] [--control-ids ID,ID,...] --out FILE
  *   npx tsx scripts/docs-readers/score.ts gated
  *     --report FILE [--report FILE...]
  *     [--catch-rulings FILE...] [--catch-key FILE...]
@@ -82,6 +82,7 @@ import {
   scorePooledSensitivity,
   stabilityKappa,
   tallyPlantCatches,
+  wilsonInterval,
   type ClassSensitivityResult,
   type PlantCatchTally,
   type PooledSensitivityResult,
@@ -317,6 +318,79 @@ function runSample(argv: string[]): number {
   return 0;
 }
 
+/** One control run's own place in the pooled precision block. */
+interface PooledPrecisionRunEntry {
+  runId: string;
+  verified: boolean;
+  falseFindings: number;
+  newFieldFalseFindings: number;
+}
+
+/** The pilot's pooled precision block, over the given `--control-ids` list. */
+interface PooledPrecision {
+  controlRunIds: string[];
+  falseFindings: number;
+  newFieldFalseFindings: number;
+  otherFalseFindings: number;
+  perRun: PooledPrecisionRunEntry[];
+}
+
+/**
+ * Validate `--control-ids`, refusing (in this order) an empty id, an id absent from the reports, a
+ * duplicate id, an id whose reader job does not parse as a `control`-role job, and, when any report
+ * carries a `pilot-2a-` batch, a `control`-role job the list leaves out. Absent input (`raw`
+ * undefined) is valid and carries no ids, since `pooledPrecision` is then omitted entirely (round
+ * 1's rescore passes none).
+ * @param raw - The raw `--control-ids` flag value, or undefined when the flag was not given.
+ * @param indexed - Every indexed reader job.
+ * @param batchNames - Every `--report` file's own batch name, to detect a `pilot-2a-` batch.
+ * @returns The validated id list (undefined when the flag was not given), or a problem naming the offending id.
+ */
+function validateControlIds(raw: string | undefined, indexed: ReadonlyMap<string, IndexedReaderJob>, batchNames: readonly string[]): { ok: true; ids?: string[] } | { ok: false; problem: string } {
+  if (raw === undefined) return { ok: true };
+  const ids = raw.split(',');
+  for (const id of ids) {
+    if (id === '') return { ok: false, problem: '--control-ids: the list carries an empty id' };
+  }
+  for (const id of ids) {
+    if (!indexed.has(id)) return { ok: false, problem: `--control-ids: id "${id}" is absent from the reports` };
+  }
+  const seen = new Set<string>();
+  for (const id of ids) {
+    if (seen.has(id)) return { ok: false, problem: `--control-ids: id "${id}" is a duplicate` };
+    seen.add(id);
+  }
+  for (const id of ids) {
+    if (indexed.get(id)!.parsed.role !== 'control') return { ok: false, problem: `--control-ids: id "${id}" does not parse as a control-role job` };
+  }
+  if (batchNames.some((batch) => batch.startsWith('pilot-2a-'))) {
+    for (const job of indexed.values()) {
+      if (job.parsed.role === 'control' && !seen.has(job.id)) return { ok: false, problem: `--control-ids: control job "${job.id}" is not listed` };
+    }
+  }
+  return { ok: true, ids };
+}
+
+/**
+ * Build the pooled precision block over the given control ids: each run's own false and new-field
+ * false finding counts (`findingCountsForRun`), summed, with new-field split from the pooled total
+ * to give `otherFalseFindings`.
+ * @param controlIds - The validated `--control-ids` list, in the given order.
+ * @param precisionRuns - Every assembled precision run.
+ * @returns The pooled precision block.
+ */
+function buildPooledPrecision(controlIds: readonly string[], precisionRuns: readonly PrecisionRunRecord[]): PooledPrecision {
+  const byRunId = new Map(precisionRuns.map((run) => [run.runId, run]));
+  const perRun: PooledPrecisionRunEntry[] = controlIds.map((runId) => {
+    const run = byRunId.get(runId);
+    const counts = run ? findingCountsForRun(run) : { falseFindings: 0, newFieldFalseFindings: 0 };
+    return { runId, verified: run?.verified ?? false, falseFindings: counts.falseFindings, newFieldFalseFindings: counts.newFieldFalseFindings };
+  });
+  const falseFindings = perRun.reduce((sum, entry) => sum + entry.falseFindings, 0);
+  const newFieldFalseFindings = perRun.reduce((sum, entry) => sum + entry.newFieldFalseFindings, 0);
+  return { controlRunIds: [...controlIds], falseFindings, newFieldFalseFindings, otherFalseFindings: falseFindings - newFieldFalseFindings, perRun };
+}
+
 /** One development job's on-map and precision figures. */
 interface DevJobResult {
   job: string;
@@ -377,6 +451,16 @@ function runDev(argv: string[]): number {
     return 1;
   }
 
+  const controlIdsResult = validateControlIds(
+    option(argv, '--control-ids'),
+    indexed,
+    reports.map(({ report }) => report.batch),
+  );
+  if (!controlIdsResult.ok) {
+    writeJson(out, { ok: false, mode: 'development', problems: [controlIdsResult.problem] });
+    return 1;
+  }
+
   const assembled = assembleRuns({
     indexed,
     catchRulingsPaths: repeatedOption(argv, '--catch-rulings'),
@@ -410,12 +494,16 @@ function runDev(argv: string[]): number {
     };
   }
 
+  const onMapPlantRunRecall = recallByPlantRun(onMapTallies);
   writeJson(out, {
     ok: true,
     mode: 'development',
     byJob,
     onMapRecall: recallByClass(onMapTallies),
-    onMapPlantRunRecall: recallByPlantRun(onMapTallies),
+    onMapPlantRunRecall,
+    onMapPlantRunWilson: wilsonInterval(onMapPlantRunRecall.caught, onMapPlantRunRecall.total),
+    plantTallies: onMapTallies.map((tally) => ({ plantId: tally.plantId, job: tally.job, runsCaught: tally.runsCaught })),
+    ...(controlIdsResult.ids ? { pooledPrecision: buildPooledPrecision(controlIdsResult.ids, assembled.precisionRuns) } : {}),
     notes: [...indexNotes, ...assembled.problems],
   });
   return 0;

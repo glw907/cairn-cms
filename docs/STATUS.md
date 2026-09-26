@@ -20,12 +20,20 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Live: docs reset pass 2a, Task 5 (the pilot) running.** Ledger at the foot of the plan in the `.claude/worktrees/docs-reset-2a` worktree (branch `docs-reset-2a`, Tasks 3 and 4 accepted, last commit `bbea7afd`; lane `docs-reset-2a-audiences` accepted, merges at segment 2's boundary). Spend 4.10M counted, projection ~11.2M. `uupd.timer` paused (F1); pilot pinned to CLI 2.1.283. Keep the `docs-reset-1b` worktree until the close. Still owed: the `~/.dotfiles` push.
+The docs reset's reader-validation line is stopped by owner ruling: the reader instrument failed
+its validation across three passes (HISTORY, "Docs reset pass 2a"). Next is Geoff's new
+draft-documentation approach, designed from conventional practice. The branches `docs-reset-2a`
+and `docs-reset-2a-audiences` are archived on origin, unmerged; the `docs-reset-1b` and
+`docs-reset-2a` worktrees are kept. Still owed: the `~/.dotfiles` push.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`
 (published version `0.96.0`) and `f:75hawi` (free tier), and `docs/why-cairn.md:41` against its
-line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` over its 6k budget.
+line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` over its 6k budget;
+the reader harness (`scripts/docs-readers/`, its tests, the reader classes), the v2 page chain's
+reader stage in `~/.dotfiles`, the scratch Worker `cairn-scratch-b`, and
+`CAIRN_DOCS_READER_OAUTH_TOKEN`, which stay in place until the new approach decides whether any
+part survives.
 
 ## Open decisions and watches
 
@@ -45,8 +53,8 @@ line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` ov
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` at effort `medium`, in
-`/var/home/glw907/Projects/cairn-cms`, execute docs reset pass 2a from Task 0 of the approved plan
-`docs/superpowers/plans/2026-09-25-docs-reset-pass-2a.md`. Conduct thin: dispatch each task's chain,
-read structured reports, and never read diffs or logs. Owner rulings F1 and F2 (a) are recorded in the
-plan's "Owner decisions at approval".
+In a fresh session started with `claude --model claude-opus-5-5` at effort `high`, in
+`/var/home/glw907/Projects/cairn-cms`, brainstorm a draft-documentation approach from conventional
+practice (a published style guide with a linter, SME review, docs-as-tests for procedures, human
+task-based usability testing). Read the HISTORY entry "Docs reset pass 2a" first; it records why
+the reader-validation line stopped and which assets survive as inputs.

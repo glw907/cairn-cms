@@ -282,66 +282,29 @@ The original decision framing, for the record:
 
 ## Now
 
-- **The docs reset (spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`, Geoff,
-  2026-09-22 to 25).** cairn's docs are rebuilt from scratch on a writing system that is tested by
-  confined reader agents. Pass 1 built that system and closed on 2026-09-24 (plan and post-mortem:
-  `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`). Pass 1b built a pre-registered
-  validation instrument and closed on its tuning record on 2026-09-25, before the freeze (O11;
-  plan, post-mortem, and a draft program budget:
-  `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`). No gated verdict exists. The
-  sequence now runs:
-  - **Pass 2a, the audience record and the trial (next).** It defines the profile-file format
-    together with the profiles (the spec's pass 1 amendment). Its inputs:
-    - **Every reader class is advisory** (`docs/internal/record/2026-09-24-docs-reset-1b-validation.md`,
-      with the cause per class). Development on-map recall per plant-run, on the tuning proxy map, was 2 of 16 and 1 of 8,
-      against a gated bar needing about 0.8.
-    - **Trial readers are Opus only.** No Sonnet share is validated.
-    - **The labeled defect set is empty.** The spec assigned it pass 1b's test plants, and the
-      planter never ran, so pass 2a supplies its own labeled set for the grader comparison.
-    - **The trial redesign the pass 1b spec hands over** ("Finding for pass 2a"). As fixed, the
-      trial keeps a truly one-third-better chain about half the time, so pass 2a resizes it or
-      restates its decision rule. Its measuring jobs must be disjoint from the chain's
-      reader-stage jobs, or it adds an independent measure. Program ruling O12 (Geoff, 2026-09-25)
-      drops the formal chain-depth trial; pass 2a opens with a go/no-go reader pilot, and the
-      chain's depth follows reader evidence page by page. Pass 2a's spec answers this and the
-      catch-field finding below: `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`,
-      ceiling 15M, flag 12M (B4).
-    - **The catch-field design finding.** Readers route around a defect and file it only as a
-      rule candidate (10 of 21 audited misses), which the spec counts as neither a catch nor a
-      finding. Any instrument pass 2a gates on needs a field design that captures a
-      routed-around defect as a claim.
-    - **The v2 page chain ignores the new report fields.** `docs-page-chain-v2.js` types `stalls`
-      and `assumed` as strings and never reads `diverged[]` (`~/.claude/workflows/`, lines
-      389 to 390 at pass 1b's pre-flight).
-    - **Carried notes from pass 1b's last review** (comment-only, open in
-      `scripts/docs-readers/`): the comment at `lib/runner.ts:731-734` implies a prompt hash match
-      that nothing enforces; the comment at `lib/class-schema.ts:68-69` is garbled; the
-      development catch test uses one on-map plant, so an off-map plant or a non-Opus run in its
-      fixture would pin those filters.
-    - **Freeze-readiness items,** moot without a freeze but open if pass 2a freezes the
-      instrument (full list: `docs/superpowers/research/2026-09-24-pass-1b-carries.md`). Packet
-      `tree/` directories carry no digest, and a file added to a packet after the build goes
-      unnoticed. The chain cannot detect an edit to its own last line and does not check the
-      genesis path. A gated batch file can live outside the manifest and the chain. The planted
-      batch file and tree digests are not order-checked against the chain. The held-out job's one
-      `commit` must map to its two page pins. The once-read judge prompt is not compared with its
-      manifest hash. The transcript audit does not follow `cd` in a subshell or `pushd`. Build the
-      freeze with `--seed oc-curve=20260924`, pass the nine held-out ids as `--heldout-ids` in
-      gated scoring, include unverified mapping runs in the adjudicator batch, and name the
-      published docs roots in the planter's input directory.
-    - The exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
-      `docs/internal/record/docs-exemplars.md`) and the readers' plan token are ready.
-    - One content input for the designer's theme task guide (Geoff, 2026-09-24): a short general
-      section on giving a DaisyUI-built site its own identity through a theme, so it does not read
-      as stock DaisyUI. It links to DaisyUI's theme docs rather than restating them.
-  - **Pass 2b, the ledger, the structure, and the outline.** Two carry-forwards from pass 1 land
-    here. A multi-page chain run shares one retag list across its pages, since a stage-1 fact read
-    on one page can undo a legitimate retag another page's read made. A scaffolded-site reader
-    class may need a variant that keeps the template's own `CLAUDE.md` and `.claude/`, which the
-    prepared site drops today.
-  - The scratch site (`glw907/cairn-scratch-b`, its Worker and D1, and two scoped tokens) stands
-    through pass 2a. Its teardown, a dry-run listing then deletion on owner confirmation, is in
-    `docs/internal/record/2026-09-23-scratch-site.md`, "Teardown for pass 2a's close".
+- **Draft documentation on a conventional approach (Geoff, 2026-09-25).** cairn's docs are still
+  to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,
+  and 2a, spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
+  ruling: its reader instrument failed validation across three passes (`docs/HISTORY.md`, "Docs
+  reset pass 2a"). The next approach is designed from conventional practice: a published style
+  guide with a linter, SME review, docs-as-tests for procedures, and human task-based usability
+  testing. Inputs it inherits, each to keep or drop on its own merits:
+  - The exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
+    `docs/internal/record/docs-exemplars.md`), never reviewed as a set.
+  - The six-audience ruling and the audience-profile format on the unmerged branch
+    `docs-reset-2a-audiences` (on origin). The profiles themselves were never written.
+  - Pass 1's docs-as-tests harness for `docs/admin/` procedures, and fact ids with
+    `check:provenance` and page briefs under `docs/internal/briefs/`.
+  - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
+    on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
+    DaisyUI. It links to DaisyUI's theme docs rather than restating them.
+  - Job-doing readers as an optional advisory pass, about 35k tokens per page: they find real
+    defects on their own path and miss what sits off it. They are not a measured gate.
+  - Parked until the approach rules on them, undeleted: the reader harness
+    (`scripts/docs-readers/`, its tests, the reader classes), the v2 page chain's reader stage in
+    `~/.dotfiles`, the branch `docs-reset-2a` (on origin, unmerged), the scratch site
+    (`glw907/cairn-scratch-b`, its Worker and D1, two scoped tokens; teardown in
+    `docs/internal/record/2026-09-23-scratch-site.md`), and `CAIRN_DOCS_READER_OAUTH_TOKEN`.
 
 - **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
   and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
@@ -903,8 +866,8 @@ the named human gates only):**
 
 - **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or
-  defer") deferred these, and pass 1 built none of them. Trigger for the chain items: pass 2a's
-  trial, or any v2 chain run, records the failure the item answers.
+  defer") deferred these, and pass 1 built none of them. Trigger for the chain items: the new
+  draft-documentation approach adopts the v2 chain, and a run records the failure the item answers.
   - Page chain (`docs-page-chain-v2.js`): the register editor fed Vale and `tellgrader` output;
     the register editor reporting every finding, with a separate Opus filter that drops only
     findings contradicting the register or the brief; source material wrapped as content; a
@@ -912,7 +875,7 @@ the named human gates only):**
   - Harness scope: `CONTRIBUTING.md`'s procedures run literally (F4 and F6 need a browser and
     the installed showcase in the repository image), and a parser run against the goldens for
     the `--json` prose claims on the three `cli-cairn-*` reference pages (D05, D10, D13, D14,
-    D18). Trigger: pass 2b drafts either page set.
+    D18). Trigger: the new draft-documentation approach drafts either page set.
   - The title check's two blind spots (Task 10): a `cairn health`-only title, and a title with no
     command, match nothing any report prints; and a command written inline in prose is not run
     until the page puts it in a fence. Trigger: the reset's admin-arm drafting.
@@ -955,7 +918,7 @@ the named human gates only):**
   sentences cite a given id, so a filer editing a fact knows which pages to re-read. It was struck
   from pass 1 because the baseline record's page-versus-code failures were drift no citation
   index sees, and no brief existed yet to index. Trigger: the first committed brief whose cited
-  fact is later edited, or the docs reset's first drafted page (pass 2b).
+  fact is later edited, or the first page drafted under the new approach.
 
 - **`npm run check:surface -- --update` cannot regenerate the surface snapshot (doctor-retirement
   pre-task, 2026-09-21).** The script is three commands joined by `&&`, and npm appends run
@@ -1139,7 +1102,7 @@ the named human gates only):**
   the draft docs unruled); the draft docs; the site round, upgrading aksailingclub-org, ecxc-ski,
   and 907-life into model cairn sites, each filing container bullets through
   `site-docs/<site>-<pass>`; one improvement release; the docs rebuild from the facts container;
-  then beta. The docs reset (Now tier) supersedes both the draft docs step and the docs rebuild
+  then beta. The draft-documentation approach (Now tier; it replaces the stopped docs reset) supersedes both the draft docs step and the docs rebuild
   from the container. The original entry sequenced the Go tool first against extend-1, the docs rewrite,
   and site migration, and that sequencing is spent: the tool, both extend passes, and the pre-cut
   pass have all landed.

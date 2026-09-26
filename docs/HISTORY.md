@@ -7,6 +7,81 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Docs reset pass 2a, stopped mid-pilot, and the reader-validation line closed, 2026-09-25 to 26
+
+Branch `docs-reset-2a` (unmerged, on origin), with the lane branch `docs-reset-2a-audiences`
+(unmerged, on origin). Plan, ledger, and post-mortem:
+`docs/superpowers/plans/2026-09-25-docs-reset-pass-2a.md` on the branch. Spec:
+`docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`. Parent spec:
+`docs/superpowers/specs/2026-09-23-docs-reset-design.md`. Geoff stopped the pass mid-pilot and
+closed the reader-validation line (2026-09-25): "cut our losses, clean up, and record the failure."
+The instrument failed its validation across three passes and is abandoned by owner ruling. His next
+step is draft documentation built on a better proven approach.
+
+**What the line tried.** Simulated readers, headless Claude sessions confined in podman behind an
+egress proxy, one per audience job, would try to use a docs page and report stalls and errors. Their
+reports would gate a drafting chain. Before any reader class could gate, it had to show it catches
+planted defects.
+
+**What landed.** Task 0's pre-flight. Task 1 added `wrong[]` and `missing[]` to the reader report.
+Task 2 ran a smoke run and committed its fixture. Task 3 carried the fields to the judge side, and a
+live adjudicator check ruled 16 items once each. Task 4 added the scorer's `plantTallies`,
+`pooledPrecision`, a Wilson interval, and `--control-ids`, with the round 1 regression matching.
+Task 6 built the audience-profile format on the lane branch. Each was accepted by `diff-reviewer`.
+Task 5, the go/no-go pilot, was running at the stop. Its pre-registered pass mark needed 12 of 16
+on-map plant-runs (75 percent), plus breadth and precision bars. The operator, designer, and
+extender reader batches ran, 9 of 9 runs verified (`~/.cache/docs-readers/results/pilot-2a-*`),
+and none was judged or scored. The core-developer batch was interrupted, and the scripter batch
+never ran. No pilot verdict exists. Tasks 7 to 11 (the audience record, audience review, exemplar
+review, owner stop 1, and the close) did not run.
+
+**The result across three measurements.** Pass 1 caught 1 of 9 held-out defects and over-reported
+through rule candidates, failing all four reader classes. Pass 1b's on-map recall per plant-run was
+2 of 16 and then 1 of 8, all three catches on one scripter plant: 3 of 24, about 12 percent. Its
+audit found 10 of 21 misses noticed only in `ruleCandidates[]`. Pass 2a added fields to capture
+those. Mid-pilot, the conductor showed that if every one of those 10 misses converted to a catch,
+recall would reach 13 of 24, about 54 percent, still under the 75 percent mark. No prompt change
+converts every miss, and the pilot ran on the same plants the instrument was developed against. A
+web survey found the parts conventional in isolation: seeded-fault testing, LLM persona usability
+testing (UXAgent, CHI 2025, used to rehearse studies before human ones), and grader calibration per
+Anthropic's agent-evals guidance. It found no documentation team running the assembly. The
+conventional lane for "does this page work for its reader" is a published style guide with a
+linter, SME review, docs-as-tests for procedures, and human task-based usability testing.
+
+**What the gates caught.** Task 1 drew one `fix`: saved `attempts[]` were not normalized, so a
+round 1 rescore would have thrown. Task 4 drew one: its new-field catch test was not built from a
+round 1 key. Task 6 drew two, the second on a conductor-added id rule that failed the valid fixture.
+The host CLI moved from 2.1.282 to 2.1.283 before the first pilot batch, and the init baseline was
+re-pinned (`0ed5b5b0`).
+
+**What a later docs effort would be wrong to rediscover.**
+
+- A job-doing reader finds real defects on its own path. Pass A's scripter reader found 14 that
+  three graders passed, and round 1 control runs showed 0 false findings in five of six jobs. It
+  does not find defects off its path, and planted-defect recall never cleared 12 percent. Readers
+  are a plausible cheap advisory pass, about 35k tokens per page. They are not a measured gate.
+- Check that a bar is reachable from the prior evidence before building toward it. Pass 1b's own
+  audit bounded pass 2a's best case at about 54 percent, below its 75 percent mark. That arithmetic
+  was available before pass 2a was planned.
+- The machinery cost the tokens, not the readers. The instrument took about 43M counted across
+  three passes (pass 1 about 18.7M, pass 1b 20.07M, pass 2a 4.53M), while one reader run costs about
+  35k. Every build task drew at least one reviewer `fix`. Prefer a conventional method with
+  published practice before a bespoke instrument (the conform-to-conventions rule).
+- What survives as input to the next approach: the 68-capture exemplar corpus and its manifest
+  (`docs/internal/record/docs-exemplars.md`), the six-audience ruling, the audience-profile format
+  on `docs-reset-2a-audiences`, pass 1's docs-as-tests harness, and fact ids with
+  `check:provenance`.
+- The reader harness (`scripts/docs-readers/`, its tests, the reader classes), the v2 page chain's
+  reader stage in `~/.dotfiles`, the scratch Worker `cairn-scratch-b`, and
+  `CAIRN_DOCS_READER_OAUTH_TOKEN` stay in place, undeleted, until the next approach rules on them.
+
+**Budgets.** Tokens: 4.53M counted by `session-ledger.ts` since `T0` (2026-09-25T22:56:11Z):
+session `0d9876f8` 3.59M and session `0855aa2e` 1.55M, less one shared runner figure of 0.61M.
+That is under the 12M flag and the 15M ceiling. Attended time: 2 planning misses (the unreachable
+pass mark, and F1's assumption that `sudo -A` would work at Task 2); 3 execution sittings (the
+updater pause, the CLI drift re-pin, and the stop decision). `uupd.timer` was paused about
+2026-09-26T02:40Z and resumed at 03:28Z.
+
 ## Docs reset pass 1b, the validation redesign, closed on tuning, 2026-09-24 to 25
 
 Branch `docs-reset-1b`. Plan, ledger, post-mortem, and the program budget draft:

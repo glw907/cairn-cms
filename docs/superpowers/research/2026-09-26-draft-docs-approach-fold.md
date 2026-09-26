@@ -185,3 +185,36 @@ folded; none is refused.
 | m6 | Folded: the shipped-anchor list's sources shrink to released tool tags' `conditions.json` plus `check_referrer.go`'s one, and the spec names the residual hole it guards. |
 | Machinery | Ledger restore cut: spend is scored with `/cost`, with a stage 0 fallback line if `/cost` omits the chain's agents (Budget "Counting rule"). `test.yml` calls the docs gate script (Stage 0 "Docs gate"). Flag map, editor-quotes floor, scoped re-review switch, and the stage 1 record kept as they were. |
 | Section 5 | Folded: erratum item 6 no longer plans a flag to Geoff. |
+
+## Prose review fold
+
+Source: `2026-09-26-draft-docs-approach-prose-review.md` (0 blockers, 7 majors, 7 minors, 3
+suggestions), against the spec at `61ca8c55`. The conductor accepted every finding; each was
+checked against its cited source first. None is refused. Owner ruling R10 (Geoff, 2026-09-26)
+landed in the same fold.
+
+| ID | Disposition |
+| --- | --- |
+| M1 | Folded, R8's form kept: pass A's basis is recorded as subagent tokens (`HISTORY.md`, "Ceiling 3.5M subagent tokens"), about 900K per page over three rounds; the spec says its chain (no profile grader, one redraft) assumes faster convergence, gives the plan as a range, and the pilot measures which end holds (Brief; Budget; "Pilot checkpoint"). With M6 and s3 folded the range is about 46M to 57M, not 43M to 54M. |
+| M2 | Folded: the rate counts only pages where exactly one reviewer returned `fix` in round 1; fewer than three makes the pilot inconclusive and the question prices both chains ("Pilot checkpoint"). |
+| M3 | Folded: "plans within 24M"; approving the spec authorizes stages 0, 1, and the 2a pilot, the rest waiting on the pilot question (Brief; Stages; "Pilot checkpoint"). |
+| M4 | Folded: verified at `check-provenance.mjs:557` (a brief is keyed by page file name) and `briefs/README.md` ("Where briefs live"). Arm READMEs brief under their own arm's track; `why-cairn.md` and `docs/README.md` under `front-door` (Stage 0 "Brief coverage"). |
+| M5 | Folded: the 40 percent is the container's share on two admin pages (a 60 percent gap), and 61/51/10 is a disposition count on three contract pages, not a measured control (chain step 1). |
+| M6 | Folded: stages 0 and 1 one pass, stage 2 as 2a and 2b, 2b carries no new outline, extend's freeze lifts at 2b, stage 2 overhead 2M (Brief; Budget; Stages; rulings list; flow step 7). |
+| M7 | Folded: R5 governs arm order; the pilot takes hard pages on purpose (note under the rulings table; flow step 2). |
+| m1 | Folded: the all-accepted figure recomputed. At the old pricing it was about 33M; with M6 and s3 it is about 36M, and the spec states the recomputed figure. |
+| m2 | Folded: `check:symbols` reads shell-tagged fences only (`check-symbols.mjs:74`); it fails a `cairn` line whose first word is not a command, with or without flags (Stage 0 "Flag pairing"; Testing 2). |
+| m3 | Folded: Stage 0 "Chain and agents" amends the facts README paragraph (page inputs file `[verified]`; the drafter never files). |
+| m4 | Folded: "by whoever makes the edit". |
+| m5 | Folded: the fallback switches to a counter that includes the chain's agents and records which. |
+| m6 | Folded: the merge waits for Geoff's read and its fold (flow step 7). |
+| m7 | Folded: two exemplars per page type, named on each page's line (flow step 1). |
+| s1 | Folded: reference is 29 pages plus its README (verified, 30 files), and stage 5 owns the README (Budget; Stage 1). |
+| s2 | Folded: the docs gate covers checks that read arm content; `check:package`, which checks the arm paths ship, keeps its own step. |
+| s3 | Folded by pricing, not by stating: the indexes are not all short (`extend/README.md` has 10 sections, `reference/README.md` 4), so each index is priced at twice its 0.4M share like `why-cairn.md`, and stage 5 is 6.5M. |
+| R10 | Added: owner ruling row; Stage 0 "Review page (R10)" with the round-trip proof and the PR-review fallback (asked before switching); flow steps 1, 5, and 6; budget inside stage 0's share (about 0.2M) and each stage's overhead. |
+
+**Resulting numbers.** Stage shares 2.5M, 3.5M, 22M, 6M, 5.5M, and 6.5M, about 46M as priced
+and about 57M at pass A's rate; about 36M if every page is accepted in round 1. Within 24M, stages
+0, 1, and 5, the stage 2 to 4 overheads, and the pilot take about 21M, which leaves about 3M, about
+10 of the 45 arm pages.

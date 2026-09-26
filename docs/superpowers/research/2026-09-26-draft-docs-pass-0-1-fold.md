@@ -115,3 +115,33 @@ pilot checkpoint, so task 11 carries the narrowed headroom into STATUS as an inp
 ## Open rulings for Geoff
 
 None.
+
+## Second fold
+
+**Target:** `2026-09-26-draft-docs-pass-0-1.md` at `c1cf6588`, revised in place. **Verification:**
+`2026-09-26-draft-docs-pass-0-1-fold-verification.md`. Counts: 0 high, 2 medium, 5 low; 7
+dispositions below, all folded, 0 refused.
+
+1. **M1, the 6.4M flag trips at planned spend.** Folded: header "Token ceiling" now reads about
+   9.6M with the flag at about 7.7M, the planned spend, so the flag marks an overrun per the spec's
+   own budget rule (spec:149-150) rather than a predictable midpoint stop. The task 10 first-batch
+   projection stays the pass's one budget question.
+2. **M2, task 6's green-CI proof has no chain mechanism.** Folded: task 6 keeps the push and the
+   draft PR but drops the green-run requirement from its own acceptance; the segment B boundary
+   now records `gh pr checks` in the ledger before segment C, and a red run re-dispatches task 6
+   with the failing step named.
+3. **`NAME=value` shrink (task 3).** Folded: the `cairn` line grammar drops leading `NAME=value`
+   handling; no doc line needs it and a miss only under-reads.
+4. **Task 7 size note.** Folded: one clause states the task carries seven deliverables, past the
+   four-deliverable guideline, and stays whole because the drafter's gate-skip line and the
+   runner's gate step are one change.
+5. **L1, proof worktree has no `npm ci`.** Folded: task 9 step 2 runs `npm ci` once before the
+   chain.
+6. **L2, no-leak diff spans the whole branch.** Folded: task 9 step 1 records the pre-chain commit
+   as `<pre-proof>`; the no-leak acceptance diffs `<pre-proof>..draft-docs-0` instead of
+   `main...draft-docs-0`.
+7. **L3, L4, L5 (header wording, review-page restore, task 7 reviewer range).** Folded: the
+   "Gates" paragraph now names only task 9 as conductor-run; task 8's outcome and acceptance
+   restore only stash entries that differ from the reloaded state, with a successful-publish
+   no-restore case added; task 7's acceptance adds that the dispatch gives `diff-reviewer` both
+   repos' base SHAs.

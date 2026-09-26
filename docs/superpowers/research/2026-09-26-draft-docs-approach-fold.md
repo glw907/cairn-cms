@@ -35,7 +35,8 @@ Each root folds once; every finding it covers is listed.
 
 ## Verification notes
 
-- `check-provenance.mjs:392` returns no defects when no brief exists; `UNCITABLE_TAGS` includes
+- `check-provenance.mjs:591` returns no defects when no brief exists (corrected in the second
+  fold; `:392` is the tag check); `UNCITABLE_TAGS` includes
   `candidate` (`:88`). Front-door briefs already have a track name, `front-door`
   (`docs/internal/briefs/README.md`, "Where briefs live"), which closes C-M1's path question.
 - `cairn doctor examples/showcase`, `cairn doctor --bogus`, and `cairn nosuch` each exit 3 on the
@@ -162,5 +163,25 @@ The spec does not edit these; each is owed or planned.
 5. **Planned amendment (Stage 0), facts README:** new facts from the chain are filed `[verified]`
    by the page-inputs agent rather than `[candidate]` pending the fact read. Independence from the
    drafter is kept; the mechanism changes.
-6. **Reading to flag for Geoff, R1:** the spec adds `docs/README.md`, the arms' parent index, to
-   the front door beside "the arm READMEs". It treats that as within R1, not a change to it.
+6. **Reading taken within R1:** the spec adds `docs/README.md`, the arms' parent index, to the
+   front door beside "the arm READMEs". It treats that as within R1, not a change to it, and does
+   not ask (second fold).
+
+## Second fold
+
+Source: `2026-09-26-draft-docs-approach-fold-verification.md` (0 blockers, 2 majors, 6 minors),
+against the spec at `5a8433bd`. The conductor accepted its machinery verdicts. Every finding is
+folded; none is refused.
+
+| ID | Disposition |
+| --- | --- |
+| M1 | Folded: brief coverage is keyed by rebuilt page path, appended at each stage merge; the exemption list is gone and the unit test plants a listed path with no brief (Stage 0 "Brief coverage"; stage flow step 7). |
+| M2 | Folded: stage 0 recounted at 13 items and 2.5M after the ledger cut; the total is about 43M (36M if every page is accepted in round 1); within 24M about 6M remains, about 15 of the 45 arm pages. R8's form is unchanged (Brief; Budget). |
+| m1 | Folded: cross-regression is mechanical everywhere (a reviewer that returned `accept` in round 1 returns `fix` in round 2), derived from `record.rounds[].reads`, no classifier (Stage 0 "Scoped re-review"; stage flow step 2). |
+| m2 | Folded: the two-escalations stop is dropped; an escalation is the conductor's call and reaches Geoff only on scope or taste ("Checkpoints and stops"). This supersedes C-m4's disposition. |
+| m3 | Folded: the pilot owner read and the pilot checkpoint question are one sitting (stage flow steps 2 and 5; "Pilot checkpoint"). |
+| m4 | Folded: the citation is `check-provenance.mjs:591`, with `:458` for a missing briefs directory (verified); the verification note above is corrected too. |
+| m5 | Folded: the brief names four check extensions and the docs gate script. |
+| m6 | Folded: the shipped-anchor list's sources shrink to released tool tags' `conditions.json` plus `check_referrer.go`'s one, and the spec names the residual hole it guards. |
+| Machinery | Ledger restore cut: spend is scored with `/cost`, with a stage 0 fallback line if `/cost` omits the chain's agents (Budget "Counting rule"). `test.yml` calls the docs gate script (Stage 0 "Docs gate"). Flag map, editor-quotes floor, scoped re-review switch, and the stage 1 record kept as they were. |
+| Section 5 | Folded: erratum item 6 no longer plans a flag to Geoff. |

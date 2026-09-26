@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-26. **Status:** revision 2 folded four review lenses
 (`docs/superpowers/research/2026-09-26-draft-docs-approach-fold.md`); owner rulings R8 and R9
-(2026-09-26) settle its two open rulings. **Replaces:** the reader-validation line of `2026-09-23-docs-reset-design.md`
+(2026-09-26) settle its two open rulings; a second fold took the fold verification. **Replaces:** the reader-validation line of `2026-09-23-docs-reset-design.md`
 (stopped 2026-09-25). **Input:** `docs/internal/record/2026-09-26-docs-approach-handoff.md`.
 
 ## Brief
@@ -11,12 +11,13 @@ cairn's published docs get rebuilt with the standard technical-writing chain: pe
 draft, a technical review, an editorial review, and one revision, run by agents and read by Geoff
 as owner and subject-matter expert. Arms go easiest first (reference, extend, admin, editors,
 front door), one pass each, and every stage merge leaves `main` releasable. The budget goes to
-pages. No new check is built: three existing checks each gain a small extension (a per-command
+pages. No new check is built: four existing checks each gain a small extension (a per-command
 flag list for `check:symbols`, a coverage rule for `check:provenance`, a shipped-anchor list for
-`check:readiness`). The real-use test is the site round after the last stage merges, plus two
+`check:readiness`, a zero-quote floor for `check:editor-quotes`), and one script runs the docs
+gate. The real-use test is the site round after the last stage merges, plus two
 human task reads. No simulated reader gates anything. The ceiling is about 30M (R8), with a lean
 chain whose re-review scope a measured pilot decides. Even lean, the full scope plans at about
-42M, so the pilot checkpoint brings Geoff one combined question on ceiling and scope before most
+43M, so the pilot checkpoint brings Geoff one combined question on ceiling and scope before most
 of the spend. No scope is cut silently.
 
 ## Owner rulings (this brainstorm, 2026-09-26)
@@ -85,11 +86,10 @@ ledger replaces any reading that the whole standard stands.
 
 ## Budget
 
-**Counting rule.** Input, output, and cache-creation tokens across the conductor and every
-subagent, with cache reads reported apart: the reset's counting rule, which found pass 1's
-estimate of about 9M to be about 18.7M (`docs/HISTORY.md`). The counter is `session-ledger.ts`,
-retired with the harness in `a8c57b4a`; stage 0 restores it from `a8c57b4a^` without its
-runner-ledger input.
+**Counting rule.** Spend is what `/cost` reports for each stage's session, per the global rule,
+read at the pilot checkpoint and at each stage close. One counter from stage 0 onward keeps
+shares and measurements comparable. If `/cost` is found not to include the chain's subagent and
+workflow agents, the stage 0 pass records that and the conductor picks the leanest counter then.
 
 **Per page.** Draft docs pass A's page chain cost 2.64M over 24 agents, about 110K per agent
 (`docs/HISTORY.md`, pass A). Its counting basis was not recorded, so this figure may undercount
@@ -115,19 +115,19 @@ outside the chain. Outlines may merge pages; the counts here do not assume it.
 
 | Stage | Scope | Derivation | Planned |
 | --- | --- | --- | --- |
-| 0 Setup | Rule, runner, and fact cleanup; the three check extensions | about six small items | 1.5M |
+| 0 Setup | Rule, runner, and fact cleanup; four check extensions and the docs gate script | 13 items (the owner-fact settling and the freeze-lift sweep one task each), one implementer and diff-reviewer chain each | 2.5M |
 | 1 Reference | Claim check in place (below) | 30 pages x one fact-read agent (about 0.1M), plus fixes and close | 3.5M |
 | 2 Extend | Rebuild, as 2a (with the six-page pilot) and 2b | 6 x 0.75M + 24 x 0.65M + 1M | 21M |
 | 3 Admin | Rebuild | 8 x 0.65M + 1M | 6M |
 | 4 Editors | Rebuild in the Microsoft register | 7 x 0.65M + 1M | 5.5M |
 | 5 Front door | `why-cairn.md` and five indexes | 2 x 0.75M + 5 x 0.4M + 1M | 4.5M |
-| | | Total | about 42M |
+| | | Total | about 43M |
 
 Stages 0 and 1 run as one pass. The planned total must sit at or below 80 percent of the ceiling,
 about 24M under R8's 30M, so the global 80 percent stop fires only on an overrun. **The full scope
-does not fit 30M, even lean.** It plans at about 42M, and with every page accepted in round 1 it
-would still plan at about 35M. Within 24M, stages 0, 1, and 5, the stage overheads, and the pilot
-take about 17M, which leaves about 7M: roughly ten more arm pages at the lean rate, so about 16 of
+does not fit 30M, even lean.** It plans at about 43M, and with every page accepted in round 1 it
+would still plan at about 36M. Within 24M, stages 0, 1, and 5, the stage overheads, and the pilot
+take about 18M, which leaves about 6M: roughly nine more arm pages at the lean rate, so about 15 of
 the 45 arm pages. The pilot checkpoint (under "Checkpoints and stops") settles the gap with one
 combined question to Geoff. Every share resets from the pilot's measured cost and again at each
 checkpoint.
@@ -181,13 +181,18 @@ entry listing renamed and removed doc paths, with a `Consumers must:` line when 
   setup command's own parser, resolves a `cairn <path> --flag` line against the map. The command
   path is the longest run of leading words that matches the tree. The check fails an unknown first
   word, and a flag the matched path does not accept. Unit tests plant both.
-- **Brief coverage.** `check:provenance` today passes with no briefs (`check-provenance.mjs:392`).
-  It gains a committed list of rebuilt arms, extended at each stage merge, and fails any page under
-  a listed arm that has no brief. The per-version records and `docs/reference/` are exempt. Front
-  door briefs use the existing `front-door` track path. A unit test fails an arm with no briefs.
-- **Shipped anchors.** A committed, append-only list of every `is-it-working` fragment any shipped
-  artifact prints: `tool/v1.1.0`'s `conditions.json`, `tool/internal/health/fixes.go`,
-  `tool/internal/doctor/check_referrer.go`, and `src/lib/diagnostics/conditions.ts`.
+- **Brief coverage.** `check:provenance` today passes with no briefs (`check-provenance.mjs:591`;
+  a missing briefs directory holds none, `:458`). It gains a committed list of rebuilt page paths,
+  to which each stage merge appends the paths its chain rebuilt, and fails any listed path that
+  has no brief. Keying by page path covers a half-rebuilt arm (2a before 2b) and the arm READMEs
+  (briefed in stage 5) with no exemption list. Front door briefs use the existing `front-door`
+  track path. A unit test plants a listed path with no brief.
+- **Shipped anchors.** `fixes.go`'s anchors are already pinned to the live headings
+  (`tool/internal/health/fixes_test.go`, under `make -C tool check`) and `conditions.ts`'s by
+  `check:readiness`. The residual hole is a heading renamed together with its registry entry,
+  which leaves released binaries pointing at the old heading. So a committed, append-only list
+  snapshots the `is-it-working` fragments released binaries print: each released tool tag's
+  `conditions.json` anchors (today `tool/v1.1.0`) plus `check_referrer.go`'s one.
   `check:readiness` also fails when a listed anchor stops resolving as a heading in
   `docs/admin/is-it-working.md`. A fragment never reaches a server, so no redirect can repair a
   renamed heading.
@@ -196,7 +201,8 @@ entry listing renamed and removed doc paths, with a `Consumers must:` line when 
   `check:docs`, `check:vale`, `check:facts`, `check:provenance`, `check:symbols`,
   `check:snippets`, `check:transcripts`, `check:visuals`, `check:arm-indexes`,
   `check:editor-quotes`, `check:readiness`, `check:tool-conditions`, `check:target-stack`,
-  `check:reference`, and `check:reference:signatures`.
+  `check:reference`, and `check:reference:signatures`. `test.yml` calls this script in place of
+  those separate steps, so the chain gate and CI read one list.
 - **Chain and agents.** `docs-page-chain.js` matches the chain below: no `args.profile`, no profile
   injection, no profile grader, and no "Profile" section in the editor prompt. It adds the
   page-inputs step, runs `cairn-docs-drafter`, points the fact read at the brief's fact ids and
@@ -205,14 +211,14 @@ entry listing renamed and removed doc paths, with a `Consumers must:` line when 
   below. `docs/internal/briefs/README.md` and the facts README's "New facts from the page chain"
   stop naming the removed `docs-page-chain-v2.js`. Proof: a dry run on one page yields a per-page
   record with the brief path, the page-inputs output, and no grader read.
-- `session-ledger.ts` is restored and counts one session under the rule above.
 - **Rule 2 scope.** The `writing-voice` skill's line ("stop after each section and let a reader see
   it before the next one starts") and the global `CLAUDE.md` Writing voice summary say the rule
   governs front-door drafting only (R9), and the `CLAUDE.md` line stops reading as a page-structure
   rule.
 - **Scoped re-review.** `docs-page-chain.js` re-runs only the reviewer that returned `fix` after a
-  redraft, with a switch that re-runs both, and records a cross-regression flag per page when both
-  run.
+  redraft, with a switch that re-runs both. When both run, it records a cross-regression flag per
+  page: a reviewer that returned `accept` in round 1 returns `fix` in round 2. The flag is derived
+  from the verdicts the record already stores (`record.rounds[].reads`); no classifier is built.
 
 ### Stage 1: reference
 
@@ -236,10 +242,11 @@ turns up a structural problem.
    and headings verbatim, and the chain passes them as `pinned`. `is-it-working.md` keeps its path.
    Geoff approves the outline with the plan.
 2. **Pilot (stage 2a only).** The first six pages through the chain are among the arm's hardest.
-   Both reviewers re-read after every redraft, and each page's record notes whether the reviewer
-   that did not return `fix` finds a new problem the redraft introduced (a cross-regression).
-   Their measured cost and the cross-regression rate feed the pilot checkpoint, and Geoff's owner
-   read of three of them happens here, before the rest of the arm is dispatched.
+   Both reviewers re-read after every redraft, and each page's record carries the
+   cross-regression flag (a reviewer that returned `accept` in round 1 returns `fix` in round 2).
+   Their measured cost and the cross-regression rate feed the pilot checkpoint. Geoff's owner read
+   of three of them and the pilot checkpoint question are one sitting, before the rest of the arm
+   is dispatched.
 3. **Draft.** Every page goes through the page chain, three pages in flight at once. Front-door
    pages (stage 5) are drafted one section per dispatch, with a register-editor read between
    sections (R9).
@@ -249,11 +256,12 @@ turns up a structural problem.
    goes into the stage record even when it has no findings. An implementer applies the batch under
    "Edits after the chain."
 5. **Owner read.** Geoff reads the two or three hardest pages, chosen by the conductor; stage 2
-   takes three, at the pilot. The read counts as one execution sitting in the pass score.
+   takes three, in the pilot checkpoint sitting. The read counts as one execution sitting in the
+   pass score.
 6. **Fold.** Geoff's notes apply across the whole arm under "Edits after the chain." A note that
    generalizes becomes a rule where it runs: the register, the drafter prompt, or the runner.
 7. **Merge and checkpoint.** The arm branch passes the docs gate plus `make -C tool check`, merges,
-   joins the rebuilt-arms list, and its freeze lifts. Each stage keeps its own arm README's links
+   appends its rebuilt page paths to the brief-coverage list, and its freeze lifts. Each stage keeps its own arm README's links
    and `docs/README.md`'s links into the arm current as in-place fixes; stage 5 rebuilds their
    prose. The owner read is a wait before the fold, never a gate on the arm's quality bar.
 
@@ -339,8 +347,9 @@ and no simulated-reader gate exist in this design.
 At each stage close, `docs/HISTORY.md` records spend against the share, the measured cost per page
 (which resets later shares), exemplar swaps, rules landed from the fold, and the consistency
 record. STATUS carries only the current shares and the next stage. A stage stops and asks Geoff
-when it runs 25 percent over its share, when two pages in one arm escalate to the conductor, or at
-80 percent of the ceiling, about 24M (the global stop rule).
+when it runs 25 percent over its share or at 80 percent of the ceiling, about 24M (the global stop
+rule). A page escalated to the conductor is the conductor's call under the global rule; it reaches
+Geoff only when it touches scope or taste.
 
 **Pilot checkpoint** (after stage 2a's six pilot pages). The conductor re-derives every share from
 the pilot's measured per-page cost, the extend outline's page count, and today's counts for the
@@ -349,8 +358,8 @@ shows one) keep the lean chain. Common ones price the both-reviewer chain from t
 measurement. If the re-derived plan for the chosen chain sits at or below 24M, the stage
 continues. Otherwise, which the current figures predict, Geoff gets one combined question: the
 cross-regression rate and the measured cost of keeping both re-reads when it is common, the
-full-scope total and the ceiling it needs, and the named scope that fits 30M. No page or arm
-leaves scope before he answers.
+full-scope total and the ceiling it needs, and the named scope that fits 30M. He answers it in
+the same sitting as the pilot owner read. No page or arm leaves scope before he answers.
 
 ## Out of scope
 

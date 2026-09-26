@@ -7,7 +7,14 @@ contract, `X` mechanics, `K` risk, `S` consistency. Every finding was checked ag
 before its disposition; the verification notes name what was run or read.
 
 **Counts:** 55 findings. 52 folded (7 of them with a named part refused), 3 became owner rulings
-(O1, O2), 0 refused whole.
+(O1, O2), 0 refused whole. Geoff ruled both on 2026-09-26: O1 as R8, O2 as R9 (below).
+
+## Owner rulings
+
+| Open ruling | Ruled | Where in the spec |
+| --- | --- | --- |
+| O1, the ceiling | R8: about 30M, not the recommended 58M. The chain goes lean (after a redraft only the reviewer that returned `fix` re-reads; the gate reruns every time), and the six-page stage 2 pilot runs both re-reads to measure the cross-regression rate. The full scope still plans at about 42M, so the pilot checkpoint brings Geoff one combined question rather than a silent cut. | Owner rulings; Budget; stage flow step 2; chain step 5; Stage 0 "Scoped re-review"; "Pilot checkpoint" |
+| O2, rule 2 | R9: as recommended. Rule 2 governs the front door only (`why-cairn.md`, `docs/README.md`, the four arm READMEs); extend, admin, and editors are drafted whole. | Owner rulings; keep/retire ledger; stage flow step 3; Budget stage 5; Stage 0 "Rule 2 scope" |
 
 ## Convergent roots
 
@@ -16,7 +23,7 @@ Each root folds once; every finding it covers is listed.
 | Root | Findings | Disposition | Where in the spec |
 | --- | --- | --- | --- |
 | Heading fragments printed by shipped binaries; a redirect cannot carry a `#fragment` | K-M1, X-M5, S-M6 | Folded | Stage 0 "Shipped anchors"; outline contract table; chain step 1 `pinned` |
-| Budget: 350K per page below the measured floor, shares summing to 20M, extend arithmetic | X-M1, S-M7, K-M5 | Folded (derivation, counting rule, pilot, planned 2a/2b); ceiling became O1 | Budget; stage flow step 2; O1 |
+| Budget: 350K per page below the measured floor, shares summing to 20M, extend arithmetic | X-M1, S-M7, K-M5 | Folded (derivation, counting rule, pilot, planned 2a/2b); ceiling became O1, ruled as R8 | Budget; stage flow step 2; O1 |
 | New facts filed before drafting fail `check:provenance` | X-M6, S-M4, C-m2 | Folded | Page chain steps 1 and 2 and the independence paragraph |
 | Post-chain edits (consistency read, owner fold, site round) break the brief | C-M7, X-M7, K-m1, C-M3 | Folded | "Edits after the chain" |
 | `check:procedures` cannot tell working from broken commands | X-M2, X-M3, X-M4, C-M4, C-M5, K-m3, S-m8, X-m3 | Folded by dropping the new check; flag pairing extends `check:symbols` | Stage 0 "Flag pairing"; Testing 2 |
@@ -83,7 +90,7 @@ Each root folds once; every finding it covers is listed.
 
 | ID | Disposition |
 | --- | --- |
-| X-M1 | Owner fork O1 (ceiling); per-agent basis, agent counts, pilot, and 80 percent headroom folded into Budget. Its option (c), thinning the chain, is not taken: pass A needed more rounds, not fewer. |
+| X-M1 | Owner fork O1 (ceiling), ruled as R8; per-agent basis, agent counts, pilot, and 80 percent headroom folded into Budget. Its option (c), thinning the chain, was not taken at the fold; R8 takes a measured form of it (scoped re-review, kept only if the pilot's cross-regression rate is rare). |
 | X-M2 | Folded: no command runs for real; the exit-3 evidence is in Testing 2. |
 | X-M3 | Folded: `npx create-cairn-site` flags are covered by `check:symbols`; Stage 3's coverage claim is dropped. |
 | X-M4 | Folded, path (b)'s flag half: the per-command map extends `flags.json`. Part refused: a live `doctor` Go test, since against the showcase it can assert nothing (exit 3, two structural UNCHECKED lines). |
@@ -105,7 +112,7 @@ Each root folds once; every finding it covers is listed.
 | K-M2 | Folded: the releasable-at-every-merge invariant, the outline's repo-wide grep over `skills/`, `claude/`, and the template, and the `## Unreleased` entry with `Consumers must:`. Part refused: a check against the last tarball's paths, since an installed tarball carries its own docs and so stays self-consistent, and the grep catches every in-tree reference at rename time. |
 | K-M3 | Folded: the claim inventory in page inputs, `[external]` vendor facts, and the fact read's carried-claim check. |
 | K-M4 | Folded: write path and in-flight file-not-fix rule in Stage 0; the site round follows stage 5. Part refused: rebasing before the consistency read, since no site round runs concurrently with a stage. |
-| K-M5 | Folded: pilot at stage 2a with the first owner read, 2a/2b planned as mergeable, ceiling headroom; the ceiling itself is O1. |
+| K-M5 | Folded: pilot at stage 2a with the first owner read, 2a/2b planned as mergeable, ceiling headroom; the ceiling itself is O1, ruled as R8. |
 | K-m1 | Folded: scoped reviews in "Edits after the chain"; stale facts fixed or retagged `[docs-drift]` in chain step 4. |
 | K-m2 | Folded: the docs gate, the contract table's pinning gates, and the `check:editor-quotes` floor. |
 | K-m3 | Folded: no live runs, so the offline-allowlist and build-from-HEAD questions are moot. Part refused: a per-page tool-version line on arm pages; the contract pages already pin `version.Documented`, and the site round runs the real binary. |
@@ -118,12 +125,12 @@ Each root folds once; every finding it covers is listed.
 | ID | Disposition |
 | --- | --- |
 | S-M1 | Folded: the keep/retire ledger. |
-| S-M2 | Owner fork O2, after verifying the reading is correct (see the notes). Its option A is the recommendation. |
+| S-M2 | Owner fork O2, after verifying the reading is correct (see the notes), ruled as R9 (its option A). |
 | S-M3 | Folded: the facts README, `docs-register.md`, the `cairn-pass` skill, and the `docs-reset-initiative` memory join the list; the write path is ruled as method. |
 | S-M4 | Folded with the fact-tag root. Part refused: a separate verification agent before the draft, since page inputs are already independent of the drafter and the fact read re-verifies every cited fact; an extra agent on every page costs more than the risk it removes. |
 | S-M5 | Folded: attribution corrected; the claim inventory is the measured control. |
 | S-M6 | Folded with the anchor root; listed headings are kept, so `conditions.json` needs no change. |
-| S-M7 | Owner fork O1; counting rule, derivation, and the 45M cap's retirement folded. |
+| S-M7 | Owner fork O1, ruled as R8; counting rule, derivation, and the 45M cap's retirement folded. |
 | S-M8 | Folded: Testing 4 repoints Sheet 2 to GitHub `main` and updates the header before the round. |
 | S-m1 | Folded: the outline lives in the stage plan; the owner read counts as one execution sitting. |
 | S-m2 | Folded: stage records go to HISTORY. |
@@ -148,7 +155,8 @@ The spec does not edit these; each is owed or planned.
    spec.
 3. **Erratum, global `~/.claude/CLAUDE.md` (Writing voice):** "carries one section per read"
    restates standard rule 2 as a page-structure rule; the source rule governs drafting. Correct
-   it with O2's outcome, together with the `writing-voice` skill line if O2 is yes.
+   it with R9's outcome (rule 2 governs front-door drafting only), together with the
+   `writing-voice` skill line; Stage 0 "Rule 2 scope" carries both.
 4. **Record note, the handoff (open question 6)** attributes the 40 percent figure to pass A,
    following the `draft-docs-initiative` memory; the source is the 2026-09-21 spec's review.
 5. **Planned amendment (Stage 0), facts README:** new facts from the chain are filed `[verified]`

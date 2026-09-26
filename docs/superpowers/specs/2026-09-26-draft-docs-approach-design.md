@@ -1,8 +1,8 @@
 # Draft docs on a conventional approach: design
 
-**Date:** 2026-09-26. **Status:** revision 2, folded from four review lenses
-(`docs/superpowers/research/2026-09-26-draft-docs-approach-fold.md`); two open rulings for Geoff
-at the end. **Replaces:** the reader-validation line of `2026-09-23-docs-reset-design.md`
+**Date:** 2026-09-26. **Status:** revision 2 folded four review lenses
+(`docs/superpowers/research/2026-09-26-draft-docs-approach-fold.md`); owner rulings R8 and R9
+(2026-09-26) settle its two open rulings. **Replaces:** the reader-validation line of `2026-09-23-docs-reset-design.md`
 (stopped 2026-09-25). **Input:** `docs/internal/record/2026-09-26-docs-approach-handoff.md`.
 
 ## Brief
@@ -14,8 +14,10 @@ front door), one pass each, and every stage merge leaves `main` releasable. The 
 pages. No new check is built: three existing checks each gain a small extension (a per-command
 flag list for `check:symbols`, a coverage rule for `check:provenance`, a shipped-anchor list for
 `check:readiness`). The real-use test is the site round after the last stage merges, plus two
-human task reads. No simulated reader gates anything. The measured cost of the chain puts the
-full scope at about 46M tokens, so the ceiling is open ruling O1.
+human task reads. No simulated reader gates anything. The ceiling is about 30M (R8), with a lean
+chain whose re-review scope a measured pilot decides. Even lean, the full scope plans at about
+42M, so the pilot checkpoint brings Geoff one combined question on ceiling and scope before most
+of the spend. No scope is cut silently.
 
 ## Owner rulings (this brainstorm, 2026-09-26)
 
@@ -28,6 +30,8 @@ full scope at about 46M tokens, so the ceiling is open ruling O1.
 | R5 | Easy docs first with Geoff's review, working up to hard docs. | Geoff, 2026-09-26 |
 | R6 | The existing exemplar corpus stays; find new or better exemplars only where needed. | Geoff, 2026-09-26 |
 | R7 | Add a consistency read per arm. | Geoff, 2026-09-26 |
+| R8 | The initiative ceiling is about 30M, replacing R2's 20M, with a lean chain decided by a measured pilot: after a redraft only the reviewer that returned `fix` re-reads, and the stage 2 pilot measures whether that is safe. | Geoff, 2026-09-26 |
+| R9 | The 2026-09-08 standard's rule 2 (outside-reader pages drafted one section per read) applies to the front door only. Extend, admin, and editors are drafted whole by the chain. | Geoff, 2026-09-26 |
 
 Already settled before this brainstorm, and binding here: draft docs come first, then the site
 round tests and fixes them, and site-pass agents may change the docs directly (Geoff, 2026-09-21,
@@ -51,7 +55,7 @@ stage 5 merges. This answers the handoff's open question 1.
   spec's outline step. Ruling 13 (exemplars as an approved input) continues as R6. Ruling 14 (the
   design spend) is closed.
 - The reset's program cap of about 45M and its 0.7M-per-page drafting basis are replaced by this
-  spec's budget and O1.
+  spec's budget and R8.
 - The core-developer track does not ship.
 - The narrative-arm freeze lifts per arm, when that arm's stage merges.
 
@@ -68,7 +72,7 @@ ledger replaces any reading that the whole standard stands.
 | Direction (b), per-track harvest before any brief | Replaced by the per-page harvest in page inputs |
 | Direction (c) and decision 14: plan one, pass 2a, five stages | Replaced by this spec's stages |
 | Rule 1: owner and stance claims resolve to an owner brief | Stands, enforced by the facts owner tier and `check:provenance` |
-| Rule 2: an outside-reader page is drafted one section per read | Open ruling O2 |
+| Rule 2: an outside-reader page is drafted one section per read | Stands for the front door only (R9): `why-cairn.md`, `docs/README.md`, and the four arm READMEs are drafted one section per dispatch with a register-editor read between sections. Extend, admin, and editors are drafted whole by the chain |
 | Prose rules (plain-language adoption) | Stand as carried by the register and Vale; the unbuilt numeric gates (paragraph gate, 25-word rule) retire |
 | Page-type registry, templates, `check:anatomy`, `check:headings`, registry lifecycle | Retire. The page type vocabulary is the exemplar manifest's section headings |
 | Figure rules (the two tests, `cairn-figure`, `figure-verifier`, `check:visuals`) | Stand. `check:figures`' seven assertions retire unbuilt |
@@ -89,32 +93,44 @@ runner-ledger input.
 
 **Per page.** Draft docs pass A's page chain cost 2.64M over 24 agents, about 110K per agent
 (`docs/HISTORY.md`, pass A). Its counting basis was not recorded, so this figure may undercount
-under the rule above. This spec's chain runs 4 agents when round 1 accepts (page inputs, draft,
-two reviews) and 7 with the one redraft and its re-review. Pass A accepted no page in round 1, so
-the estimate uses the 7-agent path: about 0.75M per page. Short index pages (the READMEs) are
-estimated at 0.4M. Each stage adds about 1M for planning, the outline, the consistency read, the
-owner fold, and the close.
+under the rule above. A page's cost is its agent runs times 110K:
+
+| Path | Agent runs | Per page |
+| --- | --- | --- |
+| Accepted in round 1 | 4: page inputs, draft, two reviews | about 0.45M |
+| Lean redraft (R8 default) | 6: the four, the redraft, a re-read by the one reviewer that returned `fix` | about 0.65M |
+| Full redraft (the pilot, or both reviewers flag) | 7: the four, the redraft, both reviewers | about 0.75M |
+
+Pass A accepted no page in round 1, so the plan prices every page at a redraft path: the six
+pilot pages at 0.75M and every later arm page at 0.65M. Short index pages (the READMEs) are
+estimated at 0.4M. `why-cairn.md` is drafted one section per dispatch (R9), at about twice a
+page's share. Each stage adds about 1M for planning, the outline, the consistency read, the owner
+fold, and the close.
 
 **Pages.** Admin 8, editors 7, and extend 30, each excluding the arm README (stage 5 owns it) and
 excluding extend's two per-version records (`migration-notes.md`, `upgrade-cairn.md`), which stay
 maintained in place. The front door is `why-cairn.md` plus five indexes (`docs/README.md` and the
 four arm READMEs). The root `README.md` is out of scope. Reference is 30 pages, checked in place
-outside the chain.
+outside the chain. Outlines may merge pages; the counts here do not assume it.
 
 | Stage | Scope | Derivation | Planned |
 | --- | --- | --- | --- |
 | 0 Setup | Rule, runner, and fact cleanup; the three check extensions | about six small items | 1.5M |
 | 1 Reference | Claim check in place (below) | 30 pages x one fact-read agent (about 0.1M), plus fixes and close | 3.5M |
-| 2 Extend | Rebuild, as 2a (with the pilot) and 2b | 30 x 0.75M + 1M | 23.5M |
-| 3 Admin | Rebuild | 8 x 0.75M + 1M | 7M |
-| 4 Editors | Rebuild in the Microsoft register | 7 x 0.75M + 1M | 6.5M |
-| 5 Front door | `why-cairn.md` and five indexes | 0.75M + 5 x 0.4M + 1M | 4M |
-| | | Total | about 46M |
+| 2 Extend | Rebuild, as 2a (with the six-page pilot) and 2b | 6 x 0.75M + 24 x 0.65M + 1M | 21M |
+| 3 Admin | Rebuild | 8 x 0.65M + 1M | 6M |
+| 4 Editors | Rebuild in the Microsoft register | 7 x 0.65M + 1M | 5.5M |
+| 5 Front door | `why-cairn.md` and five indexes | 2 x 0.75M + 5 x 0.4M + 1M | 4.5M |
+| | | Total | about 42M |
 
 Stages 0 and 1 run as one pass. The planned total must sit at or below 80 percent of the ceiling,
-so the global 80 percent stop fires only on an overrun. The full scope therefore needs a ceiling
-of about 58M against R2's 20M. That choice is open ruling O1. Every share resets from the pilot's
-measured cost (stage 2) and again at each checkpoint.
+about 24M under R8's 30M, so the global 80 percent stop fires only on an overrun. **The full scope
+does not fit 30M, even lean.** It plans at about 42M, and with every page accepted in round 1 it
+would still plan at about 35M. Within 24M, stages 0, 1, and 5, the stage overheads, and the pilot
+take about 17M, which leaves about 7M: roughly ten more arm pages at the lean rate, so about 16 of
+the 45 arm pages. The pilot checkpoint (under "Checkpoints and stops") settles the gap with one
+combined question to Geoff. Every share resets from the pilot's measured cost and again at each
+checkpoint.
 
 ## Stages
 
@@ -190,6 +206,13 @@ entry listing renamed and removed doc paths, with a `Consumers must:` line when 
   stop naming the removed `docs-page-chain-v2.js`. Proof: a dry run on one page yields a per-page
   record with the brief path, the page-inputs output, and no grader read.
 - `session-ledger.ts` is restored and counts one session under the rule above.
+- **Rule 2 scope.** The `writing-voice` skill's line ("stop after each section and let a reader see
+  it before the next one starts") and the global `CLAUDE.md` Writing voice summary say the rule
+  governs front-door drafting only (R9), and the `CLAUDE.md` line stops reading as a page-structure
+  rule.
+- **Scoped re-review.** `docs-page-chain.js` re-runs only the reviewer that returned `fix` after a
+  redraft, with a switch that re-runs both, and records a cross-regression flag per page when both
+  run.
 
 ### Stage 1: reference
 
@@ -212,10 +235,14 @@ turns up a structural problem.
    heading slug a shipped binary, `conditions.ts`, or a gate names; those pages keep their paths
    and headings verbatim, and the chain passes them as `pinned`. `is-it-working.md` keeps its path.
    Geoff approves the outline with the plan.
-2. **Pilot (stage 2a only).** The first three pages through the chain are among the arm's hardest.
-   Their measured cost resets every share, and Geoff's owner read of them happens here, before the
-   rest of the arm is dispatched.
-3. **Draft.** Every page goes through the page chain, three pages in flight at once.
+2. **Pilot (stage 2a only).** The first six pages through the chain are among the arm's hardest.
+   Both reviewers re-read after every redraft, and each page's record notes whether the reviewer
+   that did not return `fix` finds a new problem the redraft introduced (a cross-regression).
+   Their measured cost and the cross-regression rate feed the pilot checkpoint, and Geoff's owner
+   read of three of them happens here, before the rest of the arm is dispatched.
+3. **Draft.** Every page goes through the page chain, three pages in flight at once. Front-door
+   pages (stage 5) are drafted one section per dispatch, with a register-editor read between
+   sections (R9).
 4. **Consistency read.** After the arm's pages pass, one Opus 5.5 agent reads the whole arm for
    terms, cross-links, overlap, and uneven depth. It returns a record: every page read, and each
    finding with `file:line`, its class (term, link, overlap, depth), and a proposed edit. The record
@@ -256,8 +283,10 @@ The standard editorial chain, run by `docs-page-chain.js`.
    matches its source, and every claim the inventory marks carried or filed appears on the page. A
    stale fact is fixed or retagged `[docs-drift]` in the same chain. A page with a figure also gets
    a `figure-verifier` read.
-5. **One redraft** on the combined findings, then the gate and both reviews again. A second `fix`
-   from either review goes to the conductor. There is no third automatic round.
+5. **One redraft** on the combined findings. The gate reruns on every redraft. By default only
+   the reviewer that returned `fix` re-reads (R8); after the stage 2 pilot, the pilot checkpoint
+   may restore both. A second `fix` from a re-reading review goes to the conductor. There is no
+   third automatic round.
 
 The page-inputs agent and the fact read are both independent of the drafter, so a page never
 vouches for its own citations; the facts README's rule is amended to say so. The conductor reads
@@ -311,7 +340,17 @@ At each stage close, `docs/HISTORY.md` records spend against the share, the meas
 (which resets later shares), exemplar swaps, rules landed from the fold, and the consistency
 record. STATUS carries only the current shares and the next stage. A stage stops and asks Geoff
 when it runs 25 percent over its share, when two pages in one arm escalate to the conductor, or at
-80 percent of the ceiling (the global stop rule).
+80 percent of the ceiling, about 24M (the global stop rule).
+
+**Pilot checkpoint** (after stage 2a's six pilot pages). The conductor re-derives every share from
+the pilot's measured per-page cost, the extend outline's page count, and today's counts for the
+later arms, and reads the cross-regression rate. Rare cross-regressions (at most one pilot redraft
+shows one) keep the lean chain. Common ones price the both-reviewer chain from the pilot's
+measurement. If the re-derived plan for the chosen chain sits at or below 24M, the stage
+continues. Otherwise, which the current figures predict, Geoff gets one combined question: the
+cross-regression rate and the measured cost of keeping both re-reads when it is common, the
+full-scope total and the ceiling it needs, and the named scope that fits 30M. No page or arm
+leaves scope before he answers.
 
 ## Out of scope
 
@@ -320,29 +359,3 @@ when it runs 25 percent over its share, when two pages in one arm escalate to th
 - Cutting releases. Drafts accumulate on `main` under `## Unreleased`, releasable at every merge.
 - The root `README.md`.
 - A core-developer track, audience-profile files, and any reader harness.
-
-## Open rulings for Geoff
-
-**O1. Raise the initiative ceiling from 20M to about 58M?**
-Recommendation: yes. The chain's measured cost puts the full scope at about 46M planned
-(derivation above), and the ceiling must sit about 25 percent above the plan so the 80 percent
-stop marks an overrun. The pilot resets the figure within the first stage 2 pages, before most of
-the spend.
-- **Yes builds** every stage at full scope, with shares as tabled and reset from the pilot.
-- **No builds** within 20M: about 16M planned. Stages 0 and 1 (5M), then stage 2 with its outline
-  cut to about 13 pages. Admin, editors, and the front door leave this initiative, and their
-  freeze stands until a later one funds them.
-
-**O2. Retire the 2026-09-08 standard's rule 2 ("drafted one section per read") for the extend,
-admin, and editors arms, keeping it for the front door (stage 5) only?**
-The rule means a reader sees each section before the next is drafted, so no outside-reader page is
-drafted end to end autonomously (standard, rule 2; the `writing-voice` skill: "stop after each
-section and let a reader see it before the next one starts"). It answered one failure: nobody but
-the author read the front-door page before the owner did. The chain's two independent reviews now
-read every page before Geoff does, but the chain drafts whole pages.
-Recommendation: yes.
-- **Yes builds** whole-page drafting in stages 2 to 4. Stage 5 drafts `why-cairn.md` one section
-  per dispatch with a register-editor read between sections, at about twice that page's share.
-  Stage 0 amends the rule's line in the `writing-voice` skill and the global `CLAUDE.md` to match.
-- **No builds** section-by-section drafting on every rebuilt page, multiplying the draft and
-  review agents per page by the section count, which O1's figures do not include.

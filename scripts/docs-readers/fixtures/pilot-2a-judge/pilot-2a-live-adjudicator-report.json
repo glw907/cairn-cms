@@ -1,0 +1,294 @@
+{
+  "batch": "pilot-2a-live-adjudicator",
+  "runId": "20260926t010358-d224cb",
+  "kind": "adjudicator",
+  "stopReason": "complete",
+  "budgetTokens": 2000000,
+  "usage": {
+    "input": 3278,
+    "output": 7840,
+    "cacheCreation": 49207,
+    "cacheRead": 546953,
+    "counted": 60325
+  },
+  "jobs": [
+    {
+      "id": "scripter-control-1",
+      "class": "judge-adjudicator",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "rulings": [
+        {
+          "itemId": "item-2",
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "false",
+          "reason": "JSON sent between systems is UTF-8 by definition (RFC 8259). json-output.md:42 and :47 settle the framing: each payload is one compact line, and the stream is newline-delimited JSON. The job needed no separate encoding statement."
+        },
+        {
+          "itemId": "item-3",
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "false",
+          "reason": "json-output.md:42 says every payload is one compact line, and :47 calls the stream newline-delimited JSON. A line-based reader needs nothing more, and the code matches (doctor.go:105 writes \"%s\\n\")."
+        },
+        {
+          "itemId": "item-15",
+          "class": "finding",
+          "subjectGroupId": "g1",
+          "ruling": "false",
+          "reason": "The line framing is stated at json-output.md:42 and :47, and UTF-8 is inherent to JSON interchange. No missing fact blocked the parser."
+        },
+        {
+          "itemId": "item-4",
+          "class": "finding",
+          "subjectGroupId": "g2",
+          "ruling": "false",
+          "reason": "json-output.md:25-26 says every payload except a per-site NDJSON line carries exitCode, and :149 says the same. The health schema description (line 5) says only the stream form omits it, so the single-site case is settled."
+        },
+        {
+          "itemId": "item-16",
+          "class": "finding",
+          "subjectGroupId": "g2",
+          "ruling": "false",
+          "reason": "json-output.md:25-26 and :149, plus the health schema description at line 5, state that single-site `cairn health <site>` carries exitCode and only stream lines omit it. The caller also knows which command form it ran."
+        },
+        {
+          "itemId": "item-5",
+          "class": "finding",
+          "subjectGroupId": "g3",
+          "ruling": "real",
+          "reason": "cairn-adopt-list.schema.json:8 and :20 declare additionalProperties:false, and json-output.md:38 makes the schema normative. Yet json-output.md:346-348 says a field was added within schemaVersion 1 and older readers still read every candidate. No published page says whether readers must tolerate unknown properties."
+        },
+        {
+          "itemId": "item-7",
+          "class": "finding",
+          "subjectGroupId": "g3",
+          "ruling": "real",
+          "reason": "The reader departed from the page because two statements conflict: the closed schema (adopt-list schema line 8, additionalProperties:false) and json-output.md:346-348, which promises older readers survive fields added within v1. No page gives a rule on unknown fields."
+        },
+        {
+          "itemId": "item-18",
+          "class": "finding",
+          "subjectGroupId": "g3",
+          "ruling": "real",
+          "reason": "A parser needs to know whether to tolerate unknown fields. json-output.md:346-348 implies tolerance while every schema sets additionalProperties:false, and no published page states the rule."
+        },
+        {
+          "itemId": "item-8",
+          "class": "finding",
+          "subjectGroupId": "g4",
+          "ruling": "real",
+          "reason": "doctor.md:117-119 and :123-124 limit exit 3 to three cases. json-output.md:432-440 and :485-489 show a doctor payload with a warning-severity fail plus an unknown at exitCode 3, which follows from the precedence at exit-codes.md:26. A tool fault also exits 3 with no payload (doctor.go:55-57)."
+        },
+        {
+          "itemId": "item-10",
+          "class": "finding",
+          "subjectGroupId": "g4",
+          "ruling": "real",
+          "reason": "doctor.md:123 says any other exit 3 is a run whose only non-passing results are UNCHECKED. The doctor example (json-output.md:413-414, :432-439, :485-489) has a warning FAIL (doctor.md:81) plus an UNCHECKED at exit 3, because UNKNOWN outranks WARNING (exit-codes.md:26)."
+        },
+        {
+          "itemId": "item-11",
+          "class": "finding",
+          "subjectGroupId": "g5",
+          "ruling": "real",
+          "reason": "doctor.md:121-122 says a usage error is the one no-payload case. But doctor.go:55-57 returns an error before any payload when doctor.NewSnapshot fails, and exit-codes.md:95-97 lists a run that ended early and a tool fault as further empty-stdout cases."
+        },
+        {
+          "itemId": "item-9",
+          "class": "finding",
+          "subjectGroupId": "g6",
+          "ruling": "false",
+          "reason": "No contradiction here. The doctor schema's state enum (line 28) is the shared frozen five-word set, while json-output.md:399-403 says doctor writes only those frozen words and never writes held. A permissive enum does not conflict with a value that is never emitted."
+        },
+        {
+          "itemId": "item-12",
+          "class": "finding",
+          "subjectGroupId": "g7",
+          "ruling": "real",
+          "reason": "exit-codes.md:83-84 says a missing-credential auth row carries `reason.cred-missing`, but json-output.md:376-377 says an authCheck row's reason is display text, not a vocabulary code. The code matches json-output: probe_token.go:170 uses authCheckCredMissingReason, which produces the text \"%s is not set\" (messages.go:545-549)."
+        },
+        {
+          "itemId": "item-13",
+          "class": "finding",
+          "subjectGroupId": "g8",
+          "ruling": "false",
+          "reason": "json-output.md:320 is about the logs personal-data notice, which --json keeps off stderr. That fits line 13's rule that stderr carries diagnostics, and logs.go:71-77 confirms stderr carries nothing but an error under --json. The two lines do not contradict."
+        },
+        {
+          "itemId": "item-14",
+          "class": "finding",
+          "subjectGroupId": "g9",
+          "ruling": "false",
+          "reason": "doctor.md:10 refers to the seven checks that need a deployed site, which doctor.md:128-129 lists. That does not claim `cairn health` has only seven checks, so it does not contradict the nine ids at json-output.md:501-502."
+        },
+        {
+          "itemId": "item-17",
+          "class": "finding",
+          "subjectGroupId": "g10",
+          "ruling": "false",
+          "reason": "json-output.md:17-19 says the payload's exitCode is the process exit code and never disagrees with the verdict, and exit-codes.md:7-8 says an --expect-sites mismatch exits 3. A wrapper reading exitCode has what it needs, and the code folds the mismatch into errors (sites.go:80-81), which matches json-output.md:301-302."
+        }
+      ],
+      "usage": {
+        "input": 34,
+        "output": 7799,
+        "cacheCreation": 49207,
+        "cacheRead": 546953,
+        "counted": 57040
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "rulings": [
+            {
+              "itemId": "item-2",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "JSON sent between systems is UTF-8 by definition (RFC 8259). json-output.md:42 and :47 settle the framing: each payload is one compact line, and the stream is newline-delimited JSON. The job needed no separate encoding statement."
+            },
+            {
+              "itemId": "item-3",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "json-output.md:42 says every payload is one compact line, and :47 calls the stream newline-delimited JSON. A line-based reader needs nothing more, and the code matches (doctor.go:105 writes \"%s\\n\")."
+            },
+            {
+              "itemId": "item-15",
+              "class": "finding",
+              "subjectGroupId": "g1",
+              "ruling": "false",
+              "reason": "The line framing is stated at json-output.md:42 and :47, and UTF-8 is inherent to JSON interchange. No missing fact blocked the parser."
+            },
+            {
+              "itemId": "item-4",
+              "class": "finding",
+              "subjectGroupId": "g2",
+              "ruling": "false",
+              "reason": "json-output.md:25-26 says every payload except a per-site NDJSON line carries exitCode, and :149 says the same. The health schema description (line 5) says only the stream form omits it, so the single-site case is settled."
+            },
+            {
+              "itemId": "item-16",
+              "class": "finding",
+              "subjectGroupId": "g2",
+              "ruling": "false",
+              "reason": "json-output.md:25-26 and :149, plus the health schema description at line 5, state that single-site `cairn health <site>` carries exitCode and only stream lines omit it. The caller also knows which command form it ran."
+            },
+            {
+              "itemId": "item-5",
+              "class": "finding",
+              "subjectGroupId": "g3",
+              "ruling": "real",
+              "reason": "cairn-adopt-list.schema.json:8 and :20 declare additionalProperties:false, and json-output.md:38 makes the schema normative. Yet json-output.md:346-348 says a field was added within schemaVersion 1 and older readers still read every candidate. No published page says whether readers must tolerate unknown properties."
+            },
+            {
+              "itemId": "item-7",
+              "class": "finding",
+              "subjectGroupId": "g3",
+              "ruling": "real",
+              "reason": "The reader departed from the page because two statements conflict: the closed schema (adopt-list schema line 8, additionalProperties:false) and json-output.md:346-348, which promises older readers survive fields added within v1. No page gives a rule on unknown fields."
+            },
+            {
+              "itemId": "item-18",
+              "class": "finding",
+              "subjectGroupId": "g3",
+              "ruling": "real",
+              "reason": "A parser needs to know whether to tolerate unknown fields. json-output.md:346-348 implies tolerance while every schema sets additionalProperties:false, and no published page states the rule."
+            },
+            {
+              "itemId": "item-8",
+              "class": "finding",
+              "subjectGroupId": "g4",
+              "ruling": "real",
+              "reason": "doctor.md:117-119 and :123-124 limit exit 3 to three cases. json-output.md:432-440 and :485-489 show a doctor payload with a warning-severity fail plus an unknown at exitCode 3, which follows from the precedence at exit-codes.md:26. A tool fault also exits 3 with no payload (doctor.go:55-57)."
+            },
+            {
+              "itemId": "item-10",
+              "class": "finding",
+              "subjectGroupId": "g4",
+              "ruling": "real",
+              "reason": "doctor.md:123 says any other exit 3 is a run whose only non-passing results are UNCHECKED. The doctor example (json-output.md:413-414, :432-439, :485-489) has a warning FAIL (doctor.md:81) plus an UNCHECKED at exit 3, because UNKNOWN outranks WARNING (exit-codes.md:26)."
+            },
+            {
+              "itemId": "item-11",
+              "class": "finding",
+              "subjectGroupId": "g5",
+              "ruling": "real",
+              "reason": "doctor.md:121-122 says a usage error is the one no-payload case. But doctor.go:55-57 returns an error before any payload when doctor.NewSnapshot fails, and exit-codes.md:95-97 lists a run that ended early and a tool fault as further empty-stdout cases."
+            },
+            {
+              "itemId": "item-9",
+              "class": "finding",
+              "subjectGroupId": "g6",
+              "ruling": "false",
+              "reason": "No contradiction here. The doctor schema's state enum (line 28) is the shared frozen five-word set, while json-output.md:399-403 says doctor writes only those frozen words and never writes held. A permissive enum does not conflict with a value that is never emitted."
+            },
+            {
+              "itemId": "item-12",
+              "class": "finding",
+              "subjectGroupId": "g7",
+              "ruling": "real",
+              "reason": "exit-codes.md:83-84 says a missing-credential auth row carries `reason.cred-missing`, but json-output.md:376-377 says an authCheck row's reason is display text, not a vocabulary code. The code matches json-output: probe_token.go:170 uses authCheckCredMissingReason, which produces the text \"%s is not set\" (messages.go:545-549)."
+            },
+            {
+              "itemId": "item-13",
+              "class": "finding",
+              "subjectGroupId": "g8",
+              "ruling": "false",
+              "reason": "json-output.md:320 is about the logs personal-data notice, which --json keeps off stderr. That fits line 13's rule that stderr carries diagnostics, and logs.go:71-77 confirms stderr carries nothing but an error under --json. The two lines do not contradict."
+            },
+            {
+              "itemId": "item-14",
+              "class": "finding",
+              "subjectGroupId": "g9",
+              "ruling": "false",
+              "reason": "doctor.md:10 refers to the seven checks that need a deployed site, which doctor.md:128-129 lists. That does not claim `cairn health` has only seven checks, so it does not contradict the nine ids at json-output.md:501-502."
+            },
+            {
+              "itemId": "item-17",
+              "class": "finding",
+              "subjectGroupId": "g10",
+              "ruling": "false",
+              "reason": "json-output.md:17-19 says the payload's exitCode is the process exit code and never disagrees with the verdict, and exit-codes.md:7-8 says an --expect-sites mismatch exits 3. A wrapper reading exitCode has what it needs, and the code folds the mismatch into errors (sites.go:80-81), which matches json-output.md:301-302."
+            }
+          ],
+          "usage": {
+            "input": 34,
+            "output": 7799,
+            "cacheCreation": 49207,
+            "cacheRead": 546953,
+            "counted": 57040
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "problems": []
+          },
+          "cause": "initial",
+          "final": true,
+          "transcript": "transcripts/scripter-control-1-attempt1.jsonl"
+        }
+      ]
+    }
+  ],
+  "verified": true,
+  "cliVersion": "2.1.282",
+  "runRoot": "<redacted-local-cache-run-dir>",
+  "teardown": {
+    "runDirRemoved": true,
+    "containersLeft": 0,
+    "networksLeft": 0
+  }
+}

@@ -13,6 +13,7 @@ import {
   buildCatchPacketFromResolved,
   publishedRootsFromPackageJson,
   resolveRunSource,
+  type RawRunFields,
   main as judgePacketsMain,
 } from '../../../scripts/docs-readers/judge-packets.js';
 
@@ -176,20 +177,17 @@ describe('buildCatchFields', () => {
 
 describe('assertNewFieldItemCounts', () => {
   it('passes when the composed items include every wrong[]/missing[] entry the source run carries', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- only the array lengths matter to this check
-    const run = { wrong: [{}, {}], missing: [{}] } as any;
+    const run = { wrong: [{}, {}], missing: [{}] } as unknown as RawRunFields;
     expect(() => assertNewFieldItemCounts(run, [{ field: 'wrong' }, { field: 'wrong' }, { field: 'missing' }])).not.toThrow();
   });
 
   it('refuses a composed item list missing one of the source run’s wrong[] entries', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- only the array lengths matter to this check
-    const run = { wrong: [{}, {}], missing: [] } as any;
+    const run = { wrong: [{}, {}], missing: [] } as unknown as RawRunFields;
     expect(() => assertNewFieldItemCounts(run, [{ field: 'wrong' }])).toThrow(/wrong\[\] item\(s\)/);
   });
 
   it('refuses a composed item list missing one of the source run’s missing[] entries', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- only the array lengths matter to this check
-    const run = { wrong: [], missing: [{}, {}] } as any;
+    const run = { wrong: [], missing: [{}, {}] } as unknown as RawRunFields;
     expect(() => assertNewFieldItemCounts(run, [{ field: 'missing' }])).toThrow(/missing\[\] item\(s\)/);
   });
 });

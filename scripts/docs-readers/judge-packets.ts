@@ -440,9 +440,16 @@ export interface RawBlockedEntry {
   blockedBy: string | null;
 }
 
+/** A raw entry's page quote, before `line` and `text` are coerced to a number and a string. */
+interface RawQuote {
+  path: string;
+  line: unknown;
+  text: unknown;
+}
+
 /** One `diverged[]` entry, in the shape a saved report or a live run carries. */
 export interface RawDivergedEntry {
-  quote: { path: string; line: unknown; text: unknown };
+  quote: RawQuote;
   didInstead: string;
   why: string;
   blockedBy: string | null;
@@ -450,7 +457,7 @@ export interface RawDivergedEntry {
 
 /** One `wrong[]` entry, in the shape a saved report or a live run carries. Carries no `blockedBy`. */
 export interface RawWrongEntry {
-  quote: { path: string; line: unknown; text: unknown };
+  quote: RawQuote;
   pageSays: string;
   actual: string;
   evidence: string;
@@ -458,7 +465,7 @@ export interface RawWrongEntry {
 
 /** One `missing[]` entry, in the shape a saved report or a live run carries. Carries no `blockedBy`. */
 export interface RawMissingEntry {
-  quote: { path: string; line: unknown; text: unknown };
+  quote: RawQuote;
   needed: string;
   evidence: string;
 }
@@ -481,6 +488,25 @@ export interface RawRunFields {
 export interface CatchFieldItemLocation {
   field: 'stalls' | 'assumed' | 'diverged' | 'checks' | 'wrong' | 'missing';
   sourceIndex: number;
+}
+
+/**
+ * Coerce a raw quote's `line` and `text` to the number and string a packet item carries.
+ * @param quote - The raw entry's quote.
+ * @returns The packet item's quote.
+ */
+function toPacketQuote(quote: RawQuote): NonNullable<CatchFieldItem['quote']> {
+  return { path: quote.path, line: Number(quote.line), text: String(quote.text) };
+}
+
+/**
+ * Every item in a run's catch fields as one list, in id order: stalls, assumed, diverged, checks,
+ * wrong, then missing.
+ * @param fields - The allow-listed fields `buildCatchFields` returned.
+ * @returns The fields' items, concatenated.
+ */
+function flattenCatchFields(fields: RunCatchFields): CatchFieldItem[] {
+  return [...fields.stalls, ...fields.assumed, ...fields.diverged, ...(fields.checks ?? []), ...fields.wrong, ...fields.missing];
 }
 
 /**
@@ -510,7 +536,7 @@ export function buildCatchFields(run: RawRunFields, idPrefix = 'item'): { fields
     field: 'diverged' as const,
     text: entry.why,
     blockedBy: entry.blockedBy,
-    quote: { path: entry.quote.path, line: Number(entry.quote.line), text: String(entry.quote.text) },
+    quote: toPacketQuote(entry.quote),
     didInstead: entry.didInstead,
     why: entry.why,
   }));
@@ -526,7 +552,7 @@ export function buildCatchFields(run: RawRunFields, idPrefix = 'item'): { fields
     field: 'wrong' as const,
     text: entry.evidence,
     blockedBy: null,
-    quote: { path: entry.quote.path, line: Number(entry.quote.line), text: String(entry.quote.text) },
+    quote: toPacketQuote(entry.quote),
     pageSays: entry.pageSays,
     actual: entry.actual,
     evidence: entry.evidence,
@@ -536,7 +562,7 @@ export function buildCatchFields(run: RawRunFields, idPrefix = 'item'): { fields
     field: 'missing' as const,
     text: entry.evidence,
     blockedBy: null,
-    quote: { path: entry.quote.path, line: Number(entry.quote.line), text: String(entry.quote.text) },
+    quote: toPacketQuote(entry.quote),
     needed: entry.needed,
     evidence: entry.evidence,
   }));
@@ -772,7 +798,7 @@ export function buildAdjudicatorPacket({
   mkdirSync(packetDir, { recursive: true });
 
   const { fields, key: itemKey } = buildCatchFields(run.runFields);
-  const all = [...fields.stalls, ...fields.assumed, ...fields.diverged, ...(fields.checks ?? []), ...fields.wrong, ...fields.missing];
+  const all = flattenCatchFields(fields);
   assertNewFieldItemCounts(run.runFields, all);
   const excludedLocations = new Set(excludedKeys.map((e) => `${e.field}:${e.sourceIndex}`));
   const excludedIds = Object.entries(itemKey)
@@ -856,7 +882,7 @@ export interface AgreementPacketKey {
  */
 function resolveSingleCatchFieldItem(runFields: RawRunFields, field: CatchFieldItemLocation['field'], sourceIndex: number): CatchFieldItem {
   const { fields, key } = buildCatchFields(runFields);
-  const all = [...fields.stalls, ...fields.assumed, ...fields.diverged, ...(fields.checks ?? []), ...fields.wrong, ...fields.missing];
+  const all = flattenCatchFields(fields);
   const matchedId = Object.entries(key).find(([, loc]) => loc.field === field && loc.sourceIndex === sourceIndex)?.[0];
   const matched = all.find((item) => item.id === matchedId);
   if (!matched) throw new Error(`no catch-field item at ${field}[${sourceIndex}]`);

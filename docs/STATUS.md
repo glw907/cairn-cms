@@ -20,7 +20,7 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-**Live: docs reset pass 2a, segment 2 from Task 3.** Ledger at the foot of the plan in the `.claude/worktrees/docs-reset-2a` worktree (branch `docs-reset-2a`, segment 1 green at `d3438e31`; lane `docs-reset-2a-audiences` accepted, merges at segment 2's boundary). Spend 2.22M counted. Blocked on Geoff before the pilot's reader batches: `uupd.timer` is not paused (`sudo -A` fails, 1Password locked); run `sudo systemctl stop uupd.timer`. Keep the `docs-reset-1b` worktree until the close. Still owed: the `~/.dotfiles` push.
+**Live: docs reset pass 2a, Task 5 (the pilot) running.** Ledger at the foot of the plan in the `.claude/worktrees/docs-reset-2a` worktree (branch `docs-reset-2a`, Tasks 3 and 4 accepted, last commit `bbea7afd`; lane `docs-reset-2a-audiences` accepted, merges at segment 2's boundary). Spend 4.10M counted, projection ~11.2M. `uupd.timer` paused (F1); pilot pinned to CLI 2.1.283. Keep the `docs-reset-1b` worktree until the close. Still owed: the `~/.dotfiles` push.
 
 Open items for Geoff: the owner brief says "all 28 registered rules"
 (`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`

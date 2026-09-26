@@ -1,0 +1,2922 @@
+{
+  "batch": "pilot-2a-smoke",
+  "runId": "20260926t001504-6744dd",
+  "stopReason": "complete",
+  "budgetTokens": 700000,
+  "usage": {
+    "input": 3274,
+    "output": 33167,
+    "cacheCreation": 68926,
+    "cacheRead": 341997,
+    "counted": 105367
+  },
+  "jobs": [
+    {
+      "id": "scripter-control-1",
+      "class": "repository",
+      "model": "claude-opus-5-5",
+      "initModel": "claude-opus-5-5",
+      "outcome": "done",
+      "stalls": [
+        {
+          "text": "Could not execute the parser against the documented example payloads to verify it; code is written but untested.",
+          "blockedBy": "python3 check_examples.py"
+        }
+      ],
+      "assumed": [
+        {
+          "text": "stdout is UTF-8; no page states the encoding.",
+          "blockedBy": null
+        },
+        {
+          "text": "Lines are newline-terminated and blank lines can be skipped; pages say 'one compact line' but not whether a trailing newline follows.",
+          "blockedBy": null
+        },
+        {
+          "text": "A single-site `cairn health <site> --json` payload carries exitCode (per the example and prose), though the health schema does not list exitCode as required; a lone site line without exitCode is treated as a truncated stream.",
+          "blockedBy": null
+        },
+        {
+          "text": "Unknown extra fields are tolerated (not rejected) despite additionalProperties:false, because adoptable was added as an optional field within schemaVersion 1 and 'a reader written before it still reads every candidate'.",
+          "blockedBy": null
+        },
+        {
+          "text": "The parser was not exercised against the doc examples; correctness rests on reading only.",
+          "blockedBy": "python3 check_examples.py"
+        }
+      ],
+      "pagesRead": [
+        "doctor/docs/reference/cli-cairn-doctor.md",
+        "doctor/docs/reference/schema/cairn-doctor.schema.json",
+        "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+        "json-output/docs/reference/cli-cairn-json-output.md",
+        "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+        "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+        "json-output/docs/reference/schema/cairn-doctor.schema.json",
+        "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+        "json-output/docs/reference/schema/cairn-health.schema.json",
+        "json-output/docs/reference/schema/cairn-logs.schema.json",
+        "json-output/docs/reference/schema/cairn-sites-list.schema.json"
+      ],
+      "quotes": [
+        {
+          "path": "json-output/docs/reference/cli-cairn-json-output.md",
+          "line": 13,
+          "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+          "ok": true,
+          "startLine": 13,
+          "endLine": 13
+        },
+        {
+          "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+          "line": 95,
+          "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+          "ok": true,
+          "startLine": 95,
+          "endLine": 95
+        },
+        {
+          "path": "doctor/docs/reference/cli-cairn-doctor.md",
+          "line": 121,
+          "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+          "ok": true,
+          "startLine": 121,
+          "endLine": 121
+        },
+        {
+          "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+          "line": 38,
+          "text": "\"if\": { \"properties\": { \"state\": { \"enum\": [\"skip\", \"unknown\"] } }, \"required\": [\"state\"] },",
+          "ok": true,
+          "startLine": 38,
+          "endLine": 38
+        },
+        {
+          "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+          "line": 7,
+          "text": "\"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"dir\", \"checkedAt\", \"checks\"],",
+          "ok": true,
+          "startLine": 7,
+          "endLine": 7
+        },
+        {
+          "path": "doctor/docs/reference/schema/cairn-doctor.schema.json",
+          "line": 28,
+          "text": "\"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"held\", \"skip\", \"unknown\"] },",
+          "ok": true,
+          "startLine": 28,
+          "endLine": 28
+        },
+        {
+          "path": "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+          "line": 7,
+          "text": "\"required\": [",
+          "ok": true,
+          "startLine": 7,
+          "endLine": 7
+        },
+        {
+          "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+          "line": 14,
+          "text": "\"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+          "ok": true,
+          "startLine": 14,
+          "endLine": 14
+        },
+        {
+          "path": "json-output/docs/reference/schema/cairn-logs.schema.json",
+          "line": 7,
+          "text": "\"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"site\", \"containsPersonalData\", \"entries\"],",
+          "ok": true,
+          "startLine": 7,
+          "endLine": 7
+        },
+        {
+          "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+          "line": 19,
+          "text": "\"required\": [\"worker\", \"repo\", \"zone\", \"domain\", \"accountId\", \"connected\", \"adopted\"],",
+          "ok": true,
+          "startLine": 19,
+          "endLine": 19
+        },
+        {
+          "path": "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+          "line": 24,
+          "text": "\"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"skip\", \"unknown\"] },",
+          "ok": true,
+          "startLine": 24,
+          "endLine": 24
+        }
+      ],
+      "steps": [
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 13,
+            "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+            "ok": true,
+            "startLine": 13,
+            "endLine": 13
+          },
+          "decision": "Capture stdout and stderr as separate pipes; parse stdout only, keep stderr for error messages."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 17,
+            "text": "A payload's `exitCode` is the process exit code the run will use. [The `cairn` CLI's exit",
+            "ok": true,
+            "startLine": 17,
+            "endLine": 17
+          },
+          "decision": "Run subprocess with check=False (exits 1-3 are normal results) and raise if the payload exitCode differs from the process return code."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 19,
+            "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+            "ok": true,
+            "startLine": 19,
+            "endLine": 19
+          },
+          "decision": "Validate verdict against exitCode via the 0/1/2/3 = OK/WARNING/CRITICAL/UNKNOWN table."
+        },
+        {
+          "quote": {
+            "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+            "line": 16,
+            "text": "| 0 | `OK` |",
+            "ok": true,
+            "startLine": 16,
+            "endLine": 16
+          },
+          "decision": "VERDICT_EXIT mapping used for the verdict/exitCode cross-check."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 23,
+            "text": "Seven payload kinds are published, and every payload declares its own `kind` so a reader working",
+            "ok": true,
+            "startLine": 23,
+            "endLine": 23
+          },
+          "decision": "Dispatch each line on its `kind` field; reject unknown kinds (closed contract)."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 42,
+            "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+            "ok": true,
+            "startLine": 42,
+            "endLine": 42
+          },
+          "decision": "Split stdout on newlines and parse each non-empty line as one payload."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 38,
+            "text": "Every kind's `schemaVersion` stands at `1`. Each schema is the normative source where this page",
+            "ok": true,
+            "startLine": 38,
+            "endLine": 38
+          },
+          "decision": "Reject schemaVersion other than 1; where prose and schema differ, follow the schema (e.g. accept `held` in doctor checks)."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 49,
+            "text": "`exitCode` omitted), followed by one `summary` line carrying the run's own `exitCode`. A stream",
+            "ok": true,
+            "startLine": 49,
+            "endLine": 49
+          },
+          "decision": "Treat a site* + summary sequence as a sweep; the summary is the run's payload and supplies the run verdict and exitCode."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 50,
+            "text": "that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are",
+            "ok": true,
+            "startLine": 50,
+            "endLine": 50
+          },
+          "decision": "Raise CairnTruncatedStream (carrying the site lines) when the stream has no summary."
+        },
+        {
+          "quote": {
+            "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+            "line": 95,
+            "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+            "ok": true,
+            "startLine": 95,
+            "endLine": 95
+          },
+          "decision": "Empty stdout raises CairnNoPayload with exit code and stderr, without claiming it was a usage error."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+            "line": 38,
+            "text": "\"if\": { \"properties\": { \"state\": { \"enum\": [\"skip\", \"unknown\"] } }, \"required\": [\"state\"] },",
+            "ok": true,
+            "startLine": 38,
+            "endLine": 38
+          },
+          "decision": "Require `reason` on every skip/unknown check in site and doctor payloads."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+            "line": 26,
+            "text": "\"exitCode\": { \"type\": \"integer\", \"enum\": [0, 1, 2, 3] },",
+            "ok": true,
+            "startLine": 26,
+            "endLine": 26
+          },
+          "decision": "exitCode is NotRequired on SitePayload (not in the health schema's required list)."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 376,
+            "text": "`state`, with `reason` beside anything other than a pass. A row's `reason` is display text for a",
+            "ok": true,
+            "startLine": 376,
+            "endLine": 376
+          },
+          "decision": "Type authCheck Permission.reason as free str, not a reason-code literal."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+            "line": 38,
+            "text": "\"required\": [\"summary\"],",
+            "ok": true,
+            "startLine": 38,
+            "endLine": 38
+          },
+          "decision": "DoctorFix has summary and optional url only, distinct from HealthFix (summary/actor/outward required)."
+        },
+        {
+          "quote": {
+            "path": "doctor/docs/reference/cli-cairn-doctor.md",
+            "line": 70,
+            "text": "The command runs eleven checks, always in the order of the table below, and the `--json`",
+            "ok": true,
+            "startLine": 70,
+            "endLine": 70
+          },
+          "decision": "Parser does not assume doctor checks are sorted by checkId (only site checks are)."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+            "line": 14,
+            "text": "\"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+            "ok": true,
+            "startLine": 14,
+            "endLine": 14
+          },
+          "decision": "SitesPayload.errors is NotRequired."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+            "line": 29,
+            "text": "\"adoptable\": { \"type\": \"boolean\" }",
+            "ok": true,
+            "startLine": 29,
+            "endLine": 29
+          },
+          "decision": "AdoptCandidate.adoptable is NotRequired."
+        }
+      ],
+      "diverged": [
+        {
+          "quote": {
+            "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+            "line": 8,
+            "text": "\"additionalProperties\": false,",
+            "ok": true,
+            "startLine": 8,
+            "endLine": 8
+          },
+          "didInstead": "Parser ignores unrecognised fields rather than rejecting them.",
+          "why": "json-output.md:346-348 says optional fields are added within schemaVersion 1 and older readers must still read the payload; strict additionalProperties:false would break that.",
+          "blockedBy": null
+        },
+        {
+          "quote": {
+            "path": "doctor/docs/reference/cli-cairn-doctor.md",
+            "line": 117,
+            "text": "Exit 3 covers three distinct cases here, so a caller tests for a nonzero exit rather than",
+            "ok": true,
+            "startLine": 117,
+            "endLine": 117
+          },
+          "didInstead": "Wrapper does not classify doctor exit 3 into the three listed cases; it reads verdict/checks from the payload and treats empty stdout generically as 'no payload'.",
+          "why": "The three-case list conflicts with exit-codes.md (tool fault, cancellation) and with the doctor example itself.",
+          "blockedBy": null
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 402,
+            "text": "`reason: \"reason.not-observable\"`. `held` is never written, since a directory preflight has no",
+            "ok": true,
+            "startLine": 402,
+            "endLine": 402
+          },
+          "didInstead": "Doctor checks accept `held` as a valid state.",
+          "why": "The doctor schema's state enum includes held and the schema is declared normative (json-output.md:38-39).",
+          "blockedBy": null
+        }
+      ],
+      "wrong": [
+        {
+          "quote": {
+            "path": "doctor/docs/reference/cli-cairn-doctor.md",
+            "line": 123,
+            "text": "`UNKNOWN` verdict and an empty checks array; any other exit 3 is a run whose only non-passing",
+            "ok": true,
+            "startLine": 123,
+            "endLine": 123
+          },
+          "pageSays": "Any doctor exit 3 other than a usage error or non-site directory is a run whose only non-passing results are UNCHECKED.",
+          "actual": "A run with a warning-severity FAIL plus an UNCHECKED also exits 3 (UNKNOWN outranks WARNING), and tool faults/cancellations exit 3 too.",
+          "evidence": "The doctor example in json-output.md:411-491 has config.observability fail (warning severity per doctor.md:81) plus ai.posture-effective unknown with exitCode 3; exit-codes.md:26 precedence CRITICAL > UNKNOWN > WARNING; exit-codes.md:79-80 lists tool fault and cancelled run as exit 3."
+        },
+        {
+          "quote": {
+            "path": "doctor/docs/reference/cli-cairn-doctor.md",
+            "line": 121,
+            "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+            "ok": true,
+            "startLine": 121,
+            "endLine": 121
+          },
+          "pageSays": "Empty stdout under --json means the invocation was wrong; a usage error is the only no-payload case.",
+          "actual": "Empty stdout can also be a run that ended before any payload or a tool fault.",
+          "evidence": "exit-codes.md:95-97 lists usage error, a run that ended before any payload was written, or a tool fault."
+        },
+        {
+          "quote": {
+            "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+            "line": 83,
+            "text": "contributes `CRITICAL`, a permission whose credential is missing contributes `WARNING` with",
+            "ok": true,
+            "startLine": 83,
+            "endLine": 83
+          },
+          "pageSays": "A missing-credential auth check row carries `reason.cred-missing`.",
+          "actual": "An authCheck row's reason is display text, not a reason-vocabulary code.",
+          "evidence": "json-output.md:376-377: 'A row's `reason` is display text for a person, not a code from the reason vocabulary above'."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 320,
+            "text": "the personal-data notice a plain run prints travels in the payload or it reaches nobody.",
+            "ok": true,
+            "startLine": 321,
+            "endLine": 321
+          },
+          "pageSays": "Line 319-320: under --json stderr is silent.",
+          "actual": "Same page line 13 says stderr carries diagnostics under --json, and usage errors write to stderr (exit-codes.md:91).",
+          "evidence": "json-output.md:13 and exit-codes.md:91-92."
+        },
+        {
+          "quote": {
+            "path": "doctor/docs/reference/cli-cairn-doctor.md",
+            "line": 10,
+            "text": "clone and in CI. `cairn health` is the live-site counterpart, reaching the seven checks that need",
+            "ok": true,
+            "startLine": 10,
+            "endLine": 10
+          },
+          "pageSays": "cairn health reaches seven checks.",
+          "actual": "cairn health has nine frozen check ids; seven is the count that never appear in doctor.",
+          "evidence": "json-output.md:501-502 lists nine health check ids; doctor.md:128-129 lists seven."
+        }
+      ],
+      "missing": [
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 42,
+            "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+            "ok": true,
+            "startLine": 42,
+            "endLine": 42
+          },
+          "needed": "Output encoding and whether each line ends with a newline (including the last).",
+          "evidence": "The line splitter must handle the terminator and decode bytes; neither is stated."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+            "line": 7,
+            "text": "\"required\": [",
+            "ok": true,
+            "startLine": 7,
+            "endLine": 7
+          },
+          "needed": "Whether exitCode is guaranteed on single-site `cairn health <site> --json`; the schema leaves it optional for both forms.",
+          "evidence": "Needed to distinguish a single-site payload from a one-line truncated stream."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 19,
+            "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+            "ok": true,
+            "startLine": 19,
+            "endLine": 19
+          },
+          "needed": "What a reader should do if the process exit code differs from the payload exitCode, or how an --expect-sites mismatch appears in the sites payload.",
+          "evidence": "exit-codes.md:7-8 says --expect-sites mismatch exits 3, but json-output.md:299-302 only ties exit 3 to a non-empty errors array."
+        },
+        {
+          "quote": {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 347,
+            "text": "Custom Domains and never Workers Routes; it was added as an optional field within schema version",
+            "ok": true,
+            "startLine": 347,
+            "endLine": 347
+          },
+          "needed": "An explicit rule on whether readers must tolerate unknown properties despite additionalProperties:false.",
+          "evidence": "Strict schema validation would reject payloads with fields added within version 1."
+        }
+      ],
+      "checks": [],
+      "ruleCandidates": [
+        "State that the doctor schema's `held` enum value is never emitted, or drop it from the schema.",
+        "Give a full example for the authCheck payload.",
+        "Document the keys of summary.counts as exactly the four verdict words.",
+        "Say whether the NDJSON stream may interleave anything other than site and summary lines."
+      ],
+      "denials": [
+        {
+          "source": "permission",
+          "tool": "Bash",
+          "input": "{\"command\":\"python3 --version && python3 - <<'EOF'\\nimport json, re\\nfrom cairn_json import *\\nmd = open('json-output/docs/reference/cli-cairn-json-output.md').read()\\nblocks = re.findall(r'```json\\\\n(.*?)```', md, re.S)\\nfor b in blocks:\\n    o = json.loads(b); line = json.dumps(o, separators=(',',':'))\\n    r = parse_stdout(line+\\\"\\\\n\\\", o['exitCode'])\\n    print(o['kind'], r.verdict, r.exit_cod..."
+        },
+        {
+          "source": "permission",
+          "tool": "Bash",
+          "input": "{\"command\":\"python3 check_examples.py\",\"description\":\"Run example-payload check script\"}"
+        }
+      ],
+      "proxyBlocked": [],
+      "packageFetches": [],
+      "usage": {
+        "input": 16,
+        "output": 16847,
+        "cacheCreation": 35137,
+        "cacheRead": 192620,
+        "counted": 52000
+      },
+      "verified": {
+        "ok": true,
+        "init": true,
+        "canaries": true,
+        "quotes": [
+          {
+            "path": "json-output/docs/reference/cli-cairn-json-output.md",
+            "line": 13,
+            "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+            "ok": true,
+            "startLine": 13,
+            "endLine": 13
+          },
+          {
+            "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+            "line": 95,
+            "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+            "ok": true,
+            "startLine": 95,
+            "endLine": 95
+          },
+          {
+            "path": "doctor/docs/reference/cli-cairn-doctor.md",
+            "line": 121,
+            "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+            "ok": true,
+            "startLine": 121,
+            "endLine": 121
+          },
+          {
+            "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+            "line": 38,
+            "text": "\"if\": { \"properties\": { \"state\": { \"enum\": [\"skip\", \"unknown\"] } }, \"required\": [\"state\"] },",
+            "ok": true,
+            "startLine": 38,
+            "endLine": 38
+          },
+          {
+            "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+            "line": 7,
+            "text": "\"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"dir\", \"checkedAt\", \"checks\"],",
+            "ok": true,
+            "startLine": 7,
+            "endLine": 7
+          },
+          {
+            "path": "doctor/docs/reference/schema/cairn-doctor.schema.json",
+            "line": 28,
+            "text": "\"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"held\", \"skip\", \"unknown\"] },",
+            "ok": true,
+            "startLine": 28,
+            "endLine": 28
+          },
+          {
+            "path": "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+            "line": 7,
+            "text": "\"required\": [",
+            "ok": true,
+            "startLine": 7,
+            "endLine": 7
+          },
+          {
+            "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+            "line": 14,
+            "text": "\"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+            "ok": true,
+            "startLine": 14,
+            "endLine": 14
+          },
+          {
+            "path": "json-output/docs/reference/schema/cairn-logs.schema.json",
+            "line": 7,
+            "text": "\"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"site\", \"containsPersonalData\", \"entries\"],",
+            "ok": true,
+            "startLine": 7,
+            "endLine": 7
+          },
+          {
+            "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+            "line": 19,
+            "text": "\"required\": [\"worker\", \"repo\", \"zone\", \"domain\", \"accountId\", \"connected\", \"adopted\"],",
+            "ok": true,
+            "startLine": 19,
+            "endLine": 19
+          },
+          {
+            "path": "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+            "line": 24,
+            "text": "\"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"skip\", \"unknown\"] },",
+            "ok": true,
+            "startLine": 24,
+            "endLine": 24
+          }
+        ],
+        "steps": [
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 13,
+              "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+              "ok": true,
+              "startLine": 13,
+              "endLine": 13
+            },
+            "decision": "Capture stdout and stderr as separate pipes; parse stdout only, keep stderr for error messages."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 17,
+              "text": "A payload's `exitCode` is the process exit code the run will use. [The `cairn` CLI's exit",
+              "ok": true,
+              "startLine": 17,
+              "endLine": 17
+            },
+            "decision": "Run subprocess with check=False (exits 1-3 are normal results) and raise if the payload exitCode differs from the process return code."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 19,
+              "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+              "ok": true,
+              "startLine": 19,
+              "endLine": 19
+            },
+            "decision": "Validate verdict against exitCode via the 0/1/2/3 = OK/WARNING/CRITICAL/UNKNOWN table."
+          },
+          {
+            "quote": {
+              "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+              "line": 16,
+              "text": "| 0 | `OK` |",
+              "ok": true,
+              "startLine": 16,
+              "endLine": 16
+            },
+            "decision": "VERDICT_EXIT mapping used for the verdict/exitCode cross-check."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 23,
+              "text": "Seven payload kinds are published, and every payload declares its own `kind` so a reader working",
+              "ok": true,
+              "startLine": 23,
+              "endLine": 23
+            },
+            "decision": "Dispatch each line on its `kind` field; reject unknown kinds (closed contract)."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 42,
+              "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+              "ok": true,
+              "startLine": 42,
+              "endLine": 42
+            },
+            "decision": "Split stdout on newlines and parse each non-empty line as one payload."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 38,
+              "text": "Every kind's `schemaVersion` stands at `1`. Each schema is the normative source where this page",
+              "ok": true,
+              "startLine": 38,
+              "endLine": 38
+            },
+            "decision": "Reject schemaVersion other than 1; where prose and schema differ, follow the schema (e.g. accept `held` in doctor checks)."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 49,
+              "text": "`exitCode` omitted), followed by one `summary` line carrying the run's own `exitCode`. A stream",
+              "ok": true,
+              "startLine": 49,
+              "endLine": 49
+            },
+            "decision": "Treat a site* + summary sequence as a sweep; the summary is the run's payload and supplies the run verdict and exitCode."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 50,
+              "text": "that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are",
+              "ok": true,
+              "startLine": 50,
+              "endLine": 50
+            },
+            "decision": "Raise CairnTruncatedStream (carrying the site lines) when the stream has no summary."
+          },
+          {
+            "quote": {
+              "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+              "line": 95,
+              "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+              "ok": true,
+              "startLine": 95,
+              "endLine": 95
+            },
+            "decision": "Empty stdout raises CairnNoPayload with exit code and stderr, without claiming it was a usage error."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+              "line": 38,
+              "text": "\"if\": { \"properties\": { \"state\": { \"enum\": [\"skip\", \"unknown\"] } }, \"required\": [\"state\"] },",
+              "ok": true,
+              "startLine": 38,
+              "endLine": 38
+            },
+            "decision": "Require `reason` on every skip/unknown check in site and doctor payloads."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+              "line": 26,
+              "text": "\"exitCode\": { \"type\": \"integer\", \"enum\": [0, 1, 2, 3] },",
+              "ok": true,
+              "startLine": 26,
+              "endLine": 26
+            },
+            "decision": "exitCode is NotRequired on SitePayload (not in the health schema's required list)."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 376,
+              "text": "`state`, with `reason` beside anything other than a pass. A row's `reason` is display text for a",
+              "ok": true,
+              "startLine": 376,
+              "endLine": 376
+            },
+            "decision": "Type authCheck Permission.reason as free str, not a reason-code literal."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+              "line": 38,
+              "text": "\"required\": [\"summary\"],",
+              "ok": true,
+              "startLine": 38,
+              "endLine": 38
+            },
+            "decision": "DoctorFix has summary and optional url only, distinct from HealthFix (summary/actor/outward required)."
+          },
+          {
+            "quote": {
+              "path": "doctor/docs/reference/cli-cairn-doctor.md",
+              "line": 70,
+              "text": "The command runs eleven checks, always in the order of the table below, and the `--json`",
+              "ok": true,
+              "startLine": 70,
+              "endLine": 70
+            },
+            "decision": "Parser does not assume doctor checks are sorted by checkId (only site checks are)."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+              "line": 14,
+              "text": "\"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+              "ok": true,
+              "startLine": 14,
+              "endLine": 14
+            },
+            "decision": "SitesPayload.errors is NotRequired."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+              "line": 29,
+              "text": "\"adoptable\": { \"type\": \"boolean\" }",
+              "ok": true,
+              "startLine": 29,
+              "endLine": 29
+            },
+            "decision": "AdoptCandidate.adoptable is NotRequired."
+          }
+        ],
+        "diverged": [
+          {
+            "quote": {
+              "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+              "line": 8,
+              "text": "\"additionalProperties\": false,",
+              "ok": true,
+              "startLine": 8,
+              "endLine": 8
+            },
+            "didInstead": "Parser ignores unrecognised fields rather than rejecting them.",
+            "why": "json-output.md:346-348 says optional fields are added within schemaVersion 1 and older readers must still read the payload; strict additionalProperties:false would break that.",
+            "blockedBy": null
+          },
+          {
+            "quote": {
+              "path": "doctor/docs/reference/cli-cairn-doctor.md",
+              "line": 117,
+              "text": "Exit 3 covers three distinct cases here, so a caller tests for a nonzero exit rather than",
+              "ok": true,
+              "startLine": 117,
+              "endLine": 117
+            },
+            "didInstead": "Wrapper does not classify doctor exit 3 into the three listed cases; it reads verdict/checks from the payload and treats empty stdout generically as 'no payload'.",
+            "why": "The three-case list conflicts with exit-codes.md (tool fault, cancellation) and with the doctor example itself.",
+            "blockedBy": null
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 402,
+              "text": "`reason: \"reason.not-observable\"`. `held` is never written, since a directory preflight has no",
+              "ok": true,
+              "startLine": 402,
+              "endLine": 402
+            },
+            "didInstead": "Doctor checks accept `held` as a valid state.",
+            "why": "The doctor schema's state enum includes held and the schema is declared normative (json-output.md:38-39).",
+            "blockedBy": null
+          }
+        ],
+        "wrong": [
+          {
+            "quote": {
+              "path": "doctor/docs/reference/cli-cairn-doctor.md",
+              "line": 123,
+              "text": "`UNKNOWN` verdict and an empty checks array; any other exit 3 is a run whose only non-passing",
+              "ok": true,
+              "startLine": 123,
+              "endLine": 123
+            },
+            "pageSays": "Any doctor exit 3 other than a usage error or non-site directory is a run whose only non-passing results are UNCHECKED.",
+            "actual": "A run with a warning-severity FAIL plus an UNCHECKED also exits 3 (UNKNOWN outranks WARNING), and tool faults/cancellations exit 3 too.",
+            "evidence": "The doctor example in json-output.md:411-491 has config.observability fail (warning severity per doctor.md:81) plus ai.posture-effective unknown with exitCode 3; exit-codes.md:26 precedence CRITICAL > UNKNOWN > WARNING; exit-codes.md:79-80 lists tool fault and cancelled run as exit 3."
+          },
+          {
+            "quote": {
+              "path": "doctor/docs/reference/cli-cairn-doctor.md",
+              "line": 121,
+              "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+              "ok": true,
+              "startLine": 121,
+              "endLine": 121
+            },
+            "pageSays": "Empty stdout under --json means the invocation was wrong; a usage error is the only no-payload case.",
+            "actual": "Empty stdout can also be a run that ended before any payload or a tool fault.",
+            "evidence": "exit-codes.md:95-97 lists usage error, a run that ended before any payload was written, or a tool fault."
+          },
+          {
+            "quote": {
+              "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+              "line": 83,
+              "text": "contributes `CRITICAL`, a permission whose credential is missing contributes `WARNING` with",
+              "ok": true,
+              "startLine": 83,
+              "endLine": 83
+            },
+            "pageSays": "A missing-credential auth check row carries `reason.cred-missing`.",
+            "actual": "An authCheck row's reason is display text, not a reason-vocabulary code.",
+            "evidence": "json-output.md:376-377: 'A row's `reason` is display text for a person, not a code from the reason vocabulary above'."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 320,
+              "text": "the personal-data notice a plain run prints travels in the payload or it reaches nobody.",
+              "ok": true,
+              "startLine": 321,
+              "endLine": 321
+            },
+            "pageSays": "Line 319-320: under --json stderr is silent.",
+            "actual": "Same page line 13 says stderr carries diagnostics under --json, and usage errors write to stderr (exit-codes.md:91).",
+            "evidence": "json-output.md:13 and exit-codes.md:91-92."
+          },
+          {
+            "quote": {
+              "path": "doctor/docs/reference/cli-cairn-doctor.md",
+              "line": 10,
+              "text": "clone and in CI. `cairn health` is the live-site counterpart, reaching the seven checks that need",
+              "ok": true,
+              "startLine": 10,
+              "endLine": 10
+            },
+            "pageSays": "cairn health reaches seven checks.",
+            "actual": "cairn health has nine frozen check ids; seven is the count that never appear in doctor.",
+            "evidence": "json-output.md:501-502 lists nine health check ids; doctor.md:128-129 lists seven."
+          }
+        ],
+        "missing": [
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 42,
+              "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+              "ok": true,
+              "startLine": 42,
+              "endLine": 42
+            },
+            "needed": "Output encoding and whether each line ends with a newline (including the last).",
+            "evidence": "The line splitter must handle the terminator and decode bytes; neither is stated."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+              "line": 7,
+              "text": "\"required\": [",
+              "ok": true,
+              "startLine": 7,
+              "endLine": 7
+            },
+            "needed": "Whether exitCode is guaranteed on single-site `cairn health <site> --json`; the schema leaves it optional for both forms.",
+            "evidence": "Needed to distinguish a single-site payload from a one-line truncated stream."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 19,
+              "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+              "ok": true,
+              "startLine": 19,
+              "endLine": 19
+            },
+            "needed": "What a reader should do if the process exit code differs from the payload exitCode, or how an --expect-sites mismatch appears in the sites payload.",
+            "evidence": "exit-codes.md:7-8 says --expect-sites mismatch exits 3, but json-output.md:299-302 only ties exit 3 to a non-empty errors array."
+          },
+          {
+            "quote": {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 347,
+              "text": "Custom Domains and never Workers Routes; it was added as an optional field within schema version",
+              "ok": true,
+              "startLine": 347,
+              "endLine": 347
+            },
+            "needed": "An explicit rule on whether readers must tolerate unknown properties despite additionalProperties:false.",
+            "evidence": "Strict schema validation would reject payloads with fields added within version 1."
+          }
+        ],
+        "problems": []
+      },
+      "attempts": [
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "stalls": [
+            {
+              "text": "I couldn't run the parser and wrapper against the documented example payloads or a fake cairn script. The code has not been executed or tested.",
+              "blockedBy": "python3 - <<'EOF' ... (test harness importing cairn_json and running a stub cairn script)"
+            }
+          ],
+          "assumed": [
+            {
+              "text": "Python 3.11+ (typing.NotRequired, TypedDict) is acceptable for the internal script. The repo has no existing code to match.",
+              "blockedBy": null
+            },
+            {
+              "text": "A single `site` line with no `exitCode` is a truncated bare-health stream, not a single-site payload. This follows from json-output:25-26 plus :49, but the schema makes exitCode optional on every site payload, so the pages never say it directly.",
+              "blockedBy": null
+            },
+            {
+              "text": "Unknown extra keys are tolerated, not rejected. The schemas say additionalProperties:false, but `adoptable` was added as an optional field within schemaVersion 1 and 'a reader written before it still reads every candidate'.",
+              "blockedBy": null
+            },
+            {
+              "text": "Enum-like values that the pages say can grow within v1 are typed as plain str: reason codes, condition ids, check ids, and summary counts keys. Only the schema-closed enums are validated: verdict, state, schemaVersion, and the verdict/exitCode pair.",
+              "blockedBy": null
+            },
+            {
+              "text": "When the stream is truncated (no summary line), the wrapper does not cross-check the process exit code, because the pages don't state what the process exits with in that case.",
+              "blockedBy": null
+            },
+            {
+              "text": "Empty stdout is raised as a generic NoPayload and not classified as a usage error, because the pages disagree on what empty stdout means.",
+              "blockedBy": null
+            }
+          ],
+          "pagesRead": [
+            "doctor/docs/reference/cli-cairn-doctor.md",
+            "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+            "json-output/docs/reference/cli-cairn-json-output.md",
+            "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+            "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+            "json-output/docs/reference/schema/cairn-doctor.schema.json",
+            "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+            "json-output/docs/reference/schema/cairn-health.schema.json",
+            "json-output/docs/reference/schema/cairn-logs.schema.json",
+            "json-output/docs/reference/schema/cairn-sites-list.schema.json"
+          ],
+          "quotes": [
+            {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 13,
+              "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+              "ok": true,
+              "startLine": 13,
+              "endLine": 13
+            },
+            {
+              "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+              "line": 91,
+              "text": "A usage error exits 3 with byte-empty stdout; its message goes to stderr, so stdout carries",
+              "ok": true,
+              "startLine": 91,
+              "endLine": 91
+            },
+            {
+              "path": "doctor/docs/reference/cli-cairn-doctor.md",
+              "line": 117,
+              "text": "Exit 3 covers three distinct cases here, so a caller tests for a nonzero exit rather than",
+              "ok": true,
+              "startLine": 117,
+              "endLine": 117
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+              "line": 37,
+              "text": "      \"required\": [\"checkId\", \"state\", \"tier\", \"checkedAt\"],",
+              "ok": true,
+              "startLine": 37,
+              "endLine": 37
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+              "line": 28,
+              "text": "        \"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"held\", \"skip\", \"unknown\"] },",
+              "ok": true,
+              "startLine": 28,
+              "endLine": 28
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+              "line": 27,
+              "text": "    \"counts\": { \"type\": \"object\", \"additionalProperties\": { \"type\": \"integer\" } },",
+              "ok": true,
+              "startLine": 27,
+              "endLine": 27
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+              "line": 14,
+              "text": "    \"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+              "ok": true,
+              "startLine": 14,
+              "endLine": 14
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-logs.schema.json",
+              "line": 20,
+              "text": "        \"required\": [\"at\", \"level\", \"event\"],",
+              "ok": true,
+              "startLine": 20,
+              "endLine": 20
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+              "line": 19,
+              "text": "        \"required\": [\"worker\", \"repo\", \"zone\", \"domain\", \"accountId\", \"connected\", \"adopted\"],",
+              "ok": true,
+              "startLine": 19,
+              "endLine": 19
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+              "line": 24,
+              "text": "          \"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"skip\", \"unknown\"] },",
+              "ok": true,
+              "startLine": 24,
+              "endLine": 24
+            },
+            {
+              "path": "doctor/docs/reference/schema/cairn-doctor.schema.json",
+              "line": 7,
+              "text": "  \"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"dir\", \"checkedAt\", \"checks\"],",
+              "ok": true,
+              "startLine": 7,
+              "endLine": 7
+            }
+          ],
+          "steps": [
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 13,
+                "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+                "ok": true,
+                "startLine": 13,
+                "endLine": 13
+              },
+              "decision": "Capture stdout and stderr separately (capture_output) and parse only stdout. stderr is kept as text and never parsed."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 17,
+                "text": "A payload's `exitCode` is the process exit code the run will use. [The `cairn` CLI's exit",
+                "ok": true,
+                "startLine": 17,
+                "endLine": 17
+              },
+              "decision": "The wrapper raises ContractError if the payload's (or summary's) exitCode differs from the process return code. A nonzero exit is returned as a result, not raised."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 19,
+                "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+                "ok": true,
+                "startLine": 19,
+                "endLine": 19
+              },
+              "decision": "The validator checks verdict == VERDICT_FOR_CODE[exitCode], using the 0-3 table."
+            },
+            {
+              "quote": {
+                "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                "line": 16,
+                "text": "| 0 | `OK` |",
+                "ok": true,
+                "startLine": 16,
+                "endLine": 16
+              },
+              "decision": "VERDICT_FOR_CODE maps 0/1/2/3 to OK/WARNING/CRITICAL/UNKNOWN."
+            },
+            {
+              "quote": {
+                "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                "line": 95,
+                "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+                "ok": true,
+                "startLine": 95,
+                "endLine": 95
+              },
+              "decision": "Empty stdout raises NoPayload(returncode, stderr), with no claim about which cause."
+            },
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 117,
+                "text": "Exit 3 covers three distinct cases here, so a caller tests for a nonzero exit rather than",
+                "ok": true,
+                "startLine": 117,
+                "endLine": 117
+              },
+              "decision": "The wrapper never switches on the exit code. Callers read the payload's verdict and checks."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 23,
+                "text": "Seven payload kinds are published, and every payload declares its own `kind` so a reader working",
+                "ok": true,
+                "startLine": 23,
+                "endLine": 23
+              },
+              "decision": "The parser dispatches on `kind` through the REQUIRED table (seven kinds) and rejects unknown kinds."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 42,
+                "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+                "ok": true,
+                "startLine": 42,
+                "endLine": 42
+              },
+              "decision": "Split stdout on newlines and json.loads each non-blank line as one payload."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 49,
+                "text": "`exitCode` omitted), followed by one `summary` line carrying the run's own `exitCode`. A stream",
+                "ok": true,
+                "startLine": 49,
+                "endLine": 49
+              },
+              "decision": "Multi-line output, or a lone site line with no exitCode, is parsed as a HealthStream (site lines, then an optional final summary). Only the summary's exitCode is cross-checked."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 50,
+                "text": "that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are",
+                "ok": true,
+                "startLine": 50,
+                "endLine": 50
+              },
+              "decision": "HealthStream.summary is None when there is no summary line, and HealthStream.verdict then returns UNKNOWN."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 53,
+                "text": "sites the run meant to cover, which can exceed the number of `site` lines actually written.",
+                "ok": true,
+                "startLine": 53,
+                "endLine": 53
+              },
+              "decision": "The parser doesn't require len(sites) == summary.sites."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 38,
+                "text": "Every kind's `schemaVersion` stands at `1`. Each schema is the normative source where this page",
+                "ok": true,
+                "startLine": 38,
+                "endLine": 38
+              },
+              "decision": "schemaVersion must equal 1. Required-field lists and optionality are taken from the schemas, not the prose."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                "line": 39,
+                "text": "      \"then\": { \"required\": [\"reason\"] },",
+                "ok": true,
+                "startLine": 39,
+                "endLine": 39
+              },
+              "decision": "The validator rejects a skip/unknown check that has no reason, for both site and doctor checks."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                "line": 26,
+                "text": "    \"exitCode\": { \"type\": \"integer\", \"enum\": [0, 1, 2, 3] },",
+                "ok": true,
+                "startLine": 26,
+                "endLine": 26
+              },
+              "decision": "exitCode is NotRequired on SitePayload because it is not in the required list."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+                "line": 14,
+                "text": "    \"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+                "ok": true,
+                "startLine": 14,
+                "endLine": 14
+              },
+              "decision": "SitesPayload.errors is NotRequired (absent when there are none)."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                "line": 29,
+                "text": "          \"adoptable\": { \"type\": \"boolean\" }",
+                "ok": true,
+                "startLine": 29,
+                "endLine": 29
+              },
+              "decision": "AdoptCandidate.adoptable is NotRequired."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+                "line": 24,
+                "text": "          \"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"skip\", \"unknown\"] },",
+                "ok": true,
+                "startLine": 24,
+                "endLine": 24
+              },
+              "decision": "PermissionRow.state is a four-word Literal with no 'held'. reason is a free str (display text)."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                "line": 22,
+                "text": "      \"required\": [\"checkId\", \"state\"],",
+                "ok": true,
+                "startLine": 22,
+                "endLine": 22
+              },
+              "decision": "DoctorCheck requires only checkId and state. condition, detail, note and fix are NotRequired."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                "line": 38,
+                "text": "      \"required\": [\"summary\"],",
+                "ok": true,
+                "startLine": 38,
+                "endLine": 38
+              },
+              "decision": "DoctorFix has summary plus optional url, with no actor or outward, and is kept separate from HealthFix."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 116,
+                "text": "`checkedAt`, is RFC 3339 in UTC; the zero time writes an empty string, and nothing on the wire is",
+                "ok": true,
+                "startLine": 116,
+                "endLine": 116
+              },
+              "decision": "Timestamps stay as str and are not parsed to datetime, since \"\" is a legal value."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 14,
+                "text": "never merged. The payload still prints under `--quiet`, since `--json` outranks it. A usage",
+                "ok": true,
+                "startLine": 14,
+                "endLine": 14
+              },
+              "decision": "The wrapper doesn't strip --quiet from caller args."
+            }
+          ],
+          "diverged": [
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                "line": 8,
+                "text": "  \"additionalProperties\": false,",
+                "ok": true,
+                "startLine": 8,
+                "endLine": 8
+              },
+              "didInstead": "The parser ignores unknown keys and doesn't enforce additionalProperties:false.",
+              "why": "The json-output page says optional fields like `adoptable` were added within schemaVersion 1 and older readers must keep working. A strict reader would break on the next additive field.",
+              "blockedBy": null
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                "line": 28,
+                "text": "        \"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"held\", \"skip\", \"unknown\"] },",
+                "ok": true,
+                "startLine": 28,
+                "endLine": 28
+              },
+              "didInstead": "Followed the schema (normative) and accept 'held' on doctor checks, even though both prose pages say it is never written.",
+              "why": "json-output:38 says the schema wins where page and schema differ.",
+              "blockedBy": null
+            }
+          ],
+          "wrong": [
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 123,
+                "text": "`UNKNOWN` verdict and an empty checks array; any other exit 3 is a run whose only non-passing",
+                "ok": true,
+                "startLine": 123,
+                "endLine": 123
+              },
+              "pageSays": "Apart from usage errors and non-site directories, a doctor exit 3 means the only non-passing results are UNCHECKED.",
+              "actual": "Under CRITICAL > UNKNOWN > WARNING > OK, any UNCHECKED plus warning-severity FAILs (with no blocker FAIL) also exits 3. The page's own JSON example does this: config.observability fails and ai.posture-effective is unknown, and it reports UNKNOWN / exit 3.",
+              "evidence": "json-output/docs/reference/cli-cairn-json-output.md:413-414 and :432-434 ('state': 'fail' on config.observability, a warning in doctor.md:81), plus the precedence rule at exit-codes.md:26. exit-codes.md:150-151 repeats the same incomplete claim."
+            },
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 121,
+                "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+                "ok": true,
+                "startLine": 121,
+                "endLine": 121
+              },
+              "pageSays": "Empty stdout under --json means the invocation was wrong (a usage error only).",
+              "actual": "Per the exit-codes page, empty stdout also covers a run that ended before any payload was written, and a tool fault.",
+              "evidence": "exit-codes/docs/reference/cli-cairn-exit-codes.md:95-97. The same page contradicts itself at :92-93 ('never that the site is healthy... means the invocation was wrong')."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 320,
+                "text": "being `at`, `level`, `event`, and the event's own `fields`. Under `--json` stderr is silent, so",
+                "ok": true,
+                "startLine": 320,
+                "endLine": 320
+              },
+              "pageSays": "Under --json, stderr is silent.",
+              "actual": "The same page says stderr carries diagnostics under --json, and usage-error messages go to stderr.",
+              "evidence": "json-output.md:13 and exit-codes.md:91. I couldn't verify at runtime, so this is reported as a conflict between pages."
+            }
+          ],
+          "missing": [
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 149,
+                "text": "`cairn health <site> --json` writes one `site` payload; the same shape, less `exitCode`, is each",
+                "ok": true,
+                "startLine": 149,
+                "endLine": 149
+              },
+              "needed": "Whether a single-site payload always carries exitCode. The prose says it does, but the site schema leaves exitCode out of `required`, so the parser can't reliably tell a single-site payload from a truncated one-line stream.",
+              "evidence": "cairn-health.schema.json:7-18 has no exitCode in required, while json-output.md:25-26 says every payload except an NDJSON line carries it."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 50,
+                "text": "that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are",
+                "ok": true,
+                "startLine": 50,
+                "endLine": 50
+              },
+              "needed": "What process exit code accompanies a truncated stream, so the wrapper could cross-check it the way it does for complete payloads.",
+              "evidence": "The wrapper has to skip the exitCode check when summary is None."
+            },
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 95,
+                "text": "Every check carries its condition id in the payload's `condition` field, whatever its state. On a",
+                "ok": true,
+                "startLine": 95,
+                "endLine": 95
+              },
+              "needed": "Agreement with the schema. The page says condition is always present (and fix on every FAIL, :109), but the doctor schema requires only checkId and state.",
+              "evidence": "cairn-doctor.schema.json:22. I typed condition and fix as NotRequired per the schema."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 292,
+                "text": "  \"counts\": { \"CRITICAL\": 0, \"OK\": 0, \"UNKNOWN\": 0, \"WARNING\": 0 },",
+                "ok": true,
+                "startLine": 292,
+                "endLine": 292
+              },
+              "needed": "Whether counts always carries all four verdict keys, or only the verdicts that occurred.",
+              "evidence": "The schema (cairn-health-summary.schema.json:27) is an open map of integers, so counts is typed dict[str, int] and callers must use .get(verdict, 0)."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 47,
+                "text": "Bare `cairn health --json`, run against every registered site, writes newline-delimited JSON: one",
+                "ok": true,
+                "startLine": 47,
+                "endLine": 47
+              },
+              "needed": "Whether the stream ends with a trailing newline, and whether any line other than site/summary can appear. The parser tolerates blank lines and rejects other kinds.",
+              "evidence": "Needed to write the line splitter; not stated."
+            }
+          ],
+          "checks": [],
+          "ruleCandidates": [
+            "State once, in one place, whether new optional fields may appear within a schemaVersion, and make the schemas' additionalProperties agree with that.",
+            "Make the doctor schema's state enum match the prose (drop 'held') or explain why it's there.",
+            "Publish an authCheck example payload (json-output.md:377-378 says none ships).",
+            "doctor.md:10 says cairn health reaches 'the seven checks that need a deployed site', but health has nine check ids (json-output.md:501-502). Worth rewording.",
+            "Say whether `--json` is position-sensitive (root flag vs subcommand flag) when it's appended after positional args."
+          ],
+          "denials": [
+            {
+              "source": "permission",
+              "tool": "Bash",
+              "input": "{\"command\":\"python3 - <<'EOF'\\nimport re, json, os, stat, tempfile\\nfrom cairn_json import parse, run_cairn, HealthStream, NoPayload\\nmd = open(\\\"json-output/docs/reference/cli-cairn-json-output.md\\\").read()\\nblocks = [json.loads(b) for b in re.findall(r\\\"```json\\\\n(.*?)```\\\", md, re.S)]\\nfor b in blocks:\\n    p = parse(json.dumps(b))\\n    print(b[\\\"kind\\\"], type(p).__name__, p.verdict if isinstan..."
+            }
+          ],
+          "proxyBlocked": [],
+          "packageFetches": [],
+          "usage": {
+            "input": 14,
+            "output": 16278,
+            "cacheCreation": 33789,
+            "cacheRead": 149377,
+            "counted": 50081
+          },
+          "verified": {
+            "ok": false,
+            "init": true,
+            "canaries": true,
+            "quotes": [
+              {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 13,
+                "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+                "ok": true,
+                "startLine": 13,
+                "endLine": 13
+              },
+              {
+                "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                "line": 91,
+                "text": "A usage error exits 3 with byte-empty stdout; its message goes to stderr, so stdout carries",
+                "ok": true,
+                "startLine": 91,
+                "endLine": 91
+              },
+              {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 117,
+                "text": "Exit 3 covers three distinct cases here, so a caller tests for a nonzero exit rather than",
+                "ok": true,
+                "startLine": 117,
+                "endLine": 117
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                "line": 37,
+                "text": "      \"required\": [\"checkId\", \"state\", \"tier\", \"checkedAt\"],",
+                "ok": true,
+                "startLine": 37,
+                "endLine": 37
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                "line": 28,
+                "text": "        \"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"held\", \"skip\", \"unknown\"] },",
+                "ok": true,
+                "startLine": 28,
+                "endLine": 28
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+                "line": 27,
+                "text": "    \"counts\": { \"type\": \"object\", \"additionalProperties\": { \"type\": \"integer\" } },",
+                "ok": true,
+                "startLine": 27,
+                "endLine": 27
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+                "line": 14,
+                "text": "    \"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+                "ok": true,
+                "startLine": 14,
+                "endLine": 14
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-logs.schema.json",
+                "line": 20,
+                "text": "        \"required\": [\"at\", \"level\", \"event\"],",
+                "ok": true,
+                "startLine": 20,
+                "endLine": 20
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                "line": 19,
+                "text": "        \"required\": [\"worker\", \"repo\", \"zone\", \"domain\", \"accountId\", \"connected\", \"adopted\"],",
+                "ok": true,
+                "startLine": 19,
+                "endLine": 19
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+                "line": 24,
+                "text": "          \"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"skip\", \"unknown\"] },",
+                "ok": true,
+                "startLine": 24,
+                "endLine": 24
+              },
+              {
+                "path": "doctor/docs/reference/schema/cairn-doctor.schema.json",
+                "line": 7,
+                "text": "  \"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"dir\", \"checkedAt\", \"checks\"],",
+                "ok": true,
+                "startLine": 7,
+                "endLine": 7
+              }
+            ],
+            "steps": [
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 13,
+                  "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+                  "ok": true,
+                  "startLine": 13,
+                  "endLine": 13
+                },
+                "decision": "Capture stdout and stderr separately (capture_output) and parse only stdout. stderr is kept as text and never parsed."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 17,
+                  "text": "A payload's `exitCode` is the process exit code the run will use. [The `cairn` CLI's exit",
+                  "ok": true,
+                  "startLine": 17,
+                  "endLine": 17
+                },
+                "decision": "The wrapper raises ContractError if the payload's (or summary's) exitCode differs from the process return code. A nonzero exit is returned as a result, not raised."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 19,
+                  "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+                  "ok": true,
+                  "startLine": 19,
+                  "endLine": 19
+                },
+                "decision": "The validator checks verdict == VERDICT_FOR_CODE[exitCode], using the 0-3 table."
+              },
+              {
+                "quote": {
+                  "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                  "line": 16,
+                  "text": "| 0 | `OK` |",
+                  "ok": true,
+                  "startLine": 16,
+                  "endLine": 16
+                },
+                "decision": "VERDICT_FOR_CODE maps 0/1/2/3 to OK/WARNING/CRITICAL/UNKNOWN."
+              },
+              {
+                "quote": {
+                  "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                  "line": 95,
+                  "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+                  "ok": true,
+                  "startLine": 95,
+                  "endLine": 95
+                },
+                "decision": "Empty stdout raises NoPayload(returncode, stderr), with no claim about which cause."
+              },
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 117,
+                  "text": "Exit 3 covers three distinct cases here, so a caller tests for a nonzero exit rather than",
+                  "ok": true,
+                  "startLine": 117,
+                  "endLine": 117
+                },
+                "decision": "The wrapper never switches on the exit code. Callers read the payload's verdict and checks."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 23,
+                  "text": "Seven payload kinds are published, and every payload declares its own `kind` so a reader working",
+                  "ok": true,
+                  "startLine": 23,
+                  "endLine": 23
+                },
+                "decision": "The parser dispatches on `kind` through the REQUIRED table (seven kinds) and rejects unknown kinds."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 42,
+                  "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+                  "ok": true,
+                  "startLine": 42,
+                  "endLine": 42
+                },
+                "decision": "Split stdout on newlines and json.loads each non-blank line as one payload."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 49,
+                  "text": "`exitCode` omitted), followed by one `summary` line carrying the run's own `exitCode`. A stream",
+                  "ok": true,
+                  "startLine": 49,
+                  "endLine": 49
+                },
+                "decision": "Multi-line output, or a lone site line with no exitCode, is parsed as a HealthStream (site lines, then an optional final summary). Only the summary's exitCode is cross-checked."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 50,
+                  "text": "that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are",
+                  "ok": true,
+                  "startLine": 50,
+                  "endLine": 50
+                },
+                "decision": "HealthStream.summary is None when there is no summary line, and HealthStream.verdict then returns UNKNOWN."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 53,
+                  "text": "sites the run meant to cover, which can exceed the number of `site` lines actually written.",
+                  "ok": true,
+                  "startLine": 53,
+                  "endLine": 53
+                },
+                "decision": "The parser doesn't require len(sites) == summary.sites."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 38,
+                  "text": "Every kind's `schemaVersion` stands at `1`. Each schema is the normative source where this page",
+                  "ok": true,
+                  "startLine": 38,
+                  "endLine": 38
+                },
+                "decision": "schemaVersion must equal 1. Required-field lists and optionality are taken from the schemas, not the prose."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                  "line": 39,
+                  "text": "      \"then\": { \"required\": [\"reason\"] },",
+                  "ok": true,
+                  "startLine": 39,
+                  "endLine": 39
+                },
+                "decision": "The validator rejects a skip/unknown check that has no reason, for both site and doctor checks."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                  "line": 26,
+                  "text": "    \"exitCode\": { \"type\": \"integer\", \"enum\": [0, 1, 2, 3] },",
+                  "ok": true,
+                  "startLine": 26,
+                  "endLine": 26
+                },
+                "decision": "exitCode is NotRequired on SitePayload because it is not in the required list."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+                  "line": 14,
+                  "text": "    \"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+                  "ok": true,
+                  "startLine": 14,
+                  "endLine": 14
+                },
+                "decision": "SitesPayload.errors is NotRequired (absent when there are none)."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                  "line": 29,
+                  "text": "          \"adoptable\": { \"type\": \"boolean\" }",
+                  "ok": true,
+                  "startLine": 29,
+                  "endLine": 29
+                },
+                "decision": "AdoptCandidate.adoptable is NotRequired."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+                  "line": 24,
+                  "text": "          \"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"skip\", \"unknown\"] },",
+                  "ok": true,
+                  "startLine": 24,
+                  "endLine": 24
+                },
+                "decision": "PermissionRow.state is a four-word Literal with no 'held'. reason is a free str (display text)."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                  "line": 22,
+                  "text": "      \"required\": [\"checkId\", \"state\"],",
+                  "ok": true,
+                  "startLine": 22,
+                  "endLine": 22
+                },
+                "decision": "DoctorCheck requires only checkId and state. condition, detail, note and fix are NotRequired."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                  "line": 38,
+                  "text": "      \"required\": [\"summary\"],",
+                  "ok": true,
+                  "startLine": 38,
+                  "endLine": 38
+                },
+                "decision": "DoctorFix has summary plus optional url, with no actor or outward, and is kept separate from HealthFix."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 116,
+                  "text": "`checkedAt`, is RFC 3339 in UTC; the zero time writes an empty string, and nothing on the wire is",
+                  "ok": true,
+                  "startLine": 116,
+                  "endLine": 116
+                },
+                "decision": "Timestamps stay as str and are not parsed to datetime, since \"\" is a legal value."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 14,
+                  "text": "never merged. The payload still prints under `--quiet`, since `--json` outranks it. A usage",
+                  "ok": true,
+                  "startLine": 14,
+                  "endLine": 14
+                },
+                "decision": "The wrapper doesn't strip --quiet from caller args."
+              }
+            ],
+            "diverged": [
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                  "line": 8,
+                  "text": "  \"additionalProperties\": false,",
+                  "ok": true,
+                  "startLine": 8,
+                  "endLine": 8
+                },
+                "didInstead": "The parser ignores unknown keys and doesn't enforce additionalProperties:false.",
+                "why": "The json-output page says optional fields like `adoptable` were added within schemaVersion 1 and older readers must keep working. A strict reader would break on the next additive field.",
+                "blockedBy": null
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                  "line": 28,
+                  "text": "        \"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"held\", \"skip\", \"unknown\"] },",
+                  "ok": true,
+                  "startLine": 28,
+                  "endLine": 28
+                },
+                "didInstead": "Followed the schema (normative) and accept 'held' on doctor checks, even though both prose pages say it is never written.",
+                "why": "json-output:38 says the schema wins where page and schema differ.",
+                "blockedBy": null
+              }
+            ],
+            "wrong": [
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 123,
+                  "text": "`UNKNOWN` verdict and an empty checks array; any other exit 3 is a run whose only non-passing",
+                  "ok": true,
+                  "startLine": 123,
+                  "endLine": 123
+                },
+                "pageSays": "Apart from usage errors and non-site directories, a doctor exit 3 means the only non-passing results are UNCHECKED.",
+                "actual": "Under CRITICAL > UNKNOWN > WARNING > OK, any UNCHECKED plus warning-severity FAILs (with no blocker FAIL) also exits 3. The page's own JSON example does this: config.observability fails and ai.posture-effective is unknown, and it reports UNKNOWN / exit 3.",
+                "evidence": "json-output/docs/reference/cli-cairn-json-output.md:413-414 and :432-434 ('state': 'fail' on config.observability, a warning in doctor.md:81), plus the precedence rule at exit-codes.md:26. exit-codes.md:150-151 repeats the same incomplete claim."
+              },
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 121,
+                  "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+                  "ok": true,
+                  "startLine": 121,
+                  "endLine": 121
+                },
+                "pageSays": "Empty stdout under --json means the invocation was wrong (a usage error only).",
+                "actual": "Per the exit-codes page, empty stdout also covers a run that ended before any payload was written, and a tool fault.",
+                "evidence": "exit-codes/docs/reference/cli-cairn-exit-codes.md:95-97. The same page contradicts itself at :92-93 ('never that the site is healthy... means the invocation was wrong')."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 320,
+                  "text": "being `at`, `level`, `event`, and the event's own `fields`. Under `--json` stderr is silent, so",
+                  "ok": true,
+                  "startLine": 320,
+                  "endLine": 320
+                },
+                "pageSays": "Under --json, stderr is silent.",
+                "actual": "The same page says stderr carries diagnostics under --json, and usage-error messages go to stderr.",
+                "evidence": "json-output.md:13 and exit-codes.md:91. I couldn't verify at runtime, so this is reported as a conflict between pages."
+              }
+            ],
+            "missing": [
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 149,
+                  "text": "`cairn health <site> --json` writes one `site` payload; the same shape, less `exitCode`, is each",
+                  "ok": true,
+                  "startLine": 149,
+                  "endLine": 149
+                },
+                "needed": "Whether a single-site payload always carries exitCode. The prose says it does, but the site schema leaves exitCode out of `required`, so the parser can't reliably tell a single-site payload from a truncated one-line stream.",
+                "evidence": "cairn-health.schema.json:7-18 has no exitCode in required, while json-output.md:25-26 says every payload except an NDJSON line carries it."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 50,
+                  "text": "that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are",
+                  "ok": true,
+                  "startLine": 50,
+                  "endLine": 50
+                },
+                "needed": "What process exit code accompanies a truncated stream, so the wrapper could cross-check it the way it does for complete payloads.",
+                "evidence": "The wrapper has to skip the exitCode check when summary is None."
+              },
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 95,
+                  "text": "Every check carries its condition id in the payload's `condition` field, whatever its state. On a",
+                  "ok": true,
+                  "startLine": 95,
+                  "endLine": 95
+                },
+                "needed": "Agreement with the schema. The page says condition is always present (and fix on every FAIL, :109), but the doctor schema requires only checkId and state.",
+                "evidence": "cairn-doctor.schema.json:22. I typed condition and fix as NotRequired per the schema."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 292,
+                  "text": "  \"counts\": { \"CRITICAL\": 0, \"OK\": 0, \"UNKNOWN\": 0, \"WARNING\": 0 },",
+                  "ok": true,
+                  "startLine": 292,
+                  "endLine": 292
+                },
+                "needed": "Whether counts always carries all four verdict keys, or only the verdicts that occurred.",
+                "evidence": "The schema (cairn-health-summary.schema.json:27) is an open map of integers, so counts is typed dict[str, int] and callers must use .get(verdict, 0)."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 47,
+                  "text": "Bare `cairn health --json`, run against every registered site, writes newline-delimited JSON: one",
+                  "ok": true,
+                  "startLine": 47,
+                  "endLine": 47
+                },
+                "needed": "Whether the stream ends with a trailing newline, and whether any line other than site/summary can appear. The parser tolerates blank lines and rejects other kinds.",
+                "evidence": "Needed to write the line splitter; not stated."
+              }
+            ],
+            "problems": [
+              "quote doctor/docs/reference/schema/cairn-doctor.schema.json:7 cites a page the transcript never shows read"
+            ]
+          },
+          "cause": "initial",
+          "final": false,
+          "transcript": "transcripts/scripter-control-1-attempt1.jsonl"
+        },
+        {
+          "initModel": "claude-opus-5-5",
+          "outcome": "done",
+          "stalls": [
+            {
+              "text": "Could not execute the parser against the documented example payloads to verify it; code is written but untested.",
+              "blockedBy": "python3 check_examples.py"
+            }
+          ],
+          "assumed": [
+            {
+              "text": "stdout is UTF-8; no page states the encoding.",
+              "blockedBy": null
+            },
+            {
+              "text": "Lines are newline-terminated and blank lines can be skipped; pages say 'one compact line' but not whether a trailing newline follows.",
+              "blockedBy": null
+            },
+            {
+              "text": "A single-site `cairn health <site> --json` payload carries exitCode (per the example and prose), though the health schema does not list exitCode as required; a lone site line without exitCode is treated as a truncated stream.",
+              "blockedBy": null
+            },
+            {
+              "text": "Unknown extra fields are tolerated (not rejected) despite additionalProperties:false, because adoptable was added as an optional field within schemaVersion 1 and 'a reader written before it still reads every candidate'.",
+              "blockedBy": null
+            },
+            {
+              "text": "The parser was not exercised against the doc examples; correctness rests on reading only.",
+              "blockedBy": "python3 check_examples.py"
+            }
+          ],
+          "pagesRead": [
+            "doctor/docs/reference/cli-cairn-doctor.md",
+            "doctor/docs/reference/schema/cairn-doctor.schema.json",
+            "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+            "json-output/docs/reference/cli-cairn-json-output.md",
+            "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+            "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+            "json-output/docs/reference/schema/cairn-doctor.schema.json",
+            "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+            "json-output/docs/reference/schema/cairn-health.schema.json",
+            "json-output/docs/reference/schema/cairn-logs.schema.json",
+            "json-output/docs/reference/schema/cairn-sites-list.schema.json"
+          ],
+          "quotes": [
+            {
+              "path": "json-output/docs/reference/cli-cairn-json-output.md",
+              "line": 13,
+              "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+              "ok": true,
+              "startLine": 13,
+              "endLine": 13
+            },
+            {
+              "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+              "line": 95,
+              "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+              "ok": true,
+              "startLine": 95,
+              "endLine": 95
+            },
+            {
+              "path": "doctor/docs/reference/cli-cairn-doctor.md",
+              "line": 121,
+              "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+              "ok": true,
+              "startLine": 121,
+              "endLine": 121
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+              "line": 38,
+              "text": "\"if\": { \"properties\": { \"state\": { \"enum\": [\"skip\", \"unknown\"] } }, \"required\": [\"state\"] },",
+              "ok": true,
+              "startLine": 38,
+              "endLine": 38
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+              "line": 7,
+              "text": "\"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"dir\", \"checkedAt\", \"checks\"],",
+              "ok": true,
+              "startLine": 7,
+              "endLine": 7
+            },
+            {
+              "path": "doctor/docs/reference/schema/cairn-doctor.schema.json",
+              "line": 28,
+              "text": "\"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"held\", \"skip\", \"unknown\"] },",
+              "ok": true,
+              "startLine": 28,
+              "endLine": 28
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+              "line": 7,
+              "text": "\"required\": [",
+              "ok": true,
+              "startLine": 7,
+              "endLine": 7
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+              "line": 14,
+              "text": "\"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+              "ok": true,
+              "startLine": 14,
+              "endLine": 14
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-logs.schema.json",
+              "line": 7,
+              "text": "\"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"site\", \"containsPersonalData\", \"entries\"],",
+              "ok": true,
+              "startLine": 7,
+              "endLine": 7
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+              "line": 19,
+              "text": "\"required\": [\"worker\", \"repo\", \"zone\", \"domain\", \"accountId\", \"connected\", \"adopted\"],",
+              "ok": true,
+              "startLine": 19,
+              "endLine": 19
+            },
+            {
+              "path": "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+              "line": 24,
+              "text": "\"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"skip\", \"unknown\"] },",
+              "ok": true,
+              "startLine": 24,
+              "endLine": 24
+            }
+          ],
+          "steps": [
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 13,
+                "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+                "ok": true,
+                "startLine": 13,
+                "endLine": 13
+              },
+              "decision": "Capture stdout and stderr as separate pipes; parse stdout only, keep stderr for error messages."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 17,
+                "text": "A payload's `exitCode` is the process exit code the run will use. [The `cairn` CLI's exit",
+                "ok": true,
+                "startLine": 17,
+                "endLine": 17
+              },
+              "decision": "Run subprocess with check=False (exits 1-3 are normal results) and raise if the payload exitCode differs from the process return code."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 19,
+                "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+                "ok": true,
+                "startLine": 19,
+                "endLine": 19
+              },
+              "decision": "Validate verdict against exitCode via the 0/1/2/3 = OK/WARNING/CRITICAL/UNKNOWN table."
+            },
+            {
+              "quote": {
+                "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                "line": 16,
+                "text": "| 0 | `OK` |",
+                "ok": true,
+                "startLine": 16,
+                "endLine": 16
+              },
+              "decision": "VERDICT_EXIT mapping used for the verdict/exitCode cross-check."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 23,
+                "text": "Seven payload kinds are published, and every payload declares its own `kind` so a reader working",
+                "ok": true,
+                "startLine": 23,
+                "endLine": 23
+              },
+              "decision": "Dispatch each line on its `kind` field; reject unknown kinds (closed contract)."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 42,
+                "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+                "ok": true,
+                "startLine": 42,
+                "endLine": 42
+              },
+              "decision": "Split stdout on newlines and parse each non-empty line as one payload."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 38,
+                "text": "Every kind's `schemaVersion` stands at `1`. Each schema is the normative source where this page",
+                "ok": true,
+                "startLine": 38,
+                "endLine": 38
+              },
+              "decision": "Reject schemaVersion other than 1; where prose and schema differ, follow the schema (e.g. accept `held` in doctor checks)."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 49,
+                "text": "`exitCode` omitted), followed by one `summary` line carrying the run's own `exitCode`. A stream",
+                "ok": true,
+                "startLine": 49,
+                "endLine": 49
+              },
+              "decision": "Treat a site* + summary sequence as a sweep; the summary is the run's payload and supplies the run verdict and exitCode."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 50,
+                "text": "that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are",
+                "ok": true,
+                "startLine": 50,
+                "endLine": 50
+              },
+              "decision": "Raise CairnTruncatedStream (carrying the site lines) when the stream has no summary."
+            },
+            {
+              "quote": {
+                "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                "line": 95,
+                "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+                "ok": true,
+                "startLine": 95,
+                "endLine": 95
+              },
+              "decision": "Empty stdout raises CairnNoPayload with exit code and stderr, without claiming it was a usage error."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                "line": 38,
+                "text": "\"if\": { \"properties\": { \"state\": { \"enum\": [\"skip\", \"unknown\"] } }, \"required\": [\"state\"] },",
+                "ok": true,
+                "startLine": 38,
+                "endLine": 38
+              },
+              "decision": "Require `reason` on every skip/unknown check in site and doctor payloads."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                "line": 26,
+                "text": "\"exitCode\": { \"type\": \"integer\", \"enum\": [0, 1, 2, 3] },",
+                "ok": true,
+                "startLine": 26,
+                "endLine": 26
+              },
+              "decision": "exitCode is NotRequired on SitePayload (not in the health schema's required list)."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 376,
+                "text": "`state`, with `reason` beside anything other than a pass. A row's `reason` is display text for a",
+                "ok": true,
+                "startLine": 376,
+                "endLine": 376
+              },
+              "decision": "Type authCheck Permission.reason as free str, not a reason-code literal."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                "line": 38,
+                "text": "\"required\": [\"summary\"],",
+                "ok": true,
+                "startLine": 38,
+                "endLine": 38
+              },
+              "decision": "DoctorFix has summary and optional url only, distinct from HealthFix (summary/actor/outward required)."
+            },
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 70,
+                "text": "The command runs eleven checks, always in the order of the table below, and the `--json`",
+                "ok": true,
+                "startLine": 70,
+                "endLine": 70
+              },
+              "decision": "Parser does not assume doctor checks are sorted by checkId (only site checks are)."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+                "line": 14,
+                "text": "\"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+                "ok": true,
+                "startLine": 14,
+                "endLine": 14
+              },
+              "decision": "SitesPayload.errors is NotRequired."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                "line": 29,
+                "text": "\"adoptable\": { \"type\": \"boolean\" }",
+                "ok": true,
+                "startLine": 29,
+                "endLine": 29
+              },
+              "decision": "AdoptCandidate.adoptable is NotRequired."
+            }
+          ],
+          "diverged": [
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                "line": 8,
+                "text": "\"additionalProperties\": false,",
+                "ok": true,
+                "startLine": 8,
+                "endLine": 8
+              },
+              "didInstead": "Parser ignores unrecognised fields rather than rejecting them.",
+              "why": "json-output.md:346-348 says optional fields are added within schemaVersion 1 and older readers must still read the payload; strict additionalProperties:false would break that.",
+              "blockedBy": null
+            },
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 117,
+                "text": "Exit 3 covers three distinct cases here, so a caller tests for a nonzero exit rather than",
+                "ok": true,
+                "startLine": 117,
+                "endLine": 117
+              },
+              "didInstead": "Wrapper does not classify doctor exit 3 into the three listed cases; it reads verdict/checks from the payload and treats empty stdout generically as 'no payload'.",
+              "why": "The three-case list conflicts with exit-codes.md (tool fault, cancellation) and with the doctor example itself.",
+              "blockedBy": null
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 402,
+                "text": "`reason: \"reason.not-observable\"`. `held` is never written, since a directory preflight has no",
+                "ok": true,
+                "startLine": 402,
+                "endLine": 402
+              },
+              "didInstead": "Doctor checks accept `held` as a valid state.",
+              "why": "The doctor schema's state enum includes held and the schema is declared normative (json-output.md:38-39).",
+              "blockedBy": null
+            }
+          ],
+          "wrong": [
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 123,
+                "text": "`UNKNOWN` verdict and an empty checks array; any other exit 3 is a run whose only non-passing",
+                "ok": true,
+                "startLine": 123,
+                "endLine": 123
+              },
+              "pageSays": "Any doctor exit 3 other than a usage error or non-site directory is a run whose only non-passing results are UNCHECKED.",
+              "actual": "A run with a warning-severity FAIL plus an UNCHECKED also exits 3 (UNKNOWN outranks WARNING), and tool faults/cancellations exit 3 too.",
+              "evidence": "The doctor example in json-output.md:411-491 has config.observability fail (warning severity per doctor.md:81) plus ai.posture-effective unknown with exitCode 3; exit-codes.md:26 precedence CRITICAL > UNKNOWN > WARNING; exit-codes.md:79-80 lists tool fault and cancelled run as exit 3."
+            },
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 121,
+                "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+                "ok": true,
+                "startLine": 121,
+                "endLine": 121
+              },
+              "pageSays": "Empty stdout under --json means the invocation was wrong; a usage error is the only no-payload case.",
+              "actual": "Empty stdout can also be a run that ended before any payload or a tool fault.",
+              "evidence": "exit-codes.md:95-97 lists usage error, a run that ended before any payload was written, or a tool fault."
+            },
+            {
+              "quote": {
+                "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                "line": 83,
+                "text": "contributes `CRITICAL`, a permission whose credential is missing contributes `WARNING` with",
+                "ok": true,
+                "startLine": 83,
+                "endLine": 83
+              },
+              "pageSays": "A missing-credential auth check row carries `reason.cred-missing`.",
+              "actual": "An authCheck row's reason is display text, not a reason-vocabulary code.",
+              "evidence": "json-output.md:376-377: 'A row's `reason` is display text for a person, not a code from the reason vocabulary above'."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 320,
+                "text": "the personal-data notice a plain run prints travels in the payload or it reaches nobody.",
+                "ok": true,
+                "startLine": 321,
+                "endLine": 321
+              },
+              "pageSays": "Line 319-320: under --json stderr is silent.",
+              "actual": "Same page line 13 says stderr carries diagnostics under --json, and usage errors write to stderr (exit-codes.md:91).",
+              "evidence": "json-output.md:13 and exit-codes.md:91-92."
+            },
+            {
+              "quote": {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 10,
+                "text": "clone and in CI. `cairn health` is the live-site counterpart, reaching the seven checks that need",
+                "ok": true,
+                "startLine": 10,
+                "endLine": 10
+              },
+              "pageSays": "cairn health reaches seven checks.",
+              "actual": "cairn health has nine frozen check ids; seven is the count that never appear in doctor.",
+              "evidence": "json-output.md:501-502 lists nine health check ids; doctor.md:128-129 lists seven."
+            }
+          ],
+          "missing": [
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 42,
+                "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+                "ok": true,
+                "startLine": 42,
+                "endLine": 42
+              },
+              "needed": "Output encoding and whether each line ends with a newline (including the last).",
+              "evidence": "The line splitter must handle the terminator and decode bytes; neither is stated."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                "line": 7,
+                "text": "\"required\": [",
+                "ok": true,
+                "startLine": 7,
+                "endLine": 7
+              },
+              "needed": "Whether exitCode is guaranteed on single-site `cairn health <site> --json`; the schema leaves it optional for both forms.",
+              "evidence": "Needed to distinguish a single-site payload from a one-line truncated stream."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 19,
+                "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+                "ok": true,
+                "startLine": 19,
+                "endLine": 19
+              },
+              "needed": "What a reader should do if the process exit code differs from the payload exitCode, or how an --expect-sites mismatch appears in the sites payload.",
+              "evidence": "exit-codes.md:7-8 says --expect-sites mismatch exits 3, but json-output.md:299-302 only ties exit 3 to a non-empty errors array."
+            },
+            {
+              "quote": {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 347,
+                "text": "Custom Domains and never Workers Routes; it was added as an optional field within schema version",
+                "ok": true,
+                "startLine": 347,
+                "endLine": 347
+              },
+              "needed": "An explicit rule on whether readers must tolerate unknown properties despite additionalProperties:false.",
+              "evidence": "Strict schema validation would reject payloads with fields added within version 1."
+            }
+          ],
+          "checks": [],
+          "ruleCandidates": [
+            "State that the doctor schema's `held` enum value is never emitted, or drop it from the schema.",
+            "Give a full example for the authCheck payload.",
+            "Document the keys of summary.counts as exactly the four verdict words.",
+            "Say whether the NDJSON stream may interleave anything other than site and summary lines."
+          ],
+          "denials": [
+            {
+              "source": "permission",
+              "tool": "Bash",
+              "input": "{\"command\":\"python3 --version && python3 - <<'EOF'\\nimport json, re\\nfrom cairn_json import *\\nmd = open('json-output/docs/reference/cli-cairn-json-output.md').read()\\nblocks = re.findall(r'```json\\\\n(.*?)```', md, re.S)\\nfor b in blocks:\\n    o = json.loads(b); line = json.dumps(o, separators=(',',':'))\\n    r = parse_stdout(line+\\\"\\\\n\\\", o['exitCode'])\\n    print(o['kind'], r.verdict, r.exit_cod..."
+            },
+            {
+              "source": "permission",
+              "tool": "Bash",
+              "input": "{\"command\":\"python3 check_examples.py\",\"description\":\"Run example-payload check script\"}"
+            }
+          ],
+          "proxyBlocked": [],
+          "packageFetches": [],
+          "usage": {
+            "input": 16,
+            "output": 16847,
+            "cacheCreation": 35137,
+            "cacheRead": 192620,
+            "counted": 52000
+          },
+          "verified": {
+            "ok": true,
+            "init": true,
+            "canaries": true,
+            "quotes": [
+              {
+                "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                "line": 13,
+                "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+                "ok": true,
+                "startLine": 13,
+                "endLine": 13
+              },
+              {
+                "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                "line": 95,
+                "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+                "ok": true,
+                "startLine": 95,
+                "endLine": 95
+              },
+              {
+                "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                "line": 121,
+                "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+                "ok": true,
+                "startLine": 121,
+                "endLine": 121
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                "line": 38,
+                "text": "\"if\": { \"properties\": { \"state\": { \"enum\": [\"skip\", \"unknown\"] } }, \"required\": [\"state\"] },",
+                "ok": true,
+                "startLine": 38,
+                "endLine": 38
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                "line": 7,
+                "text": "\"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"dir\", \"checkedAt\", \"checks\"],",
+                "ok": true,
+                "startLine": 7,
+                "endLine": 7
+              },
+              {
+                "path": "doctor/docs/reference/schema/cairn-doctor.schema.json",
+                "line": 28,
+                "text": "\"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"held\", \"skip\", \"unknown\"] },",
+                "ok": true,
+                "startLine": 28,
+                "endLine": 28
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-health-summary.schema.json",
+                "line": 7,
+                "text": "\"required\": [",
+                "ok": true,
+                "startLine": 7,
+                "endLine": 7
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+                "line": 14,
+                "text": "\"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+                "ok": true,
+                "startLine": 14,
+                "endLine": 14
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-logs.schema.json",
+                "line": 7,
+                "text": "\"required\": [\"schemaVersion\", \"kind\", \"verdict\", \"exitCode\", \"site\", \"containsPersonalData\", \"entries\"],",
+                "ok": true,
+                "startLine": 7,
+                "endLine": 7
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                "line": 19,
+                "text": "\"required\": [\"worker\", \"repo\", \"zone\", \"domain\", \"accountId\", \"connected\", \"adopted\"],",
+                "ok": true,
+                "startLine": 19,
+                "endLine": 19
+              },
+              {
+                "path": "json-output/docs/reference/schema/cairn-auth-check.schema.json",
+                "line": 24,
+                "text": "\"state\": { \"type\": \"string\", \"enum\": [\"pass\", \"fail\", \"skip\", \"unknown\"] },",
+                "ok": true,
+                "startLine": 24,
+                "endLine": 24
+              }
+            ],
+            "steps": [
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 13,
+                  "text": "Under `--json`, stdout carries the payload and stderr carries diagnostics; the two streams are",
+                  "ok": true,
+                  "startLine": 13,
+                  "endLine": 13
+                },
+                "decision": "Capture stdout and stderr as separate pipes; parse stdout only, keep stderr for error messages."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 17,
+                  "text": "A payload's `exitCode` is the process exit code the run will use. [The `cairn` CLI's exit",
+                  "ok": true,
+                  "startLine": 17,
+                  "endLine": 17
+                },
+                "decision": "Run subprocess with check=False (exits 1-3 are normal results) and raise if the payload exitCode differs from the process return code."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 19,
+                  "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+                  "ok": true,
+                  "startLine": 19,
+                  "endLine": 19
+                },
+                "decision": "Validate verdict against exitCode via the 0/1/2/3 = OK/WARNING/CRITICAL/UNKNOWN table."
+              },
+              {
+                "quote": {
+                  "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                  "line": 16,
+                  "text": "| 0 | `OK` |",
+                  "ok": true,
+                  "startLine": 16,
+                  "endLine": 16
+                },
+                "decision": "VERDICT_EXIT mapping used for the verdict/exitCode cross-check."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 23,
+                  "text": "Seven payload kinds are published, and every payload declares its own `kind` so a reader working",
+                  "ok": true,
+                  "startLine": 23,
+                  "endLine": 23
+                },
+                "decision": "Dispatch each line on its `kind` field; reject unknown kinds (closed contract)."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 42,
+                  "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+                  "ok": true,
+                  "startLine": 42,
+                  "endLine": 42
+                },
+                "decision": "Split stdout on newlines and parse each non-empty line as one payload."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 38,
+                  "text": "Every kind's `schemaVersion` stands at `1`. Each schema is the normative source where this page",
+                  "ok": true,
+                  "startLine": 38,
+                  "endLine": 38
+                },
+                "decision": "Reject schemaVersion other than 1; where prose and schema differ, follow the schema (e.g. accept `held` in doctor checks)."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 49,
+                  "text": "`exitCode` omitted), followed by one `summary` line carrying the run's own `exitCode`. A stream",
+                  "ok": true,
+                  "startLine": 49,
+                  "endLine": 49
+                },
+                "decision": "Treat a site* + summary sequence as a sweep; the summary is the run's payload and supplies the run verdict and exitCode."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 50,
+                  "text": "that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are",
+                  "ok": true,
+                  "startLine": 50,
+                  "endLine": 50
+                },
+                "decision": "Raise CairnTruncatedStream (carrying the site lines) when the stream has no summary."
+              },
+              {
+                "quote": {
+                  "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                  "line": 95,
+                  "text": "usage error and exits 3. Empty stdout under `--json` means no payload was produced at all: a",
+                  "ok": true,
+                  "startLine": 95,
+                  "endLine": 95
+                },
+                "decision": "Empty stdout raises CairnNoPayload with exit code and stderr, without claiming it was a usage error."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                  "line": 38,
+                  "text": "\"if\": { \"properties\": { \"state\": { \"enum\": [\"skip\", \"unknown\"] } }, \"required\": [\"state\"] },",
+                  "ok": true,
+                  "startLine": 38,
+                  "endLine": 38
+                },
+                "decision": "Require `reason` on every skip/unknown check in site and doctor payloads."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                  "line": 26,
+                  "text": "\"exitCode\": { \"type\": \"integer\", \"enum\": [0, 1, 2, 3] },",
+                  "ok": true,
+                  "startLine": 26,
+                  "endLine": 26
+                },
+                "decision": "exitCode is NotRequired on SitePayload (not in the health schema's required list)."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 376,
+                  "text": "`state`, with `reason` beside anything other than a pass. A row's `reason` is display text for a",
+                  "ok": true,
+                  "startLine": 376,
+                  "endLine": 376
+                },
+                "decision": "Type authCheck Permission.reason as free str, not a reason-code literal."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-doctor.schema.json",
+                  "line": 38,
+                  "text": "\"required\": [\"summary\"],",
+                  "ok": true,
+                  "startLine": 38,
+                  "endLine": 38
+                },
+                "decision": "DoctorFix has summary and optional url only, distinct from HealthFix (summary/actor/outward required)."
+              },
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 70,
+                  "text": "The command runs eleven checks, always in the order of the table below, and the `--json`",
+                  "ok": true,
+                  "startLine": 70,
+                  "endLine": 70
+                },
+                "decision": "Parser does not assume doctor checks are sorted by checkId (only site checks are)."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-sites-list.schema.json",
+                  "line": 14,
+                  "text": "\"errors\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
+                  "ok": true,
+                  "startLine": 14,
+                  "endLine": 14
+                },
+                "decision": "SitesPayload.errors is NotRequired."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                  "line": 29,
+                  "text": "\"adoptable\": { \"type\": \"boolean\" }",
+                  "ok": true,
+                  "startLine": 29,
+                  "endLine": 29
+                },
+                "decision": "AdoptCandidate.adoptable is NotRequired."
+              }
+            ],
+            "diverged": [
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-adopt-list.schema.json",
+                  "line": 8,
+                  "text": "\"additionalProperties\": false,",
+                  "ok": true,
+                  "startLine": 8,
+                  "endLine": 8
+                },
+                "didInstead": "Parser ignores unrecognised fields rather than rejecting them.",
+                "why": "json-output.md:346-348 says optional fields are added within schemaVersion 1 and older readers must still read the payload; strict additionalProperties:false would break that.",
+                "blockedBy": null
+              },
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 117,
+                  "text": "Exit 3 covers three distinct cases here, so a caller tests for a nonzero exit rather than",
+                  "ok": true,
+                  "startLine": 117,
+                  "endLine": 117
+                },
+                "didInstead": "Wrapper does not classify doctor exit 3 into the three listed cases; it reads verdict/checks from the payload and treats empty stdout generically as 'no payload'.",
+                "why": "The three-case list conflicts with exit-codes.md (tool fault, cancellation) and with the doctor example itself.",
+                "blockedBy": null
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 402,
+                  "text": "`reason: \"reason.not-observable\"`. `held` is never written, since a directory preflight has no",
+                  "ok": true,
+                  "startLine": 402,
+                  "endLine": 402
+                },
+                "didInstead": "Doctor checks accept `held` as a valid state.",
+                "why": "The doctor schema's state enum includes held and the schema is declared normative (json-output.md:38-39).",
+                "blockedBy": null
+              }
+            ],
+            "wrong": [
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 123,
+                  "text": "`UNKNOWN` verdict and an empty checks array; any other exit 3 is a run whose only non-passing",
+                  "ok": true,
+                  "startLine": 123,
+                  "endLine": 123
+                },
+                "pageSays": "Any doctor exit 3 other than a usage error or non-site directory is a run whose only non-passing results are UNCHECKED.",
+                "actual": "A run with a warning-severity FAIL plus an UNCHECKED also exits 3 (UNKNOWN outranks WARNING), and tool faults/cancellations exit 3 too.",
+                "evidence": "The doctor example in json-output.md:411-491 has config.observability fail (warning severity per doctor.md:81) plus ai.posture-effective unknown with exitCode 3; exit-codes.md:26 precedence CRITICAL > UNKNOWN > WARNING; exit-codes.md:79-80 lists tool fault and cancelled run as exit 3."
+              },
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 121,
+                  "text": "Under `--json`, empty stdout means the invocation was wrong. A usage error is the one case that",
+                  "ok": true,
+                  "startLine": 121,
+                  "endLine": 121
+                },
+                "pageSays": "Empty stdout under --json means the invocation was wrong; a usage error is the only no-payload case.",
+                "actual": "Empty stdout can also be a run that ended before any payload or a tool fault.",
+                "evidence": "exit-codes.md:95-97 lists usage error, a run that ended before any payload was written, or a tool fault."
+              },
+              {
+                "quote": {
+                  "path": "exit-codes/docs/reference/cli-cairn-exit-codes.md",
+                  "line": 83,
+                  "text": "contributes `CRITICAL`, a permission whose credential is missing contributes `WARNING` with",
+                  "ok": true,
+                  "startLine": 83,
+                  "endLine": 83
+                },
+                "pageSays": "A missing-credential auth check row carries `reason.cred-missing`.",
+                "actual": "An authCheck row's reason is display text, not a reason-vocabulary code.",
+                "evidence": "json-output.md:376-377: 'A row's `reason` is display text for a person, not a code from the reason vocabulary above'."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 320,
+                  "text": "the personal-data notice a plain run prints travels in the payload or it reaches nobody.",
+                  "ok": true,
+                  "startLine": 321,
+                  "endLine": 321
+                },
+                "pageSays": "Line 319-320: under --json stderr is silent.",
+                "actual": "Same page line 13 says stderr carries diagnostics under --json, and usage errors write to stderr (exit-codes.md:91).",
+                "evidence": "json-output.md:13 and exit-codes.md:91-92."
+              },
+              {
+                "quote": {
+                  "path": "doctor/docs/reference/cli-cairn-doctor.md",
+                  "line": 10,
+                  "text": "clone and in CI. `cairn health` is the live-site counterpart, reaching the seven checks that need",
+                  "ok": true,
+                  "startLine": 10,
+                  "endLine": 10
+                },
+                "pageSays": "cairn health reaches seven checks.",
+                "actual": "cairn health has nine frozen check ids; seven is the count that never appear in doctor.",
+                "evidence": "json-output.md:501-502 lists nine health check ids; doctor.md:128-129 lists seven."
+              }
+            ],
+            "missing": [
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 42,
+                  "text": "Every payload is written as one compact line with no interior newlines; the examples on this",
+                  "ok": true,
+                  "startLine": 42,
+                  "endLine": 42
+                },
+                "needed": "Output encoding and whether each line ends with a newline (including the last).",
+                "evidence": "The line splitter must handle the terminator and decode bytes; neither is stated."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/schema/cairn-health.schema.json",
+                  "line": 7,
+                  "text": "\"required\": [",
+                  "ok": true,
+                  "startLine": 7,
+                  "endLine": 7
+                },
+                "needed": "Whether exitCode is guaranteed on single-site `cairn health <site> --json`; the schema leaves it optional for both forms.",
+                "evidence": "Needed to distinguish a single-site payload from a one-line truncated stream."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 19,
+                  "text": "A payload's `verdict` and `exitCode` are one result in two forms and never disagree.",
+                  "ok": true,
+                  "startLine": 19,
+                  "endLine": 19
+                },
+                "needed": "What a reader should do if the process exit code differs from the payload exitCode, or how an --expect-sites mismatch appears in the sites payload.",
+                "evidence": "exit-codes.md:7-8 says --expect-sites mismatch exits 3, but json-output.md:299-302 only ties exit 3 to a non-empty errors array."
+              },
+              {
+                "quote": {
+                  "path": "json-output/docs/reference/cli-cairn-json-output.md",
+                  "line": 347,
+                  "text": "Custom Domains and never Workers Routes; it was added as an optional field within schema version",
+                  "ok": true,
+                  "startLine": 347,
+                  "endLine": 347
+                },
+                "needed": "An explicit rule on whether readers must tolerate unknown properties despite additionalProperties:false.",
+                "evidence": "Strict schema validation would reject payloads with fields added within version 1."
+              }
+            ],
+            "problems": []
+          },
+          "cause": "unverified",
+          "final": true,
+          "transcript": "transcripts/scripter-control-1-attempt2.jsonl"
+        }
+      ]
+    }
+  ],
+  "verified": true,
+  "cliVersion": "2.1.282"
+}

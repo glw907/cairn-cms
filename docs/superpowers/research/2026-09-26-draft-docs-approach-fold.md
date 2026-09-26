@@ -1,0 +1,158 @@
+# Draft docs approach spec: fold record
+
+**Target:** `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`, revision 1 at
+`2efcb86c`, folded to revision 2 in place. **Reviews:** `2026-09-26-draft-docs-approach-review-`
+`{contract,mechanics,risk,consistency}.md` in this directory. IDs below prefix each lens: `C`
+contract, `X` mechanics, `K` risk, `S` consistency. Every finding was checked against the source
+before its disposition; the verification notes name what was run or read.
+
+**Counts:** 55 findings. 52 folded (7 of them with a named part refused), 3 became owner rulings
+(O1, O2), 0 refused whole.
+
+## Convergent roots
+
+Each root folds once; every finding it covers is listed.
+
+| Root | Findings | Disposition | Where in the spec |
+| --- | --- | --- | --- |
+| Heading fragments printed by shipped binaries; a redirect cannot carry a `#fragment` | K-M1, X-M5, S-M6 | Folded | Stage 0 "Shipped anchors"; outline contract table; chain step 1 `pinned` |
+| Budget: 350K per page below the measured floor, shares summing to 20M, extend arithmetic | X-M1, S-M7, K-M5 | Folded (derivation, counting rule, pilot, planned 2a/2b); ceiling became O1 | Budget; stage flow step 2; O1 |
+| New facts filed before drafting fail `check:provenance` | X-M6, S-M4, C-m2 | Folded | Page chain steps 1 and 2 and the independence paragraph |
+| Post-chain edits (consistency read, owner fold, site round) break the brief | C-M7, X-M7, K-m1, C-M3 | Folded | "Edits after the chain" |
+| `check:procedures` cannot tell working from broken commands | X-M2, X-M3, X-M4, C-M4, C-M5, K-m3, S-m8, X-m3 | Folded by dropping the new check; flag pairing extends `check:symbols` | Stage 0 "Flag pairing"; Testing 2 |
+| Vacuous passes: provenance with no briefs, stage 1 with no failing criterion, consistency read with no output | C-M1, C-M6, X-m5, C-M7 | Folded | Stage 0 "Brief coverage"; Stage 1; stage flow step 4 |
+| Chain gate is a subset of the CI checks that read the arms | C-M2, X-m1, K-m2 | Folded | Stage 0 "Docs gate"; chain step 3; stage flow step 7 |
+| "The 2026-09-08 standard stands" | S-M1 | Folded as a keep/retire ledger | "The 2026-09-08 docs standard" |
+| Freeze-lift list and site-agent write path | S-M3, K-M4, C-M3 | Folded | Stage 0 "Freeze lift" and "Site-pass rule" |
+| Release while arms are mixed | K-F1, K-M2 | Folded as an invariant, not a fork | Stages, "Every stage merge leaves `main` releasable" |
+
+## Verification notes
+
+- `check-provenance.mjs:392` returns no defects when no brief exists; `UNCITABLE_TAGS` includes
+  `candidate` (`:88`). Front-door briefs already have a track name, `front-door`
+  (`docs/internal/briefs/README.md`, "Where briefs live"), which closes C-M1's path question.
+- `cairn doctor examples/showcase`, `cairn doctor --bogus`, and `cairn nosuch` each exit 3 on the
+  installed 1.1.0 (run 2026-09-26). No exit code distinguishes them.
+- `tool/testdata/flags.json` is a flat union written by `TestCommittedFlagListMatchesTheCommandTree`
+  (`tool/cmd/cairn/flags_test.go`), whose `treeFlags` already walks every command. `check:symbols`
+  resolves shell-fence flags against it and against `create-cairn-site`'s parser
+  (`check-symbols.mjs:14-19`). This is the whole basis of the flag-pairing mechanism.
+- `layout.go:24` (`fixAnchorBase`), `report.go:70-80` (`docsBaseAdmin` plus `docsAnchor`),
+  `fixes.go` (`Anchor:` fields), and `check_referrer.go:36` print `is-it-working` fragments;
+  `conditions.ts` carries 26 `docsAnchor` lines; `tool/v1.1.0`'s `conditions.json` carries 25.
+- `docs-page-chain.js` already supports `pinned` slugs and a `toolGate` (`:18`, `:32`, `:139`,
+  `:164`).
+- Pass A: "the page chain alone was 2.64M over 24 agents" and "A contract page costs about 900K
+  tokens" (`docs/HISTORY.md`). The counting rule (input, output, cache creation) and
+  `session-ledger.ts` are in the reset's record (`docs/HISTORY.md`; the script is at
+  `a8c57b4a^:scripts/docs-readers/session-ledger.ts`).
+- The 40 percent figure is from `2026-09-21-draft-docs-design.md:191-193`, not pass A. Pass A's
+  claim mining filed 51 of 61 statements and cut 10 (`docs/HISTORY.md`).
+- S-M2 reading check. Rule 2 of the 2026-09-08 standard (`:68-69`) and the `writing-voice` skill
+  (`SKILL.md:74-76`, "stop after each section and let a reader see it before the next one
+  starts") are about the drafting process, not page structure. The reviewer read it correctly, so
+  it is not refused. The global `CLAUDE.md` summary ("carries one section per read") is the text
+  that misreads it (erratum 3).
+- The site round follows all drafts: the `one-release-then-model-sites` memory, "REVISED ORDER":
+  "the DRAFT DOCS are written first. Then each site is updated and rewritten, and that round tests
+  the draft docs."
+- Sheet 2 starts at `https://cairn.pub/` (human-reads file, Sheet 2), and cairn.pub is
+  un-pinnable since `0.95.0` (`docs/STATUS.md`).
+- Shipped content points at doc paths in code spans: `skills/cairn-extend/SKILL.md:29-30` and three
+  scaffold template comments. `package.json` `files` ships `skills` and `claude`.
+
+## Contract lens
+
+| ID | Disposition |
+| --- | --- |
+| C-M1 | Folded: Stage 0 "Brief coverage" (rebuilt-arms list, unit test); front-door path already exists. |
+| C-M2 | Folded: Stage 0 "Docs gate"; stage flow step 7 merge gate adds `make -C tool check`; outline contract table lists pinning scripts and `docsAnchor` values. |
+| C-M3 | Folded, not a fork: the 2026-09-21 ruling already settles direct site edits; option (a)'s brief-sync lands in "Edits after the chain", and Stage 0 rewrites the `CLAUDE.md` cross-repo line. |
+| C-M4 | Folded by the redesign (no live runs; parse-level coverage stated honestly, zero-command vacuity moot). Part refused: an exit-code and JSON-schema oracle for live runs, since no exit code distinguishes a broken command and doctor's JSON is already pinned by the Go schema tests. |
+| C-M5 | Folded: no Go toolchain is needed in `test.yml`, since `check:symbols` reads the committed `flags.json` and `tool.yml`'s Go test holds it to the tree; the docs gate is a named script. |
+| C-M6 | Folded: "Stage 1: reference" (outside the chain, no briefs, record with a failing criterion). |
+| C-M7 | Folded: stage flow step 4 (record, kept even when empty); "Edits after the chain". |
+| C-m1 | Folded: Stage 0 "Chain and agents", with a one-page dry run as proof. |
+| C-m2 | Folded: page inputs write to the per-page record, file `[verified]` with `Source:`, and use Edit (ids are random, so no pre-minting). |
+| C-m3 | Folded: the site round starts after stage 5 merges; "each" dropped. |
+| C-m4 | Folded: the stop fires when two pages in one arm escalate. |
+| C-m5 | Folded: proofs on the freeze grep and the owner-fact items; ROADMAP drops the inputs the retired list names. |
+| C-m6 | Folded: Testing 4 (Logs table; fixed or filed through the site-round rule). |
+
+## Mechanics lens
+
+| ID | Disposition |
+| --- | --- |
+| X-M1 | Owner fork O1 (ceiling); per-agent basis, agent counts, pilot, and 80 percent headroom folded into Budget. Its option (c), thinning the chain, is not taken: pass A needed more rounds, not fewer. |
+| X-M2 | Folded: no command runs for real; the exit-3 evidence is in Testing 2. |
+| X-M3 | Folded: `npx create-cairn-site` flags are covered by `check:symbols`; Stage 3's coverage claim is dropped. |
+| X-M4 | Folded, path (b)'s flag half: the per-command map extends `flags.json`. Part refused: a live `doctor` Go test, since against the showcase it can assert nothing (exit 3, two structural UNCHECKED lines). |
+| X-M5 | Folded with the anchor root. |
+| X-M6 | Folded with the fact-tag root: page inputs file `[verified]`; the drafter files nothing. |
+| X-M7 | Folded with the brief-sync root. |
+| X-m1 | Folded with the gate root. |
+| X-m2 | Folded: Stage 0 "Chain and agents" lists each runner and drafter edit. |
+| X-m3 | Folded: flag pairing is an extension of `check:symbols`, not `--help` scraping. |
+| X-m4 | Folded: chain step 3 (Vale on the page path, the not-this-page rule); Edit-only fact writes. |
+| X-m5 | Folded: Stage 1 runs outside the chain. |
+| X-m6 | Folded: page counts exclude READMEs and the per-version records; Exemplars gives the arm-to-slice map and the gap cases; page inputs do the trimming. |
+
+## Risk lens
+
+| ID | Disposition |
+| --- | --- |
+| K-M1 | Folded with the anchor root. Part refused: legacy `<a id>` anchors for renamed headings, since neither `docs-links.mjs` nor cairn.pub's renderer is verified to honor them; listed headings stay verbatim instead. |
+| K-M2 | Folded: the releasable-at-every-merge invariant, the outline's repo-wide grep over `skills/`, `claude/`, and the template, and the `## Unreleased` entry with `Consumers must:`. Part refused: a check against the last tarball's paths, since an installed tarball carries its own docs and so stays self-consistent, and the grep catches every in-tree reference at rename time. |
+| K-M3 | Folded: the claim inventory in page inputs, `[external]` vendor facts, and the fact read's carried-claim check. |
+| K-M4 | Folded: write path and in-flight file-not-fix rule in Stage 0; the site round follows stage 5. Part refused: rebasing before the consistency read, since no site round runs concurrently with a stage. |
+| K-M5 | Folded: pilot at stage 2a with the first owner read, 2a/2b planned as mergeable, ceiling headroom; the ceiling itself is O1. |
+| K-m1 | Folded: scoped reviews in "Edits after the chain"; stale facts fixed or retagged `[docs-drift]` in chain step 4. |
+| K-m2 | Folded: the docs gate, the contract table's pinning gates, and the `check:editor-quotes` floor. |
+| K-m3 | Folded: no live runs, so the offline-allowlist and build-from-HEAD questions are moot. Part refused: a per-page tool-version line on arm pages; the contract pages already pin `version.Documented`, and the site round runs the real binary. |
+| K-m4 | Folded: page inputs retrace facts whose only source is an arm page. |
+| K-m5 | Folded: stage flow step 7. |
+| K-F1 | Folded, not a fork: `CLAUDE.md` already says `main` is always releasable and fixes the release triggers; option (a) would contradict them and option (c) is cairn.pub's own pass. |
+
+## Consistency lens
+
+| ID | Disposition |
+| --- | --- |
+| S-M1 | Folded: the keep/retire ledger. |
+| S-M2 | Owner fork O2, after verifying the reading is correct (see the notes). Its option A is the recommendation. |
+| S-M3 | Folded: the facts README, `docs-register.md`, the `cairn-pass` skill, and the `docs-reset-initiative` memory join the list; the write path is ruled as method. |
+| S-M4 | Folded with the fact-tag root. Part refused: a separate verification agent before the draft, since page inputs are already independent of the drafter and the fact read re-verifies every cited fact; an extra agent on every page costs more than the risk it removes. |
+| S-M5 | Folded: attribution corrected; the claim inventory is the measured control. |
+| S-M6 | Folded with the anchor root; listed headings are kept, so `conditions.json` needs no change. |
+| S-M7 | Owner fork O1; counting rule, derivation, and the 45M cap's retirement folded. |
+| S-M8 | Folded: Testing 4 repoints Sheet 2 to GitHub `main` and updates the header before the round. |
+| S-m1 | Folded: the outline lives in the stage plan; the owner read counts as one execution sitting. |
+| S-m2 | Folded: stage records go to HISTORY. |
+| S-m3 | Folded: `check:visuals` in the gate, a `figure-verifier` read, figures marked in the outline. |
+| S-m4 | Folded: `docs/README.md` joins stage 5 as an index; the root `README.md` is out of scope; READMEs are out of the arm counts. |
+| S-m5 | Folded: the per-version records are exempt and maintained in place. |
+| S-m6 | Folded: the retired-rulings list keeps the register's track profiles and the scripter profile; Stage 0 updates the drafter definition and the briefs README. |
+| S-m7 | Folded: one line each for reset rulings 5, 6, and 8 to 14. |
+| S-m8 | Folded: the Doc Detective citation left with `check:procedures`. |
+| S-m9 | Folded: the theme-guide input moves to the stage 2 outline; the claims audit stays post-`beta.1`. |
+| S-m10 | Folded: stage 2 takes three owner-read pages, within R3. |
+
+## Owed errata and planned amendments
+
+The spec does not edit these; each is owed or planned.
+
+1. **Erratum, `2026-09-08-docs-standard-design.md`:** a superseded-in-part note pointing at the
+   new spec's keep/retire ledger, so a reader holding the standard does not treat retired units
+   as live.
+2. **Erratum, `2026-09-23-docs-reset-design.md`:** a note that rulings 2 to 4, 7 to 12, and 14,
+   the 0.7M-per-page basis, and the 45M program cap are retired or replaced by the 2026-09-26
+   spec.
+3. **Erratum, global `~/.claude/CLAUDE.md` (Writing voice):** "carries one section per read"
+   restates standard rule 2 as a page-structure rule; the source rule governs drafting. Correct
+   it with O2's outcome, together with the `writing-voice` skill line if O2 is yes.
+4. **Record note, the handoff (open question 6)** attributes the 40 percent figure to pass A,
+   following the `draft-docs-initiative` memory; the source is the 2026-09-21 spec's review.
+5. **Planned amendment (Stage 0), facts README:** new facts from the chain are filed `[verified]`
+   by the page-inputs agent rather than `[candidate]` pending the fact read. Independence from the
+   drafter is kept; the mechanism changes.
+6. **Reading to flag for Geoff, R1:** the spec adds `docs/README.md`, the arms' parent index, to
+   the front door beside "the arm READMEs". It treats that as within R1, not a change to it.

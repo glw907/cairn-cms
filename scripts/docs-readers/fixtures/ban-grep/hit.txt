@@ -1,1 +1,0 @@
-This text mentions D01 by its bare id.

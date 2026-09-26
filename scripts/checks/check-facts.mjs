@@ -29,11 +29,12 @@
 // the container, across files, fails too. `--mint` on the command line prints one freshly minted
 // id and exits, the path `docs/internal/facts/README.md` sends a filer down.
 //
-// A `Source:` pointer into `docs/internal/record/` is a special case: that whole directory is one
-// of the paths a repository-class reader export excludes (see
-// `scripts/docs-readers/lib/prepare-class.ts`'s `REPOSITORY_EXCLUDED_PATHS`), so a pointer into it
-// is skipped, not failed, exactly when the directory itself is absent; when the directory exists
-// and the cited file inside it does not, that is an ordinary broken pointer and still fails.
+// A `Source:` pointer into `docs/internal/record/` is a special case: the directory is skipped,
+// not failed, exactly when it is absent. That absence never happens on a normal checkout; the
+// rule exists only because the now-retired reader-validation harness's repository-class export
+// dropped the directory on purpose, and this gate stayed usable against that harness's own
+// exported trees without failing on its own citations. When the directory exists and the cited
+// file inside it does not, that is an ordinary broken pointer and still fails.
 //
 // A `path:line` or `path:line-line` pointer inside the bullet's `Source:` field is resolved two
 // ways: first as a literal path from the repo root, then, when that fails and the pointer names

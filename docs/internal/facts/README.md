@@ -164,11 +164,12 @@ resolved to its declaration, and a verbatim key phrase on every owner-tier bulle
 repeats anywhere in the container. It prints per-file counts by tag on success, replacing what used to be
 a hand-maintained index table in this README.
 
-A `Source:` pointer into `docs/internal/record/` is the one exception: a repository-class reader
-export drops that whole directory on purpose (`scripts/docs-readers/lib/prepare-class.ts`'s
-`REPOSITORY_EXCLUDED_PATHS`), so a pointer into it is skipped, not failed, exactly when the
-directory itself is absent; when the directory exists and the cited file inside it does not, that
-is an ordinary broken pointer and still fails.
+A `Source:` pointer into `docs/internal/record/` is the one exception: the directory is skipped,
+not failed, exactly when it is absent. That never happens on a normal checkout; the rule exists
+only because the now-retired reader-validation harness exported a trimmed copy of the repository
+that dropped the directory on purpose, and the gate stayed usable against those exported trees
+without failing on their own citations. When the directory exists and the cited file inside it
+does not, that is an ordinary broken pointer and still fails.
 
 A page brief under `docs/internal/briefs/` cites these bullets by id, sentence by sentence, and
 `npm run check:provenance` holds the citations to this container: a cited bullet tagged
@@ -179,6 +180,7 @@ A one-shot, re-runnable migration, `node scripts/checks/migrate-fact-ids.mjs`, g
 bullet its id; it changes nothing on a bullet that already has one, so running it again, or after
 a rebase that adds new bullets from another branch, only fills in what is still missing.
 
-The gate's ten-line anchor window forgives a pointer that has drifted a few lines. `npx tsx
-scripts/docs-readers/rot.ts` measures the stricter question: the share of anchored pointers whose
-anchor does not sit on the cited line itself. At docs reset pass 1's close it read 8 of 88.
+The gate's ten-line anchor window forgives a pointer that has drifted a few lines. The now-retired
+reader-validation harness carried a stricter measurement of the same question, the share of
+anchored pointers whose anchor does not sit on the cited line itself; at docs reset pass 1's close
+it read 8 of 88. No replacement tool runs that measurement.

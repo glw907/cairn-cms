@@ -42,7 +42,7 @@ docs-and-binary, and docs-and-site classes, plus `DOCS_AND_SITE_EXCLUDED_PATHS`;
 `absentPaths`/`trackedPaths` against `REPOSITORY_EXCLUDED_PATHS` for the repository class;
 per-subfolder `omittedPaths` with the scripter's bundle prefixes `json-output/`, `doctor/`,
 `exit-codes/` kept, per the carries). Saved at
-[`scripts/docs-readers/tuning/round0/absent-lists.json`](../../../scripts/docs-readers/tuning/round0/absent-lists.json).
+`scripts/docs-readers/tuning/round0/absent-lists.json`, removed with the retired harness.
 Counts per job:
 
 | Job | Absent-list entries |
@@ -96,8 +96,7 @@ through to `remaining`. Full per-job log at `~/.cache/docs-readers/packets/round
 
 Each job's proxy map (`path-map.ts build --proxy`, one run over pass 1's verified Opus control
 runs, seed n/a) is committed at
-[`scripts/docs-readers/tuning/round0/maps/`](../../../scripts/docs-readers/tuning/round0/maps/),
-one file per job. Every map used both verified Opus control runs pass 1 produced per job
+`scripts/docs-readers/tuning/round0/maps/`, removed with the retired harness, one file per job. Every map used both verified Opus control runs pass 1 produced per job
 (`verifiedRuns: 2` in every map file); a section is on a job's proxy map when any of those
 verified runs carries a verified quote inside it, in any report field. **The map is a proxy
 built from pass 1's control-run quotes, not the pinned `steps[]` instrument's own path map;

@@ -160,6 +160,8 @@ export function resolveRunSource({ reportPath, jobId, attempt }: RunSource): Res
       assumed: toBlockedEntries(fields.assumed),
       diverged: Array.isArray(fields.diverged) ? (fields.diverged as RawDivergedEntry[]) : [],
       checks: Array.isArray(fields.checks) ? (fields.checks as unknown[]) : [],
+      wrong: Array.isArray(fields.wrong) ? (fields.wrong as RawWrongEntry[]) : [],
+      missing: Array.isArray(fields.missing) ? (fields.missing as RawMissingEntry[]) : [],
     },
     runId: typeof report.runId === 'string' ? report.runId : '',
     attempt: attemptNumber,
@@ -398,15 +400,28 @@ export interface PlantEntry {
   page?: string;
 }
 
-/** One catch-field item, allow-listed from a run's `stalls[]`, `assumed[]`, `diverged[]`, or `checks[]`. */
+/**
+ * One catch-field item, allow-listed from a run's `stalls[]`, `assumed[]`, `diverged[]`,
+ * `checks[]`, `wrong[]`, or `missing[]`. `pageSays`, `actual`, `evidence`, and `needed` carry a
+ * `wrong[]` or `missing[]` item's own claim; neither field ever sets `blockedBy`, which stays
+ * `null` for both.
+ */
 export interface CatchFieldItem {
   id: string;
-  field: 'stalls' | 'assumed' | 'diverged' | 'checks';
+  field: 'stalls' | 'assumed' | 'diverged' | 'checks' | 'wrong' | 'missing';
   text: string;
   blockedBy: string | null;
   quote?: { path: string; line: number; text: string };
   didInstead?: string;
   why?: string;
+  /** A `wrong[]` item's claim of what the page says. */
+  pageSays?: string;
+  /** A `wrong[]` item's claim of what is actually true. */
+  actual?: string;
+  /** A `missing[]` item's claim of what the job needed. */
+  needed?: string;
+  /** A `wrong[]` or `missing[]` item's evidence for its claim. */
+  evidence?: string;
 }
 
 /** A run's catch-field items, grouped by field; `checks` is present only when the run filled it. */
@@ -415,6 +430,8 @@ export interface RunCatchFields {
   assumed: CatchFieldItem[];
   diverged: CatchFieldItem[];
   checks?: CatchFieldItem[];
+  wrong: CatchFieldItem[];
+  missing: CatchFieldItem[];
 }
 
 /** One `stalls[]`/`assumed[]` entry, in the shape a saved report or a live run carries. */
@@ -431,6 +448,21 @@ export interface RawDivergedEntry {
   blockedBy: string | null;
 }
 
+/** One `wrong[]` entry, in the shape a saved report or a live run carries. Carries no `blockedBy`. */
+export interface RawWrongEntry {
+  quote: { path: string; line: unknown; text: unknown };
+  pageSays: string;
+  actual: string;
+  evidence: string;
+}
+
+/** One `missing[]` entry, in the shape a saved report or a live run carries. Carries no `blockedBy`. */
+export interface RawMissingEntry {
+  quote: { path: string; line: unknown; text: unknown };
+  needed: string;
+  evidence: string;
+}
+
 /**
  * A run's raw catch fields, the allow-listed source `buildCatchFields` reads from. `stalls[]` and
  * `assumed[]` accept a plain string too, the shape a report saved before those fields carried
@@ -441,11 +473,13 @@ export interface RawRunFields {
   assumed?: ReadonlyArray<RawBlockedEntry | string>;
   diverged?: RawDivergedEntry[];
   checks?: unknown[];
+  wrong?: RawWrongEntry[];
+  missing?: RawMissingEntry[];
 }
 
 /** Where one opaque catch-field item id came from in the source run, recorded in the key file. */
 export interface CatchFieldItemLocation {
-  field: 'stalls' | 'assumed' | 'diverged' | 'checks';
+  field: 'stalls' | 'assumed' | 'diverged' | 'checks' | 'wrong' | 'missing';
   sourceIndex: number;
 }
 
@@ -453,7 +487,8 @@ export interface CatchFieldItemLocation {
  * Turn a run's raw catch fields into opaque-id'd, allow-listed packet items. `ruleCandidates[]`,
  * `outcome`, `pagesRead`, `denials`, `usage`, `modelUsage`, the model, and the run and batch names
  * never reach this function's input shape at all, so they cannot leak by omission here.
- * @param run - The run's raw `stalls[]`, `assumed[]`, `diverged[]`, and `checks[]`.
+ * @param run - The run's raw `stalls[]`, `assumed[]`, `diverged[]`, `checks[]`, `wrong[]`, and
+ *  `missing[]`.
  * @param idPrefix - The opaque id prefix, distinct per packet section.
  * @returns The allow-listed fields, and the key mapping each opaque id back to its source location.
  */
@@ -486,7 +521,26 @@ export function buildCatchFields(run: RawRunFields, idPrefix = 'item'): { fields
     const blockedBy = typeof e.blockedBy === 'string' ? e.blockedBy : null;
     return { id: nextId('checks', i), field: 'checks' as const, text: e.text, blockedBy };
   });
-  return { fields: { stalls, assumed, diverged, ...(checks.length > 0 ? { checks } : {}) }, key };
+  const wrong = (run.wrong ?? []).map((entry, i) => ({
+    id: nextId('wrong', i),
+    field: 'wrong' as const,
+    text: entry.evidence,
+    blockedBy: null,
+    quote: { path: entry.quote.path, line: Number(entry.quote.line), text: String(entry.quote.text) },
+    pageSays: entry.pageSays,
+    actual: entry.actual,
+    evidence: entry.evidence,
+  }));
+  const missing = (run.missing ?? []).map((entry, i) => ({
+    id: nextId('missing', i),
+    field: 'missing' as const,
+    text: entry.evidence,
+    blockedBy: null,
+    quote: { path: entry.quote.path, line: Number(entry.quote.line), text: String(entry.quote.text) },
+    needed: entry.needed,
+    evidence: entry.evidence,
+  }));
+  return { fields: { stalls, assumed, diverged, ...(checks.length > 0 ? { checks } : {}), wrong, missing }, key };
 }
 
 /** One plant this packet documents, plus the page content it was planted on (as the reader saw it). */
@@ -638,6 +692,27 @@ export function buildCatchPacket({
   });
 }
 
+/**
+ * Refuse a composed catch-field item list that drops or duplicates a run's `wrong[]` or
+ * `missing[]` entries: the count of `wrong`-field and `missing`-field items in `items` must equal
+ * the raw run's own `wrong[]` and `missing[]` lengths. Guards the one risk `buildCatchFields`'s
+ * typed return does not: a hand-composed item list, built by spreading each field's own array,
+ * that forgets one of the two fields compiles cleanly, since nothing forces every field onto the
+ * list, and would otherwise starve a judge of exactly the findings the two fields exist to
+ * measure.
+ * @param run - The run's raw fields, the source of truth for how many entries each field carries.
+ * @param items - The composed catch-field items a packet is about to carry.
+ * @throws When either field's item count does not match the source run's own array length.
+ */
+export function assertNewFieldItemCounts(run: RawRunFields, items: readonly Pick<CatchFieldItem, 'field'>[]): void {
+  const expectedWrong = run.wrong?.length ?? 0;
+  const expectedMissing = run.missing?.length ?? 0;
+  const actualWrong = items.filter((item) => item.field === 'wrong').length;
+  const actualMissing = items.filter((item) => item.field === 'missing').length;
+  if (actualWrong !== expectedWrong) throw new Error(`packet carries ${actualWrong} wrong[] item(s), the source report's job has ${expectedWrong}`);
+  if (actualMissing !== expectedMissing) throw new Error(`packet carries ${actualMissing} missing[] item(s), the source report's job has ${expectedMissing}`);
+}
+
 /** The key file an adjudicator packet's builder writes outside the mount. */
 export interface AdjudicatorPacketKey {
   kind: 'adjudicator';
@@ -697,7 +772,8 @@ export function buildAdjudicatorPacket({
   mkdirSync(packetDir, { recursive: true });
 
   const { fields, key: itemKey } = buildCatchFields(run.runFields);
-  const all = [...fields.stalls, ...fields.assumed, ...fields.diverged, ...(fields.checks ?? [])];
+  const all = [...fields.stalls, ...fields.assumed, ...fields.diverged, ...(fields.checks ?? []), ...fields.wrong, ...fields.missing];
+  assertNewFieldItemCounts(run.runFields, all);
   const excludedLocations = new Set(excludedKeys.map((e) => `${e.field}:${e.sourceIndex}`));
   const excludedIds = Object.entries(itemKey)
     .filter(([, loc]) => excludedLocations.has(`${loc.field}:${loc.sourceIndex}`))
@@ -780,7 +856,7 @@ export interface AgreementPacketKey {
  */
 function resolveSingleCatchFieldItem(runFields: RawRunFields, field: CatchFieldItemLocation['field'], sourceIndex: number): CatchFieldItem {
   const { fields, key } = buildCatchFields(runFields);
-  const all = [...fields.stalls, ...fields.assumed, ...fields.diverged, ...(fields.checks ?? [])];
+  const all = [...fields.stalls, ...fields.assumed, ...fields.diverged, ...(fields.checks ?? []), ...fields.wrong, ...fields.missing];
   const matchedId = Object.entries(key).find(([, loc]) => loc.field === field && loc.sourceIndex === sourceIndex)?.[0];
   const matched = all.find((item) => item.id === matchedId);
   if (!matched) throw new Error(`no catch-field item at ${field}[${sourceIndex}]`);

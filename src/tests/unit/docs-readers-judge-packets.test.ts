@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  assertNewFieldItemCounts,
   buildAdjudicatorPacket,
   buildAgreementPacket,
   buildCatchFields,
@@ -134,6 +135,62 @@ describe('buildCatchFields', () => {
     });
     expect(fields.stalls[0]).toMatchObject({ text: 'Many linked pages were not present.', blockedBy: null });
     expect(fields.assumed[0]).toMatchObject({ text: 'Assumed the magic link, not a GitHub sign-in.', blockedBy: null });
+  });
+
+  it('allow-lists wrong[] and missing[], each under its own field name with no blockedBy, ids assigned after checks', () => {
+    const { fields, key } = buildCatchFields({
+      checks: [{ text: 'A live check ran.', blockedBy: null }],
+      wrong: [{ quote: { path: 'docs/guide.md', line: 4, text: 'The port is 5432.' }, pageSays: 'The port is 5432.', actual: 'The port is 5433.', evidence: 'The config file sets PORT=5433.' }],
+      missing: [{ quote: { path: 'docs/guide.md', line: 9, text: 'Restart the service.' }, needed: 'How to roll back a failed restart.', evidence: 'The job needed a rollback step and none is given.' }],
+    });
+    expect(fields.wrong).toEqual([
+      {
+        id: 'item-2',
+        field: 'wrong',
+        text: 'The config file sets PORT=5433.',
+        blockedBy: null,
+        quote: { path: 'docs/guide.md', line: 4, text: 'The port is 5432.' },
+        pageSays: 'The port is 5432.',
+        actual: 'The port is 5433.',
+        evidence: 'The config file sets PORT=5433.',
+      },
+    ]);
+    expect(fields.missing).toEqual([
+      {
+        id: 'item-3',
+        field: 'missing',
+        text: 'The job needed a rollback step and none is given.',
+        blockedBy: null,
+        quote: { path: 'docs/guide.md', line: 9, text: 'Restart the service.' },
+        needed: 'How to roll back a failed restart.',
+        evidence: 'The job needed a rollback step and none is given.',
+      },
+    ]);
+    expect(key).toEqual({
+      'item-1': { field: 'checks', sourceIndex: 0 },
+      'item-2': { field: 'wrong', sourceIndex: 0 },
+      'item-3': { field: 'missing', sourceIndex: 0 },
+    });
+  });
+});
+
+describe('assertNewFieldItemCounts', () => {
+  it('passes when the composed items include every wrong[]/missing[] entry the source run carries', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- only the array lengths matter to this check
+    const run = { wrong: [{}, {}], missing: [{}] } as any;
+    expect(() => assertNewFieldItemCounts(run, [{ field: 'wrong' }, { field: 'wrong' }, { field: 'missing' }])).not.toThrow();
+  });
+
+  it('refuses a composed item list missing one of the source run’s wrong[] entries', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- only the array lengths matter to this check
+    const run = { wrong: [{}, {}], missing: [] } as any;
+    expect(() => assertNewFieldItemCounts(run, [{ field: 'wrong' }])).toThrow(/wrong\[\] item\(s\)/);
+  });
+
+  it('refuses a composed item list missing one of the source run’s missing[] entries', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- only the array lengths matter to this check
+    const run = { wrong: [], missing: [{}, {}] } as any;
+    expect(() => assertNewFieldItemCounts(run, [{ field: 'missing' }])).toThrow(/missing\[\] item\(s\)/);
   });
 });
 
@@ -482,6 +539,100 @@ describe('buildAdjudicatorPacket', () => {
       rmSync(outDir, { recursive: true, force: true });
     }
   });
+
+  it('builds from the real smoke-2a fixture, carrying its wrong[] and missing[] items under their own field names and no ruleCandidates[] entry', () => {
+    const reportPath = join(ROOT, 'scripts/docs-readers/fixtures/saved-reports/smoke-2a.json');
+    const smokeReport = JSON.parse(readFileSync(reportPath, 'utf8')) as { jobs: Array<{ id: string; ruleCandidates?: string[] }> };
+    const ruleCandidates = smokeReport.jobs.find((j) => j.id === 'scripter-control-1')?.ruleCandidates ?? [];
+    expect(ruleCandidates.length).toBeGreaterThan(0);
+
+    const repoRoot = tmp('smoke-adj-repo');
+    write(join(repoRoot, 'package.json'), JSON.stringify({ files: ['docs/README.md'] }));
+    write(join(repoRoot, 'docs', 'README.md'), 'readme\n');
+    const commit = commitAll(repoRoot);
+    const fixturesDir = tmp('smoke-adj-fixtures');
+    const batchPath = writeBatchFixture(fixturesDir, 'scripter-control-1', 'Job text for the scripter control run.');
+    const outDir = tmp('smoke-adj-out');
+    try {
+      buildAdjudicatorPacket({ outDir, repoRoot, batchPath, reportPath, jobId: 'scripter-control-1', pageList: [], absentList: [], commit });
+      const items = JSON.parse(readFileSync(join(outDir, 'packet', 'items.json'), 'utf8')) as Array<{ field: string }>;
+      expect(items.filter((item) => item.field === 'wrong')).toHaveLength(5);
+      expect(items.filter((item) => item.field === 'missing')).toHaveLength(4);
+      const wholePacket = Object.values(readTree(join(outDir, 'packet'))).join('\n');
+      for (const candidate of ruleCandidates) expect(wholePacket).not.toContain(candidate);
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+      rmSync(fixturesDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('a wrong[]-only or missing[]-only report reaches every packet kind under its own field name', () => {
+  const CASES: Array<{ field: 'wrong' | 'missing'; run: Record<string, unknown> }> = [
+    {
+      field: 'wrong',
+      run: { wrong: [{ quote: { path: 'docs/guide.md', line: 4, text: 'The port is 5432.' }, pageSays: 'The port is 5432.', actual: 'The port is 5433.', evidence: 'The config sets 5433.' }] },
+    },
+    {
+      field: 'missing',
+      run: { missing: [{ quote: { path: 'docs/guide.md', line: 3, text: 'The port is 5432.' }, needed: 'How to roll back a failed restart.', evidence: 'No rollback step is given.' }] },
+    },
+  ];
+
+  for (const { field, run } of CASES) {
+    it(`builds catch, adjudicator, and agreement packets carrying the ${field}[] item under "${field}"`, () => {
+      const { repoRoot, commit } = pageRepo('docs/guide.md', '# Guide\n\nThe port is 5432.\n');
+      const fixturesDir = tmp(`${field}-only-fixtures`);
+      const batchPath = writeBatchFixture(fixturesDir, 'job-a', 'Find the port.');
+      const reportPath = writeReportFixtureWithSentinels(fixturesDir, 'job-a', { stalls: [], assumed: [], diverged: [], checks: [], ...run });
+      const criteriaPath = join(fixturesDir, 'dev-plants.json');
+      writeJsonFixture(criteriaPath, [{ id: 'P01', page: 'docs/guide.md', line: 4, subject: 'port', criterion: 'names the port as wrong', nearMiss: 'repeats 5433' }]);
+      const indexPath = join(fixturesDir, 'dev-plants-index.json');
+      writeJsonFixture(indexPath, [{ id: 'P01', job: 'job-a', page: 'docs/guide.md', line: 4 }]);
+      const plantedRoot = join(fixturesDir, 'planted', 'job-a');
+      write(join(plantedRoot, 'docs/guide.md'), '# Guide\n\nThe port is 5432.\n');
+
+      const catchOut = tmp(`${field}-only-catch`);
+      const adjOut = tmp(`${field}-only-adj`);
+      const agreementOut = tmp(`${field}-only-agreement`);
+      try {
+        buildCatchPacket({
+          outDir: catchOut,
+          repoRoot,
+          batchPath,
+          reportPath,
+          jobId: 'job-a',
+          plants: { kind: 'dev', criteriaPath, indexPath, jobId: 'job-a', plantedRoot },
+          commit,
+        });
+        const catchItems = JSON.parse(readFileSync(join(catchOut, 'packet', 'items.json'), 'utf8')) as Record<string, Array<{ field: string }>>;
+        expect(catchItems[field]).toHaveLength(1);
+
+        buildAdjudicatorPacket({ outDir: adjOut, repoRoot, batchPath, reportPath, jobId: 'job-a', pageList: ['docs/guide.md'], absentList: [], commit, publishedRoots: ['docs/guide.md'] });
+        const adjItems = JSON.parse(readFileSync(join(adjOut, 'packet', 'items.json'), 'utf8')) as Array<{ field: string }>;
+        expect(adjItems.filter((item) => item.field === field)).toHaveLength(1);
+
+        const samplePath = join(fixturesDir, 'agreement-sample.json');
+        writeJsonFixture(samplePath, { findings: [{ itemId: 'f-1' }], catchCalls: [] });
+        buildAgreementPacket({
+          outDir: agreementOut,
+          repoRoot,
+          samplePath,
+          findings: { 'f-1': { batchPath, reportPath, jobId: 'job-a', field, sourceIndex: 0, page: 'docs/guide.md', commit } },
+          catchCalls: {},
+        });
+        const agreementItem = JSON.parse(readFileSync(join(agreementOut, 'packet', 'findings', 'f-1', 'item.json'), 'utf8'));
+        expect(agreementItem.field).toBe(field);
+      } finally {
+        rmSync(repoRoot, { recursive: true, force: true });
+        rmSync(fixturesDir, { recursive: true, force: true });
+        rmSync(catchOut, { recursive: true, force: true });
+        rmSync(adjOut, { recursive: true, force: true });
+        rmSync(agreementOut, { recursive: true, force: true });
+      }
+    });
+  }
 });
 
 describe('buildAgreementPacket', () => {

@@ -390,6 +390,20 @@ describe('buildPrecisionRunRecords', () => {
     expect(runs[0].itemCount).toBe(3);
   });
 
+  it('folds wrong[] and missing[] into itemCount beside stalls, assumed, and diverged', () => {
+    const readerJob = job({
+      id: 'evaluator-control-1',
+      wrong: [{ quote: { path: 'p', line: 1, text: 't', ok: true }, pageSays: 'a', actual: 'b', evidence: 'c' }],
+      missing: [
+        { quote: { path: 'p', line: 2, text: 't', ok: true }, needed: 'x', evidence: 'y' },
+        { quote: { path: 'p', line: 3, text: 't', ok: true }, needed: 'x', evidence: 'y' },
+      ],
+    });
+    const { byId: indexed } = indexReaderJobs([at('r.json', batchReport([readerJob]))], VALID_CLASSES);
+    const { runs } = buildPrecisionRunRecords(indexed, new Map([['evaluator-control-1', []]]));
+    expect(runs[0].itemCount).toBe(3);
+  });
+
   it('is a problem, never silently scored with zero items, for a control job with no joined adjudicator items', () => {
     const { byId: indexed } = indexReaderJobs([at('r.json', batchReport([job({ id: 'evaluator-control-1' })]))], VALID_CLASSES);
     const { problems } = buildPrecisionRunRecords(indexed, new Map());

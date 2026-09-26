@@ -398,9 +398,9 @@ export function joinAdjudications(
 /**
  * Build every job's `PrecisionRunRecord`s (control/mapping runs), joined from the indexed reader
  * jobs and the adjudicator's resolved items. `itemCount` is taken from the run's own final outcome
- * (its `stalls[]`, `assumed[]`, `diverged[]`, and `checks[]` counts), never from the key, since an
- * unverified run's rerun-rule fallback must reflect what the reader itself actually recorded, not
- * however many items a (possibly stale or absent) key happened to carry.
+ * (its `stalls[]`, `assumed[]`, `diverged[]`, `wrong[]`, `missing[]`, and `checks[]` counts), never
+ * from the key, since an unverified run's rerun-rule fallback must reflect what the reader itself
+ * actually recorded, not however many items a (possibly stale or absent) key happened to carry.
  * @param indexed - Every indexed reader job.
  * @param itemsByReaderJobId - Each reader job id's own resolved `PrecisionItem[]`.
  * @returns Every control-role precision run, and every problem found (a control job with no joined items).
@@ -416,7 +416,8 @@ export function buildPrecisionRunRecords(
     const items = itemsByReaderJobId.get(job.id);
     if (!items) problems.push(`job "${job.id}": no adjudicator key and rulings joined for it`);
     const outcome = job.outcome;
-    const itemCount = outcome.stalls.length + outcome.assumed.length + outcome.diverged.length + (outcome.checks?.length ?? 0);
+    const itemCount =
+      outcome.stalls.length + outcome.assumed.length + outcome.diverged.length + outcome.wrong.length + outcome.missing.length + (outcome.checks?.length ?? 0);
     runs.push({
       runId: job.id,
       job: job.parsed.job,

@@ -66,6 +66,9 @@ describe.each(['cairn-admin', 'cairn-admin-dark'] as const)('resolveColor (%s)',
     const infoColor = resolveColor('var(--alert-color, red)', theme, alert);
     const fallback = resolveColor('var(--alert-color, red)', theme);
 
+    // .alert-info sets --alert-color to var(--color-info), so resolving inside it must equal the
+    // theme's own info color, not merely some value that differs from the fallback.
+    expect(infoColor).toBe(resolveColor('var(--color-info)', theme));
     expect(infoColor).not.toBe(fallback);
     expect(fallback).toBe(resolveColor('red', theme));
   });

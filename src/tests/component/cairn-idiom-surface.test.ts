@@ -11,8 +11,8 @@ import { renderInTheme, styleOf, type IdiomState, type Theme } from './_idiom-pr
 const THEMES: Theme[] = ['cairn-admin', 'cairn-admin-dark'];
 const STATES: IdiomState[] = ['rest', 'hover', 'focus-visible', 'active'];
 
-// The lift's literal --btn-shadow value per theme: light at the ratified warm violet-adjacent
-// lift, dark at the dark theme's own --cairn-shadow tint, both at the same geometry and alpha.
+// The lift's literal --btn-shadow value per theme: light at the ratified warm lift, dark at the
+// dark theme's own --cairn-shadow tint, both at the same geometry and alpha.
 // Both are literal oklch colors, not a var(...)/color-mix(...) expression, so there is nothing for
 // the resolveColor oracle to resolve; this is the value the rule declares, read back verbatim.
 const BTN_SHADOW: Record<Theme, string> = {
@@ -44,6 +44,63 @@ describe.each(THEMES)('the .btn-primary warm lift (%s)', (theme) => {
     } finally {
       lifted.cleanup();
       flattened.cleanup();
+    }
+  });
+
+  // shadow-none proves a markup utility beats the rule on box-shadow, but box-shadow is a property
+  // shadow-none sets directly, so it cannot tell a layered --btn-shadow setter from an unlayered
+  // one (both would lose the same way). This host rule sets --btn-shadow itself, from the utilities
+  // layer's own unnested position, the same cascade slot a real Tailwind utility compiles into, so
+  // it distinguishes the layered lift from an unlayered stand-in.
+  it('loses to a host utility that sets --btn-shadow directly', () => {
+    const hostCss = "@layer utilities { .no-lift { --btn-shadow: 0 0 #0000; } }";
+    const { wrapper, cleanup } = renderInTheme('<button class="btn btn-primary no-lift">Publish</button>', theme, {
+      hostCss,
+    });
+    try {
+      const el = wrapper.querySelector('button')!;
+      const shadow = getComputedStyle(el).getPropertyValue('--btn-shadow');
+      expect(shadow).toBe('0 0 #0000');
+      expect(shadow).not.toBe(BTN_SHADOW[theme]);
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+// The lift's selector excludes every daisyUI variant and disabled form that already zeroes
+// --btn-shadow itself: a sibling render with btn-secondary in place of btn-primary never matches
+// the lift's selector at all, so its --btn-shadow is daisyUI's own untouched value for that markup.
+// Equality against that sibling proves the exclusion, not merely that the value looks unlifted.
+describe.each(THEMES)('the warm lift excludes daisyUI variants and disabled forms (%s)', (theme) => {
+  const cases: { name: string; markup: (color: 'btn-primary' | 'btn-secondary') => string }[] = [
+    { name: 'disabled', markup: (color) => `<button class="btn ${color}" disabled>Publish</button>` },
+    { name: 'btn-disabled', markup: (color) => `<button class="btn ${color} btn-disabled">Publish</button>` },
+    {
+      name: "aria-disabled='true'",
+      markup: (color) => `<button class="btn ${color}" aria-disabled="true">Publish</button>`,
+    },
+    { name: 'btn-outline', markup: (color) => `<button class="btn btn-outline ${color}">Publish</button>` },
+    { name: 'btn-dash', markup: (color) => `<button class="btn btn-dash ${color}">Publish</button>` },
+    { name: 'btn-ghost', markup: (color) => `<button class="btn btn-ghost ${color}">Publish</button>` },
+    { name: 'btn-link', markup: (color) => `<button class="btn btn-link ${color}">Publish</button>` },
+    { name: 'btn-soft', markup: (color) => `<button class="btn btn-soft ${color}">Publish</button>` },
+  ];
+
+  it.each(cases)('$name reads the same --btn-shadow as btn-secondary', ({ markup }) => {
+    const primary = renderInTheme(markup('btn-primary'), theme);
+    const secondary = renderInTheme(markup('btn-secondary'), theme);
+    try {
+      const primaryShadow = getComputedStyle(primary.wrapper.querySelector('button')!).getPropertyValue(
+        '--btn-shadow',
+      );
+      const secondaryShadow = getComputedStyle(secondary.wrapper.querySelector('button')!).getPropertyValue(
+        '--btn-shadow',
+      );
+      expect(primaryShadow).toBe(secondaryShadow);
+    } finally {
+      primary.cleanup();
+      secondary.cleanup();
     }
   });
 });

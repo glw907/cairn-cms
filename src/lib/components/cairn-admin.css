@@ -816,7 +816,7 @@
    reads one. */
 @layer utilities {
   @layer cairn-idiom {
-    /* The primary action's soft violet lift. DaisyUI compiles its own component rules into named
+    /* The primary action's warm lift. DaisyUI compiles its own component rules into named
        sublayers of utilities, so the two rules this replaces, both living in @layer components
        (ordered before utilities in the source's own layer statement), lost to daisyUI's resting
        fill and never rendered. Setting --btn-shadow rather than box-shadow keeps a markup
@@ -825,11 +825,37 @@
        across rest, hover, focus-visible, and active, since a shadow that grows on interaction read
        as the primary action fidgeting rather than lifting; the two theme-scoped rules below share
        the lift's geometry and alpha and differ only in hue, the dark theme's own warmer, darker
-       shadow tint (matching --cairn-shadow's dark value) in place of light's. */
-    [data-theme='cairn-admin'] .btn-primary:not(:disabled) {
+       shadow tint (matching --cairn-shadow's dark value) in place of light's. The :not() list
+       excludes every daisyUI variant and disabled form that already zeroes --btn-shadow itself
+       (.btn-soft, .btn-outline, .btn-dash, .btn-ghost, .btn-link, .btn-disabled, :disabled,
+       [disabled], [aria-disabled='true']), so this unconditional rule does not repaint a shadow
+       daisyUI deliberately leaves flat. */
+    [data-theme='cairn-admin']
+      .btn-primary:not(
+        .btn-soft,
+        .btn-outline,
+        .btn-dash,
+        .btn-ghost,
+        .btn-link,
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ) {
       --btn-shadow: 0 1px 2px -1px oklch(35% 0.04 75 / 0.35);
     }
-    [data-theme='cairn-admin-dark'] .btn-primary:not(:disabled) {
+    [data-theme='cairn-admin-dark']
+      .btn-primary:not(
+        .btn-soft,
+        .btn-outline,
+        .btn-dash,
+        .btn-ghost,
+        .btn-link,
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ) {
       --btn-shadow: 0 1px 2px -1px oklch(10% 0.02 75 / 0.35);
     }
 

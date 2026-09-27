@@ -103,6 +103,15 @@ describe('cairnIdiomLayerSelectorCount and the cairn-idiom category', () => {
     expect(rules).toHaveLength(1);
     expect(rules[0]).toContain('.btn-primary');
   });
+
+  it('fails evaluate on the same rule planted unlayered, as an unsanctioned unlayered rule', () => {
+    const { pass, failures } = evaluate(
+      { adminCss: 'src/tests/fixtures/custom-surface/cairn-idiom-unlayered.css', markupDirs: [] },
+      { unlayeredAllowlist: [], componentsLayerCap: 0, idiomLayerCap: 1, retiredTokenBudget: 0 },
+    );
+    expect(pass).toBe(false);
+    expect(failures.join(' ')).toContain('unsanctioned unlayered rule');
+  });
 });
 
 describe('retiredTokenHits', () => {

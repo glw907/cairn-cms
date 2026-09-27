@@ -137,7 +137,7 @@ longer passes; an eighth unlayered rule fails the length check and the set-equal
 
 ### The `.btn-primary` lift (resolved: stays Tier 2, now in the `cairn-idiom` sublayer)
 
-The bespoke soft-violet shadow lift, one `--btn-shadow` rule per theme root. It cannot fold onto
+The bespoke warm shadow lift, one `--btn-shadow` rule per theme root. It cannot fold onto
 the theme's native `--depth`; see the resolved investigation below. It moved out of
 `@layer components` into the `cairn-idiom` sublayer (see "The `cairn-idiom` category" below),
 where it renders for the first time: a `@layer components` rule cannot outrank daisyUI's own
@@ -541,7 +541,10 @@ every unlayered forced workaround above documents):
   shadow tint (`oklch(10% 0.02 75)`) at the same geometry and alpha in dark. Consolidated from the
   old dead rule's two selectors (rest, `:hover`) into one value held across every interaction
   state, since a lift that grows on hover reads as the primary action fidgeting rather than
-  lifting.
+  lifting. The selector's `:not()` list (`.btn-soft`, `.btn-outline`, `.btn-dash`, `.btn-ghost`,
+  `.btn-link`, `.btn-disabled`, `:disabled`, `[disabled]`, `[aria-disabled='true']`) excludes every
+  daisyUI variant and disabled form that already zeroes `--btn-shadow` itself, so the rule paints
+  only the filled, enabled primary it is meant to lift.
 - **The `.modal-box` repair**, moved unchanged: `border: 1px solid var(--cairn-card-border);
   box-shadow: var(--cairn-shadow);`, replacing daisyUI's flat, theme-invariant black modal shadow
   with the same theme-adaptive elevation pair every other floating surface carries.

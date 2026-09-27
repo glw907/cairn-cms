@@ -1,24 +1,25 @@
 // This module carries no runtime logic. It exists so scripts/build/admin-css.input.css's `@source
-// "../src/lib/components/**/*.{svelte,ts,js}"` glob scans it: Tailwind only compiles a class it can
-// find as literal text somewhere in the scanned tree, so a daisyUI class with no shipped admin
-// component reference (a "dead daisy class") never reaches the compiled cairn-admin.css and silently
-// fails to style anything a consumer site tries to use it on. The pass-B "admin CSS class-inventory
-// gap" harvest finding named this trap: it hid a dead `stats` band in cairn's own admin overview strip
-// (fixed with scoped CSS instead), which is what motivated a standing, documented safelist rather than
-// a one-off fix.
+// "../src/lib/components/**/*.{svelte,ts,js}"` glob scans it, a documented scan source for the
+// families below, findable by grep rather than only by their presence in the compiled sheet.
 //
-// The blessed set is curated, not exhaustive: it carries only the families a consumer site's
-// admin-toolkit design survey ("Assembly doctrine: daisyUI-first") names as needed for a
-// general-purpose admin toolkit built on cairn's admin CSS, so a site-authored screen can reach
-// for the vocabulary before cairn's own components adopt it.
-// It is never "add all of daisyUI"; extending it is a deliberate, documented act, the same as any
-// other change to the admin's compiled surface.
+// The admin build now compiles every daisyUI component and utility class, calendar excluded (the
+// full compile, scripts/build/daisyui-classes.mjs and its generated `@source inline(...)` in
+// admin-css.input.css), so this list no longer decides which daisyUI classes reach the shipped
+// sheet; every one of them already does. Before the full compile, Tailwind only compiled a class
+// it found as literal text somewhere in the scanned tree, so a daisyUI class with no shipped admin
+// component reference (a "dead daisy class") silently failed to style anything a consumer site
+// tried to use it on. The pass-B "admin CSS class-inventory gap" harvest finding named that trap:
+// it hid a dead `stats` band in cairn's own admin overview strip (fixed with scoped CSS instead),
+// which is what motivated this standing, documented list rather than a one-off fix. The list stays,
+// grouped by family, as the one place a consumer's admin-toolkit vocabulary is named and explained,
+// even though the full compile now makes every member of it, and every other daisyUI class besides,
+// compile on its own.
 
 /**
- * The blessed daisyUI 5 classes the admin CSS build compiles even though no shipped cairn admin
- * component references them yet, so a site-authored admin screen can use the vocabulary immediately.
- * Grouped by family; each family's comment notes which member classes the admin already compiles from
- * its own usage (kept here anyway, for one documented, audit-complete list) and which were newly added.
+ * The daisyUI 5 classes an admin-toolkit consumer screen most likely reaches for, documented and
+ * grouped by family even though the admin's full compile already ships every daisyUI class on its
+ * own. Each family's comment notes which member classes the admin already compiled from its own
+ * usage before the full compile, and which were newly added to this list at the time.
  */
 export const ADMIN_CSS_SAFELIST = [
   // table: the AdminTable toolkit component's two named density tiers (compact/comfortable) plus

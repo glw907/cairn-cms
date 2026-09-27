@@ -17,6 +17,23 @@ describe('admin css build', () => {
     css = await buildAdminCss();
   }, 60_000);
 
+  // The cairn-idiom sublayer pin (spec, "The cairn-idiom sublayer"): cascade layers resolve before
+  // specificity, so a rule in cairn-idiom beats every daisyUI sublayer only because this statement
+  // registers `utilities.cairn-idiom` AFTER `utilities.daisyui`. It must follow the four-layer
+  // ordering statement directly, and the two sublayer names must not be reversed (a reversed pin
+  // would make every idiom override lose to daisyUI's own declarations instead of winning).
+  it('pins the cairn-idiom sublayer after the daisyUI sublayer, directly following the layer-order statement', () => {
+    const layerOrderStatement = '@layer properties, theme, base, components, utilities;';
+    const layerOrderAt = css.indexOf(layerOrderStatement);
+    expect(layerOrderAt, 'expected the four-layer ordering statement').toBeGreaterThan(-1);
+    const pinAt = css.indexOf('@layer utilities.daisyui, utilities.cairn-idiom;');
+    expect(pinAt, 'expected the cairn-idiom sublayer pin').toBeGreaterThan(-1);
+    // Only whitespace sits between the two statements: the pin is the very next thing in the sheet.
+    const between = css.slice(layerOrderAt + layerOrderStatement.length, pinAt);
+    expect(between.trim()).toBe('');
+    expect(css).not.toContain('@layer utilities.cairn-idiom, utilities.daisyui;');
+  });
+
   // INVARIANT DISCIPLINE (do not weaken). The assertions in this suite guard the embed-anywhere and
   // cascade-layer contracts. As the sheet shrinks, a present-class LIST may lose an entry, but no
   // invariant assertion may be removed or relaxed. Dropping a `not.toMatch` re-opens a real shipped bug

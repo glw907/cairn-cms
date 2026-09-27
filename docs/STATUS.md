@@ -20,16 +20,17 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-The docs reset's reader-validation line is stopped by owner ruling (HISTORY, top entry). Next is
-Geoff's new draft-documentation approach, designed from conventional practice; start from
-[the handoff](internal/record/2026-09-26-docs-approach-handoff.md). The branches `docs-reset-2a`
-and `docs-reset-2a-audiences` are archived on origin, unmerged. Still owed: the `~/.dotfiles`
-push.
+Execute draft docs pass 0+1 (setup and reference), plan
+[`2026-09-26-draft-docs-pass-0-1.md`](superpowers/plans/2026-09-26-draft-docs-pass-0-1.md),
+approved by Geoff 2026-09-26, implementing the approved spec
+[`2026-09-26-draft-docs-approach-design.md`](superpowers/specs/2026-09-26-draft-docs-approach-design.md)
+(rulings R1 to R10). Pass ceiling about 9.6M, flag at 7.7M; the initiative's working ceiling is
+30M, and the stage 2a pilot checkpoint brings Geoff one ceiling-and-scope question. The spec
+authorizes stages 0, 1, and the 2a pilot only. Still owed: the `~/.dotfiles` push.
 
-Open items for Geoff: the owner brief says "all 28 registered rules"
-(`what-cairn-is-and-is-not.md:49`), and the audit has 36 rule modules; stale facts `f:ab9kzr`
-(published version `0.96.0`) and `f:75hawi` (free tier), and `docs/why-cairn.md:41` against its
-line 84; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` over its 6k budget.
+Open items for Geoff: the four stale owner facts (`what-cairn-is-and-is-not.md:49` rule count,
+`f:ab9kzr`, `f:75hawi`, `docs/why-cairn.md:41` against line 84) settle in the plan's task 9
+sitting; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` over its 6k budget.
 
 The reader harness is removed. Still Geoff's: revoke `CAIRN_SCRATCH_CF_TOKEN` (Cloudflare
 dashboard) and `CAIRN_DOCS_READER_OAUTH_TOKEN` (claude.ai settings), then drop both from the age
@@ -54,7 +55,7 @@ GitHub repo) awaits his delete confirmation.
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` at effort `high`, in
-`/var/home/glw907/Projects/cairn-cms`, brainstorm a draft-documentation approach with Geoff from
-conventional practice. Read `docs/internal/record/2026-09-26-docs-approach-handoff.md` first: it
-carries the documentation need, the reader-validation failure, and the open questions.
+In a fresh session started with `claude --model claude-opus-5-5` at effort `medium`, in
+`/var/home/glw907/Projects/cairn-cms`, execute draft docs pass 0+1 as a thin conductor: read
+`docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md` and its spec, run the plan's
+pre-flight (warm `~/.dotfiles` paths, `/cost` coverage), then dispatch segment A.

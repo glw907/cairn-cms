@@ -597,3 +597,86 @@ Refused: none. The trim landed at 568 lines, above the verification's estimate o
 difference is new decision text this fold added (the single-cut release, the tier trigger and its
 detector, the named-root rule, and the m3 to m9 folds). Cutting further would drop a decision, a
 constraint, or an acceptance criterion.
+
+## Sixth fold (prose review, 2026-09-27)
+
+Input: [the prose review](2026-09-27-theme-pass-b-prose-review.md), against spec commit
+`7f902c70`. Each finding was checked against the tree at `8f5081d8` before folding. Counts: 4
+blockers folded, 7 warnings folded, 12 suggestions folded, 1 suggestion folded as an open plan
+item, and the scanner's 12 "showcase" hits refused. The spec went from 568 to 578 lines; the
+growth is the new `Consumers must:` part, the task-placement text for the gates, and the
+`.table-scroll` split.
+
+Blockers:
+
+- **B1, `cairn-focus-ring` is not engine-emitted.** Verified: `grep` finds it nowhere in
+  `src/lib`, only in showcase chassis, theme, and route markup. Folded: the sheet's rules list
+  calls it "the `cairn-focus-ring` class a theme's markup applies", and the snapshot test asserts
+  only that every *emitted* class the sheet styles is in the registry. The registry does not gain
+  it.
+- **B2, the principle contradicted its rules.** Folded with the conductor's wording: literals are
+  legal only in a token definition under a theme root the site configures; the guard never
+  polices which token.
+- **B3, gates red between tasks.** Folded: task 5 adds the root export and its `core.md` entry
+  together. Task 1 creates the snapshot test with the key-set pin and the reader assertion; the
+  page-sync and registry assertions join it in task 11. Delivery states the general rule: each
+  task that adds a public export adds its reference entry.
+- **B4, `check:template` red from task 1.** Verified against `check:template`'s `--check` mode.
+  Folded into Delivery for both passes: each task that edits an emitted showcase file runs
+  `npm run emit:template` in the same task. Task 13 re-emits after the chassis README change. This
+  also covers pass B task 1, whose template preview route import changes. Supersedes S2.
+
+Warnings:
+
+- **W1, Waymark's comma-bearing dark values.** Verified at `theme.css:314-339`: dark
+  `--color-card-border` and `--cairn-shadow` both carry commas. Folded: the layer paragraph drops
+  "needs no hand-synced dark triple" and places a comma-bearing value in that scheme's `:root`
+  block. The Waymark paragraph moves only inks and muted into daisyUI blocks. The `cairn-public`
+  placement rule carries the same exception.
+- **W2, the daisyUI analogy.** Verified in `daisyui/components/button.css`: `--btn-border` mixes
+  toward `#000`. Folded with the reviewer's rewrite.
+- **W3, `site-today-export` overclaim.** Verified: its reopen condition is about discoverability.
+  Folded: the spec now says an export prevents copy drift and a copy cannot, and cites no reopen
+  condition. The proposed ruling text above repeats the old claim. When the pass records
+  `public-css-export`, its Verdict reads: "accept. The defaults are the value half of a contract
+  the engine already owns (the classes it emits into public markup and the tokens those classes
+  and the chassis read). All five sites' copied defaults froze and missed keys added since, a
+  drift an export prevents and a copy cannot." The spec points at this corrected text.
+- **W4, precedence clause.** Folded: the earlier spec governs the agent path's rules and guidance;
+  this spec governs names and paths.
+- **W5, the audit config `sheet` path.** Verified: `templates/waymark/cairn-audit.config.json`
+  and `DEFAULT_SHEET_CANDIDATES` both name `dist/components/cairn-admin.css`. Folded as the fourth
+  part of pass B's `Consumers must:` line. The migration note inherits it ("says the same").
+- **W6, five sites.** Folded per the conductor: first use names "all five sites (the four
+  production sites and cairn.pub)". The promotion trigger and the `cairn-release` step count all
+  five.
+- **W7, stripped-inks case timing.** Folded per the conductor: task 2 measures `N` with Chromium's
+  computed values, and the stripped-inks standing case lands in task 9 with `theme-contrast`. This
+  corrects the trim section's "task 2 covers the stripped-overrides case".
+
+Suggestions:
+
+- **S1** folded: "the new template's", and the changelog line names the two `@theme` colors.
+- **S2** folded through B4.
+- **S3** folded: verified `src/tests/component/admin-theme-equivalence.test.ts` in the pass A
+  worktree; the Proof bullet cites it in place of `equiv.mjs`.
+- **S4** folded: the `design-your-site.md` sentence is quoted (verified at its line 44).
+- **S5** folded: "or".
+- **S6** folded: "the new root export".
+- **S7** folded: the step 6 description no longer quotes the header; it paraphrases.
+- **S8** folded: pass B task 1 names the `components.md` to `admin.md` rename.
+- **S9** folded: Delivery's pass B task 1 carries the Names section.
+- **S10** folded: the engine sheet ships only the structural `display` and `overflow-x` pair;
+  the chassis `prose.css` keeps its `.table-scroll` flow space, scroll-edge shading, and focus
+  rule (verified at `prose.css:366-389`).
+- **S11** folded as an open plan item: whether task 1's snapshot test parses through `sheet.ts`,
+  which would move task 6's fix ahead of it. The plan settles it.
+- **S12** folded: pass A merges "with no `Consumers must:` line".
+- **S13** folded: the contrast frame at the ink paragraph is two sentences, the dependency bullets
+  are one sentence, the long heading-lever line is wrapped, and the F17 check is labelled "gate".
+  The bold lead-ins stay, per the reviewer.
+
+Refused:
+
+- The scanner's `slop-hard` "showcase" hits (12). Each is the proper name of
+  `examples/showcase`; there is no rewrite.

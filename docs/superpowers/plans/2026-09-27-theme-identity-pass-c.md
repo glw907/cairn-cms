@@ -128,9 +128,9 @@ projection, itemized after the review fold:
 | The close: the merge with `main` and the merged-head gates | 0.5M |
 | The release: `npm outdated`, the cut, the five-site counts, the publish check | 0.7M |
 | The conductor sessions | 1.5M |
-| **Projected total** | **about 24.1M** |
+| **Projected total** | **about 24.2M** |
 
-The projection sits above the flag and at the ceiling. Ruling 1 settles how the pass treats that.
+The projection sits above the flag and 0.2M above the ceiling. Ruling 1 settles how the pass treats that.
 Until it is ruled, the plan's reading holds: the conductor raises the running total on S3's page
 as the budget question, rather than stopping when the flag trips.
 
@@ -160,16 +160,17 @@ At each boundary the conductor pushes the branch, writes the ledger at the foot 
 (tasks, spend, decisions, verdicts, each task's `batchedNotes`, next task), and reads CI through
 one Haiku probe. The probe reports failing jobs, failing spec file names, and, for each failure
 inside a visual spec, whether it is a `toHaveScreenshot` mismatch or a missing baseline. The
-conductor opens the pass PR against `main` as a draft at the segment A push, so `pull_request` CI
-runs on every later push. Pass B's own draft PR, if one exists, is left open and closed as
+conductor opens the pass PR against `main` as a draft at task 0's swept head (task 0 item 9), so
+`pull_request` CI runs on the sweep alone and on every later push. Pass B's own draft PR, if one exists, is left open and closed as
 superseded at the merge.
 
 **The expected-red set:** from the segment B push until S1, `site-visual.spec.ts`
 `toHaveScreenshot` mismatches on the ten `styleguide-*` captures fail by design (task 6 changes the
 styleguide's sample kit and one sentence). Task 4's report states whether any `admin-visual`
 capture shows the editor preview frame's `body` ground; if one does, those captures join the set
-from the segment B push. Any capture task 0's dependency sweep moves, named by the segment A CI
-probe, joins the set from the segment A push with the sweep as its owner. Every other
+from the segment B push. Any capture task 0's dependency sweep moves, named by task 0 item 9's CI
+probe on the swept head before task 1 starts, joins the set from that SHA on with the sweep as its
+owner; from the segment A push, any capture outside that list is red as usual. Every other
 `site-visual` capture must stay green, since the Waymark
 render does not move (the equivalence test is the primary proof, the baselines the secondary). A
 crash, a timeout, or a missing locator inside a visual spec is red. A boundary passes when CI's
@@ -310,8 +311,8 @@ gaps this plan found while verifying the spec against the tree.
    template arm needs the network for its registry dependencies.
 5. **The equivalence test's key list: a superset, fixed at capture time.** Every custom property
    the chassis `tokens.css` and Waymark's `theme.css` declare at capture time, plus the 29 keys of
-   `daisyui/theme/object`, plus four computed checks: a focused `cairn-focus-ring` element's
-   `outline-style`, `outline-width`, `outline-color`, and `outline-offset`; `pre.shiki`'s
+   `daisyui/theme/object`, plus four computed checks: the `outline-style`, `outline-width`, `outline-color`, and
+   `outline-offset` of every focused `cairn-focus-ring` element on the pages it loads; `pre.shiki`'s
    `background-color`, `color`, and `border-color`; one `.cairn-tok-*` element's `color`; and
    `.table-scroll`'s `display` and `overflow-x`. Three states: light (a light OS, no cookie), dark by
    OS preference (a dark OS, no cookie), and dark by explicit choice (`data-theme="cairn-dark"`).
@@ -424,8 +425,10 @@ gaps this plan found while verifying the spec against the tree.
     installs the tarball with production dependencies into an empty directory under `os.tmpdir()`
     (outside the repository, removed on exit), verifies the installed `dist/audit` against the pack
     by content hash, and fails if `daisyui` resolves from that directory before the no-peers run.
-    Its minimal fixture site carries a `src/theme/theme.css` with one daisyUI block, so the run
-    reaches peer resolution instead of the empty-scope error. It runs `dist/audit/bin.js` three
+    Its minimal fixture site carries a `src/theme/theme.css` with one daisyUI block and one clean
+    `src/routes/admin/+page.svelte`, so the run reaches peer resolution instead of the public
+    scope's empty-scope error or `runStatic`'s "the static scan matched no files" throw (an empty
+    static scope with no CSS files, `run.ts:157-163`). The report quotes each run's message. It runs `dist/audit/bin.js` three
     times: the full registry without the optional peers (a nonzero exit and the named message, no
     stack trace); one admin-only `--rule` selection without the peers (a clean run, since the peers
     load only when a selected rule needs them, decision 16's logic); and the full registry after
@@ -479,8 +482,10 @@ gaps this plan found while verifying the spec against the tree.
     `cairn-audit.config.json` is emitted byte for byte into `templates/waymark` and baked into
     every scaffolded site, and a configured root the tree lacks throws, so a `../../src/lib/public`
     root there would break every scaffolded site's `check:cairn` (`create-site.yml` runs it). Task
-    7 adds `scripts/checks/public-scope.config.json` (repo-owned, never emitted), which names the
-    showcase's default public roots plus `../../src/lib/public`, and the themeRoots plus
+    7 adds `scripts/checks/public-scope.config.json` (repo-owned, never emitted), which names
+    `public.scope` as `src/theme`, `src/chassis`, `src/routes`, and `../../src/lib/public` (the
+    showcase lacks the defaults' `src/lib/public` and `src/lib/components`, and a configured root
+    the tree lacks throws), and the themeRoots plus
     `../../src/lib/public/cairn-public.css`, relative to the showcase. The packaged audit reads it
     through `--config` from the showcase directory; task 9's successor script passes it. The
     showcase's own config gains no public key, since the defaults cover it. Task 6's
@@ -506,10 +511,11 @@ fallback instead of pinning a visitor to the default block, a behavioral reason 
 answer, and the unit check guards agreement.
 
 1. **Raise the token ceiling to 30M (flag 24M) at approval?** The folded projection is about
-   24.1M against a 24M ceiling, and the global rule asks its 80% question at the next segment
-   boundary, which at 24M would trip around segment D.
-   - **Recommendation: yes.** 30M puts the flag at the projection, so the flag fires only if the
-     pass overruns its plan, which is the flag's job, and the global rule applies unchanged. A
+   24.2M against a 24M ceiling, and the global rule asks its 80% question at the next segment
+   boundary; at 24M the 19.2M flag would trip around S2 (segment E) on the itemized order.
+   - **Recommendation: yes.** 30M puts the flag at 24M, 0.2M under the projection, so on plan
+     it trips only in the release tail after the merge, and earlier only if the pass overruns its
+     plan, which is the flag's job; the global rule applies unchanged. A
      13-task pass that also carries the merge and a release is honestly this size.
    - **Yes builds:** the header reads 30M with the flag at 24M; the conductor asks the 80% question
      at the next segment boundary as the global rule says; the close and the cut never halt on
@@ -543,8 +549,11 @@ answer, and the unit check guards agreement.
   `check:chassis-boundary` parses it.
 - **Each public export adds its reference entry in the same task** (`check:reference`), and a
   task that changes a typed export regenerates `docs/internal/api-surface.md` with `npm run
-  check:surface -- --update` and commits it with the export, so CI's `check:surface` step stays
-  green. One sanctioned exception: task 2's `./cairn-public.css` export is untyped, so neither
+  package && node scripts/checks/check-surface.mjs --update` and commits it with the export, so
+  CI's `check:surface` step stays green. (`npm run check:surface -- --update` regenerates nothing:
+  npm forwards the flag to the script's last command, `check-surface-leaks.mjs`, which ignores it;
+  ROADMAP "npm run check:surface -- --update cannot regenerate". The direct form works whether or
+  not that fix has merged.) One sanctioned exception: task 2's `./cairn-public.css` export is untyped, so neither
   gate reads it, and its page, `public-css.md`, lands in task 11.
 - **A check added to a CI workflow is added to `check:close` at the same position** in the same
   task, since `check:close` mirrors CI's check list.
@@ -613,7 +622,12 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
    B's branch head; `npm ci`; `npm ci --prefix examples/showcase`; confirm with `realpath` that the
    showcase's `node_modules/@glw907/cairn-cms` resolves into this worktree. Then the dependency
    sweep (decision 28), dispatched to one Sonnet agent under the `dependency-upgrade` skill, which
-   commits the bumps and the survey record on the branch. Items 4 and 7 run on the swept tree.
+   commits the bumps and the survey record on the branch. The dispatch carries two constraints.
+   When a showcase manifest changes, the agent re-emits with `npm run emit:template` and runs
+   `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:template'`, since the template is never
+   hand-edited. The skill's refactor decision on each new capability is "file" in task 0: the
+   sweep files any refactor and takes none, so nothing unreviewed lands before the equivalence
+   capture. Items 4, 7, and 9 run on the swept tree.
 4. **Re-verify the plan's facts** (one Sonnet pre-flight agent, read-only), recording each against
    its plan-time value and amending the plan where one moved:
    - The post-rename paths: `src/lib/admin/preview-doc.ts` (plan-time
@@ -661,15 +675,20 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
 6. **The freeze rule:** read the narrative-arm rule in `CLAUDE.md` on the branch and record it.
    Tasks 13 and 15 apply it.
 7. **Baseline gate:** one gate agent runs `cairn-run-gate '<the engine string>'` in the worktree
-   and returns the `gate exit:` line and the tail. It is the only proof of the swept tree before
+   and returns the `gate exit:` line and the tail. It is the only local proof of the swept tree before
    task 1 (pass B's CI proves the unswept head). The conductor quotes it to task 1's reviewer as
    task 0's gate evidence. A red caused by the sweep goes back to the sweep agent once; a stall in
    the serialized component run, or a second red, stops the pass with one message to Geoff.
 8. **The release number is still free:** `npm view @glw907/cairn-cms versions --json` lists no
    `0.98.0` (plan time: newest `0.97.0`).
+9. **The sweep's CI set.** After item 7's green baseline, the conductor pushes the swept head and
+   opens the pass PR against `main` as a draft there. One Haiku probe reads that SHA's CI and names
+   each `site-visual` and `admin-visual` `toHaveScreenshot` mismatch; that list is the sweep's
+   entry in the expected-red set, recorded in the ledger before task 1 starts. Any other red on
+   that SHA goes back to the sweep agent under item 7's rule.
 
-**Acceptance:** the ledger carries items 1 to 8 and the sweep's taken and held versions, and the
-plan is amended and committed where item 4 moved a fact. A stop condition in item 1, 2, 4, or 7 halts the pass with one message to Geoff.
+**Acceptance:** the ledger carries items 1 to 9 and the sweep's taken and held versions, and the
+plan is amended and committed where item 4 moved a fact. A stop condition in item 1, 2, 4, 7, or 9 halts the pass with one message to Geoff.
 
 ---
 
@@ -935,8 +954,8 @@ unit test that proves a throwaway registry entry reaches the styleguide, and `te
 **Outcome:**
 - **`previewMarkdown(def)`** (decision 7) is exported from the root barrel, documented on
   `core.md` in this task, and built on `previewValues` and `serializeComponent` without exporting
-  either. `npm run check:surface -- --update` regenerates `docs/internal/api-surface.md` in the
-  same commit; its diff is the disclosure the reviewer reads.
+  either. `npm run package && node scripts/checks/check-surface.mjs --update` regenerates
+  `docs/internal/api-surface.md` in the same commit; its diff is the disclosure the reviewer reads.
 - **The styleguide** renders one sample per registry entry from its `preview`, serialized through
   `previewMarkdown`. An entry with no `preview` is listed by name as lacking one. The hand-written
   kit goes. The "auto-themes with your system light or dark setting" claim goes; the sentence says
@@ -1012,8 +1031,10 @@ tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.tes
   custom-property definition is legal anywhere under a theme root, a component's `<style>` block
   included. The root element's `font-size` is exempt by rule. Tailwind's own utilities are never
   flagged.
-- **The repo-owned config** (decision 27) sets `public.scope` to the showcase's default public
-  roots plus the engine's `../../src/lib/public`, and `public.themeRoots` to `src/theme`,
+- **The repo-owned config** (decision 27) sets `public.scope` to `src/theme`, `src/chassis`,
+  `src/routes`, and the engine's `../../src/lib/public` (never the literal default list: the
+  showcase has no `src/lib/public` or `src/lib/components`, and a configured root the tree lacks
+  throws), and `public.themeRoots` to `src/theme`,
   `src/chassis/tokens.css`, and `../../src/lib/public/cairn-public.css`. The showcase's own
   `cairn-audit.config.json` does not change. The engine's `src/lib/admin/` is never a public root.
 - **The docs:** `cairn-audit.md` gains the rule's entry, the public scope's section with its config
@@ -1442,8 +1463,8 @@ run. The sitting counts as one execution sitting.
 ### Task 15: Close, merge, and release
 
 **Outcome:** First, `code-simplifier:code-simplifier` runs once over the scope named under
-`code-simplifier` and commits; if it changed a typed declaration, `npm run check:surface --
---update` runs and its diff joins that commit. Then the full gate on that commit, in one gate
+`code-simplifier` and commits; if it changed a typed declaration, `npm run package && node
+scripts/checks/check-surface.mjs --update` runs and its diff joins that commit. Then the full gate on that commit, in one gate
 agent: `npm run check`, `npm run test:node-projects && npm run test:component --
 --no-file-parallelism` (the serialized form of `npm test`, pass A's decision 13), `npm run
 check:close`, `npm --prefix examples/showcase run test:unit` (CI runs it; `check:close` does not),

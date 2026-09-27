@@ -122,7 +122,9 @@ ceremony, and the mid-pass glance (C21, R16) is non-blocking at about 0.1M.
 ## Owed errata (the spec is not edited here)
 
 1. **Spec line 58**, "Audit scope: the public scope, rooted at the engine's `src/lib/public/` by
-   the showcase config." The plan roots it through a repo-owned config
+   the showcase config," and **spec lines 313-315**, "The audit runs from the showcase, whose
+   `cairn-audit.config.json` adds the engine's `src/lib/public/` to the public roots." The plan
+   roots it through a repo-owned config
    (`scripts/checks/public-scope.config.json`), since the showcase config ships to every scaffolded
    site (decision 27).
 2. **Spec line 307**, "The admin static scope skips any file the public scope claims." The plan
@@ -142,3 +144,19 @@ Decision 7's `app.html` regex was flagged by the plan author as a possible taste
 fork: keeping the two theme names gives a returning visitor's stale cookie a graceful fallback
 instead of pinning them to the default block for up to a year, a behavioral trade with a clear
 answer, and the plan keeps it as a decision.
+
+## Second fold
+
+Source: `2026-09-27-theme-pass-c-plan-fold-verification.md` (0 blockers, 3 majors, 5 minors).
+Each claim was checked against the tree before folding. No task was added and no scope changed.
+
+| ID | Disposition | Location |
+| --- | --- | --- |
+| V1 | Folded. Verified: `package.json:40` chains `package`, `check-surface.mjs`, and `check-surface-leaks.mjs`, and only `check-surface.mjs` reads `--update` (`process.argv.includes('--update')`, `:425`), so the npm-forwarded flag lands on the leaks script. Every regeneration now names `npm run package && node scripts/checks/check-surface.mjs --update`, which works whether or not the chores fix has merged. | Global constraints (the reference-entry bullet, with the reason); task 6 outcome; task 15 outcome |
+| V2 | Folded. Verified: `runStatic` throws when the static scope (default `src/routes/admin` among its roots) and `static.cssFiles` are both empty (`run.ts:157-163`), before any rule runs. The fixture site gains one clean `src/routes/admin/+page.svelte`, and the report quotes each run's message. The throw stays unconditional. | Decision 20 |
+| V3 | Folded. New task 0 item 9: after item 7's green baseline, the conductor pushes the swept head, opens the draft PR there, and one Haiku probe names that SHA's visual mismatches as the sweep's set before task 1. The boundary paragraph and the expected-red set point at it; the acceptance and stop list cover item 9. About 0.1M, not added to the table (see V5). | Segments paragraph; expected-red set; task 0 items 3, 7, 9 and acceptance |
+| V4 | Folded. Verified: `examples/showcase/src/lib` holds only `log.ts`, and a configured root the tree lacks throws (`run.ts:54`). The repo-owned config names `src/theme`, `src/chassis`, `src/routes`, and `../../src/lib/public`. | Decision 27; task 7 outcome |
+| V5 | Folded. The rows sum to 24.2M. The projection line, the "above the ceiling" sentence, and ruling 1's numbers are corrected: the 24M ceiling's flag trips around S2 (segment E), and 30M's 24M flag sits 0.2M under the projection, so on plan it trips in the release tail. The 30M recommendation stands. V3's 0.1M would bring the sum to about 24.3M, which does not change the ruling. | Token ceiling table and following sentence; Rulings for Geoff, ruling 1 |
+| V6 | Folded. Erratum 1 now cites spec:58 and spec:313-315 (verified). | Owed errata, erratum 1 (this file) |
+| V7 | Folded. The sweep dispatch re-emits the template and runs `check:template` when a showcase manifest changes, and files every refactor without taking one. | Task 0 item 3 |
+| V8 | Folded. Decision 5 reads every focused `cairn-focus-ring` element on the pages it loads. | Decision 5 |

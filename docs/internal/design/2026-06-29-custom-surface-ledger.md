@@ -618,7 +618,7 @@ way.
   `ring-base-content/55`, and dark from rule 10's own locked `oklch(57% 0.012 75)`. Both seeds
   clear 3:1 against `base-100`, but neither clears 3:1 against a resting sibling's own 22% edge
   (task 5's plain hairline) composited on `base-100`: light measures 2.303:1, dark 1.935:1.
-  Measured against the seed value, one seed measures over 3:1 on the base-100 row and under 3:1 on
+  Measured against the seed value, each seed measures over 3:1 on the base-100 row and under 3:1 on
   the resting-sibling row; per decision 2 each moves in lightness only, staying inside its own
   seed's formula: light from 55% to 65% (4.873:1 base-100, 3.136:1 resting sibling), dark's own `L`
   channel from 57% to 70% (6.115:1 base-100, 3.233:1 resting sibling).
@@ -630,6 +630,10 @@ way.
   exclusion, unlike the wash rule above: an outline or dashed variant control needs this same ink
   repair, not the neutral wash.
 
-`idiomLayerCap` rises from `11` to `16`: the wash/weight/ink-reset selector, the two per-theme
-hairline selectors, the hover selector, and the widened rule 11 selector. The unlayered allowlist
-drops from 18 to 15: rules 10, 11 (its old unwidened form), and 12 all leave the unlayered block.
+`idiomLayerCap` rises from `11` to `17`: the wash/weight/ink-reset selector, the two per-theme
+hairline selectors, the hover selector (guarded on `@media (hover: hover)`, the modality gate), the
+widened rule 11 selector, and the plain hairline's own fill step, split into an unguarded `:active`
+copy and a hover copy under the same guard. `.btn-link` also joins the wash/weight/ink-reset and
+hairline selectors' exclusion list, so a selected nav or breadcrumb link keeps daisyUI's own link
+look. The unlayered allowlist drops from 18 to 15: rules 10, 11 (its old unwidened form), and 12 all
+leave the unlayered block.

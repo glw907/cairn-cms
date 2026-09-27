@@ -152,13 +152,16 @@ describe.each(THEMES)('the selected segment (%s)', (theme) => {
   // daisyUI's own :checked rule sets --btn-fg to --color-primary-content on any checked .btn
   // regardless of variant; the selected-segment rule resets it back to the plain ink for the
   // non-variant case, so a checked radio join segment reads its own text ink, never
-  // primary-content painted on the neutral wash.
-  it("resolves a checked radio segment's ink to the selected ink, at 4.5:1 or better against the wash", () => {
+  // primary-content painted on the neutral wash, at every state.
+  it("resolves a checked radio segment's ink to the selected ink, at 4.5:1 or better against the wash, at every state", async () => {
     const { el, cleanup } = mount(theme, '<input type="radio" class="join-item btn" checked />');
     try {
-      const style = getComputedStyle(el);
-      expect(style.color).toBe(resolveColor('var(--color-base-content)', theme));
-      expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      for (const state of STATES) {
+        const color = await styleOf(el, 'color', state);
+        const backgroundColor = await styleOf(el, 'background-color', state);
+        expect(color).toBe(resolveColor('var(--color-base-content)', theme));
+        expect(contrastRatio(color, backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      }
     } finally {
       cleanup();
     }
@@ -225,19 +228,42 @@ describe.each(THEMES)('the selected segment (%s)', (theme) => {
   });
 });
 
+// btn-link sits in the selected-segment rule's exclusion list: a nav or breadcrumb link marked
+// current keeps daisyUI's own link look (no fill, no border, its own weight) rather than the
+// neutral wash and the hairline.
+describe.each(THEMES)('a selected btn-link is excluded from the selected segment (%s)', (theme) => {
+  it('keeps daisyUI stock background, border, and weight when carrying aria-current', () => {
+    const selected = mount(theme, '<button class="btn btn-link" aria-current="page">Save</button>');
+    const stock = mount(theme, '<button class="btn btn-link">Save</button>');
+    try {
+      const selectedStyle = getComputedStyle(selected.el);
+      const stockStyle = getComputedStyle(stock.el);
+      expect(selectedStyle.backgroundColor).toBe(stockStyle.backgroundColor);
+      expect(selectedStyle.borderTopColor).toBe(stockStyle.borderTopColor);
+      expect(selectedStyle.fontWeight).toBe(stockStyle.fontWeight);
+    } finally {
+      selected.cleanup();
+      stock.cleanup();
+    }
+  });
+});
+
 // Review focus 1: a color-variant selected control must keep its own accent fill, never the
 // neutral wash, on every one of the five forms. The dark Warm Stone neutral family (the wash's own
 // hue) sits at 0.009-0.014 chroma; --color-primary and --color-error each sit far higher. 0.05
 // sits well clear of the neutral ceiling and well under either variant's own floor, so it
-// discriminates a kept accent from a collapsed one regardless of theme or form.
+// discriminates a kept accent from a collapsed one regardless of theme or form. The border is
+// checked against the selected segment's own hairline, never the variant's own edge formula, since
+// a variant control's edge is not this rule's concern.
 describe.each(THEMES)('review focus 1: a variant selected control keeps its accent (%s)', (theme) => {
   it.each(SELECTED_FORMS)(
-    '$name on btn-primary keeps a colored fill, not the neutral wash, at every state',
+    '$name on btn-primary keeps a colored fill, not the neutral wash, and never the hairline border, at every state',
     async ({ markup }) => {
       const { el, cleanup } = mount(theme, markup('btn btn-primary'));
       try {
         for (const state of STATES) {
           expect(backgroundChroma(await styleOf(el, 'background-color', state))).toBeGreaterThan(0.05);
+          expect(await styleOf(el, 'border-top-color', state)).not.toBe(resolveColor(HAIRLINE[theme], theme));
         }
       } finally {
         cleanup();
@@ -246,12 +272,13 @@ describe.each(THEMES)('review focus 1: a variant selected control keeps its acce
   );
 
   it.each(SELECTED_FORMS)(
-    '$name on btn-error keeps a colored fill, not the neutral wash, at every state',
+    '$name on btn-error keeps a colored fill, not the neutral wash, and never the hairline border, at every state',
     async ({ markup }) => {
       const { el, cleanup } = mount(theme, markup('btn btn-error'));
       try {
         for (const state of STATES) {
           expect(backgroundChroma(await styleOf(el, 'background-color', state))).toBeGreaterThan(0.05);
+          expect(await styleOf(el, 'border-top-color', state)).not.toBe(resolveColor(HAIRLINE[theme], theme));
         }
       } finally {
         cleanup();

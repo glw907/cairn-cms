@@ -23,7 +23,7 @@
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .input:not(:focus, :focus-within, :disabled, [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .select:not(:focus, :focus-within, .toolkit-toolbar-select, :disabled, [disabled], .select-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .textarea:not(:focus, :focus-within, :disabled, [disabled], .textarea-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false']))"
         ],
         "componentsLayerCap": 16,
-        "idiomLayerCap": 16,
+        "idiomLayerCap": 17,
         "retiredTokenBudget": 0
       }
     },

@@ -898,15 +898,15 @@
        bare button reads as an outlined affordance rather than a filled one. --btn-border holds one
        value across rest, hover, focus-visible, and active (the same one-value-across-every-state
        pattern the warm lift above uses), since the edge itself is not meant to move; --btn-bg
-       steps to an explicit fill only at hover and active (the same value at both, so one selector
-       covers both), and focus-visible falls back to this rule's own rest value because the focus
-       ring itself already carries that state. The selector excludes every daisyUI color and style
-       variant, each of the forms daisyUI (and this admin) key a selected control on (.btn-active,
-       aria-pressed, aria-checked, aria-current, and a checked radio styled as a join segment), and
-       every disabled form, so a selected or disabled plain button is left to whatever rule or
-       daisyUI default already governs it. --btn-color is never set: daisyUI draws the focus ring
-       in --btn-color, and a base-100 ring would vanish on a base-100 card. join-item segments are
-       included; a join is a layout composition of plain buttons, not a variant of its own. */
+       steps to an explicit fill at hover and active, the same value at both. The selector excludes
+       every daisyUI color and style variant, each of the forms daisyUI (and this admin) key a
+       selected control on (.btn-active, aria-pressed, aria-checked, aria-current, and a checked
+       radio styled as a join segment), and every disabled form, so a selected or disabled plain
+       button is left to whatever rule or daisyUI default already governs it. --btn-color is never
+       set: daisyUI draws the focus ring in --btn-color, and a base-100 ring would vanish on a
+       base-100 card. join-item segments are included; a join is a layout composition of plain
+       buttons, not a variant of its own. focus-visible falls back to this rule's own rest value
+       because the focus ring itself already carries that state. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .btn:not(
         .btn-primary,
@@ -935,6 +935,11 @@
       --btn-border: color-mix(in oklab, var(--color-base-content) 22%, transparent);
       --btn-bg: var(--color-base-100);
     }
+
+    /* The fill step's active copy, unguarded: a touch tap fires :active with no :hover at all, so
+       the pressed fill has to stay reachable outside any hover-capability gate. Split out of a
+       single :is(:hover, :active) selector so the hover copy below can carry the modality gate
+       without also gating this one. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .btn:not(
         .btn-primary,
@@ -959,8 +964,42 @@
         :disabled,
         [disabled],
         [aria-disabled='true']
-      ):is(:hover, :active) {
+      ):active {
       --btn-bg: color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100));
+    }
+
+    /* The same fill step's hover copy, at the identical value: gated on @media (hover: hover)
+       because a touch device fires :hover on tap-and-hold with no release event, so an ungated
+       hover fill could strand on the last-tapped button. The active copy above stays outside the
+       guard, since a touch tap still needs its own pressed fill. */
+    @media (hover: hover) {
+      :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+        .btn:not(
+          .btn-primary,
+          .btn-secondary,
+          .btn-accent,
+          .btn-neutral,
+          .btn-info,
+          .btn-success,
+          .btn-warning,
+          .btn-error,
+          .btn-ghost,
+          .btn-soft,
+          .btn-outline,
+          .btn-dash,
+          .btn-link,
+          .btn-active,
+          [aria-pressed='true'],
+          [aria-checked='true'],
+          [aria-current]:not([aria-current='false'], [aria-current='']),
+          :checked:not(.filter [type='radio'].btn),
+          .btn-disabled,
+          :disabled,
+          [disabled],
+          [aria-disabled='true']
+        ):hover {
+        --btn-bg: color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100));
+      }
     }
 
     /* The emphasis ladder's opener: btn-neutral hovers one step into --cairn-ink-hover (the same
@@ -968,9 +1007,14 @@
        and active fills stay daisyUI's stock .btn-neutral. A mouse press still matches :hover in
        addition to :active, and this sublayer outranks daisyUI's own :active rule regardless of
        specificity, so without the :not(:active) guard a held press would keep showing this hover
-       ink instead of daisyUI's own pressed fill. */
-    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-neutral:hover:not(:active) {
-      --btn-bg: var(--cairn-ink-hover);
+       ink instead of daisyUI's own pressed fill. @media (hover: hover) keeps the step off a touch
+       device for the same reason the fill step above is gated: tap-and-hold fires :hover with no
+       release event, and :not(:active) still applies inside the guard, since a mouse held down on
+       a hover-capable device also matches :hover. */
+    @media (hover: hover) {
+      :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-neutral:hover:not(:active) {
+        --btn-bg: var(--cairn-ink-hover);
+      }
     }
 
     /* Button type: daisyUI sets every .btn label at weight 600 with no variable to redirect, so a
@@ -1048,8 +1092,11 @@
        segment render identically either theme. The wash alone measures only about 1.16:1 against a
        resting sibling's own base-100 fill, under the WCAG 1.4.11 non-text floor a state a control's
        meaning depends on, so an inset hairline rides --btn-border below, the design system's own
-       pressed-state device. --btn-fg resets to the plain ink: daisyUI's own :checked rule sets
-       --btn-fg to --color-primary-content on any checked .btn regardless of variant, and this
+       pressed-state device. btn-link also sits in this rule's exclusion list, alongside every
+       color variant and btn-outline/btn-dash, so a nav or breadcrumb link marked current keeps
+       daisyUI's own link look rather than the neutral wash. --btn-fg resets to the plain ink:
+       daisyUI's own :checked rule sets --btn-fg to --color-primary-content on any checked .btn
+       regardless of variant, and this
        rule's own exclusion list already keeps every color variant out, so the reset only ever
        touches the plain checked case (a checked radio styled as a join segment), never a variant
        control's own accent. The wash, ink, and weight carry no pseudo-class,
@@ -1068,6 +1115,7 @@
         .btn-error,
         .btn-outline,
         .btn-dash,
+        .btn-link,
         .btn-disabled,
         :disabled,
         [disabled],
@@ -1104,6 +1152,7 @@
         .btn-error,
         .btn-outline,
         .btn-dash,
+        .btn-link,
         .btn-disabled,
         :disabled,
         [disabled],
@@ -1136,6 +1185,7 @@
         .btn-error,
         .btn-outline,
         .btn-dash,
+        .btn-link,
         .btn-disabled,
         :disabled,
         [disabled],
@@ -1155,31 +1205,37 @@
        leaving no visible hover feedback without a second, higher-specificity rule scoped to
        :hover. :not(:active) keeps a held press, which still matches :hover, reading the resting
        wash instead, the same guard the btn-neutral hover step above uses, so active holds the
-       rest value rather than a fourth, deeper step. */
-    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-      .btn:not(
-        .btn-primary,
-        .btn-secondary,
-        .btn-accent,
-        .btn-neutral,
-        .btn-info,
-        .btn-success,
-        .btn-warning,
-        .btn-error,
-        .btn-outline,
-        .btn-dash,
-        .btn-disabled,
-        :disabled,
-        [disabled],
-        [aria-disabled='true']
-      ):is(
-        .btn-active,
-        [aria-pressed='true'],
-        [aria-checked='true'],
-        [aria-current]:not([aria-current='false'], [aria-current='']),
-        :checked:not(.filter [type='radio'].btn)
-      ):hover:not(:active) {
-      --btn-bg: color-mix(in oklab, var(--color-base-content) 12%, var(--color-base-100));
+       rest value rather than a fourth, deeper step. @media (hover: hover) keeps the step itself
+       off a touch device, whose tap-and-hold fires :hover with no release event and could
+       otherwise strand this deeper wash on the last-tapped segment; :not(:active) still applies
+       inside the guard, since a mouse held down on a hover-capable device also matches :hover. */
+    @media (hover: hover) {
+      :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+        .btn:not(
+          .btn-primary,
+          .btn-secondary,
+          .btn-accent,
+          .btn-neutral,
+          .btn-info,
+          .btn-success,
+          .btn-warning,
+          .btn-error,
+          .btn-outline,
+          .btn-dash,
+          .btn-link,
+          .btn-disabled,
+          :disabled,
+          [disabled],
+          [aria-disabled='true']
+        ):is(
+          .btn-active,
+          [aria-pressed='true'],
+          [aria-checked='true'],
+          [aria-current]:not([aria-current='false'], [aria-current='']),
+          :checked:not(.filter [type='radio'].btn)
+        ):hover:not(:active) {
+        --btn-bg: color-mix(in oklab, var(--color-base-content) 12%, var(--color-base-100));
+      }
     }
 
     /* The outline/dash ink repair for a selected control, widened: moved out of the unlayered

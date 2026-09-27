@@ -48,3 +48,8 @@ create the same look and feel."
 5. Hand-authored inline SVGs at the default 2px stroke move to 1.75; deliberately heavier
    strokes keep their values.
 6. The editor's 30px document title stays at 700; the settle audit grades it.
+
+Rename after the fold verification (2026-09-26): ruling 1's sublayer `cairn-theme` is renamed
+`cairn-idiom`. "The cairn theme" already names the public opt-in identity layer
+(`examples/cairn-theme/`), and the names convention gives each part one name
+(`docs/internal/docs-register.md`, "Names").

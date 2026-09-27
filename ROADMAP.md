@@ -294,6 +294,8 @@ The original decision framing, for the record:
   - The six-audience ruling and the audience-profile format on the unmerged branch
     `docs-reset-2a-audiences` (on origin). The profiles themselves were never written.
   - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
+  - The designer's theme guide is a primary page (Geoff, 2026-09-27): it documents the one
+    public theme contract (Next, "One public theme") and is drafted after that contract settles.
   - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
     on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
     DaisyUI. It links to DaisyUI's theme docs rather than restating them.
@@ -879,7 +881,9 @@ the named human gates only):**
     shipped agent guidance, parallel to theme identity pass B's admin guidance.
 
   Trigger: theme identity pass B, which it sits beside. Fold it into pass B's planning or run it
-  as the pass after.
+  as the pass after. It also feeds the draft documentation work (Now): theming cairn is a primary
+  docs topic, and the designer's theme guide documents this contract, so the guide is drafted
+  against the settled contract, not today's hand-kept one.
 
 - **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or

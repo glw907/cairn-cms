@@ -17,8 +17,8 @@
 import { describe, expect, it } from 'vitest';
 import { commands } from 'vitest/browser';
 import adminSource from '../../lib/components/cairn-admin.css?raw';
-import bareExpected from '../fixtures/admin-theme-computed.json';
-import hostileExpected from '../fixtures/admin-theme-computed-hostile.json';
+import bareExpected from '../fixtures/admin-theme-computed.json' with { type: 'json' };
+import hostileExpected from '../fixtures/admin-theme-computed-hostile.json' with { type: 'json' };
 import { renderInTheme, type Theme } from './_idiom-probe.js';
 
 /** Computed values keyed by element, then by property. */

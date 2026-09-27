@@ -61,3 +61,6 @@ Rename after the fold verification (2026-09-26): ruling 1's sublayer `cairn-them
   completed this effort."): the theme identity pass goes first and branches from `main` now. Draft
   docs pass 0+1 pauses at its next gate-green segment boundary (Geoff chose "Pause at next green
   boundary"), keeps its work on `draft-docs-0` unmerged, and resumes after this effort merges.
+- Pass A plan approved (Geoff, 2026-09-26, chose "Approve and run overnight"): 20M ceiling, one
+  pass; run tasks 0 to 14 and the settle round unattended, stopping at the resume point before the
+  S3 owner sitting. Nothing merges or publishes overnight.

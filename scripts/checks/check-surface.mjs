@@ -83,6 +83,7 @@ function resolveAlias(checker, sym) {
  * @param {import('typescript').Type} type
  */
 function renderIndexSignatures(checker, type) {
+  /** @type {Record<string, number>} */
   const keyOrder = { string: 0, number: 1, symbol: 2 };
   return checker
     .getIndexInfosOfType(type)

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, onTestFinished, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import { createRawSnippet, mount, unmount } from 'svelte';
@@ -878,6 +878,11 @@ describe('CairnAdminShell', () => {
   });
 
   it('exposes the drawer opener as a button whose aria-expanded mirrors the drawer state', async () => {
+    // The opener is lg:hidden, so the compiled sheet removes it from the accessibility tree at the
+    // suite's ambient 1280x720 (the persistent-sidebar breakpoint). This test drops below lg,
+    // where a reader actually meets the opener, and restores the ambient default after.
+    await page.viewport(768, 700);
+    onTestFinished(() => page.viewport(1280, 720));
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const opener = screen.getByRole('button', { name: 'Open menu' });
     await expect.element(opener).toHaveAttribute('aria-expanded', 'false');

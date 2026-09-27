@@ -17,7 +17,7 @@ name: tsgo
 # reachable `.svelte` file's raw source over its `.d.ts` companion, so it re-type-checks this
 # repo's own already-built `dist/*.svelte` output (whose `<script>` blocks were deliberately
 # transpiled to plain JS by `scripts/build/transpile-dist-svelte.mjs`). Those diagnostics, plus
-# one false positive on a deliberately-invalid lint fixture the same blanket file scan reaches,
+# an expected error on a deliberately-invalid lint fixture the same blanket file scan reaches,
 # are svelte-check artifacts that TypeScript 6 reports identically; they are not signal for "is
 # TypeScript 7 a bump". Diffing against the TS6 baseline is what makes the job report only what
 # TypeScript 7 actually adds. A green run is the signal that the 7.x edges have closed and the
@@ -50,12 +50,14 @@ jobs:
       - name: TypeScript 6 baseline (svelte-check --incremental)
         run: |
           npx svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js --incremental --output machine > ts6.log 2>&1 || true
+          grep -q ' COMPLETED ' ts6.log || { echo "svelte-check --incremental (TS6 baseline) did not complete:"; cat ts6.log; exit 1; }
           grep ' ERROR ' ts6.log | cut -d' ' -f3- | sort > ts6-errors.txt || true
           echo "TypeScript 6 baseline: $(wc -l < ts6-errors.txt) error(s)"
       - run: npm install --no-save --no-package-lock "@typescript/native@npm:typescript@7"
       - name: TypeScript 7 run (svelte-check --tsgo) and diff against the baseline
         run: |
           npx svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js --tsgo --output machine > ts7.log 2>&1 || true
+          grep -q ' COMPLETED ' ts7.log || { echo "svelte-check --tsgo did not complete:"; cat ts7.log; exit 1; }
           grep ' ERROR ' ts7.log | cut -d' ' -f3- | sort > ts7-errors.txt || true
           echo "TypeScript 6 baseline: $(wc -l < ts6-errors.txt) error(s)"
           echo "TypeScript 7 (tsgo):   $(wc -l < ts7-errors.txt) error(s)"

@@ -59,6 +59,8 @@ runs on feature worktrees off `main`, one per pass, so `main` stays releasable. 
 version, the unpublished window, and the next action live in `docs/STATUS.md`.
 
 Execute a plan task-by-task through the `cairn-implementer` chain (details under Tooling below).
+A plan header declares `Pass class:`, which sets each task's gate, review bar, test mandate, and
+close steps; the class table lives in the `cairn-pass` skill.
 The **`cairn-pass`** skill marks pass start and the pass-end ritual. Honor this repo's own skills
 and conventions while working in it.
 
@@ -70,21 +72,16 @@ durable orientation only.
 
 - **Implementer subagent** (user-scoped): `cairn-implementer` drives one plan task test-first and
   clears the full gate before reporting done (targeted test + `npm run check` 0/0 + `npm test` exit
-  0), with the cairn conventions baked in. Pinned to Sonnet; the main loop orchestrates, reviews
-  each diff, and verifies the gate between dispatches.
+  0), with the cairn conventions baked in. Pinned to Sonnet. The `diff-reviewer` agent reads each
+  task's diff and the gate runs inside the chain; the conductor stays thin and rules on reports.
 - **Review subagents** (user-scoped, read-only): `svelte-reviewer`, `cloudflare-workers-reviewer`,
   `web-auth-security-reviewer`, `daisyui-a11y-reviewer`, pinned to `claude-opus-5-5`. Fan them out in
   parallel at a review gate to complement `/code-review`.
-- **Subagent models:** the workstation `.bashrc` sets `CLAUDE_CODE_SUBAGENT_MODEL=inherit`, so
-  each agent's frontmatter `model:` wins, and a per-dispatch `model` beats the frontmatter.
-  Upshift a single correctness-critical task with `model: opus`; `model: fable` only when an Opus
-  verdict itself hedges on something that matters. Sonnet implements, Opus 5.5 reviews, and model
-  diversity is part of the
-  gate; the `code-simplifier` plugin agent pins Opus. Per Anthropic's model guidance (Geoff,
-  2026-09-23), Opus 5.5 brainstorms, authors plans at `high`, and conducts execution; Fable 5.1
-  is reached only after Opus 5.5 at `xhigh` falls short. A pass's executing session runs on
-  `claude-opus-5-5` and never reads diffs itself; the `diff-reviewer` agent does, per the global
-  "Conducting a pass" rule.
+- **Subagent models:** seats, efforts, and the dispatch default follow the global "Conducting a
+  pass" rule. Sonnet implements, Opus 5.5 reviews, and model diversity is part of the gate; the
+  `code-simplifier` plugin agent pins Opus. Upshift a single correctness-critical task with
+  `model: opus`; `model: fable` only after Opus 5.5 at `xhigh` falls short. A pass's executing
+  session runs on `claude-opus-5-5` and never reads diffs itself; the `diff-reviewer` agent does.
 - **Claude tooling for this stack** lives at user scope, not in this repo: the official DaisyUI
   skill (the component reference every implementer and reviewer reads; prefer a stock DaisyUI
   component over a home-grown one unless `docs/internal/engine-rulings.md` records the defect

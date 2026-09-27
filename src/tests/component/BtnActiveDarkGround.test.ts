@@ -15,11 +15,11 @@ const STATES: IdiomState[] = ['rest', 'hover', 'focus-visible', 'active'];
 
 const WASH = 'color-mix(in oklab, var(--color-base-content) 7%, var(--color-base-100))';
 const WASH_HOVER = 'color-mix(in oklab, var(--color-base-content) 12%, var(--color-base-100))';
-// Decision 2's own seed values: light from the 55% base-content mix segmented-control.ts's
+// The seed hairline values: light from the 55% base-content mix segmented-control.ts's
 // segmentTintClass already compiles to from ring-base-content/55, dark from the superseded rule's
 // own locked oklch(57% 0.012 75). Both clear 3:1 against base-100, but neither clears 3:1 against
 // a resting sibling's own 22% edge composited on base-100, so the shipped HAIRLINE below moves
-// each in lightness only, per decision 2.
+// each in lightness only.
 const SEED_HAIRLINE: Record<Theme, string> = {
   'cairn-admin': 'color-mix(in oklab, var(--color-base-content) 55%, transparent)',
   'cairn-admin-dark': 'oklch(57% 0.012 75)',
@@ -30,7 +30,7 @@ const HAIRLINE: Record<Theme, string> = {
   'cairn-admin': 'color-mix(in oklab, var(--color-base-content) 65%, transparent)',
   'cairn-admin-dark': 'oklch(70% 0.012 75)',
 };
-// Task 5's plain btn hairline edge, the resting sibling a selected segment sits beside in a join.
+// The plain button hairline edge, the resting sibling a selected segment sits beside in a join.
 const RESTING_EDGE = 'color-mix(in oklab, var(--color-base-content) 22%, transparent)';
 
 /**
@@ -151,8 +151,8 @@ describe.each(THEMES)('the selected segment (%s)', (theme) => {
 
   // daisyUI's own :checked rule sets --btn-fg to --color-primary-content on any checked .btn
   // regardless of variant; the selected-segment rule resets it back to the plain ink for the
-  // non-variant case decision 9 calls for, so a checked radio join segment reads its own text ink,
-  // never primary-content painted on the neutral wash.
+  // non-variant case, so a checked radio join segment reads its own text ink, never
+  // primary-content painted on the neutral wash.
   it("resolves a checked radio segment's ink to the selected ink, at 4.5:1 or better against the wash", () => {
     const { el, cleanup } = mount(theme, '<input type="radio" class="join-item btn" checked />');
     try {
@@ -184,11 +184,11 @@ describe.each(THEMES)('the selected segment (%s)', (theme) => {
     }
   });
 
-  // Decision 2's seed values, measured against the pair table's own hairline rows: the hairline
+  // The seed hairline values, measured against the pair table's own hairline rows: the hairline
   // composited on base-100 against base-100, and the same hairline against the resting sibling's
   // 22% edge composited on base-100. Both painted through the shared canvas oracle and measured
   // through the audit's own composite/contrastRatio, never hand-rolled.
-  it('clears 3:1 on both pair-table rows, moved in lightness from decision 2\'s seed where the seed falls short', () => {
+  it('clears 3:1 on both pair-table rows, moved in lightness from the seed where the seed falls short', () => {
     const { el, cleanup } = mount(theme, '<button class="join-item btn btn-active">Save</button>');
     try {
       const border = getComputedStyle(el).borderTopColor;
@@ -207,9 +207,8 @@ describe.each(THEMES)('the selected segment (%s)', (theme) => {
 
       const seed = measure(SEED_HAIRLINE[theme]);
       const shipped = measure(HAIRLINE[theme]);
-      // The report states both ratios in each theme (task acceptance): the seed clears the
-      // base-100 ground row but falls short of the resting-sibling row, which is why the shipped
-      // value moved in lightness.
+      // Both ratios in each theme: the seed clears the base-100 ground row but falls short of the
+      // resting-sibling row, which is why the shipped value moved in lightness.
       console.log(
         `selected-segment hairline seed (${theme}): ground ${seed.ground.toFixed(3)}:1, sibling ${seed.sibling.toFixed(3)}:1`,
       );
@@ -232,34 +231,47 @@ describe.each(THEMES)('the selected segment (%s)', (theme) => {
 // sits well clear of the neutral ceiling and well under either variant's own floor, so it
 // discriminates a kept accent from a collapsed one regardless of theme or form.
 describe.each(THEMES)('review focus 1: a variant selected control keeps its accent (%s)', (theme) => {
-  it.each(SELECTED_FORMS)('$name on btn-primary keeps a colored fill, not the neutral wash', ({ markup }) => {
-    const { el, cleanup } = mount(theme, markup('btn btn-primary'));
-    try {
-      expect(backgroundChroma(getComputedStyle(el).backgroundColor)).toBeGreaterThan(0.05);
-    } finally {
-      cleanup();
-    }
-  });
+  it.each(SELECTED_FORMS)(
+    '$name on btn-primary keeps a colored fill, not the neutral wash, at every state',
+    async ({ markup }) => {
+      const { el, cleanup } = mount(theme, markup('btn btn-primary'));
+      try {
+        for (const state of STATES) {
+          expect(backgroundChroma(await styleOf(el, 'background-color', state))).toBeGreaterThan(0.05);
+        }
+      } finally {
+        cleanup();
+      }
+    },
+  );
 
-  it.each(SELECTED_FORMS)('$name on btn-error keeps a colored fill, not the neutral wash', ({ markup }) => {
-    const { el, cleanup } = mount(theme, markup('btn btn-error'));
-    try {
-      expect(backgroundChroma(getComputedStyle(el).backgroundColor)).toBeGreaterThan(0.05);
-    } finally {
-      cleanup();
-    }
-  });
+  it.each(SELECTED_FORMS)(
+    '$name on btn-error keeps a colored fill, not the neutral wash, at every state',
+    async ({ markup }) => {
+      const { el, cleanup } = mount(theme, markup('btn btn-error'));
+      try {
+        for (const state of STATES) {
+          expect(backgroundChroma(await styleOf(el, 'background-color', state))).toBeGreaterThan(0.05);
+        }
+      } finally {
+        cleanup();
+      }
+    },
+  );
 });
 
 // The selected-segment rule sets --btn-fg, not color, so a plain selected segment's own text
 // utility still wins over it, an unnested Tailwind declaration beating a nested sublayer's
 // variable regardless of which of the five forms selected it.
 describe.each(THEMES)('a selected plain segment keeps its own text utility (%s)', (theme) => {
-  it.each(SELECTED_FORMS)('$name with text-error keeps the red ink', ({ markup }) => {
+  it.each(SELECTED_FORMS)('$name with text-error keeps the red ink, at every state', async ({ markup }) => {
     const { el, cleanup } = mount(theme, markup('btn text-error'));
     const reference = mount(theme, '<span class="text-error"></span>');
     try {
-      expect(getComputedStyle(el).color).toBe(getComputedStyle(reference.el).color);
+      const expectedInk = getComputedStyle(reference.el).color;
+      for (const state of STATES) {
+        expect(await styleOf(el, 'color', state)).toBe(expectedInk);
+      }
     } finally {
       cleanup();
       reference.cleanup();
@@ -274,46 +286,65 @@ describe.each(THEMES)('a selected plain segment keeps its own text utility (%s)'
 // own fill. Restating color off --btn-fg repairs it on either theme, for a neutral or a
 // color-variant outline control alike.
 describe.each(THEMES)("rule 11 widened: an outline/dash selected control's ink (%s)", (theme) => {
-  it.each(OUTLINE_ELEMENT_FORMS)('$name on a neutral btn-outline takes --btn-fg ink, legible at AA', ({ markup }) => {
-    const { el, cleanup } = mount(theme, markup('btn btn-outline'));
-    try {
-      const style = getComputedStyle(el);
-      expect(style.color).toBe(resolveColor('var(--btn-fg, var(--color-base-content))', theme, el));
-      expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
-    } finally {
-      cleanup();
-    }
-  });
+  it.each(OUTLINE_ELEMENT_FORMS)(
+    '$name on a neutral btn-outline takes --btn-fg ink, legible at AA, at every state',
+    async ({ markup }) => {
+      const { el, cleanup } = mount(theme, markup('btn btn-outline'));
+      try {
+        for (const state of STATES) {
+          const color = await styleOf(el, 'color', state);
+          const backgroundColor = await styleOf(el, 'background-color', state);
+          expect(color).toBe(resolveColor('var(--btn-fg, var(--color-base-content))', theme, el));
+          expect(contrastRatio(color, backgroundColor)).toBeGreaterThanOrEqual(4.5);
+        }
+      } finally {
+        cleanup();
+      }
+    },
+  );
 
-  it.each(OUTLINE_ELEMENT_FORMS)('$name on btn-outline btn-primary takes --btn-fg ink, legible at AA', ({ markup }) => {
-    const { el, cleanup } = mount(theme, markup('btn btn-outline btn-primary'));
-    try {
-      const style = getComputedStyle(el);
-      expect(style.color).toBe(resolveColor('var(--btn-fg, var(--color-base-content))', theme, el));
-      expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
-    } finally {
-      cleanup();
-    }
-  });
+  it.each(OUTLINE_ELEMENT_FORMS)(
+    '$name on btn-outline btn-primary takes --btn-fg ink, legible at AA, at every state',
+    async ({ markup }) => {
+      const { el, cleanup } = mount(theme, markup('btn btn-outline btn-primary'));
+      try {
+        for (const state of STATES) {
+          const color = await styleOf(el, 'color', state);
+          const backgroundColor = await styleOf(el, 'background-color', state);
+          expect(color).toBe(resolveColor('var(--btn-fg, var(--color-base-content))', theme, el));
+          expect(contrastRatio(color, backgroundColor)).toBeGreaterThanOrEqual(4.5);
+        }
+      } finally {
+        cleanup();
+      }
+    },
+  );
 
   // A replaced <input> element renders no child box, so resolveColor's context probe (a mounted
   // child) cannot read a cascaded value from it; the checked-radio form is proven by contrast
-  // instead, the same legibility property the two element forms above prove exactly.
-  it(`${OUTLINE_RADIO_FORM.name} on a neutral btn-outline reads legible ink at AA`, () => {
+  // instead, the same legibility property the two element forms above prove exactly, still read
+  // per state through the shared styleOf probe.
+  it(`${OUTLINE_RADIO_FORM.name} on a neutral btn-outline reads legible ink at AA, at every state`, async () => {
     const { el, cleanup } = mount(theme, OUTLINE_RADIO_FORM.markup('btn btn-outline'));
     try {
-      const style = getComputedStyle(el);
-      expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      for (const state of STATES) {
+        const color = await styleOf(el, 'color', state);
+        const backgroundColor = await styleOf(el, 'background-color', state);
+        expect(contrastRatio(color, backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      }
     } finally {
       cleanup();
     }
   });
 
-  it(`${OUTLINE_RADIO_FORM.name} on btn-outline btn-primary reads legible ink at AA`, () => {
+  it(`${OUTLINE_RADIO_FORM.name} on btn-outline btn-primary reads legible ink at AA, at every state`, async () => {
     const { el, cleanup } = mount(theme, OUTLINE_RADIO_FORM.markup('btn btn-outline btn-primary'));
     try {
-      const style = getComputedStyle(el);
-      expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      for (const state of STATES) {
+        const color = await styleOf(el, 'color', state);
+        const backgroundColor = await styleOf(el, 'background-color', state);
+        expect(contrastRatio(color, backgroundColor)).toBeGreaterThanOrEqual(4.5);
+      }
     } finally {
       cleanup();
     }

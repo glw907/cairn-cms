@@ -1051,8 +1051,8 @@
        pressed-state device. --btn-fg resets to the plain ink: daisyUI's own :checked rule sets
        --btn-fg to --color-primary-content on any checked .btn regardless of variant, and this
        rule's own exclusion list already keeps every color variant out, so the reset only ever
-       touches the plain checked case (a checked radio styled as a join segment) decision 9 calls
-       for, never a variant control's own accent. The wash, ink, and weight carry no pseudo-class,
+       touches the plain checked case (a checked radio styled as a join segment), never a variant
+       control's own accent. The wash, ink, and weight carry no pseudo-class,
        so this unconditional rule holds them across focus-visible and active too, the same
        one-value-across-every-state pattern the plain hairline above uses; only hover gets its own
        step, in the rule below. */
@@ -1087,7 +1087,7 @@
     /* The selected segment's state hairline, light: seeded from the identical 55% base-content mix
        segmented-control.ts's segmentTintClass already compiles to from ring-base-content/55. The
        seed itself clears 3:1 against base-100 (3.579:1), but the pair table also measures the
-       hairline against a resting sibling's own 22% edge composited on base-100 (task 5's plain
+       hairline against a resting sibling's own 22% edge composited on base-100 (the plain button
        hairline), and there the 55% seed reads only 2.303:1, under the floor. Moved in lightness
        only, deeper into base-content, to 65%, which clears both rows (4.873:1 against base-100,
        3.136:1 against the resting sibling), and is still the same color-mix family the seed uses,
@@ -1121,7 +1121,7 @@
     /* The selected segment's state hairline, dark: seeded from the superseded rule's own locked
        oklch(57% 0.012 75), the same literal that rule carried. That seed clears 3:1 against
        base-100 (3.661:1), but reads only 1.935:1 against a resting sibling's own 22% edge
-       composited on base-100 (task 5's plain hairline), under the floor. Moved in lightness only,
+       composited on base-100 (the plain button hairline), under the floor. Moved in lightness only,
        to 70%, which clears both rows (6.115:1 against base-100, 3.233:1 against the resting
        sibling), keeping the seed's own hue and chroma (BtnActiveDarkGround.test.ts). */
     :where([data-theme='cairn-admin-dark'])
@@ -1154,8 +1154,8 @@
        also beats daisyUI's own layered :hover attempt at --btn-bg regardless of specificity,
        leaving no visible hover feedback without a second, higher-specificity rule scoped to
        :hover. :not(:active) keeps a held press, which still matches :hover, reading the resting
-       wash instead, the same guard the btn-neutral hover step above uses, so active holds the rest
-       value as the Outcome states. */
+       wash instead, the same guard the btn-neutral hover step above uses, so active holds the
+       rest value rather than a fourth, deeper step. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .btn:not(
         .btn-primary,

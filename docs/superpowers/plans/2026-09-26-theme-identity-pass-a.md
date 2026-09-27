@@ -7,19 +7,22 @@ its full state set. The markup sweep then retires the per-element patches. The s
 shared corner ladder and hairline outlines. A plain-daisyUI fixture screen proves G1 in both
 themes.
 
-**Spec:** `docs/superpowers/specs/2026-09-26-theme-identity-design.md` (commit `48a87c62`),
+**Spec:** `docs/superpowers/specs/2026-09-26-theme-identity-design.md` (commit `5f7d3fd6`),
 approved by Geoff 2026-09-26. This plan covers the spec's "Delivery" pass A only. Pass B (the
 `radius-scale` rule, the retired-patch arms, the shipped guidance, the recipe source, the norms
 print, the agent-build probe) is out of scope. Executors read the spec sections their task names.
 Where this plan and the spec disagree, stop and report, except the plan's decisions on the spec's
 "Open for the plan" items and the fold's decisions, recorded under "Decisions this plan takes"
 below. Evidence and record: the spike (`docs/superpowers/research/2026-09-26-theme-identity-spike.md`),
-the spec's fold record and its verification (`...-fold.md`, `...-fold-verification.md`), the prose
+the spec's fold record and its verification
+(`docs/superpowers/research/2026-09-26-theme-identity-fold.md`,
+`docs/superpowers/research/2026-09-26-theme-identity-fold-verification.md`), the spec's prose
 review, the arc log (`docs/internal/record/2026-09-26-theme-identity-arc-log.md`), the ratified
 captures (`docs/internal/record/2026-09-26-theme-identity/final-1440.png`, `final-390.png`,
-`switch-1440.png`), and this plan's review and fold
+`switch-1440.png`), and this plan's review, fold, fold verification, and prose review
 (`docs/superpowers/research/2026-09-26-theme-identity-pass-a-review-{contract,mechanics,risk}.md`,
-`...-pass-a-fold.md`).
+`...-pass-a-fold.md`, `...-pass-a-fold-verification.md`, which produced decision 13, and
+`...-pass-a-prose-review.md`).
 
 **Approach:** Build first, then the theme roots at unchanged values (so an equivalence test proves
 the re-authoring alone changed nothing), then the new values, then the idiom rules family by
@@ -30,11 +33,12 @@ the CI baseline regeneration. Plans specify outcomes and acceptance, never imple
 **Execution mode:** `pass-execute` (by name) for tasks 1 to 14, one invocation per segment, and
 **sequential** (`parallel` unset). The runner does no worktree isolation (`repo` is prompt text
 only, `pass-execute.js:32-33`), so parallel tasks would share one index, one `base..HEAD` range,
-and one `cairn-run-gate` key. Tasks 2 to 8 all edit `src/lib/components/cairn-admin.css` and
-`scripts/checks/custom-surface-budget.json`, the contended resources. Every heavy gate also
-queues on one machine-wide lock. Task 11 is genuinely independent of tasks 9 and 10 (disjoint
-files) and is marked so, but it still runs in sequence: `pass-execute-chains` would need a second
-worktree, an `npm ci`, and a merge, which costs more than one sequential task.
+and one `cairn-run-gate` key. Tasks 2 to 8 all edit `src/lib/components/cairn-admin.css`, and
+tasks 2 and 5 to 8 also edit `scripts/checks/custom-surface-budget.json`. Those two files are the
+contended resources. Every heavy gate also queues on one machine-wide lock. Task 11 is
+independent of tasks 9 and 10 (disjoint files) and is marked so, but it still runs in sequence:
+`pass-execute-chains` would need a second worktree, an `npm ci`, and a merge, which costs more
+than one sequential task.
 
 Args: `repo` the worktree's absolute path, `implementer: "cairn-implementer"`,
 `reviewer: "diff-reviewer"`, `gate` set to **the engine string** (see Gates), `commonNotes`
@@ -50,14 +54,22 @@ independent `diff-reviewer` read.
 
 **`code-simplifier`:** the conductor dispatches it once at each segment boundary A to D, between
 `pass-execute` invocations, over the segment's changed code. `cairn-implementer` has no Agent
-tool, and the runner has no simplifier phase. The simplifier's changes take one engine gate
-through `cairn-run-gate` and one commit before the boundary push.
+tool, and the runner has no simplifier phase. The simplifier's changes take one engine gate and
+one commit before the boundary push. That gate runs inside **a gate agent** (below), never in the
+main loop.
+
+**The gate agent:** every heavy gate the conductor needs outside a `pass-execute` chain (task 0
+item 8's baseline and each boundary `code-simplifier` re-gate) runs inside one Sonnet
+`general-purpose` agent per call, dispatched by the conductor at `high`. The agent runs
+`cairn-run-gate '<the engine string>'` in the worktree, re-issuing the same command on exit 75
+until it prints `gate exit:`. It returns the `gate exit:` line and the tail of the log. The main
+loop never runs a heavy gate itself.
 
 **Models:** Sonnet `cairn-implementer` at `high` by default. Task 3 runs with `model: "opus"`: it
 picks the mechanism that moves component tests onto the compiled sheet and writes the
 equivalence probe, which the spec leaves to the plan. `claude-opus-5-5` for every
 `diff-reviewer`, the `visual-verifier` (S1, S4), both felt-audit lenses (S2), and the close's
-fold agent. Baseline and capture agents are Sonnet `general-purpose` at `high`. CI probes are
+fold agent. Capture agents and gate agents are Sonnet `general-purpose` at `high`. CI probes are
 Haiku.
 
 **Token ceiling:** 20M, flag at 16M (80%). The flag sits above the planned spend of about 15.8M,
@@ -68,7 +80,7 @@ so it marks an overrun past plan. Derivation:
 | Fourteen implementer chains at about 0.5M each (Sonnet implementer, Opus diff review, gate and task checks; up from 0.45M for the fold's added state and pair coverage) | 7.0M |
 | Task 3's Opus upshift | 0.3M |
 | Fix rounds on about a quarter of the chains at 0.25M | 0.9M |
-| Task 0's baseline agent and its gate-wiring dispatch (item 6, about 0.2M) | 0.5M |
+| Task 0's before-state capture agent (item 9), its baseline gate agent (item 8), and its gate-wiring dispatch (item 6, about 0.2M) | 0.5M |
 | `code-simplifier` and its gate at four boundaries, 0.2M each | 0.8M |
 | S1's capture agent and `visual-verifier` over the widened page set | 0.9M |
 | S2's two audit lenses | 0.8M |
@@ -103,16 +115,20 @@ a segment boundary. Each boundary sits on a commit whose engine gate ran green.
 At each boundary the conductor runs `code-simplifier` (A to D), pushes the branch, writes the
 ledger at the foot of this file (tasks, spend, decisions, verdicts, next task), and reads CI
 through one Haiku probe agent. The probe reports failing jobs, failing spec file names, and, for
-each failure inside the two visual specs, whether it is a `toHaveScreenshot` mismatch.
+each failure inside the two visual specs, whether it is a `toHaveScreenshot` mismatch or a
+missing baseline.
 
 **The expected-red set:** until S4, the `e2e` workflow's `admin-visual.spec.ts` screenshot
 mismatches fail by design (the render changes and the baselines are CI-canonical).
-`site-visual.spec.ts` screenshot mismatches join the set only from task 11's push, since tasks 1
-to 10 change nothing on the public site, and a `site-visual` red before task 11 is the signal of
-an unintended public change. Until task 13 the norms freshness job fails. Inside the two visual
-specs, only a `toHaveScreenshot` mismatch is expected; a crash, a timeout, or a missing locator
-is red. A boundary passes when CI's failures are a subset of that set. Any other red re-dispatches
-the task that owns it, with the failing step named. The conductor opens the pass PR as a draft at
+`site-visual.spec.ts` screenshot mismatches join the set only from the segment C push, which
+carries task 11. Tasks 1 to 10 change nothing on the public site, so a `site-visual` red before
+task 11 is the signal of an unintended public change. Until task 13 the norms freshness job
+fails. Inside the two visual specs, only a `toHaveScreenshot` mismatch is expected; a crash, a
+timeout, or a missing locator is red. From task 12's push, a missing-baseline failure ("A
+snapshot doesn't exist") on a new `theme-kit` entry in `admin-visual.spec.ts` is also expected.
+The Haiku probe reports that failure by its message, so the conductor can tell it from a
+mismatch. A boundary passes when CI's failures are a subset of that set. Any other red
+re-dispatches the task that owns it, with the failing step named. The conductor opens the pass PR as a draft at
 the segment A push, so `pull_request` CI runs on every later push.
 
 **Worktree:** `.claude/worktrees/theme-identity-a`, branch `theme-identity-a`, off `main` now. The
@@ -121,7 +137,8 @@ at its next gate-green boundary and keeps its work unmerged on `draft-docs-0`. T
 worktree after verifying that pause.
 
 **Gates:** `pass-execute` has the implementer run `scripts/checks/gate-tier.mjs`, which prints a
-fixed tier string, so a task cannot supply its own gate string through the runner.
+fixed tier string. Set no task-level `gate`: the implementer runs the classifier's printed string,
+and for a pinned task the reviewer compares it against `t.gate || a.gate`.
 - **The engine string**, which `gate-tier.mjs --pin engine` prints once task 0 item 6 lands
   (decision 13):
   `npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism`.
@@ -153,7 +170,8 @@ vitest component project serialized (`--no-file-parallelism`, decision 13). Stoc
 it in parallel, stalls on this workstation's recorded state, and is not a gate for this pass.
 A component-test stall under a concurrent gate is contention, so rerun that file alone before
 calling it red (the `concurrent-pass-flaky-tests` and `vitest-browser-parallel-pages-stall`
-memories). Conductor-run gates call `cairn-run-gate` directly.
+memories). The conductor runs no heavy gate itself; a gate agent runs each one (see "The gate
+agent" above).
 
 ## Decisions this plan takes
 
@@ -209,7 +227,9 @@ invents them:
     2026-09-26 (`docs/internal/record/2026-09-26-theme-identity-arc-log.md`, "Ruling 3 reversed").
     The worktree branches from `main` now. Draft docs pass 0+1 pauses at its next gate-green
     boundary and stays unmerged on `draft-docs-0` until this effort merges. Task 0 item 1 verifies
-    the pause. The spec's Delivery section now says the same.
+    the pause. The spec's Delivery section now says the same. The conductor reads "this effort"
+    as the whole theme identity initiative, so draft docs resumes after pass B merges.
+    That reading is the conductor's; Geoff confirms it at the S3 sitting.
 13. **The engine tier runs the component project serialized.** Task 0 item 6 changes
     `gate-tier.mjs` so the scripts and engine string ends
     `npm run test:node-projects && npm run test:component -- --no-file-parallelism`. `package.json`
@@ -320,14 +340,14 @@ to a test in its owning task:
 ### Task 0: Pre-flight (conductor, no gate)
 
 **Outcome:** The conductor verifies the start conditions and records each in the ledger. Task 0
-takes no tier gate of its own. Item 6's dispatch runs a targeted unit test and one light check, and item
-8's baseline is the conductor's one heavy gate call.
+takes no tier gate of its own. Item 6's dispatch runs a targeted unit test and one light check.
+Item 8's baseline runs in a gate agent, never in the main loop.
 
 1. **Draft docs pass 0+1 is paused.** Its pause is recorded in its own ledger or STATUS, naming
    its head commit. `draft-docs-0`'s head still equals that commit (no commit since the pause),
    `git -C .claude/worktrees/draft-docs-0 status --porcelain` is empty, and `pgrep -af
    'worktrees/draft-docs-0'` finds no process, so no gate runs from its worktree. The conductor
-   records the head SHA; the plan-time head was `d0639043`. If the pause is not recorded, or any
+   records the head SHA; the plan-time head was `85efee59`. If the pause is not recorded, or any
    check fails, stop with one message to Geoff: two executors must not race.
 2. **No live executor** on the target path: `pgrep -af theme-identity-a` is empty and no
    `theme-identity-a` worktree or branch exists.
@@ -372,8 +392,10 @@ takes no tier gate of its own. Item 6's dispatch runs a targeted unit test and o
 7. **The engine string:** run `node scripts/checks/gate-tier.mjs --range HEAD~1..HEAD --pin engine`
    in the worktree and confirm it prints the engine string under Gates. A different string
    replaces it as the `gate` arg and is recorded.
-8. **Baseline gate:** one `cairn-run-gate '<the engine string>'` in the worktree, quoted as task
-   0's gate evidence to task 1's reviewer. If the serialized component run stalls (a page prints
+8. **Baseline gate:** one gate agent (Sonnet `general-purpose` at `high`, see "The gate agent")
+   runs `cairn-run-gate '<the engine string>'` in the worktree and returns the `gate exit:` line
+   and the tail of the log. The conductor quotes that return as task 0's gate evidence to task 1's
+   reviewer. If the serialized component run stalls (a page prints
    `Cannot connect to the server in 60 seconds`, or the run makes no progress), the pass stops
    before segment A with one message to Geoff. The remedy is a reboot and a retest, per the
    `vitest-browser-parallel-pages-stall` memory. No rerun or further serialization clears this
@@ -384,10 +406,11 @@ takes no tier gate of its own. Item 6's dispatch runs a targeted unit test and o
    --prefix examples/showcase run build`), serve it on 4391 (`CAIRN_DEV_BACKEND=1 npm --prefix
    examples/showcase run preview -- --port 4391`), and capture full-page PNGs at 1440 and 390,
    light and dark (theme by the `cairn-admin-theme` cookie, as `admin-visual.spec.ts` does), of
-   the S1 page set that exists on `main` (every page `admin-visual.spec.ts` captures, plus
-   `/admin/login`, `/admin/signups` with its delete dialog open, and the media library's sheet
-   open at 390). Run `BASE_URL=http://localhost:4391 npx cairn-audit --rendered` over the showcase
-   admin twice (its counts vary between identical runs; STATUS carries the watch). Record both
+   the S1 page set that exists on `main`: every page `admin-visual.spec.ts` captures (read the
+   spec's test titles for the list; it already covers `/admin/login` and `/admin/signups`),
+   `/admin/signups` with its delete dialog open, `/admin/help`, and the media library's bottom
+   sheet open at 390. Run `BASE_URL=http://localhost:4391 npx cairn-audit --rendered` over the
+   showcase admin twice (its counts vary between identical runs; STATUS carries the watch). Record both
    runs' totals and, by finding identity, the findings of `weight-budget`, `norms-bands`,
    `touch-targets`, `focus-renders`, `interactive-contrast`, `border-contrast`, and
    `chip-ground-collision`. The agent stops its server and says so. Commit the PNGs and a short
@@ -430,9 +453,10 @@ directly after its existing `@layer properties, theme, base, components, utiliti
 
 **Acceptance:**
 - The generator unit test runs against the installed daisyUI: the result includes `timeline`,
-  `rating`, and `rounded-selector`. The calendar classes are defined as the difference between the
-  lists with and without `exclude: ['calendar']`, which is non-empty, and none of them is in the
-  excluded list. Pointed at an empty `root` fixture, the generator throws naming the root (a
+  `rating`, and `rounded-selector`. The calendar classes are the difference between the lists with
+  and without `exclude: ['calendar']`. That difference is non-empty, and every class in it is
+  defined in `node_modules/daisyui/components/calendar/object.js`. Pointed at an empty `root`
+  fixture, the generator throws naming the root (a
   renamed module directory would otherwise pass silently).
 - `admin-sheet-presence.test.ts` asserts the compiled sheet carries `timeline`, `rating`,
   `radial-progress`, `countdown`, `alert-info`, `toggle-primary`, `toggle-sm`,
@@ -445,7 +469,9 @@ directly after its existing `@layer properties, theme, base, components, utiliti
 - `motion-vocabulary.test.ts` gains a case with a comma-separated selector list whose second part
   is `[data-theme='cairn-admin']`, and it passes; the prior whole-selector cases still pass.
 - The report records the sheet's size (raw, minified gzip, minified brotli) against the spike's
-  table; a result more than 10% off the spike's 53.2 KB gzip is a finding.
+  table's "All components, calendar excluded" row; a result more than 10% off that row's 53.0 KB
+  minified gzip is a finding. Task 1 adds no theme blocks and no sublayer rules, so the full
+  spike's 53.2 KB is not its comparison.
 - **Mutation:** deleting the `@source inline` line, then rebuilding, makes the presence test fail.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
@@ -494,8 +520,8 @@ self-test, and a new `src/tests/component/cairn-idiom-surface.test.ts`.
 **Outcome:** `check:custom-surface` gains the spec's third category (spec, "Gates and the pinned
 rules"). The cairn-idiom block is parsed by brace matching, the way the components block is, and
 its selectors count against `idiomLayerCap`. Its `SCOPED_RULE` count of unlayered rules excludes
-the block. The ledger gains an entry for the category and for each rule in it. Two dead
-`@layer components` rules move into the sublayer and render for the first time:
+the block. The custom-surface ledger gains an entry for the category and for each rule in it.
+Two dead `@layer components` rules move into the sublayer and render for the first time:
 - **The `btn-primary` warm lift** as `--btn-shadow`: `0 1px 2px -1px oklch(35% 0.04 75 / .35)` in
   light and `0 1px 2px -1px oklch(10% 0.02 75 / .35)` in dark (decision 3), identical in every
   state. It replaces the dead violet-pair lift (spec, "Material"), which is two selectors
@@ -504,18 +530,22 @@ the block. The ledger gains an entry for the category and for each rule in it. T
 
 `componentsLayerCap` drops from 19 to 16 (three selectors leave), and `idiomLayerCap` equals the
 block's selector count. Each later task that adds or moves an idiom rule updates the cap to the
-new exact count and adds its ledger line.
+new exact count and adds its line to the custom-surface ledger.
 
 **Acceptance:**
 - The gate's unit test plants a sublayer rule written in house style and passes it inside the cap;
   plants one selector over `idiomLayerCap` and fails naming the cap; and plants the same rule
   unlayered and fails as an unsanctioned unlayered rule.
 - The probe's self-test, on a stock plain `btn` in both themes: `styleOf` reaches each of the four
-  states, and the `active` read of `translate` is daisyUI's `0 .5px`, different from rest. A
+  states, and the `active` read of `translate` differs from rest and equals the computed form of
+  daisyUI's `translate: 0 .5px` (`0px 0.5px`). A
   `styleOf` call whose state is not reached throws. `resolveColor('var(--alert-color, red)', theme,
   el)` on an `alert alert-info` element returns the info color, and the same call without `el`
   returns red.
-- A guard test fails when the compiled sheet is older than `cairn-admin.css`.
+- A guard test compares the modification times of `dist/components/cairn-admin.css` and
+  `src/lib/components/cairn-admin.css` and fails when the dist sheet is older. Mutation (in the
+  mutation ledger): with the `globalSetup` entry removed, touch `cairn-admin.css` and run the
+  component project; the guard fails.
 - `cairn-idiom-surface.test.ts`, both themes, all four states: the primary's computed
   `--btn-shadow` equals the decision 3 value for its theme (the variable, not the whole
   `box-shadow`, whose inset layer moves when task 4 zeroes `--depth`); the modal box's
@@ -551,7 +581,8 @@ named in its header) that regenerates both files. Task 4 uses it and diffs the r
 
 **Outcome:** D1 lands with every value unchanged (spec, "D1").
 1. **Before editing the roots,** generate both expectation files from the current compiled sheet:
-   every property declared in today's two roots, custom and non-custom, read on the four elements.
+   every property declared in the two roots on `main`, custom and non-custom, read on the four
+   elements.
    The wrapper is a `div`, so the hostile `div` rule meets the unlayered `[data-theme]` rule there;
    the child is a `span`, so the run proves inheritance through the wrapper.
 2. **The plugin blocks.** `@plugin "daisyui/theme"` blocks named `cairn-admin` and
@@ -633,16 +664,26 @@ commit as the manifest it governs, since `norms.test.ts` holds the two against e
 
 ### Task 5: Buttons: the plain hairline, the type, the `btn-sm` padding, the soft primary
 
-**Files:** `src/lib/components/cairn-admin.css`, `custom-surface-budget.json`, the ledger, a new
+**Files:** `src/lib/components/cairn-admin.css`, `custom-surface-budget.json`,
+`docs/internal/design/2026-06-29-custom-surface-ledger.md`, a new
 `src/tests/component/cairn-idiom-buttons.test.ts`.
 
-**Outcome:** Four idiom rule groups (spec, "Buttons"):
+**Outcome:** Five idiom rule groups (spec, "Buttons"):
 - **The plain `btn` hairline**, with the spec's exact exclusion list plus the five selected forms
-  (decision 9). Rest `--btn-bg: var(--color-base-100)`, `--btn-border: color-mix(in oklab,
-  var(--color-base-content) 22%, transparent)`; hover at the proposed 5% fill step; focus-visible
-  and active hold the hairline family rather than daisyUI's base-200 restatement; `join-item`
-  segments included; `--btn-color` never set.
-- **The ladder on plain classes:** `btn-neutral` hovers at `var(--cairn-ink-hover)`.
+  (decision 9). `join-item` segments are included, and `--btn-color` is never set. Each state
+  sets both variables, and none takes daisyUI's base-200 restatement:
+
+  | State | `--btn-bg` | `--btn-border` |
+  | --- | --- | --- |
+  | Rest | `var(--color-base-100)` | `color-mix(in oklab, var(--color-base-content) 22%, transparent)` |
+  | Hover | `color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100))` | the rest edge (22%) |
+  | Focus-visible | the rest fill | the rest edge (22%) |
+  | Active | the hover fill (5%) | the rest edge (22%) |
+
+  Focus-visible takes the rest values because the focus ring carries that state.
+- **The ladder on plain classes:** `btn-neutral` hovers at `var(--cairn-ink-hover)`. Its rest,
+  focus-visible, and active fills stay daisyUI's stock. A press also matches `:hover`, and the
+  idiom layer outranks daisyUI's `:active` rule, so the hover rule excludes `:active`.
 - **Button type:** weight 500 on plain and ghost buttons, 600 on `btn-primary`, `btn-neutral`,
   `btn-soft btn-primary`, and `btn-error`. The selected segment's 600 is task 6's.
 - **`btn-sm` padding:** `--btn-p: 0.875rem` on `btn-sm` only.
@@ -651,13 +692,17 @@ commit as the manifest it governs, since `norms.test.ts` holds the two against e
 
 **Acceptance** (`cairn-idiom-buttons.test.ts`, both themes, all four states, through
 `_idiom-probe.ts`):
-- The plain button's fill and edge at rest, hover, focus-visible, and active, each through
-  `resolveColor`; its focus-visible outline color is not `base-100` (it would vanish on a card).
+- The plain button's fill and edge at rest, hover, focus-visible, and active match the Outcome's
+  state table, each through `resolveColor`; its focus-visible outline color is not `base-100` (it
+  would vanish on a card).
 - A `btn` in each selected form, a checked radio `join-item btn` included, does not take the
   hairline (task 6 asserts what it does take). A `btn-disabled` plain button matches daisyUI's
   disabled look.
-- `btn-ghost`, `btn-outline`, and each color variant match daisyUI's stock fill in every state
-  (the narrow selector).
+- `btn-ghost`, `btn-outline`, and each color variant other than `btn-neutral` match daisyUI's
+  stock fill in every state (the narrow selector); `btn-soft btn-primary` is asserted by its own
+  line below.
+- `btn-neutral`'s hover fill resolves to `var(--cairn-ink-hover)` through `resolveColor` in both
+  themes; its rest, focus-visible, and active fills match daisyUI's stock.
 - Weights 500 and 600 by class; `btn-sm` padding 14px and `btn` padding unchanged.
 - Soft primary fill at rest, hover, focus-visible, and active; text stays `--color-primary` in
   every state.
@@ -673,7 +718,8 @@ commit as the manifest it governs, since `norms.test.ts` holds the two against e
 
 ### Task 6: The selected segment, and rules 10 to 12
 
-**Files:** `src/lib/components/cairn-admin.css`, `custom-surface-budget.json`, the ledger,
+**Files:** `src/lib/components/cairn-admin.css`, `custom-surface-budget.json`,
+`docs/internal/design/2026-06-29-custom-surface-ledger.md`,
 `src/tests/component/BtnActiveDarkGround.test.ts` (rewritten in place),
 `src/lib/components/segmented-control.ts` (comment only, if its cross-reference moves).
 
@@ -714,7 +760,8 @@ list leaves open (`btn-link`, `btn-ghost`) is named in the report as a decision 
   (`BtnActiveDarkGround.test.ts:48`), and uses `composite` and `contrastRatio` from
   `src/lib/audit/color.ts:30,51`. It hand-rolls no color math. The report states both ratios in each theme. Under 3:1 fails the
   task. Task 13 re-measures the same rows on canvas.
-- Loses to a utility: a selected segment with `font-normal` renders 400.
+- Loses to a utility: a selected segment with `font-normal` renders 400, and
+  `btn-outline btn-active text-error` keeps the red ink against rule 11.
 - `unlayeredAllowlist` has 15 entries; `idiomLayerCap` updated.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
@@ -724,7 +771,8 @@ list leaves open (`btn-link`, `btn-ghost`) is named in the report as a decision 
 
 ### Task 7: Fields and marks: rules 13 and 14, the switch, concentric corners, Lucide strokes
 
-**Files:** `src/lib/components/cairn-admin.css`, `custom-surface-budget.json`, the ledger, a new
+**Files:** `src/lib/components/cairn-admin.css`, `custom-surface-budget.json`,
+`docs/internal/design/2026-06-29-custom-surface-ledger.md`, a new
 `src/tests/component/cairn-idiom-controls.test.ts`, the admin sheet inventory fixture (the new
 `lucide` class, regenerated), and `src/tests/unit/interactive-control-edge-contrast.test.ts` only
 if its read path must follow the moved rules.
@@ -735,7 +783,8 @@ icons"):
   selectors and exclusions unchanged, `:not(:focus)` and the disabled exclusions kept. The
   allowlist drops from 15 to 13.
 - **The switch:** `border-radius: 9999px` on `.toggle` and its `::before`; checked, on all three
-  checked forms, fills the track with `--color-neutral` and turns the knob `--color-base-100`, only
+  checked forms (`:checked`, `[aria-checked='true']`, and `:has(> input:checked)`), fills the
+  track with `--color-neutral` and turns the knob `--color-base-100`, only
   on a toggle carrying none of the eight color modifiers; off and disabled left to daisyUI. daisyUI
   draws the knob and the focus ring both from `currentColor` (`toggle.css`), so the rule sets the
   knob on `::before` or sets the ring color explicitly; a base-100 knob must not make a base-100
@@ -762,6 +811,8 @@ takes them):
   (8px box minus 4px); Review focus 4's `rounded-none` item keeps 0.
 - Lucide: a `@lucide/svelte` icon at default stroke computes 1.75; one with `strokeWidth={2.5}`
   keeps 2.5; one with `strokeWidth={2}` computes 1.75 (the spec's stated reach).
+- Loses to a utility: a Lucide icon carrying `stroke-[2.5]` (through `hostCss` in
+  `@layer utilities`) computes 2.5.
 - `admin-sheet-inventory.test.ts` passes on the regenerated fixture; the report names each added
   class.
 - `unlayeredAllowlist` has 13 entries; `idiomLayerCap` updated.
@@ -774,7 +825,8 @@ takes them):
 ### Task 8: Alerts
 
 **Files:** `src/lib/components/cairn-admin.css` (the new token in the plain root rule, the alert
-rules), `custom-surface-budget.json`, the ledger, a new
+rules), `custom-surface-budget.json`,
+`docs/internal/design/2026-06-29-custom-surface-ledger.md`, a new
 `src/tests/component/cairn-idiom-alerts.test.ts`, `src/tests/unit/role-layer-contrast.test.ts` or a
 sibling unit test for the ink contrast.
 
@@ -912,8 +964,12 @@ in a toolkit component the token carries a literal fallback equal to the new val
 ### Task 11: The starter theme (independent of tasks 9 and 10)
 
 **Files:** `examples/showcase/src/theme/theme.css`, `templates/waymark/**` (re-emitted, never
-hand-edited), the showcase's Tailwind build entry if the pin needs it, and one new test that
-proves the pin.
+hand-edited), the showcase's Tailwind build entry if the pin needs it, and one new e2e spec,
+`examples/showcase/e2e/starter-outline-pin.spec.ts`, that proves the pin. The pin test is an e2e
+spec because the component project cannot host it. That project runs in a browser with no
+Tailwind plugin, and a node-side compile of `theme.css` needs the showcase's own `node_modules`
+(its `@fontsource-variable` imports). CI's `test.yml` installs those only after its `npm test`
+step. The e2e run also proves the pin through the showcase's real build.
 
 **Outcome:** (spec, "Starter theme decisions")
 - Both `@plugin "daisyui/theme"` blocks take `--radius-selector: 0.25rem`,
@@ -923,7 +979,8 @@ proves the pin.
   `--btn-border: var(--btn-color, color-mix(in oklab, var(--color-base-content) 22%,
   transparent))`, so `btn-outline btn-primary` keeps its colored edge. The badge half sets
   `border-color` directly on an uncolored `badge-outline`, since daisyUI sets
-  `border-color: currentColor` there rather than a variable (fold verification). The rule carries
+  `border-color: currentColor` there rather than a variable
+  (`docs/superpowers/research/2026-09-26-theme-identity-fold-verification.md`). The rule carries
   the full state set for the outline button.
 - The file header's "only chassis VALUES" sentence gains this one declared rule. The re-skin recipe
   gains one line naming the ladder as the family geometry a site may change freely, citing no
@@ -933,8 +990,10 @@ proves the pin.
 - `npm run emit:template` re-emits `templates/waymark`.
 
 **Acceptance:**
-- The pin test builds the showcase CSS and asserts, in a real browser, that an uncolored
-  `btn-outline` computes the 22% edge at rest, hover, focus-visible, and active,
+- `starter-outline-pin.spec.ts` loads `/styleguide`, which carries an uncolored `btn-outline` and
+  `badge-outline` under the showcase's built sheet, and injects any probe element it also needs
+  (`btn-outline btn-primary`) into that page. It asserts that an uncolored `btn-outline` computes
+  the 22% edge at rest, hover, focus-visible, and active,
   `btn-outline btn-primary` computes the primary edge, and an uncolored `badge-outline` computes
   the hairline; reversing the pin fails it (mutation ledger). The report names the pin mechanism
   chosen.
@@ -944,7 +1003,7 @@ proves the pin.
   - `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:template && npm run test:reskin && npm run check:public-tokens && npm run check:chassis-boundary'`;
   - the showcase set, `CAIRN_GATE_LANE=light cairn-run-gate 'npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check'`;
   - the port check (`ss -ltnp 'sport = :4173'` prints no listener), then
-    `cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- styleguide.spec.ts'`.
+    `cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- styleguide.spec.ts starter-outline-pin.spec.ts'`.
 
 ---
 
@@ -1000,7 +1059,8 @@ themes at 1440 and 390.
   - the port check (`ss -ltnp 'sport = :4173'` prints no listener), then
     `cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- theme-kit.spec.ts custom-screen.spec.ts'`.
 
-  The new `admin-visual` entries are expected to fail until S4; the task does not run them.
+  The new `admin-visual` entries are expected to fail until S4, as missing baselines in the
+  expected-red set; the task does not run them.
 
 ---
 
@@ -1009,8 +1069,9 @@ themes at 1440 and 390.
 **Files:** a new `examples/showcase/e2e/theme-kit-contrast.spec.ts`, `src/lib/audit/norms.ts`
 (`RATIFIED_NORMS` values only), `src/lib/audit/norms-manifest.json` (regenerated by
 `norms:generate`), `src/tests/unit/audit/norms.test.ts` and
-`src/tests/unit/audit/norms-bands.browser.test.ts` (expectations that restate a moved band), the
-showcase's audit page configuration if the page list needs it, and a new record
+`src/tests/unit/audit/rules/rendered/norms-bands.browser.test.ts` (expectations that restate a
+moved band), `examples/showcase/cairn-audit.config.json` (the `rendered.extraPages` list), and a
+new record
 `docs/superpowers/research/2026-09-26-theme-identity-pass-a-proof.md`.
 
 **Outcome:** The spec's Proof measurements, taken in a real browser on the fixture and recorded.
@@ -1036,27 +1097,42 @@ and `card` at 8px, in the same commit as the regenerated manifest.
 
 **Order of steps:** edit `RATIFIED_NORMS` first, since `norms:generate` packages and then reads it
 from `dist` (`norms.ts:484`); `npm run package`; build the showcase and serve its preview on 4391, with the
-listener's cwd checked; run `norms:generate`, the rendered audit, and the two live checks against
-it through `BASE_URL=http://localhost:4391`; stop the preview and say so; confirm 4173 is free;
-then run the contrast e2e.
+listener's cwd checked; run `norms:generate`, then `norms:check`, the rendered audit, and the two
+live checks against it, each with `BASE_URL=http://localhost:4391`; stop the preview and say so;
+confirm 4173 is free; then run the contrast e2e. `norms:check` runs the same generator as
+`norms:generate`, which starts no server and falls back to `http://localhost:4173` when
+`BASE_URL` is unset (`scripts/lab/generate-norms-manifest.mjs:32,124`), so it runs before the
+preview stops.
 
 **Acceptance:**
 - `theme-kit-contrast.spec.ts` passes and writes its numbers into the proof record, one table per
   theme. A floor that fails is a finding returned to the conductor, never a test loosened.
 - **The 320 and 390 check:** the `viewport-overflow` and `panel-width` rendered rules pass at both
-  widths. The page list is named in the showcase's audit `rendered.pages` (or the CLI's page
-  option) and quoted in the record: `/admin/theme-kit`, `/admin/posts` (the showcase's 27 posts at
-  `pageSize` 10 render `Pagination`), an edit page (the toolbar row), the `ListToolbar` filter
-  join, the phone desk band, and a chip-beside-heading row. `vertical-alignment-recipes.test.ts`
-  passes. Findings recorded.
-- `RATIFIED_NORMS` and the regenerated manifest land together; `npm run norms:check` is green,
+  widths. The pages are added through `rendered.extraPages` in
+  `examples/showcase/cairn-audit.config.json`, never `rendered.pages`, so the default core routes
+  task 0 measured (`src/lib/audit/config.ts:57-64`) stay in the set. The added pages are
+  `/admin/theme-kit`, `/admin/posts/2026-06-hello`, and `/admin/settings`. The record quotes the
+  list and names the route that carries each region the spec checks:
+  - `/admin/posts` (a default route): the `ListToolbar` filter join, and `Pagination`, since the
+    showcase's 27 posts at `ConceptList`'s `pageSize` of 10 make three pages.
+  - `/admin/posts/2026-06-hello`: the toolbar row and the phone desk band, which is the edit
+    route's header (`admin-design-system.md`, "The desk band").
+  - `/admin/settings`: the chip-beside-heading row, the "Set by your developer" chip in its
+    `cairn-line-slot` (`CairnTidySettings.svelte:410`). Below `sm` that chip drops to its own line,
+    so the 320 and 390 read covers the dropped layout.
+
+  `vertical-alignment-recipes.test.ts` passes. Findings recorded.
+- `RATIFIED_NORMS` and the regenerated manifest land together;
+  `BASE_URL=http://localhost:4391 npm run norms:check` is green on the 4391 preview,
   `norms.test.ts` passes on the regenerated manifest, no radius row carries `ratified-drift`, and
   `norms-bands.browser.test.ts` passes with any changed expectation listed. The record lists the
   radius and height bands that moved.
-- `npx cairn-audit --rendered` over the showcase admin, `/admin/theme-kit` included, run twice;
+- `npx cairn-audit --rendered` over the showcase admin, the three added pages included, run twice;
   the record sets both runs' totals beside task 0's before-runs, and compares the findings of
   `weight-budget`, `norms-bands`, `touch-targets`, `focus-renders`, `interactive-contrast`,
-  `border-contrast`, and `chip-ground-collision` by finding identity, not totals.
+  `border-contrast`, and `chip-ground-collision` by finding identity, not totals. The identity
+  comparison covers the default routes both runs share; findings on the three added pages are
+  recorded as new.
 - `BASE_URL=http://localhost:4391 npm run check:touch-targets` and
   `BASE_URL=http://localhost:4391 npm run check:interactive-contrast`, green, quoted. The record
   labels them public-site checks: they probe the sitemap and `/styleguide`, never the admin
@@ -1065,6 +1141,8 @@ then run the contrast e2e.
   blocking):
   - the showcase set, `CAIRN_GATE_LANE=light cairn-run-gate 'npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check'`;
   - the comments check, `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:comments'`;
+  - the idioms check, since the task edits `src/lib/audit/norms.ts`,
+    `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:idioms'`;
   - the port check (`ss -ltnp 'sport = :4173'` prints no listener), then
     `cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- theme-kit-contrast.spec.ts'`.
 
@@ -1075,23 +1153,50 @@ then run the contrast e2e.
 **Files:** `docs/internal/admin-design-system.md`, `docs/internal/public-design-system.md`, and the
 "Admin interface design" paragraph of `CLAUDE.md`.
 
-**Outcome:** (spec, "Documentation", "The design-system rule"; fold record, "Errata owed")
-- `admin-design-system.md`: the Tokens section (theme values, the alert inks with task 13's
-  measured contrast, the switch, the depth language); a corner-system subsection (the ladder, the
-  role mapping, true circles by shape, structural zeros, concentric corners); the type recipes
-  (page heading `type-title font-[550]`, Lucide at 1.75, and a deliberate 2px stroke written as
-  `2.01` or a scoped exception); the chip rule in place of the pill
-  geometry; the five selected forms; the load-bearing layer rule amended to the spec's three
-  homes; the new rule "identity lives in the theme layer" (a new idiom is a theme variable or a
-  cairn-idiom rule, and a per-element idiom is a defect); the "Verify visuals on the showcase, not
-  in component tests" rule (`:104-107`) rewritten, since component tests now render against the
-  compiled sheet; and every `admin-design-system.md` erratum the fold record lists (`:36-42`,
-  `:75-86`, `:80` and `:394`, `:264` and `:272`, `:368-378`, `:391`, `:652-677`, `:1278-1282`,
-  `:1320-1348`, and the pre-existing drift at `:659-660`, `:1301-1303`, `:1327`), re-located by
-  content if lines moved.
-- `public-design-system.md`: the never-cross-over line (`:257-261`) names geometry and edge grammar
-  as shared (ruling 2), and `:26-29` and `:75-76` on starter geometry follow.
-- `CLAUDE.md`: the "Admin interface design" paragraph's "scoped overrides go in `@layer components`"
+**Outcome:** (spec, "Documentation", "The design-system rule";
+`docs/superpowers/research/2026-09-26-theme-identity-fold.md`, "Errata owed to ratified
+documents"). Each line below is one deliverable. Line numbers are plan-time; re-locate by content
+if lines moved.
+
+`admin-design-system.md`, new and rewritten content:
+- [ ] The Tokens section: the theme values, the alert inks with task 13's measured contrast, the
+  switch, and the depth language.
+- [ ] A corner-system subsection: the ladder, the role mapping, true circles by shape, structural
+  zeros, and concentric corners.
+- [ ] The type recipes: page heading `type-title font-[550]`, Lucide at 1.75, and a deliberate 2px
+  stroke written as `2.01` or a scoped exception.
+- [ ] The chip rule, in place of the pill geometry.
+- [ ] The five selected forms.
+- [ ] The new rule "identity lives in the theme layer": a new idiom is a theme variable or a
+  cairn-idiom rule, and a per-element idiom is a defect.
+- [ ] The "Verify visuals on the showcase, not in component tests" rule (`:104-107`) rewritten,
+  since component tests now render against the compiled sheet.
+
+`admin-design-system.md`, the fold record's errata:
+- [ ] `:36-42`: the charter calibration stops listing "the pill family" among inherited grammars.
+- [ ] `:75-86`: the load-bearing "Scoped overrides go in `@layer components`" rule names the
+  spec's three homes.
+- [ ] `:80` and `:394`: the violet `.btn-primary` lift claim becomes the warm lift.
+- [ ] `:264` and `:272`: the page-heading recipe `text-2xl font-bold` becomes `type-title
+  font-[550]`.
+- [ ] `:368-378`: the Active nav recipe's "`--depth` set to `1` ... do not write a cancel rule"
+  is corrected for the theme's `--depth: 0`.
+- [ ] `:391`: the brand mark moves from `rounded-xl` to `rounded-box`.
+- [ ] `:652-677`: the segmented-control section (rule 10 superseded, the hairline in both themes).
+- [ ] `:1278-1282`: the versioned seam adds `--radius-selector` beside `--radius-field` and
+  `--radius-box`.
+- [ ] `:1320-1348`: the starter template section takes task 11's ladder and hairline outlines.
+- [ ] Pre-existing drift at `:659-660`: `ring-base-content/20` becomes `/55`, as the code has it.
+- [ ] Pre-existing drift at `:1301-1303`: "two unlayered forced workarounds" becomes the count
+  after this pass, read from `unlayeredAllowlist` (the fold record expects thirteen).
+- [ ] Pre-existing drift at `:1327`: the starter path becomes `src/theme/theme.css`.
+
+`public-design-system.md`:
+- [ ] The never-cross-over line (`:257-261`) names geometry and edge grammar as shared (ruling 2).
+- [ ] `:26-29` and `:75-76` on starter geometry follow it.
+
+`CLAUDE.md`:
+- [ ] The "Admin interface design" paragraph's "scoped overrides go in `@layer components`"
   becomes the three homes, in one clause.
 
 **Acceptance:**
@@ -1115,8 +1220,8 @@ worktree's showcase on 4391 (the task 0 recipe), captures, then stops its server
 - **Core pages** at 320, 390, 768, 1440, and 2560, light and dark, headless: `/admin/theme-kit`,
   `/admin/posts`, one edit page, `/admin/vocabulary`, and `/admin/signups` with its dialog open.
 - **The rest of the swept surface** at 1440 and 390, light and dark: every other page
-  `admin-visual.spec.ts` captures (`/admin/editors`, `/admin/media` in its four states, the command
-  palette), `/admin/login`, `HelpHome`, and the media library's bottom sheet open at 390.
+  `admin-visual.spec.ts` captures (read the spec's test titles for the list), `/admin/help`, and
+  the media library's bottom sheet open at 390.
 
 The verifier grades 1440 and 390 against the references and the task 0 before-set device by device
 (MATCHED, COSMETIC, STRUCTURAL). It grades 320, 768, and 2560 against the responsive standard
@@ -1144,17 +1249,30 @@ value), or owner-taste:
 ### Task 15: Settle fixes (conditional)
 
 Dispatched only if S1 or S2 returns work, as a one-task `pass-execute` run, and again only for S3's
-corrections. **Files:** as the items require. **Outcome:** each STRUCTURAL and `adjust` item fixed in
-the theme layer (never per element), with its test updated, and the proof record and the design
-system updated for any changed value. A change that moves any value task 13 measured also reruns
-`norms:generate` and `norms:check` (the task 13 order of steps), updates `RATIFIED_NORMS` if a
-ratified band moves, and re-measures the affected pair-table rows. **Acceptance:** each item
-closed in the report with its test; `theme-kit.spec.ts` and `theme-kit-contrast.spec.ts` rerun
-green; `norms:check` green when a value moved; `gateTier: "engine"`. Task checks, each quoted with
-its `gate exit:` line (missing or red is blocking): the admin CSS set,
-`CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`;
-the showcase set if the run touches `examples/showcase`; and the port check, then
-`cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- theme-kit.spec.ts theme-kit-contrast.spec.ts'`.
+corrections.
+
+**Files:** as the items require.
+
+**Outcome:**
+- Each STRUCTURAL and `adjust` item is fixed in the theme layer (never per element), with its test
+  updated.
+- The proof record and the design system are updated for any changed value.
+- A change that moves any value task 13 measured also reruns `norms:generate` and `norms:check`
+  with `BASE_URL` on the 4391 preview (the task 13 order of steps). It updates `RATIFIED_NORMS` if
+  a ratified band moves, and re-measures the affected pair-table rows.
+
+**Acceptance:**
+- Each item is closed in the report with its test.
+- `theme-kit.spec.ts` and `theme-kit-contrast.spec.ts` rerun green.
+- `norms:check` is green on the 4391 preview when a value moved.
+- `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
+  blocking):
+  - the admin CSS set,
+    `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`;
+  - if the run touches `examples/showcase`, the showcase set,
+    `CAIRN_GATE_LANE=light cairn-run-gate 'npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check'`;
+  - the port check (`ss -ltnp 'sport = :4173'` prints no listener), then
+    `cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- theme-kit.spec.ts theme-kit-contrast.spec.ts'`.
 
 ### Resume point (between segments E and F)
 
@@ -1173,7 +1291,8 @@ error alert's token ink and the success alert, the modal's warm shadow (a first 
 ratified rule), the plain button and its hover step (graded here per the spec), the selected
 segment, the switch, and one starter styleguide pair, since the starter goes live on merge. S2's
 owner-taste items ride the same page as questions, each with a recommendation, and so does a
-budget question if the flag tripped in segment E. The page opens in one Chromium tab (the
+budget question if the flag tripped in segment E. The page also asks Geoff to confirm the draft
+docs resume trigger (decision 12: after pass B merges). The page opens in one Chromium tab (the
 `visual-review-in-local-browser` memory), or is published as an Artifact if Geoff is away from the
 workstation.
 
@@ -1200,10 +1319,11 @@ push. So, once the regen run completes:
 4. The conductor commits the S4 ledger entry and pushes, which starts `pull_request` CI on the new
    head. The `test` and `design` workflows have no `workflow_dispatch`, so a push is the trigger.
 
-**Acceptance:** the regen commit exists on the branch and in the worktree; the `e2e`, `test`,
-`design`, and norms runs for the ledger commit's SHA, and only that SHA, are green with no
-expected-red exceptions left. A workstation-local e2e red on exactly the regen's files is the
-durable gotcha, not a failure.
+**Acceptance:** the regen commit exists on the branch and in the worktree; the `e2e` run (its
+`norms` job included), and the `test` and `design` runs, for the ledger commit's SHA, and only
+that SHA, are green with no expected-red exceptions left. A workstation-local e2e red on exactly
+the regen's files is the durable gotcha "CI-canonical baselines this workstation cannot
+reproduce" (`docs/internal/durable-gotchas.md`), not a failure.
 
 ---
 
@@ -1249,23 +1369,27 @@ one independent `diff-reviewer` reads the fold's diff. The cairn-pass pass-end r
   compiled sheet and its pre-run build; the five selected forms; the runner's gate-string match
   for a pinned tier; the port-4173 reuse trap; the expected-red CI set during a render change).
 - `docs/STATUS.md`, present tense, at or under 60 lines: pass A merged; pass B next with its plan
-  still to author; draft docs pass 0+1 paused on `draft-docs-0` until the theme identity effort
-  completes, and on resume it merges `main` into its branch; the next cut from `main` is `0.98.0`
+  still to author; draft docs pass 0+1 paused on `draft-docs-0` until the resume trigger Geoff
+  confirmed at S3 (the conductor's reading, decision 12: after pass B merges, which completes the
+  whole theme identity initiative), and on resume it merges `main` into its branch; the next cut
+  from `main` is `0.98.0`
   and a hotfix before it branches from `v0.97.0`; history moved to HISTORY.
 - **The merge (conductor, after the fold's review):**
   1. Re-run the executor check, widened to any conductor working `main` or `draft-docs-0`: STATUS's
      next-action line, recent workflow journal mtimes, `pgrep -af` on both worktree paths, and
      `draft-docs-0`'s head against task 0's recorded SHA.
   2. `git fetch` and merge `origin/main` into the branch if `main` moved.
-  3. Re-run `check:facts`, `check:reference`, `check:docs`, and `check:rulings-format` on the
-     merged head, and let CI go green on it.
+  3. Re-run `check:facts`, `check:reference`, `check:docs`, `check:vale`, and
+     `check:rulings-format` on the merged head, and let CI go green on it. `check:vale` covers the
+     close's edits under `docs/reference/` and `docs/extend/`.
   4. If the merge changed STATUS or HISTORY, the fold agent re-writes them against the merged
      state.
   5. Mark the PR ready, confirm CI green on the merged head, and merge `theme-identity-a` to
      `main`, which puts the starter live (spec, "Release"). Remove the worktree after merge.
 
-**Acceptance:** STATUS at or under 60 lines; `check:facts`, `check:reference`, `check:docs`, and
-`check:rulings-format` green on the merged head; the pass score records tokens against the
+**Acceptance:** STATUS at or under 60 lines; `check:facts`, `check:reference`, `check:docs`,
+`check:vale`, and `check:rulings-format` green on the merged head; the pass score records tokens
+against the
 ceiling, planning misses, and execution sittings (S3 counts as one).
 
 ## Ledger

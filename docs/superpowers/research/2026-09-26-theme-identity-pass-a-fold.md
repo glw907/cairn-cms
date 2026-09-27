@@ -175,3 +175,45 @@ forced string and the implementer's run identical.
 
 Item 6's dispatch adds about 0.2M. The task 0 row is now 0.5M, and the planned total is about
 15.8M. The 16M flag still sits above planned spend.
+
+## Prose review fold
+
+Input: the prose and fidelity review
+(`docs/superpowers/research/2026-09-26-theme-identity-pass-a-prose-review.md`), 5 blockers, 14
+warnings, and 12 suggestions. Each finding was checked against the tree before it was folded. The
+conductor decided W8, W13, W2, and the resume trigger; those are applied as decided. Only the
+plan changed. No gate was run.
+
+| ID | Disposition |
+| --- | --- |
+| B1 | **Folded.** Task 5's Outcome says five groups. The variant line excludes `btn-neutral` and points `btn-soft btn-primary` to its own line. A new line asserts `btn-neutral`'s hover at `var(--cairn-ink-hover)` and its other states at stock. Added: the Outcome says the hover rule excludes `:active`. A press also matches `:hover`, and the idiom layer outranks daisyUI's `:active` rule, so the stock-active assertion needs that exclusion. |
+| B2 | **Folded.** The path is `src/tests/unit/audit/rules/rendered/norms-bands.browser.test.ts`, confirmed in the tree. |
+| B3 | **Folded.** The spec pin is `5f7d3fd6`, the last commit to touch the spec. Task 0 item 4's `48a87c62` tree counts stay. |
+| B4 | **Folded.** Confirmed at `generate-norms-manifest.mjs:32,124`. Task 13 runs `norms:check` with `BASE_URL` before the preview stops, and its Acceptance line carries the `BASE_URL`. Task 15 reruns both against the 4391 preview. |
+| B5 | **Folded, mapping corrected.** Pages go through `rendered.extraPages` in `examples/showcase/cairn-audit.config.json` (`config.ts:227-228` appends them). The review placed the phone desk band and the chip-beside-heading row on `/admin/posts`. Both are elsewhere. The desk band is the edit route's header (`admin-design-system.md`, "The desk band"), so it lives on `/admin/posts/2026-06-hello`. The only chip-beside-heading row (`cairn-line-slot`) is the "Set by your developer" chip in `CairnTidySettings.svelte:410`, on `/admin/settings`. The added pages are `/admin/theme-kit`, `/admin/posts/2026-06-hello`, and `/admin/settings`. `/admin/posts` keeps the filter join and `Pagination`. The identity comparison covers the shared default routes. |
+| W1 | **Folded.** The expected-red set names the missing-baseline failure from task 12's push, and the Haiku probe reports it apart from a mismatch. |
+| W2 | **Folded as an e2e spec** (`examples/showcase/e2e/starter-outline-pin.spec.ts`), added to task 11's `test:e2e` check. The component project cannot build the showcase CSS. It runs in a browser with no Tailwind plugin. A node-side compile of `theme.css` needs the showcase's `@fontsource-variable` packages, and CI's `test.yml` installs the showcase only after `npm test`. The spec probes `/styleguide`, which already carries an uncolored `btn-outline` and `badge-outline`. |
+| W3 | **Folded** as written, with "the ledger" read as the mutation ledger. |
+| W4 | **Folded** as written. |
+| W5 | **Folded** as written. `calendar/object.js` exists and defines the `.cally` selectors. |
+| W6 | **Folded.** Task 15 takes the Files, Outcome, and Acceptance template, and quotes each task check in full. |
+| W7 | **Folded** in all four Files lists. Task 2's two "ledger" mentions now say the custom-surface ledger. |
+| W8 | **Folded as decided.** Task 5 carries a state table: rest, hover at 5% fill with the 22% edge, focus-visible at the rest values, and active at the hover values. No state takes daisyUI's base-200 restatement. |
+| W9 | **Folded** in tasks 6 and 7. |
+| W10 | **Folded.** Task 14 cites the spec's fold record by full path and section. |
+| W11 | **Folded.** `draft-docs-0`'s head is `85efee59` (19:30), confirmed. |
+| W12 | **Folded.** Merge step 3 and the close's Acceptance run `check:vale`. |
+| W13 | **Folded as decided.** A new "The gate agent" paragraph covers item 8 and each boundary `code-simplifier` re-gate: one Sonnet agent per call at `high`, returning the `gate exit:` line and the log tail. Task 0's preamble, item 8, the Models paragraph, and the Gates stall note now say the main loop runs no heavy gate. |
+| W14 | **Folded.** Confirmed: `norms.yml` has only `workflow_call` and `workflow_dispatch`, and `e2e.yml` calls it as the `norms` job. |
+| S: line 60, 71 | **Folded.** The token row names the capture agent, the new baseline gate agent, and the gate-wiring dispatch. The gate agent is an addition, since W13 created it. |
+| S: line 33 | **Folded.** Tasks 3 and 4 do not touch the budget file. |
+| S: line 123 | **Folded** as written. The runner's `resolveGate` returns `t.gate \|\| a.gate` for a pinned task. |
+| S: line 110 | **Folded** as written. |
+| S: S1 page set | **Folded** in task 0 item 9 and S1. Item 9 keeps the signups delete dialog, which `admin-visual.spec.ts` does not open. |
+| S: line 738 | **Folded** as written; the forms match `toggle.css`. |
+| S: fold verification cites | **Folded** at task 11 and in the evidence list, which now also names this plan's fold verification and prose review. |
+| S: resume trigger | **Folded as decided.** Decision 12 records the conductor's reading: draft docs resumes after pass B merges. S3 asks Geoff to confirm it, and the close's STATUS line cites the confirmed trigger. |
+| S: `check:idioms` in task 13 | **Folded.** |
+| S: line 448 | **Folded.** The spike's row reads 53,015 bytes minified gzip. |
+| S: task 14 bullet | **Folded** as a checklist, one deliverable per line. Three errata lines gained the action the fold record implies. The `:1301-1303` count is read from `unlayeredAllowlist`, since the fold record's "fourteen" and the plan's 18 count different things. |
+| S: register | **Folded.** "Genuinely" dropped, the gotcha named, and "today's two roots" reworded. The four "X, not Y" frames stay. |

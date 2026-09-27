@@ -60,7 +60,7 @@ equivalence probe, which the spec leaves to the plan. `claude-opus-5-5` for ever
 fold agent. Baseline and capture agents are Sonnet `general-purpose` at `high`. CI probes are
 Haiku.
 
-**Token ceiling:** 20M, flag at 16M (80%). The flag sits above the planned spend of about 15.6M,
+**Token ceiling:** 20M, flag at 16M (80%). The flag sits above the planned spend of about 15.8M,
 so it marks an overrun past plan. Derivation:
 
 | Item | Spend |
@@ -68,7 +68,7 @@ so it marks an overrun past plan. Derivation:
 | Fourteen implementer chains at about 0.5M each (Sonnet implementer, Opus diff review, gate and task checks; up from 0.45M for the fold's added state and pair coverage) | 7.0M |
 | Task 3's Opus upshift | 0.3M |
 | Fix rounds on about a quarter of the chains at 0.25M | 0.9M |
-| Task 0's baseline agent | 0.3M |
+| Task 0's baseline agent and its gate-wiring dispatch (item 6, about 0.2M) | 0.5M |
 | `code-simplifier` and its gate at four boundaries, 0.2M each | 0.8M |
 | S1's capture agent and `visual-verifier` over the widened page set | 0.9M |
 | S2's two audit lenses | 0.8M |
@@ -78,7 +78,7 @@ so it marks an overrun past plan. Derivation:
 | The close's fold and review (a recorded close ran about four times its sizing, `docs/HISTORY.md:827-828`) | 1.5M |
 | The conductor sessions, both halves of the resume point | 1.2M |
 | CI probes at the boundaries | 0.1M |
-| **Planned total** | **about 15.6M** |
+| **Planned total** | **about 15.8M** |
 
 **Counting rule:** what `/cost` reports for the conductor session. Before segment A, the
 conductor records in the ledger whether `/cost` includes subagent and workflow agents; if not, it
@@ -122,9 +122,12 @@ worktree after verifying that pause.
 
 **Gates:** `pass-execute` has the implementer run `scripts/checks/gate-tier.mjs`, which prints a
 fixed tier string, so a task cannot supply its own gate string through the runner.
-- **The engine string**, which `gate-tier.mjs --pin engine` printed at plan time on `main`:
-  `npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts && npm run check && npm test`.
-  Task 0 item 6 confirms it, and the conductor passes the confirmed string as `gate`.
+- **The engine string**, which `gate-tier.mjs --pin engine` prints once task 0 item 6 lands
+  (decision 13):
+  `npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism`.
+  At plan time on `main` it printed the same string ending `&& npm test`, which runs the
+  component project in parallel. Task 0 item 7 confirms the new string, and the conductor passes
+  the confirmed string as `gate`.
 - **Paint tasks pin `gateTier: "engine"`.** The computed tier for `src/lib/components/**` is
   `admin-visual`, and its `admin-visual.spec.ts` leg fails on every deliberate render change until
   S4 regenerates the baselines on CI. The per-rule proof lives in the component tests, which the
@@ -134,18 +137,23 @@ fixed tier string, so a task cannot supply its own gate string through the runne
   heading after the tier gate's tail. The diff reviewer treats a missing or red task check as
   blocking. Each task's criteria spell out its task checks in full.
 - **The admin CSS set:**
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`.
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`.
+  `check:idioms` bans pass-scoped citations in `src/lib` ("Round N", "Pass A", "Task N",
+  "design-arc D2") and checks indentation and gate naming under `scripts/`.
+  `check:invisible-craft` scans `examples/showcase/src/routes`. Both run only in CI's `test.yml`,
+  so the set runs them per task.
 - **The showcase set** (light, for tasks that touch `examples/showcase`):
   `CAIRN_GATE_LANE=light cairn-run-gate 'npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check'`.
 - **The comments check** (light): `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:comments'`.
 - **A showcase e2e run** is heavy: `cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- <spec>'`,
   preceded by the port check (Global constraints).
 
-The heavy lane serializes: one browser gate on the machine at a time. On this workstation the
-vitest component project runs serialized (`--no-file-parallelism`); a component-test stall under
-a concurrent gate is contention, so rerun that file alone before calling it red (the
-`concurrent-pass-flaky-tests` and `vitest-browser-parallel-pages-stall` memories). Conductor-run
-gates call `cairn-run-gate` directly.
+The heavy lane serializes: one browser gate on the machine at a time. The engine string runs the
+vitest component project serialized (`--no-file-parallelism`, decision 13). Stock `npm test` runs
+it in parallel, stalls on this workstation's recorded state, and is not a gate for this pass.
+A component-test stall under a concurrent gate is contention, so rerun that file alone before
+calling it red (the `concurrent-pass-flaky-tests` and `vitest-browser-parallel-pages-stall`
+memories). Conductor-run gates call `cairn-run-gate` directly.
 
 ## Decisions this plan takes
 
@@ -197,6 +205,25 @@ invents them:
     and a visible retheme of every consumer's admin must not arrive under a caret patch. A hotfix
     before that cut branches from `v0.97.0`. The close records the planned number; the cut stays
     Geoff's deliberate act.
+12. **This pass goes first, ahead of draft docs pass 0+1.** Geoff reversed the spec's ruling 3 on
+    2026-09-26 (`docs/internal/record/2026-09-26-theme-identity-arc-log.md`, "Ruling 3 reversed").
+    The worktree branches from `main` now. Draft docs pass 0+1 pauses at its next gate-green
+    boundary and stays unmerged on `draft-docs-0` until this effort merges. Task 0 item 1 verifies
+    the pause. The spec's Delivery section now says the same.
+13. **The engine tier runs the component project serialized.** Task 0 item 6 changes
+    `gate-tier.mjs` so the scripts and engine string ends
+    `npm run test:node-projects && npm run test:component -- --no-file-parallelism`. `package.json`
+    gains `test:node-projects` (the three node projects `npm test` runs today), and `test` becomes
+    `npm run test:node-projects && npm run test:component`. Reason: stock parallel `npm test`
+    stalls in the component project on this workstation, and serial runs are clean
+    (`vitest-browser-parallel-pages-stall` memory; `docs/HISTORY.md:545-549`). The runner forces
+    the tool's printed string on every pinned task, so the serialization must live in that string.
+    An implementer's own serialized run would otherwise draw a MISMATCH. The change lives in the
+    tool, not in `vitest.config.ts`. `gate-tier.mjs` runs only locally, so CI keeps running
+    `npm test` in `test.yml` with its component project parallel, unchanged. A config-level
+    `fileParallelism: false` would also serialize CI, which shows no stall, and lengthen every CI
+    run. The project list stays in one place, `package.json`. A later pass may restore the
+    parallel string once stock `npm test` passes after a reboot.
 
 ## Global constraints
 
@@ -293,7 +320,8 @@ to a test in its owning task:
 ### Task 0: Pre-flight (conductor, no gate)
 
 **Outcome:** The conductor verifies the start conditions and records each in the ledger. Task 0
-takes no gate of its own; its baseline is the conductor's one gate call below.
+takes no tier gate of its own. Item 6's dispatch runs a targeted unit test and one light check, and item
+8's baseline is the conductor's one heavy gate call.
 
 1. **Draft docs pass 0+1 is paused.** Its pause is recorded in its own ledger or STATUS, naming
    its head commit. `draft-docs-0`'s head still equals that commit (no commit since the pause),
@@ -323,14 +351,36 @@ takes no gate of its own; its baseline is the conductor's one gate call below.
 5. **The freeze rule:** read the narrative-arm rule in `CLAUDE.md` on `main` and record it. With
    `draft-docs-0` unmerged, `main` carries the full freeze: no pass rewrites the narrative arms,
    and a deficiency a pass discovers is fixed on the page. Task 14 and the close apply it.
-6. **The engine string:** run `node scripts/checks/gate-tier.mjs --range HEAD..HEAD --pin engine`
+6. **The serialized engine string** (decision 13). One `cairn-implementer` dispatch (Sonnet,
+   `high`) in the worktree makes these changes and commits them as one `build(test)` commit:
+   - `package.json` gains `"test:node-projects": "vitest run --project unit --project
+     unit-dist-spawn --project integration"`, and `test` becomes `npm run test:node-projects &&
+     npm run test:component`. What `npm test` runs does not change.
+   - `scripts/checks/gate-tier.mjs`'s `SCRIPTS_GATE` ends `npm run check && npm run
+     test:node-projects && npm run test:component -- --no-file-parallelism`. npm appends the flag
+     to `test:component`'s single command, and `contained.mjs` forwards its arguments to vitest.
+     A comment states why the gate serializes and that CI runs `npm test`.
+   - `src/tests/unit/gate-tier.test.ts` asserts that `TIER_GATES.engine` ends with the
+     serialized component run.
+   - `docs/internal/pass-gate-tiers.md`'s scripts row quotes the new string.
+   - `.github/workflows/test.yml` is not touched; its `npm test` step keeps the parallel run.
+
+   The dispatch runs `npx vitest run --project unit src/tests/unit/gate-tier.test.ts` and
+   `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:docs && npm run check:idioms'`, and quotes
+   both. Item 8's baseline is its full gate. A red or missing check stops the pass with one
+   message to Geoff.
+7. **The engine string:** run `node scripts/checks/gate-tier.mjs --range HEAD~1..HEAD --pin engine`
    in the worktree and confirm it prints the engine string under Gates. A different string
    replaces it as the `gate` arg and is recorded.
-7. **Baseline gate:** one `cairn-run-gate '<the engine string>'` in the worktree, quoted as task
-   0's gate evidence to task 1's reviewer. A stall in the component project that a serialized
-   rerun of the file does not clear stops the pass before segment A.
-8. **Before-state capture** (one Sonnet `general-purpose` agent at `high`, headless only, in the
-   worktree at `main`'s commit): `npm run package`, build the showcase (`VITE_CAIRN_E2E=1 npm
+8. **Baseline gate:** one `cairn-run-gate '<the engine string>'` in the worktree, quoted as task
+   0's gate evidence to task 1's reviewer. If the serialized component run stalls (a page prints
+   `Cannot connect to the server in 60 seconds`, or the run makes no progress), the pass stops
+   before segment A with one message to Geoff. The remedy is a reboot and a retest, per the
+   `vitest-browser-parallel-pages-stall` memory. No rerun or further serialization clears this
+   stop.
+9. **Before-state capture** (one Sonnet `general-purpose` agent at `high`, headless only, in the
+   worktree at its head, which renders `main`'s admin because item 6 changes only the test and
+   gate wiring): `npm run package`, build the showcase (`VITE_CAIRN_E2E=1 npm
    --prefix examples/showcase run build`), serve it on 4391 (`CAIRN_DEV_BACKEND=1 npm --prefix
    examples/showcase run preview -- --port 4391`), and capture full-page PNGs at 1440 and 390,
    light and dark (theme by the `cairn-admin-theme` cookie, as `admin-visual.spec.ts` does), of
@@ -342,9 +392,9 @@ takes no gate of its own; its baseline is the conductor's one gate call below.
    `touch-targets`, `focus-renders`, `interactive-contrast`, `border-contrast`, and
    `chip-ground-collision`. The agent stops its server and says so. Commit the PNGs and a short
    record to `docs/internal/record/2026-09-26-theme-identity/pass-a-before/` on the branch.
-9. **`/cost` coverage:** record whether `/cost` includes subagent and workflow agents.
+10. **`/cost` coverage:** record whether `/cost` includes subagent and workflow agents.
 
-**Acceptance:** the ledger carries items 1 to 9. A stop condition in item 1, 4, or 7 halts the
+**Acceptance:** the ledger carries items 1 to 10. A stop condition in item 1, 4, 6, or 8 halts the
 pass with one message to Geoff.
 
 ---
@@ -399,7 +449,7 @@ directly after its existing `@layer properties, theme, base, components, utiliti
 - **Mutation:** deleting the `@source inline` line, then rebuilding, makes the presence test fail.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`.
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`.
 
 ---
 
@@ -415,9 +465,11 @@ self-test, and a new `src/tests/component/cairn-idiom-surface.test.ts`.
 - The `cairn-idiom` block in `cairn-admin.css`, the one home every later idiom rule joins.
 - `custom-surface-budget.json` gains an `idiomLayerCap` beside `componentsLayerCap` for the admin
   tree (the showcase tree gets `0`).
-- **The component project rebuilds the admin sheet before it runs**, through a vitest
-  `globalSetup` or a `test:component` pre-step that runs `build-admin-css.mjs`, so `npm test`, a
-  TDD loop, and every mutation read a fresh `dist/components/cairn-admin.css`.
+- **The component project rebuilds the admin sheet before it runs**, through a project-level
+  vitest `globalSetup` on the component project that runs `build-admin-css.mjs`, so `npm test`, the
+  engine string, a TDD loop, and every mutation read a fresh `dist/components/cairn-admin.css`. An
+  npm pre-step does not qualify: a direct `npx vitest run --project component <file>` bypasses it.
+  vitest 4.1.11 runs a project's own `globalSetup` (`TestProject._globalSetups`).
 - `_idiom-probe.ts` exports:
   - `renderInTheme(html, theme, opts)`: mounts markup under a bare `data-theme` wrapper with the
     compiled sheet injected once. `theme` is `'cairn-admin'` or `'cairn-admin-dark'`.
@@ -428,10 +480,16 @@ self-test, and a new `src/tests/component/cairn-idiom-surface.test.ts`.
     (`userEvent.tab`, or a keyboard event followed by focus). Active uses a CDP
     `Input.dispatchMouseEvent` `mousePressed` with no release through `cdp()` (the precedent at
     `src/tests/component/reproductions-containment.test.ts:17,114`), released after the read.
+    CDP input coordinates are in top-level viewport space, and a browser-mode test runs in a child
+    frame. The press point is therefore the element's rect center offset by
+    `window.frameElement`'s rect, with any scale between the frames applied.
     Before reading, it asserts `el.matches(':hover' | ':focus-visible' | ':active')` and throws
     naming the state otherwise.
-  - `resolveColor(expr, theme)`: paints a color expression on a probe element inside the same
-    wrapper and returns its computed value, the one color oracle every idiom test uses.
+  - `resolveColor(expr, theme, context?)`: paints a color expression on a probe element and
+    returns its computed value, the one color oracle every idiom test uses. By default the probe
+    sits inside the same wrapper. When `context` is given, the probe sits inside that element, so
+    a variable the element's classes set (for example `.alert-info`'s `--alert-color`) resolves
+    as it does on the element. The self-test proves both placements.
 
 **Outcome:** `check:custom-surface` gains the spec's third category (spec, "Gates and the pinned
 rules"). The cairn-idiom block is parsed by brace matching, the way the components block is, and
@@ -454,7 +512,9 @@ new exact count and adds its ledger line.
   unlayered and fails as an unsanctioned unlayered rule.
 - The probe's self-test, on a stock plain `btn` in both themes: `styleOf` reaches each of the four
   states, and the `active` read of `translate` is daisyUI's `0 .5px`, different from rest. A
-  `styleOf` call whose state is not reached throws.
+  `styleOf` call whose state is not reached throws. `resolveColor('var(--alert-color, red)', theme,
+  el)` on an `alert alert-info` element returns the info color, and the same call without `el`
+  returns red.
 - A guard test fails when the compiled sheet is older than `cairn-admin.css`.
 - `cairn-idiom-surface.test.ts`, both themes, all four states: the primary's computed
   `--btn-shadow` equals the decision 3 value for its theme (the variable, not the whole
@@ -466,7 +526,7 @@ new exact count and adds its ledger line.
   report's mutation ledger shows both fired.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`.
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`.
 
 ---
 
@@ -536,7 +596,7 @@ named in its header) that regenerates both files. Task 4 uses it and diffs the r
   to `@layer base`.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`,
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`,
   and the comments check, `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:comments'`.
 
 ---
@@ -567,7 +627,7 @@ commit as the manifest it governs, since `norms.test.ts` holds the two against e
 - The report lists every test updated for a moved number (Global constraints).
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`.
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`.
 
 ---
 
@@ -607,7 +667,7 @@ commit as the manifest it governs, since `norms.test.ts` holds the two against e
 - **Mutation** (after a rebuild): moving the hairline rule unlayered fails the utility test.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`.
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`.
 
 ---
 
@@ -646,15 +706,19 @@ list leaves open (`btn-link`, `btn-ghost`) is named in the report as a decision 
   `base-100`.
 - `btn-outline btn-active`, `btn-outline[aria-pressed='true']`, and a checked `btn-outline` take
   rule 11's ink.
-- The hairline's light and dark computed colors match decision 2's values. The report states their
-  ratios from task 13's pair table rows for the hairline: the hairline composited on `base-100`
-  against `base-100`, and against the resting sibling's 22% edge composited on `base-100`. Under
-  3:1 fails the task.
+- The hairline's light and dark computed colors match decision 2's values. The test computes two
+  ratios itself, using the definitions of task 13's pair table rows for the hairline. The first is
+  the hairline composited on `base-100` against `base-100`. The second is the same hairline
+  against the resting sibling's 22% edge composited on `base-100`. It takes the colors from
+  `resolveColor`, converts them with the file's existing `paintedRgba` canvas read
+  (`BtnActiveDarkGround.test.ts:48`), and uses `composite` and `contrastRatio` from
+  `src/lib/audit/color.ts:30,51`. It hand-rolls no color math. The report states both ratios in each theme. Under 3:1 fails the
+  task. Task 13 re-measures the same rows on canvas.
 - Loses to a utility: a selected segment with `font-normal` renders 400.
 - `unlayeredAllowlist` has 15 entries; `idiomLayerCap` updated.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`.
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`.
 
 ---
 
@@ -689,8 +753,8 @@ takes them):
 - Unchecked checkbox, radio, and field edges compute the 55% mix at rest and hover; a focused
   field matches daisyUI's focus edge; a `border-error` utility (through `hostCss`) on a field wins.
 - `interactive-control-edge-contrast.test.ts` passes.
-- The switch: checked track neutral and knob base-100 in each of the three checked forms, at rest
-  and hover; track and knob radius 9999px; `toggle-primary` and `toggle-success` match daisyUI's
+- The switch: checked track neutral and knob base-100 in each of the three checked forms, at rest,
+  hover, focus-visible, and active; track and knob radius 9999px; `toggle-primary` and `toggle-success` match daisyUI's
   colors; Review focus 4's `toggle rounded-none` (the utility through `hostCss`) squares it.
 - The switch's focus ring: a checked switch at focus-visible, in all three checked forms and both
   themes, computes an outline color other than `base-100`; an unchecked switch does too.
@@ -703,7 +767,7 @@ takes them):
 - `unlayeredAllowlist` has 13 entries; `idiomLayerCap` updated.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`.
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`.
 
 ---
 
@@ -730,11 +794,13 @@ solid.
   text color match the table, through `resolveColor`. The stock oracle for a bare `.alert` and
   `alert-soft alert-info` is daisyUI's own formula from `node_modules/daisyui/components/alert.css`
   resolved through `resolveColor` (for a bare alert, `var(--alert-color, var(--color-base-200))`;
-  for `alert-soft`, its 8% mix), never the same element read twice. `alert-error text-base-content`
+  for `alert-soft`, its 8% mix), never the same element read twice. Each oracle passes the alert
+  under test as `resolveColor`'s `context`, so `--alert-color` resolves to the variant's value
+  and not to the fallback. `alert-error text-base-content`
   takes the utility's ink.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`.
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`.
 
 ---
 
@@ -774,7 +840,7 @@ compatibility safelist), and the admin sheet inventory fixture (additions only).
   added.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`,
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`,
   and the comments check, `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:comments'`.
 
 ---
@@ -838,7 +904,7 @@ in a toolkit component the token carries a literal fallback equal to the new val
 - `admin-sheet-inventory.test.ts` passes; the report lists each class safelisted.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the admin CSS set,
-  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`,
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`,
   and the comments check, `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:comments'`.
 
 ---
@@ -929,6 +995,7 @@ themes at 1440 and 390.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking):
   - the showcase set, `CAIRN_GATE_LANE=light cairn-run-gate 'npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check'`;
+  - the admin CSS set, `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`, since the fixture route lands under `examples/showcase/src/routes/admin`, which `check:invisible-craft` scans;
   - the comments check, `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:comments'`;
   - the port check (`ss -ltnp 'sport = :4173'` prints no listener), then
     `cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- theme-kit.spec.ts custom-screen.spec.ts'`.
@@ -967,7 +1034,8 @@ primary's active step and the dark lift (decision 3). `RATIFIED_NORMS` moves to 
 this task: the four field roles (`button-primary`, `button-ghost`, `input-text`, `select`) at 6px
 and `card` at 8px, in the same commit as the regenerated manifest.
 
-**Order of steps:** `npm run package`; build the showcase and serve its preview on 4391, with the
+**Order of steps:** edit `RATIFIED_NORMS` first, since `norms:generate` packages and then reads it
+from `dist` (`norms.ts:484`); `npm run package`; build the showcase and serve its preview on 4391, with the
 listener's cwd checked; run `norms:generate`, the rendered audit, and the two live checks against
 it through `BASE_URL=http://localhost:4391`; stop the preview and say so; confirm 4173 is free;
 then run the contrast e2e.
@@ -1084,7 +1152,7 @@ ratified band moves, and re-measures the affected pair-table rows. **Acceptance:
 closed in the report with its test; `theme-kit.spec.ts` and `theme-kit-contrast.spec.ts` rerun
 green; `norms:check` green when a value moved; `gateTier: "engine"`. Task checks, each quoted with
 its `gate exit:` line (missing or red is blocking): the admin CSS set,
-`CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes'`;
+`CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:custom-surface && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:idioms'`;
 the showcase set if the run touches `examples/showcase`; and the port check, then
 `cairn-run-gate 'npm --prefix examples/showcase run test:e2e -- theme-kit.spec.ts theme-kit-contrast.spec.ts'`.
 
@@ -1176,7 +1244,7 @@ one independent `diff-reviewer` reads the fold's diff. The cairn-pass pass-end r
   shrink; the `ADMIN_CSS_SAFELIST` retirement filed, since the full compile subsumes its daisyUI
   half; pass B filed as the next action's initiative.
 - `docs/HISTORY.md` gets the pass entry: what landed, what the gates caught, spend against the 20M
-  ceiling and 15.6M planned, and what a later pass would be wrong to rediscover (the sublayer and
+  ceiling and 15.8M planned, and what a later pass would be wrong to rediscover (the sublayer and
   its pin; unnested daisyUI declarations; the theme-object key split; component tests on the
   compiled sheet and its pre-run build; the five selected forms; the runner's gate-string match
   for a pinned tier; the port-4173 reuse trap; the expected-red CI set during a render change).

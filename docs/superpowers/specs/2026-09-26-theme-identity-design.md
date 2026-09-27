@@ -553,7 +553,9 @@ unminified bytes, about as much as the other 64 modules together (257,518).
 
 ## Delivery
 
-The pass branches from `main` after draft docs pass 0+1 merges (ruling 3).
+The pass branches from `main` now, ahead of draft docs pass 0+1. Geoff reversed ruling 3 on
+2026-09-26, and draft docs pass 0+1 pauses unmerged until this effort merges
+(`docs/internal/record/2026-09-26-theme-identity-arc-log.md`, "Ruling 3 reversed").
 
 **Recommendation for plan approval: two passes.**
 

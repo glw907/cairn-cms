@@ -10,7 +10,9 @@ Every finding was checked against the tree, the runner, or `node_modules` before
 Spot checks run for this fold:
 - `gate-tier.mjs` on `main` builds the engine string as `DOCS_GATE && npm run check && npm test`.
 - `pass-execute.js:286-288` returns `t.gate || a.gate` for a pinned task.
-- `IMPL_SCHEMA` has no summary field, so task-check lines go in `gateOutput`.
+- `IMPL_SCHEMA` has a required `summary` field (`pass-execute.js:107-109`). Task-check lines still
+  go in `gateOutput`, beside the tier gate's evidence. (Corrected in the second fold. This line
+  first said the schema had no summary field.)
 - `norms.ts:555-561` holds the manifest against `RATIFIED_NORMS`.
 - daisyUI 5.7.44 `button.css` carries `.btn:where(:checked:not(.filter [type=radio].btn))`, which
   sets `--btn-color` primary and `--btn-fg` primary-content.
@@ -129,3 +131,47 @@ E (S1, S2, task 15), a resume point, F (S3, task 15, S4), and G (task 16).
 
 None. Every finding had an answer in the tree, daisyUI's own model, or the runner's source. The
 three findings a reviewer flagged as owner forks were settled by the owner before this fold.
+
+## Second fold
+
+Input: the fold verification
+(`docs/superpowers/research/2026-09-26-theme-identity-pass-a-fold-verification.md`), 1 major and
+10 minors. Each finding was checked against the tree before it was folded. The only spec edit is
+the Delivery section's sequencing sentence. No gate was run.
+
+| ID | Disposition |
+| --- | --- |
+| M1 | **Folded, decided (decision 13).** Task 0 gains item 6, a `cairn-implementer` dispatch before the baseline. `gate-tier.mjs`'s scripts and engine string now ends `npm run test:node-projects && npm run test:component -- --no-file-parallelism`. `package.json` gains `test:node-projects`, and `npm test` runs the same projects as before. The Gates section quotes the new string. The stall note now says stock `npm test` is not a gate. Item 8 (the baseline) stops the pass on any stall of the serialized string, with one message to Geoff; the remedy is a reboot and a retest. CI is unchanged: `test.yml` still runs `npm test`, parallel. |
+| m1 | **Folded.** Item 7 runs `--range HEAD~1..HEAD --pin engine`. After item 6's commit that range is non-empty. |
+| m2 | **Folded.** Decision 12 records the sequencing reversal and cites the arc log. The spec's Delivery sentence now states the reversal and cites the arc log. |
+| m3 | **Folded.** Task 6 computes both hairline ratios itself, through `resolveColor`, the file's `paintedRgba`, and `composite` and `contrastRatio` from `color.ts:30,51`. Task 13 re-measures on canvas. |
+| m4 | **Folded.** `resolveColor` takes an optional `context` element and paints the probe inside it. The task 2 self-test proves both placements. Task 8's alert oracles pass the alert as `context`. |
+| m5 | **Folded.** `styleOf`'s CDP press offsets the element's rect center by `window.frameElement`'s rect and any frame scale. |
+| m6 | **Folded.** Task 7's switch colors are asserted at rest, hover, focus-visible, and active. |
+| m7 | **Folded.** Task 13's order of steps starts with the `RATIFIED_NORMS` edit. |
+| m8 | **Folded.** The admin CSS set appends `npm run check:idioms` at its definition and at every task that quotes it. Task 12 runs the admin CSS set. Item 6's dispatch also runs `check:idioms`, since it edits `scripts/checks/`. |
+| m9 | **Folded.** Task 2 requires a project-level `globalSetup` on the component project. An npm pre-step no longer qualifies. vitest 4.1.11 carries `TestProject._globalSetups`. |
+| m10 | **Folded, record only.** The spot-check line on `IMPL_SCHEMA` above is corrected. The plan does not change. |
+
+### M1: the mechanism and its source
+
+vitest 4.1.11 caps a browser project's page count in `getThreadsCount`
+(`node_modules/vitest/dist/chunks/cli-api.CnMVyzaz.js:2479-2483`):
+
+```js
+if (!config.headless || !config.fileParallelism || !project.browser.provider.supportsParallelism) return 1;
+if (project.config.maxWorkers) return project.config.maxWorkers;
+```
+
+The CLI flag reaches that check through `resolved.browser.fileParallelism ??=
+options.fileParallelism` (`coverage.DM_a_rWm.js:493`). So `--no-file-parallelism` gives one page
+at a time, the form the memory records as clean. The same option set in `vitest.config.ts` would
+serialize CI's `npm test` as well. CI shows no stall, so that would lengthen every CI run for a
+workstation fault. `gate-tier.mjs` runs only locally, since no workflow calls it. Putting the flag
+in the tool's string therefore serializes exactly the runs that stall. It also keeps the runner's
+forced string and the implementer's run identical.
+
+### Token effect
+
+Item 6's dispatch adds about 0.2M. The task 0 row is now 0.5M, and the planned total is about
+15.8M. The 16M flag still sits above planned spend.

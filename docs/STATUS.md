@@ -20,14 +20,16 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-Executing theme identity pass A overnight (Geoff's grant, 2026-09-26): plan
+Theme identity pass A is **stopped at the segment A boundary** (session closed 2026-09-27), on
+branch `theme-identity-a` in worktree `.claude/worktrees/theme-identity-a`, local only (not yet
+pushed). Plan:
 [`2026-09-26-theme-identity-pass-a.md`](superpowers/plans/2026-09-26-theme-identity-pass-a.md),
-implementing the approved spec
-[`2026-09-26-theme-identity-design.md`](superpowers/specs/2026-09-26-theme-identity-design.md).
-Ceiling 20M, flag 16M. The run covers tasks 0 to 14 and the settle round, then stops at the resume
-point before Geoff's S3 before/after sitting; nothing merges or publishes. Resume prompt: "Resume
-theme identity pass A from the plan's ledger at the S3 sitting." The next release carrying it is
-`0.98.0`.
+spec [`2026-09-26-theme-identity-design.md`](superpowers/specs/2026-09-26-theme-identity-design.md).
+Tasks 0 to 4 are accepted; spend about 5.4M of the 20M ceiling. Resume prompt: "Resume theme
+identity pass A at the segment A boundary: follow 'Resume here' at the foot of the plan's ledger
+in the worktree." It starts with the engine gate on the not-yet-gated simplifier commit
+`15aa1015`, then the push, the draft PR, and segment B. The run still stops before Geoff's S3
+sitting; nothing merges or publishes. The next release carrying it is `0.98.0`.
 
 Draft docs pass 0+1 is **paused** on `draft-docs-0` (Geoff, 2026-09-26: "We can hold further docs
 work until we've completed this effort"); it resumes after the theme initiative merges (pass B,

@@ -184,13 +184,13 @@ invents them:
    its `.btn-active` twin does not.
 2. **Light's selected-segment hairline seeds from the locked 55% mix**
    (`color-mix(in oklab, var(--color-base-content) 55%, transparent)`, the value
-   `segmentTintClass` already carries at `segmented-control.ts:22-24`), so the admin has one
+   `segmentTintClass` compiles to from `ring-base-content/55` at `segmented-control.ts:22-24`), so the admin has one
    pressed hairline. Dark starts from rule 10's locked `oklch(57% 0.012 75)`. Task 6 measures both
    against the pair table's grounds at 3:1; a value that fails moves in lightness only, and the
    report says why it differs from the seed.
 3. **The soft primary's active step starts at 22%** (the spike's value) and is kept if task 13
    records a visible step from the 15% hover. **The dark warm lift** takes the dark theme's
-   `--cairn-shadow` tint (`oklch(10% 0.02 75)`, `cairn-admin.css:501`) at the light lift's
+   `--cairn-shadow` tint (`oklch(10% 0.02 75)`, `cairn-admin.css:520`) at the light lift's
    geometry and alpha: `0 1px 2px -1px oklch(10% 0.02 75 / .35)`. Task 13 records both.
 4. **Alert rules exclude daisyUI's style variants** (`alert-soft`, `alert-outline`, `alert-dash`),
    the narrow-selector condition applied to alerts. A developer's styled alert keeps daisyUI's look.
@@ -1453,3 +1453,13 @@ describes the old engine string.
 read CI with one Haiku probe against the expected-red set. (3) Launch segment B (tasks 5 to 8) with
 the same `commonNotes` as segment A, including decision 14 (`E2E_PORT=4392`; port 4173 is another
 project's) and the house-scope note.
+
+### Segment A boundary, resumed (2026-09-27, conductor)
+
+- Engine gate on `15aa1015` green in a gate agent (`gate exit: 0`; node 392 files / 5167 tests,
+  component serialized 86 files / 1487 tests). The first run died with "gate process vanished"
+  mid `test:node-projects`; the identical rerun passed. Last engine-green commit: `15aa1015`.
+- Segment B pre-flight (Sonnet, read-only) checked about 55 claims; two stale citations fixed in
+  this commit (decision 2 "compiles to", decision 3 `cairn-admin.css:520`).
+- Spend: about 5.6M through the resumed boundary.
+

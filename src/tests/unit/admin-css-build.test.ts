@@ -34,6 +34,44 @@ describe('admin css build', () => {
     expect(css).not.toContain('@layer utilities.cairn-idiom, utilities.daisyui;');
   });
 
+  // The split theme roots: daisyUI's own theme variables come from `@plugin "daisyui/theme"`
+  // blocks, which daisyUI emits through addBase, so they land in `@layer base`. Everything else a
+  // root sets stays in the plain root rule, unlayered, so an unlayered host rule on the wrapper
+  // element cannot outrank it. Each theme's color-scheme is declared in both places.
+  it('emits the theme blocks in @layer base and keeps the plain root rule unlayered', () => {
+    const rootDecls = new Map<string, { layer: string | null; theme: string }[]>();
+    postcss.parse(css).walkRules((rule) => {
+      const theme = rule.selectors
+        .map((s) => s.replace(/"/g, "'").trim())
+        .find((s) => s === "[data-theme='cairn-admin']" || s === "[data-theme='cairn-admin-dark']");
+      if (!theme) return;
+      let layer: string | null = null;
+      for (let node = rule.parent; node && node.type !== 'root'; node = node.parent) {
+        if (node.type === 'atrule' && (node as postcss.AtRule).name === 'layer') layer = (node as postcss.AtRule).params;
+      }
+      rule.each((node) => {
+        if (node.type !== 'decl') return;
+        const seen = rootDecls.get(node.prop) ?? [];
+        seen.push({ layer, theme });
+        rootDecls.set(node.prop, seen);
+      });
+    });
+    for (const theme of ["[data-theme='cairn-admin']", "[data-theme='cairn-admin-dark']"]) {
+      // The set of layers a property is declared in on this root. Tailwind splits the root into
+      // several rules (a color-mix value gets an @supports twin), so one property can appear in
+      // more than one rule; only the layer each sits in matters here.
+      const layersOf = (prop: string) =>
+        new Set((rootDecls.get(prop) ?? []).filter((d) => d.theme === theme).map((d) => d.layer));
+      for (const prop of ['--color-primary', '--color-base-100', '--radius-box', '--size-field', '--border', '--depth', '--noise']) {
+        expect(layersOf(prop), `${theme} ${prop}`).toEqual(new Set(['base']));
+      }
+      for (const prop of ['--cairn-shadow', '--font-body', '--color-muted', 'font-family', 'scrollbar-color', 'font-synthesis']) {
+        expect(layersOf(prop), `${theme} ${prop}`).toEqual(new Set([null]));
+      }
+      expect(layersOf('color-scheme'), `${theme} color-scheme`).toEqual(new Set(['base', null]));
+    }
+  });
+
   // INVARIANT DISCIPLINE (do not weaken). The assertions in this suite guard the embed-anywhere and
   // cascade-layer contracts. As the sheet shrinks, a present-class LIST may lose an entry, but no
   // invariant assertion may be removed or relaxed. Dropping a `not.toMatch` re-opens a real shipped bug

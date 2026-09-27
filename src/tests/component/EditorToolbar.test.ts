@@ -3,13 +3,11 @@ import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import { createRawSnippet } from 'svelte';
 import EditorToolbar from '../../lib/components/EditorToolbar.svelte';
-// The source admin sheet (the variables partial plus the scoped component rules), so the
-// unlayered menu focus override is present for the focus-visibility tests below.
-import '../../lib/components/cairn-admin.css';
-// The compiled sheet's text (daisyUI's real .btn/.btn-sm/.btn-square sizing), injected only for
-// the strip fit test below so its measurements reflect production button footprints, never the
-// UA-default widths the source partial alone leaves.
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+// The compiled admin sheet, loaded for the whole file: daisyUI's real button sizing and menu
+// rules, the scoped Preflight substitute, and the unlayered menu focus override. Its rules are
+// scoped under a theme root, so they apply only inside the describe blocks below that set
+// data-theme on the document element.
+import '../../../dist/components/cairn-admin.css';
 
 function baseProps(over: Record<string, unknown> = {}) {
   return { format: vi.fn(), mode: 'write' as const, onMode: vi.fn(), ...over };
@@ -176,20 +174,11 @@ describe('EditorToolbar', () => {
   describe('strip fit at the posture caps', () => {
     // The editor card spans the column; the strip must not wrap at either posture's cap (the
     // 49rem prose measure or the 56rem markup ceiling). The compiled sheet carries daisyUI's real
-    // button sizing, scoped to the theme, so this run sets data-theme and injects it; render
-    // mounts its container into the width-constrained baseElement, so the strip lays out against
-    // the real cap with production button footprints.
-    let sheet: HTMLStyleElement;
-    beforeAll(() => {
-      document.documentElement.setAttribute('data-theme', 'cairn-admin');
-      sheet = document.createElement('style');
-      sheet.textContent = compiledAdminCss;
-      document.head.appendChild(sheet);
-    });
-    afterAll(() => {
-      document.documentElement.removeAttribute('data-theme');
-      sheet.remove();
-    });
+    // button sizing, scoped to the theme, so this run sets data-theme; render mounts its
+    // container into the width-constrained baseElement, so the strip lays out against the real
+    // cap with production button footprints.
+    beforeAll(() => document.documentElement.setAttribute('data-theme', 'cairn-admin'));
+    afterAll(() => document.documentElement.removeAttribute('data-theme'));
 
     it('fits every strip control on one row at the prose and markup caps', async () => {
       for (const width of ['49rem', '56rem']) {
@@ -212,17 +201,8 @@ describe('EditorToolbar', () => {
     // The check glyph adds 22px to a selected tab's own box; before this fix, selecting a tab
     // resized it and shifted the row after it. The compiled sheet carries daisyUI's real button
     // sizing, so this measures the production footprint, not a UA default.
-    let sheet: HTMLStyleElement;
-    beforeAll(() => {
-      document.documentElement.setAttribute('data-theme', 'cairn-admin');
-      sheet = document.createElement('style');
-      sheet.textContent = compiledAdminCss;
-      document.head.appendChild(sheet);
-    });
-    afterAll(() => {
-      document.documentElement.removeAttribute('data-theme');
-      sheet.remove();
-    });
+    beforeAll(() => document.documentElement.setAttribute('data-theme', 'cairn-admin'));
+    afterAll(() => document.documentElement.removeAttribute('data-theme'));
 
     it('keeps each tab its own width across the selected/unselected swap', async () => {
       const screen = await render(EditorToolbar, baseProps({ mode: 'write' }));
@@ -379,7 +359,7 @@ describe('menu item resting chrome', () => {
   // The admin sheet ships without Preflight, so a .menu button item used to keep the UA button
   // chrome (outset border, gray fill, centered system-font text) while its anchor siblings
   // rendered flat. The scoped components-layer substitute in cairn-admin.css levels buttons to
-  // the anchor baseline; the component run loads the source partial, which carries that rule.
+  // the anchor baseline; the compiled sheet this file loads carries that rule.
   beforeAll(() => document.documentElement.setAttribute('data-theme', 'cairn-admin'));
   afterAll(() => document.documentElement.removeAttribute('data-theme'));
 
@@ -407,27 +387,11 @@ describe('menu item resting chrome', () => {
 describe('popover menu focus visibility', () => {
   // DaisyUI v5's .menu quiets :focus-visible on its items (outline-style: none) from the compiled
   // sheet's utilities layer, where it beats the admin's components-layer focus ring: cascade
-  // layers resolve before specificity and utilities is the last layer. The component run loads
-  // only the source partial, so reproduce that daisyUI rule here; these tests then hold only if
-  // the admin sheet's deliberately unlayered override outranks it, the way it must in the
-  // compiled sheet.
-  let daisyMenuQuiet: HTMLStyleElement;
-  beforeAll(() => {
-    document.documentElement.setAttribute('data-theme', 'cairn-admin');
-    daisyMenuQuiet = document.createElement('style');
-    daisyMenuQuiet.textContent = `
-      @layer properties, theme, components, utilities;
-      @layer utilities {
-        :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu :where(li:not(.menu-title, .disabled) > :not(ul, details, .menu-title)):not(.menu-active, :active, .btn):focus-visible {
-          outline-style: none;
-        }
-      }`;
-    document.head.appendChild(daisyMenuQuiet);
-  });
-  afterAll(() => {
-    document.documentElement.removeAttribute('data-theme');
-    daisyMenuQuiet.remove();
-  });
+  // layers resolve before specificity and utilities is the last layer. The compiled sheet this
+  // file loads carries that daisyUI rule, so these tests hold only if the admin sheet's
+  // deliberately unlayered override outranks it.
+  beforeAll(() => document.documentElement.setAttribute('data-theme', 'cairn-admin'));
+  afterAll(() => document.documentElement.removeAttribute('data-theme'));
 
   it('keeps a visible focus outline on a More-menu item', async () => {
     const screen = await render(EditorToolbar, baseProps());

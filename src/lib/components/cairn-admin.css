@@ -24,8 +24,8 @@
    cascade-layered overrides, and the four unlayered rules) are part of the same floor. This section may
    only SHRINK, and only with a matching update to docs/internal/design/2026-06-29-custom-surface-ledger.md;
    it is never extended ad hoc. check:custom-surface guards the same floor structurally. Each token's
-   declaration stays inside the theme-root block it themes (light here, dark below); the two theme blocks
-   are the Tier-1 home, and the Tier-2 vars cluster at the end of each. */
+   declaration stays inside the theme root it themes (light here, dark below): the two daisyUI theme
+   blocks are the Tier-1 home, and the Tier-2 vars cluster at the end of each plain root rule. */
 
 /* ===== GRAMMAR TOKENS =====
    The admin's structural type and spacing vocabulary, declared once here and never inside a
@@ -76,8 +76,61 @@
   --cairn-gap-section: 1.5rem;
 }
 
-/* Warm Stone: the cairn admin theme. Self-contained, since DaisyUI v5 reads these vars at point
-   of use, so this fully overrides the host's theme with no @plugin and no host build step. */
+/* Warm Stone: the cairn admin theme, in two parts. daisyUI's own theme variables (surfaces, brand,
+   status fills, radii, sizes, border, depth, noise) sit in daisyUI's documented theme format, a
+   `@plugin "daisyui/theme"` block carrying exactly the keys of daisyUI's theme object
+   (admin-theme-completeness.test.ts). daisyUI emits the block in `@layer base`. Everything else
+   the root sets sits in the plain rule after the block, unlayered, so a host's own unlayered
+   element rule cannot outrank it (admin-theme-equivalence.test.ts, its hostile run). The
+   block's values carry no top-level comma, since Tailwind's `@plugin` option
+   parser splits a value there and keeps only the last part, silently; a comma-bearing value (a
+   font stack, a layered shadow) belongs in the plain rule. `default` and `prefersdark` stay off:
+   the admin themes apply only under their own data-theme wrapper. The block exists only at
+   compile time; a browser drops the unknown at-rule, so nothing renders this source partial
+   directly (the component tests read the compiled sheet). */
+@plugin "daisyui/theme" {
+  name: "cairn-admin";
+  color-scheme: light;
+  --color-base-100: oklch(99% 0.004 75);
+  --color-base-200: oklch(96.5% 0.006 75);
+  --color-base-300: oklch(89% 0.011 75);
+  --color-base-content: oklch(26% 0.014 75);
+
+  --color-primary: oklch(52% 0.2 293);
+  --color-primary-content: oklch(98% 0.012 293);
+  --color-secondary: oklch(45% 0.02 75);
+  --color-secondary-content: oklch(98% 0.004 75);
+  /* 54% holds AA for the editor's directive ink on base-100 (5.28:1) and on its own 8% accent
+     tint (4.75:1); 58% failed the tint at 4.04:1. A locked margin, like the dark nav pair. */
+  --color-accent: oklch(54% 0.16 300);
+  --color-accent-content: oklch(98% 0.012 300);
+
+  --color-neutral: oklch(32% 0.012 75);
+  --color-neutral-content: oklch(96% 0.004 75);
+
+  /* The info, success, and error tones sit dark enough for >= 4.5:1 white text (WCAG AA) on the
+     badge and alert fills. Measured: info 5.12:1, success 4.94:1, error 4.83:1. */
+  --color-info: oklch(52% 0.12 240);
+  --color-info-content: oklch(98% 0.012 240);
+  --color-success: oklch(52% 0.12 150);
+  --color-success-content: oklch(98% 0.012 150);
+  --color-warning: oklch(75% 0.15 70);
+  --color-warning-content: oklch(26% 0.05 70);
+  --color-error: oklch(56% 0.2 25);
+  --color-error-content: oklch(98% 0.012 25);
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* The plain root rule. color-scheme is restated here so it keeps the unlayered strength the
+   block's copy loses in `@layer base`. */
 [data-theme='cairn-admin'] {
   color-scheme: light;
   /* The motion vocabulary: five durations and three curves, read from @carbon/motion 11.52.0.
@@ -167,9 +220,8 @@
      applies, so the thumb needs >= 3:1 against the panel surfaces it scrolls over; a flat
      --color-base-300 thumb measured only ~1.3:1 here. This mix against transparent (composited
      over whichever base surface sits beneath the scrollbar) measures 3.59:1 on base-100 and
-     3.51:1 on base-200. Plain declarations, not Tailwind's scrollbar-* utilities: this sheet is
-     imported raw by src/lib/reproductions/ReproContext.svelte, and the component test project
-     runs no Tailwind step, so an @apply here is dropped in the browser. */
+     3.51:1 on base-200. Plain declarations in the unlayered root rule, so a host's unlayered
+     element rule cannot outrank them. */
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, var(--color-base-content) 55%, transparent) transparent;
   /* A faint themed press wash, not a bare removal: some interactive elements (segmented-control
@@ -177,46 +229,8 @@
      acknowledgment rather than losing touch feedback outright. */
   -webkit-tap-highlight-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
 
-  /* Tier 1: the DaisyUI theme variables (surfaces, brand, status fills, radii). */
-  --color-base-100: oklch(99% 0.004 75);
-  --color-base-200: oklch(96.5% 0.006 75);
-  --color-base-300: oklch(89% 0.011 75);
-  --color-base-content: oklch(26% 0.014 75);
-
-  --color-primary: oklch(52% 0.2 293);
-  --color-primary-content: oklch(98% 0.012 293);
-  --color-secondary: oklch(45% 0.02 75);
-  --color-secondary-content: oklch(98% 0.004 75);
-  /* 54% holds AA for the editor's directive ink on base-100 (5.28:1) and on its own 8% accent
-     tint (4.75:1); 58% failed the tint at 4.04:1. A locked margin, like the dark nav pair. */
-  --color-accent: oklch(54% 0.16 300);
-  --color-accent-content: oklch(98% 0.012 300);
-
-  --color-neutral: oklch(32% 0.012 75);
-  --color-neutral-content: oklch(96% 0.004 75);
-
-  /* The info, success, and error tones sit dark enough for >= 4.5:1 white text (WCAG AA) on the
-     badge and alert fills. Measured: info 5.12:1, success 4.94:1, error 4.83:1. */
-  --color-info: oklch(52% 0.12 240);
-  --color-info-content: oklch(98% 0.012 240);
-  --color-success: oklch(52% 0.12 150);
-  --color-success-content: oklch(98% 0.012 150);
-  --color-warning: oklch(75% 0.15 70);
-  --color-warning-content: oklch(26% 0.05 70);
-  --color-error: oklch(56% 0.2 25);
-  --color-error-content: oklch(98% 0.012 25);
-
-  --radius-selector: 0.5rem;
-  --radius-field: 0.625rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
-  --noise: 0;
-
-  /* --- Tier 2 (light): the essential custom tokens, clustered at the end of the theme block so they
-     stay in their Tier-1 home (a var must live in the block it themes) while reading as one section. --- */
+  /* --- Tier 2 (light): the essential custom tokens, clustered at the end of the plain root rule so
+     they stay in the root they theme while reading as one section. --- */
 
   /* The on-surface warning INK, for small warning TEXT (the needs-alt label and the editor chip's
      needs-alt marker). --color-warning is tuned as a FILL behind dark content, so as small text on a
@@ -323,6 +337,54 @@
    the violet 293 primary) so the admin reads as one theme under either mode. DaisyUI v5 reads these
    at point of use, so the compiled component classes need no change. The muted and subtle tones keep
    >= 4.5:1 contrast on the dark bases. The polish pass tunes these values against the reference. */
+@plugin "daisyui/theme" {
+  name: "cairn-admin-dark";
+  color-scheme: dark;
+  /* Tier 1: the DaisyUI theme variables, dark.
+     Dark surface layering: the panels (sidebar, topbar, cards = base-100) lift clearly above the app
+     background (base-200, the deepest tone), with base-300 borders lighter still for a visible edge.
+     The wider base-100-to-base-200 gap is what reads as depth on dark, since shadows barely show. */
+  --color-base-100: oklch(24% 0.01 75);
+  --color-base-200: oklch(15.5% 0.009 75);
+  --color-base-300: oklch(30% 0.014 75);
+  --color-base-content: oklch(93% 0.006 75);
+
+  /* Locked pair: pressed footer-toggle text (text-primary on the bg-primary/10 plate over
+     dark base-100) measures 4.66:1, only 0.16 above the AA floor. Do not darken dark
+     --color-primary without re-checking that pair. */
+  /* Chroma sits a step below the light theme's on purpose (the A3 dark compensation, design arc
+     2026-07-15): dark grounds amplify saturation. Measured at this value: 5.44:1 on base-100 and
+     4.71:1 on the /10 tint, both above the 4.5:1 floor (and above the 0.18-chroma values). */
+  --color-primary: oklch(68% 0.15 293);
+  --color-primary-content: oklch(20% 0.04 293);
+  --color-secondary: oklch(72% 0.02 75);
+  --color-secondary-content: oklch(20% 0.008 75);
+  --color-accent: oklch(70% 0.14 300);
+  --color-accent-content: oklch(20% 0.04 300);
+
+  --color-neutral: oklch(80% 0.01 75);
+  --color-neutral-content: oklch(22% 0.008 75);
+
+  --color-info: oklch(72% 0.12 240);
+  --color-info-content: oklch(20% 0.04 240);
+  --color-success: oklch(70% 0.12 150);
+  --color-success-content: oklch(20% 0.04 150);
+  --color-warning: oklch(80% 0.14 70);
+  --color-warning-content: oklch(24% 0.05 70);
+  --color-error: oklch(70% 0.18 25);
+  --color-error-content: oklch(20% 0.04 25);
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* The plain root rule, dark; see the light root's comments for the split. */
 [data-theme='cairn-admin-dark'] {
   color-scheme: dark;
   /* See the light root for the full rationale: the same closed token set and the same
@@ -368,58 +430,15 @@
   font-synthesis: none;
   /* A quiet, theme-toned scrollbar instead of the OS default, on every scrollable admin surface.
      Same mix as the light root; on dark it measures 4.98:1 on base-100 and 5.29:1 on base-200
-     (a --color-base-300 thumb here measured only ~1.2:1). Plain declarations, not Tailwind's
-     scrollbar-* utilities: see the light root's comment. */
+     (a --color-base-300 thumb here measured only ~1.2:1). Plain declarations; see the light
+     root's comment. */
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, var(--color-base-content) 55%, transparent) transparent;
   /* A faint themed press wash, not a bare removal; see the light root's comment. */
   -webkit-tap-highlight-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
 
-  /* Tier 1: the DaisyUI theme variables, dark.
-     Dark surface layering: the panels (sidebar, topbar, cards = base-100) lift clearly above the app
-     background (base-200, the deepest tone), with base-300 borders lighter still for a visible edge.
-     The wider base-100-to-base-200 gap is what reads as depth on dark, since shadows barely show. */
-  --color-base-100: oklch(24% 0.01 75);
-  --color-base-200: oklch(15.5% 0.009 75);
-  --color-base-300: oklch(30% 0.014 75);
-  --color-base-content: oklch(93% 0.006 75);
-
-  /* Locked pair: pressed footer-toggle text (text-primary on the bg-primary/10 plate over
-     dark base-100) measures 4.66:1, only 0.16 above the AA floor. Do not darken dark
-     --color-primary without re-checking that pair. */
-  /* Chroma sits a step below the light theme's on purpose (the A3 dark compensation, design arc
-     2026-07-15): dark grounds amplify saturation. Measured at this value: 5.44:1 on base-100 and
-     4.71:1 on the /10 tint, both above the 4.5:1 floor (and above the 0.18-chroma values). */
-  --color-primary: oklch(68% 0.15 293);
-  --color-primary-content: oklch(20% 0.04 293);
-  --color-secondary: oklch(72% 0.02 75);
-  --color-secondary-content: oklch(20% 0.008 75);
-  --color-accent: oklch(70% 0.14 300);
-  --color-accent-content: oklch(20% 0.04 300);
-
-  --color-neutral: oklch(80% 0.01 75);
-  --color-neutral-content: oklch(22% 0.008 75);
-
-  --color-info: oklch(72% 0.12 240);
-  --color-info-content: oklch(20% 0.04 240);
-  --color-success: oklch(70% 0.12 150);
-  --color-success-content: oklch(20% 0.04 150);
-  --color-warning: oklch(80% 0.14 70);
-  --color-warning-content: oklch(24% 0.05 70);
-  --color-error: oklch(70% 0.18 25);
-  --color-error-content: oklch(20% 0.04 25);
-
-  --radius-selector: 0.5rem;
-  --radius-field: 0.625rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
-  --noise: 0;
-
-  /* --- Tier 2 (dark): the essential custom tokens, clustered at the end of the theme block (a var
-     must live in the block it themes), mirroring the light root's Tier-2 cluster above. --- */
+  /* --- Tier 2 (dark): the essential custom tokens, clustered at the end of the plain root rule,
+     mirroring the light root's Tier-2 cluster above. --- */
 
   /* The on-surface warning INK on dark, for small warning TEXT (the needs-alt label and the editor
      chip's marker). The dark warning fill already reads on its dark surfaces, so this ink keeps a

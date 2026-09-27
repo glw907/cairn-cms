@@ -381,7 +381,7 @@ re-sourced to Go on this tree rather than to the page.
   `reason.api.builds-not-connected`. Source: `tool/internal/spine/outcome.go:78-93`,
   `tool/internal/spine/exit.go:104-128`. [verified]
 - `f:v8c3ws` The same fact decides the wire word and the exit code: those three reasons word a result `skip`,
-  and every other unknown words it `unknown`. Source: `tool/internal/spine/exit.go:202-216`.
+  and every other unknown words it `unknown`. Source: `tool/internal/spine/exit.go:177-191`.
   [verified]
 - `f:xolnw0` A hold has no effect on an unknown, since an operator can accept a known failure but not a check
   that never ran. Source: `tool/internal/spine/exit.go:104-128`. [verified]
@@ -497,7 +497,7 @@ re-sourced to Go on this tree rather than to the page.
   rather than marshalled off the internal three-value state: `pass`, `fail`, `held`, `skip`, and
   `unknown`. `held` is not a state at all but a failing check an unexpired hold covers, and the
   division between `skip` and `unknown` is carried by the outcome's reason. Source:
-  `tool/internal/spine/exit.go:202-216`, `tool/internal/render/json.go:264-271`. [verified]
+  `tool/internal/spine/exit.go:177-191`, `tool/internal/render/json.go:264-271`. [verified]
 - `f:nv00ik` A check's `fix` object carries `summary`, `actor`, and `outward` always, `url` where the
   condition has one, and `command` only for an operator's own fix, since that is the one actor
   whose action is a command line the tool can name. Source:
@@ -533,7 +533,7 @@ re-sourced to Go on this tree rather than to the page.
   added to any of them joins the published vocabulary with no second list to keep in step: nine
   fixed codes, one `reason.park.<code>` per park code, and one `reason.api.<reason>` per provider
   reason, 32 in all. Source: `tool/internal/spine/outcome.go:56-76,95-119`,
-  `tool/internal/spine/park.go:13-25,45-47`, `tool/internal/providers/errors.go:17-58`.
+  `tool/internal/spine/park.go:11-23,26-28`, `tool/internal/providers/errors.go:17-58`.
   [verified]
 - `f:oqkzuq` `reason.api.request-rejected` names cairn's own outgoing request being wrong, an HTTP 400 no
   operator can fix, and is kept out of the catch-all for that reason. A rate limit never answers

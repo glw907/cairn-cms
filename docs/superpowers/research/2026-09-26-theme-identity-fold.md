@@ -128,6 +128,7 @@ The pass fixes these; this fold did not edit them.
 ## Not settled here
 
 - R1 and R2 await Geoff.
+- Superseded: R1 and R2 were decided as D1 and D2 in the spec at dc66584d.
 - Three values are left to measurement in the plan: the soft primary's active step, the dark lift
   value, and the light selected-segment hairline. The plain button's hover step is proposed and graded
   at the before-and-after.

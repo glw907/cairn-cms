@@ -2,7 +2,8 @@
 
 **Status:** approved design (Geoff, 2026-09-26), revised by the four-lens review fold
 (`docs/superpowers/research/2026-09-26-theme-identity-fold.md`) and a second fold. No owner items
-are open: the two the review raised are decided by idiom and best practice (D1, D2).
+are open: the two details of ruling 1 that the spike and the fold verification reopened are decided
+by idiom and best practice (D1, D2).
 **Arc record:** `docs/internal/record/2026-09-26-theme-identity-arc-log.md` (every round, candidate,
 verdict, and the six rulings after review).
 **Evidence:** the architecture spike, `docs/superpowers/research/2026-09-26-theme-identity-spike.md`
@@ -35,7 +36,7 @@ The model an agent is given, in one sentence, everywhere cairn ships guidance:
 > component available; write plain daisyUI plus cairn's role utilities.
 
 Two stated limits qualify "every component": `calendar` is
-excluded (it skins third-party date pickers and costs 243 KB raw), and responsive variants of daisyUI
+excluded (it skins third-party date pickers and adds 243 KB unminified), and responsive variants of daisyUI
 classes (`md:btn-lg`) compile only where cairn's own markup uses them. `no-uncompiled-class` already
 reports the second case in a consumer's tree.
 
@@ -65,8 +66,8 @@ Out of scope:
 
 ## Architecture
 
-This section is settled by ruling 1 and proven by the spike. The theme roots' authoring form is
-decision D1, and the full compile's cost and the calendar exclusion are decision D2.
+This section is settled by ruling 1 and proven by the spike. D1 settles the theme roots' authoring
+form, and D2 settles the full compile's cost and the calendar exclusion.
 
 ### One compiler, every component
 
@@ -99,8 +100,8 @@ daisyUI declaration. The existing `.btn-primary` lift and `.modal-box` repair ha
 this reason. An unlayered rule wins but also beats every markup utility, which breaks the "a utility
 still wins" promise and is how pinned rule 10 once ate `text-error`.
 
-The dominant answer is a named sublayer placed after daisyUI's: every rule that overrides a daisyUI
-declaration lives in `@layer utilities { @layer cairn-idiom { ... } }` in `cairn-admin.css`.
+Every rule that overrides a daisyUI declaration lives in `@layer utilities { @layer cairn-idiom {
+... } }` in `cairn-admin.css`, a named sublayer placed after daisyUI's own.
 `build-admin-css.mjs` pins the order by adding `@layer utilities.daisyui, utilities.cairn-idiom;`
 after its existing `@layer properties, theme, base, components, utilities;` line. The spike showed
 the pin is load-bearing: reversed, every override renders stock. A rule in the sublayer beats every
@@ -128,15 +129,17 @@ properties directly. Where the declaration reads a variable, as `.alert`'s reads
 `--alert-border-color`, the rule sets the variable instead.
 
 Each rule gets a computed-style test in both themes that proves two things: it renders, and a markup
-utility beats it. This is the test the dead lift never had. `admin-css-build.test.ts` asserts the
-pin statement.
+utility beats it. `admin-css-build.test.ts` asserts the pin statement.
 
 `admin-design-system.md`'s load-bearing rule "Scoped overrides go in `@layer components`" is amended
 to three homes:
 
 - `@layer components`: rules on cairn's own classes that compete with nothing in daisyUI.
 - `@layer utilities { @layer cairn-idiom }`: every rule that overrides a daisyUI declaration.
-- Unlayered: the theme roots, the box-sizing and reduced-motion resets, and pinned rules 1 to 9.
+- Unlayered: the plain theme-root rule on the two `[data-theme]` selectors, which holds cairn's own
+  tokens and the non-custom declarations (D1), the box-sizing and reduced-motion resets, and pinned
+  rules 1 to 9. The `@plugin "daisyui/theme"` blocks are not a cairn home: daisyUI emits them into
+  `@layer base`.
 
 ### Gates and the pinned rules
 
@@ -165,8 +168,10 @@ take it.
 
 These moves retire the unlayered `.btn` overrides in rules 10 to 12. The guarded-button rule
 (`.btn.cairn-btn-guarded[aria-disabled='true']`, pinned rule 2) stays unlayered. The motion ruling's
-decision 4 ("no unlayered override of `.btn`") is timing-scoped (CS-B1). The guarded rule sets
-`pointer-events` and a background, not a timing, so it does not breach decision 4.
+decision 4 reads "No unlayered override of the four components (`.modal`, `.drawer`, `.collapse`,
+`.btn`)" (`engine-rulings.md`, `motion-conform-to-daisyui-conventions`). The review read it as
+timing-scoped (CS-B1). The guarded rule sets `pointer-events` and a background, not a timing, so on
+that reading it stands. The plan records the reading in the rulings ledger or files the question.
 
 ## Admin decisions
 
@@ -210,14 +215,15 @@ decision 4 ("no unlayered override of `.btn`") is timing-scoped (CS-B1). The gua
   cairn-idiom rule sets `--radius-field: calc(var(--radius-box) - 0.25rem)` on the padded dropdown
   panel. It keys on the daisyUI `dropdown-content menu` pair, so a developer's dropdown inherits it.
   This is inferred from daisyUI's source; the computed-style test proves it.
-- Nothing else reaches zero (Geoff, round 4: "never zero").
+- Nothing else reaches zero (the round 4 verdict in the arc log).
 
 ### Density (round 2)
 
 - `--size-field: 0.28125rem` and `--size-selector: 0.28125rem`, one daisyUI step up. Every field-sized
-  component grows one step (`btn`, `input`, `select`, `fileinput`, `label`, `tab`), and so does every
-  selector-sized one (`badge`, `checkbox`, `radio`, `toggle`, `kbd`, `loading`, `status`, `range`,
-  `rating`). A `btn-sm` goes from 32px to 36px, a default `btn` from 40px to 45px, and a `badge-sm`
+  component grows one step (`btn`, `input`, `select`, `fileinput`, `label`, `tab`, `megamenu`,
+  `otp`), and so does every selector-sized one (`badge`, `checkbox`, `radio`, `toggle`, `kbd`,
+  `loading`, `status`, `range`, `rating`). A `btn-sm` goes from 32px to 36px, a default `btn` from
+  40px to 45px, and a `badge-sm`
   from 20px to 22.5px. Type size is unchanged.
 - This addresses control density. The charter's standing grade on the base font size stays open.
 - The half-pixel selector sizes, the checkbox hit-slop rule, and the EditPage bottom-bar note restate
@@ -247,13 +253,15 @@ All button rules live in cairn-idiom and meet the three conditions above.
   on a base-100 card.
 - **The selected segment** (a join or segmented control: `.btn-active` plus daisyUI's
   `[aria-pressed='true']`, `[aria-checked='true']`, and `[aria-current]:not([aria-current='false'],
-  [aria-current=''])` forms, disabled excluded). `--btn-bg` is the neutral wash `color-mix(in oklab,
+  [aria-current=''])` forms, excluding the color variants, `btn-outline`, `btn-dash`, and disabled, so
+  a variant selected control keeps its accent). `--btn-bg` is the neutral wash `color-mix(in oklab,
   var(--color-base-content) 7%, var(--color-base-100))` in both themes, at weight 600. It keeps an
   inset state hairline on `--btn-border` in both themes, because a 7% fill step against a base-100
   sibling measures about 1.16:1 and cannot carry the state alone. Dark starts from rule 10's locked
   `oklch(57% 0.012 75)`; light's value is measured. This is the July segment ruling, "neutral wash +
   semibold," with the invisible-craft hairline it already required. The EditorToolbar mode switch is
-  the same device. `BtnActiveDarkGround.test.ts` is rewritten for the new rule.
+  the same device. `BtnActiveDarkGround.test.ts` is rewritten for the new rule, keeping its
+  color-variant and `text-error` assertions.
 - **Button type.** Labels are weight 500 on plain and ghost buttons and 600 on `btn-primary`,
   `btn-neutral`, `btn-soft btn-primary`, `btn-error`, and the selected segment. The two plain-button
   sites that mark state with `font-semibold` keep it, since a utility beats the sublayer. Tracking
@@ -330,7 +338,7 @@ beyond the intended theme change is a finding, not a silent fix.
 - zero matches for `hover:bg-\[var\(--cairn-ink-hover\)\]` and for `bg-primary/10 text-primary
   shadow-none`;
 - zero matches for the PCRE pattern (`grep -P` or `rg --pcre2`)
-  `\brounded(-(t|b|l|r|s|e|tl|tr|br|bl|ss|se|es|ee))?(-(sm|md|lg|xl|2xl|3xl)|-\[[^\]]*\])?(?![\w-])`.
+  `\brounded(-(t|b|l|r|s|e|tl|tr|br|bl|ss|se|es|ee))?(-(xs|sm|md|lg|xl|2xl|3xl|4xl)|-\[[^\]]*\])?(?![\w-])`.
   It catches bare `rounded`, the fixed sizes, arbitrary values, and their side forms. It never
   matches a token class (`rounded-field`), `rounded-full`, or a structural zero, so a `rounded-full`
   chip is left to the diff review;
@@ -408,7 +416,8 @@ Pass B carries these; they depend on A's final vocabulary.
 
   The table's rows have one source, a recipe field beside `RATIFIED_NORMS`. A test asserts that each
   guidance table carries the same rows and that the exemplar's markup matches the fixture route. It
-  fails when one copy is edited alone. `check:skill-budget` stays green.
+  fails when one copy is edited alone. `check:package` (which runs `check-skill-budget.mjs`) stays
+  green.
 - **One agent-build probe at pass B's close.** A fresh Sonnet agent given only the shipped skills and
   a one-line brief builds one admin screen in the showcase. Static and rendered `cairn-audit` must
   report zero error findings and zero `radius-scale` or retired-patch findings. A failure names the
@@ -459,7 +468,9 @@ idiom is a theme variable or a cairn-idiom rule. A per-element idiom is a defect
   contrast, the switch, the depth language); a corner-system subsection (ladder, role mapping, true
   circles by shape, structural zeros, concentric corners); the type recipes (page heading
   `type-title font-[550]`, Lucide at 1.75); the chip rule in place of the pill geometry; the amended
-  layer rule; the new identity rule; and the errata the fold record lists.
+  layer rule; the new identity rule; the "Verify visuals on the showcase, not in component tests"
+  rule (`admin-design-system.md:104-107`), which D1 makes stale, since component tests now render
+  against the compiled sheet; and the errata the fold record lists.
 - `docs/internal/public-design-system.md`: the never-cross-over line amended to name geometry and
   edge grammar as shared (ruling 2).
 - Facts bullets in `docs/internal/facts/extend.md`: a custom screen's plain daisyUI classes now
@@ -478,37 +489,47 @@ idiom is a theme variable or a cairn-idiom rule. A per-element idiom is a defect
 
 ## Decisions after review
 
-The review raised two items beyond the arc log's rulings. Both have an answer settled by the
-framework's own convention and by best practice, so the spec decides them (Geoff, 2026-09-26: "This
-again comes down to good idiom and architectural best-practices").
+The spike and the fold verification reopened two details of ruling 1: the theme roots' authoring
+form and the full compile's cost. Both have an answer settled by the framework's own convention and
+by best practice, so the spec decides them (Geoff, 2026-09-26: "This again comes down to good idiom
+and architectural best-practices").
 
 ### D1: the theme roots are daisyUI theme blocks, with split ownership
 
 daisyUI's documented way to define a custom theme is `@plugin "daisyui/theme"`, and the starter
-already uses it. The two admin themes take that form. The spike found four hazards in a naive port.
-Splitting ownership removes each one by design:
+already uses it. The two admin themes take that form. The spike found three hazards in a naive
+port: silent comma truncation, demotion to `@layer base`, and the raw partial losing its palette.
+The split removes the first by construction and confines the second to daisyUI's own variables.
+The test change below removes the third.
 
-- **The plugin blocks carry exactly daisyUI's own theme variables:** the `--color-*` roles, the
-  three radii, the two sizes, `--border`, `--depth`, and `--noise`. None of those values contains a
-  top-level comma, so the parser's silent truncation cannot occur. `default` and `prefersdark` stay
-  off.
+- **The plugin blocks carry exactly the keys of daisyUI's theme object:** `color-scheme`, the
+  twenty daisyUI `--color-*` roles, the three radii, the two sizes, `--border`, `--depth`, and
+  `--noise`. None of those values contains a top-level comma, so the parser's silent truncation
+  cannot occur. Keep the oklch literals free of single quotes, since `grammar-tokens` and
+  `role-layer-contrast` read them as source text. `default` and `prefersdark` stay off. These
+  variables now sit in `@layer base`, so a host unlayered rule that matches the wrapper and sets
+  the same name wins. The spec accepts that, because no host sets cairn's wrapper variables by
+  accident.
 - **A plain unlayered root rule on the same two selectors keeps everything else:** the `--cairn-*`
-  tokens, the font variables, the shadow pair, `--color-muted` and `--color-subtle`, the nested
-  motion rules, and every non-custom declaration (`font-family`, smoothing, `font-synthesis`,
-  `scrollbar-*`, `-webkit-tap-highlight-color`, and a restated `color-scheme`). Those keep today's
-  unlayered strength against hostile host CSS.
+  tokens, the font variables, `--cairn-shadow`, `--color-muted`, `--color-subtle`, and
+  `--color-positive-ink`, the nested motion rules, and every non-custom declaration
+  (`font-family`, smoothing, `font-synthesis`, `scrollbar-*`, `-webkit-tap-highlight-color`, and a
+  restated `color-scheme`). Those keep today's unlayered strength against hostile host CSS.
 - **Two tests guard the split.** A completeness test asserts that each plugin block defines every
   daisyUI theme variable, with the list read from daisyUI's own theme object so it tracks upgrades. A
-  build assertion pins every computed theme value on both wrappers and a child, so a truncated or
-  demoted value fails loudly.
-- **Component tests and `ReproContext` render against the compiled sheet,** since a browser drops the
-  raw partial's `@plugin` block. Testing against what ships also closes the fidelity gap the design
-  system already names. The plan picks the mechanism.
+  build assertion pins every computed theme value on both wrappers and a child, with and without a
+  hostile unlayered host sheet (the spike's `equiv.mjs` form), so a truncated or demoted value fails
+  loudly.
+- **Component tests, `ReproContext`, and the `src` imports in `CairnAdminShell`, `LoginPage`, and
+  `ConfirmPage` render against the compiled sheet,** since a browser drops the raw partial's
+  `@plugin` block. Testing against what ships also closes the fidelity gap the design system
+  already names. The plan picks the mechanism.
 - **`motion-vocabulary`'s selector comparison** matches any comma-separated part, not the whole
   selector with `===`. It ships in `cairn-audit`, so it is fixed in pass A before the roots change.
 
-The result is that daisyUI owns daisyUI's variables in daisyUI's format, and cairn owns its own. An
-agent reading cairn's source finds a stock daisyUI theme, and theme tooling can read it.
+daisyUI's own variables then sit in daisyUI's documented theme format, and cairn's tokens sit in
+cairn's own rule beside them. An agent reading cairn's source finds a stock daisyUI theme, and
+theme tooling can read it.
 
 ### D2: every daisyUI component compiles in, calendar excluded
 
@@ -523,12 +544,12 @@ The spike's measurements (bytes; "min" is `lightningcss` minify):
 |---|---|---|---|
 | Today (baseline) | 307,287 | 31,759 | 25,001 |
 | All components, calendar excluded | 506,852 | 53,015 | 39,201 |
-| Full spike (all minus calendar, themes, sublayer) | 510,090 | 53,235 | 39,338 |
+| Full spike (theme blocks, all components minus calendar, the sublayer) | 510,090 | 53,235 | 39,338 |
 | All components including calendar | 691,191 | 62,665 | 44,738 |
 
-The sheet grows about 1.7x: +21 KB gzip and +14 KB brotli, loaded only on `/admin/**` and cached.
-`calendar` is excluded because it skins third-party date pickers cairn does not ship, and alone it is
-243 KB raw, more than half the growth.
+The sheet grows about 1.7x: +21 KB gzip and +14 KB brotli, loaded only on `/admin/**`. `calendar`
+is excluded because it skins third-party date pickers cairn does not ship. Alone it adds 243,525
+unminified bytes, about as much as the other 64 modules together (257,518).
 
 ## Delivery
 
@@ -537,10 +558,11 @@ The pass branches from `main` after draft docs pass 0+1 merges (ruling 3).
 **Recommendation for plan approval: two passes.**
 
 - **Pass A, the theme:** the build (the full compile, the sublayer and pin, the custom-surface
-  category, the inventory and presence tests), the D1 theme roots and their tests, the theme values, every cairn-idiom rule
-  and its tests, rules 10 to 14, the markup sweep with its post-condition, the starter and its
-  re-emit, the fixture screen and its spec, the norms data and `chip-ground-collision` re-key, the
-  design-system and public-design-system docs, the facts, the reference pages, and the changelog.
+  category, the inventory and presence tests), the D1 theme roots and their tests, the theme values,
+  every cairn-idiom rule and its tests, rules 10 to 14, the markup sweep with its post-condition, the
+  starter and its re-emit, the fixture screen and its spec, the norms data and `chip-ground-collision`
+  re-key, the design-system and public-design-system docs, the facts, the reference pages, and the
+  changelog.
 - **Pass B, the agent path:** the `radius-scale` rule and the retired-patch arms, the shipped
   guidance and its exemplar, the recipe source and its sync test, the norms print, the pass B facts
   and reference entries, and the agent-build probe.
@@ -564,8 +586,14 @@ setup command read `templates/waymark` from `main`.
 Execution calls, not design calls:
 
 - The exact dark value of the `btn-primary` warm lift, and the soft primary's active step.
-- The light value of the selected segment's state hairline, and whether dark's locked value still
-  clears 3:1 against the new base-100 sibling.
+- The selected-segment rule's exclusions: the color variants, `btn-outline`, and `btn-dash`, so a
+  variant selected control keeps its accent. The `BtnActiveDarkGround.test.ts` rewrite keeps its
+  color-variant and `text-error` assertions (fold m5).
+- Whether rule 11 widens from `.btn-active` to the same four active forms when it moves into
+  cairn-idiom.
+- Light's selected-segment hairline starts from the locked `ring-base-content/55` mix
+  (`segmented-control.ts:10-24`), or the plan states why it differs (fold m9), and whether dark's
+  locked value still clears 3:1 against the new base-100 sibling.
 - The per-site radius role for an element the role rules do not settle. The implementer lists these,
   and the diff review rules on each.
 - The site-theme pin mechanism in the showcase's own Tailwind build, proven by a computed-style test.

@@ -53,3 +53,7 @@ Rename after the fold verification (2026-09-26): ruling 1's sublayer `cairn-them
 `cairn-idiom`. "The cairn theme" already names the public opt-in identity layer
 (`examples/cairn-theme/`), and the names convention gives each part one name
 (`docs/internal/docs-register.md`, "Names").
+
+- Decisions after review (Geoff, 2026-09-26, verbatim: "This again comes down to good idiom and
+  architectural best-practices"): D1, the theme roots are daisyUI theme blocks with split
+  ownership; D2, every daisyUI component compiles in, calendar excluded.

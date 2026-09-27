@@ -9,6 +9,13 @@ name: tsgo
 # nothing about the code under review, only that the TypeScript 7 hold is still in force, so
 # gating a PR on it would block unrelated work. A green run is the signal that the 7.x edges have
 # closed and the bump in ROADMAP.md is ready to run.
+#
+# `--config ./svelte.config.js` pins the Svelte config svelte-check applies to every file it
+# finds, matching `npm run check`'s scope. Without it, svelte-check's `--tsgo` file discovery
+# walks the whole repo tree (not just this tsconfig's `include`) and tries to load
+# `examples/showcase` and `templates/waymark`'s own `svelte.config.js` files, which import
+# `@sveltejs/adapter-cloudflare`, a dependency this job never installs. `--config` tells it there
+# is exactly one Svelte config in scope, so those directories are never loaded.
 
 on:
   schedule:
@@ -27,4 +34,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm install --no-save --no-package-lock "@typescript/native@npm:typescript@7"
-      - run: npx svelte-check --tsconfig ./tsconfig.json --tsgo
+      - run: npx svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js --tsgo

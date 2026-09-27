@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theme identity, final</title>
+<link rel="stylesheet" href="/files/probe.css">
+<style>
+  body { margin: 0; background: #e9e6e1; font-family: system-ui, sans-serif; color: #222; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 48px; }
+  .wrap > h1 { font-size: 20px; margin: 24px 0 6px; }
+  .wrap > p { margin: 4px 0; font-size: 14px; line-height: 1.5; max-width: 90ch; }
+  .cap { font-size: 14px; font-weight: 600; margin: 22px 0 6px; }
+  .frame { border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
+
+  /* ===== The ratified system ===== */
+  [data-theme].fin {
+    --depth: 0; --noise: 0;
+    --radius-selector: 0.25rem; --radius-field: 0.375rem; --radius-box: 0.5rem;
+    --size-field: 0.28125rem; --size-selector: 0.28125rem;
+  }
+  /* Emphasis ladder on plain classes */
+  .fin .btn { font-weight: 500; --btn-p: 0.875rem; }
+  .fin .btn-primary, .fin .btn-neutral, .fin .btn-error { font-weight: 600; }
+  .fin .btn-primary:not(:disabled) { box-shadow: 0 1px 2px -1px oklch(35% 0.04 75 / .35); }
+  .fin .btn-neutral:hover { --btn-bg: var(--cairn-ink-hover); }
+  .fin .btn-soft.btn-primary { --btn-bg: color-mix(in oklab, var(--color-primary) 10%, transparent); --btn-border: transparent; font-weight: 600; }
+  .fin .btn:not(.btn-primary, .btn-neutral, .btn-ghost, .btn-soft, .btn-error) {
+    background-color: var(--color-base-100);
+    border-color: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+  }
+  .fin .join .btn.btn-active { background-color: color-mix(in oklab, var(--color-base-content) 7%, var(--color-base-100)); font-weight: 600; }
+  /* Quiet alerts */
+  .fin .alert { border-width: var(--border); }
+  .fin .alert-error { background: color-mix(in oklab, var(--color-error) 7%, var(--color-base-100)); border-color: color-mix(in oklab, var(--color-error) 30%, transparent); color: oklch(45% 0.17 25); }
+  .fin .alert-warning { background: color-mix(in oklab, var(--color-warning) 12%, var(--color-base-100)); border-color: color-mix(in oklab, var(--color-warning) 45%, transparent); color: var(--cairn-warning-ink); }
+  .fin .alert-info { background: color-mix(in oklab, var(--color-info) 7%, var(--color-base-100)); border-color: color-mix(in oklab, var(--color-info) 30%, transparent); color: oklch(44% 0.12 240); }
+  [data-theme='cairn-admin-dark'].fin .alert-error { background: color-mix(in oklab, var(--color-error) 12%, var(--color-base-100)); color: oklch(82% 0.1 25); }
+  [data-theme='cairn-admin-dark'].fin .alert-info { background: color-mix(in oklab, var(--color-info) 12%, var(--color-base-100)); color: oklch(82% 0.08 240); }
+  [data-theme='cairn-admin-dark'].fin .alert-warning { background: color-mix(in oklab, var(--color-warning) 12%, var(--color-base-100)); }
+  /* Corners: every framed element on a token; chips on the selector radius; concentric menus */
+  .fin .tile { border-radius: var(--radius-box); }
+  .fin .chip { border-radius: var(--radius-selector); }
+  .fin .menu.rounded-box.p-1 > li > a { border-radius: calc(var(--radius-box) - 0.25rem); }
+  /* Type and icons */
+  .fin .page-h { font-weight: 550; }
+  .fin svg[stroke] { stroke-width: 1.75; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>The ratified theme, light and dark</h1>
+  <p>Every decision from rounds 1 to 4, applied together and rendered from the real compiled admin stylesheet: flat material, corners at 0.25 / 0.375 / 0.5rem, one size step up, the emphasis ladder on plain classes, hairline plain buttons, quiet alerts, chips on the selector radius, calmer button type, the heading at 550, 1.75px icon strokes, and concentric menus.</p>
+
+  <div class="cap">Light</div>
+  <div class="frame"><div data-theme="cairn-admin" class="fin"><div class="slot"></div></div></div>
+  <div class="cap">Dark</div>
+  <div class="frame"><div data-theme="cairn-admin-dark" class="fin"><div class="slot"></div></div></div>
+</div>
+
+<template id="t">
+  <div class="flex bg-base-200 font-[family-name:var(--font-body)] text-base-content">
+    <aside class="bg-base-100 flex w-56 flex-none flex-col border-r border-[var(--cairn-card-border)]">
+      <div class="flex h-16 items-center border-b border-[var(--cairn-card-border)] px-3">
+        <span class="flex items-center gap-2.5 px-2 py-1.5">
+          <span class="tile flex h-8 w-8 items-center justify-center bg-primary text-primary-content shadow-sm">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor"><ellipse cx="12" cy="18" rx="7" ry="2.6"/><ellipse cx="12" cy="12.5" rx="5" ry="2.3"/><ellipse cx="12" cy="7.5" rx="3" ry="2"/></svg>
+          </span>
+          <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
+        </span>
+      </div>
+      <div class="p-2">
+        <div class="px-3 pt-2 pb-1 type-label font-semibold uppercase tracking-[0.08em] text-muted">Content</div>
+        <ul class="menu menu-sm w-full gap-0.5 p-0">
+          <li><a aria-current="page" class="type-subtitle bg-primary/10 font-semibold text-primary"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Posts</a></li>
+          <li><a class="type-subtitle font-medium text-subtle"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg>Pages <span class="chip ml-auto bg-base-content/10 px-1.5 type-chip">2</span></a></li>
+          <li><a class="type-subtitle font-medium text-subtle"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg>Fragments</a></li>
+          <li><a class="type-subtitle font-medium text-subtle"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>Library</a></li>
+        </ul>
+        <div class="px-3 pt-4 pb-1 type-label font-semibold uppercase tracking-[0.08em] text-muted">Site</div>
+        <ul class="menu menu-sm w-full gap-0.5 p-0">
+          <li><a class="type-subtitle font-medium text-subtle"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.3 9.3a1 1 0 0 0 1.4 0l8.6-8.6a1 1 0 0 0 0-1.4z"/><circle cx="7" cy="7" r="1.5"/></svg>Tags</a></li>
+          <li><a class="type-subtitle font-medium text-subtle"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Editors</a></li>
+        </ul>
+      </div>
+      <div class="mt-auto flex items-center gap-2.5 border-t border-[var(--cairn-card-border)] p-3"><span class="flex h-8 w-8 items-center justify-center rounded-full bg-neutral text-neutral-content type-meta">DE</span><span class="type-meta"><span class="block font-semibold">Demo Editor</span><span class="text-muted">Owner</span></span></div>
+    </aside>
+
+    <main class="min-w-0 flex-1 px-8 py-7">
+      <div class="flex items-center justify-between">
+        <h2 class="page-h text-2xl font-[family-name:var(--font-display)]">Posts</h2>
+        <div class="flex gap-2"><button class="btn btn-sm btn-soft btn-primary">Publish site (2)</button><button class="btn btn-sm btn-neutral">+ New post</button></div>
+      </div>
+
+      <div class="mt-5 flex flex-wrap items-center gap-2">
+        <label class="input input-sm w-56"><svg class="h-4 w-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="Search posts"></label>
+        <div class="join"><button class="btn btn-sm join-item btn-active">All 7</button><button class="btn btn-sm join-item">Pending edits 2</button><button class="btn btn-sm join-item">Published 5</button></div>
+        <div class="join"><button class="btn btn-sm join-item btn-active">Shown</button><button class="btn btn-sm join-item">Hidden 0</button></div>
+      </div>
+
+      <div class="mt-4 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+        <table class="table type-subtitle">
+          <thead><tr><th class="type-label uppercase tracking-[0.08em] text-muted">Title</th><th class="type-label uppercase tracking-[0.08em] text-muted">Tags</th><th class="type-label uppercase tracking-[0.08em] text-muted">Date</th><th class="type-label uppercase tracking-[0.08em] text-muted">Status</th></tr></thead>
+          <tbody>
+            <tr><td class="font-semibold">Copy-edit demo</td><td><span class="chip border border-[var(--cairn-card-border)] px-2 py-0.5 type-label">Routes</span></td><td class="tabular-nums">Jun 9, 2026</td><td><span class="badge badge-sm">Published</span></td></tr>
+            <tr><td class="font-semibold">Light on the early track</td><td><span class="chip border border-[var(--cairn-card-border)] px-2 py-0.5 type-label">Weather</span></td><td class="tabular-nums">Jun 5, 2026</td><td><span class="badge badge-sm">Published</span></td></tr>
+            <tr><td class="font-semibold">Weather notes draft</td><td><span class="chip border border-[var(--cairn-card-border)] px-2 py-0.5 type-label">Gear</span></td><td class="tabular-nums">May 18, 2026</td><td><span class="badge badge-sm bg-primary/10 text-primary border-transparent">Edited</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-6 grid grid-cols-[1fr_auto] items-end gap-5">
+        <div class="flex flex-wrap items-end gap-3">
+          <label class="flex flex-col gap-1"><span class="type-body font-medium">Name</span><input class="input input-sm w-44" value="Ana Ruiz"></label>
+          <label class="flex flex-col gap-1"><span class="type-body font-medium">Role</span><select class="select select-sm w-32"><option>Editor</option><option>Owner</option></select></label>
+          <label class="flex items-center gap-2 type-body pb-2"><input type="checkbox" class="toggle toggle-sm" checked> Notify</label>
+          <label class="flex items-center gap-2 type-body pb-2"><input type="checkbox" class="checkbox checkbox-sm" checked> Owner</label>
+        </div>
+        <div class="flex gap-2"><button class="btn btn-sm btn-ghost">Cancel</button><button class="btn btn-sm">Save draft</button><button class="btn btn-sm btn-primary">Publish</button></div>
+      </div>
+
+      <div class="mt-6 grid grid-cols-[1fr_auto] items-start gap-5">
+        <div class="flex flex-col gap-2">
+          <div role="alert" class="alert alert-error type-body">The save failed: GitHub did not answer. Your edit is still here.</div>
+          <div role="alert" class="alert alert-warning type-body">Two images have no alt text.</div>
+          <div role="alert" class="alert alert-info type-body">Publishing takes about a minute to reach the site.</div>
+        </div>
+        <ul class="menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]">
+          <li><a class="bg-base-content/[0.06]">Duplicate</a></li><li><a>Rename</a></li><li><a>Move to Pages</a></li><li><a class="text-error">Delete</a></li>
+        </ul>
+      </div>
+
+      <div class="mt-6 flex flex-wrap items-center gap-4 type-body">
+        <span>Jump to <kbd class="kbd kbd-sm">⌘</kbd> <kbd class="kbd kbd-sm">K</kbd></span>
+        <div role="tablist" class="tabs tabs-border"><a role="tab" class="tab tab-active">Write</a><a role="tab" class="tab">Preview</a></div>
+        <progress class="progress w-32" value="60" max="100"></progress>
+        <button class="btn btn-sm btn-error">Delete post</button>
+      </div>
+    </main>
+  </div>
+</template>
+
+<script>
+  document.querySelectorAll('.slot').forEach((s) => s.replaceWith(document.getElementById('t').content.cloneNode(true)));
+</script>
+</body>
+</html>

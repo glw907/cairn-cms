@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The switch</title>
+<link rel="stylesheet" href="/files/probe.css">
+<style>
+  body { margin: 0; background: #e9e6e1; font-family: system-ui, sans-serif; color: #222; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px 48px; }
+  .wrap > h1 { font-size: 20px; margin: 24px 0 6px; }
+  .wrap > p { margin: 4px 0; font-size: 14px; line-height: 1.5; max-width: 90ch; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+  .opt { cursor: pointer; }
+  .opt .cap { font-size: 14px; margin: 0 0 6px; }
+  .opt.selected .frame { outline: 3px solid #6d4ad8; outline-offset: 3px; }
+  .frame { border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
+
+  [data-theme].fin {
+    --depth: 0; --noise: 0;
+    --radius-selector: 0.25rem; --radius-field: 0.375rem; --radius-box: 0.5rem;
+    --size-field: 0.28125rem; --size-selector: 0.28125rem;
+  }
+
+  /* B: a switch is round: track and knob exempt from the ladder, like the avatar and the dot. */
+  .sw-round .toggle, .sw-round .toggle:before { border-radius: 999px; }
+
+  /* C: round, and ON fills the track with the ink so state reads by fill, not only position. */
+  .sw-fill .toggle, .sw-fill .toggle:before { border-radius: 999px; }
+  .sw-fill .toggle:checked { background-color: var(--color-neutral); --input-color: var(--color-neutral); }
+  .sw-fill .toggle:checked:before { background-color: var(--color-base-100); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>The switch</h1>
+  <p>Two things make today's switch odd. The tight ladder squared off its knob, so it looks like a checkbox sliding inside a box. And when it's on, only the knob changes: the track stays white, so the state reads only by position.</p>
+  <p>B and C treat the switch as round. That's the same exemption as the avatar and the dirty-state dot: a switch is a physical metaphor, and it means round. C also fills the track with the ink when on, the convention every OS switch uses, so on and off read at a glance. The fill is the ink, not violet, which keeps the accent reservation. Click one.</p>
+
+  <div class="grid3">
+    <div class="opt" data-choice="sw-today" onclick="pick(this)"><div class="cap"><b>A. Today</b> on the tight ladder</div>
+      <div class="frame"><div data-theme="cairn-admin" class="fin"><div class="slot"></div></div></div>
+      <div class="frame" style="margin-top:8px"><div data-theme="cairn-admin-dark" class="fin"><div class="slot"></div></div></div></div>
+    <div class="opt" data-choice="sw-round" onclick="pick(this)"><div class="cap"><b>B. Round</b>, state by position</div>
+      <div class="frame"><div data-theme="cairn-admin" class="fin sw-round"><div class="slot"></div></div></div>
+      <div class="frame" style="margin-top:8px"><div data-theme="cairn-admin-dark" class="fin sw-round"><div class="slot"></div></div></div></div>
+    <div class="opt" data-choice="sw-fill" onclick="pick(this)"><div class="cap"><b>C. Round, ink fill when on</b>. My recommendation.</div>
+      <div class="frame"><div data-theme="cairn-admin" class="fin sw-fill"><div class="slot"></div></div></div>
+      <div class="frame" style="margin-top:8px"><div data-theme="cairn-admin-dark" class="fin sw-fill"><div class="slot"></div></div></div></div>
+  </div>
+</div>
+
+<template id="t">
+  <div class="bg-base-100 p-5 font-[family-name:var(--font-body)] text-base-content">
+    <div class="flex flex-wrap items-center gap-5 type-body">
+      <label class="flex items-center gap-2"><input type="checkbox" class="toggle toggle-sm" checked> Notify</label>
+      <label class="flex items-center gap-2"><input type="checkbox" class="toggle toggle-sm"> Digest</label>
+      <label class="flex items-center gap-2"><input type="checkbox" class="checkbox checkbox-sm" checked> Owner</label>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-5 type-body" style="zoom:2">
+      <input type="checkbox" class="toggle toggle-sm" checked>
+      <input type="checkbox" class="toggle toggle-sm">
+      <input type="checkbox" class="checkbox checkbox-sm" checked>
+    </div>
+  </div>
+</template>
+
+<script>
+  document.querySelectorAll('.slot').forEach((s) => s.replaceWith(document.getElementById('t').content.cloneNode(true)));
+  function pick(el) {
+    document.querySelectorAll('.opt').forEach((o) => o.classList.toggle('selected', o === el));
+    if (window.toggleSelect) { try { toggleSelect(el); } catch (e) {} }
+  }
+</script>
+</body>
+</html>

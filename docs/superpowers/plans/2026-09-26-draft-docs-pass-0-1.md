@@ -499,3 +499,43 @@ counts as one).
 - `~/.dotfiles` warm paths match the header exactly; no task touches them.
 - Next: segment A (tasks 1, 3, 4, 5 via `pass-execute`), task 2's chain alongside.
 
+
+### Segment A boundary (2026-09-26): parked on Geoff's hold
+
+Geoff put draft docs on hold until the theme identity pass
+(`docs/superpowers/specs/2026-09-26-theme-identity-design.md`) merges: pause at this boundary,
+do not merge `draft-docs-0`. Resume at segment B.
+
+| Task | Status | Commits |
+|---|---|---|
+| 1 | accepted, one fix round | `2427856a`, `57ccd2d2` |
+| 2 | accepted (dotfiles), two fix rounds; scope widened to `agents/site-implementer.md` and `agents/cairn-implementer.md`, which also carried the rule | `4b2916fc`, `353cc61e`, `9f2ebe36` |
+| 3 | accepted by conductor ruling (reviewer accept; gate red only on port 4173) | `d0639043`, `85efee59` |
+| 4 | accepted by conductor ruling (same) | `d17d716c` |
+| 5 | accepted by conductor ruling (same) | `0713d110`, `3e452fdc` |
+| hardening | three review findings on tasks 3 to 5, accepted | `2d960720` |
+| simplifier | segment round, accepted | `be6e13e5` |
+
+- Gate at the boundary (conductor, `cairn-run-gate`): docs checks, `check:symbols`,
+  `check:provenance`, `check:readiness`, `npm run check` 0/0, `make -C tool check`, and the
+  component project (1429/1429) green; unit plus integration 5193/5195. The two failures are
+  `src/tests/unit/audit/rendered.test.ts`'s BASE_URL tests, which assume nothing listens on
+  localhost:4173; dubplate's `sirv` held that port all segment. CI on draft PR #91 is the clean
+  proof. Every per-task gate this segment also stopped `npm test`'s `&&` chain before the
+  component project, so the component suite ran only here.
+- Rulings: site-pass agents edit the `site-docs/<site>-<pass>` branch themselves (spec, Stage 0
+  "Site-pass rule"); `engine-consult` carries no freeze wording and stays untouched.
+- Carried, not fixed: `check:symbols` still reads an attached redirect (`2>&1`, `>out.json`) as
+  a word and drops a continuation left pending at a fence close; a duplicate shipped anchor
+  hides the heading comparison until removed; `rendered.test.ts` should take a free port rather
+  than assume 4173 (friction log at the close). The global `CLAUDE.md` stays over its 6k budget
+  (already an open item for Geoff).
+- Conductor defect: a `cd` in the conductor shell moved the session's working directory, and a
+  dispatched implementer inherited it, running two gates in the wrong worktree before it
+  noticed. Conductor shell calls use absolute paths; dispatch prompts pin the worktree.
+- Spend (agent-reported `subagent_tokens`): pre-flight 0.16M, task 2 chain 0.28M, workflow run 1
+  1.30M, workflow run 2 0.62M, hardening, simplifier, and review 0.32M; about 2.7M plus the
+  conductor. `/usage` reading owed at resume. Outside the pass: the TypeScript 7 canary chore
+  (PR #90), about 0.41M.
+- Next on resume: segment B, tasks 6 and 8 through `pass-execute`, then task 7's chain; the
+  dispatch notes carry the port-4173 caveat if it persists and pin the worktree path.

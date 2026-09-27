@@ -1526,9 +1526,9 @@ persistent "?" carries Markdown help).
           style="anchor-name:--cairn-edit-actions"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12h.01" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M5 12h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 12h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 12h.01" />
           </svg>
         </button>
       </Tooltip>
@@ -1740,7 +1740,7 @@ persistent "?" carries Markdown help).
     <div class="alert alert-warning mb-4 flex-col items-start type-body">
       <p class="flex items-center gap-2 font-medium">
         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
         </svg>
         <span>{notice.message}</span>
       </p>
@@ -1974,9 +1974,9 @@ persistent "?" carries Markdown help).
               onclick={() => mediaPopover?.open('chooser')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
               </svg>
             </button>
           </Tooltip>
@@ -2279,7 +2279,7 @@ persistent "?" carries Markdown help).
         aria-label="Close details"
         onclick={closeDetails}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
       </button>
     </div>
     <!-- Three labeled groups. Each group is its own fieldset so its eyebrow is a real legend that

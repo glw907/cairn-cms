@@ -70,6 +70,13 @@
    text-[var(...)] form at their few call sites (a wider in-tree migration is a separate,
    deliberate change, not part of adding the idiom). */
 @source inline("cairn-text-warning cairn-text-success");
+/* MARKUP SWEEP SAFELIST (theme identity pass A, the markup sweep). Same de facto public API as the
+   compatibility safelist above: this sweep folded the ink-opener and Publish-tint button recipes
+   into `btn-neutral` and `btn-soft btn-primary`, whose cairn-idiom rules already reproduce the
+   hover step and the transparent edge, so these three classes lose their last admin call site.
+   Held so a consumer's own admin markup still riding the old recipe keeps resolving; each leaves
+   only as a deliberate, changelog-carried act. */
+@source inline("shadow-none hover:bg-[var(--cairn-ink-hover)] hover:bg-primary/15");
 /* FULL DAISYUI COMPILE (spec, "One compiler, every component"). The admin compiles every daisyUI
    component and utility class, calendar excluded (it skins third-party date pickers cairn does
    not ship), so a class with no admin markup call site of its own (`.timeline`, `.rating`,

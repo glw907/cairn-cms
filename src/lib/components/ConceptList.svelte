@@ -293,7 +293,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 <div class="mx-auto w-full max-w-3xl">
 
 {#snippet headerAction()}
-  <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+  <button type="button" class="btn btn-sm w-full shrink-0 btn-neutral tracking-small-semibold sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
     <PlusIcon class="h-4 w-4" aria-hidden="true" /> New {createNoun}
   </button>
 {/snippet}
@@ -356,7 +356,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   <!-- The empty state owns the content area (no card): the cairn mark, concept-named copy, and the
        create CTA centered on a tall fill, so a first-run office reads as composed. -->
   {#snippet emptyAction()}
-    <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-sm btn-neutral tracking-small-semibold" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" aria-hidden="true" /> New {createNoun}
     </button>
   {/snippet}

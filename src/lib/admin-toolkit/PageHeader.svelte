@@ -56,7 +56,7 @@ last word; it stays scoped CSS rather than a utility class, which ships the same
     {#if eyebrow}
       <span class="type-label font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
     {/if}
-    <h1 class="page-h1 m-0 type-title font-bold font-[family-name:var(--font-display)]">{title}</h1>
+    <h1 class="page-h1 m-0 type-title font-[550] font-[family-name:var(--font-display)]">{title}</h1>
     {#if meta}<p class="m-0 mt-1 type-meta text-muted">{meta}</p>{/if}
   </div>
   {#if action}

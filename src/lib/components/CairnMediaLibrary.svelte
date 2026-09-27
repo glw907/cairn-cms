@@ -630,7 +630,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      comment). Plain, unstyled: every visual and layout class stays exactly where it already was. -->
 <div bind:this={rootEl}>
 {#snippet uploadAction()}
-  <button type="button" class="btn btn-sm shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
+  <button type="button" class="btn btn-sm shrink-0 btn-neutral tracking-small-semibold" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
     <UploadIcon class="h-4 w-4" aria-hidden="true" /> Upload
   </button>
 {/snippet}
@@ -657,7 +657,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
        until there is content. -->
   {#snippet emptyUploadAction()}
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
-      <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
+      <button type="button" class="btn btn-sm btn-neutral tracking-small-semibold" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
         <UploadIcon class="h-4 w-4" aria-hidden="true" /> Upload an image
       </button>
       <span class="type-meta">or drop a file anywhere on this page</span>

@@ -344,6 +344,7 @@ focus-visible:border-[color-mix(in_oklab,var(--color-primary)_70%,transparent)]
 focus-visible:ring-2
 focus-visible:ring-primary/70
 focus-visible:text-base-content
+font-[550]
 font-[family-name:var(--font-display)]
 font-[family-name:var(--font-editor,ui-monospace,monospace)]
 font-[family-name:var(--font-editor)]

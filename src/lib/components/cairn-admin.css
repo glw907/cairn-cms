@@ -1004,9 +1004,8 @@
       font-weight: 500;
     }
 
-    /* btn-sm reads 2px narrower per side than daisyUI's own 12px default, since a wider plain
-       hairline draws the same visual weight as a filled small control. No other size changes: a
-       global --btn-p would shrink the default btn from its own 1rem default. */
+    /* btn-sm's padding grows 2px per side, from daisyUI's own 0.75rem default to 0.875rem. The
+       rule targets btn-sm only, not --btn-p globally, so the default btn keeps its own 1rem. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-sm {
       --btn-p: 0.875rem;
     }

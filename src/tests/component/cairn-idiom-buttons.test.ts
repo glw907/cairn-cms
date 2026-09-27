@@ -227,11 +227,37 @@ describe.each(THEMES)('the btn-neutral hover step (%s)', (theme) => {
       cleanup();
     }
   });
+
+  // A markup utility still wins over the hover rule's own --btn-bg setter: bg-base-200 sets
+  // background-color directly, an unnested Tailwind utility that outranks the nested sublayer
+  // rule regardless of which state (hover included) the rule itself targets.
+  it('loses to a bg-base-200 utility at hover', async () => {
+    const { el, cleanup } = mountButton(theme, 'btn btn-neutral bg-base-200');
+    try {
+      expect(await styleOf(el, 'background-color', 'hover')).toBe(resolveColor('var(--color-base-200)', theme));
+    } finally {
+      cleanup();
+    }
+  });
 });
 
 describe.each(THEMES)('button type (%s)', (theme) => {
-  it.each(['btn', 'btn btn-ghost'])('%s reads weight 500', (className) => {
-    const { el, cleanup } = mountButton(theme, className);
+  it.each(['btn', 'btn btn-ghost'])(
+    '%s reads weight 500 at rest, hover, focus-visible, and active',
+    async (className) => {
+      const { el, cleanup } = mountButton(theme, className);
+      try {
+        for (const state of STATES) {
+          expect(await styleOf(el, 'font-weight', state)).toBe('500');
+        }
+      } finally {
+        cleanup();
+      }
+    },
+  );
+
+  it.each(['btn', 'btn btn-ghost'])('%s disabled still reads weight 500', (className) => {
+    const { el, cleanup } = mountButton(theme, `${className} btn-disabled`);
     try {
       expect(getComputedStyle(el).fontWeight).toBe('500');
     } finally {
@@ -240,9 +266,23 @@ describe.each(THEMES)('button type (%s)', (theme) => {
   });
 
   it.each(['btn btn-primary', 'btn btn-neutral', 'btn btn-soft btn-primary', 'btn btn-error'])(
-    '%s keeps the stock weight 600',
-    (className) => {
+    '%s keeps the stock weight 600 at rest, hover, focus-visible, and active',
+    async (className) => {
       const { el, cleanup } = mountButton(theme, className);
+      try {
+        for (const state of STATES) {
+          expect(await styleOf(el, 'font-weight', state)).toBe('600');
+        }
+      } finally {
+        cleanup();
+      }
+    },
+  );
+
+  it.each(['btn btn-primary', 'btn btn-neutral', 'btn btn-soft btn-primary', 'btn btn-error'])(
+    '%s disabled keeps the stock weight 600',
+    (className) => {
+      const { el, cleanup } = mountButton(theme, `${className} btn-disabled`);
       try {
         expect(getComputedStyle(el).fontWeight).toBe('600');
       } finally {
@@ -275,8 +315,18 @@ describe.each(THEMES)('button type (%s)', (theme) => {
 });
 
 describe.each(THEMES)('btn-sm padding (%s)', (theme) => {
-  it('btn-sm reads 14px padding', () => {
+  it.each(STATES)('btn-sm reads 14px padding at %s', async (state) => {
     const { el, cleanup } = mountButton(theme, 'btn btn-sm');
+    try {
+      expect(await styleOf(el, 'padding-left', state)).toBe('14px');
+      expect(await styleOf(el, 'padding-right', state)).toBe('14px');
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('btn-sm disabled still reads 14px padding', () => {
+    const { el, cleanup } = mountButton(theme, 'btn btn-sm btn-disabled');
     try {
       expect(getComputedStyle(el).paddingLeft).toBe('14px');
       expect(getComputedStyle(el).paddingRight).toBe('14px');
@@ -324,10 +374,10 @@ describe.each(THEMES)('soft primary states (%s)', (theme) => {
     }
   });
 
-  it('keeps a transparent edge at rest', () => {
+  it.each(STATES)('keeps a transparent edge at %s', async (state) => {
     const { el, cleanup } = mountButton(theme, 'btn btn-soft btn-primary');
     try {
-      expect(getComputedStyle(el).borderTopColor).toBe(resolveColor('transparent', theme));
+      expect(await styleOf(el, 'border-top-color', state)).toBe(resolveColor('transparent', theme));
     } finally {
       cleanup();
     }

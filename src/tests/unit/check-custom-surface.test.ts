@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   pinnedUnlayeredRules,
   componentsLayerSelectorCount,
+  cairnIdiomLayerSelectorCount,
   retiredTokenHits,
   evaluate,
 } from '../../../scripts/checks/check-custom-surface.mjs';
@@ -53,6 +54,54 @@ describe('componentsLayerSelectorCount', () => {
     // Two rules inside the real block (the `a` reset and the bare-form `summary`); the commented mention
     // and the unlayered `.menu li` rule are excluded.
     expect(componentsLayerSelectorCount(css)).toBe(2);
+  });
+});
+
+describe('cairnIdiomLayerSelectorCount and the cairn-idiom category', () => {
+  it('counts a sublayer rule written in house style and excludes it from the unlayered scan', () => {
+    const css = `
+@layer utilities {
+  @layer cairn-idiom {
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-primary:not(:disabled) {
+      --btn-shadow: 0 1px 2px -1px oklch(35% 0.04 75 / .35);
+    }
+  }
+}
+`;
+    expect(cairnIdiomLayerSelectorCount(css)).toBe(1);
+    // The block's own selector is excluded from the unlayered scan, the same way @layer components is.
+    expect(pinnedUnlayeredRules(css)).toHaveLength(0);
+  });
+
+  it('passes evaluate when the cairn-idiom sublayer sits inside idiomLayerCap', () => {
+    const { pass } = evaluate(
+      { adminCss: 'src/tests/fixtures/custom-surface/cairn-idiom-pass.css', markupDirs: [] },
+      { unlayeredAllowlist: [], componentsLayerCap: 0, idiomLayerCap: 1, retiredTokenBudget: 0 },
+    );
+    expect(pass).toBe(true);
+  });
+
+  it('fails evaluate, naming idiomLayerCap, when the cairn-idiom sublayer is over its cap', () => {
+    const { pass, failures } = evaluate(
+      { adminCss: 'src/tests/fixtures/custom-surface/cairn-idiom-over-cap.css', markupDirs: [] },
+      { unlayeredAllowlist: [], componentsLayerCap: 0, idiomLayerCap: 1, retiredTokenBudget: 0 },
+    );
+    expect(pass).toBe(false);
+    expect(failures.join(' ')).toContain('idiomLayerCap');
+  });
+
+  it('fails the same rule planted unlayered, as an unsanctioned unlayered rule', () => {
+    const css = `
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-primary:not(:disabled) {
+  --btn-shadow: 0 1px 2px -1px oklch(35% 0.04 75 / .35);
+}
+`;
+    // The same rule with no @layer cairn-idiom wrapper at all is an unlayered rule, not counted
+    // against idiomLayerCap, and it fails set equality against an empty allowlist.
+    expect(cairnIdiomLayerSelectorCount(css)).toBe(0);
+    const rules = pinnedUnlayeredRules(css);
+    expect(rules).toHaveLength(1);
+    expect(rules[0]).toContain('.btn-primary');
   });
 });
 

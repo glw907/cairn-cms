@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { playwright } from '@vitest/browser-playwright';
+import { statSync } from 'node:fs';
 import path from 'node:path';
 
 // Read committed SQL migrations from Node context (workerd cannot read the FS).
@@ -140,6 +141,12 @@ export default defineConfig({
           unstubGlobals: true,
           include: ['src/tests/component/**/*.test.ts'],
           setupFiles: ['./src/tests/component/_setup.ts'],
+          // Rebuilds dist/components/cairn-admin.css before this project's test files start, so every
+          // idiom-probe render, mutation, and TDD loop reads a fresh compiled sheet rather than a stale
+          // one left over from a previous package build. A project's own globalSetup runs once, in
+          // Node, ahead of its test files; an npm pre-step would not reach a direct `npx vitest run
+          // --project component <file>` invocation, but this does.
+          globalSetup: ['./src/tests/component/_global-setup.ts'],
           // The heaviest component tests mount the full EditPage with the CodeMirror editor, and on a
           // slower CI runner the editor surface and toolbar occasionally are not ready before the
           // matcher times out (the EditPage and CairnAdmin toolbar/insert assertions flake this way;
@@ -151,6 +158,15 @@ export default defineConfig({
             provider: playwright(),
             headless: true,
             instances: [{ browser: 'chromium' }],
+            // The one Node-side escape hatch a browser-mode test needs: reading a file's mtime to
+            // prove the sheet above is actually fresh (`_idiom-probe.test.ts`'s guard). A real
+            // Chromium page has no fs access, so this runs server-side and the test calls it over
+            // Vitest's own browser-command RPC.
+            commands: {
+              async mtimeMs(_context, relativePath: string) {
+                return statSync(path.resolve(relativePath)).mtimeMs;
+              },
+            },
           },
         },
       },

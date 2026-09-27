@@ -135,10 +135,13 @@ reset, and the `prefers-reduced-motion` block also live outside `@layer componen
 floor (seven rules total). A swapped rule that merely *contains* `.menu li` or `.cairn-btn-guarded` no
 longer passes; an eighth unlayered rule fails the length check and the set-equality check.
 
-### The `.btn-primary` lift (resolved: stays Tier 2)
+### The `.btn-primary` lift (resolved: stays Tier 2, now in the `cairn-idiom` sublayer)
 
-The bespoke soft-violet shadow lift in the `.btn-primary:not(:disabled)` and its `:hover` rule. It
-cannot fold onto the theme's native `--depth`; see the resolved investigation below.
+The bespoke soft-violet shadow lift, one `--btn-shadow` rule per theme root. It cannot fold onto
+the theme's native `--depth`; see the resolved investigation below. It moved out of
+`@layer components` into the `cairn-idiom` sublayer (see "The `cairn-idiom` category" below),
+where it renders for the first time: a `@layer components` rule cannot outrank daisyUI's own
+utilities-layer `.btn` declarations, so the lift never painted before the move.
 
 ### The theme-adaptive elevation pair
 
@@ -508,3 +511,41 @@ not live in `@layer components`; it is the fifth pinned unlayered rule,
 reaches for in dark). No new Tier-2 token: the selector references only Tier-1 theme color. Light
 is untouched (its wider `base-100`/`base-200` gap already reads legibly; verified by render).
 `componentsLayerCap` stays 14, unchanged.
+
+## The `cairn-idiom` category: a third gate signal, and its first two rules
+
+`check:custom-surface` gains a third category beside the pinned unlayered set and the
+`@layer components` cap: the `cairn-idiom` sublayer inside `@layer utilities`, the one home every
+rule that overrides a daisyUI declaration lives in from here on. daisyUI 5 compiles every
+component into named sublayers of `@layer utilities`; cascade layers resolve before specificity,
+so neither an unlayered rule (which also beats every markup utility, the defect pinned rule 10
+once carried) nor a `@layer components` rule (which loses outright) can override a daisyUI
+declaration. `build-admin-css.mjs` registers `utilities.cairn-idiom` after daisyUI's own
+`utilities.daisyui` sublayers, so a `cairn-idiom` rule outranks daisyUI regardless of the
+competing rule's own pseudo-class, and still loses to a markup utility, which Tailwind compiles
+unnested directly into `utilities` (an unnested declaration always outranks a nested sublayer).
+
+The gate parses the `cairn-idiom` block by brace matching, the same mechanism `componentsLayerCap`
+already uses for `@layer components`, and counts its selectors against a new `idiomLayerCap` in
+`scripts/checks/custom-surface-budget.json` (the showcase tree, which authors no admin sheet, gets
+`0`). The block's own selectors are excluded from the pinned-unlayered-rule scan, the same way the
+`@layer components` block already is, so a rule written in house style inside `cairn-idiom` is not
+mistaken for an unsanctioned unlayered rule.
+
+Two rules move in, both dead in `@layer components` until now (a `@layer components` rule cannot
+outrank daisyUI's own utilities-layer declarations regardless of specificity, the same mechanism
+every unlayered forced workaround above documents):
+
+- **The `.btn-primary` warm lift**, one `--btn-shadow` rule per theme root (see the Tier-2 entry
+  above): `0 1px 2px -1px oklch(35% 0.04 75 / .35)` in light, the dark theme's own warmer, darker
+  shadow tint (`oklch(10% 0.02 75)`) at the same geometry and alpha in dark. Consolidated from the
+  old dead rule's two selectors (rest, `:hover`) into one value held across every interaction
+  state, since a lift that grows on hover reads as the primary action fidgeting rather than
+  lifting.
+- **The `.modal-box` repair**, moved unchanged: `border: 1px solid var(--cairn-card-border);
+  box-shadow: var(--cairn-shadow);`, replacing daisyUI's flat, theme-invariant black modal shadow
+  with the same theme-adaptive elevation pair every other floating surface carries.
+
+`idiomLayerCap` is `3` (two theme-scoped primary-lift selectors plus the one modal-box selector).
+`componentsLayerCap` drops from 19 to 16: the three selectors these two rules used to occupy in
+`@layer components` (dead there) leave it.

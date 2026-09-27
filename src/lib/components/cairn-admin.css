@@ -507,10 +507,12 @@
 
 /* ----- Load-bearing rules (break these and the admin renders wrong) -----
    These rules are the structural half of the Tier-2 floor. The embed-anywhere reset substitutes for the
-   omitted global Preflight; the @layer components block carries the anchor reset, the focus ring, and the
-   primary-button lift below the utilities layer so a utility still wins; the twelve UNLAYERED rules at the
-   end (starting with `.menu li > :is(button, a):focus-visible`) are the only sanctioned unlayered scoped
-   rules, pinned by exact selector in admin-css-build.test.ts and check:custom-surface.
+   omitted global Preflight; the @layer components block carries the anchor reset and the focus ring below
+   the utilities layer so a utility still wins; the cairn-idiom sublayer (nested inside utilities, ordered
+   after daisyUI's own sublayers so it outranks them instead) carries the primary-button lift and the
+   modal-box repair; the twelve UNLAYERED rules at the end (starting with `.menu li > :is(button, a):focus-visible`)
+   are the only sanctioned unlayered scoped rules, pinned by exact selector in admin-css-build.test.ts and
+   check:custom-surface.
    Each rule below names the bug it prevents; do not delete or relayer one without a ledger update. */
 
 /* The scoped reset that replaces global Preflight (which the admin sheet omits). It applies only
@@ -670,19 +672,6 @@
     outline-offset: 2px;
   }
 
-  /* The primary action carries a soft violet lift that grows on hover, so the main call to action
-     reads as raised and current rather than a flat fill. The mix adapts to the theme's primary. */
-  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-primary:not(:disabled) {
-    box-shadow:
-      0 1px 2px color-mix(in oklch, var(--color-primary) 22%, transparent),
-      0 6px 16px -5px color-mix(in oklch, var(--color-primary) 38%, transparent);
-  }
-  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-primary:not(:disabled):hover {
-    box-shadow:
-      0 2px 4px color-mix(in oklch, var(--color-primary) 26%, transparent),
-      0 10px 24px -5px color-mix(in oklch, var(--color-primary) 48%, transparent);
-  }
-
   /* The hoisted document title is a text-entry surface like the editor: browsers treat a focused
      text input as keyboard-modal, so the page-wide 2px focus-visible ring above would shout
      through every typing session. It gets the editor's quiet always-on hairline instead (WCAG
@@ -736,15 +725,6 @@
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is(a, button, input, textarea, select, summary, [tabindex]) {
     scroll-margin-top: 5.5rem;
     scroll-margin-bottom: 6rem;
-  }
-
-  /* DaisyUI ships .modal-box with a single flat, theme-invariant shadow and no border, so the
-     admin's highest-elevation surface is the one floating surface that ignores the theme-adaptive
-     elevation pair every other card, dropdown, and slide-over carries (the floating-card recipe).
-     This brings it into that same vocabulary. */
-  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .modal-box {
-    border: 1px solid var(--cairn-card-border);
-    box-shadow: var(--cairn-shadow);
   }
 
   /* Hit-slop for the checkbox-in-label pattern (boolean fields, closed-taxonomy tag pickers): a
@@ -818,6 +798,53 @@
     display: flex;
     align-items: center;
     height: 1lh;
+  }
+}
+
+/* The cairn-idiom sublayer: every rule that overrides a daisyUI declaration lives here, in
+   utilities.cairn-idiom, the sublayer build-admin-css.mjs registers after daisyUI's own
+   utilities.daisyui sublayers. Cascade layers resolve before specificity, so an unconditional rule
+   here outranks any daisyUI rule on the same property regardless of that daisyUI rule's own
+   pseudo-class, including one daisyUI restates at :hover, :focus-visible, :checked, or :active. A
+   rule meant to hold one value across every interaction state therefore needs no per-state
+   selector of its own; it only needs a selector narrow enough that daisyUI's own behavior still
+   shows through where it should (a disabled control, a variant this rule is not meant to
+   restyle). A markup utility still wins over every rule here: Tailwind compiles its own utility
+   classes directly into the utilities layer, unnested in any named sublayer, and an unnested
+   declaration always outranks a nested one regardless of layer order. Each rule sets a daisyUI
+   component variable rather than the property it feeds, for the same reason, wherever daisyUI
+   reads one. */
+@layer utilities {
+  @layer cairn-idiom {
+    /* The primary action's soft violet lift. DaisyUI compiles its own component rules into named
+       sublayers of utilities, so the two rules this replaces, both living in @layer components
+       (ordered before utilities in the source's own layer statement), lost to daisyUI's resting
+       fill and never rendered. Setting --btn-shadow rather than box-shadow keeps a markup
+       shadow-none utility, which sets box-shadow directly, still winning: the property itself
+       still reads through var(--btn-shadow) from daisyUI's own .btn rule. The lift holds one value
+       across rest, hover, focus-visible, and active, since a shadow that grows on interaction read
+       as the primary action fidgeting rather than lifting; the two theme-scoped rules below share
+       the lift's geometry and alpha and differ only in hue, the dark theme's own warmer, darker
+       shadow tint (matching --cairn-shadow's dark value) in place of light's. */
+    [data-theme='cairn-admin'] .btn-primary:not(:disabled) {
+      --btn-shadow: 0 1px 2px -1px oklch(35% 0.04 75 / 0.35);
+    }
+    [data-theme='cairn-admin-dark'] .btn-primary:not(:disabled) {
+      --btn-shadow: 0 1px 2px -1px oklch(10% 0.02 75 / 0.35);
+    }
+
+    /* The .modal-box repair, restored the same way: daisyUI ships .modal-box with a single flat,
+       theme-invariant black shadow and no border, in its own utilities sublayer, so this rule
+       (previously in @layer components too) never outranked it either. It brings the modal into
+       the theme-adaptive elevation vocabulary every other floating surface (card, dropdown,
+       slide-over) already carries. daisyUI's own .modal-box sets box-shadow directly, with no
+       variable to set instead, so this restates the property; a markup shadow utility on a
+       .modal-box still wins, from the same unnested utilities-layer position Tailwind's own
+       utilities compile into. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .modal-box {
+      border: 1px solid var(--cairn-card-border);
+      box-shadow: var(--cairn-shadow);
+    }
   }
 }
 

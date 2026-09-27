@@ -1,12 +1,16 @@
 // cairn-cms: the custom-surface ratchet gate. Holds the admin and showcase trees to their de-customized
 // floor on enumerable signals (not line counts, which are gameable and would flag sanctioned patterns):
 //   (1) the unlayered-rule set, pinned by exact selector, neither deletable nor extendable without an
-//       allowlist change; (2) a cap on @layer components rule selectors per tree; (3) a per-tree
-//       retired-token budget. The admin counts the muted and subtle parallel tokens wrapped in a bracket
-//       utility or an inline style; the showcase counts any bracketed or inline custom-property reference.
-//       The budget ratchets to zero across the sweep. Budgets, the per-tree retired-token pattern, and the
-//       by-name Tier-2 allowlist live in scripts/checks/custom-surface-budget.json, seeded at current values.
-//       Wired as `npm run check:custom-surface`.
+//       allowlist change; (2) a cap on @layer components rule selectors per tree; (3) a cap on the
+//       cairn-idiom sublayer's own selectors per tree (the one home every rule that overrides a daisyUI
+//       declaration lives in: @layer utilities { @layer cairn-idiom { ... } }, parsed by brace matching
+//       the same way the components block is, and excluded from the unlayered-rule scan the same way);
+//       (4) a per-tree retired-token budget. The admin counts the muted and subtle parallel tokens wrapped
+//       in a bracket utility or an inline style; the showcase counts any bracketed or inline
+//       custom-property reference. The budget ratchets to zero across the sweep. Budgets, the per-tree
+//       retired-token pattern, and the by-name Tier-2 allowlist live in
+//       scripts/checks/custom-surface-budget.json, seeded at current values. Wired as
+//       `npm run check:custom-surface`.
 import { readFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,13 +33,19 @@ function stripCssComments(css) {
 }
 
 /**
- * The body of the first `@layer components { … }` block by brace matching, or '' if absent.
+ * The body of the first `@layer <marker's own name> { … }` block by brace matching, found by the
+ * literal `marker` text (e.g. `@layer components` or `@layer cairn-idiom`), or '' if absent. Shared by
+ * the components-layer and cairn-idiom-layer readers below, which differ only in which at-rule they
+ * anchor on; the cairn-idiom block is nested inside `@layer utilities { … }` in the source, but the
+ * marker text alone is enough to find ITS OWN opening and matching closing brace, the outer wrapper
+ * never entering the count.
  * @param {string} source
+ * @param {string} marker
  * @returns {string}
  */
-function componentsLayerBody(source) {
+function namedLayerBody(source, marker) {
   const css = stripCssComments(source);
-  const start = css.indexOf('@layer components');
+  const start = css.indexOf(marker);
   if (start === -1) return '';
   const open = css.indexOf('{', start);
   if (open === -1) return '';
@@ -48,16 +58,17 @@ function componentsLayerBody(source) {
 }
 
 /**
- * The css with its `@layer components { … }` block removed (brace-matched). Comments are blanked first
- * so a commented `@layer components` mention is not mistaken for the real block.
+ * The css with its first `@layer <marker> { … }` block removed (brace-matched). Comments are blanked
+ * first so a commented mention of the marker is not mistaken for the real block.
  * @param {string} source
+ * @param {string} marker
  * @returns {string}
  */
-function stripComponentsLayer(source) {
+function stripNamedLayer(source, marker) {
   const css = stripCssComments(source);
-  const body = componentsLayerBody(source);
+  const body = namedLayerBody(source, marker);
   if (!body) return css;
-  const start = css.indexOf('@layer components');
+  const start = css.indexOf(marker);
   const open = css.indexOf('{', start);
   let depth = 0;
   for (let i = open; i < css.length; i++) {
@@ -65,6 +76,44 @@ function stripComponentsLayer(source) {
     else if (css[i] === '}' && --depth === 0) return css.slice(0, start) + css.slice(i + 1);
   }
   return css;
+}
+
+/**
+ * The body of the first `@layer components { … }` block by brace matching, or '' if absent.
+ * @param {string} source
+ * @returns {string}
+ */
+function componentsLayerBody(source) {
+  return namedLayerBody(source, '@layer components');
+}
+
+/**
+ * The css with its `@layer components { … }` block removed (brace-matched).
+ * @param {string} source
+ * @returns {string}
+ */
+function stripComponentsLayer(source) {
+  return stripNamedLayer(source, '@layer components');
+}
+
+/**
+ * The body of the first `@layer cairn-idiom { … }` block by brace matching, or '' if absent. This is
+ * the one home every rule that overrides a daisyUI declaration lives in (spec, "The cairn-idiom
+ * sublayer"), nested inside `@layer utilities { … }` in the source.
+ * @param {string} source
+ * @returns {string}
+ */
+function cairnIdiomLayerBody(source) {
+  return namedLayerBody(source, '@layer cairn-idiom');
+}
+
+/**
+ * The css with its `@layer cairn-idiom { … }` block removed (brace-matched).
+ * @param {string} source
+ * @returns {string}
+ */
+function stripCairnIdiomLayer(source) {
+  return stripNamedLayer(source, '@layer cairn-idiom');
 }
 
 // A scoped rule selector in EITHER authored form: the compiled `:where([data-theme=…])` form and the
@@ -75,14 +124,15 @@ function stripComponentsLayer(source) {
 const SCOPED_RULE = /(?::where\(\s*)?\[data-theme=[^{]*?\{/g;
 
 /**
- * The unlayered scoped rules (a scoped rule, in either authored form, NOT inside @layer components), by
- * selector.
+ * The unlayered scoped rules (a scoped rule, in either authored form, NOT inside @layer components and
+ * NOT inside the cairn-idiom sublayer), by selector.
  * @param {string} css
  * @returns {string[]}
  */
 export function pinnedUnlayeredRules(css) {
   const out = [];
-  for (const m of stripComponentsLayer(css).matchAll(SCOPED_RULE)) {
+  const stripped = stripCairnIdiomLayer(stripComponentsLayer(css));
+  for (const m of stripped.matchAll(SCOPED_RULE)) {
     // Drop the trailing brace, keep the selector text.
     out.push(m[0].slice(0, -1).trim());
   }
@@ -96,6 +146,15 @@ export function pinnedUnlayeredRules(css) {
  */
 export function componentsLayerSelectorCount(css) {
   return [...componentsLayerBody(css).matchAll(SCOPED_RULE)].length;
+}
+
+/**
+ * Count of scoped rule selectors inside the cairn-idiom sublayer, in either authored form.
+ * @param {string} css
+ * @returns {number}
+ */
+export function cairnIdiomLayerSelectorCount(css) {
+  return [...cairnIdiomLayerBody(css).matchAll(SCOPED_RULE)].length;
 }
 
 // The admin retired-token pattern (muted/subtle only): the default when a tree names no pattern, so the
@@ -142,7 +201,10 @@ export function retiredTokenHits(dir, patternSource = DEFAULT_RETIRED_TOKEN_PATT
  * Evaluate one tree against its budget.
  * @param {{ adminCss: string | null, markupDirs: string[], retiredTokenPattern?: string }} tree The tree's
  *   optional `retiredTokenPattern` overrides the default admin muted/subtle pattern for its markup scan.
- * @param {{ unlayeredAllowlist: string[], componentsLayerCap: number, retiredTokenBudget: number }} budget
+ * @param {{ unlayeredAllowlist: string[], componentsLayerCap: number, idiomLayerCap?: number, retiredTokenBudget: number }} budget
+ *   `idiomLayerCap` is optional so a caller that predates the cairn-idiom category (an existing test
+ *   fixture, a tree that authors no cairn-idiom rules yet) is not forced to name it; an absent cap is
+ *   read as no limit.
  * @returns {{ pass: boolean, failures: string[] }}
  */
 export function evaluate(tree, budget) {
@@ -163,6 +225,10 @@ export function evaluate(tree, budget) {
     const layerCount = componentsLayerSelectorCount(css);
     if (layerCount > budget.componentsLayerCap)
       failures.push(`@layer components selectors: ${layerCount} > cap ${budget.componentsLayerCap}`);
+    const idiomCount = cairnIdiomLayerSelectorCount(css);
+    const idiomCap = budget.idiomLayerCap ?? Infinity;
+    if (idiomCount > idiomCap)
+      failures.push(`cairn-idiom selectors: ${idiomCount} > idiomLayerCap ${idiomCap}`);
   }
   let retired = 0;
   for (const dir of tree.markupDirs) retired += retiredTokenHits(dir, tree.retiredTokenPattern).length;

@@ -82,9 +82,8 @@ citations.
 
 - **`[verified]`**: traced to a specific source file, symbol, line, or constant, and it matches
   the claim exactly. A bullet whose only source is a doc arm page, or bare "page text", is never
-  `[verified]`; it is `[candidate: sourced to the page only, not traced to code]` instead, since
-  the arms are frozen prose the container itself is meant to check against, not a source to trace
-  facts to. A bullet whose source names code AND a page keeps `[verified]`.
+  `[verified]`; it is `[candidate: sourced to the page only, not traced to code]` instead. A
+  bullet whose source names code AND a page keeps `[verified]`.
 - **`[docs-drift: page says "..."]`**: the code says one thing and a published doc page says
   another; the bullet records what the code actually does and quotes the page's wording so the
   drift is visible without opening the page.
@@ -118,23 +117,24 @@ citations.
 ## How this container grows
 
 The three narrative doc arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) and `docs/why-cairn.md`
-are frozen against rewrites, open to fixes, for the finalization window. A pass that changes a
-public behavior files the container bullet and updates the reference page; no pass rewrites the
-admin, editors, extend, or why-cairn narrative wholesale, since the docs rebuild after the site
-round does that from this container, once.
+are frozen against rewrites, open to fixes, until each arm's own stage merges (extend's lifts at
+the 2b merge). A pass that changes a public behavior files the container bullet and updates the
+reference page; no pass rewrites an arm's narrative wholesale ahead of its own stage merge, since
+that stage's draft rebuilds it from this container.
 
-But a deficiency a site pass DISCOVERS on a frozen page (a missing step, a missing worked
-example, a wrong warning, a stale command) is fixed on the page the next site will read, in the
-same pass, gated by that page's existing gates, with the fact bullet filed alongside as the
+A deficiency a site pass DISCOVERS on a page whose arm has already merged its stage (a missing
+step, a missing worked example, a wrong warning, a stale command) is fixed on the page in the same
+site pass, gated by that page's existing gates, with the fact bullet filed alongside as the
 sourced record. Such a fix is agent-facing, not register-graded: it carries the source, the
 engine version, and the why, in whatever shape holds the most information (a sourced bullet, a
 fenced command, a table); Vale's error tier still runs, but no register grade, no prose reviewer,
-no Google-style polish. The docs rebuild after the site round makes the human-facing page from it.
+no Google-style polish. A deficiency discovered on a page whose arm's stage is still in flight is
+filed, never fixed, and feeds that stage's page inputs instead.
 
 **Cross-repo path.** A site-pass agent never edits the cairn-cms checkout directly; it records
 each deficiency in its report under "Engine docs fixes", and the site pass's conductor batches
 them into one `cairn-implementer` dispatch on `site-docs/<site>-<pass>` off cairn-cms `main`,
-merged by PR before the site pass closes.
+merged by PR under the docs gate before the site pass closes.
 
 **`docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are per-version records,
 outside the freeze**, maintained every pass like the reference arm.

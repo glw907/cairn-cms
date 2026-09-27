@@ -282,7 +282,8 @@ The original decision framing, for the record:
 
 ## Now
 
-- **Draft documentation on a conventional approach (Geoff, 2026-09-25).** cairn's docs are still
+- **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
+  `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
   to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,
   and 2a, spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
   ruling: its reader instrument failed validation across three passes (`docs/HISTORY.md`, "Docs
@@ -291,17 +292,13 @@ The original decision framing, for the record:
   testing. Inputs it inherits, each to keep or drop on its own merits:
   - The exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
     `docs/internal/record/docs-exemplars.md`), never reviewed as a set.
-  - The six-audience ruling and the audience-profile format on the unmerged branch
-    `docs-reset-2a-audiences` (on origin). The profiles themselves were never written.
   - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
-  - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
-    on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
-    DaisyUI. It links to DaisyUI's theme docs rather than restating them.
+  - The designer theme-guide content (Geoff, 2026-09-24): a short general section on giving a
+    DaisyUI-built site its own identity through a theme, so it does not read as stock DaisyUI,
+    linking to DaisyUI's theme docs rather than restating them. Required topic in the stage 2
+    outline.
   - Job-doing readers as an optional advisory pass, about 35k tokens per page: they find real
     defects on their own path and miss what sits off it. They are not a measured gate.
-  - The reader harness and its clade infrastructure are retired (Geoff, 2026-09-26); the
-    conductor's cleanup commit records what was removed, and the branch `docs-reset-2a` (on
-    origin, unmerged) keeps the last working copy.
 
 - **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
   and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
@@ -886,8 +883,9 @@ the named human gates only):**
 
 - **Real defects the pass 1 readers found on current pages (2026-09-24).** The pass changed no
   published page, and the reset rebuilds these pages from the container, so each is evidence for
-  the page pass that redrafts it, or a freeze-rule fix if a site pass hits it first. They are
-  listed in the baseline record (F1 to F6, R1 to R4) and in the validation record's "Confirmed
+  the page pass that redrafts it, or a site-pass fix (or, while that arm's stage is still in
+  flight, a filing) if a site pass hits it first. They are listed in the baseline record (F1 to
+  F6, R1 to R4) and in the validation record's "Confirmed
   real, not counted" notes: the missing Email Sending price in "What it costs", the `send_email`
   binding shape no linked page states, the unexplained `UNCHECKED` reason on
   `is-it-working.md`, and seven contradictions on the three `cli-cairn-*` pages. Trigger: the
@@ -1092,8 +1090,9 @@ the named human gates only):**
   after the `tool/v1.0.0` tag. The doctor-retirement track the cut was held behind (retire-1,
   draft docs pass A, the `tool/v1.1.0` release, then retire-2a and retire-2b) is complete through
   retire-2b, and the cut follows it (see `docs/STATUS.md`): the one release cut; a docs chore moving two overturned rules to
-  their execution paths (the narrative-arm freeze and the site-pass no-edit rule), which touches
-  the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
+  their execution paths (the narrative-arm freeze, which now lifts per arm at its own stage
+  merge, and the site-pass no-edit rule, now the `site-docs/<site>-<pass>` PR write path), which
+  touches the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
   the docs-infra currency pass
   (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`, its order against
   the draft docs unruled); the draft docs; the site round, upgrading aksailingclub-org, ecxc-ski,

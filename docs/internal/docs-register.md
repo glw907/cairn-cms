@@ -222,9 +222,9 @@ code span (`` `Powered by Cairn` ``), which Vale skips, and that is the sanction
 a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose word "Cairn"
 inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
 already sits in a code span, so the rule never sees it as prose to begin with.
-Existing pages on the three frozen narrative arms (`docs/admin/`, `docs/editors/`,
-`docs/extend/`) are swept at the docs rebuild, never before; a pass touching a frozen page for
-an unrelated reason does not take on a naming sweep of the whole page. A new page, or a page
+Existing pages on a narrative arm still frozen (`docs/admin/`, `docs/editors/`,
+`docs/extend/`) are swept at that arm's own stage merge, never before; a pass touching a
+still-frozen page for an unrelated reason does not take on a naming sweep of the whole page. A new page, or a page
 already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
 `.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
 the Names rule reaches them once they do.

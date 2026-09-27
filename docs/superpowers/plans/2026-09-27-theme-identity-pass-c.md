@@ -83,11 +83,12 @@ are conductor-led. Task 15 is the close.
 **`code-simplifier`:** runs once, at the close, over the pass's TypeScript and Svelte changes only
 (`src/lib/audit/**`, `src/lib/render/**`, `src/lib/index.ts`, `src/lib/public/PreviewBanner.svelte`,
 `src/lib/admin/preview-doc.ts`, the showcase `.ts` and `.svelte` files, and the new `scripts/`
-modules). CSS, tests, docs, and skills are out of its scope. Its changes take one engine gate, run
-in **a gate agent** (below), and one commit before the close's push.
+modules). CSS, tests, docs, and skills are out of its scope. Its changes take one commit, and the
+close's full gate runs on that commit (no separate engine gate: the full gate is a superset of the
+engine string).
 
 **The gate agent:** every heavy gate the conductor needs outside a `pass-execute` chain (task 0's
-baseline and the close's `code-simplifier` re-gate) runs inside one Sonnet `general-purpose` agent
+baseline and the close's full gate) runs inside one Sonnet `general-purpose` agent
 per call, dispatched at `high`. The agent runs `cairn-run-gate '<the engine string>'` in the
 worktree, re-issuing the same command on exit 75 until it prints `gate exit:`. It returns the
 `gate exit:` line and the tail of the log. The main loop never runs a heavy gate itself.
@@ -99,38 +100,39 @@ and for the close's reviewers and `visual-verifier`. The probes are fresh Sonnet
 is a `cairn-implementer`). Capture agents and gate agents are Sonnet `general-purpose` at `high`.
 CI probes are Haiku.
 
-**Token ceiling:** 24M, flag at 19.2M (80%). The projection, itemized:
+**Token ceiling:** 24M, flag at 19.2M (80%), pending ruling 1 (Rulings for Geoff). The
+projection, itemized after the review fold:
 
 | Item | Spend |
 | --- | --- |
-| Task 0: worktree, pre-flight agent, baseline gate agent | 0.5M |
+| Task 0: worktree, pre-flight agent, dependency sweep, baseline gate agent | 1.3M |
 | Task 1 (`engine-logic`, small) | 0.5M |
 | Task 2 (`paint`: equivalence spec, `cairn-public.css`, snapshot, export) | 0.9M |
 | Task 3 (`paint`: measurement script and record, derivation, Waymark move) | 0.9M |
-| Tasks 4 and 5 (`paint`) | 1.2M |
+| Tasks 4 and 5 (`paint`) | 1.3M |
 | Task 6 (`engine-logic`: template sweep, root export, gate fixture) | 1.0M |
-| Tasks 7 and 8 (`engine-logic`: scope, loader, two rules) | 2.4M |
-| Task 9 (`engine-logic`, Opus: resolver, dependencies, pack smoke, successor script) | 1.8M |
-| Task 10 (`paint`: fixture theme, two-arm harness, CI) | 1.2M |
+| Tasks 7 and 8 (`engine-logic`: scope, loader, two rules) | 2.5M |
+| Task 9 (`engine-logic`, Opus: resolver, dependencies, pack smoke, successor script) | 2.0M |
+| Task 10 (`paint`: fixture theme, two-arm harness with probe modes, CI) | 1.5M |
 | Tasks 11 and 13 (`docs`) | 0.9M |
 | Task 12 (skill, catalogue, coverage gate) | 1.2M |
 | Fix rounds on about a third of the chains, most on the reduced gate | 2.0M |
-| Four segment boundaries (pre-flight, push, Haiku CI read, ledger) | 0.6M |
+| Four segment boundaries (pre-flight, push, Haiku CI read, ledger), plus segment B's async glance | 0.7M |
 | S1: CI baseline regeneration and one `visual-verifier` read | 0.8M |
 | S2: probes 2 and 3, with one retry budgeted | 1.2M |
 | S3: the owner sitting page and captures | 0.4M |
 | Task 14 (conditional settle, one run) | 0.5M |
-| The close: `code-simplifier` and its engine gate | 0.4M |
+| The close: `code-simplifier` (its commit takes the full gate, no separate engine gate) | 0.2M |
 | The close: review fan-out (Svelte, daisyUI a11y, one Opus read of the audit) | 1.0M |
 | The close: Sonnet draft and one Opus review, hard cap | 0.7M |
 | The close: the merge with `main` and the merged-head gates | 0.5M |
-| The release: the `dependency-upgrade` sweep on `main`, the cut, the publish check | 1.5M |
+| The release: `npm outdated`, the cut, the five-site counts, the publish check | 0.7M |
 | The conductor sessions | 1.5M |
-| **Projected total** | **about 23.5M** |
+| **Projected total** | **about 24.1M** |
 
-The projection sits above the flag. The conductor raises the running total on S3's page as the
-budget question, rather than stopping when the flag trips. The close proceeds without a second
-question unless spend passes the 24M ceiling.
+The projection sits above the flag and at the ceiling. Ruling 1 settles how the pass treats that.
+Until it is ruled, the plan's reading holds: the conductor raises the running total on S3's page
+as the budget question, rather than stopping when the flag trips.
 
 **Counting rule:** the conductor's counter is the sum of subagent and workflow token counts from
 task notifications, plus its own sessions as `/cost` reports them.
@@ -140,7 +142,10 @@ a segment boundary. A boundary is the pre-flight for the next segment, the push,
 read by one Haiku probe, and the ledger. There is no local engine re-gate and no `code-simplifier`
 at a boundary; CI runs the full suite on each push.
 - Segment A: task 0 (conductor), then tasks 1 to 3. The parser, the stylesheet, the inks.
-- Segment B: tasks 4 to 6. The preview banner and ground, the levers, the template sweep.
+- Segment B: tasks 4 to 6. The preview banner and ground, the levers, the template sweep. At its
+  boundary the conductor publishes one non-blocking Artifact for an async owner glance (the `paint`
+  class's mid-pass glance): `PreviewBanner`'s draft and published states before and after in both
+  schemes, and the new styleguide kit. Execution does not wait on it; S3 folds any reply.
 - Segment C: tasks 7 to 9. The public scope and its three rules.
 - Segment D: tasks 10 to 13. The fixture, the reference pages, the skill, the internal docs.
 - Segment E: S1 (baseline regeneration), S2 (probes 2 and 3), then task 14 if either returns work.
@@ -163,7 +168,9 @@ superseded at the merge.
 `toHaveScreenshot` mismatches on the ten `styleguide-*` captures fail by design (task 6 changes the
 styleguide's sample kit and one sentence). Task 4's report states whether any `admin-visual`
 capture shows the editor preview frame's `body` ground; if one does, those captures join the set
-from the segment B push. Every other `site-visual` capture must stay green, since the Waymark
+from the segment B push. Any capture task 0's dependency sweep moves, named by the segment A CI
+probe, joins the set from the segment A push with the sweep as its owner. Every other
+`site-visual` capture must stay green, since the Waymark
 render does not move (the equivalence test is the primary proof, the baselines the secondary). A
 crash, a timeout, or a missing locator inside a visual spec is red. A boundary passes when CI's
 failures are a subset of the set; any other red re-dispatches the task that owns it, with the
@@ -194,12 +201,15 @@ lane (no `CAIRN_GATE_LANE` prefix); a check that launches none runs light.
 - **The reduced string** (`args.reducedGate`), run by a fix round whose blocking findings are all
   comment-only or test-only, each leg dropped when it has no file:
   `npm run check && npx vitest run --project unit <touched unit test files> && npm run test:component -- --no-file-parallelism <touched component test files> && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- <touched e2e specs>`.
-- **The showcase legs:**
-  `npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm --prefix examples/showcase run test:unit`.
+- **The showcase legs** (packaged first, since the showcase's `cairn-audit` bin and its type check
+  read the engine's `dist`, and a stale `dist` is a false green):
+  `npm run package && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm --prefix examples/showcase run test:unit`.
   As a light task check (the showcase set): `CAIRN_GATE_LANE=light cairn-run-gate '<the showcase legs>'`.
 - **The public legs:**
   `npm run check:template && npm run check:public-tokens && npm run test:reskin && npm run check:chassis-boundary`.
   From task 9 on, `check:public-tokens` and `test:reskin` package the engine first.
+- **The surface check** (light), for task 6 and any task that changes a typed export:
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:surface'`.
 - **The comments check** (light): `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:comments'`.
 - **The idioms check** (light), for any task editing `src/lib`:
   `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:idioms'`.
@@ -253,11 +263,20 @@ gaps this plan found while verifying the spec against the tree.
    theme's palette (light and dark), on three grounds each: `base-100`, `base-200`, and that
    status's callout tint as the chassis `prose.css` paints it (the highest tint percentage the file
    uses for the status; `base-100` alone for a status with no tint). A pair passes at 4.5:1 in both
-   sRGB and display-p3, the floor `check:public-tokens` measures today. **Selection:** the `N`
-   with the highest pass count, subject to usable chroma: across themes whose fill has OKLCH chroma
-   of at least 0.05, the derived ink's median chroma is at least half its fill's. Ties go to the
-   higher `N` (more hue). The record lists every theme's result at the chosen `N`, so a failing
-   stock theme is named, not hidden.
+   sRGB and display-p3, the floor `check:public-tokens` measures today. **Hard constraint, applied
+   first:** Waymark with its four ink overrides stripped and the fixture palette pass every pair,
+   in both schemes, on all three grounds, since task 9's standing `test:reskin` case and decision
+   18 require both. When no `N` meets it, task 3 stops and reports; decision 18's "a finding about
+   `N`" fires here, not in task 9. **Selection among the rest:** the `N` with the highest pass
+   count, subject to usable chroma: across themes whose fill has OKLCH chroma of at least 0.05, the
+   derived ink's median chroma is at least half its fill's, with a tolerance of 0.005. The chroma
+   ratio is computed with culori over the parsed values at full precision, so serialization
+   rounding cannot move the choice. Ties go to the higher `N` (more hue). Review evidence (probe,
+   stock themes plus stripped Waymark): pass counts fall as `N` rises, so the rule lands on the
+   smallest `N` that meets the chroma floor (50 at review time, where the median ratio is exactly
+   0.5), and stripped Waymark's light `warning` on `base-200` fails from 55. The record lists every
+   theme's result at the chosen `N` and the pass counts at the neighboring `N`s, so a failing stock
+   theme is named, not hidden, and the trade the floor buys is visible.
 2. **Muted's form: an opaque mix.** `--color-muted` defaults to
    `color-mix(in oklab, var(--color-base-content) M%, var(--color-base-100))`, with `M` chosen by
    the same rule on `base-100` and `base-200`, chroma exempt. Reason: today's translucent default
@@ -274,11 +293,19 @@ gaps this plan found while verifying the spec against the tree.
    existing `.cairn-vite-test-*` precedent. Its `node_modules` is a symlink to the showcase's own, so
    the engine resolves to the working build. The harness swaps in the fixture theme, runs
    `vite build`, and serves `vite preview` on `THEME_FIXTURE_PORT` (default 4393; never 4173,
-   4391, or 4392). It removes the copy on exit, failure included, and deletes any stale copy
-   before it starts. The template arm emits the template with `scripts/build/emit-template.mjs`
-   against freshly packed engine and dev tarballs (the `scaffold.yml` recipe), installs into a
-   temporary directory, and verifies the installed engine's files against the pack by content hash
-   (the `link-consumer.mjs` guard against `npm pack`'s stale-cache trap). **Split:** CI runs both
+   4391, or 4392), with the build and server environment `examples/showcase/playwright.config.ts`
+   gives its `webServer` (`VITE_CAIRN_E2E=1`, `CAIRN_DEV_BACKEND=1`). It removes the copy on exit,
+   failure included, and deletes any stale copy before it starts. The template arm emits the
+   template with `scripts/build/emit-template.mjs` against freshly packed engine and dev tarballs
+   (the `scaffold.yml` recipe), installs into a directory under `os.tmpdir()` (outside the
+   repository, so Node's upward resolution cannot reach the repo's `node_modules`), removes it on
+   exit, and verifies the installed engine's files against the pack by content hash (the
+   `link-consumer.mjs` guard against `npm pack`'s stale-cache trap). **Two probe modes**, which S2
+   uses: `--theme-dir <dir>` overlays a directory onto `src/theme` (a probe's theme with its own
+   chrome), and `--build-only` builds and smoke-loads the three pages without the fixture-value
+   assertions; the template arm serves each build on `THEME_FIXTURE_PORT` and takes an optional
+   `--probe <route> <selector>` that reports the element's computed `color` and `border-radius`
+   under each theme. **Split:** CI runs both
    arms in `design.yml`. Locally, both arms run as task checks in task 10 and at the close; the
    template arm needs the network for its registry dependencies.
 5. **The equivalence test's key list: a superset, fixed at capture time.** Every custom property
@@ -297,7 +324,13 @@ gaps this plan found while verifying the spec against the tree.
    - `public.scope`: the roots, default `src/theme`, `src/chassis`, `src/routes`,
      `src/lib/public`, `src/lib/components`. Like `static.scope`, a configured list replaces the
      defaults, and a configured root the tree lacks throws.
-   - `public.exclude`: default `src/routes/admin`.
+   - `public.exclude`: default `src/routes/admin`. A configured list merges with the default,
+     never replaces it. Every admin-scope root, default or configured, is also excluded from the
+     public scope, whatever `public.exclude` says. Reason: a consumer that broadens `public.scope`
+     to `src` or sets its own `exclude` must not move admin files from the error-tier admin rules
+     to advisory `public-literals`; with no overlap possible, "no file answers to two grammars"
+     holds without a guard ever downgrading. (This narrows the spec's precedence sentence; see the
+     fold record's owed errata.)
    - `public.themeRoots`: default `src/theme` and `src/chassis/tokens.css` (a directory or a file).
    - `public.stylesheets`: the entry stylesheets whose `@import` chain is the site's real chain,
      default `src/theme/theme.css`.
@@ -363,10 +396,14 @@ gaps this plan found while verifying the spec against the tree.
 16. **The empty-scope error fires only when a public-scope rule runs.** A run whose selected rules
     include none of the three, such as a wrapper that injects its own rule list, never raises it.
     Reason: the admin scope's matching error exists for its own rules; an admin-only fixture tree
-    should not fail on a scope no rule it runs reads.
+    should not fail on a scope no rule it runs reads. The same holds for the optional peers:
+    `daisyui` and `tailwindcss` load lazily, only when a selected rule needs them, so a consumer
+    missing one keeps its error-tier admin audit on an admin-only selection, and a full run still
+    fails with the spec's named message.
 17. **The successor script and the reskin fixture read the packaged audit.**
     `check:public-tokens` becomes `npm run package && node scripts/checks/check-public-scope.mjs`
-    (a new file), and `test:reskin` packages first and imports the contrast core from
+    (a new file, which passes decision 27's repo-owned config), and `test:reskin` packages first
+    and imports the contrast core from
     `dist/audit`. Reason: the scripts are plain `.mjs`, and `check:invisible-craft` and
     `check:admin-css-classes` already read `dist/audit` the same way. In `design.yml`, the
     `check:public-tokens` step moves after the showcase install, since `theme-conformance` reads
@@ -384,11 +421,17 @@ gaps this plan found while verifying the spec against the tree.
     reaches the compiled CSS, and a mutation that drops the `@source` line from the temporary
     install's copy fails it. Probe 3 then proves the same path with a real component.
 20. **The pack smoke test is a real install.** `check:audit-pack` (a new script) packs the engine,
-    installs the tarball with production dependencies into an empty temporary directory, verifies
-    the installed `dist/audit` against the pack by content hash, and runs `dist/audit/bin.js` over a
-    minimal fixture site twice: without the optional peers (a nonzero exit and the named message, no
-    stack trace) and after installing `daisyui` and `tailwindcss` (a clean run). Reason: only a real
-    install proves culori is a declared dependency; a symlinked `node_modules` would hide exactly
+    installs the tarball with production dependencies into an empty directory under `os.tmpdir()`
+    (outside the repository, removed on exit), verifies the installed `dist/audit` against the pack
+    by content hash, and fails if `daisyui` resolves from that directory before the no-peers run.
+    Its minimal fixture site carries a `src/theme/theme.css` with one daisyUI block, so the run
+    reaches peer resolution instead of the empty-scope error. It runs `dist/audit/bin.js` three
+    times: the full registry without the optional peers (a nonzero exit and the named message, no
+    stack trace); one admin-only `--rule` selection without the peers (a clean run, since the peers
+    load only when a selected rule needs them, decision 16's logic); and the full registry after
+    installing `daisyui` and `tailwindcss` (a clean run with a nonzero scanned count). It also greps
+    the installed `dist/**/*.d.ts` for `culori` and fails on a hit. Reason: only a real install
+    proves culori is a declared dependency; a symlinked or in-repo `node_modules` would hide exactly
     the failure the spec guards. It joins `test.yml` after `check:package`, and `check:close` gains
     it at the same position.
 21. **The `cairn-public` coverage gate is a script, not a unit test.** `check:public-skill` (a new
@@ -431,11 +474,58 @@ gaps this plan found while verifying the spec against the tree.
     honest: task 2 adds `src/lib/public/cairn-public.css` to its definition sources, and task 3
     teaches its ink reader the daisyUI blocks. Neither adaptation loosens a check. Task 9 retires
     the file.
+27. **The engine's public roots live in a repo-owned config, never the showcase's** (review
+    blocker; departs from the spec's "rooted ... by the showcase config"). The showcase's
+    `cairn-audit.config.json` is emitted byte for byte into `templates/waymark` and baked into
+    every scaffolded site, and a configured root the tree lacks throws, so a `../../src/lib/public`
+    root there would break every scaffolded site's `check:cairn` (`create-site.yml` runs it). Task
+    7 adds `scripts/checks/public-scope.config.json` (repo-owned, never emitted), which names the
+    showcase's default public roots plus `../../src/lib/public`, and the themeRoots plus
+    `../../src/lib/public/cairn-public.css`, relative to the showcase. The packaged audit reads it
+    through `--config` from the showcase directory; task 9's successor script passes it. The
+    showcase's own config gains no public key, since the defaults cover it. Task 6's
+    `check:template` extension also fails on an emitted `cairn-audit.config.json` holding any path
+    that starts with `..`.
+28. **The dependency sweep runs in task 0, not on `main` after the merge** (review finding). A
+    daisyUI or Tailwind patch (daisyUI 5.7.46 is already on the registry) can move computed theme
+    values; swept after the merge, it would invalidate the equivalence expectation, the ink
+    measurement, and the S1 baselines, and turn `main` red inside the merge-to-cut window. Swept
+    first, every piece of pass evidence is captured on the release's dependencies. The sweep runs
+    the `dependency-upgrade` skill on the new branch before task 1 (every minor and patch, any
+    major held with its trigger, the survey recorded under `docs/internal/record/`). At the cut,
+    `cairn-release`'s skip clause applies: the window already holds the sweep, and the conductor
+    runs `npm outdated` at every manifest. A new minor or patch then stops the cut; it is taken on
+    a short branch through the same skill and merged green before the cut resumes.
+
+## Rulings for Geoff
+
+One question for the plan-approval sitting. Everything else the review raised is folded or
+refused in `docs/superpowers/research/2026-09-27-theme-pass-c-plan-fold.md`. Decision 7's
+`app.html` regex is not on this list: keeping the two names gives a stale cookie a graceful
+fallback instead of pinning a visitor to the default block, a behavioral reason with a clear
+answer, and the unit check guards agreement.
+
+1. **Raise the token ceiling to 30M (flag 24M) at approval?** The folded projection is about
+   24.1M against a 24M ceiling, and the global rule asks its 80% question at the next segment
+   boundary, which at 24M would trip around segment D.
+   - **Recommendation: yes.** 30M puts the flag at the projection, so the flag fires only if the
+     pass overruns its plan, which is the flag's job, and the global rule applies unchanged. A
+     13-task pass that also carries the merge and a release is honestly this size.
+   - **Yes builds:** the header reads 30M with the flag at 24M; the conductor asks the 80% question
+     at the next segment boundary as the global rule says; the close and the cut never halt on
+     budget once the merge lands.
+   - **No builds:** the ceiling stays 24M, and approval pre-authorizes the plan's current reading:
+     the budget question moves to S3's page instead of the boundary where the flag trips, and the
+     close and the cut finish past the ceiling once the merge lands, with the overrun recorded in
+     HISTORY's pass score.
 
 ## Global constraints
 
 - **The Waymark render does not move.** `public-theme-equivalence.spec.ts` stays green from task 2
-  to the close in all three states. The only intended visual changes are the styleguide's sample
+  to the close in all three states. Its committed expectation never changes after task 2's first
+  commit: every later task's report quotes an empty `git diff <that commit> --
+  examples/showcase/e2e/fixtures/public-theme-computed.json`, and the spec refuses its update mode
+  when `CI` is set. The only intended visual changes are the styleguide's sample
   kit and one sentence (task 6) and `PreviewBanner`'s palette (task 4). A task that moves any other
   computed value stops and reports.
 - **Literals live only in token definitions under a theme root.** No new color literal or absolute
@@ -451,12 +541,16 @@ gaps this plan found while verifying the spec against the tree.
   runs `npm run emit:template` in the same task, and `check:template` stays green at every commit.
 - **A chassis seam change updates the chassis README's table in the same task**, since
   `check:chassis-boundary` parses it.
-- **Each public export adds its reference entry in the same task** (`check:reference`), and
-  `check:surface` is regenerated only at the close.
+- **Each public export adds its reference entry in the same task** (`check:reference`), and a
+  task that changes a typed export regenerates `docs/internal/api-surface.md` with `npm run
+  check:surface -- --update` and commits it with the export, so CI's `check:surface` step stays
+  green. One sanctioned exception: task 2's `./cairn-public.css` export is untyped, so neither
+  gate reads it, and its page, `public-css.md`, lands in task 11.
 - **A check added to a CI workflow is added to `check:close` at the same position** in the same
   task, since `check:close` mirrors CI's check list.
 - **Dependency changes go through the `dependency-upgrade` skill's survey** in the task that makes
-  them (task 9), recorded under `docs/internal/record/`.
+  them (task 0's sweep, task 9's culori move and peers), recorded under `docs/internal/record/`. No
+  other task adds a dependency; the showcase gains none (task 5's test stubs its DOM globals).
 - **Ports.** Every preview a task, capture agent, or the conductor serves outside Playwright runs on
   a port other than 4173 and 4392 (4391 for a showcase preview, 4393 for the fixture harness), is
   reached through `BASE_URL` or `THEME_FIXTURE_PORT`, and is stopped on exit; the report says so.
@@ -517,7 +611,9 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
    paused on `draft-docs-0`.
 3. **Worktree:** create `.claude/worktrees/theme-identity-c` on a new `theme-identity-c` from pass
    B's branch head; `npm ci`; `npm ci --prefix examples/showcase`; confirm with `realpath` that the
-   showcase's `node_modules/@glw907/cairn-cms` resolves into this worktree.
+   showcase's `node_modules/@glw907/cairn-cms` resolves into this worktree. Then the dependency
+   sweep (decision 28), dispatched to one Sonnet agent under the `dependency-upgrade` skill, which
+   commits the bumps and the survey record on the branch. Items 4 and 7 run on the swept tree.
 4. **Re-verify the plan's facts** (one Sonnet pre-flight agent, read-only), recording each against
    its plan-time value and amending the plan where one moved:
    - The post-rename paths: `src/lib/admin/preview-doc.ts` (plan-time
@@ -528,9 +624,10 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
      `src/lib/audit/config.ts`'s `DEFAULT_STATIC_SCOPE`, `DEFAULT_ADMIN_SCOPE` (pass B's outcome,
      decision 9), `DEFAULT_SHEET_CANDIDATES`, and `DEFAULT_PALETTE_CSS_FILES`, and whether pass B
      implemented the admin half of the named-root rule.
-   - The versions: daisyUI 5.7.44 and Tailwind 4.3.3 installed at plan time (5.7.46 is on the
-     registry); culori 4.0.2 as a devDependency; `daisyui/theme/object` exports 35 themes with 29
-     keys each. A changed daisyUI or Tailwind major, or a changed key count, stops the pass.
+   - The versions after the sweep: daisyUI 5.7.44 and Tailwind 4.3.3 installed at plan time (5.7.46
+     is on the registry); culori 4.0.2 as a devDependency; `daisyui/theme/object` exports 35 themes
+     with 29 keys each (28 custom properties plus `color-scheme`). A changed daisyUI or Tailwind
+     major, or a changed key count, stops the pass.
    - The registries: 17 static and 17 rendered rules at plan time, plus pass B's `radius-scale`;
      `run.test.ts`'s rule-count assertion; the tier map in `skills/cairn-admin-screens/SKILL.md`.
    - `sheet.ts`'s comment fusion reproduces: `parseSheet` over the showcase's `theme.css`,
@@ -564,14 +661,15 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
 6. **The freeze rule:** read the narrative-arm rule in `CLAUDE.md` on the branch and record it.
    Tasks 13 and 15 apply it.
 7. **Baseline gate:** one gate agent runs `cairn-run-gate '<the engine string>'` in the worktree
-   and returns the `gate exit:` line and the tail. The conductor quotes it to task 1's reviewer as
-   task 0's gate evidence. A stall in the serialized component run stops the pass with one message
-   to Geoff.
+   and returns the `gate exit:` line and the tail. It is the only proof of the swept tree before
+   task 1 (pass B's CI proves the unswept head). The conductor quotes it to task 1's reviewer as
+   task 0's gate evidence. A red caused by the sweep goes back to the sweep agent once; a stall in
+   the serialized component run, or a second red, stops the pass with one message to Geoff.
 8. **The release number is still free:** `npm view @glw907/cairn-cms versions --json` lists no
    `0.98.0` (plan time: newest `0.97.0`).
 
-**Acceptance:** the ledger carries items 1 to 8, and the plan is amended and committed where item 4
-moved a fact. A stop condition in item 1, 2, 4, or 7 halts the pass with one message to Geoff.
+**Acceptance:** the ledger carries items 1 to 8 and the sweep's taken and held versions, and the
+plan is amended and committed where item 4 moved a fact. A stop condition in item 1, 2, 4, or 7 halts the pass with one message to Geoff.
 
 ---
 
@@ -623,8 +721,11 @@ expectation unchanged. An expectation regenerated after the move voids the test.
 
 **Outcome:**
 - **The equivalence spec** captures decision 5's key list and computed checks in the three states
-  on the built showcase, and asserts string equality against the committed expectation. It carries
-  an update mode behind an environment flag named in its header.
+  on the built showcase, and asserts string equality against the committed expectation. It
+  iterates the committed expectation's keys, never a list re-parsed from the moved files. The focus
+  check covers every `cairn-focus-ring` element on the pages it loads (`outline-style`,
+  `outline-width`, `outline-color`, `outline-offset` each), not one. It carries an update mode
+  behind an environment flag named in its header.
 - **`cairn-public.css`** holds the spec's four things: the roles in `@layer theme` on
   `:root, [data-theme]` (the four status inks, `--cairn-shadow`, the three focus-ring keys, the nine
   `--cairn-code-*` keys, and `--flow-space`); `--color-muted` and `--color-card-border` in
@@ -651,8 +752,13 @@ expectation unchanged. An expectation regenerated after the move voids the test.
 
 **Acceptance:**
 - The equivalence spec passes in all three states, against an expectation from the commit before
-  the move. The report quotes that commit. A mutation that drops the `cairn-public.css` import from
-  the chassis fails it, naming the first differing key.
+  the move. The report quotes that commit. The expectation holds no empty value, or the report
+  lists each empty key with its reason (Tailwind emits an `@theme` variable only when something
+  reads it). A mutation that drops the `cairn-public.css` import from the chassis fails it, naming
+  the first differing key.
+- One cascade test states `cairn-focus-ring`'s new precedence (the `paint` mandate's "a utility
+  beats it"): a utility setting `outline-*` on the same element wins. The report lists the
+  class's variant uses in the showcase (none at review time).
 - The snapshot test passes, and fails on a planted renamed key and on a planted key with no reader
   (mutation ledger).
 - `npm run package` ships `dist/public/cairn-public.css`; `check:package` is green with the new
@@ -660,7 +766,7 @@ expectation unchanged. An expectation regenerated after the move voids the test.
 - `grep` over the chassis `tokens.css` finds none of the moved keys, and `grep` over
   `examples/showcase/src` finds `@utility cairn-focus-ring` nowhere.
 - `gateTier: "targeted"`, `gate`:
-  `npm run check && npx vitest run --project unit src/tests/unit/cairn-public-surface.test.ts && npm run check:template && npm run check:public-tokens && npm run test:reskin && npm run check:chassis-boundary && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm --prefix examples/showcase run test:unit && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- public-theme-equivalence.spec.ts styleguide.spec.ts prose-table.spec.ts`.
+  `npm run check && npx vitest run --project unit src/tests/unit/cairn-public-surface.test.ts && npm run check:template && npm run check:public-tokens && npm run test:reskin && npm run check:chassis-boundary && npm run package && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm --prefix examples/showcase run test:unit && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- public-theme-equivalence.spec.ts styleguide.spec.ts prose-table.spec.ts`.
   Task checks: the port check, quoted; the package check.
 
 ---
@@ -682,7 +788,8 @@ string it pins changes, `scripts/checks/check-public-tokens.mjs` (its ink reader
   and its record carries the full table: per status, the pass count at each `N`, the chosen `N`,
   the chroma check, and every failing theme and ground at the chosen value. The fixture palette
   (decision 18) is dark-first: `cairn-dark` carries `default: true`, the names stay `cairn` and
-  `cairn-dark`, and its values are chosen before the measurement runs, never after.
+  `cairn-dark`, each block declares its `color-scheme`, and its values are chosen before the
+  measurement runs, never after.
 - **The defaults:** each status ink takes the derived form with its chosen `N`, `--color-muted`
   takes the opaque form with its chosen `M`, and `--cairn-shadow` takes decision 3's value. Each
   sits where task 2 placed it. The code ramp, the focus ring, `--flow-space`, and
@@ -700,11 +807,13 @@ string it pins changes, `scripts/checks/check-public-tokens.mjs` (its ink reader
 - A test in the snapshot file asserts each ink default has the derived form with the recorded `N`,
   so a changed `N` is a disclosed change.
 - The record exists, its table matches the defaults, and it names the stock themes that fail at the
-  chosen values.
+  chosen values. It shows decision 1's hard constraint met at the chosen `N` and `M`: stripped
+  Waymark and the fixture palette pass every pair in both schemes on all three grounds. If no
+  value meets it, the task stops and reports instead of choosing.
 - `check:public-tokens` still measures Waymark's hand-set inks after the move (decision 26); the
   report quotes its contrast table before and after, and the two are identical.
 - `gateTier: "targeted"`, `gate`:
-  `npm run check && npx vitest run --project unit src/tests/unit/cairn-public-surface.test.ts src/tests/unit/role-layer-contrast.test.ts && npm run check:template && npm run check:public-tokens && npm run test:reskin && npm run check:chassis-boundary && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm --prefix examples/showcase run test:unit && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- public-theme-equivalence.spec.ts styleguide.spec.ts prose-table.spec.ts`.
+  `npm run check && npx vitest run --project unit src/tests/unit/cairn-public-surface.test.ts src/tests/unit/role-layer-contrast.test.ts && npm run check:template && npm run check:public-tokens && npm run test:reskin && npm run check:chassis-boundary && npm run package && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm --prefix examples/showcase run test:unit && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- public-theme-equivalence.spec.ts styleguide.spec.ts prose-table.spec.ts`.
   Task checks: the port check, quoted.
 
 ---
@@ -723,20 +832,29 @@ changes.
 - **`PreviewBanner`** reads contract tokens (daisyUI roles, `cairn-public.css` roles) and drops its
   literal palettes and its `prefers-color-scheme` blocks. Its five `--cairn-preview-*` properties
   stay as named overrides whose fallbacks are tokens, so a site's existing override still wins. Its
-  rules stay in its scoped `<style>` block (decision 11). It uses no daisyUI component class. The
-  draft and published states stay visually distinct.
+  rules stay in its scoped `<style>` block (decision 11). It uses no daisyUI component class and
+  no color literal anywhere, fallbacks included (task 7's public scope scans it). Each
+  `cairn-public.css` role it reads carries a daisyUI-variable fallback, so a site that bumps the
+  range before adding the import still paints both states legibly. The draft and published states
+  stay visually distinct.
 - **The preview reset** paints `var(--color-base-100, #fff)` in place of the pinned white. The
   `WATCH` comment above it is rewritten to state what the reset now reads, and it no longer calls
   the value unaudited.
 
 **Acceptance:**
 - `PreviewBanner.test.ts` asserts a site override on each of the five properties still wins, and
-  that the file holds no color literal outside a `var()` fallback (a source-text assertion until
-  `public-literals` exists in task 7).
-- `public-preview-tokens.spec.ts` asserts, under Waymark light and dark (OS preference and
-  explicit), that the banner's text
-  and link each clear 4.5:1 on its ground in both states, and that the editor preview frame's `body`
-  background equals the page's computed `--color-base-100` under Waymark dark.
+  that the file holds no color literal anywhere, `var()` fallbacks included (a source-text
+  assertion until `public-literals` exists in task 7). Today's file fails it.
+- `public-preview-tokens.spec.ts` reaches the draft and published states through the minted-token
+  and publish flow `preview.spec.ts` uses, and asserts, under Waymark light and dark (OS preference
+  and explicit): the banner's computed `background-color` and `color` equal the computed values of
+  the contract tokens the task names, so today's `#fff6dd` fails; its text and link each clear
+  4.5:1 on its ground; and the draft and published grounds differ in each scheme.
+- The same spec, for the editor preview frame (whose `<html>` carries no `data-theme`, so only an
+  emulated OS scheme reaches it), emulates `prefers-color-scheme` light and dark and asserts the
+  frame `body`'s computed `background-color` equals the frame document's own resolved
+  `--color-base-100`, and under dark is not `rgb(255, 255, 255)`. Mutation (reverted): restoring
+  the reset's `#fff` fails it.
 - `preview-doc.test.ts` asserts the new reset string.
 - The report states whether any `admin-visual` capture shows the preview frame's `body` ground (the
   expected-red set).
@@ -770,7 +888,9 @@ the home, archive, and styleguide routes under `examples/showcase/src/routes/(si
   stays.
 - **The toggle.** With no `data-theme` on `<html>`, `resolveTheme` resolves the scheme from the
   root's computed `color-scheme` instead of the OS media query, so a dark-first theme needs no
-  edit to `app.html`, and Waymark behaves as today.
+  edit to `app.html`, and Waymark behaves as today. A computed value other than exactly `light` or
+  `dark` (`normal` from a block that omits the key, or `light dark`) falls back to today's
+  `matchMedia` behavior.
 - **The theme names** move into `theme-names.ts`, which `SiteHeader` imports. Its doc comment names
   the two touchpoints that cannot import it: `app.html`'s inline script (the cookie name and the
   regex) and the daisyUI block names in `theme.css`.
@@ -778,7 +898,9 @@ the home, archive, and styleguide routes under `examples/showcase/src/routes/(si
 **Acceptance:**
 - `theme-toggle.test.ts` (test-first) covers the resolution table: an explicit `data-theme` for
   either name wins; no attribute and a computed `color-scheme` of `dark` gives the dark name, and
-  `light` gives the light name, regardless of the media query.
+  `light` gives the light name, regardless of the media query; `normal` and `light dark` follow the
+  media query. The showcase unit project runs in Node with no DOM library, so the test stubs
+  `document`, `getComputedStyle`, and `matchMedia` with `vi.stubGlobal` and adds no dependency.
 - `theme-names.test.ts` asserts the config's two names equal the daisyUI block names in `theme.css`,
   the cookie name equals the one `app.html` reads, and `app.html`'s regex accepts both names. It
   fails on a planted mismatch in each.
@@ -787,7 +909,7 @@ the home, archive, and styleguide routes under `examples/showcase/src/routes/(si
   `text-transform: none` under Waymark.
 - `theme-toggle.spec.ts` passes unchanged.
 - `gateTier: "targeted"`, `gate`:
-  `npm run check:template && npm run check:public-tokens && npm run test:reskin && npm run check:chassis-boundary && npm run check:custom-surface && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm --prefix examples/showcase run test:unit && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- public-theme-equivalence.spec.ts theme-toggle.spec.ts styleguide.spec.ts`.
+  `npm run check:template && npm run check:public-tokens && npm run test:reskin && npm run check:chassis-boundary && npm run check:custom-surface && npm run package && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm --prefix examples/showcase run test:unit && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- public-theme-equivalence.spec.ts theme-toggle.spec.ts styleguide.spec.ts`.
   Task checks: the port check, quoted; the comments check.
 
 ---
@@ -799,7 +921,8 @@ the home, archive, and styleguide routes under `examples/showcase/src/routes/(si
 decisions 7, 12, and 23.
 
 **Files:** `src/lib/render/registry.ts` or `component-grammar.ts` (the export's home),
-`src/lib/index.ts`, `docs/reference/core.md`, a new root unit test for `previewMarkdown`,
+`src/lib/index.ts`, `docs/reference/core.md`, `docs/internal/api-surface.md` (regenerated), a new
+root unit test for `previewMarkdown`,
 `examples/showcase/src/routes/(site)/styleguide/+page.server.ts` and `+page.svelte`,
 `examples/showcase/src/routes/(site)/+layout.svelte`, `(site)/+page.svelte`,
 `archive/[page]/+page.svelte`, `ArticleView.svelte`, `EntryRow.svelte`, the chassis `prose.css`,
@@ -812,7 +935,8 @@ unit test that proves a throwaway registry entry reaches the styleguide, and `te
 **Outcome:**
 - **`previewMarkdown(def)`** (decision 7) is exported from the root barrel, documented on
   `core.md` in this task, and built on `previewValues` and `serializeComponent` without exporting
-  either.
+  either. `npm run check:surface -- --update` regenerates `docs/internal/api-surface.md` in the
+  same commit; its diff is the disclosure the reviewer reads.
 - **The styleguide** renders one sample per registry entry from its `preview`, serialized through
   `previewMarkdown`. An entry with no `preview` is listed by name as lacking one. The hand-written
   kit goes. The "auto-themes with your system light or dark setting" claim goes; the sentence says
@@ -827,7 +951,8 @@ unit test that proves a throwaway registry entry reaches the styleguide, and `te
 - **The comment scrub.** Each `docs/internal/` path and "Verdict" citation in the emitted sources
   becomes a one-line reason or a public docs link.
 - **The gate.** `check:template` fails on an emitted file under `src/` or a root config file that
-  contains `docs/internal/` or `Verdict` followed by a number (decision 12).
+  contains `docs/internal/` or `Verdict` followed by a number (decision 12), and on an emitted
+  `cairn-audit.config.json` holding any path that starts with `..` (decision 27).
 
 **Acceptance:**
 - The export's unit test covers a component with a `preview`, one without (returns `undefined`),
@@ -837,13 +962,17 @@ unit test that proves a throwaway registry entry reaches the styleguide, and `te
   styleguide load's output with no edit to the route.
 - `template-radius-literals.test.ts` sweeps the showcase's `src/theme`, `src/chassis`, and
   `src/routes/(site)` CSS and `<style>` blocks and finds no `border-radius` literal outside `0` and
-  the three named exceptions; it fails on a planted `border-radius: 3px` (mutation ledger).
-- `emit-template-dir.test.mjs` proves the gate with a fixture file carrying each string, and a
-  fixture under `.claude/` that the gate skips.
-- `grep -rnE "docs/internal/|Verdict [0-9]" templates/waymark/src` prints nothing.
+  the three named exceptions; it fails on a planted `border-radius: 3px` (mutation ledger), fails
+  when a named exception is no longer found (a stale entry), and reports its scanned-file count.
+- `emit-template-dir.test.mjs` proves the gate with a fixture file carrying each string, a fixture
+  config holding a `../` path, and a fixture under `.claude/` that the gate skips.
+- `grep -rnE "docs/internal/|Verdict [0-9]" templates/waymark/src` prints nothing, and the
+  "auto-themes with your system light or dark setting" sentence is found nowhere under
+  `examples/showcase/src` or `templates/waymark/src`.
+- The surface check is green with the regenerated `api-surface.md`.
 - The equivalence spec passes; `styleguide.spec.ts` passes with any changed locator listed.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line: the showcase set; the
-  comments check; the idioms check; the package check; the Node-only template checks,
+  comments check; the idioms check; the package check; the surface check; the Node-only template checks,
   `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:template && npm run check:chassis-boundary && npm run check:custom-surface && npm run test:emit && npm --prefix packages/create-cairn-site test'`;
   the port check, then
   `cairn-run-gate 'E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- public-theme-equivalence.spec.ts styleguide.spec.ts tag-filter.spec.ts'`.
@@ -859,8 +988,8 @@ empty scope, cairn's own tree, `public-literals`), "Tiers"; decisions 6, 13 to 1
 `src/lib/audit/markup.ts`, a new shared detection core under `src/lib/audit/` (its name is the
 implementer's), `src/lib/audit/rules/static/token-colors.ts`, a new
 `src/lib/audit/rules/static/public-literals.ts`, `src/lib/audit/rules/static/index.ts`, their unit
-tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.test.ts`,
-`examples/showcase/cairn-audit.config.json`, `docs/reference/cairn-audit.md`, and
+tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.test.ts`, a new
+`scripts/checks/public-scope.config.json` (decision 27), `docs/reference/cairn-audit.md`, and
 `skills/cairn-admin-screens/SKILL.md` (the tier map and its count sentence).
 
 **Outcome:**
@@ -869,8 +998,9 @@ tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.tes
   configured missing root throws, as the admin scope's does. When a public-scope rule runs and every
   root together matches no files, the run fails with an actionable message naming `public.scope`
   (decision 16).
-- **One scope per file.** The admin static scope skips any file the public scope claims. A root a
-  site names explicitly for one scope leaves the other scope's defaults, in both directions.
+- **One scope per file.** The admin static scope skips any file the public scope claims, and the
+  public scope never claims a file under an admin-scope root (decision 6). A root a site names
+  explicitly for one scope leaves the other scope's defaults, in both directions.
 - **`markup.ts`** exposes the static parts of a mixed `style=` value and each Svelte `style:`
   directive, with source offsets, so a finding lands on the right line.
 - **The detection core** classifies hex, `rgb()`, `hsl()`, `hwb()`, `lab()`, `lch()`, `oklab()`,
@@ -882,10 +1012,10 @@ tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.tes
   custom-property definition is legal anywhere under a theme root, a component's `<style>` block
   included. The root element's `font-size` is exempt by rule. Tailwind's own utilities are never
   flagged.
-- **The showcase config** sets `public.scope` to the showcase's existing default roots plus the
-  engine's `../../src/lib/public`, and `public.themeRoots` to `src/theme`,
-  `src/chassis/tokens.css`, and `../../src/lib/public/cairn-public.css`. The engine's
-  `src/lib/admin/` is never a public root.
+- **The repo-owned config** (decision 27) sets `public.scope` to the showcase's default public
+  roots plus the engine's `../../src/lib/public`, and `public.themeRoots` to `src/theme`,
+  `src/chassis/tokens.css`, and `../../src/lib/public/cairn-public.css`. The showcase's own
+  `cairn-audit.config.json` does not change. The engine's `src/lib/admin/` is never a public root.
 - **The docs:** `cairn-audit.md` gains the rule's entry, the public scope's section with its config
   keys and the named-root rule, and the updated counts; the admin-screens tier map lists the rule
   under "Static, advisory tier".
@@ -896,14 +1026,22 @@ tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.tes
   literal custom property outside a theme root. It passes a custom property in a theme component's
   `<style>`, the chassis scale's `rem` steps, `text-sm`, `bg-red-500`, `0.88em`, and the root
   `font-size` clamp.
+- A table-driven test covers the detection core per form: each literal form named above flags, and
+  `transparent`, `currentColor`, `inherit`, and `unset` do not. A mixed
+  `style="color: #abc; width: {w}px"` fixture lands its finding on the right offset.
 - A test asserts the two default root sets are disjoint, and that a root named for one scope leaves
   the other's defaults, in both directions. A test asserts the empty-scope error fires on a tree with
-  no public files when a public rule runs, and not when none does.
-- A test runs `token-colors` over the showcase's admin scope and asserts its findings equal a
-  committed pre-change list (decision 15).
-- The showcase's public scope, run through the packaged audit, reports zero `public-literals`
-  findings and a scanned count that includes `src/lib/public/PreviewBanner.svelte`; the report
-  quotes both.
+  no public files when a public rule runs, and not when none does. A configured missing root
+  throws; a missing default root is skipped.
+- A test asserts that a config with a custom `public.exclude`, and one with `public.scope:
+  ["src"]`, both leave `src/routes/admin` files under `token-colors` and out of `public-literals`,
+  and that a file under both scopes' configured roots raises one rule's finding, never both.
+- `token-colors.test.ts` passes unmodified, and one new case asserts `oklch(60% 0.12 200)` is
+  flagged by `public-literals` and not by `token-colors` (decision 15).
+- `templates/waymark/cairn-audit.config.json` is byte-identical to its pre-task state.
+- The packaged audit, run from the showcase directory with `--config` naming the repo-owned config
+  and the rule selected, reports zero `public-literals` findings and a scanned count that includes
+  `../../src/lib/public/PreviewBanner.svelte`; the report quotes both.
 - `check:invisible-craft` and `check:admin-css-classes` report the same findings as before; the
   report lists any file that moved scopes.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line: the idioms check; the
@@ -917,7 +1055,9 @@ tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.tes
 **Pass class:** `engine-logic`. **Spec:** "The guard", `theme-conformance`; "Proof", its fixtures;
 decision 6.
 
-**Files:** a new import-chain loader under `src/lib/audit/` (shared with task 9), a new
+**Files:** `src/lib/audit/sheet.ts` (a sibling export listing top-level statement at-rules, since
+`parseSheet` drops a block-less `@import` at its `;`) with its test, a new import-chain loader
+under `src/lib/audit/` (shared with task 9), a new
 `src/lib/audit/rules/static/theme-conformance.ts`, `src/lib/audit/rules/static/index.ts`, their
 unit tests and fixtures, `src/tests/unit/audit/run.test.ts`, `docs/reference/cairn-audit.md`, and
 the admin-screens tier map.
@@ -926,12 +1066,18 @@ the admin-screens tier map.
 - **The loader** reads each `public.stylesheets` entry and follows its `@import` chain in order:
   relative paths from the importing file, package specifiers from the audited root's installed
   packages (so `cairn-public.css` is read from the installed package, and counts only when the chain
-  imports it). Every file parses through `sheet.ts`, never a regex over raw text.
+  imports it). A package specifier resolves under the `style` export condition, then the `style`
+  field, never plain Node resolution: `tailwindcss` resolves to `dist/lib.js` under Node's
+  conditions and to `index.css` only under `style`. A non-CSS target is a named finding, never
+  parsed. `tailwindcss` itself is not traversed, since resolution source 2 covers its variables.
+  Every file, and every `@import` statement, is read through `sheet.ts`, never a regex over raw
+  text.
 - **The key list** is read from `daisyui/theme/object`, resolved from the audited root. When
   `daisyui` or `tailwindcss` cannot be resolved, the audit fails with a named message saying which
   peer is missing and how to install it. The rule fails loudly when the list is empty or lacks
   `--color-base-100` or `--radius-box`.
-- **Completeness.** Each named daisyUI theme block defines every key, except a block named after a
+- **Completeness.** Each named daisyUI theme block defines every key (`color-scheme` included,
+  since task 5's toggle reads it), except a block named after a
   built-in theme, which daisyUI completes by merging. The message says whether an omission sits in
   the default block (a runtime hole) or a secondary one. A scope with no theme block raises a
   finding.
@@ -951,10 +1097,15 @@ the admin-screens tier map.
   a stylesheet that skips `cairn-public.css`; a copied pre-pass-C `tokens.css` beside the new import
   (Review focus 1); and a `--font-heading` face beside `--font-weight-heading`. It passes a partial
   block named `nord`, `var(--color-red-500)`, a route-local token, and the new template's chassis.
+- More fixtures, each with its named message: a hole in the default block and a hole in a
+  secondary block (the two message variants); a block missing `color-scheme`; a scope with no
+  theme block; an import of a package that exports CSS only under `style` (resolved and read); and
+  a `var(--tw-*)` that passes. An injected empty key list, then one lacking `--radius-box`, each
+  raise the rule's loud failure.
 - A test asserts the named failure for a missing `daisyui` and a missing `tailwindcss` (resolution
   injected, so the test needs no uninstall).
-- The rule reports zero findings over the showcase through the packaged audit; the report quotes
-  the scanned count.
+- The rule reports zero findings over the showcase through the packaged audit with the repo-owned
+  config; the report quotes the scanned count.
 - `gateTier: "engine"`. Task checks, each quoted: the idioms check; the comments check; the audit
   wrappers; the package check; the showcase set.
 
@@ -970,7 +1121,8 @@ under `src/lib/audit/`, `src/lib/audit/rules/static/index.ts`, their unit tests 
 `src/tests/unit/audit/run.test.ts`, `package.json` (`dependencies`, `peerDependencies`,
 `peerDependenciesMeta`, and the `check:public-tokens`, `test:reskin`, `check:audit-pack`, and
 `check:close` scripts), `package-lock.json`, a new `scripts/checks/check-public-scope.mjs`, a new
-`scripts/checks/check-audit-pack.mjs` with its minimal fixture site, `scripts/lab/reskin-fixture.mjs`,
+`scripts/checks/check-audit-pack.mjs` with its minimal fixture site, a unit test for
+`check-public-scope.mjs`'s exit logic, `scripts/lab/reskin-fixture.mjs`,
 the retirement of `scripts/checks/check-public-tokens.mjs` and
 `src/tests/unit/check-public-tokens.test.ts`, `src/tests/unit/role-layer-contrast.test.ts`,
 `src/tests/unit/check-idioms.test.ts`, `src/tests/culori.d.ts` (or its successor),
@@ -981,8 +1133,12 @@ prose that names the retired file.
 **Outcome:**
 - **The resolver** (the fold's stated bound) follows `var()` chains to a literal and evaluates one
   `color-mix` form: two operands in `oklab` or `oklch` and one percentage, via culori's
-  `interpolate`. It then alpha-composites over the ground. Any other form yields an "unmeasured"
-  finding, never a pass or a crash.
+  `interpolateWithPremultipliedAlpha`, since CSS `color-mix()` interpolates premultiplied and plain
+  `interpolate` darkens every mix toward `transparent` (verified at review: `oklch(25% 0 0) 60%,
+  transparent` gives `l` 0.15 plain, 0.25 premultiplied). An achromatic operand's hue is powerless:
+  the resolver treats a hue at chroma near 0 as missing if the Chromium comparison below disagrees
+  with culori's interpolated hue. It then alpha-composites over the ground. Any other form yields
+  an "unmeasured" finding, never a pass or a crash.
 - **The scheme model.** Schemes come from the daisyUI theme blocks, never hard-coded names. Each
   named block resolves as `html[data-theme="<name>"]` would, the `prefersdark` block also takes the
   `@media (prefers-color-scheme: dark) :root:not([data-theme])` rules, and a secondary block's
@@ -998,8 +1154,10 @@ prose that names the retired file.
 - **`check:audit-pack`** as decision 20 states, wired into `test.yml` after `check:package` and into
   `check:close` at the same position.
 - **`check:public-tokens`** becomes decision 17's successor. It runs the three public rules over the
-  showcase, and again over the showcase with `examples/cairn-theme/cairn.css` layered after
-  `theme.css` in the chain. It exits nonzero on any unsuppressed finding at either tier. The old
+  showcase with the repo-owned config (decision 27), and again over the showcase with
+  `examples/cairn-theme/cairn.css` layered after `theme.css` in the chain. It exits nonzero on any
+  unsuppressed finding at either tier, and prints each run's scanned count and per-scheme
+  measured-pair count. The old
   script and its unit test retire; `test:reskin` imports the contrast core from `dist/audit` and
   gains the standing case: Waymark with its four ink overrides stripped passes `theme-contrast` in
   both schemes. The hue-rotation case stays. `role-layer-contrast.test.ts` imports the core from
@@ -1009,13 +1167,25 @@ prose that names the retired file.
 
 **Acceptance:**
 - Fixtures, each raising exactly the named finding: a hand-set ink below AA; a derived ink that
-  passes light and fails dark; an ink failing on the callout tint only; and an unmeasurable
-  expression (a relative color, a three-operand mix), which yields "unmeasured".
+  passes light and fails dark; an ink failing on the callout tint only; a role on its `-content`
+  below AA (for example `primary` on `primary-content`); and an unmeasurable expression (a
+  relative color, a three-operand mix), which yields "unmeasured".
+- The scheme model's fixtures use names other than `cairn`: blocks `acme` (`default: true`) and
+  `acme-night` (`prefersdark`) with one failing ink in `acme-night`, whose finding names
+  `acme-night`; a secondary block that omits a key and takes the default block's value; and a
+  `prefersdark` media rule that changes a measured pair.
 - A resolver unit test compares its `color-mix` result with Chromium's computed value for at least
-  six pairs (both spaces, both percentages ends), recorded to the printed digit; a mismatch is a
-  blocking finding.
-- The three rules report zero findings over the showcase and over the overlay variant;
-  `test:reskin` passes both cases; the report quotes the stripped-inks case's per-pair table.
+  six pairs (both spaces, both percentages ends, one with a `transparent` operand, one `oklch` pair
+  with an achromatic operand), recorded to the printed digit; a mismatch is a blocking finding.
+- The three rules report zero findings over the showcase and over the overlay variant, each with a
+  nonzero scanned count and a per-scheme measured-pair count equal to the expected pair list's
+  length; `test:reskin` passes both cases; the report quotes the stripped-inks case's per-pair
+  table.
+- The successor fails when it should: a unit test covers `check-public-scope.mjs`'s exit logic in
+  four states (no finding, an advisory finding, an error finding, a suppressed finding), and two
+  mutations (each reverted), a planted sub-AA ink and a planted `#hex` in a chassis `<style>`, each
+  make `npm run check:public-tokens` exit nonzero naming the rule.
+- The dependency survey record exists under `docs/internal/record/`.
 - `npm run check:audit-pack` passes and fails when culori is moved back to `devDependencies`
   (mutation ledger, reverted).
 - `check:package` is green; `git grep -n check-public-tokens.mjs` prints only history and record
@@ -1035,8 +1205,8 @@ fixes", each harness check; decisions 4, 18, and 19.
 
 **Files:** `scripts/lab/theme-fixture/theme.css` (completed), a new harness under `scripts/lab/`
 with its Playwright spec and config, `package.json` (`test:theme-fixture`), `.gitignore`
-(`.cairn-theme-fixture-*/`), `scripts/lab/reskin-fixture.mjs` (the fixture as a third case), and
-`.github/workflows/design.yml`.
+(`.cairn-theme-fixture-*/`), `scripts/lab/reskin-fixture.mjs` (the fixture as a third case),
+`scripts/checks/check-public-scope.mjs` (the fixture variant), and `.github/workflows/design.yml`.
 
 **Outcome:**
 - **The fixture theme** is deliberately unlike Waymark: system-stack faces, a square corner ladder
@@ -1045,12 +1215,18 @@ with its Playwright spec and config, `package.json` (`test:theme-fixture`), `.gi
   blocks, the CTA set and caption tracking the styleguide reads, and the walkthrough's lever values:
   `--font-weight-heading: 800`, `--cairn-heading-case: uppercase`, `--tag-filter-radius: 0`, and a
   tightened `--spacing-xl`. It keeps the names `cairn` and `cairn-dark`. The three public rules pass
-  on it.
+  on it: `check:public-tokens` gains a third variant, the showcase with the fixture in place of
+  `theme.css`.
 - **The harness** (`npm run test:theme-fixture`) takes an optional theme path (default the
-  committed fixture), so probe 2 reuses it. **The showcase arm** loads home, one article, and the
-  styleguide, and asserts: computed `--radius-box` is `0`; the fixture face is in `font-family`; a
-  derived ink equals its `color-mix` result; the custom token reaches its element; a nested
-  `data-theme="cairn"` region injected into the dark page recomputes its derived ink; the toggle,
+  committed fixture), plus decision 4's two probe modes, so the probes reuse it. **The showcase
+  arm** loads home, one article, and the styleguide, and asserts: computed `--radius-box` is `0`;
+  the first `font-family` entry is the fixture's face and differs from Waymark's; a derived ink,
+  measured as an ink-painted element's computed `color`, equals the computed `color` of a sibling
+  reference element painted with the literal `color-mix(in oklab, <resolved fill> N%, <resolved
+  base-content>)`, so Chromium evaluates both sides; the custom token reaches its element; inside a
+  nested `data-theme="cairn"` region injected into the dark page, the ink-painted element's
+  computed `color` differs from the same element outside it and equals its value with
+  `data-theme="cairn"` on the root; the toggle,
   under a light OS with no cookie, offers light mode, and its first click changes the root's
   computed `color-scheme`; a prose `h2`, the home lead title, and a styleguide section heading
   compute weight 800 and `uppercase`; the skip link is visually hidden until focused and fully
@@ -1062,8 +1238,15 @@ with its Playwright spec and config, `package.json` (`test:theme-fixture`), `.gi
 - Both arms pass locally and each assertion above appears by name in the spec. The report quotes
   the run and states that the temporary copy and the preview server were removed and stopped.
 - Mutations (each reverted): setting the fixture's `--radius-box` to `0.5rem` fails the corner
+  assertion; removing `[data-theme]` from `cairn-public.css`'s role selector fails the nesting
   assertion; dropping the `@source` line in the template arm's installed copy fails the sentinel.
-- The run leaves no `.cairn-theme-fixture-*` directory and no listener on 4393.
+- One run of each probe mode passes: `--build-only` with `--theme-dir` pointed at Waymark's
+  `src/theme`, and the template arm's `--probe` on a styleguide element, reporting its color and
+  radius under both themes.
+- `check:public-tokens`'s fixture variant reports zero findings; the report quotes its scanned
+  count and per-scheme pair count.
+- The run leaves no `.cairn-theme-fixture-*` directory and no listener on 4393, after the green run
+  and after the failing `--radius-box` mutation run.
 - `gateTier: "targeted"`, `gate`:
   `npm run check:public-tokens && npm run test:reskin && npm run test:theme-fixture && npm --prefix examples/showcase run check`.
   Task checks: `ss -ltnp 'sport = :4393'` prints no listener before and after, quoted.
@@ -1132,7 +1315,9 @@ and `templates/waymark/**` (re-emitted; the bake ships the new skill under `.cla
   `previewMarkdown`, plus `figure` and `include`), every island, and every composition primitive has
   a page; every class a snippet uses exists in the showcase's compiled public sheet or the registry;
   and every token a snippet or the table names resolves under `theme-conformance`'s resolution set,
-  read from the packaged audit. A parser that matches nothing fails.
+  read from the packaged audit. A parser that matches nothing fails. The Tailwind compile scans the
+  showcase's own sources only, never the skill's snippet files, or every valid utility would
+  compile and the class check would pass vacuously.
 - **`cairn-extend`** gains one routing line to `cairn-public`.
 
 **Acceptance:**
@@ -1141,7 +1326,8 @@ and `templates/waymark/**` (re-emitted; the bake ships the new skill under `.cla
 - `check:package` passes with the skill budget; the report quotes each packaged `SKILL.md`'s token
   estimate.
 - `templates/waymark/.claude/skills/cairn-public/SKILL.md` exists after the re-emit, and
-  `npm --prefix packages/create-cairn-site test` passes.
+  `npm --prefix packages/create-cairn-site test` passes. `grep` finds `cairn-public` in
+  `skills/cairn-extend/SKILL.md`.
 - `gateTier: "targeted"`, `gate`:
   `npm run check && npx vitest run --project unit src/tests/unit/check-public-skill.test.ts src/tests/unit/check-skill-budget.test.ts src/tests/unit/guidance/install.test.ts && npm run check:public-skill && npm run check:template && npm --prefix packages/create-cairn-site test`.
   Task checks: the package check; `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:docs && npm run check:vale'`.
@@ -1175,8 +1361,8 @@ internal docs, the charter); decision 25.
 - `npm run emit:template` re-emits the template after the README change.
 
 **Acceptance:**
-- `grep` finds none of the three superseded sentences on `design-your-site.md`, and no "three"
-  collision count in the README.
+- `grep` finds none of the three superseded sentences on `design-your-site.md`, and the README no
+  longer holds "share a suffix with three of Tailwind's built-in" (the plan-time wording).
 - `gateTier: "targeted"`, `gate`:
   `npm run check:docs && npm run check:vale && npm run check:facts && npm run check:chassis-boundary && npm run check:template`.
 
@@ -1205,13 +1391,13 @@ reference pages as a consumer installs them) and a one-line brief, in a throwawa
 branch.
 - **Probe 2** (Sonnet `general-purpose`): "Build a minimal new theme on this chassis, with its own
   chrome and one custom public component." It passes with zero public-scope findings, a scanned-file
-  count that includes every file it created or edited, and a clean `test:theme-fixture` build with
-  its theme as the harness's theme path.
+  count that includes every file it created or edited, and a clean `test:theme-fixture
+  --build-only --theme-dir <its theme>` run.
 - **Probe 3** (a `cairn-implementer`): "Add a small built-in public component to
   `src/lib/public/`." It passes with zero public-scope findings on its directory and a nonzero
   scanned count. In the harness's template arm, with the component mounted by a throwaway route
-  edit, its computed color and radius differ between Waymark and the fixture and equal each theme's
-  tokens. The main loop reads one screenshot per theme.
+  edit, `--probe` reports its computed color and radius differing between Waymark and the fixture
+  and equal to each theme's tokens. The main loop reads one screenshot per theme.
 
 A failure names a guidance gap, fixed on its shipped page by a task 14 run, and a fresh agent
 re-runs the probe once. A second failure escalates in S3's question. Both throwaway worktrees are
@@ -1256,8 +1442,9 @@ run. The sitting counts as one execution sitting.
 ### Task 15: Close, merge, and release
 
 **Outcome:** First, `code-simplifier:code-simplifier` runs once over the scope named under
-`code-simplifier`, and a gate agent runs the engine string on its commit. Then the full gate, in
-one gate agent: `npm run check`, `npm run test:node-projects && npm run test:component --
+`code-simplifier` and commits; if it changed a typed declaration, `npm run check:surface --
+--update` runs and its diff joins that commit. Then the full gate on that commit, in one gate
+agent: `npm run check`, `npm run test:node-projects && npm run test:component --
 --no-file-parallelism` (the serialized form of `npm test`, pass A's decision 13), `npm run
 check:close`, `npm --prefix examples/showcase run test:unit` (CI runs it; `check:close` does not),
 and `npm run test:theme-fixture` (a browser harness, so outside `check:close`, which gained
@@ -1276,14 +1463,21 @@ cairn-pass ritual:
   binding, and the focus-ring utility with `@import "@glw907/cairn-cms/cairn-public.css"`; compare
   your copy's ink, muted, and shadow values first, since those defaults changed."). It names the
   changed defaults, the three rules and their tiers, the two optional peers, the new root export,
-  and the heading levers. Pass B's entry stays as pass B wrote it.
-- **`docs/extend/migration-notes.md`** and **`upgrade-cairn.md`**: the swap, the changed defaults,
-  a `paletteFiles` entry that names the old copy, the two optional peers, and the public scope's
-  default roots with the named-root rule.
+  and the heading levers. It also names the consumer-visible changes a site sees on upgrade:
+  `PreviewBanner`'s token palette and the editor preview's ground following the site's
+  `base-100`; `cairn-focus-ring` now a components-layer rule that takes no variants and sits below
+  utilities; a copied `prose.css` that read the missing focus-ring keys gaining visible outlines;
+  and `check:cairn` printing advisory public-scope findings, and failing with the named message
+  when a peer is missing. Pass B's entry stays as pass B wrote it.
+- **`docs/extend/migration-notes.md`** and **`upgrade-cairn.md`**: the swap, with the import's
+  position (after `tailwindcss`, before `prose.css`); the changed defaults; a `paletteFiles` entry
+  that names the old copy; the two optional peers; the public scope's default roots with the
+  named-root rule; and the template fixes a copied site ports by hand (the skip-link idiom, the
+  toggle's `color-scheme` resolution, the radius-token corners, and the heading levers).
 - **Facts** for every public behavior the pass changed that tasks 11 and 13 did not file, including
   the three rules' tiers and `previewMarkdown`. `check:facts` green.
-- **`npm run check:surface -- --update`**, committing the regenerated `docs/internal/api-surface.md`
-  for the new root export and subpath.
+- **`check:surface`** is verified current (task 6 regenerated `api-surface.md`; the full gate
+  runs it).
 - **`docs/internal/engine-rulings.md`** records `public-css-export`, with the corrected Verdict text
   from the fold record's sixth fold (W3). `check:rulings-format` green.
 - **`ROADMAP.md`**: the Now entry "Theme identity, passes A, B, and C" leaves the live tiers; the
@@ -1295,9 +1489,12 @@ cairn-pass ritual:
   the line "a built-in public component under `src/lib/public/` carries no literal, uses no daisyUI
   component class, and follows `cairn-public`'s recipe"; `claude/.claude/skills/cairn-release/SKILL.md`
   gains the step that runs the audit's public scope over each of the five sites at every cut and
-  records the counts. `claude-tooling-sync verify` green; the report quotes both lines.
-- **`docs/HISTORY.md`**: the pass entry (what landed, what the gates caught, spend against the 24M
-  ceiling, and what a later pass would be wrong to rediscover: the comment-fusion parser trap, the
+  records the counts, with its invocation named: in each site's checkout, `npm exec
+  --package=@glw907/cairn-cms@<new version> -- cairn-audit`, writing no `package.json` or
+  lockfile, and recording the site's `daisyui` and `tailwindcss` versions against the peer
+  ranges. `claude-tooling-sync verify` green; the report quotes both lines.
+- **`docs/HISTORY.md`**: the pass entry (what landed, what the gates caught, spend against the
+  ceiling ruling 1 set, and what a later pass would be wrong to rediscover: the comment-fusion parser trap, the
   `@layer theme` placement and the nesting limit of `@theme` colors, the comma exception in daisyUI
   blocks, the `@source` sentinel, the real-install pack test, and the named-root rule).
 - **The plan's post-mortem** appended here, with the pass score (tokens against the ceiling,
@@ -1312,20 +1509,25 @@ cairn-pass ritual:
 4. Mark the PR ready and merge `theme-identity-c` to `main`, which lands passes B and C together.
    Close pass B's PR as superseded. Remove both worktrees.
 
-**The release (under the `cairn-release` skill, in the same close):** with no worktree live, the
-`dependency-upgrade` sweep on `main` (every minor and patch; any major held with its trigger); the
-full gate on `main`; `npm view @glw907/cairn-cms versions --json` confirms `0.98.0` is free and the
+**The release (under the `cairn-release` skill, in the same close):** `npm outdated` at every
+manifest (decision 28: the window holds task 0's sweep, so the skill's skip clause applies; a new
+minor or patch stops the cut until it lands green through a short branch); the full gate on
+`main`, and a red there stops the release, STATUS records `main` as merged but unreleased, and
+the fix goes on a branch; `npm view @glw907/cairn-cms versions --json` confirms `0.98.0` is free and the
 skill's sizing rule confirms a minor; `npm version 0.98.0 --no-git-tag-version`; the `## Unreleased`
 window finalized as `## 0.98.0` with its `<!-- release-size: minor -->` marker; `npm run
 emit:template` re-emits the template at `^0.98.0`, closing the window in which the template's range
-resolved to `0.97.x`; the release commit lands on `main` by fast-forward; `gh release create v0.98.0
+resolved to `0.97.x`; the release commit lands on `main` by fast-forward; the `test` and
+`scaffold` runs on the release commit are watched green; then `gh release create v0.98.0
 --target main` with a notes file carrying passes A, B, and C and every `Consumers must:` line; the
 publish run watched green and `npm view @glw907/cairn-cms version` serving `0.98.0`. Then the
 `cairn-release` step this pass added: the public scope's counts over the five sites, recorded.
 
 **STATUS** (present tense, at or under 60 lines): `0.98.0` published; the theme identity initiative
 done; the charter's rule count settled (decision 25); the next action is resuming draft
-documentation on `draft-docs-0`, which merges `main` into its branch first; the resume prompt.
+documentation on `draft-docs-0`, which merges `main` into its branch first; one carry-forward for
+cairn-pub's pin bump (take the B and C migration first, then check its links to the renamed
+`admin.md` and the new `public-css.md`); the resume prompt.
 
 **Acceptance:** the full gate green on the branch before the merge and on `main` before the cut;
 CI green on the release commit; `0.98.0` on the registry; STATUS at or under 60 lines;

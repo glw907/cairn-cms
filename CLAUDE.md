@@ -38,8 +38,7 @@ Leanness is the point, not an accident. "Out of scope" and "we don't accommodate
 valid, often correct, answers; add to the engine only when it demonstrably serves the core job, and
 prefer the leanest seam over a general feature. Before adding an abstraction, a subsystem, an actor, or
 new surface, ask whether it is cairn's job or the developer's domain, then read
-`docs/internal/what-cairn-is-and-is-not.md` and the full stack list in the `cairn-scope-opinionated-stack`
-memory.
+`docs/internal/what-cairn-is-and-is-not.md`.
 
 ## Engine consultation (pre-pass, from consuming sites)
 
@@ -60,7 +59,7 @@ version, the unpublished window, and the next action live in `docs/STATUS.md`.
 
 Execute a plan task-by-task through the `cairn-implementer` chain (details under Tooling below).
 A plan header declares `Pass class:`, which sets each task's gate, review bar, test mandate, and
-close steps; the class table lives in the `cairn-pass` skill.
+close steps; the class table lives in the `pass-core` skill.
 The **`cairn-pass`** skill marks pass start and the pass-end ritual. Honor this repo's own skills
 and conventions while working in it.
 
@@ -176,7 +175,7 @@ changelog window since the last published tag, carrying every
 publish workflow).
 
 The path to `1.0` and its readiness checklist live in [`ROADMAP.md`](ROADMAP.md) ("Toward 1.0");
-the full scheme is in the `cairn-release-process-and-versioning` memory.
+the release procedure is the `cairn-release` skill.
 
 ## The extending-developer lens (subordinate to the charter)
 

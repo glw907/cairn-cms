@@ -224,11 +224,22 @@ export function extractCairnLines(segments) {
   const lines = [];
   /** @type {CairnLineWord[] | null} */
   let pending = null;
+  /** @type {number | null} */
+  let lastLine = null;
   for (const seg of segments) {
     if (!seg.fenced || !seg.lang || !SHELL_LANGS.has(seg.lang)) {
       pending = null;
+      lastLine = null;
       continue;
     }
+    // Two fences back to back with no inline code between them leave no segment for either the
+    // closing or the opening fence marker, so this segment and the last one can belong to two
+    // unrelated fences even though both are fenced shell. Within one fence, every line (including
+    // a fence carried over a blank line) yields a segment, so a gap in line numbers here can only
+    // mean the previous fence closed and a new one opened; a pending continuation from the old
+    // fence must not swallow the new fence's first line as though it were the same command.
+    if (pending && lastLine !== null && seg.line !== lastLine + 1) pending = null;
+    lastLine = seg.line;
     const continues = /\\\s*$/.test(seg.text);
     const body = seg.text.replace(/\\\s*$/, '').trim();
     const words = body.length > 0 ? body.split(/\s+/) : [];
@@ -453,15 +464,38 @@ function flagNameFromWord(word) {
   return m ? `--${m[1]}` : null;
 }
 
+// A word that ends a shell-parsed cairn invocation early: a pipe, a redirect, a background or
+// sequencing operator, or the compound-command joiners. Extraction reads a line's words with no
+// shell grammar at all (`extractCairnLines`), so `cairn logs --json | jq --arg x y` still carries
+// jq's own words as though they belonged to the cairn line; resolution is what must stop reading
+// at the boundary a real shell would honor, or a defect in the piped-to program (`jq --arg`)
+// reports as a cairn defect instead.
+const SHELL_OPERATOR_WORDS = new Set(['|', '||', '&&', ';', '>', '>>', '<', '2>', '&']);
+
+/**
+ * The prefix of a cairn line's words up to, but not including, the first shell operator word or a
+ * word starting with `#` (a shell comment): words past either boundary belong to a different
+ * command, or to no command at all, and neither should be checked against this line's own path or
+ * flags.
+ * @param {CairnLineWord[]} items
+ * @returns {CairnLineWord[]}
+ */
+function truncateAtShellBoundary(items) {
+  const cut = items.findIndex(({ token }) => SHELL_OPERATOR_WORDS.has(token) || token.startsWith('#'));
+  return cut === -1 ? items : items.slice(0, cut);
+}
+
 /**
  * Resolve one `cairn` line's command path and flags against the committed map, and return its
  * findings: a class `cairn-subcommand` entry for a subcommand-position word the matched path does
  * not recognize, and a class `cairn-flag` entry for a flag the matched path does not accept.
  * `token` is the bare word or flag name, the shape `check-symbols-allowlist.mjs` keys on for
  * every other class; `path` carries the command path it was checked against, for the finding's
- * printed message. The command path is the longest run of leading words, starting from `cairn`,
- * that names a path in `commandFlags`; the walk stops at the first flag (a word starting with
- * `-`) as well as at the first word that fails to extend the path, so a value-taking flag's value
+ * printed message. The line is first truncated at the first shell operator or `#` comment
+ * (`truncateAtShellBoundary`), since neither belongs to the cairn invocation itself. The command
+ * path is the longest run of leading words, starting from `cairn`, that names a path in
+ * `commandFlags`; the walk stops at the first flag (a word starting with `-`) as well as at the
+ * first word that fails to extend the path, so a value-taking flag's value
  * (`cairn adopt --domain example.com`, `cairn --color never`) is never mistaken for a path word:
  * a word before a flag is always a command word or a bare positional, never a flag's value,
  * whereas a word right after a flag could be either. A line with no such word (`cairn`,
@@ -474,7 +508,8 @@ function flagNameFromWord(word) {
  * @returns {{ line: number, class: string, token: string, path: string }[]}
  */
 export function resolveCairnLine(items, commandFlags) {
-  const words = items.slice(1);
+  const truncated = truncateAtShellBoundary(items);
+  const words = truncated.slice(1);
   let cmdPath = 'cairn';
   let consumed = 0;
   while (consumed < words.length && !words[consumed].token.startsWith('-')) {
@@ -494,7 +529,7 @@ export function resolveCairnLine(items, commandFlags) {
   }
 
   const accepted = commandFlags.get(cmdPath) ?? new Set();
-  for (const item of items.slice(1)) {
+  for (const item of words) {
     const flagName = flagNameFromWord(item.token);
     if (flagName && !accepted.has(flagName)) {
       findings.push({ line: item.line, class: 'cairn-flag', token: flagName, path: cmdPath });

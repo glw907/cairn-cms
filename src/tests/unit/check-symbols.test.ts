@@ -127,6 +127,17 @@ describe('extractCairnLines', () => {
     );
     expect(extractCairnLines(segments)).toEqual([]);
   });
+
+  // Two fences back to back with no intervening inline code produce no segment for either the
+  // closing or the opening fence marker, so consecutive segments in the array can belong to two
+  // unrelated fences. A pending `\` continuation left over from the first fence must not swallow
+  // the second fence's first line as though it were the same command's next word.
+  it('does not carry a pending `\\` continuation from one fence into the next fence', () => {
+    const segments = codeVoiceSegments(
+      ['```bash', 'cairn doctor \\', '```', '', '```bash', '--force', '```'].join('\n'),
+    );
+    expect(extractCairnLines(segments)).toEqual([]);
+  });
 });
 
 describe('resolveCairnLine', () => {
@@ -182,6 +193,33 @@ describe('resolveCairnLine', () => {
   it('does not mistake a flag\'s value for the subcommand-position word', () => {
     const lines = extractCairnLines(
       codeVoiceSegments(['```bash', 'cairn doctor --json somewhere', '```'].join('\n')),
+    );
+    expect(resolveCairnLine(lines[0], commandMap)).toEqual([]);
+  });
+
+  // A cairn line piped into another program is still extracted whole (extractCairnLines does not
+  // parse shell grammar), so resolveCairnLine must stop reading words at the first shell operator
+  // itself: the words after `|` belong to jq, not cairn, and validating them against cairn's own
+  // flags would misattribute a real defect in the wrong tool.
+  it('truncates at a pipe, so a flag on the far side belongs to the piped command, not cairn', () => {
+    const lines = extractCairnLines(
+      codeVoiceSegments(['```bash', 'cairn doctor --json | jq --arg x y', '```'].join('\n')),
+    );
+    expect(resolveCairnLine(lines[0], commandMap)).toEqual([]);
+  });
+
+  it('truncates at a redirect, so the target file is never read as a subcommand', () => {
+    const lines = extractCairnLines(
+      codeVoiceSegments(['```bash', 'cairn doctor > out.json', '```'].join('\n')),
+    );
+    expect(resolveCairnLine(lines[0], commandMap)).toEqual([]);
+  });
+
+  // `cairn doctor` has a child (`cairn doctor fix`), so an untruncated word right after the path
+  // reads as an unrecognized subcommand. A trailing shell comment is not a subcommand at all.
+  it('truncates at a trailing `#` comment, so it is never read as a subcommand', () => {
+    const lines = extractCairnLines(
+      codeVoiceSegments(['```bash', 'cairn doctor # explain what this does', '```'].join('\n')),
     );
     expect(resolveCairnLine(lines[0], commandMap)).toEqual([]);
   });

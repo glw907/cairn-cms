@@ -116,6 +116,13 @@ export function loadShippedAnchors(listPath, root) {
   if (anchors.length === 0) {
     defects.push(`${rel}: carries no anchors; a released tag always ships at least one`);
   }
+  // The list is append-only and a released tag never ships the same fragment under two entries,
+  // so a repeat can only be a mistake in the commit that added it.
+  const seenAnchors = new Set();
+  for (const entry of anchors) {
+    if (seenAnchors.has(entry)) defects.push(`${rel}: anchors contains a duplicate entry "${entry}"`);
+    seenAnchors.add(entry);
+  }
   return { anchors, defects };
 }
 
@@ -152,6 +159,27 @@ export function checkShippedAnchors(anchors, markdownText, doc = DOC) {
   return problems;
 }
 
+/**
+ * The full problem list `main()` reports: the live registry/doc pairing (`checkReadiness`) plus
+ * the shipped-anchor list against the same doc (`checkShippedAnchors`), in that order. Split out
+ * of `main()`'s own body so a test can prove the composition itself runs the shipped-anchor half,
+ * rather than only trusting that `main()` still does: an edit that wired `checkReadiness` but
+ * dropped the shipped-anchor call would otherwise pass every test in this file. The shipped list's
+ * own load defects (a missing or malformed `shipped-anchors.json`) are reported on their own,
+ * without also running the heading comparison against a list that failed to load.
+ * @param {{ id: string, docsAnchor?: string }[]} conditions
+ * @param {string} markdownText
+ * @param {ShippedAnchorListResult} shipped
+ * @param {string} [doc]
+ * @returns {string[]}
+ */
+export function readinessProblems(conditions, markdownText, shipped, doc = DOC) {
+  const problems = checkReadiness(conditions, markdownText, ALLOWLIST, doc);
+  problems.push(...shipped.defects);
+  if (shipped.defects.length === 0) problems.push(...checkShippedAnchors(shipped.anchors, markdownText, doc));
+  return problems;
+}
+
 async function main() {
   const distPath = resolve(ROOT, CONDITIONS_JS);
   if (!existsSync(distPath)) {
@@ -162,11 +190,8 @@ async function main() {
   const { allConditions } = await import(pathToFileURL(distPath).href);
   const conditions = allConditions();
   const docText = readFileSync(resolve(ROOT, DOC), 'utf8');
-  const problems = checkReadiness(conditions, docText);
-
-  const { anchors, defects } = loadShippedAnchors(resolve(ROOT, SHIPPED_ANCHORS_PATH), ROOT);
-  problems.push(...defects);
-  if (defects.length === 0) problems.push(...checkShippedAnchors(anchors, docText));
+  const shipped = loadShippedAnchors(resolve(ROOT, SHIPPED_ANCHORS_PATH), ROOT);
+  const problems = readinessProblems(conditions, docText, shipped);
 
   if (problems.length > 0) {
     console.error(`check-readiness: ${problems.length} problem(s)`);
@@ -174,7 +199,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  console.log(`check-readiness: OK (${conditions.length} conditions, ${anchors.length} shipped anchors anchored in ${DOC})`);
+  console.log(`check-readiness: OK (${conditions.length} conditions, ${shipped.anchors.length} shipped anchors anchored in ${DOC})`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

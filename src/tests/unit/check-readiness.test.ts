@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkReadiness, checkShippedAnchors, loadShippedAnchors } from '../../../scripts/checks/check-readiness.mjs';
+import {
+  checkReadiness,
+  checkShippedAnchors,
+  loadShippedAnchors,
+  readinessProblems,
+} from '../../../scripts/checks/check-readiness.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const SHIPPED_ANCHORS_FIXTURES = join(ROOT, 'scripts/checks/fixtures/shipped-anchors');
@@ -156,5 +161,40 @@ describe('loadShippedAnchors', () => {
       'is-it-working.md#onboard-the-sending-domain',
       'is-it-working.md#admin-csrf-token-rejected',
     ]);
+  });
+
+  // A repeated entry can only ever be a mistake (the list is append-only, and a released tag
+  // never ships the same fragment twice under two entries), so it is a defect, not silently
+  // deduplicated.
+  it('flags a duplicate entry as a defect', () => {
+    const { anchors, defects } = loadShippedAnchors(join(SHIPPED_ANCHORS_FIXTURES, 'duplicate.json'), ROOT);
+    expect(anchors).toEqual([
+      'is-it-working.md#onboard-the-sending-domain',
+      'is-it-working.md#admin-csrf-token-rejected',
+      'is-it-working.md#onboard-the-sending-domain',
+    ]);
+    expect(defects).toEqual([
+      expect.stringContaining('duplicate entry "is-it-working.md#onboard-the-sending-domain"'),
+    ]);
+  });
+});
+
+// main()'s own composition: the live registry/doc pairing plus the shipped-anchor list against
+// the same doc. Testing it directly (rather than trusting main()'s own body) is what would have
+// caught an edit that wired checkReadiness but dropped the shipped-anchor half.
+describe('readinessProblems', () => {
+  it('surfaces a failing shipped anchor even when the live registry passes cleanly', () => {
+    const conditions = [cond('email.sender-not-onboarded', 'is-it-working.md#onboard-the-sending-domain')];
+    const shipped = { anchors: ['is-it-working.md#turn-on-hsts'], defects: [] };
+    expect(checkReadiness(conditions, DOC)).toEqual([]);
+
+    const problems = readinessProblems(conditions, DOC, shipped);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('turn-on-hsts');
+  });
+
+  it('surfaces the shipped-anchor list\'s own load defects, without also comparing headings', () => {
+    const shipped = { anchors: [], defects: ['scripts/checks/shipped-anchors.json: carries no anchors; a released tag always ships at least one'] };
+    expect(readinessProblems([], DOC, shipped)).toEqual(shipped.defects);
   });
 });

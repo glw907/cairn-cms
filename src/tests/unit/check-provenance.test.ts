@@ -296,6 +296,15 @@ describe('checkProvenance, brief coverage against the rebuilt-page list', () => 
     expect(result.report.join('\n')).toContain('nothing is rebuilt yet');
   });
 
+  // Default mode (no brief-path arguments) always needs the committed rebuilt-page list to check
+  // coverage against; a caller that omits it used to reach loadRebuiltList's `relative(root,
+  // listPath)` with `listPath` undefined and throw a TypeError instead of failing the gate.
+  it('returns a clear defect, not a thrown TypeError, when rebuiltListPath is missing in default mode', () => {
+    const root = join(FIXTURES, 'site-empty');
+    const { defects } = checkProvenance(join(root, 'docs/internal/briefs'), FACTS, root, []);
+    expect(defects).toEqual([expect.stringContaining('rebuiltListPath')]);
+  });
+
   it('per-brief mode skips coverage: an uncovered listed path does not fail a single-brief run', () => {
     const { defects } = checkProvenance(briefsDir, FACTS, root, [
       'docs/internal/briefs/front-door/README.json',
@@ -318,6 +327,21 @@ describe('loadRebuiltList', () => {
     const { list, defects } = loadRebuiltList(listPath, root);
     expect(list).toEqual(['docs/admin/foo.md']);
     expect(defects).toEqual([expect.stringContaining('is not a path under docs/')]);
+  });
+
+  // A literal `docs/` prefix check passes "docs/../outside.md" outright, since the string itself
+  // starts with "docs/"; only normalizing first catches that it actually names a file outside
+  // docs/. The bare "docs" (the directory itself, not a page) is rejected too, and a normalized
+  // double-slash entry is kept in its normalized form.
+  it('normalizes each entry before the docs/ prefix test, rejecting an escape and the bare "docs"', () => {
+    const root = join(FIXTURES, 'site-coverage');
+    const listPath = join(FIXTURES, 'rebuilt-lists', 'escapes-docs.json');
+    const { list, defects } = loadRebuiltList(listPath, root);
+    expect(list).toEqual(['docs/admin/foo.md', 'docs/admin/bar.md']);
+    expect(defects).toEqual([
+      expect.stringContaining('"docs/../outside.md") is not a path under docs/'),
+      expect.stringContaining('"docs") is not a path under docs/'),
+    ]);
   });
 });
 

@@ -62,7 +62,7 @@
 //   only machine-visible token is an ordinary word;
 // - a path compared by substring, so a shorter path inside a longer cited one passes.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import {
@@ -603,11 +603,20 @@ export function loadRebuiltList(listPath, root) {
   /** @type {string[]} */
   const defects = [];
   parsed.forEach((entry, i) => {
-    if (typeof entry !== 'string' || !(entry === 'docs' || entry.startsWith('docs/'))) {
+    // Normalized first, so a literal "docs/../outside.md" (which the un-normalized string itself
+    // starts with "docs/") cannot pass the prefix test on the strength of a prefix it does not
+    // actually keep. The bare "docs" (the directory, not a page) is rejected outright: every real
+    // entry names a file under it.
+    if (typeof entry !== 'string') {
       defects.push(`${rel}: entry ${i} (${JSON.stringify(entry)}) is not a path under docs/`);
       return;
     }
-    list.push(entry);
+    const normalized = posix.normalize(entry);
+    if (normalized === 'docs' || !normalized.startsWith('docs/')) {
+      defects.push(`${rel}: entry ${i} (${JSON.stringify(entry)}) is not a path under docs/`);
+      return;
+    }
+    list.push(normalized);
   });
   return { list, defects };
 }
@@ -693,11 +702,18 @@ export function checkProvenance(briefsDir, factsDir, root, briefArgs, rebuiltLis
   /** @type {string | null} */
   let coverageReportLine = null;
   if (!briefArgsGiven) {
-    const { list, defects: listDefects } = loadRebuiltList(/** @type {string} */ (rebuiltListPath), root);
-    coverageDefects = [...listDefects, ...checkBriefCoverage(list, briefs, root)];
-    coverageReportLine = list.length === 0
-      ? '  nothing is rebuilt yet'
-      : `  ${list.length} page(s) marked rebuilt in docs/internal/briefs-rebuilt.json`;
+    if (!rebuiltListPath) {
+      // Default mode always needs the rebuilt-page list to check coverage against; a caller that
+      // omits it would otherwise reach loadRebuiltList's `relative(root, listPath)` with
+      // `listPath` undefined and throw a TypeError instead of failing the gate.
+      coverageDefects = ['checkProvenance: rebuiltListPath is required in default mode (no brief paths given)'];
+    } else {
+      const { list, defects: listDefects } = loadRebuiltList(rebuiltListPath, root);
+      coverageDefects = [...listDefects, ...checkBriefCoverage(list, briefs, root)];
+      coverageReportLine = list.length === 0
+        ? '  nothing is rebuilt yet'
+        : `  ${list.length} page(s) marked rebuilt in docs/internal/briefs-rebuilt.json`;
+    }
   }
 
   if (briefs.length === 0) {

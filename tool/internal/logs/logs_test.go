@@ -201,19 +201,19 @@ func sentFilters(t *testing.T, sent map[string]any) []any {
 	return filters
 }
 
-// wantLeafFilter asserts filter is a leaf carrying key, operation, and value, and the "string"
-// type every leaf filter in the Workers Observability query contract must declare (the endpoint
+// wantLeafFilter asserts filter is an equality leaf carrying key and value, and the "string" type
+// every leaf filter in the Workers Observability query contract must declare (the endpoint
 // answers HTTP 400 with a ZodError for a leaf missing "type", which is what cairn sent for a week
 // until 2026-09-21). The expected type is the literal "string", never logs.go's own filterType
 // constant, so a wrong constant in logs.go cannot pass by agreeing with itself.
-func wantLeafFilter(t *testing.T, filter any, key, operation, value string) {
+func wantLeafFilter(t *testing.T, filter any, key, value string) {
 	t.Helper()
 	f, ok := filter.(map[string]any)
 	if !ok {
 		t.Fatalf("filter = %v, want an object", filter)
 	}
-	if f["key"] != key || f["operation"] != operation || f["value"] != value {
-		t.Errorf("filter = %v, want key %q operation %q value %q", f, key, operation, value)
+	if f["key"] != key || f["operation"] != "eq" || f["value"] != value {
+		t.Errorf("filter = %v, want key %q operation \"eq\" value %q", f, key, value)
 	}
 	if f["type"] != "string" {
 		t.Errorf("filter %v carries type %v, want the contract's \"string\"", f, f["type"])
@@ -287,8 +287,8 @@ func TestFetchSendsTheObservabilityQueryContract(t *testing.T) {
 			if len(filters) != 2 {
 				t.Fatalf("sent filters = %v, want 2 entries", filters)
 			}
-			wantLeafFilter(t, filters[0], "$metadata.service", "eq", "example-site")
-			wantLeafFilter(t, filters[1], "event", "eq", "commit.failed")
+			wantLeafFilter(t, filters[0], "$metadata.service", "example-site")
+			wantLeafFilter(t, filters[1], "event", "commit.failed")
 
 			wantTimeframe(t, rt.sent, queryNow.Add(-time.Hour), queryNow)
 
@@ -321,8 +321,8 @@ func TestFetchRecordsSendsTheObservabilityQueryContract(t *testing.T) {
 	if len(filters) != 3 {
 		t.Fatalf("sent filters = %v, want 3 entries", filters)
 	}
-	wantLeafFilter(t, filters[0], "$metadata.service", "eq", "example-site")
-	wantLeafFilter(t, filters[1], "level", "eq", "error")
+	wantLeafFilter(t, filters[0], "$metadata.service", "example-site")
+	wantLeafFilter(t, filters[1], "level", "error")
 
 	exists, ok := filters[2].(map[string]any)
 	if !ok {

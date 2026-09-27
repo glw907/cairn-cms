@@ -893,6 +893,152 @@
       border: 1px solid var(--cairn-card-border);
       box-shadow: var(--cairn-shadow);
     }
+
+    /* The plain btn hairline: a resting outline in place of daisyUI's flat base-200 fill, so a
+       bare button reads as an outlined affordance rather than a filled one. --btn-border holds one
+       value across rest, hover, focus-visible, and active (the same one-value-across-every-state
+       pattern the warm lift above uses), since the edge itself is not meant to move; --btn-bg
+       steps to an explicit fill only at hover and active (the same value at both, so one selector
+       covers both), and focus-visible falls back to this rule's own rest value because the focus
+       ring itself already carries that state. The selector excludes every daisyUI color and style
+       variant, each of the forms daisyUI (and this admin) key a selected control on (.btn-active,
+       aria-pressed, aria-checked, aria-current, and a checked radio styled as a join segment), and
+       every disabled form, so a selected or disabled plain button is left to whatever rule or
+       daisyUI default already governs it. --btn-color is never set: daisyUI draws the focus ring
+       in --btn-color, and a base-100 ring would vanish on a base-100 card. join-item segments are
+       included; a join is a layout composition of plain buttons, not a variant of its own. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn:not(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error,
+        .btn-ghost,
+        .btn-soft,
+        .btn-outline,
+        .btn-dash,
+        .btn-link,
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn),
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ) {
+      --btn-border: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+      --btn-bg: var(--color-base-100);
+    }
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn:not(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error,
+        .btn-ghost,
+        .btn-soft,
+        .btn-outline,
+        .btn-dash,
+        .btn-link,
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn),
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ):is(:hover, :active) {
+      --btn-bg: color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100));
+    }
+
+    /* The emphasis ladder's opener: btn-neutral hovers one step into --cairn-ink-hover (the same
+       ink each theme root already defines for its own state hover), while its rest, focus-visible,
+       and active fills stay daisyUI's stock .btn-neutral. A mouse press still matches :hover in
+       addition to :active, and this sublayer outranks daisyUI's own :active rule regardless of
+       specificity, so without the :not(:active) guard a held press would keep showing this hover
+       ink instead of daisyUI's own pressed fill. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-neutral:hover:not(:active) {
+      --btn-bg: var(--cairn-ink-hover);
+    }
+
+    /* Button type: daisyUI sets every .btn label at weight 600 with no variable to redirect, so a
+       plain or ghost button needs a direct property override to read lighter. btn-primary,
+       btn-neutral, btn-soft.btn-primary, and btn-error keep daisyUI's own 600 by simply not being
+       matched here (nothing else in this sheet touches font-weight for them). The exclusion list
+       also carries the five selected-control forms, so a selected plain or ghost segment is left
+       at daisyUI's own 600 rather than this rule's 500, matching the same weight every other
+       selected control keeps. A markup font-semibold utility still wins, since Tailwind compiles
+       it unnested while this rule lives in a nested sublayer. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn:not(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error,
+        .btn-soft,
+        .btn-outline,
+        .btn-dash,
+        .btn-link,
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn)
+      ) {
+      font-weight: 500;
+    }
+
+    /* btn-sm reads 2px narrower per side than daisyUI's own 12px default, since a wider plain
+       hairline draws the same visual weight as a filled small control. No other size changes: a
+       global --btn-p would shrink the default btn from its own 1rem default. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-sm {
+      --btn-p: 0.875rem;
+    }
+
+    /* Soft primary, the tinted act-on state: daisyUI's own .btn-soft reads color off
+       --btn-rest-fg/--btn-color at rest but swaps to a direct color: var(--btn-fg) declaration at
+       hover, focus-visible, active, and :checked, and .btn-primary sets --btn-fg to
+       --color-primary-content, so a stock soft-primary button swaps its own tinted-primary text
+       for primary-content the moment it is touched. Pinning --btn-fg to var(--color-primary)
+       itself removes the swap regardless of which of daisyUI's own declarations reads it. The edge
+       stays transparent and --btn-fg stays pinned across every state (the same one-value pattern
+       used above); only --btn-bg steps, one depth at rest, one deeper at hover and focus-visible
+       (grouped into one selector, since both share the same value), and deepest at active, which
+       is declared last so a held press (which still matches :hover) reads its own deeper step
+       rather than the hover/focus-visible one. Disabled is left to daisyUI entirely. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn-soft.btn-primary:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']) {
+      --btn-border: transparent;
+      --btn-bg: color-mix(in oklab, var(--color-primary) 10%, transparent);
+      --btn-fg: var(--color-primary);
+    }
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn-soft.btn-primary:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):is(
+        :hover,
+        :focus-visible
+      ) {
+      --btn-bg: color-mix(in oklab, var(--color-primary) 15%, transparent);
+    }
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn-soft.btn-primary:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):active {
+      --btn-bg: color-mix(in oklab, var(--color-primary) 22%, transparent);
+    }
   }
 }
 

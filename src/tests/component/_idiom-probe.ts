@@ -116,11 +116,32 @@ function assertReached(el: Element, state: Exclude<IdiomState, 'rest'>): void {
 }
 
 /**
+ * Moves the real CDP mouse cursor to the viewport's bottom-right corner, off a throwaway 1px
+ * marker so the move goes through the same top-level-viewport translation a real element's read
+ * does. `userEvent.hover` and the active branch's own CDP press both leave the simulated cursor
+ * sitting on the element they targeted; a `:hover`/`:active` match, unlike a class or attribute, is
+ * real pointer state that outlives the mount it was read on; a rest or focus-visible read taken
+ * right after, on a fresh element the previous one's own cleanup left rendering at the same
+ * on-screen position, would otherwise still match `:hover` from that leftover cursor position.
+ */
+async function clearHover(): Promise<void> {
+  const marker = document.createElement('div');
+  marker.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;pointer-events:none;';
+  document.body.appendChild(marker);
+  const { x, y } = topLevelPoint(marker);
+  const session = cdp() as unknown as ProtocolSession;
+  await session.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+  marker.remove();
+}
+
+/**
  * The computed value of `prop` on `el` at `state`, reached through real input: `userEvent.hover`
  * for hover; a real keyboard Tab press followed by a direct focus call for focus-visible (the
  * press primes Chromium's focus-visible heuristic, and focusing `el` directly is deterministic
  * regardless of where Tab traversal itself would have landed); and a CDP mouse press held down,
- * released after the read, for active. Before reading a non-rest state it asserts `el` actually
+ * released after the read, for active. A rest or focus-visible read first clears any leftover
+ * cursor position a previous hover or active read left behind (see {@link clearHover}), since
+ * neither state is itself a hover. Before reading a non-rest state it asserts `el` actually
  * matches that state's pseudo-class and throws naming the state otherwise.
  * @param el the element to read
  * @param prop a CSS property or custom property name, passed to `getPropertyValue`
@@ -128,13 +149,17 @@ function assertReached(el: Element, state: Exclude<IdiomState, 'rest'>): void {
  * @returns the computed value of `prop` at `state`
  */
 export async function styleOf(el: Element, prop: string, state: IdiomState): Promise<string> {
-  if (state === 'rest') return getComputedStyle(el).getPropertyValue(prop);
+  if (state === 'rest') {
+    await clearHover();
+    return getComputedStyle(el).getPropertyValue(prop);
+  }
   if (state === 'hover') {
     await userEvent.hover(el);
     assertReached(el, 'hover');
     return getComputedStyle(el).getPropertyValue(prop);
   }
   if (state === 'focus-visible') {
+    await clearHover();
     await userEvent.tab();
     (el as HTMLElement).focus();
     assertReached(el, 'focus-visible');

@@ -549,6 +549,50 @@ every unlayered forced workaround above documents):
   box-shadow: var(--cairn-shadow);`, replacing daisyUI's flat, theme-invariant black modal shadow
   with the same theme-adaptive elevation pair every other floating surface carries.
 
-`idiomLayerCap` is `3` (two theme-scoped primary-lift selectors plus the one modal-box selector).
+`idiomLayerCap` was `3` (two theme-scoped primary-lift selectors plus the one modal-box selector).
 `componentsLayerCap` drops from 19 to 16: the three selectors these two rules used to occupy in
 `@layer components` (dead there) leave it.
+
+## The button rules: the plain hairline, the type, the `btn-sm` padding, the soft primary
+
+Five more rule groups land in `cairn-idiom`, all button-only, raising `idiomLayerCap` from `3` to
+`11`:
+
+- **The plain `btn` hairline**, two selectors: an unconditional one holding `--btn-border` (a
+  `color-mix` toward `--color-base-content` at 22%) and the rest/focus-visible `--btn-bg`
+  (`--color-base-100`) across every state, and a combined `:is(:hover, :active)` selector stepping
+  `--btn-bg` to a 5% `color-mix` since both states share the same value. The `:not()` list
+  excludes every daisyUI color and style variant, the five forms daisyUI and this admin key a
+  selected control on (`.btn-active`, `[aria-pressed='true']`, `[aria-checked='true']`,
+  `[aria-current]:not(...)`, and `:checked:not(.filter [type='radio'].btn)`, daisyUI's own selector
+  for a checked radio styled as a `.btn`), and every disabled form, so a selected or disabled plain
+  button is left to whatever already governs it. `--btn-color` is never set, since daisyUI draws
+  the focus ring in `--btn-color` and a base-100 ring would vanish on a base-100 card.
+- **`btn-neutral`'s hover step**, `.btn-neutral:hover:not(:active)` setting `--btn-bg` to
+  `var(--cairn-ink-hover)`. The `:not(:active)` guard keeps a held press on daisyUI's own pressed
+  fill instead of this hover ink, since a press still matches `:hover` and this sublayer would
+  otherwise outrank daisyUI's `:active` rule regardless of specificity.
+- **Button type**, one selector setting `font-weight: 500` on a plain or ghost button (daisyUI's
+  base `.btn` rule hardcodes 600 with no variable to redirect, so this is a direct property
+  override). The `:not()` list excludes every color and style variant that keeps 600 by not being
+  matched (`.btn-primary`, `.btn-neutral`, `.btn-soft`, `.btn-error`, and the rest) and the five
+  selected-control forms, so a selected plain or ghost segment keeps daisyUI's own 600 rather than
+  reading 500 from this rule.
+- **`btn-sm` padding**, `.btn-sm { --btn-p: 0.875rem }`, 2px wider per side than daisyUI's own
+  default; no other size changes, since a global `--btn-p` would shrink the default `btn` from its
+  own 1rem.
+- **Soft primary**, three selectors on `.btn-soft.btn-primary`, each excluding the four disabled
+  forms: an unconditional one pinning `--btn-border` to `transparent`, `--btn-fg` to
+  `var(--color-primary)`, and rest's `--btn-bg` to a 10% `color-mix`; a combined
+  `:is(:hover, :focus-visible)` selector stepping `--btn-bg` to 15%; and an `:active` selector,
+  declared after the hover/focus-visible one so a held press (which still matches `:hover`) reads
+  its own deeper step, stepping `--btn-bg` to 22%. Pinning `--btn-fg` matters because daisyUI's own
+  `.btn-soft` reads `color` off `--btn-rest-fg`/`--btn-color` at rest but swaps to a direct
+  `color: var(--btn-fg)` declaration at hover, focus-visible, active, and `:checked`, and
+  `.btn-primary` sets `--btn-fg` to `--color-primary-content`, so a stock soft-primary button swaps
+  its own tinted-primary text for primary-content the moment it is touched. Disabled is left to
+  daisyUI entirely.
+
+`idiomLayerCap` is `11`: the three prior selectors plus two for the hairline, one for the
+`btn-neutral` hover step, one for button type, one for `btn-sm` padding, and three for soft
+primary. `componentsLayerCap` stays `16`; none of these five rule groups previously lived there.

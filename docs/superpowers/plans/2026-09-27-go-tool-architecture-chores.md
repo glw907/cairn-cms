@@ -106,7 +106,9 @@ tree. What holds is folded into the tasks. What drifted or is false:
    The B2 record's `env.go:41` and `deps.go:61` citations are already gone. Test files carry about
    150 more (Decision 11).
 9. **Line drift, no substance change:** `logs_test.go`'s `fixtureRoundTripper` sits at `:19-33`
-   (ROADMAP `:26`); `health.go`'s Degraded and Acknowledged derivation at `:124-136` (record
+   (ROADMAP `:26`); `health.go`'s Degraded derivation is `report.Degraded = true` at `:131`, its
+   Acknowledged derivation is `report.Acknowledged = activeAckIDs(acks, o.Now())` at `:140`
+   (Task 0 correction, 2026-09-27: this plan's own pre-flight had said `:124-136`; the record said
    `:127-135`); `usage_test.go`'s `builtBinary` at `:29-44` (record `:26-44`); `health`'s
    `Catalogue` holds 38 entries (ROADMAP "about 35").
 10. **`outcome.go`'s "eight fixed constants" is already fixed** (it reads "nine").
@@ -615,3 +617,363 @@ Run by the conductor per `cairn-pass` and `pass-core`, after S4 lands green.
 
 ## Ledger
 
+### Task 0 (2026-09-27)
+
+**HEAD:** this worktree's HEAD (`fe145608`) carries only two docs-only commits over `main`
+(`c9beafb3`, this plan's pre-flight-verified commit): `9220f6bb` (author the plan) and `fe145608`
+(fold the review). `git diff c9beafb3..fe145608 --stat -- tool/` is empty, so every path, symbol,
+line, and count below is verified at the same `tool/` tree the header names.
+
+**1. Pre-flight findings and task criteria, confirmed or drifted (one line each):**
+
+- Finding 1 (`probe_token.go` names no retired command; `main.go:44,133-137` stale rationale;
+  `f:cwtfs7`): confirmed. `main.go:44` still reads "`auth probe` both print it on purpose";
+  `main.go:133-141`'s `codedError` comment still says "typed error rather than a call into
+  spine.ExitCode" while `probe_token.go:131` computes the verdict with `spine.ExitCode`.
+  `f:cwtfs7` (`docs/internal/facts/reference.md:408-411`) still carries the same stale framing
+  (settles provider states, holds no site verdicts) without the ExitCode contradiction spelled
+  out; Task 13's planned correction still applies. No amendment needed.
+- Finding 2 (doctor `Result.ID` never reaches the JSON payload): confirmed exact.
+  `internal/doctor/json.go:107` reads `cr.Check.ID`; `report.go:50` sets `result.ID = c.ID`;
+  `status.go:65,67,69` build `spine.CheckVerdict{ID: r.ID, ...}` from `Result.ID`. No amendment.
+- Finding 3 (`cmd/copylist` misses `longRoot`, `longHealth`, `longDoctor`): confirmed. All three
+  are `*ast.BinaryExpr` string concatenations (`messages.go:77`, `:265`, `:312`) absent from
+  `tool/testdata/copy.golden.md` (`grep` for the three names returns nothing in the golden). No
+  amendment.
+- Finding 4 (`spine.FromKind`/`Kind` pre-adjudicated 2.0 seams): confirmed. The 1.0 plan's seams
+  table names `FromKind` with the HUD's detail view at
+  `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md:303`; `kind.go:18` states the same
+  seam. No amendment.
+- Finding 5 (`CombineState` not open-coded in `check_creds.go`): confirmed exact.
+  `worseCredentialOutcome` spans `check_creds.go:115-126` exactly; `credentialRank` breaks the
+  Unknown/Unknown tie at line 124; `CombineState` (`spine/exit.go:180`, tested at
+  `exit_test.go:107-124`) has no caller anywhere in `tool/`. No amendment.
+- Finding 6 (`render`'s eighteen callerless exports): confirmed exact. `Sanitize`, `WidthFloor`,
+  `WidthNarrow`, `Width100`, `WidthCap`, and the seven Theme methods (`Strong`, `SizedStrong`,
+  `SizedLink`, `Link`, `Clamp`, `Rule`, `Width`) have zero callers anywhere under `tool/` outside
+  `internal/render`; the six `*SchemaVersion` constants besides `DoctorSchemaVersion` (which has
+  its one caller at `doctor/json.go:90`) are equally uncalled. No amendment.
+- Finding 7 (`RenderInput.FailingOnly` unwritten, `Height` unread): confirmed. `body_single.go:36`
+  and `body_plain.go:42` read `FailingOnly`; no writer exists under `tool/`. `Height`
+  (`render.go:84`) has no reader; `golden_test.go:349` sets `tall.height = 24` for the one case
+  whose golden the plan names. No amendment.
+- Finding 8 (process-citation counts): `messages.go` "editorial gate" count is exactly 22
+  (confirmed exact, `grep -c`). `root.go:37-53,98-115` and `health_sweep.go:3,34,209` and
+  `ack.go:177` all still carry a citation (confirmed). `render`'s count is 21 distinct sites by
+  the broadest matching pattern (`Task N`, `criterion`, `editorial gate`, `reviewed at`,
+  `1.0 pass/plan`, `retire-1`, `B2`, `20a/20b/20c`) across `body_many.go`(2), `palette.go`(7),
+  `profile.go`(7), `profile_windows.go`(1), `render.go`(2), `status.go`(2); the plan's "about 20"
+  holds against the ROADMAP's 23. `health/fixes.go` carries exactly 7 distinct citation sites
+  (`fixes.go:30,36,57-58,73,85-86,106,189`, two of which each span two comment lines), matching
+  the plan exactly; `health/messages.go` carries exactly 11 (`messages.go:18-19` is a citation the
+  first grep pass missed, plus `:69,112,118-119,129,138,147,155,200,234,300`), also matching the
+  plan exactly. No amendment; Task 5's acceptance already names files, not a fixed count.
+- Finding 9 (line drift): `logs_test.go`'s `fixtureRoundTripper` confirmed exact at `:19-33`.
+  `usage_test.go`'s `builtBinary` confirmed exact at `:29-44`. `health`'s message `Catalogue`
+  (`messages.go:356-378`) confirmed exact at 38 entries. **Drifted and amended in place above:**
+  `health.go`'s Degraded derivation is `report.Degraded = true` at line 131 (not in `:124-136`,
+  whose range never reaches the Acknowledged line at all); its Acknowledged derivation is
+  `report.Acknowledged = activeAckIDs(acks, o.Now())` at line 140, outside the plan's own stated
+  `:124-136`. The finding's text is corrected in place to name lines 131 and 140 directly.
+- Finding 10 (`outcome.go`'s fixed constants already read "nine"): confirmed.
+  `outcome.go:95` reads "the nine fixed constants". No amendment.
+- Finding 11 (facts gate baseline defect): confirmed and recorded verbatim in item 2 below.
+- Finding 12 (no chore touches `check:tool-conditions`/`check:tool-heuristics` inputs): confirmed.
+  Neither `tool/internal/spine/conditions.json` nor
+  `tool/internal/doctor/site-config-path.json` nor anything under `src/lib` is in any task's
+  Files list. No amendment.
+- Finding 13 (`store`'s perm pair byte-identical and pinned): confirmed.
+  `perm_linux.go`/`perm_darwin.go` diff empty; `identicalfiles_test.go:15` asserts the pair. No
+  amendment.
+- Finding 14 (concurrent branches): confirmed both. `origin/draft-docs-0` vs `main` touches only
+  `tool/cmd/cairn/flags_test.go` (+74/-2 net) and `tool/testdata/flags.json` (+238/-0 net), no
+  file this pass edits. `origin/theme-identity-a` vs `main` touches only
+  `docs/internal/facts/admin.md` (1 line), a repoint this pass may also touch; the plan already
+  calls this mechanical. No amendment.
+- Decision-cited facts spot-checked and confirmed: `probe_token.go:84` (`st.Load(args[0])`,
+  Decision 1's "loads one record by id"), `root.go:280-290` (Decision 1's shell-completion listing
+  every id via `st.List()`), `identicalfiles_test.go:15` (Decision 3's byte-identical assertion,
+  inside the `identicalPairs` block whose header comment is at `:10-14`), `exit_test.go:71-80`
+  (Decision 3's property test, `TestVerdictSeverityAgreesWithStateSeverity`, line 76 falls inside
+  its loop body), `messages_test.go:31-34` (Decision 10's `probeDumpFiles` allowlist naming
+  `probe_token.go`), `purity_test.go:227,254` (Decision 5's `exportedSurface` and
+  `exportedThemeMethods` lists). No amendment.
+
+**2. Baseline gate:**
+
+```
+gate exit: 0 (log: /tmp/cairn-gate-1000/c82f19ff4c4f347d/gate.log, 37 lines)
+```
+
+Full suite green on the first issue: `go vet`, `golangci-lint run` (0 issues), `govulncheck` (no
+vulnerabilities), `vale-comments.sh` (clean), `check-copy.sh` (vocabulary clean, Vale 0/0/0), and
+`go test -count=1 ./...` (every package ok, `internal/exe` has no test files).
+
+**3. `check-facts` baseline defect set (verbatim):**
+
+```
+check-facts: 1 defect(s)
+
+  docs/internal/facts/admin.md:53: anchor for "package.json:197-198" names ["sveltejs","kit","svelte"], not found within 10 lines of the cited range
+```
+
+This is finding 11's pre-existing defect, outside `tool/` and outside this pass's scope. Every
+task's acceptance is that its own `check-facts` run reproduces exactly this one defect, no more
+and no fewer.
+
+**4. Facts pointers into `tool/`, by file (137 pointers, 50 files):**
+
+137 `tool/` path:line citations were found across `docs/internal/facts/{admin,editors,extend,
+front-door,reference}.md` (all but three in `reference.md`; `extend.md` carries the other two).
+Every citation resolved inside its file's current length; none is out of range. Grouped by file,
+each line gives the fact id, the arm it lives in, the cited path:range, and the first line of
+code or comment that range names today:
+
+
+### tool/cmd/cairn/ack.go
+- f:igjau7 (reference) tool/cmd/cairn/ack.go:17-36 -> `// field accept: a bare calendar date, since an acknowledgement is granted for whole days.`
+
+### tool/cmd/cairn/adopt.go
+- f:by9zcg (reference) tool/cmd/cairn/adopt.go:98 -> `Adoptable: c.Domain != "",`
+
+### tool/cmd/cairn/auth.go
+- f:ka0ngc (reference) tool/cmd/cairn/auth.go:145 -> `Use:     "set <name>",`
+- f:9x1w7n (reference) tool/cmd/cairn/auth.go:73-109 -> `// non-terminal stdin, the fallback below reads one line from stdin instead, so `printf %s "$v"`
+
+### tool/cmd/cairn/doctor.go
+- f:rrwp1r (reference) tool/cmd/cairn/doctor.go:24-37,50-53 -> `Use:     "doctor [<dir>]",`
+- f:plng3z (reference) tool/cmd/cairn/doctor.go:60-61,113-129 -> `if !doctor.IsCairnSite(snap.Dir) {`
+- f:ee48yi (reference) tool/cmd/cairn/doctor.go:42,88-97 -> `cmd.Flags().BoolVar(&f.asJSON, "json", false, flagDoctorJSONHelp)`
+- f:s960z6 (reference) tool/cmd/cairn/doctor.go:88-97 -> `func writeDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap doctor.Snapshot, checked []doctor.CheckedResult, verdict spine.Verdict) error {`
+- f:mcjbpm (reference) tool/cmd/cairn/doctor.go:88-97 -> `func writeDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap doctor.Snapshot, checked []doctor.CheckedResult, verdict spine.Verdict) error {`
+
+### tool/cmd/cairn/doctor_json_test.go
+- f:s960z6 (reference) tool/cmd/cairn/doctor_json_test.go:26-55 -> `// TestDoctorJSONOutsideACairnSitePayload covers the case a caller is most likely to hit`
+
+### tool/cmd/cairn/doctor_test.go
+- f:re7sn7 (reference) tool/cmd/cairn/doctor_test.go:76-159 -> `func TestDoctorExitCodes(t *testing.T) {`
+- f:zb3izw (reference) tool/cmd/cairn/doctor_test.go:161-270 -> `// TestDoctorOutsideACairnSitePrintsOneLineAndExitsUnknown is the fifth test: a directory`
+
+### tool/cmd/cairn/env.go
+- f:ka0ngc (reference) tool/cmd/cairn/env.go:36-38,199-212 -> `varCFAccountID = "CAIRN_CF_ACCOUNT_ID" // secret-guard-allow: a variable name, not a value`
+- f:9x1w7n (reference) tool/cmd/cairn/env.go:36-38,199-212 -> `varCFAccountID = "CAIRN_CF_ACCOUNT_ID" // secret-guard-allow: a variable name, not a value`
+
+### tool/cmd/cairn/health.go
+- f:igjau7 (reference) tool/cmd/cairn/health.go:58 -> `cmd.Flags().StringVar(&f.since, "since", defaultSince, flagHealthSinceHelp)`
+- f:h1x1i5 (reference) tool/cmd/cairn/health.go:44 -> `Use:               "health [<site>]",`
+
+### tool/cmd/cairn/health_json.go
+- f:dzsdcf (reference) tool/cmd/cairn/health_json.go:16-69 -> `// writeSiteJSON writes the single-site payload, which carries the run's own exit code: for a`
+- f:khcwri (reference) tool/cmd/cairn/health_json.go:51-53 -> `// writeSweepSummaryJSON writes the stream's final line. A stream that carries none is UNKNOWN,`
+
+### tool/cmd/cairn/health_sweep.go
+- f:tchzio (reference) tool/cmd/cairn/health_sweep.go:39-44 -> `// An empty registry reuses spine.ErrExpectSites, sites list's own sentinel for the same`
+- f:mcjbpm (reference) tool/cmd/cairn/health_sweep.go:49-53 -> `// A sweep's verdict is only known once every site has settled, and --quiet turns on that`
+- f:g4arh0 (reference) tool/cmd/cairn/health_sweep.go:20-26,215-253 -> `// maxSweepTimeout bounds a multi-site sweep's default whole-run budget, so a large registry`
+- f:qgeq2i (reference) tool/cmd/cairn/health_sweep.go:28-36 -> `// runHealthSweep runs health.Run over every registered site, in store.List order, printing each`
+- f:i8y825 (reference) tool/cmd/cairn/health_sweep.go:49-53 -> `// A sweep's verdict is only known once every site has settled, and --quiet turns on that`
+
+### tool/cmd/cairn/logs.go
+- f:oegghv (reference) tool/cmd/cairn/logs.go:70-74 -> ``
+- f:r5pqhd (reference) tool/cmd/cairn/logs.go:70-74 -> ``
+- f:fyosog (reference) tool/cmd/cairn/logs.go:44,66 -> `cmd.Flags().StringVar(&f.since, "since", defaultSince, flagLogsSinceHelp)`
+
+### tool/cmd/cairn/main.go
+- f:50ifoh (reference) tool/cmd/cairn/main.go:133-167 -> `// codedError is an error carrying its own process verdict, returned by a command that measured`
+- f:cwtfs7 (reference) tool/cmd/cairn/main.go:133-141 -> `// codedError is an error carrying its own process verdict, returned by a command that measured`
+- f:hi5cw3 (reference) tool/cmd/cairn/main.go:153-167 -> `// exitVerdict maps an error that produced no report onto the code the process exits with.`
+- f:i8y825 (reference) tool/cmd/cairn/main.go:153-167 -> `// exitVerdict maps an error that produced no report onto the code the process exits with.`
+
+### tool/cmd/cairn/messages.go
+- f:e1s8kh (reference) tool/cmd/cairn/messages.go:299-306 -> `const tmplHealthTooManyArgs = "cairn: cairn health takes at most one site.\nRun `cairn health --help` for usage"`
+- f:plng3z (reference) tool/cmd/cairn/messages.go:322-330 -> `)`
+- f:ee48yi (reference) tool/cmd/cairn/messages.go:309 -> `// than copied, since the catalogue carries no row for a credential-less directory preflight.`
+- f:zlqdbn (reference) tool/cmd/cairn/messages.go:557,562 -> ``
+- f:zlqdbn (reference) tool/cmd/cairn/messages.go:570-573 -> `tmplAckFileMalformed      = "cairn: %s is not a valid hold file.\n%v\nWrite the file as a JSON array of entries, each carrying checkId and expires"`
+- f:oegghv (reference) tool/cmd/cairn/messages.go:152 -> `}`
+- f:r5pqhd (reference) tool/cmd/cairn/messages.go:152 -> `}`
+
+### tool/cmd/cairn/probe_token.go
+- f:cwtfs7 (reference) tool/cmd/cairn/probe_token.go:20-29 -> `func newAuthCheckCmd(d deps) *cobra.Command {`
+
+### tool/cmd/cairn/root.go
+- f:zrgny4 (reference) tool/cmd/cairn/root.go:35 -> `const defaultTimeout = 480 * time.Second`
+- f:8our2s (reference) tool/cmd/cairn/root.go:229-235 -> `p.DurationVarP(&f.timeout, "timeout", "t", defaultTimeout, flagTimeoutHelp)`
+- f:igjau7 (reference) tool/cmd/cairn/root.go:235 -> `p.StringVar(&f.ackFile, "ack-file", "", flagAckFileHelp)`
+- f:8ow43o (reference) tool/cmd/cairn/root.go:37-53,98-115 -> `// The three --color values. Task 20a reads the chosen value to pick a colour profile; until it`
+- f:dbwe2j (reference) tool/cmd/cairn/root.go:213-226 -> `// cmd.Version, rather than a hand-rolled flag, is what makes cobra register and serve`
+- f:u9fpq8 (reference) tool/cmd/cairn/root.go:29-35 -> `// docs/reference/cli-cairn-exit-codes.md, and TestTheSingleSiteBudgetFitsTheRequestArithmetic`
+- f:yxdrdh (reference) tool/cmd/cairn/root.go:29-35 -> `// docs/reference/cli-cairn-exit-codes.md, and TestTheSingleSiteBudgetFitsTheRequestArithmetic`
+- f:i8y825 (reference) tool/cmd/cairn/root.go:231,236 -> `p.BoolVarP(&f.quiet, "quiet", "q", false, flagQuietHelp)`
+
+### tool/cmd/cairn/sites.go
+- f:tchzio (reference) tool/cmd/cairn/sites.go:46 -> `p.IntVar(&f.expectSites, "expect-sites", 0, flagExpectSitesHelp)`
+- f:3pxhb9 (reference) tool/cmd/cairn/sites.go:143 -> `lines = append(lines, render.SiteListEntry{ID: e.ID, Name: e.Record.Name, Domain: e.Record.Domain, Step: e.Record.Step})`
+
+### tool/cmd/cairn/usage_test.go
+- f:hi5cw3 (reference) tool/cmd/cairn/usage_test.go:133-146 -> `// TestAUsageErrorExitsUnknownWithEmptyStdout runs the falsification table against the built`
+- f:v2mrvq (reference) tool/cmd/cairn/usage_test.go:507-564 -> `// requestsPerCheck reads the "Requests per check" table out of the published exit-codes page. The`
+- f:p8ie34 (reference) tool/cmd/cairn/usage_test.go:507-527 -> `// requestsPerCheck reads the "Requests per check" table out of the published exit-codes page. The`
+- f:6tm5nr (reference) tool/cmd/cairn/usage_test.go:566-576 -> `// TestTheSweepCapIsThePublishedOne pins the two numbers the multi-site formula on the`
+
+### tool/internal/doctor/check_bindings.go
+- f:m0ouh8 (extend) tool/internal/doctor/check_bindings.go:17-28 -> `bindingEmailMissing = "EMAIL (send_email)"`
+- f:kjp61u (reference) tool/internal/doctor/check_bindings.go:31 -> `Condition: spine.ConditionConfigBindingsMissing,`
+
+### tool/internal/doctor/check_csrf.go
+- f:01iu5z (reference) tool/internal/doctor/check_csrf.go:72,79 -> `svelteConfig, svelteFound, err := s.ReadFile("svelte.config.js")`
+- f:v2isa4 (reference) tool/internal/doctor/check_csrf.go:71-84 -> `Run: func(s Snapshot) Result {`
+
+### tool/internal/doctor/check_floors.go
+- f:01iu5z (reference) tool/internal/doctor/check_floors.go:328,376,384,392 -> `body, ok, err := s.ReadFile(enginePackageJSONPath)`
+- f:a71nbo (reference) tool/internal/doctor/check_floors.go:358-401 -> `}`
+
+### tool/internal/doctor/check_mount.go
+- f:q01lkt (reference) tool/internal/doctor/check_mount.go:14-21 -> `var adminMountPaths = []string{`
+
+### tool/internal/doctor/check_posture.go
+- f:b94uhy (reference) tool/internal/doctor/check_posture.go:292-305 -> `Run: func(s Snapshot) Result {`
+
+### tool/internal/doctor/check_referrer.go
+- f:01iu5z (reference) tool/internal/doctor/check_referrer.go:191-234 -> `missing = append(missing, "src/hooks.server.ts (or .js)")`
+
+### tool/internal/doctor/check_siteconfig.go
+- f:3sxgcl (reference) tool/internal/doctor/check_siteconfig.go:12-13 -> `// scope note: the per-concept URL policy is not checkable from a directory preflight.`
+- f:xejl4n (reference) tool/internal/doctor/check_siteconfig.go:23-38 -> `// candidate paths is unchecked, never a fail, since there was nothing to judge.`
+
+### tool/internal/doctor/facts.go
+- f:01iu5z (reference) tool/internal/doctor/facts.go:11 -> `const siteFactsRelPath = "src/content/.cairn/site-facts.json"`
+- f:6oopkt (reference) tool/internal/doctor/facts.go:8-19 -> `// siteFactsRelPath is the committed engine-facts file every facts-dependent check reads,`
+
+### tool/internal/doctor/fetchrobots.go
+- f:8fhjud (reference) tool/internal/doctor/fetchrobots.go:28-35 -> `// FetchRobots performs ai.posture-effective's one network request, the single GET this whole`
+- f:zrgny4 (reference) tool/internal/doctor/fetchrobots.go:14-21,33-34 -> `// robotsClient is the one HTTP client ai.posture-effective's fetch uses. It does not use`
+- f:b94uhy (reference) tool/internal/doctor/fetchrobots.go:35-62 -> `func FetchRobots(ctx context.Context, origin PublicOrigin) Robots {`
+
+### tool/internal/doctor/fileread.go
+- f:plng3z (reference) tool/internal/doctor/fileread.go:89-104 -> `func IsCairnSite(dir string) bool {`
+
+### tool/internal/doctor/json.go
+- f:gilykt (reference) tool/internal/doctor/json.go:41-54,99-126 -> `type checkPayload struct {`
+- f:i9rv5i (reference) tool/internal/doctor/json.go:11-13 -> `// kindDoctor is what this payload declares in its kind field, so a consumer reading a mixed`
+- f:iasib1 (reference) tool/internal/doctor/json.go:28-38 -> `type payload struct {`
+- f:wzavtn (reference) tool/internal/doctor/json.go:25-38,65-98 -> `// payload is one directory preflight on the wire. It is its own kind rather than a health`
+- f:lkbuxg (reference) tool/internal/doctor/json.go:15-23,44-55,100-129 -> `// The wire state words this payload writes. They are five of the frozen vocabulary`
+- f:5hswlx (reference) tool/internal/doctor/json.go:57-63 -> `// fixPayload is what clears a failure. It carries no actor and no outward flag, which the health`
+
+### tool/internal/doctor/report.go
+- f:um228q (reference) tool/internal/doctor/report.go:10-31 -> `// checks is the complete doctor check set cairn doctor runs, in report order: the eight`
+- f:b7o2xd (reference) tool/internal/doctor/report.go:19-31 -> `var checks = []Check{`
+- f:svxuiv (reference) tool/internal/doctor/report.go:66-80 -> `// docsBaseAdmin is the admin docs directory a failure's docs URL resolves against, the same`
+
+### tool/internal/doctor/siteconfig.go
+- f:xejl4n (reference) tool/internal/doctor/siteconfig.go:40-46 -> `// siteConfigPaths returns the four candidate paths a site's site.config.yaml can live at, in`
+
+### tool/internal/doctor/snapshot.go
+- f:dg0xqg (reference) tool/internal/doctor/snapshot.go:75-87 -> ``
+
+### tool/internal/doctor/status.go
+- f:re7sn7 (reference) tool/internal/doctor/status.go:58-82 -> `// checkVerdict converts r to the spine.CheckVerdict its exit code arithmetic reads. Pass, skip,`
+
+### tool/internal/doctor/wrangler.go
+- f:01iu5z (reference) tool/internal/doctor/wrangler.go:36,48 -> `jsonc, ok, err := s.ReadFile("wrangler.jsonc")`
+
+### tool/internal/health/check_errors.go
+- f:xk7j2v (reference) tool/internal/health/check_errors.go:31-57 -> `// errorsDetail is errorsCheck's own internal measurement, flattened into Fields as a`
+
+### tool/internal/health/check_serving.go
+- f:b7o2xd (reference) tool/internal/health/check_serving.go:25 -> `func (servingCheck) ID() string { return "serving" }`
+
+### tool/internal/health/health.go
+- f:wulqee (reference) tool/internal/health/health.go:151,173 -> `result.Outcome = spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotRun, Detail: ctx.Err().Error()}`
+- f:4wq7zj (reference) tool/internal/health/health.go:130-132 -> `if result.Outcome.Reason == spine.ReasonCredMissing {`
+
+### tool/internal/health/severity.go
+- f:oo8qdz (reference) tool/internal/health/severity.go:16-30 -> `var failSeverity = map[string]spine.FailSeverity{`
+
+### tool/internal/logs/events.go
+- f:ulw0xh (reference) tool/internal/logs/events.go:3-7,92 -> `// eventVocabulary is the engine's diagnostic event vocabulary, kept in step with`
+
+### tool/internal/logs/events_test.go
+- f:v35jst (reference) tool/internal/logs/events_test.go:33-58 -> `// TestEventVocabularyMatchesEngine reads src/lib/log/events.ts through providers.RepoRoot and`
+
+### tool/internal/logs/logs.go
+- f:fyosog (reference) tool/internal/logs/logs.go:88-97 -> `// sinceGrammar is the message every ParseSince rejection names, so an operator sees the accepted`
+
+### tool/internal/providers/errors.go
+- f:1aej7q (reference) tool/internal/providers/errors.go:17-58 -> `const (`
+- f:oqkzuq (reference) tool/internal/providers/errors.go:32-37 -> `// ReasonRequestRejected is an HTTP 400: the provider parsed the request and refused its`
+
+### tool/internal/providers/probe.go
+- f:u9fpq8 (reference) tool/internal/providers/probe.go:31-35 -> `// RequestTimeout is the same per-request budget every Probe method applies below, exported so a`
+
+### tool/internal/providers/transport.go
+- f:zrgny4 (reference) tool/internal/providers/transport.go:12-16 -> `// requestTimeout bounds every request this package makes. The Node CLI this ports from`
+- f:u9fpq8 (reference) tool/internal/providers/transport.go:12-16 -> `// requestTimeout bounds every request this package makes. The Node CLI this ports from`
+
+### tool/internal/render/json.go
+- f:qgeq2i (reference) tool/internal/render/json.go:369-371 -> `if missing := in.Sites - len(in.Verdicts); missing > 0 {`
+- f:i9rv5i (reference) tool/internal/render/json.go:41-50 -> `// The kind each payload declares, so a consumer reading a mixed stream keys off a field rather`
+- f:p5qhgy (reference) tool/internal/render/json.go:14-39 -> `// The schema version of each published payload, one integer per payload type rather than one`
+- f:iasib1 (reference) tool/internal/render/json.go:55-70,116-126,130-137,149-159,172-179 -> `type sitePayload struct {`
+- f:dzsdcf (reference) tool/internal/render/json.go:61-64,216-229 -> `// ExitCode is the run's code, never the site's, and is therefore absent from a per-site`
+- f:khcwri (reference) tool/internal/render/json.go:114-116 -> `// summaryPayload is the NDJSON stream's final line. A stream that carries none is UNKNOWN: a`
+- f:dm3u5v (reference) tool/internal/render/json.go:350-352,369-371 -> `// Sites is how many sites the run was meant to cover, which exceeds len(Reports) when a`
+- f:0yfm91 (reference) tool/internal/render/json.go:264-271 -> `// checkObject builds one check's wire shape. The state word is computed here rather than`
+- f:nv00ik (reference) tool/internal/render/json.go:99-106,317-339 -> `// fixPayload is the structured fix a consumer switches on rather than a sentence it parses.`
+- f:bd0ubx (reference) tool/internal/render/json.go:108-112,288-290 -> `// holdPayload is one acknowledgement on the wire.`
+- f:bn4bii (reference) tool/internal/render/json.go:82-97,294-315 -> `// Fields holds the values cairn derived itself, as an object so a consumer indexes a key`
+- f:3pxhb9 (reference) tool/internal/render/json.go:128-146,391-405 -> `// sitesListPayload is cairn sites list's own payload. Every listed site carries enough for a`
+- f:oegghv (reference) tool/internal/render/json.go:148-169,407-431 -> `// logsPayload is cairn logs's own payload.`
+- f:by9zcg (reference) tool/internal/render/json.go:181-195 -> `// AdoptCandidate is one discovered Worker in the adopt candidate list payload. Adoptable splits`
+- f:0typfn (reference) tool/internal/render/json.go:232-244 -> `func siteObject(in SiteJSON) sitePayload {`
+- f:junfdz (reference) tool/internal/render/json.go:501-508 -> `// string for the zero time. Nothing on the wire is relative: "3 minutes ago" is a fact about`
+- f:xvdk04 (reference) tool/internal/render/json.go:448-499 -> `// authCheckPayload is cairn auth check's own payload.`
+- f:ycj7pq (reference) tool/internal/render/json.go:209-211 -> `// Elapsed is the wall time this site's sweep took. It is reported and excluded from any`
+- f:9aa96j (reference) tool/internal/render/json.go:407-431 -> `// MarshalLogs writes cairn logs's payload. Every record it carries is the site's own, which is`
+- f:r5pqhd (reference) tool/internal/render/json.go:155-157 -> `// ContainsPersonalData carries the notice a non-JSON run prints to stderr. Under --json`
+
+### tool/internal/render/json_schema_test.go
+- f:lxemp0 (reference) tool/internal/render/json_schema_test.go:502-564 -> `func isInteger(value any) bool {`
+
+### tool/internal/render/rank.go
+- f:8137ac (reference) tool/internal/render/rank.go:99-122 -> `// worstClass returns the severity class of r's worst live failure, or noFailureClass when r`
+
+### tool/internal/spine/condition.go
+- f:iaqcq6 (extend) tool/internal/spine/condition.go:44 -> `ConditionAdminLoginProbeFailed       Condition = "admin.login-probe-failed"`
+- f:y0ocr0 (reference) tool/internal/spine/condition.go:19-45 -> `const (`
+
+### tool/internal/spine/exit.go
+- f:re7sn7 (reference) tool/internal/spine/exit.go:133-167 -> `// Verdict folds every check into the code this one site reports. A site with no checks is`
+- f:olm8xt (reference) tool/internal/spine/exit.go:14-36 -> `// The four monitoring-plugin verdicts. Each constant's value is its exit code.`
+- f:2i8uqy (reference) tool/internal/spine/exit.go:38-55,147-167 -> `// Severity ranks v for combining several verdicts into one: CRITICAL outranks UNKNOWN outranks`
+- f:ncrqaw (reference) tool/internal/spine/exit.go:89-92,98-128 -> `// Acknowledged reports whether an unexpired hold covers this check. A hold that has already`
+- f:zy25ex (reference) tool/internal/spine/exit.go:104-128 -> `// A check that could not run is UNKNOWN, with one exclusion. An Unknown whose Reason answers`
+- f:v8c3ws (reference) tool/internal/spine/exit.go:202-216 -> `// StateWord returns the wire word one check's result carries: "pass", "fail", "held", "skip", or`
+- f:xolnw0 (reference) tool/internal/spine/exit.go:104-128 -> `// A check that could not run is UNKNOWN, with one exclusion. An Unknown whose Reason answers`
+- f:l20z8y (reference) tool/internal/spine/exit.go:133-145 -> `// Verdict folds every check into the code this one site reports. A site with no checks is`
+- f:tchzio (reference) tool/internal/spine/exit.go:57-59,147-167 -> `// ErrExpectSites is the sentinel a registry listing returns when the operator named a site count`
+- f:50ifoh (reference) tool/internal/spine/exit.go:147-167 -> `// ExitCode returns the verdict a whole run reports, folding every site's checks by the`
+- f:0yfm91 (reference) tool/internal/spine/exit.go:202-216 -> `// StateWord returns the wire word one check's result carries: "pass", "fail", "held", "skip", or`
+- f:bd0ubx (reference) tool/internal/spine/exit.go:89-92 -> `// Acknowledged reports whether an unexpired hold covers this check. A hold that has already`
+
+### tool/internal/spine/outcome.go
+- f:zy25ex (reference) tool/internal/spine/outcome.go:78-93 -> `// notAttemptedReasons is every ReasonCode NotAttempted answers true for.`
+- f:wulqee (reference) tool/internal/spine/outcome.go:64 -> `ReasonNotRun        ReasonCode = "reason.not-run"`
+- f:bn4bii (reference) tool/internal/spine/outcome.go:144-178 -> `// OutcomeField is one ordered, named value a Check reports beyond its one-line Detail: a`
+- f:1aej7q (reference) tool/internal/spine/outcome.go:56-76,95-119 -> `// The fixed ReasonCode values, ported from the spec's reason catalogue.`
+- f:oqkzuq (reference) tool/internal/spine/outcome.go:121-142 -> `// ReasonToOutcome is the one translation from a classified provider Reason to a check's Outcome.`
+
+### tool/internal/spine/park.go
+- f:1aej7q (reference) tool/internal/spine/park.go:13-25,45-47 -> `ParkDelegationPropagating   ParkCode = "delegation-propagating"`
+
+**5. `git log c9beafb3..main -- tool/`:**
+
+Empty: `main` has taken no commits since `c9beafb3`, so this worktree's HEAD (`fe145608`, two
+docs-only commits ahead of `main` authoring and folding this plan) still measures against exactly
+the pre-flight-verified tree. Nothing to name.
+
+**Stop-the-pass check:** nothing found here should stop the pass. The one drift (health.go's
+Degraded/Acknowledged lines) is a line-number correction with no scope effect, amended in place
+above. The one pre-existing `check-facts` defect is out of scope and already excluded from every
+task's acceptance. No task's Files list, decision, or acceptance criterion needed a correction.

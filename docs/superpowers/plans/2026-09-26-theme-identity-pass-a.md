@@ -1604,3 +1604,29 @@ read; no other domain reviewer, since nothing touches auth, Workers, or Svelte l
 Task 14 runs as class `docs` (the design-system documents). The `gateTier: "targeted"` sentinel
 relies on `gate-tier.mjs` rejecting an unknown pin; if the classifier ever accepts it, the
 targeted tasks draw a MISMATCH, so check the first task's report for the fallback line.
+
+### Segment B close (2026-09-27, conductor, resumed session)
+
+- **Task 7 fix round** accepted, no further fix (`305011c7`). Decision 17 took the `border-error`
+  branch on all five destructive controls: 4.996:1 light, 5.649:1 dark against `base-100`, pinned
+  in `interactive-control-edge-contrast.test.ts`. The switch knob reads `::before` at four states in
+  three checked forms (`styleOf` gained a pseudo-element argument); the disabled checked switch
+  pins daisyUI stock. No CSS change: both switch items were test-rigor gaps.
+- **Task 8** accepted by conductor ruling after one fix round (`3b5af271`, `3755768f`, `278110f7`).
+  The first review's blocker (a self-context oracle that compared each alert to itself) closed in
+  `278110f7`. The second review escalated only on the gate string: the implementer added the new
+  sibling file `src/tests/unit/alert-ink-contrast.test.ts` to the unit leg, which the acceptance
+  criteria permit and the report named. **Decision 18:** later targeted strings that list unit
+  files add `alert-ink-contrast.test.ts` beside `role-layer-contrast.test.ts`.
+- **Batched notes (act on none mid-segment):** 7-fix: the contrast test proves the ratio, not that
+  `border-error` wins the cascade over the 55% field edge; the disabled-stock test covers the
+  `:checked` form only; `transition: none` is not set on `::before`. Task 8: the bare `.alert`
+  oracle does not prove `--alert-color` unset; `alert-ink-contrast.test.ts` copies tone and ink
+  values by hand and its source-literal check does not bind each value to its token; no component
+  test covers `alert-outline` or `alert-dash` on a colored variant.
+- **Runner friction (filed for the close):** `diff-reviewer` treats a criteria-permitted gate-string
+  addition as a MISMATCH; the runner's resolved string cannot learn the added file.
+- **Boundary:** pushed `278110f7`; the Haiku CI read lands in segment C's ledger. The owner glance
+  captures build from a detached worktree at `278110f7`, so segment C launches at once.
+- **Spend:** segment B's workflow about 0.76M (including a launch that crashed on a `files` string
+  before any task ran; runner fixed in dotfiles `d6718b7`). Pass A total about 9.5M.

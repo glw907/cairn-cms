@@ -977,3 +977,17 @@ the pre-flight-verified tree. Nothing to name.
 Degraded/Acknowledged lines) is a line-number correction with no scope effect, amended in place
 above. The one pre-existing `check-facts` defect is out of scope and already excluded from every
 task's acceptance. No task's Files list, decision, or acceptance criterion needed a correction.
+
+### S1 (2026-09-27, conductor)
+
+- **Task 1** accepted after one fix round (`3e6aebd9`, `d121fd46`): `CombineState` and `ExitCodeFor`
+  deleted, `ParkCodes` removed, an AST test proves the four vocabularies against their const
+  blocks and names the offending constant. Notes: the AST test parses one named file per
+  vocabulary and sees only type-annotated constants (every current block qualifies).
+- **Task 2** accepted (`64503afc`, `d6c6f1e8`): the fixture captures method, path, and body; the
+  assertions read the wire body against contract literals. Notes: `RoundTrip` keeps the last
+  non-empty body; `queryId`, `view`, and `datasets` are not asserted.
+- **Task 3** accepted (`355695b6`): `store.Discover` and `store.Site` deleted, the perm pair
+  carries the ruling header. The ROADMAP bullet naming them retires at the close.
+- **Spend:** S1 workflow about 1.0M, plus the plan, its review, and Task 0 about 0.8M. Pass total
+  about 1.8M of 8.5M.

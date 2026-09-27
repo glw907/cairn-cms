@@ -880,8 +880,9 @@ the named human gates only):**
     `theme.css`'s header and an internal ledger describe it. Publish it as a developer page and as
     shipped agent guidance, parallel to theme identity pass B's admin guidance.
 
-  Trigger: theme identity pass B, which it sits beside. Fold it into pass B's planning or run it
-  as the pass after. It also feeds the draft documentation work (Now): theming cairn is a primary
+  Sequencing (Geoff, 2026-09-27): it lands before draft documentation resumes. Fold it into
+  theme identity pass B's planning or run it as the pass after; either way draft docs waits. It
+  also feeds the draft documentation work (Now): theming cairn is a primary
   docs topic, and the designer's theme guide documents this contract, so the guide is drafted
   against the settled contract, not today's hand-kept one.
 

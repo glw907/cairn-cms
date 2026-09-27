@@ -32,8 +32,8 @@ in the worktree." It starts with the engine gate on the not-yet-gated simplifier
 sitting; nothing merges or publishes. The next release carrying it is `0.98.0`.
 
 Draft docs pass 0+1 is **paused** on `draft-docs-0` (Geoff, 2026-09-26: "We can hold further docs
-work until we've completed this effort"); it resumes after the theme initiative merges (pass B,
-pending Geoff's confirmation at S3) and merges `main` into its branch first. Its plan:
+work until we've completed this effort"); it resumes after the theme initiative merges (pass B)
+and the one public theme initiative lands (ROADMAP "Next"; Geoff, 2026-09-27) and merges `main` into its branch first. Its plan:
 [`2026-09-26-draft-docs-pass-0-1.md`](superpowers/plans/2026-09-26-draft-docs-pass-0-1.md).
 Segment A (tasks 1 to 5) is done; the branch's plan ledger records it, and draft PR #91 carries
 the CI proof. It resumes at segment B.

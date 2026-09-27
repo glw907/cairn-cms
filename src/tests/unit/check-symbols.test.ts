@@ -1,10 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { execSync } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   codeVoiceSegments,
   extractCliFlags,
+  extractCairnLines,
+  resolveCairnLine,
   extractEnvVars,
   extractImportedIdentifiers,
   extractFilePaths,
@@ -14,6 +18,7 @@ import {
   toolCheckIds,
   createCairnSiteFlags,
   cairnToolFlags,
+  cairnCommandFlags,
   cliFlagNames,
   parseApiSurface,
   findUnresolvedSymbols,
@@ -85,6 +90,136 @@ describe('extractCliFlags', () => {
   it('ignores a flag-shaped token outside a shell-tagged fence', () => {
     const segments = codeVoiceSegments('inline `--dry-run` is not extracted as a CLI flag');
     expect(extractCliFlags(segments)).toEqual([]);
+  });
+});
+
+describe('extractCairnLines', () => {
+  it('reads a `$ `-prompted cairn line, dropping the prompt itself', () => {
+    const segments = codeVoiceSegments(['```bash', '$ cairn doctor', '```'].join('\n'));
+    const lines = extractCairnLines(segments);
+    expect(lines).toEqual([[{ line: 2, token: 'cairn' }, { line: 2, token: 'doctor' }]]);
+  });
+
+  it('joins a continuation line, tagging each word with the line it was written on', () => {
+    const segments = codeVoiceSegments(
+      ['```bash', 'cairn doctor \\', '  --domain example.com', '```'].join('\n'),
+    );
+    const lines = extractCairnLines(segments);
+    expect(lines).toEqual([
+      [
+        { line: 2, token: 'cairn' },
+        { line: 2, token: 'doctor' },
+        { line: 3, token: '--domain' },
+        { line: 3, token: 'example.com' },
+      ],
+    ]);
+  });
+
+  it('does not read a cairn line inside a non-shell fence (Review focus 1)', () => {
+    const segments = codeVoiceSegments(['```text', 'cairn doctor --not-a-real-flag', '```'].join('\n'));
+    expect(extractCairnLines(segments)).toEqual([]);
+  });
+
+  it('does not read `npx cairn-audit --rendered` or `npm run cairn:manifest` as cairn lines', () => {
+    const segments = codeVoiceSegments(
+      ['```bash', 'npx cairn-audit --rendered', 'npm run cairn:manifest', '```'].join('\n'),
+    );
+    expect(extractCairnLines(segments)).toEqual([]);
+  });
+});
+
+describe('resolveCairnLine', () => {
+  // A synthetic map, not tool/testdata/flags.json: the real tree has no path that is a strict
+  // prefix of another (Review focus 2 needs one), so the grammar is proven here against a
+  // fixture built to carry that shape, independent of the tool's current command tree.
+  const commandMap = new Map([
+    ['cairn', new Set(['--help', '--verbose'])],
+    ['cairn doctor', new Set(['--help', '--verbose', '--json'])],
+    ['cairn doctor fix', new Set(['--help', '--verbose', '--force'])],
+  ]);
+
+  it('fails an unknown subcommand with no flags', () => {
+    const lines = extractCairnLines(codeVoiceSegments(['```bash', 'cairn frobnicate', '```'].join('\n')));
+    const findings = resolveCairnLine(lines[0], commandMap);
+    expect(findings).toEqual([{ line: 2, class: 'cairn-subcommand', token: 'frobnicate', path: 'cairn' }]);
+  });
+
+  it('fails a real flag on the wrong command', () => {
+    const lines = extractCairnLines(codeVoiceSegments(['```bash', 'cairn doctor --force', '```'].join('\n')));
+    const findings = resolveCairnLine(lines[0], commandMap);
+    expect(findings).toEqual([{ line: 2, class: 'cairn-flag', token: '--force', path: 'cairn doctor' }]);
+  });
+
+  it('picks the longer match on a prefix path (Review focus 2)', () => {
+    const lines = extractCairnLines(codeVoiceSegments(['```bash', 'cairn doctor fix --force', '```'].join('\n')));
+    // --force belongs only to the longer path; resolving it against the shorter "cairn doctor"
+    // would wrongly fail it.
+    expect(resolveCairnLine(lines[0], commandMap)).toEqual([]);
+  });
+
+  it('names the continuation line a wrong flag is actually written on', () => {
+    const segments = codeVoiceSegments(
+      ['```bash', 'cairn doctor \\', '  --not-a-real-flag', '```'].join('\n'),
+    );
+    const lines = extractCairnLines(segments);
+    const findings = resolveCairnLine(lines[0], commandMap);
+    expect(findings).toEqual([
+      { line: 3, class: 'cairn-flag', token: '--not-a-real-flag', path: 'cairn doctor' },
+    ]);
+  });
+
+  it('accepts an inherited flag on a subcommand', () => {
+    const lines = extractCairnLines(codeVoiceSegments(['```bash', 'cairn doctor --verbose', '```'].join('\n')));
+    expect(resolveCairnLine(lines[0], commandMap)).toEqual([]);
+  });
+});
+
+describe('the real cairn command map', () => {
+  it('carries the root path with --version and --help', () => {
+    const commandMap = cairnCommandFlags();
+    expect(commandMap.get('cairn')?.has('--version')).toBe(true);
+    expect(commandMap.get('cairn')?.has('--help')).toBe(true);
+  });
+
+  it('passes `cairn --version`', () => {
+    const lines = extractCairnLines(codeVoiceSegments(['```bash', 'cairn --version', '```'].join('\n')));
+    expect(resolveCairnLine(lines[0], cairnCommandFlags())).toEqual([]);
+  });
+
+  it('passes `cairn help agents`: cobra\'s help command takes a command path, not a subcommand', () => {
+    const lines = extractCairnLines(codeVoiceSegments(['```bash', 'cairn help agents', '```'].join('\n')));
+    expect(resolveCairnLine(lines[0], cairnCommandFlags())).toEqual([]);
+  });
+
+  it('passes `$ cairn doctor`', () => {
+    const lines = extractCairnLines(codeVoiceSegments(['```bash', '$ cairn doctor', '```'].join('\n')));
+    expect(resolveCairnLine(lines[0], cairnCommandFlags())).toEqual([]);
+  });
+});
+
+describe('cairnCommandFlags guards an empty or absent input', () => {
+  function scratchRoot(): string {
+    return mkdtempSync(join(tmpdir(), 'cairn-command-flags-'));
+  }
+
+  it('throws when tool/testdata/flags.json is absent', () => {
+    const dir = scratchRoot();
+    try {
+      expect(() => cairnCommandFlags(dir)).toThrow(/is missing/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws when the file carries no "commands" map', () => {
+    const dir = scratchRoot();
+    mkdirSync(join(dir, 'tool/testdata'), { recursive: true });
+    writeFileSync(join(dir, 'tool/testdata/flags.json'), JSON.stringify({ target: 'make -C tool flags', flags: [] }));
+    try {
+      expect(() => cairnCommandFlags(dir)).toThrow(/carries no "commands" map/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

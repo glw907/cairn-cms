@@ -10,6 +10,7 @@
     "--expect-sites",
     "--help",
     "--json",
+    "--no-descriptions",
     "--quiet",
     "--repo",
     "--since",
@@ -19,5 +20,240 @@
     "--version",
     "--width",
     "--worker"
-  ]
+  ],
+  "commands": {
+    "cairn": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--version",
+      "--width"
+    ],
+    "cairn adopt": [
+      "--ack-file",
+      "--color",
+      "--domain",
+      "--help",
+      "--quiet",
+      "--repo",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width",
+      "--worker"
+    ],
+    "cairn adopt list": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--json",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn agents": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn auth": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn auth check": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--json",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn auth list": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn auth probe": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--json",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn auth set": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn auth unset": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn completion": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn completion bash": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--no-descriptions",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn completion fish": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--no-descriptions",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn completion powershell": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--no-descriptions",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn completion zsh": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--no-descriptions",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn doctor": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--json",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn health": [
+      "--ack",
+      "--ack-file",
+      "--color",
+      "--error-threshold",
+      "--help",
+      "--json",
+      "--quiet",
+      "--since",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn help": [
+      "--ack-file",
+      "--color",
+      "--help",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn logs": [
+      "--ack-file",
+      "--color",
+      "--event",
+      "--help",
+      "--json",
+      "--quiet",
+      "--since",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn sites": [
+      "--ack-file",
+      "--color",
+      "--expect-sites",
+      "--help",
+      "--json",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ],
+    "cairn sites list": [
+      "--ack-file",
+      "--color",
+      "--expect-sites",
+      "--help",
+      "--json",
+      "--quiet",
+      "--theme",
+      "--timeout",
+      "--verbose",
+      "--width"
+    ]
+  }
 }

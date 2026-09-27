@@ -100,7 +100,7 @@ and for the close's reviewers and `visual-verifier`. The probes are fresh Sonnet
 is a `cairn-implementer`). Capture agents and gate agents are Sonnet `general-purpose` at `high`.
 CI probes are Haiku.
 
-**Token ceiling:** 24M, flag at 19.2M (80%), pending ruling 1 (Rulings for Geoff). The
+**Token ceiling:** 29M, flag at 23.2M (80%), per ruling 1 (Geoff, 2026-09-27). The
 projection, itemized after the review fold:
 
 | Item | Spend |
@@ -130,9 +130,10 @@ projection, itemized after the review fold:
 | The conductor sessions | 1.5M |
 | **Projected total** | **about 24.2M** |
 
-The projection sits above the flag and 0.2M above the ceiling. Ruling 1 settles how the pass treats that.
-Until it is ruled, the plan's reading holds: the conductor raises the running total on S3's page
-as the budget question, rather than stopping when the flag trips.
+The projection sits about 1.1M above the 23.2M flag and well under the 29M ceiling. On the
+itemized order the flag trips around segment D, and the conductor asks the global 80% question at
+the next segment boundary as the rule says. The close and the cut never halt on budget once the
+merge lands.
 
 **Counting rule:** the conductor's counter is the sum of subagent and workflow token counts from
 task notifications, plus its own sessions as `/cost` reports them.
@@ -510,20 +511,10 @@ refused in `docs/superpowers/research/2026-09-27-theme-pass-c-plan-fold.md`. Dec
 fallback instead of pinning a visitor to the default block, a behavioral reason with a clear
 answer, and the unit check guards agreement.
 
-1. **Raise the token ceiling to 30M (flag 24M) at approval?** The folded projection is about
-   24.2M against a 24M ceiling, and the global rule asks its 80% question at the next segment
-   boundary; at 24M the 19.2M flag would trip around S2 (segment E) on the itemized order.
-   - **Recommendation: yes.** 30M puts the flag at 24M, 0.2M under the projection, so on plan
-     it trips only in the release tail after the merge, and earlier only if the pass overruns its
-     plan, which is the flag's job; the global rule applies unchanged. A
-     13-task pass that also carries the merge and a release is honestly this size.
-   - **Yes builds:** the header reads 30M with the flag at 24M; the conductor asks the 80% question
-     at the next segment boundary as the global rule says; the close and the cut never halt on
-     budget once the merge lands.
-   - **No builds:** the ceiling stays 24M, and approval pre-authorizes the plan's current reading:
-     the budget question moves to S3's page instead of the boundary where the flag trips, and the
-     close and the cut finish past the ceiling once the merge lands, with the overrun recorded in
-     HISTORY's pass score.
+1. **Ruled (Geoff, 2026-09-27): the ceiling is 29M, flag at 23.2M.** The review recommended 30M
+   (flag 24M); Geoff set 29M. The header carries it. With the projection at about 24.3M, the flag
+   trips on plan near segment D, which asks the usual combined question at the next boundary
+   rather than halting the pass.
 
 ## Global constraints
 

@@ -459,30 +459,38 @@ function flagNameFromWord(word) {
  * not recognize, and a class `cairn-flag` entry for a flag the matched path does not accept.
  * `token` is the bare word or flag name, the shape `check-symbols-allowlist.mjs` keys on for
  * every other class; `path` carries the command path it was checked against, for the finding's
- * printed message. The command path is the longest run of leading non-flag words, starting from
- * `cairn`, that names a path in `commandFlags`; a line with no such word (`cairn`,
- * `cairn --version`) resolves to the root path. The first non-flag word left over once that run
- * stops is read as a subcommand only when the matched path has subcommands of its own
- * (`commandPathsWithChildren`): otherwise it is a positional argument (a site id, a directory),
- * and the line's flags are still checked against the path that did match.
+ * printed message. The command path is the longest run of leading words, starting from `cairn`,
+ * that names a path in `commandFlags`; the walk stops at the first flag (a word starting with
+ * `-`) as well as at the first word that fails to extend the path, so a value-taking flag's value
+ * (`cairn adopt --domain example.com`, `cairn --color never`) is never mistaken for a path word:
+ * a word before a flag is always a command word or a bare positional, never a flag's value,
+ * whereas a word right after a flag could be either. A line with no such word (`cairn`,
+ * `cairn --version`) resolves to the root path. The word the walk stopped on is read as a
+ * subcommand only when it is not itself a flag and the matched path has subcommands of its own
+ * (`commandPathsWithChildren`): otherwise it is a flag or a positional argument (a site id, a
+ * directory), and the line's flags are still checked against the path that did match.
  * @param {CairnLineWord[]} items
  * @param {Map<string, Set<string>>} commandFlags
  * @returns {{ line: number, class: string, token: string, path: string }[]}
  */
 export function resolveCairnLine(items, commandFlags) {
-  const words = items.slice(1).filter((item) => !item.token.startsWith('-'));
+  const words = items.slice(1);
   let cmdPath = 'cairn';
   let consumed = 0;
-  while (consumed < words.length && commandFlags.has(`${cmdPath} ${words[consumed].token}`)) {
-    cmdPath = `${cmdPath} ${words[consumed].token}`;
+  while (consumed < words.length && !words[consumed].token.startsWith('-')) {
+    const candidate = `${cmdPath} ${words[consumed].token}`;
+    if (!commandFlags.has(candidate)) break;
+    cmdPath = candidate;
     consumed++;
   }
 
   /** @type {{ line: number, class: string, token: string, path: string }[]} */
   const findings = [];
-  if (consumed < words.length && commandPathsWithChildren(commandFlags).has(cmdPath)) {
+  if (consumed < words.length) {
     const word = words[consumed];
-    findings.push({ line: word.line, class: 'cairn-subcommand', token: word.token, path: cmdPath });
+    if (!word.token.startsWith('-') && commandPathsWithChildren(commandFlags).has(cmdPath)) {
+      findings.push({ line: word.line, class: 'cairn-subcommand', token: word.token, path: cmdPath });
+    }
   }
 
   const accepted = commandFlags.get(cmdPath) ?? new Set();
@@ -597,6 +605,35 @@ function envVarInSourceTree(token, root = ROOT) {
 }
 
 /**
+ * Every `cairn`-line finding in one file's code-voice segments, each carrying the `file` it came
+ * from alongside `resolveCairnLine`'s own `line`, `class`, and composed `token` message
+ * (`${word} (not accepted by/not a subcommand of \`${path}\`)`), with an allowlisted finding
+ * dropped. Split out of `findUnresolvedSymbols`'s per-file loop so the file/line wiring is
+ * directly testable without a scratch corpus.
+ * @param {string} file the file path a finding is attributed to
+ * @param {CodeVoiceSegment[]} segments
+ * @param {Map<string, Set<string>>} commandFlags
+ * @returns {{ file: string, line: number, class: string, token: string }[]}
+ */
+export function cairnLineFindings(file, segments, commandFlags) {
+  /** @type {{ file: string, line: number, class: string, token: string }[]} */
+  const findings = [];
+  for (const items of extractCairnLines(segments)) {
+    for (const finding of resolveCairnLine(items, commandFlags)) {
+      if (ALLOWLIST.has(`${finding.class}:${finding.token}`)) continue;
+      const reason = finding.class === 'cairn-flag' ? 'not accepted by' : 'not a subcommand of';
+      findings.push({
+        file,
+        line: finding.line,
+        class: finding.class,
+        token: `${finding.token} (${reason} \`${finding.path}\`)`,
+      });
+    }
+  }
+  return findings;
+}
+
+/**
  * Every unresolved symbol across the files in scope. Each entry names the file, the line, the
  * class, and the offending token.
  * @param {string} root
@@ -643,18 +680,7 @@ export function findUnresolvedSymbols(root = ROOT) {
     recordUnresolved(file, 'cli-flag', extractCliFlags(segments), ({ token }) =>
       cliFlags.has(token.slice(2)),
     );
-    for (const items of extractCairnLines(segments)) {
-      for (const finding of resolveCairnLine(items, cairnCommands)) {
-        if (ALLOWLIST.has(`${finding.class}:${finding.token}`)) continue;
-        const reason = finding.class === 'cairn-flag' ? 'not accepted by' : 'not a subcommand of';
-        findings.push({
-          file,
-          line: finding.line,
-          class: finding.class,
-          token: `${finding.token} (${reason} \`${finding.path}\`)`,
-        });
-      }
-    }
+    findings.push(...cairnLineFindings(file, segments, cairnCommands));
     recordUnresolved(file, 'env-var', extractEnvVars(segments), ({ token }) =>
       envVarInSourceTree(token, root),
     );

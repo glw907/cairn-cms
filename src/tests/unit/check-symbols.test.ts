@@ -9,6 +9,7 @@ import {
   extractCliFlags,
   extractCairnLines,
   resolveCairnLine,
+  cairnLineFindings,
   extractEnvVars,
   extractImportedIdentifiers,
   extractFilePaths,
@@ -172,6 +173,18 @@ describe('resolveCairnLine', () => {
     const lines = extractCairnLines(codeVoiceSegments(['```bash', 'cairn doctor --verbose', '```'].join('\n')));
     expect(resolveCairnLine(lines[0], commandMap)).toEqual([]);
   });
+
+  // A value-taking flag's value word sits right after the flag, in the same position a real
+  // subcommand would occupy. `cairn doctor` has a child (`cairn doctor fix`), so the old
+  // filter-first walk dropped `--json` before matching the path, then read `somewhere` as an
+  // unrecognized subcommand of `cairn doctor`. The fix stops the path walk at the first flag, so
+  // the word after it is never checked as a subcommand candidate.
+  it('does not mistake a flag\'s value for the subcommand-position word', () => {
+    const lines = extractCairnLines(
+      codeVoiceSegments(['```bash', 'cairn doctor --json somewhere', '```'].join('\n')),
+    );
+    expect(resolveCairnLine(lines[0], commandMap)).toEqual([]);
+  });
 });
 
 describe('the real cairn command map', () => {
@@ -193,6 +206,24 @@ describe('the real cairn command map', () => {
 
   it('passes `$ cairn doctor`', () => {
     const lines = extractCairnLines(codeVoiceSegments(['```bash', '$ cairn doctor', '```'].join('\n')));
+    expect(resolveCairnLine(lines[0], cairnCommandFlags())).toEqual([]);
+  });
+
+  // Review focus: `adopt` is cobra.NoArgs and `--domain` is a real StringVar on it, so
+  // `example.com` is the flag's value, not an unrecognized subcommand of `cairn adopt` (which
+  // does have a real child, `cairn adopt list`, so the old bug fired here).
+  it('passes `cairn adopt --domain example.com`, the flag value never read as a subcommand', () => {
+    const lines = extractCairnLines(
+      codeVoiceSegments(['```bash', 'cairn adopt --domain example.com', '```'].join('\n')),
+    );
+    expect(resolveCairnLine(lines[0], cairnCommandFlags())).toEqual([]);
+  });
+
+  // Review focus: `--color` is a real root flag that takes a value; `never` is that value, not an
+  // unrecognized subcommand of the root (which does have real children, so the old bug fired here
+  // too).
+  it('passes `cairn --color never`, the flag value never read as a subcommand', () => {
+    const lines = extractCairnLines(codeVoiceSegments(['```bash', 'cairn --color never', '```'].join('\n')));
     expect(resolveCairnLine(lines[0], cairnCommandFlags())).toEqual([]);
   });
 });
@@ -386,6 +417,34 @@ describe('the ALLOWLIST', () => {
 
   it('does not suppress the same token under a different class key', () => {
     expect(ALLOWLIST.has('env-var:--prefix')).toBe(false);
+  });
+});
+
+describe('cairnLineFindings', () => {
+  // findUnresolvedSymbols' own per-file loop only ever runs over the real committed docs, which
+  // are (by design) free of findings, so this is the only place the `file` attribution and the
+  // composed `token` message get proven against a failing case at all.
+  it('names the file and the line on a failing cairn line', () => {
+    const commandMap = new Map([
+      ['cairn', new Set(['--help'])],
+      ['cairn doctor', new Set(['--help'])],
+    ]);
+    const segments = codeVoiceSegments(['prose', '```bash', 'cairn doctor --not-a-real-flag', '```'].join('\n'));
+    const findings = cairnLineFindings('docs/admin/troubleshooting.md', segments, commandMap);
+    expect(findings).toEqual([
+      {
+        file: 'docs/admin/troubleshooting.md',
+        line: 3,
+        class: 'cairn-flag',
+        token: '--not-a-real-flag (not accepted by `cairn doctor`)',
+      },
+    ]);
+  });
+
+  it('returns nothing for a passing cairn line', () => {
+    const commandMap = new Map([['cairn', new Set(['--version'])]]);
+    const segments = codeVoiceSegments(['```bash', 'cairn --version', '```'].join('\n'));
+    expect(cairnLineFindings('docs/README.md', segments, commandMap)).toEqual([]);
   });
 });
 

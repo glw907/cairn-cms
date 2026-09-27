@@ -33,6 +33,8 @@ Draft docs pass 0+1 is **paused** on `draft-docs-0` (Geoff, 2026-09-26: "We can 
 work until we've completed this effort"); it resumes after the theme initiative merges (pass B,
 pending Geoff's confirmation at S3) and merges `main` into its branch first. Its plan:
 [`2026-09-26-draft-docs-pass-0-1.md`](superpowers/plans/2026-09-26-draft-docs-pass-0-1.md).
+Segment A (tasks 1 to 5) is done; the branch's plan ledger records it, and draft PR #91 carries
+the CI proof. It resumes at segment B.
 
 Open items for Geoff: the four stale owner facts (`what-cairn-is-and-is-not.md:49` rule count,
 `f:ab9kzr`, `f:75hawi`, `docs/why-cairn.md:41` against line 84) settle in the plan's task 9
@@ -61,7 +63,7 @@ GitHub repo) awaits his delete confirmation.
 
 ## Resume prompt
 
-In a fresh session started with `claude --model claude-opus-5-5` at effort `medium`, in
-`/var/home/glw907/Projects/cairn-cms`, execute draft docs pass 0+1 as a thin conductor: read
-`docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md` and its spec, run the plan's
-pre-flight (warm `~/.dotfiles` paths, `/cost` coverage), then dispatch segment A.
+Draft docs, after the theme pass merges: in a fresh session started with
+`claude --model claude-opus-5-5` at effort `medium`, in `/var/home/glw907/Projects/cairn-cms`,
+resume draft docs pass 0+1 as a thin conductor at segment B: merge `main` into `draft-docs-0`,
+read the plan's ledger on that branch, then dispatch tasks 6 and 8 through `pass-execute`.

@@ -4,18 +4,32 @@ name: tsgo
 # svelte-check, svelte2tsx, and typescript-estree still pin typescript@^6 (see ROADMAP.md,
 # "TypeScript 7 is held on the toolchain"). This job installs the side-by-side layout
 # svelte-check's own README documents (typescript@^6 plus @typescript/native@npm:typescript@7,
-# `--no-save --no-package-lock` so neither package.json nor the lockfile moves) and runs the same
-# check under `--tsgo`. It runs weekly rather than on every push: a red result here signals
-# nothing about the code under review, only that the TypeScript 7 hold is still in force, so
-# gating a PR on it would block unrelated work. A green run is the signal that the 7.x edges have
-# closed and the bump in ROADMAP.md is ready to run.
+# `--no-save --no-package-lock` so neither package.json nor the lockfile moves) and compares two
+# svelte-check runs over the same tsconfig: a TypeScript 6 baseline (`--incremental`, the closest
+# same-overlay comparison to `--tsgo` without installing TS7) and the TypeScript 7 run
+# (`--tsgo`). It runs weekly rather than on every push: a red result here signals nothing about
+# the code under review, only that the TypeScript 7 hold is still in force, so gating a PR on it
+# would block unrelated work.
+#
+# Comparing against a same-repo TS6 baseline, rather than asserting zero errors outright, is
+# deliberate: this repo's own `src/lib/vite/internal.ts` self-imports its own published package
+# (`@glw907/cairn-cms/...`), and svelte-check's `--incremental`/`--tsgo` overlay always prefers a
+# reachable `.svelte` file's raw source over its `.d.ts` companion, so it re-type-checks this
+# repo's own already-built `dist/*.svelte` output (whose `<script>` blocks were deliberately
+# transpiled to plain JS by `scripts/build/transpile-dist-svelte.mjs`). Those diagnostics, plus
+# one false positive on a deliberately-invalid lint fixture the same blanket file scan reaches,
+# are svelte-check artifacts that TypeScript 6 reports identically; they are not signal for "is
+# TypeScript 7 a bump". Diffing against the TS6 baseline is what makes the job report only what
+# TypeScript 7 actually adds. A green run is the signal that the 7.x edges have closed and the
+# bump in ROADMAP.md is ready to run.
 #
 # `--config ./svelte.config.js` pins the Svelte config svelte-check applies to every file it
-# finds, matching `npm run check`'s scope. Without it, svelte-check's `--tsgo` file discovery
-# walks the whole repo tree (not just this tsconfig's `include`) and tries to load
-# `examples/showcase` and `templates/waymark`'s own `svelte.config.js` files, which import
-# `@sveltejs/adapter-cloudflare`, a dependency this job never installs. `--config` tells it there
-# is exactly one Svelte config in scope, so those directories are never loaded.
+# finds, matching `npm run check`'s scope, in both the TS6 baseline and TS7 runs below. Without
+# it, svelte-check's `--incremental`/`--tsgo` file discovery walks the whole repo tree (not just
+# this tsconfig's `include`) and tries to load `examples/showcase` and `templates/waymark`'s own
+# `svelte.config.js` files, which import `@sveltejs/adapter-cloudflare`, a dependency this job
+# never installs. `--config` tells it there is exactly one Svelte config in scope, so those
+# directories are never loaded.
 
 on:
   schedule:
@@ -24,7 +38,7 @@ on:
 
 jobs:
   check-tsgo:
-    name: "check:tsgo (weekly; green means TypeScript 7 is a bump)"
+    name: "check:tsgo (weekly; green means no TS7-only diagnostics)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -33,5 +47,22 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: TypeScript 6 baseline (svelte-check --incremental)
+        run: |
+          npx svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js --incremental --output machine > ts6.log 2>&1 || true
+          grep ' ERROR ' ts6.log | cut -d' ' -f3- | sort > ts6-errors.txt || true
+          echo "TypeScript 6 baseline: $(wc -l < ts6-errors.txt) error(s)"
       - run: npm install --no-save --no-package-lock "@typescript/native@npm:typescript@7"
-      - run: npx svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js --tsgo
+      - name: TypeScript 7 run (svelte-check --tsgo) and diff against the baseline
+        run: |
+          npx svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js --tsgo --output machine > ts7.log 2>&1 || true
+          grep ' ERROR ' ts7.log | cut -d' ' -f3- | sort > ts7-errors.txt || true
+          echo "TypeScript 6 baseline: $(wc -l < ts6-errors.txt) error(s)"
+          echo "TypeScript 7 (tsgo):   $(wc -l < ts7-errors.txt) error(s)"
+          NEW_IN_TSGO="$(comm -13 ts6-errors.txt ts7-errors.txt)"
+          if [ -n "$NEW_IN_TSGO" ]; then
+            echo "TypeScript 7 reports diagnostics TypeScript 6 does not (the real TS7 migration list):"
+            echo "$NEW_IN_TSGO"
+            exit 1
+          fi
+          echo "No TS7-only diagnostics: the bump is clear on the checker side."

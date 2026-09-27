@@ -596,3 +596,40 @@ Five more rule groups land in `cairn-idiom`, all button-only, raising `idiomLaye
 `idiomLayerCap` is `11`: the three prior selectors plus two for the hairline, one for the
 `btn-neutral` hover step, one for button type, one for `btn-sm` padding, and three for soft
 primary. `componentsLayerCap` stays `16`; none of these five rule groups previously lived there.
+
+## The selected segment: pinned rules 10 and 12 superseded, rule 11 widened and moved in
+
+The two unlayered rules that hardcoded dark's `.btn-active` fill (rule 10) and its hover step (rule
+12) are retired outright, replaced by one selected-segment rule group in `cairn-idiom`, widened
+from `.btn-active` alone to every form daisyUI (and this admin) key a selected control on:
+`.btn-active`, `[aria-pressed='true']`, `[aria-checked='true']`, a non-false non-empty
+`[aria-current]`, and `:checked:not(.filter [type='radio'].btn)` (a checked radio styled as a join
+segment). Rule 11 (the outline/dash ink repair) moves in unchanged in mechanism, widened the same
+way.
+
+- **The wash and weight**, one selector: `--btn-bg: color-mix(in oklab, var(--color-base-content)
+  7%, var(--color-base-100))`, `--btn-fg: var(--color-base-content)`, `font-weight: 600`, in both
+  themes. The `--btn-fg` reset neutralizes daisyUI's own `:checked` rule, which sets `--btn-fg` to
+  `--color-primary-content` on any checked `.btn` regardless of variant; since this selector
+  already excludes every color variant, the reset only ever touches the plain checked case. No
+  pseudo-class, so it holds across focus-visible and active the same way the plain hairline does.
+- **The state hairline, two selectors** (one per theme, since the literal differs): decision 2
+  seeds light from the identical 55% base-content mix `segmentTintClass` compiles to from
+  `ring-base-content/55`, and dark from rule 10's own locked `oklch(57% 0.012 75)`. Both seeds
+  clear 3:1 against `base-100`, but neither clears 3:1 against a resting sibling's own 22% edge
+  (task 5's plain hairline) composited on `base-100`: light measures 2.303:1, dark 1.935:1.
+  Measured against the seed value, one seed measures over 3:1 on the base-100 row and under 3:1 on
+  the resting-sibling row; per decision 2 each moves in lightness only, staying inside its own
+  seed's formula: light from 55% to 65% (4.873:1 base-100, 3.136:1 resting sibling), dark's own `L`
+  channel from 57% to 70% (6.115:1 base-100, 3.233:1 resting sibling).
+- **The hover step**, one selector, `:hover:not(:active)`, stepping the wash to a 12% mix. The
+  `:not(:active)` guard is the same one `btn-neutral`'s own hover step uses, so a held press reads
+  the resting wash, matching the Outcome's "holds them at focus-visible and active."
+- **Rule 11, widened**, one selector: `.btn:is(.btn-outline, .btn-dash):not(<disabled forms>):is(<
+  five selected forms>) { color: var(--btn-fg, var(--color-base-content)) }`. No color-variant
+  exclusion, unlike the wash rule above: an outline or dashed variant control needs this same ink
+  repair, not the neutral wash.
+
+`idiomLayerCap` rises from `11` to `16`: the wash/weight/ink-reset selector, the two per-theme
+hairline selectors, the hover selector, and the widened rule 11 selector. The unlayered allowlist
+drops from 18 to 15: rules 10, 11 (its old unwidened form), and 12 all leave the unlayered block.

@@ -1038,6 +1038,172 @@
       .btn-soft.btn-primary:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):active {
       --btn-bg: color-mix(in oklab, var(--color-primary) 22%, transparent);
     }
+
+    /* The selected segment: supersedes the old dark-only hardcoded .btn-active fill and its hover
+       step, and widens the device from .btn-active alone to every form daisyUI (and this admin)
+       treat as selected: .btn-active, aria-pressed, aria-checked, aria-current, and a checked
+       radio styled as a join segment. A neutral wash plus weight 600 reads the selected state
+       through weight rather than hue (the July segment ruling, "neutral wash + semibold"), the
+       same device in both themes now, so EditorToolbar's mode switch and Pagination's current-page
+       segment render identically either theme. The wash alone measures only about 1.16:1 against a
+       resting sibling's own base-100 fill, under the WCAG 1.4.11 non-text floor a state a control's
+       meaning depends on, so an inset hairline rides --btn-border below, the design system's own
+       pressed-state device. --btn-fg resets to the plain ink: daisyUI's own :checked rule sets
+       --btn-fg to --color-primary-content on any checked .btn regardless of variant, and this
+       rule's own exclusion list already keeps every color variant out, so the reset only ever
+       touches the plain checked case (a checked radio styled as a join segment) decision 9 calls
+       for, never a variant control's own accent. The wash, ink, and weight carry no pseudo-class,
+       so this unconditional rule holds them across focus-visible and active too, the same
+       one-value-across-every-state pattern the plain hairline above uses; only hover gets its own
+       step, in the rule below. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn:not(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error,
+        .btn-outline,
+        .btn-dash,
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ):is(
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn)
+      ) {
+      --btn-bg: color-mix(in oklab, var(--color-base-content) 7%, var(--color-base-100));
+      --btn-fg: var(--color-base-content);
+      font-weight: 600;
+    }
+
+    /* The selected segment's state hairline, light: seeded from the identical 55% base-content mix
+       segmented-control.ts's segmentTintClass already compiles to from ring-base-content/55. The
+       seed itself clears 3:1 against base-100 (3.579:1), but the pair table also measures the
+       hairline against a resting sibling's own 22% edge composited on base-100 (task 5's plain
+       hairline), and there the 55% seed reads only 2.303:1, under the floor. Moved in lightness
+       only, deeper into base-content, to 65%, which clears both rows (4.873:1 against base-100,
+       3.136:1 against the resting sibling), and is still the same color-mix family the seed uses,
+       not a new formula (BtnActiveDarkGround.test.ts). */
+    :where([data-theme='cairn-admin'])
+      .btn:not(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error,
+        .btn-outline,
+        .btn-dash,
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ):is(
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn)
+      ) {
+      --btn-border: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+    }
+
+    /* The selected segment's state hairline, dark: seeded from the superseded rule's own locked
+       oklch(57% 0.012 75), the same literal that rule carried. That seed clears 3:1 against
+       base-100 (3.661:1), but reads only 1.935:1 against a resting sibling's own 22% edge
+       composited on base-100 (task 5's plain hairline), under the floor. Moved in lightness only,
+       to 70%, which clears both rows (6.115:1 against base-100, 3.233:1 against the resting
+       sibling), keeping the seed's own hue and chroma (BtnActiveDarkGround.test.ts). */
+    :where([data-theme='cairn-admin-dark'])
+      .btn:not(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error,
+        .btn-outline,
+        .btn-dash,
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ):is(
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn)
+      ) {
+      --btn-border: oklch(70% 0.012 75);
+    }
+
+    /* The selected segment's own hover step: the rest rule above carries no pseudo-class, so it
+       also beats daisyUI's own layered :hover attempt at --btn-bg regardless of specificity,
+       leaving no visible hover feedback without a second, higher-specificity rule scoped to
+       :hover. :not(:active) keeps a held press, which still matches :hover, reading the resting
+       wash instead, the same guard the btn-neutral hover step above uses, so active holds the rest
+       value as the Outcome states. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn:not(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error,
+        .btn-outline,
+        .btn-dash,
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ):is(
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn)
+      ):hover:not(:active) {
+      --btn-bg: color-mix(in oklab, var(--color-base-content) 12%, var(--color-base-100));
+    }
+
+    /* The outline/dash ink repair for a selected control, widened: moved out of the unlayered
+       block and widened from .btn-active alone to every one of the five selected forms, since the
+       selected-segment rule above now keys on all five and an outline or dashed button selected by
+       attribute would otherwise keep its own stock ink while its .btn-active twin does not.
+       daisyUI fills an outline or dashed button carrying any of the five forms (its own selected
+       rule sits directly in daisyui.l1.l2, which outranks .btn-outline/.btn-dash in the nested
+       daisyui.l1.l2.l3) but leaves color at the variant's own --btn-color, so
+       `btn-outline btn-primary btn-active` painted primary ink on a primary-derived fill.
+       Restating color off --btn-fg completes what daisyUI's own fill already intends, and is a
+       no-op for every non-outline, non-dash variant, which reads its ink through --btn-fg already.
+       No color variant is excluded here, unlike the wash rule above: a variant outline or dash
+       control (`btn-outline btn-primary`) needs this same ink repair, not the neutral wash. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):is(
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn)
+      ) {
+      color: var(--btn-fg, var(--color-base-content));
+    }
   }
 }
 
@@ -1236,126 +1402,6 @@
    20rem. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked > :where(.input, .select, .textarea) {
   width: 100%;
-}
-
-/* The dark-ground selected state (ships with the one-filled-action
-   partition change above and not without it): the ruling pushes a segmented control's selected
-   state (EditorToolbar's mode switch, ListToolbar's and Pagination's join-pagination pickers) off
-   `btn-primary`, now that two of them beside a card action would be two primaries on one surface,
-   and onto `btn-active`. DaisyUI's dark `.btn-active` mixes `--btn-color` (or `--color-base-200`,
-   already 15.5% oklch-lightness, near-black, when no variant is set) 7% toward pure black, an
-   0.011 step off a plain `.btn` for the neutral case, close to invisible on a dark ground.
-   A first repair hardcoded a flat `--btn-bg` value, which fixed the neutral step but discarded the
-   `--btn-color` channel entirely: a variant selected control (`btn btn-primary btn-active`) lost
-   its accent and painted its `--btn-fg` on a fill that no longer read as primary. This mixes
-   toward WHITE instead of daisyUI's toward-black, keeping `--btn-color` (or the same base-200
-   fallback) as the mix base, so a variant control keeps its hue and chroma, only lightened, while
-   the neutral case still lands in the measured 0.05-0.07 oklch range Geoff's ruling calls for
-   (BtnActiveDarkGround.test.ts pins >= 0.04 with rounding slack; 8% white on base-200's 0.155 L
-   measures a 0.068 step, matching the light theme's own 0.068 step off its base-200).
-   That fill step is perceptual, not photometric: near-black sRGB compresses luminance, so the
-   lighter fill still measures only 1.14:1 against an unselected base-200 sibling and 1.05:1
-   against the base-100 ground, well under WCAG 1.4.11's 3:1 floor for a state a control's
-   meaning depends on. The 3:1 cue therefore rides on `--btn-border`, the design system's
-   sanctioned pressed-state device (a 1px inset hairline in the family's own ink; see
-   docs/internal/admin-design-system.md, "Segmented control and check-and-tint toggle"). Locked
-   margins for the neutral hairline `oklch(57% 0.012 75)`, the same hue-75 Warm Stone family as
-   the fill: 3.85:1 against the resting fill, 3.34:1 against the hover fill, 3.68:1 against the
-   base-100 ground, 4.37:1 against an unselected sibling's base-200 fill. Do not darken it below
-   about 52% L without re-measuring, which is where the 3:1 floor sits.
-   `var(--btn-color, ...)` picks the same branch the fill does: a variant selected control keeps
-   daisyUI's own border-in-the-variant's-ink look, and only the neutral case, the one the fill
-   cannot cue, gets the literal. That states what daisyUI already renders, not a claim of WCAG
-   1.4.11 coverage for the variant case: measured against an unselected sibling's own fill, a
-   variant `.btn-active` border reads 1.11:1 dark / 1.17:1 light, stock daisyUI's own gap, not
-   this rule's to close. Cairn renders no variant segmented control today (every one is neutral),
-   so the gap is filed rather than fixed here (ROADMAP.md, "Next", "Three design-system gaps
-   found in the same triage").
-   The hairline carries no `color-mix`, so it also answers the fallback problem the fill has:
-   Tailwind's optimizer splits every `color-mix` declaration into a plain fallback plus an
-   `@supports` override, and the fallback it derives for the fill is
-   `var(--btn-color, var(--color-base-200))`, exactly a plain `.btn`'s background. On an engine
-   without `color-mix` the selected state therefore loses its fill step but keeps its
-   full-strength hairline, which is the cue that had to survive.
-   Excludes the four disabled forms so daisyUI's own disabled reset (`--btn-bg`/`--btn-border`
-   to transparent) still wins on a disabled selected control.
-   Dark-theme only, so the selector carries the explicit `[data-theme='cairn-admin-dark']` root
-   rather than the shared `:where(both themes)` prefix the rest of this file uses, the same pattern
-   the theme-token block above uses for a dark-only declaration. `--btn-bg` is itself a
-   utilities-layer declaration (`@layer daisyui.l1.l2`), which a components-layer rule cannot
-   outrank regardless of specificity; UNLAYERED for the same reason as the eight rules above.
-   No `color` declaration here: a first cut carried
-   `color: var(--btn-fg, ...)` on this same unscoped rule, needed only for `.btn-outline`/
-   `.btn-dash`'s own ink composition, but being unlayered it outranked every OTHER selected
-   control's own text utility too (`btn btn-active text-error` painted `--btn-fg` instead of
-   `text-error`'s ink on dark). The outline/dash rule below carries that declaration, scoped to
-   the forms that need it.
-   PINNED unlayered rule 10 of 14 (gate match:
-   `[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])`);
-   bug it prevents: a segmented control's selected state reading as visually identical to its unselected
-   siblings on the dark theme, or a variant selected control losing its accent. */
-[data-theme='cairn-admin-dark']
-  .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']) {
-  --btn-bg: color-mix(in oklab, var(--btn-color, var(--color-base-200)), oklch(100% 0 0) 8%);
-  --btn-border: var(--btn-color, oklch(57% 0.012 75));
-}
-
-/* The outline/dash ink fix for a selected control (split out of the
-   rule above): DaisyUI already fills an outline or dashed button that carries `.btn-active` (its
-   own `.btn-active` sits directly in `daisyui.l1.l2`, which outranks `.btn-outline`/`.btn-dash`
-   in the nested `daisyui.l1.l2.l3`), but leaves `color` at the outline variant's own
-   `--btn-color`, so `btn-outline btn-primary btn-active` painted primary ink on a
-   primary-derived fill. Restating `color` off `--btn-fg` completes what daisyUI's own fill
-   already intends. It is a no-op for every non-outline, non-dash variant, which reads its ink
-   through `--btn-fg` already.
-   Theme-agnostic, not mirrored per theme: this shipped dark-only at first (folded into the rule
-   above), scoped by the explicit `[data-theme='cairn-admin-dark']` root the way the fill and
-   hairline still are. But daisyUI's own `.btn-active` fill recipe is not theme-scoped, so the
-   light theme carries the identical outline-ink defect, and measures worse there (1.17:1 stock,
-   against dark's own pre-repair 1.20:1): light's fill already separates enough on its own for the
-   neutral case (see "Segmented control and check-and-tint toggle",
-   docs/internal/admin-design-system.md), but the outline composition needs the same ink repair
-   either theme. So this rule carries the shared `:where(both themes)` prefix the rest of this
-   file uses, scoped further to `:is(.btn-outline, .btn-dash)` so it touches neither the neutral
-   fill above (dark-only, unaffected) nor the light theme's otherwise-stock `.btn-active`.
-   Excludes the four disabled forms for the same reason the rule above does. `--btn-bg` (what the
-   outline/dash recipe fills against) and `.btn-outline`/`.btn-dash`'s own `color` are both
-   utilities-layer declarations (`@layer daisyui.l1.l2` / `daisyui.l1.l2.l3`), which a
-   components-layer rule cannot outrank regardless of specificity; UNLAYERED for the same reason
-   as the rule above.
-   PINNED unlayered rule 11 of 14 (gate match:
-   `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])`);
-   bug it prevents: an outline or dashed selected control painting its own ink on its own fill,
-   on either theme. */
-:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']) {
-  color: var(--btn-fg, var(--color-base-content));
-}
-
-/* The companion hover step for the neutral fill rule above: because the resting override reaches
-   every state of `.btn-active` (it carries no pseudo-class, so it always applies, hover
-   included), it also beats daisyUI's own layered `.btn:hover` attempt at `--btn-bg` regardless of
-   that rule's specificity (an unlayered declaration always outranks a layered one, hover or not),
-   so the selected control gave no visible hover feedback. Setting `--btn-hover-bg` on the resting
-   rule above would not help, since the resting rule's own unconditional `--btn-bg` still wins
-   over the hover-layer read of it; only a second unlayered rule scoped to `:hover`, with the
-   higher specificity a pseudo-class adds, can outrank the resting rule during hover. Steps the mix
-   a few points further toward white (14% against the resting 8%) so hovering the selected control
-   visibly lightens it.
-   This repairs what the resting override took away; it is not an opinion about hover. DaisyUI's
-   own convention is that `.btn-active` does not change on hover (its `--btn-hover-bg` restates
-   its `--btn-bg`), and the LIGHT theme keeps that convention, because light's `.btn-active` fill
-   is stock, so nothing there needs repairing. Gated on `@media (hover: hover)`, the same guard
-   daisyUI puts on its own button hover recipes, so a touch device does not strand the lighter
-   fill on the last-tapped segment.
-   PINNED unlayered rule 12 of 14 (gate match: the rule 10 selector plus `:hover`, inside
-   `@media (hover: hover)`);
-   bug it prevents: a selected control giving no visible feedback on hover. */
-@media (hover: hover) {
-  [data-theme='cairn-admin-dark']
-    .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):hover {
-    --btn-bg: color-mix(in oklab, var(--btn-color, var(--color-base-200)), oklch(100% 0 0) 14%);
-  }
 }
 
 /* The unchecked checkbox/radio edge (2026-08-27 admin sheet fixes): DaisyUI's own `.checkbox`

@@ -282,6 +282,16 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Theme identity, passes A, B, and C (Geoff, 2026-09-26 and 2026-09-27).** cairn's own look moves
+  into the daisyUI theme layer, and the public site gets one theme contract that any theme can meet.
+  Pass A (the admin theme, spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`) is
+  executing on `theme-identity-a`. Passes B and C share one spec,
+  `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renames `./components` to
+  `./admin` and ships the admin agent path; C is the one public theme (`cairn-public.css`, derived
+  inks, heading levers, the three public audit rules, the `cairn-public` skill, and the designer
+  walkthrough's template fixes). B stays unmerged, C branches from it, and both merge at C's close
+  with one `0.98.0` cut carrying A, B, and C. Draft documentation (below) waits for C.
+
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
   `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
   to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,
@@ -293,9 +303,11 @@ The original decision framing, for the record:
   - The exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
     `docs/internal/record/docs-exemplars.md`), never reviewed as a set.
   - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
-  - The designer theme-guide content (Geoff, 2026-09-24): a short general section on giving a
-    DaisyUI-built site its own identity through a theme, so it does not read as stock DaisyUI,
-    linking to DaisyUI's theme docs rather than restating them. Required topic in the stage 2
+  - The designer's theme guide is a primary page (Geoff, 2026-09-27): it documents the one
+    public theme contract (Now, "Theme identity", pass C) and is drafted after that contract settles.
+  - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
+    on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
+    DaisyUI. It links to DaisyUI's theme docs rather than restating them. Required topic in the stage 2
     outline.
   - Job-doing readers as an optional advisory pass, about 35k tokens per page: they find real
     defects on their own path and miss what sits off it. They are not a measured gate.
@@ -311,6 +323,31 @@ The original decision framing, for the record:
   step: a hand run of `cairn-audit --rendered --rule viewport-overflow` against the showcase with
   the drawer closed versus open, reading the flagged elements to confirm or rule out the drawer
   hypothesis.
+
+- **Inserting a component fuses its closing fence onto the text after the caret (designer
+  walkthrough, 2026-09-27; friction log F12).** A live editor-facing defect.
+  `insertAtCursor` in `src/lib/components/MarkdownEditor.svelte:1133-1143` prepends `\n\n` when the
+  caret is past position 0 but appends nothing after the block. `serializeComponent`
+  (`src/lib/render/component-grammar.ts:44`) ends the block on its bare closing fence. Any text
+  after the caret therefore joins that fence, and the directive never closes. Repro: open a post
+  whose body has text, put the caret at the start of the body, choose Insert block, pick any
+  component, and press Insert. The editor shows `:::The original body.` on one line. The e2e at
+  `examples/showcase/e2e/golden-path.spec.ts:449-453` asserts only the opening line, so it cannot
+  see this. Leanest fix: pad the inserted block with a blank line on each side whenever the
+  caret's line has text before or after it, and assert the whole inserted block in the e2e. Owner:
+  the next engine pass, as its own small task. Pass B's rename moves the file to
+  `src/lib/admin/`. Evidence: `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`,
+  F12.
+
+- **`configure-rendering.md` teaches a leaf-directive syntax that renders as literal text
+  (designer walkthrough, 2026-09-27; friction log F10).** `docs/extend/configure-rendering.md:107`
+  says an author writes `::callout{tone="tip"}`. The engine restores a leaf (`::`) or text (`:`)
+  directive to literal prose (`src/lib/render/remark-directives.ts:113-116`), and the showcase's
+  registry says it is container-only (`examples/showcase/src/theme/markdown-components.ts:115-117`).
+  The working form is `:::callout[Title]{tone="tip"}`, then the body, then a closing `:::`. The
+  page is frozen, so this is a frozen-page deficiency: the next pass fixes the line on the page
+  under the freeze rule, with a facts bullet. Owner: the next engine pass. Evidence:
+  `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`, F10.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -2079,7 +2116,16 @@ the named human gates only):**
   2026-07-17) — a line-shaped subpath (the flag glyph's pole) paints nothing under a fill-only
   renderer, reading as an ~14x8px smudge at standalone size. Close the subpath in the engine icon
   set or paint stroke+fill. Deferred because a stroke change sweeps all 27 icons just after the
-  icon vocabulary shipped.
+  icon vocabulary shipped. The designer walkthrough (2026-09-27, friction log F11 in
+  `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`) adds two facts. The
+  `snowflake` glyph is stroke-only too, and both it and `flag` render as near-invisible dashes in
+  the Insert-block picker (`examples/showcase/src/theme/icons.ts:7,14`, copied to
+  `templates/waymark`). The `IconSet` type never says that a path must be a filled shape on a
+  `0 0 256 256` box (`src/lib/render/glyph.ts:7`, `docs/reference/core.md:1081`), so a designer
+  drawing a line icon gets a solid block or nothing. Leanest fix, short of the stroke sweep: one
+  sentence on `IconSet` and its reference row, and closed-shape paths for `flag` and `snowflake` in
+  the showcase and the template. Trigger: the next pass that touches `glyph.ts`, the icon set, or
+  `core.md`'s extension rows.
 - **Mechanical hardening: gate the `sideEffects` coverage of the server-only browser stubs (from the
   seams pass-two review, 2026-08-01).** `package.json`'s `sideEffects` now lists `dist/*/browser.js`, so
   a bundler cannot tree-shake away the module-level throw that makes `./auth-crypto` and `./cloudflare`

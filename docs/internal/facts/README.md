@@ -122,19 +122,21 @@ the 2b merge). A pass that changes a public behavior files the container bullet 
 reference page; no pass rewrites an arm's narrative wholesale ahead of its own stage merge, since
 that stage's draft rebuilds it from this container.
 
-A deficiency a site pass DISCOVERS on a page whose arm has already merged its stage (a missing
-step, a missing worked example, a wrong warning, a stale command) is fixed on the page in the same
-site pass, gated by that page's existing gates, with the fact bullet filed alongside as the
-sourced record. Such a fix is agent-facing, not register-graded: it carries the source, the
-engine version, and the why, in whatever shape holds the most information (a sourced bullet, a
-fenced command, a table); Vale's error tier still runs, but no register grade, no prose reviewer,
-no Google-style polish. A deficiency discovered on a page whose arm's stage is still in flight is
-filed, never fixed, and feeds that stage's page inputs instead.
+A site edit to an arm whose stage is in flight is filed, never fixed, and feeds that stage's page
+inputs instead. Otherwise, a deficiency a site pass DISCOVERS on a page (a missing step, a missing
+worked example, a wrong warning, a stale command) is fixed on the page in the same site pass,
+gated by that page's existing gates, with the fact bullet filed alongside as the sourced record.
+On a page not yet rebuilt (no brief), such a fix is agent-facing, not register-graded: it carries
+the source, the engine version, and the why, in whatever shape holds the most information (a
+sourced bullet, a fenced command, a table); Vale's error tier still runs, but no register grade,
+no prose reviewer, no Google-style polish. On a page whose arm has already merged its stage (a
+rebuilt page with a brief), the fix instead follows the spec's "Edits after the chain" rule:
+update the brief's `sentences` in the same change, file a new or changed claim's fact
+`[candidate]` with the Edit tool (retagged only by the fact read), and give the changed sentences
+both reviews, scoped to those sentences, except a pure term or link substitution.
 
-**Cross-repo path.** A site-pass agent never edits the cairn-cms checkout directly; it records
-each deficiency in its report under "Engine docs fixes", and the site pass's conductor batches
-them into one `cairn-implementer` dispatch on `site-docs/<site>-<pass>` off cairn-cms `main`,
-merged by PR under the docs gate before the site pass closes.
+**Cross-repo path.** The site pass's own agents edit cairn-cms on a `site-docs/<site>-<pass>`
+branch off cairn-cms `main`, merged by PR under the docs gate before the site pass closes.
 
 **`docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are per-version records,
 outside the freeze**, maintained every pass like the reference arm.

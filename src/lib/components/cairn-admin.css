@@ -253,6 +253,12 @@
   --cairn-error-ink: oklch(50% 0.19 25);
   --cairn-error-tint: oklch(96% 0.03 25);
   --cairn-error-border: oklch(85% 0.06 25);
+  /* The on-surface INFO ink, for the info alert's small text over its own tinted panel. Tuned as
+     readable small text the same way the warning and positive inks are, rather than the fill
+     --color-info is tuned as. Locked: on base-100 measures 7.30:1, on the alert's own 7% info
+     panel 6.64:1, both clearing the 4.5:1 AA floor (WCAG 1.4.3). Do not lighten without
+     re-checking both. */
+  --cairn-info-ink: oklch(44% 0.12 240);
 
   /* The tidy review diff tints (TidyReview), colorless since the design arc's accent reservation
      (2026-07-15, the picked A3 treatment): a proofing surface, not a code review, so no red and no
@@ -456,6 +462,10 @@
   --cairn-error-ink: oklch(78% 0.15 25);
   --cairn-error-tint: oklch(28% 0.06 25);
   --cairn-error-border: oklch(40% 0.09 25);
+  /* The on-surface INFO ink on dark, the counterpart to the light root's. Locked: on dark base-100
+     measures 9.54:1, on the alert's own 12% info panel 7.95:1, both clearing the 4.5:1 AA floor.
+     Do not darken without re-checking both. */
+  --cairn-info-ink: oklch(82% 0.08 240);
 
   /* The tidy review diff tints on dark, the counterpart to the light root's colorless treatment
      (the arc's accent reservation; see the light block). Locked (dark): muted ink on the run wash
@@ -1395,6 +1405,60 @@
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .textarea:not(:focus, :focus-within, :disabled, [disabled], .textarea-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])) {
       border-color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+    }
+
+    /* Alerts: the four color variants become a tinted panel with a hairline edge and an
+       on-surface ink, in place of daisyUI's solid slab. daisyUI's own `.alert` rule reads its
+       panel and edge through `var(--alert-color, ...)`/`var(--alert-border-color, ...)` at the
+       plain, unnested `.alert` selector position (background-color sits inside its own nested
+       sublayer and so is reachable directly, but border-color does not), so the panel and edge
+       are set through the two variables rather than background-color/border-color themselves;
+       the ink is a plain `color` declaration, since daisyUI's own alert-variant color lives
+       inside a nested sublayer this rule already outranks. Every variant excludes daisyUI's own
+       style variants (`alert-soft`, `alert-outline`, `alert-dash`), so a developer's own styled
+       alert keeps daisyUI's stock look; a bare `.alert` sets neither variable and stays
+       untouched. A markup `color` utility still wins, since Tailwind compiles it unlayered while
+       this rule lives in a nested sublayer. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .alert-error:not(.alert-soft, .alert-outline, .alert-dash) {
+      --alert-color: var(--cairn-error-tint);
+      --alert-border-color: var(--cairn-error-border);
+      color: var(--cairn-error-ink);
+    }
+
+    /* The warning panel and edge mix the same percentage in both themes (12% and 45% toward
+       base-100), so one rule covers both roots; only the --color-warning and --color-base-100
+       tokens the mix reads differ per root. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .alert-warning:not(.alert-soft, .alert-outline, .alert-dash) {
+      --alert-color: color-mix(in oklab, var(--color-warning) 12%, var(--color-base-100));
+      --alert-border-color: color-mix(in oklab, var(--color-warning) 45%, var(--color-base-100));
+      color: var(--cairn-warning-ink);
+    }
+
+    /* The success and info panels mix a stronger percentage on dark (12% against light's 7%), so
+       the tint still reads against dark's darker base-100; the edge mix (30%) holds the same
+       percentage in both themes. Split per root for the panel's own differing percentage. */
+    :where([data-theme='cairn-admin']) .alert-success:not(.alert-soft, .alert-outline, .alert-dash) {
+      --alert-color: color-mix(in oklab, var(--color-success) 7%, var(--color-base-100));
+      --alert-border-color: color-mix(in oklab, var(--color-success) 30%, var(--color-base-100));
+      color: var(--color-positive-ink);
+    }
+    :where([data-theme='cairn-admin-dark']) .alert-success:not(.alert-soft, .alert-outline, .alert-dash) {
+      --alert-color: color-mix(in oklab, var(--color-success) 12%, var(--color-base-100));
+      --alert-border-color: color-mix(in oklab, var(--color-success) 30%, var(--color-base-100));
+      color: var(--color-positive-ink);
+    }
+
+    :where([data-theme='cairn-admin']) .alert-info:not(.alert-soft, .alert-outline, .alert-dash) {
+      --alert-color: color-mix(in oklab, var(--color-info) 7%, var(--color-base-100));
+      --alert-border-color: color-mix(in oklab, var(--color-info) 30%, var(--color-base-100));
+      color: var(--cairn-info-ink);
+    }
+    :where([data-theme='cairn-admin-dark']) .alert-info:not(.alert-soft, .alert-outline, .alert-dash) {
+      --alert-color: color-mix(in oklab, var(--color-info) 12%, var(--color-base-100));
+      --alert-border-color: color-mix(in oklab, var(--color-info) 30%, var(--color-base-100));
+      color: var(--cairn-info-ink);
     }
   }
 }

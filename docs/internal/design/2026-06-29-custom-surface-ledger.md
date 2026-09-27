@@ -70,6 +70,7 @@ the readable on-surface ink counterparts at locked, measured contrast.
 | `--cairn-error-ink` | ink | on base-100 ~5.2:1, on error tint ~4.9:1 | on base-100 ~7:1, on error tint ~5.3:1 |
 | `--cairn-error-tint` | ink (surface for the ink above) | the locked break-list surface | the locked dark surface |
 | `--cairn-error-border` | ink (hairline for the tint) | the danger hairline | the dark danger hairline |
+| `--cairn-info-ink` | ink (info alert) | on base-100 7.30:1, on the 7% info alert panel 6.64:1 | on base-100 9.54:1, on the 12% info alert panel 7.95:1 |
 | `--cairn-tidy-del-row` | ink (tidy diff row tint) | deletion ink on row tint 5.81:1 | deletion ink on row tint 7.12:1 |
 | `--cairn-tidy-del-run` | ink (tidy diff run highlight) | deletion ink on run tint 5.08:1 | deletion ink on run tint 5.89:1 |
 | `--cairn-tidy-add-row` | ink (tidy diff row tint) | insertion ink on row tint 5.56:1 | insertion ink on row tint 8.01:1 |
@@ -681,3 +682,32 @@ Three more rule groups land in `cairn-idiom`, raising `idiomLayerCap` from 19 to
 `cairn-idiom`, since it overrides no daisyUI declaration (only Lucide's own default SVG attribute
 value), so it only needs to sort before the utilities layer, not after daisyUI's own sublayers
 inside it. A markup `stroke-[2.5]` utility still wins from its later, unnested position regardless.
+
+## Alerts: the four color variants become a tinted panel, raising `idiomLayerCap` from 23 to 29
+
+Six selectors land in `cairn-idiom`, one rule group per alert color:
+
+- **`.alert-error`**, one combined selector (both roots): sets `--alert-color` to the locked
+  `--cairn-error-tint` and `--alert-border-color` to the locked `--cairn-error-border`, reusing
+  the danger family already tuned for the safe-delete dialog, and `color` to `--cairn-error-ink`.
+- **`.alert-warning`**, one combined selector: the panel and edge each mix `--color-warning`
+  toward `--color-base-100` (12% and 45%), the same percentage in both roots, and `color` reads
+  the already-locked `--cairn-warning-ink`.
+- **`.alert-success`** and **`.alert-info`**, two selectors each (one per root): the panel mixes
+  7% in light and 12% in dark, since dark's darker base-100 needs a stronger mix to hold the same
+  visible tint; the edge holds 30% in both. Success's ink is the already-locked
+  `--color-positive-ink`; info's ink is the new `--cairn-info-ink` (`oklch(44% 0.12 240)` light,
+  `oklch(82% 0.08 240)` dark), added to the plain root rule's Tier-2 cluster, locked at 7.30:1
+  (light, on base-100) / 6.64:1 (light, on the 7% panel) and 9.54:1 (dark, on base-100) / 7.95:1
+  (dark, on the 12% panel), all clearing the 4.5:1 AA floor.
+
+Every rule excludes daisyUI's own `alert-soft`/`alert-outline`/`alert-dash` style variants, so a
+developer's own styled alert keeps daisyUI's stock look, and a bare `.alert` (setting neither
+variable) is untouched. `--alert-color` and `--alert-border-color` are set through the variables
+daisyUI's own `.alert` rule reads via `var(...)`, not `background-color`/`border-color` directly:
+`border-color` sits at the plain, unnested `.alert` selector position (one of the file's known
+unnested cases, alongside `.kbd`'s `box-shadow` and `.collapse`'s `visibility`), which a sublayer
+rule cannot outrank directly, so only the variable form reaches it; `background-color` sits inside
+daisyUI's own nested sublayer and so is reachable the same way `color` is. A markup `color`
+utility still wins over the ink, since Tailwind compiles it unlayered while this rule lives in a
+nested sublayer.

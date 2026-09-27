@@ -59,7 +59,9 @@ describe.each(['cairn-admin', 'cairn-admin-dark'] as const)('styleOf on a stock 
 
 describe.each(['cairn-admin', 'cairn-admin-dark'] as const)('resolveColor (%s)', (theme) => {
   it('resolves through a context element and falls back to the default without one', () => {
-    const { wrapper, cleanup } = renderInTheme('<div class="alert alert-info"></div>', theme);
+    // alert-outline: the cairn-idiom alert rules exclude daisyUI's own style variants, so
+    // --alert-color here is untouched, still daisyUI's own stock .alert-info value.
+    const { wrapper, cleanup } = renderInTheme('<div class="alert alert-outline alert-info"></div>', theme);
     cleanups.push(cleanup);
     const alert = wrapper.querySelector('.alert-info')!;
 

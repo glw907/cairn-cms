@@ -454,3 +454,146 @@ emits only `font-family`, and the same holds for `heading`. That settled the key
   and `test:theme-fixture` carries the toggle, heading, skip-link, and corner checks. A new Proof
   bullet lists the checks outside the harness. The facts and reference-page lists gain the new
   behaviors and the root export.
+
+## Fifth fold (verification and trim, 2026-09-27)
+
+Inputs: the [fold verification](2026-09-27-theme-pass-b-fold-verification.md) (0 blockers, 2
+majors, 9 minors, and a trim table) and Geoff's rulings on R1 and R2 of 2026-09-27. The spec went
+from 703 to 568 lines. The owner rulings section is gone, and both rulings are decisions in the body.
+
+### Owner rulings, now decisions
+
+- R1, the single-cut path. Pass A merges to `main` as planned, carrying theme values only. Pass B
+  finishes on its branch and stays unmerged. Pass B's branch merges `main` in before pass C
+  starts, and pass C branches from it. At pass C's close the branch merges `main` in again, B and
+  C merge to `main` together, and one release follows in the same close. The proposed number is
+  `0.98.0`, carrying A, B, and C; `npm view` showed `0.97.0` as the newest version on 2026-09-27.
+  One release carries every `Consumers must:` line (pass A's is nothing). Folded into Delivery's
+  pass closes and its "Sequencing and release" paragraph. The two-cut text, the old Release
+  paragraph, and `0.99.0` are removed.
+- R2, yes. `public-literals` stays advisory on consumers permanently. `theme-conformance` and
+  `theme-contrast` promote to error at the first minor cut after every production site reports
+  zero advisory findings from them. Folded into the guard's "Tiers" paragraph. The charter line
+  now names the advisory tier on consumers.
+
+### Majors
+
+- M1, folded. The rename grep now also excludes `docs/extend/migration-notes.md` and
+  `docs/internal/engine-rulings.md`, and the spec states that the records keep the old paths. The
+  grep's moment is now "pass B's close", since pass B no longer merges alone. A check of the
+  remaining non-code matches found no other per-version record: `docs/extend/upgrade-cairn.md` does
+  not match, and every other hit (facts, reference pages, internal docs, `ROADMAP.md`, `CLAUDE.md`)
+  describes the current tree and must be rewritten by the rename.
+- M2, folded. A root a site names explicitly for one scope is removed from the other scope's
+  defaults. It is stated once, in pass B's audit-scopes paragraph, echoed in the guard's Roots
+  bullet, and pinned by the disjoint-roots test. Both migration notes (pass B's and pass C's) now
+  carry the named-root rule.
+
+### Minors
+
+- m1, folded. The release paragraph names the window: the template's engine range resolves to
+  `0.97.x` from the merge until the cut's `emit:template` re-emits it, and the cut follows the
+  merge in the same close.
+- m2, folded. One trigger: the first minor cut after every production site reports zero. Pass C's
+  close files it as a ROADMAP "Toward 1.0" entry and adds one step to the user-scoped
+  `cairn-release` checklist that runs the public scope over each production site at every cut and
+  records the counts. That step is the detector. The dotfiles bullet carries the edit.
+- m3, folded. Admission now admits a key only when an engine or chassis file reads it and it
+  carries no site-owned design choice. The chassis keep-list names both heading keys, and "the
+  roles leave it" became "the engine roles leave it".
+- m4, folded. The list-marker diamond is a third named shape exception, and the sweep exempts `0`.
+- m5, folded. "Five" `--cairn-preview-*` properties.
+- m6, folded. The custom public cell adds `src/lib/components`. `./public` exports every built-in
+  public component that renders styled markup, and `CairnHead` stays at `./delivery/head`.
+- m7, folded by the second option. The theme roots default to `src/theme` and the chassis
+  `tokens.css`. The `public-literals` pass fixtures gain the chassis scale's `rem` steps. The first
+  option (check custom-property definitions for color only) was not taken, because it would let a
+  site's stray `--x: 14px` outside a theme root pass silently.
+- m8, folded. The walkthrough section says the unit and e2e checks land with their task, and the
+  harness checks land in task 10. Each bullet labels its check as unit, e2e, or harness.
+- m9, folded. The template arm builds under both Waymark and the fixture theme, so probe 3 compares
+  two themes in one arm.
+
+### Trim: what moved where
+
+Moved to this record (the spec keeps the decision, and this section is the record):
+
+- The fold-by-fold status narration and the Review section. The review history lives in the
+  sections above.
+- The parent-erratum sentence and the evidence narration, including the stale caption-tracking
+  claim.
+- The rename's file-by-file reference list: the `@source` line in `admin-sources.css`; the audit's
+  default scopes, sheet candidates, and palette file in `src/lib/audit/config.ts`, with the stale
+  "middle root" comment above `DEFAULT_ADMIN_SCOPE` rewritten (it is the last root, and the rename
+  removes it); `check:surface` and every other gate naming the path; `docs/reference/components.md`
+  becoming `admin.md`; the shipped guidance; the `CLAUDE.md` mentions; the templates' and
+  showcase's imports; and the package exports. The acceptance grep enforces the list. The admin
+  barrel drops its comment calling `PreviewBanner` an exception.
+- The scale argument's three findings: five of eight `--spacing-*` names shadow Tailwind's
+  container sizes (`max-w-2xl` compiles to the 4rem step); four scale keys redefine Tailwind stock
+  keys, which is the site's choice; and every theme retunes its scale, while the stale-copy
+  evidence is entirely `:root` roles.
+- The layer mechanics: `@layer theme, base, components, utilities` order; daisyUI emits a theme
+  block in `@layer base` on both its dark-preference selector and `[data-theme="<name>"]`; a role on
+  `:root` alone inherits the root's computed value (measured in Chromium); `@theme static` was
+  rejected because a later ordinary `@theme` redeclaration drops the flag.
+- The engine-defaults argument: the charter's design-agnostic line and the three rulings
+  (`copy-to-clipboard-control`, `site-today-export`, the `audit-render-*` re-homings) this move is
+  consistent with; package-shipped design defaults are the daisyUI and Tailwind idiom.
+- The ink aside: relative color syntax (`oklch(from …)`) would be tighter, but it is Baseline only
+  since September 2024 and unused in the repo.
+- The walkthrough's bug narration and line-level fixes: `resolveTheme` in `theme-toggle.ts` falls
+  back to `matchMedia`, and Waymark's `prefersdark` block sets `color-scheme: dark` exactly when the
+  query matches; the three theme-name touchpoints today (the daisyUI blocks, `SiteHeader.svelte`'s
+  type and config, `app.html`'s cookie regex); the heading readers (`SiteHeader.svelte`'s wordmark
+  and titles, the home and archive routes' title markup and scoped rules, `EntryRow.svelte`, the
+  styleguide's section headings) and the RK6 evidence (five `--font-weight-semibold` reads on the
+  production sites); the `--font-weight-display` rejection (Tailwind 4.3.3's `font-*` resolves the
+  `--font-*` family namespace before `--font-weight-*`, so Waymark's `--font-display` face claims
+  `font-display`, and a theme adding a `--font-heading` face would take over `font-heading`);
+  `preview-doc.ts`'s `body{margin:0;background:#fff}` and its `WATCH` comment, which closes;
+  the skip link's `-top-xl` in `(site)/+layout.svelte`; the focus-ring `border-radius: 2px`
+  corners in the home and archive routes, `EntryRow.svelte`, `ArticleView.svelte`, and
+  `prose.css`'s link focus rule; the hand-written kit in `styleguide/+page.server.ts` and the
+  false "auto-themes with your system light or dark setting" sentence; the "Verdict 7" and
+  `docs/internal/` citations in the emitted `theme.css`, `site.css`, and `prose.css`.
+- The guard internals: the extended detection core's color forms (`hsl`, `hwb`, `lab`, `lch`,
+  `oklab`, `oklch`, `color()`); `theme-contrast` evaluates `color-mix` with culori's
+  `interpolate`, which matched Chromium's computed value to every printed digit; the `prefersdark`
+  block also takes the `@media (prefers-color-scheme: dark) :root:not([data-theme])` rules; each
+  named block resolves as `html[data-theme="<name>"]` would; static resolution is sound because it
+  resolves token to token within theme files; a secondary block's omission is still covered by the
+  default block's `:where(:root)`.
+- Guidance detail: the dotfiles path (`~/.dotfiles/claude/.claude/agents/cairn-implementer.md`),
+  the commit in the dotfiles repo, and the pass report quoting the line; the fixture keeps the
+  names `cairn` and `cairn-dark`.
+- Proof detail: the fixture's lever values (`--font-weight-heading: 800`,
+  `--cairn-heading-case: uppercase`, `--tag-filter-radius: 0`, a tightened `--spacing-xl`); the
+  harness copies to a temporary directory and runs `vite build`, and runs locally when fast
+  enough; `check:reference` cannot see a CSS subpath, which is why the snapshot test exists; the
+  probe-retry process (a fresh agent re-runs a failed probe once after the fix, and a second
+  failure escalates).
+- The thirteen-task breakdown's detail, which the one-line task list replaces: task 1 also moves
+  the chassis import and the rules; task 2 covers the stripped-overrides case and Waymark header
+  step 6; task 5 carries the tag pill's override, the throwaway-entry test, and the
+  `check:template` fixture; task 7 has `markup.ts` expose mixed `style=` parts and `style:`
+  directives; task 8 includes the face-and-weight collision finding; task 11 includes
+  `PreviewBanner`'s entry on `public.md` and the root export on `core.md`; task 12 carries the three
+  new table rows and the shared registry walk.
+
+Moved within the spec or collapsed as repetition:
+
+- The three statements of pass B's `Consumers must:` parts are one paragraph now; the close list
+  and migration note point at it.
+- The Release paragraph and R1 merged into Delivery's "Sequencing and release".
+- The facts list for pass C shrank to a pointer at the behaviors the section and walkthrough name.
+- The walkthrough-check restatements in Proof (a bullet listing checks outside the harness, and the
+  harness sentence repeating each check) are gone; each check lives once, on its walkthrough bullet.
+- The `DEFAULT_ADMIN_SCOPE` conditional is one sentence, and "Open for the plan" keeps the item.
+- "Open for the plan" gains one line pointing at this section for the rename list, the resolver
+  internals, the line-level fixes, and the probe-retry process.
+
+Refused: none. The trim landed at 568 lines, above the verification's estimate of about 500. The
+difference is new decision text this fold added (the single-cut release, the tier trigger and its
+detector, the named-root rule, and the m3 to m9 folds). Cutting further would drop a decision, a
+constraint, or an acceptance criterion.

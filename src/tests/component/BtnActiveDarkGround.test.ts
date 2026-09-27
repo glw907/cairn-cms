@@ -232,15 +232,21 @@ describe.each(THEMES)('the selected segment (%s)', (theme) => {
 // current keeps daisyUI's own link look (no fill, no border, its own weight) rather than the
 // neutral wash and the hairline.
 describe.each(THEMES)('a selected btn-link is excluded from the selected segment (%s)', (theme) => {
-  it('keeps daisyUI stock background, border, and weight when carrying aria-current', () => {
+  it('keeps daisyUI stock background, border, and weight when carrying aria-current, at every state', async () => {
     const selected = mount(theme, '<button class="btn btn-link" aria-current="page">Save</button>');
     const stock = mount(theme, '<button class="btn btn-link">Save</button>');
     try {
-      const selectedStyle = getComputedStyle(selected.el);
-      const stockStyle = getComputedStyle(stock.el);
-      expect(selectedStyle.backgroundColor).toBe(stockStyle.backgroundColor);
-      expect(selectedStyle.borderTopColor).toBe(stockStyle.borderTopColor);
-      expect(selectedStyle.fontWeight).toBe(stockStyle.fontWeight);
+      for (const state of STATES) {
+        const selectedBg = await styleOf(selected.el, 'background-color', state);
+        const selectedBorder = await styleOf(selected.el, 'border-top-color', state);
+        const selectedWeight = await styleOf(selected.el, 'font-weight', state);
+        const stockBg = await styleOf(stock.el, 'background-color', state);
+        const stockBorder = await styleOf(stock.el, 'border-top-color', state);
+        const stockWeight = await styleOf(stock.el, 'font-weight', state);
+        expect(selectedBg).toBe(stockBg);
+        expect(selectedBorder).toBe(stockBorder);
+        expect(selectedWeight).toBe(stockWeight);
+      }
     } finally {
       selected.cleanup();
       stock.cleanup();

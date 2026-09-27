@@ -4,14 +4,22 @@
 // the doc, and every condition must carry a docsAnchor unless an allowlist entry here excuses it.
 // Fail-closed both ways, so a renamed heading or a new condition without a checklist section goes
 // RED, and the RED output is the fix worklist.
+//
+// It also carries a second, independent comparison against the committed shipped-anchor list
+// (shipped-anchors.json): the docsAnchor fragments a released tool tag has ever printed. The live
+// registry above only proves today's tree is self-consistent; a heading renamed in the same
+// change as its live docsAnchor entry passes that comparison cleanly while every already-shipped
+// binary keeps linking to the fragment it was built with, and a fragment link can never be
+// redirected. The shipped list is append-only for exactly that reason.
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { headingAnchors } from './docs-links.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const DOC = 'docs/admin/is-it-working.md';
 const CONDITIONS_JS = 'dist/diagnostics/conditions.js';
+const SHIPPED_ANCHORS_PATH = 'scripts/checks/shipped-anchors.json';
 
 // Conditions deliberately absent from the checklist. An addition needs a comment naming why the
 // doc cannot carry the condition.
@@ -63,6 +71,83 @@ export function checkReadiness(conditions, markdownText, allowlist = ALLOWLIST, 
   return problems;
 }
 
+/**
+ * @typedef {{ anchors: string[], defects: string[] }} ShippedAnchorListResult
+ */
+
+/**
+ * Read, parse, and validate the committed shipped-anchor list. Unlike the live registry above,
+ * an empty list is itself a defect: no released tag has ever shipped zero anchors, so an emptied
+ * file cannot be told apart from a working one that legitimately has none.
+ * @param {string} listPath
+ * @param {string} root The directory `listPath`'s own message is reported relative to.
+ * @returns {ShippedAnchorListResult}
+ */
+export function loadShippedAnchors(listPath, root) {
+  const rel = relative(root, listPath);
+  if (!existsSync(listPath)) {
+    return { anchors: [], defects: [`${rel}: does not exist`] };
+  }
+  /** @type {unknown} */
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(listPath, 'utf8'));
+  } catch (error) {
+    return { anchors: [], defects: [`${rel}: not valid JSON (${error instanceof Error ? error.message : String(error)})`] };
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed) || !Array.isArray(parsed.anchors)) {
+    return { anchors: [], defects: [`${rel}: not an object carrying an "anchors" array`] };
+  }
+  /** @type {string[]} */
+  const anchors = [];
+  /** @type {string[]} */
+  const defects = [];
+  parsed.anchors.forEach((entry, i) => {
+    if (typeof entry !== 'string' || entry.length === 0) {
+      defects.push(`${rel}: anchors[${i}] is not a non-empty string`);
+      return;
+    }
+    anchors.push(entry);
+  });
+  if (anchors.length === 0) {
+    defects.push(`${rel}: carries no anchors; a released tag always ships at least one`);
+  }
+  return { anchors, defects };
+}
+
+/**
+ * Compare the shipped-anchor list against the checklist text. Returns one problem line per
+ * anchor a released binary still links to that no longer resolves: a docsAnchor with no
+ * `#anchor` part, one naming a file other than the checklist, or one whose anchor matches no
+ * current heading.
+ * @param {string[]} anchors
+ * @param {string} markdownText
+ * @param {string} doc Repo-relative path of the checklist; its basename is what every entry's
+ *   file half must name, so a test can point this at a fixture.
+ */
+export function checkShippedAnchors(anchors, markdownText, doc = DOC) {
+  const headingSet = headingAnchors(markdownText);
+  const expectedFile = doc.slice(doc.lastIndexOf('/') + 1);
+  const problems = [];
+  for (const entry of anchors) {
+    const hash = entry.indexOf('#');
+    const file = hash === -1 ? entry : entry.slice(0, hash);
+    const anchor = hash === -1 ? '' : entry.slice(hash + 1);
+    if (!anchor) {
+      problems.push(`shipped anchor "${entry}" carries no #anchor part`);
+      continue;
+    }
+    if (file !== expectedFile) {
+      problems.push(`shipped anchor "${entry}" names "${file}", but the checklist is ${expectedFile}`);
+      continue;
+    }
+    if (!headingSet.has(anchor)) {
+      problems.push(`shipped anchor "#${anchor}" matches no heading in ${doc}; a released binary still links to it`);
+    }
+  }
+  return problems;
+}
+
 async function main() {
   const distPath = resolve(ROOT, CONDITIONS_JS);
   if (!existsSync(distPath)) {
@@ -72,14 +157,20 @@ async function main() {
   }
   const { allConditions } = await import(pathToFileURL(distPath).href);
   const conditions = allConditions();
-  const problems = checkReadiness(conditions, readFileSync(resolve(ROOT, DOC), 'utf8'));
+  const docText = readFileSync(resolve(ROOT, DOC), 'utf8');
+  const problems = checkReadiness(conditions, docText);
+
+  const { anchors, defects } = loadShippedAnchors(resolve(ROOT, SHIPPED_ANCHORS_PATH), ROOT);
+  problems.push(...defects);
+  if (defects.length === 0) problems.push(...checkShippedAnchors(anchors, docText));
+
   if (problems.length > 0) {
     console.error(`check-readiness: ${problems.length} problem(s)`);
     for (const p of problems) console.error(`  ${p}`);
     process.exitCode = 1;
     return;
   }
-  console.log(`check-readiness: OK (${conditions.length} conditions anchored in ${DOC})`);
+  console.log(`check-readiness: OK (${conditions.length} conditions, ${anchors.length} shipped anchors anchored in ${DOC})`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

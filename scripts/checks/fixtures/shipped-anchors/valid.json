@@ -1,0 +1,6 @@
+{
+  "anchors": [
+    "is-it-working.md#onboard-the-sending-domain",
+    "is-it-working.md#admin-csrf-token-rejected"
+  ]
+}

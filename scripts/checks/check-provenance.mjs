@@ -607,12 +607,8 @@ export function loadRebuiltList(listPath, root) {
     // starts with "docs/") cannot pass the prefix test on the strength of a prefix it does not
     // actually keep. The bare "docs" (the directory, not a page) is rejected outright: every real
     // entry names a file under it.
-    if (typeof entry !== 'string') {
-      defects.push(`${rel}: entry ${i} (${JSON.stringify(entry)}) is not a path under docs/`);
-      return;
-    }
-    const normalized = posix.normalize(entry);
-    if (normalized === 'docs' || !normalized.startsWith('docs/')) {
+    const normalized = typeof entry === 'string' ? posix.normalize(entry) : null;
+    if (normalized === null || normalized === 'docs' || !normalized.startsWith('docs/')) {
       defects.push(`${rel}: entry ${i} (${JSON.stringify(entry)}) is not a path under docs/`);
       return;
     }
@@ -698,33 +694,31 @@ export function checkProvenance(briefsDir, factsDir, root, briefArgs, rebuiltLis
   }
 
   /** @type {string[]} */
-  let coverageDefects = [];
-  /** @type {string | null} */
-  let coverageReportLine = null;
+  const defects = [];
+  /** @type {string[]} */
+  const report = [];
   if (!briefArgsGiven) {
     if (!rebuiltListPath) {
       // Default mode always needs the rebuilt-page list to check coverage against; a caller that
       // omits it would otherwise reach loadRebuiltList's `relative(root, listPath)` with
       // `listPath` undefined and throw a TypeError instead of failing the gate.
-      coverageDefects = ['checkProvenance: rebuiltListPath is required in default mode (no brief paths given)'];
+      defects.push('checkProvenance: rebuiltListPath is required in default mode (no brief paths given)');
     } else {
       const { list, defects: listDefects } = loadRebuiltList(rebuiltListPath, root);
-      coverageDefects = [...listDefects, ...checkBriefCoverage(list, briefs, root)];
-      coverageReportLine = list.length === 0
-        ? '  nothing is rebuilt yet'
-        : `  ${list.length} page(s) marked rebuilt in docs/internal/briefs-rebuilt.json`;
+      defects.push(...listDefects, ...checkBriefCoverage(list, briefs, root));
+      report.push(
+        list.length === 0
+          ? '  nothing is rebuilt yet'
+          : `  ${list.length} page(s) marked rebuilt in docs/internal/briefs-rebuilt.json`,
+      );
     }
   }
 
   if (briefs.length === 0) {
-    const report = coverageReportLine ? [coverageReportLine, '  no page has a brief yet'] : ['  no page has a brief yet'];
-    return { defects: coverageDefects, report };
+    report.push('  no page has a brief yet');
+    return { defects, report };
   }
   const index = loadFactIndex(factsDir);
-  /** @type {string[]} */
-  const defects = [...coverageDefects];
-  /** @type {string[]} */
-  const report = coverageReportLine ? [coverageReportLine] : [];
   for (const briefPath of briefs) {
     const rel = relative(root, briefPath);
     const result = checkBrief(briefPath, index, root);

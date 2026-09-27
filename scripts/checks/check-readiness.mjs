@@ -95,10 +95,9 @@ export function loadShippedAnchors(listPath, root) {
   } catch (error) {
     return { anchors: [], defects: [`${rel}: not valid JSON (${error instanceof Error ? error.message : String(error)})`] };
   }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    return { anchors: [], defects: [`${rel}: not an object carrying an "anchors" array`] };
-  }
-  const anchorsField = /** @type {{ anchors?: unknown }} */ (parsed).anchors;
+  // A top-level array has no `anchors` property, so it fails like an object missing the field.
+  const anchorsField =
+    typeof parsed === 'object' && parsed !== null ? /** @type {{ anchors?: unknown }} */ (parsed).anchors : undefined;
   if (!Array.isArray(anchorsField)) {
     return { anchors: [], defects: [`${rel}: not an object carrying an "anchors" array`] };
   }

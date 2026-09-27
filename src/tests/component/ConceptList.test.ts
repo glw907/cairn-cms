@@ -4,7 +4,7 @@ import { page } from 'vitest/browser';
 import ConceptList from '../../lib/components/ConceptList.svelte';
 // The compiled sheet's text (daisyUI's real .badge/.input/.btn sizing), injected only for the
 // narrow/wide extremes suite below so its bounding-box measurements reflect production control
-// footprints, never the UA-default widths the source partial alone leaves (the EditPage pattern).
+// footprints, never the UA-default widths an unstyled render leaves (the EditPage pattern).
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 function data(over = {}) {
@@ -453,7 +453,7 @@ describe('ConceptList', () => {
   // freed width, the header search never collapses to an icon and a stray letter, and the Pending
   // edits filter chip stays on one line. The compiled sheet carries daisyUI's real .table/.input/
   // .badge sizing (the EditPage phone-width pattern), so these measurements reflect production
-  // footprints, not the UA-default widths the source partial alone leaves.
+  // footprints, not the UA-default widths an unstyled render leaves.
   describe('office composition at 320px (audit finding 8)', () => {
     let sheet: HTMLStyleElement;
 

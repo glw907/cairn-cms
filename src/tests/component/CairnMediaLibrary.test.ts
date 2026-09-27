@@ -4,7 +4,7 @@ import { tick } from 'svelte';
 import { stringify as devalueStringify } from 'devalue';
 import CairnMediaLibrary from '../../lib/components/CairnMediaLibrary.svelte';
 // The compiled sheet's real DaisyUI sizing, injected only for the tile-title-width suite below,
-// the same reason ConceptList's narrow/wide extremes suite does (the source partial alone leaves
+// the same reason ConceptList's narrow/wide extremes suite does (an unstyled render leaves
 // UA-default widths, which never reproduces a real truncation defect).
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import { mediaLibraryEntry } from '../../lib/media/library-entry.js';

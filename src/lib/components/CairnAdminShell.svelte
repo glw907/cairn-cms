@@ -617,13 +617,14 @@ discriminant, not the fields, gates the chrome).
     drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     let cancelled = false;
     let attempts = 0;
-    const focusIn = () => {
+    function focusIn(): void {
       if (cancelled) return;
       const target = drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]');
       if (!target) return;
       target.focus();
-      if (document.activeElement !== target && ++attempts < 60) requestAnimationFrame(focusIn);
-    };
+      attempts += 1;
+      if (document.activeElement !== target && attempts < 60) requestAnimationFrame(focusIn);
+    }
     tick().then(focusIn);
     return () => {
       cancelled = true;

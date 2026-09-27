@@ -9,8 +9,7 @@ import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
 import { beforeNavigateCallbacks } from './_app-navigation.js';
 import type { BeforeNavigate } from '@sveltejs/kit';
 // The compiled sheet carries the real .modal-box sizing and the utility layer (outline-hidden,
-// :focus-visible) the palette-inset and focus tests below measure against; the source partial
-// these other tests import has neither.
+// :focus-visible) the palette-inset and focus tests below measure against.
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));

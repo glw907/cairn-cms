@@ -839,10 +839,9 @@
    reads one. */
 @layer utilities {
   @layer cairn-idiom {
-    /* The primary action's warm lift. DaisyUI compiles its own component rules into named
-       sublayers of utilities, so the two rules this replaces, both living in @layer components
-       (ordered before utilities in the source's own layer statement), lost to daisyUI's resting
-       fill and never rendered. Setting --btn-shadow rather than box-shadow keeps a markup
+    /* The primary action's warm lift. It lives here, not in @layer components, because daisyUI
+       compiles its own component rules into named sublayers of utilities, which outrank every
+       components-layer rule. Setting --btn-shadow rather than box-shadow keeps a markup
        shadow-none utility, which sets box-shadow directly, still winning: the property itself
        still reads through var(--btn-shadow) from daisyUI's own .btn rule. The lift holds one value
        across rest, hover, focus-visible, and active, since a shadow that grows on interaction read
@@ -882,9 +881,9 @@
       --btn-shadow: 0 1px 2px -1px oklch(10% 0.02 75 / 0.35);
     }
 
-    /* The .modal-box repair, restored the same way: daisyUI ships .modal-box with a single flat,
-       theme-invariant black shadow and no border, in its own utilities sublayer, so this rule
-       (previously in @layer components too) never outranked it either. It brings the modal into
+    /* The .modal-box repair: daisyUI ships .modal-box with a single flat, theme-invariant black
+       shadow and no border, in its own utilities sublayer, which only a rule in this sublayer
+       outranks. It brings the modal into
        the theme-adaptive elevation vocabulary every other floating surface (card, dropdown,
        slide-over) already carries. daisyUI's own .modal-box sets box-shadow directly, with no
        variable to set instead, so this restates the property; a markup shadow utility on a

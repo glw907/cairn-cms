@@ -2,18 +2,13 @@
 // "../src/lib/components/**/*.{svelte,ts,js}"` glob scans it, a documented scan source for the
 // families below, findable by grep rather than only by their presence in the compiled sheet.
 //
-// The admin build now compiles every daisyUI component and utility class, calendar excluded (the
-// full compile, scripts/build/daisyui-classes.mjs and its generated `@source inline(...)` in
-// admin-css.input.css), so this list no longer decides which daisyUI classes reach the shipped
-// sheet; every one of them already does. Before the full compile, Tailwind only compiled a class
-// it found as literal text somewhere in the scanned tree, so a daisyUI class with no shipped admin
-// component reference (a "dead daisy class") silently failed to style anything a consumer site
-// tried to use it on. The pass-B "admin CSS class-inventory gap" harvest finding named that trap:
-// it hid a dead `stats` band in cairn's own admin overview strip (fixed with scoped CSS instead),
-// which is what motivated this standing, documented list rather than a one-off fix. The list stays,
-// grouped by family, as the one place a consumer's admin-toolkit vocabulary is named and explained,
-// even though the full compile now makes every member of it, and every other daisyUI class besides,
-// compile on its own.
+// The list no longer decides which daisyUI classes reach the shipped sheet: the admin build
+// compiles every daisyUI component and utility class, calendar excluded, from the `@source
+// inline(...)` line scripts/build/daisyui-classes.mjs generates. Before that full compile,
+// Tailwind compiled only a class it found as literal text in the scanned tree, so a daisyUI class
+// with no admin call site silently failed to style anything a consumer site used it on; that trap
+// once hid a dead `stats` band in cairn's own overview strip. The list stays, grouped by family,
+// as the one place a consumer's admin-toolkit vocabulary is named and explained.
 
 /**
  * The daisyUI 5 classes an admin-toolkit consumer screen most likely reaches for, documented and

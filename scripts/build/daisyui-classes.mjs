@@ -20,9 +20,8 @@ const DEFAULT_ROOT = resolve(repoRoot(import.meta.url), 'node_modules/daisyui');
 const GROUPS = ['components', 'utilities'];
 
 // A class token inside a selector: a literal dot immediately followed by a CSS identifier. The
-// identifier must start with a letter or a dash/underscore, so a decimal fraction's dot (`.5rem`,
-// always preceded by a digit's own dot in a VALUE, never a key) cannot match even if a value were
-// scanned by mistake.
+// identifier must start with a letter, dash, or underscore, so a decimal such as `0.5rem` cannot
+// match even if a value were scanned by mistake.
 const CLASS_TOKEN = /\.([a-zA-Z_-][\w-]*)/g;
 
 /**
@@ -90,10 +89,8 @@ export async function listDaisyuiClasses({ exclude = [], root = DEFAULT_ROOT } =
       collect(mod.default, classes);
     }
   }
-  // A missing components/utilities directory, or one with no module carrying an object.js this
-  // generator can read, yields zero classes the same way a renamed daisyUI module layout would:
-  // silently returning an empty list would be indistinguishable from that failure, so it throws
-  // instead, naming the root that produced nothing.
+  // Zero classes means the root is wrong or daisyUI's module layout changed; an empty list would
+  // silently shrink the compiled sheet, so fail loudly instead.
   if (classes.size === 0) {
     throw new Error(`listDaisyuiClasses: found no daisyUI classes under root "${root}"`);
   }

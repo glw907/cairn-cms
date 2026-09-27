@@ -32,88 +32,58 @@ function stripCssComments(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
 }
 
+const COMPONENTS_LAYER = '@layer components';
+// The one home every rule that overrides a daisyUI declaration lives in (spec, "The cairn-idiom
+// sublayer"), nested inside `@layer utilities { … }` in the source.
+const CAIRN_IDIOM_LAYER = '@layer cairn-idiom';
+
 /**
- * The body of the first `@layer <marker's own name> { … }` block by brace matching, found by the
- * literal `marker` text (e.g. `@layer components` or `@layer cairn-idiom`), or '' if absent. Shared by
- * the components-layer and cairn-idiom-layer readers below, which differ only in which at-rule they
- * anchor on; the cairn-idiom block is nested inside `@layer utilities { … }` in the source, but the
- * marker text alone is enough to find ITS OWN opening and matching closing brace, the outer wrapper
- * never entering the count.
+ * Locates the first block opened by the literal `marker` text (`@layer components` or `@layer
+ * cairn-idiom`) by brace matching, in the comment-blanked css. A nested block such as cairn-idiom
+ * inside `@layer utilities { … }` is found by its own marker, so the outer wrapper never enters the
+ * count.
+ * @param {string} css comment-blanked css
+ * @param {string} marker the at-rule text that opens the block
+ * @returns {{ start: number, open: number, close: number } | null} the marker's offset and the
+ *   block's opening and matching closing brace offsets, or null when absent or unbalanced
+ */
+function namedLayerSpan(css, marker) {
+  const start = css.indexOf(marker);
+  if (start === -1) return null;
+  const open = css.indexOf('{', start);
+  if (open === -1) return null;
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === '{') depth++;
+    else if (css[i] === '}' && --depth === 0) return { start, open, close: i };
+  }
+  return null;
+}
+
+/**
+ * The body of the first `marker` block, or '' if absent. Comments are blanked first so a commented
+ * mention of the marker is not mistaken for the real block.
  * @param {string} source
  * @param {string} marker
  * @returns {string}
  */
 function namedLayerBody(source, marker) {
   const css = stripCssComments(source);
-  const start = css.indexOf(marker);
-  if (start === -1) return '';
-  const open = css.indexOf('{', start);
-  if (open === -1) return '';
-  let depth = 0;
-  for (let i = open; i < css.length; i++) {
-    if (css[i] === '{') depth++;
-    else if (css[i] === '}' && --depth === 0) return css.slice(open + 1, i);
-  }
-  return '';
+  const span = namedLayerSpan(css, marker);
+  return span ? css.slice(span.open + 1, span.close) : '';
 }
 
 /**
- * The css with its first `@layer <marker> { … }` block removed (brace-matched). Comments are blanked
- * first so a commented mention of the marker is not mistaken for the real block.
+ * The comment-blanked css with its first `marker` block removed. An empty block is left in place.
  * @param {string} source
  * @param {string} marker
  * @returns {string}
  */
 function stripNamedLayer(source, marker) {
   const css = stripCssComments(source);
-  const body = namedLayerBody(source, marker);
-  if (!body) return css;
-  const start = css.indexOf(marker);
-  const open = css.indexOf('{', start);
-  let depth = 0;
-  for (let i = open; i < css.length; i++) {
-    if (css[i] === '{') depth++;
-    else if (css[i] === '}' && --depth === 0) return css.slice(0, start) + css.slice(i + 1);
-  }
-  return css;
-}
-
-/**
- * The body of the first `@layer components { … }` block by brace matching, or '' if absent.
- * @param {string} source
- * @returns {string}
- */
-function componentsLayerBody(source) {
-  return namedLayerBody(source, '@layer components');
-}
-
-/**
- * The css with its `@layer components { … }` block removed (brace-matched).
- * @param {string} source
- * @returns {string}
- */
-function stripComponentsLayer(source) {
-  return stripNamedLayer(source, '@layer components');
-}
-
-/**
- * The body of the first `@layer cairn-idiom { … }` block by brace matching, or '' if absent. This is
- * the one home every rule that overrides a daisyUI declaration lives in (spec, "The cairn-idiom
- * sublayer"), nested inside `@layer utilities { … }` in the source.
- * @param {string} source
- * @returns {string}
- */
-function cairnIdiomLayerBody(source) {
-  return namedLayerBody(source, '@layer cairn-idiom');
-}
-
-/**
- * The css with its `@layer cairn-idiom { … }` block removed (brace-matched).
- * @param {string} source
- * @returns {string}
- */
-function stripCairnIdiomLayer(source) {
-  return stripNamedLayer(source, '@layer cairn-idiom');
+  const span = namedLayerSpan(css, marker);
+  if (!span || span.close === span.open + 1) return css;
+  return css.slice(0, span.start) + css.slice(span.close + 1);
 }
 
 // A scoped rule selector in EITHER authored form: the compiled `:where([data-theme=…])` form and the
@@ -131,7 +101,7 @@ const SCOPED_RULE = /(?::where\(\s*)?\[data-theme=[^{]*?\{/g;
  */
 export function pinnedUnlayeredRules(css) {
   const out = [];
-  const stripped = stripCairnIdiomLayer(stripComponentsLayer(css));
+  const stripped = stripNamedLayer(stripNamedLayer(css, COMPONENTS_LAYER), CAIRN_IDIOM_LAYER);
   for (const m of stripped.matchAll(SCOPED_RULE)) {
     // Drop the trailing brace, keep the selector text.
     out.push(m[0].slice(0, -1).trim());
@@ -145,7 +115,7 @@ export function pinnedUnlayeredRules(css) {
  * @returns {number}
  */
 export function componentsLayerSelectorCount(css) {
-  return [...componentsLayerBody(css).matchAll(SCOPED_RULE)].length;
+  return [...namedLayerBody(css, COMPONENTS_LAYER).matchAll(SCOPED_RULE)].length;
 }
 
 /**
@@ -154,7 +124,7 @@ export function componentsLayerSelectorCount(css) {
  * @returns {number}
  */
 export function cairnIdiomLayerSelectorCount(css) {
-  return [...cairnIdiomLayerBody(css).matchAll(SCOPED_RULE)].length;
+  return [...namedLayerBody(css, CAIRN_IDIOM_LAYER).matchAll(SCOPED_RULE)].length;
 }
 
 // The admin retired-token pattern (muted/subtle only): the default when a tree names no pattern, so the

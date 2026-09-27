@@ -246,14 +246,17 @@ describe('the light theme .btn-active', () => {
     sheet.remove();
   });
 
-  // Stock daisyUI (5.7) mixes the active border 7% toward black where a plain .btn mixes 5%, a step
-  // of roughly 0.02 oklch lightness. The dark hairline sits at 57% L, more than 0.3 below either, so
-  // a stock border reads within a hair of plain and nowhere near the hairline.
-  it('keeps daisyUI stock: a border within a hair of a plain .btn and no dark-side hairline', () => {
+  // Stock daisyUI (5.7) mixes a plain .btn's own border toward black by --depth's own multiplier
+  // (5% at depth 1), and the round-1 Material decision zeroes --depth to 0, so the plain border now
+  // reads as base-200 outright. .btn-active's own border mix stays a fixed 7% regardless of --depth,
+  // so the step between the two widens from about 0.02 to about 0.07 oklch lightness. The dark
+  // hairline sits at 57% L, still more than 0.3 below either, so the wider stock step still reads
+  // nothing like the hairline.
+  it('keeps daisyUI stock: a border that widens with --depth: 0 but is nowhere near the dark-side hairline', () => {
     const plainL = oklchLightness(getComputedStyle(mount('btn')).borderTopColor);
     const activeL = oklchLightness(getComputedStyle(mount('btn btn-active')).borderTopColor);
 
-    expect(Math.abs(activeL - plainL)).toBeLessThan(0.03);
+    expect(Math.abs(activeL - plainL)).toBeLessThan(0.1);
     expect(activeL).toBeGreaterThan(0.8);
   });
 

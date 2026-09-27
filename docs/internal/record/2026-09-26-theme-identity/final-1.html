@@ -45,6 +45,10 @@
   /* Type and icons */
   .fin .page-h { font-weight: 550; }
   .fin svg[stroke] { stroke-width: 1.75; }
+  /* The switch, verdict C: round, and ON fills the track with the ink */
+  .fin .toggle, .fin .toggle:before { border-radius: 999px; }
+  .fin .toggle:checked { background-color: var(--color-neutral); --input-color: var(--color-neutral); }
+  .fin .toggle:checked:before { background-color: var(--color-base-100); }
 </style>
 </head>
 <body>

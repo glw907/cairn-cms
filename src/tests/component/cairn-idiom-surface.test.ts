@@ -106,27 +106,33 @@ describe.each(THEMES)('the warm lift excludes daisyUI variants and disabled form
 });
 
 describe.each(THEMES)('the .modal-box repair (%s)', (theme) => {
-  it('replaces the theme-invariant black shadow with the theme-adaptive elevation pair', () => {
-    const { wrapper, cleanup } = renderInTheme(
-      '<div class="modal-box"></div><div class="cairn-ref"></div>',
-      theme,
-    );
-    try {
-      const modal = wrapper.querySelector('.modal-box') as HTMLElement;
-      // The reference element paints the same var(...) expressions the rule sets, so the
-      // comparison is browser-resolved on both sides, never a hand-written serialized string.
-      const ref = wrapper.querySelector('.cairn-ref') as HTMLElement;
-      ref.style.boxShadow = 'var(--cairn-shadow)';
-      ref.style.borderColor = 'var(--cairn-card-border)';
-      ref.style.borderWidth = '1px';
-      ref.style.borderStyle = 'solid';
-      expect(getComputedStyle(modal).boxShadow).toBe(getComputedStyle(ref).boxShadow);
-      expect(getComputedStyle(modal).borderTopColor).toBe(getComputedStyle(ref).borderTopColor);
-      expect(getComputedStyle(modal).borderTopWidth).toBe('1px');
-    } finally {
-      cleanup();
-    }
-  });
+  it.each(STATES)(
+    'replaces the theme-invariant black shadow with the theme-adaptive elevation pair at %s',
+    async (state) => {
+      // tabindex makes the modal box focusable, so focus-visible (and the CDP-driven active
+      // press, which needs no focus but shares the same probe) are both reachable on a bare div.
+      const { wrapper, cleanup } = renderInTheme(
+        '<div class="modal-box" tabindex="0"></div><div class="cairn-ref"></div>',
+        theme,
+      );
+      try {
+        const modal = wrapper.querySelector('.modal-box') as HTMLElement;
+        // The reference element paints the same var(...) expressions the rule sets, so the
+        // comparison is browser-resolved on both sides, never a hand-written serialized string.
+        const ref = wrapper.querySelector('.cairn-ref') as HTMLElement;
+        ref.style.boxShadow = 'var(--cairn-shadow)';
+        ref.style.borderColor = 'var(--cairn-card-border)';
+        ref.style.borderWidth = '1px';
+        ref.style.borderStyle = 'solid';
+        const refStyle = getComputedStyle(ref);
+        expect(await styleOf(modal, 'box-shadow', state)).toBe(refStyle.boxShadow);
+        expect(await styleOf(modal, 'border-top-color', state)).toBe(refStyle.borderTopColor);
+        expect(getComputedStyle(modal).borderTopWidth).toBe('1px');
+      } finally {
+        cleanup();
+      }
+    },
+  );
 
   // shadow-lg is absent from the compiled sheet (the admin build scans only its own markup), so
   // this supplies it the way a consumer's own site sheet would: an unnested utilities-layer rule,

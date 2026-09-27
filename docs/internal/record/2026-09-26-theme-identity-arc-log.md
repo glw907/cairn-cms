@@ -57,3 +57,7 @@ Rename after the fold verification (2026-09-26): ruling 1's sublayer `cairn-them
 - Decisions after review (Geoff, 2026-09-26, verbatim: "This again comes down to good idiom and
   architectural best-practices"): D1, the theme roots are daisyUI theme blocks with split
   ownership; D2, every daisyUI component compiles in, calendar excluded.
+- Ruling 3 reversed (Geoff, 2026-09-26, verbatim: "We can hold further docs work until we've
+  completed this effort."): the theme identity pass goes first and branches from `main` now. Draft
+  docs pass 0+1 pauses at its next gate-green segment boundary (Geoff chose "Pause at next green
+  boundary"), keeps its work on `draft-docs-0` unmerged, and resumes after this effort merges.

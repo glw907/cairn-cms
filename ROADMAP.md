@@ -861,6 +861,26 @@ the named human gates only):**
 
 ## Next
 
+- **One public theme (Geoff, 2026-09-27).** A site's `src/theme/theme.css`, its two daisyUI theme
+  blocks plus cairn's tier-2 tokens, is the one meta theme. It must cover every public component
+  cairn ships by default and every custom public component a developer writes, with nothing to
+  keep in step by hand. The default output already reads only theme variables (`prose.css`, the
+  starter chrome). Three gaps remain:
+  - Status inks are hand-kept. `--cairn-info-ink`, `--cairn-success-ink`, and `--cairn-warning-ink`
+    sit beside their `--color-*` fills in both themes, so a retuned fill desyncs directive text
+    unless the themer also edits the ink. Derive each ink from its fill.
+  - No guard reaches a real site. `check:public-tokens` (`scripts/checks/check-public-tokens.mjs`)
+    bans literal colors and font sizes only under `examples/showcase/src`, and a scaffolded site
+    does not inherit it (`docs/extend/design-your-site.md`). Ship the guard as a `cairn-audit` rule
+    or a scaffold script, so a custom component that hard-codes a color is caught.
+  - The token contract is undocumented for component authors. The contract is the daisyUI roles
+    plus cairn's status inks, `--cairn-shadow`, and the spacing and type steps. Today only
+    `theme.css`'s header and an internal ledger describe it. Publish it as a developer page and as
+    shipped agent guidance, parallel to theme identity pass B's admin guidance.
+
+  Trigger: theme identity pass B, which it sits beside. Fold it into pass B's planning or run it
+  as the pass after.
+
 - **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or
   defer") deferred these, and pass 1 built none of them. Trigger for the chain items: the new

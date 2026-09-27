@@ -527,32 +527,118 @@ export function checkComponentProps(name, dtsPath, pageText) {
   };
 }
 
-// One reference page per importable subpath. `excludeDts` drops a re-exported surface that is
-// documented on its own page: /delivery re-exports all of /delivery/data, so the delivery page
-// documents only its own additions. The /delivery/head entry points at the same delivery.md page,
-// so the folded-in CairnHead is covered there.
-export const CONFIG = [
-  { subpath: '.', dts: 'dist/index.d.ts', page: 'docs/reference/core.md' },
-  { subpath: '/sveltekit', dts: 'dist/sveltekit/index.d.ts', page: 'docs/reference/sveltekit.md' },
-  { subpath: '/components', dts: 'dist/components/index.d.ts', page: 'docs/reference/components.md' },
-  { subpath: '/reproductions', dts: 'dist/reproductions/index.d.ts', page: 'docs/reference/reproductions.md' },
-  { subpath: '/reproductions/manifest', dts: 'dist/reproductions/manifest.d.ts', page: 'docs/reference/reproductions.md' },
-  { subpath: '/admin-toolkit', dts: 'dist/admin-toolkit/index.d.ts', page: 'docs/reference/admin-toolkit.md' },
-  { subpath: '/render', dts: 'dist/render/authoring.d.ts', page: 'docs/reference/render.md' },
-  { subpath: '/islands', dts: 'dist/islands/index.d.ts', page: 'docs/reference/islands.md' },
-  { subpath: '/delivery', dts: 'dist/delivery/index.d.ts', page: 'docs/reference/delivery.md', excludeDts: 'dist/delivery/data.d.ts' },
-  { subpath: '/delivery/data', dts: 'dist/delivery/data.d.ts', page: 'docs/reference/delivery-data.md' },
-  { subpath: '/delivery/head', dts: 'dist/delivery/head.d.ts', page: 'docs/reference/delivery.md' },
-  { subpath: '/media', dts: 'dist/media/index.d.ts', page: 'docs/reference/media.md' },
-  { subpath: '/auth-store', dts: 'dist/auth-store/index.d.ts', page: 'docs/reference/auth-store.md' },
-  { subpath: '/auth-channel', dts: 'dist/auth-channel/index.d.ts', page: 'docs/reference/auth-channel.md' },
-  { subpath: '/auth-crypto', dts: 'dist/auth-crypto/index.d.ts', page: 'docs/reference/auth-crypto.md' },
-  { subpath: '/cloudflare', dts: 'dist/cloudflare/index.d.ts', page: 'docs/reference/cloudflare.md' },
-  { subpath: '/vite', dts: 'dist/vite/index.d.ts', page: 'docs/reference/vite.md' },
-  // Type-only: the module exports no names, so the entry asserts only that the page exists.
-  { subpath: '/ambient', dts: 'dist/ambient.d.ts', page: 'docs/reference/ambient.md' },
-  { subpath: '/log', dts: 'dist/log/public.d.ts', page: 'docs/reference/log.md' },
+// A reasoned exception to CONFIG's coverage: a package.json exports subpath deliberately outside
+// this gate's per-page checking, each entry naming the one-line reason. This is the same
+// fail-unless-recorded idiom NARRATIVE_CONTEXT_ALLOWLIST and DOCUMENTED_UNSTABLE_PROPS use below;
+// `deriveConfig` asserts every entry here still names a real exports subpath, so an exclusion for a
+// retired subpath (a stale exclusion) fails loudly instead of quietly excusing nothing.
+/** @type {{ subpath: string, reason: string }[]} */
+export const SUBPATH_EXCLUSIONS = [
+  {
+    subpath: '/admin-sources.css',
+    reason:
+      'a CSS asset with no .d.ts to enumerate; documented inside docs/reference/cairn-audit.md ' +
+      'rather than its own reference page (see ROADMAP.md).',
+  },
+  {
+    subpath: '/package.json',
+    reason:
+      "the npm self-reference convention for resolving the package's own metadata, not a " +
+      'documented export.',
+  },
 ];
+
+// The per-subpath settings CONFIG needs beyond "this subpath exists": which built `.d.ts` to
+// enumerate and which reference page documents it, plus `excludeDts` for /delivery, which drops a
+// re-exported surface that is documented on its own page (/delivery re-exports all of
+// /delivery/data, so the delivery page documents only its own additions). /delivery/head points at
+// the same delivery.md page, so the folded-in CairnHead is covered there. /ambient is type-only:
+// the module exports no names, so its entry asserts only that the page exists.
+/** @type {Record<string, { dts: string, page: string, excludeDts?: string }>} */
+export const SUBPATH_SETTINGS = {
+  '.': { dts: 'dist/index.d.ts', page: 'docs/reference/core.md' },
+  '/sveltekit': { dts: 'dist/sveltekit/index.d.ts', page: 'docs/reference/sveltekit.md' },
+  '/components': { dts: 'dist/components/index.d.ts', page: 'docs/reference/components.md' },
+  '/reproductions': { dts: 'dist/reproductions/index.d.ts', page: 'docs/reference/reproductions.md' },
+  '/reproductions/manifest': {
+    dts: 'dist/reproductions/manifest.d.ts',
+    page: 'docs/reference/reproductions.md',
+  },
+  '/admin-toolkit': { dts: 'dist/admin-toolkit/index.d.ts', page: 'docs/reference/admin-toolkit.md' },
+  '/render': { dts: 'dist/render/authoring.d.ts', page: 'docs/reference/render.md' },
+  '/islands': { dts: 'dist/islands/index.d.ts', page: 'docs/reference/islands.md' },
+  '/delivery': {
+    dts: 'dist/delivery/index.d.ts',
+    page: 'docs/reference/delivery.md',
+    excludeDts: 'dist/delivery/data.d.ts',
+  },
+  '/delivery/data': { dts: 'dist/delivery/data.d.ts', page: 'docs/reference/delivery-data.md' },
+  '/delivery/head': { dts: 'dist/delivery/head.d.ts', page: 'docs/reference/delivery.md' },
+  '/media': { dts: 'dist/media/index.d.ts', page: 'docs/reference/media.md' },
+  '/auth-store': { dts: 'dist/auth-store/index.d.ts', page: 'docs/reference/auth-store.md' },
+  '/auth-channel': { dts: 'dist/auth-channel/index.d.ts', page: 'docs/reference/auth-channel.md' },
+  '/auth-crypto': { dts: 'dist/auth-crypto/index.d.ts', page: 'docs/reference/auth-crypto.md' },
+  '/cloudflare': { dts: 'dist/cloudflare/index.d.ts', page: 'docs/reference/cloudflare.md' },
+  '/vite': { dts: 'dist/vite/index.d.ts', page: 'docs/reference/vite.md' },
+  '/ambient': { dts: 'dist/ambient.d.ts', page: 'docs/reference/ambient.md' },
+  '/log': { dts: 'dist/log/public.d.ts', page: 'docs/reference/log.md' },
+};
+
+// A package.json exports key in this gate's own subpath convention: the root key stays '.', every
+// other key drops its leading dot (`./sveltekit` becomes `/sveltekit`), the same convention
+// check-surface.mjs's `surfaceSubpaths` reads exports with, so the two gates agree on one subpath
+// string per key.
+/** @param {string} key @returns {string} */
+export function exportKeyToSubpath(key) {
+  return key === '.' ? '.' : key.replace(/^\./, '');
+}
+
+// Derive CONFIG from a package.json `exports` map: one entry per subpath, carrying the settings
+// `settings` maps it to. Every exports subpath must be either mapped in `settings` or named in
+// `exclusions`, and every exclusion must still name a real exports subpath, so this throws by
+// naming the offending subpath rather than the hardcoded list's old failure mode, silently
+// reporting OK across the subpaths it happened to know about while a new or renamed one shipped
+// with no reference page at all.
+/**
+ * @param {object} options
+ * @param {Record<string, unknown>} options.exportsMap package.json's own `exports` field
+ * @param {Record<string, { dts: string, page: string, excludeDts?: string }>} [options.settings]
+ * @param {{ subpath: string, reason: string }[]} [options.exclusions]
+ * @returns {{ subpath: string, dts: string, page: string, excludeDts?: string }[]}
+ */
+export function deriveConfig({ exportsMap, settings = SUBPATH_SETTINGS, exclusions = SUBPATH_EXCLUSIONS }) {
+  const exportSubpaths = new Set(Object.keys(exportsMap).map(exportKeyToSubpath));
+  for (const exclusion of exclusions) {
+    if (!exclusion.reason || !exclusion.reason.trim()) {
+      throw new Error(`reference-coverage exclusion for ${exclusion.subpath} has no reason`);
+    }
+    if (!exportSubpaths.has(exclusion.subpath)) {
+      throw new Error(
+        `reference-coverage stale exclusion: ${exclusion.subpath} is not a package.json export subpath`,
+      );
+    }
+  }
+  const excludedSubpaths = new Set(exclusions.map((e) => e.subpath));
+  const config = [];
+  for (const subpath of [...exportSubpaths].sort()) {
+    if (excludedSubpaths.has(subpath)) continue;
+    const entry = settings[subpath];
+    if (!entry) {
+      throw new Error(
+        `reference-coverage: package.json exports ${subpath} with no CONFIG mapping and no exclusion`,
+      );
+    }
+    config.push({ subpath, ...entry });
+  }
+  return config;
+}
+
+// One reference page per importable subpath, derived from package.json's own `exports` map (see
+// `deriveConfig`) so a new export subpath fails this gate, naming itself, until it is mapped in
+// SUBPATH_SETTINGS or recorded in SUBPATH_EXCLUSIONS, rather than shipping with silent coverage.
+export const CONFIG = deriveConfig({
+  exportsMap: JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).exports,
+});
 
 // The full, unfiltered real-export set across every covered subpath. This is no longer the pool
 // `staleNames` checks a page against (see `knownNamesByPage` below, the per-page rescope); it

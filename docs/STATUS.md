@@ -20,17 +20,23 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-Execute draft docs pass 0+1 (setup and reference), plan
-[`2026-09-26-draft-docs-pass-0-1.md`](superpowers/plans/2026-09-26-draft-docs-pass-0-1.md),
-approved by Geoff 2026-09-26, implementing the approved spec
-[`2026-09-26-draft-docs-approach-design.md`](superpowers/specs/2026-09-26-draft-docs-approach-design.md)
-(rulings R1 to R10). Pass ceiling about 9.6M, flag at 7.7M; the initiative's working ceiling is
-30M, and the stage 2a pilot checkpoint brings Geoff one ceiling-and-scope question. The spec
-authorizes stages 0, 1, and the 2a pilot only. Still owed: the `~/.dotfiles` push.
+Executing theme identity pass A overnight (Geoff's grant, 2026-09-26): plan
+[`2026-09-26-theme-identity-pass-a.md`](superpowers/plans/2026-09-26-theme-identity-pass-a.md),
+implementing the approved spec
+[`2026-09-26-theme-identity-design.md`](superpowers/specs/2026-09-26-theme-identity-design.md).
+Ceiling 20M, flag 16M. The run covers tasks 0 to 14 and the settle round, then stops at the resume
+point before Geoff's S3 before/after sitting; nothing merges or publishes. Resume prompt: "Resume
+theme identity pass A from the plan's ledger at the S3 sitting." The next release carrying it is
+`0.98.0`.
+
+Draft docs pass 0+1 is **paused** on `draft-docs-0` (Geoff, 2026-09-26: "We can hold further docs
+work until we've completed this effort"); it resumes after the theme initiative merges (pass B,
+pending Geoff's confirmation at S3) and merges `main` into its branch first. Its plan:
+[`2026-09-26-draft-docs-pass-0-1.md`](superpowers/plans/2026-09-26-draft-docs-pass-0-1.md).
 
 Open items for Geoff: the four stale owner facts (`what-cairn-is-and-is-not.md:49` rule count,
 `f:ab9kzr`, `f:75hawi`, `docs/why-cairn.md:41` against line 84) settle in the plan's task 9
-sitting; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` over its 6k budget.
+sitting; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` trim (now ~5,999 of 6,000) awaits his dotfiles commit.
 
 The reader harness is removed. Still Geoff's: revoke `CAIRN_SCRATCH_CF_TOKEN` (Cloudflare
 dashboard) and `CAIRN_DOCS_READER_OAUTH_TOKEN` (claude.ai settings), then drop both from the age

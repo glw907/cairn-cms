@@ -607,12 +607,27 @@ discriminant, not the fields, gates the chrome).
   // not a modal, never receives this focus management, and re-runs only on the true/false edge
   // (isDrawerOverlay is a boolean $derived, so an unrelated dependency change with the same value
   // does not re-fire it).
+  //
+  // daisyUI's `.drawer-side` delays its visibility transition by 0.1s, so for a few frames after
+  // the toggle checks, the nav is still `visibility: hidden` and a focus call on it is a silent
+  // no-op. The focus attempt therefore repeats once per frame until it lands, for at most about a
+  // second, and stops if the overlay closes first.
   $effect(() => {
     if (!isDrawerOverlay) return;
     drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    tick().then(() => {
-      drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]')?.focus();
-    });
+    let cancelled = false;
+    let attempts = 0;
+    const focusIn = () => {
+      if (cancelled) return;
+      const target = drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]');
+      if (!target) return;
+      target.focus();
+      if (document.activeElement !== target && ++attempts < 60) requestAnimationFrame(focusIn);
+    };
+    tick().then(focusIn);
+    return () => {
+      cancelled = true;
+    };
   });
 
   // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user

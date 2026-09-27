@@ -13,6 +13,8 @@
 name, "The B2 architecture reads, what retire-1 left" and "Go tool architecture chores filed at
 retire-1's close", as a behavior-preserving refactor of the `tool/` module.
 
+**Review:** single-lens fold, `docs/superpowers/research/2026-09-27-go-chores-plan-review.md`.
+
 **Pass class:** `tool`. Per-task gate `make -C tool check` on the light lane, Opus
 `diff-reviewer`, test mandate `go-conventions`, and at the close one `code-simplifier` plus one
 `go-architecture-reader` per touched package. No task changes painted terminal output, so no
@@ -73,8 +75,10 @@ tree. What holds is folded into the tasks. What drifted or is false:
    (`cmd/cairn/messages.go:77`), `longHealth` (`:265`), and `longDoctor` (`:312`) are all
    `*ast.BinaryExpr` values absent from `tool/testdata/copy.golden.md`. A dry run of
    `scripts/check-copy.sh` over a golden carrying the three folded strings fails on `longDoctor`:
-   its first sentence carries four commas before its first period (copy-standard section 2.5).
-   The gap the ROADMAP names has been hiding a real copy-rule violation.
+   its first sentence carries four commas before its first period. Section 2.5 governs fix lines;
+   the script's comma rule treats any entry line ending in a period as one, and it reads only each
+   entry's first line, so `longHealth`'s four-comma "Precedence is ..." continuation line passes
+   unseen. The trip is the heuristic reaching a help `Long`, not a fix-line violation.
 4. **`spine.FromKind` and `spine.Kind` are pre-adjudicated 2.0 seams.** The 1.0 plan's seams
    table (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md:282-305`) names `FromKind`
    with its 2.0 caller, the HUD's detail view, and `kind.go:18` says so. `Kind` is its parameter
@@ -138,10 +142,11 @@ tree. What holds is folded into the tasks. What drifted or is false:
 2. **`spine.FromKind` and `spine.Kind` stay exported**, the seams table's pre-adjudication
    (finding 4). Both ROADMAP entries' callerless-export lines are closed for these two by that
    ruling, recorded as declined.
-3. **`spine.CombineState` and `spine.ExitCodeFor` are deleted with their tests; `ParkCodes`
-   goes unexported.** Neither function has a caller (finding 5); unexporting a callerless
+3. **`spine.CombineState`, `spine.ExitCodeFor`, and `spine.ParkCodes` are deleted, the first
+   two with their tests.** Neither function has a caller (finding 5); unexporting a callerless
    function only trips the `unused` linter. `ParkCodes`'s one caller is `outcome.go`, in the same
-   package, which reads the backing slice directly. The property test at `exit_test.go:76` keeps
+   package, which reads the backing slice `parkCodes` directly instead; an unexported
+   `parkCodes()` would collide with that slice's name and have no reader. The property test at `exit_test.go:76` keeps
    its coverage expressed through `ExitCode` or a local table.
 4. **"Derive from the source" means one production list per vocabulary, proven complete by an AST
    read of its own const block, and no second copy anywhere.** Go cannot enumerate a const block
@@ -149,8 +154,10 @@ tree. What holds is folded into the tasks. What drifted or is false:
    that parses the declaring file, as `cmd/copylist` does, and fails naming any const missing from
    the slice or out of declaration order. That applies to `spine`'s four string vocabularies
    (`Code`, `ParkCode`, `ReasonCode`, `Condition`) and `health`'s `Catalogue`. An int-typed
-   vocabulary derives outright: `providers.Reason` becomes one index-keyed name table from which
-   both `String` and `Reasons` read. A test-side copy (`park_test.go`'s `allParkCodes`,
+   vocabulary collapses to one list: `providers.Reason` becomes one index-keyed name table from
+   which both `String` and `Reasons` read, and its completeness test must also catch a constant
+   appended after `ReasonUnknown` (an unexported end-of-block count constant or the same AST
+   read). A test-side copy (`park_test.go`'s `allParkCodes`,
    `fixtures.nineCheckIDs`, `messages_test.go`'s restated function list) reads the source instead.
    The ROADMAP's "five-copy vocabulary" is read as the five hand-kept enumerations in `spine` at
    HEAD: `codes`, `parkCodes`, `fixedReasonCodes`, `conditions`, and the test's `allParkCodes`.
@@ -170,7 +177,10 @@ tree. What holds is folded into the tasks. What drifted or is false:
 6. **`RenderInput.Height` and `RenderInput.FailingOnly` are deleted**, with the `tall` golden case
    and its h024 golden. `Height` has no reader; `FailingOnly` has no writer and its two branches
    are untested (finding 7). The HUD re-adds either with its own caller and its own test. No
-   command sets either, so no operator output moves.
+   command sets either, so no operator output moves. This supersedes the 1.0 pass's segment 5
+   ruling 7 (conductor, 2026-09-21, `2026-09-14-cairn-tool-1-0-pass.md:4408`), which kept
+   `FailingOnly` when `--quiet` stopped setting it; retire-1's close then filed the field as
+   test-only, and nothing has written it since.
 7. **`fixtures`' `Acknowledged` stays scenario data; its `Degraded` is proven against the real
    rule.** `health.Run` derives `Acknowledged` from the acknowledgement file (`activeAckIDs`), which
    a fixture does not have, so the fixture's own list is the scenario's statement, and a comment
@@ -183,8 +193,9 @@ tree. What holds is folded into the tasks. What drifted or is false:
    is rejected: it is mutable global state that breaks `t.Parallel`, against `deps`' own
    documented design.
 9. **`longDoctor`'s first sentence is split, and that is the one operator-visible change.** Once
-   `cmd/copylist` folds concatenations, the copy gate reaches `longDoctor` and fails it (finding
-   3). The fix splits the first sentence so at most one comma precedes the first period, keeping
+   `cmd/copylist` folds concatenations, the copy gate reaches `longDoctor` and its comma heuristic
+   fires (finding 3). Splitting a four-comma sentence is cheaper than teaching the gate to tell a
+   help `Long` from a fix line, and the gate stays as it is. The fix splits the first sentence so at most one comma precedes the first period, keeping
    every clause and fact. It changes `cairn doctor --help` only; no golden, transcript, or doc
    quotes the sentence. It earns one `## Unreleased` bullet in `tool/CHANGELOG.md` and nothing in
    the engine's `CHANGELOG.md`. A `copylist` const value that is neither a string literal nor a
@@ -211,7 +222,12 @@ tree. What holds is folded into the tasks. What drifted or is false:
     non-zero at HEAD on a defect this pass does not own (finding 11), so a task's criterion is
     that its defect set equals Task 0's baseline. A task whose edit moves a cited line or renames
     an anchored symbol repoints that fact in the same task, changing only the `Source:` pointer or
-    anchor, except `f:cwtfs7`'s stale clause, which Task 13 corrects.
+    anchor, except `f:cwtfs7`'s stale clause, which Task 13 corrects. **`check-facts` alone cannot
+    prove a repoint:** of about 137 line pointers into `tool/`, three carry an anchor, and an
+    unanchored pointer fails only when it runs past the end of its file. So Task 0 records, for
+    every pointer into `tool/`, the symbol or first line it names, and each task's report lists
+    every pointer into a file it edited with its old and new lines and the code it names after the
+    edit.
 
 ---
 
@@ -238,8 +254,9 @@ tree. What holds is folded into the tasks. What drifted or is false:
   since an engine pass runs concurrently.
 - `unused` and `unparam` are enabled (`tool/.golangci.yml`): a name with no reader is deleted, not
   unexported.
-- A removed or renamed symbol is grepped across `tool/`, `docs/`, and `README.md` before the task
-  reports, and every hit is repointed or recorded.
+- A removed or renamed symbol is grepped across the whole repository (`tool/`, `docs/`,
+  `scripts/`, `.github/`, and `README.md`) before the task reports, and every hit is repointed or
+  recorded.
 - Each implementer runs the gate-economy pre-flight in its notes: no comment claims what its
   assertion does not prove, no process citation in a shipped comment, counts found and changed.
 
@@ -253,7 +270,8 @@ The `diff-reviewer` checks, beyond each task's criteria:
   demonstration, the report carries it.
 - The process-citation rule (Decision 11) is applied as written: dated evidence and standard
   pointers survive, and task, criterion, plan, and gate citations do not.
-- The facts defect set equals the baseline.
+- The facts defect set equals the baseline, and every facts pointer into a file the task edited
+  still names the code Task 0 recorded for it (Decision 13).
 
 ---
 
@@ -263,14 +281,17 @@ The `diff-reviewer` checks, beyond each task's criteria:
 plan is amended before the first dispatch where one drifted.
 
 **Constraints:** read-only; `sonnet`; no gate (the conductor's one lane-launch `cairn-run-gate`
-call is the baseline). Re-run at each later segment start for that segment's tasks.
+call is the baseline). Runs once, at S1. The branch never takes `main`'s commits mid-pass, so a
+later segment re-checks nothing Task 0 already read; each implementer confirms its own task's
+line references in its report.
 
 **Acceptance:**
 - Every path, symbol, line reference, and count in this plan's pre-flight findings and task
   criteria is confirmed or reported drifted, one line each.
 - The `check-facts` baseline defect set is recorded verbatim.
-- The list of every `tool/` file the facts container cites is recorded, so each task knows which
-  of its files carry citations.
+- Every facts pointer into `tool/` is recorded with the symbol or first line it names, grouped by
+  file, so each task knows which of its files carry citations and what each must still name
+  (Decision 13).
 - `git log main -- tool/` since `c9beafb3` is empty, or each new commit is named with the tasks
   it affects.
 
@@ -287,13 +308,15 @@ block.
 **Acceptance:**
 - `CombineState` and `ExitCodeFor` and their tests are gone; `exit_test.go`'s severity-agreement
   property keeps equivalent coverage without them.
-- `ParkCodes` is unexported or removed; `outcome.go`'s `ReasonCodes` still builds the same
-  vocabulary, proven by the existing tests.
+- `ParkCodes` is removed; `outcome.go`'s `ReasonCodes` reads `parkCodes` and still builds the
+  same vocabulary, proven by the existing tests.
 - `park_test.go`'s `allParkCodes` is gone; `park_test.go` and `condition_test.go` read the
   package's backing list.
 - A test parses the package's own source and fails, naming the const, when any `Code`,
   `ParkCode`, `ReasonCode`, or `Condition` constant is missing from its backing list or out of
-  declaration order. The report shows it red against a deliberately dropped entry, then green.
+  declaration order. `CodeNone` and `ConditionNone` are the named exemptions, and the test fails
+  when it finds no constant of a vocabulary's type, so a misspelled type name cannot pass it
+  empty. The report shows it red against a deliberately dropped entry, then green.
 - `catalogue.go`'s task citation is gone (Decision 11).
 - `internal/hygiene/severity_test.go`'s comment naming `ExitCodeFor` names what now exists.
 - Gate green; `check-facts` at baseline, with `f:` citations into `spine/exit.go`,
@@ -319,7 +342,10 @@ sent body, and then without behavior change.
   `queryNow`, and the limit where one applies.
 - The filter assertions no longer restate `buildQuery`'s arguments by hand; they read the body
   the call sent.
-- The report shows one new assertion red against a deliberately wrong filter type, then green.
+- Expected values are literals from the Workers Observability query contract, never read from
+  `logs.go`'s own constants or `buildQuery`, so a wrong constant cannot agree with itself.
+- The report shows one new assertion red against a deliberately wrong filter type introduced in
+  `logs.go` (not in the test), then green.
 - Gate green; `check-facts` at baseline.
 
 **Files:** `tool/internal/logs/logs_test.go`.
@@ -334,7 +360,8 @@ is two files.
 **Acceptance:**
 - `discover.go` and `discover_test.go` are deleted; nothing under `tool/`, `docs/`, or
   `README.md` names `store.Discover` or `store.Site`.
-- `perm_linux.go` and `perm_darwin.go` open with the same header stating the ruling: the module
+- `perm_linux.go` and `perm_darwin.go` carry the same header, after the `package` clause so it
+  is never a second package doc comment (`paths.go` holds that), stating the ruling: the module
   forbids build tags (`internal/hygiene`'s `TestNoBuildTags`), so the pair stays two
   byte-identical files, and `identicalfiles_test.go` asserts the identity instead.
 - `internal/hygiene`'s identical-files test and the Windows build still pass (`GOOS=windows go vet
@@ -363,7 +390,9 @@ is two files.
 **Outcome:** `health` exports only what an outside caller uses, its `Catalogue` cannot silently
 drop a message, and its shipped comments carry reasons, not provenance.
 
-**Constraints:** Decisions 4 and 11. `copy.golden.md` unchanged.
+**Constraints:** Decisions 4 and 11. `copy.golden.md` unchanged. The seams table's
+condition-to-fix-map row (HUD detail view) is carried by `FixFor` and `FixForReason`, which stay
+exported; `FixForCondition` and `FixForCode` are its internals.
 
 **Acceptance:**
 - `FailSeverityOf`, `HasRepo`, `FixForCondition`, and `FixForCode` are unexported;
@@ -392,7 +421,8 @@ one place.
 - `GitHub.RepoOwnership` and its four tests are deleted. Its corpus fixtures under
   `packages/create-cairn-site/fixtures/` are not touched, since they live outside `tool/`.
 - `String` and `Reasons` both read one index-keyed name table; a test fails when a `Reason`
-  constant has no name or the table outgrows the constants.
+  constant has no name, including one appended after `ReasonUnknown`, or the table outgrows the
+  constants.
 - The existing `String` and `Reasons` tests pass unchanged in their expected values.
 - Gate green; `check-facts` at baseline, with `providers/errors.go` citations repointed.
 
@@ -548,13 +578,15 @@ Run by the conductor per `cairn-pass` and `pass-core`, after S4 lands green.
    name is declined with its reason.
 2. **Full gate.** `make -C tool check` on the light lane, `check-facts` at baseline, and a
    `git diff --name-only main...HEAD` proving nothing outside `tool/`, `docs/internal/facts/`,
-   and the ledgers changed. No engine npm gate runs: the pass touches nothing under `src/`,
+   `docs/superpowers/` (this plan and its review record), the friction log, and the ledgers
+   changed. No engine npm gate runs: the pass touches nothing under `src/`,
    `packages/`, `examples/`, or `scripts/`. Push the branch and open the PR; `tool.yml`'s
    Linux, macOS, and Windows legs and every other workflow must be green before merge.
-3. **Architecture reads.** One `go-architecture-reader` per touched package: `spine`, `logs`,
-   `store`, `doctor`, `health`, `providers`, `render`, `render/fixtures`, `internal/exe`,
-   `hygiene`, `cmd/mangen`, `cmd/copylist`, `cmd/cairn`. A structural finding is fixed in the
-   pass or filed; a nit is filed.
+3. **Architecture reads.** One `go-architecture-reader` per package whose non-test source
+   changed: `spine`, `store`, `health`, `providers`, `render`, `render/fixtures`, `internal/exe`,
+   `cmd/mangen`, `cmd/copylist`, `cmd/cairn`. The reader grades non-test source, so `logs` and
+   `doctor` (test-only edits) and `hygiene` (test files only) get none. A structural finding is
+   fixed in the pass or filed; a nit is filed.
 4. **Docs.** No public behavior changed except `cairn doctor --help`'s first sentence, so no
    facts bullet is filed and no reference page changes. Triage `docs/internal/docs-friction-log.md`
    complete-or-move per `cairn-pass`.
@@ -567,8 +599,9 @@ Run by the conductor per `cairn-pass` and `pass-core`, after S4 lands green.
      architecture reads' new filings join it.
    - `docs/HISTORY.md`: a newest-first entry, "Go tool architecture chores, thirteen tasks,
      <date>": what landed with commit SHAs, what the gates caught, and what a later pass would
-     be wrong to rediscover. That list includes the three hidden `Long` strings and the
-     `longDoctor` violation, the seams-table rulings, the facts-gate coupling, and the ~150
+     be wrong to rediscover. That list includes the three hidden `Long` strings, the
+     `longDoctor` comma trip and `check-copy`'s first-line-only, period-means-fix-line reach
+     (finding 3), the seams-table rulings, the facts-gate coupling, and the ~150
      test-file citations left in place.
    - `tool/CHANGELOG.md` carries Task 11's bullet; the engine's `CHANGELOG.md` gets nothing.
    - `docs/STATUS.md` on `main`, present tense, pointing at the next action.

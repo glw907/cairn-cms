@@ -1426,3 +1426,30 @@ ceiling, planning misses, and execution sittings (S3 counts as one).
 
 Owed to the close: `docs/internal/pass-gate-tiers.md`'s prose sentence above the table still
 describes the old engine string.
+
+### Segment A (2026-09-27, conductor) — stopped at the boundary for a session close
+
+- **Task 1** accepted (`59ecfc82`), no fix rounds: full compile (580 of 649 classes, calendar
+  excluded), layer pin, `motion-vocabulary` fix; three mutations fired.
+- **Task 2** accepted after a conductor decision. The chain's second review returned `fix` on two
+  mechanical points (bare `[data-theme]` heads on the warm lift; the modal repair tested at rest
+  only). One targeted fix, `e61c8b5c`, and an independent `diff-reviewer` read (accept) closed it.
+  `componentsLayerCap` 19 to 16, `idiomLayerCap` 3.
+- **Task 3** (Opus) accepted, no fix rounds (`8d1bfccc` to `c5d1239e`). D1 theme blocks at unchanged
+  values; bare and hostile expectations pinned before the edit; component tests load the compiled
+  sheet through the `compiledAdminSheet` Vite plugin. It found and fixed a shipped bug:
+  **`c5d1239e`, the overlay drawer's focus now lands after daisyUI's visibility delay** (owed: a
+  CHANGELOG "Fixed" line at the close). `-moz-osx-font-smoothing` cannot be proven in Chromium.
+- **Task 4** accepted, no fix rounds (`199471d6`, `620c8cb9`): theme values live; `RATIFIED_NORMS`
+  untouched (task 13 owns it).
+- **Boundary:** `code-simplifier` ran; its work is `15aa1015` (behavior-preserving; targeted tests
+  and the admin CSS light set green). **Its engine gate was interrupted by the session close.**
+  Last engine-green commit: `620c8cb9`. Not yet done at this boundary: the engine gate on
+  `15aa1015`, the branch push, the draft PR, and the Haiku CI read.
+- **Spend:** about 5.4M through this boundary (task 0 about 3.0M, segment A about 2.4M).
+
+**Resume here (next session):** (1) run the engine gate on `15aa1015` in a gate agent; if red,
+`git revert 15aa1015` and gate again. (2) Push `theme-identity-a`, open the pass PR as a draft, and
+read CI with one Haiku probe against the expected-red set. (3) Launch segment B (tasks 5 to 8) with
+the same `commonNotes` as segment A, including decision 14 (`E2E_PORT=4392`; port 4173 is another
+project's) and the house-scope note.

@@ -1,8 +1,8 @@
 # Theme identity: cairn's own look through the daisyUI levers
 
 **Status:** approved design (Geoff, 2026-09-26), revised by the four-lens review fold
-(`docs/superpowers/research/2026-09-26-theme-identity-fold.md`) and a second fold. Two owner items
-are open: fork R1 and confirmation R2.
+(`docs/superpowers/research/2026-09-26-theme-identity-fold.md`) and a second fold. No owner items
+are open: the two the review raised are decided by idiom and best practice (D1, D2).
 **Arc record:** `docs/internal/record/2026-09-26-theme-identity-arc-log.md` (every round, candidate,
 verdict, and the six rulings after review).
 **Evidence:** the architecture spike, `docs/superpowers/research/2026-09-26-theme-identity-spike.md`
@@ -34,7 +34,7 @@ The model an agent is given, in one sentence, everywhere cairn ships guidance:
 > cairn's admin is the daisyUI theme `cairn-admin` (dark: `cairn-admin-dark`) with every daisyUI
 > component available; write plain daisyUI plus cairn's role utilities.
 
-The sentence assumes R2 is confirmed. Two stated limits qualify "every component": `calendar` is
+Two stated limits qualify "every component": `calendar` is
 excluded (it skins third-party date pickers and costs 243 KB raw), and responsive variants of daisyUI
 classes (`md:btn-lg`) compile only where cairn's own markup uses them. `no-uncompiled-class` already
 reports the second case in a consumer's tree.
@@ -65,9 +65,8 @@ Out of scope:
 
 ## Architecture
 
-This section is settled by ruling 1 and proven by the spike, with two exceptions. The authoring form
-of the theme roots is fork R1. The size cost of the full compile, and the calendar exclusion, await
-confirmation R2.
+This section is settled by ruling 1 and proven by the spike. The theme roots' authoring form is
+decision D1, and the full compile's cost and the calendar exclusion are decision D2.
 
 ### One compiler, every component
 
@@ -84,7 +83,7 @@ tracks daisyUI upgrades with no hand-kept safelist. The spike measured 580 of 64
 the only missing ones being calendar's.
 
 The measured cost: the minified, gzipped admin sheet grows from 31.8 KB to 53.2 KB (25.0 KB to
-39.3 KB brotli), about 1.7x. It loads only on `/admin/**`. Whether to accept that cost is R2.
+39.3 KB brotli), about 1.7x. It loads only on `/admin/**`. D2 accepts that cost.
 
 `admin-sheet-inventory.test.ts` is regenerated deliberately (217 to 580 daisyUI classes), carried in
 the changelog. A new presence test asserts a representative set of classes cairn's own markup never
@@ -464,7 +463,7 @@ idiom is a theme variable or a cairn-idiom rule. A per-element idiom is a defect
 - `docs/internal/public-design-system.md`: the never-cross-over line amended to name geometry and
   edge grammar as shared (ruling 2).
 - Facts bullets in `docs/internal/facts/extend.md`: a custom screen's plain daisyUI classes now
-  render cairn's ladder; every daisyUI component except calendar is available (if R2 is confirmed);
+  render cairn's ladder; every daisyUI component except calendar is available;
   a bare `btn` is a hairline; fixed Tailwind radii do not follow the ladder, so use
   `rounded-selector`, `rounded-field`, or `rounded-box`; the norms manifest's radius and height
   bands moved. Pass B adds the new audit rules. `check:facts` gates them.
@@ -477,57 +476,46 @@ idiom is a theme variable or a cairn-idiom rule. A per-element idiom is a defect
   why.
 - `ROADMAP.md`: the Waymark citation item narrowed to what remains; the rules 1 to 9 shrink filed.
 
-## Rulings
+## Decisions after review
 
-Rulings 2 to 6 in the arc log are settled and folded above. Ruling 1 is settled except two points.
-The spike reopened its authoring detail (R1). Its size cost and the calendar exclusion were measured
-after the ruling and need the owner's confirmation (R2).
+The review raised two items beyond the arc log's rulings. Both have an answer settled by the
+framework's own convention and by best practice, so the spec decides them (Geoff, 2026-09-26: "This
+again comes down to good idiom and architectural best-practices").
 
-### R1 (owner fork): how the two theme roots are authored
+### D1: the theme roots are daisyUI theme blocks, with split ownership
 
-Ruling 1 said to author them as `@plugin "daisyui/theme"` blocks. The spike proved that form works
-only under four conditions:
+daisyUI's documented way to define a custom theme is `@plugin "daisyui/theme"`, and the starter
+already uses it. The two admin themes take that form. The spike found four hazards in a naive port.
+Splitting ownership removes each one by design:
 
-- Tailwind's `@plugin` parser splits every value at a top-level comma and keeps the last part, with
-  no error. 20 of 78 values came out wrong (the font stacks, the multi-layer shadow) until each was
-  quote-wrapped.
-- The plugin emits the theme rule into `@layer base`, where today's roots are unlayered. A hostile
-  unlayered host rule then beats the admin's `font-family`, smoothing, scrollbar settings, and
-  `color-scheme`.
-- A browser drops the unknown `@plugin` at-rule, so the raw partial loses its palette.
-  `ReproContext.svelte`, `EditorToolbar.test.ts`, and the `src` imports in `CairnAdminShell`,
-  `LoginPage`, and `ConfirmPage` render from the raw partial.
-- It adds no capability under scoping. The theme-controller half of its selector is inert, and the
-  `default` and `prefersdark` flags only add dead CSS.
+- **The plugin blocks carry exactly daisyUI's own theme variables:** the `--color-*` roles, the
+  three radii, the two sizes, `--border`, `--depth`, and `--noise`. None of those values contains a
+  top-level comma, so the parser's silent truncation cannot occur. `default` and `prefersdark` stay
+  off.
+- **A plain unlayered root rule on the same two selectors keeps everything else:** the `--cairn-*`
+  tokens, the font variables, the shadow pair, `--color-muted` and `--color-subtle`, the nested
+  motion rules, and every non-custom declaration (`font-family`, smoothing, `font-synthesis`,
+  `scrollbar-*`, `-webkit-tap-highlight-color`, and a restated `color-scheme`). Those keep today's
+  unlayered strength against hostile host CSS.
+- **Two tests guard the split.** A completeness test asserts that each plugin block defines every
+  daisyUI theme variable, with the list read from daisyUI's own theme object so it tracks upgrades. A
+  build assertion pins every computed theme value on both wrappers and a child, so a truncated or
+  demoted value fails loudly.
+- **Component tests and `ReproContext` render against the compiled sheet,** since a browser drops the
+  raw partial's `@plugin` block. Testing against what ships also closes the fidelity gap the design
+  system already names. The plan picks the mechanism.
+- **`motion-vocabulary`'s selector comparison** matches any comma-separated part, not the whole
+  selector with `===`. It ships in `cairn-audit`, so it is fixed in pass A before the roots change.
 
-Plugin blocks buy idiom alignment: the admin reads as a stock daisyUI theme to an agent. Consumers
-never author these roots, so the documentation step serves G2 equally.
+The result is that daisyUI owns daisyUI's variables in daisyUI's format, and cairn owns its own. An
+agent reading cairn's source finds a stock daisyUI theme, and theme tooling can read it.
 
-**Recommendation: keep the hand-written `[data-theme]` roots.** Add a test asserting that each root
-defines every daisyUI theme variable, with the list read from daisyUI's own theme object so it tracks
-upgrades. Document the roots as daisyUI themes in the design system and the shipped guidance.
+### D2: every daisyUI component compiles in, calendar excluded
 
-What each answer changes (the rest of this spec builds either way):
-
-- **Keep the roots:** the completeness test and the documentation above. Nothing else changes. The
-  admin and the starter then author their themes in different forms; the starter already uses plugin
-  blocks.
-- **Plugin blocks:** quote-wrap every value with a top-level comma or a leading quote, and add a build
-  assertion that compares the theme's computed values or lints unquoted commas. Keep the nested motion
-  rules and every non-custom declaration (`font-family`, smoothing, `font-synthesis`, `scrollbar-*`,
-  `-webkit-tap-highlight-color`, and a restated `color-scheme`) in a plain unlayered root rule. Leave
-  the `default` and `prefersdark` flags off. Fix `motion-vocabulary`'s companion assertion, which
-  compares the whole selector with `===`, to match any comma-separated part; it ships in `cairn-audit`,
-  so consumers' audits fail until it changes. Move the raw-partial imports to the compiled sheet or
-  declare the partial compile-only. Keep the oklch literals free of single quotes so the source-text
-  token tests still read them.
-
-### R2 (owner confirmation): the full compile's size, calendar excluded
-
-Ruling 1 said every daisyUI component compiles in, and it asked the spike to measure the size cost
-first. The fold then accepted the measured cost without putting it to the owner. This item puts it
-to the owner. The question is yes or no: compile every daisyUI component except `calendar`, at the
-measured cost?
+daisyUI's contract is that any of its classes works under a theme. A safelist grown family by
+family would be a bespoke partial version of that contract, and an extender would meet its edges
+unwarned. Completeness is the best practice for an extensibility promise, and it is the only form
+that keeps G1 without a hand-kept list.
 
 The spike's measurements (bytes; "min" is `lightningcss` minify):
 
@@ -538,24 +526,9 @@ The spike's measurements (bytes; "min" is `lightningcss` minify):
 | Full spike (all minus calendar, themes, sublayer) | 510,090 | 53,235 | 39,338 |
 | All components including calendar | 691,191 | 62,665 | 44,738 |
 
-The admin sheet grows about 1.7x: +21 KB gzip and +14 KB brotli on every admin page, for every
-consumer. It loads only on `/admin/**`. Calendar alone adds 243 KB raw, more than half the growth,
-because it skins third-party date pickers cairn does not ship.
-
-**Recommendation: yes.** G1 promises a consistent look for anything a developer writes in plain
-daisyUI, and only the full compile keeps that promise without a list someone must maintain.
-
-What each answer changes:
-
-- **Yes:** nothing. The spec as written stands: the generated class list, `exclude: calendar`, the
-  inventory regeneration (217 to 580 classes), the presence test, and the one-sentence model with its
-  two stated limits.
-- **No:** the scanned compile stays, plus a documented safelist grown family by family (`timeline`
-  alone costs about 10 KB raw). The class walk becomes a hand-kept list with a test that each entry
-  compiles. The presence test asserts the safelist's families. The one-sentence model and the facts
-  bullet say "every daisyUI component on the safelist." G1 weakens to "only the families on the
-  safelist": a developer's plain class from an unlisted family renders nothing, and
-  `no-uncompiled-class` reports it in the consumer's tree.
+The sheet grows about 1.7x: +21 KB gzip and +14 KB brotli, loaded only on `/admin/**` and cached.
+`calendar` is excluded because it skins third-party date pickers cairn does not ship, and alone it is
+243 KB raw, more than half the growth.
 
 ## Delivery
 
@@ -563,8 +536,8 @@ The pass branches from `main` after draft docs pass 0+1 merges (ruling 3).
 
 **Recommendation for plan approval: two passes.**
 
-- **Pass A, the theme:** the build (the compile R2 settles, the sublayer and pin, the custom-surface
-  category, the inventory and presence tests), R1's answer, the theme values, every cairn-idiom rule
+- **Pass A, the theme:** the build (the full compile, the sublayer and pin, the custom-surface
+  category, the inventory and presence tests), the D1 theme roots and their tests, the theme values, every cairn-idiom rule
   and its tests, rules 10 to 14, the markup sweep with its post-condition, the starter and its
   re-emit, the fixture screen and its spec, the norms data and `chip-ground-collision` re-key, the
   design-system and public-design-system docs, the facts, the reference pages, and the changelog.

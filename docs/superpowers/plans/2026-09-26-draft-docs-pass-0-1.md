@@ -16,6 +16,15 @@ the chain and the review page, proven together on one scratch page in one owner 
 also settles the owner facts. Stage 1 runs last, on the finished docs gate. Plans specify
 outcomes and acceptance, never implementation code.
 
+**Pass class (amended 2026-09-27, Geoff, after segment B's task 6):** `engine-logic` for the
+remaining code tasks 7 and 8 (internal checks, scripts, and the workstation runner), `docs` for
+task 10, and task 9 stays conductor-led. Under `engine-logic` each task keeps the repo's full gate
+it already ran, and the reviewer blocks on behavior defects and unmet outcomes, and on coverage gaps
+only where they touch reachable behavior. `code-simplifier` runs once, at the close (task 11), over
+the pass's changed code, never per task. Tasks 1 to 6 ran before the amendment under the per-task
+simplifier. Task 6's segment B commit also carries one line the ROADMAP owed to the next pass
+touching `test.yml`: CI now runs `check:tool-heuristics` beside `check:tool-conditions`.
+
 **Execution mode:** `pass-execute` (by name) for the cairn-cms tasks 1, 3, 4, 5, 6, and 8, in the
 segments below, **sequential** (`parallel` unset): the runner does no worktree isolation (`repo`
 is "prompt text only", `pass-execute.js:32-33`), so parallel tasks would share one index, one
@@ -83,7 +92,7 @@ only to a gate that is `make -C tool check` alone; a mixed diff (task 3: `tool/`
 tier `scripts+tool`) runs the heavy lane, since its `npm test` launches a browser suite. Task 6
 touches `package.json` and `.github/` and so runs the `full` tier; that is accepted. Conductor-run
 gates (task 9) call `cairn-run-gate` directly. Dotfiles: `scripts/check.sh`.
-`code-simplifier` runs over each code task's diff before its commit.
+`code-simplifier` runs once at the close (see "Pass class"), not per task.
 
 ## Global constraints
 

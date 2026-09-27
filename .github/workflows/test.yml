@@ -105,4 +105,6 @@ jobs:
       # gated (the standing repo rule). The Google and Microsoft style packages are vendored under
       # .vale/styles, so this runs offline against the exact rules committed to the repo.
       - run: npm run check:docs-gate
+      # Tripwire for the engine literals `cairn doctor`'s heuristics grep for.
+      - run: npm run check:tool-heuristics
       - run: npm run check:comments

@@ -280,6 +280,12 @@ describe('TIER_ORDER and TIER_GATES', () => {
     expect(TIER_GATES.full).toContain('test:e2e -- admin-visual.spec.ts && npm run check:comments');
     expect(TIER_GATES.full.endsWith('npm --prefix examples/showcase run test:e2e')).toBe(true);
   });
+
+  it('the engine gate ends with the node projects then the serialized component run', () => {
+    expect(TIER_GATES.engine.endsWith(
+      'npm run test:node-projects && npm run test:component -- --no-file-parallelism',
+    )).toBe(true);
+  });
 });
 
 // CLI integration: exercises the empty-range and git-failure exits, which decideGate alone cannot

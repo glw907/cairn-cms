@@ -48,7 +48,12 @@ const ROOT = repoRoot(import.meta.url);
 // is never folded into or out of the npm chain.
 const DOCS_GATE =
   'npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts';
-const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm test`;
+// Stock `npm test` runs the vitest component project (real Chromium) in parallel with the three
+// node projects, and that parallel component run stalls on the maintainer's workstation. This
+// gate runs the node projects first, then the component project alone with file parallelism off,
+// so the local gate stays reliable. CI's `test.yml` keeps running `npm test` and stays parallel;
+// this serialization is local-gate-only.
+const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
 const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';

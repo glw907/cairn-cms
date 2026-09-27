@@ -637,3 +637,47 @@ copy and a hover copy under the same guard. `.btn-link` also joins the wash/weig
 hairline selectors' exclusion list, so a selected nav or breadcrumb link keeps daisyUI's own link
 look. The unlayered allowlist drops from 18 to 15: rules 10, 11 (its old unwidened form), and 12 all
 leave the unlayered block.
+
+## Fields and marks: rules 13 and 14 move in, the switch, concentric corners, Lucide strokes
+
+Two more rules move in, unchanged in mechanism, widened at nothing:
+
+- **Rules 13 and 14** (the unchecked checkbox/radio edge and the unfocused `.input`/`.select`/
+  `.textarea` edge, both the 55% `color-mix` toward `--color-base-content`), moved out of the
+  unlayered block for the identical reason rules 10-12 were: a components-layer rule cannot outrank
+  daisyUI's own utilities-layer border declaration regardless of specificity, and an unlayered rule,
+  while it can, also outranks every markup utility along with it. Every selector and exclusion
+  carries over unchanged (`.checkbox`'s own `:indeterminate` exclusion, `.radio`'s deliberate lack
+  of one, the field family's `:focus`/`:focus-within`/`:disabled`/`[disabled]`/
+  `.toolkit-toolbar-select`/daisyUI's own error-family exclusions). After the move a
+  `border-error` markup utility on a field, or `.toolkit-toolbar-select`'s own scoped
+  `--input-color` override, wins where it could not before.
+
+The unlayered allowlist drops from 15 to 13. `idiomLayerCap` rises from 17 to 19 for these two
+(one selector-count match each, since a comma-joined multi-selector rule counts once, the same
+mechanism `componentsLayerCap` already relies on).
+
+Three more rule groups land in `cairn-idiom`, raising `idiomLayerCap` from 19 to 23:
+
+- **The switch's geometry**, one selector pair: `border-radius: 9999px` on `.toggle` and its
+  `::before`, unconditional (no color-variant or state exclusion), since daisyUI derives both radii
+  from `--radius-selector` and shape does not change with color, checked state, or disabled state.
+- **The switch's checked fill**, two selectors (track, knob), each excluding the eight color
+  modifiers and `:disabled` (mirroring daisyUI's own `.toggle:disabled` selector, which carries no
+  `[disabled]`/`[aria-disabled]` form of its own): `background-color: var(--color-neutral)` on the
+  track, `background-color: var(--color-base-100)` on the knob's own `::before`, across all three
+  daisyUI checked forms (`:checked`, `[aria-checked='true']`, `:has(> input:checked)`). The knob is
+  set directly on `::before` rather than through `--input-color`, since daisyUI draws both the knob
+  and the `:focus-visible` ring from `currentColor`; setting the knob through the shared variable
+  would have turned the ring `base-100` too, and a `base-100` ring vanishes on a `base-100` card.
+- **Concentric corners**, one selector: `--radius-field: calc(var(--radius-box) - 0.25rem)` on the
+  `dropdown-content.menu` pair, since daisyUI's own `.menu` item rule reads `--radius-field` but
+  `.menu` itself never declares it, so an item's radius otherwise floats free of its own panel's.
+  Sets the variable, not `border-radius` directly, so an item's own `rounded-none` utility still
+  wins.
+
+`componentsLayerCap` rises from 16 to 17: Lucide's stroke retune,
+`svg.lucide[stroke-width='2'] { stroke-width: 1.75 }`, lands in `@layer components` rather than
+`cairn-idiom`, since it overrides no daisyUI declaration (only Lucide's own default SVG attribute
+value), so it only needs to sort before the utilities layer, not after daisyUI's own sublayers
+inside it. A markup `stroke-[2.5]` utility still wins from its later, unnested position regardless.

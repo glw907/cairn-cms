@@ -822,6 +822,23 @@
     align-items: center;
     height: 1lh;
   }
+
+  /* Lucide icons ship at a default stroke-width of 2; the admin retunes it to 1.75 for a lighter
+     line weight, keyed on the rendered attribute value rather than the lucide class alone, so a
+     deliberately heavier stroke (an explicit strokeWidth of 2.2, 2.4, 2.5, or 3, or an
+     absoluteStrokeWidth icon at a size other than 24, which computes strokeWidth * size / 24) keeps
+     its own computed value untouched. lucide is Lucide's stable class name across every icon;
+     lucide-icon carries an upstream removal TODO (@lucide/svelte's own Icon.svelte comment) and is
+     not this rule's anchor. This lives in components, not cairn-idiom: it overrides no daisyUI
+     declaration, only Lucide's own default attribute value, so it only needs to sort before the
+     utilities layer, not after daisyUI's own sublayers inside it; a markup stroke-[2.5] utility (an
+     unnested Tailwind class) still wins from that later, unnested position regardless.
+     WATCH: this rule keys on Lucide's own default attribute value (stroke-width="2"); a future
+     @lucide/svelte release that changes that default would make this selector silently stop
+     matching. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) svg.lucide[stroke-width='2'] {
+    stroke-width: 1.75;
+  }
 }
 
 /* The cairn-idiom sublayer: every rule that overrides a daisyUI declaration lives here, in
@@ -1260,6 +1277,125 @@
       ) {
       color: var(--btn-fg, var(--color-base-content));
     }
+
+    /* The switch is exempt from the corner ladder: daisyUI derives both the track and knob radii
+       from --radius-selector (`border-radius: calc(var(--radius-selector) + ...)` on .toggle,
+       `border-radius: var(--radius-selector)` on .toggle:before), and a fully round pill is the
+       shape a switch reads as regardless of the ladder's own tightened box/field/selector scale.
+       Unconditional and carrying no color-variant or state exclusion: shape does not change with
+       color, checked state, or disabled state, so a rounded-none utility on either element still
+       wins from the utilities layer's own unnested position. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .toggle,
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .toggle::before {
+      border-radius: 9999px;
+    }
+
+    /* Checked fills the track with --color-neutral, on all three forms daisyUI itself treats as
+       checked (:checked, [aria-checked='true'], and :has(> input:checked), the wrapped-icon
+       toggle recipe's own device), for a toggle carrying none of the eight color modifiers; a
+       toggle-primary and its seven siblings keep daisyUI's own --input-color-driven fill,
+       unaffected by the exclusion list. :not(:disabled) mirrors daisyUI's own disabled selector for
+       .toggle exactly (`.toggle:disabled{opacity:.3}`, no [disabled] or [aria-disabled] form of its
+       own), so this rule leaves a disabled checked switch to that same opacity-only dimming instead
+       of painting a full-strength fill through a later sublayer regardless of it. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .toggle:not(
+        .toggle-primary,
+        .toggle-secondary,
+        .toggle-accent,
+        .toggle-neutral,
+        .toggle-info,
+        .toggle-success,
+        .toggle-warning,
+        .toggle-error,
+        :disabled
+      ):is(:checked, [aria-checked='true'], :has(> input:checked)) {
+      background-color: var(--color-neutral);
+    }
+
+    /* The knob's own fill, the identical exclusion list: daisyUI draws the knob from currentColor
+       (`.toggle:before{background-color:currentColor}`), the same currentColor its own
+       :focus-visible rule draws the ring from (`outline: 2px solid`, no explicit color of its own).
+       Turning the knob base-100 through --input-color, the property daisyUI's own checked rule
+       already restates to --color-base-content and the value color itself (and so currentColor)
+       reads from, would turn the ring base-100 too, and a base-100 ring vanishes on a base-100
+       card. Setting the knob directly on ::before instead decouples the two, so the ring stays
+       whatever currentColor already resolves to. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .toggle:not(
+        .toggle-primary,
+        .toggle-secondary,
+        .toggle-accent,
+        .toggle-neutral,
+        .toggle-info,
+        .toggle-success,
+        .toggle-warning,
+        .toggle-error,
+        :disabled
+      ):is(:checked, [aria-checked='true'], :has(> input:checked))::before {
+      background-color: var(--color-base-100);
+    }
+
+    /* Concentric corners: daisyUI's own .menu item rule reads `border-radius: var(--radius-field)`
+       but .menu never declares that variable itself, so an item inside a padded dropdown panel
+       otherwise takes whatever --radius-field the ambient page happens to carry rather than one
+       sized to its own panel. Keyed on the dropdown-content/menu pair specifically (a developer's
+       own `<ul class="dropdown-content menu">`), since a plain sidebar or inline .menu with no
+       dropdown-content already reads the ambient value correctly and needs no adjustment. Sets the
+       variable, not border-radius directly, so an item's own rounded-none utility still wins. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .dropdown-content.menu {
+      --radius-field: calc(var(--radius-box) - 0.25rem);
+    }
+
+    /* The unchecked checkbox/radio edge, moved out of the unlayered block: a components-layer rule
+       cannot outrank daisyUI's own utilities-layer border declaration regardless of specificity,
+       which is why this used to have to sit outside every layer, and an unlayered rule, while it
+       can outrank daisyUI, also outranks every markup utility along with it, the same class of
+       defect an earlier unlayered `.btn-active` override once caused elsewhere in this file. The
+       cairn-idiom sublayer outranks daisyUI's own
+       utilities.daisyui sublayers (build-admin-css.mjs registers it after them) while still losing
+       to Tailwind's own unnested utilities, so a border-error utility on a field now wins where it
+       could not before. The selectors, the 55% color-mix, and the exclusions carry over unchanged:
+       daisyUI's own .checkbox/.radio border reads `var(--input-color, color-mix(in oklab,
+       var(--color-base-content) 20%, transparent))` at rest, under the WCAG 1.4.11 non-text 3:1
+       floor when no color variant supplies --input-color, which no admin call site does; 55% clears
+       it (3.586:1 light / 4.959:1 dark against base-100) and holds through hover unaided, since
+       neither daisyUI's own rule nor this one restates border-color there. `.checkbox` excludes
+       `:indeterminate` in addition to `:checked`/`[aria-checked='true']`: a checked control already
+       carries its own solid fill or currentColor border, and an unnamed, ungrouped radio matches
+       `:indeterminate` too (the HTML spec's radio-button-group algorithm), so `.radio` deliberately
+       carries no such exclusion. Disabled is left alone: it is exempt from the 1.4.11 floor, and
+       daisyUI's own `:disabled` opacity step already communicates the state. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .checkbox:not(:checked, :indeterminate, [aria-checked='true']),
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .radio:not(:checked, [aria-checked='true']) {
+      border-color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+    }
+
+    /* The unfocused .input/.select/.textarea edge, moved out of the unlayered block for the
+       identical reason the checkbox/radio rule above was. The selectors, the 55% mix, and every
+       exclusion (`:focus`, `:focus-within`, `:disabled`, `[disabled]`, the
+       `.toolkit-toolbar-select` carve-out, and daisyUI's own error family) carry over unchanged: a
+       focused field already sets --input-color to full --color-base-content through daisyUI's own
+       focus rule, a far stronger edge this rule would otherwise outrank too since a nested-sublayer
+       rule beats a nested-sublayer rule regardless of pseudo-class specificity; a disabled field is
+       exempt from the WCAG 1.4.11 floor by daisyUI's own opacity dimming; and an error-marked
+       field's own red border is a distinct semantic signal this rule has no business flattening to
+       the generic gray edge. `.select` additionally excludes `.toolkit-toolbar-select`
+       (`ListToolbar.svelte`'s own scoped `--input-color` override, harmonizing that facet with its
+       menu sibling's own hairline vocabulary), which this rule's own longhand border-color would
+       otherwise still outrank from the same sublayer. A border-error utility, or
+       `.toolkit-toolbar-select`'s own scoped rule, now wins where it could not before, the same win
+       the checkbox/radio move above grants. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .input:not(:focus, :focus-within, :disabled, [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])),
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .select:not(:focus, :focus-within, .toolkit-toolbar-select, :disabled, [disabled], .select-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])),
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .textarea:not(:focus, :focus-within, :disabled, [disabled], .textarea-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])) {
+      border-color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+    }
   }
 }
 
@@ -1458,109 +1594,6 @@
    20rem. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked > :where(.input, .select, .textarea) {
   width: 100%;
-}
-
-/* The unchecked checkbox/radio edge (2026-08-27 admin sheet fixes): DaisyUI's own `.checkbox`
-   borders at `var(--input-color, color-mix(in oklab, var(--color-base-content) 20%, transparent))`
-   and `.radio` at the equivalent `var(--input-color, color-mix(in srgb, currentColor 20%,
-   transparent))` (currentColor resolves to the same base-content ink here); both a 20% mix, and no
-   admin call site sets a color variant (`.checkbox-primary`, `.radio-primary`, etc.) that would
-   supply `--input-color`, so every unchecked toggle in the admin falls to that 20% fallback.
-   Measured against base-100: 1.492:1 light / 1.773:1 dark, both under the
-   WCAG 1.4.11 non-text 3:1 floor, so an unchecked control reads as a near-invisible blank box rather
-   than a visible field. Both controls share the identical faint-edge construction (checked
-   2026-08-27), so one rule covers both; `.toggle`'s own construction already mixes 50% and clears the
-   floor unaided (3.118:1 light / 4.370:1 dark), so it is left alone.
-   The border is a utilities-layer declaration (`@layer daisyui.l1.l2.l3`), which a components-layer
-   rule cannot outrank regardless of specificity (cascade layers resolve before specificity, the same
-   reason every rule above is unlayered); UNLAYERED for the same reason. 55% reuses the exact mix
-   already locked for the scrollbar thumb and the outline chip border (measured there: 3.59:1 light /
-   4.98:1 dark against base-100); here it measures 3.586:1 light / 4.959:1 dark, both comfortably
-   clearing 3:1.
-   Scoped to `:not(:checked, [aria-checked='true'])`, and `.checkbox` additionally excludes
-   `:indeterminate`: a checked checkbox already fills with `--input-color`'s solid background (or,
-   unstyled, stays a legible glyph-on-transparent), and a checked radio already sets its own
-   `border-color: currentColor`, so neither needs this rule. `.radio` carries no `:not(:indeterminate)`
-   exclusion, deliberately: an `<input type="radio">` with no `name` forms a singleton group per the
-   HTML spec's radio-button-group algorithm, so an ungrouped unchecked radio matches `:indeterminate`
-   too (confirmed empirically, `.matches(':indeterminate')` is true for a bare unnamed radio), and
-   excluding it would silently exempt the common ungrouped case this rule exists to fix. Disabled is
-   left alone deliberately: a disabled control is exempt from WCAG 1.4.11's non-text floor, and
-   daisyUI's own `:disabled` opacity step already communicates the state.
-   Falsifiable the same way as the chip rules above: dropping the mix back to 20% turns both measured
-   ratios red (1.492:1 light / 1.773:1 dark, under the 3:1 floor); restoring 55% turns them green
-   again (status-chip-register-tuning.test.ts's sibling proof,
-   interactive-control-edge-contrast.test.ts, carries this exact break-and-restore).
-   PINNED unlayered rule 13 of 14 (gate match: `.checkbox:not(:checked, :indeterminate,
-   [aria-checked='true']), .radio:not(:checked, [aria-checked='true'])`); bug it prevents: an
-   unchecked checkbox or radio's edge sitting under the WCAG 1.4.11 non-text contrast floor. */
-:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .checkbox:not(:checked, :indeterminate, [aria-checked='true']),
-:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .radio:not(:checked, [aria-checked='true']) {
-  border-color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
-}
-
-/* The unfocused `.input`/`.select`/`.textarea` edge (2026-08-27 admin sheet fixes, extends the
-   checkbox/radio fix above to the rest of the field family): all three resolve their border
-   through the identical `--input-color` construction the checkbox/radio rule above fixes
-   (`border: var(--border) solid var(--input-color, transparent)`, with `--input-color` itself
-   `color-mix(in oklab, var(--color-base-content) 20%, transparent)` when no color variant
-   supplies it, which no admin call site does). Measured against base-100: 1.492:1 light / 1.773:1
-   dark, both under the WCAG 1.4.11 non-text 3:1 floor, the same numbers as the checkbox/radio case
-   above since the underlying token pair is identical.
-   The border is a utilities-layer declaration, which a components-layer rule cannot outrank
-   regardless of specificity (the same reason every rule above is unlayered); UNLAYERED for the
-   same reason. 55% reuses the exact mix already locked above (and for the scrollbar thumb and the
-   outline chip border); here it measures 3.586:1 light / 4.959:1 dark, both comfortably clearing
-   3:1 (unchanged from the checkbox/radio numbers, since both share the same base-content/base-100
-   pair).
-   Scoped to `:not(:focus, :focus-within)`: a focused field already sets `--input-color` to full
-   `var(--color-base-content)` (daisyUI's own focus rule), a far stronger edge, and this override
-   would otherwise outrank that state too, since an unlayered rule always wins over a layered one
-   regardless of pseudo-class specificity.
-   `.select` additionally excludes `.toolkit-toolbar-select` (`ListToolbar.svelte`'s own select
-   facet): that call site deliberately overrides `--input-color` in its own scoped `<style>` to
-   `var(--cairn-card-border)`, so the select reads as the same quiet-chrome family as its sibling
-   `'menu'` facet (both share one hairline border vocabulary) rather than as a standard text field.
-   This rule's `border-color` is a longhand, unlayered like that scoped rule, and would otherwise
-   outrank it regardless of the scoped rule's own `--input-color` value, repainting a deliberately
-   harmonized control back to the generic field edge. `--cairn-card-border` is not this rule's
-   concern: it is a structural card/chrome hairline measured and owned elsewhere, not the
-   `--input-color` fallback this rule exists to raise.
-   Every field additionally excludes `:disabled`/`[disabled]` and daisyUI's own error family
-   (`.validator:user-invalid`, its `[aria-invalid]:not([aria-invalid="false"])` sibling selector
-   (the accessible, no-real-interaction-needed way to mark a field invalid daisyUI's own rule
-   already matches on), and `.input-error`/`.select-error`/`.textarea-error`): unlike rule 13
-   above, this rule carried no disabled exclusion of its own before this fix round, so it silently
-   repainted a disabled field's edge to the same 55% mix as an enabled one, overriding daisyUI's
-   own `:disabled` base-200 border (a distinct, lower-salience state this rule has no business
-   touching, the same WCAG 1.4.11 disabled exemption rule 13's own comment already carries) and,
-   separately, an invalid field's own red error border (`--input-color: var(--color-error)`, which
-   this rule's own longhand `border-color` always outranks regardless of that variable's value,
-   since a longhand set after a shorthand wins at equal specificity/layer): a semantic signal this
-   rule would otherwise flatten to the generic gray edge, actively working against the state the
-   color exists to convey.
-   Falsifiable the same way as the rule above: dropping the mix back to 20% turns both measured
-   ratios red (1.492:1 light / 1.773:1 dark, under the 3:1 floor); restoring 55% turns them green
-   again (interactive-control-edge-contrast.test.ts carries this exact break-and-restore for the
-   field family, plus the disabled/error non-repaint cases the same file adds alongside it).
-   PINNED unlayered rule 14 of 14 (gate match: `.input:not(:focus, :focus-within, :disabled,
-   [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid=
-   "false"])), .select:not(:focus, :focus-within, .toolkit-toolbar-select, :disabled, [disabled],
-   .select-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid="false"])),
-   .textarea:not(:focus, :focus-within, :disabled, [disabled], .textarea-error,
-   .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid="false"]))`); bug it
-   prevents: an unfocused text field, select, or textarea's edge sitting under the WCAG 1.4.11
-   non-text contrast floor, without repainting a disabled or already-error-colored field's own
-   edge. */
-:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .input:not(:focus, :focus-within, :disabled, [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])),
-:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .select:not(:focus, :focus-within, .toolkit-toolbar-select, :disabled, [disabled], .select-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])),
-:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .textarea:not(:focus, :focus-within, :disabled, [disabled], .textarea-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])) {
-  border-color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

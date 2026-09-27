@@ -528,6 +528,7 @@ loading-spinner
 loading-xl
 loading-xs
 lowercase
+lucide
 m-0
 mask
 mask-circle

@@ -142,3 +142,23 @@ jobs:
             git pull --rebase
             git push
           fi
+      # examples/showcase/playwright.config.ts sets testDir: 'e2e' and leaves reporter/outputDir
+      # unset, so Playwright writes test-results (its outputDir default, package-dir-relative) and
+      # would write playwright-report (the html reporter's own default path) under the same
+      # package dir; both paths are relative to examples/showcase. `if: failure()` catches a
+      # failure from any prior step in this job, not only the test run. `if-no-files-found: ignore`
+      # keeps the step from failing the job itself when a path has nothing to upload (this repo's
+      # config runs the default CI reporter, not `html`, so playwright-report is not produced
+      # today; test-results still carries the per-failure error-context.md Playwright writes
+      # regardless of reporter). The name is job-scoped so a future matrix leg gets its own
+      # artifact instead of two legs colliding on one name.
+      - name: Upload the Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ github.job }}
+          path: |
+            examples/showcase/playwright-report
+            examples/showcase/test-results
+          retention-days: 7
+          if-no-files-found: ignore

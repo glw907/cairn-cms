@@ -1596,3 +1596,11 @@ tasks: `7-fix` and task 8, each with `gateTier: "targeted"` and its `gate` from 
 Then the segment B boundary (push, one Haiku CI probe against the expected-red set, the ledger with
 each task's `batchedNotes`), then the owner glance's captures and page, then segment C (tasks 9,
 10, 11) without waiting on Geoff.
+
+Conductor notes for the cold resume (2026-09-27): a reduced-gate leg with no touched files is
+omitted, never run bare (`vitest run --project unit` with no file list runs the whole project).
+The close's class-keyed pass-end fan-out is `daisyui-a11y-reviewer` plus the S1 `visual-verifier`
+read; no other domain reviewer, since nothing touches auth, Workers, or Svelte logic beyond markup.
+Task 14 runs as class `docs` (the design-system documents). The `gateTier: "targeted"` sentinel
+relies on `gate-tier.mjs` rejecting an unknown pin; if the classifier ever accepts it, the
+targeted tasks draw a MISMATCH, so check the first task's report for the fallback line.

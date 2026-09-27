@@ -1092,6 +1092,7 @@ textarea-success
 textarea-warning
 textarea-xl
 textarea-xs
+theme-controller
 timeline
 timeline-box
 timeline-compact

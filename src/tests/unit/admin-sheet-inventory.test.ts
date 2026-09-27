@@ -102,7 +102,9 @@ describe('shipped admin sheet class inventory', () => {
 
 // The motion token vocabulary: five durations and three curves, the closed set cairn-audit's
 // motion-band rule enforces, declared on both admin theme roots so a component under either
-// scheme reads the same values. The two theme-root blocks are found by their opening selector and
+// scheme reads the same values. The two plain theme-root rules are found by their opening selector
+// at the start of a line, where the unlayered rule sits (the daisyUI theme block's `@layer base`
+// rule ends in the same selector but is indented and carries only daisyUI's own variables), and
 // their assertion runs against the SLICE up to the next top-level closing brace, so a token
 // declared in one root does not silently satisfy the assertion for the other. lightningcss's
 // printer normalizes number serialization (110ms becomes .11s, a leading zero on a cubic-bezier
@@ -133,14 +135,14 @@ describe('the admin motion token set', () => {
   }
 
   it('declares all eight token names with their exact values on the light theme root', () => {
-    const block = themeRootBlock('[data-theme="cairn-admin"] {');
+    const block = themeRootBlock('\n[data-theme="cairn-admin"] {');
     for (const [name, value] of Object.entries(TOKENS)) {
       expect(block, `expected ${name} in the light root`).toContain(`${name}: ${value}`);
     }
   });
 
   it('declares all eight token names with their exact values on the dark theme root', () => {
-    const block = themeRootBlock('[data-theme="cairn-admin-dark"] {');
+    const block = themeRootBlock('\n[data-theme="cairn-admin-dark"] {');
     for (const [name, value] of Object.entries(TOKENS)) {
       expect(block, `expected ${name} in the dark root`).toContain(`${name}: ${value}`);
     }

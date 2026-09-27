@@ -1,15 +1,19 @@
-# Theme identity pass B: the admin agent path and one public theme
+# Theme identity passes B and C: the admin agent path and one public theme
 
-**Status:** draft, folded (2026-09-27). Geoff approved the brainstorm's design in conversation. The
-nine-lens review then ran, and its fold changed parts of that design. Every change is listed in the
-fold record, and each change that needs Geoff's word is under Owner rulings. This document awaits
-Geoff's read and his answers to R1 through R5.
+**Status:** draft, folded three times (2026-09-27). This spec covers two passes: pass B (the rename
+and the admin agent path) and pass C (one public theme). Geoff approved the brainstorm's design in
+conversation. The nine-lens review then ran, and its fold changed parts of that design. A second
+fold applied Geoff's decisions of 2026-09-27. He confirmed the `cairn-public` skill and the
+library's meaning, and he settled the names, the rename, and the two-pass delivery. A third fold
+applied the conductor's decisions on three conflicts the second fold surfaced: `PreviewBanner`'s
+export, the release ordering, and the audit's default scopes. Every change is listed in the fold
+record. This document awaits Geoff's read and his answers to R1 and R2.
 
 **Extends:** [`2026-09-26-theme-identity-design.md`](2026-09-26-theme-identity-design.md). Its
-"G2: easy for agents" section and the "Pass B, the agent path" bullet under Delivery define chain 1
-below. This spec adds nothing to that scope and restates it only by reference; where the two
-disagree, the earlier spec governs chain 1. The fold changes no meaning in the parent, so no erratum
-is owed.
+"G2: easy for agents" section and the "Pass B, the agent path" bullet under Delivery define pass
+B's agent path below. This spec adds nothing to that scope and restates it only by reference;
+where the two disagree, the earlier spec governs the agent path. The fold changes no meaning in
+the parent, so no erratum is owed.
 
 **Folds in:** the ROADMAP "One public theme" initiative (Geoff, 2026-09-27), which sequences
 before draft documentation resumes.
@@ -32,8 +36,8 @@ Geoff's intent, from the brainstorm:
 - "cairn should be able to include a non-Waymark theme." The contract must be theme-independent.
   This initiative makes a second theme possible and proves it; shipping one is later work.
 - "A cairn implementer [should] be able to add a new component to the library and have it easily
-  access the theme values." The library means both the engine's public components and the chassis
-  component set (R4).
+  access the theme values." The library means both built-in public components and custom public
+  components (confirmed by Geoff, 2026-09-27).
 - "Our system [must not] box in a designer who wants a very different look-and-feel," and it must
   be "something a theoretical theme designer would be happy to work with."
 - The system should be "clean, simple, logical, and flexible," following idiom without
@@ -47,7 +51,83 @@ tokens of its own, may replace or drop the chassis `prose.css` and `composition.
 restyle anything through the ordinary cascade. The guard polices literals, never vocabulary: it
 checks that a value comes from a token, never which token, and never where a token is defined.
 
-## Chain 1: the admin agent path
+## Names
+
+Geoff delegated the naming, and these names are decided. cairn has two surfaces, the admin and the
+public site. Every component is built-in, which means cairn ships it, or custom, which means a site
+writes it. The noun is "component" on both surfaces, since the editor's insert menu already says
+"components" and it is the stack's word. The surface adjective tells the two apart: "admin
+component", "public component", "built-in public component", "custom admin component". "Site" keeps
+its one meaning, the developer's whole project ("a cairn site"). "Custom admin screen" stays the
+name for a whole admin route.
+
+| | Built-in (cairn ships it) | Custom (a site writes it) |
+|---|---|---|
+| **Admin component** | Lives in `src/lib/admin/`, exported at `@glw907/cairn-cms/admin`, beside `cairn-admin.css`. Rulebook: `docs/internal/admin-design-system.md`. Audit scope: the admin static scope. Guidance: the admin design system and `cairn-implementer`. | Lives under the site's `src/routes/admin` or `src/lib/admin/`, built on `@glw907/cairn-cms/admin-toolkit`. Rulebook: the ratified norms, DaisyUI-first. Audit scope: the admin static scope. Guidance: `cairn-admin-screens`, `cairn-extend`'s `daisyui-first.md`, and `cairn-extension-reviewer`. |
+| **Public component** | Lives in `src/lib/public/`, exported at `@glw907/cairn-cms/public`, styled by `cairn-public.css`. Rulebook: the public theme contract, with no literal and no daisyUI component class. Audit scope: the public scope, rooted at the engine's `src/lib/public/` by the showcase config. Guidance: `cairn-public`'s built-in recipe and the `cairn-implementer` line. | Lives under the site's `src/chassis`, `src/theme`, or `src/routes`, as a `defineComponent` plus rules in `prose.css` or a component `<style>`. Rulebook: the public theme contract. Audit scope: the public scope's default roots. Guidance: `cairn-public`'s custom recipe. |
+
+Each surface has its own barrel. `@glw907/cairn-cms/admin` exports only admin components, and
+`@glw907/cairn-cms/public` exports every built-in public component. The stylesheet subpath stays
+`@glw907/cairn-cms/cairn-public.css`. A site's custom admin components live under `src/lib/admin`
+or `src/routes/admin`, which is where the admin audit scope looks by default.
+
+`src/lib/admin-toolkit` and its `./admin-toolkit` export keep their names. Pass B's first task
+writes these names into the Names section of `docs/internal/docs-register.md`, with Vale
+enforcement through the `Cairn.Names` and `Cairn.NamesRetired` rules.
+
+## Pass B: the rename and the admin agent path
+
+### The rename, first and alone
+
+The engine's admin folder `src/lib/components/` becomes `src/lib/admin/`, and `cairn-admin.css`
+moves with it. The export `@glw907/cairn-cms/components` becomes `@glw907/cairn-cms/admin`. This
+is a breaking change with no compatibility alias. Geoff: "It's not too much cost, since I'm about
+to rebuild each site." Under R1's recommended answer, it ships in the release cut at pass
+B's merge.
+
+The same task gives the one built-in public component its own home. `PreviewBanner` moves from the
+admin folder to `src/lib/public/`. A new barrel there is exported as `@glw907/cairn-cms/public`, the
+subpath every built-in public component exports from. `./admin` then carries no public component,
+and its barrel drops the comment that called `PreviewBanner` an exception. The template's and the
+showcase's preview routes import `PreviewBanner` from `@glw907/cairn-cms/public` in this task, so
+the template's import changes once. `PreviewBanner` keeps its current styling in pass B. Pass C
+migrates that styling to tokens.
+
+The rename is pass B's first task, run alone before any other task, after pass A merges, since
+pass A edits those files. It updates every path reference: the `@source` line in
+`admin-sources.css`, the audit's default scopes, sheet candidates, and palette file in
+`src/lib/audit/config.ts`, `check:surface` and every other gate that names the path, the reference
+pages (`docs/reference/components.md` becomes `admin.md`), the shipped guidance, the `CLAUDE.md`
+mentions, the templates' and showcase's imports, and the package exports. It adds
+`docs/reference/public.md`, the reference page `check:reference` requires for the new subpath.
+
+**The admin audit scope's defaults.** The admin static scope's default roots become
+`src/routes/admin`, `src/lib/admin`, and `src/lib/admin-toolkit`. `src/lib/components` leaves the
+admin defaults. A site's custom admin components belong under `src/lib/admin` or
+`src/routes/admin`. A site that keeps custom admin components in `src/lib/components` either moves
+them or names that root in its `cairn-audit.config.json`. Pass B's `Consumers must:` line and its
+migration note both say so.
+
+**Consumers must.** Pass B's changelog entry carries one `Consumers must:` line with three parts:
+import admin components from `@glw907/cairn-cms/admin` instead of `./components`; import
+`PreviewBanner` from `@glw907/cairn-cms/public`; and move any custom admin components out of
+`src/lib/components` into `src/lib/admin`, or name that root in `cairn-audit.config.json`.
+
+**Acceptance.** The full gate is green, including `check:reference` with the new
+`docs/reference/public.md`. `package.json` exports `./public`, and the showcase and template
+preview routes import `PreviewBanner` from it. `git grep -n PreviewBanner -- src/lib/admin` prints
+nothing. This grep also prints nothing at pass B's merge:
+
+```sh
+git grep -nE "lib/components|dist/components|cairn-cms/components|['\"]\.?/components['\"]" -- \
+  ':!docs/internal/history' ':!docs/internal/record' ':!docs/internal/design' ':!docs/superpowers' \
+  ':!docs/HISTORY.md' ':!CHANGELOG.md'
+```
+
+The grep is pass B's acceptance, not a standing gate. Pass C's public scope names
+`src/lib/components` as a default root on purpose, so the string returns in `src/lib/audit/config.ts`.
+
+### The admin agent path
 
 Unchanged from the theme identity spec: the `radius-scale` rule and the retired-patch arms on
 `stock-default-hazards`, both advisory; the recipe field beside `RATIFIED_NORMS` as the one source
@@ -57,7 +137,7 @@ guidance (`skills/cairn-admin-screens/SKILL.md` with a new exemplar built from t
 the sync test between the guidance tables, the recipe source, and the fixture route; and the
 admin agent-build probe. It depends on pass A's final class vocabulary and fixture screen.
 
-## Chain 2: one public theme
+## Pass C: one public theme
 
 ### The contract
 
@@ -68,8 +148,10 @@ The public theme contract has three parts, and nothing else:
    `--noise`. The key list is read from `daisyui/theme/object`, a declared daisyUI export and the
    source pass A's completeness test uses, so it tracks daisyUI upgrades. Nothing in cairn defaults
    these keys. daisyUI does, when a theme block extends a built-in theme by name.
-2. **One engine-shipped public stylesheet, `@glw907/cairn-cms/public.css`,** beside the existing
-   `./admin-sources.css`. It holds four things:
+2. **One engine-shipped public stylesheet, `src/lib/public/cairn-public.css`,** exported as
+   `@glw907/cairn-cms/cairn-public.css` beside the existing `./admin-sources.css`. The name pairs
+   with `cairn-admin.css`, and the prefix keeps it from colliding with a site's own files. It holds
+   four things:
    - cairn's roles, declared in `@layer theme` on `:root, [data-theme]`: the four status inks,
      `--cairn-shadow`, the focus-ring set, the code ramp, and `--flow-space`;
    - two utility-bearing colors in `@theme`, `--color-muted` and `--color-card-border`;
@@ -88,7 +170,7 @@ namespace when a utility should read it, as `text-muted` reads `--color-muted`. 
 key is a `--cairn-*` role. `--flow-space` is the one unprefixed role, grandfathered because every
 site's prose reads it. There are no aliases.
 
-**Admission.** A key enters `public.css` only when an engine or chassis file reads it. Waymark's
+**Admission.** A key enters `cairn-public.css` only when an engine or chassis file reads it. Waymark's
 own keys stay in Waymark's `theme.css` as theme tokens: the CTA set and `--cairn-caption-tracking`,
 whose only readers are Waymark's styleguide and `SiteHeader`. The engine never redefines a Tailwind
 stock key such as `--leading-tight` or `--font-mono`.
@@ -100,14 +182,14 @@ Tailwind's container sizes (`max-w-2xl` compiles to the 4rem space step, not 42r
 them from the engine would make that trap permanent contract. Four scale keys redefine Tailwind stock
 keys, which is the site's choice to make, never the engine's. And every theme retunes its scale
 anyway, while the stale-copy evidence is entirely `:root` roles. Keeping the scale site-owned keeps
-the engine contract small and removes the `@theme`-pruning risk for the scale. The cost is that an
-engine public component cannot rely on a scale key; it sizes type and space from its context (`em`,
-`inherit`) or from daisyUI's `--size-field` and `--size-selector`. A chassis or site component reads
-the scale freely, since the chassis defines it. The chassis README's collision note is corrected to
+the engine contract small and removes the `@theme`-pruning risk for the scale. The cost is that a
+built-in public component cannot rely on a scale key; it sizes type and space from its context
+(`em`, `inherit`) or from daisyUI's `--size-field` and `--size-selector`. A custom public component
+reads the scale freely, since the chassis defines it. The chassis README's collision note is corrected to
 all five shadowed names.
 
 The chassis `tokens.css` therefore keeps: the Tailwind import, the daisyUI plugin activation, the
-`public.css` import, the `prose.css` and `composition.css` imports, `@source not "./.claude"`, and
+`cairn-public.css` import, the `prose.css` and `composition.css` imports, `@source not "./.claude"`, and
 the design scale. The roles, the code-block binding, and the focus-ring utility leave it.
 
 **Why the roles sit in a layer.** `@layer theme` is the lowest layer Tailwind declares
@@ -119,7 +201,7 @@ Chromium). daisyUI emits a theme block's custom properties on both its dark-pref
 `[data-theme="<name>"]`, so a theme puts each per-scheme value in that scheme's block and needs no
 hand-synced dark triple. One limit applies. A comma-separated value such as `--cairn-shadow` does
 not survive daisyUI's option parser, so it stays in `:root`. The two `@theme` colors follow
-`@theme`'s own rule, where the later declaration wins, and the chassis imports `public.css` before
+`@theme`'s own rule, where the later declaration wins, and the chassis imports `cairn-public.css` before
 the theme's own blocks. They also resolve at
 `:root` and do not recompute under a nested theme; the reference page states this, and a theme that
 nests sets them in the nested block. `@theme static` was rejected for the pruning problem, because
@@ -132,7 +214,7 @@ is consistent with them. The defaults are the value half of a contract the engin
 classes it emits, and the tokens those classes and the chassis read. The stale-copy evidence meets
 `site-today-export`'s own reopen condition, "evidence an export fixes the discoverability failure
 better than the chassis copy does". All five sites' copies froze and missed keys added since, and
-an engine component that reads a newer key fails silently on an older site. Shipping a package's
+a built-in public component that reads a newer key fails silently on an older site. Shipping a package's
 design defaults in the package is the daisyUI and Tailwind idiom. The pass records a new ruling in
 `docs/internal/engine-rulings.md` (the proposed text is in the fold record).
 
@@ -141,16 +223,16 @@ they stay copy-on-create, the Drupal Starterkit and shadcn choice. The cost is s
 rebuilt sites do not receive upstream prose fixes automatically. Those fixes reach a site through
 the migration notes.
 
-**Engine public components.** An engine public component may assume `public.css` and daisyUI's
+**Built-in public components.** A built-in public component may assume `cairn-public.css` and daisyUI's
 theme variables. It lives in `src/lib/public/`, where the `@source` line makes its markup a scanned
 source on every consumer, so its Tailwind utilities compile and the `@theme` keys it reads are
 emitted. It uses no daisyUI component class, since a site's plugin config may exclude that
-component. `PreviewBanner` migrates to this posture as a named task. It moves into
-`src/lib/public/` with its `./components` export unchanged, reads contract tokens, and drops its
-literal palettes and its color-scheme media blocks. Its four `--cairn-preview-*` properties stay
+component. `PreviewBanner` migrates to this posture as a named task. Pass B already moved it into
+`src/lib/public/` and exports it from `./public`, so pass C changes only its styling. It reads
+contract tokens and drops its literal palettes and its color-scheme media blocks. Its four `--cairn-preview-*` properties stay
 as named overrides whose fallbacks are tokens, so a site's existing override still wins.
 
-**The seam promise.** `public.css` and the emitted-class registry are public surface. Renaming or
+**The seam promise.** `cairn-public.css` and the emitted-class registry are public surface. Renaming or
 removing a key or an emitted class is a disclosed contract change. Adding a key with a default is
 not breaking. Changing a default's value is a disclosed change with a changelog line; a site that
 needs a value to stay fixed sets the key itself.
@@ -182,16 +264,22 @@ override it only to hand-tune."
 
 `cairn-audit` gains a **public scope**, a sibling of the admin static scope.
 
-- **Roots.** The default roots are `src/theme`, `src/chassis`, and `src/routes`, with
-  `src/routes/admin` excluded through a new `exclude` list. `src/lib/components` stays in the
-  admin scope by default; a site that keeps public components there moves the root by config.
+- **Roots.** The default roots are `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`,
+  and `src/lib/components`, with `src/routes/admin` excluded through a new `exclude` list. On a
+  consumer, `src/lib/components` is where the audit config's own comment says a site keeps its
+  shared public components. On cairn's own tree that folder no longer exists after pass B's rename.
+  A missing default root is skipped, as the admin scope skips one today. `src/lib/admin` stays in
+  the admin scope by default. A site that keeps custom public components elsewhere names the root
+  by config.
 - **One scope per file.** The admin static scope skips any file the public scope claims, so no
   file answers to two grammars and `token-colors` never double-fires with `public-literals`. A test
   asserts that the two default root sets are disjoint.
-- **No silent empty scope.** The scope fails with an actionable error when its roots match no
-  files, as `static.scope` does today.
-- **Cairn's own tree.** The showcase's `cairn-audit.config.json` adds the engine's
-  `src/lib/public/` to the public roots. The admin component directory is never a public root.
+- **No silent empty scope.** The scope fails with an actionable error when the whole scope
+  matches no files, as `static.scope` does today. A single missing root is not an empty scope; the
+  error fires only when every root together yields nothing.
+- **Cairn's own tree.** The audit runs from the showcase, so the default `src/lib/public` root
+  resolves inside the showcase, not the engine. The showcase's `cairn-audit.config.json` therefore
+  adds the engine's `src/lib/public/` to the public roots. The engine's `src/lib/admin/` is never a public root.
 
 Three rules run in it:
 
@@ -212,14 +300,14 @@ Three rules run in it:
   secondary one, which the default block's `:where(:root)` still covers. The rule fails loudly
   when the key list is empty or lacks `--color-base-100` and `--radius-box`, and raises a finding
   when the scope holds no theme block. A `var(--x)` with no fallback must resolve to one of these:
-  - the site's real import chain, where `public.css` counts only if that chain imports it;
+  - the site's real import chain, where `cairn-public.css` counts only if that chain imports it;
   - Tailwind's theme variables, read from `tailwindcss/theme.css`, or the `--tw-` namespace;
   - the daisyUI keys of a block the rule already found complete;
   - any custom property declared in the scanned tree, in CSS, `<style>`, `style=`, or `style:`.
 
   A `var()` with a fallback and a non-literal name are skipped. Parsing goes through `sheet.ts`,
   never a regex over raw text. Two migration findings turn the `Consumers must:` line into a
-  tripwire: "the public stylesheet does not import `public.css`" and "a chassis file redeclares an
+  tripwire: "the public stylesheet does not import `cairn-public.css`" and "a chassis file redeclares an
   engine default". Today's check misses a key omitted from one block only; this rule catches it.
 - **`theme-contrast`** is the existing dual-gamut AA check, moved from the repo-only
   `scripts/checks/check-public-tokens.mjs` into the audit. Its resolver is new code with a stated
@@ -230,7 +318,7 @@ Three rules run in it:
   from the daisyUI theme blocks, not hard-coded names: each named block resolves as
   `html[data-theme="<name>"]` would. The `prefersdark` block also takes the
   `@media (prefers-color-scheme: dark) :root:not([data-theme])` rules. Sources load in the site's
-  import order, with `public.css` read from the installed package. The pairs are every text-bearing
+  import order, with `cairn-public.css` read from the installed package. The pairs are every text-bearing
   role with its `-content`, plus each ink and muted on `base-100`, `base-200`, and the callout
   tint. Static resolution is sound here because it resolves token to token within theme files, with
   no layout and no computed style. The rendered checks (`check:interactive-contrast`, the showcase
@@ -255,10 +343,11 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
 ### Where the guidance lives
 
 - **`docs/reference/public-css.md`**, the reference page for the new subpath. It carries the whole
-  contract: daisyUI's variables, every `public.css` key with its default, the rules the sheet
+  contract: daisyUI's variables, every `cairn-public.css` key with its default, the rules the sheet
   ships, the layer and nesting behavior with its limit, ink derivation, and the coverage limits of
   `theme-contrast`. It links the emitted-class registry and opens with the governing principle.
-- **A new shipped skill, `cairn-site`,** replaces the planned `public-theme.md`. It covers the
+- **A new shipped skill, `cairn-public`,** replaces the planned `public-theme.md` (confirmed by
+  Geoff, 2026-09-27). It covers the
   public side only, since the admin is always the same. Its shape follows the official daisyUI
   skill: a router `SKILL.md` within the packaged skill budget, pointing at reference pages. It
   defers to the official daisyUI skill for component classes. It has two halves:
@@ -271,31 +360,32 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
     and what a replacement `prose.css` must cover.
   - A **catalogue** of about 25 short pages for cairn's public pieces: each directive's rendered
     markup, the islands, `CairnHead`, `PreviewBanner`, the chassis composition primitives, and the
-    prose elements. The component recipe names both paths. A chassis or site component is a
-    `defineComponent` plus rules in `prose.css` or a component `<style>`. An engine component is
-    markup in `src/lib/public/` plus rules in `public.css`. Both read contract tokens.
+    prose elements. The component recipe names both paths. A custom public component is a
+    `defineComponent` plus rules in `prose.css` or a component `<style>`. A built-in public
+    component is markup in `src/lib/public/` plus rules in `cairn-public.css`. Both read contract
+    tokens.
 
   A **coverage gate** asserts three things. Every directive (the showcase registry plus the engine
   built-ins), every island, and every composition primitive has a page. Every class a snippet uses
   exists in the showcase's compiled public stylesheet or the emitted-class registry. Every token a
   snippet or the table names resolves under `theme-conformance`'s resolution set. A parser that
-  matches nothing fails. `skills/cairn-extend/SKILL.md` gains one routing line to `cairn-site`.
-- **`cairn-implementer`'s definition** gains one line: a public component under `src/lib/public/`
-  carries no literal, uses no daisyUI component class, and follows `cairn-site`'s recipe. The
-  definition lives in the dotfiles repo (`~/.dotfiles/claude/.claude/agents/cairn-implementer.md`),
-  outside the pass's diff. The close's conductor makes that edit and commits it in the dotfiles repo,
-  verified by `claude-tooling-sync verify`, and the pass report quotes the line. `public-literals`
-  over `src/lib/public/` enforces it.
+  matches nothing fails. `skills/cairn-extend/SKILL.md` gains one routing line to `cairn-public`.
+- **`cairn-implementer`'s definition** gains one line: a built-in public component under
+  `src/lib/public/` carries no literal, uses no daisyUI component class, and follows
+  `cairn-public`'s recipe. The definition lives in the dotfiles repo
+  (`~/.dotfiles/claude/.claude/agents/cairn-implementer.md`), outside the pass's diff. Pass C's
+  close conductor makes that edit and commits it in the dotfiles repo, verified by
+  `claude-tooling-sync verify`, and the pass report quotes the line. `public-literals` over `src/lib/public/` enforces it.
 
 ## Proof
 
 - **The Waymark render does not move, proven by computed values.** Before the move, a
   computed-token equivalence test (the `equiv.mjs` form from pass A) records
-  `getComputedStyle(documentElement)` for every `public.css` key, every chassis scale key, and
+  `getComputedStyle(documentElement)` for every `cairn-public.css` key, every chassis scale key, and
   every daisyUI key. It records them on the built showcase under Waymark light and dark, plus the
   computed outline of a focused `cairn-focus-ring` element. After the move, the test asserts string
   equality. The `site-visual` baselines stay as the secondary check.
-- **The public surface is snapshotted.** A standalone unit test parses `public.css`'s keys and
+- **The public surface is snapshotted.** A standalone unit test parses `cairn-public.css`'s keys and
   rules. It asserts that the reference page lists each key with its default and names nothing the
   file lacks. It asserts that every class the sheet styles is in the render registry, and that every
   key has a reader in `src/lib` or the chassis. It pins the key set in a snapshot, so a rename or
@@ -307,7 +397,7 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
     passes a custom property in a theme component's `<style>`, `text-sm`, `bg-red-500`, `0.88em`,
     and the root `font-size` clamp.
   - `theme-conformance` flags a block missing `--radius-box`, a key missing from one block only,
-    a `var(--typo-token)`, `var(--color-red-550)`, and a stylesheet that skips `public.css`. It
+    a `var(--typo-token)`, `var(--color-red-550)`, and a stylesheet that skips `cairn-public.css`. It
     passes a partial block named `nord`, `var(--color-red-500)`, and a route-local token.
   - `theme-contrast` flags a hand-set ink below AA, a derived ink that passes light and fails
     dark, an ink failing on the callout tint only, and an unmeasurable expression.
@@ -320,37 +410,39 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
   Playwright. It asserts that the fixture took effect: computed `--radius-box` is `0`, the fixture
   face is in `font-family`, a derived ink equals its `color-mix` result, the custom token reaches
   its element, and the nested region's ink recomputes. A second arm builds the Waymark template
-  against the working engine. It asserts that a key read only by an engine component under
+  against the working engine. It asserts that a key read only by a built-in public component under
   `src/lib/public/` reaches the compiled CSS. The harness runs in CI's design workflow, and locally
   when fast enough. `test:reskin` also gains a standing case: Waymark with its four ink overrides
   stripped must pass `theme-contrast` in both schemes. The hue-rotation case stays.
-- **Three acceptance probes at the pass close,** each a fresh Sonnet agent given only the shipped
-  guidance and a one-line brief:
+- **Three acceptance probes,** each a fresh Sonnet agent given only the shipped guidance and a
+  one-line brief. Probe 1 runs at pass B's close. Probes 2 and 3 run at pass C's close.
   1. An admin screen, as the theme identity spec defines it.
   2. A minimal new theme on the chassis, with its own chrome and one custom public component. It
      passes with zero public-scope findings, a scanned-file count that includes every file the probe
      created or edited, and a clean `test:theme-fixture` build under it.
-  3. A throwaway engine public component in `src/lib/public/`, written by a `cairn-implementer`. It
+  3. A throwaway built-in public component in `src/lib/public/`, written by a `cairn-implementer`. It
      passes with zero public-scope findings on its directory and a nonzero scanned count. In the
      harness's template arm, its computed color and radius must differ between Waymark and the
      fixture theme and equal each theme's tokens. The main loop also reads one screenshot per theme.
      The branch is discarded.
 
-  A probe failure names the guidance gap. The fix lands before the close, and a fresh agent re-runs
-  the probe once. A second failure escalates.
-- **Gates that stay green:** `npm run check`, `npm test`, `check:reference`, `check:facts`,
-  `check:template`, `check:package` (with the skill budget), `check:rulings-format`,
+  A probe failure names the guidance gap. The fix lands before that pass's close, and a fresh
+  agent re-runs the probe once. A second failure escalates.
+- **Gates that stay green** through both passes, each from the task that adds it: `npm run check`,
+  `npm test`, `check:reference`, `check:facts`, `check:template`, `check:package` (with the skill budget), `check:rulings-format`,
   `check:public-tokens` (the successor script), `test:reskin`, `test:theme-fixture`, the `npm pack`
   smoke test, `norms:check`, and the showcase e2e.
 
 ## Documentation and records
 
-- **Facts** in `docs/internal/facts/` for each public behavior: the `public.css` subpath, the
+Pass B's own records are listed under Delivery. Everything in this section is pass C's.
+
+- **Facts** in `docs/internal/facts/` for each public behavior: the `cairn-public.css` subpath, the
   one-scope-per-file rule, derived inks and the changed muted and shadow defaults, the three rules,
-  the `PreviewBanner` migration, and the `cairn-site` skill.
+  `PreviewBanner`'s token styling, and the `cairn-public` skill.
 - **Reference pages:** `docs/reference/public-css.md` (new), `render.md`'s registry,
-  `components.md` for `PreviewBanner`, and `cairn-audit.md` for both chains' rules and the public
-  scope's config keys.
+  `public.md` for `PreviewBanner`'s styling and its override properties, and `cairn-audit.md` for
+  pass C's rules and the public scope's config keys.
 - **Frozen narrative pages, fixed under the freeze rule** (each deficiency fixed on the page, with a
   facts bullet): `docs/extend/design-your-site.md`, whose "every design-scale key … carries a
   generic default", ink-retune warning, and dependency sentence the pass makes wrong.
@@ -364,7 +456,7 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
 - **`CHANGELOG.md`** under `## Unreleased`, with one `Consumers must:` line: "move any key your
   copied `src/chassis/tokens.css` adds beyond the template's into your theme, then replace the
   copied roles, code-block binding, and focus-ring utility with `@import
-  "@glw907/cairn-cms/public.css"`; compare your copy's ink, muted, and shadow values first, since
+  "@glw907/cairn-cms/cairn-public.css"`; compare your copy's ink, muted, and shadow values first, since
   those defaults changed." `PreviewBanner`'s migration makes the import required, not optional.
 - **`docs/extend/migration-notes.md`** carries the swap, the changed defaults, a `paletteFiles`
   entry that names the old copy, and the two optional peers.
@@ -374,17 +466,23 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
 
 ## Delivery
 
-**One pass, theme identity pass B, run as two parallel chains** through `pass-execute-chains`, with
-the implementer, `diff-reviewer`, and gate chain inside each. The close's probes need both chains
-finished. R5 asks whether chain 2 should instead start as its own pass.
+**Two passes, run in sequence.** Each runs its tasks through `pass-execute`, with the implementer,
+`diff-reviewer`, and gate chain per task.
 
-- **Chain 1** is the admin agent path, about five tasks.
-- **Chain 2** is about eleven tasks, in dependency order:
-  1. The equivalence test recorded on today's tree, then `public.css`, its `@source` directory,
+- **Pass B** is about six tasks. Task 1 is the rename, run alone and committed green before task 2
+  starts. Tasks 2 onward are the admin agent path, about five tasks.
+- **Pass B's close** runs probe 1, reconciles the skill budget, and makes pass B's shared-file
+  edits: `docs/reference/cairn-audit.md` for pass B's rules and the admin scope's new defaults, the
+  facts for the rename, the `./public` subpath, and the new rules, the changelog entry with pass
+  B's `Consumers must:` line, and the migration notes for the rename, `PreviewBanner`'s new
+  subpath, and the admin scope's defaults. Under R1's recommended answer, the close then cuts the
+  release.
+- **Pass C** is about eleven tasks, in dependency order:
+  1. The equivalence test recorded on today's tree, then `cairn-public.css`, its `@source` directory,
      the moved rules, the chassis import, and the key-set snapshot test.
   2. Ink and muted derivation by measurement, the shadow default, the stripped-overrides case, and
      Waymark's per-scheme values moved into its daisyUI blocks with its header's step 6.
-  3. `PreviewBanner`'s migration into `src/lib/public/`.
+  3. `PreviewBanner`'s styling migration to contract tokens. Pass B already moved the file.
   4. The `sheet.ts` fix, the first audit task: comments no longer fuse into declaration names or
      values, with a regression test over `theme.css`. Every later rule depends on it.
   5. The public scope (roots, `exclude`, one scope per file, the empty-scope error) and
@@ -394,29 +492,34 @@ finished. R5 asks whether chain 2 should instead start as its own pass.
   7. `theme-contrast`, the three dependency decisions, the `npm pack` smoke test, and the
      `check:public-tokens` successor.
   8. The fixture theme and `test:theme-fixture`.
-  9. The reference page, the render registry, and the `components.md` entry.
-  10. The `cairn-site` skill, its coverage gate, and the `cairn-extend` routing line.
+  9. The reference page, the render registry, and `PreviewBanner`'s entry on `public.md`.
+  10. The `cairn-public` skill, its coverage gate, and the `cairn-extend` routing line.
   11. The chassis README, `public-design-system.md`, `design-your-site.md`, and the template re-emit.
-- **Shared files.** Both chains add lines to `src/lib/audit/rules/static/index.ts`,
-  `src/lib/audit/types.ts`, `src/lib/audit/config.ts`, and `skills/cairn-extend/SKILL.md`, so the
-  chain merge expects those overlaps. The close reconciles the skill budget.
-- **The close** runs the three probes and makes every other edit to a shared file:
-  `docs/reference/cairn-audit.md`, the facts, the changelog, the migration notes, the charter line,
-  the rulings entry, the ROADMAP, and the dotfiles `cairn-implementer` line.
+- **Pass C's close** runs probes 2 and 3, reconciles the skill budget, and makes pass C's
+  shared-file edits: `docs/reference/cairn-audit.md` for pass C's rules, the facts, the changelog,
+  the migration notes, the charter line, the rulings entry, the ROADMAP, and the dotfiles
+  `cairn-implementer` line. The close then cuts the release, under either answer to R1.
 
-Segment boundaries fall every three or four tasks per chain. **The named split point:** if spend
-reaches 80% of the ceiling, chain 1 closes alone as pass B and chain 2 becomes pass C with its own
-close. Both halves are self-contained.
+Segment boundaries fall every three or four tasks within each pass.
 
-**Sequencing.** This spec and its review touch nothing in pass A's worktree. Plan authorship waits
-for pass A's segment D, since chain 1 needs A's final vocabulary and fixture. Execution waits for
-pass A to merge: chain 1's rules would flag cairn's unswept tree, and chain 2 edits the starter
-`theme.css` that pass A's task 11 changes. Draft documentation resumes after the public theme
-contract merges (pass B, or pass C under the split), and the designer's theme guide is drafted
-against this contract.
+**Sequencing.** This spec and its review touch nothing in pass A's worktree. Both plans are
+authored together after pass A's segment D lands, for one approval sitting. Pass B's agent path
+needs A's final vocabulary and fixture. Pass C's plan may read pass B's final names, since this
+spec fixes them. Execution is sequential. Pass B starts after pass A merges: pass A edits the files
+the rename moves, and B's rules would flag cairn's unswept tree. Pass C starts after pass B merges,
+and it edits the starter `theme.css` that pass A's task 11 changes. Under R1's "no", pass C starts
+from pass B's finished branch instead, and both merge together. Draft documentation resumes
+after pass C merges, and the designer's theme guide is drafted against this contract.
 
-**Release.** The template on `main` would import a subpath no published version exports, and the
-Deploy button and the setup command read `templates/waymark` from `main`. R1 settles the ordering.
+**Release.** Both passes change what the template imports. Pass B changes the export names:
+`./components` becomes `./admin`, and the preview route imports `PreviewBanner` from the new
+`./public`. Pass C changes the stylesheet, so the template imports `cairn-public.css`. The template
+goes live from `main` on merge, since the Deploy button and the setup command read
+`templates/waymark` from `main`. A merge without a release would leave the template importing
+subpaths no published version exports. Each merge therefore meets the first release trigger in
+the repo `CLAUDE.md`: a consumer, the template on `main`, needs the change now. R1 settles whether
+that means two cuts or one. The version numbers below are proposals; verify each is free with
+`npm view @glw907/cairn-cms versions --json` before promising it.
 
 ## Review
 
@@ -432,24 +535,20 @@ raised as an owner ruling.
 
 Each is a yes or no. The recommendation comes first.
 
-- **R1. Cut the release at pass B's merge?** Recommend yes: cut pass A and pass B together as
-  `0.98.0` when pass B merges. This is release trigger 1, since the template is a consumer that
-  needs the subpath now. Yes builds the cut into the close. No holds pass B's merge until the next
-  cut, and the template keeps its copied defaults until then.
+- **R1. Cut a release at each pass's merge?** Recommend yes. Yes cuts two releases, each under
+  release trigger 1, since the template on `main` needs the change at that merge. Pass B's close
+  cuts passes A and B as `0.98.0`, carrying the rename's `Consumers must:` line. Pass C's close
+  cuts pass C as `0.99.0`, carrying the stylesheet's `Consumers must:` line. No window opens where
+  the template on `main` imports an unpublished subpath. The cost is that sites cross two
+  `Consumers must:` lists instead of one, which is small, since each site is rebuilt from Waymark
+  anyway. No holds pass B unmerged and cuts once at pass C's merge. Pass C then builds on pass B's
+  branch, pass B waits on pass C, and one release (`0.98.0`) carries both breaking changes.
 - **R2. Public-literals advisory for good, the other two promoted?** Recommend yes:
   `public-literals` stays advisory on consumers permanently, since it polices a developer's own
   markup. `theme-conformance` and `theme-contrast` are promoted to error at the next minor, because
   they protect cairn's own parts. That promotion also waits for each production site's advisory
   count to reach zero, by fixes or reasoned suppressions. No promotes all three as first drafted,
   and the charter line then says the audit gates a site's public design.
-- **R3. Fold the `cairn-site` skill into pass B?** Recommend yes, adding about one task to chain 2.
-  No keeps the planned single `public-theme.md` reference page under `cairn-extend`.
-- **R4. Does "the library" mean both the engine and the chassis component set?** Recommend yes:
-  probe 3 exercises the engine path, `cairn-site`'s recipe covers both, and `PreviewBanner`
-  migrates. No narrows the recipe to one path and drops the other from the probes.
-- **R5. Keep one pass with two chains?** Recommend yes. Chain 2 grew from about seven tasks to about
-  eleven in the fold. The chains are parallel, both wait on pass A's merge, and the named split
-  remains the budget guard. No plans chain 2 as pass C from the start, with its own close and probes.
 
 ## Open for the plan
 
@@ -457,7 +556,7 @@ Execution calls, not design calls:
 
 - Each status's derivation percentage and muted's form, set by measurement.
 - The fixture harness's temp-copy mechanism and its local-versus-CI split.
-- The equivalence test's key list, which is exactly `public.css`, the chassis scale, and daisyUI's
+- The equivalence test's key list, which is exactly `cairn-public.css`, the chassis scale, and daisyUI's
   keys at capture time.
 - The exact config key names for the public roots, `exclude`, and the theme roots.
-- The `cairn-site` catalogue's page list, within the coverage gate's sources.
+- The `cairn-public` catalogue's page list, within the coverage gate's sources.

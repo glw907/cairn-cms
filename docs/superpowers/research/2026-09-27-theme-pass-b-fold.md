@@ -272,3 +272,93 @@ contract), and the culori-versus-browser choice in ME3.
 - `docs/internal/engine-rulings.md`: the entry above, recorded by the pass, with
   `check:rulings-format` green.
 - `~/.dotfiles/claude/.claude/agents/cairn-implementer.md`: the one-line addition, made at the close.
+
+## Second fold (owner decisions, 2026-09-27)
+
+Geoff settled these in the brainstorm on 2026-09-27. The fold applied them to the spec, which now
+covers passes B and C.
+
+- **R3 and R4 confirmed.** The `cairn-public` skill is folded in, and "the library" means both
+  built-in and custom public components. Both now sit in the spec body as decisions.
+- **R5 resolved as a split.** The old R5 is gone, and the two remaining rulings are renumbered: R1
+  is release ordering, and R2 is the public rules' tier.
+- **Names.** A new Names section carries the two-axis grid (admin or public, built-in or custom),
+  with each cell's home, rulebook, audit scope, and guidance. The noun stays "component", "site"
+  keeps its one meaning, and "custom admin screen" stays the name for a whole route. Pass B's first
+  task writes the names into `docs/internal/docs-register.md` with Vale enforcement.
+- **Skill rename.** `cairn-site` became `cairn-public` everywhere in the spec.
+- **Stylesheet name.** The engine public sheet is `src/lib/public/cairn-public.css`, exported as
+  `@glw907/cairn-cms/cairn-public.css`. It pairs with `cairn-admin.css`, and the prefix avoids a
+  collision with a site's own files.
+- **Admin rename.** `src/lib/components/` becomes `src/lib/admin/`, `./components` becomes
+  `./admin`, and `cairn-admin.css` moves with it. `./admin-toolkit` keeps its name. The rename is a
+  breaking change with no alias, carries one `Consumers must:` line, and ships in the same release
+  as the `cairn-public.css` import. It is pass B's first task, run alone after pass A merges, with
+  the full gate green and a named grep for leftover references as its acceptance.
+- **Knock-on naming.** "Engine public component" became "built-in public component", "chassis or
+  site component" became "custom public component", and `docs/reference/components.md` became
+  `admin.md`. The guard's default admin root is now `src/lib/admin`.
+- **Two passes.** Pass B is the rename plus the admin agent path, about six tasks, with probe 1 at
+  its close. Pass C is one public theme, about eleven tasks, with probes 2 and 3 at its close. The
+  one-pass, two-chain framing, the split point, and the shared-files bullet are gone. Each pass's
+  close owns its own shared-file edits and skill-budget reconcile.
+- **Sequencing and release.** Both plans are authored together after pass A's segment D, for one
+  approval sitting. Execution runs B after A merges and C after B merges. Draft documentation
+  resumes after pass C merges. R1 attaches to pass C and now proposes cutting A, B, and C together.
+
+Found while folding, left for the owner or the plan:
+
+- `PreviewBanner` is a built-in public component, but its export sits on the admin barrel, which
+  the rename makes `./admin`. The spec keeps it there, as the barrel's one documented exception.
+- The rename edits `templates/waymark`'s preview route import. From pass B's merge until the cut,
+  the template on `main` imports `./admin`, which no published version exports. R1 names this
+  window.
+- The audit's default admin root is also a consumer's default. Renaming it moves a site's default
+  admin component root from `src/lib/components` to `src/lib/admin`, so a site's
+  `src/lib/components` falls outside both default scopes. The migration notes carry it.
+
+## Third fold (conductor decisions, 2026-09-27)
+
+The conductor decided the three conflicts the second fold surfaced, as design calls under Geoff's
+delegation. The fold applied them to the spec.
+
+- **`PreviewBanner` gets a public export in pass B.** Pass B's rename task moves `PreviewBanner`
+  to `src/lib/public/` and exports it from a new `@glw907/cairn-cms/public` subpath. That barrel is
+  where every built-in public component exports from. `cairn-public.css` stays the stylesheet
+  subpath. `./admin` carries no public component, so the barrel-exception wording is gone.
+- **The template's import changes once.** The template's and the showcase's preview routes import
+  `PreviewBanner` from `./public` in the same rename task.
+- **Pass C no longer moves the file.** Pass C's task 3 migrates only `PreviewBanner`'s styling to
+  tokens. Task 9 documents it on `public.md` instead of `admin.md`, and the facts bullet names its
+  token styling.
+- **A new reference page.** Pass B adds `docs/reference/public.md`, which `check:reference` needs
+  for the new subpath.
+- **Names grid.** The built-in public component cell names the `./public` export. A new paragraph
+  states that each surface has its own barrel and where a site's custom admin components live.
+- **Rename acceptance.** It now requires the `./public` export, the two preview routes importing
+  from it, and no `PreviewBanner` under `src/lib/admin`. The leftover-reference grep is pass B's
+  acceptance only, since pass C's public scope names `src/lib/components` again on purpose.
+- **Release ordering (R1 rewritten).** Both passes change what the template imports, and the
+  template goes live from `main` on merge. R1 now asks whether to cut at each pass's merge: `0.98.0`
+  at pass B (passes A and B) and `0.99.0` at pass C. The recommendation is yes. The alternative
+  holds pass B unmerged and cuts once at pass C's merge, with pass C built on pass B's branch. The
+  version numbers stay proposals, to verify with `npm view` before promising.
+- **Release knock-ons.** The Release paragraph states the trigger for both merges. Pass B's close
+  cuts its release under the recommended answer, and pass C's close cuts under either answer. The
+  sentence that shipped the rename in the same release as `cairn-public.css` is gone. Sequencing
+  names the "no" path.
+- **Admin scope defaults.** The admin static scope's defaults become `src/routes/admin`,
+  `src/lib/admin`, and `src/lib/admin-toolkit`. The convention is stated: a site's custom admin
+  components live under `src/lib/admin` or `src/routes/admin`.
+- **Public scope defaults.** The public scope's defaults become `src/theme`, `src/chassis`,
+  `src/routes` minus `src/routes/admin`, `src/lib/public`, and `src/lib/components`. A missing
+  default root is skipped. The empty-scope error now fires only when the whole scope matches no
+  files, which keeps the two rules consistent. The two default sets stay disjoint.
+- **Showcase root.** The spec now says why the showcase config still names the engine's
+  `src/lib/public/`: the audit runs from the showcase, so the default root resolves there.
+- **Consumers must.** Pass B's line has three parts: the `./admin` import, `PreviewBanner` from
+  `./public`, and moving custom admin components out of `src/lib/components` or naming that root
+  in `cairn-audit.config.json`. Pass B's close carries the same three items into the migration
+  notes and the `cairn-audit.md` reference page.
+
+This fold resolves the three items listed under "Found while folding" in the second fold.

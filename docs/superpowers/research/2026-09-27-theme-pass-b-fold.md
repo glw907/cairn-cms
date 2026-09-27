@@ -362,3 +362,95 @@ delegation. The fold applied them to the spec.
   notes and the `cairn-audit.md` reference page.
 
 This fold resolves the three items listed under "Found while folding" in the second fold.
+
+## Fourth fold (designer walkthrough, 2026-09-27)
+
+**Input:** [`2026-09-27-theme-designer-friction-log.md`](2026-09-27-theme-designer-friction-log.md),
+a designer agent's re-skin of a scratch showcase copy to a dark-first theme plus a new
+`event-card` directive. The conductor decided the dispositions. Each item was checked against the
+tree at `3e76c41d` before it was folded, and the log's line citations reproduced. Pass C grows from
+about eleven tasks to about thirteen. The two new tasks are 4 (the heading levers and the toggle)
+and 5 (the template sweep), so the old tasks 4 to 11 are now 6 to 13.
+
+**New evidence produced by this fold.** A compile against the installed Tailwind 4.3.3 (scratch
+`tw/t.mjs`) showed that the `font-*` utility resolves the `--font-*` family namespace before
+`--font-weight-*`. With `--font-display` and `--font-weight-display` both declared, `font-display`
+emits only `font-family`, and the same holds for `heading`. That settled the key name below.
+
+- **F3, folded (pass C task 4).** Verified: `resolveTheme` (`src/chassis/theme-toggle.ts:27-29`)
+  falls back to `matchMedia`, and daisyUI sets `color-scheme` in each theme block
+  (`theme.css:100,148`). The fallback reads the root's computed `color-scheme`, and the fixture
+  harness asserts the toggle's first click under a light OS. The theme names move into one
+  exported config under `src/theme`, the two touchpoints that cannot import it are named there and
+  in `cairn-public`, and a unit test asserts the names agree.
+- **F2, folded with F3.** The log's workaround, a fifth touchpoint in `app.html`'s no-cookie branch, is
+  made unnecessary by the computed-scheme fallback, and the rest are named in one config.
+- **F4, folded (pass C task 4).** Verified: literal `600` at `prose.css:79,102,115` and in scoped
+  title rules, `font-semibold` in `SiteHeader.svelte:101` and the home and archive routes. The keys
+  are `--font-weight-heading` in the chassis `@theme` (Tailwind's `--font-weight-*` namespace,
+  generating `font-heading`) and `--cairn-heading-case`, a chassis role, since `text-transform` has
+  no Tailwind namespace. `--font-weight-display` was rejected on the measured collision with
+  Waymark's `--font-display` face. `theme-conformance` gains a finding for a `--font-<name>` face
+  beside a `--font-weight-<name>` weight. Both keys stay in the chassis, not in `cairn-public.css`,
+  under the admission rule. The fixture sets `800` and `uppercase`, and the harness asserts both
+  computed values on three headings.
+- **F7, folded (pass C task 3).** Verified: `preview-doc.ts:105` pins `background:#fff`, and the
+  showcase paints its ground on `.cairn-site-shell`. The reset reads
+  `var(--color-base-100, #fff)`, which fixes stale chassis copies too. A showcase e2e under Waymark
+  dark asserts the preview frame's `body` background. The risk lens's "no change is needed"
+  (review-risk.md) checked token reach, not the ground, so this corrects it.
+- **F6, folded (pass C task 5).** Verified: `-top-xl` at `(site)/+layout.svelte:74`. The template
+  uses `sr-only focus:not-sr-only` or another scale-independent idiom. The harness asserts hidden
+  until focus at the fixture's tight scale.
+- **F5, folded (pass C task 5).** Verified: the five `border-radius: 2px` focus corners the log
+  lists, plus `archive/[page]/+page.svelte:108` and `prose.css:154`, and `--tag-filter-radius: 999px` declared in the route's scoped
+  style, where a theme cannot reach it. The corners read `--cairn-focus-ring-radius`. The tag pill
+  and `prose.css:639`'s video facade button stay full-round as documented shape exceptions. The
+  pill reads `var(--tag-filter-radius, 999px)` with no scoped declaration, so a theme's root value
+  reaches it. A unit test sweeps for radius literals outside the named exceptions.
+  **Refused arm:** a `border-radius` arm on `public-literals`. A radius literal is often a
+  legitimate shape, the rule polices color and font size by design, and the template test covers
+  cairn's own files.
+- **F8, folded (pass C task 5).** Verified: the kit is a hand-written string in
+  `styleguide/+page.server.ts`, and `serializeComponent` and `previewValues` are internal
+  (`src/lib/render/component-grammar.ts:44`, `registry.ts:226`), exported from no subpath. The
+  styleguide renders one sample per registry entry from its `preview`, which needs one new root
+  export. `cairn-public`'s coverage gate walks the registry through the same export. The false
+  "auto-themes with your system" sentence (`styleguide/+page.svelte:156`) is corrected. The export
+  is new public surface: additive, documented on `core.md`, and carried in the facts.
+- **F17, folded (pass C task 5).** Verified: `docs/internal/` and "Verdict 7" appear in the emitted
+  `templates/waymark` copies of `theme.css`, `site.css`, and `prose.css`. The references are
+  scrubbed at the showcase source, and `check:template` gains a failing fixture for both strings.
+  The fold was cheap because task 5 already edits the same template files.
+- **F14, split.** The role is real, but it is a rule role, not a text ground: the chassis reads
+  `base-300` only for borders, rules, and the flourish fill (`prose.css:227,401,424,436`), and no
+  text paints on it. **Folded:** a rules row in `cairn-public`'s job-to-token table naming
+  `base-300` as the rule and border color, never a text ground. **Refused:** adding `base-300` to
+  `theme-contrast`'s text pairs, since a text pair on a ground that carries no text measures
+  nothing. `base-200` is already a measured ground.
+- **F1, folded through F3 and F4.** The two moves the log found missing from the recipe (heading
+  case and weight, the default scheme) are now rows in `cairn-public`'s table.
+  `design-your-site.md` stays under the freeze rule, fixed only where pass C makes it wrong.
+- **F9, F13, F15, F16: no change.** The log tags each as already addressed by the spec (CP8 and
+  TH11, `theme-contrast`, the public scope, and `@layer theme`). The fold confirmed each against
+  the spec text.
+- **F18, refused.** `vite preview` serving stale hashes after a rebuild is Vite behavior, not
+  cairn's, and the design loop documents `vite dev`.
+- **F10, F11, F12: not folded into the spec,** since each is an engine defect outside theming.
+  F12 (the Insert path fusing the closing fence) and F10 (`configure-rendering.md:107`'s
+  `::callout` example) are filed under `ROADMAP.md`'s Now. F11 was already filed under Next, as
+  item 3 of "Component-system gaps surfaced by the starter set", for the flag glyph only. The fold
+  amended that entry with the `snowflake` glyph, the silent `IconSet` doc, and the leanest fix, in
+  place of a duplicate.
+- **Third-fold note, `DEFAULT_ADMIN_SCOPE`, folded (pass B, rename task).** Verified: the list is
+  `src/routes/admin` and `src/lib/admin-toolkit` (`config.ts:32`), read by the three `adminOnly`
+  motion rules. It gains `src/lib/admin` only if the plan confirms those rules already pass on the
+  engine's admin components, else it stays unchanged and the gap is filed. Also listed under
+  "Open for the plan".
+- **Third-fold note, the "middle root" comment, folded (pass B, rename task).** Verified: the
+  comment at `config.ts:27-31` calls `src/lib/components` the static scope's middle root, though it
+  is the last. The rename rewrites it.
+- **Proof and acceptance.** The fixture theme gains the heading, pill, and tight-spacing values,
+  and `test:theme-fixture` carries the toggle, heading, skip-link, and corner checks. A new Proof
+  bullet lists the checks outside the harness. The facts and reference-page lists gain the new
+  behaviors and the root export.

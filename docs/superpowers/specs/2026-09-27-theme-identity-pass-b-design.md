@@ -1,13 +1,15 @@
 # Theme identity passes B and C: the admin agent path and one public theme
 
-**Status:** draft, folded three times (2026-09-27). This spec covers two passes: pass B (the rename
+**Status:** draft, folded four times (2026-09-27). This spec covers two passes: pass B (the rename
 and the admin agent path) and pass C (one public theme). Geoff approved the brainstorm's design in
 conversation. The nine-lens review then ran, and its fold changed parts of that design. A second
 fold applied Geoff's decisions of 2026-09-27. He confirmed the `cairn-public` skill and the
 library's meaning, and he settled the names, the rename, and the two-pass delivery. A third fold
 applied the conductor's decisions on three conflicts the second fold surfaced: `PreviewBanner`'s
-export, the release ordering, and the audit's default scopes. Every change is listed in the fold
-record. This document awaits Geoff's read and his answers to R1 and R2.
+export, the release ordering, and the audit's default scopes. A fourth fold applied the
+conductor's decisions on a hands-on designer walkthrough
+([friction log](../research/2026-09-27-theme-designer-friction-log.md)). Every change is listed in
+the fold record. This document awaits Geoff's read and his answers to R1 and R2.
 
 **Extends:** [`2026-09-26-theme-identity-design.md`](2026-09-26-theme-identity-design.md). Its
 "G2: easy for agents" section and the "Pass B, the agent path" bullet under Delivery define pass
@@ -107,6 +109,16 @@ admin defaults. A site's custom admin components belong under `src/lib/admin` or
 `src/routes/admin`. A site that keeps custom admin components in `src/lib/components` either moves
 them or names that root in its `cairn-audit.config.json`. Pass B's `Consumers must:` line and its
 migration note both say so.
+
+**The admin-only scope.** `DEFAULT_ADMIN_SCOPE` in `src/lib/audit/config.ts` is a separate list. It
+holds the roots the three `adminOnly` motion rules (`motion-vocabulary`, `motion-hover-gate`,
+`motion-property`) resolve over, today `src/routes/admin` and `src/lib/admin-toolkit`. It gains
+`src/lib/admin` only if the plan confirms that those three rules already pass on the engine's admin
+components. Otherwise it stays unchanged, and the gap is filed in `ROADMAP.md`. If it gains the
+root, the migration note says that a site's `src/lib/admin` components now answer to the motion
+rules. The rename also rewrites the comment above `DEFAULT_ADMIN_SCOPE`. That comment calls
+`src/lib/components` the static scope's "middle root", which is already wrong (it is the last root)
+and which the rename removes outright.
 
 **Consumers must.** Pass B's changelog entry carries one `Consumers must:` line with three parts:
 import admin components from `@glw907/cairn-cms/admin` instead of `./components`; import
@@ -260,6 +272,101 @@ change. Every other default reproduces today's value. The re-skin recipe's step 
 `theme.css` header changes from "retune the ink with the fill" to "the ink follows the fill;
 override it only to hand-tune."
 
+### Levers and template fixes from the designer walkthrough
+
+A designer agent re-skinned a scratch copy of the showcase to a dark-first theme and added a themed
+directive ([friction log](../research/2026-09-27-theme-designer-friction-log.md)). The walkthrough
+found gaps the contract does not reach, each in the chassis, the template, or one engine file. Pass
+C closes each one below. Each outcome carries a check that fails if it regresses. File paths are
+the showcase's, which the template receives through `emit:template`, and engine paths use pass B's
+names.
+
+- **The theme toggle follows the applied theme (F3).** `resolveTheme` in
+  `src/chassis/theme-toggle.ts` falls back to `matchMedia('(prefers-color-scheme: dark)')` when
+  `<html>` carries no `data-theme`. Under a theme whose default block is dark, a visitor on a light
+  OS sees a dark page. The toggle then offers dark mode, and its first click changes nothing. The
+  fallback reads the root's computed `color-scheme` instead, which daisyUI sets in every theme
+  block. Waymark behaves as it does today, since its `prefersdark` block sets `color-scheme: dark`
+  exactly when the media query matches. A dark-first theme then needs no edit to `app.html`.
+  **Check:** the fixture harness loads the fixture theme under a light `prefers-color-scheme` with
+  no cookie. It asserts that the toggle offers light mode and that its first click changes the
+  root's computed `color-scheme`.
+- **The theme names live in one place (F3, F2).** Renaming `cairn` and `cairn-dark` today means
+  editing the two daisyUI blocks in `theme.css`, the type and config in `SiteHeader.svelte`, and
+  the cookie regex in `app.html`. The toggle's two names move into one exported config under
+  `src/theme`, and `SiteHeader` imports it. Two touchpoints cannot import it: the inline script in
+  `app.html` and the daisyUI block names. The config's doc comment names both, and so does
+  `cairn-public`'s theming section. The plan may reduce the touchpoints further, for example with a
+  cookie regex that accepts any name. **Check:** a unit test asserts that the config's names match
+  the daisyUI block names in `theme.css` and the names `app.html`'s regex accepts.
+- **Heading weight and heading case are levers (F4).** Heading weight is a literal `600` in
+  `prose.css`'s heading rules and in route-scoped title rules, and the chrome bakes `font-semibold`
+  into its title markup. A theme can change neither without targeting route-private classes, and
+  the utilities layer beats a theme's `@layer components` rule. Two keys fix this. Both sit in the
+  chassis `tokens.css` beside the design scale, as site-owned defaults, because only chassis and
+  template files read them. The admission rule therefore keeps them out of `cairn-public.css`.
+  - `--font-weight-heading`, default `600`, in the `@theme` block. It follows Tailwind 4's
+    `--font-weight-*` namespace and generates the `font-heading` utility.
+    `--font-weight-display` was rejected. Tailwind 4's `font-*` utility resolves the `--font-*`
+    family namespace before `--font-weight-*`, so Waymark's `--font-display` face already claims
+    `font-display`, and the weight utility would never emit. A compile against the installed
+    Tailwind 4.3.3 confirmed this precedence. It also means a theme that adds a `--font-heading`
+    face silently takes over `font-heading`. `theme-conformance` therefore flags a `--font-<name>`
+    declared beside a `--font-weight-<name>`.
+  - `--cairn-heading-case`, default `none`, a chassis role. `text-transform` has no Tailwind theme
+    namespace, so the key takes the `--cairn-*` form under the naming rule.
+
+  The readers are `prose.css`'s heading rules and the template chrome's titles: the wordmark and
+  titles in `SiteHeader.svelte`, the home and archive routes' title markup and scoped title rules,
+  `EntryRow.svelte`, and the styleguide's own section headings. Each replaces its literal `600` or
+  its `font-semibold` with the keys. The plan picks the markup form for case. Eyebrow labels are not
+  headings and keep their own `uppercase tracking-eyebrow` row. Waymark's defaults reproduce
+  today's weight and case, so the equivalence test holds. The evidence comes from two sources. The
+  risk review found the production sites reading `--font-weight-semibold` five times (RK6), and
+  this walkthrough hit the same wall. **Check:** the fixture theme sets `800` and `uppercase`. The harness asserts the
+  computed `font-weight` and `text-transform` of a prose `h2`, the home page's lead title, and a
+  styleguide section heading.
+- **The editor preview's ground reads the theme (F7).** `src/lib/admin/preview-doc.ts` pins
+  `body{margin:0;background:#fff}` in the preview document. The site paints its ground on
+  `.cairn-site-shell`, not on `body`, so the site's CSS never overrides the white. Under any dark
+  theme, Waymark's included, the preview shows content on a white strip. The reset's ground becomes
+  `var(--color-base-100, #fff)`, and the `WATCH` comment above it closes. The fix sits in the
+  engine, not in the chassis `body` rule, so it reaches every site, stale chassis copies included.
+  **Check:** a showcase e2e under Waymark dark asserts that the preview frame's `body` background
+  equals the page's computed `--color-base-100`.
+- **The skip link hides by an idiom independent of the scale (F6).** The skip link in
+  `src/routes/(site)/+layout.svelte` hides with `-top-xl`. When a theme shrinks `--spacing-xl`
+  below the link's height, part of the link shows on every page. The template switches to
+  Tailwind's `sr-only focus:not-sr-only`, or another idiom that reads no scale key. **Check:** under
+  the fixture's tight scale, the harness asserts that the skip link is visually hidden until
+  focused (clipped to nothing or wholly outside the viewport) and fully visible once focused.
+- **Every rounded element reads a radius token (F5).** The template sweeps its corner literals. The
+  `border-radius: 2px` focus-ring corners in the home and archive routes, `EntryRow.svelte`,
+  `ArticleView.svelte`, and `prose.css`'s link focus rule read `var(--cairn-focus-ring-radius)`.
+  Two full-round shapes stay as documented exceptions, since each is a shape and not a step on the
+  corner ladder: the tag filter's pill and the video facade's round button. Each carries a comment
+  saying so. The tag filter's pill reads `var(--tag-filter-radius, 999px)` and drops its scoped
+  declaration, so a theme's root declaration reaches it. **Check:** a unit test over the template's
+  and chassis's CSS and `<style>` blocks finds no `border-radius` literal outside the named
+  exceptions. The fixture theme sets `--tag-filter-radius: 0`, and the harness asserts the computed
+  corner of a tag pill and of a focused entry link.
+- **The styleguide renders every registered component (F8).** The styleguide's component kit is a
+  hand-written markdown string in `src/routes/(site)/styleguide/+page.server.ts`, so a new
+  directive is missing until someone adds a sample by hand. The kit part renders one sample per
+  registry entry from its `preview`, serialized through the same grammar the Insert dialog uses. An
+  entry with no `preview` is listed by name as lacking one, so the gap stays visible. The grammar
+  helpers are internal today, so the root barrel gains one small export that returns a component's
+  preview as directive markdown. `cairn-public`'s coverage gate walks the registry through the same
+  export. The styleguide's copy also stops saying it "auto-themes with your system light or dark
+  setting", which is false for a dark-first theme. **Check:** a test adds a throwaway entry with a
+  `preview` to the registry and asserts that its sample appears in the styleguide's rendered
+  output, with no edit to the route.
+- **The template's comments cite only what a site has (F17).** The emitted `theme.css`, `site.css`,
+  and `prose.css` cite `docs/internal/` paths and "Verdict 7", which a scaffolded site does not
+  have. Each reference in the showcase sources becomes a one-line reason or a public docs link.
+  **Check:** `check:template` fails when an emitted file contains `docs/internal/` or `Verdict`
+  followed by a number, proven by a fixture file carrying each string.
+
 ### The guard
 
 `cairn-audit` gains a **public scope**, a sibling of the admin static scope.
@@ -309,6 +416,8 @@ Three rules run in it:
   never a regex over raw text. Two migration findings turn the `Consumers must:` line into a
   tripwire: "the public stylesheet does not import `cairn-public.css`" and "a chassis file redeclares an
   engine default". Today's check misses a key omitted from one block only; this rule catches it.
+  One more finding guards the heading lever: a `--font-<name>` face declared beside a
+  `--font-weight-<name>` weight, since the face then takes over the `font-<name>` utility.
 - **`theme-contrast`** is the existing dual-gamut AA check, moved from the repo-only
   `scripts/checks/check-public-tokens.mjs` into the audit. Its resolver is new code with a stated
   bound. It follows `var()` chains to a literal and evaluates the one `color-mix` form (two
@@ -353,11 +462,15 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
   defers to the official daisyUI skill for component classes. It has two halves:
   - A **theming section**, the contract as a designer uses it. It gives the job-to-token table,
     including an eyebrow row of `uppercase tracking-eyebrow`, and one placement rule: a per-scheme
-    value goes in that scheme's daisyUI block. It names the fast path, extending a built-in daisyUI
+    value goes in that scheme's daisyUI block. The table also carries three rows from the designer
+    walkthrough. A headings row names `--font-weight-heading` and `--cairn-heading-case`. A default-scheme row says that the theme block marked `default: true`
+    sets the first-visit scheme and that the toggle follows it. A rules row says that the chassis
+    reads `base-300` as the rule and border color, never as a text ground. The section names the
+    fast path, extending a built-in daisyUI
     theme by name or starting from daisyUI's theme generator, beside the full-control path. It also
     lists the two sanctioned escapes from `public-literals` (a one-line `@theme` token, or a
-    reasoned suppression), the theme-name touchpoints (the fixture keeps `cairn` and `cairn-dark`),
-    and what a replacement `prose.css` must cover.
+    reasoned suppression), the theme-name touchpoints and the one config that names them (the
+    fixture keeps `cairn` and `cairn-dark`), and what a replacement `prose.css` must cover.
   - A **catalogue** of about 25 short pages for cairn's public pieces: each directive's rendered
     markup, the islands, `CairnHead`, `PreviewBanner`, the chassis composition primitives, and the
     prose elements. The component recipe names both paths. A custom public component is a
@@ -366,7 +479,8 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
     tokens.
 
   A **coverage gate** asserts three things. Every directive (the showcase registry plus the engine
-  built-ins), every island, and every composition primitive has a page. Every class a snippet uses
+  built-ins), every island, and every composition primitive has a page. The gate walks the registry
+  through the same export the styleguide uses. Every class a snippet uses
   exists in the showcase's compiled public stylesheet or the emitted-class registry. Every token a
   snippet or the table names resolves under `theme-conformance`'s resolution set. A parser that
   matches nothing fails. `skills/cairn-extend/SKILL.md` gains one routing line to `cairn-public`.
@@ -397,7 +511,8 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
     passes a custom property in a theme component's `<style>`, `text-sm`, `bg-red-500`, `0.88em`,
     and the root `font-size` clamp.
   - `theme-conformance` flags a block missing `--radius-box`, a key missing from one block only,
-    a `var(--typo-token)`, `var(--color-red-550)`, and a stylesheet that skips `cairn-public.css`. It
+    a `var(--typo-token)`, `var(--color-red-550)`, a stylesheet that skips `cairn-public.css`, and a
+    `--font-heading` face beside `--font-weight-heading`. It
     passes a partial block named `nord`, `var(--color-red-500)`, and a route-local token.
   - `theme-contrast` flags a hand-set ink below AA, a derived ink that passes light and fails
     dark, an ink failing on the callout tint only, and an unmeasurable expression.
@@ -409,11 +524,20 @@ smoke test runs `dist/audit/bin.js` in an empty directory, with the peers presen
   fixture, and runs `vite build`. It then loads home, one article, and the styleguide in
   Playwright. It asserts that the fixture took effect: computed `--radius-box` is `0`, the fixture
   face is in `font-family`, a derived ink equals its `color-mix` result, the custom token reaches
-  its element, and the nested region's ink recomputes. A second arm builds the Waymark template
+  its element, and the nested region's ink recomputes. The same run carries the walkthrough
+  checks named under "Levers and template fixes from the designer walkthrough": the toggle's first
+  click under a light OS, the heading weight and case, the skip link at the fixture's tight scale,
+  and the tag pill and focus-ring corners. For those checks the fixture also sets
+  `--font-weight-heading: 800`, `--cairn-heading-case: uppercase`, and `--tag-filter-radius: 0`,
+  with a tightened `--spacing-xl`. A second arm builds the Waymark template
   against the working engine. It asserts that a key read only by a built-in public component under
   `src/lib/public/` reaches the compiled CSS. The harness runs in CI's design workflow, and locally
   when fast enough. `test:reskin` also gains a standing case: Waymark with its four ink overrides
   stripped must pass `theme-contrast` in both schemes. The hue-rotation case stays.
+- **The walkthrough fixes outside the harness each have their own check,** as that section names
+  them: the theme-name agreement test, the showcase e2e on the preview frame's ground under Waymark
+  dark, the radius-literal sweep test, the styleguide's throwaway-entry test, and the
+  `check:template` fixture for internal references.
 - **Three acceptance probes,** each a fresh Sonnet agent given only the shipped guidance and a
   one-line brief. Probe 1 runs at pass B's close. Probes 2 and 3 run at pass C's close.
   1. An admin screen, as the theme identity spec defines it.
@@ -439,16 +563,18 @@ Pass B's own records are listed under Delivery. Everything in this section is pa
 
 - **Facts** in `docs/internal/facts/` for each public behavior: the `cairn-public.css` subpath, the
   one-scope-per-file rule, derived inks and the changed muted and shadow defaults, the three rules,
-  `PreviewBanner`'s token styling, and the `cairn-public` skill.
+  `PreviewBanner`'s token styling, and the `cairn-public` skill. The walkthrough fixes add four:
+  the heading levers, the toggle's scheme resolution and its one theme-name config, the editor
+  preview's themed ground, and the registry-driven styleguide with its new root export.
 - **Reference pages:** `docs/reference/public-css.md` (new), `render.md`'s registry,
-  `public.md` for `PreviewBanner`'s styling and its override properties, and `cairn-audit.md` for
-  pass C's rules and the public scope's config keys.
+  `public.md` for `PreviewBanner`'s styling and its override properties, `cairn-audit.md` for
+  pass C's rules and the public scope's config keys, and `core.md` for the new root export.
 - **Frozen narrative pages, fixed under the freeze rule** (each deficiency fixed on the page, with a
   facts bullet): `docs/extend/design-your-site.md`, whose "every design-scale key … carries a
   generic default", ink-retune warning, and dependency sentence the pass makes wrong.
 - **Internal docs:** `docs/internal/public-design-system.md` changes its fill-and-ink rule to "the
   ink follows the fill; hand-tune only by override". The chassis README updates the `tokens.css`
-  row, "The token system" paragraph, and the namespace rule. It corrects the spacing-collision count
+  row with the two heading keys, "The token system" paragraph, and the namespace rule. It corrects the spacing-collision count
   to five and the sentence calling directive classes engine-fixed.
 - **The charter:** `docs/internal/what-cairn-is-and-is-not.md` amends its "all 28 registered rules
   audit the `/admin` surface" line to name the public scope. The pass records the new
@@ -477,24 +603,35 @@ Pass B's own records are listed under Delivery. Everything in this section is pa
   B's `Consumers must:` line, and the migration notes for the rename, `PreviewBanner`'s new
   subpath, and the admin scope's defaults. Under R1's recommended answer, the close then cuts the
   release.
-- **Pass C** is about eleven tasks, in dependency order:
+- **Pass C** is about thirteen tasks, in dependency order. Tasks 4 and 5 are new in the fourth
+  fold, and the walkthrough's other fixes fold into existing tasks:
   1. The equivalence test recorded on today's tree, then `cairn-public.css`, its `@source` directory,
      the moved rules, the chassis import, and the key-set snapshot test.
   2. Ink and muted derivation by measurement, the shadow default, the stripped-overrides case, and
      Waymark's per-scheme values moved into its daisyUI blocks with its header's step 6.
-  3. `PreviewBanner`'s styling migration to contract tokens. Pass B already moved the file.
-  4. The `sheet.ts` fix, the first audit task: comments no longer fuse into declaration names or
+  3. `PreviewBanner`'s styling migration to contract tokens, and the editor preview document's
+     themed ground with its e2e. Pass B already moved both files.
+  4. The heading levers and the toggle: `--font-weight-heading` and `--cairn-heading-case` with
+     their readers in `prose.css` and the template chrome, the toggle's computed-scheme
+     resolution, and the one theme-name config with its agreement test.
+  5. The template sweep: the radius literals and the tag pill's override, the skip link, the
+     registry-driven styleguide with its root export and throwaway-entry test, and the comment
+     scrub with its `check:template` fixture.
+  6. The `sheet.ts` fix, the first audit task: comments no longer fuse into declaration names or
      values, with a regression test over `theme.css`. Every later rule depends on it.
-  5. The public scope (roots, `exclude`, one scope per file, the empty-scope error) and
+  7. The public scope (roots, `exclude`, one scope per file, the empty-scope error) and
      `public-literals` on the shared core, with `markup.ts` exposing mixed `style=` parts and
      `style:` directives.
-  6. `theme-conformance`.
-  7. `theme-contrast`, the three dependency decisions, the `npm pack` smoke test, and the
+  8. `theme-conformance`, including the face-and-weight collision finding.
+  9. `theme-contrast`, the three dependency decisions, the `npm pack` smoke test, and the
      `check:public-tokens` successor.
-  8. The fixture theme and `test:theme-fixture`.
-  9. The reference page, the render registry, and `PreviewBanner`'s entry on `public.md`.
-  10. The `cairn-public` skill, its coverage gate, and the `cairn-extend` routing line.
-  11. The chassis README, `public-design-system.md`, `design-your-site.md`, and the template re-emit.
+  10. The fixture theme and `test:theme-fixture`, carrying the walkthrough's harness checks.
+  11. The reference page, the render registry, `PreviewBanner`'s entry on `public.md`, and the
+      new root export on `core.md`.
+  12. The `cairn-public` skill with the three new table rows, its coverage gate on the shared
+      registry walk, and the `cairn-extend` routing line.
+  13. The chassis README, `public-design-system.md`, `design-your-site.md`, and the template
+      re-emit.
 - **Pass C's close** runs probes 2 and 3, reconciles the skill budget, and makes pass C's
   shared-file edits: `docs/reference/cairn-audit.md` for pass C's rules, the facts, the changelog,
   the migration notes, the charter line, the rulings entry, the ROADMAP, and the dotfiles
@@ -560,3 +697,7 @@ Execution calls, not design calls:
   keys at capture time.
 - The exact config key names for the public roots, `exclude`, and the theme roots.
 - The `cairn-public` catalogue's page list, within the coverage gate's sources.
+- The markup form that applies `--cairn-heading-case` in the chrome, the new root export's name,
+  and whether the theme-name touchpoints shrink below the one config.
+- Whether `DEFAULT_ADMIN_SCOPE` gains `src/lib/admin`, settled by running the three motion rules
+  over the engine's admin components.

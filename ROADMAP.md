@@ -317,6 +317,31 @@ The original decision framing, for the record:
   the drawer closed versus open, reading the flagged elements to confirm or rule out the drawer
   hypothesis.
 
+- **Inserting a component fuses its closing fence onto the text after the caret (designer
+  walkthrough, 2026-09-27; friction log F12).** A live editor-facing defect.
+  `insertAtCursor` in `src/lib/components/MarkdownEditor.svelte:1133-1143` prepends `\n\n` when the
+  caret is past position 0 but appends nothing after the block. `serializeComponent`
+  (`src/lib/render/component-grammar.ts:44`) ends the block on its bare closing fence. Any text
+  after the caret therefore joins that fence, and the directive never closes. Repro: open a post
+  whose body has text, put the caret at the start of the body, choose Insert block, pick any
+  component, and press Insert. The editor shows `:::The original body.` on one line. The e2e at
+  `examples/showcase/e2e/golden-path.spec.ts:449-453` asserts only the opening line, so it cannot
+  see this. Leanest fix: pad the inserted block with a blank line on each side whenever the
+  caret's line has text before or after it, and assert the whole inserted block in the e2e. Owner:
+  the next engine pass, as its own small task. Pass B's rename moves the file to
+  `src/lib/admin/`. Evidence: `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`,
+  F12.
+
+- **`configure-rendering.md` teaches a leaf-directive syntax that renders as literal text
+  (designer walkthrough, 2026-09-27; friction log F10).** `docs/extend/configure-rendering.md:107`
+  says an author writes `::callout{tone="tip"}`. The engine restores a leaf (`::`) or text (`:`)
+  directive to literal prose (`src/lib/render/remark-directives.ts:113-116`), and the showcase's
+  registry says it is container-only (`examples/showcase/src/theme/markdown-components.ts:115-117`).
+  The working form is `:::callout[Title]{tone="tip"}`, then the body, then a closing `:::`. The
+  page is frozen, so this is a frozen-page deficiency: the next pass fixes the line on the page
+  under the freeze rule, with a facts bullet. Owner: the next engine pass. Evidence:
+  `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`, F10.
+
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
   `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API
@@ -2105,7 +2130,16 @@ the named human gates only):**
   2026-07-17) — a line-shaped subpath (the flag glyph's pole) paints nothing under a fill-only
   renderer, reading as an ~14x8px smudge at standalone size. Close the subpath in the engine icon
   set or paint stroke+fill. Deferred because a stroke change sweeps all 27 icons just after the
-  icon vocabulary shipped.
+  icon vocabulary shipped. The designer walkthrough (2026-09-27, friction log F11 in
+  `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`) adds two facts. The
+  `snowflake` glyph is stroke-only too, and both it and `flag` render as near-invisible dashes in
+  the Insert-block picker (`examples/showcase/src/theme/icons.ts:7,14`, copied to
+  `templates/waymark`). The `IconSet` type never says that a path must be a filled shape on a
+  `0 0 256 256` box (`src/lib/render/glyph.ts:7`, `docs/reference/core.md:1081`), so a designer
+  drawing a line icon gets a solid block or nothing. Leanest fix, short of the stroke sweep: one
+  sentence on `IconSet` and its reference row, and closed-shape paths for `flag` and `snowflake` in
+  the showcase and the template. Trigger: the next pass that touches `glyph.ts`, the icon set, or
+  `core.md`'s extension rows.
 - **Mechanical hardening: gate the `sideEffects` coverage of the server-only browser stubs (from the
   seams pass-two review, 2026-08-01).** `package.json`'s `sideEffects` now lists `dist/*/browser.js`, so
   a bundler cannot tree-shake away the module-level throw that makes `./auth-crypto` and `./cloudflare`

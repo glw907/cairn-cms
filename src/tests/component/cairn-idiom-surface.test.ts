@@ -5,6 +5,9 @@
 // @layer components until the sublayer move, since a components-layer rule cannot outrank
 // daisyUI's own utilities-layer declarations regardless of specificity. Each rule's test proves
 // two things: it renders, and a markup utility still beats it.
+//
+// A third block below proves the density step (the theme roots' own --size-field/--size-selector,
+// not a cairn-idiom rule) reaches the whole daisyUI size family it drives, not just the token.
 import { describe, expect, it } from 'vitest';
 import { renderInTheme, styleOf, type IdiomState, type Theme } from './_idiom-probe.js';
 
@@ -143,6 +146,30 @@ describe.each(THEMES)('the .modal-box repair (%s)', (theme) => {
     try {
       const modal = wrapper.querySelector('.modal-box') as HTMLElement;
       expect(getComputedStyle(modal).boxShadow).toBe('rgb(255, 0, 0) 0px 25px 50px -12px');
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+// The density step (spec, "Density"): --size-field and --size-selector each grow one daisyUI step,
+// and every field-sized or selector-sized component reads its own --size from that same token, so
+// one representative of each family is enough to prove the step reached the family rather than
+// only the one class an author happened to change. A height that stayed at the old step would mean
+// the token change did not reach the component, even though the theme root itself carries the new
+// value.
+describe.each(THEMES)('the density step reaches the size family (%s)', (theme) => {
+  const cases: { name: string; markup: string; height: string }[] = [
+    { name: 'btn-sm (size-field)', markup: '<button class="btn btn-sm">Save</button>', height: '36px' },
+    { name: 'btn (size-field)', markup: '<button class="btn">Save</button>', height: '45px' },
+    { name: 'badge-sm (size-selector)', markup: '<span class="badge badge-sm">3</span>', height: '22.5px' },
+  ];
+
+  it.each(cases)('$name renders at its stepped height', ({ markup, height }) => {
+    const { wrapper, cleanup } = renderInTheme(markup, theme);
+    try {
+      const el = wrapper.firstElementChild as HTMLElement;
+      expect(getComputedStyle(el).height).toBe(height);
     } finally {
       cleanup();
     }

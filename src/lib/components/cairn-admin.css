@@ -119,13 +119,13 @@
   --color-error: oklch(56% 0.2 25);
   --color-error-content: oklch(98% 0.012 25);
 
-  --radius-selector: 0.5rem;
-  --radius-field: 0.625rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
+  --radius-selector: 0.25rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.28125rem;
+  --size-field: 0.28125rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
@@ -374,13 +374,13 @@
   --color-error: oklch(70% 0.18 25);
   --color-error-content: oklch(20% 0.04 25);
 
-  --radius-selector: 0.5rem;
-  --radius-field: 0.625rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
+  --radius-selector: 0.25rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.28125rem;
+  --size-field: 0.28125rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
@@ -739,8 +739,10 @@
      hidden beneath it (WCAG 2.4.11 Focus Not Obscured). The scroll margin keeps any focus or
      fragment scroll clear of the sticky band, with a little slack. The below-sm fixed bottom
      action bar (EditPage.svelte) is the same kind of obscuring band from the other edge: its
-     min-h-11 button plus its pt-2/pb-2 padding and border measure about 3.8rem before
-     env(safe-area-inset-bottom), so the bottom margin rounds up with slack for that inset too. */
+     button now measures 45px tall (--size-field's density step carries its --size past the
+     min-h-11 floor, so the field height wins over the minimum), and that button plus the bar's
+     own pt-2/pb-2 padding and border measure about 3.9rem before env(safe-area-inset-bottom), so
+     the bottom margin rounds up with slack for that inset too. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is(a, button, input, textarea, select, summary, [tabindex]) {
     scroll-margin-top: 5.5rem;
     scroll-margin-bottom: 6rem;
@@ -748,9 +750,11 @@
 
   /* Hit-slop for the checkbox-in-label pattern (boolean fields, closed-taxonomy tag pickers): a
      bare checkbox-sm plus its label has no min-height, so its effective touch target sits near
-     20-24px. Padding grows the label's own border box (what the browser hit-tests) while the
-     equal, opposite margin keeps its contribution to the surrounding flow unchanged, so the
-     visible checkbox size and the row-to-row spacing both stay exactly as authored. */
+     22.5-24px (the checkbox's own --size-selector-derived box at the low end, the label's type
+     line-height at the high end). Padding grows the label's own border box (what the browser
+     hit-tests) while the equal, opposite margin keeps its contribution to the surrounding flow
+     unchanged, so the visible checkbox size and the row-to-row spacing both stay exactly as
+     authored. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) label.label:has(> input.checkbox) {
     margin-block: -0.25rem;
     padding-block: 0.25rem;

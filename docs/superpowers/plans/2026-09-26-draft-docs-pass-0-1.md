@@ -483,3 +483,19 @@ counts as one).
 ## Ledger
 
 (written by the conductor at each segment boundary)
+
+### Pre-flight (2026-09-26, before segment A)
+
+- Counter: `/usage` (the command `/cost` now reports as) includes subagent and workflow-agent
+  tokens (https://code.claude.com/docs/en/costs.md). Between readings the conductor sums the
+  per-agent `subagent_tokens` and each workflow run's reported usage.
+- Pre-flight spend: fact check 0.10M, counter question 0.06M.
+- Fact check over the header and tasks 1 to 5: 20+ claims, none failed. Caveat: tags
+  `tool/v1.0.0` and `v1.0.1` carry no `conditions.json`, so "print none outside the set" holds
+  vacuously.
+- Worktree `draft-docs-0` off `main` at `2776dfa3` (the theme-identity spec commit, docs-only).
+  `npm ci` skipped `workerd`'s postinstall under npm 11.19's script approval; the platform
+  binary is present.
+- `~/.dotfiles` warm paths match the header exactly; no task touches them.
+- Next: segment A (tasks 1, 3, 4, 5 via `pass-execute`), task 2's chain alongside.
+

@@ -95,14 +95,18 @@ export function loadShippedAnchors(listPath, root) {
   } catch (error) {
     return { anchors: [], defects: [`${rel}: not valid JSON (${error instanceof Error ? error.message : String(error)})`] };
   }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed) || !Array.isArray(parsed.anchors)) {
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return { anchors: [], defects: [`${rel}: not an object carrying an "anchors" array`] };
+  }
+  const anchorsField = /** @type {{ anchors?: unknown }} */ (parsed).anchors;
+  if (!Array.isArray(anchorsField)) {
     return { anchors: [], defects: [`${rel}: not an object carrying an "anchors" array`] };
   }
   /** @type {string[]} */
   const anchors = [];
   /** @type {string[]} */
   const defects = [];
-  parsed.anchors.forEach((entry, i) => {
+  anchorsField.forEach((entry, i) => {
     if (typeof entry !== 'string' || entry.length === 0) {
       defects.push(`${rel}: anchors[${i}] is not a non-empty string`);
       return;

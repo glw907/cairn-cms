@@ -60,6 +60,13 @@ GitHub repo) awaits his delete confirmation.
 
 ## Open decisions and watches
 
+- Open for Geoff (2026-09-27): whether to overlap pass C with pass A. Option 1 authors pass C's
+  plan now (it needs none of A's vocabulary; B's plan still waits for segment D). Option 2 adds a
+  concurrent slice of C's audit-engine work (the `sheet.ts` comment fix, the bounded contrast
+  resolver with culori, the shared literal core) in its own worktree, at the cost of gate
+  contention and one extra small plan. Recommendation: option 1 only. Absent an answer, stay
+  sequential.
+
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026);
   TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).
 - extend-1's two advisory audit rules go to error tier at `0.98.0`; `cairn-audit --rendered`

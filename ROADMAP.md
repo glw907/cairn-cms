@@ -282,6 +282,16 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Theme identity, passes A, B, and C (Geoff, 2026-09-26 and 2026-09-27).** cairn's own look moves
+  into the daisyUI theme layer, and the public site gets one theme contract that any theme can meet.
+  Pass A (the admin theme, spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`) is
+  executing on `theme-identity-a`. Passes B and C share one spec,
+  `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renames `./components` to
+  `./admin` and ships the admin agent path; C is the one public theme (`cairn-public.css`, derived
+  inks, heading levers, the three public audit rules, the `cairn-public` skill, and the designer
+  walkthrough's template fixes). B stays unmerged, C branches from it, and both merge at C's close
+  with one `0.98.0` cut carrying A, B, and C. Draft documentation (below) waits for C.
+
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25).** cairn's docs are still
   to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,
   and 2a, spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
@@ -295,7 +305,7 @@ The original decision framing, for the record:
     `docs-reset-2a-audiences` (on origin). The profiles themselves were never written.
   - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
   - The designer's theme guide is a primary page (Geoff, 2026-09-27): it documents the one
-    public theme contract (Next, "One public theme") and is drafted after that contract settles.
+    public theme contract (Now, "Theme identity", pass C) and is drafted after that contract settles.
   - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
     on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
     DaisyUI. It links to DaisyUI's theme docs rather than restating them.
@@ -887,29 +897,6 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
-
-- **One public theme (Geoff, 2026-09-27).** A site's `src/theme/theme.css`, its two daisyUI theme
-  blocks plus cairn's tier-2 tokens, is the one meta theme. It must cover every public component
-  cairn ships by default and every custom public component a developer writes, with nothing to
-  keep in step by hand. The default output already reads only theme variables (`prose.css`, the
-  starter chrome). Three gaps remain:
-  - Status inks are hand-kept. `--cairn-info-ink`, `--cairn-success-ink`, and `--cairn-warning-ink`
-    sit beside their `--color-*` fills in both themes, so a retuned fill desyncs directive text
-    unless the themer also edits the ink. Derive each ink from its fill.
-  - No guard reaches a real site. `check:public-tokens` (`scripts/checks/check-public-tokens.mjs`)
-    bans literal colors and font sizes only under `examples/showcase/src`, and a scaffolded site
-    does not inherit it (`docs/extend/design-your-site.md`). Ship the guard as a `cairn-audit` rule
-    or a scaffold script, so a custom component that hard-codes a color is caught.
-  - The token contract is undocumented for component authors. The contract is the daisyUI roles
-    plus cairn's status inks, `--cairn-shadow`, and the spacing and type steps. Today only
-    `theme.css`'s header and an internal ledger describe it. Publish it as a developer page and as
-    shipped agent guidance, parallel to theme identity pass B's admin guidance.
-
-  Sequencing (Geoff, 2026-09-27): it lands before draft documentation resumes. Fold it into
-  theme identity pass B's planning or run it as the pass after; either way draft docs waits. It
-  also feeds the draft documentation work (Now): theming cairn is a primary
-  docs topic, and the designer's theme guide documents this contract, so the guide is drafted
-  against the settled contract, not today's hand-kept one.
 
 - **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or

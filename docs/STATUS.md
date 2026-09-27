@@ -32,7 +32,7 @@ in `/var/home/glw907/Projects/cairn-cms`: "Resume theme identity pass A: follow 
 the foot of the plan's ledger in the worktree." The pass machinery lives in the `pass-core` skill,
 which `cairn-pass` loads. Nothing merges or publishes; the next release carrying it is `0.98.0`.
 
-Theme identity passes B and C have a reviewed spec awaiting Geoff's final read:
+Theme identity passes B and C have a reviewed spec, **approved by Geoff 2026-09-27**:
 [`2026-09-27-theme-identity-pass-b-design.md`](superpowers/specs/2026-09-27-theme-identity-pass-b-design.md)
 (fold record `superpowers/research/2026-09-27-theme-pass-b-fold.md`). Pass B is the
 `./components` to `./admin` rename plus the admin agent path; pass C is the one public theme,
@@ -60,12 +60,10 @@ GitHub repo) awaits his delete confirmation.
 
 ## Open decisions and watches
 
-- Open for Geoff (2026-09-27): whether to overlap pass C with pass A. Option 1 authors pass C's
-  plan now (it needs none of A's vocabulary; B's plan still waits for segment D). Option 2 adds a
-  concurrent slice of C's audit-engine work (the `sheet.ts` comment fix, the bounded contrast
-  resolver with culori, the shared literal core) in its own worktree, at the cost of gate
-  contention and one extra small plan. Recommendation: option 1 only. Absent an answer, stay
-  sequential.
+- Pass C overlap (Geoff, 2026-09-27: "if you can do that plan concurrently, that would be great"):
+  pass C's plan is authored now, alongside pass A; no pass C code runs before pass B, so the
+  heavy-gate lock and the B-then-C branch order stay intact. Pass B's plan still waits for pass
+  A's segment D.
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026);
   TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).

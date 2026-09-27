@@ -20,16 +20,17 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-Theme identity pass A is **stopped at the segment A boundary** (session closed 2026-09-27), on
-branch `theme-identity-a` in worktree `.claude/worktrees/theme-identity-a`, local only (not yet
-pushed). Plan:
+Theme identity pass A is **stopped at a segment B resume point** (session closed 2026-09-27), on
+branch `theme-identity-a` in worktree `.claude/worktrees/theme-identity-a`, draft PR #92. Plan:
 [`2026-09-26-theme-identity-pass-a.md`](superpowers/plans/2026-09-26-theme-identity-pass-a.md),
-spec [`2026-09-26-theme-identity-design.md`](superpowers/specs/2026-09-26-theme-identity-design.md).
-Tasks 0 to 4 are accepted; spend about 5.4M of the 20M ceiling. Resume prompt: "Resume theme
-identity pass A at the segment A boundary: follow 'Resume here' at the foot of the plan's ledger
-in the worktree." It starts with the engine gate on the not-yet-gated simplifier commit
-`15aa1015`, then the push, the draft PR, and segment B. The run still stops before Geoff's S3
-sitting; nothing merges or publishes. The next release carrying it is `0.98.0`.
+now run as **pass class `paint`** (per-task targeted gates, coverage findings non-blocking, owner
+glance after task 8, S2 folded into S1). Tasks 0 to 6 are accepted; task 7 is committed and owes
+one fix round (decision 17, an accessibility regression); task 8 has not run. Spend about 8.7M of
+the 20M ceiling; projected total about 17.3M, so the 16M flag trips near S4 and its question rides
+the S3 page. Resume prompt, in a fresh `claude --model claude-opus-5-5` session at effort `medium`
+in `/var/home/glw907/Projects/cairn-cms`: "Resume theme identity pass A: follow 'Resume here' at
+the foot of the plan's ledger in the worktree." The pass machinery lives in the `pass-core` skill,
+which `cairn-pass` loads. Nothing merges or publishes; the next release carrying it is `0.98.0`.
 
 Draft docs pass 0+1 is **paused** on `draft-docs-0` (Geoff, 2026-09-26: "We can hold further docs
 work until we've completed this effort"); it resumes after the theme initiative merges (pass B)

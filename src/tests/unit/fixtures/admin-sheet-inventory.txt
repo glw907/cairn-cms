@@ -133,6 +133,7 @@ border-base-content/25
 border-collapse
 border-current
 border-dashed
+border-error
 border-l
 border-none
 border-primary/[0.16]

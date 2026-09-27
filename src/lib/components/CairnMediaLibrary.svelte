@@ -1228,7 +1228,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <input type="hidden" name="confirmSlug" value={confirmSlugInput} />
             <div class="flex flex-col gap-1.5">
               <label class="type-body" for="cairn-ml-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta font-bold">{asset.slug}</code> to delete it anyway.</label>
-              <input id="cairn-ml-confirm" class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={confirmSlugInput} />
+              <input id="cairn-ml-confirm" class="input input-sm border-error font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={confirmSlugInput} />
             </div>
           {/if}
           <div class="flex justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">

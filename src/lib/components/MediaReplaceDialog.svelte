@@ -543,7 +543,7 @@ full-page POST to `?/mediaReplace` navigates away.
 
           <div class="flex flex-col gap-1.5">
             <label class="type-body" for="cairn-ml-replace-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta font-bold">{asset.slug}</code> to replace the file in all {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}.</label>
-            <input id="cairn-ml-replace-confirm" data-cairn-replace-confirm class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={replaceConfirmInput} />
+            <input id="cairn-ml-replace-confirm" data-cairn-replace-confirm class="input input-sm border-error font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={replaceConfirmInput} />
           </div>
         </div>
 

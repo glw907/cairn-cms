@@ -436,7 +436,7 @@ restores there on close.
                 <input
                   bind:this={orphanSelectAll}
                   type="checkbox"
-                  class="checkbox checkbox-sm border-[var(--cairn-error-border)]"
+                  class="checkbox checkbox-sm border-error"
                   aria-label="Select all orphaned files"
                   onchange={toggleOrphanAll}
                 />
@@ -452,7 +452,7 @@ restores there on close.
                   <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                     <input
                       type="checkbox"
-                      class="checkbox checkbox-sm border-[var(--cairn-error-border)]"
+                      class="checkbox checkbox-sm border-error"
                       checked={picked}
                       aria-label={`Select ${byte.key}`}
                       onchange={() => toggleOrphanKey(byte.key)}

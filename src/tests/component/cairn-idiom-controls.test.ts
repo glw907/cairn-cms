@@ -156,15 +156,19 @@ describe.each(THEMES)('the switch (%s)', (theme) => {
     }
   });
 
-  // The knob's own rule carries no pseudo-class of its own (the same one-value-across-every-state
-  // pattern the plain button hairline uses), so it holds across hover/focus-visible/active by
-  // construction; getComputedStyle(el, '::before') itself has no interaction-state concept to
-  // drive, unlike the real element styleOf reads above, so this is read once rather than looped.
-  it.each(CHECKED_FORMS)('$name fills the knob base-100', ({ markup }) => {
+  // The knob's own rule carries no pseudo-class of its own, but a real interaction state still
+  // lands on the host element while the property under test lives on its ::before, so styleOf's
+  // pseudo-element argument reads the knob at each of the four states the real element reaches.
+  it.each(CHECKED_FORMS)('$name fills the knob base-100 at every state', async ({ markup }) => {
     const { wrapper, cleanup } = renderInTheme(markup, theme);
     try {
       const el = wrapper.querySelector('.toggle') as HTMLElement;
-      expect(getComputedStyle(el, '::before').backgroundColor).toBe(resolveColor('var(--color-base-100)', theme));
+      el.style.transition = 'none';
+      for (const state of STATES) {
+        expect(await styleOf(el, 'background-color', state, '::before')).toBe(
+          resolveColor('var(--color-base-100)', theme),
+        );
+      }
     } finally {
       cleanup();
     }
@@ -185,20 +189,17 @@ describe.each(THEMES)('the switch (%s)', (theme) => {
     },
   );
 
-  it('leaves a disabled checked switch to daisyUI\'s own opacity-only dimming', () => {
-    const checked = renderInTheme('<input type="checkbox" class="toggle" checked />', theme);
-    const disabled = renderInTheme('<input type="checkbox" class="toggle" checked disabled />', theme);
+  it('a disabled checked switch matches daisyUI stock: knob transparent, track base-100', () => {
+    const { wrapper, cleanup } = renderInTheme('<input type="checkbox" class="toggle" checked disabled />', theme);
     try {
-      const checkedEl = checked.wrapper.querySelector('input')!;
-      const disabledEl = disabled.wrapper.querySelector('input')!;
-      // The rule excludes :disabled, so the disabled knob keeps daisyUI's own transparent value,
-      // not this rule's base-100.
-      expect(getComputedStyle(disabledEl, '::before').backgroundColor).not.toBe(
-        getComputedStyle(checkedEl, '::before').backgroundColor,
-      );
+      const el = wrapper.querySelector('input')!;
+      // The rule excludes :disabled, so the disabled switch is left entirely to daisyUI's own
+      // .toggle:checked (track background-color: base-100) and .toggle:disabled::before
+      // (background-color: transparent) rules, not this rule's neutral track or base-100 knob.
+      expect(getComputedStyle(el).backgroundColor).toBe(resolveColor('var(--color-base-100)', theme));
+      expect(getComputedStyle(el, '::before').backgroundColor).toBe(resolveColor('transparent', theme));
     } finally {
-      checked.cleanup();
-      disabled.cleanup();
+      cleanup();
     }
   });
 

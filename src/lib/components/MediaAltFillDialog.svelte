@@ -305,7 +305,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                     <input
                       type="checkbox"
                       data-cairn-alt-optin
-                      class="checkbox checkbox-sm mt-px border-[var(--cairn-error-border)] checked:border-[var(--cairn-error-ink)] checked:bg-[var(--cairn-error-ink)]"
+                      class="checkbox checkbox-sm mt-px border-error checked:border-[var(--cairn-error-ink)] checked:bg-[var(--cairn-error-ink)]"
                       aria-describedby="cairn-ml-alt-optin-hint"
                       bind:checked={altOverwrite}
                     />

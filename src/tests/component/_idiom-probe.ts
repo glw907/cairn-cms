@@ -142,35 +142,44 @@ async function clearHover(): Promise<void> {
  * released after the read, for active. A rest or focus-visible read first clears any leftover
  * cursor position a previous hover or active read left behind (see {@link clearHover}), since
  * neither state is itself a hover. Before reading a non-rest state it asserts `el` actually
- * matches that state's pseudo-class and throws naming the state otherwise.
+ * matches that state's pseudo-class and throws naming the state otherwise. `pseudoElt`, when
+ * given, reads `el`'s pseudo-element instead of `el` itself (for example `::before`), since the
+ * interaction state a mouse or keyboard drives always lands on the real element even when the
+ * property under test lives on its pseudo-element.
  * @param el the element to read
  * @param prop a CSS property or custom property name, passed to `getPropertyValue`
  * @param state which interaction state to read
+ * @param pseudoElt an optional pseudo-element selector, forwarded to `getComputedStyle`
  * @returns the computed value of `prop` at `state`
  */
-export async function styleOf(el: Element, prop: string, state: IdiomState): Promise<string> {
+export async function styleOf(
+  el: Element,
+  prop: string,
+  state: IdiomState,
+  pseudoElt?: string,
+): Promise<string> {
   if (state === 'rest') {
     await clearHover();
-    return getComputedStyle(el).getPropertyValue(prop);
+    return getComputedStyle(el, pseudoElt).getPropertyValue(prop);
   }
   if (state === 'hover') {
     await userEvent.hover(el);
     assertReached(el, 'hover');
-    return getComputedStyle(el).getPropertyValue(prop);
+    return getComputedStyle(el, pseudoElt).getPropertyValue(prop);
   }
   if (state === 'focus-visible') {
     await clearHover();
     await userEvent.tab();
     (el as HTMLElement).focus();
     assertReached(el, 'focus-visible');
-    return getComputedStyle(el).getPropertyValue(prop);
+    return getComputedStyle(el, pseudoElt).getPropertyValue(prop);
   }
   const { x, y } = topLevelPoint(el);
   const session = cdp() as unknown as ProtocolSession;
   await session.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
   try {
     assertReached(el, 'active');
-    return getComputedStyle(el).getPropertyValue(prop);
+    return getComputedStyle(el, pseudoElt).getPropertyValue(prop);
   } finally {
     await session.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
   }

@@ -66,6 +66,17 @@ func TestVocabulariesCoverTheirConstBlocks(t *testing.T) {
 			}
 
 			if !slices.Equal(got, want) {
+				for _, name := range want {
+					if !slices.Contains(got, name) {
+						t.Errorf("%s constant %s missing from %s", v.typeName, name, v.listVar)
+					}
+				}
+				for i, name := range want {
+					if i >= len(got) || got[i] != name {
+						t.Errorf("%s and %s diverge at position %d: expected %s", v.listVar, v.typeName, i, name)
+						break
+					}
+				}
 				t.Errorf("%s constants in declaration order = %v, backing list %s = %v", v.typeName, want, v.listVar, got)
 			}
 		})

@@ -46,11 +46,17 @@ const ROOT = repoRoot(import.meta.url);
 // by concatenation rather than five independent literals so the superset relationship cannot
 // drift. TOOL_GATE stands alone: `make -C tool check` proves the Go module's own three legs and
 // is never folded into or out of the npm chain.
-const DOCS_GATE =
-  'npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts';
+//
+// DOCS_GATE is the one `check:docs-gate` script (scripts/checks/docs-gate.mjs): it already runs
+// check:docs, check:vale, check:facts, check:provenance, check:symbols, check:snippets,
+// check:transcripts, check:visuals, check:arm-indexes, check:editor-quotes, check:readiness,
+// check:tool-conditions, check:target-stack, check:reference, and check:reference:signatures, so
+// FULL_GATE does not repeat check:snippets, check:transcripts, or check:symbols on top of it; a
+// diff-touching path list would otherwise run those three twice.
+const DOCS_GATE = 'npm run check:docs-gate';
 const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm test`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
-const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
+const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';
 
 /**

@@ -143,7 +143,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ToolbarDisclosure`: Component<Props, {}, "">
 - `ToolbarDisclosureAriaHaspopup`: "menu" | "listbox" | "dialog" | "grid" | "tree" | "true"
 - `ToolbarDisclosurePanelAttrs`: { id: string; hidden: true | undefined }
-- `ToolbarDisclosureTriggerAttrs`: { aria-expanded: boolean; aria-controls: string; aria-haspopup: ToolbarDisclosureAriaHaspopup | undefined; onclick: (event: MouseEvent) => void }
+- `ToolbarDisclosureTriggerAttrs`: { aria-expanded: boolean; aria-controls: string; aria-haspopup: ToolbarDisclosureAriaHaspopup | undefined; onclick: (event: MouseEvent) => void; [key: symbol]: Attachment<HTMLElement> }
 - `Tooltip`: Component<Props, {}, "">
 
 ## `/ambient`

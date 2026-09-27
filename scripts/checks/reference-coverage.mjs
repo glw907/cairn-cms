@@ -595,10 +595,9 @@ export function exportKeyToSubpath(key) {
 
 // Derive CONFIG from a package.json `exports` map: one entry per subpath, carrying the settings
 // `settings` maps it to. Every exports subpath must be either mapped in `settings` or named in
-// `exclusions`, and every exclusion must still name a real exports subpath, so this throws by
-// naming the offending subpath rather than the hardcoded list's old failure mode, silently
-// reporting OK across the subpaths it happened to know about while a new or renamed one shipped
-// with no reference page at all.
+// `exclusions`, and every exclusion must still name a real exports subpath. A violation throws
+// naming the offending subpath, so a new or renamed export cannot ship with no reference page
+// while the gate reports OK over the subpaths it already knew.
 /**
  * @param {object} options
  * @param {Record<string, unknown>} options.exportsMap package.json's own `exports` field
@@ -609,7 +608,7 @@ export function exportKeyToSubpath(key) {
 export function deriveConfig({ exportsMap, settings = SUBPATH_SETTINGS, exclusions = SUBPATH_EXCLUSIONS }) {
   const exportSubpaths = new Set(Object.keys(exportsMap).map(exportKeyToSubpath));
   for (const exclusion of exclusions) {
-    if (!exclusion.reason || !exclusion.reason.trim()) {
+    if (!exclusion.reason?.trim()) {
       throw new Error(`reference-coverage exclusion for ${exclusion.subpath} has no reason`);
     }
     if (!exportSubpaths.has(exclusion.subpath)) {

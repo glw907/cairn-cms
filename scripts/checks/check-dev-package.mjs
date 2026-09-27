@@ -92,6 +92,7 @@ function run(label, args) {
   return result.status === 0;
 }
 
+/** Run every check, then report and set a failing exit code when any check failed. */
 function main() {
   const tscOk = run('tsc --noEmit (dev-package types)', ['tsc', '--noEmit', '-p', TSCONFIG]);
   const lintOk = run('eslint (TSDoc structure + the em-dash ban on the dev-package)', ['eslint', ESLINT_PATH]);

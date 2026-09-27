@@ -130,21 +130,21 @@ describe('diffSurface', () => {
 // causes. `getPropertiesOfType` alone never sees it, so the rendered listing must fold it in
 // explicitly (renderExport is the fixture-testable seam; renderInterface is not exported).
 describe('renderExport (index signatures)', () => {
-  const tmpFiles: string[] = [];
+  const tmpDirs: string[] = [];
   afterEach(() => {
-    for (const dir of tmpFiles.splice(0)) rmSync(dir, { recursive: true, force: true });
+    for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
   });
 
-  function compileFixture(source: string) {
+  function writeFixture(source: string) {
     const dir = mkdtempSync(join(tmpdir(), 'check-surface-'));
-    tmpFiles.push(dir);
+    tmpDirs.push(dir);
     const dtsPath = join(dir, 'fixture.d.ts');
     writeFileSync(dtsPath, source);
     return dtsPath;
   }
 
   it('renders a string index signature, and differs from the same interface without one', () => {
-    const dtsPath = compileFixture(
+    const dtsPath = writeFixture(
       [
         'export interface WithIndex {',
         '  known: string;',
@@ -165,7 +165,7 @@ describe('renderExport (index signatures)', () => {
   });
 
   it('renders a readonly number index signature', () => {
-    const dtsPath = compileFixture(
+    const dtsPath = writeFixture(
       ['export interface Rows {', '  readonly [index: number]: string;', '}'].join('\n'),
     );
     const { checker, symbols } = moduleExports(dtsPath);
@@ -174,7 +174,7 @@ describe('renderExport (index signatures)', () => {
   });
 
   it('renders a symbol index signature', () => {
-    const dtsPath = compileFixture(
+    const dtsPath = writeFixture(
       ['export interface Tagged {', '  [key: symbol]: unknown;', '}'].join('\n'),
     );
     const { checker, symbols } = moduleExports(dtsPath);

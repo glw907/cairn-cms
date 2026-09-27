@@ -1395,3 +1395,34 @@ ceiling, planning misses, and execution sittings (S3 counts as one).
 ## Ledger
 
 (written by the conductor at each segment boundary)
+
+### Task 0 (2026-09-26, conductor)
+
+1. Draft docs paused: `draft-docs-0` head `a22d0662` ("park draft docs pass 0+1"), pause recorded
+   in its plan's ledger; tree clean; no process in its worktree. Pass.
+2. No executor on `theme-identity-a`. Pass.
+3. Worktree `.claude/worktrees/theme-identity-a` off `main` `38e76ffd`; both `npm ci` exit 0; the
+   showcase's `@glw907/cairn-cms` resolves into the worktree. Pass.
+4. Counts re-verified exactly: daisyUI 5.7.44, Tailwind 4.3.3, allowlist 18, cap 19, 85 radius
+   matches in 17 files, 24 `rounded-full`, 4 ink-hover, 1 Publish tint, 5 `shadow-none`, 8 style
+   literals, 1 `type-title font-bold`, 16 inline `stroke-width="2"`. Pass.
+5. `main` carries the full narrative-arm freeze (`CLAUDE.md`, "frozen against rewrites"). Recorded.
+6. `aff583d2`: the serialized engine string. **Decision 14** added to the same commit: port 4173 is
+   held by another project's server (dubplate's `sirv`), and the showcase Playwright config
+   hard-coded it with `reuseExistingServer`, so a local e2e would test the wrong site. The config
+   now reads `E2E_PORT` (default 4173, CI unchanged). This pass runs every local e2e with
+   `E2E_PORT=4392`; the Global constraints' port check applies to 4392, not 4173.
+7. `gate-tier.mjs --range HEAD~1..HEAD --pin engine` prints the plan's engine string verbatim.
+8. Baseline green on the third run, `gate exit: 0`: node projects 389 files / 5145 tests, component
+   (serialized) 82 files / 1429 tests. Two fixes first: `2d33e098` (a facts citation stale on
+   `main`, pushed past its 10-line tolerance by item 6's added line) and `30d2372b` (**decision
+   15**: two `rendered.test.ts` BASE_URL tests made hermetic by stubbing `fetch`, since the
+   machine's port 4173 answered). No stall.
+9. `9dfe7dd4`: 70 before PNGs over 18 page states; two rendered audits, tracked rules identical
+   (`weight-budget` 4, `border-contrast` 238, `chip-ground-collision` 50, the rest 0); variance is
+   `viewport-overflow` only. Server stopped.
+10. `/cost` is Geoff's slash command; the conductor's counter is the sum of subagent and workflow
+    token counts from task notifications. Spend since plan approval, through task 0: about 3.0M.
+
+Owed to the close: `docs/internal/pass-gate-tiers.md`'s prose sentence above the table still
+describes the old engine string.

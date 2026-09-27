@@ -30,3 +30,21 @@ required of a developer.
 - Switch (Geoff: "The Notify switch looks a little ... odd"): squared knob in a box, on-state by
   position only. Verdict **C**: switch exempt from the ladder (round, like avatar/dot), checked
   track fills with the neutral ink, knob base-100.
+
+## Rulings after the four-lens spec review (Geoff: "yes to all", 2026-09-26)
+
+Goals added mid-review (Geoff): "anybody extending the cairn admin interface should get a
+consistant look by default"; "It should also be maximally easy for agents extending cairn to
+create the same look and feel."
+
+1. Architecture: the engine stays the single compiler of admin component CSS; the theme is
+   authored as real `@plugin "daisyui/theme"` blocks (`cairn-admin`, `cairn-admin-dark`); every
+   daisyUI component compiles in; cairn's idiom lives in a `cairn-theme` sublayer inside
+   `utilities`, after daisyUI's. A spike proves it and measures the size cost before the fold.
+2. F1: the starter takes the hairline outline as a shared family trait (confirmed, no longer
+   inferred); `public-design-system.md`'s never-cross-over line is amended.
+3. Sequencing: spike and fold now; the pass branches after draft docs pass 0+1 merges.
+4. Soft-primary hover stays tinted (`primary/15`), the July tint rung.
+5. Hand-authored inline SVGs at the default 2px stroke move to 1.75; deliberately heavier
+   strokes keep their values.
+6. The editor's 30px document title stays at 700; the settle audit grades it.

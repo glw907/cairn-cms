@@ -955,7 +955,7 @@ the named human gates only):**
   `color-mix(in oklab, currentColor 55%, transparent)` hairline inside a `text-muted` ancestor;
   neither traced to a source in the repo (no test, no audit rule output, no computed constant), so
   stage 1's batch 4/5 fact review removed them and the page now states only the traceable claim
-  (the mix clears the audit's 3:1 border-contrast floor against both grounds). Trigger:
+  (the mix reads under the audit's own 3:1 border-contrast floor against both grounds). Trigger:
   re-measure the actual ratios, ideally with the rendered `border-contrast` rule itself against a
   `text-muted` ancestor fixture, before restoring specific numbers to the page.
 

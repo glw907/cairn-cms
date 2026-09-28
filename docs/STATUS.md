@@ -17,21 +17,22 @@ un-pinnable against the registry since `0.95.0`. Live contracts:
 
 ## Immediate next action
 
-One conductor session (2026-09-27, `claude-opus-5-5`) is running theme identity unattended
-overnight; draft docs pass 0+1 closed the same session. Resume each from its plan's ledger foot:
+Three initiatives are live; resume each from its plan's ledger foot:
 
-- **Theme identity pass A** (worktree `.claude/worktrees/theme-identity-a`, draft PR #92, class
-  `paint`): segments A/B done, segment C (tasks 9-11) in flight, merges `main` in at the segment C
-  boundary (blocked on a `package.json` conflict until then). Owner glance page:
-  https://claude.ai/artifact/84VPNnuk9uwNwHnTtvTobx; runs unattended to its close, merge held for
-  Geoff's before-and-after (ruling 2026-09-27).
-- **Theme identity passes B and C**: spec approved, pass C's plan reviewed and cleared
-  (`theme-c-plan`, `a6722a6e`, ceiling ruling `8000a3f3`); pass B's plan is written once A's
-  segment D lands. B branches from A's closed-but-unmerged head, C from B; S3 corrections merge
-  forward into B and C; all three merge with one `0.98.0` cut (Geoff, 2026-09-27).
-- **Draft docs pass 0+1** closed on `draft-docs-0` (draft PR #91, full gate green); merge waits on
-  Geoff's word, then the next action is the stage 2a plan (below). PRs #93, #94, #96 (chores, Go
-  tool chores, setup-paid) already merged.
+- **Theme identity pass A** (branch `theme-identity-a`, closed at `7e64a388`): closed, unmerged;
+  Geoff's S3 owner sitting is done ("all per recommendation"), a correction run is folding its
+  fixes in, and pass A then merges `main` on its own (Geoff's ruling, 2026-09-28, overriding the
+  earlier A-B-C joint-merge ruling). Ledger foot:
+  `docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`.
+- **Theme identity pass B** (branch `theme-identity-b`): segments A and B done, segment C (the
+  shipped guidance and its exemplar, then the sync test) next. Ledger foot:
+  `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`.
+- **Theme identity pass C**: reviewed plan waits on branch `theme-c-plan`
+  (`docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`), runs after pass B, cuts `0.98.0`.
+- **Draft docs pass 0+1**: closed on `draft-docs-0` (draft PR #91, full gate green); merge waits on
+  Geoff's word, then the next action is the stage 2a plan (below). Geoff's style-guide sync
+  brainstorm (`docs/superpowers/research/2026-09-28-style-guide-sync-brainstorm-brief.md`, `main`,
+  a separate session) must land before stage 2a drafts its first page.
 
 ## Open decisions and watches
 
@@ -51,10 +52,9 @@ overnight; draft docs pass 0+1 closed the same session. Resume each from its pla
 
 ## Resume prompt
 
-Passes B and C: once pass A's segment D lands, in a fresh session (`claude-opus-5-5`, `high`),
-confirm Geoff approved the pass B/C spec, author both plans (`Pass class:`, ceiling, checkpoint per
-`pass-core`), run `spec-plan-review`, and bring both to Geoff in one sitting. Read the spec's "Open
-for the plan" and the fold record's moved detail first; never touch pass A's worktree.
-Draft docs, after `draft-docs-0` merges: in a fresh session (`claude-opus-5-5`, `high`), author the
-stage 2a plan (with its extend outline) from the approach spec's stage 2 outline, run
-`spec-plan-review`, and bring it to Geoff on an R10 page.
+Theme identity: in a fresh session (`claude-opus-5-5`, `high`), resume pass B at segment C per its
+own plan's ledger foot; pass C waits for pass B's close; never touch pass A's worktree, whose merge
+to `main` is pass A's own act.
+Draft docs, after `draft-docs-0` merges: in a fresh session (`claude-opus-5-5`, `high`), confirm the
+style-guide sync brainstorm has landed, author the stage 2a plan (with its extend outline) from the
+approach spec's stage 2 outline, run `spec-plan-review`, and bring it to Geoff on an R10 page.

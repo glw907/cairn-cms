@@ -98,10 +98,14 @@ flag and within the 9.6M ceiling. Tasks 6, 7, 8, the segment B boundary, and thi
 recorded this pattern (a projection past its checkpoint is the checkpoint question, not a hard
 stop) and this record does not manufacture a number where the ledger carries none.
 
-**Attended time:** one execution sitting (task 9's owner review, 2026-09-28): Geoff's Firefox
-read of the published review page across four versions (v1 code fix, v2, v3 with four comments,
-v4 approved with no edits), per `pass-core`'s rule that this sitting counts as one regardless of
-its round count.
+**Attended time:** one planning miss (the register's academic voice and its "You know it worked
+when" heading rule were scoped front-door-only, found at task 9's owner review of the published
+proof page); one execution sitting (task 9's owner review, 2026-09-28): Geoff's Firefox read of
+the published review page across four versions (v1 code fix, v2, v3 with four comments, v4
+approved with no edits), per `pass-core`'s rule that this sitting counts as one regardless of its
+round count.
+
+`code-simplifier` ran after this close, on the closed head, as `bd935c9d`.
 
 ## Workers Paid confirmation and AI posture prompt, 2026-09-28
 

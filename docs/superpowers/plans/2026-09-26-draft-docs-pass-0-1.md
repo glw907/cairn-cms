@@ -603,9 +603,13 @@ within the 9.6M ceiling. Segment B (tasks 6, 7, 8) and this closing task (11) ca
 `subagent_tokens` figure anywhere in this ledger or the stage records; this entry does not
 invent one where none was measured.
 
-**Attended time:** one execution sitting (task 9's owner review, 2026-09-28): Geoff's Firefox
-read of the published review page across four versions, approving v4 with no edits, counted as
-one sitting regardless of its round count per `pass-core`'s rule.
+**Attended time:** one planning miss (the register's academic voice and its "You know it worked
+when" heading rule were scoped front-door-only, found at task 9's owner review of the published
+proof page); one execution sitting (task 9's owner review, 2026-09-28): Geoff's Firefox read of
+the published review page across four versions, approving v4 with no edits, counted as one
+sitting regardless of its round count per `pass-core`'s rule.
+
+`code-simplifier` ran after this close, on the closed head, as `bd935c9d`.
 
 **Next:** the merge to `main` waits on Geoff's word (this closing task does not merge PR #91 or
 edit `main`); once it lands, the next action is authoring the stage 2a plan (with its extend

@@ -116,6 +116,13 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
   // by the first statement that names it, so declaring the pin early (rather than waiting for the
   // first `cairn-idiom` rule to register it implicitly) keeps the order explicit and reviewable in
   // one place instead of riding wherever that first rule happens to land in the source.
+  //
+  // A minifier downstream of this build (a consumer's own bundler) is free to relocate this
+  // statement below both sublayer blocks, where it registers nothing new: both blocks already
+  // fixed their own layer order by appearing first. Emission order, not this statement, is what
+  // decides the winner in that case, so the two sublayer blocks below must keep daisyUI's ahead of
+  // cairn-idiom's regardless of where this pin ends up. src/tests/unit/admin-css-build.test.ts
+  // guards that order against both the shipped sheet and a minified compile of it.
   const layerOrder =
     '@layer properties, theme, base, components, utilities;\n' +
     '@layer utilities.daisyui, utilities.cairn-idiom;\n';

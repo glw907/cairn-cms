@@ -3,6 +3,8 @@ import postcss from 'postcss';
 import prefixSelector from 'postcss-prefix-selector';
 import { transform, Features } from 'lightningcss';
 import { chromium } from 'playwright';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 // The build script is plain ESM under scripts/; the unit project runs in Node.
 import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import type { Browser } from 'playwright';
@@ -354,5 +356,55 @@ describe('the admin transition defaults: runtime computed style', () => {
     const { duration, timing } = await computedTransition('cairn-admin-dark');
     expect(duration).toBe('0.15s');
     expect(timing).toBe('cubic-bezier(0.2, 0, 0.38, 0.9)');
+  });
+});
+
+// The source-order guard the pin statement above cannot carry on its own: a minifier downstream of
+// this build (a consumer's own bundler, the showcase's Vite build) is free to relocate the
+// `@layer utilities.daisyui, utilities.cairn-idiom;` statement below both sublayer blocks, where it
+// registers nothing new, since a cascade layer's order is fixed by the first statement that names
+// it and both sublayers already did that by appearing first. Emission order is the guarantee a
+// minified build actually reads, so this asserts it directly against the file the package ships and
+// against a minified compile of that same file, rather than trusting the pin statement's position.
+describe('the shipped sheet: the daisyUI sublayer precedes cairn-idiom by emission order', () => {
+  const outPath = fileURLToPath(new URL('../../../dist/components/cairn-admin.css', import.meta.url));
+  const outDir = fileURLToPath(new URL('../../../dist/components/', import.meta.url));
+  // Matches the nested sublayer a Tailwind/postcss compile emits (`@layer daisyui.l1.l2 { ... }`)
+  // and the merged form a minifier can produce (no space before the brace).
+  const DAISYUI_SUBLAYER = /@layer\s+daisyui(?:\.[\w-]+)*\s*\{/;
+  const CAIRN_IDIOM_SUBLAYER = /@layer\s+cairn-idiom\s*\{/;
+
+  let variants: { label: string; css: string }[];
+  beforeAll(async () => {
+    const shipped = await buildAdminCss();
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(outPath, shipped);
+    const fromDisk = readFileSync(outPath, 'utf8');
+    const minified = new TextDecoder().decode(
+      transform({
+        filename: outPath,
+        code: new TextEncoder().encode(fromDisk),
+        minify: true,
+      }).code,
+    );
+    variants = [
+      { label: 'dist/components/cairn-admin.css, the file the package ships', css: fromDisk },
+      { label: 'the same sheet after a minifier relocates same-priority layer statements', css: minified },
+    ];
+  }, 60_000);
+
+  it('places the first daisyUI sublayer block ahead of the first cairn-idiom block', () => {
+    for (const { label, css } of variants) {
+      const daisyuiAt = css.search(DAISYUI_SUBLAYER);
+      const idiomAt = css.search(CAIRN_IDIOM_SUBLAYER);
+      expect(daisyuiAt, `${label}: expected a daisyUI sublayer block`).toBeGreaterThan(-1);
+      expect(idiomAt, `${label}: expected a cairn-idiom sublayer block`).toBeGreaterThan(-1);
+      expect(
+        daisyuiAt < idiomAt,
+        `${label}: expected the daisyUI sublayer (at ${daisyuiAt}) to precede cairn-idiom ` +
+          `(at ${idiomAt}); the pin statement sets nothing once a minifier moves it past both ` +
+          'blocks, so a reversed emission order would flip which sublayer wins.',
+      ).toBe(true);
+    }
   });
 });

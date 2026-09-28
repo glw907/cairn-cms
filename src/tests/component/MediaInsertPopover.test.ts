@@ -156,6 +156,37 @@ describe('MediaInsertPopover routing', () => {
   });
 });
 
+// Task 15 item 8: a caret near the bottom of a tall page (or one captured a frame before a font
+// swap widened the toolbar enough to wrap it, which locks in a too-low anchor for the popover's
+// whole open lifetime, media-figure.spec.ts's own CI-only flake) used to anchor the panel low
+// enough that its own bottom-row primary action rendered outside the viewport with no page scroll
+// able to reach it (`position: fixed`). The vertical clamp keeps the panel's own reserved box,
+// the same height its stylesheet already caps it at, inside the viewport.
+describe('MediaInsertPopover vertical placement', () => {
+  it('clamps the panel so its own box stays inside the viewport when the caret sits near the bottom', async () => {
+    const { api } = fakePlaceholders();
+    const editor = fakeEditor(api);
+    editor.caretCoords = () => ({
+      left: 10,
+      right: 12,
+      top: window.innerHeight - 40,
+      bottom: window.innerHeight - 20,
+    });
+    const screen = await render(MediaInsertPopover, {
+      conceptId: 'posts',
+      id: 'hello',
+      library: {},
+      editor,
+      onuploaded: () => {},
+    });
+    (screen.component as unknown as { open: (s: string) => void }).open('chooser');
+    await tick();
+    const panel = screen.container.querySelector('.cairn-media-popover') as HTMLElement;
+    const box = panel.getBoundingClientRect();
+    expect(box.bottom).toBeLessThanOrEqual(window.innerHeight);
+  });
+});
+
 describe('MediaInsertPopover focus restore', () => {
   it('restores focus to the editor on Escape', async () => {
     const { api } = fakePlaceholders();

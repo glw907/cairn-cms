@@ -307,13 +307,25 @@ rule). The CSRF token is read from the admin context.
   // kinds carry their own messages through failureCard.
   const GENERIC_FAILURE_MESSAGE = 'The upload could not be completed. Please try again.';
 
-  // The popover's anchored position: just below the caret line, clamped into the viewport. A null
-  // anchor centers it. The full-height sheet at the narrow breakpoint is the CSS fallback.
-  const positionStyle = $derived(
-    anchor
-      ? `left: ${Math.max(8, Math.min(anchor.left, (typeof window !== 'undefined' ? window.innerWidth : 1024) - 360))}px; top: ${anchor.bottom + 6}px;`
-      : 'left: 50%; top: 4rem; transform: translateX(-50%);',
-  );
+  // The popover's anchored position: just below the caret line, clamped into the viewport on both
+  // axes. A null anchor centers it. The full-height sheet at the narrow breakpoint is the CSS
+  // fallback. The vertical clamp reserves the same box height the stylesheet's own
+  // `max-height: min(28rem, 80vh)` caps the panel at, so a caret near the bottom of a tall page
+  // (or one captured a frame before a font swap widened the toolbar's own eyebrow labels enough
+  // to wrap it, locking in a too-low anchor for the popover's whole open lifetime) never anchors
+  // the panel low enough to push its own bottom-row primary action, the Insert/Add submit button,
+  // past the viewport: the panel's `overflow: auto` still handles content taller than that
+  // reserved height by scrolling within itself, which a click's own scroll-into-view can reach,
+  // unlike a `position: fixed` box sitting off-screen.
+  const positionStyle = $derived.by(() => {
+    if (!anchor) return 'left: 50%; top: 4rem; transform: translateX(-50%);';
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 768;
+    const left = Math.max(8, Math.min(anchor.left, viewportWidth - 360));
+    const panelHeight = Math.min(448, viewportHeight * 0.8);
+    const top = Math.max(8, Math.min(anchor.bottom + 6, viewportHeight - panelHeight - 8));
+    return `left: ${left}px; top: ${top}px;`;
+  });
 </script>
 
 {#if trigger}

@@ -29,8 +29,13 @@ Where this plan and a spec disagree, stop and report, except the decisions recor
 suite, both visual specs included, before anything else lands on top of it. Then the small editor
 fix, then the agent path in dependency order: the audit rule and arms, the recipe source and the
 norms print, the shipped guidance and its exemplar, and the sync test that binds them. Settle is
-one fresh-agent probe. The close merges `main` in and leaves the branch unmerged for pass C. Plans
-specify outcomes and acceptance, never implementation code.
+one fresh-agent probe, run headless against the emitted template outside the repo. The close
+merges `main` in and leaves the branch unmerged for pass C. Plans specify outcomes and acceptance,
+never implementation code.
+
+**Plan review:** three lenses (contract, mechanics, risk) reviewed this plan at `07035110`; the
+fold record is `docs/superpowers/research/2026-09-27-theme-pass-b-plan-fold.md`, and Geoff's three
+rulings on it (2026-09-27) sit under "Rulings for Geoff".
 
 **Branch topology (Geoff, 2026-09-27; task 0 verifies it).** Pass B branches from pass A's
 closed but unmerged head, never from `main` after A merges. Pass C later branches from pass B's
@@ -44,34 +49,50 @@ amends this plan before segment A.
 
 **Pass class:** `engine-logic` by default. Per-task overrides: task 1 is `sweep` (a mechanical
 rename and move, with grep post-conditions; its gate is heavier than the class floor because it
-touches every surface, and the plan names it). Task 5 is `docs` (shipped guidance prose). Task 6
-is `engine-logic` with a scoped gate, since it adds one unit test and changes no file under
-`src/lib` (gate economy's blast-radius rule). Tasks 2, 3, and 4 change engine TypeScript behavior,
-so they carry the engine gate. The close runs the union: `code-simplifier` once, the full gate,
-`svelte-reviewer`, one Opus read of the new audit code, and one `prose-voice-reviewer` read of the
-changed guidance. The `sweep` class's spot captures are CI's two visual specs at the segment A
-boundary, which read every captured screen.
+touches every surface, and the plan names it). Task 1 also changes four behaviors (the audit
+defaults in `config.ts`, the props check in `reference-coverage.mjs`, the classifier in
+`gate-tier.mjs`, and the new barrel test), so its reviewer runs on `claude-opus-5-5` and holds
+those four at the `engine-logic` bar, the rest at the `sweep` grep bar (see Models). Task 5 is
+`docs` (shipped guidance prose). Task 6 is `engine-logic` with a scoped gate, since it adds one
+unit test and changes no file under `src/lib` (gate economy's blast-radius rule). Tasks 2, 3, and 4
+change engine TypeScript behavior, so they carry the engine gate. The close runs the union:
+`code-simplifier` once, the full gate, `svelte-reviewer`, and one `prose-voice-reviewer` read of
+the changed guidance. The close takes no separate Opus read of the audit code: tasks 3 and 4
+already run an Opus `diff-reviewer` against the same parent-spec sections (Geoff, 2026-09-27,
+ruling F1). The `sweep` class's spot captures are CI's two visual specs at the segment A boundary,
+which read every captured screen.
 
 **Execution mode:** `pass-execute` (by name) for tasks 1 to 6, one invocation per segment, and
 **sequential** (`parallel` unset). The runner does no worktree isolation, so parallel tasks would
 share one index, one `base..HEAD` range, and one `cairn-run-gate` key. Task 2 is independent of
 tasks 3 to 6 (disjoint files) and is marked so, but it runs in sequence for the same reason. The
-contended files are `docs/reference/cairn-audit.md` (tasks 1, 3, 4), `skills/cairn-admin-screens/SKILL.md`
-(tasks 3, 5), `templates/waymark/**` (every task that runs `emit:template`: 1, 3, 5),
-`docs/internal/facts/*.md` (task 1 repoints citations; the close adds bullets), and
+contended files are `docs/reference/cairn-audit.md` (tasks 1, 3, 4),
+`skills/cairn-admin-screens/SKILL.md` (tasks 3, 5),
+`skills/cairn-admin-screens/references/exemplar-list.md` (tasks 1, 3), `templates/waymark/**`
+(every task that runs `emit:template`: 1, 3, 5), `docs/internal/facts/*.md` (task 1 repoints citations; the close adds bullets), and
 `src/lib/audit/config.ts` (task 1 only). Every heavy gate also queues on one machine-wide lock.
 
 Args: `repo` the worktree's absolute path, `implementer: "cairn-implementer"`,
 `reviewer: "diff-reviewer"`, `passClass: "engine-logic"`, `gate` set to **the engine string**
 (see Gates), `reducedGate` set to **the reduced string**, `commonNotes` carrying the Global
 constraints and the sentinel note below, and each task's `passClass`, `gateTier`, `gate`,
-`gateLane`, and `model` as the task states. Each task's `criteria` carries its acceptance lines
-verbatim, including its gate string, its task-check strings, and the rule that a missing or red
-task check is blocking, because the reviewer never sees `commonNotes`. Under `engine-logic`,
+`gateLane`, and `model` as the task states. Segment A's invocation also sets
+`reviewerModel: "claude-opus-5-5"`, since the runner reads the reviewer model from the args and
+the class, never from a task.
+
+**What each task's `criteria` carries.** `pass-execute.js` hands `diff-reviewer` only the task's
+`criteria` and the implementer's report; the reviewer never sees `notes`, `commonNotes`, or this
+plan. So the conductor builds each task's `criteria` from four parts, verbatim: the task's
+**Outcome**; its **Acceptance**, including its gate string, its task-check strings, and the rule
+that a missing or red task check is blocking; the **full text of every numbered decision** the
+task names in its header or body; and, for a task pinned to `targeted`, the sentinel note under
+Gates. A reviewer holding a decision's text can block on any part of it. Each task's `notes`
+carries this plan's path and the spec sections the task header names. Under `engine-logic`,
 `sweep`, and `docs`, the runner moves a finding the reviewer marks `coverageOnly` to `nonBlocking`
 and returns it as `batchedNotes`; the conductor lists those in the boundary ledger and acts on
 none mid-segment. Task 7 is a one-task `pass-execute` run, dispatched only if the probe returns a
-guidance gap. Step S1 is conductor-led. Task 8 is the close.
+guidance gap or the close's review returns a finding. Step S1 is conductor-led. Task 8 is the
+close.
 
 **`code-simplifier`:** `code-simplifier:code-simplifier` runs once, at the close, over the pass's
 authored TypeScript, Svelte, and script changes: `src/lib/audit/**`, the insert helper and
@@ -90,35 +111,36 @@ runs a heavy gate itself.
 
 **Models:** Sonnet `cairn-implementer` at `high` for every task. No task upshifts: the rename is
 mechanical, and the one rule and three arms follow `type-scale` and the guarded arm with every
-behavior the parent spec fixes stated in the task. `diff-reviewer` runs at the class default:
-Sonnet for task 1 (`sweep`), `claude-opus-5-5` for every other task. The pre-flight agents, gate
-agents, the probe, and the probe's audit agent are Sonnet at `high`. CI probes are Haiku. The
-close is drafted by a Sonnet agent and read by one Opus `diff-reviewer`; the close's review
-fan-out is Opus.
+behavior the parent spec fixes stated in the task. `diff-reviewer` runs on `claude-opus-5-5` for
+every task, task 1 included (an override of the `sweep` class's Sonnet default, set through
+segment A's `reviewerModel`). The pre-flight agents, gate agents, the probe's setup and audit
+agents, and the headless probe session itself (`--model sonnet`) are Sonnet at `high`. CI probes
+are Haiku. The close is drafted by a Sonnet agent and read by one Opus `diff-reviewer`; the close's
+review fan-out is Opus.
 
-**Token ceiling:** 17M, flag at 13.6M (80%). The projection:
+**Token ceiling:** 19M, flag at 15.2M (80%) (Geoff, 2026-09-27, ruling F1). The projection:
 
 | Item | Spend |
 | --- | --- |
 | Task 0: worktree, `main` merge, pre-flight agent, dependency state, baseline gate agent | 1.1M |
-| Task 1 (`sweep`: the rename, `./public`, the Names section; heavy gate) | 2.0M |
+| Task 1 (`sweep`: the rename, `./public`, the Names section; heavy gate; Opus reviewer) | 2.2M |
 | Task 2 (`engine-logic`, small: the insert padding, its unit table, the e2e) | 0.6M |
-| Task 3 (`engine-logic`: `radius-scale`, three arms, the own-tree and guidance test) | 1.2M |
-| Task 4 (`engine-logic`: the recipe source and the norms print) | 0.7M |
+| Task 3 (`engine-logic`: `radius-scale`, three arms, the own-tree and guidance test, the fence repairs, the promotion tripwire) | 1.4M |
+| Task 4 (`engine-logic`: the recipe source and the norms print) | 0.6M |
 | Task 5 (`docs`: three guidance files and the exemplar) | 0.8M |
 | Task 6 (the sync test) | 0.5M |
 | Fix rounds on about a third of the chains, most on the reduced gate | 1.2M |
 | Three segment boundaries (pre-flight, push, Haiku CI read, ledger) and one merge-forward | 0.8M |
-| S1: probe 1 in a scratch worktree, its audit agent, one retry budgeted | 1.0M |
+| S1: the emitted template, the headless probe, its audit agent, one retry budgeted | 1.1M |
 | Task 7 (conditional guidance fix, one run) | 0.4M |
 | The close: `code-simplifier` and the full gate agent | 0.5M |
-| The close: review fan-out (Svelte, the audit read, the guidance read) | 0.6M |
+| The close: review fan-out (Svelte, the guidance read) | 0.4M |
 | The close: Sonnet draft and one Opus review, hard cap | 0.6M |
 | The close: the `main` merge and the merged-head checks | 0.3M |
 | The conductor sessions | 1.0M |
-| **Projected total** | **about 13.3M** |
+| **Projected total** | **about 13.5M** |
 
-The projection sits just under the 13.6M flag. If the flag trips, the conductor asks the global
+The projection sits 1.7M under the 15.2M flag. If the flag trips, the conductor asks the global
 80% question at the next segment boundary; the close never halts on budget once task 6 lands.
 
 **Counting rule:** the conductor's counter is the sum of subagent and workflow token counts from
@@ -133,7 +155,8 @@ re-gate and no `code-simplifier` at a boundary; CI runs the full suite on each p
   is the pass's one change that touches every surface. Its boundary is the only point where CI's
   full e2e, both visual specs included, can prove the rename moved no render before later tasks
   mix other changes into the diff.
-- Segment B: tasks 2 to 4. The insert fix, the rule and arms, the recipe source.
+- Segment B: tasks 2 to 4. The insert fix, the rule and arms, the recipe source. Its boundary
+  also dispatches CI's `norms` workflow on the branch (Gates).
 - Segment C: tasks 5 and 6. The guidance and the sync test.
 - Segment D: S1 (probe 1), then task 7 if the probe returns a gap, then task 8 (the close).
 
@@ -157,12 +180,19 @@ at the close before the `main` merge, the conductor runs `git fetch` and compare
 1. Confirm no executor is live on `theme-identity-a` (the global executor check) and that its new
    head is committed and pushed. Never merge warm work.
 2. Merge `theme-identity-a` into `theme-identity-b` (the default `ort` strategy; its rename
-   detection carries an edit to `src/lib/components/<file>` onto `src/lib/admin/<file>`). Resolve
-   `docs/STATUS.md` to this branch's side, keep both sides of `docs/HISTORY.md`, and keep both
-   sides of any plan-ledger text.
-3. Re-run the rename's post-condition greps (task 1, "Acceptance"). A pass A commit that added a
-   new file or path under the old folder shows up here; one Sonnet `cairn-implementer` dispatch
-   (class `sweep`, the task 1 reviewer bar) moves it and repoints it.
+   detection carries an edit to `src/lib/components/<file>` onto `src/lib/admin/<file>`). The
+   conductor resolves only three files: `docs/STATUS.md` to this branch's side, both sides of
+   `docs/HISTORY.md`, and both sides of any plan-ledger text. Any other conflict aborts the
+   merge (`git merge --abort`), and one Sonnet `cairn-implementer` dispatch (class `sweep`, the
+   task 1 reviewer bar) performs the merge and resolves it. Two conflicts are expected there:
+   a pass A edit to a line task 1 rewrote (a path-bearing comment, the barrel header), and a new
+   pass A file under the old folder, which git reports as `CONFLICT (file location): ... added
+   in theme-identity-a inside a directory that was renamed in HEAD, suggesting it should perhaps
+   be moved to src/lib/admin/<file>`. The implementer accepts git's `src/lib/admin/` location, or
+   moves the file to `src/lib/public/` when it is public markup, then repoints it.
+3. Re-run the rename's post-condition greps (task 1, "Acceptance"), and `test ! -e
+   src/lib/components`. A remaining hit goes to one Sonnet `cairn-implementer` dispatch (class
+   `sweep`, the task 1 reviewer bar) that moves or repoints it.
 4. One gate agent runs the engine string on the merged head, and the push's CI read follows.
 5. The ledger records the new base SHA and the merge commit.
 
@@ -222,7 +252,16 @@ them slightly off (`docs/internal/durable-gotchas.md`), so the boundary's CI rea
   `npm run package && node scripts/checks/check-surface.mjs --update`, then commit
   `docs/internal/api-surface.md` with the export. The direct form works whatever npm's
   argument forwarding does.
-- **The norms check** (heavy; it renders the admin): `cairn-run-gate 'npm run norms:check'`.
+- **The guidance tests** (light), for a task whose gate runs no vitest:
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npx vitest run --project unit src/tests/unit/audit/own-tree-and-guidance.test.ts src/tests/unit/guidance-recipes-sync.test.ts'`,
+  each file dropped while it does not exist yet (decision 14's test lands in task 3, the sync test
+  in task 6). The file name `own-tree-and-guidance.test.ts` is fixed here so every task names the
+  same file.
+- No task runs `norms:check` locally. It needs a showcase preview it does not start, it is
+  CI-only by design (`.github/workflows/norms.yml`, dispatched or called by the publish
+  workflow, never on push), and no pass B change reaches the manifest (decision 15). Task 4
+  proves the manifest unchanged by diff; at segment B's boundary the conductor also runs
+  `gh workflow run norms.yml --ref theme-identity-b`, and the boundary's Haiku probe reads it.
 - **A showcase e2e run** is heavy and always carries `E2E_PORT=4392`:
   `E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- <spec>`, preceded by the port check
   (Global constraints).
@@ -264,14 +303,18 @@ settled here so no implementer invents it.
    The new defaults: `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are both `src/routes/admin`,
    `src/lib/admin`, `src/lib/admin-toolkit`. They stay two constants and two config keys, since a
    site can still narrow one without the other; the comment above them says they now agree by
-   default and why. The stale "middle root" comment is rewritten.
+   default and why. The stale "middle root" comment is rewritten. Only `src/lib/admin`'s place in
+   `DEFAULT_ADMIN_SCOPE` is conditional on the measurement; `DEFAULT_STATIC_SCOPE` takes all three
+   roots unconditionally.
 2. **Pass B implements no half of the named-root rule, since it has one scope.** The rule ("a root
    a site names explicitly for one scope is removed from the other scope's defaults") needs two
    scopes, and the public scope arrives in pass C's task 7, which implements and tests both
    directions. Pass B's docs state the rule in a form true on this branch and at the release: a
    root a site names under `static.scope` is an admin root, and the audit treats it as one wherever
-   another scope's defaults would also reach it. Pass C's task 0 reads this decision as its answer
-   to "whether pass B implemented the admin half".
+   another scope's defaults would also reach it. The same sentence carries decision 23's restore
+   form (a configured list replaces the defaults; a configured root the tree lacks fails the run).
+   Pass C's task 0 reads this decision as its answer to "whether pass B implemented the admin
+   half".
 3. **`PreviewBanner` keeps every check it had when it leaves the admin tree.** `check:invisible-craft`'s
    `SCAN_SCOPE` gains `src/lib/public` (not `ADMIN_SCOPE`: it is public markup), so its eight
    `token-colors` suppressions stay exercised; the gate's findings and suppressed totals are
@@ -292,32 +335,70 @@ settled here so no implementer invents it.
    `:844-880`) runs for `/admin` against `docs/reference/admin.md` and for `/public` against
    `docs/reference/public.md`, so `PreviewBanner`'s props stay checked after the move.
    `reference-coverage.test.ts` covers the second barrel.
-6. **The rename's acceptance adds three greps to the spec's.** The spec's grep misses three live
-   forms, measured at plan time: relative imports of the old folder (30 lines in 11 files under
-   `src/lib`, such as `'../components/CairnLogo.svelte'`), the subpath in backticked prose
-   (`` `/components` `` and `` `./components` ``, 19 files), and links to the old reference page
-   (`components.md`, 28 lines in 17 files). Task 1's acceptance runs all four greps with the spec's
-   exclusion list; each prints nothing.
+6. **The rename's acceptance adds four greps to the spec's, and names what may stay.** The spec's
+   grep misses four live forms, measured at plan time: relative imports of the old folder (30
+   lines in 11 files under `src/lib`, such as `'../components/CairnLogo.svelte'`), the subpath in
+   backticked or `<code>` prose (`` `/components` `` and `` `./components` ``, 19 files, plus the
+   mermaid node at `docs/extend/architecture.md:19`), links to the old reference page
+   (`components.md`, 28 lines in 17 files), and bare folder-relative paths and `'components'`
+   literals under `src`, `scripts`, and the showcase (14 lines at plan time, among them
+   `check-admin-prose.mjs:23`'s `join(ROOT, 'src', 'lib', 'components')`, the test paths at
+   `check-editor-quotes.test.ts:100,118`, `engine-isolation.test.ts:36,71`, and
+   `editor-boundary.test.ts:101`, and `components-barrel-prune.test.ts:44-46`'s demoted export
+   keys, which would pass vacuously unless repointed to `./admin/...`). Task 1's acceptance runs
+   all five greps with the spec's exclusion list plus `ROADMAP.md` (history lines describe the old
+   tree; task 1 repoints the live-tree mentions by reading) and `docs/STATUS.md`.
+
+   Some lines must name the old path after the rename, because this plan requires them. They form
+   **the rename allowlist**, and every grep's post-condition is "prints nothing outside the
+   allowlist"; the report lists each remaining hit beside its allowlist item:
+   1. `src/tests/unit/audit/config.test.ts`: the restore cases naming `src/lib/components`
+      (Review focus 2).
+   2. The new barrel test and `admin-barrel-prune.test.ts`: an assertion that `package.json`
+      carries no `./components` export.
+   3. `docs/reference/cairn-audit.md`: the one restore sentence naming `src/lib/components`.
+   4. `docs/internal/docs-register.md`: the Names section's retired-names line, if it names the
+      old subpath.
+   5. `docs/internal/facts/*.md`: the close's bullets that record the rename or the narrowing
+      (the old path as what changed, never as a citation).
+   6. `ComponentInsertDialog.svelte`'s plural UI string (`'component' : 'components'`), and the
+      daisyUI group directory in `scripts/build/daisyui-classes.mjs` and
+      `src/tests/unit/daisyui-classes.test.ts`, which the fifth grep excludes by pathspec.
+   `docs/extend/upgrade-cairn.md` is not on it: the per-version text goes to
+   `migration-notes.md` alone (task 8).
 7. **Test files named for the barrel are renamed with it** (`components-barrel.test.ts` and
    `components-barrel-prune.test.ts` become `admin-barrel*.test.ts`); every other test keeps its
    name. Task 1 names one new test, as the `sweep` mandate requires: a barrel test asserting that
    `./public` exports exactly `PreviewBanner` and that `./admin` does not export it.
-8. **The Names section's Vale enforcement follows the freeze.** `Cairn.Names` (error) gains only
-   retired compounds that match no page on a frozen narrative arm at execution: at plan time,
-   "engine public component", "public engine component", "chassis component", and "site
-   component" (the last has two hits, both on the reference arm, `core.md:1079` and
-   `sveltekit.md:2043`, which task 1 rewrites to "custom public component"). `Cairn.NamesRetired`
-   (warning) gains "engine component" and "custom component", since each can be right in a sense a
-   writer must check. A token that would fire on a frozen page goes to the warning rule instead,
-   because the Names section sweeps frozen pages only at the docs rebuild. The `` `/components` ``
-   subpath cannot be a Vale token (Vale skips code spans), so decision 6's grep carries it.
+8. **The Names section's Vale enforcement follows the freeze, in two new rule files.** The
+   component-name tokens do not go into `Cairn/Names.yml` or `Cairn/NamesRetired.yml`: `Names.yml`
+   is case-sensitive by necessity (it must match capital `Cairn` exactly) and its message is about
+   the Go tool and the capital wordmark, so a sentence-initial "Site component" would slip and a
+   hit would print the wrong advice. Two new files under `.vale/styles/Cairn/` carry them, both
+   `ignorecase: true`, each message pointing at the Names grid in `docs-register.md`:
+   `ComponentNames.yml` (error) gains only retired compounds that match no page on a frozen
+   narrative arm at execution: at plan time, "engine public component", "public engine
+   component", "chassis component", and "site component" (the last has two hits, both on the
+   reference arm, `core.md:1079` and `sveltekit.md:2043`, which task 1 rewrites to "custom public
+   component"). `ComponentNamesRetired.yml` (warning) gains "engine component" and "custom
+   component", since each can be right in a sense a writer must check. A token that would fire on
+   a frozen page goes to the warning rule instead, because the Names section sweeps frozen pages
+   only at the docs rebuild. `.vale.ini`'s `BasedOnStyles = ..., Cairn` already loads every file in
+   the style. The Names section's "Enforcement and scope" paragraph names the two new rules. The
+   `` `/components` `` subpath cannot be a Vale token (Vale skips code spans), so decision 6's greps
+   carry it.
 9. **The audit's reach narrowing is disclosed, not hidden.** Removing `src/lib/components` from
    `DEFAULT_STATIC_SCOPE` also removes a consumer's own `src/lib/components` from every static rule,
    including `stripe-trim-parity` and `unlayered-font-clobber`, whose comments
    (`stripe-trim-parity.ts:13-16`, `unlayered-font-clobber.ts:9-14`) justify their reach by that
    root. Task 1 rewrites both comments to the new reach. The close's migration note names the
-   narrowing and how a site restores it (name the root under `static.scope`). The spec's admin
-   scope change implies this; the spec does not state it.
+   narrowing and how a site restores it (decision 23's restore form). The spec's admin scope
+   change implies this; the spec does not state it. **Ruled (Geoff, 2026-09-27, A1):**
+   `stripe-trim-parity` and `unlayered-font-clobber` stay admin-only. The narrowing is accepted and
+   disclosed, and it is permanent: under pass C's one-scope-per-file rule, a root the public scope
+   claims leaves the admin scope, so these two rules never read a site's public components again.
+   The rewritten comments and the migration note say so; pass C's task 7 does not add them to the
+   public scope.
 10. **The insert padding, exactly.** The outcome in task 2 states Geoff's ruling precisely: a blank
     line separates the inserted block from any adjacent non-blank text, before it when non-blank
     text precedes the caret on its line or sits on the line directly above, and after it when
@@ -325,24 +406,30 @@ settled here so no implementer invents it.
     added at the document's start or end, or beside a blank line already there, so no insert ever
     produces a double blank line. The caret lands at the end of the block's closing fence, as it
     does today when nothing follows, so the existing round trip ("the caret enables Edit block")
-    holds. The padding is one pure internal function, unit-tested table-driven, that both
-    `insertAtCursor` paths call (the mounted path and the pre-mount fallback). The behavior belongs
+    holds. A line holding only whitespace counts as blank. The padding is one pure internal
+    function, unit-tested table-driven, that both `insertAtCursor` paths call: the mounted path
+    with the editor's caret, and the pre-mount fallback with the caret at the end of `value`
+    (today's append behavior, now padded by the same rule). The behavior belongs
     to the public `EditorApi.insert`, which today already prefixes a blank line at any caret past 0,
     so it is block insertion already; `docs/reference/admin.md` states it.
 11. **`radius-scale`'s shape.** A static rule, tier `advisory`, sibling of `type-scale` and
     `gap-scale`, reading each class token through `utilityBase()`, so `md:rounded-lg` is caught. It
-    flags bare `rounded`, the fixed sizes (`xs` through `4xl`), any arbitrary radius
-    (`rounded-[...]`), and each side or corner form of those (`t`, `b`, `l`, `r`, `s`, `e`, `tl`,
-    `tr`, `br`, `bl`, `ss`, `se`, `es`, `ee`): the parent spec's post-condition pattern. It passes
+    flags bare `rounded`, the fixed sizes (`xs` through `4xl`), any arbitrary radius in either of
+    Tailwind v4's forms (`rounded-[...]` and the variable shorthand `rounded-(--x)`, which Tailwind
+    4.3.3 compiles to `border-radius: var(--x)`), and each side or corner form of those (`t`, `b`,
+    `l`, `r`, `s`, `e`, `tl`, `tr`, `br`, `bl`, `ss`, `se`, `es`, `ee`): the parent spec's
+    post-condition pattern, widened to the shorthand. It raises one finding per offending token. It
+    passes
     the three role classes and their side forms (`rounded-selector`, `rounded-field`, `rounded-box`,
     `rounded-t-box`), `rounded-full`, `rounded-none`, and structural side zeros (`rounded-l-none`).
     It flags `rounded-full` on an element that also carries `badge` (chips leave the pill). The
     message names the replacement role class: the one class when the element carries a daisyUI
     class whose role the parent spec's Corners mapping fixes (`badge` to `rounded-selector`; `btn`,
     `input`, `select`, `textarea` to `rounded-field`; `card`, `modal-box`, `dropdown-content` to
-    `rounded-box`), the exact class for an arbitrary `rounded-[var(--radius-<role>)]`, and otherwise
-    the three-role mapping in one sentence. It reads class tokens only; a `border-radius` literal in
-    a `<style>` block is outside it, and the reference page says so.
+    `rounded-box`), the exact class for an arbitrary `rounded-[var(--radius-<role>)]` or
+    `rounded-(--radius-<role>)`, and otherwise the three-role mapping in one sentence. Every
+    message names the `0.99.0` promotion (decision 13). It reads class tokens only; a
+    `border-radius` literal in a `<style>` block is outside it, and the reference page says so.
 12. **The retired-patch arms' shape.** Three new arms on `stock-default-hazards`, each on an element
     that carries `btn`, each an `advisory` finding: the ink-opener recipe (the element carries
     `bg-neutral` or a `bg-[var(--cairn-ink-hover)]` utility and no `btn-neutral`) names
@@ -353,25 +440,65 @@ settled here so no implementer invents it.
     five existing arms keep their raw comparison, since widening them is the deliberate decision
     their `WATCH` comment reserves. An element without `btn` never fires an arm: at plan time the
     engine carries `bg-primary/10` on six non-button elements (icon medallions, a nav item, a radio
-    segment), which must stay silent.
-13. **The promotion version is `0.99.0`, with no version tripwire in this pass.** The parent spec
-    promotes the new findings "for the next minor, as the guarded arm did"; the guarded arm shipped
-    in `0.97.0` and named `0.98.0`, and these ship in `0.98.0`, so they name `0.99.0` through one
-    constant each, the way `log-event-grammar.ts:20` does. A test that fails once `package.json`'s
-    version reaches a promotion constant would be the right tripwire, but three existing constants
-    already name `0.98.0` (`log-event-grammar.ts:20`, `log-secret-field.ts:25`,
-    `stock-default-hazards.ts:45`), so it would red pass C's release commit on promises pass C's
-    plan does not handle. The close files the tripwire in `ROADMAP.md` and writes a STATUS watch
-    listing all five promises and their versions, so the `0.98.0` cut decides the three due then.
-14. **Cairn's own tree and the shipped guidance report zero, proven by a test.** No gate runs
-    `stock-default-hazards` or a new rule over the engine's own admin today
-    (`check:invisible-craft` owns six rules, `check:admin-css-classes` one). Task 3 adds one unit
-    test that runs `radius-scale` and `stock-default-hazards` statically over `src/lib/admin`,
-    `src/lib/admin-toolkit`, and `examples/showcase/src/routes/admin`, and over every fenced
-    `svelte` or `html` code block in `skills/**/*.md` and `claude/agents/*.md`, and asserts zero
-    findings of either. A retired pattern in guidance may appear only in a prose code span, never in
-    a fence. This is the parent spec's "the fixture fails if the sweep missed a site or a guidance
-    file still teaches a patch".
+    segment), which must stay silent. One `btn` element raises at most one retired-patch finding: a
+    recipe arm (ink opener or Publish tint) takes precedence, and the `shadow-none` arm stays silent
+    on an element where a recipe arm fired, since writing the named replacement drops the
+    `shadow-none` with the rest. So the parent spec's two full recipes (`btn border-transparent
+    bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)]` and `btn
+    border-transparent bg-primary/10 text-primary shadow-none`) each raise exactly one finding.
+    Every arm message names the `0.99.0` promotion.
+13. **The promotion version is `0.99.0`, guarded by a version tripwire this pass lands.** The parent
+    spec promotes the new findings "for the next minor, as the guarded arm did"; the guarded arm
+    shipped in `0.97.0` and named `0.98.0`, and these ship in `0.98.0`, so they name `0.99.0`
+    through one constant in `radius-scale.ts` and one for the three arms in
+    `stock-default-hazards.ts`, the way `log-event-grammar.ts:20` does, each constant's name ending
+    in `PROMOTION_VERSION`. Three existing constants already name `0.98.0`
+    (`log-event-grammar.ts:20` and `log-secret-field.ts:25`, both `PROMOTION_VERSION`, and
+    `stock-default-hazards.ts:45`, `GUARDED_RETIREMENT_PROMOTION_VERSION`). Task 3 adds
+    `src/tests/unit/audit/promotion-versions.test.ts`: it reads every `*PROMOTION_VERSION = '<x>'`
+    constant in `src/lib/audit/**/*.ts` as source text and `package.json`'s `version`, asserts it
+    found at least the five constants this pass leaves (non-vacuity), and fails when any
+    constant's version is at or below the package version, naming each constant's file, its
+    version, and the choice owed: promote the finding to error (and delete the constant) or
+    re-date it with a disclosed changelog line. It is green on pass B (`package.json` stays
+    `0.97.0`) and turns red on pass C's `0.98.0` version commit unless the three due promises have
+    been decided. **Ruled (Geoff, 2026-09-27, F2):** the three `0.98.0` promises are decided per
+    rule at pass C's owner sitting (S3) from measured finding counts on the five sites; pass B
+    lands the tripwire and names the question in "What pass C receives". The test reads no git
+    ref, so CI's depth-1 checkout runs it.
+14. **Cairn's own tree and the shipped guidance report zero retired-patch findings, proven by a
+    test.** No gate runs `stock-default-hazards` or a new rule over the engine's own admin today
+    (`check:invisible-craft` owns six rules, `check:admin-css-classes` one). Task 3 adds
+    `src/tests/unit/audit/own-tree-and-guidance.test.ts`, which runs `radius-scale` and
+    `stock-default-hazards` statically over `src/lib/admin`, `src/lib/admin-toolkit`, and
+    `examples/showcase/src/routes/admin`, and over every fenced `svelte` or `html` code block in
+    `skills/**/*.md` and `claude/agents/*.md`. It asserts zero `radius-scale` findings, zero
+    findings from the three new arms, and zero error-tier findings from `stock-default-hazards`.
+    **One stated exemption:** the guarded-retirement arm's advisory findings (identified by its
+    message) are not counted. At plan time it fires four times in `EditPage.svelte` (`:1630`,
+    `:1918`, `:2014`, `:2394`), because the engine keeps `cairn-btn-guarded` on those four controls
+    by design (`stock-default-hazards.ts:139-143`); that arm's future is one of the three `0.98.0`
+    questions decision 13 routes to pass C, and the test's comment says a promotion to error must
+    retire those four sites first.
+
+    **The fence strategy.** The test parses each fence through the audit's own parser after two
+    normalizations: an elided expression `{...}` becomes `{_}` and a line holding only `...` is
+    dropped, and each fence is prefixed with `<script lang="ts"></script>` so a TypeScript snippet
+    parameter parses. A fence that still does not parse fails the test, naming the file and line;
+    it is never skipped. At plan time 13 fences exist, all under `skills/cairn-admin-screens/`;
+    five fail raw, and two still fail after normalization (`exemplar-detail.md:100`, "`<div>` was
+    left open", and `exemplar-list.md:177`, "`<section>` was left open"). Task 3 repairs both by
+    closing their elements. The `exemplar-detail.md:100` fence also teaches the retired
+    `badge-ghost` chip (its line with `badge-ghost badge-sm font-medium opacity-60`), which the
+    error-tier arm flags: task 3 rewrites that line to the ratified quiet chip
+    (`<StatusChip label="Archived" />`, whose default register is `quiet`, per
+    `BADGE_GHOST_MESSAGE`). The prose at `:129-134` keeps naming `badge-ghost` in a code span, now
+    as the pattern the source screen wrote and cairn retires, beside the fence's cairn-native form.
+    A retired pattern in guidance may appear only in a prose code span, never in a fence.
+
+    **Non-vacuity.** The test asserts a nonzero engine file count and a fence count of at least 13,
+    so it cannot go green by reading nothing. This is the parent spec's "the fixture fails if the
+    sweep missed a site or a guidance file still teaches a patch".
 15. **The recipe source.** `src/lib/audit/norms.ts` gains `ROLE_RECIPES` beside `RATIFIED_NORMS`:
     each row is a class string to write, a one-line look it produces, and an optional `role` (a
     `NORM_ROLES` id). It also gains `RECIPE_MODEL`, the one-sentence model every guidance copy
@@ -381,7 +508,11 @@ settled here so no implementer invents it.
     ink opener `btn-neutral`, the soft primary, and the selected segment; and the three radius
     role classes by role. Each class string comes from `docs/internal/admin-design-system.md` as
     pass A left it or from the `/admin/theme-kit` fixture, and the diff review checks each row
-    against those. A ratified role a screen never writes itself (a nav item, which
+    against those. A unit test also catches a typo mechanically: every class token in each row's
+    Write string appears in the committed admin sheet inventory
+    (`src/tests/unit/fixtures/admin-sheet-inventory.txt`) or in the theme-kit fixture's source
+    (`examples/showcase/src/routes/admin/theme-kit/+page.svelte`), and the failure names the row
+    and the token. A ratified role a screen never writes itself (a nav item, which
     `CairnAdminShell` renders) says which engine component renders it. The rows live outside the
     norms manifest, read at print time the way `findRatified` reads `RATIFIED_NORMS`, so the
     manifest and `norms:check` do not change. The recipe table is internal to the audit module; it
@@ -409,19 +540,50 @@ settled here so no implementer invents it.
     already binds to the source. It asserts `RECIPE_MODEL` and the table rows in all three files,
     the exemplar's fences against the fixture route, and that every ratified role has exactly one
     recipe row. Its mutation proof: editing one guidance copy alone, or one fixture line an
-    exemplar fence quotes, fails it.
-20. **Probe 1's brief, setup, and criteria.** One fresh Sonnet agent, in a detached scratch
-    worktree at the segment C head, reads only the shipped guidance as a consumer receives it
-    (`templates/waymark/.claude/`) and the showcase source, and gets one line: "Add an owner-only
-    admin settings screen at `/admin/probe` in the showcase: a segmented filter, a short form with
-    two fields and a switch, a status chip per row of a small table, and one primary action." A
-    separate Sonnet audit agent then runs the static audit from the showcase and the rendered audit
-    against a preview on port 4391 with `/admin/probe` added to `rendered.extraPages` in the
-    scratch tree. Pass: zero error findings on the probe's files and page, and zero `radius-scale`
-    or retired-patch findings, both modes. Findings elsewhere in the showcase do not count and are
-    reported separately. The scratch worktree is removed after; nothing from it merges.
+    exemplar fence quotes, fails it. It cannot go vacuous: a guidance file missing the `Write this,
+    get this` heading or carrying an empty table fails naming the file; a malformed row fails
+    naming the file and the row; the exemplar must hold at least the seven kit sections decision
+    18 names; and the test collects every mismatch before failing, never stopping at the first.
+20. **Probe 1's brief, setup, and criteria.** The probe must see only what a consumer receives. A
+    subagent of the conductor would inherit this repo's `CLAUDE.md` (which points at
+    `admin-design-system.md`), could read `docs/internal/**`, and would find the showcase's
+    `/admin/theme-kit`, a near answer key that the template deliberately excludes. So the probe
+    runs as a separate headless Claude Code process in an emitted template outside the repo:
+    - **Setup** (one Sonnet setup agent, from the pass worktree at the segment C head): `npm run
+      package`; pack the engine and `packages/cairn-cms-dev` with `npm pack --pack-destination
+      <probe dir>` (so no tarball lands in the worktree); emit the template with
+      `node scripts/build/emit-template.mjs <probe dir>/site file:<engine.tgz> file:<dev.tgz>
+      probe-site`, the way `.github/workflows/scaffold.yml` does. The probe dir is
+      `<session scratchpad>/pass-b-probe/`, outside `~/Projects`; the agent checks the `/tmp` user
+      quota first (`quota -s -f /tmp`, the `tmpfs-user-quota-go-link` memory). In the site: `npm
+      install`, then `git init` and one commit of the clean tree, so the probe's own changes read
+      from `git status --porcelain` afterwards.
+    - **The probe** (the same setup agent runs it and returns its final message): `claude -p
+      --model sonnet --setting-sources project,local --permission-mode acceptEdits --allowedTools
+      'Bash(npm run:*)' 'Bash(npx cairn-audit:*)'` with the site as its working directory, so it
+      loads the template's `CLAUDE.md` and `.claude/` and no user-scope settings, may edit files,
+      and may run the site's own scripts and audit as a consumer's agent would. The prompt is the one-line brief: "Add an owner-only admin settings
+      screen at `/admin/probe` in this site: a segmented filter, a short form with two fields and a
+      switch, a status chip per row of a small table, and one primary action." Whatever user-scope
+      context still loads (for example user-scope skills) is recorded in the ledger as the probe's
+      stated limit.
+    - **The audit** (a separate Sonnet audit agent): adds `/admin/probe` to the site's
+      `rendered.extraPages`; runs `npm run check:cairn` (the static audit, after the site's own
+      `build:admin-css`); builds with `VITE_CAIRN_E2E=1 npm run build` and serves
+      `CAIRN_DEV_BACKEND=1 npm run preview -- --port 4391` detached (the `norms.yml` recipe,
+      without which every admin page redirects to login); runs
+      `BASE_URL=http://localhost:4391 npx cairn-audit --rendered` (installing the site's Playwright
+      Chromium first if it is missing); stops the preview.
+    - **Pass:** zero error findings on the probe's files and page, and zero `radius-scale` or
+      retired-patch findings, in both modes. **The audit read what the probe wrote:** every
+      `.svelte` file `git status --porcelain` lists lies under a root of the effective
+      `static.scope`, and the rendered run's page list includes `/admin/probe`. A probe file
+      outside every scanned root fails the probe as a guidance gap (the guidance did not say where
+      a custom admin component lives). Findings elsewhere in the site do not count and are
+      reported separately.
+    - The probe dir is deleted after the ledger records the counts; nothing from it merges.
 21. **Probe retry.** A failed probe names a guidance gap. Task 7 fixes the gap on its shipped page,
-    and a fresh agent re-runs the probe once. A second failure is recorded in the ledger with both
+    and a fresh headless probe (decision 20's setup, a new probe dir) re-runs it once. A second failure is recorded in the ledger with both
     audit summaries, filed in `ROADMAP.md`, and raised at the next owner sitting (pass C's S3); the
     pass closes with the finding disclosed in STATUS, since it is a guidance gap, not a product
     fork.
@@ -430,19 +592,56 @@ settled here so no implementer invents it.
     dependencies; a sweep here would be redone there. Task 0 records `npm outdated` for the root,
     the showcase, and `packages/*` in the ledger as the state pass C inherits.
 23. **The changelog's `Consumers must:` line** is one line with the spec's four parts, verbatim in
-    task 8. The migration note says the same, plus decision 2's named-root sentence, decision 9's
-    narrowing, and the `DEFAULT_ADMIN_SCOPE` change (decision 1) with the motion rules it brings to
-    a site's `src/lib/admin`.
+    task 8, with two parts made exact. **The restore form (part 3).** `static.scope` replaces the
+    defaults rather than adding to them (`config.ts:215`, `asPathList`), and a configured root the
+    tree lacks fails the run (`run.ts:64-72`). So "name `src/lib/components` under the admin scope"
+    followed literally (`["src/lib/components"]`) silently drops `src/routes/admin` from every
+    static rule, and copying the full new default list fails on a site without `src/lib/admin`.
+    The line therefore says to set `static.scope` to the default roots the site has plus
+    `src/lib/components`, with an example, and names why. It also stops calling `static.scope`
+    "the admin scope", since `static.adminScope` is a separate key: the three `adminOnly` motion
+    rules read that key, and they never read `src/lib/components` before either. The move branch
+    of part 3 also names the `@source "./lib/admin";` line a site's own admin stylesheet needs
+    (decision 25), since a site's `admin.css` is its own file, not the template's. **The dist path
+    (part 4)** covers every channel a consumer can hold the old path in: an audit config
+    (including one passed with `--config`) or a site script (for example
+    `aksailingclub-org/scripts/verify-chip-registers.mjs:55`). The migration note says the same,
+    plus decision 2's named-root sentence, decision 9's narrowing and Geoff's A1 ruling, and the
+    `DEFAULT_ADMIN_SCOPE` change (decision 1) with the motion rules it brings to a site's
+    `src/lib/admin`. This sharpens the spec's clause without changing its four parts; the fold
+    record lists it as an owed spec erratum.
 24. **The user-scoped `cairn-release` skill names the old folder** (`~/.dotfiles/claude/.claude/skills/cairn-release/SKILL.md:107`,
-    "`src/lib/components/*.svelte`"). The close repoints it in one dotfiles commit and runs
-    `claude-tooling-sync verify`. No other user-scoped agent or skill names the old paths at plan
-    time; task 0 re-checks.
+    "`src/lib/components/*.svelte`"). Pass B does not edit it. A user-scope skill is live the
+    moment it is committed, and `main` keeps `src/lib/components/` until pass C merges A, B, and C,
+    so a cut from `main` before then (a hotfix) must still read the old path. Pass C's close, which
+    already edits `cairn-release` in one dotfiles commit, repoints the line; "What pass C
+    receives" says so. No other user-scoped agent or skill names the old paths at plan time; task 0
+    re-checks.
+25. **The showcase compiles the new custom-admin home.** The Names grid puts a custom admin
+    component in `src/routes/admin` or `src/lib/admin`, but the showcase's `src/admin.css` (and,
+    through `emit:template`, the template's) imports utilities with `source(none)` and scans only
+    `@source "./routes/admin"`. A site that follows the `Consumers must:` line into `src/lib/admin`
+    would get no utility that appears only there, and `no-uncompiled-class` would fail its
+    `check:cairn` without naming the missing `@source`. Task 1 adds `@source "./lib/admin";` beside
+    the existing line. Tailwind 4.3.3 ignores an `@source` path that does not exist (verified by
+    the risk review), so the showcase's compiled admin CSS stays byte-identical and no render
+    moves.
 
 ## Rulings for Geoff
 
-None. The review found no product fork and no architectural question the spec leaves unsettled.
-Decision 13's three `0.98.0` promises belong to the release, which pass C's close cuts; this pass
-only surfaces them in STATUS.
+Settled, 2026-09-27; no fork remains open.
+
+- **F1, the token ceiling (Geoff, 2026-09-27):** pass B's ceiling rises to 19M, flag 15.2M, and the
+  close drops its separate Opus read of the audit code (tasks 3 and 4 already run an Opus
+  `diff-reviewer` against the same sections). Recorded in the header.
+- **A1, the two Tailwind-general rules (Geoff, 2026-09-27):** `stripe-trim-parity` and
+  `unlayered-font-clobber` stay admin-only. The narrowing is accepted and disclosed, and it is
+  permanent under pass C's one-scope-per-file rule. Recorded in decision 9.
+- **F2, the three `0.98.0` promises (Geoff, 2026-09-27, the recommended default accepted without
+  objection):** each is decided per rule at pass C's owner sitting from measured finding counts on
+  the five sites. Pass B lands the version tripwire that stays green here and forces the decision
+  before a `0.98.0` cut, and names the question in "What pass C receives". Recorded in decision
+  13.
 
 ## What pass C receives
 
@@ -471,12 +670,31 @@ ledger lists them with SHAs.
 - The branch `theme-identity-b`, merged with `main` and with `theme-identity-a`'s latest head at
   the close, green on CI, its draft PR open (pass C closes it as superseded).
 - STATUS on this branch naming the head, the base SHAs, the merge commits, and pass C's resume.
+- **The `0.98.0` question, forced by a test (ruling F2).** `promotion-versions.test.ts` is green
+  here and turns red on the `0.98.0` version commit while any of the three due promises stands:
+  `log-event-grammar`, `log-secret-field` (both `PROMOTION_VERSION`), and the guarded-retirement
+  arm (`GUARDED_RETIREMENT_PROMOTION_VERSION`). Pass C's owner sitting (S3) decides each per rule
+  from measured finding counts on the five sites: promote it to error, or re-date it with a
+  disclosed changelog line. One fact bears on the guarded arm: the engine itself keeps
+  `cairn-btn-guarded` on four `EditPage.svelte` controls, so promoting that arm first retires
+  those four sites, and `own-tree-and-guidance.test.ts`'s stated exemption follows the decision.
+  The two `0.99.0` constants this pass adds fall under the same test at the next minor.
+- **A1, settled:** pass C's public scope does not run `stripe-trim-parity` or
+  `unlayered-font-clobber` (decision 9).
+- **The dotfiles repoint (decision 24):** pass C's close repoints
+  `~/.dotfiles/claude/.claude/skills/cairn-release/SKILL.md:107` from `src/lib/components/*.svelte`
+  to `src/lib/admin/*.svelte` in its existing `cairn-release` dotfiles commit, once `main` carries
+  the new folder, and runs `claude-tooling-sync verify`.
+- **A cairn-pub carry-forward:** cairn.pub derives its docs routes from the tarball's files, so
+  `/docs/reference/components` returns 404 once it pins `0.98.0`. Its pin bump adds a redirect to
+  `/docs/reference/admin`. The engine needs no change.
 
-Pass C's plan assumes one thing this pass cannot produce: its task 0 item 1 requires "`main`
-contains pass A's merge". Under the 2026-09-27 ruling pass A stays unmerged until pass C's close,
-so pass C's task 0 must read that item as "pass B's branch contains pass A's closed head and a
-`main` merge", and its close merges A, B, and C together (closing pass A's PR #92 and pass B's PR
-as superseded). Task 8 writes this into STATUS for pass C's conductor.
+Pass C's plan assumes one thing this pass cannot produce: its header paragraph "Branch topology"
+(pass C plan `:34-36` on `theme-c-plan`) still reads "Pass A has merged to `main`". Its task 0 item
+1 already reads the 2026-09-27 topology: pass A stays unmerged until pass C's close, pass B's
+branch contains pass A's closed head and a `main` merge, and pass C's close merges A, B, and C
+together (closing pass A's PR #92 and pass B's PR as superseded). Task 8 writes into STATUS that
+pass C's conductor reads the header paragraph under task 0 item 1's topology.
 
 ## Global constraints
 
@@ -534,8 +752,11 @@ test or check in its owning task:
    green on the new candidates, and `config.test.ts`'s candidate-fallback cases name the new paths.
    Task 1.
 2. **A consumer with custom admin components in `src/lib/components`.** With no config, no static
-   rule reads them after the upgrade; with the root named under `static.scope`, every static rule
-   reads them again. A `config.test.ts` case pins both. Task 1.
+   rule reads them after the upgrade. With `static.scope` set to the documented restore form
+   (`["src/routes/admin", "src/lib/components"]`), every non-`adminOnly` static rule reads both
+   roots. With `static.scope` naming only `src/lib/components`, `src/routes/admin` goes unread:
+   the documented trap, pinned so the docs keep warning about it. `config.test.ts` pins all three.
+   Task 1.
 3. **A pass A correction merged across the rename.** An edit to `src/lib/components/cairn-admin.css`
    on pass A must land on `src/lib/admin/cairn-admin.css`, and a new file under the old folder must
    be caught by the post-condition greps. The merge-forward protocol, step 3.
@@ -544,7 +765,7 @@ test or check in its owning task:
    case.
 5. **`radius-scale` on the shapes the ladder exempts.** A `rounded-full` avatar with no `badge`,
    `rounded-none`, `rounded-l-none` in a join, and `rounded-t-box` on a bottom sheet pass;
-   `md:rounded-lg` and `rounded-[0.55rem]` flag. Task 3's fixtures.
+   `md:rounded-lg`, `rounded-[0.55rem]`, and `rounded-(--my-radius)` flag. Task 3's fixtures.
 6. **The recipe table drifting.** One guidance copy edited alone fails the sync test, and the
    template's baked copy drifting fails `check:template`. Tasks 5 and 6.
 
@@ -572,8 +793,9 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
    worktree (the `a-worktree-showcase-e2e-proves-mains-engine` gotcha).
 4. **Re-verify the plan's facts** (one Sonnet pre-flight agent, read-only), recording each against
    its plan-time value and amending the plan where one moved:
-   - The spec's acceptance grep (task 1) at plan time: 181 files, 486 lines. Decision 6's three
-     greps: 30 lines in 11 files, 19 files, 28 lines in 17 files.
+   - The spec's acceptance grep (task 1) at plan time: 181 files, 486 lines. Decision 6's four
+     greps: 30 lines in 11 files; 19 files plus the one `<code>` form; 28 lines in 17 files; 14
+     lines for the fifth (before the rename, with `src/lib/components/` hits filtered out).
    - `src/lib/components/`: 93 entries, 103 files; `index.ts` with 22 export statements, the last
      `PreviewBanner` with its exception comment at `:40-44`; `PreviewBanner.svelte` importing
      `../sveltekit/preview.js` and carrying eight `token-colors` suppressions and no utility class.
@@ -610,13 +832,26 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
      `docs/reference/components.md:680`.
    - The guidance: `SKILL.md` sizes (plan time: `cairn-admin-screens` 7,027 characters, about
      1,757 estimated tokens; `cairn-extend` about 1,037; `cairn-consult` about 548; budget 3,500);
-     no retired recipe or fixed radius in any fenced block of `skills/**` or `claude/agents/**`;
-     `daisyui-first.md`'s "Segmented-control contrast" section describing the pinned
-     `.btn-active` ring pass A retired.
+     the 13 `svelte`/`html` fences under `skills/**` (none under `claude/agents/**`), the two that
+     fail to parse after decision 14's normalization (`exemplar-detail.md:100`,
+     `exemplar-list.md:177`), the one retired pattern in a fence (`badge-ghost` at
+     `exemplar-detail.md:115`), and no fixed radius in any fence; `daisyui-first.md`'s
+     "Segmented-control contrast" section describing the pinned `.btn-active` ring pass A retired;
+     no `src/lib` placement line in `cairn-admin-screens` or `cairn-extend` (task 5 adds one).
+   - The guarded-retirement arm's four findings on `EditPage.svelte` (decision 14's exemption).
+   - `examples/showcase/src/admin.css`: one `@source "./routes/admin"` and utilities imported
+     with `source(none)` (decision 25).
+   - **Pass A's late commits.** List the files pass A changed between `1486f3f7` (this plan's
+     verification base) and its closed head, and re-verify every plan fact that sits in one of
+     them, among them the theme-kit fixture's line count and its exclusion from the emitted
+     template (pass A's `cfab5c4c`).
    - `examples/showcase/playwright.config.ts` honors `E2E_PORT` (pass A's decision 14).
    - User scope: `grep -rln` for the old paths under `~/.dotfiles/claude/.claude/` finds only
      `skills/cairn-release/SKILL.md:107` and a dated record (decision 24).
-   - The three `0.98.0` promotion constants (decision 13).
+   - The three `0.98.0` promotion constants and their names (decision 13), and `package.json` at
+     `0.97.0`.
+   - `docs/reference/cairn-audit.md:73` (the static count sentence, which task 3 changes) and
+     `:275` (the rendered count sentence, which it must not).
 5. **The engine string:** run `node scripts/checks/gate-tier.mjs --range HEAD~1..HEAD --pin engine`
    and confirm it prints the engine string under Gates.
 6. **The freeze rule:** read the narrative-arm rule in `CLAUDE.md` on the branch and record it.
@@ -642,17 +877,21 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
 
 **Pass class:** `sweep`. **Spec:** "Names"; "The rename, first and alone"; "The audit scopes";
 "Consumers must" (for the paths it names); the fold record's fifth fold, "Trim", the rename's file
-list. Decisions 1 to 9.
+list. Decisions 1 to 9, 23 (the restore form, for `cairn-audit.md` and `config.test.ts`), and 25.
+**Reviewer:** `claude-opus-5-5` (segment A's `reviewerModel`); `config.ts`,
+`reference-coverage.mjs`, `gate-tier.mjs`, and the new barrel test are held at the `engine-logic`
+bar (block on behavior defects and unmet outcomes), every other file at the `sweep` grep bar. The
+task's `criteria` says so.
 
 **Files:** `git mv src/lib/components src/lib/admin` (every file); a new `src/lib/public/`
 holding `PreviewBanner.svelte` (moved) and a new `index.ts`; `package.json` (exports); every file
-the four greps name, among them `src/lib/admin-toolkit/**` and `src/lib/reproductions/**` imports,
+the five greps name, among them `src/lib/admin-toolkit/**` and `src/lib/reproductions/**` imports,
 `src/lib/sveltekit/content-routes-shell.ts`, `src/lib/audit/config.ts` and the four audit
 comments that name the old folder (`color.ts`, `screen-anatomy.ts`, `stripe-trim-parity.ts`,
 `unlayered-font-clobber.ts`),
 `src/tests/**`, `vitest.config.ts`, `eslint.config.js`, `scripts/build/{admin-css.input.css,build-admin-css.mjs,build-mockup-css.mjs,update-admin-sheet-inventory.mjs}`,
 `scripts/checks/{check-invisible-craft.mjs,check-admin-prose.mjs,check-cm-internals.mjs,cm-internals-allowlist.json,check-surface-leaks.mjs,check-surface-leaks.json,check-symbols-allowlist.mjs,check-tool-heuristics.mjs,custom-surface-budget.json,gate-tier.mjs,reference-coverage.mjs}`,
-`examples/showcase/{cairn-audit.config.json,src/routes/admin/**,src/routes/(site)/preview/[token]/+page.svelte,src/theme/theme.css}`,
+`examples/showcase/{cairn-audit.config.json,src/admin.css,src/routes/admin/**,src/routes/(site)/preview/[token]/+page.svelte,src/theme/theme.css}`,
 `claude/snippets/cairn-audit.config.json`, `claude/CLAUDE.md`,
 `skills/cairn-admin-screens/references/exemplar-list.md`, `tool/internal/doctor/check_mount_test.go`,
 `git mv docs/reference/components.md docs/reference/admin.md`, a new `docs/reference/public.md`,
@@ -661,7 +900,7 @@ comments that name the old folder (`color.ts`, `screen-anatomy.ts`, `stripe-trim
 `pass-gate-tiers.md`, `src-lib-map.md`, `code-idioms.md`, `README.md`, and the rest the greps
 list, with `docs/internal/api-surface.md` regenerated, not hand-edited), `docs/internal/facts/*.md`
 (citations repointed), `docs/internal/docs-register.md` (the Names section),
-`.vale/styles/Cairn/Names.yml`, `.vale/styles/Cairn/NamesRetired.yml`, the frozen pages the greps
+two new Vale rules `.vale/styles/Cairn/{ComponentNames.yml,ComponentNamesRetired.yml}`, the frozen pages the greps
 name (`docs/extend/build-a-site-by-hand.md`, `docs/extend/share-a-draft-preview.md`,
 `docs/extend/architecture.md`), `CLAUDE.md`, `CONTRIBUTING.md`, `ROADMAP.md` (path mentions of the
 live tree only), and `templates/waymark/**` through `npm run emit:template`.
@@ -682,8 +921,8 @@ live tree only), and `templates/waymark/**` through `npm run emit:template`.
   same three conditions. The showcase's and, through `emit:template`, the template's preview route
   import `PreviewBanner` from `@glw907/cairn-cms/public`.
 - **The audit's defaults** follow decision 1: `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are
-  `src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit` (the latter conditional on the
-  measurement); `DEFAULT_SHEET_CANDIDATES` names `dist/admin/cairn-admin.css` and
+  `src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit`, with `src/lib/admin`'s place in
+  `DEFAULT_ADMIN_SCOPE` alone conditional on decision 1's measurement; `DEFAULT_SHEET_CANDIDATES` names `dist/admin/cairn-admin.css` and
   `node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css`; `DEFAULT_PALETTE_CSS_FILES` names
   `src/lib/admin/cairn-admin.css`. The comments above them are rewritten to the new reach, and so
   are the two rule comments decision 9 names. The showcase's and the snippet's `sheet` entries
@@ -701,14 +940,19 @@ live tree only), and `templates/waymark/**` through `npm run emit:template`.
   old page or its anchors points at the new page that holds the section. `docs/reference/README.md`
   lists both pages. `cairn-audit.md`'s configuration table carries the new `static.scope` and
   `static.adminScope` defaults and the `sheet` example path, and the page states decision 2's
-  named-root sentence once.
+  named-root sentence once, with decision 23's restore form (the default roots the site has plus
+  `src/lib/components`; a configured list replaces the defaults; a configured root the tree lacks
+  fails the run).
+- **The showcase admin sheet** gains `@source "./lib/admin";` (decision 25), and its compiled
+  admin CSS is byte-identical before and after.
 - **The Names section.** `docs/internal/docs-register.md`'s Names section gains the spec's two-axis
   grid (admin or public, built-in or custom), each cell's home, rulebook, audit scope, and
   guidance as the spec's table gives them, the noun "component" with its surface adjective, "site"
-  as the whole project, and "custom admin screen" for a whole route; plus the barrel rule
+  as the whole project, and "custom admin screen" for a whole route; its "Enforcement and scope"
+  paragraph names the two new Vale rules (decision 8); plus the barrel rule
   (`./admin` exports only admin components; `./public` exports every built-in public component that
-  renders styled markup; `./admin-toolkit` keeps its name). The two Vale rules gain decision 8's
-  tokens, and the reference pages it names use "custom public component".
+  renders styled markup; `./admin-toolkit` keeps its name). The two new Vale rules carry decision
+  8's tokens, and the reference pages it names use "custom public component".
 - **Every other live mention** (the internal docs, `CLAUDE.md`, `CONTRIBUTING.md`, `claude/CLAUDE.md`,
   the shipped exemplar, the showcase theme comment, the frozen extend pages as deficiency fixes)
   names the new path or subpath. Records keep the old paths (the spec's excluded list).
@@ -716,29 +960,40 @@ live tree only), and `templates/waymark/**` through `npm run emit:template`.
   command and shows `/admin` and `/public` in place of `/components`.
 
 **Acceptance:**
-- These four greps each print nothing (the spec's exclusion list on all four):
+- These five greps each print nothing outside the rename allowlist (decision 6), with the spec's
+  exclusion list plus `ROADMAP.md` and `docs/STATUS.md`:
   ```sh
-  X=(':!docs/internal/history' ':!docs/internal/record' ':!docs/internal/design' ':!docs/superpowers' ':!docs/HISTORY.md' ':!CHANGELOG.md' ':!docs/extend/migration-notes.md' ':!docs/internal/engine-rulings.md')
+  X=(':!docs/internal/history' ':!docs/internal/record' ':!docs/internal/design' ':!docs/superpowers' ':!docs/HISTORY.md' ':!CHANGELOG.md' ':!docs/extend/migration-notes.md' ':!docs/internal/engine-rulings.md' ':!ROADMAP.md' ':!docs/STATUS.md')
   git grep -nE "lib/components|dist/components|cairn-cms/components|['\"]\.?/components['\"]" -- "${X[@]}"
   git grep -n '\.\./components/' -- src/lib
-  git grep -nE '`\.?/components`' -- "${X[@]}"
+  git grep -nE '(`|<code>)\.?/components(`|</code>)' -- "${X[@]}"
   git grep -n 'components\.md' -- "${X[@]}"
+  git grep -nE "(^|[^-a-z_/.])(\./)?components/|'components'" -- src scripts examples/showcase/src examples/showcase/e2e docs/internal/src-lib-map.md ':!scripts/build/daisyui-classes.mjs' ':!src/tests/unit/daisyui-classes.test.ts'
   ```
   and `git grep -n PreviewBanner -- src/lib/admin` prints nothing. The report quotes each command
-  with its empty output and the plan-time counts it cleared.
+  with its output, names the allowlist item for each remaining line, and states the plan-time
+  counts it cleared.
+- `git grep -n "@glw907/cairn-cms/public" -- examples/showcase/src/routes templates/waymark/src/routes`
+  prints exactly the two preview routes (the spec's positive import check).
 - `package.json` exports `./admin` and `./public` and no `./components`; the new barrel test
-  (decision 7) passes; `ls src/lib/components` fails.
+  (decision 7) passes; `test ! -e src/lib/components` succeeds; the renamed
+  `admin-barrel-prune.test.ts`'s demoted keys name `./admin/...` paths.
 - Decision 1's measurement: the report quotes `check:invisible-craft`'s findings and suppressed
   counts before and after the move, identical, with zero unsuppressed findings from
   `motion-property`, `motion-vocabulary`, and `motion-hover-gate` on `src/lib/admin`, and states
   whether `DEFAULT_ADMIN_SCOPE` took the root.
 - The compiled admin sheet's class inventory is identical before and after (the report states the
   inventory diff, empty or each safelisted class), and `admin-sheet-inventory.test.ts` passes.
-- `config.test.ts` covers the new defaults and a config naming `src/lib/components` under
-  `static.scope` bringing that root back under every static rule, and `run.test.ts:241`'s
-  named-sheet hard error passes on the new candidates (Review focus 1 and 2).
-- A scratch file (never committed) containing each new Vale token raises the expected `Cairn.Names`
-  or `Cairn.NamesRetired` alert; the report quotes `vale` on it. `npm run check:vale` is green.
+- `config.test.ts` covers the new defaults and Review focus 2's three cases: the documented
+  restore form (`["src/routes/admin", "src/lib/components"]`) brings both roots under every
+  non-`adminOnly` static rule, and a config naming only `src/lib/components` leaves
+  `src/routes/admin` unread. `run.test.ts:241`'s named-sheet hard error passes on the new
+  candidates (Review focus 1).
+- The showcase's compiled admin CSS is byte-identical before and after decision 25's `@source`
+  line; the report quotes the `cmp`.
+- A scratch file (never committed) containing each new Vale token, one of them capitalized at a
+  sentence start, raises the expected `Cairn.ComponentNames` or `Cairn.ComponentNamesRetired`
+  alert; the report quotes `vale` on it. `npm run check:vale` is green.
 - `gateTier: "targeted"`, `gate` the rename string (Gates), preceded by the port check quoted under
   Task checks. Task checks, each quoted with its `gate exit:` line: the tool gate;
   `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:tool-heuristics && npm run test:emit'`; the
@@ -774,8 +1029,11 @@ row).
   at the document start before body text (the F12 repro); the caret mid-line with text on both
   sides; the caret at a line's end with a non-blank line below; the caret on a blank line already
   between two paragraphs (no double blank line); the caret at the document's end after text; the
-  caret on an empty line directly under a paragraph line; and a caller's inline text inserted
-  mid-sentence (Review focus 4). Each row asserts the resulting document and the caret offset.
+  caret on an empty line directly under a paragraph line; a caret beside a line holding only
+  whitespace (treated as blank); the pre-mount fallback's case, the caret at the end of a non-empty
+  `value`; and a caller's inline text inserted mid-sentence (Review focus 4). Each row asserts the
+  resulting document and the caret offset. The reviewer confirms both `insertAtCursor` paths call
+  the pure function.
 - Test-first: the report quotes the new e2e assertion failing against the unfixed editor, then
   passing.
 - The editor's existing component tests pass unmodified.
@@ -792,10 +1050,14 @@ rules bullet), "Corners", "The markup sweep"'s post-condition. Decisions 11 to 1
 
 **Files:** a new `src/lib/audit/rules/static/radius-scale.ts`,
 `src/lib/audit/rules/static/index.ts`, `src/lib/audit/rules/static/stock-default-hazards.ts`, new
-and existing unit tests under `src/tests/unit/audit/rules/` with fixtures, a new unit test for
-decision 14 under `src/tests/unit/audit/`, `src/tests/unit/audit/run.test.ts`,
-`docs/reference/cairn-audit.md`, `skills/cairn-admin-screens/SKILL.md` (the tier map and its count
-sentence), and `templates/waymark/**` through `npm run emit:template`.
+and existing unit tests under `src/tests/unit/audit/rules/` with fixtures, two new unit tests
+under `src/tests/unit/audit/` (`own-tree-and-guidance.test.ts` for decision 14 and
+`promotion-versions.test.ts` for decision 13), `src/tests/unit/audit/run.test.ts`,
+`docs/reference/cairn-audit.md` (the static count sentence at `:73` and "All 34" at `:31`; the
+rendered count sentence at `:275` does not change), `skills/cairn-admin-screens/SKILL.md` (the tier
+map and its count sentence), `skills/cairn-admin-screens/references/exemplar-detail.md` and
+`exemplar-list.md` (decision 14's fence repairs and the `badge-ghost` line), and
+`templates/waymark/**` through `npm run emit:template`.
 
 **Outcome:**
 - `radius-scale` is registered after `gap-scale`, at `advisory` tier, behaving as decision 11
@@ -804,7 +1066,10 @@ sentence), and `templates/waymark/**` through `npm run emit:template`.
   naming its replacement (or, for `shadow-none`, that nothing replaces it) and the `0.99.0`
   promotion. The five existing arms do not change.
 - Decision 14's test proves cairn's own admin tree and the shipped guidance's fences report zero
-  findings from both rules.
+  `radius-scale` findings, zero new-arm findings, and zero error-tier `stock-default-hazards`
+  findings, with the guarded-retirement exemption stated in its comment. The two unparseable
+  fences are repaired and the `badge-ghost` fence line teaches the quiet `StatusChip`.
+- Decision 13's tripwire is green on `0.97.0` and names every constant it found.
 - `docs/reference/cairn-audit.md`: a `radius-scale` row, the `stock-default-hazards` row naming the
   eight arms and which three are advisory until `0.99.0`, the rule-count sentences ("Eighteen rules
   run: fifteen error tier, and three advisory"; "All 35 registered rules"), and the `radius-scale`
@@ -818,17 +1083,29 @@ sentence), and `templates/waymark/**` through `npm run emit:template`.
 - Fixtures, each raising exactly the named finding with the named replacement: `rounded-lg` on a
   `btn` (names `rounded-field`); `rounded-xl` on a `card` (`rounded-box`); bare `rounded` on a
   plain `div` (the three-role sentence); `md:rounded-lg`; `rounded-[0.55rem]`;
-  `rounded-[var(--radius-field)]` (names `rounded-field`); `rounded-t-2xl`; `badge rounded-full`
-  (`rounded-selector`). Passing fixtures, each raising nothing: `rounded-field`, `rounded-t-box`,
+  `rounded-[var(--radius-field)]` (names `rounded-field`); `rounded-(--radius-field)` (names
+  `rounded-field`); `rounded-(--my-radius)` (the three-role sentence); `rounded-t-2xl`;
+  `badge rounded-full` (`rounded-selector`); one element carrying `rounded-lg md:rounded-xl`
+  (exactly two findings). Passing fixtures, each raising nothing: `rounded-field`, `rounded-t-box`,
   a `rounded-full` avatar with no `badge`, `rounded-none`, `rounded-l-none` on a `join-item`.
+- One table test over decision 11's class-to-role mapping: `badge`, `btn`, `input`, `select`,
+  `textarea`, `card`, `modal-box`, and `dropdown-content`, each with `rounded-lg`, names its role
+  class.
+- Every `radius-scale` and new-arm finding's message contains `0.99.0`, asserted per finding.
 - Arm fixtures: `btn bg-neutral text-neutral-content` (names `btn btn-neutral`);
   `btn hover:bg-[var(--cairn-ink-hover)]`; `btn bg-primary/10 text-primary` (names
   `btn btn-soft btn-primary`); `btn shadow-none` and `btn sm:shadow-none`. Silent: `btn btn-neutral`,
   `btn btn-soft btn-primary`, and a `span` carrying `bg-primary/10 text-primary` (decision 12's
-  non-button case). Each arm finding's tier is `advisory`, asserted per finding.
+  non-button case). The parent spec's two full recipes each raise exactly one finding: `btn
+  border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)]`
+  names `btn btn-neutral`, and `btn border-transparent bg-primary/10 text-primary shadow-none`
+  names `btn btn-soft btn-primary`. Each arm finding's tier is `advisory`, asserted per finding.
 - The existing `stock-default-hazards.test.ts` cases pass unmodified.
 - Decision 14's test passes and its mutation proof is quoted: planting `rounded-lg` on one engine
-  button, and a `btn shadow-none` inside one guidance fence, each fails it.
+  button, a `btn shadow-none` inside one guidance fence, and an unclosed element in one fence each
+  fails it (the last naming the file and line).
+- Decision 13's tripwire mutation proof is quoted: setting `package.json`'s version to `0.98.0` in
+  the working tree fails it naming the three `0.98.0` constants; reverted after.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line: the package check (the
   tier map binding); the audit wrappers; the idioms and comments checks; the template check after
   `npm run emit:template`.
@@ -858,16 +1135,20 @@ section).
   expectations pass unmodified.
 - After `npm run package`, `node dist/audit/bin.js norms button-primary` prints the recipe line;
   the report quotes the output.
-- `src/lib/audit/norms-manifest.json` is unchanged.
-- `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line: the norms check
-  (heavy); the idioms and comments checks.
+- The typo check (decision 15): every class token in each row's Write string appears in the
+  committed admin sheet inventory or the theme-kit fixture's source; its mutation proof (one
+  misspelled token) is quoted.
+- `git diff --exit-code src/lib/audit/norms-manifest.json` exits 0; the report quotes it.
+- `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line: the idioms and comments
+  checks. No local `norms:check` (Gates).
 
 ---
 
 ### Task 5: The shipped guidance and its exemplar
 
 **Pass class:** `docs`. **Spec:** parent spec "G2", "Shipped guidance" (the one-sentence model, the
-table, the tier-map counts, the exemplar, the extension reviewer's new checks). Decisions 17 and 18.
+table, the tier-map counts, the exemplar, the extension reviewer's new checks). Decisions 14 (the
+fence rule), 17, and 18.
 
 **Files:** `skills/cairn-admin-screens/SKILL.md`, a new
 `skills/cairn-admin-screens/references/exemplar-kit.md`,
@@ -887,16 +1168,25 @@ radius in its prose, and `templates/waymark/.claude/**` through `npm run emit:te
   section is checked against `admin-design-system.md` as pass A left it.
 - `SKILL.md` points at `references/exemplar-kit.md` for the plain-class kit; the exemplar follows
   decision 18.
-- No shipped guidance file teaches `bg-neutral` on a `btn`, the Publish tint, `shadow-none` on a
-  `btn`, a fixed Tailwind radius, or a `rounded-full` chip, in prose or in a fence; the report
-  quotes the grep.
+- `cairn-admin-screens/SKILL.md` and `daisyui-first.md` each gain one line saying where a custom
+  admin component lives: under `src/routes/admin` or `src/lib/admin`, the roots the audit reads by
+  default and the site's admin sheet compiles (decision 25). The spec's Names grid gives that
+  home; without the line, a probe that puts a shared component in `src/lib/components` passes an
+  audit that never read it.
+- No shipped guidance file recommends `bg-neutral` on a `btn`, the Publish tint, `shadow-none` on a
+  `btn`, a fixed Tailwind radius, a `rounded-full` chip, or `badge-ghost`. In a fence none may
+  appear at all (decision 14's test is the check). In prose, a code span may name one as a pattern
+  to flag or avoid, as the extension reviewer's checks must; the report quotes
+  `git grep -nE "badge-ghost|bg-primary/10|shadow-none|bg-neutral|rounded-(xs|sm|md|lg|xl|[234]xl|\[|\()|rounded-full" -- skills claude`
+  and classifies each hit as a flag-or-avoid mention.
 
 **Acceptance:**
 - Every `SKILL.md` stays under the 3,500-token budget; the report lists each skill's estimated
   tokens before and after.
 - Decision 14's test still passes (the guidance fences carry no patch).
-- `gateTier: "targeted"`, `gateLane: "light"`, `gate` the docs string (Gates). A missing or red
-  task check is blocking.
+- `gateTier: "targeted"`, `gateLane: "light"`, `gate` the docs string (Gates). Task check, quoted
+  with its `gate exit:` line: the guidance tests (Gates), which run decision 14's test. A missing
+  or red task check is blocking.
 
 ---
 
@@ -916,33 +1206,40 @@ route, and one recipe row per ratified role.
 - The test passes on the tree.
 - Its mutation proof is quoted, each mutation reverted after: one row edited in `daisyui-first.md`
   alone; one row deleted from `cairn-extension-reviewer.md` alone; `RECIPE_MODEL` reworded in
-  `norms.ts` alone; one class changed on a fixture-route line an exemplar fence quotes. Each fails
-  the test with a message naming the file and the row or fence.
+  `norms.ts` alone; one class changed on a fixture-route line an exemplar fence quotes; the `Write
+  this, get this` heading removed from one copy. Each fails the test with a message naming the
+  file and the row, fence, or heading, and a mutation that breaks two copies reports both.
 - `gateTier: "targeted"`, `gateLane: "light"`, `gate` the sync string (Gates).
 
 ---
 
 ### S1: Probe 1 (conductor-led)
 
-**Outcome:** Decision 20's probe runs once on the segment C head: the conductor creates the
-detached scratch worktree, installs it (`npm ci` at the root and in the showcase, then
-`npm run package`), dispatches the probe agent with the one-line brief, then dispatches the audit
-agent. The audit agent serves the probe's showcase build on port 4391 through `BASE_URL`, stops it
-on exit, and returns the static and rendered counts on the probe's files and page by rule and
-tier, plus a separate list of any finding outside them. The conductor records both in the ledger
-and removes the scratch worktree.
+**Outcome:** Decision 20's probe runs once on the segment C head. The conductor dispatches the
+setup agent (the emitted template outside the repo, installed and committed, then the headless
+`claude -p` probe with the one-line brief), then the audit agent. The audit agent serves the
+probe site's build on port 4391 through `BASE_URL`, stops it on exit, and returns the static and
+rendered counts on the probe's files and page by rule and tier, the list of files `git status
+--porcelain` shows the probe created or edited with each file's scanned root, whether the
+rendered run visited `/admin/probe`, and a separate list of any finding outside the probe's
+files. The conductor records all of it in the ledger, with the probe's stated limit, and the setup
+agent deletes the probe dir.
 
 **Acceptance:** zero error findings and zero `radius-scale` or retired-patch findings on the probe's
-files and page, in both modes. On a failure, the ledger names the guidance gap each failing finding
-points at, and task 7 runs (decision 21).
+files and page, in both modes; every probe `.svelte` file inside a scanned root; `/admin/probe` in
+the rendered run's pages. On a failure, the ledger names the guidance gap each failing finding (or
+unscanned file) points at, and task 7 runs (decision 21).
 
 ### Task 7: Guidance fix (conditional)
 
-**Pass class:** `docs`. Dispatched only when S1 fails. **Outcome:** each gap S1 named is fixed on
-the shipped page that should have prevented it, and decision 17's rows change only through
-`ROLE_RECIPES` plus all three copies, so task 6's test stays green. Then a fresh probe agent re-runs
-S1 once (decision 21). **Acceptance:** the docs string green (`gateTier: "targeted"`,
-`gateLane: "light"`), the sync test green, and the re-run's counts recorded.
+**Pass class:** `docs` (or `engine-logic` when a close-review finding touches code). Dispatched
+when S1 fails, and once more at the close if its review returns findings. **Outcome:** each gap S1
+named is fixed on the shipped page that should have prevented it, and decision 17's rows change
+only through `ROLE_RECIPES` plus all three copies, so task 6's test stays green. After an S1 fix, a
+fresh headless probe re-runs S1 once (decision 21). **Acceptance:** the docs string green
+(`gateTier: "targeted"`, `gateLane: "light"`); task check, quoted with its `gate exit:` line: the
+guidance tests (Gates), which run both decision 14's test and the sync test; and the re-run's
+counts recorded.
 
 ---
 
@@ -953,45 +1250,55 @@ S1 once (decision 21). **Acceptance:** the docs string green (`gateTier: "target
 `npm run check:close && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm --prefix examples/showcase run test:unit`,
 then the tool gate. The consumer-build proof is CI's `e2e` run on the pushed head. Then the review
 fan-out, in parallel: `svelte-reviewer` (the editor insert and the `PreviewBanner` move and
-barrel), one Opus `general-purpose` read of `radius-scale`, the three arms, and the recipe source
-against the parent spec's "G2" and "Corners" sections, and one `prose-voice-reviewer` read of the
-changed shipped guidance against the agent-guidance standard the `writing-voice` skill routes to.
-Findings fold through one task 7 run in `engine-logic` or `docs` class as the finding requires.
+barrel) and one `prose-voice-reviewer` read of the changed shipped guidance against the
+agent-guidance standard the `writing-voice` skill routes to. No separate Opus read of the audit
+code (ruling F1): tasks 3 and 4's Opus `diff-reviewer` reads already held it to the parent spec's
+"G2" and "Corners" sections. Findings fold through one task 7 run in `engine-logic` or `docs`
+class as the finding requires.
 
 Then one Sonnet agent drafts the close and commits it; one Opus `diff-reviewer` reads that diff,
 and the drafter folds its findings once. Hard cap about 0.6M tokens for draft, review, and fold.
 The cairn-pass ritual:
 - **`CHANGELOG.md`** under `## Unreleased` (created if absent), pass B's entry: the rename and the
-  new `./public` subpath, with this `Consumers must:` line verbatim: "Consumers must: import admin
-  components from `@glw907/cairn-cms/admin` instead of `@glw907/cairn-cms/components`; import
-  `PreviewBanner` from `@glw907/cairn-cms/public`; move any custom admin components out of
-  `src/lib/components` into `src/lib/admin`, or name `src/lib/components` under the admin scope
-  (`static.scope`) in `cairn-audit.config.json`; and, if that config names
-  `dist/components/cairn-admin.css` under `sheet`, change it to `dist/admin/cairn-admin.css`." It
-  also names the audit's new default roots and the reach narrowing (decision 9), `radius-scale` and
-  the three arms at advisory tier with their `0.99.0` promotion, the norms print's recipe line, the
-  shipped guidance's table and exemplar, and a "Fixed" line for the insert.
-- **`docs/extend/migration-notes.md`** and **`upgrade-cairn.md`**: the same four actions, the
-  old subpath named, decision 2's named-root sentence, decision 9's narrowing and its restore, and
-  `DEFAULT_ADMIN_SCOPE`'s new root with the three motion rules it brings to a site's
-  `src/lib/admin`.
+  new `./public` subpath, with this `Consumers must:` line verbatim (decision 23): "Consumers
+  must: import admin components from `@glw907/cairn-cms/admin` instead of
+  `@glw907/cairn-cms/components`; import `PreviewBanner` from `@glw907/cairn-cms/public`; move any
+  custom admin components out of `src/lib/components` into `src/lib/admin` and add
+  `@source "./lib/admin";` to the site's admin stylesheet, or keep them there and set
+  `static.scope` in `cairn-audit.config.json` to the default roots the site has plus
+  `src/lib/components` (for example `["src/routes/admin", "src/lib/components"]`), since a
+  configured list replaces the defaults and a configured root that does not exist fails the run;
+  and change any path into `dist/components/` to `dist/admin/`, whether an audit config's `sheet`
+  (including a config passed with `--config`) or a site script names it." It also names the
+  audit's new default roots and the reach narrowing with Geoff's A1 ruling (decision 9),
+  `radius-scale` and the three arms at advisory tier with their `0.99.0` promotion, the norms
+  print's recipe line, the shipped guidance's table, placement line, and exemplar, and a "Fixed"
+  line for the insert.
+- **`docs/extend/migration-notes.md`** only, under `## Unreleased`: the same four actions, the old
+  subpath named, decision 2's named-root sentence, decision 9's narrowing and its restore form,
+  and `DEFAULT_ADMIN_SCOPE`'s new root with the three motion rules it brings to a site's
+  `src/lib/admin`. `upgrade-cairn.md` is a version-free procedure whose steps already send a
+  reader to the `Consumers must:` lines and the guidance refresh, so it takes no per-version text
+  (and it sits outside the rename allowlist).
 - **Facts** in `docs/internal/facts/`: the rename, the `./public` subpath and its barrel rule, the
-  audit's default roots, `radius-scale` and the arms and their tier, the norms recipe line, and the
-  insert's padding (the editors arm too, since an author sees it). `check:facts` green.
+  audit's default roots and the restore form, `radius-scale` and the arms and their tier, the
+  promotion tripwire, the norms recipe line, the insert's padding (the editors arm too, since an
+  author sees it), and one bullet per frozen-page deficiency task 1 fixed
+  (`docs/extend/build-a-site-by-hand.md`, `share-a-draft-preview.md`, `architecture.md`), as the
+  Global constraints require. `check:facts` green.
 - **Reference pages:** verified current (tasks 1 to 4 wrote them); `check:reference` green.
 - **`check:surface`:** verified current (task 1 regenerated `api-surface.md`); the full gate runs it.
 - **`ROADMAP.md`**: the F12 Now entry removed; the "Theme identity, passes A, B, and C" entry says
-  pass B is finished on `theme-identity-b` (pass C removes the entry); a new entry for decision 13's
-  version tripwire; the promotion of `radius-scale` and the arms at `0.99.0`; and any gap S1 left
-  open.
+  pass B is finished on `theme-identity-b` (pass C removes the entry); the promotion of
+  `radius-scale` and the arms at `0.99.0`, noting that `promotion-versions.test.ts` enforces it;
+  and any gap S1 left open.
 - **`docs/internal/docs-friction-log.md`** triaged, complete-or-move.
-- **The dotfiles** (decision 24): one commit in `~/.dotfiles` repointing `cairn-release`'s
-  admin-surface line to `src/lib/admin/*.svelte`; `claude-tooling-sync verify` green; the report
-  quotes the line.
-- **`docs/HISTORY.md`**: the pass entry (what landed, what the gates caught, spend against the 17M
-  ceiling, and what a later pass would be wrong to rediscover: the spec grep's three blind forms,
-  the reach narrowing, `PreviewBanner`'s kept coverage, the merge-forward across a rename, and the
-  three `0.98.0` promises).
+- **No dotfiles edit** in this pass (decision 24; pass C's close repoints `cairn-release`).
+- **`docs/HISTORY.md`**: the pass entry (what landed, what the gates caught, spend against the 19M
+  ceiling, and what a later pass would be wrong to rediscover: the spec grep's four blind forms
+  and the rename allowlist, `static.scope` replacing rather than adding, the reach narrowing and
+  its A1 ruling, `PreviewBanner`'s kept coverage, the merge-forward across a rename, the guidance
+  fences the audit parser could not read, and the promotion tripwire).
 - **The plan's post-mortem** appended here, with the pass score (tokens against the ceiling,
   planning misses, execution sittings).
 
@@ -999,20 +1306,25 @@ The cairn-pass ritual:
 1. Run the merge-forward protocol a last time (pass A's head).
 2. `git fetch` and merge `origin/main` into `theme-identity-b` if `main` moved; resolve STATUS to
    this branch's close text and keep both sides of HISTORY.
-3. Re-run task 1's four greps, then `check:facts`, `check:reference`, `check:docs`, `check:vale`,
+3. Re-run task 1's five greps (outside the rename allowlist) and `test ! -e src/lib/components`,
+   then `check:facts`, `check:reference`, `check:docs`, `check:vale`,
    `check:rulings-format`, and `check:template` on the merged head (one light gate agent), and let
    CI go green on the pushed head; one Haiku probe reads it.
 4. **STATUS** on this branch, present tense, at or under 60 lines: pass B finished and unmerged,
    its head and base SHAs and merge commits; "What pass C receives" verified, with its topology
-   note (pass A unmerged; pass C's task 0 item 1 reads as this branch containing pass A's closed
-   head and a `main` merge); the STATUS watch from decision 13; any open S1 gap; and pass C's
+   note (pass A unmerged; pass C's header paragraph "Branch topology" still says pass A merged to
+   `main`, so pass C's conductor reads it under task 0 item 1's topology: this branch contains
+   pass A's closed head and a `main` merge); the `0.98.0` question the tripwire forces at pass C's
+   owner sitting (ruling F2); the dotfiles repoint and the cairn-pub redirect carried to pass C;
+   any open S1 gap; and pass C's
    resume prompt naming `theme-c-plan`'s plan and this branch as its base. The conductor then
    records the same next action on `main`'s STATUS in one `docs(status)` commit, after the
    executor check, the way this repo records stream state there.
 5. The draft PR stays open and unmerged. The worktree stays for pass C to branch from.
 
 **Acceptance:** the full gate green on the branch before the `main` merge and CI green on the
-final pushed head; the four rename greps empty on the final head; STATUS at or under 60 lines;
+final pushed head; the five rename greps print nothing outside the rename allowlist on the final
+head; STATUS at or under 60 lines;
 `check:facts`, `check:reference`, `check:docs`, `check:vale`, `check:rulings-format`, and
 `check:template` green on the final head; the pass score recorded.
 

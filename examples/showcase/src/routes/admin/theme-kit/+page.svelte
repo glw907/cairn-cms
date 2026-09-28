@@ -141,7 +141,11 @@ by default"). -->
       </div>
     </section>
 
-    <div class="modal-box" data-testid="tk-modal-box">
+    <!-- daisyUI's own `.modal-box` is `opacity: 0; scale: .95` at rest, visible only nested
+         inside an open `.modal`. This fixture renders the box standalone to prove its warm
+         shadow, so `opacity-100 scale-100` (plain Tailwind utilities, unlayered against
+         daisyUI's nested component layer) hold it visible on its own. -->
+    <div class="modal-box opacity-100 scale-100" data-testid="tk-modal-box">
       <p class="type-body">A statically open modal.</p>
     </div>
 

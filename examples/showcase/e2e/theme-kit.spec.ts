@@ -205,6 +205,19 @@ for (const theme of THEMES) {
       await expect.poll(() => modal.evaluate((e) => getComputedStyle(e).boxShadow)).toBe(warm);
     });
 
+    // Task 15 item 3: daisyUI's own `.modal-box` is `opacity: 0; scale: .95` at rest, visible only
+    // as a `.modal[open] > .modal-box`/`.modal.modal-open > .modal-box` child. The fixture renders
+    // the box standalone (proving the warm shadow, not a full modal), so it carries its own
+    // `opacity-100 scale-100` to stay visible; the shadow test above already proved the computed
+    // box-shadow, invisible until this fix, since a computed style reads regardless of opacity.
+    test("the statically open modal box renders visible, not hidden at daisyUI's rest opacity", async ({
+      page,
+    }) => {
+      const modal = page.getByTestId('tk-modal-box');
+      await expect.poll(() => modal.evaluate((e) => getComputedStyle(e).opacity)).toBe('1');
+      await expect.poll(() => modal.evaluate((e) => getComputedStyle(e).scale)).toBe('1');
+    });
+
     test('each alert renders its own panel and ink, and a bare alert stays untouched', async ({
       page,
     }) => {

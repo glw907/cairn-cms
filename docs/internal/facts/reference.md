@@ -247,7 +247,7 @@ re-sourced to Go on this tree rather than to the page.
 
 - `f:e1s8kh` `cairn doctor` reads a site's checked-in configuration and needs no credential, no adopted site,
   and no Cloudflare or GitHub access, so it runs in a fresh clone and in CI; `cairn health` is the
-  live-site counterpart. Source: `tool/cmd/cairn/messages.go:299-306`. [verified]
+  live-site counterpart. Source: `tool/cmd/cairn/messages.go:296-303`. [verified]
 - `f:rrwp1r` `cairn doctor [<dir>]` takes at most one positional argument; `<dir>` defaults to the working
   directory, is a filesystem path and never a registered site id, and its shell completion offers
   directories rather than site ids. Source: `tool/cmd/cairn/doctor.go:24-37,50-53`. [verified]
@@ -275,13 +275,13 @@ re-sourced to Go on this tree rather than to the page.
 - `f:plng3z` A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency in
   `package.json` is not a cairn-cms site: the run prints one line, exits 3, and settles no check.
   Source: `tool/internal/doctor/fileread.go:89-104`, `tool/cmd/cairn/doctor.go:60-61,112-128`,
-  `tool/cmd/cairn/messages.go:323-331`. [verified]
+  `tool/cmd/cairn/messages.go:320-328`. [verified]
 - `f:ee48yi` `--json` is the command's own flag and writes the payload instead of the report; it beats
   `--quiet`, so the payload always prints under `--json`. Source:
-  `tool/cmd/cairn/doctor.go:42,88-97`, `tool/cmd/cairn/messages.go:309`. [verified]
+  `tool/cmd/cairn/doctor.go:42,88-97`, `tool/cmd/cairn/messages.go:306`. [verified]
 - `f:8our2s` The root's `--color`, `--theme`, and `--width` are accepted and have no effect on this command,
   whose report is plain text with no ANSI and no terminal query; `--quiet` and `--timeout` do
-  apply. Source: `tool/cmd/cairn/root.go:229-235` declares all five, and neither
+  apply. Source: `tool/cmd/cairn/root.go:232-238` declares all five, and neither
   `tool/cmd/cairn/doctor.go` nor `tool/internal/doctor/report.go` reads the three.
   [verified: the declaration is sourced; the no-effect half is the absence of any read, confirmed
   by grep over the command and package]
@@ -391,38 +391,39 @@ re-sourced to Go on this tree rather than to the page.
   count the registry does not match; zero means the operator named no count and the length is not
   checked. An empty registry reuses the same sentinel, which is why bare `cairn health` on an
   empty registry exits 3. Source: `tool/internal/spine/exit.go:57-59,147-167`,
-  `tool/cmd/cairn/health_sweep.go:39-44`, `tool/cmd/cairn/sites.go:46`. [verified]
+  `tool/cmd/cairn/health_sweep.go:40-45`, `tool/cmd/cairn/sites.go:46`. [verified]
 - `f:igjau7` A hold is named either by a repeatable `--ack <check-id>=<YYYY-MM-DD>` or by an acknowledgement
   file, which `--ack-file` names and which defaults to `acknowledgements.json` in the registry
   directory; its absence is not an error. Source: `tool/cmd/cairn/ack.go:17-36`,
-  `tool/cmd/cairn/health.go:58`, `tool/cmd/cairn/root.go:235`. [verified]
+  `tool/cmd/cairn/health.go:58`, `tool/cmd/cairn/root.go:238`. [verified]
 - `f:zlqdbn` The absence rule above covers only the default file. An `--ack-file` path the operator names
   explicitly and that does not exist, or cannot be read, is a usage error. Source:
-  `tool/cmd/cairn/messages.go:558,563`, `tool/cmd/cairn/messages.go:571-574`. [candidate: filed
+  `tool/cmd/cairn/messages.go:549,554`, `tool/cmd/cairn/messages.go:561-564`. [candidate: filed
   during the cli-cairn-exit-codes.md redraft, 2026-09-22, re-sourced against `main`]
 - `f:50ifoh` An exit code is decided in exactly two ways, which cannot disagree: a run that produced reports
   folds site verdicts, listing errors, and the expected site count; a run that produced no report
   carries a typed error, and everything but a coded error reports `UNKNOWN`. A cancelled run, a
   usage error, and a tool fault all say the same thing to a routine. Source:
-  `tool/cmd/cairn/main.go:133-167`, `tool/internal/spine/exit.go:147-167`. [verified]
-- `f:cwtfs7` `cairn auth check` is the one command carrying its own typed verdict, because it settles
-  provider states and holds no site verdicts. `cairn auth probe` is a hidden alias of it, kept
-  reachable for a script that already types the earlier name. Source:
-  `tool/cmd/cairn/main.go:133-141`, `tool/cmd/cairn/probe_token.go:20-29`. [verified]
+  `tool/cmd/cairn/main.go:134-168`, `tool/internal/spine/exit.go:147-167`. [verified]
+- `f:cwtfs7` `cairn auth check` is the one command carrying its own typed verdict, because it computes it
+  with `spine.ExitCode` over its own permission rows and hands the result to main through
+  `codedExit`. `cairn auth probe` is a hidden alias of it, kept reachable for a script that already
+  types the earlier name. Source:
+  `tool/cmd/cairn/main.go:134-142`, `tool/cmd/cairn/probe_token.go:20-29`. [verified]
 - `f:hi5cw3` A usage error exits 3 with byte-empty stdout, and its message goes to stderr, so stdout carries
-  payloads alone. Source: `tool/cmd/cairn/main.go:153-167`, test
+  payloads alone. Source: `tool/cmd/cairn/main.go:154-168`, test
   `tool/cmd/cairn/usage_test.go:125-138`. [verified]
 - `f:mcjbpm` `--json` beats `--quiet`: the payload always prints, so empty stdout under `--json` means the
   invocation was wrong rather than that the site is healthy. Source:
-  `tool/cmd/cairn/health_sweep.go:49-53`, `tool/cmd/cairn/doctor.go:88-97`. [verified]
+  `tool/cmd/cairn/health_sweep.go:50-54`, `tool/cmd/cairn/doctor.go:88-97`. [verified]
 - `f:8ow43o` A `--color` value outside auto, always, and never, a `--theme` value outside dark and light, and
   an explicit `--width` outside its bounds are each usage errors. `--theme` has no auto: querying
   a terminal for its background is a write-then-read the tool refuses, so the value is the one the
-  operator states, and dark when they state none. Source: `tool/cmd/cairn/root.go:37-53,98-115`.
+  operator states, and dark when they state none. Source: `tool/cmd/cairn/root.go:37-55,101-118`.
   [verified]
 - `f:dbwe2j` `--help` and `--version` exit 0, which is cobra's own behaviour rather than a cairn override;
   cairn registers the `-V` shorthand explicitly before cobra would add an unshorthanded one.
-  Source: `tool/cmd/cairn/root.go:213-226`. [verified]
+  Source: `tool/cmd/cairn/root.go:216-229`. [verified]
 - `f:h1x1i5` `cairn health <site>` takes the site as a positional operand, not a flag. Source:
   `tool/cmd/cairn/health.go:44`. [verified]
 - `f:u9fpq8` Three nested bounds govern a run's duration: every provider request is capped at 15 seconds,
@@ -443,14 +444,14 @@ re-sourced to Go on this tree rather than to the page.
   capped at four times the single-site default, and each site gets the envelope's remaining time
   divided by the sites still to run, never more than the per-site budget, recomputed after each
   site settles. An explicit `--timeout` replaces the whole-run budget and the division works the
-  same inside it. Source: `tool/cmd/cairn/health_sweep.go:20-26,215-253`. [verified]
+  same inside it. Source: `tool/cmd/cairn/health_sweep.go:20-26,216-254`. [verified]
 - `f:6tm5nr` The formula the page publishes is pinned by a test that builds it from the two constants, so the
   worked examples stay arithmetic rather than assertion. Source:
   `tool/cmd/cairn/usage_test.go:558-568`. [verified]
 - `f:qgeq2i` A budget miss or a signal stops a sweep after the site already in flight settles; every site
   still to come is counted toward the run's exit code as `UNKNOWN`, and under `--json` it is
   omitted from the stream rather than emitted empty, since a plain-text line would corrupt the
-  newline-delimited JSON. Source: `tool/cmd/cairn/health_sweep.go:28-36`,
+  newline-delimited JSON. Source: `tool/cmd/cairn/health_sweep.go:28-37`,
   `tool/internal/render/json.go:369-371`. [verified]
 - `f:wulqee` A site cut short partway reports each unfinished check unknown with `reason.not-run`. Source:
   `tool/internal/health/health.go:151,173`, `tool/internal/spine/outcome.go:64`. [verified]
@@ -471,8 +472,8 @@ re-sourced to Go on this tree rather than to the page.
 
 - `f:i8y825` Under `--json`, stdout carries the payload and stderr carries diagnostics; the two are never
   merged. The payload prints even under `--quiet`, and a usage error writes nothing to stdout and
-  exits 3. Source: `tool/cmd/cairn/root.go:231,236`, `tool/cmd/cairn/health_sweep.go:49-53`,
-  `tool/cmd/cairn/main.go:153-167`. [verified]
+  exits 3. Source: `tool/cmd/cairn/root.go:234,239`, `tool/cmd/cairn/health_sweep.go:50-54`,
+  `tool/cmd/cairn/main.go:154-168`. [verified]
 - `f:i9rv5i` Seven payload kinds are published, each declaring its own `kind` so a consumer reading a mixed
   stream keys off a field rather than off the shape it sees: `site`, `summary`, `sites`, `logs`,
   `adoptCandidates`, `authCheck`, and `doctor`. Source: `tool/internal/render/json.go:41-50`,
@@ -522,7 +523,7 @@ re-sourced to Go on this tree rather than to the page.
   `level`, `event`, and the event's own `fields`. Under `--json` stderr is silent, so the
   personal-data notice a plain run prints travels in the payload or it reaches nobody. Source:
   `tool/internal/render/json.go:148-169,407-431`, `tool/cmd/cairn/logs.go:70-74`,
-  `tool/cmd/cairn/messages.go:152`. [verified]
+  `tool/cmd/cairn/messages.go:150`. [verified]
 - `f:by9zcg` An adopt candidate carries `worker`, `repo`, `zone`, `domain`, `accountId`, `connected`,
   `adopted`, and `adoptable`. `adoptable` is true only where the Worker serves a Custom Domain,
   since cairn provisions Workers Custom Domains and never Workers Routes, and it was added as an
@@ -976,7 +977,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:r5pqhd` A plain `cairn logs` run prints an unconditional stderr notice that its output carries
   identifiers and is not safe to paste in public; under `--json` stderr carries nothing but an
   error, so the same notice travels as the payload's own `containsPersonalData` field. Source:
-  `tool/cmd/cairn/messages.go:152`, `tool/cmd/cairn/logs.go:70-74`,
+  `tool/cmd/cairn/messages.go:150`, `tool/cmd/cairn/logs.go:70-74`,
   `tool/internal/render/json.go:155-157`. [verified]
 - `f:fyosog` `cairn health --since` and `cairn logs --since` share one grammar, a positive integer followed
   by `m`, `h`, or `d`, which is Go's duration parsing narrowed rather than widened. A bare

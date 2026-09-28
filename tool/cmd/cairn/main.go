@@ -41,8 +41,9 @@ func notifyContext(parent context.Context) (context.Context, context.CancelFunc)
 //
 // The third variable, the Cloudflare account id, is deliberately not registered. It is an
 // identifier rather than a bearer token, it is stored in cleartext in every site record, and
-// `sites list --verbose` and `auth probe` both print it on purpose, so redacting it would blank
-// the diagnostic output an operator reads without protecting anything.
+// `sites list --verbose` and `auth check` (`auth probe` is its hidden alias) both print it on
+// purpose, so redacting it would blank the diagnostic output an operator reads without
+// protecting anything.
 //
 // The flush emits whatever partial line is still buffered, since a scrubber that holds output to
 // a line boundary has to be told when the last line will never arrive.
@@ -130,11 +131,11 @@ func commandPath(args []string) string {
 	return strings.Join(path, " ")
 }
 
-// codedError is an error carrying its own process verdict, returned by a command that measured
-// something without producing a health report: cairn auth probe is the only one. It is a typed
-// error rather than a call into spine.ExitCode because the probe settles provider States and
-// holds no site verdicts, no listing errors, and no expected site count, which are ExitCode's
-// whole input.
+// codedError is an error carrying its own process verdict, returned by a command that computed
+// a verdict without producing a health.Report: cairn auth check (cairn auth probe is its hidden
+// alias) is the only one. The command folds its permission rows into one spine.SiteVerdicts and
+// calls spine.ExitCode itself, then hands the result to main through codedExit, since main's own
+// dispatch has no path that reads a permission row the way it reads a health.Report.
 type codedError struct {
 	verdict spine.Verdict
 }

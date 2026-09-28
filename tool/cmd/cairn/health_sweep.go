@@ -1,6 +1,6 @@
 // health_sweep.go is split out of health.go, which the 300-line-per-file bound
 // (root_test.go's TestNoCommandFileExceedsItsBound) would otherwise exceed: one file for the
-// single-site path, one for the multi-site sweep the 2026-09-20 amendment brought into 1.0.
+// single-site path, one for the multi-site sweep.
 package main
 
 import (
@@ -31,8 +31,9 @@ const maxSweepTimeout = 4 * defaultTimeout
 // stops the sweep after whichever site is already in flight settles; every site still to come is
 // still counted toward the run's exit code the same as a settled site would be, but under --json
 // it is omitted from the emitted stream rather than named, since a plain-text UNKNOWN line and a
-// blank-line separator would corrupt the newline-delimited JSON; Task 20c owns --json's final,
-// documented contract for a site the sweep never reached.
+// blank-line separator would corrupt the newline-delimited JSON. The stream's own Sites count
+// still includes it, so MarshalSummary's arithmetic (Sites minus len(Verdicts)) counts every
+// unreached site as UNKNOWN without a per-site line for it.
 func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, window time.Duration, acks health.Acks) error {
 	entries, listErrs := st.List()
 
@@ -204,9 +205,9 @@ func anyDegraded(rs []health.Report) bool {
 
 // writeSweepTimeout writes the line naming a site the sweep never reached, because the run's
 // budget or a signal ended it first. No health.Report exists for a site the sweep never started,
-// so this is not writeHealthBody's per-check shape; the three columns (verdict, id, reason) are
-// new to cmd/cairn's operator-facing strings, not yet in cmd/cairn/messages.go, which Task 19c-ii
-// creates, and are reviewed at the 1.0 editorial gate.
+// so this is not writeHealthBody's per-check shape. The three columns (verdict, id, reason) are
+// printed directly rather than through messages.go's table: they are identifiers with no prose,
+// the same shape section 2.3 exempts from that table.
 func writeSweepTimeout(w io.Writer, id string) error {
 	_, err := fmt.Fprintf(w, "%s\t%s\t%s\n", spine.VerdictUnknown, id, spine.ReasonTimeout)
 	return err

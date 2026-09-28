@@ -554,3 +554,59 @@ do not merge `draft-docs-0`. Resume at segment B.
   (PR #90), about 0.41M.
 - Next on resume: segment B, tasks 6 and 8 through `pass-execute`, then task 7's chain; the
   dispatch notes carry the port-4173 caveat if it persists and pin the worktree path.
+
+### Close (2026-09-28): tasks 9, 10, and 11
+
+Segment B (tasks 6, 7, 8) and the segment B boundary ran and merged `main` in without a ledger
+entry of their own; this record only covers what task 9, task 10, and this closing task (11)
+carry. Task 9 (conductor-led, `6ad6dee8`, `0f7ab264`, `82c906e2`, `c634f43c`) landed the four
+owner-fact fixes, ran the chain proof on `choose-an-ai-posture.md` for real (not thrown away,
+per this closing task's direction), and forced a register amendment mid-pass: Geoff's Firefox
+review of the published page found three "AI phrasing" headings and an explanation-before-steps
+ordering the register did not yet forbid, fixed in `docs/internal/docs-register.md`
+(`07d5c87e`, `fb5238d1`) and the workstation's `cairn-register-editor` agent definition, not in
+the page. Task 10 (five batches, `716cd90e` through `11bd4809`, full record
+`docs/superpowers/research/2026-09-26-draft-docs-stage-1-record.md`) checked 1204 claims across
+28 of 29 reference pages (the two theme identity pass B moves deferred by Geoff's split), fixed
+33 of 35 discrepancies, and caught one batch's apply agent landing its commit in the wrong
+worktree before the next batch dispatched.
+
+Task 11 merged `main` (PR #96, setup-paid) into `draft-docs-0`, resolving four real conflicts
+(the front-door voice bullets in the register, the AI-posture facts and two stale line numbers,
+the gate-tier docs string, and `gate-tier.mjs`'s `DOCS_GATE`/`SCRIPTS_GATE` constants) keeping
+both sides' intent, then fixed `choose-an-ai-posture.md`'s owed deficiency (fact `f:1ij5h5`): the
+"Pass the posture to the robots route" step now states that a site scaffolded by the current
+setup command needs no edit there, keeping the step and its snippet only for an older scaffold.
+Triaged the whole `docs/internal/docs-friction-log.md`: its two open findings (the
+`admin-toolkit.md` contrast-ratio gap, the page-chain claim-inventory disposition gap) and the
+segment A boundary's two still-open carried items (`check:symbols`'s attached-redirect and
+dropped-continuation gaps, `rendered.test.ts`'s hardcoded port 4173) all promoted to
+`ROADMAP.md`'s Next tier; the boundary's third carried item, the duplicate-shipped-anchor gap,
+verified already fixed by the 2026-09-26 hardening commit (`2d960720`) and needed no filing.
+Read the pass's own non-test code changes since the last simplifier commit (`be6e13e5`):
+`docs-gate.mjs`, `check-editor-quotes.mjs`, `gate-tier.mjs`, `scripts/docs-review/embed.mjs`, and
+`scripts/docs-review/runtime.mjs`; all five were already clean, so no simplification edit was
+made (no Task/Agent tool was available in this closing session to dispatch the
+`code-simplifier` subagent itself; this was a manual read against the same discipline).
+
+Gate: `npm run check:docs-gate` green (single-page mode over `choose-an-ai-posture.md` plus the
+full run, 15 checks); `npm run check` (0/0), `npm test` (exits 0, 1429/1429 after confirming one
+`media-public-base.test.ts` failure was contention from a concurrently running theme-identity
+gate, reproduced clean in isolation), and `npm run check:close` all green in one
+`npm run check && npm test && npm run check:close` gate; `make -C tool check` green separately.
+
+**Cost:** the plan's ceiling is about 9.6M, flagged at about 7.7M planned spend. Recorded pieces:
+segment A (tasks 1-5 plus hardening and simplifier) about 2.7M plus the conductor; task 9's chain
+proof about 0.65M against its 0.2M estimate; task 10's stage 1 about 4.9M against its 4.5M
+checkpoint (stage-1 record). Those three alone total about 8.25M, already past the 7.7M flag and
+within the 9.6M ceiling. Segment B (tasks 6, 7, 8) and this closing task (11) carry no recorded
+`subagent_tokens` figure anywhere in this ledger or the stage records; this entry does not
+invent one where none was measured.
+
+**Attended time:** one execution sitting (task 9's owner review, 2026-09-28): Geoff's Firefox
+read of the published review page across four versions, approving v4 with no edits, counted as
+one sitting regardless of its round count per `pass-core`'s rule.
+
+**Next:** the merge to `main` waits on Geoff's word (this closing task does not merge PR #91 or
+edit `main`); once it lands, the next action is authoring the stage 2a plan (with its extend
+outline) from the approach spec's stage 2 outline.

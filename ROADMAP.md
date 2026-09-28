@@ -930,6 +930,46 @@ the named human gates only):**
   A watchdog that fails a browser-lane gate after a bounded silence would have surfaced it in
   minutes. Trigger: the next gate run that has to be killed by hand.
 
+- **`check:symbols` still misses an attached shell redirect and drops a continuation left pending
+  at a fence close (draft docs pass 0+1, segment A, 2026-09-26).** The 2026-09-26 hardening
+  (`2d960720`) truncates a `cairn` line's word list at a shell operator or `#` comment written as
+  its own word, so `cairn logs --json | jq --arg x y` no longer blames `cairn` for `jq`'s flag, but
+  an operator glued to its target with no space (`2>&1`, `>out.json`) still tokenizes as one word
+  and is read as a `cairn` argument. Separately, when a fence's last line ends with a `\`
+  continuation and the fence then closes with no further line, `extractCairnLines` sets `pending`
+  to `null` without ever pushing it to `lines`, so that invocation's flags are never checked at
+  all. Trigger: a docs page whose `cairn` line actually is silently unchecked this way, or the next
+  pass that touches `extractCairnLines`.
+
+- **`rendered.test.ts`'s `BASE_URL` contract tests assume nothing listens on `localhost:4173`
+  (draft docs pass 0+1, segment A, 2026-09-26).** The tests failed for the length of the segment
+  because another concurrent worktree's `sirv` preview server held that port; the suite never
+  starts a server itself, so a real one on the assumed port makes an unrelated regression look like
+  the tests' own default-URL assertions failing. Trigger: the next concurrent-pass collision on
+  this port, or the next pass that touches this file, either takes a free ephemeral port instead of
+  the hardcoded default.
+
+- **`admin-toolkit.md`'s outline-chip contrast ratios need re-measuring (draft docs stage 1,
+  2026-09-28).** The outline-chip contrast paragraph once cited two specific ratios (about 2.4:1
+  against a card ground, 2.97:1 against a page ground) for the
+  `color-mix(in oklab, currentColor 55%, transparent)` hairline inside a `text-muted` ancestor;
+  neither traced to a source in the repo (no test, no audit rule output, no computed constant), so
+  stage 1's batch 4/5 fact review removed them and the page now states only the traceable claim
+  (the mix clears the audit's 3:1 border-contrast floor against both grounds). Trigger:
+  re-measure the actual ratios, ideally with the rendered `border-contrast` rule itself against a
+  `text-muted` ancestor fixture, before restoring specific numbers to the page.
+
+- **The page-chain's claim inventory has no disposition for a claim a redraft relocates to a
+  linked reference entry (draft docs pass 0+1, task 9, 2026-09-28).** Task 9's chain-proof redraft
+  of `choose-an-ai-posture.md` moved the crawler-decline listing and the limits of declining into
+  the `buildRobots` reference entry, which the register's task-guide anatomy wants (explanation
+  subordinate to the steps), but the page-inputs step's claim inventory still lists those sentences
+  as claims the extend page itself carries, so a fact reader checking the brief against the page
+  reads it as dropped content. Detail:
+  `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-proof.md`, "Finding: the page-chain's
+  brief format and the register's anatomy disagree." Trigger: the next page-chain redraft that
+  relocates a claim to a linked page, or the stage 2 pilot if it hits this first.
+
 - **Report the drawer `:where()` specificity defect upstream to daisyUI (pre-cut, 2026-09-21).**
   `components/drawer.css` releases its open panel's `will-change` through a rule whose prelude is
   wrapped in `:where()`, which zeroes the prelude, so the release measures (0,1,0) against its own

@@ -533,12 +533,12 @@ re-sourced to Go on this tree rather than to the page.
   added to any of them joins the published vocabulary with no second list to keep in step: nine
   fixed codes, one `reason.park.<code>` per park code, and one `reason.api.<reason>` per provider
   reason, 32 in all. Source: `tool/internal/spine/outcome.go:56-76,95-119`,
-  `tool/internal/spine/park.go:11-23,26-28`, `tool/internal/providers/errors.go:17-58`.
+  `tool/internal/spine/park.go:11-23,26-28`, `tool/internal/providers/errors.go:16-65`.
   [verified]
 - `f:oqkzuq` `reason.api.request-rejected` names cairn's own outgoing request being wrong, an HTTP 400 no
   operator can fix, and is kept out of the catch-all for that reason. A rate limit never answers
   failing either: the tool being throttled is not the site being broken. Source:
-  `tool/internal/providers/errors.go:32-37`, `tool/internal/spine/outcome.go:121-142`. [verified]
+  `tool/internal/providers/errors.go:31-36`, `tool/internal/spine/outcome.go:121-142`. [verified]
 - `f:y0ocr0` The condition ids a payload can carry are ported from the engine's own registry and are the same
   vocabulary the engine emits. Source: `tool/internal/spine/condition.go:19-45`. [verified]
 - `f:0typfn` On the wire a site's `checks` sort by id and `acknowledged` sorts alphabetically, so two runs of

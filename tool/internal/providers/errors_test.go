@@ -46,6 +46,33 @@ func TestReasonForStatusAgreesAcrossProvidersForStatusOnlyCodes(t *testing.T) {
 	}
 }
 
+// TestReasonNamesCoverEveryReason asserts reasonNames carries a non-empty name for every index
+// from 0 up to (but excluding) reasonCount, so a Reason constant added to the block above
+// reasonCount and never given an entry in reasonNames fails here instead of silently naming
+// "unknown". reasonNames is declared [reasonCount]string, so its length cannot exceed reasonCount
+// at compile time; this test covers the direction the compiler cannot, a missing entry.
+func TestReasonNamesCoverEveryReason(t *testing.T) {
+	for r := Reason(0); r < reasonCount; r++ {
+		if reasonNames[r] == "" {
+			t.Errorf("Reason(%d) has no entry in reasonNames", int(r))
+		}
+	}
+}
+
+// TestReasonsMatchesReasonNames asserts Reasons returns exactly the indices reasonNames carries,
+// in order, so the published vocabulary and the String lookup can never diverge.
+func TestReasonsMatchesReasonNames(t *testing.T) {
+	got := Reasons()
+	if len(got) != len(reasonNames) {
+		t.Fatalf("Reasons() has %d entries, want %d (len(reasonNames))", len(got), len(reasonNames))
+	}
+	for i, r := range got {
+		if int(r) != i {
+			t.Errorf("Reasons()[%d] = %d, want %d", i, int(r), i)
+		}
+	}
+}
+
 // TestAPIErrorAndGitHubErrorSatisfyProviderError asserts both response failure types implement
 // ProviderError, so a caller outside this package has one verdict function instead of one per
 // provider.

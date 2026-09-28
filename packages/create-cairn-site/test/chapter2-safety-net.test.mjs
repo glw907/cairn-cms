@@ -157,7 +157,7 @@ function confirmRouting({ domain, carryOver, email } = {}) {
   return async ({ message }) => {
     if (message.includes('Connect a domain')) return answer('domain', domain);
     if (message.includes('Copy these records')) return answer('carry-over', carryOver);
-    if (message.includes('Workers Paid')) return answer('email', email);
+    if (message.includes('email sign-in')) return answer('email', email);
     throw new Error(`confirmRouting: unrecognized confirm message: ${message}`);
   };
 }
@@ -295,7 +295,7 @@ test('interruption: a record at live runs every hop exactly once through to doma
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const zoneCreates = cloudflare.requests.filter((r) => r.method === 'POST' && r.path === '/client/v4/zones');
   assert.equal(zoneCreates.length, 1, 'zone create must run exactly once');
@@ -307,7 +307,7 @@ test('interruption: a record at live runs every hop exactly once through to doma
   assert.equal(deploys.length, 1, 'wrangler deploy must run exactly once');
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.step, 'email-declined');
   assert.equal(state.cloudflare.domain, domain);
 
   // This zone arrives already active (setupCloudflare's zoneStatus above), so the carry-over hop
@@ -343,7 +343,7 @@ test('interruption: a record at zone-created reaches domain-live without repeati
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const since = seeded.cloudflare.requests.slice(requestsBefore);
   assert.equal(
@@ -353,7 +353,7 @@ test('interruption: a record at zone-created reaches domain-live without repeati
   );
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.step, 'email-declined');
   assert.equal(state.cloudflare.zoneId, seeded.zoneId, 'the seeded zoneId must survive unchanged');
   assert.deepEqual(state.cloudflare.nameServers, seeded.nameServers, 'the seeded nameServers must survive unchanged');
   assert.equal(state.cloudflare.domain, domain, 'the seeded domain must survive unchanged');
@@ -385,7 +385,7 @@ test('interruption: a record at records-carried reaches domain-live without repe
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const since = seeded.cloudflare.requests.slice(requestsBefore);
   assert.equal(
@@ -396,7 +396,7 @@ test('interruption: a record at records-carried reaches domain-live without repe
   assert.equal(since.filter((r) => r.method === 'POST' && r.path === '/client/v4/zones').length, 0);
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.step, 'email-declined');
   assert.deepEqual(state.cloudflare.carryOver, seeded.carryOver, 'the seeded carryOver must survive unchanged');
 });
 
@@ -425,7 +425,7 @@ test('interruption: a record at delegated reaches domain-live via exactly one cu
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const since = seeded.cloudflare.requests.slice(requestsBefore);
   assert.equal(since.filter((r) => r.method === 'POST' && r.path === '/client/v4/zones').length, 0);
@@ -438,7 +438,7 @@ test('interruption: a record at delegated reaches domain-live via exactly one cu
   assert.equal(deploys.length, 1, 'wrangler deploy must run exactly once');
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.step, 'email-declined');
 });
 
 test('interruption: a resume that parks before the cutover shells out to wrangler for nothing', async (t) => {
@@ -530,7 +530,7 @@ test('interruption: a genuine park then a later re-run continues from the same s
     resolveNs: resolveNsStub,
     fetchImpl: alwaysMatchingFetch(),
   });
-  assert.equal(secondOutcome.outcome, 'paid-plan-declined');
+  assert.equal(secondOutcome.outcome, 'email-declined');
   assert.equal(resolveNsCalls, 2, 'the second run must re-detect delegation, not reuse the first answer');
 
   const since = seeded.cloudflare.requests.slice(requestsBeforeSecondRun);
@@ -538,7 +538,7 @@ test('interruption: a genuine park then a later re-run continues from the same s
   assert.equal(since.filter((r) => r.method === 'POST' && r.path.includes('/dns_records')).length, 0);
 
   const finalState = await loadSite(siteId);
-  assert.equal(finalState.step, 'paid-plan-declined');
+  assert.equal(finalState.step, 'email-declined');
 });
 
 // --- Deliverable 2: the secret sweep ------------------------------------------------------------
@@ -729,12 +729,12 @@ test('secret sweep: reaching a terminal step deletes the token everywhere, and t
     promptSecretFn: async () => plantedToken,
     fetchImpl: alwaysMatchingFetch(),
   });
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   assert.ok(TERMINAL_STEPS.length > 0);
   const terminalStep = TERMINAL_STEPS[0];
   // The decline above already deleted the token as part of reaching its OWN terminal step
-  // (paid-plan-declined); replant it here so the short-circuit below has a real token to prove it
+  // (email-declined); replant it here so the short-circuit below has a real token to prove it
   // deletes, rather than proving nothing against an already-empty field. This still synthesizes
   // arriving at TERMINAL_STEPS[0] ('email-live') the way chapter2.test.mjs already does for the
   // token-deletion rule itself.

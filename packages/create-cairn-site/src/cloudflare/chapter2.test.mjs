@@ -231,7 +231,7 @@ function confirmRouting({ domain, email } = {}) {
       if (domain === undefined) throw new Error('the domain gate must not be asked on this record');
       return domain;
     }
-    if (message.includes('Workers Paid')) {
+    if (message.includes('email sign-in')) {
       if (email === undefined) throw new Error('the email gate must not be asked on this record');
       return email;
     }
@@ -374,10 +374,10 @@ test('admission: interactive consent proceeds to ask for and save the domain', a
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const state = await loadSite('site-consent');
-  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.step, 'email-declined');
   assert.equal(state.cloudflare.domain, 'consented-domain.example');
 
   const zoneCreates = cloudflare.requests.filter((r) => r.method === 'POST' && r.path === '/client/v4/zones');
@@ -457,9 +457,9 @@ function authoritativeResolve(domain) {
   };
 }
 
-// --yes with no --email declines the email half unattended (never committing an owner to a
-// subscription without asking), so this run is fully unattended end to end and lands on
-// paid-plan-declined rather than domain-live.
+// --yes with no --email declines the email half unattended (never turning email sign-in on
+// without asking), so this run is fully unattended end to end and lands on email-declined
+// rather than domain-live.
 test('admission: --yes --domain proceeds fully unattended, with no prompt ever called', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -484,10 +484,10 @@ test('admission: --yes --domain proceeds fully unattended, with no prompt ever c
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const state = await loadSite('site-unattended');
-  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.step, 'email-declined');
   assert.equal(state.cloudflare.domain, 'unattended-domain.example');
 });
 
@@ -699,7 +699,7 @@ test('resume: a record at records-carried never re-reads records', async (t) => 
   // alreadyActive short-circuits checkDelegation to 'active' with no NS lookup, so this reaches
   // the cutover and finishes, then declines email; the load-bearing proof is that `resolve`
   // above was never called.
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const dnsCreatesAfterSeed = cloudflare.requests.filter(
     (r) => r.method === 'POST' && r.path.includes('/dns_records'),
@@ -747,7 +747,7 @@ test('resume: a record at delegated skips straight to the cutover', async (t) =>
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
   const attachRequests = cloudflare.requests.filter((r) => r.path.includes('/workers/domains') && r.method === 'PUT');
   assert.equal(attachRequests.length, 1);
 });
@@ -821,7 +821,7 @@ test('an interactive run threads waitForClear into cutOverHostname: the console 
     createConsoleServerFn: () => consoleServer.handle,
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
   assert.equal(state.rounds, 4, 'three held probes, then the one-shot re-check after the redeploy');
   assert.equal(holdRecorder.calls.length, 1, 'the seam is composed exactly once, for the pre-redeploy confirm');
   // The row an interrupt lands on before the first probe has read anything. The chapter is the
@@ -1069,10 +1069,10 @@ test('records: an already-active zone skips the read and gate entirely, and pers
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const state = await loadSite('site-already-active');
-  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.step, 'email-declined');
   assert.equal(state.cloudflare.carryOver.outcome, 'not-needed');
 
   const dnsWrites = cloudflare.requests.filter(
@@ -1292,7 +1292,7 @@ test('completion: re-entry at domain-live re-runs ensureApiToken', async (t) => 
     promptSecretFn: mustNotBeCalled('promptSecretFn'),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const state = await loadSite('site-reentry');
   assert.equal(state.cloudflare.domain, 'reentry-test.example', 'the seeded domain must survive the decline');
@@ -1350,10 +1350,10 @@ test('email admission: a decline records, deletes the token, exits 0, and prints
     text: mustNotBeCalled('text'),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const state = await loadSite('site-email-decline');
-  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.step, 'email-declined');
   assert.equal('apiToken' in state.cloudflare, false, 'the token must be deleted on decline');
   assert.ok(logs.some((line) => line.includes('--sign-in')));
 });
@@ -1362,7 +1362,7 @@ test('email admission: a re-run after a decline prints the re-offered copy', asy
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   await seedLiveSite('site-email-reoffer', dir, {
-    step: 'paid-plan-declined',
+    step: 'email-declined',
     cloudflare: { emailDeclinedAt: new Date().toISOString() },
   });
 
@@ -1380,7 +1380,7 @@ test('email admission: a re-run after a decline prints the re-offered copy', asy
     text: mustNotBeCalled('text'),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
   assert.ok(logs.some((line) => line.includes('chose again')), 'a re-run must print the reoffered copy, not the first-decline copy');
 });
 
@@ -1403,7 +1403,7 @@ test('email admission: --yes without --email declines and names the flag', async
     text: mustNotBeCalled('text'),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
   assert.ok(logs.some((line) => line.includes('--email')), 'the skip message must name --email');
 });
 
@@ -1773,7 +1773,7 @@ test('email terminal state: a recorded decline deletes the token from the re-rea
     text: mustNotBeCalled('text'),
   });
 
-  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(outcome.outcome, 'email-declined');
 
   const state = await loadSite('site-email-terminal-decline');
   assert.equal('apiToken' in state.cloudflare, false, 'the token must be gone from the re-read record');

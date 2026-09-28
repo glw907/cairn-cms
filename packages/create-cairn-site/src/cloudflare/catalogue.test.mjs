@@ -39,6 +39,7 @@ const EXPECTED_KIND = {
   'custom-domain-failed': 'act',
   'cutover-deploy-failed': 'act',
   'paid-plan-declined': 'declined',
+  'email-declined': 'declined',
   'paid-plan-missing': 'act',
   'email-onboarding-failed': 'act',
   'email-not-ready': 'wait',
@@ -104,6 +105,7 @@ const SAMPLE_PARAMS = {
   'custom-domain-failed': { dir: './alpine', detail: '409: hostname already exists' },
   'cutover-deploy-failed': { dir: './alpine', detail: 'ERROR: script size limit exceeded' },
   'paid-plan-declined': { dir: './alpine' },
+  'email-declined': { dir: './alpine' },
   'paid-plan-missing': { dir: './alpine' },
   'email-onboarding-failed': { dir: './alpine', detail: 'Cloudflare: 403 not entitled' },
   'email-not-ready': { dir: './alpine', domain: 'example.com' },
@@ -182,8 +184,9 @@ test('every catalogue code message ends in exactly one Next: line', () => {
 
 test('the Builds rows add exactly eight codes, none colliding with build-failed or build-not-runnable', () => {
   // 37 pre-Builds codes, plus Task 2's split: hostname-propagating retired (-1), replaced by
-  // hostname-records-absent and hostname-resolver-lagging (+2).
-  const BASELINE_CODE_COUNT = 38;
+  // hostname-records-absent and hostname-resolver-lagging (+2), plus email-declined, split out
+  // from paid-plan-declined once that code moved to chapter 1's pre-deploy consent (+1).
+  const BASELINE_CODE_COUNT = 39;
   const NEW_BUILDS_CODES = [
     'builds-app-not-authorized',
     'builds-repo-not-selected',
@@ -294,14 +297,14 @@ test('deploy-failed matches the plan-specified text exactly', () => {
   );
 });
 
-test('subdomain-unregistered matches the plan-specified text exactly', () => {
+test('subdomain-unregistered names the workers.dev subdomain and that registering it costs nothing', () => {
   const err = cloudflareError('subdomain-unregistered', { dir: './alpine' });
   assert.equal(
     err.message,
-    'Your Cloudflare account does not have its free workers.dev subdomain yet, so the site has ' +
-      'nowhere to deploy.\n' +
+    'Your Cloudflare account does not have a workers.dev subdomain yet, and registering one ' +
+      'costs nothing, so the site has nowhere to deploy.\n' +
       'Next: open https://dash.cloudflare.com/?to=/:account/workers-and-pages and accept the ' +
-      'suggested workers.dev subdomain (one click, free), then re-run npx create-cairn-site ' +
+      'suggested workers.dev subdomain (one click, no charge), then re-run npx create-cairn-site ' +
       '--dir ./alpine.'
   );
 });
@@ -413,19 +416,31 @@ test('carry-over-declined now reports the declined kind', () => {
   assert.equal(err.catalogue.kind, 'declined');
 });
 
-test('paid-plan-declined states Workers Paid is needed from the first deploy, the --sign-in path, and the 30-day window', () => {
+test('paid-plan-declined states Workers Paid is needed from the first deploy, and that nothing was deployed', () => {
   const err = cloudflareError('paid-plan-declined', { dir: './alpine' });
   assert.match(err.message, /first deploy/);
+  assert.match(err.message, /Nothing was installed, built, or deployed/);
+  assert.ok(err.message.includes('./alpine'), 'should interpolate dir');
+  assert.match(err.message, /Next:/);
+});
+
+test('email-declined states the --sign-in path and the 30-day window, without presenting Workers Paid as a fresh choice', () => {
+  const err = cloudflareError('email-declined', { dir: './alpine' });
   assert.match(err.message, /editing and publishing/);
   assert.match(err.message, /signing in/);
   assert.ok(err.message.includes('--sign-in'), 'should name the --sign-in recovery command');
   assert.ok(err.message.includes('./alpine'), 'should interpolate dir');
   assert.ok(err.message.includes('30 days'), 'should name the 30-day sign-in window');
+  assert.equal(
+    err.message.includes('Workers Paid'),
+    false,
+    'should not present Workers Paid as a fresh choice; the plan is already on',
+  );
 });
 
-test('paid-plan-declined differs between its first and re-offered forms', () => {
-  const first = cloudflareError('paid-plan-declined', { dir: './alpine' });
-  const reoffered = cloudflareError('paid-plan-declined', { dir: './alpine', reoffered: true });
+test('email-declined differs between its first and re-offered forms', () => {
+  const first = cloudflareError('email-declined', { dir: './alpine' });
+  const reoffered = cloudflareError('email-declined', { dir: './alpine', reoffered: true });
   assert.notEqual(first.message, reoffered.message);
   assert.match(reoffered.message, /Next:/);
 });

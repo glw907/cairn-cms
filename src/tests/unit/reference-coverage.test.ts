@@ -20,6 +20,10 @@ import {
   assertDocumentedUnstableReasoned,
   DOCUMENTED_UNSTABLE_PROPS,
   CONFIG,
+  deriveConfig,
+  exportKeyToSubpath,
+  SUBPATH_SETTINGS,
+  SUBPATH_EXCLUSIONS,
 } from '../../../scripts/checks/reference-coverage.mjs';
 import { loadRegistry } from '../../../scripts/checks/check-surface-leaks.mjs';
 
@@ -407,6 +411,65 @@ describe('NARRATIVE_CONTEXT_ALLOWLIST', () => {
 
   it('carries no entries now that the render trio is re-homed', () => {
     expect(NARRATIVE_CONTEXT_ALLOWLIST).toEqual([]);
+  });
+});
+
+describe('exportKeyToSubpath', () => {
+  it('keeps the root key as itself', () => {
+    expect(exportKeyToSubpath('.')).toBe('.');
+  });
+
+  it('drops the leading dot from every other key', () => {
+    expect(exportKeyToSubpath('./sveltekit')).toBe('/sveltekit');
+    expect(exportKeyToSubpath('./reproductions/manifest')).toBe('/reproductions/manifest');
+  });
+});
+
+describe('deriveConfig (a new export subpath must be mapped or excluded, never silently OK)', () => {
+  it('fails on an exports subpath with no CONFIG mapping and no exclusion', () => {
+    const exportsMap = { '.': {}, './new-thing': {} };
+    const settings = { '.': { dts: 'dist/index.d.ts', page: 'docs/reference/core.md' } };
+    expect(() => deriveConfig({ exportsMap, settings, exclusions: [] })).toThrow(/new-thing/);
+  });
+
+  it('fails on a stale exclusion naming a subpath no longer in exports', () => {
+    const exportsMap = { '.': {} };
+    const settings = { '.': { dts: 'dist/index.d.ts', page: 'docs/reference/core.md' } };
+    const exclusions = [{ subpath: '/retired', reason: 'no longer exported.' }];
+    expect(() => deriveConfig({ exportsMap, settings, exclusions })).toThrow(/stale exclusion/);
+    expect(() => deriveConfig({ exportsMap, settings, exclusions })).toThrow(/retired/);
+  });
+
+  it('fails on an exclusion carrying no reason (the fail-unless-recorded idiom)', () => {
+    const exportsMap = { '.': {}, './admin-sources.css': 'x' };
+    const settings = { '.': { dts: 'dist/index.d.ts', page: 'docs/reference/core.md' } };
+    const exclusions = [{ subpath: '/admin-sources.css', reason: '' }];
+    expect(() => deriveConfig({ exportsMap, settings, exclusions })).toThrow(/no reason/);
+  });
+
+  it('excludes a reasoned subpath and maps every other one', () => {
+    const exportsMap = { '.': {}, './admin-sources.css': 'x' };
+    const settings = { '.': { dts: 'dist/index.d.ts', page: 'docs/reference/core.md' } };
+    const exclusions = [{ subpath: '/admin-sources.css', reason: 'a CSS asset, documented elsewhere.' }];
+    expect(deriveConfig({ exportsMap, settings, exclusions })).toEqual([
+      { subpath: '.', dts: 'dist/index.d.ts', page: 'docs/reference/core.md' },
+    ]);
+  });
+
+  it('derives the real CONFIG from package.json exports with no unmapped or stale subpath', () => {
+    expect(() =>
+      deriveConfig({ exportsMap: JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).exports }),
+    ).not.toThrow();
+  });
+
+  it('carries every SUBPATH_SETTINGS subpath, and only those, in the real CONFIG', () => {
+    expect(CONFIG.map((e: { subpath: string }) => e.subpath).sort()).toEqual(Object.keys(SUBPATH_SETTINGS).sort());
+  });
+
+  it('reasons every real SUBPATH_EXCLUSIONS entry', () => {
+    for (const exclusion of SUBPATH_EXCLUSIONS) {
+      expect(exclusion.reason.trim().length).toBeGreaterThan(0);
+    }
   });
 });
 

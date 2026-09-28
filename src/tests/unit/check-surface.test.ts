@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { describe, it, expect, afterEach } from 'vitest';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { diffSurface, findHomeViolations } from '../../../scripts/checks/check-surface.mjs';
+import { moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
+import { diffSurface, findHomeViolations, renderExport } from '../../../scripts/checks/check-surface.mjs';
 
 const SNAPSHOT = resolve(
   fileURLToPath(new URL('../../../docs/internal/api-surface.md', import.meta.url)),
@@ -120,6 +122,64 @@ describe('diffSurface', () => {
       expect(result.drift[0].subpath).toBe('.');
       expect(result.drift[0].changed[0].name).toBe('fields');
     }
+  });
+});
+
+// An index signature (`[key: string]: T`) is part of an interface's declared shape: dropping one
+// changes what a consumer can assign or index into, the same class of drift a renamed named field
+// causes. `getPropertiesOfType` alone never sees it, so the rendered listing must fold it in
+// explicitly (renderExport is the fixture-testable seam; renderInterface is not exported).
+describe('renderExport (index signatures)', () => {
+  const tmpDirs: string[] = [];
+  afterEach(() => {
+    for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function writeFixture(source: string) {
+    const dir = mkdtempSync(join(tmpdir(), 'check-surface-'));
+    tmpDirs.push(dir);
+    const dtsPath = join(dir, 'fixture.d.ts');
+    writeFileSync(dtsPath, source);
+    return dtsPath;
+  }
+
+  it('renders a string index signature, and differs from the same interface without one', () => {
+    const dtsPath = writeFixture(
+      [
+        'export interface WithIndex {',
+        '  known: string;',
+        '  [key: string]: unknown;',
+        '}',
+        'export interface WithoutIndex {',
+        '  known: string;',
+        '}',
+      ].join('\n'),
+    );
+    const { checker, symbols } = moduleExports(dtsPath);
+    const withIndex = symbols.find((s) => s.name === 'WithIndex')!;
+    const withoutIndex = symbols.find((s) => s.name === 'WithoutIndex')!;
+    const renderedWithIndex = renderExport(checker, withIndex);
+    const renderedWithoutIndex = renderExport(checker, withoutIndex);
+    expect(renderedWithIndex).toContain('[key: string]: unknown');
+    expect(renderedWithIndex).not.toBe(renderedWithoutIndex);
+  });
+
+  it('renders a readonly number index signature', () => {
+    const dtsPath = writeFixture(
+      ['export interface Rows {', '  readonly [index: number]: string;', '}'].join('\n'),
+    );
+    const { checker, symbols } = moduleExports(dtsPath);
+    const rows = symbols.find((s) => s.name === 'Rows')!;
+    expect(renderExport(checker, rows)).toContain('readonly [key: number]: string');
+  });
+
+  it('renders a symbol index signature', () => {
+    const dtsPath = writeFixture(
+      ['export interface Tagged {', '  [key: symbol]: unknown;', '}'].join('\n'),
+    );
+    const { checker, symbols } = moduleExports(dtsPath);
+    const tagged = symbols.find((s) => s.name === 'Tagged')!;
+    expect(renderExport(checker, tagged)).toContain('[key: symbol]: unknown');
   });
 });
 

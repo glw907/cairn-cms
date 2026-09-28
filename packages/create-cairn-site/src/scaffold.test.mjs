@@ -459,3 +459,15 @@ test('the hand-over block names the baked agent guidance and cairn-guidance chec
   assert.match(text, /cairn-guidance check/, 'the hand-over block must name cairn-guidance check');
   assert.match(text, /\.claude\//, 'the hand-over block must name the baked .claude/ guidance');
 });
+
+test('the doctor reminder prints the exact go install literal and release-page URL', () => {
+  const text = handoverText({ dir: 'alpine-club' });
+  assert.ok(
+    text.includes('go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest'),
+    'the doctor reminder must print the exact go install command for the cairn tool',
+  );
+  assert.ok(
+    text.includes('https://github.com/glw907/cairn-cms/releases'),
+    'the doctor reminder must print the exact release-page URL as a fallback to go install',
+  );
+});

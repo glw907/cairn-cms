@@ -117,6 +117,48 @@ task's gate-string escalation in one line; no planning miss reached him.
 
 ## Docs reset reader-validation line, stopped, 2026-09-25 to 26
 
+## Chores batch: CI report uploads, check fixes, two docs fixes, 2026-09-27
+
+Branch `chores-0927`. Eight ROADMAP items, each a small, independently gated fix:
+
+- `e2e.yml` now uploads the Playwright report and `test-results` on failure, with the html
+  reporter enabled so the upload is not empty.
+- `check:dev-package` fails on a `package.json` / `packages/cairn-cms-dev/package.json` version
+  mismatch.
+- `publish.yml` installs with `npm ci` instead of `npm install --no-audit --no-fund`.
+- A scaffolder test now pins `create-cairn-site`'s install-pointer literal and release URL.
+- `check:surface` renders index signatures, and `npm run check:surface -- --update` reaches
+  `check-surface.mjs` (the forwarding bug is fixed); the component-props half of the sibling
+  `check:reference` hole stays open.
+- `check:reference` derives its subpath list from `package.json`'s `exports` instead of a
+  hardcoded `CONFIG` list.
+- `configure-rendering.md` teaches the working container-directive syntax (`:::callout[Title]{...}
+  ... :::`) instead of the leaf form that renders as literal text.
+- `IconSet`'s reference documents that a glyph path must be a filled shape on a `0 0 256 256` box;
+  the showcase's `flag`/`snowflake` redraw to closed-shape paths stays open, owned by theme
+  identity pass C.
+
+Also repointed facts bullet `f:01tx08` to the moved peer-dependency lines (`06d66be7`).
+
+**What the gates caught.** The e2e upload task's first round found CI writes no HTML report by
+default (Playwright's own default reporter is `dot` on CI), so the upload-on-failure step would
+have carried an empty `playwright-report` directory; a second commit added `--reporter=dot,html`.
+The `configure-rendering.md` fix escalated past its implementer, but only on the pre-existing
+`f:01tx08` facts drift, not on the directive-syntax fix itself. The `IconSet` task found and fixed
+a `svelte-check` error that the `check:surface` task (three tasks earlier) had introduced, an
+index-signature type mismatch in `check-surface.mjs`'s `keyOrder` map, because that task's light
+gate did not include `npm run check`.
+
+**What a later pass would be wrong to rediscover.**
+
+- A light-lane gate for a scripts/checks change (`.mjs`) must still include `npm run check`:
+  `svelte-check` type-checks JSDoc in plain `.mjs` files, so a narrower gate can pass while leaving
+  a type error for a later task to trip over.
+- The chain runner halts at an escalation rather than skipping forward, so an escalated task's
+  later siblings need a fresh relaunch, not a resume.
+
+
+
 Geoff stopped docs reset pass 2a mid-pilot and closed the reader-validation line: "cut our losses,
 clean up, and record the failure." The line built simulated readers (headless Claude sessions in
 podman, one per audience job) meant to gate a drafting chain once they proved they catch planted

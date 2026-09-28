@@ -1759,6 +1759,85 @@ verdict and the commit log.
   B's task 0 reads this entry: pass A is closed, unmerged, S3 pending on async review. The closed
   head is the commit that adds this entry.
 
+### Task 15, S3's corrections (2026-09-28, second run)
+
+Geoff's S3 verdict, verbatim: "all per recommendation."
+
+- **Q1** keep the status chips' quiet gray fill (no change). **Q3** keep the plain button's 5%
+  hover step (no change). **Q9** keep the editor footer's small controls (no change). **Q12**
+  keep the 320 Tags slug mid-token break (no change). **Q13** keep the 2560 posts column width
+  for pass A (no change). **Q21** confirmed: draft docs resume after the A-B-C merge (ledger only,
+  no file).
+- **Q2** moves the Editors role chip to the quiet register:
+  `src/lib/components/ManageEditors.svelte:115`.
+- **Q4** resets a radio-as-join-item's own UA margin on every edge daisyUI's join rule does not
+  restate: `src/lib/components/cairn-admin.css:665` (`@layer base`, item 8).
+- **Q5** gives an uncolored selected `btn-outline`/`btn-dash` the plain button's own neutral wash:
+  `src/lib/components/cairn-admin.css:1344`. The checked-radio-join form (`BtnActiveDarkGround.test.ts`,
+  in the task 8 gate string) failed contrast on the first pass, since daisyUI's own `:checked` rule
+  pairs `--btn-fg: var(--color-primary-content)` with any checked `.btn` regardless of variant; the
+  rule now also resets `--btn-fg` to `var(--color-base-content)`, caught by the real gate run before
+  commit.
+- **Q6** gives `dropdown-content.menu` the warm elevation vocabulary:
+  `src/lib/components/cairn-admin.css:1480` (existing selector, `box-shadow` declaration added, no
+  new selector); the theme-kit fixture's own redundant `shadow-sm` (daisyUI's own black shadow, which
+  would have kept winning over the rule) is dropped from
+  `examples/showcase/src/routes/admin/theme-kit/+page.svelte`.
+- **Q7** paints the admin root's own page ground: `src/lib/components/cairn-admin.css:866`
+  (`@layer components`, a new `::before`, `position: fixed`). Verified correct in a real scrolled
+  browser (manual capture); Playwright's `fullPage` screenshot does not repaint a `position: fixed`
+  element past the themed layout's own flow-box bottom, so the S4 regen's own theme-kit baselines
+  may still show a thin residual band exactly the width of the fixture's forced-open dropdown
+  overhang. This is a capture-tooling limitation (documented in the report to the conductor), not
+  an unfixed rule; flagged here so a later pass does not re-open it expecting a different baseline.
+- **Q8** sizes the media library's density toggle level with its `btn-sm` neighbor:
+  `src/lib/components/CairnMediaLibrary.svelte:1275`.
+- **Q10** gives the media detail panel's scrollable body more bottom padding:
+  `src/lib/components/CairnMediaLibrary.svelte:983` (`p-4` to `p-4 pb-8`).
+- **Q11** sizes the Tidy settings heading pills to their own content (`size="xs"`, no floor, in
+  place of `size="sm"`'s 5rem floor): `src/lib/components/CairnTidySettings.svelte:436,483`.
+- **Q14** drops the browser's own UA paragraph margin on a stacked alert's title and body:
+  `src/lib/components/ConceptList.svelte:334,336,338` and the theme-kit fixture's identical markup.
+- **Q15** drops the search trigger's label to `sr-only` below `sm`, keeping its accessible name:
+  `src/lib/components/CairnAdminShell.svelte:861,868`.
+- **Q16** gives the command palette's box top padding matching the focus ring's own outward reach:
+  `src/lib/components/CairnAdminShell.svelte:916` (`p-0` to `p-0 pt-1`).
+- **Q17** splits the soft primary's hover step behind `@media (hover: hover)`, keeping
+  `:focus-visible` unconditional: `src/lib/components/cairn-admin.css:1158`.
+- **Q18** splits `EditorToolbar`'s Write/Preview seam-squaring the same way:
+  `src/lib/components/EditorToolbar.svelte:519`.
+- **Q19** fixes the theme-kit fixture's own title, section names, and dropdown `aria-expanded`:
+  `examples/showcase/src/routes/admin/theme-kit/+page.svelte:9,18,74,95,146,173`.
+- **Q20** rounds the Tidy settings radiogroup's own end buttons instead of clipping a focus ring
+  via `overflow-hidden`: `src/lib/components/CairnTidySettings.svelte:508,524` (confirmed clipping
+  first, in an isolated Chromium render, before writing the fix).
+- **Budget:** `componentsLayerCap` moves from 17 to 18 for Q7's `::before` rule; `idiomLayerCap`
+  moves from 30 to 32 for Q5's wash rule and Q17's split
+  (`scripts/checks/custom-surface-budget.json`).
+- **New shipped classes** (`admin-sheet-inventory.test.ts`'s snapshot, regenerated): `max-sm:sr-only`,
+  `max-sm:w-auto` (Q15), `pb-8` (Q10), recorded in `CHANGELOG.md`'s `## Unreleased` window.
+- **ROADMAP.md:** every item in "Theme identity pass A's carried items" this run settles is
+  removed; the entry itself stays for its two remaining items (the `paint`-class coverage notes,
+  the showcase `theme.css` unscoped `.btn-outline` rule), neither touched by this run.
+- **Tests added**, one per fixable rule: `examples/showcase/e2e/theme-kit.spec.ts` (Q4, Q5, Q6,
+  Q17, Q19); `src/tests/component/ManageEditors.test.ts` (Q2); `src/tests/component/CairnMediaLibrary.test.ts`
+  (Q8, Q10); `src/tests/component/tidy-settings.test.ts` (Q11, Q20);
+  `src/tests/component/ConceptList.test.ts` (Q14); `src/tests/component/CairnAdminShell.test.ts`
+  (Q15, Q16). Q18's existing keyboard-focus test (`EditorToolbar.test.ts`, "squares the shared
+  corner only once the ghost sibling also paints a border on focus") already proves the split; no
+  new test needed there.
+- **Gate:** class `paint`, `gateTier: "targeted"`, task 8's string plus the showcase legs plus
+  `E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- theme-kit.spec.ts
+  theme-kit-contrast.spec.ts`, through `cairn-run-gate`. First run failed on
+  `admin-sheet-inventory.test.ts` (3 undocumented new classes; fixed by recording them in
+  `CHANGELOG.md` and regenerating the snapshot) and on `BtnActiveDarkGround.test.ts`'s
+  checked-radio-outline contrast (fixed by Q5's `--btn-fg` reset, above). Final run: `gate exit: 0`,
+  52 e2e tests passed, the full unit/component/showcase legs green.
+- **Commit:** `9ef7b8b3`, `fix(admin): settle theme identity pass A's S3 corrections`.
+
+**Next:** S4 regeneration, a diff-reviewer read of this run, CI green, then merge PR #92 (Geoff
+approved pass A merging on its own, 2026-09-28), in a fresh session.
+
 ## Post-mortem (2026-09-28)
 
 ### What was built

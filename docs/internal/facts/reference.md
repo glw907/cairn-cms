@@ -708,6 +708,11 @@ re-sourced to Go on this tree rather than to the page.
   empty-record, empty-name, missing-owner, and owner-capability throws), `:108`
   (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:44,201-202` (`bootstrapOwner`).
   [verified]
+- `f:xbdb74` An `IconSet` path is filled shape data on a `0 0 256 256` box, never stroke data: `renderGlyph`
+  sets the svg's `fill` to `currentColor` and sets no `stroke` anywhere, so a stroke-only path (one
+  whose `d` encloses no area) renders invisible. Source: `src/lib/render/glyph.ts:16-23`
+  (`renderGlyph`: `s('svg', { ..., fill: 'currentColor', ... }, [s('path', { d })])`, no `stroke`
+  attribute anywhere in the call). [verified]
 
 ## docs/reference/delivery.md
 

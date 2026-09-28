@@ -32,9 +32,19 @@ in `/var/home/glw907/Projects/cairn-cms`: "Resume theme identity pass A: follow 
 the foot of the plan's ledger in the worktree." The pass machinery lives in the `pass-core` skill,
 which `cairn-pass` loads. Nothing merges or publishes; the next release carrying it is `0.98.0`.
 
+Theme identity passes B and C have a reviewed spec, **approved by Geoff 2026-09-27**:
+[`2026-09-27-theme-identity-pass-b-design.md`](superpowers/specs/2026-09-27-theme-identity-pass-b-design.md)
+(fold record `superpowers/research/2026-09-27-theme-pass-b-fold.md`). Pass B is the
+`./components` to `./admin` rename plus the admin agent path; pass C is the one public theme,
+which folds in the ROADMAP "One public theme" initiative and the `cairn-public` skill. Geoff's
+rulings are recorded in it: one release cut, `public-literals` advisory for good. Both plans are
+authored together after pass A's segment D lands, for one approval sitting. Pass B stays
+unmerged, pass C branches from it, and both merge at pass C's close with one `0.98.0` cut
+carrying A, B, and C.
+
 Draft docs pass 0+1 is **paused** on `draft-docs-0` (Geoff, 2026-09-26: "We can hold further docs
-work until we've completed this effort"); it resumes after the theme initiative merges (pass B)
-and the one public theme initiative lands (ROADMAP "Next"; Geoff, 2026-09-27) and merges `main` into its branch first. Its plan:
+work until we've completed this effort"); it resumes after passes B and C merge, and merges
+`main` into its branch first. Its plan:
 [`2026-09-26-draft-docs-pass-0-1.md`](superpowers/plans/2026-09-26-draft-docs-pass-0-1.md).
 Segment A (tasks 1 to 5) is done; the branch's plan ledger records it, and draft PR #91 carries
 the CI proof. It resumes at segment B.
@@ -49,6 +59,11 @@ store and `~/.dotfiles/secrets/registry.md`; the scratch site `cairn-scratch-b` 
 GitHub repo) awaits his delete confirmation.
 
 ## Open decisions and watches
+
+- Pass C overlap (Geoff, 2026-09-27: "if you can do that plan concurrently, that would be great"):
+  pass C's plan is authored now, alongside pass A; no pass C code runs before pass B, so the
+  heavy-gate lock and the B-then-C branch order stay intact. Pass B's plan still waits for pass
+  A's segment D.
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026);
   TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).
@@ -66,7 +81,15 @@ GitHub repo) awaits his delete confirmation.
 
 ## Resume prompt
 
-Draft docs, after the theme pass merges: in a fresh session started with
+Passes B and C plans, once pass A's plan ledger records segment D accepted: in a fresh session
+started with `claude --model claude-opus-5-5` at effort `high`, in
+`/var/home/glw907/Projects/cairn-cms`, confirm Geoff has approved the pass B and C spec, then
+author both plans from it (each with its `Pass class:`, token ceiling, and checkpoint interval per
+`pass-core`), run `spec-plan-review` on both, and bring them to Geoff in one sitting. Read the
+spec's "Open for the plan" and the fold record's moved detail first; never touch pass A's
+worktree.
+
+Draft docs, after passes B and C merge: in a fresh session started with
 `claude --model claude-opus-5-5` at effort `medium`, in `/var/home/glw907/Projects/cairn-cms`,
 resume draft docs pass 0+1 as a thin conductor at segment B: merge `main` into `draft-docs-0`,
 read the plan's ledger on that branch, then dispatch tasks 6 and 8 through `pass-execute`.

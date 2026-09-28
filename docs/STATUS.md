@@ -48,9 +48,11 @@ The chores batch merged as PR #93 (`283a63d1`).
 
 ## Open decisions and watches
 
-- Go pass merges on a green close (Geoff, 2026-09-27). Open for Geoff at the evening sitting: whether
-  draft docs task 10 runs overnight on the reference pages pass B leaves alone; whether the
-  `checkOrigin` migration runs as its own `auth-data` pass.
+- Rulings (Geoff, 2026-09-27): the Go pass merges on a green close. Draft docs task 10 splits:
+  it runs overnight on every reference page except the admin subpath page pass B renames and the
+  `./public` page it creates, which run after pass B lands. The `checkOrigin` to
+  `csrf.trustedOrigins` migration becomes its own small `auth-data` pass after the `0.98.0` cut:
+  planned and reviewed unattended, run when Geoff can make the magic-link click.
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026);
   TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).

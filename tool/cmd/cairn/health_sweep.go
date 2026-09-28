@@ -206,8 +206,8 @@ func anyDegraded(rs []health.Report) bool {
 // writeSweepTimeout writes the line naming a site the sweep never reached, because the run's
 // budget or a signal ended it first. No health.Report exists for a site the sweep never started,
 // so this is not writeHealthBody's per-check shape. The three columns (verdict, id, reason) are
-// printed directly rather than through messages.go's table: they are identifiers with no prose,
-// the same shape section 2.3 exempts from that table.
+// printed directly rather than through messages.go's table: the format string carries only
+// identifiers and no prose, so it stays below the length bound TestNoLongProseLiteralOutsideMessages enforces.
 func writeSweepTimeout(w io.Writer, id string) error {
 	_, err := fmt.Fprintf(w, "%s\t%s\t%s\n", spine.VerdictUnknown, id, spine.ReasonTimeout)
 	return err

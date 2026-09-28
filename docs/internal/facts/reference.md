@@ -462,7 +462,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:ka0ngc` No shell profile reaches a scheduled run, so the three credential variables come from the
   scheduler's own environment or from the OS keyring `cairn auth set` writes: `CAIRN_CF_ACCOUNT_ID`,
   `CAIRN_CF_READ_TOKEN`, and `CAIRN_GH_READ_TOKEN`. The environment provider is tried before every
-  other provider in the chain. Source: `tool/cmd/cairn/env.go:36-38,199-212`,
+  other provider in the chain. Source: `tool/cmd/cairn/env.go:36-38,198-211`,
   `tool/cmd/cairn/auth.go:145`. [verified]
 
 ## docs/reference/cli-cairn-json-output.md
@@ -573,7 +573,7 @@ re-sourced to Go on this tree rather than to the page.
   unchanged site differ in it. Source: `tool/internal/render/json.go:209-211`. [verified]
 - `f:9x1w7n` The credential variables resolve environment first, then every other provider in the chain, and
   the password prompt falls back to reading one piped line when stdin carries no terminal state,
-  so a scripted `cairn auth set` does not hang. Source: `tool/cmd/cairn/env.go:36-38,199-212`,
+  so a scripted `cairn auth set` does not hang. Source: `tool/cmd/cairn/env.go:36-38,198-211`,
   `tool/cmd/cairn/auth.go:73-109`. [verified]
 - `f:4wq7zj` A site payload's `degraded` is true when any check on that site ended with the reason
   `reason.cred-missing`, the credential-shaped skip, and it is set nowhere else. Source:

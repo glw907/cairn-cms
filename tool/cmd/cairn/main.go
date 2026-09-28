@@ -40,10 +40,10 @@ func notifyContext(parent context.Context) (context.Context, context.CancelFunc)
 // branch that would otherwise decide per run which values are worth protecting.
 //
 // The third variable, the Cloudflare account id, is deliberately not registered. It is an
-// identifier rather than a bearer token, it is stored in cleartext in every site record, and
-// `sites list --verbose` and `auth check` (`auth probe` is its hidden alias) both print it on
-// purpose, so redacting it would blank the diagnostic output an operator reads without
-// protecting anything.
+// identifier rather than a bearer token, stored in cleartext in every site record; the only
+// place it prints on purpose is `cairn adopt list --json`'s accountId field, so redacting it
+// here would blank that diagnostic value without protecting anything, since it carries no
+// secret.
 //
 // The flush emits whatever partial line is still buffered, since a scrubber that holds output to
 // a line boundary has to be told when the last line will never arrive.

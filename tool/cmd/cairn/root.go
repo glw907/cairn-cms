@@ -35,9 +35,9 @@ const (
 const defaultTimeout = 480 * time.Second
 
 // The three --color values. cairn health passes the chosen value into detectTerminal, which
-// hands it to render.DetectProfile as Env.Color: auto defers to NO_COLOR and the terminal's own
-// colour support, always forces a coloured frame regardless of the terminal, and never paints
-// none. cairn doctor's report is plain text and reads none of the three.
+// hands it to render.DetectProfile as Env.Color: a non-empty NO_COLOR means no colour under all
+// three, and otherwise auto defers to the terminal's own colour support, always forces a coloured
+// frame regardless of the terminal, and never paints none. cairn doctor's report is plain text.
 const (
 	colorAuto   = "auto"
 	colorAlways = "always"

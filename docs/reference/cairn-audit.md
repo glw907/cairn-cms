@@ -469,8 +469,8 @@ npx cairn-audit norms card
 ```text
 card  (container)  .card-shell
   The floating card surface: the list table, the editor panes, the auth card.
-  recipe: card-shell
-    a floating card surface, with the box radius and a hairline edge.
+  recipe: card-shell card-shadow
+    a floating card surface: the box radius, a hairline edge, and elevation.
 
   background-color  var(--color-base-100)  15 sites  observed
   border-color  var(--cairn-card-border)  15 sites  ratified

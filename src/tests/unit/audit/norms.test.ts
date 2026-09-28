@@ -531,10 +531,10 @@ describe('ROLE_RECIPES', () => {
     }
   });
 
-  // The typo check (decision 15): a hand-typed class in a Write string can drift from what the
-  // sheet actually compiles or the fixture actually renders. Every token has to be attested by one
-  // of the two sources a recipe row is allowed to come from, so a misspelled class fails here
-  // rather than shipping silently into the guidance tables task 5 copies it into.
+  // The typo check: a hand-typed class in a Write string can drift from what the sheet actually
+  // compiles or the fixture actually renders. Every token has to be attested by one of the two
+  // sources a recipe row is allowed to come from, so a misspelled class fails here rather than
+  // shipping silently into the guidance the table feeds.
   it('attests every Write token against the admin sheet inventory or the theme-kit fixture source', () => {
     const inventory = new Set(
       readFileSync(new URL('../fixtures/admin-sheet-inventory.txt', import.meta.url), 'utf8')

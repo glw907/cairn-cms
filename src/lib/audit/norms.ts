@@ -310,15 +310,15 @@ export const RECIPE_MODEL =
 // norms:check never regenerates it.
 /**
  * Every recipe the shipped guidance and `cairn-audit norms <role>` teach: one row per ratified
- * role, plus the four hand-authored button patterns and the one chip-radius pattern the ratified
- * roles do not otherwise demonstrate. This table is internal to the audit module and carries no
- * package export of its own.
+ * role, plus the four hand-authored button patterns and the three corner-ladder patterns the
+ * ratified roles do not otherwise demonstrate. This table is internal to the audit module and
+ * carries no package export of its own.
  */
 export const ROLE_RECIPES: readonly RoleRecipe[] = [
   {
     role: 'page-title',
-    write: 'type-title font-[550]',
-    look: 'the page heading, 24px at weight 550, no bold.',
+    write: 'type-title font-[550] font-[family-name:var(--font-display)]',
+    look: 'the page heading, 24px at weight 550, no bold, in the display face.',
   },
   {
     role: 'eyebrow',
@@ -343,17 +343,17 @@ export const ROLE_RECIPES: readonly RoleRecipe[] = [
   {
     role: 'input-text',
     write: 'input',
-    look: 'a single-line text field, with the field radius.',
+    look: 'a single-line text field.',
   },
   {
     role: 'select',
     write: 'select',
-    look: 'a native select control, with the field radius.',
+    look: 'a native select control.',
   },
   {
     role: 'card',
-    write: 'card-shell',
-    look: 'a floating card surface, with the box radius and a hairline edge.',
+    write: 'card-shell card-shadow',
+    look: 'a floating card surface: the box radius, a hairline edge, and elevation.',
   },
   {
     write: 'btn',
@@ -372,9 +372,16 @@ export const ROLE_RECIPES: readonly RoleRecipe[] = [
     look: 'the selected segment in a join or segmented control: a neutral wash plus a state hairline.',
   },
   {
-    role: 'status-chip',
     write: 'rounded-selector',
-    look: "the corner a chip, tag, or count takes on the ladder's small-inline-marker step.",
+    look: 'the corner for a chip, tag, count, or other small inline marker.',
+  },
+  {
+    write: 'rounded-field',
+    look: 'the corner for a control, button-like element, or small thumbnail.',
+  },
+  {
+    write: 'rounded-box',
+    look: 'the corner for a panel, card, tile, popover, sheet, or the brand tile.',
   },
 ];
 

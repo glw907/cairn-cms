@@ -131,3 +131,89 @@ charter row. Geoff reviews these with the owner rulings.
    register for "the full rule". R1 deletes that rule (C1); the record's pointer now describes a
    rule that no longer exists. The erratum notes that deviation from a base guide now requires a
    recorded exception row by Geoff's ruling (2026-09-28).
+
+## Second fold (2026-09-28)
+
+Narrow fold of Geoff's owner answers, his new design ruling, and the fold verification
+(`2026-09-28-style-guide-sync-fold-verification.md`: 2 major, 8 minor) into the spec. Branch
+`style-guide-sync`, rebased onto `main` at `feca3348`; PR #91 merged as `8bbe78f5`. Nothing wider
+was reopened.
+
+### Verification done before folding
+
+- `feca3348` is an ancestor of the branch head; the worktree was clean and no other process named
+  it.
+- `docs/STATUS.md` on this tree: draft docs pass 0+1 merged (`8bbe78f5`); "the stage 2a plan is
+  next", and the style-guide sync "must land before stage 2a drafts its first page". Stage 2a has
+  not started.
+- `docs/extend/choose-an-ai-posture.md` last changed at `5aa40faa`, merged by `8bbe78f5`; its brief
+  exists at `docs/internal/briefs/extend/choose-an-ai-posture.json`.
+- The freeze rule as it now reads on `main`: CLAUDE.md "Documentation is a pass dimension" and
+  `docs/internal/facts/README.md` "How this container grows" (quoted under R5 below).
+- `~/.claude/workflows/docs-page-chain.js:352` still documents that the runtime has no filesystem
+  access, so the brief and the promoted list must be passed in.
+- `docs/internal/docs-register.md:49` holds the metaphor allowance ruling 8 removes.
+
+### Dispositions
+
+| Item | Disposition | Where in the spec |
+|---|---|---|
+| A, owner ruling 1 | Folded as ruling 7 (yes) | Rulings; criterion 9 |
+| A, owner ruling 2 | Folded as ruling 8 (yes); the "if no" seed row is gone | Rulings; R1 metaphor bullet |
+| A, owner ruling 3 | Folded as ruling 9 (resolved by events); stacking alternative, branch-wait preconditions, and the approach-spec erratum for line 160 removed | Rulings; Pass shape "Branch" |
+| A, fold-edit confirmation (verification major 2) | Folded as ruling 10, naming each edited clause; a line above ruling 1 says the rulings text stands on Geoff's word | Rulings |
+| A, "Owner rulings" section | Deleted | |
+| B, named voice, flattened for the drafter | Folded as ruling 11. The Google-arm tone is "the cairn docs voice", defined positively. R1 replaces the header digest with two drafting briefs (developer docs, editor docs), each flat in one order (structural rules quoted, voice with specimen, tells). The layering (provenance table, exceptions tables, rationale) is reviewer-only. W1 hands the drafter only its brief plus conforming exemplars, extracted by heading by the page-inputs agent or the conductor (the runtime cannot read files), and hands the register editor the brief plus provenance and exceptions. W2 carries no digest of its own. New task R7, `check:register-briefs`, specifies outcome and failure states only. G1 and G2, the analogy, and criteria 1, 6, 11, 12 updated | Goals; Rulings 11; R1; R7; W1; W2; W3; W5; criteria |
+| C, major 1 (build-order loop) | Folded. R1 lands without the specimen; R1b adds it at the join. Join order: R5, proof run (criterion 7), R1b, register review (criterion 8) | Design intro; R1; R1b; criterion 8; Pass shape |
+| C, m1 (pinned-anchor exemption from memory) | Folded. `shipped-anchors.json` sourcing dropped; a pinned heading gets a static YAML exemption before its page is promoted, first needed at the admin stage; open item dropped | R2a; Open for the plan |
+| C, m2 (chain cannot read the list) | Folded. The page-inputs agent or conductor passes the list into `valeErrorRules`; the `--page` gate enforces | R2a rollout; W1 |
+| C, m3 (harness has two homes) | Folded. Tree mode only | R2a; criterion 3 |
+| C, m4 (R1 reviewed twice) | Folded. Chain-R `register-check` dropped; criterion 8 is R1's one review | Pass shape; criterion 8 |
+| C, m5 (stale pins, concurrent executor) | Folded. Pinned to `main` at `feca3348`; the risk entry and branch preconditions removed | Header; Pass shape; Risks |
+| C, m6 (W1's gate) | Folded. W1 gates on the dotfiles `scripts/check.sh` | Pass shape |
+| C, m7 (reference arm has no path) | Folded as a recorded deferral: R2a measures the promoted-rule count for the reference arm and root README and files a ROADMAP entry with that trigger | R2a; criterion 12; Out of scope |
+| C, m8 (byte-identical baseline) | Folded. Base: the page as merged at `8bbe78f5`. Method: sentence-level diff, identical outside the named passages | R5; criterion 9 |
+| C, trims | Folded. "Concurrent executor" and "Tone flattening" risks dropped; the 26-word fence stated once, in ruling 3 (removed from R1's digest list and Out of scope) | Rulings 3; Out of scope; Risks |
+
+Net length: 384 to 429 lines. The trims recovered about 15 lines. Ruling 11, R1b, R7, and the
+brief mechanics added about 60; the deleted Owner rulings section offset part of rulings 7 to 10.
+
+### Refused
+
+None. One reading choice: the verification's m2 fold said "the plan's chain header copies the
+list". The conductor's instruction named the page-inputs agent or the conductor; the spec uses
+that wording and leaves the pick to the plan, one home, the same as the brief extraction.
+
+### R5 against the freeze rule on `main`
+
+CLAUDE.md, "Documentation is a pass dimension": the narrative arms are "frozen against rewrites
+until each arm's own stage merges (extend's lifts at the 2b merge)", and "A deficiency a pass
+discovers on a page ... is fixed on the page in the same pass, gated by that page's own gates, per
+the facts container's fix rule (`docs/internal/facts/README.md`, 'How this container grows'),
+except a site edit to an arm whose stage is in flight". R5 qualifies as a deficiency fix:
+
+- It is a scoped structural fix (a prose procedure made a numbered list, a run-in precondition, a
+  heading form), not a rewrite of the arm's narrative; sentences outside the named passages stay
+  identical against `8bbe78f5`.
+- The exception does not apply twice over: this is an engine pass, not a site edit, and extend's
+  stage 2a has not started (STATUS names its plan as next, after this sync lands).
+- The page has a brief, and the facts README routes a fix on "a rebuilt page with a brief" through
+  the approach spec's "Edits after the chain" rule, which R5 already follows.
+
+One timing condition follows from the same rule: if stage 2a started before R5 lands, extend's
+stage would be in flight. STATUS already orders the sync ahead of stage 2a's first page, so no
+spec change is needed.
+
+### Errata owed (ratified documents not edited here)
+
+1. **Repo `CLAUDE.md`, "Authoring" section:** "On top of the Google floor, every published docs
+   page follows the register standard" becomes "base" (the style-guide sense of ruling 2 and R1).
+   The same sentence should name the drafting briefs once R1 lands.
+2. **`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`:** line 17 "No new check is
+   built" and the retirement row (`check:headings`, markdownlint as a gate) are superseded for
+   structural checks by R2 and R3. The first fold's conditional erratum on line 160
+   (merge-before-next) is withdrawn: ruling 9 keeps the rule as written.
+3. **`docs/internal/record/2026-08-15-docs-outlines-with-visuals.md:58`:** "They are a floor, not a
+   ceiling ... the standard yields" points to a register rule R1 deletes. The erratum notes that
+   deviation from a base guide now requires a recorded exception row by Geoff's ruling
+   (2026-09-28).

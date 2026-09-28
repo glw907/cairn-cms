@@ -330,6 +330,28 @@ workstation; the report states whether `writing-voice/evals` re-run.
 track's drafting brief in the register. The implementer writes the reference arm and the
 per-version extend records every pass.
 
+**W4 addition (Geoff, 2026-09-28): the brief reaches writers outside the chain by routing, never
+by a new skill.** `writing-voice`'s cairn-docs route says to read the drafting brief for the
+page's track in `docs/internal/docs-register.md` and write to it. No drafting skill carries a copy
+of the brief, since a copy is the drift R7 exists to catch.
+
+**W6. Stale-reference tripwire.** A list of retired phrases fails the dotfiles `scripts/check.sh`
+and a cairn docs check wherever one appears in `~/.dotfiles/claude` (agents, skills, workflows,
+`docs/`), both `CLAUDE.md` files, or cairn's `docs/internal` (excluding dated records, specs,
+plans, and research, which are history). The seed list: "Vale-enforced floor", "a floor is not a
+ceiling", "academic introduction", "slightly academic", the 25-40-word baseline, "on top of the
+Google floor", and "admin walkthroughs" routed to Microsoft. Each fixture proves the check fires
+on a planted phrase and passes on the clean tree. A later voice change adds its retired phrases.
+
+**W7. Infra read at pass end (Geoff, 2026-09-28: "we failed on that front earlier").** After the
+join, one fresh-context reviewer lists every file that tells any writer how to write cairn docs
+or cairn UI copy, including the agents, `writing-voice` and its routed docs, `cairn-pass`,
+`site-pass`, `pass-core`, `engine-consult`, `register-check`, `spec-plan-review`, the authoring
+charter, the repo `CLAUDE.md`, and the admin design system. For each file it returns a verdict:
+routes to the right drafting brief (or states the Microsoft UI-copy voice), restates no rule of
+its own, and carries no retired term. Every mismatch is fixed before the close, and every phrase
+it finds joins W6's list. The owed `CLAUDE.md` erratum ("On top of the Google floor") lands here.
+
 ### Exemplars
 
 `enable-tidy.md` and `restrict-admin-access.md` fail the new checks; their rebuild belongs to the

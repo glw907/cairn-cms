@@ -87,8 +87,18 @@ func holdLapsed(c health.CheckResult, expired time.Time) health.CheckResult {
 }
 
 // nineCheckIDs is health.All's own nine check ids, in report order, the set fillNine completes
-// every site to.
-var nineCheckIDs = []string{"creds", "serving", "delegation", "https-forced", "email", "deploy", "publish-path", "engine", "errors"}
+// every site to. It reads health.All directly rather than restating the ids, so a check added,
+// removed, or reordered there is reflected here with no second list to drift.
+var nineCheckIDs = checkIDs(health.All)
+
+// checkIDs returns each check's ID(), in the given order.
+func checkIDs(checks []health.Check) []string {
+	ids := make([]string, len(checks))
+	for i, c := range checks {
+		ids[i] = c.ID()
+	}
+	return ids
+}
 
 // fillNine returns checks completed to all nine of health.All's ids: any id checks already names
 // is kept exactly as given, and any id it omits is filled with a plausible default, so a strip
@@ -145,6 +155,10 @@ func report(site, domain string, checks ...health.CheckResult) health.Report {
 		if c.Outcome.Reason == spine.ReasonCredMissing {
 			r.Degraded = true
 		}
+		// Acknowledged is restated here rather than read from health.Run's own activeAckIDs,
+		// which derives it from an acknowledgement file this package carries none of: each
+		// fixture states its own held ids directly, as the scenario's own claim about what is
+		// held.
 		if c.Acknowledged {
 			r.Acknowledged = append(r.Acknowledged, c.ID)
 		}

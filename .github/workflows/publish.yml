@@ -41,7 +41,12 @@ jobs:
       # sigstore module and every publish fails on MODULE_NOT_FOUND in libnpmpublish;
       # move back to npm@latest once a fixed 12.x publishes cleanly.
       - run: npm install -g npm@11
-      - run: npm install --no-audit --no-fund
+      # A committed, in-sync lockfile lets this job resolve the exact dependency tree every other
+      # workflow in the repo already installs with (test.yml, e2e.yml, norms.yml, design.yml,
+      # tsgo.yml, tool-conditions.yml), so the published build gets the same reproducibility
+      # guarantee: an out-of-sync lockfile fails the install loudly instead of a floating resolve
+      # silently drifting the published tarball's dependency tree from what CI proved.
+      - run: npm ci --no-audit --no-fund
       # Validate the published package shape before releasing.
       - run: npm run check:package
       # The repo is public, so OIDC trusted publishing attaches build provenance automatically.

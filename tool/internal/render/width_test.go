@@ -8,24 +8,24 @@ import (
 // TestWidthRungConstants pins criterion 18's numbers: a floor of 40, a single-column threshold of
 // 60, and a wide cap of 120.
 func TestWidthRungConstants(t *testing.T) {
-	if WidthFloor != 40 {
-		t.Errorf("WidthFloor = %d, want 40", WidthFloor)
+	if widthFloor != 40 {
+		t.Errorf("widthFloor = %d, want 40", widthFloor)
 	}
-	if WidthNarrow != 60 {
-		t.Errorf("WidthNarrow = %d, want 60", WidthNarrow)
+	if widthNarrow != 60 {
+		t.Errorf("widthNarrow = %d, want 60", widthNarrow)
 	}
 	if Width80 != 80 {
 		t.Errorf("Width80 = %d, want 80", Width80)
 	}
-	if Width100 != 100 {
-		t.Errorf("Width100 = %d, want 100", Width100)
+	if width100 != 100 {
+		t.Errorf("width100 = %d, want 100", width100)
 	}
-	if WidthCap != 120 {
-		t.Errorf("WidthCap = %d, want 120", WidthCap)
+	if widthCap != 120 {
+		t.Errorf("widthCap = %d, want 120", widthCap)
 	}
 }
 
-// TestContentClampsToCap is criterion 18's wide cap: content stops growing past WidthCap.
+// TestContentClampsToCap is criterion 18's wide cap: content stops growing past widthCap.
 func TestContentClampsToCap(t *testing.T) {
 	tests := []struct {
 		in, want int
@@ -44,21 +44,21 @@ func TestContentClampsToCap(t *testing.T) {
 // render at width 90 is not byte-identical to one at width 80.
 func TestRuleHonoursRequestedWidthExactly(t *testing.T) {
 	th := NewTheme(true, ProfileNoColor)
-	r80 := th.Rule(false, 80)
-	r90 := th.Rule(false, 90)
+	r80 := th.rule(false, 80)
+	r90 := th.rule(false, 90)
 	if r80 == r90 {
-		t.Fatal("Rule(80) and Rule(90) are byte-identical; width must be honoured exactly, not snapped to a rung")
+		t.Fatal("rule(80) and rule(90) are byte-identical; width must be honoured exactly, not snapped to a rung")
 	}
-	if got := th.Width(r80); got != 80 {
-		t.Errorf("Width(Rule(80)) = %d, want 80", got)
+	if got := th.width(r80); got != 80 {
+		t.Errorf("width(rule(80)) = %d, want 80", got)
 	}
-	if got := th.Width(r90); got != 90 {
-		t.Errorf("Width(Rule(90)) = %d, want 90", got)
+	if got := th.width(r90); got != 90 {
+		t.Errorf("width(rule(90)) = %d, want 90", got)
 	}
 }
 
 // TestDegenerateWidthsNeverPanic is criterion 20: 0, 1, 2, 5, 19, and a negative value each render
-// without panicking, on both Rule and Clamp.
+// without panicking, on both rule and clamp.
 func TestDegenerateWidthsNeverPanic(t *testing.T) {
 	th := NewTheme(true, ProfileTrueColor)
 	widths := []int{0, 1, 2, 5, 19, -1, -400}
@@ -67,20 +67,20 @@ func TestDegenerateWidthsNeverPanic(t *testing.T) {
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						t.Errorf("Rule(%v, %d) panicked: %v", ascii, w, r)
+						t.Errorf("rule(%v, %d) panicked: %v", ascii, w, r)
 					}
 				}()
-				_ = th.Rule(ascii, w)
+				_ = th.rule(ascii, w)
 			}()
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						t.Errorf("Clamp(..., %d) panicked: %v", w, r)
+						t.Errorf("clamp(..., %d) panicked: %v", w, r)
 					}
 				}()
-				got := th.Clamp("a long line of dynamic content a site handed us", w)
-				if gotW := th.Width(got); gotW > max(w, 1) {
-					t.Errorf("Clamp(..., %d) = %q, %d cells, want at most %d", w, got, gotW, max(w, 1))
+				got := th.clamp("a long line of dynamic content a site handed us", w)
+				if gotW := th.width(got); gotW > max(w, 1) {
+					t.Errorf("clamp(..., %d) = %q, %d cells, want at most %d", w, got, gotW, max(w, 1))
 				}
 			}()
 		}
@@ -88,7 +88,7 @@ func TestDegenerateWidthsNeverPanic(t *testing.T) {
 }
 
 // TestClampNeverExceedsWidth is the nearest sound form of criterion 19 that this task's own
-// primitives can prove: 20a has no body compositor yet (Task 20b-i), so this exercises Clamp,
+// primitives can prove: 20a has no body compositor yet (Task 20b-i), so this exercises clamp,
 // the primitive every dynamic field passes through, across the plan's own sweep widths, over
 // long and CJK content rather than a full frame. width.go's own doc comment records the
 // deviation from criterion 19's two-table sweep (Task 20b-ii's own scope).
@@ -99,9 +99,9 @@ func TestClampNeverExceedsWidth(t *testing.T) {
 	cjk := strings.Repeat("你好世界", 40)
 	for _, w := range sweepWidths {
 		for _, s := range []string{longLine, cjk} {
-			got := th.Clamp(s, w)
-			if gotW := th.Width(got); gotW > w {
-				t.Errorf("Clamp(%d) over width: got %d cells for width %d", w, gotW, w)
+			got := th.clamp(s, w)
+			if gotW := th.width(got); gotW > w {
+				t.Errorf("clamp(%d) over width: got %d cells for width %d", w, gotW, w)
 			}
 		}
 	}

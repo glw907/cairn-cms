@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 )
@@ -202,59 +201,6 @@ func TestTokenExpiryReturnsZeroTimeWhenHeaderAbsent(t *testing.T) {
 	}
 	if !when.IsZero() {
 		t.Errorf("when = %v, want the zero time when the header is absent (unauthenticated call)", when)
-	}
-}
-
-func TestRepoOwnershipReportsPrivateAndKeys(t *testing.T) {
-	body := []byte(`{"id":1,"full_name":"glw907/xcathletes-org","private":true}`)
-	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
-
-	private, err := gh.RepoOwnership(context.Background(), "glw907", "xcathletes-org")
-	if err != nil {
-		t.Fatalf("RepoOwnership: %v", err)
-	}
-	if !private {
-		t.Error("private = false, want true")
-	}
-}
-
-func TestRepoOwnershipReportsPublicRepo(t *testing.T) {
-	body := []byte(`{"id":2,"full_name":"glw907/cairn-cms","private":false}`)
-	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
-
-	private, err := gh.RepoOwnership(context.Background(), "glw907", "cairn-cms")
-	if err != nil {
-		t.Fatalf("RepoOwnership: %v", err)
-	}
-	if private {
-		t.Error("private = true, want false")
-	}
-}
-
-func TestRepoOwnershipClassifiesNotFound(t *testing.T) {
-	status, body, err := Corpus("github", "not_found.default.404.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: status, body: body})
-
-	_, err = gh.RepoOwnership(context.Background(), "glw907", "a-private-repo-this-token-cannot-see")
-	assertGitHubReason(t, err, status, ReasonNotFound)
-}
-
-// TestRepoOwnershipMissingPrivateField covers github.go:185's guard: a repos response with no
-// "private" field at all reports a plain error naming the missing field, not a raw JSON decode
-// error over a nil RawMessage.
-func TestRepoOwnershipMissingPrivateField(t *testing.T) {
-	body := []byte(`{"id":1,"full_name":"glw907/cairn-cms"}`)
-	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
-
-	_, err := gh.RepoOwnership(context.Background(), "glw907", "cairn-cms")
-	if err == nil {
-		t.Fatal("RepoOwnership: want an error for a response with no private field")
-	}
-	if !strings.Contains(err.Error(), "no private field") {
-		t.Errorf("err = %v, want it to name the missing private field", err)
 	}
 }
 

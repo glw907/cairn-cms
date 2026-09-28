@@ -25,10 +25,10 @@ var failSeverity = map[string]spine.FailSeverity{
 	"errors":       spine.CriticalFailure,
 }
 
-// FailSeverityOf returns the weight a Failing outcome from the check named id carries. An id the
+// failSeverityOf returns the weight a Failing outcome from the check named id carries. An id the
 // table does not name reports spine.CriticalFailure, so a check that somehow reached a run
 // without a severity is reported at full weight rather than silently softened.
-func FailSeverityOf(id string) spine.FailSeverity {
+func failSeverityOf(id string) spine.FailSeverity {
 	return failSeverity[id]
 }
 
@@ -44,7 +44,7 @@ func Verdicts(r Report) spine.SiteVerdicts {
 			State:        c.Outcome.State,
 			Reason:       c.Outcome.Reason,
 			Acknowledged: c.Acknowledged,
-			Severity:     FailSeverityOf(c.ID),
+			Severity:     failSeverityOf(c.ID),
 		})
 	}
 	return vs

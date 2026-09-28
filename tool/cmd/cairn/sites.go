@@ -150,8 +150,7 @@ func writeSites(cmd *cobra.Command, entries []store.Entry, f sitesFlags, rf *roo
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", data)
-		return err
+		return writeJSONPayload(cmd.OutOrStdout(), data)
 	}
 	if rf.quiet && verdict == spine.VerdictOK {
 		return nil

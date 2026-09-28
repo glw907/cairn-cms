@@ -16,9 +16,9 @@ type Profile int
 const (
 	// ProfileNoColor paints no colour at all. Theme.Style returns the zero style here.
 	ProfileNoColor Profile = iota
-	// ProfileANSI16 paints the sixteen named terminal slots (criterion 5's table).
+	// ProfileANSI16 paints the sixteen named terminal slots.
 	ProfileANSI16
-	// ProfileANSI256 paints the named xterm-256 rung (criterion 6).
+	// ProfileANSI256 paints the named xterm-256 rung.
 	ProfileANSI256
 	// ProfileTrueColor paints the 24-bit hex values directly.
 	ProfileTrueColor
@@ -42,8 +42,9 @@ func (p Profile) colorprofile() colorprofile.Profile {
 
 // Env is the subset of the environment DetectProfile reads: the two variables cmd/cairn's loadEnv
 // resolves (NoColor, Term), plus the operator's own --color choice (Color: "auto", "always", or
-// "never"). It carries no more than that so this package's own determinism promise (criterion 24)
-// stays checkable by construction: the same Env value can only ever produce the same profile.
+// "never"). It carries no more than that so this package's own determinism promise, that the same
+// input always produces the same bytes, stays checkable by construction: the same Env value can
+// only ever produce the same profile.
 type Env struct {
 	NoColor string
 	Term    string
@@ -60,17 +61,17 @@ type Terminal struct {
 	Columns int
 	// ASCII reports whether output should render at the ASCII glyph tier.
 	ASCII bool
-	// TTY reports whether stdout is a terminal. It selects the body (Task 20b-i criterion 1):
-	// a pipe always takes the plain body, whatever --color says, and ASCII is a separate axis,
-	// since a TERM=dumb terminal is still a terminal.
+	// TTY reports whether stdout is a terminal. It selects the body: a pipe always takes the
+	// plain body, whatever --color says, and ASCII is a separate axis, since a TERM=dumb
+	// terminal is still a terminal.
 	TTY bool
 }
 
-// DetectProfile is this package's one TTY check (criterion 14) and its one caller of
-// term.IsTerminal; purity_test.go's grep test names this file as the sole exception for both. It
-// reports the colour profile to paint with, the terminal's column count when stdout is a
-// terminal (0 otherwise), whether output should render at the ASCII glyph tier, and whether
-// stdout is a terminal at all.
+// DetectProfile is this package's one TTY check and its one caller of term.IsTerminal;
+// purity_test.go's grep test names this file as the sole exception for both. It reports the
+// colour profile to paint with, the terminal's column count when stdout is a terminal (0
+// otherwise), whether output should render at the ASCII glyph tier, and whether stdout is a
+// terminal at all.
 //
 // Detection order for colour: NO_COLOR, present and non-empty, always means no colour, even under
 // --color=always, per the no-color.org convention that NO_COLOR overrides everything.
@@ -78,9 +79,9 @@ type Terminal struct {
 // terminal. --color=auto, the default, falls through to TERM=dumb and a non-TTY stdout (both no
 // colour), then to the terminfo database for the ANSI/ANSI256/TrueColor rung.
 //
-// The ASCII glyph tier is decided by a separate, TTY-shaped condition (criterion 13): not a TTY,
-// TERM=dumb, or a Windows console that refuses virtual-terminal mode. --color and NO_COLOR never
-// affect it, so an operator who forces colour into a pipe still reads the ASCII tier there.
+// The ASCII glyph tier is decided by a separate, TTY-shaped condition: not a TTY, TERM=dumb, or a
+// Windows console that refuses virtual-terminal mode. --color and NO_COLOR never affect it, so an
+// operator who forces colour into a pipe still reads the ASCII tier there.
 //
 // cmd/cairn is the one impure caller: it resolves env.NoColor and env.Term from loadEnv and
 // passes its own stdout, and render itself reads nothing beyond this file.
@@ -126,9 +127,9 @@ func detect(isTTY, vtOK bool, env Env) (profile Profile, ascii bool) {
 	default:
 		// colorprofile.Terminfo only ever distinguishes NoTTY, ANSI, or TrueColor (Tc/RGB
 		// capabilities): it never reports ANSI256 (verified local, colorprofile@v0.4.3/env.go),
-		// so criterion 6's named 256 rung is unreachable through it. colorprofile.Env reads
-		// TERM's own "-256color" convention instead, which is the one signal a 256-colour
-		// terminal actually advertises there.
+		// so the named 256 rung is unreachable through it. colorprofile.Env reads TERM's own
+		// "-256color" convention instead, which is the one signal a 256-colour terminal
+		// actually advertises there.
 		profile = fromColorprofile(colorprofile.Env([]string{"TERM=" + env.Term}))
 	}
 	return profile, ascii

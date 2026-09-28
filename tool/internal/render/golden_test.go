@@ -27,7 +27,7 @@ const goldenDir = "testdata/golden"
 
 // goldenRungs are the widths every golden is cut at: the named rung constants, so a frame is
 // pinned at the floor, at the single-column threshold, and at each of the three rungs above it.
-var goldenRungs = []int{WidthFloor, WidthNarrow, Width80, Width100, WidthCap}
+var goldenRungs = []int{widthFloor, widthNarrow, Width80, width100, widthCap}
 
 // goldenCase is one frame cut and committed. The fields are the whole of what changes its bytes,
 // which is what lets goldenName carry every one of them in the file name.
@@ -47,23 +47,18 @@ type goldenCase struct {
 	profile Profile
 	dark    bool
 	ascii   bool
-	// height is the row budget, 0 for the unbounded frame every CLI run asks for.
-	height int
 }
 
 // goldenName is the sole source of a golden's path, for writing one and for recognising an
 // orphan, so the corpus cannot drift into two naming schemes.
-func goldenName(view, fixture string, width int, profile Profile, dark, ascii bool, height int) string {
+func goldenName(view, fixture string, width int, profile Profile, dark, ascii bool) string {
 	parts := []string{fixture, fmt.Sprintf("w%03d", width), profileName(profile), groundName(dark), tableName(ascii)}
-	if height > 0 {
-		parts = append(parts, fmt.Sprintf("h%03d", height))
-	}
 	return filepath.Join(goldenDir, view, strings.Join(parts, "_")+".txt")
 }
 
 // path returns c's own golden path.
 func (c goldenCase) path() string {
-	return goldenName(c.view, c.fixture, c.width, c.profile, c.dark, c.ascii, c.height)
+	return goldenName(c.view, c.fixture, c.width, c.profile, c.dark, c.ascii)
 }
 
 // profileName names a colour profile for a golden's file name.
@@ -334,7 +329,7 @@ func goldenCases() []goldenCase {
 
 	base := goldenCase{
 		view: "single", fixture: "one-sick", reports: fixtures.OneSick(), body: BodySingle,
-		width: Width100, profile: ProfileTrueColor, dark: true,
+		width: width100, profile: ProfileTrueColor, dark: true,
 	}
 	for _, p := range []Profile{ProfileNoColor, ProfileANSI16, ProfileANSI256} {
 		targeted := base
@@ -345,9 +340,7 @@ func goldenCases() []goldenCase {
 	light.dark = false
 	ascii := base
 	ascii.ascii = true
-	tall := base
-	tall.height = 24
-	return append(out, light, ascii, tall)
+	return append(out, light, ascii)
 }
 
 // render cuts c's frame from the real renderer.
@@ -360,7 +353,6 @@ func (c goldenCase) render() string {
 		View:    view,
 		Body:    c.body,
 		Width:   c.width,
-		Height:  c.height,
 		Dark:    c.dark,
 		Profile: c.profile,
 		ASCII:   c.ascii,

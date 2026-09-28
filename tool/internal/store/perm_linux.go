@@ -6,6 +6,14 @@ import (
 	"syscall"
 )
 
+// perm_linux.go and perm_darwin.go hold the same POSIX permission-check
+// logic. The module forbids build tags (internal/hygiene's
+// TestNoBuildTags), so a GOOS-suffixed file name is the only way to keep
+// this code out of the Windows build, and carrying it in two files is the
+// accepted cost. internal/hygiene's TestGOOSPairsAreByteIdentical asserts
+// the pair stays byte-identical, so a fix to one is never forgotten on the
+// other.
+
 // openNoFollow creates path exclusively at mode 0600, refusing to follow a
 // symlink already sitting at path.
 func openNoFollow(path string) (*os.File, error) {

@@ -339,16 +339,6 @@ The original decision framing, for the record:
   `src/lib/admin/`. Evidence: `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`,
   F12.
 
-- **`configure-rendering.md` teaches a leaf-directive syntax that renders as literal text
-  (designer walkthrough, 2026-09-27; friction log F10).** `docs/extend/configure-rendering.md:107`
-  says an author writes `::callout{tone="tip"}`. The engine restores a leaf (`::`) or text (`:`)
-  directive to literal prose (`src/lib/render/remark-directives.ts:113-116`), and the showcase's
-  registry says it is container-only (`examples/showcase/src/theme/markdown-components.ts:115-117`).
-  The working form is `:::callout[Title]{tone="tip"}`, then the body, then a closing `:::`. The
-  page is frozen, so this is a frozen-page deficiency: the next pass fixes the line on the page
-  under the freeze rule, with a facts bullet. Owner: the next engine pass. Evidence:
-  `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`, F10.
-
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
   `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API
@@ -394,30 +384,19 @@ The original decision framing, for the record:
   CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
   already. The next unexplained red `main` on a media test is this.**
 
-- **`create-cairn-site` tells a reader the deploy is free, then deploys something that is not
-  (release-debt pass, 2026-08-19).** The engine and docs now state that a cairn site runs on
-  Workers Paid from its first deploy, but the tool's own interactive flow still says the opposite at
-  the point it matters. `packages/create-cairn-site/src/cloudflare/chapter.mjs:106-113` is the
-  consent text a reader approves before deploying, and it promises "Cloudflare's free workers.dev
-  hosting ... The free plan is enough; nothing in this step costs money." At 3.2 MiB gzipped that
-  deploy fails on a free plan, so the tool breaks the promise it just made. This is not a copy fix:
-  `chapter2.mjs`'s `EMAIL_ADMISSION_DETAIL` and its JSDoc both depend on chapter 1 having
-  established "nothing up to here costs money", and the later "Turn on Workers Paid now, so anyone
-  besides you can sign in?" prompt is premised on Paid arriving later. Fixing it means reworking the
-  tool's money narrative and probably its prompt order, plus the `01c-resume.txt` and
-  `01d-resume.txt` fixtures. **Scoped as its own pass (Geoff, 2026-08-19), deliberately cut from the
-  release-debt pass rather than absorbed into it. Trigger: before `create-cairn-site` publishes,
-  which is the same decision the release cut already owes.**
-
-- **`check:surface` is blind to an index signature, so a real breaking change passes it silently
-  (release-debt pass, 2026-08-19).** That pass removed `[key: string]: unknown` from the exported
-  `SiteConfig` interface, which breaks dynamic indexing and `Record<string, unknown>` assignability
-  for a consumer, and `npm run check:surface -- --update` produced zero diff: the snapshot's member
-  listing never renders index signatures at all. The gate exists to catch public-surface drift and
-  cannot see this whole class of it. Same shape as the `check:reference` subpath hole below, and the
-  same preferred form applies: make the snapshot render index signatures so the drift fails the gate
-  rather than relying on a reviewer noticing. **Trigger: the next pass that touches an exported
-  interface's shape.**
+- **`create-cairn-site` promises a free deploy; a cairn site runs on Workers Paid from its first
+  deploy (Geoff, 2026-09-27: "I don't think that it would ever work with the Free tier").** A
+  small chore, queued for the 2026-09-27 overnight run, not a pass. Chapter 2's email text
+  (`packages/create-cairn-site/src/cloudflare/chapter2.mjs:191-196`) already states the truth;
+  chapter 1's deploy consent (`chapter.mjs:108-113`) still says "Cloudflare's free workers.dev
+  hosting" and "nothing in this step costs money". The chore: confirm or turn on Workers Paid
+  before the first build and deploy, so the later email step no longer offers Paid as a fresh
+  choice; reword the deploy consent to match chapter 2; update the resume transcripts and the
+  `paid-plan-declined` path (declining stops setup before any deploy). It also adds one setup
+  prompt: the AI posture, written as `aiPosture: 'decline'` or `'invite'` into
+  `src/theme/cairn.config.ts`, with no preference as the default answer; the template ships the
+  field commented out today. `docs/extend/choose-an-ai-posture.md` then becomes the page for
+  changing that choice later, so its rewrite follows this change.
 
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
@@ -467,17 +446,14 @@ The original decision framing, for the record:
   are already enumerated in `manifest.ts`), then assert `complete && naturalWidth > 0` rather than
   the composed string. Found by the seam pass's Svelte review.
 
-- **`check:reference` cannot see a subpath nobody told it about.** `scripts/checks/reference-coverage.mjs`
-  holds a hardcoded `CONFIG` list, so a new export subpath ships with no reference page while the gate
-  reports OK across the subpaths it does know. The seam pass added two subpaths and hit exactly this.
-  Deriving the list from `package.json`'s `exports` (with an explicit, asserted exclusion list for
-  anything deliberately undocumented) turns a silent gap into a failure. The same shape of hole exists
-  for component props: the gate matches exported names, so a new public prop is invisible to it, and
-  the live-reproduction seam pass proved it twice in one window: `CairnAdminShell` and `EditPage` each
-  gained a public prop (`themeOverride`, `spellcheckOverride`) while `docs/reference/components.md`
-  kept printing the older, shorter signature until a later manual pass caught both. Converting this
-  into a failing check, not a watch note, is this repo's own preferred form for a mechanically
-  detectable, silent-failure gap.
+- **`check:reference` cannot see a new public component prop.** `scripts/checks/reference-coverage.mjs`
+  matches exported names, so a new public prop is invisible to it, and the live-reproduction seam pass
+  proved it twice in one window: `CairnAdminShell` and `EditPage` each gained a public prop
+  (`themeOverride`, `spellcheckOverride`) while `docs/reference/components.md` kept printing the older,
+  shorter signature until a later manual pass caught both. (The sibling hole, a subpath nobody told the
+  gate about, shipped a fix in the 2026-09-27 chores batch: the list now derives from `package.json`'s
+  `exports`.) Converting the props gap into a failing check, not a watch note, is this repo's own
+  preferred form for a mechanically detectable, silent-failure gap.
 
 - **The published docs have no visual layer at all, and half of that was never decided
   (Geoff, 2026-08-15, reading the editors track).** The corpus ships zero images and zero
@@ -952,15 +928,6 @@ the named human gates only):**
   index sees, and no brief existed yet to index. Trigger: the first committed brief whose cited
   fact is later edited, or the first page drafted under the new approach.
 
-- **`npm run check:surface -- --update` cannot regenerate the surface snapshot (doctor-retirement
-  pre-task, 2026-09-21).** The script is three commands joined by `&&`, and npm appends run
-  arguments to the end of the whole string, so `--update` reaches `check-surface-leaks.mjs` only
-  and `check-surface.mjs` never sees it. A regen therefore takes
-  `node scripts/checks/check-surface.mjs --update` by hand, which Task 3 had to discover after a
-  reviewer flagged a stale `docs/internal/api-surface.md`. The fix is a second npm script that
-  calls the generator alone. Trigger: the next pass that changes the public surface, or the next
-  reviewer finding of a stale surface snapshot.
-
 - **`cairn-run-gate` needs a silence watchdog for browser gates (doctor-retirement pre-task,
   2026-09-21; a dotfiles chore, filed here because cairn passes are what hit it).** This pass lost
   over an hour to a stock `npm test` that held the heavy lock while producing no output, because
@@ -1042,23 +1009,6 @@ the named human gates only):**
   made the visual baselines depend on the CI runner's font fallback for `U+2318` rather than on
   cairn's own markup. Draw both from the icon library (`@lucide/svelte`) or a pinned symbol font
   instead. Trigger: the next pass that touches either component.
-
-- **`publish.yml` uses `npm install --no-audit --no-fund`, not `npm ci`, for the published build
-  (pre-cut pass, 2026-09-21).** A reviewer proposed the switch during the pass; declined for the
-  cut because `npm install` with a committed lockfile already honors it, and changing the release
-  pipeline sat outside the owner's four rulings for that pass. Evaluate `npm ci` for the
-  reproducibility guarantee it adds over a committed lockfile in a release workflow. Trigger: the
-  next pass that touches `publish.yml`.
-
-- **The `cairn-release` skill has no step enforcing that `package.json` and
-  `packages/cairn-cms-dev/package.json` carry the same version (pre-cut pass, 2026-09-21).**
-  Task 6 of the pre-cut plan hand-asserts the two versions are equal before tagging
-  (`docs/superpowers/plans/2026-09-21-pre-cut-pass.md`, Task 6), but neither the skill's own
-  procedure nor `check:version` or `check:dev-package` enforces the lockstep bump as a gate, so a
-  future cut that skips the plan's hand step can silently publish a mismatched dev-package version
-  the way `0.95.0` almost did. Add the assertion to the skill's own steps, or extend
-  `check:version` (or `check:dev-package`) to fail when the two manifests disagree. Trigger: the
-  next release cut, or the next pass that touches either gate script.
 
 - **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
   until a site pass has filed about twenty facts by hand and the shape has stopped moving
@@ -1189,14 +1139,9 @@ the named human gates only):**
   prose that no longer runs. This pass never edits another repo; both need a fix in cairn-pub's
   own next pass, filed here since no engine record reaches that repo.
 
-- **Five small items retire-2a left, filed at retire-2b's close (2026-09-22).** Four came from
-  the friction log and the fifth from the close's own ROADMAP reconciliation. Each was verified
-  against the tree at filing.
-  - **No scaffolder test pins the install pointer.** `packages/create-cairn-site/src/scaffold.mjs`
-    prints the `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` literal and the
-    release-page URL beside its `cairn doctor` reminder, but `resume-chapter2.test.mjs` asserts
-    only the reminder's first sentence, so a wrong module path or URL ships green. Trigger: the
-    next pass touching the scaffolder's hand-over text.
+- **Three small items retire-2a left, filed at retire-2b's close (2026-09-22).** Verified against
+  the tree at filing. (A fourth, the scaffolder test pinning the install pointer, shipped in the
+  2026-09-27 chores batch.)
   - **`cairn-guidance`'s containment is a text-prefix check.** `readFileUnderCwd` in
     `src/lib/guidance/bin.ts` compares `resolve(cwd, relPath)` against `cwd + sep` with no
     realpath step, so a symlink inside the project can lead the read outside it. It predates the
@@ -1230,68 +1175,49 @@ the named human gates only):**
     captured from 1.1.0). A passing line wants the check's own neutral name. Needs a tool release,
     and the capture and `is-it-working.md`'s transcript re-taken after it.
 
-- **The B2 architecture reads, what retire-1 left (2026-09-21, updated 2026-09-22).** One read per
-  touched Go package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen
-  sound with nits, none escalated. **retire-1's `code-simplifier` round touched `doctor`, `spine`,
-  and `cmd/cairn`, and cleared only what fell there**: `spine`'s hand-retyped `condition_test.go`
-  list replaced by the package var (gaining the missing `ReasonRepoNotRecorded`), and `env.go`'s one
-  task citation removed. Every other B2 nit stands, since the round never reached `render` or
-  `health`. The two with teeth first:
-  - `internal/spine`'s `park_test.go:16` retypes the package's code list by hand as `allParkCodes`.
-    Read the backing list instead.
-  - `internal/logs`'s `fixtureRoundTripper` discards the request, so no test ever observes the
-    query body `Fetch` sends. **This is the seam that let the live 400 through.** Capture the
-    sent body in the fixture and assert from it.
-  - `store.Discover` and `store.Site` have no caller anywhere: the plan expected the auth probe
-    to read through `Discover`, and it calls `st.Load` directly. An unwired deliverable, not in
-    the seams table. Wire it or delete it.
-  - Exported surface with no outside caller, to unexport: `health`'s `FailSeverityOf`, `HasRepo`,
-    and `FixForCondition`, and `providers.RepoOwnership`, whose doc names a caller that does not
-    exist. `spine`'s and `render`'s callerless-export counts are folded into the retire-1 chores
-    entry below, not restated here.
-  - Hand-kept parallel lists, the theme across packages: `spine`'s code lists, `health`'s
-    `Catalogue` of about 35 functions restated in its own test, `providers`'s three parallel
-    lists of the ten `Reason` values, `fixtures`'s hand copy of the nine check ids and its
-    hand-recomputed `Degraded`/`Acknowledged`, and `mangen`'s build helper duplicating
-    `usage_test.go`'s. Derive each from its source, as `cmd/copylist` does by AST.
-  - Process citations in shipped comments: about thirty "reviewed at the 1.0 editorial gate"
-    notes in `cmd/cairn/messages.go`, task-name citations in `root.go` and `deps.go`, about 25
-    plan citations in `render` (one of them stale), and three in `health/fixes.go`. A comment
-    carries the reason the code is what it is, never which pass wrote it.
-  - **Not a defect, recorded so it is not re-filed:** `store`'s `perm_linux.go` and
-    `perm_darwin.go` are byte-identical. That is deliberate. The `hygiene` package forbids build
-    tags module-wide and asserts the pair's byte-identity instead, so a `//go:build linux ||
-    darwin` merge would break its own gate. The ruling belongs in the files' header.
-  Full text: `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
+- **Go tool architecture, declined and unplanned (2026-09-27).** What the two source entries left
+  behind after the Go tool architecture chores pass (thirteen tasks, `docs/HISTORY.md`) shipped
+  their items. Each declined item carries the reason a chore did not fix it:
+  - **`spine.FromKind` and `spine.Kind` stay exported**, not unexported as callerless. Both are
+    pre-adjudicated 2.0 seams: the 1.0 plan's seams table
+    (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md:282-305`) names `FromKind` with its
+    2.0 caller, the HUD's detail view, and `Kind` is its parameter type (Decision 2).
+  - **`render`'s `Role` and its eight constants, the `Profile` constants, and `Glyphs`/`GlyphSet`
+    stay exported**, not folded into the eighteen names the render cut unexported. Each is load-
+    bearing for a seams-table signature: `Role` for `Style(role)`, `Profile` for
+    `NewTheme(dark, p Profile)` and `DetectProfile`'s return, the glyph set for the glyph row
+    (Decision 5).
+  - **`fixtures`'s `Acknowledged` stays scenario data**, not derived against `health.Run` the way
+    its `Degraded` now is. `health.Run` derives `Acknowledged` from the acknowledgement file
+    (`activeAckIDs`), which a fixture does not have, so the fixture's own list is the scenario's
+    statement (Decision 7).
+  - **`probe_token.go` keeps its file name**, not renamed to `auth_check.go`. The rename would
+    break two facts citations and the test-file allowlist in `messages_test.go:34`; the file's
+    actual defect, stale wording naming a retired command, was the chore that shipped (Decision
+    10).
+  - **The B2 record's nits outside the two source entries' bullets stay unplanned**, the same as
+    before this pass (Decision 12): `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
+    None of it blocks a release. **Trigger:** the next pass touching that package.
 
-- **Go tool architecture chores filed at retire-1's close (2026-09-22).** Four
-  `go-architecture-reader` reads at the merge, `doctor` and `render` and `cmd/cairn` sound with
-  nits, `spine` workmanlike. None blocks a release; each carries the condition that makes it bite.
-  - **`cmd/copylist` collects only `*ast.BasicLit`, so a concatenated const never reaches the copy
-    golden.** A real gap in the copy-review gate, found when `cairn doctor`'s `longDoctor` escaped
-    it. `TestCatalogueCarriesEveryCheckString` now folds concatenations for the doctor's own
-    catalogue; the generator itself still does not. **Trigger:** the next operator-facing string
-    written as a concatenation, or any pass touching `cmd/copylist`.
-  - **`spine` carries callerless exports and a five-copy vocabulary.** `FromKind`, `Kind`,
-    `CombineState`, `ExitCodeFor`, and `ParkCodes` have no caller outside the package, and the same
-    code vocabulary is restated in five places. **Trigger:** the next pass that adds a code or a
-    state word, which pays for the drift.
-  - **`render` holds roughly thirty callerless exports pinned by `purity_test.go`**, plus the
-    test-only `Height` and `FailingOnly` fields, and 23 process citations in shipped comments.
-    **Trigger:** draft docs pass A, which already renames `layout.go`'s docs-URL constant, or the
-    HUD, which imports this package wholesale.
-  - **`cmd/cairn` carries stale comments and duplicated printing.** `root.go:37-43,77-78` still
-    claim `--color` and `--width` are inert when `cairn health` acts on both, `probe_token.go`
-    names a retired command, eight `Fprintf(w, "%s\n", data)` copies want one helper, and
-    `deps.go`'s `checks` seam exists for tests alone. **Trigger:** the `tool/v1.1.0` tag session,
-    which re-reads the help text anyway.
-  - **The doctor's `Result.ID` stamp is unobserved by any test.** `Run` stamps each result's id and
-    nothing asserts it, so a wrong id would reach the JSON payload silently. **Trigger:** the next
-    check added to `internal/doctor`.
+- **Go tool architecture, round 2 (2026-09-27).** The chores pass's ten `go-architecture-reader`
+  reads, full findings and best passages at
+  `docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`. Nine of ten packages read
+  sound with nits; most findings predate this pass, since the reader grades a whole package rather
+  than a diff. Structural-finding counts per package, descending: `cmd/cairn` 13 (**needs work**,
+  first in line: the `deps` seam's one test hook per field, duplicated bodies across `adopt`,
+  `auth check`, and the health paths, and a two-path process-exit split), `health` 11, `render` 9,
+  `providers` 7, `spine` 5, `store` 4, `mangen` 4, `fixtures` 2, `copylist` 2, `exe` 1. **Trigger:**
+  the next pass
+  touching any of these packages, or a dedicated architecture pass before tool `1.2`.
 
-- **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
-  2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact
-  upload on failure so a CI-only visual diff is viewable without one.
+- **`design.yml` uploads no Playwright report artifact on failure (found closing the 2026-09-27
+  chores batch, the same gap `e2e.yml` had).** The design gate's styleguide e2e job
+  (`.github/workflows/design.yml`) runs `npm --prefix examples/showcase run test:e2e -- styleguide`
+  with no reporter selection and no upload-on-failure step, so a CI-only failure (a token or
+  axe regression) leaves no downloadable report, the same diagnosability hole `e2e.yml` had before
+  this batch closed it. Apply the same fix: `--reporter=dot,html` plus an `actions/upload-artifact`
+  step scoped to the job, bounded retention, `if: failure()`. Trigger: the next pass that touches
+  `design.yml`, or the next CI-only design-gate failure nobody can reproduce locally.
 
 - **The Names convention reaches only prose Vale lints (promoted from the friction log,
   2026-09-22).** `docs-register.md`'s "Names" section and the `Cairn.Names`/`Cairn.NamesRetired`
@@ -2114,18 +2040,14 @@ the named human gates only):**
   `:::figure` natively, and the name is reserved — the docs pass records this.
   (3) **Glyph rendering is fill-only** (from the friction log, Waymark final review T1,
   2026-07-17) — a line-shaped subpath (the flag glyph's pole) paints nothing under a fill-only
-  renderer, reading as an ~14x8px smudge at standalone size. Close the subpath in the engine icon
-  set or paint stroke+fill. Deferred because a stroke change sweeps all 27 icons just after the
-  icon vocabulary shipped. The designer walkthrough (2026-09-27, friction log F11 in
-  `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`) adds two facts. The
-  `snowflake` glyph is stroke-only too, and both it and `flag` render as near-invisible dashes in
-  the Insert-block picker (`examples/showcase/src/theme/icons.ts:7,14`, copied to
-  `templates/waymark`). The `IconSet` type never says that a path must be a filled shape on a
-  `0 0 256 256` box (`src/lib/render/glyph.ts:7`, `docs/reference/core.md:1081`), so a designer
-  drawing a line icon gets a solid block or nothing. Leanest fix, short of the stroke sweep: one
-  sentence on `IconSet` and its reference row, and closed-shape paths for `flag` and `snowflake` in
-  the showcase and the template. Trigger: the next pass that touches `glyph.ts`, the icon set, or
-  `core.md`'s extension rows.
+  renderer, reading as an ~14x8px smudge at standalone size; the `snowflake` glyph is stroke-only
+  too, and both it and `flag` render as near-invisible dashes in the Insert-block picker
+  (`examples/showcase/src/theme/icons.ts:7,14`, copied to `templates/waymark`). The leanest half,
+  one sentence on `IconSet` stating a path must be a filled shape on a `0 0 256 256` box
+  (`src/lib/render/glyph.ts:7`, `docs/reference/core.md:1081`), shipped in the 2026-09-27 chores
+  batch. Still open: redraw `flag` and `snowflake` as closed-shape paths in the showcase and the
+  template, short of the full stroke sweep across all 27 icons. Owner: theme identity pass C.
+
 - **Mechanical hardening: gate the `sideEffects` coverage of the server-only browser stubs (from the
   seams pass-two review, 2026-08-01).** `package.json`'s `sideEffects` now lists `dist/*/browser.js`, so
   a bundler cannot tree-shake away the module-level throw that makes `./auth-crypto` and `./cloudflare`

@@ -32,7 +32,7 @@ func eachGlyphPair(t *testing.T, f func(t *testing.T, field string, u, a string)
 func TestGlyphWidthParity(t *testing.T) {
 	th := NewTheme(true, ProfileTrueColor)
 	eachGlyphPair(t, func(t *testing.T, field, u, a string) {
-		uw, aw := th.Width(u), th.Width(a)
+		uw, aw := th.width(u), th.width(a)
 		if uw != aw {
 			t.Errorf("%s: unicode %q is %d cells, ascii %q is %d cells", field, u, uw, a, aw)
 		}

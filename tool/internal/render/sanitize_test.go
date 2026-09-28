@@ -12,7 +12,7 @@ import (
 type hostileEntry struct {
 	Name  string `json:"name"`
 	Input string `json:"input"`
-	// Want is the exact output Sanitize must produce. It is committed beside the input so the
+	// Want is the exact output sanitize must produce. It is committed beside the input so the
 	// corpus is the assertion: weakening the sanitizer fails the entry by name rather than
 	// passing a property test that the control-dropping loop alone already satisfies.
 	Want string `json:"want"`
@@ -36,7 +36,7 @@ func loadHostileCorpus(t *testing.T) []hostileEntry {
 	return entries
 }
 
-// hasC0OrC1 reports whether s carries a C0 or C1 control byte, DEL included, the way Sanitize's
+// hasC0OrC1 reports whether s carries a C0 or C1 control byte, DEL included, the way sanitize's
 // own switch classifies one.
 func hasC0OrC1(s string) bool {
 	for _, r := range s {
@@ -56,15 +56,15 @@ func hasC0OrC1(s string) bool {
 func TestSanitizeHostileCorpus(t *testing.T) {
 	for _, e := range loadHostileCorpus(t) {
 		t.Run(e.Name, func(t *testing.T) {
-			out := Sanitize(e.Input)
+			out := sanitize(e.Input)
 			if out != e.Want {
-				t.Errorf("Sanitize(%q) = %q, want %q", e.Input, out, e.Want)
+				t.Errorf("sanitize(%q) = %q, want %q", e.Input, out, e.Want)
 			}
 			if hasC0OrC1(out) {
-				t.Errorf("Sanitize(%q) = %q still carries a C0 or C1 byte", e.Input, out)
+				t.Errorf("sanitize(%q) = %q still carries a C0 or C1 byte", e.Input, out)
 			}
 			if n := strings.Count(out, "\n"); n != 0 {
-				t.Errorf("Sanitize(%q) = %q carries %d newlines, want 0", e.Input, out, n)
+				t.Errorf("sanitize(%q) = %q carries %d newlines, want 0", e.Input, out, n)
 			}
 		})
 	}
@@ -74,10 +74,10 @@ func TestSanitizeHostileCorpus(t *testing.T) {
 // colour escape must not read as a line of its own once its escapes are stripped.
 func TestSanitizeForgedVerdictStaysInField(t *testing.T) {
 	in := "detail \u001b[42;30mOK\u001b[0m more detail"
-	got := Sanitize(in)
+	got := sanitize(in)
 	want := "detail OK more detail"
 	if got != want {
-		t.Errorf("Sanitize(%q) = %q, want %q", in, got, want)
+		t.Errorf("sanitize(%q) = %q, want %q", in, got, want)
 	}
 }
 
@@ -85,9 +85,9 @@ func TestSanitizeForgedVerdictStaysInField(t *testing.T) {
 // separated two words becomes a space rather than joining them.
 func TestSanitizeControlBetweenWordsBecomesSpace(t *testing.T) {
 	for _, in := range []string{"before\nafter", "before\rafter", "before\tafter"} {
-		got := Sanitize(in)
+		got := sanitize(in)
 		if got != "before after" {
-			t.Errorf("Sanitize(%q) = %q, want \"before after\"", in, got)
+			t.Errorf("sanitize(%q) = %q, want \"before after\"", in, got)
 		}
 	}
 }
@@ -96,12 +96,12 @@ func TestSanitizeControlBetweenWordsBecomesSpace(t *testing.T) {
 // invalid UTF-8 (JSON strings are Unicode text), so this constructs the byte sequence directly.
 func TestSanitizeInvalidUTF8(t *testing.T) {
 	in := "before\xff\xfeafter"
-	got := Sanitize(in)
+	got := sanitize(in)
 	if !strings.Contains(got, "before") || !strings.Contains(got, "after") {
-		t.Errorf("Sanitize(%q) = %q dropped surrounding text", in, got)
+		t.Errorf("sanitize(%q) = %q dropped surrounding text", in, got)
 	}
 	if hasC0OrC1(got) {
-		t.Errorf("Sanitize(%q) = %q carries a control byte", in, got)
+		t.Errorf("sanitize(%q) = %q carries a control byte", in, got)
 	}
 }
 
@@ -109,7 +109,7 @@ func TestSanitizeInvalidUTF8(t *testing.T) {
 // fix, a 300-character fix, a 60-character domain, an IDN, punycode, CJK, a ZWJ emoji, and a 2 KB
 // log field all sanitize without panic. The count- and site-shaped half of criterion 23 (zero
 // sites, zero checks, fifty sites, counts of 0 and 100000) describes a body's fixtures rather
-// than a string Sanitize takes, and is out of this task's scope; see the task report.
+// than a string sanitize takes, and is out of this task's scope; see the task report.
 func TestSanitizeDegenerateInputs(t *testing.T) {
 	inputs := map[string]string{
 		"empty":            "",
@@ -126,23 +126,23 @@ func TestSanitizeDegenerateInputs(t *testing.T) {
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						t.Errorf("Sanitize(%s) panicked: %v", name, r)
+						t.Errorf("sanitize(%s) panicked: %v", name, r)
 					}
 				}()
-				_ = Sanitize(in)
+				_ = sanitize(in)
 			}()
 		})
 	}
 }
 
 // TestSanitizeDeterministic is the sanitizer's own share of criterion 24: two runs of the same
-// input are byte-identical. Sanitize takes no environment input at all, so this holds regardless
+// input are byte-identical. sanitize takes no environment input at all, so this holds regardless
 // of TZ, LANG, LC_CTYPE, TERM, or NO_COLOR.
 func TestSanitizeDeterministic(t *testing.T) {
 	for _, e := range loadHostileCorpus(t) {
-		a, b := Sanitize(e.Input), Sanitize(e.Input)
+		a, b := sanitize(e.Input), sanitize(e.Input)
 		if a != b {
-			t.Errorf("Sanitize(%q) not deterministic: %q vs %q", e.Input, a, b)
+			t.Errorf("sanitize(%q) not deterministic: %q vs %q", e.Input, a, b)
 		}
 	}
 }

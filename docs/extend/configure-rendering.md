@@ -104,9 +104,19 @@ const registry = defineRegistry({ components: [callout] });
 const { renderMarkdown } = createRenderer(registry);
 ```
 
-Once registered, an author writes `::callout{tone="tip"}` in the markdown editor (or inserts it
-through the component picker), and both the preview and the public page render it identically,
-since both call the same `renderMarkdown`.
+Once registered, an author writes a container directive in the markdown editor (or inserts it
+through the component picker):
+
+```md
+:::callout[Write the title last]{tone="tip"}
+The title is a promise about the post.
+:::
+```
+
+and both the preview and the public page render it identically, since both call the same
+`renderMarkdown`. The directive vocabulary is container-only: a leaf or text form (`::callout{...}`
+or `:callout{...}`) is never dispatched to a component, since the pipeline restores it to literal
+prose so an accidental colon in ordinary text (a time, a ratio) survives unharmed.
 
 ## Hydrate a component on the client
 

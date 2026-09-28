@@ -118,6 +118,7 @@ export async function runReviewPage(
       outerHTML: `<script id="cairn-docs-review-script">${glueScript}${GLUE_SCRIPT_END_MARKER}\n</script>`,
     },
     querySelector: () => null,
+    querySelectorAll: () => [],
     addEventListener: () => {},
   };
 

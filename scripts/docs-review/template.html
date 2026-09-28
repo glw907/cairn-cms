@@ -46,6 +46,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 0.75rem;
     position: sticky;
     top: env(safe-area-inset-top, 0px);
@@ -55,6 +56,7 @@
   #cairn-docs-review-banner {
     margin: 0;
     margin-inline-end: auto;
+    flex: 1 1 16rem;
     color: var(--cdr-accent);
     font-size: 0.9rem;
   }
@@ -125,7 +127,7 @@
   [hidden] { display: none !important; }
 </style>
 <div id="cairn-docs-review-toolbar">
-  <p id="cairn-docs-review-banner" hidden></p>
+  <p id="cairn-docs-review-banner" role="status" hidden></p>
   <button type="button" id="cairn-docs-review-save" data-write-control>Save</button>
 </div>
 <div id="app"></div>
@@ -167,8 +169,20 @@
     files: computeRestoredFiles(stashedFiles, embeddedState.files),
   };
   var readOnly = false;
+  var saving = false;
+  // Why each group of controls is off, or null while it is live. Write controls (Save and every
+  // Edit) go off when this view cannot save; Comment goes off when it cannot comment.
+  var writeOffReason = null;
+  var commentOffReason = null;
   var artifactApi = null;
   var commentsApi = null;
+  // The in-flight capability lookups, started at load. A control clicked before its lookup
+  // settles waits on it rather than finding a null namespace and doing nothing.
+  var artifactLookup = null;
+  var commentsLookup = null;
+
+  var READ_ONLY_MESSAGE = 'This review page is read-only for you: publishing is off here.';
+  var UNAVAILABLE_SUFFIX = ' Open the page in the Claude artifact viewer to use it.';
 
   /**
    * Rebuilds the whole document from `nextState`, in the exact shape a self-publish must match:
@@ -202,15 +216,51 @@
     }
   }
 
+  function showStatus(text) {
+    var banner = document.getElementById('cairn-docs-review-banner');
+    if (!banner) return;
+    banner.hidden = false;
+    banner.textContent = text;
+  }
+
+  function setControlsOff(selector, reason) {
+    var controls = document.querySelectorAll(selector);
+    for (var i = 0; i < controls.length; i += 1) {
+      controls[i].disabled = true;
+      controls[i].title = reason;
+    }
+  }
+
+  function unavailableNotice() {
+    if (writeOffReason === null && commentOffReason === null) return null;
+    if (readOnly) {
+      return commentOffReason === null ? READ_ONLY_MESSAGE : READ_ONLY_MESSAGE + ' ' + commentOffReason;
+    }
+    if (writeOffReason !== null && commentOffReason !== null) {
+      return 'Saving and commenting are unavailable in this view.' + UNAVAILABLE_SUFFIX;
+    }
+    return writeOffReason !== null ? writeOffReason : commentOffReason;
+  }
+
+  function turnWritingOff(reason) {
+    writeOffReason = reason;
+    setControlsOff('[data-write-control]', reason);
+    showStatus(unavailableNotice());
+  }
+
+  function turnCommentingOff(reason) {
+    commentOffReason = reason;
+    setControlsOff('[data-action="comment"]', reason);
+    showStatus(unavailableNotice());
+  }
+
   function applyReadOnlyUi() {
     readOnly = true;
-    var save = document.getElementById('cairn-docs-review-save');
-    if (save) save.disabled = true;
-    var banner = document.getElementById('cairn-docs-review-banner');
-    if (banner) {
-      banner.hidden = false;
-      banner.textContent = 'This review page is read-only for you: publishing is off here.';
-    }
+    turnWritingOff(READ_ONLY_MESSAGE);
+  }
+
+  function offAttributes(reason) {
+    return reason === null ? '' : ' disabled title="' + escapeHtml(reason) + '"';
   }
 
   function fileSectionHtml(file, index) {
@@ -218,8 +268,9 @@
       '<section class="doc-file" data-index="' + index + '">' +
       '<header><h2>' + escapeHtml(file.path) + '</h2>' +
       '<button type="button" data-write-control data-action="edit" data-index="' + index + '"' +
-      (readOnly ? ' disabled' : '') + '>Edit</button>' +
-      '<button type="button" data-action="comment" data-index="' + index + '">Comment</button>' +
+      offAttributes(writeOffReason) + '>Edit</button>' +
+      '<button type="button" data-action="comment" data-index="' + index + '"' +
+      offAttributes(commentOffReason) + '>Comment</button>' +
       '</header>' +
       '<div class="doc-file-preview">' + renderMarkdown(file.markdown) + '</div>' +
       '<textarea class="doc-file-editor" hidden data-index="' + index + '">' +
@@ -241,59 +292,170 @@
     });
   }
 
-  async function save() {
-    if (readOnly || !artifactApi) return;
-    readTextareaValues();
-    stashState(state);
-    var html = buildDocument(state);
-    try {
-      await artifactApi.publish(html);
-    } catch (err) {
-      var code = err && err.code;
-      if (isReadOnlyRejection(code)) {
-        applyReadOnlyUi();
-      }
-      // Every other rejection (conflict, rate_limited, upstream_error, ...) is handled by the
-      // shell itself: on conflict it is already reloading every open view to the winner, and
-      // this view's own stash is what brings an unsent edit back after that reload.
+  /**
+   * Resolves one capability's namespace, or null when this view cannot run it: no
+   * `window.claude` (a copy of the page opened outside the viewer), `use()` resolving null, or
+   * `use()` rejecting. Never rejects, so no caller can leave an unhandled rejection behind.
+   */
+  function lookUpCapability(name) {
+    var claude = window.claude;
+    if (!claude || typeof claude.use !== 'function') return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      resolve(claude.use(name));
+    }).then(
+      function (namespace) { return namespace || null; },
+      function () { return null; },
+    );
+  }
+
+  function setSaveBusy(busy) {
+    var saveButton = document.getElementById('cairn-docs-review-save');
+    if (saveButton) saveButton.disabled = busy || writeOffReason !== null;
+  }
+
+  function reportPublishRejection(code) {
+    if (isReadOnlyRejection(code)) {
+      applyReadOnlyUi();
+    } else if (
+      code === 'not_declared' ||
+      code === 'capability_disabled' ||
+      code === 'capability_removed'
+    ) {
+      turnWritingOff('Saving is unavailable in this view (' + code + ').' + UNAVAILABLE_SUFFIX);
+    } else if (code === 'conflict') {
+      // The shell is already reloading every open view to the winning version; this view's
+      // stash is what brings the unsent edit back after that reload.
+      showStatus(
+        'Someone else saved first. The page is reloading to their version, and your edits ' +
+          'come back after the reload.',
+      );
+    } else if (code === 'rate_limited') {
+      showStatus('Saving too often. Wait a moment, then press Save again.');
+    } else {
+      showStatus(
+        'The save did not go through (' + (code || 'unknown error') + '). Press Save to try again.',
+      );
     }
+  }
+
+  async function save() {
+    if (readOnly || saving || writeOffReason !== null) return;
+    saving = true;
+    setSaveBusy(true);
+    try {
+      if (!artifactApi) {
+        showStatus('Connecting to the artifact viewer\u2026');
+        // A null lookup has already turned saving off and said why.
+        if (!(await artifactLookup)) return;
+      }
+      readTextareaValues();
+      stashState(state);
+      showStatus('Saving\u2026');
+      try {
+        await artifactApi.publish(buildDocument(state));
+        showStatus('Saved. The page reloads to the new version.');
+      } catch (err) {
+        reportPublishRejection(err && err.code);
+      }
+    } finally {
+      saving = false;
+      setSaveBusy(false);
+    }
+  }
+
+  function reportCommentRejection(code) {
+    if (
+      code === 'not_granted' ||
+      code === 'forbidden' ||
+      code === 'consent_required' ||
+      code === 'capability_disabled' ||
+      code === 'capability_removed'
+    ) {
+      turnCommentingOff('Commenting from the page is off here (' + code + ').');
+    } else if (code === 'rate_limited') {
+      showStatus('Too many comment requests. Wait a moment, then press Comment again.');
+    } else {
+      showStatus(
+        'The comment box could not open (' + (code || 'unknown error') + '). ' +
+          'Press Comment to try again.',
+      );
+    }
+  }
+
+  async function comment(section) {
+    if (commentOffReason !== null) return;
+    if (!commentsApi) {
+      showStatus('Connecting to the artifact viewer\u2026');
+      // A null lookup has already turned commenting off and said why.
+      if (!(await commentsLookup)) return;
+    }
+    var result;
+    try {
+      result = await commentsApi.openComposer({ element: section });
+    } catch (err) {
+      reportCommentRejection(err && err.code);
+      return;
+    }
+    if (result && result.opened) {
+      showStatus('Comment box open.');
+    } else {
+      // A soft refusal: the page did not hold focus, or the viewer already has a composer open
+      // with typed text. Never retried automatically.
+      showStatus(
+        'The comment box did not open. Click inside the page, close any open comment box, ' +
+          'then press Comment again.',
+      );
+    }
+  }
+
+  function toggleEditor(section, button) {
+    var preview = section.querySelector('.doc-file-preview');
+    var editor = section.querySelector('.doc-file-editor');
+    if (!preview || !editor) return;
+    var opening = editor.hidden;
+    if (!opening) preview.innerHTML = renderMarkdown(editor.value);
+    preview.hidden = opening;
+    editor.hidden = !opening;
+    button.textContent = opening ? 'Preview' : 'Edit';
+    if (opening) editor.focus();
   }
 
   function wireEvents() {
     var saveButton = document.getElementById('cairn-docs-review-save');
     if (saveButton) saveButton.addEventListener('click', save);
     document.addEventListener('click', function (event) {
-      var target = event.target;
-      if (!target || typeof target.getAttribute !== 'function') return;
-      var action = target.getAttribute('data-action');
-      var indexAttr = target.getAttribute('data-index');
-      if (!action || indexAttr === null) return;
-      var index = Number(indexAttr);
-      if (action === 'edit') {
-        var section = target.closest('.doc-file');
-        if (!section) return;
-        var preview = section.querySelector('.doc-file-preview');
-        var editor = section.querySelector('.doc-file-editor');
-        if (preview && editor) {
-          preview.hidden = !preview.hidden;
-          editor.hidden = !editor.hidden;
-        }
-      } else if (action === 'comment' && commentsApi) {
-        var el = target.closest('.doc-file');
-        if (el) commentsApi.openComposer({ element: el });
-      }
+      // Resolve the control from whatever node received the click, a text node included, so
+      // the handler does not depend on which node a given browser reports as the target.
+      var node = event.target;
+      if (node && node.nodeType !== 1) node = node.parentElement;
+      var control = node && typeof node.closest === 'function' ? node.closest('[data-action]') : null;
+      if (!control || control.disabled) return;
+      var section = control.closest('.doc-file');
+      if (!section) return;
+      var action = control.getAttribute('data-action');
+      if (action === 'edit') toggleEditor(section, control);
+      else if (action === 'comment') comment(section);
     });
   }
 
-  async function init() {
+  function init() {
     render();
     wireEvents();
     // Publish this page with capabilities: {artifact: {}, comments: {composer_only: true}}.
-    // Only openComposer/anchorFor are called here, matching the composer-only grant.
-    if (typeof window.claude !== 'undefined' && typeof window.claude.use === 'function') {
-      artifactApi = await window.claude.use('artifact');
-      commentsApi = await window.claude.use('comments');
-    }
+    // Only openComposer is called here, matching the composer-only grant. The two lookups run
+    // side by side, so a slow or unanswered one never holds up the other.
+    artifactLookup = lookUpCapability('artifact').then(function (namespace) {
+      artifactApi = namespace;
+      if (!namespace) turnWritingOff('Saving is unavailable in this view.' + UNAVAILABLE_SUFFIX);
+      return namespace;
+    });
+    commentsLookup = lookUpCapability('comments').then(function (namespace) {
+      commentsApi = namespace;
+      if (!namespace) {
+        turnCommentingOff('Commenting from the page is unavailable in this view.' + UNAVAILABLE_SUFFIX);
+      }
+      return namespace;
+    });
   }
 
   // Exposed for tests and debugging; not part of the page's own UI.

@@ -34,8 +34,9 @@ jobs:
       # with cairn's own and breaks check:snippets on the Handle type (tried and reverted,
       # 2026-08-20).
       - run: npm run check
-      # The component test project runs in real Chromium via @vitest/browser-playwright.
-      - run: npx playwright install --with-deps chromium
+      # The component test project runs in real Chromium via @vitest/browser-playwright, and the
+      # docs-review page test (a unit spec) clicks the review page's controls in real Firefox too.
+      - run: npx playwright install --with-deps chromium firefox
       # dist-sveltekit-app-import-boundary.test.ts (and packaging-boundary.test.ts) need a real
       # dist/ to run their gate against. `npm ci` above already triggers this through the
       # `prepare` life cycle script, but that is an implicit dependency on a hook a future

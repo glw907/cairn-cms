@@ -991,3 +991,17 @@ task's acceptance. No task's Files list, decision, or acceptance criterion neede
   carries the ruling header. The ROADMAP bullet naming them retires at the close.
 - **Spend:** S1 workflow about 1.0M, plus the plan, its review, and Task 0 about 0.8M. Pass total
   about 1.8M of 8.5M.
+
+### S2 (2026-09-27, conductor)
+
+- **Task 4** accepted by conductor ruling (`39074399`): the test goes red with the stamp removed
+  and green with it. The review escalated only on a gate-string mismatch between the absolute
+  and relative forms of `make -C tool check`; the runner now normalizes both (dotfiles
+  `fafa4f6`). Note: the per-pair loop would pass on an empty check list.
+- **Task 5** accepted (`9975d489`): four internals unexported, an AST test proves every
+  operator-facing message reaches `Catalogue` or a reasoned exemption, the zero-argument
+  restatements gone, about 18 citations rewritten as reasons. Notes: `messageExemptions` is not
+  checked for stale keys; an exemption's backing template is not itself verified.
+- **Task 6** accepted (`9a6ba169`, `41e3d185`): `RepoOwnership` deleted, one index-keyed `Reason`
+  name table. Note: a constant added after the `reasonCount` sentinel escapes the test.
+- **Spend:** S2 about 1.9M (0.25M of it the escalated first launch). Pass total about 3.7M of 8.5M.

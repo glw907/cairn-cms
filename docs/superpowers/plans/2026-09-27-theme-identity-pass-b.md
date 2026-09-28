@@ -1492,3 +1492,97 @@ items 1, 2, or 7 was hit.
 (item 6 above covers the two the decision's own list does not name); the two barrel tests, the new
 `DEFAULT_ADMIN_SCOPE` and restore-form coverage, and `check:vale`'s scratch-file proof all pass;
 the targeted gate is green except the proven-environmental `preview.spec.ts` exception in item 5.
+
+### Segment B: tasks 2 to 4 (2026-09-28)
+
+**Task 2: The insert stops fusing its closing fence.** Commits `1f15095d` (implementer) and
+`b6ca73a1` (fix). Verdict: `fix`, then `accept` on re-review.
+- The implementer's `padInsertedBlock` used `trimStart()`/`trimEnd()` on both sides of the caret,
+  which stripped the leading indentation of the next non-blank line (an indented code line, a
+  nested list item) and could eat inline whitespace. The reviewer also found the report's e2e
+  test-first evidence was unit-level only, not the required "fails on the unfixed editor, then
+  passes" e2e quote. The fix replaced the trims with line-aware `stripBefore`/`stripAfter` helpers
+  that leave a content line's own indentation alone at a genuine line boundary, added the two
+  required indentation unit rows, and re-ran the golden-path e2e against the pre-fix editor
+  (confirmed failing with the fused fence) and the fixed one (13/13 passing). Two non-blocking
+  items were also taken: a unit-test row's `pos` corrected to literally exercise `value.length`,
+  and process-citation comments ("F12 repro", "decision 10") dropped from test files.
+- **Decisions the implementer reported the criteria did not cover:** the padding function
+  collapses a run of more than one pre-existing blank line to exactly one, a broader guarantee
+  than decision 10's literal "the line directly above or below" wording (no test exercises more
+  than one pre-existing blank line); and the mounted path dispatches a full-document replace
+  (`from: 0, to: doc.length`) rather than a point insert, matching the file's existing
+  `transformSelection` idiom. The reviewer accepted the whole-document-replace approach as valid
+  and non-blocking both rounds.
+- **Batched non-blocking notes (not acted on mid-segment):** a caret sitting inside a content
+  line's own leading indentation is not treated as a line start, so the rest of that line's
+  indentation strips (no test row covers it); the attribution footer used Sonnet where the
+  dispatch text asked for Opus 5.5 (the conductor's own call, per the live system reminder).
+
+**Task 3: `radius-scale` and the retired-patch arms.** Commits `df474344` (implementer) and
+`02f8c3a5` (fix). Verdict: `fix`, then `accept` on re-review.
+- The rule, the three new `stock-default-hazards` arms, the promotion-version tripwire, and the
+  own-tree-and-guidance test landed correctly on the first pass; the reviewer's three blocking
+  findings were all test-coverage gaps against the acceptance's "asserted per finding" wording:
+  no new-arm fixture asserted its message contains `0.99.0`; three arm findings never asserted
+  `tier === 'advisory'`; and `radius-scale`'s `0.99.0` claim was checked only in one aggregate
+  test, not per fixture. The fix added the missing per-finding assertions across both rule test
+  files (exporting `RETIRED_PATCH_PROMOTION_VERSION` from the rule module so tests import rather
+  than hardcode it), plus two non-blocking process-citation rewords and a line-wrap for
+  readability. One non-blocking item was explicitly left: `rounded-t-full` (a side form of `full`)
+  falls through `radius-scale` on a `badge`, which the reviewer itself noted decision 11 does not
+  name, so no behavior change was authorized.
+- **Decisions the implementer reported the criteria did not cover:** the exact citation headings
+  quoted in each new arm's message (drawn from `docs/internal/admin-design-system.md`'s "The ink
+  story" / "Buttons" / "Component recipes" sections, since the task named the replacement classes
+  but not which heading to cite); `radius-scale`'s side-preserving replacement class in messages
+  (for example `rounded-t-box` rather than `rounded-box`), kept for correctness but not asserted
+  by any fixture; the precedence order among the three retired-patch arms when more than one
+  condition matches (ink-opener checked before Publish-tint before `shadow-none`), exercised only
+  in the "recipe beats `shadow-none`" direction, never ink-opener versus Publish-tint together; and
+  filing no `docs/internal/facts/` bullet, since the plan assigns this pass's facts bullets to the
+  close task, not per task.
+- **Batched non-blocking notes:** `rounded-t-full` and other side forms of `full` still pass
+  silently on a `badge`, flagged for the conductor to consider filing for a later decision.
+
+**Task 4: The recipe source and the norms print.** Commits `c31795f5` and `691224c0`
+(implementer, two commits) and `1cecaa17` (fix). Verdict: `fix`, then `accept` on re-review.
+- The implementer's `card` row wrote `card-shell` alone with the look "a floating card surface",
+  contradicting `docs/internal/admin-design-system.md:476-479`, which defines the floating card as
+  `card-shell card-shadow` and reserves bare `card-shell` for a nested surface inside an
+  already-shadowed container. The implementer also read decision 15's "the three radius role
+  classes by role" as one standalone `rounded-selector` row, folding `rounded-field` and
+  `rounded-box` into other rows' look text as prose rather than teachable `write` rows. The fix
+  corrected the `card` row to `card-shell card-shadow` (verified against the design system and the
+  live `norms card` output, with the reference page's example updated to match) and added the two
+  missing role-less rows for `rounded-field` and `rounded-box`. Two non-blocking items were also
+  taken: `status-chip`'s `rounded-selector` row made role-less (matching the other two radius
+  rows, since a corner class is not what a screen writes for a status chip) and the page-title
+  write string gained `font-[family-name:var(--font-display)]` (present in `PageHeader.svelte` and
+  the committed inventory, which the theme-kit fixture the implementer had copied from omits).
+- **Decisions the implementer reported the criteria did not cover:** decision 15's "the three
+  radius role classes by role" was textually ambiguous about standalone rows versus folding the
+  mapping into existing rows' look text; the implementer's first reading (one standalone row, two
+  folded) was overturned by the reviewer's blocking finding and replaced with three standalone
+  role-less rows in the fix. The reviewer separately noted the implementer's choice to add
+  `roleRecipes` as a test-only override on `NormsTables`, and the choice to source the page-title
+  write string from the fixture rather than the design-system recipe (later corrected in the fix).
+- **Batched non-blocking notes:** the `role` doc comment above `ROLE_RECIPES` lists only the four
+  button patterns as rows with no `role`, and now undercounts the three corner-class rows added in
+  the fix; left as an optional widening, not acted on.
+
+**Merge-forward ruling recorded.** Pass A now merges to `main` on its own, superseding this plan's
+"Passes A, B, and C merge to `main` together" header text (Geoff, 2026-09-28). The merge-forward
+protocol's mechanics are unchanged: this branch still merges `theme-identity-a`'s S3 corrections
+forward at a segment boundary or the close, but the eventual `main` merge is pass A's own act, not
+a joint A-B-C merge at pass C's close. Pass A's S3 corrections are in flight on `theme-identity-a`
+as of this boundary; the merge-forward will run as a merge of `origin/main` into `theme-identity-b`
+once PR #92 merges, at or before segment C's start.
+
+**Spend.** Segment B (tasks 2 through 4 combined, both implementer and fix rounds, both review
+rounds): about 1.4M subagent tokens. Running pass total: about 4.6M of the 19M ceiling (task 0
+about 0.25M; task 1 about 1.3M including its fix round; the segment A to B boundary work about
+0.3M; segment B about 1.4M; the remainder in conductor session overhead). These are conductor
+estimates from task notifications and `/cost`, not a token-by-token audit.
+
+**Next:** segment C (tasks 5 and 6, the shipped guidance and its exemplar, then the sync test).

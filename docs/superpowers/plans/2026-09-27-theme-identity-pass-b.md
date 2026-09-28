@@ -1434,3 +1434,61 @@ head; STATUS at or under 60 lines;
 **Acceptance:** items 1 to 10 recorded above; the plan is amended in place (task 0 item 4's four
 bullets) rather than re-typed, since the corrections are small and local. No stop condition in
 items 1, 2, or 7 was hit.
+
+### Task 1: The rename, `./public`, and the Names section (2026-09-28)
+
+1. **The rename landed and its own fix round.** `git mv` moved every file under
+   `src/lib/components/` to `src/lib/admin/` and `PreviewBanner.svelte` to a new
+   `src/lib/public/`; `package.json` exports `./admin` and `./public` in place of `./components`.
+   Committed as `17299cc5`, with every gate, doc, and script named in the task's Files section
+   retargeted (the audit's default scopes, the gate classifier, the reference-coverage props
+   check, the invisible-craft and prose gates, ESLint's Svelte glob, the admin sheet's `@source`,
+   the Go doctor fixture, `docs/reference/admin.md`/`public.md`, the Names section's two-axis grid
+   and two new Vale rules, the facts container's citations, and `templates/waymark/**` via
+   `npm run emit:template`). A review round found three comment-only defects (a ROADMAP trigger
+   line that named the destination instead of the rename, `config.ts`'s "three library
+   directories" miscounting a site route as a library directory, and `admin-css.input.css`'s
+   history comment naming the new folder for an event that happened in the old one); fixed, plus
+   the parallel mistake in `admin-css-safelist.ts`'s own history comment, one test fixture rename
+   (`PublicWidget.svelte` to `AdminWidget.svelte`, since the fixture lives under `src/lib/admin`
+   and names an admin role), three dropped process citations in `run.test.ts`, and two ROADMAP
+   historical-measurement lines restored to the old path they actually measured against
+   (`src/lib/components`, both predating this rename). Committed as the fix commit on top of
+   `17299cc5`.
+2. **Decision 1's measurement.** `check:invisible-craft` before the move (a scratch worktree at
+   `43ab1626`): 977 files scanned, 6 rules run, 0 errors, 0 advisories, 16 suppressed (all
+   `token-colors` on `PreviewBanner.svelte`, then under `src/lib/components`). After: 978 files
+   scanned, 0 errors, 0 advisories, the same 16 suppressed findings, now on
+   `src/lib/public/PreviewBanner.svelte`. Zero unsuppressed findings from `motion-property`,
+   `motion-vocabulary`, or `motion-hover-gate` either time, so `DEFAULT_ADMIN_SCOPE` took
+   `src/lib/admin` unconditionally; no ROADMAP fallback filing was needed.
+3. **Decision 25's byte-identical check.** The engine's own `dist/admin/cairn-admin.css`: `cmp`
+   before/after the move reports identical (654045 bytes). The showcase's own compiled admin CSS,
+   built with and without the new `@source "./lib/admin";` line (temporarily removed, rebuilt,
+   restored): `cmp` reports identical, 55013 bytes both times.
+4. **Decision 14's live audit count.** `node dist/audit/bin.js --rule stock-default-hazards
+   --config <scope: src/lib/admin>` on the moved tree: exactly 4 advisory findings, at
+   `EditPage.svelte:1630,1918,2014,2394`, confirming the plan's stated count live rather than by
+   grep.
+5. **The preview.spec.ts exception, proven and accepted.** The targeted gate's e2e run failed 8 of
+   67 tests, all in `e2e/preview.spec.ts`, all `expect(status).toBe(200)` receiving 404 on a
+   minted preview URL. Root cause traced to `examples/showcase/wrangler.jsonc`'s hardcoded
+   `PUBLIC_ORIGIN: "http://localhost:4173"` (untouched by this diff) feeding `requireOrigin`
+   independent of `E2E_PORT`, colliding with an unrelated process already holding port 4173 on
+   this workstation (confirmed with `ss -ltnp` and a `curl` to that port returning a bare 404 on
+   every path). CI's full e2e run on PR #95, where no such port collision exists, passed, closing
+   the question: this is a pre-existing, workstation-specific defect, not a regression from the
+   rename. The conductor accepted the gate with this exception recorded.
+6. **Allowlist notes not covered by decision 6's own list.** `docs/reference/sveltekit.md:1405`
+   and `docs/extend/share-a-draft-preview.md:61` correctly keep
+   `$lib/components/ArticleView.svelte`: it names a site's own custom public component under its
+   own `$lib/components` convention (the Names grid's "custom (a site writes it)" column), matched
+   by the acceptance grep's `lib/components` substring only by coincidence of naming, not a stale
+   engine-path reference. `docs/internal/README.md:44` links `daisyui-v5-hard-components.md`, an
+   unrelated file whose name happens to contain "components"; also a grep false positive, not a
+   stale reference.
+
+**Acceptance:** the five acceptance greps (decision 6) print only allowlisted or explained lines
+(item 6 above covers the two the decision's own list does not name); the two barrel tests, the new
+`DEFAULT_ADMIN_SCOPE` and restore-form coverage, and `check:vale`'s scratch-file proof all pass;
+the targeted gate is green except the proven-environmental `preview.spec.ts` exception in item 5.

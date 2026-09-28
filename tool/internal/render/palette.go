@@ -126,42 +126,42 @@ func (t Theme) Style(role Role) lipgloss.Style {
 	return s.Foreground(t.color(role))
 }
 
-// Strong returns role's style at bold weight, for the two things a frame emphasizes: the verdict
+// strong returns role's style at bold weight, for the two things a frame emphasizes: the verdict
 // word and the subject it names. It is a Theme method rather than a setter a body chains, which
 // is what keeps criterion 8's rule (Style and Sized are the only ways out of here) intact.
 //
 // At ProfileNoColor it returns the zero style unchanged, bold included: that rung is what
 // NO_COLOR, --color=never, and a plain pipe all resolve to, and its readers (a cron mail, a CI
 // log, an agent) get no escape bytes at all, not merely no colour.
-func (t Theme) Strong(role Role) lipgloss.Style {
+func (t Theme) strong(role Role) lipgloss.Style {
 	if t.profile == ProfileNoColor {
 		return t.Style(role)
 	}
 	return t.Style(role).Bold(true)
 }
 
-// SizedStrong returns Strong's style constrained to a fixed-width cell, the pairing a bold
+// sizedStrong returns strong's style constrained to a fixed-width cell, the pairing a bold
 // column field needs.
-func (t Theme) SizedStrong(role Role, w int) lipgloss.Style {
+func (t Theme) sizedStrong(role Role, w int) lipgloss.Style {
 	w = max(w, 0)
-	return t.Strong(role).Width(w).MaxWidth(w)
+	return t.strong(role).Width(w).MaxWidth(w)
 }
 
-// Link returns role's style carrying url as an OSC 8 hyperlink. A terminal that understands the
+// link returns role's style carrying url as an OSC 8 hyperlink. A terminal that understands the
 // sequence makes the text clickable and one that does not prints the text unchanged, which is why
 // every caller passes the URL itself as the text: the two terminals then show the same
 // destination. Callers gate this on the colour profile, since a pipe has no use for the sequence.
-func (t Theme) Link(role Role, url string) lipgloss.Style {
+func (t Theme) link(role Role, url string) lipgloss.Style {
 	return t.Style(role).Hyperlink(url)
 }
 
-// SizedLink returns role's style constrained to a fixed-width cell and carrying url as an OSC 8
+// sizedLink returns role's style constrained to a fixed-width cell and carrying url as an OSC 8
 // hyperlink, the pairing a linked column field needs. It lives here rather than at a call site
 // because Style and Sized are the only two ways out of this file, and a column that links has to
 // take its width from the same place every other column does.
-func (t Theme) SizedLink(role Role, url string, w int) lipgloss.Style {
+func (t Theme) sizedLink(role Role, url string, w int) lipgloss.Style {
 	w = max(w, 0)
-	return t.Link(role, url).Width(w).MaxWidth(w)
+	return t.link(role, url).Width(w).MaxWidth(w)
 }
 
 // Sized returns role's style constrained to a fixed-width cell: Width(w).MaxWidth(w), the

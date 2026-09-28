@@ -187,8 +187,8 @@ func TestStyleZeroAtNoColor(t *testing.T) {
 		style func(Role) lipgloss.Style
 	}{
 		{"Style", th.Style},
-		{"Strong", th.Strong},
-		{"SizedStrong", func(r Role) lipgloss.Style { return th.SizedStrong(r, 1) }},
+		{"Strong", th.strong},
+		{"SizedStrong", func(r Role) lipgloss.Style { return th.sizedStrong(r, 1) }},
 	}
 	for _, w := range ways {
 		t.Run(w.name, func(t *testing.T) {

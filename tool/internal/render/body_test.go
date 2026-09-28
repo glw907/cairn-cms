@@ -578,8 +578,8 @@ func TestWidthDefaultAndExactHonouring(t *testing.T) {
 	if got := (RenderInput{Width: 90}).width(); got != 90 {
 		t.Errorf("width() = %d, want the requested 90 exactly", got)
 	}
-	if got := (RenderInput{Width: 200}).width(); got != WidthCap {
-		t.Errorf("width() = %d, want the cap %d: content stops growing there", got, WidthCap)
+	if got := (RenderInput{Width: 200}).width(); got != widthCap {
+		t.Errorf("width() = %d, want the cap %d: content stops growing there", got, widthCap)
 	}
 }
 
@@ -593,16 +593,16 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 		for _, width := range []int{20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400} {
 			for _, ascii := range []bool{false, true} {
 				theme := NewTheme(true, ProfileTrueColor).forTier(ascii)
-				budget := min(width, WidthCap)
+				budget := min(width, widthCap)
 				for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 					in := input(f.Reports, body, width, ProfileTrueColor, ascii, spine.VerdictCritical)
 					in.Status = sampleStatus()
 					for _, l := range Render(in).Lines() {
 						// The plain body is line-oriented by contract and depends on no width at
 						// all, so it is swept for the other two tables' sake and exempted here.
-						if body != BodyPlain && theme.Width(l) > budget {
+						if body != BodyPlain && theme.width(l) > budget {
 							t.Errorf("%s body %v at width %d ascii %v: line is %d cells: %q",
-								f.Name, body, width, ascii, theme.Width(l), stripANSI(l))
+								f.Name, body, width, ascii, theme.width(l), stripANSI(l))
 						}
 					}
 				}
@@ -620,16 +620,16 @@ func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
 	const ambiguous = "●"
 	narrow := NewTheme(true, ProfileTrueColor).forTier(false)
 	wide := NewTheme(true, ProfileTrueColor).forTier(true)
-	if got := narrow.Width(ambiguous); got != 1 {
+	if got := narrow.width(ambiguous); got != 1 {
 		t.Errorf("narrow table measures %q as %d cells, want 1", ambiguous, got)
 	}
-	if got := wide.Width(ambiguous); got != 2 {
+	if got := wide.width(ambiguous); got != 2 {
 		t.Errorf("wide table measures %q as %d cells, want 2", ambiguous, got)
 	}
 	// The tables agree on plain ASCII, which is the whole of the ASCII tier's own glyph set.
 	for _, s := range []string{"+", "!", "*", "?", "o", ">", "-", "...", "ecxc.ski"} {
-		if narrow.Width(s) != wide.Width(s) {
-			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.Width(s), wide.Width(s))
+		if narrow.width(s) != wide.width(s) {
+			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.width(s), wide.width(s))
 		}
 	}
 }
@@ -1221,10 +1221,10 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 		// the line. Below the wide rung the record names itself on one line and its fields
 		// follow, which is what keeps a field from being hard-wrapped inside its own token.
 		record := lineCarryingIn(t, lines, "commit.failed")
-		if width >= Width100 && !strings.Contains(record, "=") {
+		if width >= width100 && !strings.Contains(record, "=") {
 			t.Errorf("width %d: the record line carries no field: %q", width, record)
 		}
-		if width < Width100 && strings.Contains(record, "=") {
+		if width < width100 && strings.Contains(record, "=") {
 			t.Errorf("width %d: a field shares the record line at a width too narrow for it: %q",
 				width, record)
 		}
@@ -1249,7 +1249,7 @@ func TestLogRowWithNoEventDropsTheEventColumn(t *testing.T) {
 		if !strings.Contains(text, "message=[404] POST /blog/") {
 			t.Errorf("width %d: the trimmed message is missing:\n%s", width, text)
 		}
-		if width < Width100 {
+		if width < width100 {
 			continue
 		}
 		console := lineCarryingIn(t, lines, "[404] POST /blog/")
@@ -1316,7 +1316,7 @@ func textOf(in RenderInput) string {
 // measured below.
 func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
 	theme := NewTheme(true, ProfileTrueColor)
-	if got := theme.Width(theme.cell(RoleFailing, "x", 8)); got != 8 {
+	if got := theme.width(theme.cell(RoleFailing, "x", 8)); got != 8 {
 		t.Errorf("the cell measures %d cells, want the 8 its column budgeted", got)
 	}
 	ground := lipgloss.NewStyle().Background(lipgloss.Color("#123456")).Width(8).MaxWidth(8)
@@ -1334,7 +1334,7 @@ func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
 func TestFleetOnePassRule(t *testing.T) {
 	theme := NewTheme(true, ProfileTrueColor)
 	ok := inkOf(theme, RoleOK)
-	for _, width := range []int{Width80, Width100, WidthCap} {
+	for _, width := range []int{Width80, width100, widthCap} {
 		in := input(fixtures.TwelveSites(), BodyMany, width, ProfileTrueColor, false, spine.VerdictCritical)
 		in.Status = sampleStatus()
 		for _, sp := range frameSpans(Render(in)) {

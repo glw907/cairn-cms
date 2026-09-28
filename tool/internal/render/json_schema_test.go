@@ -447,12 +447,12 @@ func TestEverySchemaVersionIsOneBeforeTheTag(t *testing.T) {
 		schema   string
 		constant int
 	}{
-		{"cairn-health.schema.json", SiteSchemaVersion},
-		{"cairn-health-summary.schema.json", SummarySchemaVersion},
-		{"cairn-sites-list.schema.json", SitesListSchemaVersion},
-		{"cairn-logs.schema.json", LogsSchemaVersion},
-		{"cairn-adopt-list.schema.json", AdoptListSchemaVersion},
-		{"cairn-auth-check.schema.json", AuthCheckSchemaVersion},
+		{"cairn-health.schema.json", siteSchemaVersion},
+		{"cairn-health-summary.schema.json", summarySchemaVersion},
+		{"cairn-sites-list.schema.json", sitesListSchemaVersion},
+		{"cairn-logs.schema.json", logsSchemaVersion},
+		{"cairn-adopt-list.schema.json", adoptListSchemaVersion},
+		{"cairn-auth-check.schema.json", authCheckSchemaVersion},
 		{"cairn-doctor.schema.json", DoctorSchemaVersion},
 	} {
 		t.Run(tt.schema, func(t *testing.T) {

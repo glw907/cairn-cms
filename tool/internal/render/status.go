@@ -82,7 +82,7 @@ func (t Theme) statusLines(in RenderInput, col, width int) []string {
 // check was attempted: a site listing runs none, so the past tense would tell the operator that
 // checks failed to run when nothing ran at all.
 func (t Theme) statusLine(c Credential, now time.Time, listing bool, col, width int) []string {
-	variable := Sanitize(c.Variable)
+	variable := sanitize(c.Variable)
 	if variable == "" {
 		return nil
 	}
@@ -94,7 +94,7 @@ func (t Theme) statusLine(c Credential, now time.Time, listing bool, col, width 
 		return t.indented(t.Style(RoleUnknown), col,
 			variable+statusUnsetJoin+joinWords(sanitizeAll(c.Disables))+tail, width)
 	}
-	line := variable + statusReadJoin + Sanitize(c.Provider)
+	line := variable + statusReadJoin + sanitize(c.Provider)
 	if !c.Expires.IsZero() {
 		line += statusExpiresJoin + isoDate(c.Expires) + ", in " + remainingDays(c.Expires.Sub(now))
 	}
@@ -138,7 +138,7 @@ func remainingDays(d time.Duration) string {
 func sanitizeAll(ss []string) []string {
 	out := make([]string, 0, len(ss))
 	for _, s := range ss {
-		out = append(out, Sanitize(s))
+		out = append(out, sanitize(s))
 	}
 	return out
 }

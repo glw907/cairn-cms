@@ -7,7 +7,9 @@ import { buildRobots } from '@glw907/cairn-cms/delivery';
 // that unrelated dependency chain.
 const SITE_ORIGIN = 'https://showcase.test';
 vi.mock('$chassis/content.js', () => ({ siteMeta: { origin: SITE_ORIGIN } }));
-const mockCairn = vi.hoisted(() => ({ cairn: { aiPosture: undefined as 'decline' | 'invite' | undefined } }));
+const mockCairn = vi.hoisted(() => ({
+  cairn: { aiPosture: undefined as 'decline' | 'invite' | undefined },
+}));
 vi.mock('$theme/cairn.config.js', () => mockCairn);
 
 describe('robots.txt route', () => {
@@ -15,7 +17,9 @@ describe('robots.txt route', () => {
     mockCairn.cairn.aiPosture = undefined;
     const { GET } = await import('./+server.js');
     const body = await (await GET({} as Parameters<typeof GET>[0])).text();
-    expect(body).toBe(buildRobots({ sitemapUrl: SITE_ORIGIN + '/sitemap.xml', disallow: ['/admin'] }));
+    expect(body).toBe(
+      buildRobots({ sitemapUrl: SITE_ORIGIN + '/sitemap.xml', disallow: ['/admin'] }),
+    );
   });
 
   it('passes a declared aiPosture through to robotsResponse', async () => {
@@ -24,7 +28,11 @@ describe('robots.txt route', () => {
     const { GET } = await import('./+server.js');
     const body = await (await GET({} as Parameters<typeof GET>[0])).text();
     expect(body).toBe(
-      buildRobots({ sitemapUrl: SITE_ORIGIN + '/sitemap.xml', disallow: ['/admin'], posture: 'decline' }),
+      buildRobots({
+        sitemapUrl: SITE_ORIGIN + '/sitemap.xml',
+        disallow: ['/admin'],
+        posture: 'decline',
+      }),
     );
   });
 });

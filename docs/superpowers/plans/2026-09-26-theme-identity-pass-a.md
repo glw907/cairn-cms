@@ -218,8 +218,7 @@ The heavy lane serializes: one browser gate on the machine at a time. Every stri
 vitest component project serialized (`--no-file-parallelism`, decision 13). Stock `npm test` runs
 it in parallel, stalls on this workstation's recorded state, and is not a gate for this pass.
 A component-test stall under a concurrent gate is contention, so rerun that file alone before
-calling it red (the `concurrent-pass-flaky-tests` and `vitest-browser-parallel-pages-stall`
-memories). The conductor runs no heavy gate itself; a gate agent runs each one (see "The gate
+calling it red (`docs/internal/durable-gotchas.md`, "The component project stalls under file parallelism" (on `main` since `8196bc9e`; it reaches this branch at the merge), whose last paragraph covers contention). The conductor runs no heavy gate itself; a gate agent runs each one (see "The gate
 agent" above).
 
 ## Decisions this plan takes
@@ -285,7 +284,7 @@ invents them:
     gains `test:node-projects` (the three node projects `npm test` runs today), and `test` becomes
     `npm run test:node-projects && npm run test:component`. Reason: stock parallel `npm test`
     stalls in the component project on this workstation, and serial runs are clean
-    (`vitest-browser-parallel-pages-stall` memory; `docs/HISTORY.md:545-549`). The runner forces
+    (`docs/internal/durable-gotchas.md`, "The component project stalls under file parallelism" (on `main` since `8196bc9e`; it reaches this branch at the merge); `docs/HISTORY.md:545-549`). The runner forces
     the tool's printed string on every pinned task, so the serialization must live in that string.
     An implementer's own serialized run would otherwise draw a MISMATCH. The change lives in the
     tool, not in `vitest.config.ts`. `gate-tier.mjs` runs only locally, so CI keeps running
@@ -451,8 +450,8 @@ Item 8's baseline runs in a gate agent, never in the main loop.
    and the tail of the log. The conductor quotes that return as task 0's gate evidence to task 1's
    reviewer. If the serialized component run stalls (a page prints
    `Cannot connect to the server in 60 seconds`, or the run makes no progress), the pass stops
-   before segment A with one message to Geoff. The remedy is a reboot and a retest, per the
-   `vitest-browser-parallel-pages-stall` memory. No rerun or further serialization clears this
+   before segment A with one message to Geoff. The remedy is a reboot and a retest, per
+   `docs/internal/durable-gotchas.md`, "The component project stalls under file parallelism" (on `main` since `8196bc9e`; it reaches this branch at the merge). No rerun or further serialization clears this
    stop.
 9. **Before-state capture** (one Sonnet `general-purpose` agent at `high`, headless only, in the
    worktree at its head, which renders `main`'s admin because item 6 changes only the test and
@@ -1697,5 +1696,152 @@ targeted tasks draw a MISMATCH, so check the first task's report for the fallbac
 - **Note:** the regen commit was pushed by the workflow token, so PR CI did not run on it; this
   ledger's push is what triggers it.
 
-**Resume here (next session):** run task 16, the close, with the merge held for Geoff's
-before-and-after.
+**Resume here (superseded by the close below):** run task 16, the close, with the merge held for
+Geoff's before-and-after.
+
+### S1 and task 15 (2026-09-27, conductor; recorded at the close)
+
+S1's ledger entry was not written when S1 ran; this close reconstructs it from the verifier's
+verdict and the commit log.
+
+- **S1** (fresh-context `visual-verifier`, the core pages at five widths and the rest at 1440 and
+  390, both themes): MATCHED 162 cells, COSMETIC 31, STRUCTURAL 10 cells in 4 distinct items;
+  glance test YES on every page; contrast probe clean. Verdict FAIL-WITH-LIST. The four
+  STRUCTURAL items: `ListToolbar`'s forced 30px row missed the size step; the posts segmented join
+  wrapped at 320, orphaning its last option; the theme-kit's statically open `.modal-box` never
+  rendered; the theme-kit error alert crushed its body at 320 (pre-existing `ConceptList` markup,
+  `flex-col` inert on daisyUI's grid alert). Three `adjust` items: the office toolbar rhythm (the
+  same as STRUCTURAL 1), the Write/Preview selected tab's one square corner at rest, and the bare
+  `.badge`'s invisible edge in light. Felt ledger: the heading weights, button weights, non-`sm`
+  padding, soft primary steps, alerts, modal shadow, and selected segment read already-right.
+- **Task 15** closed every STRUCTURAL and `adjust` item: `e4a87c99` (the toolbar takes the size
+  step, and the join scrolls instead of wrapping), `35b73489` (the kit modal box renders),
+  `bcbc22ff` (the refused-delete banner stacks below `sm`), `aad3a870` (the resting tab rounds all
+  four corners), `7b3421e4` (the bare badge takes the plain button's 22% edge), `3a2c0f21` (the
+  kit heading at 550). Follow-ups in the same run: `cfab5c4c` (the kit stays out of the Waymark
+  template), `a590559f` (the media insert popover clamps inside the viewport; the intermittent
+  `media-figure` e2e failure predates the pass), `f2dab161`, `b4a7aa5d`, `08bb888a`, `daf23897`
+  (the join's 4px pad keeps its focus ring whole), and `8c770707` (the kit's error alert matches
+  `ConceptList`'s fix).
+- **Carried to S3** (not fixed): S1's COSMETIC and owner-taste items, listed in `ROADMAP.md`'s Now
+  entry "Theme identity pass A's carried items".
+
+### Close (task 16, 2026-09-28)
+
+- **`code-simplifier`** (Opus): `78136254`, three files. The chip rule's control skip is one
+  named helper, the drawer focus retry names its attempt cap, and two comments lose pass-name
+  citations. `npm run check` 0/0 inside its run.
+- **Review fan-out** (class `paint`): `daisyui-a11y-reviewer` (Opus) returned accept with four
+  minors (the soft primary's ungated hover, `EditorToolbar`'s ungated seam hover, the theme-kit
+  fixture's missing title and section names, and a pre-existing `overflow-hidden` on
+  `CairnTidySettings`'s radiogroup), all routed to `ROADMAP.md`. Its first dispatch died on a
+  1,249-line diff read and was re-run with windowed reads. The S1 and S4 `visual-verifier` reads
+  stand as the visual half.
+- **Docs** (`d7eb381e`): the `## Unreleased` window (`<!-- release-size: minor -->`, `0.98.0`
+  planned) and its migration-notes partner; eight facts bullets in `facts/extend.md`; reference
+  fixes in `admin-grammar-tokens.md`, `admin-toolkit.md`, `cairn-audit.md`, `components.md`, and
+  `sveltekit.md`; the frozen `add-a-custom-admin-screen.md` "status pill" deficiency fixed and
+  filed as `f:bwn0uo`; decision 4's timing-scoped reading recorded in `engine-rulings.md`; the
+  arc log's two errata; the stale engine-string sentence in `pass-gate-tiers.md`; the
+  friction-log triage (no open entry; the pass's findings routed to `ROADMAP.md`).
+- **Routing of the S4 carried cosmetics:** none fit pass B, whose scope is the rename and the
+  agent path. All three went to `ROADMAP.md`'s Now entry "Theme identity pass A's carried items",
+  whose trigger is Geoff's S3 sitting (a correction lands here and merges forward into B), else the
+  next pass to edit the admin CSS, before the `0.98.0` cut in any case.
+- **Gate:** one heavy run on `d7eb381e` through `cairn-run-gate`: `npm run check`, the node
+  projects (395 files, 5203 tests), the component project serialized (89 files, 1757 passed and
+  2 skipped), then `npm run check:close`; `gate exit: 0`. The drafting agent re-issued the command
+  once after that run had already completed, which started a second full run (also `gate exit:
+  0`); a wasted heavy run worth remembering, since `cairn-run-gate` reruns a finished command
+  rather than replaying its result.
+- **Held for Geoff:** the merge, the S3 before-and-after, `docs/STATUS.md` and
+  `docs/HISTORY.md` on `main` (written at the merge from this post-mortem), and the version. Pass
+  B's task 0 reads this entry: pass A is closed, unmerged, S3 pending on async review. The closed
+  head is the commit that adds this entry.
+
+## Post-mortem (2026-09-28)
+
+### What was built
+
+The admin's identity moved into daisyUI's theme layer. The admin sheet compiles every daisyUI
+class except calendar (580, up from 217), generated from the installed package. The two theme
+roots are `@plugin "daisyui/theme"` blocks with split ownership. Every override of a daisyUI
+declaration lives in `@layer utilities { @layer cairn-idiom { ... } }` with its full state set:
+the plain hairline, the selected segment on five forms, the soft primary, field edges, the round
+switch, concentric menu corners, and the tinted alerts. The markup sweep put every fixed corner on
+the three-token ladder and folded the button recipes onto daisyUI variants, with each retired class
+kept on the compatibility safelist. The starter took the ladder and the hairline outline. The
+`/admin/theme-kit` fixture proves plain daisyUI markup renders as cairn in both themes. The
+contrast proof, the ratified radius ladder, the regenerated norms manifest, and the design-system
+documents record it. S4 regenerated 92 CI baselines.
+
+### What the gates caught
+
+- The full compile surfaced a shipped bug: the overlay drawer's focus call ran while daisyUI held
+  the drawer hidden, so focus never moved (`c5d1239e`).
+- Moving rules 13 and 14 into `cairn-idiom` let a `--cairn-error-border` utility win on five
+  destructive controls, under 3:1 (decision 17, fixed with `border-error`).
+- Task 12's fix round found the host-CSS regex missed four of six stylesheets, and found that
+  Vite's minifier moves the sublayer pin below both blocks; task 12b guards emission order.
+- S1 found four STRUCTURAL items the per-task gates could not see (the toolbar's forced height,
+  the wrapping join, the invisible kit modal, the crushed banner).
+- The close's a11y review found the soft primary's hover outside the modality gate.
+
+### What a later pass would be wrong to rediscover
+
+- **The sublayer and its pin.** daisyUI 5 emits component rules into sublayers of `utilities`, so
+  a `@layer components` override loses. Overrides go in `utilities.cairn-idiom`, pinned by
+  `@layer utilities.daisyui, utilities.cairn-idiom;`. A minified build moves that pin below both
+  blocks, so emission order decides; `e426f011`'s test guards it.
+- **A few daisyUI declarations are unnested** in `@layer utilities`, outside every `daisyui.*`
+  sublayer: `.alert`'s `border-color`, `.kbd`'s `box-shadow`, `.collapse`'s `visibility`. A
+  `cairn-idiom` rule cannot beat one, so override it through daisyUI's variable
+  (`--alert-border-color`).
+- **The theme-object key split.** The `@plugin "daisyui/theme"` block carries exactly daisyUI's
+  theme keys (`admin-theme-completeness.test.ts`) and no top-level comma, since Tailwind's
+  `@plugin` parser keeps only a value's last comma part, silently. Everything else the root sets,
+  comma-bearing font stacks and shadows included, sits in the plain unlayered rule after it.
+- **Component tests run on the compiled sheet**, through the `compiledAdminSheet` Vite plugin, and
+  the component project rebuilds the sheet before every run, so the sheet is never stale.
+- **Five selected forms:** `.btn-active`, `aria-pressed`, `aria-checked`, a real `aria-current`,
+  and `:checked` (daisyUI's own checked `.btn` is selected). The plain hairline excludes all five.
+- **Every `cairn-idiom` hover sits in `@media (hover: hover)`**; `:active` and `:focus-visible`
+  never do.
+- **The runner's gate string for a pinned tier.** `pass-execute` forces `gate-tier.mjs`'s printed
+  string on a pinned task, so a per-task `gate` runs only with the `gateTier: "targeted"`
+  sentinel, which relies on the classifier rejecting an unknown pin.
+- **The mid-pass class switch.** Moving to `paint` at task 7 dropped the full engine gate per CSS
+  task and the test-only fix rounds that reran it. By the switch the pass had spent about 8.7M
+  of the original 15.8M plan, with tasks 7 to 16 still ahead; the rest re-projected at 8.6M under
+  `paint`. The class belongs in the plan header from the start.
+- **Port 4173 belongs to another project on this workstation.** Playwright's
+  `reuseExistingServer` silently tests whatever answers there; the showcase config reads
+  `E2E_PORT` (decision 14), and this pass ran every local e2e on 4392.
+- **During a render change CI is expected red** on `toHaveScreenshot` mismatches in
+  `admin-visual` and `site-visual` and on norms freshness, until S4's regen; read CI against that
+  set rather than as green or red.
+- **A statically open `.modal-box` renders nothing** outside `.modal[open]`; a fixture must open
+  it the way daisyUI does.
+- **daisyUI's `.alert` is a grid**, so `flex-col` on it is inert; stack with `grid-flow-row` and
+  `grid-cols-1`.
+
+### Score
+
+- **Tokens:** ceiling 20M, flag 16M; original plan 15.8M; re-projection 17.3M. Ledgered spend
+  through segment D is about 14.6M. S1, task 15, and S4 ran without a spend line in the ledger,
+  so their share is unrecorded here; the conductor's notification counter holds it. The close:
+  subagents about 0.22M (`code-simplifier` 0.09M, two `daisyui-a11y-reviewer` dispatches 0.14M)
+  plus this drafting agent's own session, about 0.4M (an estimate; the agent has no meter of its own). Known total: about 15.2M, before the
+  unrecorded S1 to S4 share, which the conductor adds.
+- **Planning misses: 3.** The ceremony the plan set for a CSS pass (the full engine gate per task,
+  4.4 test lines per source line), which Geoff re-scoped to the `paint` class mid-pass; the merge
+  and sequencing (the plan merged A alone at its close, and Geoff's 2026-09-27 rulings hold A for
+  an async before-and-after and merge A, B, and C together); decision 16, the `.btn-link`
+  exclusion, which a planning question on nav links would have settled.
+- **Execution sittings: 2 so far.** The pass-class approval (2026-09-27) and the segment C
+  rulings on async review and the held merge (2026-09-27). The owner glance was published async
+  and drew no corrections. S3 will be the third.
+
+**Resume here (next session):** pass A is closed and unmerged. Pass B runs from this head per
+its plan (`docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md` on `theme-b-plan`). Geoff's
+S3 before-and-after is still owed; its corrections land on `theme-identity-a` and merge forward.

@@ -805,8 +805,12 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
    worktree (the `a-worktree-showcase-e2e-proves-mains-engine` gotcha).
 4. **Re-verify the plan's facts** (one Sonnet pre-flight agent, read-only), recording each against
    its plan-time value and amending the plan where one moved:
-   - The spec's acceptance grep (task 1) at plan time: 181 files, 486 lines. Decision 6's four
-     greps: 30 lines in 11 files; 19 files plus the one `<code>` form; 28 lines in 17 files; 14
+   - The spec's acceptance grep (task 1) at plan time: 181 files, 493 lines (task 0 re-verification,
+     2026-09-28: line count moved from the plan's 486 to 493; file count held). Decision 6's four
+     greps: 30 lines in 11 files; 18 files, 24 lines for the `<code>`/backtick form (task 0
+     re-verification: moved from the plan's "19 files plus the one `<code>` form" — `architecture.md`
+     carries two hits on one file, not a 19th file); 27 lines in 16 files for the `components.md`
+     link form (task 0 re-verification: moved from the plan's 28 lines in 17 files); 14
      lines for the fifth (before the rename, with `src/lib/components/` hits filtered out).
    - `src/lib/components/`: 93 entries, 103 files; `index.ts` with 22 export statements, the last
      `PreviewBanner` with its exception comment at `:40-44`; `PreviewBanner.svelte` importing
@@ -835,8 +839,10 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
      `RATIFIED_NORMS`: twelve rows over eight roles, at `norms.ts:208-282`. `formatNormsQuery` in
      `norms.ts`.
    - The ratified vocabulary pass A left: `admin-design-system.md`'s corner ladder and emphasis
-     ladder, and `/admin/theme-kit/+page.svelte` (159 lines at plan time, no `<style>` block, `<h1
-     class="type-title font-bold">`).
+     ladder, and `/admin/theme-kit/+page.svelte` (164 lines, no `<style>` block, `<h1
+     class="type-title font-[550]">`; task 0 re-verification, 2026-09-28: moved from the plan's
+     "159 lines at plan time" and `font-bold` — pass A's late commits `3a2c0f21` and neighbors gave
+     the fixture's heading the ratified 550 weight after this plan's verification base).
    - The insert: `insertAtCursor` at `MarkdownEditor.svelte:1133-1143`, prefixing `\n\n` when the
      caret is past 0 and appending nothing; `serializeComponent` at
      `src/lib/render/component-grammar.ts:44`; the e2e's opening-line-only assertion at
@@ -850,7 +856,12 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
      `exemplar-detail.md:115`), and no fixed radius in any fence; `daisyui-first.md`'s
      "Segmented-control contrast" section describing the pinned `.btn-active` ring pass A retired;
      no `src/lib` placement line in `cairn-admin-screens` or `cairn-extend` (task 5 adds one).
-   - The guarded-retirement arm's four findings on `EditPage.svelte` (decision 14's exemption).
+   - The guarded-retirement arm's four findings on `EditPage.svelte` (decision 14's exemption; task
+     0 re-verification, 2026-09-28: not confirmable by static grep alone — `EditPage.svelte` carries
+     the `cairn-btn-guarded` pattern extensively and no literal `badge-ghost`, consistent with the
+     exemption story, but the exact count of four findings needs a live `cairn-audit` run against
+     the file, which task 0 did not run; task 1's implementer confirms the count when it re-proves
+     the audit).
    - `examples/showcase/src/admin.css`: one `@source "./routes/admin"` and utilities imported
      with `source(none)` (decision 25).
    - **Pass A's late commits.** List the files pass A changed between `1486f3f7` (this plan's
@@ -1344,3 +1355,82 @@ head; STATUS at or under 60 lines;
 ## Ledger
 
 (written by the conductor at each segment boundary)
+
+### Task 0: Pre-flight (2026-09-28, conductor)
+
+1. **Pass A closed and unmerged, verified.** Pass A's plan ledger records its close at task 16;
+   the ledger's own close entry says "the closed head is the commit that adds this entry," which
+   is `a9bef091`, but a later fold commit, `7e64a388`, sits on top of it on `theme-identity-a`
+   (its own message: "fold the close review into pass A's changelog and ledgers") and is the true
+   closed head — recorded here per the conductor's brief. `theme-identity-a` is not merged to
+   `main` (`git merge-base --is-ancestor origin/main origin/theme-identity-a` fails) and its head
+   is pushed. S3 (Geoff's before-and-after) is pending on async review per pass A's ledger; the
+   merge-forward protocol watches `theme-identity-a` for its corrections.
+2. **No live executor, with one non-blocking finding.** `pgrep -af` on `theme-identity-b` found
+   nothing. `pgrep -af` on `theme-identity-a` found one stray process: a `workerd` server
+   (`examples/showcase/node_modules/@cloudflare/workerd-linux-64/bin/workerd serve ...`, PID
+   3515430, running since Sep 27, over four hours old at check time), with no parent Claude or
+   workflow process attached — a leaked e2e/dev-server process from a prior run, not a live
+   editing executor. `git status --porcelain` in pass A's worktree is empty. Left running (not
+   killed) since it is harmless to this branch's work and not this conductor's worktree to clean;
+   flagging for whoever next touches `theme-identity-a`. The `theme-identity-b` worktree and
+   branch already existed at dispatch time (created by an earlier session step, head `f462cd9d`),
+   superseding this item's plan-time "no worktree exists" precondition.
+3. **Worktree.** Already created at `.claude/worktrees/theme-identity-b` from pass A's closed head
+   with `theme-b-plan`'s plan file already merged in (byte-identical to `origin/theme-b-plan`'s
+   tip). `origin/main` was not yet contained (35 commits ahead), so merged it in: `git merge
+   origin/main --no-edit` produced merge commit `e48c97e7` with **zero conflicts** (`docs/STATUS.md`
+   and `docs/HISTORY.md` both took `main`'s side automatically since pass B's branch had not
+   touched them). Cleared the reinstall's lockfile churn (`git checkout --
+   examples/showcase/package-lock.json`, then `npm ci` at the root and `npm ci --prefix
+   examples/showcase`, not `npm install`, which avoided the lockfile's local-package-version
+   churn); `git status --short` is clean and `realpath
+   examples/showcase/node_modules/@glw907/cairn-cms` resolves inside this worktree.
+4. **Facts re-verified** (one Sonnet pre-flight agent, read-only). About 30 of roughly 35 checked
+   facts matched exactly (file:line references for `config.ts`, `check-invisible-craft.mjs`,
+   `reference-coverage.mjs`, `gate-tier.mjs`, the various `check-*.mjs`/`.json` files, the audit's
+   17/17/34 rule counts and doc sentences, `RATIFIED_NORMS`, the insert mechanics, the SKILL.md
+   sizes and fence facts, the dotfiles grep, the `0.98.0` promotion constants). Four moved, amended
+   in place above:
+   - The spec's acceptance grep: 493 lines, not 486 (file count 181 held).
+   - Decision 6's `<code>`/backtick grep: 18 files, 24 lines, not "19 files plus the one `<code>`
+     form" (`architecture.md` carries two hits on one file, not a 19th file).
+   - Decision 6's `components.md` link grep: 27 lines in 16 files, not 28 lines in 17 files.
+   - `/admin/theme-kit/+page.svelte`: 164 lines with `<h1 class="type-title font-[550]">`, not the
+     plan's "159 lines at plan time" and `font-bold` — pass A's late commits (`3a2c0f21` and
+     neighbors, landed after this plan's `1486f3f7` verification base) gave the fixture's heading
+     the ratified 550 weight.
+   One item, the guarded-retirement arm's "four findings on `EditPage.svelte`," could not be
+   confirmed by static grep (needs a live `cairn-audit` run); flagged in place for task 1's
+   implementer to confirm when it re-proves the audit. No other correction needed.
+5. **The engine string confirmed.** `node scripts/checks/gate-tier.mjs --range HEAD~1..HEAD --pin
+   engine` prints exactly the plan's engine string.
+6. **The freeze rule confirmed.** `CLAUDE.md` on the branch: the three narrative arms and
+   `why-cairn.md` stay frozen against rewrites for the finalization window; a deficiency a pass
+   finds on a frozen page is fixed in place, gated by that page's own gates, agent-facing and not
+   register-graded.
+7. **Baseline gate green.** One gate agent ran the engine string via `cairn-run-gate` on the merged
+   head (`e48c97e7`); one re-issue on exit 75 (still running at ~540s), then **`gate exit: 0`**.
+   `test:node-projects`: 395 files passed, 5203 tests passed. `test:component`
+   (`--no-file-parallelism`, serialized): 89 files passed, 1757 tests passed, 2 skipped. No
+   failures; only benign Vite/Svelte teardown warnings. No red caused by the `main` merge, so no
+   fix dispatch was needed.
+8. **Dependency state** (no bump): root has 13 packages behind wanted/latest
+   (`@cloudflare/workers-types`, `@lezer/common`, `@lezer/highlight`, `@lucide/svelte`,
+   `@types/node`, `@vitest/browser`, `@vitest/browser-playwright`, `daisyui`, `devalue`,
+   `typescript`, `vite`, `vitest`, `wrangler`); `examples/showcase` mirrors the same set (8 of the
+   13 apply there); `packages/cairn-cms-dev` is current; `packages/create-cairn-site` shows
+   `@clack/prompts` as its one dependency, not separately installed (no local `node_modules` there).
+   Held majors (`devalue` 6, TypeScript 7, Vitest 5, `@types/node` 26) match `docs/STATUS.md`.
+9. **Draft PR opened, CI green, expected-red set empty.** Pushed `theme-identity-b`
+   (`f462cd9d..e48c97e7`) and opened `#95` as a draft against `main`. One Haiku probe read CI on
+   that head: `create-site`, `design`, `e2e` (with its embedded `norms` freshness and audit jobs),
+   `scaffold`, and `test` all passed. **The inherited expected-red set is empty**, matching the
+   plan's plan-time expectation.
+10. **Counter.** Spend through task 0: pre-flight fact-check agent ~140K tokens, baseline gate
+    agent ~65K tokens, CI-read Haiku probe ~48K tokens, this conductor session's own usage on top
+    (not separately metered). Well inside the 1.1M task 0 projection and the 19M ceiling.
+
+**Acceptance:** items 1 to 10 recorded above; the plan is amended in place (task 0 item 4's four
+bullets) rather than re-typed, since the corrections are small and local. No stop condition in
+items 1, 2, or 7 was hit.

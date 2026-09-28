@@ -7,6 +7,23 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Workers Paid confirmation and AI posture prompt, 2026-09-28
+
+Branch `setup-paid` (worktree `.claude/worktrees/setup-paid`), PR #96, merge commit `e6a2b717`.
+The setup command now confirms Workers Paid, with the price, before the first build and deploy;
+declining stops before anything deploys (catalogue row `deploy-plan-declined`). Chapter 2's own
+saved step stays the existing name `paid-plan-declined`, since the Go tool mirrors it and existing
+site records already carry it. A new AI posture setup prompt (no-preference default, decline,
+invite; `--ai-posture` flag) writes `aiPosture` into the new site's `cairn.config.ts`, and the
+showcase's `robots.txt` route (the template source) now passes `cairn.aiPosture` to
+`robotsResponse`. `scripts/checks/gate-tier.mjs` classifies `packages/create-cairn-site/**` into
+the scripts tier.
+
+What a later pass would be wrong to rediscover: an unrequested rename of a persisted setup step
+breaks the Go tool's `TestStepConstantsMatchNodeRecordSteps` and strands existing site records;
+captured pty transcripts are re-captured, never hand-edited; the template is emitted from
+`examples/showcase` (`npm run emit:template`), never hand-edited.
+
 ## Go tool architecture chores, thirteen tasks, 2026-09-27
 
 Branch `go-chores-plan` (worktree `.claude/worktrees/go-chores-plan`), PR #94. Plan:

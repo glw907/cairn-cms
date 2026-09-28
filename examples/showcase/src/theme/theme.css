@@ -2,15 +2,20 @@
    Waymark, cairn's public reading template, neutral by default. The one file a site owner
    edits to re-skin. The signature cairn theme identity (the display serif, the warm-tinted paper,
    the cairn-glyph rule, the diamond bullet, the hanging pull-quote) lives on as an opt-in layer
-   behind `[data-flourish]` in prose.css, not the default; see the "The cairn theme" section of
-   docs/internal/public-design-system.md for where it lives and how a theme re-enables it.
+   behind `[data-flourish]` in prose.css, not the default. Each of the three prose gestures already
+   has its flourish rule written there, scoped under `.prose[data-flourish]` and never deleted; a
+   theme brings all three back at once by adding a `data-flourish` attribute to the `.prose` root,
+   no CSS edit and no other markup change. The display face and the paper tint are a separate,
+   ordinary re-skin edit (see the recipe below), not gated by that attribute.
 
    This file is the THEME half of the chassis boundary (src/chassis/README.md): it `@import`s the
    chassis token SYSTEM (Tailwind, the DaisyUI plugin activation, prose.css, composition.css, and
    every design-scale key with a generic default) and then redeclares every one of those keys with
    Waymark's own concrete numbers and colors, plus the two named DaisyUI themes the chassis
    deliberately never declares. Cascade order does the override: a property declared again later
-   in the same build wins, so nothing below duplicates chassis machinery, only chassis VALUES.
+   in the same build wins, so nothing below duplicates chassis machinery, only chassis VALUES, plus
+   the one declared rule near the bottom of this file that gives an uncolored outline its hairline
+   edge (see "Hairline outlines" below).
 
    RE-SKIN RECIPE (the committed N). The whole surface, chrome and article alike,
    reads the role tokens in the two theme blocks below, so editing them re-skins
@@ -47,6 +52,9 @@
         status hue, retune its matching `--cairn-<status>-ink` (light AND dark) to
         the same hue, or the directive text and the code colours desync from the
         fills.
+     7. The corner ladder (`--radius-selector`, `--radius-field`, `--radius-box`, in the same two
+        `@plugin` blocks) is family geometry, not brand: change all three freely to fit your own
+        site's chosen roundness, from square to fully rounded.
 
    About fourteen role values cover the brand-and-base headline: a new accent and
    a new paper-and-ink, the change most owners make. That set is `--color-primary`
@@ -64,8 +72,7 @@
    admin's Warm Stone system (`src/lib/components/cairn-admin.css`); only the
    palette differs.
 
-   TIER MAP (the starter-template custom-surface ledger,
-   docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md):
+   TIER MAP (this file's own token ownership, by how far a re-skin reaches):
      - Tier 1: the two `@plugin "daisyui/theme"` blocks (cairn, cairn-dark). This site's own
        DaisyUI theme, kept verbatim. Not the admin's Warm Stone.
      - Tier 2 (owned, the documented floor): the on-surface inks (--color-muted and the
@@ -127,10 +134,11 @@
   --color-error: oklch(58% 0.19 27);
   --color-error-content: oklch(99% 0.01 27);
 
-  /* modest, stone-grade geometry (not zero broadsheet, not bubbly); depth/noise off by default */
-  --radius-selector: 0.28rem;
-  --radius-field: 0.4rem;
-  --radius-box: 0.625rem;
+  /* the shared corner ladder (also the admin's own), family geometry rather than brand; free to
+     retune (recipe step 7). depth/noise off by default. */
+  --radius-selector: 0.25rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.5rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -168,9 +176,9 @@
   --color-error: oklch(66% 0.17 27);
   --color-error-content: oklch(24% 0.05 27);
 
-  --radius-selector: 0.28rem;
-  --radius-field: 0.4rem;
-  --radius-box: 0.625rem;
+  --radius-selector: 0.25rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.5rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -198,8 +206,10 @@
      on a constant this way (step--1's floor above its own rescaled ceiling, step-0's ceiling a
      hair above its floor): a `clamp()` whose three terms never vary across the viewport is
      written as that plain constant instead, so the source states outright what the CSS would
-     otherwise resolve to. Full derivation: docs/internal/public-design-system.md, "Type scale
-     derivation". */
+     otherwise resolve to. Both ceilings share the same 0.871 desktop rescale factor (the ratio
+     from a 1.22rem step-0 ceiling down to the 1.0625rem one used here), which holds every other
+     step's ceiling in the same proportion so only the root clamp in site.css, not this scale,
+     supplies the growth above 1440px. */
   --text-step--2: clamp(0.72rem, 0.7rem + 0.05vw, 0.76rem); /* tracked nav eyebrow (SiteHeader) */
   --text-step--1: 0.84rem; /* caption, meta; the resolved constant (floor over ceiling, so pinned) */
   --text-step-0: 1.06rem; /* body, effectively 17px; the resolved constant */
@@ -245,6 +255,27 @@
      scoped `--color-muted` does not collide. */
   --color-muted: oklch(46% 0.013 72);
   --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
+}
+
+/* Hairline outlines, a shared family trait with the admin's own idiom (both give an uncolored
+   outline a visible edge instead of full ink). Pinned after DaisyUI's own utilities (this rule
+   compiles into a sublayer declared after `daisyui`, so it outranks every state DaisyUI's button
+   and badge rules restate regardless of selector specificity). Everything a re-skin needs to touch
+   still lives above, in `theme.css`'s own token blocks; this is the one rule this file declares
+   outright rather than a token value.
+
+   The button half only overrides `--btn-border`, never `--btn-bg`, so the fallback chain does the
+   work across every state DaisyUI restates that variable (rest, hover, focus-visible, active): a
+   color variant (`btn-outline btn-primary`) sets `--btn-color` itself, so the fallback here never
+   runs and the colored edge is untouched.
+
+   The badge half sets `border-color` directly, because DaisyUI's own `.badge-outline` rule reads
+   `border-color: currentColor` rather than a variable, leaving no fallback slot to join. The
+   `:not()` list excludes every DaisyUI badge color modifier, so a colored outline badge keeps its
+   own `currentColor` edge. */
+@layer utilities {
+  @layer site-theme {
+  }
 }
 
 /* ----------------------------------------------------------------------------

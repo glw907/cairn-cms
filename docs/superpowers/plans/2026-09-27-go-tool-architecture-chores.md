@@ -1016,3 +1016,75 @@ task's acceptance. No task's Files list, decision, or acceptance criterion neede
   design-fact source. Task 8's computed gate chained `check:facts` ahead of `make -C tool check`,
   so the baseline facts defect stopped the chain; its implementer ran the legs separately.
 - **Spend:** S3 about 1.2M. Pass total about 4.9M of 8.5M.
+
+### S4 (2026-09-27, conductor)
+
+- **Task 11** accepted, no fix rounds (`a75179e0`, `137e7ee3`, `1ca19e9e`): `cairnCatalogue` folds
+  `+`-concatenated string-literal consts and fails loudly on any other non-literal const;
+  `copy.golden.md` regenerated with `longRoot`, `longHealth`, and `longDoctor`; `longDoctor`'s
+  first sentence split so `check-copy`'s comma heuristic passes, every clause kept.
+  `tool/CHANGELOG.md` carries the `## Unreleased` bullet.
+- **Task 12** accepted, no fix round (`13b6841c`): one JSON-writing helper replaces the eight
+  `fmt.Fprintf(w, "%s\n", data)` sites; `deps.checks` is an ordinary field `newDeps` fills from
+  `health.All`, `healthChecks`'s nil-means-default method gone.
+- **Task 13** accepted after one fix round (`bc8eca9b`, `e8d840a4`): `root.go`'s `--color`/
+  `--width` comments, `probe_cloudflare.go`, `main.go`, and `f:cwtfs7` all name `cairn auth check`
+  as live and state `codedError`'s current reason; every remaining process citation in non-test
+  `cmd/cairn` files removed. The first draft made four false claims (`NO_COLOR` precedence, a
+  misattributed copy-standard section, which commands print the account id, a leftover task
+  citation), caught by `diff-reviewer` and corrected in the fix round.
+- **Spend:** S4 about 1.3M. Pass total about 6.2M of 8.5M.
+
+### Close (2026-09-27, conductor)
+
+- **Simplify.** One `code-simplifier:code-simplifier` dispatch over `git diff main...HEAD -- tool`
+  (`010f10e6`): three edits, all accepted by an independent `diff-reviewer` read; none changed
+  output bytes or unexported a seams-table name.
+- **Full gate.** `make -C tool check` green on the light lane; `check-facts` reproduces exactly
+  Task 0's one baseline defect (`docs/internal/facts/admin.md:53`); `git diff --name-only
+  main...HEAD` touches only `tool/`, `docs/internal/facts/`, `docs/superpowers/`, and this pass's
+  ledgers. PR #94 opened against `main`.
+- **Architecture reads.** Ten `go-architecture-reader` reads, one per package whose non-test
+  source changed (`spine`, `store`, `health`, `providers`, `render`, `render/fixtures`,
+  `internal/exe`, `cmd/mangen`, `cmd/copylist`, `cmd/cairn`): nine "sound with nits," `cmd/cairn`
+  "needs work," 58 structural findings and 96 nits total, most predating this pass. Full text and
+  the ROADMAP filings: `docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`.
+- **Docs.** No facts bullet filed and no reference page changed (the pass's one public-behavior
+  change, `cairn doctor --help`'s first sentence, needed neither). `docs/internal/docs-friction-log.md`
+  read against this pass's scope; nothing to triage or add, since the pass touched no public docs.
+- **Ledgers.** `ROADMAP.md`: both source entries' shipped items deleted; the survivors folded into
+  one "Go tool architecture, declined and unplanned (2026-09-27)" entry (Decisions 2, 5, 7, 10,
+  plus the B2-record pointer for Decision 12's nits); one new Next-tier entry, "Go tool
+  architecture, round 2 (2026-09-27)," names `cmd/cairn` first and points at the new research
+  record. `docs/HISTORY.md` gained the "Go tool architecture chores, thirteen tasks, 2026-09-27"
+  entry. `tool/CHANGELOG.md` already carried Task 11's bullet; nothing else added; the engine
+  `CHANGELOG.md` untouched. `docs/STATUS.md` is left for the conductor to update on `main` after
+  the merge, per this fold's own instructions.
+- **Fold review.** This fold agent authored the close's docs and ledgers (steps 4 and 5); one
+  independent `diff-reviewer` read the diff before commit.
+- **Spend:** close (simplify, reviews, fold, this ledger) about 0.2M beyond the S1-S4 total, plus
+  the ten architecture reads at about 0.7M. Pass total about 7.1M of 8.5M.
+
+## Post-mortem
+
+**Budgets scored.**
+
+- **Tokens:** about 7.1M of the 8.5M ceiling (83%). Breakdown: Task 0 plus plan authoring and
+  review about 0.8M, S1 about 1.0M, S2 about 1.9M (0.25M of it an escalated first launch on Task
+  4's gate-string mismatch), S3 about 1.2M, S4 about 1.3M, the close's simplifier and reviews
+  about 0.2M, the ten architecture reads about 0.7M. The ceiling held; no segment approached the
+  80% finish-in-flight trigger until the close's own reads pushed the running total past it, by
+  which point every task had already landed.
+- **Attended time:** two planning-miss-free approvals. Geoff approved the plan in one line at the
+  gate before execution, with no question reaching him about scope, method, or design during
+  planning. One combined question reached him mid-pass: Task 4's `diff-reviewer` escalation over
+  an absolute-versus-relative gate-string mismatch, which he ruled in one line (normalize both
+  forms in the runner). No other sitting interrupted him; S1 through S4 and the close ran to
+  completion on the conductor's own rulings.
+
+**What a later pass would be wrong to conclude from this pass's smoothness.** Twelve of thirteen
+tasks and both fix-round tasks (4 and 13) cleared on their first or second dispatch with no
+conductor split and no scope change, which is not the norm for a `tool`-class pass; it reflects
+Task 0's unusually thorough pre-flight (fourteen findings, all but one confirmed exact) and the
+plan's thirteen decisions closing every judgment call before dispatch. A future Go architecture
+pass with a thinner pre-flight should expect more fix rounds, not assume this pass's ratio.

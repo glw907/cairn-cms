@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
@@ -936,6 +937,44 @@ describe('ListToolbar layout (compiled CSS)', () => {
     });
     const option = screen.container.querySelector('[role="radio"]')!;
     expect(getComputedStyle(option).height).toBe('36px');
+  });
+
+  // Fix-round finding: `.toolkit-toolbar-segmented`'s `overflow-x: auto` also computes
+  // `overflow-y` to `auto`, clipping the page-wide focus-visible ring at the scroll container's
+  // own padding edge. Proven the way the finding itself named: the container's own padding on
+  // every side must be at least as large as the focused segment's outline-width plus its
+  // outline-offset, the exact reach the ring needs to stay inside the scrollport.
+  it("pads the segmented join enough that a focused segment's own focus ring is not clipped", async () => {
+    const screen = await render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [
+        {
+          id: 'publish-state',
+          label: 'Publish state',
+          display: 'segmented',
+          options: [
+            { value: 'all', label: 'All' },
+            { value: 'published', label: 'Published' },
+          ],
+          value: 'all',
+          onChange: () => {},
+        },
+      ],
+      count: 6,
+      itemLabel: 'entries',
+    });
+    const container = screen.container.querySelector('.toolkit-toolbar-segmented')!;
+    const option = screen.getByRole('radio', { name: 'All' }).element() as HTMLElement;
+    await userEvent.tab();
+    option.focus();
+    expect(option.matches(':focus-visible')).toBe(true);
+    const outlineStyle = getComputedStyle(option);
+    const ringReach = parseFloat(outlineStyle.outlineWidth) + parseFloat(outlineStyle.outlineOffset);
+    const containerStyle = getComputedStyle(container);
+    for (const side of ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'] as const) {
+      expect(parseFloat(containerStyle[side])).toBeGreaterThanOrEqual(ringReach);
+    }
   });
 
   it('sets the search input and count line text to the ruled 13px (0.8125rem)', async () => {

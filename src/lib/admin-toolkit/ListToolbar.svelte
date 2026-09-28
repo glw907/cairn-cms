@@ -489,12 +489,23 @@ reflows its neighboring characters.
      `btn-sm` size step widened each segment enough that wrapping split the join across two rows,
      orphaning its last option; a join reads as one control, never two, so it now scrolls
      horizontally inside its own bounding box, contained by `max-width: 100%`, rather than
-     breaking onto a second line or letting the page itself scroll sideways. */
+     breaking onto a second line or letting the page itself scroll sideways.
+
+     `overflow-x: auto` also computes `overflow-y` to `auto` (the CSS spec's own rule: one axis
+     `auto` forces the other off `visible`), turning this box into a scrollport whose own padding
+     edge clips anything a child paints past it, including the page-wide `:focus-visible` ring
+     (`outline: 2px` at `outline-offset: 2px`, cairn-admin.css) a focused segment draws outside its
+     own border box. The 4px `padding` gives that ring the exact room it needs on every side
+     (2px offset plus 2px width), and the matching `-4px` `margin` pulls the box back by the same
+     amount so the padding adds no visible space and the join's own on-screen position and the
+     320px one-row fit are both unchanged. */
   .toolkit-toolbar-segmented {
     flex: 0 1 auto;
     min-width: 0;
     max-width: 100%;
     overflow-x: auto;
+    padding: 4px;
+    margin: -4px;
   }
 
   /* The per-option count: visually secondary to its own label, opacity-dimmed (not a separate

@@ -28,7 +28,7 @@ move the roles into `cairn-public.css`, and derive the inks. Then the walkthroug
 template fixes, then the three audit rules in dependency order, then the fixture theme and its
 harness, then the reference pages, the skill, and the internal documents. Settle runs a CI
 baseline regeneration for the one intended visual change (the styleguide), the two acceptance
-probes, and one owner sitting. The close merges A, B, and C and cuts the release. Plans specify
+probes, and one owner sitting. The close merges B and C (pass A merged to `main` on its own) and cuts the release. Plans specify
 outcomes and acceptance, never implementation code.
 
 **Branch topology (an assumption task 0 verifies).** Pass A has merged to `main`. Pass B has
@@ -602,12 +602,12 @@ a test in its owning task:
 **Outcome:** The conductor verifies the start conditions and records each in the ledger. Task 0
 takes no tier gate. Item 7's baseline runs in a gate agent.
 
-1. **Pass A is closed and pass B is finished (topology per Geoff's 2026-09-27 ruling: pass B
-   branches from pass A's closed but unmerged head, pass C from pass B, and all three merge
-   together at this pass's close).** Pass A's ledger records its close on `theme-identity-a` with
-   the merge held for Geoff's S3 before-and-after. Pass B's ledger or STATUS records its close,
-   names its branch and head, and records that its branch merged `main` and pass A's latest head
-   in. Pass B's branch head is green on CI. If any of these fails, stop with one message to Geoff.
+1. **Pass A is merged and pass B is finished (topology: pass B branched from pass A's closed
+   head and pass C branches from pass B; Geoff ruled on 2026-09-28 that pass A merges to `main` on
+   its own after his S3 sitting, overriding the 2026-09-27 ruling that all three merge together, so
+   this pass's close merges B and C).** PR #92 is merged and `main` carries pass A. Pass B's
+   ledger or STATUS records its close, names its branch and head, and records that its branch
+   merged `main` (with pass A) in. Pass B's branch head is green on CI. If any of these fails, stop with one message to Geoff.
 2. **No live executor.** Per the global "one executor per worktree" rule: `pgrep -af` on pass B's
    worktree path and on `theme-identity-c` finds nothing, `git status --porcelain` in pass B's
    worktree is empty, and no `theme-identity-c` branch or worktree exists. No executor is live on
@@ -1535,8 +1535,8 @@ cairn-pass ritual:
    `main`'s and keep both sides of HISTORY.
 3. Re-run `check:facts`, `check:reference`, `check:docs`, `check:vale`, `check:rulings-format`, and
    `check:template` on the merged head, and let CI go green on it.
-4. Mark the PR ready and merge `theme-identity-c` to `main`, which lands passes A, B, and C
-   together. Close pass A's PR #92 and pass B's PR as superseded. Remove all three worktrees.
+4. Mark the PR ready and merge `theme-identity-c` to `main`, which lands passes B and C together.
+   Close pass B's PR as superseded. Remove the pass B and pass C worktrees.
 
 **The release (under the `cairn-release` skill, in the same close):** `npm outdated` at every
 manifest (decision 28: the window holds task 0's sweep, so the skill's skip clause applies; a new

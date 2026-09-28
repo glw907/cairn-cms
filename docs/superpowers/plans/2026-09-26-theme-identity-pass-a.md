@@ -1630,3 +1630,29 @@ targeted tasks draw a MISMATCH, so check the first task's report for the fallbac
   captures build from a detached worktree at `278110f7`, so segment C launches at once.
 - **Spend:** segment B's workflow about 0.76M (including a launch that crashed on a `files` string
   before any task ran; runner fixed in dotfiles `d6718b7`). Pass A total about 9.5M.
+
+### Segment C (2026-09-27, conductor)
+
+- **Owner glance** published: https://claude.ai/artifact/84VPNnuk9uwNwHnTtvTobx (70 before-and-after
+  pairs plus 18 extra screens at `278110f7`). No corrections yet; any that arrive join S3.
+- **Task 9** accepted (`4c82b654`): 4 ink openers to `btn-neutral`, the Publish tint to `btn-soft
+  btn-primary`, 5 `shadow-none` and 16 inline strokes swept, `font-[550]` added, three classes
+  safelisted. The two badges' `border-transparent` kept with evidence (they cancel a live stock
+  edge). Note: `screen-anatomy.test.ts`'s fixture still reads `type-title font-bold`.
+- **Task 10** accepted after one fix round (`1ddaf17a`, `443b2410`): every fixed corner on the
+  ladder; the chip detector skips `select`, `textarea`, and daisyUI control classes. Notes for
+  S1: the 20x20 numbered step markers moved from `rounded-full` to `rounded-selector`, which the
+  spec's equal-width-and-height rule may read as true circles; the report summarized changed
+  sites by role, not one table row per site.
+- **Task 11** accepted (`b1e04461`, `8b9c43d8`): the starter takes the ladder and the pinned
+  hairline outline rule, re-emitted. Note: the outline rule is one selector with no explicit
+  state variants; the e2e proves the edge at all four states.
+- **Boundary:** merged `origin/main` (`9fb07ca3`; `package.json` kept both script lines, STATUS
+  took main's), so PR #92 is mergeable and CI ran for the first time since segment A. CI read:
+  every failure is a `toHaveScreenshot` mismatch in `admin-visual` or `site-visual`, plus norms
+  freshness; `media-figure` flaked once and passed on retry. This run also stands as segment B's
+  CI proof. Boundary passes.
+- **Rulings (Geoff, 2026-09-27):** the pass runs past S3 on async review, through S1, task 15,
+  S4, and its close, with the merge held for his before-and-after. Pass B branches from this
+  pass's closed head.
+- **Spend:** segment C about 1.3M. Pass A total about 11.0M of 20M.

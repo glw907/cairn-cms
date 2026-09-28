@@ -302,8 +302,8 @@ export interface RoleRecipe {
 export const RECIPE_MODEL =
   'Write the plain daisyUI or cairn role class a screen needs; the theme layer, not the markup, carries the ratified look.';
 
-// Every Write string here is copied from docs/internal/admin-design-system.md as pass A left it, or
-// from the /admin/theme-kit fixture route, never invented: norms.test.ts checks every token against
+// Every Write string here is copied verbatim from docs/internal/admin-design-system.md or from the
+// /admin/theme-kit fixture route, never invented: norms.test.ts checks every token against
 // the committed admin sheet inventory or the fixture's own source, so a hand-typed row cannot drift
 // from what actually compiles. The table lives here, read at print time the way findRatified reads
 // RATIFIED_NORMS, rather than inside the norms manifest: it is guidance data, not a measurement, and

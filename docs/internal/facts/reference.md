@@ -197,6 +197,17 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   for both "no such row" and "present but not owner-capability" (their `WHERE` matches only
   owner-capability rows, so the two cases can't be told apart). Source: `src/lib/auth/store.ts`
   function bodies at lines noted above; outcome unions confirmed present. [verified]
+- `f:lml542` `deleteEditor` and `removeOwnerIfNotLast` cascade past session and magic-token rows to also
+  delete every `preview_tokens` row the removed editor minted (a separate statement outside the
+  atomic batch, swallowing only a "no such table" fault for a site with the preview migration
+  unapplied). Source: `src/lib/auth/store.ts:300-320` (`deleteEditorPreviewTokens`), `:407-411`
+  (`deleteEditor` call), `:446-450` (`removeOwnerIfNotLast` call). [verified]
+- `f:pf69s2` The store's unexported auth-flow set (engine-internal to the magic-link guard, not proven
+  consumer surface) is `findEditor`, `issueToken`, `recentlyIssued`, `consumeToken`, `rebindToken`,
+  `createSession`, `resolveSession`, `deleteSession`; `insertOwnerIfEmpty` is separately demoted (a
+  site seeds its first owner via `bootstrapOwner` instead, per `f:f2vudv`). Source:
+  `src/lib/auth-store/index.ts:1-23`, `src/lib/auth/store.ts` (all named exports),
+  `src/lib/sveltekit/auth-routes.ts:18-25`. [verified]
 
 ## docs/reference/cairn-audit.md
 
@@ -261,10 +272,10 @@ re-sourced to Go on this tree rather than to the page.
   Source: `tool/internal/doctor/fetchrobots.go:14-21,33-34`,
   `tool/internal/providers/transport.go:12-16`, `tool/cmd/cairn/root.go:35`.
   [docs-drift: the retired page said the one request "is bounded at 15 seconds inside it"]
-- `f:plng3z` A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency in
-  `package.json` is not a cairn-cms site: the run prints one line, exits 3, and settles no check.
-  Source: `tool/internal/doctor/fileread.go:89-104`, `tool/cmd/cairn/doctor.go:60-61,112-128`,
-  `tool/cmd/cairn/messages.go:320-328`. [verified]
+- `f:plng3z` A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency or
+  devDependency in `package.json` is not a cairn-cms site: the run prints one line, exits 3, and
+  settles no check. Source: `tool/internal/doctor/fileread.go:89-104`,
+  `tool/cmd/cairn/doctor.go:60-61,112-128`, `tool/cmd/cairn/messages.go:320-328`. [verified]
 - `f:ee48yi` `--json` is the command's own flag and writes the payload instead of the report; it beats
   `--quiet`, so the payload always prints under `--json`. Source:
   `tool/cmd/cairn/doctor.go:42,88-97`, `tool/cmd/cairn/messages.go:306`. [verified]
@@ -344,6 +355,13 @@ re-sourced to Go on this tree rather than to the page.
   `"reason": "reason.not-observable"`. The condition id itself is the payload's `condition` field.
   Source: `tool/internal/doctor/json.go:41-54,99-126`. [candidate: found during the 2026-09-22
   redraft's Go read, not independently re-verified by a second pass]
+- `f:0ms9c1` `auth.role-wiring` settles `INFO`, not only `PASS`/`FAIL`/`SKIP`/`UNCHECKED`, when
+  `src/hooks.server.ts` is missing, when no `createAuthGuard` call is found in it, or when the
+  call's argument is a bare identifier the check cannot read into; none of these is treated as a
+  high-confidence `FAIL`. The page's checks table names only this check's `PASS`/`FAIL` condition,
+  `SKIP`, and `UNCHECKED` cases, not its `INFO` settlements. Source:
+  `tool/internal/doctor/check_roles.go:118-131`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
+  [verified]
 
 ## docs/reference/cli-cairn-exit-codes.md
 
@@ -744,6 +762,25 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/delivery/CairnHead.svelte:5-8` (doc comment), `:35`
   (`title !== undefined ? title : titleTemplate ? titleTemplate(seo.title) : seo.title`), `:53-54`
   (`{#if markdownUrl}<link rel="alternate" type="text/markdown" ...>`). [verified]
+- `f:qzcpzc` The showcase's four static-route servers reach four different `/delivery` response builders:
+  `feed.xml` uses `rssResponse`, `feed.json` uses `jsonFeedResponse`, `sitemap.xml` uses
+  `sitemapResponse`, and `robots.txt` uses `robotsResponse`. Source:
+  `examples/showcase/src/routes/feed.xml/+server.ts:2`,
+  `examples/showcase/src/routes/feed.json/+server.ts:2`,
+  `examples/showcase/src/routes/sitemap.xml/+server.ts:2`,
+  `examples/showcase/src/routes/robots.txt/+server.ts:2`. [verified]
+- `f:bnt2wh` `PublicRoutesConfig.assetsEnabled` only diagnoses a forgotten `resolveMedia` wire-point (a
+  one-time `media.resolver_absent` log at construction when media is on but no resolver was
+  passed); it does not itself gate hero resolution, which `resolveMedia` alone controls. Source:
+  `src/lib/delivery/public-routes.ts:39-50` (doc comment), `:202-210`
+  (`if (assetsEnabled && !resolveMedia) { log.warn('media.resolver_absent'); }`). [verified]
+- `f:g030q0` The showcase's catch-all `[...path]` route builds `createPublicRoutes` from one shared
+  `publicRoutesConfig` binding (also used by the preview route and the markdown-twin route) and
+  layers `withReferences` on `entryLoad`'s result before rendering through the theme's
+  `ArticleView` component, not an inline `<article>{@html html}</article>`. Source:
+  `examples/showcase/src/routes/(site)/[...path]/+page.server.ts:1-15`,
+  `examples/showcase/src/chassis/public-routes.ts:11-24`,
+  `examples/showcase/src/routes/(site)/[...path]/+page.svelte:1-9`. [verified]
 
 ## docs/reference/delivery-data.md
 
@@ -816,6 +853,11 @@ re-sourced to Go on this tree rather than to the page.
 
 - `f:vhxkab` `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is also refused and not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Both the `.orig` path and the destination beside it land in `report.refused`, so an operator reading the report sees which destination was left stale, not only its `.orig` sibling. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`, `installGuidance`). [verified]
 - `f:x5grdm` A write failure during `cairn-guidance install` (an `ENOSPC`, an `EACCES`, ...) is reported through `InstallReport.writeErrors`, a list of `{ path, code }` entries, separate from `report.refused`: a disk or permissions error is not folded into the containment refusals, so the bin's printed line names the errno code rather than misattributing the failure to a symlink or an out-of-bounds path. Source: `src/lib/guidance/install.ts` (`installGuidance`'s write `catch`), `src/lib/guidance/bin.ts` (`write error` print line). [verified]
+- `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
+  `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
+  distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`
+  itself, that is three other bins. Source: `package.json:187-192` (`bin` field),
+  `package.json:172-174` (`./vite` export). [verified]
 
 ## docs/reference/islands.md
 

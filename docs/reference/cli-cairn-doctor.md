@@ -48,8 +48,8 @@ context, the same one `--timeout` bounds (default 480 seconds).
 
 ## When the directory is not a cairn-cms site
 
-A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency in `package.json`
-is not a cairn-cms site. The run prints one line naming the directory and exits 3. No check runs.
+A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency or
+devDependency in `package.json` is not a cairn-cms site. The run prints one line naming the directory and exits 3. No check runs.
 Under `--json` the run writes the payload instead of the line, with an empty `checks` array,
 `"verdict": "UNKNOWN"`, and `"exitCode": 3`.
 

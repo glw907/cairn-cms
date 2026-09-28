@@ -135,7 +135,7 @@ toolchain in use) so those examples never compile into the site's own shipped CS
 ## The trust boundary
 
 Shipping agent markdown adds no capability a compromised release does not already have: the
-package runs four other bins and a Vite plugin in the site's build. It adds a review class,
+package runs three other bins and a Vite plugin in the site's build. It adds a review class,
 because markdown is not typed, tested, or read by any gate. Two rules hold the line:
 `cairn-guidance` never writes `.claude/settings.json`, because a hook is what would give a
 compromised package unattended execution inside a developer's session without a deliberate edit;

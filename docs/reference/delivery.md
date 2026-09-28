@@ -25,9 +25,9 @@ helpers. Those symbols are documented on [the delivery-data reference](./deliver
 repeated here. This page covers only the names `/delivery` adds on top of that surface: the
 `createPublicRoutes` loader factory and its route-data types.
 
-A SvelteKit site usually imports the shared symbols through this barrel. The `feed.xml`, `feed.json`,
-`sitemap.xml`, and `robots.txt` showcase servers all reach `rssResponse`, `sitemapResponse`, and
-`robotsResponse` through `@glw907/cairn-cms/delivery`.
+A SvelteKit site usually imports the shared symbols through this barrel. The `feed.xml`, `sitemap.xml`,
+and `robots.txt` showcase servers reach `rssResponse`, `sitemapResponse`, and `robotsResponse`
+through `@glw907/cairn-cms/delivery`; `feed.json` reaches `jsonFeedResponse` the same way.
 
 **Ordering contract:** a `ContentIndex`'s `all()` already returns entries in the engine's own order,
 so a caller never re-sorts it. A dated concept, one whose `routing.dated` is true, such as Posts,
@@ -77,32 +77,28 @@ caller that needs the same composition over a different lookup: [`loadPreview`](
 composition so a preview and its eventual public page can't structurally drift.
 
 The showcase wires `entryLoad` and `entries` into its `[...path]` catch-all server. The
-`+page.server.ts` calls `entryLoad` and the `+page.svelte` renders the entry directly.
+`+page.server.ts` calls `entryLoad` through a shared `PublicRoutesConfig` binding and layers the
+site's own reference-edge resolution on top; the `+page.svelte` hands the result to the theme's
+article view rather than rendering the entry inline.
 
 ```ts
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
-import { site, siteMeta } from '$lib/content';
-import { cairn } from '$theme/cairn.config.js';
+import { publicRoutesConfig } from '$chassis/public-routes.js';
+import { withReferences } from '$chassis/entry-data.js';
 
 export const prerender = true;
 
-const routes = createPublicRoutes({
-  site,
-  render: cairn.rendering.render,
-  origin: siteMeta.origin,
-  siteName: siteMeta.title,
-  description: siteMeta.description,
-  defaultImage: siteMeta.origin + '/og/default.png',
-  feeds: { rss: siteMeta.origin + '/feed.xml', json: siteMeta.origin + '/feed.json' },
-});
+const routes = createPublicRoutes(publicRoutesConfig);
 
 export const entries: EntryGenerator = () => routes.entries();
 
 export const load: PageServerLoad = async ({ url }) => {
   // entryLoad resolves one entry by request path and throws error(404) on a miss. The returned
-  // payload carries the rendered html, the SEO head, and the hero.
-  return routes.entryLoad({ url });
+  // payload carries the rendered html, the SEO head, and the hero. withReferences layers this
+  // site's own reference-edge resolution on top, unchanged from before that layer existed.
+  const data = await routes.entryLoad({ url });
+  return withReferences(data);
 };
 ```
 
@@ -136,6 +132,7 @@ interface PublicRoutesConfig {
   feeds?: { rss?: string; json?: string };
   defaultImage?: string;
   resolveMedia?: MediaResolve;
+  assetsEnabled?: boolean;
 }
 ```
 
@@ -143,7 +140,11 @@ The injected dependencies for the public loaders. `render` turns an entry's mark
 `origin` and `feeds` build the absolute URLs in the head, and `description` and `defaultImage` are the
 site-wide fallbacks for an entry that declares none. `resolveMedia` resolves a frontmatter `media:`
 hero reference to its delivery path; the site builds it from its committed `media.json` exactly as it
-builds the body resolver, and when it is absent no `heroImage` projection is derived.
+builds the body resolver, and when it is absent no `heroImage` projection is derived. `assetsEnabled`
+records whether the site turned media on (`runtime.resolvedAssets.enabled`); when true and
+`resolveMedia` is left unset, `createPublicRoutes` logs a one-time `media.resolver_absent`
+diagnostic at construction rather than silently shipping bare `media:` tokens. It only diagnoses the
+gap; `resolveMedia` alone still gates hero resolution.
 
 ### `EntryData`
 

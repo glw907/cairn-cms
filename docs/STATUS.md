@@ -29,8 +29,8 @@ Three initiatives are live; resume each from its plan's ledger foot:
   `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`.
 - **Theme identity pass C**: reviewed plan waits on branch `theme-c-plan`
   (`docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`), runs after pass B, cuts `0.98.0`.
-- **Draft docs pass 0+1**: closed on `draft-docs-0` (draft PR #91, full gate green); merge waits on
-  Geoff's word, then the next action is the stage 2a plan (below). Geoff's style-guide sync
+- **Draft docs pass 0+1**: merged (PR #91, `8bbe78f5`); the stage 2a plan is next (below), after
+  pass B merges (Geoff, S3 Q21). Geoff's style-guide sync
   brainstorm (`docs/superpowers/research/2026-09-28-style-guide-sync-brainstorm-brief.md`, `main`,
   a separate session) must land before stage 2a drafts its first page.
 
@@ -55,6 +55,6 @@ Three initiatives are live; resume each from its plan's ledger foot:
 Theme identity: in a fresh session (`claude-opus-5-5`, `high`), resume pass B at segment C per its
 own plan's ledger foot; pass C waits for pass B's close; never touch pass A's worktree, whose merge
 to `main` is pass A's own act.
-Draft docs, after `draft-docs-0` merges: in a fresh session (`claude-opus-5-5`, `high`), confirm the
+Draft docs, after pass B merges: in a fresh session (`claude-opus-5-5`, `high`), confirm the
 style-guide sync brainstorm has landed, author the stage 2a plan (with its extend outline) from the
 approach spec's stage 2 outline, run `spec-plan-review`, and bring it to Geoff on an R10 page.

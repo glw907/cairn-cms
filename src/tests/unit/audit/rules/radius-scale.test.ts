@@ -27,12 +27,14 @@ describe('radius-scale: fixed and bare radii', () => {
     expect(findings[0].ruleId).toBe('radius-scale');
     expect(findings[0].tier).toBe('advisory');
     expect(findings[0].message).toContain('rounded-field');
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 
   it('flags a fixed radius on a card, naming rounded-box', () => {
     const findings = check(fixture('<div class="card rounded-xl">x</div>\n'));
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('rounded-box');
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 
   it('flags a bare rounded on a plain div with the three-role sentence', () => {
@@ -41,14 +43,19 @@ describe('radius-scale: fixed and bare radii', () => {
     expect(findings[0].message).toContain('rounded-selector');
     expect(findings[0].message).toContain('rounded-field');
     expect(findings[0].message).toContain('rounded-box');
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 
   it('flags a fixed radius behind a responsive variant', () => {
-    expect(check(fixture('<div class="md:rounded-lg">x</div>\n'))).toHaveLength(1);
+    const findings = check(fixture('<div class="md:rounded-lg">x</div>\n'));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 
   it('flags a side or corner form of a fixed radius', () => {
-    expect(check(fixture('<div class="rounded-t-2xl">x</div>\n'))).toHaveLength(1);
+    const findings = check(fixture('<div class="rounded-t-2xl">x</div>\n'));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 });
 
@@ -56,18 +63,21 @@ describe('radius-scale: arbitrary and variable-shorthand radii', () => {
   it('flags an arbitrary bracket radius with no ratified role', () => {
     const findings = check(fixture('<div class="rounded-[0.55rem]">x</div>\n'));
     expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 
   it('flags an arbitrary bracket radius naming a ratified role token, with the exact class', () => {
     const findings = check(fixture('<div class="rounded-[var(--radius-field)]">x</div>\n'));
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('rounded-field');
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 
   it('flags the variable-shorthand form naming a ratified role, with the exact class', () => {
     const findings = check(fixture('<div class="rounded-(--radius-field)">x</div>\n'));
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('rounded-field');
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 
   it('flags the variable-shorthand form naming an unratified var with the three-role sentence', () => {
@@ -76,6 +86,7 @@ describe('radius-scale: arbitrary and variable-shorthand radii', () => {
     expect(findings[0].message).toContain('rounded-selector');
     expect(findings[0].message).toContain('rounded-field');
     expect(findings[0].message).toContain('rounded-box');
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 });
 
@@ -84,6 +95,7 @@ describe('radius-scale: rounded-full and chips', () => {
     const findings = check(fixture('<span class="badge rounded-full">New</span>\n'));
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('rounded-selector');
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 
   it('passes rounded-full on an avatar with no badge class', () => {
@@ -93,7 +105,11 @@ describe('radius-scale: rounded-full and chips', () => {
 
 describe('radius-scale: multiple findings on one element', () => {
   it('raises exactly two findings for two offending tokens on the same element', () => {
-    expect(check(fixture('<div class="rounded-lg md:rounded-xl">x</div>\n'))).toHaveLength(2);
+    const findings = check(fixture('<div class="rounded-lg md:rounded-xl">x</div>\n'));
+    expect(findings).toHaveLength(2);
+    for (const finding of findings) {
+      expect(finding.message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
+    }
   });
 });
 
@@ -128,6 +144,7 @@ describe('radius-scale: the class-to-role mapping', () => {
     const findings = check(fixture(`<div class="${daisyClass} rounded-lg">x</div>\n`));
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain(roleClass);
+    expect(findings[0].message).toContain(RADIUS_SCALE_PROMOTION_VERSION);
   });
 });
 

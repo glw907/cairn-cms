@@ -57,7 +57,7 @@ describe('audit promotion-version tripwire', () => {
     expect(findPromotionConstants().length).toBeGreaterThan(0);
   });
 
-  it('finds both this pass\'s constants by name while the package version is below 0.99.0', () => {
+  it('finds both new constants by name while the package version is below 0.99.0', () => {
     const version = packageVersion();
     if (compareVersions(version, '0.99.0') >= 0) return;
     const names = findPromotionConstants().map((constant) => constant.name);

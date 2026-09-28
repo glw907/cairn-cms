@@ -6,7 +6,10 @@ import { DEFAULT_STATIC_SCOPE, resolveConfig } from '../../../../lib/audit/confi
 import { parseComponent } from '../../../../lib/audit/markup.js';
 import { parseSheet } from '../../../../lib/audit/sheet.js';
 import { applySuppressions } from '../../../../lib/audit/suppress.js';
-import { stockDefaultHazards } from '../../../../lib/audit/rules/static/stock-default-hazards.js';
+import {
+  stockDefaultHazards,
+  RETIRED_PATCH_PROMOTION_VERSION,
+} from '../../../../lib/audit/rules/static/stock-default-hazards.js';
 import { walk } from '../../../../../scripts/walk-files.mjs';
 import type { ParsedComponent } from '../../../../lib/audit/markup.js';
 
@@ -232,6 +235,7 @@ describe('stock-default-hazards: retired ink-opener patch', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].tier).toBe('advisory');
     expect(findings[0].message).toContain('btn btn-neutral');
+    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
   });
 
   it('flags a variant-prefixed ink-hover patch on a btn', () => {
@@ -243,6 +247,7 @@ describe('stock-default-hazards: retired ink-opener patch', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].tier).toBe('advisory');
     expect(findings[0].message).toContain('btn btn-neutral');
+    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
   });
 
   it('is silent once the element already carries btn-neutral', () => {
@@ -261,6 +266,7 @@ describe('stock-default-hazards: retired Publish-tint patch', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].tier).toBe('advisory');
     expect(findings[0].message).toContain('btn btn-soft btn-primary');
+    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
   });
 
   it('is silent once the element already carries btn-soft', () => {
@@ -284,11 +290,16 @@ describe('stock-default-hazards: retired shadow-none cancel', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].tier).toBe('advisory');
     expect(findings[0].message).toContain('nothing to add');
+    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
   });
 
   it('flags a variant-prefixed shadow-none the same way', () => {
     const file = parseComponent('Fixture.svelte', '<button class="btn sm:shadow-none">Save</button>\n');
-    expect(check(file)).toHaveLength(1);
+    const findings = check(file);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('nothing to add');
+    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
   });
 
   it('stays silent when a recipe arm already fired on the same element', () => {
@@ -302,7 +313,9 @@ describe('stock-default-hazards: retired shadow-none cancel', () => {
     );
     const inkFindings = check(inkRecipe);
     expect(inkFindings).toHaveLength(1);
+    expect(inkFindings[0].tier).toBe('advisory');
     expect(inkFindings[0].message).toContain('btn btn-neutral');
+    expect(inkFindings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
 
     const tintRecipe = parseComponent(
       'Fixture.svelte',
@@ -310,7 +323,9 @@ describe('stock-default-hazards: retired shadow-none cancel', () => {
     );
     const tintFindings = check(tintRecipe);
     expect(tintFindings).toHaveLength(1);
+    expect(tintFindings[0].tier).toBe('advisory');
     expect(tintFindings[0].message).toContain('btn btn-soft btn-primary');
+    expect(tintFindings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
   });
 });
 

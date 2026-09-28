@@ -54,7 +54,7 @@ const GUARDED_RETIREMENT_MESSAGE =
 
 // The promotion version stated in every finding the three retired-patch arms below raise: the
 // minor release that moves each finding out of advisory tier.
-const RETIRED_PATCH_PROMOTION_VERSION = '0.99.0';
+export const RETIRED_PATCH_PROMOTION_VERSION = '0.99.0';
 
 // The utility bases (compared via utilityBase(), so a variant-prefixed patch such as
 // hover:bg-[var(--cairn-ink-hover)] or sm:shadow-none is still caught) that name each retired
@@ -231,12 +231,16 @@ export const stockDefaultHazards: StaticRule = {
           const inkToken = tokenWithBase(file, elementStart, INK_OPENER_BASES);
           const tintToken = tokenWithBase(file, elementStart, PUBLISH_TINT_BASE);
           if (inkToken && !baseClasses.has('btn-neutral')) {
-            findings.push(findingAt(file, inkToken, inkOpenerMessage(utilityBase(inkToken.value)), 'advisory'));
+            const message = inkOpenerMessage(utilityBase(inkToken.value));
+            findings.push(findingAt(file, inkToken, message, 'advisory'));
           } else if (tintToken && !baseClasses.has('btn-soft')) {
-            findings.push(findingAt(file, tintToken, publishTintMessage(utilityBase(tintToken.value)), 'advisory'));
+            const message = publishTintMessage(utilityBase(tintToken.value));
+            findings.push(findingAt(file, tintToken, message, 'advisory'));
           } else {
             const shadowToken = tokenWithBase(file, elementStart, SHADOW_NONE_BASE);
-            if (shadowToken) findings.push(findingAt(file, shadowToken, SHADOW_NONE_MESSAGE, 'advisory'));
+            if (shadowToken) {
+              findings.push(findingAt(file, shadowToken, SHADOW_NONE_MESSAGE, 'advisory'));
+            }
           }
         }
       }

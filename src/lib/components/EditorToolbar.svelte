@@ -268,7 +268,7 @@ stays pinned at the row's right end, reachable at every width.
        1.32:1 to 1.23:1 and flattening dark's unselected hover step from 1.20:1 to 1.01:1, which
        is the only hover feedback an unselected tab has; the selected tab's own visibility rides
        on the cairn-admin.css hairline instead.
-       Each tab keeps all four of its own corners rounded at rest (task 15 item 5): a prior
+       Each tab keeps all four of its own corners rounded at rest: a prior
        unconditional rounded-r-none/rounded-l-none pair squared write's right and preview's left
        corner regardless of which tab was actually painting a border, so the selected tab always
        showed one flat edge next to nothing. The scoped stylesheet below squares a tab's shared
@@ -509,7 +509,7 @@ stays pinned at the row's right end, reachable at every width.
     --cairn-naming-hook: true;
   }
 
-  /* Task 15 item 5: the Write/Preview pair only reads as a joined capsule in the states where
+  /* The Write/Preview pair only reads as a joined capsule in the states where
      both tabs actually paint a border, the selected tab (always bordered, aria-selected) beside
      its ghost sibling's own hover/focus-visible fill. `write` and `preview` render as adjacent
      siblings inside the tablist, so the shared corner and the 1px seam collapse only then; at

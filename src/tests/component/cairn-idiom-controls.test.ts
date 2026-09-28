@@ -114,7 +114,7 @@ describe.each(THEMES)('the unfocused field-family edge, moved into cairn-idiom (
   });
 });
 
-// Task 15 item 6: a bare .badge's own border falls back to daisyUI's --color-base-200, about
+// A bare .badge's own border falls back to daisyUI's --color-base-200, about
 // 1.05:1 against the card, so an uncolored chip reads as loose text. The rule sets border-color
 // directly (never --badge-color, which also feeds --badge-bg's fallback) at the plain button's
 // own 22% base-content mix, one value with no state table since a badge is not interactive.

@@ -893,7 +893,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(style.flexWrap).toBe('wrap');
   });
 
-  // Was 30px (a hand-pinned height on both elements, task 15 item 1): `--size-field`'s
+  // Was 30px (a hand-pinned height on both elements): `--size-field`'s
   // `0.28125rem` step now makes `input-sm` and `btn-sm` agree on their own, so the search box
   // needs no forced height at all, and the facet container (a plain div) matches them at 36px
   // through the same `calc(var(--size-field) * 8)` formula daisyUI's own `-sm` variants use.
@@ -911,7 +911,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(getComputedStyle(facet).height).toBe('36px');
   });
 
-  // Task 15 item 1: the segmented join's own buttons used to be pinned to 30px, orphaned below
+  // The segmented join's own buttons used to be pinned to 30px, orphaned below
   // the 36px header CTA. `btn-sm` now reads the same `--size-field` step as `input-sm`, so a
   // segmented option needs no forced height either.
   it('keeps a segmented filter option at the same 36px row height', async () => {
@@ -1034,7 +1034,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(getComputedStyle(value).textOverflow).toBe('ellipsis');
   });
 
-  // Was 30px (task 15 item 1): `select-sm`'s own `--size-field`-derived height now agrees with
+  // Was 30px: `select-sm`'s own `--size-field`-derived height now agrees with
   // `input-sm`/`btn-sm`, so only the font-size still needs restyling to the ruled 13px.
   it("restyles the 'select' variant to the shared 36px row height and 13px text", async () => {
     const screen = await render(ListToolbar, {

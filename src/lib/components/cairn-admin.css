@@ -1029,7 +1029,7 @@
       }
     }
 
-    /* The bare .badge edge (task 15 item 6): daisyUI's own uncolored badge border falls back to
+    /* The bare .badge edge: daisyUI's own uncolored badge border falls back to
        var(--color-base-200), which measures about 1.05:1 against the card, so the chip reads as
        loose text rather than a bounded control. --badge-color also feeds --badge-bg's own
        fallback, so overriding that variable would tint the fill too; this sets border-color

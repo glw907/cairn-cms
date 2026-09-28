@@ -156,7 +156,7 @@ describe('MediaInsertPopover routing', () => {
   });
 });
 
-// Task 15 item 8: a caret near the bottom of a tall page (or one captured a frame before a font
+// A caret near the bottom of a tall page (or one captured a frame before a font
 // swap widened the toolbar enough to wrap it, which locks in a too-low anchor for the popover's
 // whole open lifetime, media-figure.spec.ts's own CI-only flake) used to anchor the panel low
 // enough that its own bottom-row primary action rendered outside the viewport with no page scroll

@@ -224,7 +224,7 @@ describe('EditorToolbar', () => {
       );
     });
 
-    // Task 15 item 5: a prior unconditional rounded-r-none/rounded-l-none pair squared the
+    // A prior unconditional rounded-r-none/rounded-l-none pair squared the
     // selected tab's own outer corner even though its ghost sibling painted no border to share
     // it with. At rest, only the selected tab's own border ever shows, so it keeps all four of
     // its own --radius-field corners.

@@ -744,7 +744,7 @@ test('reference fields round-trip through the editor, commit their edges, and re
 // lives in custom-screen.spec.ts's Signups test, which proves the stronger case: a custom admin
 // screen reading identity and writing its own D1 binding, registered through the same navLayout seam.
 
-// Task 15 item 2: at 320px the publish-state segmented join (All / Pending edits / Published,
+// At 320px the publish-state segmented join (All / Pending edits / Published,
 // each carrying a count) used to wrap onto two lines, orphaning "Published 5" below "All" and
 // "Pending edits". The join now scrolls horizontally inside its own container instead of
 // wrapping, so its three options stay on one row and the page itself never scrolls sideways.

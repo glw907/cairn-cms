@@ -525,7 +525,7 @@ describe('ConceptList', () => {
       expect(rect.height).toBeLessThanOrEqual(40);
     });
 
-    // Task 15 item 4: daisyUI's `.alert` is `display: grid`, and `flex-col` did nothing, so the
+    // daisyUI's `.alert` is `display: grid`, and `flex-col` did nothing, so the
     // refused-delete banner's title, body paragraph, and link list laid out as separate grid
     // columns, crushing the body into a narrow sliver at 320. `max-sm:grid-flow-row
     // max-sm:grid-cols-1` stacks them into one full-width column below `sm`.

@@ -485,7 +485,7 @@ reflows its neighboring characters.
      count badges renders past 320px on its own, and the prior `flex: 0 0 auto` refused to yield
      that width back). The shrink half alone fixes the overflow; the group keeps its own no-grow
      basis rather than claiming free space from the row, so the toolbar stays flush right at
-     desktop widths. `overflow-x: auto` replaces a prior `flex-wrap: wrap` (task 15 item 2): the
+     desktop widths. `overflow-x: auto` replaces a prior `flex-wrap: wrap`: the
      `btn-sm` size step widened each segment enough that wrapping split the join across two rows,
      orphaning its last option; a join reads as one control, never two, so it now scrolls
      horizontally inside its own bounding box, contained by `max-width: 100%`, rather than

@@ -443,6 +443,12 @@ question for the facts on the same page or alongside it.
 
 ### Task 10: Stage 1, reference claim check
 
+**Split (Geoff, 2026-09-27):** task 10 runs now on every reference page except the two theme
+identity pass B changes: the admin subpath page its `./components` to `./admin` rename moves, and
+the `./public` page it creates. Those two run after pass B lands, as a short follow-up batch with
+the same acceptance. The reference arm is the most complete and the easiest for an agent to draft,
+so it goes first; the editor docs and the front page come last.
+
 **Outcome:** One `claude-opus-5-5` fact-read agent per page for the 29 pages in `docs/reference/`
 other than its README; the five largest (`sveltekit.md`, `core.md`, `admin-toolkit.md`,
 `cairn-audit.md`, `components.md`) split into chunks of whole H2 sections near 5K words each, one

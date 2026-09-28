@@ -48,7 +48,7 @@ The chores batch merged as PR #93 (`283a63d1`).
 
 ## Open decisions and watches
 
-- Open for Geoff at the evening sitting: whether the Go pass merges on a green close; whether
+- Go pass merges on a green close (Geoff, 2026-09-27). Open for Geoff at the evening sitting: whether
   draft docs task 10 runs overnight on the reference pages pass B leaves alone; whether the
   `checkOrigin` migration runs as its own `auth-data` pass.
 

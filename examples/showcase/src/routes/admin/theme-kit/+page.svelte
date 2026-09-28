@@ -2,10 +2,11 @@
 written only in plain daisyUI classes and cairn's role utilities (`type-*`, `gap-*`, `card-shell`,
 `rounded-*`) gets a consistent look with no per-element idiom of its own. Every probed element
 carries a stable `data-testid`, read by `theme-kit.spec.ts` and the `admin-visual` captures; no
-`<style>` block and no arbitrary Tailwind value anywhere on the page (spec, "G1: a consistent look
-by default"). -->
+`<style>` block anywhere on the page (spec, "G1: a consistent look by default"). The page heading
+carries `font-[550]`, the one arbitrary value the ratified page heading itself uses (PageHeader's
+own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
 <div class="max-w-3xl mx-auto card-shell p-6" data-testid="tk-root">
-  <h1 class="type-title font-bold">Theme kit</h1>
+  <h1 class="type-title font-[550]">Theme kit</h1>
 
   <div class="flex flex-col gap-section">
     <section class="flex flex-col gap-group" data-testid="tk-buttons">

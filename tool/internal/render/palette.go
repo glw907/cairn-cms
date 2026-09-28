@@ -26,19 +26,19 @@ const (
 )
 
 // ink carries one role's value at every rung a terminal can offer: a hex pair for TrueColor, an
-// xterm-256 pair for the named ANSI256 rung (criterion 6), and one ANSI-16 slot shared by both
-// branches, empty when the role carries no explicit slot at all. RoleText and RoleMuted are the
-// terminal's own default foreground at ANSI-16: slot 8 is the background on Solarized Dark, and
-// SGR 2 (faint) measures under 2:1 contrast on several common themes, so neither is ever used for
-// a role that must stay readable (criterion 5).
+// xterm-256 pair for the named ANSI256 rung, and one ANSI-16 slot shared by both branches, empty
+// when the role carries no explicit slot at all. RoleText and RoleMuted are the terminal's own
+// default foreground at ANSI-16: slot 8 is the background on Solarized Dark, and SGR 2 (faint)
+// measures under 2:1 contrast on several common themes, so neither is ever used for a role that
+// must stay readable.
 type ink struct {
 	lightHex, darkHex string
 	light256, dark256 string
 	ansi16            string
 }
 
-// warmStone is the one table in this module that writes a hex value (criterion 4). Every other
-// file resolves colour through Theme.Style or Theme.Sized.
+// warmStone is the one table in this module that writes a hex value. Every other file resolves
+// colour through Theme.Style or Theme.Sized.
 var warmStone = map[Role]ink{
 	RoleText:    {"#28231d", "#eae7e3", "235", "255", ""},
 	RoleMuted:   {"#615d57", "#a8a49e", "243", "246", ""},
@@ -95,10 +95,10 @@ func (t Theme) forTier(ascii bool) Theme {
 }
 
 // color resolves role through lipgloss's own light/dark and per-profile seams, so the value a
-// terminal receives is named at every rung (criterion 6's ANSI256 rung included) rather than
-// nearest-matched down from 24 bits. The ANSI-16 argument is only ever selected when Style has
-// already confirmed role carries an explicit slot (criterion 5), so an empty slot never reaches a
-// terminal even though the zero value still has to type-check here.
+// terminal receives is named at every rung, ANSI256 included, rather than nearest-matched down
+// from 24 bits. The ANSI-16 argument is only ever selected when Style has already confirmed role
+// carries an explicit slot, so an empty slot never reaches a terminal even though the zero value
+// still has to type-check here.
 func (t Theme) color(role Role) color.Color {
 	v := warmStone[role]
 	ld := lipgloss.LightDark(t.dark)
@@ -128,7 +128,7 @@ func (t Theme) Style(role Role) lipgloss.Style {
 
 // strong returns role's style at bold weight, for the two things a frame emphasizes: the verdict
 // word and the subject it names. It is a Theme method rather than a setter a body chains, which
-// is what keeps criterion 8's rule (Style and Sized are the only ways out of here) intact.
+// is what keeps this file's own rule intact: Style and Sized are the only ways out of here.
 //
 // At ProfileNoColor it returns the zero style unchanged, bold included: that rung is what
 // NO_COLOR, --color=never, and a plain pipe all resolve to, and its readers (a cron mail, a CI
@@ -165,8 +165,8 @@ func (t Theme) sizedLink(role Role, url string, w int) lipgloss.Style {
 }
 
 // Sized returns role's style constrained to a fixed-width cell: Width(w).MaxWidth(w), the
-// construction go-conventions names for this package and Task 20b's bodies (padding inside the
-// styled block, cut at the same width, so a selected row can later take a full-width ground).
+// construction the column bodies use throughout (padding inside the styled block, cut at the
+// same width, so a selected row can later take a full-width ground).
 func (t Theme) Sized(role Role, w int) lipgloss.Style {
 	w = max(w, 0)
 	return t.Style(role).Width(w).MaxWidth(w)

@@ -9,8 +9,9 @@
 // Theme and its palette (palette.go), the glyph set (glyph.go), the named width rungs (width.go),
 // and the sanitizer every dynamic string passes through (sanitize.go). One shared layer
 // (layout.go, rank.go) supplies the header, the section grammar, the fix format, and the one
-// severity ranking, and the bodies (body_single.go, body_plain.go) compose them into the frames
-// an operator reads.
+// severity ranking, and the four bodies compose them into the frames an operator reads: one site
+// on a terminal (body_single.go), more than one (body_many.go), a pipe or any non-terminal
+// consumer (body_plain.go), and a log excerpt (body_logs.go).
 package render
 
 import (
@@ -84,8 +85,8 @@ type RenderInput struct {
 	// Profile is the colour profile to paint with.
 	Profile Profile
 	// ASCII selects the ASCII glyph tier over Unicode. profile.go's DetectProfile is the only
-	// function that fills it (criterion 13); render.Render reads the field and never re-derives
-	// it, since purity forbids a second TTY check anywhere else in this package.
+	// function that fills it; render.Render reads the field and never re-derives it, since
+	// purity forbids a second TTY check anywhere else in this package.
 	ASCII bool
 	// Reports holds the health sweep's settled reports, in the order the sweep ran them. The
 	// render owns the ranking; nothing upstream re-orders.
@@ -102,8 +103,8 @@ type RenderInput struct {
 	// operator reading the word and a routine reading the exit code cannot disagree.
 	Verdict Verdict
 	// Now is the instant every timestamp in the frame is formatted against. A caller wanting
-	// "now" passes time.Now() itself: render never calls the system clock (criterion 24), which
-	// is what keeps a replay of the same input byte-identical regardless of when it runs.
+	// "now" passes time.Now() itself: render never calls the system clock, which is what keeps
+	// a replay of the same input byte-identical regardless of when it runs.
 	Now time.Time
 }
 

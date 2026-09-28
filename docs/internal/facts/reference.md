@@ -50,7 +50,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/sveltekit/cairn-admin.ts` (`CairnAdminRoutes` interface and the `actions` object).
   [verified]
 - `f:6toyed` `previewMint` and `previewRevoke` are `edit`-gated actions present at runtime and kept
-  (not narrowed away) in the declared `CairnAdminRoutes` type, alongside the other named actions.
+  (not narrowed away) in the declared `CairnAdminRoutes` type, alongside the other named actions;
+  sveltekit.md's own `actions` table omitted both rows until this fact prompted their addition.
   Source: `src/lib/sveltekit/cairn-admin.ts:301-304,399-400`. [verified]
 - `f:hjhp4w` Logout and publish-all always post to the fixed absolute `/admin?/logout` and
   `/admin?/publishAll` paths, both of which parse to the `index` view, never to the editor's
@@ -70,6 +71,17 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 ## docs/reference/admin-toolkit.md
 
+- `f:0vgrcx` `TextInput` and `SelectInput` shipped at `0.94.0` (renamed from admin-fields'
+  `TextField`/`SelectField`); `FieldRow` was added later, at `0.95.0` (commit `68d622a1`,
+  2026-08-07), not alongside the 0.94.0 merge. All three retired together in the retires pass,
+  batch 1a. Source: `CHANGELOG.md:3817-3827` (0.94.0 merge entry, no FieldRow), `CHANGELOG.md:1254-1256`
+  (retirement entry), commit `68d622a1` (FieldRow's introducing commit, first tagged at
+  `v0.95.0-rc.1`). [verified]
+- `f:i450hg` `ListToolbarFilter.display` is a three-way union, `'select' | 'segmented' | 'menu'`, not
+  two-way: the `'menu'` display is a fully shipped facet (an in-control applied-value trigger
+  folding onto `ToolbarDisclosure`, with its own ARIA-menu panel). Source:
+  `src/lib/admin-toolkit/list-toolbar.ts:63`, `src/lib/admin-toolkit/ListToolbar.svelte:300-359`.
+  [verified]
 - `f:itlble` `formatCivilDate`/`formatTimestamp` both default `fallback` to `''`, `locale` to `'en-US'`;
   `formatTimestamp` additionally defaults `timeZone` to `'UTC'` (deliberately not a site's own
   zone). Source: `src/lib/admin-toolkit/format.ts:38-100`. [verified]
@@ -98,7 +110,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` count, and
   `clear` returns focus to the header checkbox. Source:
   `src/lib/admin-toolkit/AdminTable.svelte`. [verified]
-- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin it has one call site, the edit page's Hidden chip, so a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/components/EditPage.svelte:1456`. [verified]
+- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin the `StatusChip` component itself has one outline call site, EditPage's Hidden chip (component-rendered, not hand-composed). Three more surfaces hand-compose the same `cairn-chip-outline` class directly rather than through the component: ManageEditors, ReferenceField, and MediaCaptureCard. Together that is four outline call sites in the engine, not through the component alone; a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/components/EditPage.svelte:1456`, `src/lib/components/ManageEditors.svelte`, `src/lib/components/ReferenceField.svelte`, `src/lib/components/MediaCaptureCard.svelte` (grep `cairn-chip-outline`). [verified]
 - `f:ro7w36` `Tooltip` (added `0.97.0`) reads the triggering `PointerEvent`'s own `pointerType` to detect a
   coarse-pointer tap, never `matchMedia`, since a hybrid device can carry both a mouse and a
   touchscreen at once; an empty `text` prop opts the whole component out (no `aria-describedby`,
@@ -240,7 +252,21 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   (focus-renders, panel-width, one-filled-action, interactive-contrast, touch-targets, list-role,
   viewport-overflow = 7) vs `tier: 'advisory'` (container-inset-asymmetry, form-font-parity,
   field-edge-alignment, border-contrast, norms-bands, screen-anatomy, relational-spacing,
-  weight-budget, chip-ground-collision = 9). [verified]
+  weight-budget, chip-ground-collision = 9). [rejected: rule count grew after this fact was filed
+  and the counting grep undercounted by one on each side even at the time; the audit now registers
+  34 rules (17 static, 17 rendered), see `f:hqhp14`]
+- `f:hqhp14` Exactly 34 rules are registered: 17 static (15 error tier, 2 advisory: `log-event-grammar`,
+  `log-secret-field`) plus 17 rendered (7 error-tier, 10 advisory-tier). A literal-string grep for
+  `id: '` undercounts both totals by one, since `motion-reduced-delay.ts` declares `id: RULE_ID`
+  rather than a literal string; count by the registry array or by tier grep instead. Source:
+  `src/lib/audit/rules/static/index.ts` (`staticRules()`, 17-entry array), tier grep across
+  `src/lib/audit/rules/static/*.ts` = 15 error / 2 advisory; `src/lib/audit/rules/rendered/index.ts`
+  (`renderedRules()`, 17-entry array; header comment states the 7/10 tier split), tier grep across
+  `src/lib/audit/rules/rendered/*.ts` = 7 error (focus-renders, panel-width, one-filled-action,
+  interactive-contrast, touch-targets, list-role, viewport-overflow) / 10 advisory
+  (container-inset-asymmetry, form-font-parity, field-edge-alignment, border-contrast, norms-bands,
+  screen-anatomy, relational-spacing, weight-budget, chip-ground-collision, motion-reduced-delay).
+  [verified]
 - `f:3kvawo` Exit codes: 0 (clean), 1 (unsuppressed error-tier finding), 2 (run couldn't start/finish: bad
   flag, no server, no browser, redirect-trap refusal). Codes route through `process.exitCode`,
   never `process.exit`, so piped stdout flushes fully first. Source: `src/lib/audit/bin.ts:5-68`,
@@ -707,6 +733,11 @@ re-sourced to Go on this tree rather than to the page.
 
 ## docs/reference/core.md
 
+- `f:eooeqm` `defineFieldset`'s Standard Schema `~standard.validate` returns `result.issues`
+  unchanged, not a single-segment remap; a nested `object`/`array` field failure carries a
+  multi-segment path (leaf key or row index appended), the same `ValidationIssue[]` `validate()`
+  itself returns. Source: `src/lib/content/fieldset.ts:150-181` (`validateField` appends nested
+  segments), `:491-499` (`~standard.validate` passes `result.issues` through). [verified]
 - `f:1to3po` `defineConcept`'s permalink default is `/:slug` when the concept id is exactly `pages`, and
   `/<concept-id>/:slug` for any other id; `datePrefix` defaults to `'day'`. Source:
   `src/lib/content/concepts.ts:67,190`. [verified]
@@ -1292,6 +1323,17 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 
 ## docs/reference/sveltekit.md
 
+- `f:6rvhxl` `RequestOutcome`'s awaited-send behavior (`requestAction` awaiting the magic-link
+  email before responding) dates to `0.38.0`, when the type was named `RequestResult` with a
+  `status` discriminant (`sent`/`send_error`/`throttled`); the `0.97.0` outcome-idiom sweep
+  renamed it to `RequestOutcome`, changed the discriminant key to `outcome`, and restated
+  `send_error` as `send-error`, with the `sent` boolean unchanged throughout. Source:
+  `CHANGELOG.md:6884-6891` (0.38.0), `CHANGELOG.md:1748-1751` (0.97.0). [verified]
+- `f:yubpho` The event-shape interface documents only four of `CairnEvent`'s five `locals` keys;
+  `cairnIdentity` (set under identity mode) was omitted from both the code sample and the "four
+  optional keys" prose at sveltekit.md:32-46,60. Source: `src/lib/sveltekit/types.ts:85-91`.
+  [verified]
+
 ### Refusal channels (the load-bearing section, verified in full)
 
 - `f:howa1l` `requireOwner`, `requireEditor`, and `requireAccess` perform authorization (throw on refusal);
@@ -1494,16 +1536,19 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   before any token is generated. Source: `src/lib/sveltekit/preview.ts:61`
   (`DEFAULT_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000`), `:75-85` (`resolveTtlMs`: finite/positive
   check, min/max bound check, `PreviewTokenConfig:`-prefixed throws). [verified]
-- `f:esg0zx` `renameAction`, `deleteAction`/`listDeleteAction`, and `discardAction` each clear a
-  never-published entry's outstanding preview rows as part of their own cascade, closing an
-  id-reuse collision where a stale link could later resolve to a different entry's draft;
-  publishing deliberately leaves the rows in place since `loadPreview` needs them to answer a stale
-  link with "this preview has ended" rather than a bare 404. Source:
-  `src/lib/sveltekit/content-routes-entry-destructive.ts:167,205` (`deleteEntry`, shared by
-  `deleteAction`/`listDeleteAction`, calls `clearPreviewTokens`), `:407` (`renameAction` calls
-  `clearPreviewTokens`), `src/lib/sveltekit/content-routes-entry-write.ts:537-543` (`discardAction`
-  clears rows only for a never-published entry), `:406-410` (publish deliberately does not clear,
-  comment states the `loadPreview` "this preview has ended" rationale). [verified]
+- `f:esg0zx` `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's outstanding
+  preview rows unconditionally (regardless of publish state) as part of their own cascade;
+  `discardAction` clears them only for a never-published entry (a live entry's discarded edit
+  leaves its rows alone). All three close the same id-reuse collision, where a stale link could
+  later resolve to a different entry's draft; publishing deliberately leaves the rows in place
+  since `loadPreview` needs them to answer a stale link with "this preview has ended" rather than a
+  bare 404. Source: `src/lib/sveltekit/content-routes-entry-destructive.ts:167,205` (`deleteEntry`,
+  shared by `deleteAction`/`listDeleteAction`, calls `clearPreviewTokens` unconditionally on both
+  the never-published and the published-then-committed exit), `:407` (`renameAction` calls
+  `clearPreviewTokens` unconditionally, no never-published check),
+  `src/lib/sveltekit/content-routes-entry-write.ts:537-543` (`discardAction` clears rows only for a
+  never-published entry), `:406-410` (publish deliberately does not clear, comment states the
+  `loadPreview` "this preview has ended" rationale). [verified]
 - `f:3qexq3` `settingsLoad` actively probes a present Anthropic key with a zero-token call and reports
   `keyStatus` (`missing`/`invalid`/`valid`/`unknown`) distinct from the presence-only
   `keyConfigured`, feeding the same key-health cache `editLoad`'s Tidy control reads (a
@@ -1515,10 +1560,14 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:n8qe9y` `tidyAction` refuses before any model call if tidy is disabled or the key is missing; a 401/403
   from Anthropic marks the shared key-health cache unhealthy and is not retryable
   (`fail(503)`, reading "Tidy isn't available right now"), while a deadline overrun, other abort,
-  model error, or empty result is retryable (`fail(502)`). Source:
-  `src/lib/sveltekit/content-routes-tidy.ts:111,130,135` (`tidyAction`: `fail(503)` before any
-  model call when disabled or key missing), `:200-209` (401/403 calls `markKeyUnhealthy()`,
-  `fail(503)`, not retryable), `:223-231,249` (other errors `fail(502)`, retryable). [verified]
+  model error, or empty result is retryable (`fail(502)`); a missing `@anthropic-ai/sdk` peer and
+  an Anthropic 400 `invalid_request_error` (typically an unsupported `tidy.model`) are two more
+  non-retryable `fail(503)` causes, distinct from the disabled/missing-key and 401/403 cases
+  already named. Source: `src/lib/sveltekit/content-routes-tidy.ts:111,130,135` (`tidyAction`:
+  `fail(503)` before any model call when disabled or key missing), `:190-199` (`TidySdkMissingError`,
+  `fail(503)`), `:200-211` (401/403 calls `markKeyUnhealthy()`, `fail(503)`, not retryable),
+  `:212-222` (400 `invalid_request_error`, `fail(503)`, not retryable), `:223-231,249` (other
+  errors `fail(502)`, retryable). [verified]
 - `f:sd18xx` `NavLayoutSection.collapsed` (default `false`) is only the group's starting state for a visitor
   with no persisted `cairn-admin-nav-collapsed` cookie; the cookie, once any header is toggled,
   wins entirely in both directions, so a group added after a visitor's cookie already exists

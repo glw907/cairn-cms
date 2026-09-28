@@ -492,7 +492,8 @@ declare function defineFieldset<const R extends Record<string, FieldDescriptor>>
 Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors as
 plain data for the editor form, a server-derived validator that coerces each value to its type and
 returns field-keyed errors or normalized data, and a Standard Schema conformance property whose
-issues map each error to a single-segment path. The validator enforces each descriptor's declared
+issues are the same `ValidationIssue[]` the validator returns, each located by the field's own
+path (a nested `object`/`array` failure carries the leaf key or row index too). The validator enforces each descriptor's declared
 constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
 `pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the `defineFieldset()`
 call, not on a later save. The validator reads a parsed value as well as a form string, so a numeric

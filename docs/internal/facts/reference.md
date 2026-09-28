@@ -12,6 +12,13 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `registerEditor?.(null)`); a grep of the file for `registerFocusEditor`, `registerImagePlaceholders`,
   `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`, and
   `registerFormat` finds none of them. [verified]
+- `f:dr2k4a` `EditorApi.insert` pads a block insertion by exactly one blank line on each side that
+  touches non-blank text, trimming any whitespace already adjacent to the caret first so an
+  existing blank line never doubles; nothing is added at a document's start or end. Both the
+  mounted CodeMirror path and the pre-mount textarea fallback call the same pure function. Source:
+  `src/lib/admin/insert-padding.ts#padInsertedBlock` (`const before = doc.slice(0, pos).trimEnd();`),
+  `src/lib/admin/MarkdownEditor.svelte:1138-1150` (`insertAtCursor` calling `padInsertedBlock` on
+  both paths). [verified]
 - `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
   deliberate hardening so the token survives `use:enhance`'s native form reset after a successful
   submit. Source: `src/lib/admin/CsrfField.svelte:7,24`. [verified]

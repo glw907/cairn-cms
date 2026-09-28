@@ -677,7 +677,7 @@ needed the whole thing anyway.
 
 | Member | Type | What it does |
 | --- | --- | --- |
-| `insert` | `(text: string) => void` | Inserts text at the cursor. |
+| `insert` | `(text: string) => void` | Inserts a block at the cursor, separated from adjacent text by a blank line where text touches it. |
 | `insertLink` | `(href: string, title: string) => void` | Inserts an inline link at the current selection. |
 | `insertImage` | `(alt: string, ref: string) => void` | Inserts an inline `![alt](media:slug.hash)` image at the caret. |
 | `replaceRange` | `(from: number, to: number, text: string) => void` | Overwrites a document span with new text and drops the caret after it. |

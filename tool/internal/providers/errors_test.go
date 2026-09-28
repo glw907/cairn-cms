@@ -52,7 +52,7 @@ func TestReasonForStatusAgreesAcrossProvidersForStatusOnlyCodes(t *testing.T) {
 // "unknown". reasonNames is declared [reasonCount]string, so its length cannot exceed reasonCount
 // at compile time; this test covers the direction the compiler cannot, a missing entry.
 func TestReasonNamesCoverEveryReason(t *testing.T) {
-	for r := Reason(0); r < reasonCount; r++ {
+	for r := range reasonCount {
 		if reasonNames[r] == "" {
 			t.Errorf("Reason(%d) has no entry in reasonNames", int(r))
 		}

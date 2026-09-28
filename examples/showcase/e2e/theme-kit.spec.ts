@@ -296,14 +296,33 @@ async function findAdminStylesheetHref(page: Page): Promise<string> {
   throw new Error('admin stylesheet link not found in <head>');
 }
 
-/** Fetches every stylesheet the public homepage links, concatenated into one CSS text blob. */
+/**
+ * Fetches every stylesheet the public homepage links, concatenated into one CSS text blob.
+ *
+ * The served HTML is parsed as a document, never matched with a regex, because the attribute order
+ * differs by source: the showcase's own head writes `rel` before `href`, while SvelteKit emits its
+ * route stylesheets as `href` before `rel`. The list must be non-empty, or the host-CSS check below
+ * would pass without injecting any host CSS at all.
+ */
 async function fetchHomepageCss(page: Page, baseURL: string): Promise<string> {
-  const html = await (await page.request.get(baseURL)).text();
-  const hrefs = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(
-    (m) => m[1],
+  const homeURL = new URL('/', baseURL).toString();
+  const html = await (await page.request.get(homeURL)).text();
+  const hrefs = await page.evaluate(
+    (args) =>
+      Array.from(
+        new DOMParser()
+          .parseFromString(args.html, 'text/html')
+          .querySelectorAll('link[rel~="stylesheet"][href]'),
+      ).map((l) => new URL(l.getAttribute('href')!, args.homeURL).toString()),
+    { html, homeURL },
   );
+  expect(hrefs.length).toBeGreaterThan(0);
   const texts = await Promise.all(
-    hrefs.map(async (href) => (await page.request.get(new URL(href, baseURL).toString())).text()),
+    hrefs.map(async (href) => {
+      const res = await page.request.get(href);
+      expect(res.ok(), href).toBe(true);
+      return res.text();
+    }),
   );
   return texts.join('\n');
 }
@@ -369,21 +388,16 @@ for (const order of ['before', 'after'] as const) {
       await expect.poll(() => el.evaluate((e) => getComputedStyle(e).borderRadius)).toBe(px);
     }
 
-    // Recorded finding (both orders, run and read, not merely hoped for): the showcase's own
-    // homepage sheet carries no site-theme rule that touches a selected outline button's ink, so
-    // rule 11 (the widened outline/dash ink repair) holds in both host orders here. An uncolored
-    // btn-outline keeps daisyUI's own edge (unaffected either way, since no cairn-idiom rule
-    // targets it), and the selected btn-outline btn-active keeps the plain-ink reset in both
-    // orders. A future host sheet that DOES carry a competing site-theme rule on this property
-    // could still lose the after order to it; that risk is unpatched, per the review focus.
-    const outline = page.getByTestId('tk-btn-outline');
-    const outlineActive = page.getByTestId('tk-btn-outline-active');
-    const outlineEdge = await outline.evaluate((e) => getComputedStyle(e).borderColor);
-    expect(outlineEdge.length).toBeGreaterThan(0);
-    const expectedInk = await resolveOn(outlineActive, 'color', 'var(--color-base-content)');
-    await expect
-      .poll(() => outlineActive.evaluate((e) => getComputedStyle(e).color))
-      .toBe(expectedInk);
+    // Both outline buttons keep the base-content ink in this order, which for the selected one is
+    // the outline ink repair holding against the host sheet. The showcase's site-theme sublayer
+    // carries an unscoped `.btn-outline` rule, but it sets only `--btn-border`, so it moves these
+    // buttons' edges and never their ink. A host sheet with a site-theme rule on `color` could
+    // still win the after order; this test does not cover that case.
+    for (const testId of ['tk-btn-outline', 'tk-btn-outline-active']) {
+      const el = page.getByTestId(testId);
+      const ink = await resolveOn(el, 'color', 'var(--color-base-content)');
+      await expect.poll(() => el.evaluate((e) => getComputedStyle(e).color)).toBe(ink);
+    }
   });
 }
 

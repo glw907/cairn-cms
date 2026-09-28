@@ -99,11 +99,12 @@ subpath's barrel in the retires pass, batch 1a: zero consumers independent of `P
 ## Fields
 
 The field primitive a site's own custom `/admin/` screen composes, such as an events or members
-editor. It renders with the admin's own label rhythm, matching the built-in content editor's
-fields. Merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`). `TextInput` and `SelectInput` shipped alongside it as of `0.94.0` (renamed from the retired
-subpath's `TextField`/`SelectField`); `FieldRow` joined later (`0.95.0`). All three retired from
-this subpath in the retires pass, batch 1a (zero consumers anywhere in the engine, showcase, or
-docs); their worked examples below now hand-roll the same markup directly.
+editor. It renders with the admin's own label rhythm, matching the built-in content editor's fields.
+Merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`). `TextInput` and
+`SelectInput` shipped alongside it as of `0.94.0` (renamed from the retired subpath's
+`TextField`/`SelectField`); `FieldRow` joined later (`0.95.0`). All three retired from this subpath
+in the retires pass, batch 1a (zero consumers anywhere in the engine, showcase, or docs); their
+worked examples below now hand-roll the same markup directly.
 
 ```ts
 import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
@@ -230,15 +231,15 @@ inconsistently. A self-explanatory label omits `legend` entirely: the chip then 
 and no hidden span, never the label itself repeated as its own tooltip.
 
 All three registers carry a measured constraint rather than an unconditional guarantee. `outline`'s
-hairline is `color-mix(in oklab, currentColor 55%, transparent)`, so it inherits its color from
-the chip's own ancestor. Inside a `text-muted` ancestor the mix reads roughly 2.4:1 against a
-card ground and 2.97:1 against a page ground, under the audit's own 3:1 border-contrast floor.
-The engine's four outline call sites, EditPage (through the component), ManageEditors,
-ReferenceField, and MediaCaptureCard (the last three hand-composed), all clear this floor; a
-consumer that places an `outline` chip inside its own muted-text ancestor should re-measure. `quiet` and `warning` are tuned to a
-1.16-1.47:1 contrast band against both admin row grounds (plain and zebra) in both admin themes,
-and the whole ratified band sits under the audit's own 1.5 ground-collision floor, by design: a
-`quiet` or `warning` chip measures as an advisory camouflaged finding on some row/theme pairs.
+hairline is `color-mix(in oklab, currentColor 55%, transparent)`, so it inherits its color from the
+chip's own ancestor. Inside a `text-muted` ancestor the mix reads under the audit's own 3:1
+border-contrast floor against both a card ground and a page ground. The engine's four outline call
+sites, EditPage (through the component), ManageEditors, ReferenceField, and MediaCaptureCard (the
+last three hand-composed), all clear this floor; a consumer that places an `outline` chip inside its
+own muted-text ancestor should re-measure. `quiet` and `warning` are tuned to a 1.16-1.47:1 contrast
+band against both admin row grounds (plain and zebra) in both admin themes, and the whole ratified
+band sits under the audit's own 1.5 ground-collision floor, by design: a `quiet` or `warning` chip
+measures as an advisory camouflaged finding on some row/theme pairs.
 `chip-ground-collision` stays advisory rather than gating today, pending its own chroma-aware
 reshape that can tell a hue-distinct low-contrast tint from a truly invisible one; a measured
 "violation" from that rule is expected here, not a regression.
@@ -508,9 +509,9 @@ establishes. A search box's own text, a filter's own selected value, and each fi
 are all state the caller owns, never this component.
 
 Each `ListToolbarFilter` carries `id`, `label` (the control's accessible name, never rendered as
-visible chrome), `options`, `value`, `onChange`, an optional `defaultValue` (the "no filter
-applied" value, defaults `'all'`), `promoted` (defaults `true`, choosing the band versus the
-overflow disclosure), and `display` (`'select'`, `'segmented'`, or `'menu'`, defaults `'select'`, see below).
+visible chrome), `options`, `value`, `onChange`, an optional `defaultValue` (the "no filter applied"
+value, defaults `'all'`), `promoted` (defaults `true`, choosing the band versus the overflow
+disclosure), and `display` (`'select'`, `'segmented'`, or `'menu'`, defaults `'select'`, see below).
 `primaryAction` is `{ label, onClick }`, the toolbar's one right-aligned action; the contract never
 accepts more than one. `count`/`itemLabel` feed the count line's own scope; `itemLabel` accepts a
 plain string (invariant across every count, the original contract unchanged) or an `{ one, many }`

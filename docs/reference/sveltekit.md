@@ -955,10 +955,11 @@ model](../extend/security-model.md#sign-in-binds-to-the-browser-that-asked) for 
 `requestAction` awaits the send, so its `RequestOutcome` reflects the outcome. The awaited-send
 behavior dates to `0.38.0`, under the type's earlier name `RequestResult` and a `status`
 discriminant (`sent`/`send_error`/`throttled`); the `0.97.0` outcome-idiom sweep renamed it to
-`RequestOutcome` with the `outcome` key and kebab-case `send-error`. The `sent` outcome covers both a successful send and a non-allow-listed address (the two
-return identical results, so the response never reveals membership). A `send-error` means the email
-could not be sent; `throttled` means the same address requested a link inside the cooldown window.
-`sent` mirrors the old boolean, so a site rendering against `form.sent` keeps working.
+`RequestOutcome` with the `outcome` key and kebab-case `send-error`. The `sent` outcome covers both
+a successful send and a non-allow-listed address (the two return identical results, so the response
+never reveals membership). A `send-error` means the email could not be sent; `throttled` means the
+same address requested a link inside the cooldown window. `sent` mirrors the old boolean, so a site
+rendering against `form.sent` keeps working.
 
 `config.bootstrapOwner` names the address and display name that seeds the first owner row without
 a manual `wrangler d1 execute` insert. On a request whose normalized email matches it, when the
@@ -1174,17 +1175,18 @@ response (the one admin payload that carries a bearer credential), and logs
 every outstanding link for the entry in one call, returning `{ count }`; it is idempotent, since
 revoking with nothing minted still succeeds with a count of zero. Both actions answer the same
 `ActionFailure<ContentFormFailure>` when `AUTH_DB` is missing the `preview_tokens` table
-(`migrations/0003_preview.sql` not yet applied), naming the migration to apply rather than
-surfacing a raw D1 error, since the engine ships the share affordance to every upgraded site's edit
-screen regardless of adoption. `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's outstanding preview rows
-unconditionally as part of their own cascade, since the id they touch stops naming that entry either
-way; `discardAction` clears them only when the entry was never published (discarding an edit to a
-live entry leaves its rows alone, since the id still names the same, still-live entry). All three
-close the same id-reuse collision, where a stale link could later resolve to a different entry's
-draft; publishing deliberately leaves the rows in place, since [`loadPreview`](#loadpreview) needs
-them to answer a stale link with "this preview has ended" rather than a bare 404. See [Public
-preview](#public-preview) below for the site-mounted page these actions feed, and [Share a draft
-preview](../extend/share-a-draft-preview.md) for the adopter's full walkthrough.
+(`migrations/0003_preview.sql` not yet applied), naming the migration to apply rather than surfacing
+a raw D1 error, since the engine ships the share affordance to every upgraded site's edit screen
+regardless of adoption. `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's
+outstanding preview rows unconditionally as part of their own cascade, since the id they touch stops
+naming that entry either way; `discardAction` clears them only when the entry was never published
+(discarding an edit to a live entry leaves its rows alone, since the id still names the same,
+still-live entry). All three close the same id-reuse collision, where a stale link could later
+resolve to a different entry's draft; publishing deliberately leaves the rows in place, since
+[`loadPreview`](#loadpreview) needs them to answer a stale link with "this preview has ended" rather
+than a bare 404. See [Public preview](#public-preview) below for the site-mounted page these actions
+feed, and [Share a draft preview](../extend/share-a-draft-preview.md) for the adopter's full
+walkthrough.
 
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /

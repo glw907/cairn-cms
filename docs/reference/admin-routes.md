@@ -8,8 +8,7 @@ a guess at them. The showcase's own `svelte.config.js` predates the current scaf
 it is this repo's hand-maintained config, not a fresh scaffold's output, and both settings still
 work there too. The showcase also imports its composer through its own `$chassis` alias and
 imports a compiled .cairn/admin.css in its shell layout; the snippets below use the generic
-`$lib` alias and omit that stylesheet import, which a Tailwind-based scaffold needs only once it
-adds its own admin screens (see the stylesheet seam in `docs/extend/`).
+`$lib` alias and omit that stylesheet import.
 
 This wiring assumes the site disables SvelteKit's own origin check for form posts, `csrf: {
 checkOrigin: false }`, since cairn's guard owns CSRF for the admin through a double-submit token.
@@ -174,15 +173,15 @@ so a `save` posted to a list URL refuses rather than misfiring:
 The engine's components post these names, so an action-adding release reaches a site through the
 version bump alone; there is no per-site action table to keep in sync.
 
-The ten media-janitorial actions (`mediaDelete`, `mediaUpdate`,
-`mediaLibraryUpload`, `mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`,
-`mediaAltPropagate`, `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`) all run at
-runtime on the object `createCairnAdmin` returns, but are absent from the declared
-[`CairnAdminRoutes`](./sveltekit.md#types) type. `mediaUpload` is not one of the ten: it stays in
-the declared type, gated to the media view instead of the edit view. The narrowing is type-level, not a runtime
-boundary: `export const actions = admin.actions` still wires every one of them, since it reads
-the actual object rather than the declared type; a caller that needs the narrowed members typed
-recovers them with a spread (`{ ...admin.actions }`) or a cast.
+The ten media-janitorial actions (`mediaDelete`, `mediaUpdate`, `mediaLibraryUpload`,
+`mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`, `mediaAltPropagate`, `mediaBulkDelete`,
+`mediaOrphanScan`, `mediaOrphanPurge`) all run at runtime on the object `createCairnAdmin` returns,
+but are absent from the declared [`CairnAdminRoutes`](./sveltekit.md#types) type. `mediaUpload` is
+not one of the ten: it stays in the declared type, gated to the media view instead of the edit view.
+The narrowing is type-level, not a runtime boundary: `export const actions = admin.actions` still
+wires every one of them, since it reads the actual object rather than the declared type; a caller
+that needs the narrowed members typed recovers them with a spread (`{ ...admin.actions }`) or a
+cast.
 
 ## The guard and the ambient type
 

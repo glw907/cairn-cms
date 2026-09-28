@@ -49,6 +49,15 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`contributor`.** `admin-toolkit.md`'s outline-chip contrast paragraph once cited two specific
+  ratios (roughly 2.4:1 against a card ground, 2.97:1 against a page ground) for the
+  `color-mix(in oklab, currentColor 55%, transparent)` hairline inside a `text-muted` ancestor.
+  Neither number traces to a source in the repo (no test, no audit rule output, no computed
+  constant); the batch 4/5 fact review caught it and the page now states only the traceable claim
+  (the mix reads under the audit's 3:1 border-contrast floor against both grounds). Re-measure the
+  actual ratios, ideally with the rendered `border-contrast` rule itself against a `text-muted`
+  ancestor fixture, before restoring specific numbers to the page.
+
 Docs reset pass 1's close (2026-09-24) triaged the whole log and found no open entry. The pass
 routed its own findings straight to `ROADMAP.md` in the same step, so none opens here. The docs
 reset itself went to the Now tier, with pass 1b next. The pass's deferred chain and harness items,

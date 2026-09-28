@@ -252,13 +252,13 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   (focus-renders, panel-width, one-filled-action, interactive-contrast, touch-targets, list-role,
   viewport-overflow = 7) vs `tier: 'advisory'` (container-inset-asymmetry, form-font-parity,
   field-edge-alignment, border-contrast, norms-bands, screen-anatomy, relational-spacing,
-  weight-budget, chip-ground-collision = 9). [rejected: rule count grew after this fact was filed
-  and the counting grep undercounted by one on each side even at the time; the audit now registers
-  34 rules (17 static, 17 rendered), see `f:hqhp14`]
+  weight-budget, chip-ground-collision = 9). [rejected: rule count grew after this fact was filed;
+  the audit now registers 34 rules (17 static, 17 rendered), see `f:hqhp14`]
 - `f:hqhp14` Exactly 34 rules are registered: 17 static (15 error tier, 2 advisory: `log-event-grammar`,
   `log-secret-field`) plus 17 rendered (7 error-tier, 10 advisory-tier). A literal-string grep for
-  `id: '` undercounts both totals by one, since `motion-reduced-delay.ts` declares `id: RULE_ID`
-  rather than a literal string; count by the registry array or by tier grep instead. Source:
+  `id: '` undercounts only the rendered total by one, since `motion-reduced-delay.ts` declares
+  `id: RULE_ID` rather than a literal string; the static grep already finds all 17. Count by the
+  registry array or by tier grep instead. Source:
   `src/lib/audit/rules/static/index.ts` (`staticRules()`, 17-entry array), tier grep across
   `src/lib/audit/rules/static/*.ts` = 15 error / 2 advisory; `src/lib/audit/rules/rendered/index.ts`
   (`renderedRules()`, 17-entry array; header comment states the 7/10 tier split), tier grep across
@@ -1329,9 +1329,9 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   renamed it to `RequestOutcome`, changed the discriminant key to `outcome`, and restated
   `send_error` as `send-error`, with the `sent` boolean unchanged throughout. Source:
   `CHANGELOG.md:6884-6891` (0.38.0), `CHANGELOG.md:1748-1751` (0.97.0). [verified]
-- `f:yubpho` The event-shape interface documents only four of `CairnEvent`'s five `locals` keys;
-  `cairnIdentity` (set under identity mode) was omitted from both the code sample and the "four
-  optional keys" prose at sveltekit.md:32-46,60. Source: `src/lib/sveltekit/types.ts:85-91`.
+- `f:yubpho` `CairnEvent`'s `locals` carries five optional keys: `cairnEditor`, `cairnBackend`,
+  `cairnAuditSink`, `cairnAccess`, and `cairnIdentity` (set under identity mode). sveltekit.md's
+  event-shape code sample and prose now list all five. Source: `src/lib/sveltekit/types.ts:85-91`.
   [verified]
 
 ### Refusal channels (the load-bearing section, verified in full)

@@ -495,18 +495,17 @@ Stability tier: Extension API.
 function buildNewlyPublished(before: Manifest | null, after: Manifest): ManifestEntry[];
 ```
 
-Build the list of entries a deploy just carried across the first-publish transition: `after`
-entries that carry a `publishedAt` stamp, whose same concept-and-id counterpart in `before` was
-absent or itself unstamped. An entry that carried its stamp forward from `before`, and an entry
-that was already non-draft but never stamped, never match, since neither changes the stamp
-between the two manifests. A draft entry never matches either, but for a different reason:
-`upsertEntry` preserves a prior `publishedAt` stamp through any save, including one that
-re-drafts the entry. A drafted entry can therefore carry a stamp the stamp comparison alone would
-not catch. The explicit draft check is what excludes it. An entry deleted from `after`
-never returns. The helper is pure
-and node-safe. It performs no I/O and reads no clock, so a caller supplies both manifests and gets a
-deterministic result back. The engine sends nothing over the network and runs no scheduler. A
-consumer diffs and then acts on the result, the seam an announce-on-publish integration builds on.
+Build the list of entries a deploy just carried across the first-publish transition: `after` entries
+that carry a `publishedAt` stamp, whose same concept-and-id counterpart in `before` was absent or
+itself unstamped. An entry that carried its stamp forward from `before`, and an entry that was
+already non-draft but never stamped, never match, since neither changes the stamp between the two
+manifests. A draft entry never matches either, but for a different reason: `upsertEntry` preserves a
+prior `publishedAt` stamp through any save, including one that re-drafts the entry. A drafted entry
+can therefore carry a stamp the stamp comparison alone would not catch. The explicit draft check is
+what excludes it. An entry deleted from `after` never returns. The helper is pure and node-safe. It
+performs no I/O and reads no clock, so a caller supplies both manifests and gets a deterministic
+result back. The engine sends nothing over the network and runs no scheduler. A consumer diffs and
+then acts on the result, the seam an announce-on-publish integration builds on.
 
 Pass `before: null` to mean no prior manifest exists. Every stamped entry in `after` then comes back,
 a full fan-out. A consumer wiring announce-on-publish has to persist the prior deployed manifest

@@ -170,7 +170,7 @@ async function printEmailLiveInfo(siteId) {
 }
 
 /**
- * Print the closing block for a site whose owner declined the paid plan (`paid-plan-declined`,
+ * Print the closing block for a site whose owner declined email sign-in (`paid-plan-declined`,
  * the other member of `TERMINAL_STEPS`): its own domain, admin sign-in URL, and workers.dev note,
  * same as a site at `email-live`, but naming that email sign-in is off rather than claiming it
  * works, since a declined site has no email path at all. `--sign-in` is that owner's only way
@@ -482,7 +482,7 @@ async function main() {
       // with its own `reoffered` copy. Returning here instead would make that promise unreachable
       // and, since --start-over refuses at this step too, would leave an owner who declined no way
       // to turn email on at all. This branch is what keeps the decline a choice rather than a trap.
-      console.log(`Resuming ${priorRecord.data.name} after a declined paid plan.`);
+      console.log(`Resuming ${priorRecord.data.name} after declining email sign-in.`);
       await continueIntoChapter2({
         siteId: priorRecord.id,
         dir: priorRecord.data.dir,

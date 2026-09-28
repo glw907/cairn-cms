@@ -89,17 +89,12 @@ and redeploys once. From here your site answers at both `https://yourdomain` and
 
 ## Turn on sign-in email
 
-This is the free-until boundary from [Before you start](./before-you-start.md): free for as long
-as you're the only one signing in, and this is the step that changes that. Turn Workers Paid on
-first, at Cloudflare's own
-[Workers & Pages overview](https://dash.cloudflare.com/?to=/:account/workers-and-pages) for your
-account. Saying yes to the question below doesn't subscribe you to anything by itself; it only
-tells the tool to go ahead and onboard your domain for email, and if your account isn't on Workers
-Paid yet, the run stops there and tells you so. The tool restates the price the moment it asks, so
-you never meet it as a surprise: **Turn on Cloudflare's Workers Paid plan now, so anyone besides
-you can sign in?** That's $5 US a month, billed once per Cloudflare account rather than once per
-site, and it is not a scaling upgrade tied to how much traffic your site gets. Say no, and nothing
-changes: your site keeps serving, and you keep signing in as its owner through
+Cloudflare's Workers Paid plan was already confirmed back when you deployed your site, since a
+cairn site needs it from its first deploy (see [What it
+costs](./before-you-start.md#what-it-costs)), so this step doesn't ask about it again. Saying yes
+here only tells the tool to go ahead and onboard your domain for Cloudflare's Email Sending:
+**Turn on email sign-in for your domain now?** Say no, and nothing changes: your site keeps
+serving, and you keep signing in as its owner through
 [`--sign-in`](./create-your-site.md#getting-back-in). You can turn this on later any time you run
 the command again.
 

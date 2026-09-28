@@ -15,6 +15,7 @@ import { updateSite, loadSite } from '../state.mjs';
 import { workerNameFor, writePublicOrigin } from './config.mjs';
 import { ensureInstalled, ensureLogin, buildSite, deployWorker, applyMigrations } from './deploy.mjs';
 import { ensureAccountId } from './account.mjs';
+import { cloudflareError } from './catalogue.mjs';
 import { movePemToWorkerSecret } from './secret.mjs';
 import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './bootstrap.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
@@ -104,13 +105,20 @@ export async function runCloudflareChapter({
   // strictly less and printed directly beneath the first. A live run is where that showed up;
   // both modules' own tests were happy.
   if (!resumingAtDeployed) {
+    // A cairn site needs Cloudflare's Workers Paid plan from its first deploy, so this consent
+    // states the plan the site runs on, not a free tier: chapter 2's own email admission
+    // (chapter2.mjs's EMAIL_ADMISSION_DETAIL) states the same figure the same way, so an owner
+    // reading both never meets a contradiction. This is also where a decline stops the run,
+    // before anything is installed, built, or deployed.
     const consentDetail =
-      "The tool will now install your site's dependencies, build it, and deploy it to " +
-      `Cloudflare's free workers.dev hosting on your account: one Worker named ${workerName} ` +
-      `(deploying again later updates it), two databases (${workerName}-auth, ${workerName}-app), ` +
-      `and one storage bucket (${workerName}-media). The free plan is enough; nothing in this ` +
-      'step costs money. One browser trip to sign in to Cloudflare if you are not already, then ' +
-      'one click to sign in to your own site.';
+      "Cloudflare's Workers Paid plan costs $5 US per month, as of 2026-08-11 " +
+      '(https://developers.cloudflare.com/workers/platform/pricing/), billed once per Cloudflare ' +
+      "account rather than once per site: a cairn site runs on it from its first deploy. Turn it " +
+      "on first if it is not already, then the tool installs your site's dependencies, builds " +
+      `it, and deploys it to your account: one Worker named ${workerName} (deploying again ` +
+      `later updates it), two databases (${workerName}-auth, ${workerName}-app), and one ` +
+      `storage bucket (${workerName}-media). One browser trip to sign in to Cloudflare if you ` +
+      'are not already, then one click to sign in to your own site.';
 
     let consented = false;
     await runStep(frame, 'Deploy your site to Cloudflare', consentDetail, async () => {
@@ -129,6 +137,9 @@ export async function runCloudflareChapter({
       }
       const answer = await confirm({ message: 'Install, build, and deploy your site now?' });
       if (isCancel(answer)) exitOnCancel();
+      if (!answer) {
+        log(cloudflareError('deploy-plan-declined', { dir }).message);
+      }
       consented = answer;
     });
     if (!dryRun && !consented) {

@@ -9,9 +9,9 @@ theme and run it locally.
 npm create cairn-site
 ```
 
-The command asks for the site's name, description, brand color, and target directory, then writes
-a ready-to-run SvelteKit site. Node.js 24 or later is required, tracking the `@glw907/cairn-cms`
-engine's own floor.
+The command asks for the site's name, description, brand color, its stance toward AI training
+crawlers, and target directory, then writes a ready-to-run SvelteKit site. Node.js 24 or later is
+required, tracking the `@glw907/cairn-cms` engine's own floor.
 
 **macOS and Linux only.** Windows is not supported, including Git Bash and PowerShell. The
 Cloudflare chapter shells out to `npm` and `wrangler` in a way Windows rejects, so a run there
@@ -26,9 +26,15 @@ Answer any prompt ahead of time with a flag, and the command skips it:
 | `--name` | The site's name, written into `site.config.yaml`. |
 | `--description` | A short, one-line description of the site. Omit for none. |
 | `--brand-color` | A hex color, an `oklch(...)` string, or a bare hue. Rotates the theme's brand accent. |
+| `--ai-posture` | `decline`, `invite`, or `none` (no preference, the default). Writes `aiPosture` into `cairn.config.ts`; `none` writes nothing. |
 | `--dir` | Where to create the site. Defaults to a slug of the name. |
 | `--yes` | Accept the defaults for anything not given by a flag. |
 | `--dry-run` | Print every action and perform none. |
+
+The scaffolded `src/routes/robots.txt/+server.ts` already passes `aiPosture` to `robotsResponse`,
+so answering the prompt (or the flag) is the only step: your `robots.txt` reflects it on the next
+build with no route edit. See `docs/extend/choose-an-ai-posture.md` in the engine package for the
+full wiring this scaffold gives you.
 
 ## The GitHub chapter
 
@@ -105,11 +111,13 @@ without a prompt.
 
 ### What gets created, and what it costs
 
-The chapter deploys your site to Cloudflare's free `workers.dev` hosting, on your own Cloudflare
-account. It creates one Worker named after your site, two databases (`<site>-auth` for sign-ins
-and `<site>-app` for the site's own data), and one storage bucket for media. Cloudflare's free
-plan covers all of it. Nothing in this step costs money, and the tool never asks for a payment
-method.
+The chapter deploys your site to your own Cloudflare account, on the `workers.dev` domain
+Cloudflare gives every account. It creates one Worker named after your site, two databases
+(`<site>-auth` for sign-ins and `<site>-app` for the site's own data), and one storage bucket for
+media. A cairn site needs Cloudflare's Workers Paid plan, $5 US per month as of 2026-08-11,
+billed once per Cloudflare account rather than once per site, from this first deploy onward; the
+interactive consent names the plan and its cost before doing anything, and declining it stops the
+run there, with nothing installed, built, or deployed.
 
 Deploying again later updates the same Worker rather than making a second one.
 
@@ -218,17 +226,16 @@ anyone other than you sign in, because everyone else gets in by clicking a link 
 address. Your own sign-in never needs it.
 
 It asks once, and either answer is fine. `--email` opts in without the prompt. `--yes` alone, with
-no `--email`, declines rather than putting you on a subscription unattended, and says which flag
-turns it on.
+no `--email`, declines rather than turning on email sign-in unattended, and says which flag turns
+it on.
 
 ### What it costs
 
-Sending email needs Cloudflare's Workers Paid plan, at $5 US per month as of 2026-08-11. It is a
-subscription rather than a charge per message, and it is billed once per account rather than once
-per site, so a second site on the same account adds nothing. Your site's traffic has nothing to do
-with it. The command states the price again at the moment it asks.
+Nothing new: Cloudflare's Workers Paid plan, $5 US per month as of 2026-08-11, was already
+confirmed back at the deploy chapter, since a cairn site needs it from its first deploy. This step
+only turns on sign-in email for your domain; it does not ask about Workers Paid again.
 
-### Declining costs you nothing today
+### Declining costs you nothing
 
 If you say no, the run stops there and exits `0`. Your site keeps serving on your domain, and you
 keep editing and publishing as its owner. What you cannot do is invite anyone else, since there is
@@ -236,7 +243,8 @@ no way to send them a link.
 
 Your own way back in is `npx create-cairn-site --dir <dir> --sign-in`, which writes a fresh sign-in
 link straight into your site's database without touching email. Each one lasts 30 days, so nothing
-expires out from under you while you decide. Running the command again re-offers the plan.
+expires out from under you while you decide. Running the command again re-offers turning on email
+sign-in.
 
 ### What it does
 

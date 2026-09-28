@@ -134,10 +134,10 @@ const ROWS = {
     kind: 'act',
     build(params) {
       return (
-        'Your Cloudflare account does not have its free workers.dev subdomain yet, so the site ' +
-        'has nowhere to deploy.\n' +
+        'Your Cloudflare account does not have a workers.dev subdomain yet, and registering one ' +
+        'costs nothing, so the site has nowhere to deploy.\n' +
         'Next: open https://dash.cloudflare.com/?to=/:account/workers-and-pages and accept the ' +
-        'suggested workers.dev subdomain (one click, free), then re-run npx create-cairn-site ' +
+        'suggested workers.dev subdomain (one click, no charge), then re-run npx create-cairn-site ' +
         `--dir ${params.dir}.`
       );
     }
@@ -525,29 +525,52 @@ const ROWS = {
       );
     }
   },
+  // This row fires from chapter 1, before anything is installed, built, or deployed: a cairn
+  // site needs Workers Paid from its first deploy, so the run stops here rather than deploying
+  // onto a plan that cannot carry it. There is no reoffered form: nothing was created yet, so a
+  // later re-run simply asks again from the same starting point. A distinct code from chapter 2's
+  // own paid-plan-declined row below, since the two are different events.
+  'deploy-plan-declined': {
+    kind: 'declined',
+    build(params) {
+      return (
+        "You chose not to turn on Cloudflare's Workers Paid plan, and a cairn site needs that " +
+        'plan from its first deploy. Nothing was installed, built, or deployed: your GitHub ' +
+        'repository and App are already set up and untouched, and this step is safe to come ' +
+        'back to.\n' +
+        'Next: turn on Workers Paid, then re-run npx create-cairn-site --dir ' +
+        `${params.dir} when you are ready.`
+      );
+    }
+  },
+  // This row fires from chapter 2's own email admission, once the site is already live on
+  // Cloudflare's Workers Paid plan: declining here turns down email sign-in for the connected
+  // domain specifically, not the plan itself, which is already on. Its code and the `step` it
+  // writes are both the stable name `paid-plan-declined`, since the Go tool mirrors this step
+  // name (tool/internal/spine/step.go) and existing site records already carry it.
   'paid-plan-declined': {
     kind: 'declined',
     build(params) {
       if (params.reoffered) {
         return (
-          "You chose again not to turn on Cloudflare's Workers Paid plan. A cairn site needs " +
-          'that plan from its first deploy, so this site still cannot send its own sign-in ' +
-          'email; it keeps serving its pages, and you keep editing and publishing as the owner.\n' +
+          'You chose again not to turn on email sign-in for your domain. This site still ' +
+          'cannot send its own sign-in email; it keeps serving its pages, and you keep editing ' +
+          'and publishing as the owner.\n' +
           `Your own way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
           'each sign-in it writes lasts 30 days.\n' +
-          'Next: turn on Workers Paid. Re-run npx create-cairn-site --dir ' +
+          'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
           `${params.dir} to do it.`
         );
       }
       return (
-        "You chose not to turn on Cloudflare's Workers Paid plan, and a cairn site needs that " +
-        'plan from its first deploy. That choice is recorded: your site keeps serving its pages, ' +
-        'and you keep editing and publishing as the owner, but what does not work is anyone else ' +
-        'signing in, since only Workers Paid can send them a link.\n' +
+        'You chose not to turn on email sign-in for your domain. That choice is recorded: your ' +
+        'site keeps serving its pages, and you keep editing and publishing as the owner, but ' +
+        'what does not work is anyone else signing in, since only email sign-in can send them a ' +
+        'link.\n' +
         `Your own way back in is npx create-cairn-site --dir ${params.dir} --sign-in, which ` +
         "writes a fresh sign-in link straight into the site's database without touching email. " +
         'Your current sign-in lasts 30 days.\n' +
-        'Next: turn on Workers Paid. Re-run npx create-cairn-site --dir ' +
+        'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
         `${params.dir} when you are ready.`
       );
     }

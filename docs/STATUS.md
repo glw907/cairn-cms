@@ -40,9 +40,10 @@ overnight run. If it dies, resume each from its plan's ledger foot:
   tasks): tasks 6 and 8 accepted, task 7 in flight, plan amended to pass classes (`14d3f7ac`).
   Task 9 is Geoff's sitting; task 10 waits on pass B's rename.
 
-The chores batch merged as PR #93 (`283a63d1`). The Go tool architecture chores pass merged as
-PR #94 (`8c6327f6`), untagged; its ten architecture reads are filed as the ROADMAP entry "Go tool
-architecture, round 2".
+The chores batch merged as PR #93 (`283a63d1`); Go tool architecture chores as PR #94
+(`8c6327f6`), filed as ROADMAP's "Go tool architecture, round 2"; and setup-paid (Workers Paid
+confirmation, AI posture prompt) as PR #96 (`e6a2b717`). `docs/extend/choose-an-ai-posture.md`
+owes one step removal now the scaffold passes posture (fact `f:1ij5h5`).
 
 ## Open decisions and watches
 

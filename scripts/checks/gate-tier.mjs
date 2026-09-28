@@ -52,8 +52,11 @@ const DOCS_GATE =
 // node projects, and that parallel component run stalls on the maintainer's workstation. This
 // gate runs the node projects first, then the component project alone with file parallelism off,
 // so the local gate stays reliable. CI's `test.yml` keeps running `npm test` and stays parallel;
-// this serialization is local-gate-only.
-const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism`;
+// this serialization is local-gate-only. `npm test` (root) never reaches the create-cairn-site
+// workspace member's own `node --test` suite, so its own invocation is appended here too, to
+// keep the five-tier superset chain intact rather than adding a sixth severity level for one
+// workspace member.
+const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
 const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';
@@ -103,7 +106,12 @@ export function classifyPath(path) {
   if (path.startsWith('src/lib/') && path.endsWith('.ts')) {
     return 'engine';
   }
-  if (path.startsWith('scripts/') || path.startsWith('src/tests/') || /\.(test|spec)\.ts$/.test(path)) {
+  if (
+    path.startsWith('scripts/') ||
+    path.startsWith('src/tests/') ||
+    path.startsWith('packages/create-cairn-site/') ||
+    /\.(test|spec)\.ts$/.test(path)
+  ) {
     return 'scripts';
   }
   if (path.startsWith('docs/') || path.endsWith('.md') || path === 'CHANGELOG.md') {

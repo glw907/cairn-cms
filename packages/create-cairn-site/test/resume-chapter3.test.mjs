@@ -284,7 +284,7 @@ test('bin.mjs: a run that reaches paid-plan-declined during this call falls thro
 
   assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
   assert.ok(
-    result.stdout.includes("You chose not to turn on Cloudflare's Workers Paid plan"),
+    result.stdout.includes("You chose not to turn on email sign-in for your domain"),
     `expected chapter 2's own decline row, got: ${result.stdout}`,
   );
   assertReachedChapter3TokenHop(result.stdout);

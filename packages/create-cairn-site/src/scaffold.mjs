@@ -104,8 +104,8 @@ async function assertTargetDirEmpty(dir) {
 
 /**
  * Build the scaffold's action list and run it through the shared action runner.
- * @param {{ templateDir: string, answers: { name: string, description?: string, brandColor?: string },
- *  dir: string, dryRun: boolean, log: (line: string) => void }} options `templateDir` is the baked
+ * @param {{ templateDir: string, answers: { name: string, description?: string, brandColor?: string,
+ *  aiPosture?: string }, dir: string, dryRun: boolean, log: (line: string) => void }} options `templateDir` is the baked
  *  template to copy from; `dir` is the scaffold target; `answers` are collectAnswers' result;
  *  `dryRun` and `log` pass straight through to runActions
  * @returns {Promise<{ executed: number, skipped: number, siteId: string }>} the action runner's

@@ -40,9 +40,11 @@ Cloudflare's Workers Paid plan costs $5 US per month, billed once per account, n
 [...]
 ```
 
-Then it asks four short questions: your site's name, an optional one-line description, an
-optional brand color, and the folder to create it in. Press Enter on the name or the folder to
-accept the value shown; press Enter on the description or brand color to leave it blank.
+Then it asks five short questions: your site's name, an optional one-line description, an
+optional brand color, whether your `robots.txt` should decline or invite AI training crawlers or
+state no preference, and the folder to create it in. Press Enter on the name or the folder to
+accept the value shown. Press Enter on the description or brand color to leave it blank. Pick a
+row with the arrow keys for the AI-crawler question, where no preference is already selected.
 
 The tool scaffolds your site locally, then keeps going: it walks you through putting that site on
 GitHub, and then onto Cloudflare, in the same run. Both stages ask before they do anything, so you

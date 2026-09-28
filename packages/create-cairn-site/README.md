@@ -31,10 +31,10 @@ Answer any prompt ahead of time with a flag, and the command skips it:
 | `--yes` | Accept the defaults for anything not given by a flag. |
 | `--dry-run` | Print every action and perform none. |
 
-Setting `aiPosture` in `cairn.config.ts` is one half of stating it: the scaffolded
-`src/routes/robots.txt/+server.ts` also needs to pass it to `robotsResponse`, which the template
-does not do out of the box. See `docs/extend/choose-an-ai-posture.md` in the engine package for
-both halves of the wiring.
+The scaffolded `src/routes/robots.txt/+server.ts` already passes `aiPosture` to `robotsResponse`,
+so answering the prompt (or the flag) is the only step: your `robots.txt` reflects it on the next
+build with no route edit. See `docs/extend/choose-an-ai-posture.md` in the engine package for the
+full wiring this scaffold gives you.
 
 ## The GitHub chapter
 

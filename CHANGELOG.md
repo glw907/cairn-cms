@@ -8,9 +8,9 @@
   three answers (decline, invite, or no preference, the default). Answer ahead of time with
   `--ai-posture decline|invite|none`; `--yes` alone defaults to no preference. Choosing decline or
   invite writes `aiPosture` into the scaffolded `src/theme/cairn.config.ts`; no preference leaves
-  the file exactly as the template ships it. The scaffolded `robots.txt` route does not yet pass
-  this field to `robotsResponse`, so wiring it through is a manual step for now; see
-  `docs/extend/choose-an-ai-posture.md` for both halves.
+  the file exactly as the template ships it. The scaffolded `robots.txt` route already passes
+  `cairn.aiPosture` to `robotsResponse`, so a scaffolded site needs no route edit to serve the
+  chosen posture; see `docs/extend/choose-an-ai-posture.md` for the full wiring.
 
 ### Fixed
 

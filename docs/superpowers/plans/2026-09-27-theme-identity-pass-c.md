@@ -28,7 +28,7 @@ move the roles into `cairn-public.css`, and derive the inks. Then the walkthroug
 template fixes, then the three audit rules in dependency order, then the fixture theme and its
 harness, then the reference pages, the skill, and the internal documents. Settle runs a CI
 baseline regeneration for the one intended visual change (the styleguide), the two acceptance
-probes, and one owner sitting. The close merges B and C and cuts the release. Plans specify
+probes, and one owner sitting. The close merges A, B, and C and cuts the release. Plans specify
 outcomes and acceptance, never implementation code.
 
 **Branch topology (an assumption task 0 verifies).** Pass A has merged to `main`. Pass B has
@@ -602,13 +602,16 @@ a test in its owning task:
 **Outcome:** The conductor verifies the start conditions and records each in the ledger. Task 0
 takes no tier gate. Item 7's baseline runs in a gate agent.
 
-1. **Pass A is merged and pass B is finished.** `main` contains pass A's merge. Pass B's ledger or
-   STATUS records its close, names its branch and head, and records that its branch merged `main`
+1. **Pass A is closed and pass B is finished (topology per Geoff's 2026-09-27 ruling: pass B
+   branches from pass A's closed but unmerged head, pass C from pass B, and all three merge
+   together at this pass's close).** Pass A's ledger records its close on `theme-identity-a` with
+   the merge held for Geoff's S3 before-and-after. Pass B's ledger or STATUS records its close,
+   names its branch and head, and records that its branch merged `main` and pass A's latest head
    in. Pass B's branch head is green on CI. If any of these fails, stop with one message to Geoff.
 2. **No live executor.** Per the global "one executor per worktree" rule: `pgrep -af` on pass B's
    worktree path and on `theme-identity-c` finds nothing, `git status --porcelain` in pass B's
-   worktree is empty, and no `theme-identity-c` branch or worktree exists. The draft docs pass stays
-   paused on `draft-docs-0`.
+   worktree is empty, and no `theme-identity-c` branch or worktree exists. No executor is live on
+   `theme-identity-a` or `draft-docs-0`.
 3. **Worktree:** create `.claude/worktrees/theme-identity-c` on a new `theme-identity-c` from pass
    B's branch head; `npm ci`; `npm ci --prefix examples/showcase`; confirm with `realpath` that the
    showcase's `node_modules/@glw907/cairn-cms` resolves into this worktree. Then the dependency
@@ -1513,13 +1516,15 @@ cairn-pass ritual:
   planning misses, execution sittings).
 
 **The merge (conductor, after the close's review):**
-1. Re-run the executor check across `main`, pass B's worktree, and `draft-docs-0`.
+1. Re-run the executor check across `main`, pass A's and pass B's worktrees, and `draft-docs-0`.
+   Confirm Geoff's S3 sitting on pass A is recorded in pass A's ledger, and that any S3 corrections
+   landed on `theme-identity-a` have merged forward into pass B and this branch.
 2. `git fetch`, and merge `origin/main` into `theme-identity-c` if `main` moved; resolve STATUS to
    `main`'s and keep both sides of HISTORY.
 3. Re-run `check:facts`, `check:reference`, `check:docs`, `check:vale`, `check:rulings-format`, and
    `check:template` on the merged head, and let CI go green on it.
-4. Mark the PR ready and merge `theme-identity-c` to `main`, which lands passes B and C together.
-   Close pass B's PR as superseded. Remove both worktrees.
+4. Mark the PR ready and merge `theme-identity-c` to `main`, which lands passes A, B, and C
+   together. Close pass A's PR #92 and pass B's PR as superseded. Remove all three worktrees.
 
 **The release (under the `cairn-release` skill, in the same close):** `npm outdated` at every
 manifest (decision 28: the window holds task 0's sweep, so the skill's skip clause applies; a new

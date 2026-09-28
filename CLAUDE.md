@@ -244,7 +244,8 @@ Before any work on the `/admin` interface (the `src/lib/components/*.svelte` adm
 It is the agent-facing design system: the Warm Stone tokens, the Bricolage Grotesque display and IBM Plex Sans body type, the component
 recipes (cards, eyebrow groups, the brand tile, the CTA, empty states, the command palette), the voice,
 and the load-bearing rules that are not visible in the markup (most importantly: `data-theme` goes on a
-bare wrapper, never on a styled element, and scoped overrides go in `@layer components`). Keep the doc
+bare wrapper, never on a styled element, and a scoped override picks one of three homes: `@layer
+components`, the `cairn-idiom` sublayer, or a pinned unlayered exception). Keep the doc
 current when the design language changes, the same as any other doc.
 
 ## Diagnosing a running site (look to the logs first)

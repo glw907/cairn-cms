@@ -38,7 +38,7 @@ Calibration (Geoff, 2026-07-15):
 
 - **"An extended cairn should still feel like one visually coherent system."** The idiom's
   reach includes screens cairn never shipped: a developer's custom admin section inherits the
-  grammars (the emphasis ladder, the accent reservation, the pill family, the type rules)
+  grammars (the emphasis ladder, the accent reservation, the corner ladder, the type rules)
   through tokens, shared helpers, the public extension docs, and ultimately the component kit —
   never by the developer re-deriving them from prose. A ruling that exists only in this internal
   doc has not finished shipping.
@@ -73,16 +73,24 @@ Calibration (Geoff, 2026-07-15):
   itself never matches. Put `data-theme` on an outer `<div>` and the styled layout one level in. This
   broke the drawer (it stayed `display:block`) and both auth pages (they would not center); both were
   real shipped bugs.
-- **Scoped overrides go in `@layer components`.** The compiled sheet layers as
-  `properties < theme < components < utilities`, so a rule must sit in `components` to lose to Tailwind
-  utilities. An unlayered rule beats every utility (cascade layers resolve before specificity), which
-  silently kills hover and link utilities. The anchor reset, the `<summary>`/caret rules, `::selection`,
-  `:focus-visible`, and the `.btn-primary` lift all live in the `@layer components` block in
-  `cairn-admin.css`. One deliberate exception: the `.menu` focus override is unlayered on purpose,
-  because DaisyUI's own utilities-layer rule quiets `:focus-visible` on menu items and only an
-  unlayered rule outranks it. Do not add another unlayered rule without the same forcing reason.
-  The set has grown to fourteen pinned rules on that reason; the newest re-asserts `will-change:
-  auto` on a showing drawer panel, which daisyUI's own `:where()`-wrapped reset cannot win
+- **A scoped rule has exactly three homes (amended 2026-09-27, the theme identity pass).**
+  `@layer components`: a rule on cairn's own classes that competes with nothing DaisyUI ships (the
+  anchor reset, the `<summary>`/caret rules, `::selection`, `:focus-visible`, the box-sizing
+  reset, the bare-button Preflight replacement). `@layer utilities { @layer cairn-idiom { ... } }`:
+  every rule that overrides a DaisyUI declaration (the button ladder, the selected-segment wash,
+  the alert panels, the toggle geometry and its checked fill, the field-edge fixes, the
+  `.btn-primary` lift, the `.modal-box` repair), because DaisyUI 5 compiles its own component
+  rules into sublayers of `@layer utilities` (`daisyui.l1.l2...`) and cascade layers resolve
+  before specificity, so a `components`-layer rule can never win against one.
+  `build-admin-css.mjs` pins `cairn-idiom` after DaisyUI's own sublayer
+  (`@layer utilities.daisyui, utilities.cairn-idiom;`), so a `cairn-idiom` rule beats every
+  DaisyUI sublayer and still loses to a plain markup utility, which Tailwind compiles unlayered.
+  Unlayered, outside every layer: the plain rule on the two `[data-theme]` selectors (cairn's own
+  tokens and the non-custom declarations) and a small pinned set of forced workarounds a layered
+  rule structurally cannot win (the developer-facing vocabulary section below names the current
+  set). Do not add a fourth home, and do not add an unlayered rule without the same forcing
+  reason a pinned one already carries; the newest re-asserts `will-change: auto` on a showing
+  drawer panel, which daisyUI's own `:where()`-wrapped reset cannot win
   (`daisyui-drawer-will-change-where-wrapper` in the rulings ledger).
 - **The build flattens CSS nesting before scoping.** `build-admin-css.mjs` runs lightningcss with
   `Features.Nesting` between the Tailwind compile and `postcss-prefix-selector`, because the prefixer
@@ -101,10 +109,26 @@ Calibration (Geoff, 2026-07-15):
 - **Classes ship automatically.** `build-admin-css.mjs` scans the `.svelte` sources with `@source`, so
   any DaisyUI or Tailwind class a component adds is compiled into the sheet with no build change. Run
   `npm run package` after a component or `cairn-admin.css` change, then rebuild the showcase to preview.
-- **Verify visuals on the showcase, not in component tests.** The browser component tests import the
-  source `cairn-admin.css` (the variables-only partial), not the compiled dist sheet, so DaisyUI
-  component styling is absent there. Preview with `examples/showcase` (`npm run package` then the
-  showcase build/preview). The showcase mounts the authed shell at `/admin/posts`.
+- **Component tests render against the compiled sheet, not the raw partial (amended 2026-09-27,
+  the theme identity pass).** `CairnAdminShell`, `LoginPage`, `ConfirmPage`, `ReproContext`, and
+  every component test that imports `cairn-admin.css` by any relative path get
+  `dist/components/cairn-admin.css` instead: a Vite plugin in `vitest.config.ts` redirects the
+  resolved import for the component project only, since the source partial is compile-input (its
+  DaisyUI theme lives in `@plugin "daisyui/theme"` blocks a browser drops, and its sublayer order
+  would reverse if it ever loaded beside the compiled sheet). The component project's own
+  `globalSetup` rebuilds the sheet before the project's test files start, so a stale build never
+  masks a real failure; a bare `npx vitest run --project component <file>` bypasses that setup, so
+  run `npm run package` first when invoking a single file directly. DaisyUI component styling and
+  every `cairn-idiom` rule are present in a component test the same way they are on the showcase.
+  Still preview a real page on `examples/showcase` (`npm run package` then the showcase
+  build/preview, mounting the authed shell at `/admin/posts`) for anything a computed-style
+  assertion cannot see: layout, spacing, and the felt read.
+- **Identity lives in the theme layer.** A new idiom is a theme variable, on the two
+  `[data-theme]` blocks, or a `cairn-idiom` rule (see "A scoped rule has exactly three homes"
+  below), never a per-element patch (a bracketed inline style, a one-off recipe built from raw
+  utility classes, a hand-tuned radius on a single component). A per-element idiom is a defect: it
+  never reaches a screen built from plain DaisyUI classes, which is the whole promise a
+  developer's own admin route depends on.
 - **A bare button needs the scoped reset, or it shows UA chrome.** The admin omits global Preflight
   (it would reset the host site's elements), so a `<button>` styled with utilities instead of DaisyUI's
   `.btn` keeps the native outset border and gray fill. One scoped rule in `cairn-admin.css`
@@ -185,7 +209,42 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   never an arbitrary bracket wrapper. The utilities are defined in `scripts/build/admin-css.input.css` and are
   the frozen role interface; they resolve to the two vars. A standing test (`admin-css-build.test.ts`)
   keeps them compiled and pointing at their vars, so the admin markup writes the utility, not the token.
-- Radii: `--radius-field: 0.625rem` (inputs, buttons, badges), `--radius-box: 1rem` (cards, modals).
+- Radii: the corner ladder, `--radius-selector: 0.25rem`, `--radius-field: 0.375rem`,
+  `--radius-box: 0.5rem`. See Corner system below for the role mapping and the exceptions.
+- **Depth is zero, deliberately, with one exception.** `--depth: 0` and `--noise: 0` on both theme
+  roots pull DaisyUI's own bevel lever all the way down: no button or input inset, no lifted
+  active-menu-item shadow, no toggle or checkbox shading. The one exception is `btn-primary`,
+  which keeps a faint warm lift set as `--btn-shadow` in a `cairn-idiom` rule
+  (`0 1px 2px -1px oklch(35% 0.04 75 / 0.35)` in light, `0 1px 2px -1px oklch(10% 0.02 75 / 0.35)`
+  in dark, dark's own `--cairn-shadow` tint at the light lift's geometry and alpha), identical in
+  every state; it replaces the old primary-tinted pair that never rendered before this rule moved
+  into the `cairn-idiom` sublayer (a `@layer components` rule cannot outrank a DaisyUI
+  declaration). `.modal-box`'s warm shadow is the other exception, and it comes from a scoped
+  rule rather than from `--depth`, since DaisyUI's own modal shadow is theme-invariant black.
+- **Alerts are a tinted panel with a hairline edge, in place of DaisyUI's solid slab.** Each color
+  variant excludes DaisyUI's own style variants (`alert-soft`, `alert-outline`, `alert-dash`, which
+  keep DaisyUI's stock look untouched) and sets a per-root panel tint, edge mix, and on-surface
+  ink, measured in a real browser (paint-to-canvas, the method the audit engine itself uses):
+
+  | Alert | Panel | Edge | Ink | Ink/panel contrast, light / dark |
+  | --- | --- | --- | --- | --- |
+  | error | `--cairn-error-tint` | `--cairn-error-border` | `--cairn-error-ink` | 5.774 / 6.705 |
+  | warning | warning 12% over base-100 | warning 45% | `--cairn-warning-ink` | 5.486 / 6.935 |
+  | success | success 7% over base-100 (dark 12%) | success 30% | `--color-positive-ink` | 5.439 / 7.229 |
+  | info | info 7% over base-100 (dark 12%) | info 30% | `--cairn-info-ink`, `oklch(44% 0.12 240)` light / `oklch(82% 0.08 240)` dark | 6.658 / 7.966 |
+
+  Every ink clears >= 4.5:1 against its own panel in both themes; the error alert's nested link
+  (`ConceptList.svelte:325`) inherits the same ink and the same measured ratio. A bare `.alert`
+  with no color variant is unchanged.
+- **The switch keeps DaisyUI's own construction, dressed in the theme.** Checked fills the track
+  with `--color-neutral` and turns the knob `--color-base-100`, on all three of DaisyUI's own
+  checked forms (`:checked`, `[aria-checked='true']`, `:has(> input:checked)`), for a toggle
+  carrying none of DaisyUI's eight color modifiers (`toggle-primary` and its seven siblings keep
+  their own color, unaffected). Off keeps DaisyUI's construction outright, the 50% `base-content`
+  edge and knob. Measured against `base-100`: checked track 12.333:1 light / 8.802:1 dark, checked
+  knob against the checked track the same ratio; unchecked edge and knob 3.118:1 light / 4.370:1
+  dark, both clearing the WCAG 1.4.11 3:1 non-text floor. See Corner system below for why the
+  switch is exempt from the ladder.
 - **The ink story (design arc, 2026-07-15).** Exactly two dark-fill tones exist on a page:
   standing dark fills (the ink-opener buttons, the profile avatar) rest on the solid `neutral`
   token, and hover/press deepens to `--cairn-ink-hover` (set per theme root; light deepens, dark
@@ -230,20 +289,62 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
 - **Unchecked checkbox/radio edge (2026-08-27).** DaisyUI's own `.checkbox`/`.radio` border a
   20%-mix fallback (`color-mix(..., var(--color-base-content) 20%, transparent)`) when no color
   variant supplies `--input-color`, which no admin call site does: measured 1.492:1 light / 1.773:1
-  dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor. A pinned unlayered rule in
-  `cairn-admin.css` (rule 13 of 14) raises the unchecked edge to a 55% mix, the same one already
-  locked for the scrollbar thumb and the outline chip border: 3.586:1 light / 4.959:1 dark. `.toggle`
-  needed no change; its own construction already mixes 50% and clears the floor unaided.
+  dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor. A `cairn-idiom` rule in
+  `cairn-admin.css` (moved out of the unlayered set in the theme identity pass, since a
+  components-layer rule could never have outranked DaisyUI's own border declaration in the first
+  place) raises the unchecked edge to a 55% mix, the same one already locked for the scrollbar
+  thumb and the outline chip border: 3.586:1 light / 4.959:1 dark. `.toggle` needed no change; its
+  own construction already mixes 50% and clears the floor unaided.
 - **Unfocused `.input`/`.select`/`.textarea` edge (2026-08-27, extends the checkbox/radio fix
   above).** All three share the identical faint-edge construction: daisyUI resolves their border
   through the same `--input-color` 20%-mix fallback (`border: var(--border) solid var(--input-color,
   transparent)`), and no admin call site supplies a color variant. Measured against the compiled
-  sheet: 1.492:1 light / 1.773:1 dark against `base-100`, both under the same 3:1 floor. A pinned
-  unlayered rule in `cairn-admin.css` (rule 14 of 14) raises the edge to the same 55% mix already
-  locked above: 3.586:1 light / 4.959:1 dark, unchanged from the checkbox/radio numbers since the
+  sheet: 1.492:1 light / 1.773:1 dark against `base-100`, both under the same 3:1 floor. A
+  `cairn-idiom` rule in `cairn-admin.css` (moved out of the unlayered set alongside the
+  checkbox/radio fix above, same reason) raises the edge to the same 55% mix already locked above:
+  3.586:1 light / 4.959:1 dark, unchanged from the checkbox/radio numbers since the
   underlying `base-content`/`base-100` pair is the same. Scoped to `:not(:focus, :focus-within)`,
   since a focused field already sets `--input-color` to full `base-content` (a much stronger edge)
   and the unlayered override would otherwise outrank that state too.
+
+### Corner system
+
+Every framed element in the admin resolves to one of the three ladder tokens, mapped by role,
+never a fixed Tailwind radius:
+
+- `--radius-selector: 0.25rem` — chip, tag, count, small inline marker.
+- `--radius-field: 0.375rem` — control, button-like element, small thumbnail.
+- `--radius-box: 0.5rem` — panel, card, tile, popover, sheet, the brand tile (side forms such as
+  `rounded-t-box` for the mobile bottom sheet).
+
+Four rules keep the ladder from reaching shapes it was never meant to touch:
+
+- **True circles stay round, judged by shape.** An element with equal width and height that reads
+  as a dot, disc, medallion, spinner, or avatar keeps `rounded-full`. A padded text chip does not:
+  it takes `rounded-selector` instead (see the chip rule under Component recipes).
+- **Structural zeros stay.** Edge-zeroing on a fused or joined edge (`rounded-l-none`,
+  `rounded-r-none`, `rounded-t-none`) is structure, not a radius choice, and the ladder leaves it
+  alone.
+- **Concentric corners.** An item inside a padded rounded panel takes the panel's radius minus the
+  inset. DaisyUI's `.menu` items read `--radius-field`, but `.menu` never declares that variable
+  itself, so a `dropdown-content menu` pair (cairn's own or a developer's) gets one `cairn-idiom`
+  rule setting `--radius-field: calc(var(--radius-box) - 0.25rem)`, sized to the panel it sits
+  inside rather than the ambient page value. An item's own `rounded-none` utility still wins.
+- **The switch is exempt.** DaisyUI derives both the toggle track and knob radii from
+  `--radius-selector`; a `cairn-idiom` rule pins `border-radius: 9999px` on `.toggle` and its
+  `::before` unconditionally, so the switch reads as a pill at every ladder setting. A
+  `rounded-none` utility on either element still wins from the utilities layer's own unnested
+  position.
+
+Nothing else reaches zero.
+
+A minifier is free to relocate the `@layer utilities.daisyui, utilities.cairn-idiom;` order-pin
+statement below both sublayer blocks, where it sets nothing: a cascade layer's priority is fixed
+by the first statement that names it, and both sublayers already do that by appearing first in
+the sheet. Emission order in the compiled, minified sheet, not the pin statement's own position,
+is what actually keeps every corner rule (and every other `cairn-idiom` rule) winning over
+DaisyUI's own in a downstream build; `admin-css-build.test.ts` guards the order directly against
+`dist/components/cairn-admin.css` and a minified compile of it, rather than trusting the pin.
 
 ## Type
 
@@ -261,8 +362,17 @@ theme roots, with font-smoothing on. The brand pair is variable; the editor face
 
 Recipes:
 
-- Page heading: `text-2xl font-bold font-[family-name:var(--font-display)]` — normal tracking, the same
-  K4 reasoning as the brand wordmark below.
+- Page heading: `type-title font-[550] font-[family-name:var(--font-display)]` — normal tracking,
+  the same K4 reasoning as the brand wordmark below. Weight 550 (`PageHeader.svelte`) replaced the
+  old `font-bold` (700) in the theme identity pass; the 18px `type-heading` dialog heading and the
+  editor's 30px document title stay at 700.
+- Icon strokes: Lucide glyphs render at 1.75px by default, down from the library's stock 2px
+  (`svg.lucide[stroke-width='2'] { stroke-width: 1.75 }`, a `cairn-idiom` rule keyed on Lucide's
+  own default attribute value, so an icon size or an `absoluteStrokeWidth` pick that still
+  computes to exactly 2 is caught the same way an explicit `strokeWidth={2}` is). A hand-authored
+  inline SVG at the default 2px stroke moves to 1.75 the same way. A deliberate 2px stroke is
+  written `2.01`, or documented as a scoped exception, never bare `2`, since the rule keys on the
+  literal attribute value.
 - Eyebrow (sidebar group headers and table column labels):
   `type-label font-semibold uppercase tracking-[0.08em] text-muted`. The size comes from the role
   utility; the weight, case, and tracking are this recipe's own.
@@ -368,14 +478,14 @@ alongside the component recipes above and below it.
   replace (`docs/reference/admin-grammar-tokens.md` has the full contract).
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
   `font-medium text-subtle`. From daisyUI 5.7.38 the `.menu` recipe styles an `[aria-current]` item
-  natively, which adds its own depth shadow under the active item
-  (`box-shadow: 0 2px calc(var(--depth) * 3px) -2px var(--menu-active-bg)`). That shadow is the stock
-  active treatment and the admin takes it; the utilities above still carry the fill and the ink.
-  Flatness under an active nav item is not a rule, so do not write a cancel rule for it. The same
-  holds for an active toggle button: daisyUI 5.7.38 gives a `.btn` carrying `aria-pressed="true"`,
-  `aria-checked="true"`, or `aria-current` the `.btn-active` treatment, and the admin takes that too.
-  `--depth` (set to `1` on both theme roots) is the stock lever if a flatter active item is ever
-  wanted; it scales the menu item's shadow blur, not the shadow's existence.
+  natively, which would add its own depth shadow under the active item
+  (`box-shadow: 0 2px calc(var(--depth) * 3px) -2px var(--menu-active-bg)`) if depth were nonzero.
+  Both theme roots pin `--depth: 0` (the theme identity pass, Material round), so the shadow's
+  blur term computes to zero and the active item already renders flat with no shadow; the
+  utilities above carry the fill and the ink alone. No cancel rule is needed, and none should be
+  written: `--depth` is the one lever, already pulled all the way down, and the same zero reaches
+  an active toggle button the same way (daisyUI 5.7.38 gives a `.btn` carrying
+  `aria-pressed="true"`, `aria-checked="true"`, or `aria-current` the `.btn-active` treatment).
 - **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
   own screens and a site's flat entries alike, as loose top-level nodes with no section wrapper. A
   category header costs a reader a decision on every visit, a cost the sizes a zero-config sidebar
@@ -388,12 +498,13 @@ alongside the component recipes above and below it.
   `.cairn-caret` chevron that the scoped rule rotates when open. Items align with the group label and the
   brand mark on one left edge.
 - **Brand mark:** the cairn glyph in a filled app-icon tile:
-  `h-8 w-8 rounded-xl bg-primary text-primary-content shadow-sm` wrapping `<CairnLogo class="h-5 w-5" />`,
+  `h-8 w-8 rounded-box bg-primary text-primary-content shadow-sm` wrapping `<CairnLogo class="h-5 w-5" />`,
   then the wordmark. It links to `/admin`. The mark is `CairnLogo.svelte` (the public-domain Temaki
   cairn); the favicon is `cairn-favicon.ts`.
-- **Primary action:** `btn btn-primary`. It gets a soft violet lift from a scoped rule, so do not add an
-  ad-hoc shadow. Long-running submits (save, create) flip a local `$state` on `onsubmit` to show a
-  `loading loading-spinner` and a working label.
+- **Primary action:** `btn btn-primary`. It gets a soft warm lift (`--btn-shadow`, the shadow's own
+  warm tint rather than the violet primary) from a `cairn-idiom` rule, identical in every state, so
+  do not add an ad-hoc shadow. Long-running submits (save, create) flip a local `$state` on
+  `onsubmit` to show a `loading loading-spinner` and a working label.
 - **The admin toolkit (`@glw907/cairn-cms/admin-toolkit`, born 2026-07-20).** Several of the
   recipes below are no longer hand-rolled per screen. `PageHeader`, `ListToolbar`, `AdminTable`,
   `Pagination`, `StatusChip`, and `EmptyState` are the shared implementations of the page-header,
@@ -451,6 +562,13 @@ alongside the component recipes above and below it.
     HTML content-model validity. Wrap the control inside the cell or the list item, never the row
     or the list itself. A natively `disabled` control receives no pointer events in some browsers,
     so a reason that must reach a mouse user takes the `aria-disabled` guarded shape.
+- **Chip geometry: `rounded-selector`, not the pill (the theme identity pass).** Every chip, tag,
+  and count (`StatusChip`'s `badge` base, the hand-built `cairn-chip-quiet`/`cairn-chip-warning`/
+  `cairn-chip-outline` classes, and the media library's inline kind tags) reads its corner from
+  `--radius-selector`, the same token any other small inline marker uses on the corner ladder, in
+  place of the old `rounded-full` pill silhouette. The one exception is a chip that is also a true
+  circle by shape (a status dot, never a padded text chip), which keeps `rounded-full` under the
+  Corner system rule above.
 - **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
   Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`).** `StatusChip`
   and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/
@@ -651,29 +769,42 @@ alongside the component recipes above and below it.
   panel if it is open. Entering zen moves focus into the editor if the focused control hid.
 - **Segmented control and check-and-tint toggle:** a pick-one control is one bordered group (the shared
   border carries the semantics) whose segments are borderless and whose active segment tints
-  (`bg-primary/10 text-primary`) and shows a check glyph; the check is the non-color state cue (WCAG
-  1.4.1). A standalone on/off toggle (focus mode, typewriter, zen) is borderless and transparent until
-  hover, tinting and check-marking when `aria-pressed`. A reference link (Markdown help) is a borderless
-  underlined button, not a control. The editor footer uses all three; no group labels (the segmented
-  border carries pick-one). **Every active/pressed state also carries a 1px inset hairline in its
-  family's own ink** (invisible-craft pass, 2026-07-17; closes the weight-only pressed-cue advisory):
-  the neutral pick-one family adds `ring-1 ring-inset ring-base-content/20` (through
-  `segmentTintClass` in `segmented-control.ts`), and the primary pressed family adds
-  `ring-1 ring-inset ring-primary/35`. The hairline is the non-color, non-weight cue that also covers
-  icon-only controls; never give a neutral segment a primary edge (the accent budget).
-  The third family is daisyUI's own `.btn-active`, which a join-style picker uses instead of the
-  tint pair (`ListToolbar`'s segmented facet, `Pagination`, the editor's Write/Preview capsule).
-  It gets the same two cues, and it needs them more: on dark, a lightened `.btn-active` fill
-  measures only 1.14:1 against an unselected sibling, so the hairline is the whole 3:1 cue. It is
-  a `--btn-border` literal in `cairn-admin.css` rather than a `ring-*` utility, because the border
-  is the property daisyUI's own button recipe already paints. The hairline is dark-only; on light
-  the fill separates nothing (measured 1.23:1 against a plain sibling's fill, 1.31:1 against a
-  ghost sibling's hover fill, 1.06:1 against its own border, all well under WCAG 1.4.11's 3:1
-  floor), so on light the check glyph IS the state cue, full stop, not a second cue alongside a
-  working fill. The check glyph is the caller's job, the same as for the tint families.
-  `Pagination` is the one caller that renders no glyph at all: its selected page conveys state
-  through `aria-current="page"` and fill alone, a known exception, out of conformance on light
-  (ROADMAP.md, "Next", filed 2026-07-31).
+  (`bg-base-content/[0.07] text-base-content font-semibold`, weight rather than hue carrying the
+  state, since the accent budget reserves color for act-on states) and shows a check glyph; the
+  check is the non-color state cue (WCAG 1.4.1). A standalone on/off toggle (focus mode,
+  typewriter, zen) is borderless and transparent until hover, tinting and check-marking when
+  `aria-pressed`. A reference link (Markdown help) is a borderless underlined button, not a
+  control. The editor footer uses all three; no group labels (the segmented border carries
+  pick-one). **Every active/pressed state also carries a 1px inset hairline in its family's own
+  ink** (invisible-craft pass, 2026-07-17; closes the weight-only pressed-cue advisory): the
+  neutral pick-one family adds `ring-1 ring-inset ring-base-content/55` (through
+  `segmentTintClass` in `segmented-control.ts`; a 20% mix measured under the 3:1 floor, which is
+  why the ring is 55%), and the primary pressed family adds `ring-1 ring-inset ring-primary/35`.
+  The hairline is the non-color, non-weight cue that also covers icon-only controls; never give a
+  neutral segment a primary edge (the accent budget).
+
+  **The third family, a join-style picker's `.btn-active`** (`ListToolbar`'s segmented facet,
+  `Pagination`, the editor's Write/Preview capsule), now takes the same neutral-wash treatment as
+  a `cairn-idiom` rule, superseding the old dark-only hardcoded `.btn-active` fill and its hover
+  step (the theme identity pass). The rule keys on all five of cairn's selected forms, matching
+  DaisyUI's own active/checked treatment (`button.css`, 5.7.44): `.btn-active`,
+  `[aria-pressed='true']`, `[aria-checked='true']`,
+  `[aria-current]:not([aria-current='false'], [aria-current=''])`, and
+  `:checked:not(.filter [type='radio'].btn)`. It excludes every color variant, `btn-outline`, and
+  `btn-dash`, so a `join-item btn btn-primary` or `btn-error` selected segment keeps its own fill
+  and ink, never the neutral wash, and a plain selected segment carrying `text-error` keeps the red
+  ink. `--btn-bg` is `color-mix(in oklab, var(--color-base-content) 7%, var(--color-base-100))` in
+  both themes, at weight 600, with a state hairline on `--btn-border` in BOTH themes now, not
+  dark-only as before: light is `color-mix(in oklab, var(--color-base-content) 65%, transparent)`
+  (4.862:1 against `base-100`, 3.131:1 against a resting sibling's own 22% edge), dark is
+  `oklch(70% 0.012 75)` (6.115:1 against `base-100`, 3.230:1 against a resting sibling). Both moved
+  past their own seed value in lightness only: light seeded from the neutral pick-one family's own
+  55% mix (3.579:1 against `base-100`, but only 2.303:1 against a resting sibling, under the
+  floor), and dark seeded from the superseded rule's own locked `oklch(57% 0.012 75)` (3.661:1
+  against `base-100`, but only 1.935:1 against a resting sibling). The check glyph is still the
+  caller's job, the same as for the tint families; `Pagination` is the one caller that renders no
+  glyph at all, relying on `aria-current="page"` plus the wash and the hairline above for its
+  non-color cue on both themes.
 - **Plain bulleted list (`.toolkit-list`, 2026-08-27; ruling rewritten 2026-08-27 review):** a bare
   `<ul>`/`<ol>` that wants an ordinary bulleted or numbered list, not daisyUI's own `.list`
   component, adds `class="toolkit-list"` to drop the UA's 40px marker gutter
@@ -1221,7 +1352,9 @@ needs the spacing scale re-measured beside it.
 ## Icons
 
 Lucide via `@lucide/svelte` (per-icon imports). `admin-icons.ts` is the chrome glyph set; import nav and
-content glyphs directly. Conventions in use: signpost = the nav-menu editor (kept distinct from the
+content glyphs directly. Default stroke is 1.75px, not Lucide's stock 2px; see the icon-strokes
+recipe under Type above for the exact mechanism and the `2.01` escape hatch. Conventions in use:
+signpost = the nav-menu editor (kept distinct from the
 Settings gear), gear = Settings, users = Editors, file-text = an undated content concept, newspaper = a
 dated concept, layers = Fragments (the reserved concept id keys `ENGINE_NAV_ICONS` directly; "one thing
 present in many places", ratified 2026-07-16 over puzzle, which stays reserved for component blocks),
@@ -1278,8 +1411,8 @@ The contract is three things:
 
 - **The Warm Stone theme tokens.** The DaisyUI 5 role variables in the two `[data-theme]` blocks: the
   `base-*` surfaces, `base-content`, `primary` and its `-content`, the status pairs, and the geometry
-  (`--radius-field`, `--radius-box`). A screen reads them the DaisyUI way, through `bg-base-100`,
-  `text-primary`, and the rest, so it recolors with the theme.
+  (`--radius-selector`, `--radius-field`, `--radius-box`). A screen reads them the DaisyUI way,
+  through `bg-base-100`, `text-primary`, and the rest, so it recolors with the theme.
 - **The `text-muted` / `text-subtle` role utilities.** The two named secondary-text roles, defined in
   `scripts/build/admin-css.input.css` and frozen as the role interface. Use them for labels, dates, hints
   (`text-muted`) and nav-item text (`text-subtle`). A standing test keeps them compiled and pointing at
@@ -1304,9 +1437,14 @@ engine may change between versions without a major bump. A screen should not bui
 - **The editor (CodeMirror) system** (the directive rails, the fold gutter, the syntax highlight, the
   `--cairn-directive-*` and `--cairn-focus-dim-*` tokens). This is a settled design in the editor's
   `EditorView.theme` territory, walled out of the sweep on purpose.
-- **The two unlayered forced workarounds** (the `.menu` focus-visible restore and the
-  `.cairn-btn-guarded` pointer-events restore). Both fix real shipped bugs and are pinned by exact
-  selector.
+- **The admin's own unlayered rules,** thirteen entries pinned by exact selector in
+  `scripts/checks/custom-surface-budget.json`'s `unlayeredAllowlist` after this pass (the theme
+  identity pass shrank the set from eighteen by moving several pinned rules into `cairn-idiom`,
+  where a layered rule can win): the two theme-root selectors and the embed-anywhere infrastructure
+  named above, plus a handful of forced workarounds a layered rule structurally cannot win, among
+  them the `.menu` focus-visible restore and the `.cairn-btn-guarded` pointer-events restore. All
+  fix a real shipped bug or a hostile-host hazard; none may be deleted, nor an untracked one added,
+  without a reviewed allowlist change.
 
 The split is recorded token by token in the admin custom-surface ledger
 (`docs/internal/design/2026-06-29-custom-surface-ledger.md`), which classifies every custom property into
@@ -1324,11 +1462,22 @@ site's own, not the admin's, so its tokens live with the site and a developer re
 showcase custom-surface ledger (`docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`)
 records the tiers.
 
-- **Tier 1 is the template's own DaisyUI theme, not Warm Stone.** `examples/showcase/src/lib/theme.css`
+- **Tier 1 is the template's own DaisyUI theme, not Warm Stone.** `examples/showcase/src/theme/theme.css`
   holds two `@plugin "daisyui/theme"` blocks, `cairn` (light) and `cairn-dark` (under
   `prefers-color-scheme: dark`), a warm stone pairing that is the showcase's brand and distinct from the
   admin's Warm Stone. The public output stays design-agnostic by charter, so the template does not impose
   the admin theme.
+- **The corner ladder and the hairline outline are a shared family trait (ruling 2, the theme
+  identity pass).** Both theme blocks take the same three radius tokens the admin uses,
+  `--radius-selector: 0.25rem`, `--radius-field: 0.375rem`, `--radius-box: 0.5rem` (down from
+  `0.28rem` / `0.4rem` / `0.625rem`), and a `@layer utilities { @layer site-theme { ... } }` rule
+  gives an uncolored `btn-outline` and `badge-outline` the same hairline edge the admin's own
+  idiom does (`--btn-border`/`border-color` at a 22% `base-content` mix); a color variant
+  (`btn-outline btn-primary`, a colored `badge-outline`) keeps its own edge untouched. The rule
+  lives in `theme.css`, the one file a re-skin edits, so a site can drop it; the re-skin recipe's
+  own numbered steps name the ladder as family geometry a site is free to retune, from square to
+  fully rounded. Everything else in this file (palette, faces, heading weights, size step, depth
+  and noise) is unchanged.
 - **The design-scale tokens live in Tailwind 4 `@theme`, which generates the named utilities.** The type
   scale, the space scale, the faces, the rhythm, the reading measure, the muted ink, and the card hairline
   sit in the `@theme` block. Tailwind emits a named utility for each, so the chrome markup writes

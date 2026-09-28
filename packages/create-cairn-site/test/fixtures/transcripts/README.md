@@ -194,6 +194,32 @@ App and repository creation, a harness outside this repo, so this fixture stays 
 `check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against
 the current scaffold's behavior, so it stays green either way.
 
+## Staleness note (2026-09-28)
+
+The Cloudflare deploy consent's detail line changed: a cairn site needs Cloudflare's Workers
+Paid plan from its first deploy, so the consent now states that plan and its cost instead of
+promising "Cloudflare's free workers.dev hosting" and that "nothing in this step costs money".
+`01c-resume.txt` and `01d-resume.txt` both quote the old detail line verbatim (the "Deploy your
+site to Cloudflare" block), so it no longer matches current tool behavior. Re-capturing needs a
+live GitHub App and repository creation, a harness outside this repo, so these fixtures stay as
+recorded rather than being hand-edited to carry new prose no run actually produced.
+`check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against
+the current scaffold's behavior, so it stays green either way; `docs/admin/create-your-site.md`
+never quotes this specific line, so no docs page is affected.
+
+## Staleness note (2026-09-28, AI posture)
+
+`create-cairn-site` gained a fifth scaffold question between brand color and directory: the
+site's stance toward AI training crawlers (decline, invite, or no preference, the default).
+`01-create-cairn-site.txt` predates it and shows only four questions in that stretch of the run.
+Re-capturing needs a live GitHub App and repository creation, a harness outside this repo, so this
+fixture stays as recorded rather than being hand-edited to add a prompt no run actually produced.
+`check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against the
+current scaffold's behavior, so it stays green either way; `docs/admin/create-your-site.md` never
+quotes that stretch of the transcript (only the cost preamble, the GitHub App confirmation, and
+the closing summary), so its own prose is fixed to name the new question without touching any
+quoted block.
+
 ## Identifiers
 
 Kept verbatim by ruling. The worker, both databases, the bucket, the App, and the repository

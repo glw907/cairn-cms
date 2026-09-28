@@ -396,20 +396,6 @@ The original decision framing, for the record:
   CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
   already. The next unexplained red `main` on a media test is this.**
 
-- **`create-cairn-site` promises a free deploy; a cairn site runs on Workers Paid from its first
-  deploy (Geoff, 2026-09-27: "I don't think that it would ever work with the Free tier").** A
-  small chore, queued for the 2026-09-27 overnight run, not a pass. Chapter 2's email text
-  (`packages/create-cairn-site/src/cloudflare/chapter2.mjs:191-196`) already states the truth;
-  chapter 1's deploy consent (`chapter.mjs:108-113`) still says "Cloudflare's free workers.dev
-  hosting" and "nothing in this step costs money". The chore: confirm or turn on Workers Paid
-  before the first build and deploy, so the later email step no longer offers Paid as a fresh
-  choice; reword the deploy consent to match chapter 2; update the resume transcripts and the
-  `paid-plan-declined` path (declining stops setup before any deploy). It also adds one setup
-  prompt: the AI posture, written as `aiPosture: 'decline'` or `'invite'` into
-  `src/theme/cairn.config.ts`, with no preference as the default answer; the template ships the
-  field commented out today. `docs/extend/choose-an-ai-posture.md` then becomes the page for
-  changing that choice later, so its rewrite follows this change.
-
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
   in favour of `csrf.trustedOrigins`. It will be removed in a future version." This is the standing

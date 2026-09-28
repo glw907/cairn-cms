@@ -157,7 +157,7 @@ function confirmRouting({ domain, carryOver, email } = {}) {
   return async ({ message }) => {
     if (message.includes('Connect a domain')) return answer('domain', domain);
     if (message.includes('Copy these records')) return answer('carry-over', carryOver);
-    if (message.includes('Workers Paid')) return answer('email', email);
+    if (message.includes('email sign-in')) return answer('email', email);
     throw new Error(`confirmRouting: unrecognized confirm message: ${message}`);
   };
 }

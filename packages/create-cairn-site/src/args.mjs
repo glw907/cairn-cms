@@ -27,13 +27,16 @@ const OPTIONS = {
   // chapter 2 with a hint rather than guessing at a domain the admin never named.
   domain: { type: 'string' },
   // The email half's own opt-in, mirroring `--domain`: a boolean rather than a value, since the
-  // admission it stands in for is a single yes/no rather than a name to collect. `--yes --email`
-  // turns on Workers Paid and Email Sending with no prompt; `--yes` alone (no --email) declines
-  // rather than committing an owner to a subscription unattended.
+  // admission it stands in for is a single yes/no rather than a name to collect. Workers Paid is
+  // confirmed earlier, at the `--deploy` consent; `--yes --email` turns on email sign-in for the
+  // connected domain with no prompt, `--yes` alone (no --email) declines it unattended.
   email: { type: 'boolean', default: false },
   // Chapter 3's own entry point (T4c, Builds): resumes or re-offers chapter 3 from any step at
   // or past `live`, ahead of whatever chapter2/chapter1 branch would otherwise claim that step.
   connect: { type: 'boolean', default: false },
+  // The AI-posture question's own flag: 'decline', 'invite', or 'none' for no preference.
+  // Validated in collectAnswers, not here, the same as --brand-color's shape check.
+  'ai-posture': { type: 'string' },
 };
 
 /**
@@ -42,8 +45,8 @@ const OPTIONS = {
  * @returns {{ dryRun: boolean, yes: boolean, name?: string, description?: string, brandColor?: string,
  *  dir?: string, version: boolean, appName?: string, org?: string, repoName?: string, github: boolean,
  *  startOver: boolean, ownerEmail?: string, deploy: boolean, signIn: boolean, domain?: string,
- *  email: boolean, connect: boolean }} the parsed flags; the string options are undefined, not
- *  empty, when absent
+ *  email: boolean, connect: boolean, aiPosture?: string }} the parsed flags; the string options
+ *  are undefined, not empty, when absent
  */
 export function parseArgs(argv) {
   let values;
@@ -75,5 +78,6 @@ export function parseArgs(argv) {
     domain: values.domain,
     email: values.email,
     connect: values.connect,
+    aiPosture: values['ai-posture'],
   };
 }

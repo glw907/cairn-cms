@@ -25,6 +25,11 @@ describe('classifyPath', () => {
     expect(classifyPath('examples/showcase/e2e/admin-visual.spec.ts')).toBe('scripts');
   });
 
+  it('classifies a create-cairn-site workspace file as scripts, the Node-only tier that runs its own test suite', () => {
+    expect(classifyPath('packages/create-cairn-site/src/prompts.mjs')).toBe('scripts');
+    expect(classifyPath('packages/create-cairn-site/src/prompts.test.mjs')).toBe('scripts');
+  });
+
   it('classifies src/lib TypeScript outside components as engine', () => {
     expect(classifyPath('src/lib/log/index.ts')).toBe('engine');
   });
@@ -253,6 +258,10 @@ describe('TIER_ORDER and TIER_GATES', () => {
 
   it('scripts and engine share the identical gate string', () => {
     expect(TIER_GATES.scripts).toBe(TIER_GATES.engine);
+  });
+
+  it('the scripts gate runs the create-cairn-site workspace test suite root `npm test` never reaches', () => {
+    expect(TIER_GATES.scripts).toContain('npm test -w packages/create-cairn-site');
   });
 
   it('every npm tier above docs is a strict superset of the npm tier below it', () => {

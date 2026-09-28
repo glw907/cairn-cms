@@ -73,7 +73,7 @@ export const ADMIN_CSS_SAFELIST = [
   // div). `join` itself compiles from the admin-toolkit's own literal `class="join"` usage now
   // that the CSS build's `@source` scans src/lib/admin-toolkit (the visual-regression repair this
   // safelist entry documents: admin-toolkit was never added to the scan root when it graduated out
-  // of src/lib/admin, so its own usage alone did not compile the class, and the segmented
+  // of src/lib/components, so its own usage alone did not compile the class, and the segmented
   // filter rendered as a plain block div with no compiled `.join` rule at all). Blessed here
   // anyway, deliberately rather than incidentally, so a future admin-toolkit refactor away from a
   // literal `class="join"` string can never silently drop the rule again. Verified against the

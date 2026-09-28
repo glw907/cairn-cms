@@ -2540,7 +2540,7 @@ the named human gates only):**
   no longer decides which daisyUI classes ship; its own header says it stays only as a grouped,
   explained vocabulary. Retire it, or reduce it to the non-daisyUI names it still documents, and
   move the explanation to `docs/reference/admin-toolkit.md`. Trigger: pass B's rename of
-  `src/lib/admin/` (the file moves anyway), or the next pass that edits it.
+  `src/lib/components/` to `src/lib/admin/` (the file moves anyway), or the next pass that edits it.
 
 - **Symbol-anchored `Source:` pointers for the Go `tool/` tree (docs reset pass 1, 2026-09-23).**
   `check:facts` resolves `path#Symbol` only for `.ts` and `.js` files under `src/`, through the
@@ -2620,7 +2620,7 @@ the named human gates only):**
   `var(--color-*)` fill tone anywhere else is retired. Widening the pattern to every
   `--color-*` fill tone, measured with the budget file's own regex shape
   (`\[[^][]*var\(--color-[a-z0-9-]+\)[^][]*\]|style="[^"]*var\(--color-`) over
-  `src/lib/admin/*.svelte` and `src/lib/admin-toolkit/*.svelte`, flagged **27 lines (41
+  `src/lib/components/*.svelte` and `src/lib/admin-toolkit/*.svelte`, flagged **27 lines (41
   occurrences) across nine files** at this pass's parent commit, before Task 9 converted
   `LoginPage`'s own bracketed success token onto a named utility. At this pass's head the
   population is **25 lines (38 occurrences) across eight files**: `CairnTidySettings` 1,
@@ -2631,7 +2631,7 @@ the named human gates only):**
   gate proves only the two tokens it already covers.
 
 - **The 317-comment register sweep over the engine's own admin components.** Polish-11a's
-  Svelte lint wiring brought `src/lib/admin/**/*.svelte` under the same `check:comments`
+  Svelte lint wiring brought `src/lib/components/**/*.svelte` under the same `check:comments`
   parser the showcase already carries, so the file family's roughly 317 comments are parsed for
   the first time; `jsdoc/informative-docs` (the paraphrase-tell rule) reports zero warnings
   against that population today, so there is nothing the gate can flag toward this sweep.

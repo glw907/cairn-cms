@@ -13,7 +13,7 @@
 @plugin "daisyui" { themes: false; exclude: calendar; }
 @source "../../src/lib/admin/**/*.{svelte,ts,js}";
 /* The admin-toolkit subpath (AdminTable, ListToolbar, Pagination, StatusChip, PageHeader,
-   EmptyState, ...) was never added to the scan root when it graduated out of src/lib/admin,
+   EmptyState, ...) was never added to the scan root when it graduated out of src/lib/components,
    so any daisy or Tailwind class used only there (never also referenced somewhere under
    src/lib/admin) silently never compiled: `.join`'s own base rule on ListToolbar's segmented
    filter, plus a run of plain utilities (py-16, opacity-30, mb-10, the size-variant `xs`) EmptyState/

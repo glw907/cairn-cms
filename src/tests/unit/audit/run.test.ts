@@ -50,7 +50,7 @@ beforeAll(() => {
   );
   writeFileSync(join(root, 'src/routes/admin/posts/+page.svelte'), '<div class="card"></div>\n');
   mkdirSync(join(root, 'src/lib/admin'), { recursive: true });
-  writeFileSync(join(root, 'src/lib/admin/PublicWidget.svelte'), '<div></div>\n');
+  writeFileSync(join(root, 'src/lib/admin/AdminWidget.svelte'), '<div></div>\n');
 });
 
 afterAll(() => {
@@ -172,7 +172,7 @@ describe('runStatic', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0].files.map((f) => f.file).sort()).toEqual([
       'src/lib/admin-toolkit/FieldLabel.svelte',
-      'src/lib/admin/PublicWidget.svelte',
+      'src/lib/admin/AdminWidget.svelte',
       'src/routes/admin/posts/+page.svelte',
     ]);
     expect(seen[0].sheet.has('type-body')).toBe(true);
@@ -197,7 +197,7 @@ describe('runStatic', () => {
     const report = runStatic(loadConfig(root));
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
     // default (no rules override) run wires up the full seventeen-rule registry. The new
-    // `src/lib/admin/PublicWidget.svelte` fixture carries no class and no CSS, so it trips
+    // `src/lib/admin/AdminWidget.svelte` fixture carries no class and no CSS, so it trips
     // nothing beyond the two no-uncompiled-class findings the tree already carried; none of the
     // fixture components carries a log call, so log-event-grammar and log-secret-field raise
     // nothing here either.
@@ -436,14 +436,14 @@ describe('static.adminScope', () => {
     ]);
     const adminSeen = report.findings.filter((f) => f.ruleId === 'probe-admin').map((f) => f.file);
     const defaultSeen = report.findings.filter((f) => f.ruleId === 'probe-default').map((f) => f.file);
-    expect(adminSeen).not.toContain('src/lib/admin/PublicWidget.svelte');
+    expect(adminSeen).not.toContain('src/lib/admin/AdminWidget.svelte');
     expect(adminSeen).toContain('src/routes/admin/posts/+page.svelte');
-    expect(defaultSeen).toContain('src/lib/admin/PublicWidget.svelte');
+    expect(defaultSeen).toContain('src/lib/admin/AdminWidget.svelte');
     expect(defaultSeen).toContain('src/routes/admin/posts/+page.svelte');
   });
 
   it('reaches a static.cssFiles entry outside the admin roots with a plain rule, and never with an adminOnly one', () => {
-    // src/lib/admin is now one of the default admin roots (decision 1), so this file names a root
+    // src/lib/admin is now one of the default admin roots, so this file names a root
     // no default scope reaches at all: an admin-scope css file's own coverage is the prior test.
     mkdirSync(join(root, 'src/theme'), { recursive: true });
     writeFileSync(join(root, 'src/theme/site.css'), '.foo { color: red }\n');
@@ -500,11 +500,11 @@ describe('static.adminScope', () => {
   });
 });
 
-// The documented restore form (decision 23, docs/reference/cairn-audit.md): a site whose own tree
-// still keeps a directory literally named `src/lib/components` (its own convention, unrelated to
-// the engine's own rename) sets `static.scope` to the default roots it has plus that directory,
-// rather than the bare `['src/lib/components']` the spec's literal wording would suggest.
-// `static.scope` replaces the defaults outright, so the bare form would silently drop
+// The documented restore form (docs/reference/cairn-audit.md): a site whose own tree still keeps
+// a directory literally named `src/lib/components` (its own convention, unrelated to the engine's
+// own rename) sets `static.scope` to the default roots it has plus that directory, rather than
+// the bare `['src/lib/components']` a literal reading of "restore src/lib/components" might
+// suggest. `static.scope` replaces the defaults outright, so the bare form would silently drop
 // `src/routes/admin` from every static rule.
 describe('static.scope restore form (a site keeping its own src/lib/components)', () => {
   let siteRoot: string;

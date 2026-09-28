@@ -25,16 +25,16 @@ const (
 	ActorRegistrar Actor = "registrar"
 )
 
-// Fix is one fix line the fix table carries for one declared spine.Condition or spine.Code:
-// tool/docs/design/copy-standard.md's remedy map, re-homed here from the mockups' own
-// remedy.go sketch (see the seams table in the plan this task implements).
+// Fix is one fix line the fix table carries for one declared spine.Condition or spine.Code, using
+// the grammar tool/docs/design/copy-standard.md's remedy map defines, re-homed here from the
+// mockups' own remedy.go sketch.
 type Fix struct {
 	// Text is the imperative fix line itself, catalogue grammar 2.5: one clause naming the
 	// action and where to take it, capital initial, final period.
 	Text string
 	// Anchor is the heading anchor in docs/admin/is-it-working.md this fix's own doc section
-	// lives at, or "" when the page carries no matching heading yet. "" is legal: this task does
-	// not edit the frozen page to manufacture headings.
+	// lives at, or "" when the page carries no matching heading yet. "" is legal: a fix line can
+	// exist before the frozen page grows the heading it points at.
 	Anchor string
 	// Actor is whose job carrying this fix out is.
 	Actor Actor
@@ -51,11 +51,11 @@ type Fix struct {
 
 // fixesByCondition is the fix table's engine-Condition half: the three condition ids this tool
 // can ever print (spine.Conditions() carries the engine's whole registry, but this tool's checks
-// declare only these three; see health's TestFixTableCoversDeclaredIdentities). Two of the three
+// declare only these three; see health's TestFixTableCoversDeclaredConditions). Two of the three
 // entries' Text and Command are copied from tool/docs/design/copy-standard.md section 3.5;
 // ConditionConfigObservabilityOff's is not in the catalogue (grep for "observability" and
-// "wrangler.jsonc" in section 3.5 finds no fix row for it), so its line is this task's own
-// addition, reported to the editorial gate the same as fixesByCode's uncatalogued rows below.
+// "wrangler.jsonc" in section 3.5 finds no fix row for it), so its line is written directly here
+// to the same section 2.5 grammar, the same as fixesByCode's uncatalogued rows below.
 var fixesByCondition = map[spine.Condition]Fix{
 	spine.ConditionEdgeHTTPSNotForced: {
 		Text:    "Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.",
@@ -70,7 +70,7 @@ var fixesByCondition = map[spine.Condition]Fix{
 		Outward: true,
 		Command: "wrangler email sending enable <domain>",
 	},
-	// Not in the catalogue; the plainest fragment satisfying 2.5, reported to the editorial gate.
+	// Not in the catalogue; the plainest fragment satisfying section 2.5.
 	spine.ConditionConfigObservabilityOff: {
 		Text:    "Turn on observability for the Worker in wrangler.jsonc, then deploy again.",
 		Anchor:  "turn-on-observability",
@@ -82,9 +82,8 @@ var fixesByCondition = map[spine.Condition]Fix{
 // fixesByCode is the fix table's tool-owned half, one line per spine.Code health's checks can
 // declare. None of these carry an Anchor: docs/admin/is-it-working.md has no heading for any of
 // them today (Serving, Delegation, Deploy, Behind, Engine, and an error count, verified
-// 2026-09-20; see this task's report). A line marked "not in the catalogue" is this task's own
-// addition under tool/docs/design/copy-standard.md section 4.6, reported to the editorial gate
-// rather than copied from an existing row.
+// 2026-09-20). A line marked "not in the catalogue" is written directly under
+// tool/docs/design/copy-standard.md section 4.6 rather than copied from an existing row.
 var fixesByCode = map[spine.Code]Fix{
 	// Copied from the catalogue.
 	spine.CodeServingMismatch: {
@@ -103,7 +102,7 @@ var fixesByCode = map[spine.Code]Fix{
 		Outward: true,
 	},
 
-	// Not in the catalogue; the plainest fragment satisfying 2.5, reported to the editorial gate.
+	// Not in the catalogue; the plainest fragment satisfying section 2.5.
 	spine.CodeServingNotCairn: {
 		Text:    "Confirm this hostname serves the cairn site, not another Worker or origin.",
 		Actor:   ActorOperator,
@@ -185,8 +184,7 @@ var fixesByCode = map[spine.Code]Fix{
 //
 // The cred-missing line names no variable, because one entry covers both tokens and this table
 // does not know which one the run could not find. The renderer names it from the run's own
-// credential state, beside the entry. None of the three is in the catalogue; all are reported to
-// the editorial gate.
+// credential state, beside the entry. None of the three is in the catalogue.
 var fixesByReason = map[spine.ReasonCode]Fix{
 	spine.ReasonCredMissing: {
 		Text:  "Run `cairn auth set` naming each missing token, then run the command again.",
@@ -211,14 +209,14 @@ func FixForReason(r spine.ReasonCode) (Fix, bool) {
 	return fix, ok
 }
 
-// FixForCondition returns the fix line declared Condition, when the fix table carries one.
-func FixForCondition(c spine.Condition) (Fix, bool) {
+// fixForCondition returns the fix line declared Condition, when the fix table carries one.
+func fixForCondition(c spine.Condition) (Fix, bool) {
 	fix, ok := fixesByCondition[c]
 	return fix, ok
 }
 
-// FixForCode returns the fix line declared Code, when the fix table carries one.
-func FixForCode(c spine.Code) (Fix, bool) {
+// fixForCode returns the fix line declared Code, when the fix table carries one.
+func fixForCode(c spine.Code) (Fix, bool) {
 	fix, ok := fixesByCode[c]
 	return fix, ok
 }
@@ -228,10 +226,10 @@ func FixForCode(c spine.Code) (Fix, bool) {
 // not carry a line for, returns false.
 func FixFor(o spine.Outcome) (Fix, bool) {
 	if o.Condition != spine.ConditionNone {
-		return FixForCondition(o.Condition)
+		return fixForCondition(o.Condition)
 	}
 	if o.Code != spine.CodeNone {
-		return FixForCode(o.Code)
+		return fixForCode(o.Code)
 	}
 	return Fix{}, false
 }

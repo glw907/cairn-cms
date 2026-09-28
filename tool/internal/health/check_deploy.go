@@ -150,11 +150,11 @@ func findWorker(ctx context.Context, cf *providers.Cloudflare, name string) (*pr
 	return nil, nil
 }
 
-// HasRepo reports whether r names a GitHub repository. Discovery learns a repository from a
+// hasRepo reports whether r names a GitHub repository. Discovery learns a repository from a
 // Workers Builds trigger alone, so a site deployed any other way is adopted without one and
 // every check that reads the repository has to say so rather than querying "/repos//" and
 // reporting the 404 as the site's own fault.
-func HasRepo(r record.Record) bool {
+func hasRepo(r record.Record) bool {
 	return r.GitHub.Repo.Owner != "" && r.GitHub.Repo.Repo != ""
 }
 
@@ -220,7 +220,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployBuildFailed())
 	}
 
-	if !HasRepo(r) {
+	if !hasRepo(r) {
 		return detail.outcome(spine.Unknown, spine.ReasonRepoNotRecorded, "", detailNoRepoRecorded())
 	}
 	mainSHA, err := c.GH.HeadSHA(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, DefaultBranch(r))

@@ -1,7 +1,5 @@
 package spine
 
-import "slices"
-
 // ParkCode is the vocabulary the hold loop and park pages use to describe a wait-kind outcome:
 // nothing is wrong, something just takes time. A ParkCode is never written to a record's "step"
 // field.
@@ -25,7 +23,9 @@ const (
 	ParkBuildsReconcileParked   ParkCode = "builds-reconcile-parked"
 )
 
-// parkCodes is every ParkCode above, in declaration order.
+// parkCodes is every ParkCode above, in declaration order. ReasonCodes reads it directly to build
+// the reason.park.<code> family, so the published reason vocabulary is read off these constants
+// rather than retyped.
 var parkCodes = []ParkCode{
 	ParkDelegationPropagating,
 	ParkDelegationPending,
@@ -40,10 +40,4 @@ var parkCodes = []ParkCode{
 	ParkBuildNotStarted,
 	ParkBuildRunning,
 	ParkBuildsReconcileParked,
-}
-
-// ParkCodes is every known ParkCode. ReasonCodes spends it to build the reason.park.<code>
-// family, so the published reason vocabulary is read off these constants rather than retyped.
-func ParkCodes() []ParkCode {
-	return slices.Clone(parkCodes)
 }

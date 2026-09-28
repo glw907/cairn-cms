@@ -67,63 +67,25 @@ func TestVerdictPrecedence(t *testing.T) {
 
 // TestVerdictSeverityAgreesWithStateSeverity asserts the Verdict ordering and the State ordering
 // rank the three states they share the same way, so the module holds one severity order rather
-// than two that can drift.
+// than two that can drift. stateVerdict is a local, test-only restatement of the mapping
+// production code expresses through CheckVerdict.Verdict and ExitCode; nothing under tool/ needs
+// a State-to-Verdict function of its own, so this table exists only to prove the two orders agree.
 func TestVerdictSeverityAgreesWithStateSeverity(t *testing.T) {
+	stateVerdict := map[State]Verdict{
+		OK:      VerdictOK,
+		Failing: VerdictCritical,
+		Unknown: VerdictUnknown,
+	}
 	states := []State{OK, Unknown, Failing}
 	for i, a := range states {
 		for _, b := range states[i+1:] {
 			stateWins := b.Severity() > a.Severity()
-			verdictWins := ExitCodeFor(b).Severity() > ExitCodeFor(a).Severity()
+			verdictWins := stateVerdict[b].Severity() > stateVerdict[a].Severity()
 			if stateWins != verdictWins {
 				t.Errorf("State %v vs %v: State.Severity ranks b higher = %v, Verdict.Severity ranks b higher = %v",
 					a, b, stateWins, verdictWins)
 			}
 		}
-	}
-}
-
-// TestExitCodeForState asserts the State-to-Verdict mapping a probe-style command exits with,
-// including that a State value this package does not know reports UNKNOWN rather than OK.
-func TestExitCodeForState(t *testing.T) {
-	tests := []struct {
-		state State
-		want  Verdict
-	}{
-		{OK, VerdictOK},
-		{Failing, VerdictCritical},
-		{Unknown, VerdictUnknown},
-		{State(42), VerdictUnknown},
-	}
-	for _, tt := range tests {
-		t.Run(tt.state.String(), func(t *testing.T) {
-			if got := ExitCodeFor(tt.state); got != tt.want {
-				t.Errorf("ExitCodeFor(%v) = %v, want %v", tt.state, got, tt.want)
-			}
-		})
-	}
-}
-
-// TestCombineState asserts the moved fold keeps State.Severity's order and is order-independent.
-func TestCombineState(t *testing.T) {
-	tests := []struct {
-		name string
-		a, b State
-		want State
-	}{
-		{"failing beats unknown", Failing, Unknown, Failing},
-		{"failing beats ok", Failing, OK, Failing},
-		{"unknown beats ok", Unknown, OK, Unknown},
-		{"ok with ok", OK, OK, OK},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := CombineState(tt.a, tt.b); got != tt.want {
-				t.Errorf("CombineState(%v, %v) = %v, want %v", tt.a, tt.b, got, tt.want)
-			}
-			if got := CombineState(tt.b, tt.a); got != tt.want {
-				t.Errorf("CombineState(%v, %v) = %v, want %v", tt.b, tt.a, got, tt.want)
-			}
-		})
 	}
 }
 

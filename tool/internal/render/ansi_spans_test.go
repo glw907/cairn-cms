@@ -68,5 +68,5 @@ func inkOf(t Theme, role Role) string {
 // stripANSI returns s with every escape sequence removed, for an assertion about the characters
 // a reader sees rather than the ink they carry.
 func stripANSI(s string) string {
-	return Sanitize(s)
+	return sanitize(s)
 }

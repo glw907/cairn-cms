@@ -9,8 +9,9 @@
 // Theme and its palette (palette.go), the glyph set (glyph.go), the named width rungs (width.go),
 // and the sanitizer every dynamic string passes through (sanitize.go). One shared layer
 // (layout.go, rank.go) supplies the header, the section grammar, the fix format, and the one
-// severity ranking, and the bodies (body_single.go, body_plain.go) compose them into the frames
-// an operator reads.
+// severity ranking, and the four bodies compose them into the frames an operator reads: one site
+// on a terminal (body_single.go), more than one (body_many.go), a pipe or any non-terminal
+// consumer (body_plain.go), and a log excerpt (body_logs.go).
 package render
 
 import (
@@ -79,34 +80,17 @@ type RenderInput struct {
 	Body Body
 	// Width is the terminal column budget a frame composes into. Zero means defaultWidth.
 	Width int
-	// Height is the row budget, and 0 means unbounded, which is what the CLI always passes. It
-	// exists for the 2.0 HUD's viewport, which bounds the body it scrolls.
-	Height int
 	// Dark reports whether Theme should read the palette's dark branch.
 	Dark bool
 	// Profile is the colour profile to paint with.
 	Profile Profile
 	// ASCII selects the ASCII glyph tier over Unicode. profile.go's DetectProfile is the only
-	// function that fills it (criterion 13); render.Render reads the field and never re-derives
-	// it, since purity forbids a second TTY check anywhere else in this package.
+	// function that fills it; render.Render reads the field and never re-derives it, since
+	// purity forbids a second TTY check anywhere else in this package.
 	ASCII bool
 	// Reports holds the health sweep's settled reports, in the order the sweep ran them. The
 	// render owns the ranking; nothing upstream re-orders.
 	Reports []health.Report
-	// FailingOnly draws the failing rows alone. It filters rows and nothing else: the verdict and
-	// the tally still describe the whole run, so a body that says "1 failing, 0 passing" for a
-	// report carrying a pass and a skip is not reachable from here. The caller hands over the
-	// uncut reports and this field decides what is drawn, rather than cutting them upstream where
-	// the counts can no longer see what was removed.
-	//
-	// No 1.0 command sets it. --quiet suppresses an OK run's body outright and prints the whole
-	// body on every other verdict, so nothing in cmd/cairn asks for a reduced one; the field is
-	// kept for the 2.0 HUD's filtered view the way Height is kept for that HUD's viewport.
-	//
-	// The fleet body ignores it. That body is already one line per site rather than a list of
-	// check rows, and filtering its checks left most of the strip drawn as the separator glyph,
-	// which says less than the marks it replaced.
-	FailingOnly bool
 	// Entries holds a log query's records, newest first, for ViewLogs.
 	Entries []logs.Entry
 	// Site names the subject a view that carries no report still has to name, which is the log
@@ -119,13 +103,13 @@ type RenderInput struct {
 	// operator reading the word and a routine reading the exit code cannot disagree.
 	Verdict Verdict
 	// Now is the instant every timestamp in the frame is formatted against. A caller wanting
-	// "now" passes time.Now() itself: render never calls the system clock (criterion 24), which
-	// is what keeps a replay of the same input byte-identical regardless of when it runs.
+	// "now" passes time.Now() itself: render never calls the system clock, which is what keeps
+	// a replay of the same input byte-identical regardless of when it runs.
 	Now time.Time
 }
 
 // width returns the column budget this input composes into: the requested width honoured
-// exactly, capped at WidthCap, with an unset width falling back to defaultWidth.
+// exactly, capped at widthCap, with an unset width falling back to defaultWidth.
 func (in RenderInput) width() int {
 	if in.Width <= 0 {
 		return content(defaultWidth)

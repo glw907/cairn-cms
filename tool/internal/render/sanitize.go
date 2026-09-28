@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-// Sanitize is the render seam every dynamic string passes through before a style is applied: a
+// sanitize is the render seam every dynamic string passes through before a style is applied: a
 // check's detail, a fix line, a site name, a domain, a log field value, and an adopt candidate's
 // worker name all arrive from an HTTP body, a build log, or a GitHub error, so none of them is
 // trusted. C0 and C1 controls are stripped, a tab, newline, or carriage return becomes a single
@@ -15,7 +15,7 @@ import (
 // own, and invalid UTF-8 becomes the replacement character. No escape sequence reaches the
 // terminal: ansi.Strip consumes a whole sequence, parameters included, so a forged
 // "ESC[42;30m OK" never leaves colour-changing bytes sitting in the output as debris.
-func Sanitize(s string) string {
+func sanitize(s string) string {
 	s = ansi.Strip(s)
 	var b strings.Builder
 	b.Grow(len(s))

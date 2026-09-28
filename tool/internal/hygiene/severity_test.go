@@ -87,8 +87,8 @@ func TestOneSeverityTable(t *testing.T) {
 // mapping. It greps for the four names the mapping has carried, the private exit-code constants
 // and the two functions that read them, so a command reintroducing any of them goes red rather
 // than quietly owning a rule the whole module needs. It is a name grep and so does not catch a
-// mapping written under fresh names; spine.ExitCode and spine.ExitCodeFor are the only exported
-// mappings, and a second one is what code review looks for.
+// mapping written under fresh names; spine.ExitCode is the only exported mapping, and a second
+// one is what code review looks for.
 func TestNoExitArithmeticInCommands(t *testing.T) {
 	root := moduleRoot(t)
 	cmdDir := filepath.Join(root, "cmd", "cairn")

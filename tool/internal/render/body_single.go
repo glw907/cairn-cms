@@ -29,13 +29,8 @@ func renderSingle(t Theme, in RenderInput) Frame {
 	width := in.width()
 	report := firstReport(in)
 	s := split(report)
-	subject := Sanitize(report.Site)
-	// The tally is taken before the rows are filtered, so --quiet's body counts the run that
-	// happened rather than the slice it drew.
+	subject := sanitize(report.Site)
 	tally := s.tally(" " + t.glyphs(in.ASCII).Sep + " ")
-	if in.FailingOnly {
-		s = s.failingRowsOnly()
-	}
 
 	f := Frame{Header: t.verdictLines(in.Verdict, subject, tally, width)}
 	f.Header = append(f.Header, t.indented(t.Style(RoleMuted), 0,
@@ -160,18 +155,18 @@ func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 		word := spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)
 		cells = append(cells, t.cell(t.wordRole(c, escalating), word, colWord))
 	}
-	cells = append(cells, t.SizedStrong(RoleText, colName).Render(Sanitize(c.ID)))
+	cells = append(cells, t.sizedStrong(RoleText, colName).Render(sanitize(c.ID)))
 
 	holdRole := RoleMuted
 	if escalating {
 		holdRole = RoleUnknown
 	}
-	detail := Sanitize(checkDetail(c))
+	detail := sanitize(checkDetail(c))
 
 	// Below the narrow rung the body drops to one column: the row names the check and every
 	// field beneath it sits at one shallow indent rather than in a column budget the width
 	// cannot pay for.
-	narrow := width < WidthNarrow
+	narrow := width < widthNarrow
 	col := detailCol(in)
 	if narrow {
 		col = colIndent + colGlyph
@@ -215,10 +210,10 @@ func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 // line of its own.
 func (t Theme) detailLines(detail, tail string, col, width int) (lines []string, placed bool) {
 	avail := width - col
-	if tail == "" || width >= Width100 {
+	if tail == "" || width >= width100 {
 		return atColumn(t.Style(RoleSubtle), col, t.wrap(detail, avail)), false
 	}
-	wrapped, ok := t.wrapLeavingTail(detail, avail, t.Width(tail))
+	wrapped, ok := t.wrapLeavingTail(detail, avail, t.width(tail))
 	lines = atColumn(t.Style(RoleSubtle), col, wrapped)
 	if !ok || len(lines) == 0 {
 		return lines, false
@@ -245,9 +240,9 @@ func (t Theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 	}
 	g := t.glyphs(in.ASCII)
 	indent := colIndent + colGlyph
-	col := indent + t.Width(g.Arrow) + 1
+	col := indent + t.width(g.Arrow) + 1
 	lead := strings.Repeat(" ", indent) + t.Style(RoleAccent).Render(g.Arrow) + " "
-	out := t.hangingAt(t.Style(RoleSubtle), lead, col, Sanitize(fix.Text), width)
+	out := t.hangingAt(t.Style(RoleSubtle), lead, col, sanitize(fix.Text), width)
 
 	url := fixURL(fix)
 	if url == "" {
@@ -257,7 +252,7 @@ func (t Theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 	// prints the text show the same destination.
 	style := t.Style(RoleMuted)
 	if in.Profile != ProfileNoColor && linkable(url) {
-		style = t.Link(RoleMuted, url)
+		style = t.link(RoleMuted, url)
 	}
 	return append(out, t.indented(style, col, url, width)...)
 }
@@ -276,7 +271,7 @@ func (t Theme) placeCondition(detail, block []string, tail string, width int) {
 		return
 	}
 	order := [][]string{detail, block}
-	if width >= Width100 {
+	if width >= width100 {
 		order = [][]string{block, detail}
 	}
 	for _, lines := range order {
@@ -290,7 +285,7 @@ func (t Theme) placeCondition(detail, block []string, tail string, width int) {
 // and reports whether it found one.
 func attachTail(t Theme, lines []string, tail string, width int) bool {
 	for i := len(lines) - 1; i >= 0; i-- {
-		if t.Width(lines[i])+t.Width(tail) <= width {
+		if t.width(lines[i])+t.width(tail) <= width {
 			lines[i] += tail
 			return true
 		}
@@ -304,12 +299,12 @@ func attachTail(t Theme, lines []string, tail string, width int) bool {
 func (t Theme) foldLine(in RenderInput, passing []health.CheckResult, width int) []string {
 	names := make([]string, 0, len(passing))
 	for _, c := range passing {
-		names = append(names, Sanitize(c.ID))
+		names = append(names, sanitize(c.ID))
 	}
 	g := t.glyphs(in.ASCII)
 	label := count(len(passing), labelPassing)
 	lead := t.Style(passRole(in.Verdict)).Render(g.Pass) + " " + t.Style(RoleMuted).Render(label) + "  "
-	col := t.Width(g.Pass) + 1 + t.Width(label) + 2
+	col := t.width(g.Pass) + 1 + t.width(label) + 2
 	return t.hangingAt(t.Style(RoleMuted), lead, col, strings.Join(names, " "+g.Sep+" "), width)
 }
 
@@ -319,7 +314,7 @@ func (t Theme) foldLine(in RenderInput, passing []health.CheckResult, width int)
 func (t Theme) clampFrame(f Frame, width int) Frame {
 	for _, section := range [][]string{f.Header, f.Body, f.Footer} {
 		for i, l := range section {
-			section[i] = t.Clamp(l, width)
+			section[i] = t.clamp(l, width)
 		}
 	}
 	return f

@@ -61,7 +61,8 @@ func (noRecordsResolver) LookupIP(_ context.Context, _, host string) ([]net.IP, 
 // testDeps returns a dependency set wired entirely to fakes: an empty environment, a keyring
 // holding nothing, a transport that answers 404 for every path, a resolver that finds no record,
 // a fresh registry directory, a prompt that refuses, and an exit that records instead of ending
-// the process.
+// the process. checks is the production set, health.All, so a test reaches the same health run
+// production does unless it overrides the field with its own stub checks.
 func testDeps(t *testing.T) (deps, *int) {
 	t.Helper()
 	dir := t.TempDir()
@@ -84,6 +85,7 @@ func testDeps(t *testing.T) (deps, *int) {
 		now:            fixedNow,
 		readPassword:   fakeReadPassword("", errors.New("no terminal")),
 		exit:           func(c int) { *code = c },
+		checks:         health.All,
 	}, code
 }
 

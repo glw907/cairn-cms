@@ -377,12 +377,10 @@ func buildCairn() (bin string, cleanup func(), err error) {
 	}
 	cleanup = func() { _ = os.RemoveAll(tmp) }
 
-	bin = exe.Path(tmp, "cairn")
-	build := exec.Command("go", "build", "-o", bin, "./cmd/cairn")
-	build.Dir = moduleRoot()
-	if out, err := build.CombinedOutput(); err != nil {
+	bin, err = exe.Build(moduleRoot(), tmp)
+	if err != nil {
 		cleanup()
-		return "", nil, fmt.Errorf("go build: %w: %s", err, out)
+		return "", nil, err
 	}
 	return bin, cleanup, nil
 }

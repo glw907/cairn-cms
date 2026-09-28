@@ -12,7 +12,7 @@ import (
 // statusInput builds the input a status line is read from, with one token found and one missing.
 func statusInput() RenderInput {
 	return RenderInput{
-		View: ViewStatus, Width: Width100, Dark: true, Profile: ProfileNoColor,
+		View: ViewStatus, Width: width100, Dark: true, Profile: ProfileNoColor,
 		Status: sampleStatus(), Now: fixtures.Now(),
 	}
 }
@@ -49,7 +49,7 @@ func TestMissingCredentialNamesTheChecksItDisables(t *testing.T) {
 // checks did run, the line stays in the past tense, since a missing token there is a cost the
 // run already paid.
 func TestHealthFrameKeepsThePastTenseMissingTokenLine(t *testing.T) {
-	in := input(fixtures.OneSick(), BodySingle, Width100, ProfileNoColor, false, spine.VerdictCritical)
+	in := input(fixtures.OneSick(), BodySingle, width100, ProfileNoColor, false, spine.VerdictCritical)
 	in.Status = StatusState{Credentials: []Credential{{
 		Variable: "CAIRN_GH_READ_TOKEN",
 		Disables: []string{"deploy", "engine", "publish-path"},

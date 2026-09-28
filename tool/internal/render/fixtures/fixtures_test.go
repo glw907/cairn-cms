@@ -1,11 +1,55 @@
 package fixtures
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/glw907/cairn-cms/tool/internal/health"
+	"github.com/glw907/cairn-cms/tool/internal/record"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
+
+// runOptions is the Options every health.Run call in this file sweeps against; its threshold and
+// window are never read by a stub check, so their values only need to satisfy Options.Validate.
+var runOptions = health.Options{ErrorThreshold: 1, LogWindow: time.Minute, Now: Now}
+
+// stubCheck plays back one fixture's own CheckResult.Outcome as health.Run's Check.Run result,
+// standing in for the real check that produced it.
+type stubCheck struct {
+	id      string
+	outcome spine.Outcome
+}
+
+func (c stubCheck) ID() string       { return c.id }
+func (stubCheck) Needs() health.Tier { return health.TierNone }
+func (c stubCheck) Run(context.Context, record.Record, health.Clients, health.Options) spine.Outcome {
+	return c.outcome
+}
+
+// TestFixtureDegradedMatchesHealthRun drives every exported fixture's own check results through
+// health.Run and asserts the settled report's Degraded agrees with the fixture's own restated
+// value, proving report's local rule has not drifted from health.Run's.
+func TestFixtureDegradedMatchesHealthRun(t *testing.T) {
+	for _, f := range All() {
+		t.Run(f.Name, func(t *testing.T) {
+			for _, r := range f.Reports {
+				checks := make([]health.Check, len(r.Checks))
+				for i, c := range r.Checks {
+					checks[i] = stubCheck{id: c.ID, outcome: c.Outcome}
+				}
+				rec := record.Record{Name: r.Site, Domain: r.Domain}
+				got, err := health.Run(context.Background(), rec, health.Clients{}, checks, runOptions, nil)
+				if err != nil {
+					t.Fatalf("Run: %v", err)
+				}
+				if got.Degraded != r.Degraded {
+					t.Errorf("%s: health.Run Degraded = %v, fixture Degraded = %v", r.Site, got.Degraded, r.Degraded)
+				}
+			}
+		})
+	}
+}
 
 // TestEveryFixtureCredsRowAgreesWithItsOwnCredentialStory holds the corpus to reports health.Run
 // could produce. The creds check is the one that reads both provider tokens directly, so a token

@@ -28,7 +28,7 @@ var forbiddenSelectors = map[string][]string{
 // getter family (Get*), and Copy are not setters and are not listed. Width, MaxWidth, Height,
 // MaxHeight, Align*, and Border* are deliberately absent too: this check has no type information
 // (a plain AST walk, not go/types), so it can only match a selector by name, and those names
-// collide with this package's own methods (Theme.Width) and would false-positive on a legitimate
+// collide with this package's own methods (Theme.width) and would false-positive on a legitimate
 // call. The remaining names are lipgloss-specific enough that a collision is not a real risk.
 var lipglossSetters = []string{
 	"Foreground", "Background", "Bold", "Italic", "Underline", "UnderlineStyle", "Strikethrough",
@@ -233,26 +233,27 @@ var exportedSurface = []string{
 	"GlyphSet", "Glyphs",
 	"MarshalAdoptList", "MarshalAuthCheck", "MarshalLogs", "MarshalSite", "MarshalSiteLine", "MarshalSitesList",
 	"MarshalSummary",
-	"AdoptCandidate", "AdoptListSchemaVersion", "AuthCheckPermission", "AuthCheckSchemaVersion",
-	"DoctorSchemaVersion", "LogsSchemaVersion", "SiteJSON", "SiteListEntry",
-	"SiteSchemaVersion", "SitesListSchemaVersion", "SummaryJSON", "SummarySchemaVersion",
+	"AdoptCandidate", "AuthCheckPermission",
+	"DoctorSchemaVersion", "SiteJSON", "SiteListEntry",
+	"SummaryJSON",
 	"NewTheme",
 	"Profile", "ProfileANSI16", "ProfileANSI256", "ProfileNoColor", "ProfileTrueColor",
 	"Render", "RenderInput",
 	"Role", "RoleAccent", "RoleFailing", "RoleMuted", "RoleOK", "RoleRule", "RoleSubtle",
 	"RoleText", "RoleUnknown",
-	"Sanitize", "SelectBody", "StatusState",
+	"SelectBody", "StatusState",
 	"Terminal", "Theme",
 	"Verdict",
 	"View", "ViewHealth", "ViewLogs", "ViewStatus",
-	"Width100", "Width80", "WidthCap", "WidthFloor", "WidthNarrow",
+	"Width80",
 }
 
-// exportedThemeMethods is Theme's own exported method set, the seam the 2.0 HUD imports
-// unchanged. Style and Sized are the only two ways out of palette.go, and every other entry is
-// one of them constrained.
+// exportedThemeMethods is Theme's own exported method set: the seams table names Style, Sized,
+// and Wrap as the 2.0 HUD's own seam, and every other method the cut found reachable only from
+// this package's own bodies and tests is unexported instead, so a later widening is a deliberate
+// one a reviewer reads rather than a name nobody noticed had gone public.
 var exportedThemeMethods = []string{
-	"Clamp", "Link", "Rule", "Sized", "SizedLink", "SizedStrong", "Strong", "Style", "Width", "Wrap",
+	"Sized", "Style", "Wrap",
 }
 
 // TestExportedSurfaceIsPinned falsifies criterion 16: the package's exported surface is exactly

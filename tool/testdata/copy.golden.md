@@ -124,6 +124,12 @@ Run the command again in %s
 - %s was not stored in the keyring
 
 - Add a Cloudflare Worker to the registry as a site
+- Check a cairn-cms site's checked-in configuration, read straight off the directory. It covers bindings, CSRF wiring, the site config, and more. It needs no credential and no adopted site, and makes at most one network request, a GET of the declared origin's own /robots.txt.
+
+The report is plain text, so --color, --theme, and --width do not change it.
+
+Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
+Run `cairn health` after deploying to reach the checks that need a live site.
 - Check a cairn-cms site's own configuration, no credential or deploy needed
 - Cloudflare: skip, %s
 - Confirm the credential permissions this tool itself needs
@@ -139,11 +145,27 @@ auth check's whole output is identifiers (permission labels, credential variable
 - List the sites cairn knows
 - Manage credentials in the OS keyring
 - Operate a cairn-cms production site
+- Operate a cairn-cms production site.
+
+Run `cairn help agents` for the contract a program reads.
+Pass --json to a reporting command for a machine-readable payload on stdout.
+Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
+
+The published contracts:
+  https://cairn.pub/docs/reference/cli-cairn-exit-codes
+  https://cairn.pub/docs/reference/cli-cairn-json-output
+  https://cairn.pub/docs/reference/cli-cairn-doctor
 - Permissions:
 - Print the contract a program or an agent reads
 - Prompt for a value and store it in the keyring
 - Read one site's engine log records
 - Run the read-only health checks against one site, or every site when none is named
+- Run the read-only health checks against one site, or every site when none is named.
+
+Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
+Precedence is CRITICAL, then UNKNOWN, then WARNING, then OK, which is not numeric order.
+Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.
+The payload contract is published at https://cairn.pub/docs/reference/cli-cairn-json-output.
 - Show which provider answers each credential variable
 - cairn adopt --worker ecxc-ski
 - cairn adopt list

@@ -76,13 +76,6 @@ func split(r health.Report) sections {
 	return s
 }
 
-// failingRowsOnly returns s carrying its failing checks alone, the rows --quiet draws. The
-// counts a caller already took off the whole sections value are unaffected, which is the whole
-// point of filtering here rather than cutting the report upstream.
-func (s sections) failingRowsOnly() sections {
-	return sections{Failing: s.Failing}
-}
-
 // tally renders the header's counts in the section words, joined by sep, omitting a state with
 // none. The passing count always prints, so a reader always learns how much did run.
 func (s sections) tally(sep string) string {
@@ -211,7 +204,7 @@ func conditionID(o spine.Outcome) string {
 	if o.Condition == spine.ConditionNone {
 		return ""
 	}
-	return Sanitize(string(o.Condition))
+	return sanitize(string(o.Condition))
 }
 
 // fixURL returns the documentation address a fix's anchor resolves to, and empty when the fix
@@ -225,12 +218,12 @@ func fixURL(f health.Fix) string {
 }
 
 // linkable reports whether url may be emitted as an OSC 8 hyperlink. The target is constrained
-// rather than trusted: https only, unchanged by Sanitize (so no control byte survives in it),
+// rather than trusted: https only, unchanged by sanitize (so no control byte survives in it),
 // and carrying no whitespace, which is what keeps a hostile string that reached a fix field from
 // becoming a clickable destination that differs from the text beside it.
 func linkable(url string) bool {
 	return strings.HasPrefix(url, "https://") &&
-		Sanitize(url) == url &&
+		sanitize(url) == url &&
 		!strings.ContainsAny(url, " \t")
 }
 
@@ -285,14 +278,14 @@ func (t Theme) verdictLines(v Verdict, subject, tally string, width int) []strin
 // that the run had nothing to count at all, which is the empty registry's own frame.
 func (t Theme) verdictParts(v Verdict, subject, tally string, width int) (head string, tallyLines []string) {
 	word := v.String()
-	head = t.Strong(verdictRole(v)).Render(word)
+	head = t.strong(verdictRole(v)).Render(word)
 	if subject != "" {
-		head += "  " + t.Strong(RoleText).Render(subject)
+		head += "  " + t.strong(RoleText).Render(subject)
 	}
 	if tally == "" {
 		return head, nil
 	}
-	if t.Width(word)+2+t.Width(subject)+2+t.Width(tally) <= width {
+	if t.width(word)+2+t.width(subject)+2+t.width(tally) <= width {
 		return head + "  " + t.Style(RoleMuted).Render(tally), nil
 	}
 	for _, l := range t.wrap(tally, width) {
@@ -304,10 +297,10 @@ func (t Theme) verdictParts(v Verdict, subject, tally string, width int) (head s
 // insetRule is the one section device this design uses: a lowercase label inset two cells into a
 // rule. No box, no capitals, no coloured rail of its own.
 func (t Theme) insetRule(ascii bool, label string, width int) string {
-	lead := t.Rule(ascii, 2)
-	tail := max(width-t.Width(lead)-t.Width(label)-2, 0)
+	lead := t.rule(ascii, 2)
+	tail := max(width-t.width(lead)-t.width(label)-2, 0)
 	return t.Style(RoleRule).Render(lead) + " " + t.Style(RoleText).Render(label) + " " +
-		t.Style(RoleRule).Render(t.Rule(ascii, tail))
+		t.Style(RoleRule).Render(t.rule(ascii, tail))
 }
 
 // cell renders one fixed-width field. Theme.Sized pads inside the styled block and cuts there,
@@ -340,11 +333,11 @@ func (t Theme) wrap(text string, width int) []string {
 		if i > 0 && cur != "" {
 			sep = " "
 		}
-		if cur != "" && t.Width(cur)+t.Width(sep)+t.Width(tok) > width {
+		if cur != "" && t.width(cur)+t.width(sep)+t.width(tok) > width {
 			out = append(out, strings.TrimRight(cur, " "))
 			cur, sep = "", ""
 		}
-		for t.Width(tok) > width {
+		for t.width(tok) > width {
 			head, tail := t.cutAt(tok, width)
 			out = append(out, head)
 			tok = tail
@@ -384,7 +377,7 @@ func (t Theme) wrapNoOrphan(text string, width int) []string {
 		return lines
 	}
 	moved := words[len(words)-1]
-	if t.Width(moved)+1+t.Width(lines[last]) > width {
+	if t.width(moved)+1+t.width(lines[last]) > width {
 		return lines
 	}
 	lines[last-1] = strings.Join(words[:len(words)-1], " ")
@@ -397,7 +390,7 @@ func (t Theme) wrapNoOrphan(text string, width int) []string {
 func (t Theme) cutAt(s string, width int) (head, tail string) {
 	n := 0
 	for i, r := range s {
-		rw := t.Width(string(r))
+		rw := t.width(string(r))
 		if n+rw > width && i > 0 {
 			return s[:i], s[i:]
 		}
@@ -451,7 +444,7 @@ func (t Theme) wrapLeavingTail(text string, width, tailWidth int) (lines []strin
 	if len(lines) == 0 {
 		return nil, false
 	}
-	for t.Width(lines[len(lines)-1])+tailWidth > width {
+	for t.width(lines[len(lines)-1])+tailWidth > width {
 		words := strings.Fields(lines[len(lines)-1])
 		if len(words) < 2 {
 			return t.wrap(text, width), false

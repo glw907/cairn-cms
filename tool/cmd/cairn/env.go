@@ -38,10 +38,9 @@ const (
 	varGHReadToken = "CAIRN_GH_READ_TOKEN" // secret-guard-allow: a variable name, not a value
 )
 
-// varNoColor and varTerm are the two variables loadEnv reads for render.DetectProfile (Task
-// 20a). Neither is a credential: they carry no Missing entry and are read directly from envFn
-// rather than through secrets.Resolve's provider chain, which is for the three CAIRN_ variables
-// above alone.
+// varNoColor and varTerm are the two variables loadEnv reads for render.DetectProfile. Neither
+// is a credential: they carry no Missing entry and are read directly from envFn rather than
+// through secrets.Resolve's provider chain, which is for the three CAIRN_ variables above alone.
 const (
 	varNoColor = "NO_COLOR"
 	varTerm    = "TERM"

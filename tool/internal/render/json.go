@@ -19,18 +19,18 @@ import (
 // handed a lower number now. docs/reference/cli-cairn-json-output.md carries the promise each one
 // makes: a key is added within a version, and never removed or retyped within one.
 const (
-	// SiteSchemaVersion versions the single-site health payload and every per-site NDJSON line.
-	SiteSchemaVersion = 1
-	// SummarySchemaVersion versions the NDJSON stream's final summary line.
-	SummarySchemaVersion = 1
-	// SitesListSchemaVersion versions the sites list payload.
-	SitesListSchemaVersion = 1
-	// LogsSchemaVersion versions the logs payload.
-	LogsSchemaVersion = 1
-	// AdoptListSchemaVersion versions the adopt candidate list payload.
-	AdoptListSchemaVersion = 1
-	// AuthCheckSchemaVersion versions cairn auth check's own payload.
-	AuthCheckSchemaVersion = 1
+	// siteSchemaVersion versions the single-site health payload and every per-site NDJSON line.
+	siteSchemaVersion = 1
+	// summarySchemaVersion versions the NDJSON stream's final summary line.
+	summarySchemaVersion = 1
+	// sitesListSchemaVersion versions the sites list payload.
+	sitesListSchemaVersion = 1
+	// logsSchemaVersion versions the logs payload.
+	logsSchemaVersion = 1
+	// adoptListSchemaVersion versions the adopt candidate list payload.
+	adoptListSchemaVersion = 1
+	// authCheckSchemaVersion versions cairn auth check's own payload.
+	authCheckSchemaVersion = 1
 	// DoctorSchemaVersion versions cairn doctor's own directory-preflight payload. The
 	// marshaller itself lives in internal/doctor, whose posture check dials over HTTP; this
 	// package's contract is purity with its direct requires pinned by name, so it holds the
@@ -244,7 +244,7 @@ func siteObject(in SiteJSON) sitePayload {
 	}
 
 	p := sitePayload{
-		SchemaVersion: SiteSchemaVersion,
+		SchemaVersion: siteSchemaVersion,
 		Kind:          kindSite,
 		Site:          r.Site,
 		Domain:        r.Domain,
@@ -376,7 +376,7 @@ func MarshalSummary(in SummaryJSON) ([]byte, error) {
 	}
 
 	return json.Marshal(summaryPayload{
-		SchemaVersion: SummarySchemaVersion,
+		SchemaVersion: summarySchemaVersion,
 		Kind:          kindSummary,
 		Verdict:       in.Verdict.String(),
 		ExitCode:      int(in.ExitCode),
@@ -395,7 +395,7 @@ func MarshalSitesList(entries []SiteListEntry, verdict spine.Verdict, errs []str
 		entries = []SiteListEntry{}
 	}
 	return json.Marshal(sitesListPayload{
-		SchemaVersion: SitesListSchemaVersion,
+		SchemaVersion: sitesListSchemaVersion,
 		Kind:          kindSites,
 		Verdict:       verdict.String(),
 		ExitCode:      int(verdict),
@@ -419,7 +419,7 @@ func MarshalLogs(site string, entries []logs.Entry) ([]byte, error) {
 		out = append(out, item)
 	}
 	return json.Marshal(logsPayload{
-		SchemaVersion:        LogsSchemaVersion,
+		SchemaVersion:        logsSchemaVersion,
 		Kind:                 kindLogs,
 		Verdict:              spine.VerdictOK.String(),
 		ExitCode:             int(spine.VerdictOK),
@@ -436,7 +436,7 @@ func MarshalAdoptList(candidates []AdoptCandidate) ([]byte, error) {
 		candidates = []AdoptCandidate{}
 	}
 	return json.Marshal(adoptListPayload{
-		SchemaVersion:        AdoptListSchemaVersion,
+		SchemaVersion:        adoptListSchemaVersion,
 		Kind:                 kindAdoptList,
 		Verdict:              spine.VerdictOK.String(),
 		ExitCode:             int(spine.VerdictOK),
@@ -488,7 +488,7 @@ func MarshalAuthCheck(site string, permissions []AuthCheckPermission, verdict sp
 		rows = append(rows, authCheckPermission(p))
 	}
 	return json.Marshal(authCheckPayload{
-		SchemaVersion: AuthCheckSchemaVersion,
+		SchemaVersion: authCheckSchemaVersion,
 		Kind:          kindAuthCheck,
 		Verdict:       verdict.String(),
 		ExitCode:      int(verdict),

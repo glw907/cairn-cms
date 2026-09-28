@@ -9,6 +9,12 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
+## Unreleased
+
+The release step sets the version number at the cut and renames this section to match it. No
+consumer action so far: the window's own `CHANGELOG.md` entry reads "No consumer action for an
+existing site."
+
 ## 0.97.0
 
 - **Run `npx cairn-manifest` once and commit the new `src/content/.cairn/site-facts.json`.**

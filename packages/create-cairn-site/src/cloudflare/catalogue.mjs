@@ -528,8 +528,11 @@ const ROWS = {
   // This row fires from chapter 1, before anything is installed, built, or deployed: a cairn
   // site needs Workers Paid from its first deploy, so the run stops here rather than deploying
   // onto a plan that cannot carry it. There is no reoffered form: nothing was created yet, so a
-  // later re-run simply asks again from the same starting point.
-  'paid-plan-declined': {
+  // later re-run simply asks again from the same starting point. Its own catalogue code is
+  // distinct from chapter 2's paid-plan-declined row below (this decline persists no `step` at
+  // all, so the two codes never actually collide on a saved record, but a shared name would still
+  // read as if declining here and declining chapter 2's admission were the same event).
+  'deploy-plan-declined': {
     kind: 'declined',
     build(params) {
       return (
@@ -544,8 +547,11 @@ const ROWS = {
   },
   // This row fires from chapter 2's own email admission, once the site is already live on
   // Cloudflare's Workers Paid plan: declining here turns down email sign-in for the connected
-  // domain specifically, not the plan itself, which is already on.
-  'email-declined': {
+  // domain specifically, not the plan itself, which is already on. Its code and the `step` it
+  // writes are both the stable, pre-existing name `paid-plan-declined`: the Go tool mirrors this
+  // step name (tool/internal/spine/step.go) and existing site records already carry it, so only
+  // this row's own text changed to drop the now-stale Workers Paid framing.
+  'paid-plan-declined': {
     kind: 'declined',
     build(params) {
       if (params.reoffered) {
@@ -804,7 +810,7 @@ export const WAIT_KIND_CODES = CATALOGUE_CODES.filter((code) => ROWS[code].kind 
  *  `detail` on the rows that carry child or API output, `database` on migrations-failed, `reason`
  *  and `email` on seed-failed's not-allowlisted case, `permission` on token-scope-missing,
  *  `domain` on the domain and hostname rows and the email-sender rows, `nameServers`/`actual`,
- *  both string arrays, on the delegation rows, `reoffered`, a boolean, on email-declined to
+ *  both string arrays, on the delegation rows, `reoffered`, a boolean, on paid-plan-declined to
  *  print the copy for a re-run after an earlier decline, `owner`/`repo` on
  *  builds-repo-not-selected, `detail`/`buildUrl`/`logTruncated` (a boolean, true only when
  *  getBuildLogs gave up against its own page cap) on builds-deploy-failed, and `outcome`

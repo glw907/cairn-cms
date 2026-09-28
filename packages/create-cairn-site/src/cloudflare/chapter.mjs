@@ -138,7 +138,7 @@ export async function runCloudflareChapter({
       const answer = await confirm({ message: 'Install, build, and deploy your site now?' });
       if (isCancel(answer)) exitOnCancel();
       if (!answer) {
-        log(cloudflareError('paid-plan-declined', { dir }).message);
+        log(cloudflareError('deploy-plan-declined', { dir }).message);
       }
       consented = answer;
     });

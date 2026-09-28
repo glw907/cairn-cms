@@ -255,7 +255,7 @@ for (const [step, expectedNote] of [
 
 // --- The fall-through: reaching a chapter-2 terminal step DURING this run continues into chapter 3
 
-test('bin.mjs: a run that reaches email-declined during this call falls through into chapter 3', async (t) => {
+test('bin.mjs: a run that reaches paid-plan-declined during this call falls through into chapter 3', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-fallthrough-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -291,7 +291,7 @@ test('bin.mjs: a run that reaches email-declined during this call falls through 
   assert.ok(result.stderr.includes('Next:'), `expected chapter 3's token-hop Next: line, got: ${result.stderr}`);
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'email-declined', 'chapter 2 wrote its own outcome before chapter 3 began');
+  assert.equal(state.step, 'paid-plan-declined', 'chapter 2 wrote its own outcome before chapter 3 began');
   assert.equal('apiToken' in state.cloudflare, false, 'the decline deleted chapter 2\'s own saved token');
 });
 
@@ -654,7 +654,7 @@ for (const step of ['builds-connected', 'config-reconciled', 'builds-live', 'bui
 //
 // A record whose email admission was declined before it ever reached chapter 3 keeps
 // `emailDeclinedAt` set (chapter 2's own reoffered flag reads that field, never the step, per
-// email-declined's own admission logic in chapter2.mjs). This proves bin.mjs's chapter-3
+// paid-plan-declined's own admission logic in chapter2.mjs). This proves bin.mjs's chapter-3
 // routing carries that field through unchanged, rather than the state store's flat-merge losing
 // it: a record already at `builds-connected` still has it on disk after a plain re-run, so it
 // would still drive the reoffered copy on any later path that DOES re-enter chapter 2's own

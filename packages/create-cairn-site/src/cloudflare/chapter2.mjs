@@ -24,13 +24,15 @@
 // later work. TERMINAL_STEPS names the states that really are done; reaching one deletes the token
 // by an explicit whole-record rebuild and save, since state.mjs's own updateSite merge can never
 // express removing a key. T4a implemented the rule and its keep half (domain-live keeps the
-// token); T4b exercises the delete half for real: a decline writes `step: 'email-declined'`
+// token); T4b exercises the delete half for real: a decline writes `step: 'paid-plan-declined'`
 // and deletes the token at the moment it happens, and a LATER re-entry at that same terminal step
 // (this module's own top-of-function short-circuit) re-offers with the row's reoffered copy
-// rather than returning silently, since a decline is a choice an owner can still reconsider.
-// Workers Paid itself is no longer a choice made here: chapter 1's own consent confirms it before
-// the first deploy, so by the time this module runs the account already carries it, and declining
-// the email admission below turns down email sign-in for this domain, not the plan.
+// rather than returning silently, since a decline is a choice an owner can still reconsider. The
+// step name stays `paid-plan-declined`, a stable contract the Go tool mirrors
+// (tool/internal/spine/step.go) and existing site records already carry, even though Workers Paid
+// itself is no longer a choice made here: chapter 1's own consent confirms it before the first
+// deploy, so by the time this module runs the account already carries it, and declining the email
+// admission below turns down email sign-in for this domain, not the plan.
 //
 // T4b.1 adds a SCOPE-FAILURE half to the same lifecycle: a saved token that still passes
 // validateToken's read (prefill.mjs's own listZones probe) but lacks a write permission was
@@ -79,13 +81,14 @@ const STEP_ORDER = [
 
 /**
  * The step names that mean the chapter is fully done and the pasted token has no more work left
- * to do: `email-live` (the chapter's real finish line) and `email-declined` (an owner who
+ * to do: `email-live` (the chapter's real finish line) and `paid-plan-declined` (an owner who
  * declined email sign-in for the domain, with Workers Paid already on, which is also a clean
- * stop). Neither name appears in STEP_ORDER, since reaching one short-circuits this function
- * before any `hasReached` check ever runs against it.
+ * stop; the name predates that framing and stays put, since it is a stable contract the Go tool
+ * mirrors and existing site records already carry). Neither name appears in STEP_ORDER, since
+ * reaching one short-circuits this function before any `hasReached` check ever runs against it.
  * @type {string[]}
  */
-export const TERMINAL_STEPS = ['email-live', 'email-declined'];
+export const TERMINAL_STEPS = ['email-live', 'paid-plan-declined'];
 
 /** Where a record without a recognized step falls in STEP_ORDER: treated as fresh, from `live`. */
 function stepIndex(step) {
@@ -307,7 +310,7 @@ function composeCutoverWaitForClear({
  * @returns {Promise<{ outcome: string, domain?: string, state?: string, message?: string }>} the
  *  outcome reached: `'admission-declined'` | `'carry-over-declined'` | `'delegation-pending'` |
  *  `'delegation-propagating'` | `'hostname-records-absent'` | `'hostname-resolver-lagging'` |
- *  `'certificate-pending'` | `'email-declined'` | `'email-not-ready'` |
+ *  `'certificate-pending'` | `'paid-plan-declined'` | `'email-not-ready'` |
  *  `'email-sender-propagating'` | `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a
  *  record already at one of TERMINAL_STEPS, that step's own name. A delegation park also carries
  *  the row's own `state` and printed `message`
@@ -342,8 +345,8 @@ export async function runChapter2({
     // mind, and this is the one place that later re-run would ever be told so. `email-live`
     // prints nothing here, since its own completion hop already said everything once, on the run
     // that reached it; bin.mjs's own closing print covers a later re-entry there.
-    if (record.step === 'email-declined') {
-      log(cloudflareError('email-declined', { dir, reoffered: true }).message);
+    if (record.step === 'paid-plan-declined') {
+      log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
     }
     return { outcome: record.step };
   }
@@ -685,14 +688,14 @@ export async function runChapter2({
         emailConsented = Boolean(answer);
       });
       if (!dryRun && !emailConsented) {
-        const declineErr = cloudflareError('email-declined', { dir, reoffered });
+        const declineErr = cloudflareError('paid-plan-declined', { dir, reoffered });
         log(declineErr.message);
         await updateSite(siteId, {
-          step: 'email-declined',
+          step: 'paid-plan-declined',
           cloudflare: { emailDeclinedAt: new Date().toISOString() },
         });
         await deleteApiToken(siteId);
-        return { outcome: 'email-declined' };
+        return { outcome: 'paid-plan-declined' };
       }
     }
 

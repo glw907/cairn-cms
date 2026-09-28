@@ -381,7 +381,7 @@ test('bin.mjs at domain-live continues into chapter 2 instead of the old termina
   assert.equal(state.step, 'domain-live', 'a thrown row must never advance the saved step');
 });
 
-// --- The `email-live` and `email-declined` steps: chapter 2's own terminal states ----------
+// --- The `email-live` and `paid-plan-declined` steps: chapter 2's own terminal states ----------
 
 /** Save a site record shaped like one that finished chapter 2's email half. */
 async function seedEmailLiveSite(siteId, dir, overrides = {}) {
@@ -394,7 +394,7 @@ async function seedEmailLiveSite(siteId, dir, overrides = {}) {
 
 /** Save a site record shaped like one whose owner declined email sign-in. */
 async function seedDeclinedSite(siteId, dir, overrides = {}) {
-  await seedChapter2Site(siteId, dir, 'email-declined', {
+  await seedChapter2Site(siteId, dir, 'paid-plan-declined', {
     domain: 'declined-test.example',
     emailDeclinedAt: new Date().toISOString(),
     ...overrides,
@@ -486,7 +486,7 @@ for (const [label, step, seed, idSuffix] of [
 //
 // UPDATED FOR T4c: chapter 2's own top-of-function short-circuit reaches its reoffered copy with
 // no network call at all (it never re-runs the actual admission), and its outcome,
-// `email-declined`, is one of chapter 2's own TERMINAL_STEPS, so bin.mjs's continueIntoChapter2
+// `paid-plan-declined`, is one of chapter 2's own TERMINAL_STEPS, so bin.mjs's continueIntoChapter2
 // now falls straight through into chapter 3 in the same call (T4c's own fall-through). This run
 // carries no saved Cloudflare token for chapter 3 to reuse, so it stops at chapter 3's own token
 // hop and exits 1, the same deterministic stop this file's own CHAPTER2_RESUMABLE_STEPS loop
@@ -537,14 +537,14 @@ test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-
   );
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'email-declined', 'declining again must leave the step where it was');
+  assert.equal(state.step, 'paid-plan-declined', 'declining again must leave the step where it was');
 });
 
 // --- --sign-in works from both terminal states --------------------------------------------------
 
 for (const [label, step, seed, idSuffix] of [
   ['email-live', 'email-live', seedEmailLiveSite, 'sinliv'],
-  ['a recorded decline', 'email-declined', seedDeclinedSite, 'sindec'],
+  ['a recorded decline', 'paid-plan-declined', seedDeclinedSite, 'sindec'],
 ]) {
   test(`bin.mjs --sign-in at ${label} reseeds exactly once and reopens the browser`, async (t) => {
     const stateDir = await freshStateDir(t);

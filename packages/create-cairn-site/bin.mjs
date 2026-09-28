@@ -170,12 +170,12 @@ async function printEmailLiveInfo(siteId) {
 }
 
 /**
- * Print the closing block for a site whose owner declined email sign-in (`email-declined`,
+ * Print the closing block for a site whose owner declined email sign-in (`paid-plan-declined`,
  * the other member of `TERMINAL_STEPS`): its own domain, admin sign-in URL, and workers.dev note,
  * same as a site at `email-live`, but naming that email sign-in is off rather than claiming it
  * works, since a declined site has no email path at all. `--sign-in` is that owner's only way
  * back in, which this names alongside the shared repo/App lines and doctor line.
- * @param {string} siteId the site's state-store id, already at step `email-declined`
+ * @param {string} siteId the site's state-store id, already at step `paid-plan-declined`
  * @returns {Promise<void>}
  */
 async function printDeclinedInfo(siteId) {

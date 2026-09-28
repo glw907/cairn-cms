@@ -378,11 +378,7 @@ reflows its neighboring characters.
         onOpenChange={(next) => { overflowOpen = next; }}
       >
         {#snippet trigger(attrs)}
-          <button
-            type="button"
-            class="btn btn-sm btn-outline toolkit-toolbar-overflow-trigger"
-            {...attrs}
-          >{overflowLabel}</button>
+          <button type="button" class="btn btn-sm btn-outline" {...attrs}>{overflowLabel}</button>
         {/snippet}
         {#snippet panel(attrs)}
           <div id={attrs.id} hidden={attrs.hidden} class="dropdown-content menu toolkit-toolbar-overflow">

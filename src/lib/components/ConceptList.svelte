@@ -321,8 +321,13 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 {#if deleteRefused}
   <!-- A `?/delete` was refused: name the blockers up front, matching the editor's refusal banner,
        so the author sees why without re-opening a dialog. The polite region above announces it, so
-       the box itself carries no role or label (a bare div with an aria-label gets no accessible name). -->
-  <div class="alert alert-error mb-4 flex-col items-start type-body">
+       the box itself carries no role or label (a bare div with an aria-label gets no accessible name).
+       `flex-col` was inert: daisyUI's `.alert` is `display: grid`, laying its three children out as
+       grid columns (an icon-plus-message alert's own intended shape). Below `sm`, `grid-flow-row`
+       plus a single-column template stack the title, the body paragraph, and the link list instead
+       of crushing them into a narrow auto-sized column; at `sm` and above the alert keeps its
+       existing column layout. -->
+  <div class="alert alert-error mb-4 max-sm:grid-flow-row max-sm:grid-cols-1 items-start type-body">
     <p class="font-medium">This {refusedNoun} could not be deleted.</p>
     {#if deleteRefused.inboundKind === 'include'}
       <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>

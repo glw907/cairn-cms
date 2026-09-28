@@ -519,10 +519,34 @@ describe('ConceptList', () => {
       pad320(screen.container);
       const pending = screen.getByRole('radio', { name: /^pending edits/i });
       const rect = (await pending.element()).getBoundingClientRect();
-      // The toolkit's segmented option is a real btn-sm (the standard 2rem control height every
-      // other toolbar/pagination button already uses), taller than the old bespoke pill; a
+      // The toolkit's segmented option is a real btn-sm, sized by the shared --size-field step
+      // every other toolbar/pagination button already uses, taller than the old bespoke pill; a
       // wrapped two-line label would roughly double even that height, which this still catches.
       expect(rect.height).toBeLessThanOrEqual(40);
+    });
+
+    // Task 15 item 4: daisyUI's `.alert` is `display: grid`, and `flex-col` did nothing, so the
+    // refused-delete banner's title, body paragraph, and link list laid out as separate grid
+    // columns, crushing the body into a narrow sliver at 320. `max-sm:grid-flow-row
+    // max-sm:grid-cols-1` stacks them into one full-width column below `sm`.
+    it('spans the refused-delete banner body across the alert width at 320, not a crushed column', async () => {
+      await page.viewport(320, 700);
+      const form = {
+        error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+        id: '2026-05-01-post-1',
+        inboundLinks: [
+          { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
+        ],
+      };
+      const screen = await render(ConceptList, { data: data(), form });
+      pad320(screen.container);
+      const banner = screen.container.querySelector('.alert-error')!;
+      const body = banner.querySelector('p:nth-of-type(2)')!;
+      const bannerWidth = banner.getBoundingClientRect().width;
+      const bodyWidth = body.getBoundingClientRect().width;
+      // A crushed column measured about 60px against a roughly 290px banner (well under half);
+      // spanning the alert keeps the body within a small margin of the banner's own content width.
+      expect(bodyWidth).toBeGreaterThan(bannerWidth * 0.75);
     });
   });
 

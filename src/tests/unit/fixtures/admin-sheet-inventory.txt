@@ -391,6 +391,7 @@ grid-cols-[auto_1fr]
 grid-cols-1
 grid-cols-2
 grid-cols-3
+grid-flow-row
 group-hover/sec:opacity-90
 group/sec
 grow
@@ -564,6 +565,8 @@ max-sm:[&_button]:shrink-0
 max-sm:border-0
 max-sm:flex-nowrap
 max-sm:gap-1
+max-sm:grid-cols-1
+max-sm:grid-flow-row
 max-sm:h-12
 max-sm:hidden
 max-sm:min-h-11

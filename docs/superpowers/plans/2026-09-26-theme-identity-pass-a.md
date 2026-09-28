@@ -1656,3 +1656,24 @@ targeted tasks draw a MISMATCH, so check the first task's report for the fallbac
   S4, and its close, with the merge held for his before-and-after. Pass B branches from this
   pass's closed head.
 - **Spend:** segment C about 1.3M. Pass A total about 11.0M of 20M.
+
+### Segment D (2026-09-27, conductor)
+
+- **Task 12** accepted by conductor ruling after one fix round (`4419afde`, `9a10dafc`): the
+  `/admin/theme-kit` fixture and its spec. The fix round found the host-CSS regex missed four of
+  six stylesheets (SvelteKit writes `href` before `rel`); it now parses the tags, asserts a
+  non-empty list, and review focus 2 passes in both orders. **Finding:** Vite's lightningcss
+  minifier moves the `@layer utilities.daisyui, utilities.cairn-idiom;` pin below both sublayer
+  blocks, so in a minified build the pin sets nothing and emission order decides; the order is
+  correct today. Observed, not patched: the showcase `theme.css`'s unscoped `.btn-outline` rule
+  reaches admin outline-button edges in both orders (a pass C public-theme scoping concern).
+- **Task 12b** (added) accepted (`e426f011`): a unit test guards emission order in the shipped
+  and minified sheet, proven by a planted reorder; the build script's comment names it.
+- **Task 13** accepted after one fix round (`3886a391`, `1b7d1106`, `b69ce356`, `22c5bd5b`): the
+  contrast proof, the ratified radius ladder, the norms manifest, and the audit comparison by
+  finding identity. The fix round's record was accepted but left uncommitted; the conductor
+  committed it as `22c5bd5b`.
+- **Task 14** accepted after one fix round (`2a6fdb0d`, `bd7ff805`): the design-system documents.
+  Notes: spaced em dashes in the corner-ladder bullets; some "pill" names outside the banned
+  phrase survive as descriptions.
+- **Spend:** segment D about 3.4M including both relaunches. Pass A total about 14.6M of 20M.

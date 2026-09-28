@@ -198,17 +198,6 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   owner-capability rows, so the two cases can't be told apart). Source: `src/lib/auth/store.ts`
   function bodies at lines noted above; outcome unions confirmed present. [verified]
 
-- `f:avc1a2` `createLogger` (`/log`) redacts three levels deep into plain objects and arrays, marks a repeated
-  reference `'<repeated>'`, and leaves a key at level four or deeper as written. Both sides of the
-  key comparison normalize (lowercased, `-` and `_` removed, compared whole), so `REDACTED_LOG_KEYS`
-  spells each name once; it now also carries `csrf` and `csrf_token` (both, since normalization maps
-  `csrf_token` to `csrftoken`, not `csrf`). `createLogger(options?: { redactKeys?: readonly string[]
-  })` unions a site's own names with the defaults and cannot narrow them. `REDACTED_LOG_KEYS` and
-  `CAIRN_LOG_EVENTS` are both frozen. A throwing getter anywhere in a call's own `fields` cannot
-  throw out of `log.info()`/`.warn()`/`.error()`: the record build runs inside a `try`/`catch`
-  wrapping `emit`, and a caught failure emits `{ level, event, timestamp, fields: '<unserializable>'
-  }` instead. Source: `src/lib/log/create.ts`, `src/lib/log/events-list.ts`. [verified]
-
 ## docs/reference/cairn-audit.md
 
 - `f:4g122y` `motion-property` splits a `transition` value's entries at the top level only, so a comma inside
@@ -879,6 +868,19 @@ re-sourced to Go on this tree rather than to the page.
   the empty `sandbox` attribute blocks script execution by the HTML sandboxing spec (no
   `allow-scripts` token). [verified]
 
+## docs/reference/log.md
+
+- `f:avc1a2` `createLogger` (`/log`) redacts three levels deep into plain objects and arrays, marks a repeated
+  reference `'<repeated>'`, and leaves a key at level four or deeper as written. Both sides of the
+  key comparison normalize (lowercased, `-` and `_` removed, compared whole), so `REDACTED_LOG_KEYS`
+  spells each name once; it now also carries `csrf` and `csrf_token` (both, since normalization maps
+  `csrf_token` to `csrftoken`, not `csrf`). `createLogger(options?: { redactKeys?: readonly string[]
+  })` unions a site's own names with the defaults and cannot narrow them. `REDACTED_LOG_KEYS` and
+  `CAIRN_LOG_EVENTS` are both frozen. A throwing getter anywhere in a call's own `fields` cannot
+  throw out of `log.info()`/`.warn()`/`.error()`: the record build runs inside a `try`/`catch`
+  wrapping `emit`, and a caught failure emits `{ level, event, timestamp, fields: '<unserializable>'
+  }` instead. Source: `src/lib/log/create.ts`, `src/lib/log/events-list.ts`. [verified]
+
 ## docs/reference/log-events.md
 
 - `f:rkj7tn` Every log record carries an envelope of `level`, `event`, `timestamp`, plus event-specific
@@ -1215,6 +1217,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `src/hooks.server.ts`, or SvelteKit's own Origin check runs ahead of cairn's) confirms the
   cairn-specific half; the SvelteKit deprecation version and issue number are an upstream fact
   quoted from the page, not independently checked against GitHub this pass. [verified]
+- `f:aalmbd` The `@sveltejs/kit ^2.12` floor became an enforced peer range (rather than an advisory) in
+  the `0.41.0` changelog entry, justified by the edit page reading `$app/state` (shipped in kit
+  2.12.0); `0.51.0` is a separate, later entry that raises the `svelte` floor to `^5.56.3` and
+  mentions `^2.12` only as a side note for a site still below it. Source: `CHANGELOG.md:6820-6823`
+  (0.41.0 entry), `CHANGELOG.md:6708-6718` (0.51.0 entry). [verified]
 
 ## docs/reference/sveltekit.md
 

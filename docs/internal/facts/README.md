@@ -73,10 +73,13 @@ bullet with no id, a duplicate id anywhere in the container, across every file, 
 `## Harvest record` or `## Provenance` bullet. A filer working in a separate worktree mints
 independently and never collides.
 
-**New facts from the page chain.** A drafter or a redraft in `docs-page-chain-v2.js` files a new
-fact only as `[candidate]` and never retags one. The chain's independent fact read (stage 1) or
-applied read (stage 2) traces it to code and retags it, so a page never vouches for its own
-citations.
+**New facts from the page chain.** The page-inputs step in `docs-page-chain.js` files any fact
+its page needs and the container lacks, tagged `[verified]` with a `Source:` line or
+`[external]` with the vendor URL; a cited fact whose only source is an arm page is retraced
+first or retagged `[candidate]` and left uncited. `cairn-docs-drafter` files no fact, new or
+retagged. The chain's fact read is independent of both the page-inputs step and the drafter: it
+verifies every cited fact against its source and retags a stale one `[docs-drift]`, so a page
+never vouches for its own citations.
 
 ## Tag vocabulary
 

@@ -234,3 +234,35 @@ in pass B's HISTORY entry:
    criterion that probes 2 and 3 have.
 4. **Parent spec, "Corners" and "The markup sweep" post-condition pattern:** `radius-scale` also
    flags Tailwind v4's `rounded-(--x)` variable shorthand, which the pattern omits.
+
+## Second fold (2026-09-28)
+
+Source: `2026-09-28-theme-pass-b-plan-fold-verification.md` (0 blockers, 1 major, 3 minors). All
+four are folded; each was checked against the tree first, and each command written into the plan
+was run in the session scratchpad.
+
+1. **Major, vacuous scanned-root check (decision 20, S1): folded.** Confirmed: in a scratch repo, a
+   probe that adds `src/routes/admin/probe/+page.svelte` and `src/lib/components/Chip.svelte`
+   shows `?? src/routes/admin/probe/` and `?? src/lib/components/` under plain
+   `git status --porcelain`, with no `.svelte` path. The plan now reads the probe's changes from
+   `git ls-files -mo --exclude-standard` (setup step, Pass clause, S1 outcome), and the Pass
+   clause and S1 acceptance require the list to be nonempty and to contain
+   `src/routes/admin/probe/+page.svelte`. Proven: the probe tree lists all three changed files;
+   a clean tree fails "changed no files"; a tree with only `Chip.svelte` fails "no /admin/probe
+   route file".
+2. **Minor, probe command (decision 20): folded.** The brief moves to `<probe dir>/brief.txt`,
+   written with a quoted heredoc and fed on stdin; the file sits outside the site so it never
+   reads as a probe change. Proven with the plan's exact flag set on Haiku: a brief carrying
+   `` `/admin/probe` `` came back verbatim, exit 0.
+3. **Minor, tripwire floor (decision 13): folded.** The floor becomes at least one constant, plus
+   the two constants this pass adds, now named `RADIUS_SCALE_PROMOTION_VERSION` and
+   `RETIRED_PATCH_PROMOTION_VERSION`, by name while the package version is below `0.99.0`. The
+   version leg is unchanged, so the `0.98.0` version commit still reds on any undecided `0.98.0`
+   constant, and pass C may delete a promoted one without tripping non-vacuity. The by-name leg
+   lapses at `0.99.0`, when those two constants are themselves due for promotion or re-dating.
+   Neither name exists in `src/` today.
+4. **Minor, allowlist item 1 (decision 6): folded.** Confirmed: `readScope` (`run.ts:44`) walks
+   the roots and `config.ts` only resolves the list (`asPathList`, `:157`, `:215`). Item 1 now
+   covers `config.test.ts` or `run.test.ts`. Review focus 2 and task 1's acceptance, which named
+   `config.test.ts` alone for the three cases, are widened to match, so the allowlist and the
+   acceptance agree.

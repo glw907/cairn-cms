@@ -352,8 +352,9 @@ settled here so no implementer invents it.
    Some lines must name the old path after the rename, because this plan requires them. They form
    **the rename allowlist**, and every grep's post-condition is "prints nothing outside the
    allowlist"; the report lists each remaining hit beside its allowlist item:
-   1. `src/tests/unit/audit/config.test.ts`: the restore cases naming `src/lib/components`
-      (Review focus 2).
+   1. `src/tests/unit/audit/config.test.ts` or `src/tests/unit/audit/run.test.ts`: the restore
+      cases naming `src/lib/components` (Review focus 2; the both-roots proof is run-level, since
+      `readScope` in `run.ts` walks the roots and `config.ts` only resolves the list).
    2. The new barrel test and `admin-barrel-prune.test.ts`: an assertion that `package.json`
       carries no `./components` export.
    3. `docs/reference/cairn-audit.md`: the one restore sentence naming `src/lib/components`.
@@ -450,14 +451,16 @@ settled here so no implementer invents it.
 13. **The promotion version is `0.99.0`, guarded by a version tripwire this pass lands.** The parent
     spec promotes the new findings "for the next minor, as the guarded arm did"; the guarded arm
     shipped in `0.97.0` and named `0.98.0`, and these ship in `0.98.0`, so they name `0.99.0`
-    through one constant in `radius-scale.ts` and one for the three arms in
-    `stock-default-hazards.ts`, the way `log-event-grammar.ts:20` does, each constant's name ending
+    through one constant in `radius-scale.ts` (`RADIUS_SCALE_PROMOTION_VERSION`) and one for the
+    three arms in `stock-default-hazards.ts` (`RETIRED_PATCH_PROMOTION_VERSION`), the way `log-event-grammar.ts:20` does, each constant's name ending
     in `PROMOTION_VERSION`. Three existing constants already name `0.98.0`
     (`log-event-grammar.ts:20` and `log-secret-field.ts:25`, both `PROMOTION_VERSION`, and
     `stock-default-hazards.ts:45`, `GUARDED_RETIREMENT_PROMOTION_VERSION`). Task 3 adds
     `src/tests/unit/audit/promotion-versions.test.ts`: it reads every `*PROMOTION_VERSION = '<x>'`
     constant in `src/lib/audit/**/*.ts` as source text and `package.json`'s `version`, asserts it
-    found at least the five constants this pass leaves (non-vacuity), and fails when any
+    found at least one constant and, while the package version is below `0.99.0`, both
+    `RADIUS_SCALE_PROMOTION_VERSION` and `RETIRED_PATCH_PROMOTION_VERSION` by name
+    (non-vacuity that survives pass C deleting a promoted `0.98.0` constant), and fails when any
     constant's version is at or below the package version, naming each constant's file, its
     version, and the choice owed: promote the finding to error (and delete the constant) or
     re-date it with a disclosed changelog line. It is green on pass B (`package.json` stays
@@ -557,14 +560,20 @@ settled here so no implementer invents it.
       `<session scratchpad>/pass-b-probe/`, outside `~/Projects`; the agent checks the `/tmp` user
       quota first (`quota -s -f /tmp`, the `tmpfs-user-quota-go-link` memory). In the site: `npm
       install`, then `git init` and one commit of the clean tree, so the probe's own changes read
-      from `git status --porcelain` afterwards.
+      from `git ls-files -mo --exclude-standard` afterwards (tracked edits plus every untracked
+      file; plain `git status --porcelain` lists a new folder, not its files).
     - **The probe** (the same setup agent runs it and returns its final message): `claude -p
       --model sonnet --setting-sources project,local --permission-mode acceptEdits --allowedTools
-      'Bash(npm run:*)' 'Bash(npx cairn-audit:*)'` with the site as its working directory, so it
-      loads the template's `CLAUDE.md` and `.claude/` and no user-scope settings, may edit files,
-      and may run the site's own scripts and audit as a consumer's agent would. The prompt is the one-line brief: "Add an owner-only admin settings
-      screen at `/admin/probe` in this site: a segmented filter, a short form with two fields and a
-      switch, a status chip per row of a small table, and one primary action." Whatever user-scope
+      'Bash(npm run:*)' 'Bash(npx cairn-audit:*)' < <probe dir>/brief.txt` with the site as its
+      working directory, so it loads the template's `CLAUDE.md` and `.claude/` and no user-scope
+      settings, may edit files, and may run the site's own scripts and audit as a consumer's agent
+      would. The brief goes on stdin because `--allowedTools` is variadic and would read a trailing
+      prompt as a third tool. The agent writes `brief.txt` in the probe dir (outside the site, so
+      it never reads as a probe change) with a quoted heredoc (`cat > brief.txt <<'EOF'`), so the
+      brief's backticks reach the model verbatim instead of executing. The brief is one line: "Add
+      an owner-only admin settings screen at `/admin/probe` in this site: a segmented filter, a
+      short form with two fields and a switch, a status chip per row of a small table, and one
+      primary action." Whatever user-scope
       context still loads (for example user-scope skills) is recorded in the ledger as the probe's
       stated limit.
     - **The audit** (a separate Sonnet audit agent): adds `/admin/probe` to the site's
@@ -575,9 +584,11 @@ settled here so no implementer invents it.
       `BASE_URL=http://localhost:4391 npx cairn-audit --rendered` (installing the site's Playwright
       Chromium first if it is missing); stops the preview.
     - **Pass:** zero error findings on the probe's files and page, and zero `radius-scale` or
-      retired-patch findings, in both modes. **The audit read what the probe wrote:** every
-      `.svelte` file `git status --porcelain` lists lies under a root of the effective
-      `static.scope`, and the rendered run's page list includes `/admin/probe`. A probe file
+      retired-patch findings, in both modes. **The audit read what the probe wrote:** the list
+      `git ls-files -mo --exclude-standard` prints in the site is nonempty and contains
+      `src/routes/admin/probe/+page.svelte` (so the check cannot pass by reading nothing), every
+      `.svelte` file on it lies under a root of the effective `static.scope`, and the rendered
+      run's page list includes `/admin/probe`. A probe file
       outside every scanned root fails the probe as a guidance gap (the guidance did not say where
       a custom admin component lives). Findings elsewhere in the site do not count and are
       reported separately.
@@ -755,7 +766,8 @@ test or check in its owning task:
    rule reads them after the upgrade. With `static.scope` set to the documented restore form
    (`["src/routes/admin", "src/lib/components"]`), every non-`adminOnly` static rule reads both
    roots. With `static.scope` naming only `src/lib/components`, `src/routes/admin` goes unread:
-   the documented trap, pinned so the docs keep warning about it. `config.test.ts` pins all three.
+   the documented trap, pinned so the docs keep warning about it. `config.test.ts` or
+   `run.test.ts` pins all three (the both-roots read is run-level).
    Task 1.
 3. **A pass A correction merged across the rename.** An edit to `src/lib/components/cairn-admin.css`
    on pass A must land on `src/lib/admin/cairn-admin.css`, and a new file under the old folder must
@@ -984,9 +996,9 @@ live tree only), and `templates/waymark/**` through `npm run emit:template`.
   whether `DEFAULT_ADMIN_SCOPE` took the root.
 - The compiled admin sheet's class inventory is identical before and after (the report states the
   inventory diff, empty or each safelisted class), and `admin-sheet-inventory.test.ts` passes.
-- `config.test.ts` covers the new defaults and Review focus 2's three cases: the documented
-  restore form (`["src/routes/admin", "src/lib/components"]`) brings both roots under every
-  non-`adminOnly` static rule, and a config naming only `src/lib/components` leaves
+- `config.test.ts` covers the new defaults, and `config.test.ts` or `run.test.ts` covers Review
+  focus 2's three cases: the documented restore form (`["src/routes/admin",
+  "src/lib/components"]`) brings both roots under every non-`adminOnly` static rule, and a config naming only `src/lib/components` leaves
   `src/routes/admin` unread. `run.test.ts:241`'s named-sheet hard error passes on the new
   candidates (Review focus 1).
 - The showcase's compiled admin CSS is byte-identical before and after decision 25's `@source`
@@ -1219,15 +1231,16 @@ route, and one recipe row per ratified role.
 setup agent (the emitted template outside the repo, installed and committed, then the headless
 `claude -p` probe with the one-line brief), then the audit agent. The audit agent serves the
 probe site's build on port 4391 through `BASE_URL`, stops it on exit, and returns the static and
-rendered counts on the probe's files and page by rule and tier, the list of files `git status
---porcelain` shows the probe created or edited with each file's scanned root, whether the
+rendered counts on the probe's files and page by rule and tier, the list of files `git ls-files
+-mo --exclude-standard` shows the probe created or edited with each file's scanned root, whether the
 rendered run visited `/admin/probe`, and a separate list of any finding outside the probe's
 files. The conductor records all of it in the ledger, with the probe's stated limit, and the setup
 agent deletes the probe dir.
 
 **Acceptance:** zero error findings and zero `radius-scale` or retired-patch findings on the probe's
-files and page, in both modes; every probe `.svelte` file inside a scanned root; `/admin/probe` in
-the rendered run's pages. On a failure, the ledger names the guidance gap each failing finding (or
+files and page, in both modes; the probe's changed-file list nonempty and containing
+`src/routes/admin/probe/+page.svelte`; every probe `.svelte` file inside a scanned root;
+`/admin/probe` in the rendered run's pages. On a failure, the ledger names the guidance gap each failing finding (or
 unscanned file) points at, and task 7 runs (decision 21).
 
 ### Task 7: Guidance fix (conditional)

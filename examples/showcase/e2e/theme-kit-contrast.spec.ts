@@ -13,6 +13,13 @@ type Theme = 'cairn-admin' | 'cairn-admin-dark';
 
 const THEMES: Theme[] = ['cairn-admin', 'cairn-admin-dark'];
 
+/**
+ * How long the hover/active step test waits after triggering a state before reading it back.
+ * daisyUI's own `.btn` carries a 0.2s transition on `background-color`, and an immediate read
+ * catches an interpolated mid-transition value indistinguishable from rest.
+ */
+const SETTLE_MS = 300;
+
 /** A color already normalized to sRGB bytes, alpha in 0..1. */
 interface Rgba {
   r: number;
@@ -292,11 +299,7 @@ for (const theme of THEMES) {
 
     // Measured and recorded for the proof record, never asserted against a floor: these are the
     // hover, active, and dark-lift steps the design already commits to elsewhere, not new
-    // contrast claims. daisyUI's own `.btn` carries a 0.2s transition on background-color, so
-    // each read waits past it (SETTLE_MS) rather than catching an interpolated mid-transition
-    // value; a step's own before/after values are printed so the record can quote them.
-    const SETTLE_MS = 300;
-
+    // contrast claims. A step's own before/after values are printed so the record can quote them.
     test('records the hover, active, and lift steps for the record', async ({ page }) => {
       const plain = page.getByTestId('tk-btn-plain');
       const plainRest = await styleOf(plain, 'backgroundColor');

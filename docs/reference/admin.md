@@ -1,4 +1,4 @@
-# Components (`@glw907/cairn-cms/components`)
+# The admin components (`@glw907/cairn-cms/admin`)
 
 This subpath holds the admin Svelte UI: the shell, the sign-in and confirm pages, the content list
 and editor, the editors, nav, vocabulary, and welcome screens, and the dialogs and pickers those
@@ -14,12 +14,12 @@ For the catch-all wiring, see
 [the canonical admin mount](./admin-routes.md).
 
 ```ts
-import { CairnAdmin } from '@glw907/cairn-cms/components';
+import { CairnAdmin } from '@glw907/cairn-cms/admin';
 ```
 
 Each component sets `data-theme="cairn-admin"` (or sits inside `CairnAdminShell`, which does), so the
 Warm Stone admin theme ships as a CSS side effect of the import. The TypeScript prop types in
-`src/lib/components` are the source of truth, and the export-coverage gate checks every name here
+`src/lib/admin` are the source of truth, and the export-coverage gate checks every name here
 against them.
 
 Anything built on this surface shares the shell and theme's design grammar: an emphasis ladder for
@@ -69,7 +69,7 @@ not do. The showcase mounts it like this:
 ```svelte
 <!-- src/routes/admin/[...path]/+page.svelte -->
 <script lang="ts">
-  import { CairnAdmin } from '@glw907/cairn-cms/components';
+  import { CairnAdmin } from '@glw907/cairn-cms/admin';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
   import { cairn } from '$theme/cairn.config.js';
   import type { ActionData } from './$types';
@@ -139,7 +139,7 @@ always the overlay drawer, opened on demand and closed after a navigation.
 <!-- src/routes/admin/+layout.svelte -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { CairnAdminShell } from '@glw907/cairn-cms/components';
+  import { CairnAdminShell } from '@glw907/cairn-cms/admin';
   import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
 
   let { data, children }: { data: { shell: AdminShellData }; children: Snippet } = $props();
@@ -187,7 +187,7 @@ per-route mounting it lives at `src/routes/admin/(app)/[concept]/+page.svelte`.
 
 ```svelte
 <script lang="ts">
-  import { ConceptList } from '@glw907/cairn-cms/components';
+  import { ConceptList } from '@glw907/cairn-cms/admin';
   import type { ListData } from '@glw907/cairn-cms/sveltekit';
 
   let { data }: { data: ListData } = $props();
@@ -235,7 +235,7 @@ surfaces in the slide-over.
 
 ```svelte
 <script lang="ts">
-  import { CairnMediaLibrary } from '@glw907/cairn-cms/components';
+  import { CairnMediaLibrary } from '@glw907/cairn-cms/admin';
   import type { MediaLibraryData } from '@glw907/cairn-cms/sveltekit';
 
   let { data }: { data: MediaLibraryData } = $props();
@@ -327,7 +327,7 @@ web-link dialog.
 
 ```svelte
 <script lang="ts">
-  import { EditPage } from '@glw907/cairn-cms/components';
+  import { EditPage } from '@glw907/cairn-cms/admin';
   import type { EditData } from '@glw907/cairn-cms/sveltekit';
   import { cairn, siteConfig } from '$theme/cairn.config.js';
 
@@ -366,7 +366,7 @@ carries only what the server needs to catch a stale page, never a trust of the r
 
 ```svelte
 <script lang="ts">
-  import { CairnHistory } from '@glw907/cairn-cms/components';
+  import { CairnHistory } from '@glw907/cairn-cms/admin';
   import type { HistoryData } from '@glw907/cairn-cms/sveltekit';
 
   let { data }: { data: HistoryData } = $props();
@@ -401,7 +401,7 @@ reads to tell this page apart from the magic-link one.
 
 ```svelte
 <script lang="ts">
-  import { LoginPage } from '@glw907/cairn-cms/components';
+  import { LoginPage } from '@glw907/cairn-cms/admin';
 
   let { data, form } = $props();
 </script>
@@ -425,7 +425,7 @@ load and a `confirm`-named action.
 
 ```svelte
 <script lang="ts">
-  import { ConfirmPage } from '@glw907/cairn-cms/components';
+  import { ConfirmPage } from '@glw907/cairn-cms/admin';
 
   let { data } = $props();
 </script>
@@ -459,7 +459,7 @@ under the same names.
 
 ```svelte
 <script lang="ts">
-  import { ManageEditors } from '@glw907/cairn-cms/components';
+  import { ManageEditors } from '@glw907/cairn-cms/admin';
 
   let { data, form } = $props();
 </script>
@@ -484,7 +484,7 @@ per-route mounting it lives at `src/routes/admin/(app)/nav/+page.svelte` against
 
 ```svelte
 <script lang="ts">
-  import { NavTree } from '@glw907/cairn-cms/components';
+  import { NavTree } from '@glw907/cairn-cms/admin';
 
   let { data } = $props();
 </script>
@@ -513,7 +513,7 @@ same committed site-config YAML the nav editor writes; `form` carries a refused 
 
 ```svelte
 <script lang="ts">
-  import { CairnTidySettings } from '@glw907/cairn-cms/components';
+  import { CairnTidySettings } from '@glw907/cairn-cms/admin';
 
   let { data } = $props();
 </script>
@@ -541,7 +541,7 @@ an explicit empty string suppresses the hand-off, the self-serve state. It mount
 
 ```svelte
 <script lang="ts">
-  import { HelpHome } from '@glw907/cairn-cms/components';
+  import { HelpHome } from '@glw907/cairn-cms/admin';
 
   let { data } = $props();
 </script>
@@ -568,7 +568,7 @@ mutation. It mounts inside `CairnAdminShell` on `PageHeader` for its header band
 
 ```svelte
 <script lang="ts">
-  import { VocabularyAdmin } from '@glw907/cairn-cms/components';
+  import { VocabularyAdmin } from '@glw907/cairn-cms/admin';
   import type { VocabularyData } from '@glw907/cairn-cms/sveltekit';
 
   let { data }: { data: VocabularyData } = $props();
@@ -593,7 +593,7 @@ It mounts inside `CairnAdminShell`, so it carries no theme wrapper or CSS of its
 
 ```svelte
 <script lang="ts">
-  import { WelcomeView } from '@glw907/cairn-cms/components';
+  import { WelcomeView } from '@glw907/cairn-cms/admin';
   import type { WelcomeData } from '@glw907/cairn-cms/sveltekit';
 
   let { data }: { data: WelcomeData } = $props();
@@ -691,7 +691,7 @@ needed the whole thing anyway.
 | `tidy` | `TidyApi` | The tidy apply API (`enter`, `acceptOne`, `rejectOne`, `acceptMany`, `rejectAll`, `exit`) driving the review surface's in-buffer decorations and its accept/reject state machine. |
 | `imagePlaceholders` | `ImagePlaceholderApi` | The optimistic-placeholder API (`begin`, `progress`, `resolveTo`, `cancel`) that drives the upload loop's in-flight thumbnail and determinate progress, with no document text written until the upload resolves. |
 
-`/components` exports `TidyApi`, `ImagePlaceholderApi`, and `FormatKind` by name, since a caller that
+`/admin` exports `TidyApi`, `ImagePlaceholderApi`, and `FormatKind` by name, since a caller that
 types a held `EditorApi` grant needs its `tidy`, `imagePlaceholders`, and `format` members named, not
 just reachable through property access.
 
@@ -815,56 +815,6 @@ guarantee a test independently proves; the component carries it on its own.
 ```
 
 ---
-
-## Public preview
-
-`PreviewBanner` is the one exception to this barrel's admin-only membership rule: a design-agnostic
-component for a page a site's own visitors reach, not the admin. See [Public
-preview](./sveltekit.md#public-preview) for the `loadPreview` seam it pairs with, and [Share a
-draft preview](../extend/share-a-draft-preview.md) for the full walkthrough.
-
-### `PreviewBanner`
-
-Stability tier: Extension API.
-
-```ts
-let { preview, formatExpiry }: { preview: PreviewData['preview']; formatExpiry?: (iso: string) => string };
-```
-
-A status notice for a shared preview link, driven only by the `preview` field
-[`loadPreview`](./sveltekit.md#loadpreview) adds to its data. It renders one of two states and
-nothing else: no fetch, no internal state, no interactivity. `state: 'draft'` names the expiry so
-the holder knows the link ages out; `state: 'published'` reports only that the preview has ended,
-since a discarded edit and a published entry both reach this state and the copy must never claim
-the draft went live (false for the discard case). It links the live permalink when `preview.published`
-is set, and renders no link when it's `null` (a discarded new entry, which never had a live page).
-A site may ignore this component entirely and render its own banner from the same metadata; this is
-only the default treatment a getting-started site mounts.
-
-The expiry renders inside a `<time datetime>` element, formatted by default as a fixed,
-locale-independent `YYYY-MM-DD HH:MM UTC` string rather than the visitor's own locale: the same
-formatter runs during SSR and hydration, so a Worker whose runtime locale or timezone differs from
-the browser's own cannot render two different strings and cause a hydration mismatch. Pass the
-optional `formatExpiry` prop to render the expiry in a site's own fixed date vocabulary instead.
-
-The four custom properties the component's default palette reads
-(`--cairn-preview-bg`/`-fg`/`-border`/`-link`) are the site-override seam: they fall back to
-literal light- and dark-mode colors switched only by `prefers-color-scheme`, the OS-level signal.
-A site that themes by its own toggle (a `data-theme` attribute, a class) declares all four in its
-own light root and in both its `prefers-color-scheme: dark` and its own dark selector, so the
-banner follows the toggle rather than the OS preference; see [Override the banner's
-palette](../extend/share-a-draft-preview.md#override-the-banners-palette) for a worked example.
-
-```svelte
-<script lang="ts">
-  import { PreviewBanner } from '@glw907/cairn-cms/components';
-  import type { PageData } from './$types';
-
-  let { data }: { data: PageData } = $props();
-</script>
-
-<PreviewBanner preview={data.preview} />
-```
 
 ## Hydrate and the island boundary
 

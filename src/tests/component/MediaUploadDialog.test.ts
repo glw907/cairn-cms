@@ -2,12 +2,12 @@
 // (WCAG 4.1.3), with only its content gated on uploadStatus.kind === 'working'.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import MediaUploadDialog from '../../lib/components/MediaUploadDialog.svelte';
-import * as ingest from '../../lib/components/client-ingest.js';
+import MediaUploadDialog from '../../lib/admin/MediaUploadDialog.svelte';
+import * as ingest from '../../lib/admin/client-ingest.js';
 
-vi.mock('../../lib/components/client-ingest.js', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/components/client-ingest.js')>(
-    '../../lib/components/client-ingest.js',
+vi.mock('../../lib/admin/client-ingest.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/admin/client-ingest.js')>(
+    '../../lib/admin/client-ingest.js',
   );
   return { ...actual, ingestFile: vi.fn(), sendUpload: vi.fn() };
 });

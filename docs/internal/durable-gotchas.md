@@ -73,7 +73,7 @@ in one layer) and by a measured height, never by the suite alone.
 The admin side has the same root. daisyUI 5 compiles its component rules into sublayers of
 `@layer utilities`, so an admin override in `@layer components` also loses to a daisyUI
 component rule (the `.btn-primary` lift never rendered). Today's fix is a pinned unlayered rule
-(the pinned-rule comments in `src/lib/components/cairn-admin.css`); the theme identity spec
+(the pinned-rule comments in `src/lib/admin/cairn-admin.css`); the theme identity spec
 (`docs/superpowers/specs/2026-09-26-theme-identity-design.md`) introduces a named `cairn-idiom`
 sublayer pinned after daisyUI's (`@layer utilities.daisyui, utilities.cairn-idiom;`).
 

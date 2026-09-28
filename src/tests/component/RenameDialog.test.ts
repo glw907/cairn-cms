@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import RenameDialog from '../../lib/components/RenameDialog.svelte';
+import RenameDialog from '../../lib/admin/RenameDialog.svelte';
 
 async function open(props: { conceptId: string; id: string; singular: string; slug: string; routable?: boolean }) {
   return await render(RenameDialog, props);

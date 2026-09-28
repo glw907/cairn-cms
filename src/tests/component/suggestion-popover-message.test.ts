@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { renderDiagnosticMessage } from '../../lib/components/editor-suggestion-popover.js';
+import { renderDiagnosticMessage } from '../../lib/admin/editor-suggestion-popover.js';
 
 // Direct DOM tests for the popover's message renderer (see chrome-guard.test.ts for the same
 // plain-function-over-real-DOM idiom). The full suggestion-popover.test.ts exercises the popover

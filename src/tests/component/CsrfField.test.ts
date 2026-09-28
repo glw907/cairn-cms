@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import CsrfField from '../../lib/components/CsrfField.svelte';
+import CsrfField from '../../lib/admin/CsrfField.svelte';
 
 describe('CsrfField', () => {
   it('renders a hidden csrf input from the token prop', async () => {
@@ -37,7 +37,7 @@ describe('CsrfField', () => {
   // attribute clears all three at once and a subsequent `form.reset()` finds nothing left to
   // restore. The token does NOT survive this sequence, with or without the component's own
   // hardening; that hardening only pins the reflection explicitly (see `CsrfField`'s own doc
-  // comment and docs/reference/components.md), it does not create an independent default value a
+  // comment and docs/reference/admin.md), it does not create an independent default value a
   // form-level attribute removal could still recover.
   it('does not survive an external value-attribute removal followed by a native form reset (a real limit of the defaultValue mirror, not covered by "survives a native form reset" above)', async () => {
     const form = document.createElement('form');

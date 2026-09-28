@@ -6,10 +6,13 @@
 // measured render caught the resulting defect, a 24px/700 heading silently downgraded by one
 // unlayered `font-size`/`font-weight` declaration a reviewer had every reason to read as harmless.
 //
-// `DEFAULT_STATIC_SCOPE` reaches `src/lib/components`, a consumer's own generic component directory,
-// and this interaction is Tailwind-general, not admin-specific, so the rule stands on a consumer's
-// public-side components the same way it stands on the admin's own. A scan of `src/lib/admin-toolkit`,
-// `src/lib/components`, and `src/routes/admin` found zero co-occurrences, so the rule does not red the
+// `DEFAULT_STATIC_SCOPE`'s three roots (`src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit`)
+// are all admin surfaces; this interaction is Tailwind-general, not admin-specific, but the rule now
+// reaches only a site's admin markup, never its public-side components, since none of the default
+// roots are public ones. That narrowing is disclosed and permanent (Geoff, admin/public
+// one-scope-per-file ruling): a root a site's public scope claims leaves the admin scope, so this
+// rule never reads a site's public components again. A scan of `src/lib/admin-toolkit`,
+// `src/lib/admin`, and `src/routes/admin` found zero co-occurrences, so the rule does not red the
 // engine's own tree.
 import { parseSheet } from '../../sheet.js';
 import { lineAt } from '../../markup.js';

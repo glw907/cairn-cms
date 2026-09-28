@@ -55,7 +55,7 @@
 // carrying no drawer at all is not running inside the shell, so it is office by default.
 //
 // A page with no `<main>` landmark at all is skipped, not flagged. `CairnAdminShell` is the only
-// component that renders `<main>` (`grep '<main' src/lib/components` finds exactly one hit), so a
+// component that renders `<main>` (`grep '<main' src/lib/admin` finds exactly one hit), so a
 // page without one (`LoginPage`, the pre-auth screen) does not run inside the office/desk shell and
 // carries no PageHeader anatomy to judge in the first place; this is a markup fact, not a route-name
 // guess.

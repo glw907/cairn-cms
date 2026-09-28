@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import * as icons from '../../lib/components/admin-icons.js';
+import * as icons from '../../lib/admin/admin-icons.js';
 
 describe('admin-icons', () => {
   it('re-exports every chrome glyph the admin uses as a component', () => {

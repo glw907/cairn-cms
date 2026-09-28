@@ -24,7 +24,7 @@ import type { MediaLibraryData, MediaUsageInfo } from '../sveltekit/content-rout
 import type { MediaLibraryEntry } from '../media/library-entry.js';
 import type { VocabularyData } from '../sveltekit/content-routes-settings.js';
 import type { ResolvedNavLayout } from '../sveltekit/admin-nav.js';
-import { diffChanges, type Change } from '../components/tidy-diff.js';
+import { diffChanges, type Change } from '../admin/tidy-diff.js';
 import { resolveTidyConventions, type TidyConventions } from '../nav/site-config.js';
 
 /** The one sample concept every fixture entry belongs to: a dated, routable "posts" concept. */

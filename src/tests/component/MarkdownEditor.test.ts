@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditor, { type EditorApi } from '../../lib/admin/MarkdownEditor.svelte';
 import MarkdownEditorRekeyHarness from './_MarkdownEditorRekeyHarness.svelte';
-import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
+import { cairnLinkCompletionSource } from '../../lib/admin/link-completion.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 
@@ -15,7 +15,7 @@ import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js'
 // the browser mocker reconstructs a `vi.mock` factory in isolation and cannot close over an
 // ordinary file-scope binding.
 const spellcheckGate = vi.hoisted(() => ({ promise: Promise.resolve() as Promise<void> }));
-vi.mock('../../lib/components/spellcheck.js', async (importOriginal) => {
+vi.mock('../../lib/admin/spellcheck.js', async (importOriginal) => {
   await spellcheckGate.promise;
   return importOriginal();
 });

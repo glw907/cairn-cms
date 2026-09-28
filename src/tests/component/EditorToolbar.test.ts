@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import { createRawSnippet } from 'svelte';
-import EditorToolbar from '../../lib/components/EditorToolbar.svelte';
+import EditorToolbar from '../../lib/admin/EditorToolbar.svelte';
 // The compiled admin sheet, loaded for the whole file: daisyUI's real button sizing and menu
 // rules, the scoped Preflight substitute, and the unlayered menu focus override. Its rules are
 // scoped under a theme root, so they apply only inside the describe blocks below that set
 // data-theme on the document element.
-import '../../../dist/components/cairn-admin.css';
+import '../../../dist/admin/cairn-admin.css';
 
 function baseProps(over: Record<string, unknown> = {}) {
   return { format: vi.fn(), mode: 'write' as const, onMode: vi.fn(), ...over };

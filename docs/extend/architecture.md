@@ -16,7 +16,7 @@ flowchart TB
   subgraph engine["The engine"]
     core["Core &amp; adapter<br/>(root barrel)"]
     kit["SvelteKit layer<br/><code>/sveltekit</code>"]
-    adminUI["Admin UI<br/><code>/components</code>, <code>/admin-toolkit</code>, <code>/islands</code>"]
+    adminUI["Admin UI<br/><code>/admin</code>, <code>/public</code>, <code>/admin-toolkit</code>, <code>/islands</code>"]
     rendering["Rendering<br/><code>/render</code>"]
     delivery["Delivery<br/><code>/delivery</code>, <code>/media</code>"]
     authPlatform["Auth &amp; platform<br/><code>/auth-store</code>, <code>/auth-channel</code>, <code>/auth-crypto</code>, <code>/cloudflare</code>, <code>/vite</code>, <code>/ambient</code>"]
@@ -54,10 +54,10 @@ object, not a fork of the engine.
 
 The root barrel and `/sveltekit` are the split the preceding diagram draws as core/adapter and
 the SvelteKit layer. Nothing on the root barrel imports SvelteKit, and nothing on `/sveltekit` is a
-`.svelte` file; a Svelte admin component lives on `/components`. That three-way split is
-deliberate: the content model has to stay usable from a build script with no server request in
-scope, and the route layer has to stay substitutable without dragging Svelte's client runtime
-into it.
+`.svelte` file; a Svelte admin component lives on `/admin`, and a built-in public component on
+`/public`. That split is deliberate: the content model has to stay usable from a build script with
+no server request in scope, and the route layer has to stay substitutable without dragging
+Svelte's client runtime into it.
 
 ## The seams a site extends through
 

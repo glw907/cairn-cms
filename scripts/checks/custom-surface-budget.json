@@ -1,8 +1,8 @@
 {
   "trees": {
     "admin": {
-      "adminCss": "src/lib/components/cairn-admin.css",
-      "markupDirs": ["src/lib/components"],
+      "adminCss": "src/lib/admin/cairn-admin.css",
+      "markupDirs": ["src/lib/admin"],
       "retiredTokenPattern": "\\[[^\\][]*var\\(--color-(?:muted|subtle)\\)[^\\][]*\\]|style=\"[^\"]*var\\(--color-(?:muted|subtle)\\)",
       "budget": {
         "unlayeredAllowlist": [

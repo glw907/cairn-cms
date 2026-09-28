@@ -5,7 +5,7 @@ markdown render pipeline, the composed runtime, the content and manifest project
 and GitHub App primitives. A site imports it at `src/theme/cairn.config.ts` and in its admin and
 delivery code. This subpath carries the adapter and schema construction surface plus the read
 helpers a site's own routes call directly; a SvelteKit route factory lives on
-[`/sveltekit`](./sveltekit.md), and an admin Svelte component on [`/components`](./components.md),
+[`/sveltekit`](./sveltekit.md), and an admin Svelte component on [`/admin`](./admin.md),
 even though a site's adapter config also feeds both.
 
 ```ts
@@ -1076,7 +1076,7 @@ function signatures above reference these.
 | `LinkResolve` | Extension API | `type LinkResolve = (ref: CairnRef) => string \| undefined` | Resolve a `CairnRef` to its live permalink. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `FragmentResolve` | Extension API | `type FragmentResolve = (id: string) => string \| undefined` | Resolve a fragment id to its raw markdown body, for the `::include` directive. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `Manifest` | Extension API | `interface Manifest` | The whole corpus as one committed file, with a version guard. |
-| `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview, and `hydrate` opts the directive into a client [island](./islands.md). |
+| `ComponentDef` | Extension API | `interface ComponentDef` | A custom public component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview, and `hydrate` opts the directive into a client [island](./islands.md). |
 | `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `IconSet` | Extension API | `type IconSet` | A glyph name to SVG path-data map the site owns. Each path holds filled shape data on a `0 0 256 256` box, and `renderGlyph` sets fill=currentColor with no stroke, so a stroke-only path renders invisible. |
 | `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>` the editor preview and every public page call. |

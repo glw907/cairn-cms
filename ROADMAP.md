@@ -376,7 +376,7 @@ The original decision framing, for the record:
 
 - **Inserting a component fuses its closing fence onto the text after the caret (designer
   walkthrough, 2026-09-27; friction log F12).** A live editor-facing defect.
-  `insertAtCursor` in `src/lib/components/MarkdownEditor.svelte:1133-1143` prepends `\n\n` when the
+  `insertAtCursor` in `src/lib/admin/MarkdownEditor.svelte:1133-1143` prepends `\n\n` when the
   caret is past position 0 but appends nothing after the block. `serializeComponent`
   (`src/lib/render/component-grammar.ts:44`) ends the block on its bare closing fence. Any text
   after the caret therefore joins that fence, and the directive never closes. Repro: open a post
@@ -499,7 +499,7 @@ The original decision framing, for the record:
 - **`check:reference` cannot see a new public component prop.** `scripts/checks/reference-coverage.mjs`
   matches exported names, so a new public prop is invisible to it, and the live-reproduction seam pass
   proved it twice in one window: `CairnAdminShell` and `EditPage` each gained a public prop
-  (`themeOverride`, `spellcheckOverride`) while `docs/reference/components.md` kept printing the older,
+  (`themeOverride`, `spellcheckOverride`) while `docs/reference/admin.md` kept printing the older,
   shorter signature until a later manual pass caught both. (The sibling hole, a subpath nobody told the
   gate about, shipped a fix in the 2026-09-27 chores batch: the list now derives from `package.json`'s
   `exports`.) Converting the props gap into a failing check, not a watch note, is this repo's own
@@ -656,7 +656,7 @@ The original decision framing, for the record:
   D's Task 13 production gate (2026-08-14).** `DEFAULT_ALLOWED_TYPES`
   (`src/lib/media/config.ts:37`) includes `image/avif`, and the server-side sniffer and its
   content-route check (`content-routes-media.ts:520`) both honor it, but every editor upload runs
-  through `ingestFile` (`src/lib/components/client-ingest.ts`) first, which accepts only JPEG,
+  through `ingestFile` (`src/lib/admin/client-ingest.ts`) first, which accepts only JPEG,
   PNG, WebP, GIF, and HEIC-via-re-encode; an AVIF sniffs correctly and then falls through to
   `throw new IngestError('decode-unsupported')`. An editor who drops an AVIF gets a failure card
   with no explanation the allow-list would predict. AVIF is reachable only through developer-side
@@ -1049,12 +1049,12 @@ the named human gates only):**
   deliberate custom glyphs. (5) `EditPage.svelte:2429` and `:2491` write
   `hover:text-[var(--color-primary)]` and `text-[var(--color-accent)]` where the semantic
   utilities `hover:text-primary` and `text-accent` already cover the same token; a plain swap.
-  Trigger: the next pass that touches `src/lib/components/`.
+  Trigger: the next pass that touches `src/lib/admin/`.
 
 - **Two admin glyphs are drawn as bare text characters, not icons (pre-cut pass fix round,
   2026-09-21).** `DeleteDialog.svelte`'s dialog close button is a bare `✕` character
-  (`src/lib/components/DeleteDialog.svelte:75`), and the command palette's keyboard hint is a bare
-  `&#8984;` inside a `<kbd>` (`src/lib/components/CairnAdminShell.svelte:851`). Neither pins a
+  (`src/lib/admin/DeleteDialog.svelte:75`), and the command palette's keyboard hint is a bare
+  `&#8984;` inside a `<kbd>` (`src/lib/admin/CairnAdminShell.svelte:851`). Neither pins a
   font, so both resolve through whatever fallback font the rendering environment supplies, which
   made the visual baselines depend on the CI runner's font fallback for `U+2318` rather than on
   cairn's own markup. Draw both from the icon library (`@lucide/svelte`) or a pinned symbol font
@@ -1386,9 +1386,9 @@ the named human gates only):**
   makes rather than an external event.
 
 - **Follow-up from the 3c escalate ruling (extend-2, 2026-09-20): `cairn-audit.config.json`'s
-  `sheet` entry still names the engine's `dist/components/cairn-admin.css` layout.** The
+  `sheet` entry still names the engine's `dist/admin/cairn-admin.css` layout.** The
   engine-owned Tailwind sources file closed the `@source` line's own "no site names dist" gap, but
-  each site's audit config still points `sheet` at the precompiled path under `dist/components/`,
+  each site's audit config still points `sheet` at the precompiled path under `dist/admin/`,
   a different artifact the amendment did not grant scope to relocate. Resolve the audit's `sheet`
   entry by package subpath so no site config names the dist layout either.
 
@@ -2527,7 +2527,7 @@ the named human gates only):**
 
 - **Move pinned unlayered rules 1 to 9 into the `cairn-idiom` sublayer (theme identity pass A,
   2026-09-28).** Pass A moved rules 10 to 14 into `utilities.cairn-idiom` and retired their pins.
-  Rules 1 to 9 stay pinned and unlayered in `src/lib/components/cairn-admin.css`; rule 2, the
+  Rules 1 to 9 stay pinned and unlayered in `src/lib/admin/cairn-admin.css`; rule 2, the
   guarded-button rule, stands under the timing-scoped reading of decision 4
   (`docs/internal/engine-rulings.md`, `motion-conform-to-daisyui-conventions`). Moving the rest is
   a ratchet shrink: each move takes an entry out of `unlayeredAllowlist` in
@@ -2536,11 +2536,11 @@ the named human gates only):**
   those rules, or the pre-1.0 CSS audit.
 
 - **Retire `ADMIN_CSS_SAFELIST` (theme identity pass A, 2026-09-28).** The admin build now compiles
-  every daisyUI class except calendar, so the list in `src/lib/components/admin-css-safelist.ts`
+  every daisyUI class except calendar, so the list in `src/lib/admin/admin-css-safelist.ts`
   no longer decides which daisyUI classes ship; its own header says it stays only as a grouped,
   explained vocabulary. Retire it, or reduce it to the non-daisyUI names it still documents, and
   move the explanation to `docs/reference/admin-toolkit.md`. Trigger: pass B's rename of
-  `src/lib/components/` (the file moves anyway), or the next pass that edits it.
+  `src/lib/admin/` (the file moves anyway), or the next pass that edits it.
 
 - **Symbol-anchored `Source:` pointers for the Go `tool/` tree (docs reset pass 1, 2026-09-23).**
   `check:facts` resolves `path#Symbol` only for `.ts` and `.js` files under `src/`, through the
@@ -2620,7 +2620,7 @@ the named human gates only):**
   `var(--color-*)` fill tone anywhere else is retired. Widening the pattern to every
   `--color-*` fill tone, measured with the budget file's own regex shape
   (`\[[^][]*var\(--color-[a-z0-9-]+\)[^][]*\]|style="[^"]*var\(--color-`) over
-  `src/lib/components/*.svelte` and `src/lib/admin-toolkit/*.svelte`, flagged **27 lines (41
+  `src/lib/admin/*.svelte` and `src/lib/admin-toolkit/*.svelte`, flagged **27 lines (41
   occurrences) across nine files** at this pass's parent commit, before Task 9 converted
   `LoginPage`'s own bracketed success token onto a named utility. At this pass's head the
   population is **25 lines (38 occurrences) across eight files**: `CairnTidySettings` 1,
@@ -2631,7 +2631,7 @@ the named human gates only):**
   gate proves only the two tokens it already covers.
 
 - **The 317-comment register sweep over the engine's own admin components.** Polish-11a's
-  Svelte lint wiring brought `src/lib/components/**/*.svelte` under the same `check:comments`
+  Svelte lint wiring brought `src/lib/admin/**/*.svelte` under the same `check:comments`
   parser the showcase already carries, so the file family's roughly 317 comments are parsed for
   the first time; `jsdoc/informative-docs` (the paraphrase-tell rule) reports zero warnings
   against that population today, so there is nothing the gate can flag toward this sweep.
@@ -2801,7 +2801,7 @@ the named human gates only):**
   (docs friction log, triaged 2026-08-14; raised by the code-simplifier on the preview pass,
   2026-08-07)?** `PreviewBanner` mounts on public pages where neither `cairn-admin.css` nor
   Tailwind may exist, so it deliberately carries its own fallback palette
-  (`src/lib/components/PreviewBanner.svelte:62-75`), and `token-colors` still needs a
+  (`src/lib/public/PreviewBanner.svelte:62-75`), and `token-colors` still needs a
   `cairn-audit-disable-next-line` suppression per literal to accept that. `DEFAULT_PALETTE_CSS_FILES`
   (`audit/config.ts:38`) is the existing seam a site names its own theme file through; the open
   question is whether a component that declares (or consumes by fallback) its own `--cairn-*`

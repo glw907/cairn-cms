@@ -1,0 +1,11 @@
+# Vale gotcha: multiple `raw:` entries in an `existence` rule concatenate into one pattern
+# (`['\bfoo\b', '\bCairn\b']` becomes `\bfoo\b\bCairn\b` and matches nothing); a token list uses
+# `tokens:` instead, and `raw:` is reserved for a single pattern.
+extends: existence
+message: "Possibly retired name ('%s'): see 'Names' in docs/internal/docs-register.md. Check which surface and which tier: 'admin component' or 'public component', 'built-in' or 'custom'."
+level: warning
+scope: text
+ignorecase: true
+tokens:
+  - engine component
+  - custom component

@@ -40,7 +40,7 @@ export interface ReproStory {
   id: string;
   /**
    * The smallest package component that contains what the story shows. Story modules reach a
-   * component not on the `/components` barrel through a relative source import; see the audit's
+   * component not on the `/admin` barrel through a relative source import; see the audit's
    * "The export question" for why that stays unexported.
    */
   component: Component<Record<string, unknown>>;

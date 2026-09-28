@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditor, { type EditorApi } from '../../lib/admin/MarkdownEditor.svelte';
 import { COLD_START, makeFakeWorker } from './_fake-spell-worker.js';
-import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
+import { cairnLinkCompletionSource } from '../../lib/admin/link-completion.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 

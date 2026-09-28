@@ -239,7 +239,7 @@ it alone for a port. What is cairn-specific, not in the skill:
 
 ## Admin interface design
 
-Before any work on the `/admin` interface (the `src/lib/components/*.svelte` admin components or
+Before any work on the `/admin` interface (the `src/lib/admin/*.svelte` admin components or
 `cairn-admin.css`), read and follow [`docs/internal/admin-design-system.md`](docs/internal/admin-design-system.md).
 It is the agent-facing design system: the Warm Stone tokens, the Bricolage Grotesque display and IBM Plex Sans body type, the component
 recipes (cards, eyebrow groups, the brand tile, the CTA, empty states, the command palette), the voice,
@@ -313,7 +313,7 @@ Separate from `check:prose`, spellcheck, and tidy, which serve editors, not Clau
 
 Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte
 `@component` convention. ESLint's `svelte-eslint-parser` reaches both the showcase's and the engine's own `.svelte`
-sources (`src/lib/components/**/*.svelte`), gated by the same four comment rules.
+sources (`src/lib/admin/**/*.svelte` and `src/lib/public/**/*.svelte`), gated by the same four comment rules.
 
 One calibration holds: `check:reference` and `jsdoc/require-jsdoc` want every export documented,
 so an exported symbol keeps its minimal one-line doc even when self-evident; write-only-when-it-helps

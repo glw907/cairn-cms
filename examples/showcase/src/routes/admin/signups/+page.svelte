@@ -5,7 +5,7 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import { enhance } from '$app/forms';
-  import { CsrfField } from '@glw907/cairn-cms/components';
+  import { CsrfField } from '@glw907/cairn-cms/admin';
   import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
   import type { PageData, ActionData } from './$types';
   import type { SubmitFunction } from '@sveltejs/kit';

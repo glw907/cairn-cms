@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPreviewDoc, previewDevices } from '../../lib/components/preview-doc.js';
+import { buildPreviewDoc, previewDevices } from '../../lib/admin/preview-doc.js';
 import type { PreviewConfig } from '../../lib/content/types.js';
 
 const preview: PreviewConfig = {

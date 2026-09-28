@@ -3,7 +3,7 @@
 // field/fieldset builders, `CairnAdapter` and its member types), plus the render pipeline entry
 // (`createRenderer`), the composed runtime's read surface, and the content-manifest and
 // GitHub-backend primitives a build script or the delivery layer calls. A
-// SvelteKit route factory belongs on `/sveltekit`, and an admin Svelte component on `/components`,
+// SvelteKit route factory belongs on `/sveltekit`, and an admin Svelte component on `/admin`,
 // even though a site's adapter config also feeds both: this barrel carries no server route, no
 // Svelte component, and no per-request framework binding.
 //

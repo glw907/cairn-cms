@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import VocabularyAdmin from '../../lib/components/VocabularyAdmin.svelte';
+import VocabularyAdmin from '../../lib/admin/VocabularyAdmin.svelte';
 import type { VocabularyData } from '../../lib/sveltekit/content-routes.js';
 
 // SAFE_TAG_VALUE is the engine's slug shape; the screen derives the same value on add.

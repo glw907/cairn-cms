@@ -146,7 +146,7 @@ Swapping the editor stays a one-file change.
      *  injects a deterministic fake Worker factory and asks the lint source to skip the `ready` wait.
      *  When this is absent the production path is untouched: the real `new Worker(...)` and the real
      *  asset resolution. Never set this outside a test; pinned documented-unstable (see
-     *  `docs/reference/components.md`), never promoted into `StableEditorProps`. */
+     *  `docs/reference/admin.md`), never promoted into `StableEditorProps`. */
     spellcheckTest?: {
       createWorker?: () => import('./spellcheck.js').SpellWorker;
       assumeReady?: boolean;

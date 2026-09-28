@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as view from '@codemirror/view';
 import * as state from '@codemirror/state';
 import * as lint from '@codemirror/lint';
-import { cairnSuggestionPopover } from '../../lib/components/editor-suggestion-popover.js';
+import { cairnSuggestionPopover } from '../../lib/admin/editor-suggestion-popover.js';
 
 // Regression guard for the focus-loss hole the a11y review caught: CodeMirror's tooltip reconciler reuses
 // a mounted tooltip view only when the new Tooltip's `create` is reference-identical to the mounted one

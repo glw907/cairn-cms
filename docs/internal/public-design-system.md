@@ -283,7 +283,7 @@ executes the wider application; until it runs, these are the standard new theme 
   marks an element that belongs to its neighbor, larger steps (16/32/40px) separate zones and set
   the page's one loose element apart. Uniform gaps at every boundary read as strict but say
   nothing; the scale's steps should do grouping work borders would otherwise do. (Admin reference:
-  the scale comment in `src/lib/components/cairn-admin.css`.)
+  the scale comment in `src/lib/admin/cairn-admin.css`.)
 - **Tracking keys to optical size and weight, never element role.** Small semibold text closes its
   counters and takes a small positive tracking step; mid-size medium labels a smaller one; body
   and meta stay normal. Measure the real rendered size before assigning a band (the admin's

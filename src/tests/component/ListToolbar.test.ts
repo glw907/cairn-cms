@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 import ListToolbar from '../../lib/admin-toolkit/ListToolbar.svelte';
 import type { ListToolbarFilter } from '../../lib/admin-toolkit/list-toolbar.js';
 
@@ -831,7 +831,7 @@ describe('ListToolbar', () => {
 // compiled daisyUI `.btn`/`.join` sizing), so the fit assertion injects the real compiled sheet
 // (component-fit-test-needs-compiled-css) and sets data-theme, the same seam CairnAdminShell's own
 // fit suites use. Regression: `.join`'s own base rule never compiled once ListToolbar graduated out
-// of the `@source`-scanned src/lib/components tree (admin-toolkit was never added to the scan
+// of the `@source`-scanned src/lib/admin tree (admin-toolkit was never added to the scan
 // root), and the segmented filter's grid column was too narrow for its own options; both silently
 // stacked the triage buttons one per line instead of one row.
 describe('ListToolbar layout (compiled CSS)', () => {

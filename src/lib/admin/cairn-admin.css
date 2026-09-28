@@ -41,7 +41,7 @@
    markup; markup uses only the named role utilities in scripts/admin-css.input.css. One exception,
    in src/lib/admin-toolkit only: those components ship on a public subpath and a consumer can mount
    one outside the admin theme root, where these tokens are undefined, so their scoped styles carry
-   the measured literal as a var() fallback. Engine screens under src/lib/components always render
+   the measured literal as a var() fallback. Engine screens under src/lib/admin always render
    inside CairnAdminShell's themed wrapper and reference the token bare. */
 :root {
   /* The seven-role type scale: title, heading (dialog and section headings; the bold
@@ -639,7 +639,7 @@
      computed display keeps its `::marker` box in Chromium, so the earlier "suppressed marker,
      zero px offset" claim was false. The zero px IS real, but it comes from `padding-inline-start:
      0` on both `.list` and `.toolkit-list` alike, not from marker suppression (measured against
-     the built `dist/components/cairn-admin.css`, both classes rendering an identical `li` left
+     the built `dist/admin/cairn-admin.css`, both classes rendering an identical `li` left
      edge flush with the `ul` left edge; a bare unstyled `<ul>` in the same render measures a 40px
      UA gutter instead, and both `.list` and `.toolkit-list` paint a visible bullet at that flush
      position). `.toolkit-list` carries only the same padding reset rule 6 does, with none of

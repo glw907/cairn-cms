@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { tick } from 'svelte';
 import type { ComponentProps } from 'svelte';
-import MediaHeroField from '../../lib/components/MediaHeroField.svelte';
+import MediaHeroField from '../../lib/admin/MediaHeroField.svelte';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 
 const LIBRARY: Record<string, MediaLibraryEntry> = {};

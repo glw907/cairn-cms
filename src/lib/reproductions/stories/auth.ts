@@ -5,8 +5,8 @@
 // (an empty sign-in form, the resting "Confirm sign-in" button) is the resting render.
 import { fixtureCsrf, fixtureSiteName } from '../fixtures.js';
 import type { Component } from 'svelte';
-import LoginPage from '../../components/LoginPage.svelte';
-import ConfirmPage from '../../components/ConfirmPage.svelte';
+import LoginPage from '../../admin/LoginPage.svelte';
+import ConfirmPage from '../../admin/ConfirmPage.svelte';
 import type { ReproStory } from '../index.js';
 
 /** The magic-link sign-in page, resting state: an empty email form (`auth/login`). */

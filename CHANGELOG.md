@@ -3370,7 +3370,7 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   (`PreviewTokenConfig`). Four new log events (`preview.token.minted`, `preview.token.revoked`,
   `preview.cleanup_failed`, `preview.rejected`) never carry the token itself. See
   [SvelteKit](docs/reference/sveltekit.md#public-preview),
-  [Components](docs/reference/components.md#previewbanner),
+  [Public](docs/reference/public.md#previewbanner),
   [Delivery](docs/reference/delivery.md#composeentrydata), [Log
   events](docs/reference/log-events.md), and [Share a draft
   preview](docs/guides/share-a-draft-preview.md) for the full adopter walkthrough, including the
@@ -3920,7 +3920,7 @@ removal, nothing this list needs to carry.
   the two views `CairnAdmin` already rendered internally but a site on the advanced per-route
   mounting could not reach directly. The membership rule is now exact: every view `CairnAdmin` can
   render is individually mountable. See
-  [Components](docs/reference/components.md#vocabularyadmin). Consumers must: nothing; both
+  [Admin](docs/reference/admin.md#vocabularyadmin). Consumers must: nothing; both
   additions are additive.
 
 - `createSectionAction`'s `SectionActionOptions.target` now defaults to `event.route.id`, never

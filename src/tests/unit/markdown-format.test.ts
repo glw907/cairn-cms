@@ -10,7 +10,7 @@ import {
   updateFigure,
   wrapImageInFigure,
   type FormatKind,
-} from '../../lib/components/markdown-format.js';
+} from '../../lib/admin/markdown-format.js';
 
 describe('applyMarkdownFormat', () => {
   const wrap: { kind: FormatKind; doc: string; out: string; from: number; to: number }[] = [

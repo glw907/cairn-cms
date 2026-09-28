@@ -1,7 +1,7 @@
 // cairn-audit's color arithmetic, shared by every rendered rule that compares two painted colors.
 // Three rendered rules landed with their own copy of this math and their own `rgb()`-only regex
 // parser, and an adversarial pass demonstrated the same fail-open in all three: cairn's admin
-// palette is oklch end to end (`src/lib/components/cairn-admin.css` declares every Warm Stone token
+// palette is oklch end to end (`src/lib/admin/cairn-admin.css` declares every Warm Stone token
 // as `oklch(...)`, and Tailwind's opacity modifier compiles to `color-mix(in oklab, ...)`), so
 // `getComputedStyle` hands back a color function the regex could not read, the candidate was
 // skipped, and the rule reported clean against the very interface it exists to audit.

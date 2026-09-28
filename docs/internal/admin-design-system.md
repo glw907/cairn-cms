@@ -7,13 +7,13 @@ superseded historical record). When a judgment call here feels ambiguous, match 
 the recipes below. The design README beside that file has the capture recipe for the bar and the rule for
 mockups (a new screen with no component yet gets a utility-class HTML mockup, built with
 `npm run design:mockup-css`, never hand-rolled token CSS). Read this before any work on the
-`/admin` interface (`src/lib/components/*.svelte` and
-`src/lib/components/cairn-admin.css`). It is the convention set that keeps the admin consistent. It is
+`/admin` interface (`src/lib/admin/*.svelte` and
+`src/lib/admin/cairn-admin.css`). It is the convention set that keeps the admin consistent. It is
 written for an implementing agent, so it leads with the rules that are easy to break and not visible in
 the markup, then the tokens, the type system, and the component recipes. Match these; do not reinvent
 them per component.
 
-The admin is self-styled: the engine ships a scoped stylesheet (`dist/components/cairn-admin.css`,
+The admin is self-styled: the engine ships a scoped stylesheet (`dist/admin/cairn-admin.css`,
 compiled from `cairn-admin.css` plus DaisyUI/Tailwind by `scripts/build/build-admin-css.mjs`) so the admin
 looks identical on any host with no host CSS. DaisyUI v5, Tailwind v4, Svelte 5 runes.
 
@@ -105,7 +105,7 @@ Calibration (Geoff, 2026-07-15):
 - **`@font-face` is added after compile, not in the partial.** The `@import` inlining rebases a `url()`
   against the source tree, so the woff2 url would 404 for a consumer. The `@font-face` rules (the two
   brand faces plus the four iA Writer Mono editor faces) are appended in `build-admin-css.mjs` with an
-  output-relative `./fonts/` url; the woff2 files ship in `dist/components/fonts/`. A build test pins
+  output-relative `./fonts/` url; the woff2 files ship in `dist/admin/fonts/`. A build test pins
   the urls.
 - **Borders and shadows are theme-adaptive vars.** Use `var(--cairn-card-border)` and
   `var(--cairn-shadow)`, never a fixed `base-300` border on a floating card. In light the border is a
@@ -117,7 +117,7 @@ Calibration (Geoff, 2026-07-15):
 - **Component tests render against the compiled sheet, not the raw partial (amended 2026-09-27,
   the theme identity pass).** `CairnAdminShell`, `LoginPage`, `ConfirmPage`, `ReproContext`, and
   every component test that imports `cairn-admin.css` by any relative path get
-  `dist/components/cairn-admin.css` instead: a Vite plugin in `vitest.config.ts` redirects the
+  `dist/admin/cairn-admin.css` instead: a Vite plugin in `vitest.config.ts` redirects the
   resolved import for the component project only, since the source partial is compile-input (its
   DaisyUI theme lives in `@plugin "daisyui/theme"` blocks a browser drops, and its sublayer order
   would reverse if it ever loaded beside the compiled sheet). The component project's own
@@ -142,7 +142,7 @@ Calibration (Geoff, 2026-07-15):
   `.btn` for a real button, or rely on the reset and add only the utilities the control needs. This
   was a real shipped blemish on the footer toggles and the list's sort headers.
 - **The edit page's preview iframe is a second, separately-hashed consumer of the public
-  `theme.css`.** `buildPreviewDoc` (`src/lib/components/preview-doc.ts`) links every stylesheet the
+  `theme.css`.** `buildPreviewDoc` (`src/lib/admin/preview-doc.ts`) links every stylesheet the
   adapter's preview knob hands it into the sandboxed `srcdoc` document, and a site's preview knob
   points at the same `theme.css` the public layout links, so the admin loads that file too, inside
   its own iframe document, isolated from the admin's own `cairn-admin.css` by the sandbox boundary
@@ -157,7 +157,7 @@ The admin runs two contexts, and each gets the chrome that serves it. **List and
 the office**: the persistent sidebar and the full topbar, for moving between content and managing it.
 **An open document is the desk**: the editor takes the shell, and the surrounding chrome recedes so
 the manuscript is the page. A route is a desk route when its path has three segments
-(`/admin/<concept>/<id>`); `CairnAdminShell` (`src/lib/components/CairnAdminShell.svelte`) derives
+(`/admin/<concept>/<id>`); `CairnAdminShell` (`src/lib/admin/CairnAdminShell.svelte`) derives
 this as `isDeskRoute`.
 
 Three rules carry the model:
@@ -349,11 +349,11 @@ by the first statement that names it, and both sublayers already do that by appe
 the sheet. Emission order in the compiled, minified sheet, not the pin statement's own position,
 is what actually keeps every corner rule (and every other `cairn-idiom` rule) winning over
 DaisyUI's own in a downstream build; `admin-css-build.test.ts` guards the order directly against
-`dist/components/cairn-admin.css` and a minified compile of it, rather than trusting the pin.
+`dist/admin/cairn-admin.css` and a minified compile of it, rather than trusting the pin.
 
 ## Type
 
-Three self-hosted fonts (SIL OFL, in `src/lib/components/fonts/`), wired through vars on the
+Three self-hosted fonts (SIL OFL, in `src/lib/admin/fonts/`), wired through vars on the
 theme roots, with font-smoothing on. The brand pair is variable; the editor face is four static files.
 
 - Display: `var(--font-display)` = Bricolage Grotesque. Brand wordmark and page `h1` only, so it stays
@@ -448,7 +448,7 @@ alongside the component recipes above and below it.
   subpath and a consumer can mount one outside the admin theme root, where the grammar tokens are
   undefined. Their scoped styles carry the measured literal as a `var()` fallback,
   `font-size: var(--cairn-type-meta, 0.8125rem)`, so the component still renders correctly outside
-  `CairnAdminShell`. Engine screens under `src/lib/components` always render inside the shell's
+  `CairnAdminShell`. Engine screens under `src/lib/admin` always render inside the shell's
   themed wrapper and reference the token bare, with no fallback.
 - **A site re-tunes the palette and never redeclares a grammar token.** Grammar names structure
   (a heading's size, a gap's relationship) and holds across light and dark; palette
@@ -466,7 +466,7 @@ alongside the component recipes above and below it.
   editor's document title lost 2.25rem during this migration. Use `text-[1.5rem]/[2rem]` when a
   bracketed value genuinely needs both.
 - **A class used only outside the stylesheet's scan roots never compiles.** The roots are
-  `src/lib/components` and `src/lib/admin-toolkit` (the retired `admin-fields` subpath merged into
+  `src/lib/admin` and `src/lib/admin-toolkit` (the retired `admin-fields` subpath merged into
   the latter in the C2 breaking-window pass). A class used only in a directory that is not scanned
   resolves to nothing at runtime rather than failing a build, so a new admin-rendering directory
   joins both the `@source` list and `check:admin-css-classes`.
@@ -827,7 +827,7 @@ alongside the component recipes above and below it.
   on either class (WCAG 1.3.1 removes list semantics from the accessibility tree in
   WebKit/VoiceOver), and never a bare `ul`/`ol` ancestry selector (the admin wrapper also hosts the
   editor's rendered markdown preview, which needs its own bullets untouched). No admin screen
-  carries a plain bulleted list today (a grep of every bare `<ul>`/`<ol>` in `src/lib/components` and
+  carries a plain bulleted list today (a grep of every bare `<ul>`/`<ol>` in `src/lib/admin` and
   `src/lib/admin-toolkit` found only structured lists: menus, listboxes, flex rows with their own
   gap, daisyUI's `.steps`), so `.toolkit-list` ships as documented infrastructure for the next screen
   that needs one, rather than an in-tree call site today.
@@ -977,7 +977,7 @@ alongside the component recipes above and below it.
   title input the same hairline.
 - **Editor: the suggestion popover (`.cairn-cm-suggest`).** The spellcheck and objective-error suggestion
   surface, rendered as cairn's own recipe DOM through CodeMirror's public `showTooltip` facet
-  (`src/lib/components/editor-suggestion-popover.ts`), NOT a skinned `.cm-tooltip-lint`; the built-in
+  (`src/lib/admin/editor-suggestion-popover.ts`), NOT a skinned `.cm-tooltip-lint`; the built-in
   lint tooltip is suppressed via `tooltipFilter` (returning `null`, since @codemirror/lint 6.9.7 still
   mounts an empty tooltip for `[]`). It is a generic renderer over `Diagnostic.message` and
   `Diagnostic.actions`, so one recipe serves both diagnostic kinds: the spellcheck popover (a row of
@@ -1385,7 +1385,7 @@ engine serves outside the components (the guard's HTTPS-required page in `https-
 
 The component copy ships compiled inside the published package, so a consuming site's `prose-guard` hook
 never sees it. It is guarded here instead by `npm run check:prose` (`scripts/checks/check-admin-prose.mjs`),
-which extracts the user-facing strings from `src/lib/components/*.svelte` and runs the blocking tells
+which extracts the user-facing strings from `src/lib/admin/*.svelte` and runs the blocking tells
 from the `writing-voice` standard over them. It runs in CI alongside the other `check:*` gates. The
 mechanical rules catch the lexical and structural class (marketing words, banned phrases, the
 antithesis frame, and the like); they cannot catch a judgment-level tell such as a tacked-on closer, so
@@ -1511,7 +1511,7 @@ watcher (a `schedule` routine) pings when a new major publishes; it points here.
 The runbook:
 
 1. Bump the dependency (`daisyui` or `tailwindcss`) to the new major.
-2. Recompile the admin sheet: `npm run package`. This rebuilds `dist/components/cairn-admin.css` from the
+2. Recompile the admin sheet: `npm run package`. This rebuilds `dist/admin/cairn-admin.css` from the
    partial plus the new DaisyUI/Tailwind, and it also runs the doc-tree scan, so a bad doc candidate shows
    up here.
 3. Run the visual baselines in `examples/showcase`: `CI=1 npx playwright test admin-visual site-visual`.

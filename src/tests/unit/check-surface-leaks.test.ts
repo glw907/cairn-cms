@@ -95,15 +95,15 @@ describe('collectReachableNames (the type-checker model)', () => {
   });
 });
 
-// F-1's `/components` clause (Task 9, internals-C): whether a barrel export is a plain type
+// F-1's `/admin` clause (Task 9, internals-C): whether a barrel export is a plain type
 // export (an interface, type alias, or enum with no value side) or a runtime value export (a
 // function, a const, or a Svelte component's `declare const X: Component<...>` default), read
 // off real TypeScript symbol flags rather than asserted in prose. Proven against real dist
-// declarations too, below: `dist/components/index.d.ts` classifies its four plain-type exports
+// declarations too, below: `dist/admin/index.d.ts` classifies its four plain-type exports
 // (TidyApi, ImagePlaceholderApi, FormatKind, EditorApi) as `true` and its nineteen component
 // exports as `false`, which is what lets `deriveTypeCheckerLeaks` walk the former without ever
 // descending into a component's own Props/Events/Slots type graph.
-describe('isPlainTypeExport (the /components mechanical split)', () => {
+describe('isPlainTypeExport (the /admin mechanical split)', () => {
   const tmpFiles: string[] = [];
   afterEach(() => {
     for (const dir of tmpFiles.splice(0)) rmSync(dir, { recursive: true, force: true });
@@ -148,11 +148,11 @@ describe('isPlainTypeExport (the /components mechanical split)', () => {
     }
   });
 
-  it('classifies the real dist/components/index.d.ts barrel (4 plain-type, 19 component)', () => {
+  it('classifies the real dist/admin/index.d.ts barrel (4 plain-type, 18 component)', () => {
     // `npm ci`'s `prepare` hook and CI's own `npm run package` step both build `dist/` ahead of
     // `npm test`, so a real built barrel is available here without this suite building one itself.
     const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-    const dtsPath = join(repoRoot, 'dist/components/index.d.ts');
+    const dtsPath = join(repoRoot, 'dist/admin/index.d.ts');
     const { checker, symbols } = moduleExports(dtsPath);
     // Mirrors check-surface-leaks.mjs's own `resolveAlias`: `moduleExports` returns barrel-level
     // symbols, most of which are re-export ALIAS symbols whose Interface/TypeAlias/Value flags
@@ -163,7 +163,7 @@ describe('isPlainTypeExport (the /components mechanical split)', () => {
     const plainTypeNames = resolved.filter((sym) => isPlainTypeExport(sym)).map((sym) => sym.name);
     const componentNames = resolved.filter((sym) => !isPlainTypeExport(sym)).map((sym) => sym.name);
     expect(plainTypeNames.sort()).toEqual(['EditorApi', 'FormatKind', 'ImagePlaceholderApi', 'TidyApi']);
-    expect(componentNames).toHaveLength(19);
+    expect(componentNames).toHaveLength(18);
   });
 });
 

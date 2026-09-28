@@ -14,13 +14,13 @@ import { buildAdminCss } from './build-admin-css.mjs';
 
 const repoRoot = new URL('../../', import.meta.url);
 const designDir = fileURLToPath(new URL('docs/internal/design', repoRoot));
-const fontsSrc = fileURLToPath(new URL('dist/components/fonts', repoRoot));
+const fontsSrc = fileURLToPath(new URL('dist/admin/fonts', repoRoot));
 
 // The glob is relative to the input CSS (scripts/build/), the base buildAdminCss resolves @source against.
 const css = await buildAdminCss({ extraSources: ['../../docs/internal/design/*.html'] });
 writeFileSync(`${designDir}/cairn-admin.css`, css);
 
-// The fonts ship from dist/components/fonts after `npm run package`; copy them beside the sheet so the
+// The fonts ship from dist/admin/fonts after `npm run package`; copy them beside the sheet so the
 // mockup's @font-face ./fonts/ urls resolve when the folder is served.
 mkdirSync(`${designDir}/fonts`, { recursive: true });
 cpSync(fontsSrc, `${designDir}/fonts`, { recursive: true });

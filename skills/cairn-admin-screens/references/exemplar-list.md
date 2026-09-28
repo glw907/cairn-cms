@@ -4,7 +4,7 @@ Load this when building or reviewing a list screen: a searchable, filterable tab
 collection, with a row that expands in place for detail.
 
 Source: a production member-management screen from a consumer site's `/admin` extension,
-built entirely from `@glw907/cairn-cms/admin-toolkit` and `@glw907/cairn-cms/components`. The
+built entirely from `@glw907/cairn-cms/admin-toolkit` and `@glw907/cairn-cms/admin`. The
 household-grouped anatomy and the filter grammar are ratified decisions from that site's own
 private design record, a planning archive no cairn package ships, so this file states them on
 its own authority rather than a citation a builder could open; what follows translates the

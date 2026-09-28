@@ -11,8 +11,8 @@ import type { Plugin } from 'vite';
 // entry; there is no `/config` subpath.
 const migrations = await readD1Migrations(path.resolve('migrations'));
 
-const SOURCE_ADMIN_SHEET = path.resolve('src/lib/components/cairn-admin.css');
-const COMPILED_ADMIN_SHEET = path.resolve('dist/components/cairn-admin.css');
+const SOURCE_ADMIN_SHEET = path.resolve('src/lib/admin/cairn-admin.css');
+const COMPILED_ADMIN_SHEET = path.resolve('dist/admin/cairn-admin.css');
 
 /**
  * Redirects every import that resolves to the source admin partial onto the compiled sheet, for
@@ -58,7 +58,7 @@ export default defineConfig({
       {
         resolve: {
           // loadPreview (src/lib/sveltekit/preview.ts) imports $app/environment for its build-time
-          // guard, the first $app import outside src/lib/components. The real module exists only
+          // guard, the first $app import outside src/lib/admin. The real module exists only
           // inside a kit app; this alias resolves it to a stub so the unit project can import
           // preview.ts at all.
           alias: {
@@ -171,7 +171,7 @@ export default defineConfig({
           unstubGlobals: true,
           include: ['src/tests/component/**/*.test.ts'],
           setupFiles: ['./src/tests/component/_setup.ts'],
-          // Rebuilds dist/components/cairn-admin.css before this project's test files start, so every
+          // Rebuilds dist/admin/cairn-admin.css before this project's test files start, so every
           // idiom-probe render, mutation, and TDD loop reads a fresh compiled sheet rather than a stale
           // one left over from a previous package build. A project's own globalSetup runs once, in
           // Node, ahead of its test files; an npm pre-step would not reach a direct `npx vitest run

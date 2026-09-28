@@ -74,14 +74,14 @@ export const ALLOWLIST = new Set([
   'log-event:config.site', // docs/reference/delivery.md, the render config's `site` field
   'log-event:config.branding', // docs/reference/sveltekit.md, an auth config's `branding` field
   'log-event:config.send', // docs/reference/sveltekit.md, an auth config's `send` field
-  'log-event:entry.status', // docs/reference/components.md, a ListData row's `status` field
+  'log-event:entry.status', // docs/reference/admin.md, a ListData row's `status` field
   'log-event:entry.title', // docs/reference/delivery-data.md, a manifest entry's `title` field
   'log-event:entry.excerpt', // docs/reference/delivery-data.md, a manifest entry's `excerpt` field
   'log-event:entry.permalink', // docs/reference/delivery-data.md, a manifest entry's `permalink` field
   'log-event:entry.date', // docs/reference/delivery-data.md, a manifest entry's `date` field
   'log-event:entry.frontmatter', // docs/reference/delivery-data.md, a manifest entry's `frontmatter` field
   'log-event:preview.state', // docs/reference/sveltekit.md, PreviewData's `state` field
-  'log-event:preview.published', // docs/reference/sveltekit.md and components.md, PreviewData's `published` field
+  'log-event:preview.published', // docs/reference/sveltekit.md and public.md, PreviewData's `published` field
   'log-event:tidy.enabled', // docs/reference/doctor.md, the site config's `tidy.enabled` field
   'log-event:tidy.client', // docs/reference/sveltekit.md, ContentRoutesOptions' `tidy.client` field
   'log-event:tidy.conventions', // docs/extend/enable-tidy.md, the site config's `tidy.conventions` field
@@ -131,7 +131,8 @@ export const ALLOWLIST = new Set([
   'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
   'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
   'file-path:dist/site.css', // docs/reference/cairn-audit.md's illustrative site-compiled stylesheet in a list-valued `sheet`
-  'file-path:node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css', // docs/reference/cairn-audit.md's real installed-package sheet path, cited literally rather than resolved against this repo's own tree
+  'file-path:node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css', // docs/reference/cairn-audit.md's real installed-package sheet path, cited literally rather than resolved against this repo's own tree
+  'file-path:dist/components/cairn-admin.css', // docs/extend/migration-notes.md's per-version record of a pre-rename release, which must keep the path that was real when it shipped
   'file-path:src/admin.css', // a site's own admin-stylesheet entry file, by convention
   'file-path:@glw907/cairn-cms/admin-sources.css', // docs/reference/cairn-audit.md's real published subpath, cited by its import specifier rather than its installed dist path
   // Real paths in this repo's own examples/showcase/ tree, cited without that prefix because the

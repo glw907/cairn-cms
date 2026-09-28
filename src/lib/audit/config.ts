@@ -6,17 +6,13 @@ import { resolve } from 'node:path';
 /** The config file a consumer writes, read from the audited root. */
 export const CONFIG_FILE = 'cairn-audit.config.json';
 
-// Every surface that renders inside the admin theme, plus the site's own admin routes. The two
+// Every surface that renders inside the admin theme, plus the site's own admin routes. The three
 // library directories are the same roots the admin stylesheet build and the class-compilation gate
 // scan (the retired `admin-fields` subpath merged into admin-toolkit, so its own roster entry
 // folded into that one). A directory that renders admin markup
 // belongs here even when it looks covered. A path that does not exist in a given tree is skipped,
 // so a consumer inherits only what it actually has.
-export const DEFAULT_STATIC_SCOPE = [
-  'src/routes/admin',
-  'src/lib/admin-toolkit',
-  'src/lib/components',
-];
+export const DEFAULT_STATIC_SCOPE = ['src/routes/admin', 'src/lib/admin', 'src/lib/admin-toolkit'];
 
 // Where the source-text-family static rules (log-event-grammar, log-secret-field) walk for
 // `.ts` and `.svelte` files, read as plain text rather than parsed markup. Wider than
@@ -24,19 +20,19 @@ export const DEFAULT_STATIC_SCOPE = [
 // default is the whole source tree a site actually keeps its own code in.
 export const DEFAULT_SOURCE_SCOPE = ['src'];
 
-// The roots an `adminOnly` static rule resolves over instead of `DEFAULT_STATIC_SCOPE`. Narrower
-// on purpose: `DEFAULT_STATIC_SCOPE`'s middle root is where a consuming site keeps its shared
-// public components, and an admin-only motion rule reading that root would gate a site's own
-// public design. A site whose admin screens sit outside these two roots names `static.adminScope`
+// The roots an `adminOnly` static rule resolves over instead of `DEFAULT_STATIC_SCOPE`. Now the
+// same three roots `DEFAULT_STATIC_SCOPE` names, since `src/lib/admin` renders only the admin's
+// own views, never a site's shared public components: an admin-only motion rule reading it gates
+// no public design. A site whose admin screens sit outside these roots names `static.adminScope`
 // itself, the same override `staticScope` already carries.
-export const DEFAULT_ADMIN_SCOPE = ['src/routes/admin', 'src/lib/admin-toolkit'];
+export const DEFAULT_ADMIN_SCOPE = ['src/routes/admin', 'src/lib/admin', 'src/lib/admin-toolkit'];
 
 // Where the built admin stylesheet is, first in the library's own tree and then in a consumer's
 // installed package. The first candidate is the fallback when neither exists, so the run fails
 // naming a path a developer can act on.
 export const DEFAULT_SHEET_CANDIDATES = [
-  'dist/components/cairn-admin.css',
-  'node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css',
+  'dist/admin/cairn-admin.css',
+  'node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css',
 ];
 
 // Declared palette declaration sites: the one CSS file per tree whose whole job is DEFINING the
@@ -48,7 +44,7 @@ export const DEFAULT_SHEET_CANDIDATES = [
 // selector, a transition) those rules legitimately police. `cairn-admin.css` is the engine's own
 // declaration site and so the one default; a site names its own theme file the same way
 // (`static.paletteFiles`) to keep its own palette declaration outside `token-colors` too.
-export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/components/cairn-admin.css'];
+export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/admin/cairn-admin.css'];
 
 // The core admin routes rendered mode visits absent a configured page list. Mirrors the norms
 // generator's own page set (scripts/lab/generate-norms-manifest.mjs): both are "the core admin routes"

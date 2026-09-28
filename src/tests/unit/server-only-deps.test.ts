@@ -94,7 +94,7 @@ describe('server-only deps stay off the client', () => {
   it('no client-reachable module statically imports @anthropic-ai/sdk', () => {
     // Seed from every component; the walk follows their static relative edges (the .ts helpers they
     // import statically, and onward), which is the graph a consumer's client bundle would pull.
-    const graph = reachable(componentFiles('src/lib/components'));
+    const graph = reachable(componentFiles('src/lib/admin'));
     const offenders = [...graph].filter((file) => STATIC_SDK.test(readFileSync(file, 'utf8')));
     expect(offenders).toEqual([]);
   });
@@ -106,7 +106,7 @@ describe('server-only deps stay off the client', () => {
     // reach (and the first assertion would then also fire).
     const importer = 'src/lib/sveltekit/content-routes-context.ts';
     expect(DYNAMIC_SDK.test(readFileSync(importer, 'utf8'))).toBe(true);
-    const graph = reachable(componentFiles('src/lib/components'));
+    const graph = reachable(componentFiles('src/lib/admin'));
     expect(graph.has(path.resolve(importer))).toBe(false);
   });
 

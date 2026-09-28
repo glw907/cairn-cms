@@ -88,6 +88,7 @@ export const TIER_ORDER = ['docs', 'scripts', 'engine', 'admin-visual', 'full'];
 export function classifyPath(path) {
   if (
     path.startsWith('src/lib/render/') ||
+    path.startsWith('src/lib/public/') ||
     path.startsWith('examples/showcase/src/chassis/') ||
     path.startsWith('examples/showcase/src/theme/') ||
     path.startsWith('examples/showcase/src/routes/(site)/') ||
@@ -96,7 +97,7 @@ export function classifyPath(path) {
   ) {
     return 'full';
   }
-  if (path.startsWith('src/lib/components/') || path.startsWith('src/lib/admin-toolkit/')) {
+  if (path.startsWith('src/lib/admin/') || path.startsWith('src/lib/admin-toolkit/')) {
     return 'admin-visual';
   }
   if (path.startsWith('src/lib/') && path.endsWith('.ts')) {

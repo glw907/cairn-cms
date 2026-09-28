@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 // The shipped sheet, the same artifact the CairnAdminShell.test.ts palette suite loads: this test
 // must prove the reset that reaches a consumer, not the source file, so it loads the built dist
 // output rather than compiling cairn-admin.css itself.
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 // Design ratchet Task 1 (closes findings 1 and 6): the packaged admin sheet ships no user-agent
 // reset, so a bare textarea renders UA monospace, a native <dialog> carries Chrome's UA border

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import PreviewBanner from '../../lib/components/PreviewBanner.svelte';
+import PreviewBanner from '../../lib/public/PreviewBanner.svelte';
 import type { PreviewData } from '../../lib/sveltekit/preview.js';
 
 describe('PreviewBanner', () => {
@@ -92,7 +92,7 @@ describe('PreviewBanner', () => {
       published: null,
     };
     // A spy, not a locale swap: jsdom/Playwright cannot cheaply re-run a test under a second
-    // timezone, but the default formatter (../../lib/components/PreviewBanner.svelte) reads only
+    // timezone, but the default formatter (../../lib/public/PreviewBanner.svelte) reads only
     // the UTC getters (getUTCFullYear and friends), never Intl.DateTimeFormat. Asserting the
     // constructor is never called proves the rendered string cannot vary with the host's locale
     // or timezone, which is what "TZ independence" means for a fixed-offset formatter: there is

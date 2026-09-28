@@ -17,7 +17,7 @@ export const load = cms.shellLoad;
 // shellLayout renders the shared chrome. Lifted from doctor-checks-admin-mount.test.ts's
 // SHELL_LAYOUT (:21-28).
 const shellLayout = `<script lang="ts">
-  import { CairnAdminShell } from '@glw907/cairn-cms/components';
+  import { CairnAdminShell } from '@glw907/cairn-cms/admin';
   let { data, children } = $props();
 </script>
 

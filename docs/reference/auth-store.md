@@ -1,7 +1,7 @@
 # Auth store (`@glw907/cairn-cms/auth-store`)
 
 This subpath holds the D1 editor-provisioning functions the engine's own `editors-routes` uses to
-back the [`ManageEditors`](./components.md) screen: read the allowlist, add or remove an editor,
+back the [`ManageEditors`](./admin.md#manageeditors) screen: read the allowlist, add or remove an editor,
 and change a role, with the owner-count guards that keep at least one owner-capability editor on
 the roster. It is server-only surface (no `svelte` export condition), for a site that provisions or
 manages editors from its own server code, a setup script, or a migration, outside the admin screen.

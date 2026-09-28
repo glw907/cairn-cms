@@ -1,4 +1,4 @@
-import type { SpellWorker } from '../../lib/components/spellcheck.js';
+import type { SpellWorker } from '../../lib/admin/spellcheck.js';
 
 // The real wasm and dictionary assets resolve through `import.meta.url` and do not load under the
 // vitest browser dev server, and the 1.5MB dictionary is slow, so the spellcheck component layer drives

@@ -5,7 +5,7 @@
 // and resolves a color expression the way an idiom test's oracle must: painted, never a
 // hand-written color-mix(...)/var(...) string.
 import { cdp, userEvent } from 'vitest/browser';
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 /** The two admin theme roots a cairn-idiom rule keys on. */
 export type Theme = 'cairn-admin' | 'cairn-admin-dark';

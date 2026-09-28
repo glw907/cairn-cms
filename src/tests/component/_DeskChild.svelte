@@ -6,7 +6,7 @@ mounting the whole editor. The optional `zen` prop also registers the holder's z
 for EditPage's own zen toggle, so a zen-recede test can drive the shell without mounting EditPage.
 -->
 <script lang="ts">
-  import { useTopbar } from '../../lib/components/topbar-context.js';
+  import { useTopbar } from '../../lib/admin/topbar-context.js';
 
   let { zen = false }: { zen?: boolean } = $props();
 

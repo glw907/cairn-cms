@@ -79,7 +79,7 @@ export default [
   // components carry the same TSDoc contract as its .ts sources, so they belong under the same
   // gate rather than relying on review alone to catch a malformed doc comment.
   {
-    files: ['examples/showcase/src/**/*.svelte', 'src/lib/components/**/*.svelte'],
+    files: ['examples/showcase/src/**/*.svelte', 'src/lib/admin/**/*.svelte', 'src/lib/public/**/*.svelte'],
     languageOptions: {
       parser: svelteParser,
       parserOptions: { parser: tseslint.parser },

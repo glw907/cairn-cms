@@ -4,12 +4,12 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs';
 
-// The four names the surface-pruning pass demotes from the /components barrel (Task 3), verbatim
+// The four names the surface-pruning pass demotes from the /admin barrel (Task 3), verbatim
 // from `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md` and the audit verdicts doc's
 // `## ./components` section (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
 const DEMOTED = ['ComponentInsertDialog', 'ComponentForm', 'IconPicker', 'LinkPicker'];
 
-// The keep list for the /components subpath: the twelve KEEP-verdict page-level components plus
+// The keep list for the /admin subpath: the twelve KEEP-verdict page-level components plus
 // DeleteDialog/RenameDialog (also KEEP) plus MarkdownEditor, which the audit RESHAPEs (a narrower
 // prop contract, a later task) but keeps exported. Fifteen names in total, the current barrel's
 // nineteen minus the four demotions above.
@@ -32,7 +32,7 @@ const KEPT = [
 ];
 
 const DTS = resolve(
-  fileURLToPath(new URL('../../../dist/components/index.d.ts', import.meta.url)),
+  fileURLToPath(new URL('../../../dist/admin/index.d.ts', import.meta.url)),
 );
 
 const PACKAGE_JSON = resolve(fileURLToPath(new URL('../../../package.json', import.meta.url)));
@@ -41,23 +41,23 @@ const PACKAGE_JSON = resolve(fileURLToPath(new URL('../../../package.json', impo
 // assets itself through a module-relative `new URL(..., import.meta.url)`, so no consumer needs a
 // frozen public subpath for them (the only prior importer was the showcase spike route).
 const DEMOTED_EXPORT_KEYS = [
-  './components/spellcheck-worker',
-  './components/spellcheck-assets/spellchecker-wasm.wasm',
-  './components/spellcheck-assets/dictionary-en-us.txt',
+  './admin/spellcheck-worker',
+  './admin/spellcheck-assets/spellchecker-wasm.wasm',
+  './admin/spellcheck-assets/dictionary-en-us.txt',
 ];
 
-describe('components barrel prune', () => {
+describe('admin barrel prune', () => {
   it('resolves the packaged dist output', () => {
-    expect(existsSync(DTS), 'missing dist/components/index.d.ts; run "npm run package" first').toBe(true);
+    expect(existsSync(DTS), 'missing dist/admin/index.d.ts; run "npm run package" first').toBe(true);
   });
 
-  it('no longer resolves the demoted names from the /components subpath', () => {
+  it('no longer resolves the demoted names from the /admin subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const stillPresent = DEMOTED.filter((name) => names.has(name));
     expect(stillPresent).toEqual([]);
   });
 
-  it('still resolves every keep-list name from the /components subpath', () => {
+  it('still resolves every keep-list name from the /admin subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const missing = KEPT.filter((name) => !names.has(name));
     expect(missing).toEqual([]);

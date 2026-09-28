@@ -165,12 +165,12 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 
 | Key | Default | What it names |
 |---|---|---|
-| `static.scope` | `src/routes/admin`, `src/lib/admin-toolkit`, `src/lib/components` | Directories the static scan reads components from, recursively |
+| `static.scope` | `src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit` | Directories the static scan reads components from, recursively |
 | `static.sourceScope` | `src` | Directories `log-event-grammar` and `log-secret-field` walk for `.ts` and `.svelte` files, read as plain text rather than parsed markup |
-| `static.adminScope` | `src/routes/admin`, `src/lib/admin-toolkit` | Roots the three motion rules (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) resolve over instead of `static.scope`, since they're `adminOnly`. Name your own screens here if they live outside those two defaults |
+| `static.adminScope` | `src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit` | Roots the three motion rules (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) resolve over instead of `static.scope`, since they're `adminOnly`. Name your own screens here if they live outside those three defaults |
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
-| `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css"]` |
+| `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css"]` |
 | `rendered.pages` | the core admin routes | The pages rendered mode visits. Naming this key replaces the default list |
 | `rendered.extraPages` | none | Pages rendered mode visits IN ADDITION to `rendered.pages` (or, absent that key, the core admin routes). Name your own screen here rather than restating the six core routes beside it |
 | `rendered.allowlist` | none | Rendered-mode exemptions. See [The allowlist](#the-allowlist) |
@@ -178,6 +178,14 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 A default scan path your tree doesn't have is skipped, since the defaults span a library and a
 consumer site. A path you wrote in `static.scope` yourself fails the run when it doesn't exist: a
 typo that quietly narrows the audit to nothing is the silent green this engine exists to rule out.
+A root you name explicitly under `static.scope` is an admin root, and the audit treats it as one
+wherever another scope's defaults would also reach it. If your own tree still keeps a directory
+named `src/lib/components` (its own convention, from before this engine's admin barrel moved to
+`src/lib/admin`) and you want it back under the static scan, set `static.scope` to the default
+roots your tree has plus that directory, for example
+`["src/routes/admin", "src/lib/components"]`, rather than naming `src/lib/components` alone:
+`static.scope` replaces the defaults outright, so the bare form would silently drop
+`src/routes/admin` from every static rule.
 `static.sourceScope` carries the same rule.
 
 `sheet` behaves the same way from the other side: leave it unset and the run resolves it to a

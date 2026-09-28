@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, onTes
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import { createRawSnippet, mount, unmount } from 'svelte';
-import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
+import CairnAdminShell from '../../lib/admin/CairnAdminShell.svelte';
 import { resolveNavLayout, type NavLayout } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
 import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
@@ -10,7 +10,7 @@ import { beforeNavigateCallbacks } from './_app-navigation.js';
 import type { BeforeNavigate } from '@sveltejs/kit';
 // The compiled sheet carries the real .modal-box sizing and the utility layer (outline-hidden,
 // :focus-visible) the palette-inset and focus tests below measure against.
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 

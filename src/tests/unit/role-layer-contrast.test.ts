@@ -33,7 +33,7 @@ function guaranteedFloor(theme: 'light' | 'dark', role: 'muted' | 'subtle'): num
 // deliberate update of both the sheet and this test's fixed truth in one change.
 it('matches the oklch literals the source sheet defines', () => {
   const sheet = readFileSync(
-    resolve(fileURLToPath(new URL('.', import.meta.url)), '../../lib/components/cairn-admin.css'),
+    resolve(fileURLToPath(new URL('.', import.meta.url)), '../../lib/admin/cairn-admin.css'),
     'utf8',
   );
   for (const theme of ['light', 'dark'] as const) {

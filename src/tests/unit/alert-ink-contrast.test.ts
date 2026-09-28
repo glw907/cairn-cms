@@ -84,7 +84,7 @@ function panel(theme: 'light' | 'dark', variant: 'warning' | 'success' | 'info')
 // every literal this math assumes.
 it('matches the oklch literals the source sheet defines', () => {
   const sheet = readFileSync(
-    resolve(fileURLToPath(new URL('.', import.meta.url)), '../../lib/components/cairn-admin.css'),
+    resolve(fileURLToPath(new URL('.', import.meta.url)), '../../lib/admin/cairn-admin.css'),
     'utf8',
   );
   for (const theme of ['light', 'dark'] as const) {

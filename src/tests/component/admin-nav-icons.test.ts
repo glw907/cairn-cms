@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ADMIN_NAV_ICON_NAMES } from '../../lib/sveltekit/admin-nav.js';
-import { ADMIN_NAV_ICONS } from '../../lib/components/admin-nav-icons.js';
+import { ADMIN_NAV_ICONS } from '../../lib/admin/admin-nav-icons.js';
 
 describe('the bundled icon allowlist and its component map', () => {
   it('carry exactly the same names, so a widened allowlist cannot drift from an unbundled glyph', () => {

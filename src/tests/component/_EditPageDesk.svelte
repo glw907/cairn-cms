@@ -14,8 +14,8 @@ always a desk route, so the harness applies it unconditionally rather than gatin
 -->
 <script lang="ts">
   import type { ComponentProps } from 'svelte';
-  import { provideTopbar, type TopbarHolder } from '../../lib/components/topbar-context.js';
-  import EditPage from '../../lib/components/EditPage.svelte';
+  import { provideTopbar, type TopbarHolder } from '../../lib/admin/topbar-context.js';
+  import EditPage from '../../lib/admin/EditPage.svelte';
 
   let props: ComponentProps<typeof EditPage> = $props();
 

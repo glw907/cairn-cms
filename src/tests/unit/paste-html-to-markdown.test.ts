@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { htmlToMarkdown } from '../../lib/components/paste-html-to-markdown.js';
+import { htmlToMarkdown } from '../../lib/admin/paste-html-to-markdown.js';
 
 describe('htmlToMarkdown', () => {
   it('converts a heading, bold, italic, and a link the way a web page pastes them', () => {

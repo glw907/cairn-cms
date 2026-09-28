@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { diffTokens, diffChanges, lineLabel } from '../../lib/components/tidy-diff.js';
-import type { Change, DiffRange } from '../../lib/components/tidy-diff.js';
+import { diffTokens, diffChanges, lineLabel } from '../../lib/admin/tidy-diff.js';
+import type { Change, DiffRange } from '../../lib/admin/tidy-diff.js';
 
 // Reconstruct the original from the runs: every equal and deleted range carries the original text
 // at its own offsets, so concatenating them in order must rebuild the captured original exactly.

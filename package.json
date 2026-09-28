@@ -101,10 +101,15 @@
       "svelte": "./dist/sveltekit/index.js",
       "default": "./dist/sveltekit/index.js"
     },
-    "./components": {
-      "types": "./dist/components/index.d.ts",
-      "svelte": "./dist/components/index.js",
-      "default": "./dist/components/index.js"
+    "./admin": {
+      "types": "./dist/admin/index.d.ts",
+      "svelte": "./dist/admin/index.js",
+      "default": "./dist/admin/index.js"
+    },
+    "./public": {
+      "types": "./dist/public/index.d.ts",
+      "svelte": "./dist/public/index.js",
+      "default": "./dist/public/index.js"
     },
     "./admin-toolkit": {
       "types": "./dist/admin-toolkit/index.d.ts",

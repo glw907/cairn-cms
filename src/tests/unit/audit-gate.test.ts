@@ -73,7 +73,7 @@ describe('scopeReport', () => {
 });
 
 // The engine gate's own static.adminScope: without it, an adminOnly rule resolves over the
-// consumer default, which never reaches src/lib/components. This proves the gate's config wires
+// consumer default, which never reaches src/lib/admin. This proves the gate's config wires
 // ADMIN_SCOPE in, using the gate's own exported lists (SCAN_SCOPE, ADMIN_SCOPE, CSS_FILES) over a
 // temporary root, the idiom src/tests/unit/audit/run.test.ts already uses. Both fixtures carry an
 // identical violation pair (a p-[13px] gap-scale hit, a scoped transition: width motion-property
@@ -87,12 +87,12 @@ describe('the engine gate: static.adminScope narrows the admin-only motion rules
     root = mkdtempSync(join(tmpdir(), 'cairn-invisible-craft-'));
     for (const dir of SCAN_SCOPE) mkdirSync(join(root, dir), { recursive: true });
     mkdirSync(join(root, 'examples/showcase/src/routes/admin'), { recursive: true });
-    mkdirSync(join(root, 'dist/components'), { recursive: true });
-    writeFileSync(join(root, 'dist/components/cairn-admin.css'), '.type-body { font-size: var(--cairn-type-body) }\n');
+    mkdirSync(join(root, 'dist/admin'), { recursive: true });
+    writeFileSync(join(root, 'dist/admin/cairn-admin.css'), '.type-body { font-size: var(--cairn-type-body) }\n');
     // CSS_FILES entries must exist for loadCssFiles to read them; harmless content keeps the
     // count this test asserts free of an extra motion-property hit from the standalone sheet.
     for (const cssFile of CSS_FILES) writeFileSync(join(root, cssFile), '.harmless { color: red }\n');
-    writeFileSync(join(root, 'src/lib/components/Fixture.svelte'), FIXTURE);
+    writeFileSync(join(root, 'src/lib/admin/Fixture.svelte'), FIXTURE);
     writeFileSync(join(root, 'examples/showcase/src/theme/Fixture.svelte'), FIXTURE);
   });
 
@@ -100,7 +100,7 @@ describe('the engine gate: static.adminScope narrows the admin-only motion rules
     rmSync(root, { recursive: true, force: true });
   });
 
-  it('produces a motion-property finding under src/lib/components and none under the showcase theme, while gap-scale reports both', () => {
+  it('produces a motion-property finding under src/lib/admin and none under the showcase theme, while gap-scale reports both', () => {
     const config = resolveConfig(
       root,
       { static: { scope: SCAN_SCOPE, adminScope: ADMIN_SCOPE, cssFiles: CSS_FILES } },
@@ -108,11 +108,11 @@ describe('the engine gate: static.adminScope narrows the admin-only motion rules
     );
     const report = runStatic(config);
     const motionPropertyFiles = report.findings.filter((f) => f.ruleId === 'motion-property').map((f) => f.file);
-    expect(motionPropertyFiles).toEqual(['src/lib/components/Fixture.svelte']);
+    expect(motionPropertyFiles).toEqual(['src/lib/admin/Fixture.svelte']);
     const gapScaleFiles = report.findings.filter((f) => f.ruleId === 'gap-scale').map((f) => f.file).sort();
     expect(gapScaleFiles).toEqual([
       'examples/showcase/src/theme/Fixture.svelte',
-      'src/lib/components/Fixture.svelte',
+      'src/lib/admin/Fixture.svelte',
     ]);
   });
 });

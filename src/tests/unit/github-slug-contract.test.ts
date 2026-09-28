@@ -47,7 +47,7 @@ describe('the GitHub-slug contract', () => {
       // A backticked component name leading the heading, plus a parenthetical.
       markdown: '#### `MarkdownEditor` wiring props (Unstable API)',
       id: 'markdowneditor-wiring-props-unstable-api',
-      source: 'docs/reference/components.md',
+      source: 'docs/reference/admin.md',
     },
     {
       // Two backticked terms in one heading, nested in a parenthetical.

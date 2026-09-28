@@ -70,7 +70,7 @@ describe('the /sveltekit barrel bundles cleanly with a plain, non-Vite esbuild p
 });
 
 describe('the other exported subpaths (informational only, not gated)', () => {
-  // `./components` and `./reproductions` both carry a static `$app/` import today, reached only
+  // `./admin` and `./reproductions` both carry a static `$app/` import today, reached only
   // through client-only `.svelte` components a raw esbuild pass cannot even parse without the
   // SvelteKit Vite plugin (so their bundle fails for an unrelated reason, and the `$app`/`$env`
   // filter below reports nothing for them). `./sveltekit` is the one subpath a raw, server-side,

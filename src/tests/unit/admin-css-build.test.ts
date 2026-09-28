@@ -172,7 +172,7 @@ describe('admin css build', () => {
 
   // The admin build must scan ONLY the admin components, never the whole repo. These tokens exist only in
   // examples/showcase and in docs that discuss the showcase rename; if the sheet carries them, Tailwind's
-  // automatic source detection is scanning outside src/lib/components and compiling foreign candidates into
+  // automatic source detection is scanning outside src/lib/admin and compiling foreign candidates into
   // the shipped artifact. Do not weaken this: a hit means the content scope regressed.
   it('compiles no foreign token from outside the admin components', () => {
     for (const foreign of ['--text-step', '--container-measure', '--cairn-step', '--cairn-space', '--cairn-measure']) {
@@ -367,8 +367,8 @@ describe('the admin transition defaults: runtime computed style', () => {
 // minified build actually reads, so this asserts it directly against the file the package ships and
 // against a minified compile of that same file, rather than trusting the pin statement's position.
 describe('the shipped sheet: the daisyUI sublayer precedes cairn-idiom by emission order', () => {
-  const outPath = fileURLToPath(new URL('../../../dist/components/cairn-admin.css', import.meta.url));
-  const outDir = fileURLToPath(new URL('../../../dist/components/', import.meta.url));
+  const outPath = fileURLToPath(new URL('../../../dist/admin/cairn-admin.css', import.meta.url));
+  const outDir = fileURLToPath(new URL('../../../dist/admin/', import.meta.url));
   // Matches the nested sublayer a Tailwind/postcss compile emits (`@layer daisyui.l1.l2 { ... }`)
   // and the merged form a minifier can produce (no space before the brace).
   const DAISYUI_SUBLAYER = /@layer\s+daisyui(?:\.[\w-]+)*\s*\{/;
@@ -388,7 +388,7 @@ describe('the shipped sheet: the daisyUI sublayer precedes cairn-idiom by emissi
       }).code,
     );
     variants = [
-      { label: 'dist/components/cairn-admin.css, the file the package ships', css: fromDisk },
+      { label: 'dist/admin/cairn-admin.css, the file the package ships', css: fromDisk },
       { label: 'the same sheet after a minifier relocates same-priority layer statements', css: minified },
     ];
   }, 60_000);

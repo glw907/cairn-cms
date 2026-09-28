@@ -9,7 +9,7 @@ import {
   spellcheckRanges,
   arbitrateChecked,
   type SeqArbiter,
-} from '../../lib/components/spellcheck.js';
+} from '../../lib/admin/spellcheck.js';
 
 // The unit drives the PURE classifier (part A) and the latest-wins arbiter, never a real Worker.
 // A syntax tree is built in node from the markdown language. syntaxTree(state) is time-budgeted and

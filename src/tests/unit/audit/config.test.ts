@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import {
+  DEFAULT_ADMIN_SCOPE,
   DEFAULT_PALETTE_CSS_FILES,
   DEFAULT_RENDERED_PAGES,
   DEFAULT_SHEET_CANDIDATES,
@@ -19,7 +20,7 @@ describe('DEFAULT_STATIC_SCOPE', () => {
   // scan.
   it('carries every surface that renders inside the admin theme', () => {
     expect(DEFAULT_STATIC_SCOPE).toContain('src/lib/admin-toolkit');
-    expect(DEFAULT_STATIC_SCOPE).toContain('src/lib/components');
+    expect(DEFAULT_STATIC_SCOPE).toContain('src/lib/admin');
   });
 
   it("carries the consumer site's admin routes", () => {
@@ -27,11 +28,27 @@ describe('DEFAULT_STATIC_SCOPE', () => {
   });
 });
 
+describe('DEFAULT_ADMIN_SCOPE', () => {
+  // The engine's own admin barrel renders only the admin's own views, never a site's shared public
+  // components, so an adminOnly motion rule reading it gates no public design: DEFAULT_ADMIN_SCOPE
+  // now agrees with DEFAULT_STATIC_SCOPE by default, and a site narrows one away from the other
+  // only by naming static.adminScope itself.
+  it('agrees with DEFAULT_STATIC_SCOPE by default', () => {
+    expect(DEFAULT_ADMIN_SCOPE).toEqual(DEFAULT_STATIC_SCOPE);
+  });
+
+  it('carries the three admin surfaces', () => {
+    expect(DEFAULT_ADMIN_SCOPE).toContain('src/routes/admin');
+    expect(DEFAULT_ADMIN_SCOPE).toContain('src/lib/admin');
+    expect(DEFAULT_ADMIN_SCOPE).toContain('src/lib/admin-toolkit');
+  });
+});
+
 describe('DEFAULT_PALETTE_CSS_FILES', () => {
   // The engine's own admin stylesheet is the declared palette (and grammar) declaration site;
   // token-colors reads this list rather than carrying its own filename special case for it.
   it('names the admin stylesheet as the engine\'s one declared palette site', () => {
-    expect(DEFAULT_PALETTE_CSS_FILES).toContain('src/lib/components/cairn-admin.css');
+    expect(DEFAULT_PALETTE_CSS_FILES).toContain('src/lib/admin/cairn-admin.css');
   });
 });
 
@@ -102,10 +119,10 @@ describe('resolveConfig', () => {
   it('takes a list of compiled-class sources from a list-valued sheet', () => {
     const config = resolveConfig(
       '/site',
-      { sheet: ['dist/components/cairn-admin.css', 'src/theme/site.css'] },
+      { sheet: ['dist/admin/cairn-admin.css', 'src/theme/site.css'] },
       sheetHere
     );
-    expect(config.sheetPaths).toEqual(['dist/components/cairn-admin.css', 'src/theme/site.css']);
+    expect(config.sheetPaths).toEqual(['dist/admin/cairn-admin.css', 'src/theme/site.css']);
   });
 
   it('rejects a sheet that is neither a path nor a list of paths', () => {

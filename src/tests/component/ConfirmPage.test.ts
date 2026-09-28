@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import ConfirmPage from '../../lib/components/ConfirmPage.svelte';
+import ConfirmPage from '../../lib/admin/ConfirmPage.svelte';
 import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-error-codes.js';
 
 describe('ConfirmPage', () => {

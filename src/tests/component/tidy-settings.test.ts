@@ -5,7 +5,7 @@
 // role="status" region. The "reset to safe default" control returns the safe resting state.
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import CairnTidySettings from '../../lib/components/CairnTidySettings.svelte';
+import CairnTidySettings from '../../lib/admin/CairnTidySettings.svelte';
 import { defaultTidyConventions, type TidyConventions } from '../../lib/nav/site-config.js';
 import type { SettingsData } from '../../lib/sveltekit/content-routes.js';
 

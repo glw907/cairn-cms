@@ -1598,7 +1598,7 @@ persistent "?" carries Markdown help).
            counterpart on the bottom bar) rather than a post-mount swap. `hidden` states the
            intent for a reader of the markup, but the admin sheet compiles with no Preflight
            (scripts/build/admin-css.input.css imports only tailwindcss/theme.css and
-           tailwindcss/utilities.css), so the shipped dist/components/cairn-admin.css carries no
+           tailwindcss/utilities.css), so the shipped dist/admin/cairn-admin.css carries no
            [hidden] rule at all and hidden does not itself compute to display: none here; `inert`
            is what actually removes this branch from the accessibility tree and from role-based
            test locators when `narrow`, independently of computed display, so exactly one live

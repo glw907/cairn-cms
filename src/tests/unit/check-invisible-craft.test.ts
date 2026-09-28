@@ -18,7 +18,8 @@ describe('SCAN_SCOPE', () => {
   });
 
   it('keeps walking the admin surfaces', () => {
-    expect(SCAN_SCOPE).toContain('src/lib/components');
+    expect(SCAN_SCOPE).toContain('src/lib/admin');
+    expect(SCAN_SCOPE).toContain('src/lib/public');
     expect(SCAN_SCOPE).toContain('src/lib/admin-toolkit');
   });
 

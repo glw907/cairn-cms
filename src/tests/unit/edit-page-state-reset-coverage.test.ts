@@ -25,14 +25,14 @@ interface CoveredFile {
 }
 
 const COVERED_FILES: CoveredFile[] = [
-  { label: 'EditPage.svelte', path: resolve(ROOT, 'src/lib/components/EditPage.svelte') },
+  { label: 'EditPage.svelte', path: resolve(ROOT, 'src/lib/admin/EditPage.svelte') },
   {
     label: 'tidy-controller.svelte.ts',
-    path: resolve(ROOT, 'src/lib/components/tidy-controller.svelte.ts'),
+    path: resolve(ROOT, 'src/lib/admin/tidy-controller.svelte.ts'),
   },
   {
     label: 'figure-editor.svelte.ts',
-    path: resolve(ROOT, 'src/lib/components/figure-editor.svelte.ts'),
+    path: resolve(ROOT, 'src/lib/admin/figure-editor.svelte.ts'),
   },
 ];
 

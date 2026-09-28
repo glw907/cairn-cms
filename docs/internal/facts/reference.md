@@ -2,31 +2,54 @@
 
 Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signatures, which `check:reference`/`check:reference:signatures` already gate). Agent-facing; never shipped; not register-graded. Every fact carries a source.
 
+## docs/reference/admin.md
+
+- `f:qmz20x` The 13 retired `register*` props on `MarkdownEditor` (11 per-capability callbacks plus the two
+  object grants `registerTidy`/`registerImagePlaceholders`) all collapsed into one
+  `registerEditor` callback delivering an `EditorApi` object once on mount and `null` once on
+  destroy. Source: `src/lib/admin/MarkdownEditor.svelte:29,85-91` (`EditorApi` type,
+  `registerEditor` prop doc), `:946-949` (mount: `registerEditor?.({...})`), `:980` (destroy:
+  `registerEditor?.(null)`); a grep of the file for `registerFocusEditor`, `registerImagePlaceholders`,
+  `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`, and
+  `registerFormat` finds none of them. [verified]
+- `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
+  deliberate hardening so the token survives `use:enhance`'s native form reset after a successful
+  submit. Source: `src/lib/admin/CsrfField.svelte:7,24`. [verified]
+- `f:iu46pv` `CairnAdminShell`'s sidebar breakpoint logic uses `min-width: 1024px` (`lg`) and `min-width:
+  1280px` (`xl`) media queries; a desk (document-editor) route persists the sidebar at `xl`,
+  recedes to an overlay through the `lg`-`xl` band, and both route kinds use the overlay drawer
+  below `lg`. Source: `src/lib/admin/CairnAdminShell.svelte:241-242,638,649,669-693`.
+  [verified]
+- `f:9ntlzw` `EditPage`'s preview-device choice persists per browser under the localStorage key
+  `cairn-editor-preview-device`. Source: `src/lib/admin/EditPage.svelte:381,384-389`
+  (`deviceStorageKey = 'cairn-editor-preview-device'`; `localStorage.getItem`/`.setItem`).
+  [verified]
+
 ## docs/reference/admin-grammar-tokens.md
 
 - `f:lmcaon` The admin declares 18 `--cairn-type-*`/`--cairn-gap-*` grammar tokens plus 11 named role
   utilities (`type-*`, `gap-*`), outside the light/dark theme blocks, in `cairn-admin.css`.
-  Source: `src/lib/components/cairn-admin.css:56-76`. [verified]
+  Source: `src/lib/admin/cairn-admin.css:56-76`. [verified]
 - `f:rjcxh5` Exact token values match the page's table verbatim (title 1.5rem/2rem leading, heading
   1.125rem/1.75rem, subtitle 0.9375rem/1.1875rem, body 0.875rem/1.25rem, meta 0.8125rem/1.0625rem,
   label 0.6875rem/0.875rem, chip 0.625rem/0.8125rem; gap-label 0.25rem, gap-control 0.5rem,
-  gap-group 1rem, gap-section 1.5rem). Source: `src/lib/components/cairn-admin.css:56-76`.
+  gap-group 1rem, gap-section 1.5rem). Source: `src/lib/admin/cairn-admin.css:56-76`.
   [verified]
 - `f:cuio64` `--cairn-warning-ink` and `--color-positive-ink` are distinct per theme (light:
   `oklch(50% 0.13 70)` / `oklch(48% 0.12 150)`; dark: `oklch(80% 0.14 70)` / `oklch(78% 0.12 150)`),
   confirming the page's claim that the fill tone (`--color-warning`) measures far lower contrast
-  (~2.2:1) than the dedicated text inks. Source: `src/lib/components/cairn-admin.css:156,161,326,330`.
+  (~2.2:1) than the dedicated text inks. Source: `src/lib/admin/cairn-admin.css:156,161,326,330`.
   [verified]
 - `f:3ncib5` The three hand-composed chip classes (`cairn-chip-quiet`, `cairn-chip-warning`,
   `cairn-chip-outline`) each pin `font-weight: 400` unlayered, so they outrank a
   `font-semibold`/`font-medium` Tailwind utility on the same element. Source:
-  `src/lib/components/cairn-admin.css:920-997` (rules "PINNED unlayered rule 6/7/8 of 14").
+  `src/lib/admin/cairn-admin.css:920-997` (rules "PINNED unlayered rule 6/7/8 of 14").
   [verified]
 - `f:6isecz` Exactly five call sites carry a ratified `type-scale` exemption directive: the wordmark at three
   sites (ConfirmPage, CairnAdminShell, LoginPage) plus two in EditPage (document title, prose
   canvas), matching the page's "five ratified exceptions" claim even though its own table lists
   only three named rows (the wordmark row covers three sites). Source: `grep -rn
-  "cairn-audit-disable-next-line type-scale" src/lib/components/*.svelte` (5 hits: ConfirmPage.svelte,
+  "cairn-audit-disable-next-line type-scale" src/lib/admin/*.svelte` (5 hits: ConfirmPage.svelte,
   CairnAdminShell.svelte, LoginPage.svelte, EditPage.svelte x2). [verified]
 
 ## docs/reference/admin-routes.md
@@ -40,8 +63,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   case. Source: `src/lib/sveltekit/content-routes-shell.ts:301-315`. [verified]
 - `f:po1p8w` The dev-only chrome-boundary guard (an ancestor walk logging one `console.error` when a
   width-constraining ancestor sits between the admin root and `<body>`) is implemented in
-  `src/lib/components/chrome-guard.ts`, described in its own header as compiling out of
-  production. Source: `src/lib/components/chrome-guard.ts:1-54`. [verified]
+  `src/lib/admin/chrome-guard.ts`, described in its own header as compiling out of
+  production. Source: `src/lib/admin/chrome-guard.ts:1-54`. [verified]
 - `f:1mgfhj` The ten media-janitorial actions run at runtime on `createCairnAdmin`'s returned object but are
   absent from the type-level `CairnAdminRoutes` contract; recovering them for a typed caller needs
   a spread (`{ ...admin.actions }`) or a cast. This is a documented type-vs-runtime narrowing, not
@@ -67,8 +90,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `touch-targets` enforces). [verified]
 - `f:0tr2zx` `MediaPicker`'s thumbnail base falls back to `/media` (via `DEFAULT_MEDIA_BASE`) when mounted
   with no `MEDIA_BASE_CONTEXT_KEY` provider in context; `CairnAdminShell` is the provider that
-  supplies the site's real `assets.publicBase`. Source: `src/lib/components/media-base-context.ts:5`,
-  `src/lib/components/CairnAdminShell.svelte:76`, `src/lib/components/MediaPicker.svelte:65`.
+  supplies the site's real `assets.publicBase`. Source: `src/lib/admin/media-base-context.ts:5`,
+  `src/lib/admin/CairnAdminShell.svelte:76`, `src/lib/admin/MediaPicker.svelte:65`.
   [verified]
 - `f:lmgnn2` `AdminTable`'s `emptyColspan` defaults to `100`, relying on HTML's own `colspan` clamp to the
   real column count. Source: `src/lib/admin-toolkit/AdminTable.svelte:96`. [verified]
@@ -79,7 +102,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` count, and
   `clear` returns focus to the header checkbox. Source:
   `src/lib/admin-toolkit/AdminTable.svelte`. [verified]
-- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin it has one call site, the edit page's Hidden chip, so a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/components/EditPage.svelte:1456`. [verified]
+- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin it has one call site, the edit page's Hidden chip, so a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/admin/EditPage.svelte:1456`. [verified]
 - `f:ro7w36` `Tooltip` (added `0.97.0`) reads the triggering `PointerEvent`'s own `pointerType` to detect a
   coarse-pointer tap, never `matchMedia`, since a hybrid device can carry both a mouse and a
   touchscreen at once; an empty `text` prop opts the whole component out (no `aria-describedby`,
@@ -644,35 +667,6 @@ re-sourced to Go on this tree rather than to the page.
   [verified: for the current shape; the predecessor-name claim not independently checked against
   a deleted file]
 
-## docs/reference/components.md
-
-- `f:qmz20x` The 13 retired `register*` props on `MarkdownEditor` (11 per-capability callbacks plus the two
-  object grants `registerTidy`/`registerImagePlaceholders`) all collapsed into one
-  `registerEditor` callback delivering an `EditorApi` object once on mount and `null` once on
-  destroy. Source: `src/lib/components/MarkdownEditor.svelte:29,85-91` (`EditorApi` type,
-  `registerEditor` prop doc), `:946-949` (mount: `registerEditor?.({...})`), `:980` (destroy:
-  `registerEditor?.(null)`); a grep of the file for `registerFocusEditor`, `registerImagePlaceholders`,
-  `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`, and
-  `registerFormat` finds none of them. [verified]
-- `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
-  deliberate hardening so the token survives `use:enhance`'s native form reset after a successful
-  submit. Source: `src/lib/components/CsrfField.svelte:7,24`. [verified]
-- `f:iu46pv` `CairnAdminShell`'s sidebar breakpoint logic uses `min-width: 1024px` (`lg`) and `min-width:
-  1280px` (`xl`) media queries; a desk (document-editor) route persists the sidebar at `xl`,
-  recedes to an overlay through the `lg`-`xl` band, and both route kinds use the overlay drawer
-  below `lg`. Source: `src/lib/components/CairnAdminShell.svelte:241-242,638,649,669-693`.
-  [verified]
-- `f:9ntlzw` `EditPage`'s preview-device choice persists per browser under the localStorage key
-  `cairn-editor-preview-device`. Source: `src/lib/components/EditPage.svelte:381,384-389`
-  (`deviceStorageKey = 'cairn-editor-preview-device'`; `localStorage.getItem`/`.setItem`).
-  [verified]
-- `f:6q5q05` `PreviewBanner` renders the expiry inside a `<time datetime>` formatted by default as a fixed
-  `YYYY-MM-DD HH:MM UTC` string (never the visitor's locale), specifically because the same
-  formatter must run identically during SSR and hydration to avoid a hydration mismatch when the
-  Worker's runtime zone differs from the browser's. Source:
-  `src/lib/components/PreviewBanner.svelte:42-46` (`defaultFormatExpiry`), `:52-58` (doc comment:
-  hydration-mismatch rationale), `:68` (`<time datetime={preview.expiresAt}>`). [verified]
-
 ## docs/reference/core.md
 
 - `f:1to3po` `defineConcept`'s permalink default is `/:slug` when the concept id is exactly `pages`, and
@@ -869,7 +863,7 @@ re-sourced to Go on this tree rather than to the page.
   and Svelte's default `{expr}` binding rendering as text. [verified]
 - `f:7sc3pe` The edit page's preview frame is sandboxed (`sandbox=""`), so scripts never run there and the
   island runtime never mounts in the preview; verify a live island on the deployed page. Source:
-  `src/lib/components/EditPage.svelte:2128` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
+  `src/lib/admin/EditPage.svelte:2128` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
   the empty `sandbox` attribute blocks script execution by the HTML sandboxing spec (no
   `allow-scripts` token). [verified]
 
@@ -1038,6 +1032,15 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   SIZES_BY_ROLE[role]) || '100vw'`), and `:185-196` (`remarkResolveMedia`: `parseMediaToken`
   returns null and the visitor returns early for any non-`media:` src). [verified]
 
+## docs/reference/public.md
+
+- `f:6q5q05` `PreviewBanner` renders the expiry inside a `<time datetime>` formatted by default as a fixed
+  `YYYY-MM-DD HH:MM UTC` string (never the visitor's locale), specifically because the same
+  formatter must run identically during SSR and hydration to avoid a hydration mismatch when the
+  Worker's runtime zone differs from the browser's. Source:
+  `src/lib/public/PreviewBanner.svelte:42-46` (`defaultFormatExpiry`), `:52-58` (doc comment:
+  hydration-mismatch rationale), `:68` (`<time datetime={preview.expiresAt}>`). [verified]
+
 ## docs/reference/README.md
 
 - `f:u1y47n` Three stability tiers exist: Extension API (frozen), Scaffold API (frozen, for copied
@@ -1083,7 +1086,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:uzducy` The admin sheet owns roughly sixty of its own `cairn-*` classes (`cairn-type-*`, `cairn-chip-*`),
   documented in the admin design system, a separate registry from the emitted-markup side this page
   documents. Source: `docs/internal/admin-design-system.md` (49 distinct `--cairn-*`/`.cairn-*`
-  names in the doc's own prose; a grep of `src/lib/components` and `src/lib/admin-toolkit` for
+  names in the doc's own prose; a grep of `src/lib/admin` and `src/lib/admin-toolkit` for
   `--cairn-*`/`.cairn-*` tokens including size-modifier variants returns 82), consistent with
   "roughly sixty" as an order-of-magnitude figure. [verified]
 - `f:4d9ssv` `cairn-icon-label` is an admin-toolkit label class, not emitted by any render helper. Source:
@@ -1437,7 +1440,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:sd18xx` `NavLayoutSection.collapsed` (default `false`) is only the group's starting state for a visitor
   with no persisted `cairn-admin-nav-collapsed` cookie; the cookie, once any header is toggled,
   wins entirely in both directions, so a group added after a visitor's cookie already exists
-  renders open. Source: `src/lib/components/CairnAdminShell.svelte:192-218` (comment: "once any
+  renders open. Source: `src/lib/admin/CairnAdminShell.svelte:192-218` (comment: "once any
   header is touched, the cookie carries the full collapsed set and wins entirely"; `collapsed`
   state derivation; `writeAdminCookie('cairn-admin-nav-collapsed', ...)`). [verified]
 - `f:bc27j9` A `NavLayoutEntry.href` colliding with a built-in admin view throws at startup with the

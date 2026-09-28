@@ -1387,9 +1387,7 @@ test('email admission: a re-run after a decline prints the re-offered copy', asy
 // A record saved at `paid-plan-declined` before chapter 1 gained its own pre-deploy consent (the
 // only shape a real site record from before that change could carry: no field chapter 1's new
 // consent writes, since it persists no step at all) still short-circuits exactly the same way:
-// terminal, token deleted, zero network calls. This is the resume proof that reverting chapter
-// 2's own step name back to `paid-plan-declined` (after a since-reverted rename to
-// `email-declined`) changed nothing an existing record depends on.
+// terminal, token deleted, zero network calls.
 test('email admission: a record saved at paid-plan-declined by a version of the tool from before chapter 1 had its own deploy consent still resumes as a clean terminal stop', async (t) => {
   await freshStateDir(t);
   const stateDir = process.env.CAIRN_STATE_DIR;

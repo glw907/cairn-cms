@@ -528,10 +528,8 @@ const ROWS = {
   // This row fires from chapter 1, before anything is installed, built, or deployed: a cairn
   // site needs Workers Paid from its first deploy, so the run stops here rather than deploying
   // onto a plan that cannot carry it. There is no reoffered form: nothing was created yet, so a
-  // later re-run simply asks again from the same starting point. Its own catalogue code is
-  // distinct from chapter 2's paid-plan-declined row below (this decline persists no `step` at
-  // all, so the two codes never actually collide on a saved record, but a shared name would still
-  // read as if declining here and declining chapter 2's admission were the same event).
+  // later re-run simply asks again from the same starting point. A distinct code from chapter 2's
+  // own paid-plan-declined row below, since the two are different events.
   'deploy-plan-declined': {
     kind: 'declined',
     build(params) {

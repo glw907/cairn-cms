@@ -68,8 +68,8 @@ out of the list. Table cells and list items are sentences.
 
 The drafter (`cairn-docs-drafter`, run by the workstation's `docs-page-chain.js`) writes the
 `sentences` list together with the page, in the same round, never after it. A sentence that states two facts from two bullets is two sentences. A drafted sentence with
-no fact to cite is either `no-claim`, because it claims nothing, or it goes back to the facts
-container first, because a claim with no fact is the defect this check exists to catch.
+no fact to cite is either `no-claim`, because it claims nothing, or it goes back to the chain's
+page-inputs step first, because a claim with no fact is the defect this check exists to catch.
 
 ## What the check fails
 

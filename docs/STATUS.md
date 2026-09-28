@@ -32,8 +32,7 @@ overnight run. If it dies, resume each from its plan's ledger foot:
   before-and-after.
 - **Theme identity passes B and C**, spec approved. Pass C's plan is reviewed and cleared to run
   (`theme-c-plan` branch, `a6722a6e` plus the 29M ceiling ruling `8000a3f3`). Pass B's plan is
-  written and reviewed after pass A's segment D lands, then run without Geoff's read (standing
-  rule, `plans-proceed-on-adversarial-review` memory). **Ruling (Geoff, 2026-09-27):** pass B
+  written and reviewed after pass A's segment D lands, then run without Geoff's read (standing rule, `pass-core`). **Ruling (Geoff, 2026-09-27):** pass B
   branches from pass A's closed but unmerged head, not from `main` after A merges; pass C
   branches from B. S3 corrections land on A and merge forward into B and C; A, B, and C merge
   with the one `0.98.0` cut.

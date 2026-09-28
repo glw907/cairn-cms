@@ -65,10 +65,10 @@ own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
 
     <section class="flex flex-col gap-group" data-testid="tk-alerts">
       <div class="alert" data-testid="tk-alert-bare">A bare alert.</div>
-      <!-- The exact refusal-banner shape ConceptList.svelte:325 renders: an error alert carrying a
+      <!-- The exact refusal-banner shape ConceptList.svelte:330 renders: an error alert carrying a
            nested link, so the fixture proves the same markup the office list uses. -->
       <div
-        class="alert alert-error mb-4 flex-col items-start type-body"
+        class="alert alert-error mb-4 max-sm:grid-flow-row max-sm:grid-cols-1 items-start type-body"
         data-testid="tk-alert-error"
       >
         <p class="font-medium">This entry could not be deleted.</p>

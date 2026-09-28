@@ -465,3 +465,23 @@ test('review focus 3: the ladder join in RTL at 320px keeps its logical corners,
   );
   await expect.poll(() => last.evaluate((e) => getComputedStyle(e).borderColor)).toBe(hairline);
 });
+
+// Fix-round finding: the fixture's own error-alert markup had drifted from ConceptList's fixed
+// `max-sm:grid-flow-row max-sm:grid-cols-1` form, so it still rendered the pre-fix crushed column
+// at 320. Same shape ConceptList.test.ts already proves for the engine's own banner.
+test('the error alert body spans the alert width at 320, not a crushed column', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await gotoThemed(page, context, baseURL!, 'cairn-admin');
+
+  const alert = page.getByTestId('tk-alert-error');
+  const body = alert.locator('p').nth(1);
+  const alertBox = await alert.boundingBox();
+  const bodyBox = await body.boundingBox();
+  expect(alertBox).not.toBeNull();
+  expect(bodyBox).not.toBeNull();
+  expect(bodyBox!.width).toBeGreaterThan(alertBox!.width * 0.75);
+});

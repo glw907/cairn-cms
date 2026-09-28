@@ -387,25 +387,19 @@ The original decision framing, for the record:
   CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
   already. The next unexplained red `main` on a media test is this.**
 
-- **`create-cairn-site` tells a reader the deploy is free, then deploys something that is not
-  (release-debt pass, 2026-08-19).** The engine and docs now state that a cairn site runs on
-  Workers Paid from its first deploy, but the tool's own interactive flow still says the opposite at
-  the point it matters. `packages/create-cairn-site/src/cloudflare/chapter.mjs:106-113` is the
-  consent text a reader approves before deploying, and it promises "Cloudflare's free workers.dev
-  hosting ... The free plan is enough; nothing in this step costs money." At 3.2 MiB gzipped that
-  deploy fails on a free plan, so the tool breaks the promise it just made. This is not a copy fix:
-  `chapter2.mjs`'s `EMAIL_ADMISSION_DETAIL` and its JSDoc both depend on chapter 1 having
-  established "nothing up to here costs money", and the later "Turn on Workers Paid now, so anyone
-  besides you can sign in?" prompt is premised on Paid arriving later. Fixing it means reworking the
-  tool's money narrative and probably its prompt order, plus the `01c-resume.txt` and
-  `01d-resume.txt` fixtures. **Scoped as its own pass (Geoff, 2026-08-19), deliberately cut from the
-  release-debt pass rather than absorbed into it. Trigger: before `create-cairn-site` publishes,
-  which is the same decision the release cut already owes.**
-  The same pass adds one setup prompt (Geoff, 2026-09-27): the AI posture. Today the template
-  ships `aiPosture` commented out in `src/theme/cairn.config.ts`, so a new site states no
-  preference until its developer edits the config. The prompt writes `'decline'` or `'invite'`,
-  with no preference as the default answer. `docs/extend/choose-an-ai-posture.md` then becomes
-  the page for changing that choice later, so its rewrite follows this change.
+- **`create-cairn-site` promises a free deploy; a cairn site runs on Workers Paid from its first
+  deploy (Geoff, 2026-09-27: "I don't think that it would ever work with the Free tier").** A
+  small chore, queued for the 2026-09-27 overnight run, not a pass. Chapter 2's email text
+  (`packages/create-cairn-site/src/cloudflare/chapter2.mjs:191-196`) already states the truth;
+  chapter 1's deploy consent (`chapter.mjs:108-113`) still says "Cloudflare's free workers.dev
+  hosting" and "nothing in this step costs money". The chore: confirm or turn on Workers Paid
+  before the first build and deploy, so the later email step no longer offers Paid as a fresh
+  choice; reword the deploy consent to match chapter 2; update the resume transcripts and the
+  `paid-plan-declined` path (declining stops setup before any deploy). It also adds one setup
+  prompt: the AI posture, written as `aiPosture: 'decline'` or `'invite'` into
+  `src/theme/cairn.config.ts`, with no preference as the default answer; the template ships the
+  field commented out today. `docs/extend/choose-an-ai-posture.md` then becomes the page for
+  changing that choice later, so its rewrite follows this change.
 
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated

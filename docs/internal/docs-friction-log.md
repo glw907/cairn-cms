@@ -58,6 +58,18 @@ New findings start below this line, one per finding, with its perspective and a 
   actual ratios, ideally with the rendered `border-contrast` rule itself against a `text-muted`
   ancestor fixture, before restoring specific numbers to the page.
 
+- **`contributor`.** Task 9's chain-proof redraft of `choose-an-ai-posture.md` moved the
+  crawler-decline listing and the limits of declining into the `buildRobots` reference entry, which
+  the amended register's task-guide anatomy wants (explanation subordinate to the steps). The
+  page's own brief still lists those relocated sentences as claims the extend page carries, because
+  the page-inputs step's claim inventory has no disposition for "carried, but by a linked reference
+  entry, not this page." A fact reader checking the brief against the page reads this as dropped
+  content. Either the claim inventory needs a "carried by a linked page" disposition, or the
+  fact-read step needs to follow a claim's citation to wherever the current page text actually
+  states it before flagging it dropped. Full detail:
+  `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-proof.md`, "Finding: the page-chain's
+  brief format and the register's anatomy disagree".
+
 Docs reset pass 1's close (2026-09-24) triaged the whole log and found no open entry. The pass
 routed its own findings straight to `ROADMAP.md` in the same step, so none opens here. The docs
 reset itself went to the Now tier, with pass 1b next. The pass's deferred chain and harness items,

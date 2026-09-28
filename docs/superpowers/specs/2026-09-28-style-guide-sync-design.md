@@ -2,7 +2,8 @@
 
 **Status:** approved design (Geoff, 2026-09-28), revised by two `spec-plan-review` folds
 (`docs/superpowers/research/2026-09-28-style-guide-sync-fold.md`). The owner rulings are answered
-(rulings 7 to 11); the plan is authored next.
+(rulings 7 to 11); the plan review's fold added rulings 12 to 14
+(`docs/superpowers/research/2026-09-28-style-guide-sync-plan-fold.md`).
 **Inputs:** the brainstorm brief
 (`docs/superpowers/research/2026-09-28-style-guide-sync-brainstorm-brief.md`) and the audit beside
 it (`2026-09-28-style-guide-sync-audit.md`). The audit's conflict ids (C1 to C8), gap ids (S1 to
@@ -110,6 +111,22 @@ stands on his word.
       only its brief; the layering (provenance, exceptions, rationale) lives elsewhere in the
       register for reviewers.
     - A check keeps each brief in step with its sources, so the flattening costs no drift.
+12. **The charter's "no house voice" rule is corrected (Geoff, 2026-09-28).** Verbatim: "The cairn
+    overlay or the cairn docs voice is absolutely a house voice, so the workstation charter is
+    wrong." Every audience starts from a published external standard as its base. A repo may carry
+    a named house voice as a recorded overlay on that base; the overlay never replaces the base
+    standard's structure, and every departure carries provenance and Geoff's ruling. W4 carries
+    the correction into the authoring charter, the global `CLAUDE.md` "Writing voice" section, the
+    `writing-voice` output style, and the `writing-voice` skill; the repo `CLAUDE.md` Authoring
+    section ("with no house voice", "On top of the Google floor") takes it in chain R, since the
+    file is this repo's. "No house voice" joins W6's retired phrases where it asserts the old rule.
+13. **cairn.pub: route now, adopt later (Geoff, 2026-09-28).** W4's routing names cairn.pub's own
+    prose as developer-brief. A ROADMAP item covers cairn-pub adopting Vale and a `CLAUDE.md` line
+    pointing at the brief, in a cairn-pub pass.
+14. **Tone-read timing (conductor's decision under ruling 7, 2026-09-28).** The same single read
+    moves: Geoff reads the R5 diff right after R5 lands. The proof run may run meanwhile; R1b waits
+    for his read and takes its specimen only from text he has read. This supersedes the placement
+    "the close waits on" in ruling 7; the read itself is unchanged.
 
 ## Design
 
@@ -316,7 +333,10 @@ the Google arms; the editors genre exemplar becomes `editor.md`'s Microsoft exem
 dispatched with no track (`register-check` on a spec or plan), the guide lens applies Google to
 published arms and the register itself, and stays off for internal records.
 
-**W4. The voice docs.** `skills/writing-voice/SKILL.md` gains "a sequence of actions is a numbered
+**W4. The voice docs.** Ruling 12's correction lands in `docs/authoring-charter.md`, the global
+`CLAUDE.md` "Writing voice" section, `output-styles/writing-voice.md`, and the skill, and the
+cairn-docs route names cairn.pub's own prose as developer-brief (ruling 13).
+`skills/writing-voice/SKILL.md` gains "a sequence of actions is a numbered
 list" beside "paragraphs over bullets", and qualifies its editor-copy routing row ("admin
 walkthroughs") to a UI walkthrough with no terminal step. `docs/voice/technical-doc-web.md` gains
 one line: a repo's register may record voice deltas against this standard, and within that repo
@@ -340,7 +360,8 @@ and a cairn docs check wherever one appears in `~/.dotfiles/claude` (agents, ski
 `docs/`), both `CLAUDE.md` files, or cairn's `docs/internal` (excluding dated records, specs,
 plans, and research, which are history). The seed list: "Vale-enforced floor", "a floor is not a
 ceiling", "academic introduction", "slightly academic", the 25-40-word baseline, "on top of the
-Google floor", and "admin walkthroughs" routed to Microsoft. Each fixture proves the check fires
+Google floor", "admin walkthroughs" routed to Microsoft, and "no house voice" and "not a house
+voice" (ruling 12). The plan fixes the literal strings. Each fixture proves the check fires
 on a planted phrase and passes on the clean tree. A later voice change adds its retired phrases.
 
 **W7. Infra read at pass end (Geoff, 2026-09-28: "we failed on that front earlier").** After the
@@ -350,7 +371,8 @@ or cairn UI copy, including the agents, `writing-voice` and its routed docs, `ca
 charter, the repo `CLAUDE.md`, and the admin design system. For each file it returns a verdict:
 routes to the right drafting brief (or states the Microsoft UI-copy voice), restates no rule of
 its own, and carries no retired term. Every mismatch is fixed before the close, and every phrase
-it finds joins W6's list. The owed `CLAUDE.md` erratum ("On top of the Google floor") lands here.
+it finds joins W6's list. The owed `CLAUDE.md` erratum ("On top of the Google floor") lands in
+chain R with ruling 12's edit; W7 verifies it.
 
 ### Exemplars
 

@@ -122,4 +122,20 @@ describe('chip-ground-collision: the chip shape re-key', () => {
     );
     expect(findings).toEqual([]);
   });
+
+  it('does not flag a select under a theme whose selector and field radii are equal', async () => {
+    // A native <select>'s textContent concatenates its option text, so this case is proven only
+    // by the tag exclusion, not incidentally by the text check.
+    const findings = await findingsFor(
+      chipGroundCollision,
+      `<body style="background-color: ${GROUND}; --radius-selector: 6px; --radius-field: 6px">
+         <select style="display:inline-block;height:32px;line-height:32px;background-color:${FILL};
+               border-radius:var(--radius-field);padding:0 14px;font:13px system-ui">
+           <option>Draft</option>
+         </select>
+       </body>`,
+      browser
+    );
+    expect(findings).toEqual([]);
+  });
 });

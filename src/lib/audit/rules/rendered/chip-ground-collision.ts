@@ -287,9 +287,23 @@ function readChipGrounds(): ChipGroundReading {
   const chips: ChipGroundCandidate[] = [];
   for (const el of document.querySelectorAll('*')) {
     if (!isPainted(el)) continue;
-    // A button, input, or link answers to its own interaction affordance, never a status pill,
-    // whatever its resolved corner radius happens to be.
-    if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'A') continue;
+    // A button, input, select, textarea, or link answers to its own interaction affordance,
+    // never a status pill, whatever its resolved corner radius happens to be. daisyUI also
+    // builds controls on other tags (`label.input`, `span.btn`), so the same skip covers any
+    // element carrying a daisyUI control class or an explicit button role.
+    if (
+      el.tagName === 'BUTTON' ||
+      el.tagName === 'INPUT' ||
+      el.tagName === 'SELECT' ||
+      el.tagName === 'TEXTAREA' ||
+      el.tagName === 'A' ||
+      el.classList.contains('btn') ||
+      el.classList.contains('input') ||
+      el.classList.contains('select') ||
+      el.classList.contains('textarea') ||
+      el.getAttribute('role') === 'button'
+    )
+      continue;
     const style = getComputedStyle(el);
     const isChip = el.classList.contains('badge') || isChipShaped(el, style);
     if (!isChip) continue;

@@ -144,11 +144,54 @@ and one `User-agent`/`Disallow: /` group per training-crawler token in its inter
 `'invite'` adds `Content-Signal: search=yes, ai-train=yes` and no `Disallow`, since no robots
 directive invites a crawler.
 
+The output keeps one fixed line order. With `sitemapUrl: 'https://example.com/sitemap.xml'` and
+`disallow: ['/admin']`, `'decline'` produces the following file, the seven crawler groups in table
+order:
+
+```text
+User-agent: *
+Content-Signal: ai-train=no
+Allow: /
+Disallow: /admin
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+Sitemap: https://example.com/sitemap.xml
+```
+
 Declining is a request that named crawlers say they honor, not enforcement. robots.txt has no
-mechanism to block a fetch. OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are exempt
-from robots.txt by their own operators' first-party design, so a fully declining site can still
-receive a live fetch when someone asks an assistant about it. See the [`AiPosture`](#types) row
-below for the full honesty constraint, carried on `CairnAdapter.aiPosture`.
+mechanism to block a fetch. Four of the seven operators in the table (Amazon, Anthropic, Google,
+and Common Crawl) state outright that they honor robots.txt, and the other three document it as
+the control for their training crawler without that promise. OpenAI's `ChatGPT-User` and
+Perplexity's `Perplexity-User` are exempt from robots.txt by their own operators' first-party
+design, so a fully declining site can still receive a live fetch when someone asks an assistant
+about it. See the [`AiPosture`](#types) row below for the full honesty constraint, carried on
+`CairnAdapter.aiPosture`.
+
+The crawler table is fixed, and no option declines a crawler outside it. `disallow` cannot stand
+in for one, because its paths always emit under the `User-agent: *` group. A token ships only
+with first-party documentation from its operator, which is why Bytespider is absent. Search
+crawlers such as Googlebot stay out of the table, since disallowing one costs search presence and brings
+no training benefit.
 
 `Content-Signal` syntax follows Cloudflare's published policy
 (https://blog.cloudflare.com/content-signals-policy/): directive `Content-Signal`, keys

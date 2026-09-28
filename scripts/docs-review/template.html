@@ -1,0 +1,473 @@
+<title>__CAIRN_REVIEW_TITLE__</title>
+<style id="cairn-docs-review-style">
+  :root {
+    --cdr-bg: #f1f3f5;
+    --cdr-surface: #ffffff;
+    --cdr-ink: #1c2430;
+    --cdr-muted: #5b6472;
+    --cdr-accent: #2f6f62;
+    --cdr-border: #d7dce2;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --cdr-bg: #14171c;
+      --cdr-surface: #1c2027;
+      --cdr-ink: #e8eaee;
+      --cdr-muted: #9aa3b2;
+      --cdr-accent: #5fb3a1;
+      --cdr-border: #2b303a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --cdr-bg: #14171c;
+    --cdr-surface: #1c2027;
+    --cdr-ink: #e8eaee;
+    --cdr-muted: #9aa3b2;
+    --cdr-accent: #5fb3a1;
+    --cdr-border: #2b303a;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding-inline: max(16px, env(safe-area-inset-left, 0px));
+    padding-block: 16px;
+    background: var(--cdr-bg);
+    color: var(--cdr-ink);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  #app { max-width: 46rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+  #cairn-docs-review-toolbar {
+    max-width: 46rem;
+    margin-inline: auto;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    background: var(--cdr-bg);
+    padding-block: 0.5rem;
+  }
+  #cairn-docs-review-banner {
+    margin: 0;
+    margin-inline-end: auto;
+    flex: 1 1 16rem;
+    color: var(--cdr-accent);
+    font-size: 0.9rem;
+  }
+  button {
+    font: inherit;
+    border: 1px solid var(--cdr-border);
+    background: var(--cdr-surface);
+    color: var(--cdr-ink);
+    border-radius: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #cairn-docs-review-save { background: var(--cdr-accent); color: var(--cdr-surface); border-color: var(--cdr-accent); }
+  .doc-file {
+    background: var(--cdr-surface);
+    border: 1px solid var(--cdr-border);
+    border-radius: 0.6rem;
+    padding: 1rem 1.25rem;
+  }
+  .doc-file header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--cdr-border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .doc-file h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.05rem;
+    margin: 0;
+    margin-inline-end: auto;
+    word-break: break-all;
+  }
+  .doc-file-preview :is(h1, h2, h3, h4, h5, h6) { font-family: Georgia, "Times New Roman", serif; }
+  .doc-file-preview pre {
+    overflow-x: auto;
+    background: var(--cdr-bg);
+    border: 1px solid var(--cdr-border);
+    border-radius: 0.4rem;
+    padding: 0.75rem;
+  }
+  .doc-file-preview code {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.9em;
+  }
+  .table-wrap { overflow-x: auto; }
+  .doc-file-preview table { border-collapse: collapse; min-width: 100%; }
+  .doc-file-preview th, .doc-file-preview td {
+    border: 1px solid var(--cdr-border);
+    padding: 0.35rem 0.6rem;
+    text-align: left;
+  }
+  .doc-file-editor {
+    width: 100%;
+    min-height: 12rem;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.9rem;
+    border: 1px solid var(--cdr-border);
+    border-radius: 0.4rem;
+    padding: 0.6rem;
+    background: var(--cdr-bg);
+    color: var(--cdr-ink);
+  }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<div id="cairn-docs-review-toolbar">
+  <p id="cairn-docs-review-banner" role="status" hidden></p>
+  <button type="button" id="cairn-docs-review-save" data-write-control>Save</button>
+</div>
+<div id="app"></div>
+<script type="application/json" id="cairn-docs-review-state">__CAIRN_REVIEW_STATE__</script>
+<script id="cairn-docs-review-script">
+/*__CAIRN_REVIEW_RUNTIME__*/
+(function () {
+  'use strict';
+
+  // The small reset the Artifact tool's own skeleton head carries, reproduced here because a
+  // self-publish must build that skeleton itself rather than rely on the tool to add it.
+  var RESET_CSS =
+    ':root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);' +
+    'padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,' +
+    'BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#fafafa}img{max-width:100%}' +
+    '[hidden]{display:none!important}';
+  var STASH_KEY = 'cairn-docs-review-stash';
+
+  // Captured once, synchronously, at load: this page's own style block and this page's own
+  // script element. Neither ever changes after load, so capturing them here (rather than
+  // serializing the whole live document later) cannot pick up anything the viewer shell injects
+  // elsewhere in the page.
+  var styleHtml = document.getElementById('cairn-docs-review-style').outerHTML;
+  var toolbarHtml = document.getElementById('cairn-docs-review-toolbar').outerHTML;
+  var ownScriptHtml = document.currentScript.outerHTML;
+
+  var stateEl = document.getElementById(STATE_ELEMENT_ID);
+  var embeddedState = decodeState(stateEl.textContent);
+  var stashRaw = null;
+  try {
+    stashRaw = window.sessionStorage.getItem(STASH_KEY);
+  } catch (err) {
+    stashRaw = null;
+  }
+  var stashedFiles = stashRaw ? decodeState(stashRaw).files : null;
+
+  var state = {
+    title: embeddedState.title,
+    files: computeRestoredFiles(stashedFiles, embeddedState.files),
+  };
+  var readOnly = false;
+  var saving = false;
+  // Why each group of controls is off, or null while it is live. Write controls (Save and every
+  // Edit) go off when this view cannot save; Comment goes off when it cannot comment.
+  var writeOffReason = null;
+  var commentOffReason = null;
+  var artifactApi = null;
+  var commentsApi = null;
+  // The in-flight capability lookups, started at load. A control clicked before its lookup
+  // settles waits on it rather than finding a null namespace and doing nothing.
+  var artifactLookup = null;
+  var commentsLookup = null;
+
+  var READ_ONLY_MESSAGE = 'This review page is read-only for you: publishing is off here.';
+  var UNAVAILABLE_SUFFIX = ' Open the page in the Claude artifact viewer to use it.';
+
+  /**
+   * Rebuilds the whole document from `nextState`, in the exact shape a self-publish must match:
+   * the skeleton the Artifact tool would have wrapped this page in, with this page's own title,
+   * style, mount point, state, and script placed inside its body exactly as authored.
+   */
+  function buildDocument(nextState) {
+    return (
+      '<!doctype html><html><head><meta charset=utf8><meta name=viewport ' +
+      'content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' +
+      RESET_CSS +
+      '</style></head><body>' +
+      '<title>' + escapeHtml(nextState.title) + '</title>' +
+      styleHtml +
+      toolbarHtml +
+      '<div id="app"></div>' +
+      '<script type="application/json" id="' + STATE_ELEMENT_ID + '">' +
+      encodeState(nextState) +
+      '<' + '/script>' +
+      ownScriptHtml +
+      '</body></html>'
+    );
+  }
+
+  function stashState(currentState) {
+    try {
+      window.sessionStorage.setItem(STASH_KEY, encodeState(currentState));
+    } catch (err) {
+      // Storage can be unavailable (private mode, a strict host); the save still goes out, it
+      // just cannot survive a conflict reload this time.
+    }
+  }
+
+  function showStatus(text) {
+    var banner = document.getElementById('cairn-docs-review-banner');
+    if (!banner) return;
+    banner.hidden = false;
+    banner.textContent = text;
+  }
+
+  function setControlsOff(selector, reason) {
+    var controls = document.querySelectorAll(selector);
+    for (var i = 0; i < controls.length; i += 1) {
+      controls[i].disabled = true;
+      controls[i].title = reason;
+    }
+  }
+
+  function unavailableNotice() {
+    if (writeOffReason === null && commentOffReason === null) return null;
+    if (readOnly) {
+      return commentOffReason === null ? READ_ONLY_MESSAGE : READ_ONLY_MESSAGE + ' ' + commentOffReason;
+    }
+    if (writeOffReason !== null && commentOffReason !== null) {
+      return 'Saving and commenting are unavailable in this view.' + UNAVAILABLE_SUFFIX;
+    }
+    return writeOffReason !== null ? writeOffReason : commentOffReason;
+  }
+
+  function turnWritingOff(reason) {
+    writeOffReason = reason;
+    setControlsOff('[data-write-control]', reason);
+    showStatus(unavailableNotice());
+  }
+
+  function turnCommentingOff(reason) {
+    commentOffReason = reason;
+    setControlsOff('[data-action="comment"]', reason);
+    showStatus(unavailableNotice());
+  }
+
+  function applyReadOnlyUi() {
+    readOnly = true;
+    turnWritingOff(READ_ONLY_MESSAGE);
+  }
+
+  function offAttributes(reason) {
+    return reason === null ? '' : ' disabled title="' + escapeHtml(reason) + '"';
+  }
+
+  function fileSectionHtml(file, index) {
+    return (
+      '<section class="doc-file" data-index="' + index + '">' +
+      '<header><h2>' + escapeHtml(file.path) + '</h2>' +
+      '<button type="button" data-write-control data-action="edit" data-index="' + index + '"' +
+      offAttributes(writeOffReason) + '>Edit</button>' +
+      '<button type="button" data-action="comment" data-index="' + index + '"' +
+      offAttributes(commentOffReason) + '>Comment</button>' +
+      '</header>' +
+      '<div class="doc-file-preview">' + renderMarkdown(file.markdown) + '</div>' +
+      '<textarea class="doc-file-editor" hidden data-index="' + index + '">' +
+      escapeHtml(file.markdown) + '</textarea>' +
+      '</section>'
+    );
+  }
+
+  function render() {
+    var app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = state.files.map(fileSectionHtml).join('');
+  }
+
+  function readTextareaValues() {
+    state.files = state.files.map(function (file, index) {
+      var textarea = document.querySelector('.doc-file-editor[data-index="' + index + '"]');
+      return textarea ? { path: file.path, markdown: textarea.value } : file;
+    });
+  }
+
+  /**
+   * Resolves one capability's namespace, or null when this view cannot run it: no
+   * `window.claude` (a copy of the page opened outside the viewer), `use()` resolving null, or
+   * `use()` rejecting. Never rejects, so no caller can leave an unhandled rejection behind.
+   */
+  function lookUpCapability(name) {
+    var claude = window.claude;
+    if (!claude || typeof claude.use !== 'function') return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      resolve(claude.use(name));
+    }).then(
+      function (namespace) { return namespace || null; },
+      function () { return null; },
+    );
+  }
+
+  function setSaveBusy(busy) {
+    var saveButton = document.getElementById('cairn-docs-review-save');
+    if (saveButton) saveButton.disabled = busy || writeOffReason !== null;
+  }
+
+  function reportPublishRejection(code) {
+    if (isReadOnlyRejection(code)) {
+      applyReadOnlyUi();
+    } else if (
+      code === 'not_declared' ||
+      code === 'capability_disabled' ||
+      code === 'capability_removed'
+    ) {
+      turnWritingOff('Saving is unavailable in this view (' + code + ').' + UNAVAILABLE_SUFFIX);
+    } else if (code === 'conflict') {
+      // The shell is already reloading every open view to the winning version; this view's
+      // stash is what brings the unsent edit back after that reload.
+      showStatus(
+        'Someone else saved first. The page is reloading to their version, and your edits ' +
+          'come back after the reload.',
+      );
+    } else if (code === 'rate_limited') {
+      showStatus('Saving too often. Wait a moment, then press Save again.');
+    } else {
+      showStatus(
+        'The save did not go through (' + (code || 'unknown error') + '). Press Save to try again.',
+      );
+    }
+  }
+
+  async function save() {
+    if (readOnly || saving || writeOffReason !== null) return;
+    saving = true;
+    setSaveBusy(true);
+    try {
+      if (!artifactApi) {
+        showStatus('Connecting to the artifact viewer\u2026');
+        // A null lookup has already turned saving off and said why.
+        if (!(await artifactLookup)) return;
+      }
+      readTextareaValues();
+      stashState(state);
+      showStatus('Saving\u2026');
+      try {
+        await artifactApi.publish(buildDocument(state));
+        showStatus('Saved. The page reloads to the new version.');
+      } catch (err) {
+        reportPublishRejection(err && err.code);
+      }
+    } finally {
+      saving = false;
+      setSaveBusy(false);
+    }
+  }
+
+  function reportCommentRejection(code) {
+    if (
+      code === 'not_granted' ||
+      code === 'forbidden' ||
+      code === 'consent_required' ||
+      code === 'capability_disabled' ||
+      code === 'capability_removed'
+    ) {
+      turnCommentingOff('Commenting from the page is off here (' + code + ').');
+    } else if (code === 'rate_limited') {
+      showStatus('Too many comment requests. Wait a moment, then press Comment again.');
+    } else {
+      showStatus(
+        'The comment box could not open (' + (code || 'unknown error') + '). ' +
+          'Press Comment to try again.',
+      );
+    }
+  }
+
+  async function comment(section) {
+    if (commentOffReason !== null) return;
+    if (!commentsApi) {
+      showStatus('Connecting to the artifact viewer\u2026');
+      // A null lookup has already turned commenting off and said why.
+      if (!(await commentsLookup)) return;
+    }
+    var result;
+    try {
+      result = await commentsApi.openComposer({ element: section });
+    } catch (err) {
+      reportCommentRejection(err && err.code);
+      return;
+    }
+    if (result && result.opened) {
+      showStatus('Comment box open.');
+    } else {
+      // A soft refusal: the page did not hold focus, or the viewer already has a composer open
+      // with typed text. Never retried automatically.
+      showStatus(
+        'The comment box did not open. Click inside the page, close any open comment box, ' +
+          'then press Comment again.',
+      );
+    }
+  }
+
+  function toggleEditor(section, button) {
+    var preview = section.querySelector('.doc-file-preview');
+    var editor = section.querySelector('.doc-file-editor');
+    if (!preview || !editor) return;
+    var opening = editor.hidden;
+    if (!opening) preview.innerHTML = renderMarkdown(editor.value);
+    preview.hidden = opening;
+    editor.hidden = !opening;
+    button.textContent = opening ? 'Preview' : 'Edit';
+    if (opening) editor.focus();
+  }
+
+  function wireEvents() {
+    var saveButton = document.getElementById('cairn-docs-review-save');
+    if (saveButton) saveButton.addEventListener('click', save);
+    document.addEventListener('click', function (event) {
+      // Resolve the control from whatever node received the click, a text node included, so
+      // the handler does not depend on which node a given browser reports as the target.
+      var node = event.target;
+      if (node && node.nodeType !== 1) node = node.parentElement;
+      var control = node && typeof node.closest === 'function' ? node.closest('[data-action]') : null;
+      if (!control || control.disabled) return;
+      var section = control.closest('.doc-file');
+      if (!section) return;
+      var action = control.getAttribute('data-action');
+      if (action === 'edit') toggleEditor(section, control);
+      else if (action === 'comment') comment(section);
+    });
+  }
+
+  function init() {
+    render();
+    wireEvents();
+    // Publish this page with capabilities: {artifact: {}, comments: {composer_only: true}}.
+    // Only openComposer is called here, matching the composer-only grant. The two lookups run
+    // side by side, so a slow or unanswered one never holds up the other.
+    artifactLookup = lookUpCapability('artifact').then(function (namespace) {
+      artifactApi = namespace;
+      if (!namespace) turnWritingOff('Saving is unavailable in this view.' + UNAVAILABLE_SUFFIX);
+      return namespace;
+    });
+    commentsLookup = lookUpCapability('comments').then(function (namespace) {
+      commentsApi = namespace;
+      if (!namespace) {
+        turnCommentingOff('Commenting from the page is unavailable in this view.' + UNAVAILABLE_SUFFIX);
+      }
+      return namespace;
+    });
+  }
+
+  // Exposed for tests and debugging; not part of the page's own UI.
+  window.__cairnDocsReview = {
+    getState: function () { return state; },
+    isReadOnly: function () { return readOnly; },
+    buildDocument: buildDocument,
+    save: save,
+    render: render,
+  };
+
+  init();
+})();
+// cairn-docs-review-script-end
+</script>

@@ -142,7 +142,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:w379wu` Every publish is a commit with the editor as author and the GitHub App as committer, per spec
   §7.4. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in editor (spec §7.4).
   The committer is left to the App." [verified]
-- `f:ab9kzr` The current published version is `0.96.0`. Source: `package.json:3`. [verified]
+- `f:ab9kzr` The current published version is `0.97.0`. Source: `package.json:3`. [verified]
 - `f:0xsi67` `check:surface` runs a public-surface snapshot gate (`check-surface.mjs`) plus a leak check
   (`check-surface-leaks.mjs`). Source: `package.json:40`. [verified]
 - `f:usjir5` `check:version` is a standalone gate script. Source: `package.json:53`. [verified]
@@ -175,14 +175,13 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   `docs/internal/what-cairn-is-and-is-not.md:83-90`, "The `cairn` tool is the operator's cockpit,
   not engine surface", "a second front over the same contracts", and "never adds to the engine's
   public surface or models a domain actor". [verified]
-- `f:xh2mwb` `cairn-audit` ships whole as a consumer product: all 28 registered rules audit the
-  `/admin` surface, which is itself cairn's own admin toolkit, so design-conformance auditing is the
-  product being shipped, not engine-internal apparatus. Key phrase: "ships whole, as consumer
-  product". Source: same file, "`cairn-audit` ships whole, as consumer product," citing
-  `docs/reference/cairn-audit.md`. [candidate: excluded, the owner brief's "all 28 registered rules"
-  (line 49) was not recounted and no longer holds: `src/lib/audit/rules/` now carries more than 28
-  rule modules, among them `log-event-grammar` and `log-secret-field`, which read logger calls
-  rather than the `/admin` surface]
+- `f:xh2mwb` `cairn-audit` ships whole as a consumer product: all 34 registered rules (17 static, 17
+  rendered) audit the `/admin` surface, which is itself cairn's own admin toolkit, so
+  design-conformance auditing is the product being shipped, not engine-internal apparatus. Key
+  phrase: "ships whole, as consumer product". Source:
+  `docs/internal/what-cairn-is-and-is-not.md:45-52`, "`cairn-audit` ships whole, as consumer
+  product," citing `docs/reference/cairn-audit.md`, and `src/lib/audit/rules/static/index.ts#staticRules`,
+  `src/lib/audit/rules/rendered/index.ts#renderedRules`. [verified]
 
 ## Harvest record
 Decisions/opinions found, not harvested as facts:

@@ -44,13 +44,44 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   production. Source: `src/lib/components/chrome-guard.ts:1-54`. [verified]
 - `f:1mgfhj` The ten media-janitorial actions run at runtime on `createCairnAdmin`'s returned object but are
   absent from the type-level `CairnAdminRoutes` contract; recovering them for a typed caller needs
-  a spread (`{ ...admin.actions }`) or a cast. This is a documented type-vs-runtime narrowing, not
-  independently re-verifiable by grep alone. Source: `src/lib/sveltekit/cairn-admin.ts`. [candidate: searched
-  that file for `CairnAdminRoutes`, found no type definition in it
-  to diff against the runtime object directly, pending a dedicated type-level check]
+  a spread (`{ ...admin.actions }`) or a cast. `mediaUpload` is deliberately excluded from the
+  narrowed set: it stays in the declared type, wrapping the same `uploadAction` the kept `upload`
+  action wraps, gated to the media view instead of the edit view. Source:
+  `src/lib/sveltekit/cairn-admin.ts` (`CairnAdminRoutes` interface and the `actions` object).
+  [verified]
+- `f:6toyed` `previewMint` and `previewRevoke` are `edit`-gated actions present at runtime and kept
+  (not narrowed away) in the declared `CairnAdminRoutes` type, alongside the other named actions;
+  sveltekit.md's own `actions` table omitted both rows until this fact prompted their addition.
+  Source: `src/lib/sveltekit/cairn-admin.ts:301-304,399-400`. [verified]
+- `f:hjhp4w` Logout and publish-all always post to the fixed absolute `/admin?/logout` and
+  `/admin?/publishAll` paths, both of which parse to the `index` view, never to the editor's
+  current page URL. Source: `src/lib/components/CairnAdminShell.svelte:12,1160`;
+  `src/lib/sveltekit/cairn-admin.ts:260-262,279,340` (`authedViews`/`anyView`). [verified]
+- `f:p3vmug` The showcase's admin route files differ from `admin-routes.md`'s "reproduced from the
+  showcase" snippets in two ways: they import the composer through the showcase-internal
+  `$chassis` alias (not `$lib`), and `+layout.svelte` imports a compiled `.cairn/admin.css`,
+  present in both the showcase and the `create-cairn-site` scaffold template
+  (`templates/waymark/src/routes/admin/+layout.svelte`). Source:
+  `examples/showcase/src/routes/admin/+layout.server.ts`,
+  `examples/showcase/src/routes/admin/+layout.svelte`,
+  `templates/waymark/src/routes/admin/+layout.svelte`. [candidate: unclear whether the
+  `.cairn/admin.css` import is required for the base single-mount admin to render, or only for a
+  site that adds its own Tailwind-styled admin screens per the style-sheet seam ruling;
+  `docs/extend/build-a-site-by-hand.md`'s hand-build walkthrough also omits it]
 
 ## docs/reference/admin-toolkit.md
 
+- `f:0vgrcx` `TextInput` and `SelectInput` shipped at `0.94.0` (renamed from admin-fields'
+  `TextField`/`SelectField`); `FieldRow` was added later, at `0.95.0` (commit `68d622a1`,
+  2026-08-07), not alongside the 0.94.0 merge. All three retired together in the retires pass,
+  batch 1a. Source: `CHANGELOG.md:3817-3827` (0.94.0 merge entry, no FieldRow), `CHANGELOG.md:1254-1256`
+  (retirement entry), commit `68d622a1` (FieldRow's introducing commit, first tagged at
+  `v0.95.0-rc.1`). [verified]
+- `f:i450hg` `ListToolbarFilter.display` is a three-way union, `'select' | 'segmented' | 'menu'`, not
+  two-way: the `'menu'` display is a fully shipped facet (an in-control applied-value trigger
+  folding onto `ToolbarDisclosure`, with its own ARIA-menu panel). Source:
+  `src/lib/admin-toolkit/list-toolbar.ts:63`, `src/lib/admin-toolkit/ListToolbar.svelte:300-359`.
+  [verified]
 - `f:itlble` `formatCivilDate`/`formatTimestamp` both default `fallback` to `''`, `locale` to `'en-US'`;
   `formatTimestamp` additionally defaults `timeZone` to `'UTC'` (deliberately not a site's own
   zone). Source: `src/lib/admin-toolkit/format.ts:38-100`. [verified]
@@ -79,7 +110,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` count, and
   `clear` returns focus to the header checkbox. Source:
   `src/lib/admin-toolkit/AdminTable.svelte`. [verified]
-- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin it has one call site, the edit page's Hidden chip, so a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/components/EditPage.svelte:1456`. [verified]
+- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin the `StatusChip` component itself has one outline call site, EditPage's Hidden chip (component-rendered, not hand-composed). Three more surfaces hand-compose the same `cairn-chip-outline` class directly rather than through the component: ManageEditors, ReferenceField, and MediaCaptureCard. Together that is four outline call sites in the engine, not through the component alone; a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/components/EditPage.svelte:1456`, `src/lib/components/ManageEditors.svelte`, `src/lib/components/ReferenceField.svelte`, `src/lib/components/MediaCaptureCard.svelte` (grep `cairn-chip-outline`). [verified]
 - `f:ro7w36` `Tooltip` (added `0.97.0`) reads the triggering `PointerEvent`'s own `pointerType` to detect a
   coarse-pointer tap, never `matchMedia`, since a hybrid device can carry both a mouse and a
   touchscreen at once; an empty `text` prop opts the whole component out (no `aria-describedby`,
@@ -197,17 +228,17 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   for both "no such row" and "present but not owner-capability" (their `WHERE` matches only
   owner-capability rows, so the two cases can't be told apart). Source: `src/lib/auth/store.ts`
   function bodies at lines noted above; outcome unions confirmed present. [verified]
-
-- `f:avc1a2` `createLogger` (`/log`) redacts three levels deep into plain objects and arrays, marks a repeated
-  reference `'<repeated>'`, and leaves a key at level four or deeper as written. Both sides of the
-  key comparison normalize (lowercased, `-` and `_` removed, compared whole), so `REDACTED_LOG_KEYS`
-  spells each name once; it now also carries `csrf` and `csrf_token` (both, since normalization maps
-  `csrf_token` to `csrftoken`, not `csrf`). `createLogger(options?: { redactKeys?: readonly string[]
-  })` unions a site's own names with the defaults and cannot narrow them. `REDACTED_LOG_KEYS` and
-  `CAIRN_LOG_EVENTS` are both frozen. A throwing getter anywhere in a call's own `fields` cannot
-  throw out of `log.info()`/`.warn()`/`.error()`: the record build runs inside a `try`/`catch`
-  wrapping `emit`, and a caught failure emits `{ level, event, timestamp, fields: '<unserializable>'
-  }` instead. Source: `src/lib/log/create.ts`, `src/lib/log/events-list.ts`. [verified]
+- `f:lml542` `deleteEditor` and `removeOwnerIfNotLast` cascade past session and magic-token rows to also
+  delete every `preview_tokens` row the removed editor minted (a separate statement outside the
+  atomic batch, swallowing only a "no such table" fault for a site with the preview migration
+  unapplied). Source: `src/lib/auth/store.ts:300-320` (`deleteEditorPreviewTokens`), `:407-411`
+  (`deleteEditor` call), `:446-450` (`removeOwnerIfNotLast` call). [verified]
+- `f:pf69s2` The store's unexported auth-flow set (engine-internal to the magic-link guard, not proven
+  consumer surface) is `findEditor`, `issueToken`, `recentlyIssued`, `consumeToken`, `rebindToken`,
+  `createSession`, `resolveSession`, `deleteSession`; `insertOwnerIfEmpty` is separately demoted (a
+  site seeds its first owner via `bootstrapOwner` instead, per `f:f2vudv`). Source:
+  `src/lib/auth-store/index.ts:1-23`, `src/lib/auth/store.ts` (all named exports),
+  `src/lib/sveltekit/auth-routes.ts:18-25`. [verified]
 
 ## docs/reference/cairn-audit.md
 
@@ -221,7 +252,21 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   (focus-renders, panel-width, one-filled-action, interactive-contrast, touch-targets, list-role,
   viewport-overflow = 7) vs `tier: 'advisory'` (container-inset-asymmetry, form-font-parity,
   field-edge-alignment, border-contrast, norms-bands, screen-anatomy, relational-spacing,
-  weight-budget, chip-ground-collision = 9). [verified]
+  weight-budget, chip-ground-collision = 9). [rejected: rule count grew after this fact was filed;
+  the audit now registers 34 rules (17 static, 17 rendered), see `f:hqhp14`]
+- `f:hqhp14` Exactly 34 rules are registered: 17 static (15 error tier, 2 advisory: `log-event-grammar`,
+  `log-secret-field`) plus 17 rendered (7 error-tier, 10 advisory-tier). A literal-string grep for
+  `id: '` undercounts only the rendered total by one, since `motion-reduced-delay.ts` declares
+  `id: RULE_ID` rather than a literal string; the static grep already finds all 17. Count by the
+  registry array or by tier grep instead. Source:
+  `src/lib/audit/rules/static/index.ts` (`staticRules()`, 17-entry array), tier grep across
+  `src/lib/audit/rules/static/*.ts` = 15 error / 2 advisory; `src/lib/audit/rules/rendered/index.ts`
+  (`renderedRules()`, 17-entry array; header comment states the 7/10 tier split), tier grep across
+  `src/lib/audit/rules/rendered/*.ts` = 7 error (focus-renders, panel-width, one-filled-action,
+  interactive-contrast, touch-targets, list-role, viewport-overflow) / 10 advisory
+  (container-inset-asymmetry, form-font-parity, field-edge-alignment, border-contrast, norms-bands,
+  screen-anatomy, relational-spacing, weight-budget, chip-ground-collision, motion-reduced-delay).
+  [verified]
 - `f:3kvawo` Exit codes: 0 (clean), 1 (unsuppressed error-tier finding), 2 (run couldn't start/finish: bad
   flag, no server, no browser, redirect-trap refusal). Codes route through `process.exitCode`,
   never `process.exit`, so piped stdout flushes fully first. Source: `src/lib/audit/bin.ts:5-68`,
@@ -272,10 +317,10 @@ re-sourced to Go on this tree rather than to the page.
   Source: `tool/internal/doctor/fetchrobots.go:14-21,33-34`,
   `tool/internal/providers/transport.go:12-16`, `tool/cmd/cairn/root.go:35`.
   [docs-drift: the retired page said the one request "is bounded at 15 seconds inside it"]
-- `f:plng3z` A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency in
-  `package.json` is not a cairn-cms site: the run prints one line, exits 3, and settles no check.
-  Source: `tool/internal/doctor/fileread.go:89-104`, `tool/cmd/cairn/doctor.go:60-61,112-128`,
-  `tool/cmd/cairn/messages.go:320-328`. [verified]
+- `f:plng3z` A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency or
+  devDependency in `package.json` is not a cairn-cms site: the run prints one line, exits 3, and
+  settles no check. Source: `tool/internal/doctor/fileread.go:89-104`,
+  `tool/cmd/cairn/doctor.go:60-61,112-128`, `tool/cmd/cairn/messages.go:320-328`. [verified]
 - `f:ee48yi` `--json` is the command's own flag and writes the payload instead of the report; it beats
   `--quiet`, so the payload always prints under `--json`. Source:
   `tool/cmd/cairn/doctor.go:42,88-97`, `tool/cmd/cairn/messages.go:306`. [verified]
@@ -355,6 +400,13 @@ re-sourced to Go on this tree rather than to the page.
   `"reason": "reason.not-observable"`. The condition id itself is the payload's `condition` field.
   Source: `tool/internal/doctor/json.go:41-54,99-126`. [candidate: found during the 2026-09-22
   redraft's Go read, not independently re-verified by a second pass]
+- `f:0ms9c1` `auth.role-wiring` settles `INFO`, not only `PASS`/`FAIL`/`SKIP`/`UNCHECKED`, when
+  `src/hooks.server.ts` is missing, when no `createAuthGuard` call is found in it, or when the
+  call's argument is a bare identifier the check cannot read into; none of these is treated as a
+  high-confidence `FAIL`. The page's checks table names only this check's `PASS`/`FAIL` condition,
+  `SKIP`, and `UNCHECKED` cases, not its `INFO` settlements. Source:
+  `tool/internal/doctor/check_roles.go:118-131`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
+  [verified]
 
 ## docs/reference/cli-cairn-exit-codes.md
 
@@ -587,8 +639,10 @@ re-sourced to Go on this tree rather than to the page.
 
 - `f:fh6kod` `cairn-manifest` reuses the `cairnManifest()` Vite plugin's own options (globs, config module,
   manifest path) rather than taking its own flags, so the regenerated manifest is guaranteed to
-  match what a build verifies against. Source: page text plus `src/lib/vite/internal.ts` doc
-  comments referencing shared option resolution. [verified: structurally]
+  match what a build verifies against. The bin calls two internal functions in sequence,
+  `writeManifest` and `writeSiteFacts`. Source: page text plus `src/lib/vite/internal.ts` doc
+  comments referencing shared option resolution; `src/lib/vite/bin.ts:9` (header comment naming
+  both functions) and `:27-29` (sequential calls). [verified: structurally]
 - `f:6t5tzu` Only `publishedAt` survives a rebuild across entries: the command reads existing stamps from
   the file about to be overwritten, merges them into the new manifest, and drops any stamp whose
   entry the corpus no longer holds. On a corrupt existing file, it warns to stderr and writes the
@@ -607,18 +661,22 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/media-seed/assemble.ts:147-172`. [verified]
 - `f:fs5tpa` Each manifest row's public delivery URL is derived as `<from>/media/<slug>.<hash>.<ext>`, and
   the written local-R2 key is `media/<hash[0:2]>/<hash>.<ext>` (content-addressed, matching what
-  the media route reads). Source: `src/lib/media-seed/assemble.ts:118-122` (delivery URL builder)
-  plus page text for the write-side key shape (not independently re-derived from the write
-  function in this harvest). [verified: for the URL builder; candidate for the exact write-key
-  format string]
-- `f:5a5oq0` A manifest row missing `slug`, `hash`, or `ext` is silently dropped rather than failing the
-  run; the same tolerance applies elsewhere in the manifest reader. Source:
-  `src/lib/media-seed/assemble.ts:80-101` (`normalizeManifest`'s doc comment and implementation: a
-  row failing the `slug`/`hash`/`ext` shape checks is not pushed to `items`), `src/lib/media/manifest.ts:107`
-  ("a failing element is dropped"). [verified]
+  the media route reads). Source: `src/lib/media-seed/assemble.ts:118-122` (delivery URL builder);
+  `src/lib/media/naming.ts:113-121` (`r2Key`, returning `` `media/${shortHash.slice(0, 2)}/${shortHash}.${ext}` ``,
+  matching the write-side key shape exactly). [verified]
+- `f:5a5oq0` A manifest row missing, or carrying a malformed, `slug`, `hash`, or `ext` is dropped rather than
+  failing the run; the same tolerance applies elsewhere in the manifest reader. Source:
+  `src/lib/media-seed/assemble.ts:80-105` (`normalizeManifest`: the guard requires each field be a
+  string AND match its shape regexp, `SLUG_RE`/`HASH_RE`/`R2_EXT_RE`, so a present-but-malformed
+  field is dropped the same as a missing one), `src/lib/media/manifest.ts:107` ("a failing element
+  is dropped"). [verified]
 - `f:4as382` Exit codes: 0 (`--help`, or every entry synced, or manifest holds none), 1 (at least one entry
-  failed, each printing `FAILED <slug>: <message>`), 2 (bad flags or unresolved bucket name).
-  Source: `src/lib/media-seed/bin.ts:92-150`. [verified]
+  failed, each printing `FAILED <slug>: <message>`), 2 (bad flags or unresolved bucket name). The
+  summary line (`cairn-media-seed: <ok> synced, <failed> failed, of <total> manifest entries`)
+  prints on both exit 0 and exit 1, any run past flag parsing and bucket resolution; only the two
+  exit-2 paths return before it. Source: `src/lib/media-seed/bin.ts:92-150` (summary print at
+  :139-147, before the `process.exitCode` assignment; the two exit-2 returns at :106-108 and
+  :129-133 precede it). [verified]
 
 ## docs/reference/cloudflare.md
 
@@ -675,6 +733,11 @@ re-sourced to Go on this tree rather than to the page.
 
 ## docs/reference/core.md
 
+- `f:eooeqm` `defineFieldset`'s Standard Schema `~standard.validate` returns `result.issues`
+  unchanged, not a single-segment remap; a nested `object`/`array` field failure carries a
+  multi-segment path (leaf key or row index appended), the same `ValidationIssue[]` `validate()`
+  itself returns. Source: `src/lib/content/fieldset.ts:150-181` (`validateField` appends nested
+  segments), `:491-499` (`~standard.validate` passes `result.issues` through). [verified]
 - `f:1to3po` `defineConcept`'s permalink default is `/:slug` when the concept id is exactly `pages`, and
   `/<concept-id>/:slug` for any other id; `datePrefix` defaults to `'day'`. Source:
   `src/lib/content/concepts.ts:67,190`. [verified]
@@ -749,6 +812,25 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/delivery/CairnHead.svelte:5-8` (doc comment), `:35`
   (`title !== undefined ? title : titleTemplate ? titleTemplate(seo.title) : seo.title`), `:53-54`
   (`{#if markdownUrl}<link rel="alternate" type="text/markdown" ...>`). [verified]
+- `f:qzcpzc` The showcase's four static-route servers reach four different `/delivery` response builders:
+  `feed.xml` uses `rssResponse`, `feed.json` uses `jsonFeedResponse`, `sitemap.xml` uses
+  `sitemapResponse`, and `robots.txt` uses `robotsResponse`. Source:
+  `examples/showcase/src/routes/feed.xml/+server.ts:2`,
+  `examples/showcase/src/routes/feed.json/+server.ts:2`,
+  `examples/showcase/src/routes/sitemap.xml/+server.ts:2`,
+  `examples/showcase/src/routes/robots.txt/+server.ts:2`. [verified]
+- `f:bnt2wh` `PublicRoutesConfig.assetsEnabled` only diagnoses a forgotten `resolveMedia` wire-point (a
+  one-time `media.resolver_absent` log at construction when media is on but no resolver was
+  passed); it does not itself gate hero resolution, which `resolveMedia` alone controls. Source:
+  `src/lib/delivery/public-routes.ts:39-50` (doc comment), `:202-210`
+  (`if (assetsEnabled && !resolveMedia) { log.warn('media.resolver_absent'); }`). [verified]
+- `f:g030q0` The showcase's catch-all `[...path]` route builds `createPublicRoutes` from one shared
+  `publicRoutesConfig` binding (also used by the preview route and the markdown-twin route) and
+  layers `withReferences` on `entryLoad`'s result before rendering through the theme's
+  `ArticleView` component, not an inline `<article>{@html html}</article>`. Source:
+  `examples/showcase/src/routes/(site)/[...path]/+page.server.ts:1-15`,
+  `examples/showcase/src/chassis/public-routes.ts:11-24`,
+  `examples/showcase/src/routes/(site)/[...path]/+page.svelte:1-9`. [verified]
 
 ## docs/reference/delivery-data.md
 
@@ -790,6 +872,12 @@ re-sourced to Go on this tree rather than to the page.
   `before` was [absent or unstamped]... `upsertEntry` preserves a prior `publishedAt` through an
   ordinary save") and `:59-62` (`priorStamps` keyed by `keyOf(e)` = concept+id; `if (!e.publishedAt)
   return false`). [verified]
+- `f:wv457z` `buildNewlyPublished`'s draft exclusion is a separate, necessary check, not implied by
+  the stamp comparison: a drafted entry can carry a `publishedAt` stamp forward from a prior
+  publish (`upsertEntry` preserves it through a re-draft), so without the explicit
+  `if (e.draft) return false` check such an entry could read as newly published even though its
+  stamp differs from `before`. Source: `src/lib/delivery/manifest.ts:38-46` (doc comment) and
+  `:60-64` (draft check precedes the stamp comparison). [verified]
 - `f:gkrell` `ManifestEntry.publishedAt` (ISO 8601 UTC) is set once, at the publish commit that first lands
   the entry non-draft, and never overwritten or cleared afterward; `upsertEntry` preserves a prior
   `publishedAt` through an ordinary save. Source: `src/lib/delivery/manifest.ts:44` (doc comment,
@@ -821,6 +909,11 @@ re-sourced to Go on this tree rather than to the page.
 
 - `f:vhxkab` `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is also refused and not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Both the `.orig` path and the destination beside it land in `report.refused`, so an operator reading the report sees which destination was left stale, not only its `.orig` sibling. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`, `installGuidance`). [verified]
 - `f:x5grdm` A write failure during `cairn-guidance install` (an `ENOSPC`, an `EACCES`, ...) is reported through `InstallReport.writeErrors`, a list of `{ path, code }` entries, separate from `report.refused`: a disk or permissions error is not folded into the containment refusals, so the bin's printed line names the errno code rather than misattributing the failure to a symlink or an out-of-bounds path. Source: `src/lib/guidance/install.ts` (`installGuidance`'s write `catch`), `src/lib/guidance/bin.ts` (`write error` print line). [verified]
+- `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
+  `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
+  distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`
+  itself, that is three other bins. Source: `package.json:187-192` (`bin` field),
+  `package.json:172-174` (`./vite` export). [verified]
 
 ## docs/reference/islands.md
 
@@ -872,6 +965,19 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/components/EditPage.svelte:2128` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
   the empty `sandbox` attribute blocks script execution by the HTML sandboxing spec (no
   `allow-scripts` token). [verified]
+
+## docs/reference/log.md
+
+- `f:avc1a2` `createLogger` (`/log`) redacts three levels deep into plain objects and arrays, marks a repeated
+  reference `'<repeated>'`, and leaves a key at level four or deeper as written. Both sides of the
+  key comparison normalize (lowercased, `-` and `_` removed, compared whole), so `REDACTED_LOG_KEYS`
+  spells each name once; it now also carries `csrf` and `csrf_token` (both, since normalization maps
+  `csrf_token` to `csrftoken`, not `csrf`). `createLogger(options?: { redactKeys?: readonly string[]
+  })` unions a site's own names with the defaults and cannot narrow them. `REDACTED_LOG_KEYS` and
+  `CAIRN_LOG_EVENTS` are both frozen. A throwing getter anywhere in a call's own `fields` cannot
+  throw out of `log.info()`/`.warn()`/`.error()`: the record build runs inside a `try`/`catch`
+  wrapping `emit`, and a caught failure emits `{ level, event, timestamp, fields: '<unserializable>'
+  }` instead. Source: `src/lib/log/create.ts`, `src/lib/log/events-list.ts`. [verified]
 
 ## docs/reference/log-events.md
 
@@ -1089,6 +1195,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:4d9ssv` `cairn-icon-label` is an admin-toolkit label class, not emitted by any render helper. Source:
   `docs/internal/admin-design-system.md:1109` (`.cairn-icon-label` recipe in `cairn-admin.css`);
   no occurrence under `src/lib/render/`. [verified]
+- `f:x8y1hd` `renderGlyph` itself stamps only the `cairn-glyph` class; `cairn-head` and
+  `cairn-icon`/`cairn-icon-secondary` are built by site (chassis) code, not by `renderGlyph` or
+  any other engine export. Source: `src/lib/render/glyph.ts:16-22` (single `className:
+  ['cairn-glyph']`), `examples/showcase/src/chassis/render.ts:20-23,28-33` (`makeIconRenderer`,
+  `headRow` building `cairn-head`/`cairn-icon`). [verified]
 
 ## docs/reference/reproductions.md
 
@@ -1204,8 +1315,24 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `src/hooks.server.ts`, or SvelteKit's own Origin check runs ahead of cairn's) confirms the
   cairn-specific half; the SvelteKit deprecation version and issue number are an upstream fact
   quoted from the page, not independently checked against GitHub this pass. [verified]
+- `f:aalmbd` The `@sveltejs/kit ^2.12` floor became an enforced peer range (rather than an advisory) in
+  the `0.41.0` changelog entry, justified by the edit page reading `$app/state` (shipped in kit
+  2.12.0); `0.51.0` is a separate, later entry that raises the `svelte` floor to `^5.56.3` and
+  mentions `^2.12` only as a side note for a site still below it. Source: `CHANGELOG.md:6820-6823`
+  (0.41.0 entry), `CHANGELOG.md:6708-6718` (0.51.0 entry). [verified]
 
 ## docs/reference/sveltekit.md
+
+- `f:6rvhxl` `RequestOutcome`'s awaited-send behavior (`requestAction` awaiting the magic-link
+  email before responding) dates to `0.38.0`, when the type was named `RequestResult` with a
+  `status` discriminant (`sent`/`send_error`/`throttled`); the `0.97.0` outcome-idiom sweep
+  renamed it to `RequestOutcome`, changed the discriminant key to `outcome`, and restated
+  `send_error` as `send-error`, with the `sent` boolean unchanged throughout. Source:
+  `CHANGELOG.md:6884-6891` (0.38.0), `CHANGELOG.md:1748-1751` (0.97.0). [verified]
+- `f:yubpho` `CairnEvent`'s `locals` carries five optional keys: `cairnEditor`, `cairnBackend`,
+  `cairnAuditSink`, `cairnAccess`, and `cairnIdentity` (set under identity mode). sveltekit.md's
+  event-shape code sample and prose now list all five. Source: `src/lib/sveltekit/types.ts:85-91`.
+  [verified]
 
 ### Refusal channels (the load-bearing section, verified in full)
 
@@ -1409,16 +1536,19 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   before any token is generated. Source: `src/lib/sveltekit/preview.ts:61`
   (`DEFAULT_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000`), `:75-85` (`resolveTtlMs`: finite/positive
   check, min/max bound check, `PreviewTokenConfig:`-prefixed throws). [verified]
-- `f:esg0zx` `renameAction`, `deleteAction`/`listDeleteAction`, and `discardAction` each clear a
-  never-published entry's outstanding preview rows as part of their own cascade, closing an
-  id-reuse collision where a stale link could later resolve to a different entry's draft;
-  publishing deliberately leaves the rows in place since `loadPreview` needs them to answer a stale
-  link with "this preview has ended" rather than a bare 404. Source:
-  `src/lib/sveltekit/content-routes-entry-destructive.ts:167,205` (`deleteEntry`, shared by
-  `deleteAction`/`listDeleteAction`, calls `clearPreviewTokens`), `:407` (`renameAction` calls
-  `clearPreviewTokens`), `src/lib/sveltekit/content-routes-entry-write.ts:537-543` (`discardAction`
-  clears rows only for a never-published entry), `:406-410` (publish deliberately does not clear,
-  comment states the `loadPreview` "this preview has ended" rationale). [verified]
+- `f:esg0zx` `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's outstanding
+  preview rows unconditionally (regardless of publish state) as part of their own cascade;
+  `discardAction` clears them only for a never-published entry (a live entry's discarded edit
+  leaves its rows alone). All three close the same id-reuse collision, where a stale link could
+  later resolve to a different entry's draft; publishing deliberately leaves the rows in place
+  since `loadPreview` needs them to answer a stale link with "this preview has ended" rather than a
+  bare 404. Source: `src/lib/sveltekit/content-routes-entry-destructive.ts:167,205` (`deleteEntry`,
+  shared by `deleteAction`/`listDeleteAction`, calls `clearPreviewTokens` unconditionally on both
+  the never-published and the published-then-committed exit), `:407` (`renameAction` calls
+  `clearPreviewTokens` unconditionally, no never-published check),
+  `src/lib/sveltekit/content-routes-entry-write.ts:537-543` (`discardAction` clears rows only for a
+  never-published entry), `:406-410` (publish deliberately does not clear, comment states the
+  `loadPreview` "this preview has ended" rationale). [verified]
 - `f:3qexq3` `settingsLoad` actively probes a present Anthropic key with a zero-token call and reports
   `keyStatus` (`missing`/`invalid`/`valid`/`unknown`) distinct from the presence-only
   `keyConfigured`, feeding the same key-health cache `editLoad`'s Tidy control reads (a
@@ -1430,10 +1560,14 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:n8qe9y` `tidyAction` refuses before any model call if tidy is disabled or the key is missing; a 401/403
   from Anthropic marks the shared key-health cache unhealthy and is not retryable
   (`fail(503)`, reading "Tidy isn't available right now"), while a deadline overrun, other abort,
-  model error, or empty result is retryable (`fail(502)`). Source:
-  `src/lib/sveltekit/content-routes-tidy.ts:111,130,135` (`tidyAction`: `fail(503)` before any
-  model call when disabled or key missing), `:200-209` (401/403 calls `markKeyUnhealthy()`,
-  `fail(503)`, not retryable), `:223-231,249` (other errors `fail(502)`, retryable). [verified]
+  model error, or empty result is retryable (`fail(502)`); a missing `@anthropic-ai/sdk` peer and
+  an Anthropic 400 `invalid_request_error` (typically an unsupported `tidy.model`) are two more
+  non-retryable `fail(503)` causes, distinct from the disabled/missing-key and 401/403 cases
+  already named. Source: `src/lib/sveltekit/content-routes-tidy.ts:111,130,135` (`tidyAction`:
+  `fail(503)` before any model call when disabled or key missing), `:190-199` (`TidySdkMissingError`,
+  `fail(503)`), `:200-211` (401/403 calls `markKeyUnhealthy()`, `fail(503)`, not retryable),
+  `:212-222` (400 `invalid_request_error`, `fail(503)`, not retryable), `:223-231,249` (other
+  errors `fail(502)`, retryable). [verified]
 - `f:sd18xx` `NavLayoutSection.collapsed` (default `false`) is only the group's starting state for a visitor
   with no persisted `cairn-admin-nav-collapsed` cookie; the cookie, once any header is toggled,
   wins entirely in both directions, so a group added after a visitor's cookie already exists

@@ -283,15 +283,24 @@ describe('a rule-declared exemption', () => {
 });
 
 describe('the BASE_URL contract', () => {
+  // Both tests below exercise `resolveBaseUrl`'s and `runRendered`'s DEFAULT reachability probe
+  // (`defaultIsReachable`, which calls the global `fetch`), not an injected `isReachable`, so a
+  // real server happening to listen on port 4173 on the machine running the suite would make
+  // `fetch` resolve instead of reject. Stubbing `fetch` to always reject makes "nothing answers"
+  // deterministic regardless of the machine's port state.
+  afterEach(() => vi.unstubAllGlobals());
+
   // The harness never starts a server, so an unanswering BASE_URL (explicit or the default) is a
   // clear, actionable failure naming the URL it tried, not a hang or a silent empty report.
   it('fails naming the URL it tried when nothing answers there', async () => {
     delete process.env.BASE_URL;
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('connect ECONNREFUSED'); }));
     await expect(resolveBaseUrl()).rejects.toThrow(/http:\/\/localhost:4173/);
   });
 
   it('runRendered surfaces the same failure before ever touching Playwright', async () => {
     delete process.env.BASE_URL;
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('connect ECONNREFUSED'); }));
     const config = configWith({ pages: ['/admin/posts'] });
     await expect(runRendered(config, [trivialRule])).rejects.toThrow(/no server answering/);
   });

@@ -52,6 +52,7 @@
     "check:facts": "node scripts/checks/check-facts.mjs",
     "check:provenance": "node scripts/checks/check-provenance.mjs",
     "check:editor-quotes": "node scripts/checks/check-editor-quotes.mjs",
+    "check:docs-gate": "node scripts/checks/docs-gate.mjs",
     "check:visuals": "npm run package && node scripts/checks/check-visuals.mjs",
     "check:transcripts": "node scripts/checks/transcript-blocks.mjs",
     "check:snippets": "npm run package && node scripts/checks/check-snippets.mjs",

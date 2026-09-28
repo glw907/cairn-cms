@@ -225,8 +225,27 @@ export function findStrandedQuotes(markdown, candidates) {
   return extractDocQuotes(markdown).filter((quote) => !isGrounded(quote, candidates));
 }
 
+/**
+ * Whether the page carries at least one bolded quote to check. `findStrandedQuotes` against zero
+ * quotes vacuously returns no defects, so a page that lost every quote (a rewrite that dropped the
+ * bolding, a page swapped out from under this gate) would otherwise pass silently; the gate treats
+ * zero as its own failure instead.
+ * @param {string} markdown
+ * @returns {boolean}
+ */
+export function hasQuotesToCheck(markdown) {
+  return extractDocQuotes(markdown).length > 0;
+}
+
 function main() {
   const markdown = readFileSync(DOC_PATH, 'utf8');
+  if (!hasQuotesToCheck(markdown)) {
+    console.error(
+      'check-editor-quotes: 0 bolded quotes found in docs/editors/when-something-goes-wrong.md; the page this gate pins is expected to carry at least one',
+    );
+    process.exitCode = 1;
+    return;
+  }
   const files = walk(LIB_DIR, (name) => name.endsWith('.svelte') || name.endsWith('.ts'));
   const candidates = files.flatMap(candidatesForFile);
   const stranded = findStrandedQuotes(markdown, candidates);

@@ -11,7 +11,28 @@ Pass one or more brief paths to check only those briefs, leaving every other bri
 `npm run check:provenance -- <brief path>...`. Each path must exist and sit under
 `docs/internal/briefs/`; a missing or outside path fails with a clear message. This is the mode a
 page chain runs while a sibling page's brief is still in flight, so one page's gate never fails
-on another page's draft. With no path given, the check runs every brief, as before.
+on another page's draft. With no path given, the check runs every brief and also checks coverage
+(below).
+
+## Coverage: the rebuilt-page list
+
+`docs/internal/briefs-rebuilt.json` is a committed, flat JSON array of page paths (from the
+repository root, under `docs/`) that a stage has rebuilt. Each stage merge appends the paths its
+chain rebuilt; the list starts empty (`[]`) and nothing is ever removed from it. In the check's
+default, no-argument run only (the single-brief mode does not read this list), `check:provenance`
+fails any listed path that no brief's `page` field names, matched by that field and never by a
+brief's file name, so a page that lost its brief after a later rewrite is caught. That check runs
+before the check decides whether any brief exists at all, so it still catches a coverage gap even
+when the briefs directory is empty. A listed path whose page no longer exists on disk is reported
+as a stale list entry, not as a missing brief; the list is itself invalid, and the run fails,
+when it is absent, not valid JSON, or not a JSON array.
+
+**The brief naming rule.** An arm's own `README.md` (`docs/admin/README.md`,
+`docs/editors/README.md`, `docs/extend/README.md`, `docs/reference/README.md`) is briefed under
+its own arm's track (`docs/internal/briefs/admin/README.json`, and so on), the same as any other
+page in that arm. Only `docs/why-cairn.md` and `docs/README.md`, the two front-door pages, use the
+`front-door` track. Because coverage matches a brief's `page` field, `front-door/README.json` (for
+`docs/README.md`) never covers `docs/admin/README.md`; each arm README needs its own brief.
 
 ## Where briefs live
 
@@ -45,10 +66,10 @@ out of the list. Table cells and list items are sentences.
 
 ## The drafter writes it
 
-The drafter (`cairn-docs-drafter`, run by the workstation's `docs-page-chain-v2.js`) writes the
+The drafter (`cairn-docs-drafter`, run by the workstation's `docs-page-chain.js`) writes the
 `sentences` list together with the page, in the same round, never after it. A sentence that states two facts from two bullets is two sentences. A drafted sentence with
-no fact to cite is either `no-claim`, because it claims nothing, or it goes back to the facts
-container first, because a claim with no fact is the defect this check exists to catch.
+no fact to cite is either `no-claim`, because it claims nothing, or it goes back to the chain's
+page-inputs step first, because a claim with no fact is the defect this check exists to catch.
 
 ## What the check fails
 

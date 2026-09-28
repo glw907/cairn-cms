@@ -46,8 +46,11 @@ const ROOT = repoRoot(import.meta.url);
 // by concatenation rather than five independent literals so the superset relationship cannot
 // drift. TOOL_GATE stands alone: `make -C tool check` proves the Go module's own three legs and
 // is never folded into or out of the npm chain.
-const DOCS_GATE =
-  'npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts';
+//
+// DOCS_GATE is the one `check:docs-gate` script (scripts/checks/docs-gate.mjs), which owns the
+// full docs check list. That list already includes check:snippets, check:transcripts, and
+// check:symbols, so FULL_GATE does not repeat them.
+const DOCS_GATE = 'npm run check:docs-gate';
 // `npm test` (root) runs the engine's own vitest projects; it never reaches the
 // create-cairn-site workspace member's own `node --test` suite, so a diff scoped to that package
 // needs its own invocation appended here to be proven at all. Folding it into SCRIPTS_GATE (and
@@ -55,7 +58,7 @@ const DOCS_GATE =
 // chain intact rather than adding a sixth severity level for one workspace member.
 const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm test && npm test -w packages/create-cairn-site`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
-const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:snippets && npm run check:transcripts && npm run check:symbols && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
+const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';
 
 /**

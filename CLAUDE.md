@@ -114,18 +114,20 @@ friction that writing a doc surfaces, triaged into [`ROADMAP.md`](ROADMAP.md) an
 container surfaces (see below) is filed here too, same as any other friction.
 
 **The reference arm is maintained every pass and gated by `check:reference`.** The three
-narrative arms (admin, editors, extend) and `why-cairn.md` are frozen against rewrites for the
-finalization window, except the per-version extend records below: no pass rewrites their prose.
-A deficiency a pass discovers on a frozen page (a missing step, a wrong warning, a stale command)
-is fixed on the page in the same pass, gated by that page's own gates; the fix is agent-facing,
-not register-graded. Every pass that changes a public behavior files a bullet in
-[`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`. The docs rebuild
-after the site round rebuilds the narrative arms from the container (`docs-rebuild-not-edit`
-memory). A site-pass agent never edits the cairn-cms checkout; it records each deficiency under
-"Engine docs fixes" in its report, and the site pass's conductor batches them into one
-`cairn-implementer` dispatch on `site-docs/<site>-<pass>` off `main`, merged by PR before the
-site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are
-per-version records outside the freeze, maintained every pass like the reference arm.
+narrative arms (admin, editors, extend) and `why-cairn.md` are frozen against rewrites until
+each arm's own stage merges (extend's lifts at the 2b merge), except the per-version extend
+records below: no pass rewrites an arm's prose ahead of its stage merge. A deficiency a pass
+discovers on a page (a missing step, a wrong warning, a stale command) is fixed on the page in
+the same pass, gated by that page's own gates, per the facts container's fix rule
+(`docs/internal/facts/README.md`, "How this container grows"), except a site edit to an arm whose
+stage is in flight, which is filed, never fixed, and feeds that stage's page inputs instead.
+Every pass that changes a public behavior files a bullet in
+[`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`. Each arm's own
+stage rebuilds it from the container before its freeze lifts (`docs-rebuild-not-edit` memory);
+the site round that follows tests and fixes the rebuilt arms. The site pass's own agents edit
+cairn-cms on a `site-docs/<site>-<pass>` branch off `main`, merged by PR under the docs gate
+before the site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md`
+are per-version records outside the freeze, maintained every pass like the reference arm.
 
 **Maintaining it:** a staging area, never a backlog, measured by what leaves it. Triage is
 complete-or-move: fixed and deleted, promoted to the `ROADMAP.md` tier where it bites, or deleted
@@ -139,7 +141,7 @@ backlog item is not done until the roadmap stops listing it. Shipped history liv
 `docs/STATUS.md` and the per-plan post-mortems, not in the roadmap.
 
 Four production sites depend on the package, each on its own version range, so a stale doc costs
-real users (`docs-is-a-pass-dimension` memory). cairn.pub renders the doc arms shipped inside the
+real users. cairn.pub renders the doc arms shipped inside the
 npm tarball from its installed engine version, so its dependency pin is the docs version selector:
 docs on `main` describe `main`'s engine and go public at the next release and pin bump. No
 separate docs deploy, no dev-docs channel (record: cairn-pub `docs/architecture.md`, "Docs

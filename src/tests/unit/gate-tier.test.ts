@@ -279,15 +279,19 @@ describe('TIER_ORDER and TIER_GATES', () => {
     expect(TIER_GATES.docs.startsWith(TIER_GATES.tool)).toBe(false);
   });
 
-  it('the docs gate names every docs-tier check, including check:reference:signatures', () => {
-    expect(TIER_GATES.docs).toBe(
-      'npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts',
-    );
+  it('the docs tier is the one docs-gate script', () => {
+    expect(TIER_GATES.docs).toBe('npm run check:docs-gate');
   });
 
   it('the full gate runs the admin-visual spec once inside the admin-visual string, then the whole showcase suite', () => {
     expect(TIER_GATES.full).toContain('test:e2e -- admin-visual.spec.ts && npm run check:comments');
     expect(TIER_GATES.full.endsWith('npm --prefix examples/showcase run test:e2e')).toBe(true);
+  });
+
+  it('runs no npm check script twice in the full tier, since check:docs-gate already carries the docs-gate components', () => {
+    const scripts = [...TIER_GATES.full.matchAll(/npm run (check:[a-z:-]+)/g)].map((m) => m[1]);
+    expect(scripts.length).toBeGreaterThan(0);
+    expect(new Set(scripts).size).toBe(scripts.length);
   });
 });
 

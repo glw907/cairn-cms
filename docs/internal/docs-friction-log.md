@@ -49,6 +49,18 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+Draft docs pass 0+1's close (2026-09-28) triaged the whole log and found two open entries, both
+verified against the code and promoted whole to `ROADMAP.md`'s Next tier: the `admin-toolkit.md`
+outline-chip contrast ratios needing re-measurement, and the page-chain claim inventory's missing
+disposition for a claim a redraft relocates to a linked reference entry. The close's own two
+findings, carried from the segment A ledger boundary and re-verified against the current tree in
+the same step (`check:symbols`'s attached-redirect and dropped-continuation gaps, still present
+after the 2026-09-26 hardening; `rendered.test.ts`'s hardcoded `localhost:4173` assumption), were
+also filed straight to the Next tier rather than opened here first, per the pattern earlier closes
+use for a finding discovered and routed in the same step. The segment A boundary's third carried
+item, the duplicate-shipped-anchor gap, was re-checked and found already fixed by the same
+2026-09-26 hardening commit (`2d960720`) and needed no filing.
+
 Docs reset pass 1's close (2026-09-24) triaged the whole log and found no open entry. The pass
 routed its own findings straight to `ROADMAP.md` in the same step, so none opens here. The docs
 reset itself went to the Now tier, with pass 1b next. The pass's deferred chain and harness items,
@@ -175,6 +187,7 @@ history holds every pruned entry in full.
 | 2026-09-22 | retire-1's close | the Names finding (mermaid `accDescr:`/`accTitle:` text, image alt text, and nav labels carrying no code font for Vale to read) promoted whole to `ROADMAP.md`'s Next tier with its trigger; retire-1's own `contributor` finding, the pinned-site limit on `link:consumer` plus `cairn-manifest`, filed beside it. The whole-log sweep found no other open finding |
 | 2026-09-22 | retire-2b's close | retire-2a's five carried findings, all promoted to `ROADMAP.md`'s Next tier: the `cairn doctor` PASS-line title into the "Go tool 1.1 items" entry; the scaffolder install-literal test gap, `cairn-guidance`'s containment, the `is-it-working.md` register slip, and the stale lockfile bin mapping into one new entry with a trigger each, beside the close's own finding that CI never runs `check:tool-heuristics`. The whole-log sweep found no other open finding |
 | 2026-09-24 | docs reset pass 1's close | no open finding in the log; the pass's own findings routed to `ROADMAP.md` (the docs reset to Now; the deferred chain and harness items, the Waymark theme comments, and the readers' real page defects to Next); the page-only `[candidate]` re-sourcing entry in Next reworded to the 25 bullets the triage excluded |
+| 2026-09-28 | draft docs pass 0+1's close | two open entries, both verified and promoted whole to `ROADMAP.md`'s Next tier: the `admin-toolkit.md` outline-chip contrast ratios needing re-measurement, and the page-chain claim inventory's missing disposition for a relocated claim; the close's own two carried findings (`check:symbols`'s attached-redirect and dropped-continuation gaps, `rendered.test.ts`'s hardcoded port 4173) filed straight to the same tier; the segment A boundary's third carried item, the duplicate-shipped-anchor gap, verified already fixed by the 2026-09-26 hardening commit and needed no filing |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

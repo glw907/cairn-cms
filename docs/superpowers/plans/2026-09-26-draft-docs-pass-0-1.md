@@ -16,6 +16,15 @@ the chain and the review page, proven together on one scratch page in one owner 
 also settles the owner facts. Stage 1 runs last, on the finished docs gate. Plans specify
 outcomes and acceptance, never implementation code.
 
+**Pass class (amended 2026-09-27, Geoff, after segment B's task 6):** `engine-logic` for the
+remaining code tasks 7 and 8 (internal checks, scripts, and the workstation runner), `docs` for
+task 10, and task 9 stays conductor-led. Under `engine-logic` each task keeps the repo's full gate
+it already ran, and the reviewer blocks on behavior defects and unmet outcomes, and on coverage gaps
+only where they touch reachable behavior. `code-simplifier` runs once, at the close (task 11), over
+the pass's changed code, never per task. Tasks 1 to 6 ran before the amendment under the per-task
+simplifier. Task 6's segment B commit also carries one line the ROADMAP owed to the next pass
+touching `test.yml`: CI now runs `check:tool-heuristics` beside `check:tool-conditions`.
+
 **Execution mode:** `pass-execute` (by name) for the cairn-cms tasks 1, 3, 4, 5, 6, and 8, in the
 segments below, **sequential** (`parallel` unset): the runner does no worktree isolation (`repo`
 is "prompt text only", `pass-execute.js:32-33`), so parallel tasks would share one index, one
@@ -83,7 +92,7 @@ only to a gate that is `make -C tool check` alone; a mixed diff (task 3: `tool/`
 tier `scripts+tool`) runs the heavy lane, since its `npm test` launches a browser suite. Task 6
 touches `package.json` and `.github/` and so runs the `full` tier; that is accepted. Conductor-run
 gates (task 9) call `cairn-run-gate` directly. Dotfiles: `scripts/check.sh`.
-`code-simplifier` runs over each code task's diff before its commit.
+`code-simplifier` runs once at the close (see "Pass class"), not per task.
 
 ## Global constraints
 
@@ -434,6 +443,12 @@ question for the facts on the same page or alongside it.
 
 ### Task 10: Stage 1, reference claim check
 
+**Split (Geoff, 2026-09-27):** task 10 runs now on every reference page except the two theme
+identity pass B changes: the admin subpath page its `./components` to `./admin` rename moves, and
+the `./public` page it creates. Those two run after pass B lands, as a short follow-up batch with
+the same acceptance. The reference arm is the most complete and the easiest for an agent to draft,
+so it goes first; the editor docs and the front page come last.
+
 **Outcome:** One `claude-opus-5-5` fact-read agent per page for the 29 pages in `docs/reference/`
 other than its README; the five largest (`sveltekit.md`, `core.md`, `admin-toolkit.md`,
 `cairn-audit.md`, `components.md`) split into chunks of whole H2 sections near 5K words each, one
@@ -483,3 +498,119 @@ counts as one).
 ## Ledger
 
 (written by the conductor at each segment boundary)
+
+### Pre-flight (2026-09-26, before segment A)
+
+- Counter: `/usage` (the command `/cost` now reports as) includes subagent and workflow-agent
+  tokens (https://code.claude.com/docs/en/costs.md). Between readings the conductor sums the
+  per-agent `subagent_tokens` and each workflow run's reported usage.
+- Pre-flight spend: fact check 0.10M, counter question 0.06M.
+- Fact check over the header and tasks 1 to 5: 20+ claims, none failed. Caveat: tags
+  `tool/v1.0.0` and `v1.0.1` carry no `conditions.json`, so "print none outside the set" holds
+  vacuously.
+- Worktree `draft-docs-0` off `main` at `2776dfa3` (the theme-identity spec commit, docs-only).
+  `npm ci` skipped `workerd`'s postinstall under npm 11.19's script approval; the platform
+  binary is present.
+- `~/.dotfiles` warm paths match the header exactly; no task touches them.
+- Next: segment A (tasks 1, 3, 4, 5 via `pass-execute`), task 2's chain alongside.
+
+
+### Segment A boundary (2026-09-26): parked on Geoff's hold
+
+Geoff put draft docs on hold until the theme identity pass
+(`docs/superpowers/specs/2026-09-26-theme-identity-design.md`) merges: pause at this boundary,
+do not merge `draft-docs-0`. Resume at segment B.
+
+| Task | Status | Commits |
+|---|---|---|
+| 1 | accepted, one fix round | `2427856a`, `57ccd2d2` |
+| 2 | accepted (dotfiles), two fix rounds; scope widened to `agents/site-implementer.md` and `agents/cairn-implementer.md`, which also carried the rule | `4b2916fc`, `353cc61e`, `9f2ebe36` |
+| 3 | accepted by conductor ruling (reviewer accept; gate red only on port 4173) | `d0639043`, `85efee59` |
+| 4 | accepted by conductor ruling (same) | `d17d716c` |
+| 5 | accepted by conductor ruling (same) | `0713d110`, `3e452fdc` |
+| hardening | three review findings on tasks 3 to 5, accepted | `2d960720` |
+| simplifier | segment round, accepted | `be6e13e5` |
+
+- Gate at the boundary (conductor, `cairn-run-gate`): docs checks, `check:symbols`,
+  `check:provenance`, `check:readiness`, `npm run check` 0/0, `make -C tool check`, and the
+  component project (1429/1429) green; unit plus integration 5193/5195. The two failures are
+  `src/tests/unit/audit/rendered.test.ts`'s BASE_URL tests, which assume nothing listens on
+  localhost:4173; dubplate's `sirv` held that port all segment. CI on draft PR #91 is the clean
+  proof. Every per-task gate this segment also stopped `npm test`'s `&&` chain before the
+  component project, so the component suite ran only here.
+- Rulings: site-pass agents edit the `site-docs/<site>-<pass>` branch themselves (spec, Stage 0
+  "Site-pass rule"); `engine-consult` carries no freeze wording and stays untouched.
+- Carried, not fixed: `check:symbols` still reads an attached redirect (`2>&1`, `>out.json`) as
+  a word and drops a continuation left pending at a fence close; a duplicate shipped anchor
+  hides the heading comparison until removed; `rendered.test.ts` should take a free port rather
+  than assume 4173 (friction log at the close). The global `CLAUDE.md` stays over its 6k budget
+  (already an open item for Geoff).
+- Conductor defect: a `cd` in the conductor shell moved the session's working directory, and a
+  dispatched implementer inherited it, running two gates in the wrong worktree before it
+  noticed. Conductor shell calls use absolute paths; dispatch prompts pin the worktree.
+- Spend (agent-reported `subagent_tokens`): pre-flight 0.16M, task 2 chain 0.28M, workflow run 1
+  1.30M, workflow run 2 0.62M, hardening, simplifier, and review 0.32M; about 2.7M plus the
+  conductor. `/usage` reading owed at resume. Outside the pass: the TypeScript 7 canary chore
+  (PR #90), about 0.41M.
+- Next on resume: segment B, tasks 6 and 8 through `pass-execute`, then task 7's chain; the
+  dispatch notes carry the port-4173 caveat if it persists and pin the worktree path.
+
+### Close (2026-09-28): tasks 9, 10, and 11
+
+Segment B (tasks 6, 7, 8) and the segment B boundary ran and merged `main` in without a ledger
+entry of their own; this record only covers what task 9, task 10, and this closing task (11)
+carry. Task 9 (conductor-led, `6ad6dee8`, `0f7ab264`, `82c906e2`, `c634f43c`) landed the four
+owner-fact fixes, ran the chain proof on `choose-an-ai-posture.md` for real (not thrown away,
+per this closing task's direction), and forced a register amendment mid-pass: Geoff's Firefox
+review of the published page found three "AI phrasing" headings and an explanation-before-steps
+ordering the register did not yet forbid, fixed in `docs/internal/docs-register.md`
+(`07d5c87e`, `fb5238d1`) and the workstation's `cairn-register-editor` agent definition, not in
+the page. Task 10 (five batches, `716cd90e` through `11bd4809`, full record
+`docs/superpowers/research/2026-09-26-draft-docs-stage-1-record.md`) checked 1204 claims across
+28 of 29 reference pages (the two theme identity pass B moves deferred by Geoff's split), fixed
+33 of 35 discrepancies, and caught one batch's apply agent landing its commit in the wrong
+worktree before the next batch dispatched.
+
+Task 11 merged `main` (PR #96, setup-paid) into `draft-docs-0`, resolving four real conflicts
+(the front-door voice bullets in the register, the AI-posture facts and two stale line numbers,
+the gate-tier docs string, and `gate-tier.mjs`'s `DOCS_GATE`/`SCRIPTS_GATE` constants) keeping
+both sides' intent, then fixed `choose-an-ai-posture.md`'s owed deficiency (fact `f:1ij5h5`): the
+"Pass the posture to the robots route" step now states that a site scaffolded by the current
+setup command needs no edit there, keeping the step and its snippet only for an older scaffold.
+Triaged the whole `docs/internal/docs-friction-log.md`: its two open findings (the
+`admin-toolkit.md` contrast-ratio gap, the page-chain claim-inventory disposition gap) and the
+segment A boundary's two still-open carried items (`check:symbols`'s attached-redirect and
+dropped-continuation gaps, `rendered.test.ts`'s hardcoded port 4173) all promoted to
+`ROADMAP.md`'s Next tier; the boundary's third carried item, the duplicate-shipped-anchor gap,
+verified already fixed by the 2026-09-26 hardening commit (`2d960720`) and needed no filing.
+Read the pass's own non-test code changes since the last simplifier commit (`be6e13e5`):
+`docs-gate.mjs`, `check-editor-quotes.mjs`, `gate-tier.mjs`, `scripts/docs-review/embed.mjs`, and
+`scripts/docs-review/runtime.mjs`; all five were already clean, so no simplification edit was
+made (no Task/Agent tool was available in this closing session to dispatch the
+`code-simplifier` subagent itself; this was a manual read against the same discipline).
+
+Gate: `npm run check:docs-gate` green (single-page mode over `choose-an-ai-posture.md` plus the
+full run, 15 checks); `npm run check` (0/0), `npm test` (exits 0, 1429/1429 after confirming one
+`media-public-base.test.ts` failure was contention from a concurrently running theme-identity
+gate, reproduced clean in isolation), and `npm run check:close` all green in one
+`npm run check && npm test && npm run check:close` gate; `make -C tool check` green separately.
+
+**Cost:** the plan's ceiling is about 9.6M, flagged at about 7.7M planned spend. Recorded pieces:
+segment A (tasks 1-5 plus hardening and simplifier) about 2.7M plus the conductor; task 9's chain
+proof about 0.65M against its 0.2M estimate; task 10's stage 1 about 4.9M against its 4.5M
+checkpoint (stage-1 record). Those three alone total about 8.25M, already past the 7.7M flag and
+within the 9.6M ceiling. Segment B (tasks 6, 7, 8) and this closing task (11) carry no recorded
+`subagent_tokens` figure anywhere in this ledger or the stage records; this entry does not
+invent one where none was measured.
+
+**Attended time:** one planning miss (the register's academic voice and its "You know it worked
+when" heading rule were scoped front-door-only, found at task 9's owner review of the published
+proof page); one execution sitting (task 9's owner review, 2026-09-28): Geoff's Firefox read of
+the published review page across four versions, approving v4 with no edits, counted as one
+sitting regardless of its round count per `pass-core`'s rule.
+
+`code-simplifier` ran after this close, on the closed head, as `bd935c9d`.
+
+**Next:** the merge to `main` waits on Geoff's word (this closing task does not merge PR #91 or
+edit `main`); once it lands, the next action is authoring the stage 2a plan (with its extend
+outline) from the approach spec's stage 2 outline.

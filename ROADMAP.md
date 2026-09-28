@@ -401,6 +401,11 @@ The original decision framing, for the record:
   `01d-resume.txt` fixtures. **Scoped as its own pass (Geoff, 2026-08-19), deliberately cut from the
   release-debt pass rather than absorbed into it. Trigger: before `create-cairn-site` publishes,
   which is the same decision the release cut already owes.**
+  The same pass adds one setup prompt (Geoff, 2026-09-27): the AI posture. Today the template
+  ships `aiPosture` commented out in `src/theme/cairn.config.ts`, so a new site states no
+  preference until its developer edits the config. The prompt writes `'decline'` or `'invite'`,
+  with no preference as the default answer. `docs/extend/choose-an-ai-posture.md` then becomes
+  the page for changing that choice later, so its rewrite follows this change.
 
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated

@@ -29,7 +29,7 @@ of that, and `full` adds the remaining CI-only checks plus the whole showcase e2
 | Tier | Trigger (glob, matched per changed path) | Gate string |
 | --- | --- | --- |
 | `docs` | `docs/**`, any `*.md`, `CHANGELOG.md` | `npm run check:docs-gate` |
-| `scripts` | `scripts/**`, `src/tests/**`, any `*.test.ts`/`*.spec.ts` | docs string + `&& npm run check && npm test` |
+| `scripts` | `scripts/**`, `src/tests/**`, `packages/create-cairn-site/**`, any `*.test.ts`/`*.spec.ts` | docs string + `&& npm run check && npm test && npm test -w packages/create-cairn-site` |
 | `engine` | `src/lib/**/*.ts`, excluding `src/lib/components/**` and `src/lib/admin-toolkit/**` | same string as `scripts` |
 | `admin-visual` | `src/lib/components/**` (Svelte components and `cairn-admin.css`) or `src/lib/admin-toolkit/**` (the shared admin-table components) | scripts/engine string + `&& npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts` |
 | `full` | `src/lib/render/**` (the render seam), `examples/showcase/src/chassis/**` and `examples/showcase/src/theme/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | admin-visual string + `&& npm run check:comments && npm run check:surface && npm --prefix examples/showcase run test:e2e` |

@@ -1,3 +1,31 @@
+## Unreleased
+
+<!-- release-size: patch -->
+
+### Added
+
+- `create-cairn-site` asks one more question: the site's stance toward AI training crawlers, with
+  three answers (decline, invite, or no preference, the default). Answer ahead of time with
+  `--ai-posture decline|invite|none`; `--yes` alone defaults to no preference. Choosing decline or
+  invite writes `aiPosture` into the scaffolded `src/theme/cairn.config.ts`; no preference leaves
+  the file exactly as the template ships it. The scaffolded `robots.txt` route already passes
+  `cairn.aiPosture` to `robotsResponse`, so a scaffolded site needs no route edit to serve the
+  chosen posture; see `docs/extend/choose-an-ai-posture.md` for the full wiring.
+
+### Fixed
+
+- `create-cairn-site`'s Cloudflare deploy consent now states plainly that a cairn site needs
+  Cloudflare's Workers Paid plan, $5 US per month, from its first deploy, instead of promising
+  "Cloudflare's free workers.dev hosting" and that "nothing in this step costs money"; declining
+  stops the run there, before anything is installed, built, or deployed, on a new pre-deploy
+  catalogue row (`deploy-plan-declined`). The record's own persisted step string is unchanged
+  (`paid-plan-declined`), a stable contract the Go tool mirrors, so an existing site record still
+  routes the same way. Chapter 2's own email admission no longer re-offers Workers Paid as a fresh
+  choice once the account already carries it: it asks only whether to turn on email sign-in for
+  the connected domain. Operator-visible: a fresh `npx create-cairn-site` run and its README now
+  state the true cost up front rather than at the email step. No consumer action for an existing
+  site.
+
 ## 0.97.0
 
 <!-- release-size: minor -->

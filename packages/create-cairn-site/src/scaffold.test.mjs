@@ -97,6 +97,25 @@ async function templateFixture(t) {
     path.join(dir, 'src/theme/theme.css'),
     '--color-primary: oklch(45% 0.15 30);\n',
   );
+  // The template's own commented-out aiPosture field (substitute.mjs's AI_POSTURE_COMMENT_BLOCK),
+  // present so a test that answers a real posture has something to personalize.
+  await writeFile(
+    path.join(dir, 'src/theme/cairn.config.ts'),
+    [
+      'export const cairn = defineAdapter({',
+      '  media,',
+      "  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the",
+      "  // site's robots.txt route (docs/extend/wire-the-delivery-surface.md) passes it to",
+      '  // robotsResponse, and CairnAdapter.aiPosture (docs/reference/core.md) documents both values.',
+      '  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate',
+      "  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.",
+      '  rendering: {',
+      '    render: () => null,',
+      '  },',
+      '});',
+      '',
+    ].join('\n'),
+  );
   await writeFile(path.join(dir, 'wrangler.jsonc'), WRANGLER_JSONC_FIXTURE);
   // Mirrors bake-template.mjs's renameGitignoreForPacking: the real baked template carries the
   // showcase's own .gitignore under this dot-free name, npm-safe through packing.
@@ -158,6 +177,40 @@ test('real run scaffolds, renames, substitutes, and saves state outside the scaf
     !scaffoldFileNames.includes(stateFileName),
     `state record ${stateFileName} must not also exist inside the scaffold`,
   );
+});
+
+test('resuming at an already-scaffolded directory never re-runs the aiPosture answer', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: { ...ANSWERS, aiPosture: 'decline' },
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  const configPath = path.join(dir, 'src/theme/cairn.config.ts');
+  const afterFirstRun = await readFile(configPath, 'utf8');
+  assert.match(afterFirstRun, /^ {2}aiPosture: 'decline',$/m);
+
+  // A second invocation against the same directory is what a resumed `create-cairn-site` run
+  // would attempt if it ever reached the scaffolder again (it never does in bin.mjs; this proves
+  // the guard scaffold() itself carries). It refuses rather than re-personalizing, so the
+  // answer written on the first run survives untouched.
+  await assert.rejects(
+    async () =>
+      scaffold({
+        templateDir: await templateFixture(t),
+        answers: { ...ANSWERS, aiPosture: 'invite' },
+        dir,
+        dryRun: false,
+        log: () => {},
+      }),
+    /already exists and is not empty/,
+  );
+  const afterResumeAttempt = await readFile(configPath, 'utf8');
+  assert.equal(afterResumeAttempt, afterFirstRun);
 });
 
 test('a real scaffold run writes .gitignore, covering the secret-bearing entries', async (t) => {

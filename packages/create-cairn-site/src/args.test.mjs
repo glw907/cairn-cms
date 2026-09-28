@@ -84,3 +84,10 @@ test('parses --connect, false when absent', () => {
   assert.equal(parseArgs([]).connect, false);
   assert.equal(parseArgs(['--connect']).connect, true);
 });
+
+// The AI-posture question's own flag: a string, like --brand-color, since collectAnswers does
+// the shape validation rather than parseArgs.
+test('parses --ai-posture, undefined when absent', () => {
+  assert.equal(parseArgs([]).aiPosture, undefined);
+  assert.equal(parseArgs(['--ai-posture', 'decline']).aiPosture, 'decline');
+});

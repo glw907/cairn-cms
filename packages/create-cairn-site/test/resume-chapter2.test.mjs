@@ -392,7 +392,7 @@ async function seedEmailLiveSite(siteId, dir, overrides = {}) {
   });
 }
 
-/** Save a site record shaped like one whose owner declined the paid plan. */
+/** Save a site record shaped like one whose owner declined email sign-in. */
 async function seedDeclinedSite(siteId, dir, overrides = {}) {
   await seedChapter2Site(siteId, dir, 'paid-plan-declined', {
     domain: 'declined-test.example',

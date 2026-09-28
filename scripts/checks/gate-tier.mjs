@@ -54,7 +54,12 @@ const ROOT = repoRoot(import.meta.url);
 // FULL_GATE does not repeat check:snippets, check:transcripts, or check:symbols on top of it; a
 // diff-touching path list would otherwise run those three twice.
 const DOCS_GATE = 'npm run check:docs-gate';
-const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm test`;
+// `npm test` (root) runs the engine's own vitest projects; it never reaches the
+// create-cairn-site workspace member's own `node --test` suite, so a diff scoped to that package
+// needs its own invocation appended here to be proven at all. Folding it into SCRIPTS_GATE (and
+// so into every tier built on top of it) is cheap and Node-only, and keeps the five-tier superset
+// chain intact rather than adding a sixth severity level for one workspace member.
+const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm test && npm test -w packages/create-cairn-site`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
 const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';
@@ -103,7 +108,12 @@ export function classifyPath(path) {
   if (path.startsWith('src/lib/') && path.endsWith('.ts')) {
     return 'engine';
   }
-  if (path.startsWith('scripts/') || path.startsWith('src/tests/') || /\.(test|spec)\.ts$/.test(path)) {
+  if (
+    path.startsWith('scripts/') ||
+    path.startsWith('src/tests/') ||
+    path.startsWith('packages/create-cairn-site/') ||
+    /\.(test|spec)\.ts$/.test(path)
+  ) {
     return 'scripts';
   }
   if (path.startsWith('docs/') || path.endsWith('.md') || path === 'CHANGELOG.md') {

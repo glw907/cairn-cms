@@ -158,6 +158,15 @@ leading into beta, not the whole history before it. Treat any further pre-beta s
 same way: ship it, batch its `Consumers must:` line, and let this note stand as the ruling
 rather than re-litigating it pass by pass.
 
+**Clean breaks, no aliases, until the Waymark rebuilds land (Geoff, 2026-09-27).** Every
+production site (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub) is to be
+rebuilt from the Waymark theme, re-skinned to each site's personality. A site rebuilt from the
+template carries no migration burden, so a breaking rename (the `./components` to `./admin`
+case) is cheap now: take the clean break with one `Consumers must:` line rather than a
+compatibility alias or a compromise that keeps a confusing name or seam. Once the rebuilt sites
+are live, each break costs one migration per site again, so re-check this with Geoff when the first
+rebuilt site goes live.
+
 When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem / patch = everything else"
 scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
@@ -383,20 +392,6 @@ The original decision framing, for the record:
   A poll with no upper bound on decoration mount is the wrong shape for a gate; wait on a signal
   CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
   already. The next unexplained red `main` on a media test is this.**
-
-- **`create-cairn-site` promises a free deploy; a cairn site runs on Workers Paid from its first
-  deploy (Geoff, 2026-09-27: "I don't think that it would ever work with the Free tier").** A
-  small chore, queued for the 2026-09-27 overnight run, not a pass. Chapter 2's email text
-  (`packages/create-cairn-site/src/cloudflare/chapter2.mjs:191-196`) already states the truth;
-  chapter 1's deploy consent (`chapter.mjs:108-113`) still says "Cloudflare's free workers.dev
-  hosting" and "nothing in this step costs money". The chore: confirm or turn on Workers Paid
-  before the first build and deploy, so the later email step no longer offers Paid as a fresh
-  choice; reword the deploy consent to match chapter 2; update the resume transcripts and the
-  `paid-plan-declined` path (declining stops setup before any deploy). It also adds one setup
-  prompt: the AI posture, written as `aiPosture: 'decline'` or `'invite'` into
-  `src/theme/cairn.config.ts`, with no preference as the default answer; the template ships the
-  field commented out today. `docs/extend/choose-an-ai-posture.md` then becomes the page for
-  changing that choice later, so its rewrite follows this change.
 
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
@@ -1108,7 +1103,11 @@ the named human gates only):**
   as the credential design test. The HUD imports the render package's theme
   (`NewTheme(dark, profile)`), its glyph set, its named width rungs, and its sectioned `Frame`
   unchanged, and adds only the cursor, the selection channel, the viewport, and the
-  generation-counted refresh. An MCP front end is declined (2026-09-20): a skill on disk reaches
+  generation-counted refresh. The HUD's look is a design deliverable, never an implementer
+  default (Geoff, 2026-09-20: best-quality CLI and TUI output is a top priority for the tool):
+  draw real-terminal renderings in both grounds and at 80 and 120 columns, let Geoff pick, cut
+  the goldens from the pick, and write every operator-facing string to
+  `tool/docs/design/copy-standard.md`. An MCP front end is declined (2026-09-20): a skill on disk reaches
   every agent while an MCP server reaches only the main loop, and `cairn help agents` already
   covers the same ground. The architectural rule stands whatever the front end: the spine's API
   is the product, every front end is a view over it, and no logic lives in a view.

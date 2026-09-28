@@ -19,7 +19,7 @@
 // treating domain-live as finished.
 //
 // TOKEN LIFECYCLE: the pasted API token is deleted at a TERMINAL step: `email-live`, or a recorded
-// decline of the paid plan. domain-live and email-onboarded are NOT terminal, since T4b's email
+// decline of email sign-in. domain-live and email-onboarded are NOT terminal, since T4b's email
 // half continues from either and needs the same credential; deleting it there would strand that
 // later work. TERMINAL_STEPS names the states that really are done; reaching one deletes the token
 // by an explicit whole-record rebuild and save, since state.mjs's own updateSite merge can never
@@ -27,7 +27,12 @@
 // token); T4b exercises the delete half for real: a decline writes `step: 'paid-plan-declined'`
 // and deletes the token at the moment it happens, and a LATER re-entry at that same terminal step
 // (this module's own top-of-function short-circuit) re-offers with the row's reoffered copy
-// rather than returning silently, since a decline is a choice an owner can still reconsider.
+// rather than returning silently, since a decline is a choice an owner can still reconsider. The
+// step name stays `paid-plan-declined`, a stable contract the Go tool mirrors
+// (tool/internal/spine/step.go) and existing site records already carry, even though Workers Paid
+// itself is no longer a choice made here: chapter 1's own consent confirms it before the first
+// deploy, so by the time this module runs the account already carries it, and declining the email
+// admission below turns down email sign-in for this domain, not the plan.
 //
 // T4b.1 adds a SCOPE-FAILURE half to the same lifecycle: a saved token that still passes
 // validateToken's read (prefill.mjs's own listZones probe) but lacks a write permission was
@@ -77,7 +82,9 @@ const STEP_ORDER = [
 /**
  * The step names that mean the chapter is fully done and the pasted token has no more work left
  * to do: `email-live` (the chapter's real finish line) and `paid-plan-declined` (an owner who
- * declined the paid plan, which is also a clean stop). Neither name appears in STEP_ORDER, since
+ * declined email sign-in for the domain, with Workers Paid already on, which is also a clean
+ * stop; the name predates that framing and stays put, since it is a stable contract the Go tool
+ * mirrors and existing site records already carry). Neither name appears in STEP_ORDER, since
  * reaching one short-circuits this function before any `hasReached` check ever runs against it.
  * @type {string[]}
  */
@@ -182,18 +189,15 @@ const ALREADY_ACTIVE_DETAIL =
   'stay untouched.';
 
 /**
- * The email half's own admission, restating the price at the moment of the ask (T4b ruling 6):
- * chapter 1's consent copy already said nothing up to here costs money, and this is the point
- * where that stops being the whole story. Every figure carries its date and a link, since Email
- * Sending is in beta; the copy also says what the plan is not, since it is easy to mistake a
- * per-account subscription for a traffic-based upgrade.
+ * The email half's own admission. Workers Paid was already confirmed before chapter 1's first
+ * deploy, so this no longer restates its price as an open decision; it says what turning on
+ * email sign-in itself does, since Paid being on is not the same as this domain sending mail yet.
  */
 const EMAIL_ADMISSION_DETAIL =
-  "Cloudflare's Workers Paid plan costs $5 US per month, as of 2026-08-11 " +
-  '(https://developers.cloudflare.com/workers/platform/pricing/), billed once per Cloudflare ' +
-  "account rather than once per site. It is what sends this site's sign-in email, and a " +
-  'cairn site needs it from its first deploy. It is not a scaling upgrade: your ' +
-  "site's traffic has nothing to do with it.";
+  "Cloudflare's Workers Paid plan, already on for this account since your first deploy, is what " +
+  "sends this site's sign-in email. Turning this on onboards your domain for Cloudflare Email " +
+  'Sending, then sends a real test message to your own sign-in address to prove it works before ' +
+  'it hands the feature to anyone else.';
 
 /**
  * @typedef {object} RunChapter2Input
@@ -654,11 +658,12 @@ export async function runChapter2({
       },
     );
 
-    // --- Email admission: the price, restated at the moment of the ask (T4b ruling 6). Only asked
-    // while step has not yet reached email-onboarded; once onboarding has actually succeeded, this
-    // is never re-asked. A decline writes the terminal step directly (rather than going through
-    // TERMINAL_STEPS' own short-circuit, which only fires on a LATER re-entry) and deletes the
-    // token at the point it happens, per the terminal-state token rule.
+    // --- Email admission: Workers Paid is already on (chapter 1's own consent confirmed it
+    // before the first deploy), so this asks only about turning on email sign-in itself. Only
+    // asked while step has not yet reached email-onboarded; once onboarding has actually
+    // succeeded, this is never re-asked. A decline writes the terminal step directly (rather than
+    // going through TERMINAL_STEPS' own short-circuit, which only fires on a LATER re-entry) and
+    // deletes the token at the point it happens, per the terminal-state token rule.
     if (!hasReached(record?.step, 'email-onboarded')) {
       let emailConsented = false;
       const reoffered = Boolean(record?.cloudflare?.emailDeclinedAt);
@@ -677,7 +682,7 @@ export async function runChapter2({
           return;
         }
         const answer = await confirm({
-          message: "A cairn site needs Cloudflare's Workers Paid plan from its first deploy. Turn it on now?",
+          message: 'Turn on email sign-in for your domain now?',
         });
         if (isCancel(answer)) exitOnCancel();
         emailConsented = Boolean(answer);

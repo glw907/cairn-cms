@@ -23,10 +23,21 @@ async function tempDir(t) {
   return dir;
 }
 
+// The template's own commented-out aiPosture block (see the template's cairn.config.ts, around
+// the media/rendering seam), reproduced exactly so the fixture exercises the real target string.
+const AI_POSTURE_COMMENT_FIXTURE = [
+  "  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the",
+  "  // site's robots.txt route (docs/extend/wire-the-delivery-surface.md) passes it to",
+  '  // robotsResponse, and CairnAdapter.aiPosture (docs/reference/core.md) documents both values.',
+  '  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate',
+  "  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.",
+].join('\n');
+
 /**
  * Build a fixture directory reproducing the real showcase's substitution targets:
- * `src/theme/site.config.yaml` with the `siteName:` line and the tagline beneath it, and
- * `src/theme/theme.css` with both the light and dark brand blocks.
+ * `src/theme/site.config.yaml` with the `siteName:` line and the tagline beneath it,
+ * `src/theme/theme.css` with both the light and dark brand blocks, and `src/theme/cairn.config.ts`
+ * with the commented-out aiPosture field between its `media,` and `rendering: {` lines.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the fixture directory's absolute path
  */
@@ -49,6 +60,19 @@ async function fixture(t) {
       DARK_PRIMARY,
       DARK_CONTENT,
       '}',
+      '',
+    ].join('\n'),
+  );
+  await writeFile(
+    path.join(dir, 'src/theme/cairn.config.ts'),
+    [
+      'export const cairn = defineAdapter({',
+      '  media,',
+      AI_POSTURE_COMMENT_FIXTURE,
+      '  rendering: {',
+      '    render: () => null,',
+      '  },',
+      '});',
       '',
     ].join('\n'),
   );
@@ -147,6 +171,90 @@ test('partial drift throws rather than rotating only some declarations', async (
     () => applySubstitutions(dir, { name: 'X', description: '', brandColor: '#0000ff' }),
     /matched 3/,
   );
+});
+
+test('aiPosture "decline" writes aiPosture: \'decline\' into cairn.config.ts', async (t) => {
+  const dir = await fixture(t);
+  const changed = await applySubstitutions(dir, {
+    name: 'Alpine Club',
+    description: '',
+    brandColor: '',
+    aiPosture: 'decline',
+  });
+  const config = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.match(config, /^ {2}aiPosture: 'decline',$/m);
+  assert.ok(!config.includes('Left unset here on purpose'));
+  assert.ok(changed.includes('src/theme/cairn.config.ts'));
+});
+
+test('aiPosture "invite" writes aiPosture: \'invite\' into cairn.config.ts', async (t) => {
+  const dir = await fixture(t);
+  const changed = await applySubstitutions(dir, {
+    name: 'Alpine Club',
+    description: '',
+    brandColor: '',
+    aiPosture: 'invite',
+  });
+  const config = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.match(config, /^ {2}aiPosture: 'invite',$/m);
+  assert.ok(changed.includes('src/theme/cairn.config.ts'));
+});
+
+test('aiPosture "none" leaves cairn.config.ts byte-identical and absent from changed', async (t) => {
+  const dir = await fixture(t);
+  const before = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  const changed = await applySubstitutions(dir, {
+    name: 'Alpine Club',
+    description: '',
+    brandColor: '',
+    aiPosture: 'none',
+  });
+  const after = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.equal(after, before);
+  assert.ok(!changed.includes('src/theme/cairn.config.ts'));
+});
+
+test('an absent aiPosture answer leaves cairn.config.ts untouched, the same as "none"', async (t) => {
+  const dir = await fixture(t);
+  const before = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  const changed = await applySubstitutions(dir, { name: 'Alpine Club', description: '', brandColor: '' });
+  const after = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.equal(after, before);
+  assert.ok(!changed.includes('src/theme/cairn.config.ts'));
+});
+
+test('a decline or invite answer throws naming cairn.config.ts when its aiPosture block is missing', async (t) => {
+  const dir = await fixture(t);
+  await writeFile(path.join(dir, 'src/theme/cairn.config.ts'), 'export const cairn = defineAdapter({});\n');
+  await assert.rejects(
+    () => applySubstitutions(dir, { name: 'X', description: '', brandColor: '', aiPosture: 'decline' }),
+    /cairn\.config\.ts/,
+  );
+});
+
+// Regression: this file's own AI_POSTURE_COMMENT_FIXTURE is hand-copied from the template, so a
+// silent drift between the two would pass every test above against a fixture the real scaffold no
+// longer produces. This reads the real template's own file instead, the same guard
+// substitute.test.mjs's showcase-config test already applies to site.config.yaml.
+test('the real template config carries the exact aiPosture comment block this pass targets', async (t) => {
+  const templateConfig = readFileSync(
+    fileURLToPath(new URL('../template/src/theme/cairn.config.ts', import.meta.url)),
+    'utf8',
+  );
+
+  const dir = await tempDir(t);
+  await mkdir(path.join(dir, 'src/theme'), { recursive: true });
+  await writeFile(path.join(dir, 'src/theme/site.config.yaml'), 'siteName: Waymark\n');
+  await writeFile(path.join(dir, 'src/theme/cairn.config.ts'), templateConfig);
+  const changed = await applySubstitutions(dir, {
+    name: 'X',
+    description: '',
+    brandColor: '',
+    aiPosture: 'decline',
+  });
+  const personalized = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.match(personalized, /^ {2}aiPosture: 'decline',$/m);
+  assert.ok(changed.includes('src/theme/cairn.config.ts'));
 });
 
 test('verifySiteConfigPath accepts a plain relative path', () => {

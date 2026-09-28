@@ -429,6 +429,89 @@ test('runCloudflareChapter: declining the interactive consent returns declined',
   assert.equal(outcome, 'declined');
 });
 
+test('runCloudflareChapter: the deploy consent states Workers Paid, never a free-tier promise', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-paid-copy', dir);
+
+  process.env.CAIRN_WRANGLER_BIN = '/no/such/wrangler-binary-anywhere';
+  process.env.CAIRN_NPM_BIN = '/no/such/npm-binary-anywhere';
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  const logs = [];
+  await runCloudflareChapter({
+    siteId: 'alpine-club-paid-copy',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: false, deploy: true },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: async () => false,
+    openBrowser: async () => {
+      throw new Error('openBrowser must never be called when consent is declined');
+    },
+  });
+
+  const printed = logs.join('\n');
+  assert.ok(printed.includes('Workers Paid'), `expected the deploy consent to name Workers Paid, got: ${printed}`);
+  assert.equal(printed.includes('free workers.dev'), false, 'must never promise free workers.dev hosting');
+  assert.equal(printed.includes('free plan is enough'), false, 'must never claim the free plan is enough');
+  assert.equal(
+    printed.includes('nothing in this step costs money'),
+    false,
+    'must never claim this step costs nothing',
+  );
+});
+
+test('runCloudflareChapter: declining Workers Paid stops before any deploy, with a clear message and a re-run instruction', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-paid-decline', dir);
+
+  const fake = await makeFakeBin('cloudflare-tools-paid-decline');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  process.env.CAIRN_NPM_BIN = fake.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  const logs = [];
+  const outcome = await runCloudflareChapter({
+    siteId: 'alpine-club-paid-decline',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: false, deploy: true },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: async () => false,
+    openBrowser: async () => {
+      throw new Error('openBrowser must never be called when Workers Paid is declined');
+    },
+  });
+
+  assert.equal(outcome, 'declined');
+  assert.deepEqual(await fake.invocations(), [], 'declining Workers Paid must never reach install, build, or deploy');
+
+  const printed = logs.join('\n');
+  assert.ok(printed.includes('Workers Paid'), `expected the decline message to name Workers Paid, got: ${printed}`);
+  assert.ok(
+    printed.includes('Nothing was installed, built, or deployed'),
+    `expected the decline message to say nothing was deployed, got: ${printed}`,
+  );
+  assert.ok(
+    printed.includes('re-run npx create-cairn-site --dir'),
+    `expected the decline message to carry the re-run instruction, got: ${printed}`,
+  );
+
+  const state = await loadSite('alpine-club-paid-decline');
+  assert.equal(state.step, 'pushed', 'a decline before any deploy must leave the record resumable at pushed');
+});
+
 test('runCloudflareChapter: a dry run makes zero fake-bin invocations and prints every action title', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);

@@ -46,10 +46,14 @@ To state no posture, leave the member out.
 
 ## Pass the posture to the robots route
 
-Pass `cairn.aiPosture` as the `posture` option in the robots route, since declaring `aiPosture`
-on the adapter changes no output bytes on its own. The scaffold's route calls
-[`robotsResponse`](../reference/delivery-data.md#robotsresponse) with no posture, so the change is
-one import and one option:
+A site scaffolded by the current setup command needs no edit here: the scaffold's
+`src/routes/robots.txt/+server.ts` already passes `cairn.aiPosture` as the `posture` option to
+[`robotsResponse`](../reference/delivery-data.md#robotsresponse). `create-cairn-site` asks for a
+stance toward AI training crawlers.
+
+For a site scaffolded before this pass-through existed, pass `cairn.aiPosture` as the `posture`
+option in the robots route, since declaring `aiPosture` on the adapter changes no output bytes on
+its own:
 
 ```ts
 // src/routes/robots.txt/+server.ts

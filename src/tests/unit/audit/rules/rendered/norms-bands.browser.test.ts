@@ -60,7 +60,7 @@ describe('norms-bands against a real browser', () => {
     const findings = await findingsFor(
       normsBands,
       `<style>.btn-primary { display:inline-flex; align-items:center; height:96px; padding:1px 16px;
-              border:1px solid #000; border-radius:10px; font-size:14px; }</style>
+              border:1px solid #000; border-radius:6px; font-size:14px; }</style>
        <body><button class="btn btn-primary" type="button">Publish</button></body>`
     );
     const heightFindings = findings.filter((f) => f.message.includes('button-primary/height'));
@@ -90,7 +90,7 @@ describe('norms-bands against a real browser', () => {
     const findings = await findingsFor(
       normsBands,
       `<style>.card-shell { display:block; width:200px; height:100px;
-              border:1px dashed #000; border-radius:16px; }</style>
+              border:1px dashed #000; border-radius:8px; }</style>
        <body><div class="card-shell"></div></body>`
     );
     const styleFindings = findings.filter((f) => f.message.includes('card/border-style'));
@@ -103,7 +103,7 @@ describe('norms-bands against a real browser', () => {
   it('does not check height on a container role', async () => {
     const findings = await findingsFor(
       normsBands,
-      `<style>.card-shell { display:block; width:200px; height:900px; border:1px solid #000; border-radius:16px; }</style>
+      `<style>.card-shell { display:block; width:200px; height:900px; border:1px solid #000; border-radius:8px; }</style>
        <body><div class="card-shell"></div></body>`
     );
     expect(findings.filter((f) => f.selector.includes('card-shell'))).toEqual([]);
@@ -163,7 +163,7 @@ describe('norms-bands against a real browser', () => {
     const html = `<body><div data-theme="cairn-admin"><main>
       <h1 class="page-h1">Posts</h1>
       <button class="btn btn-primary" type="button">New post</button>
-      <div class="card-shell" style="border:1px solid #000;border-radius:16px;padding:16px">
+      <div class="card-shell" style="border:1px solid #000;border-radius:8px;padding:16px">
         <input class="input" type="text" placeholder="Search" style="height:32px;padding:4px 12px">
         <select class="select" style="height:32px;padding:4px 12px"><option>All</option></select>
         <span class="status-chip" style="display:inline-block;padding:0 7px;height:16px;border-radius:8px;font-size:10px">Draft</span>

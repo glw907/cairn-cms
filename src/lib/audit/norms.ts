@@ -239,31 +239,31 @@ export const RATIFIED_NORMS: readonly RatifiedNorm[] = [
   {
     role: 'button-primary',
     property: 'border-radius',
-    values: [10],
+    values: [6],
     reference: 'docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'button-ghost',
     property: 'border-radius',
-    values: [10],
+    values: [6],
     reference: 'docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'input-text',
     property: 'border-radius',
-    values: [10],
+    values: [6],
     reference: 'docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'select',
     property: 'border-radius',
-    values: [10],
+    values: [6],
     reference: 'docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'card',
     property: 'border-radius',
-    values: [16],
+    values: [8],
     reference: 'docs/internal/admin-design-system.md (--radius-box)',
   },
   {

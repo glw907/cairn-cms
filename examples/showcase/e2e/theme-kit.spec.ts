@@ -1,0 +1,440 @@
+import { test, expect, type Page, type Locator } from '@playwright/test';
+
+// The G1 fixture spec: a custom /admin route written only in plain daisyUI classes and cairn's
+// role utilities gets the admin's look with no per-element idiom of its own. Every assertion here
+// reads the compiled admin sheet through the fixture at examples/showcase/src/routes/admin/theme-kit,
+// by the same cairn-admin-theme cookie admin-visual.spec.ts sets, never a hand-typed serialized
+// color: a color-mix(...)/var(...) expression is always resolved by painting it on a throwaway
+// probe appended inside the element under test (the same oracle discipline
+// starter-outline-pin.spec.ts uses for the starter's own pin), so a probe placed inside an alert or
+// a button also inherits any custom property that rule sets locally on that element.
+
+type Theme = 'cairn-admin' | 'cairn-admin-dark';
+
+const THEMES: Theme[] = ['cairn-admin', 'cairn-admin-dark'];
+
+/** Sets the theme cookie and the matching prefers-color-scheme, then loads the fixture. */
+async function gotoThemed(
+  page: Page,
+  context: Parameters<Parameters<typeof test>[1]>[0]['context'],
+  baseURL: string,
+  theme: Theme,
+): Promise<void> {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: theme, url: baseURL }]);
+  await page.emulateMedia({ colorScheme: theme === 'cairn-admin' ? 'light' : 'dark' });
+  await page.goto('/admin/theme-kit');
+  await expect(page.getByRole('heading', { level: 1, name: 'Theme kit' })).toBeVisible();
+}
+
+/**
+ * Paints a CSS declaration on a throwaway `<span>` appended INSIDE the given element and reads
+ * back its resolved value, so a `color-mix()`/`var()` expression resolves exactly as the browser
+ * computes it in that element's own cascade (a custom property a rule sets locally, such as an
+ * alert's `--alert-color`, inherits into the probe the same way it reaches the element itself). A
+ * replaced form control (`<input>`) has no rendered content model of its own, so the probe goes
+ * beside it, as a child of its parent, instead; neither of the two rules this file reads through a
+ * form-control input (`--color-neutral`, `--color-base-100`, the 55% checkbox/radio edge mix) is
+ * ever set locally on the input itself, only inherited from the theme root, so the parent placement
+ * resolves the same value.
+ */
+async function resolveOn(locator: Locator, prop: string, expr: string): Promise<string> {
+  return locator.evaluate(
+    (el, args) => {
+      const container = el instanceof HTMLInputElement ? el.parentElement! : el;
+      const probe = document.createElement('span');
+      probe.style.position = 'absolute';
+      probe.style.visibility = 'hidden';
+      probe.style.setProperty(args.prop, args.expr);
+      container.appendChild(probe);
+      const resolved = getComputedStyle(probe).getPropertyValue(args.prop);
+      probe.remove();
+      return resolved;
+    },
+    { prop, expr },
+  );
+}
+
+/** The same oracle, read off the element's `::before` pseudo-element instead of the element itself. */
+async function computedBefore(locator: Locator, prop: string): Promise<string> {
+  return locator.evaluate((el, p) => getComputedStyle(el, '::before').getPropertyValue(p), prop);
+}
+
+for (const theme of THEMES) {
+  test.describe(`${theme}`, () => {
+    test.beforeEach(async ({ page, context, baseURL }) => {
+      await gotoThemed(page, context, baseURL!, theme);
+    });
+
+    test('radii of 4, 6, and 8px land by role, not by element', async ({ page }) => {
+      const cases: { testId: string; px: string }[] = [
+        { testId: 'tk-btn-plain', px: '6px' }, // field
+        { testId: 'tk-field-input', px: '6px' }, // field
+        { testId: 'tk-checkbox-unchecked', px: '4px' }, // selector
+        { testId: 'tk-chip', px: '4px' }, // selector
+        { testId: 'tk-card', px: '8px' }, // box
+        { testId: 'tk-modal-box', px: '8px' }, // box
+      ];
+      for (const { testId, px } of cases) {
+        const el = page.getByTestId(testId);
+        await expect.poll(() => el.evaluate((e) => getComputedStyle(e).borderRadius)).toBe(px);
+      }
+    });
+
+    test('btn-sm is 36px tall with 14px inline padding', async ({ page }) => {
+      const small = page.getByTestId('tk-btn-sm');
+      await expect.poll(() => small.evaluate((e) => getComputedStyle(e).height)).toBe('36px');
+      await expect.poll(() => small.evaluate((e) => getComputedStyle(e).paddingLeft)).toBe('14px');
+      await expect.poll(() => small.evaluate((e) => getComputedStyle(e).paddingRight)).toBe('14px');
+    });
+
+    test('the plain button is an outlined base-100 fill, not a flat slab', async ({ page }) => {
+      const plain = page.getByTestId('tk-btn-plain');
+      const fill = await resolveOn(plain, 'background-color', 'var(--color-base-100)');
+      const edge = await resolveOn(
+        plain,
+        'border-color',
+        'color-mix(in oklab, var(--color-base-content) 22%, transparent)',
+      );
+      await expect
+        .poll(() => plain.evaluate((e) => getComputedStyle(e).backgroundColor))
+        .toBe(fill);
+      await expect.poll(() => plain.evaluate((e) => getComputedStyle(e).borderColor)).toBe(edge);
+    });
+
+    test('button label weight: 500 plain/ghost, 600 primary and every selected form', async ({
+      page,
+    }) => {
+      const cases: { testId: string; weight: string }[] = [
+        { testId: 'tk-btn-plain', weight: '500' },
+        { testId: 'tk-btn-ghost', weight: '500' },
+        { testId: 'tk-btn-primary', weight: '600' },
+        { testId: 'tk-join-ladder-active', weight: '600' },
+        { testId: 'tk-join-ladder-current', weight: '600' },
+      ];
+      for (const { testId, weight } of cases) {
+        const el = page.getByTestId(testId);
+        await expect.poll(() => el.evaluate((e) => getComputedStyle(e).fontWeight)).toBe(weight);
+      }
+    });
+
+    test('the aria-current segment and the checked radio segment render as the selected segment', async ({
+      page,
+    }) => {
+      const wash = await resolveOn(
+        page.getByTestId('tk-join-ladder-current'),
+        'background-color',
+        'color-mix(in oklab, var(--color-base-content) 7%, var(--color-base-100))',
+      );
+      const cases = ['tk-join-ladder-current', 'tk-radio-join-first'];
+      for (const testId of cases) {
+        const el = page.getByTestId(testId);
+        await expect.poll(() => el.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(wash);
+        await expect.poll(() => el.evaluate((e) => getComputedStyle(e).fontWeight)).toBe('600');
+      }
+    });
+
+    test("the soft primary's rest and hover fills step through the primary tint", async ({
+      page,
+    }) => {
+      const soft = page.getByTestId('tk-btn-soft-primary');
+      const rest = await resolveOn(
+        soft,
+        'background-color',
+        'color-mix(in oklab, var(--color-primary) 10%, transparent)',
+      );
+      await expect.poll(() => soft.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(rest);
+
+      await soft.hover();
+      const hovered = await resolveOn(
+        soft,
+        'background-color',
+        'color-mix(in oklab, var(--color-primary) 15%, transparent)',
+      );
+      await expect
+        .poll(() => soft.evaluate((e) => getComputedStyle(e).backgroundColor))
+        .toBe(hovered);
+    });
+
+    test("the switch's checked track and knob, and every switch's round knob", async ({ page }) => {
+      const checked = page.getByTestId('tk-switch-checked');
+      const track = await resolveOn(checked, 'background-color', 'var(--color-neutral)');
+      const knob = await resolveOn(checked, 'background-color', 'var(--color-base-100)');
+      await expect
+        .poll(() => checked.evaluate((e) => getComputedStyle(e).backgroundColor))
+        .toBe(track);
+      await expect.poll(() => computedBefore(checked, 'background-color')).toBe(knob);
+
+      for (const testId of ['tk-switch-checked', 'tk-switch-unchecked', 'tk-toggle-primary']) {
+        const el = page.getByTestId(testId);
+        await expect
+          .poll(() => el.evaluate((e) => getComputedStyle(e).borderRadius))
+          .toBe('9999px');
+        await expect.poll(() => computedBefore(el, 'border-radius')).toBe('9999px');
+      }
+    });
+
+    test('toggle-primary keeps its own color, unaffected by the neutral-fill idiom', async ({
+      page,
+    }) => {
+      const primary = page.getByTestId('tk-toggle-primary');
+      const neutralTrack = await resolveOn(primary, 'background-color', 'var(--color-neutral)');
+      const base100Knob = await resolveOn(primary, 'background-color', 'var(--color-base-100)');
+      await expect
+        .poll(() => primary.evaluate((e) => getComputedStyle(e).backgroundColor))
+        .not.toBe(neutralTrack);
+      await expect.poll(() => computedBefore(primary, 'background-color')).not.toBe(base100Knob);
+    });
+
+    test('the unchecked checkbox and radio edges clear the 55% mix', async ({ page }) => {
+      const edge = await resolveOn(
+        page.getByTestId('tk-checkbox-unchecked'),
+        'border-color',
+        'color-mix(in oklab, var(--color-base-content) 55%, transparent)',
+      );
+      for (const testId of ['tk-checkbox-unchecked', 'tk-radio-unchecked']) {
+        const el = page.getByTestId(testId);
+        await expect.poll(() => el.evaluate((e) => getComputedStyle(e).borderColor)).toBe(edge);
+      }
+    });
+
+    test("the modal box carries the theme's warm shadow, not daisyUI's flat black", async ({
+      page,
+    }) => {
+      const modal = page.getByTestId('tk-modal-box');
+      const warm = await resolveOn(modal, 'box-shadow', 'var(--cairn-shadow)');
+      await expect.poll(() => modal.evaluate((e) => getComputedStyle(e).boxShadow)).toBe(warm);
+    });
+
+    test('each alert renders its own panel and ink, and a bare alert stays untouched', async ({
+      page,
+    }) => {
+      const cases: { testId: string; bg: string; border: string; ink: string }[] = [
+        {
+          testId: 'tk-alert-error',
+          bg: 'var(--cairn-error-tint)',
+          border: 'var(--cairn-error-border)',
+          ink: 'var(--cairn-error-ink)',
+        },
+        {
+          testId: 'tk-alert-warning',
+          bg: 'color-mix(in oklab, var(--color-warning) 12%, var(--color-base-100))',
+          border: 'color-mix(in oklab, var(--color-warning) 45%, var(--color-base-100))',
+          ink: 'var(--cairn-warning-ink)',
+        },
+        {
+          testId: 'tk-alert-success',
+          bg: `color-mix(in oklab, var(--color-success) ${theme === 'cairn-admin' ? '7%' : '12%'}, var(--color-base-100))`,
+          border: 'color-mix(in oklab, var(--color-success) 30%, var(--color-base-100))',
+          ink: 'var(--color-positive-ink)',
+        },
+        {
+          testId: 'tk-alert-info',
+          bg: `color-mix(in oklab, var(--color-info) ${theme === 'cairn-admin' ? '7%' : '12%'}, var(--color-base-100))`,
+          border: 'color-mix(in oklab, var(--color-info) 30%, var(--color-base-100))',
+          ink: 'var(--cairn-info-ink)',
+        },
+      ];
+      for (const { testId, bg, border, ink } of cases) {
+        const el = page.getByTestId(testId);
+        const panel = await resolveOn(el, 'background-color', bg);
+        const edge = await resolveOn(el, 'border-color', border);
+        const text = await resolveOn(el, 'color', ink);
+        await expect
+          .poll(() => el.evaluate((e) => getComputedStyle(e).backgroundColor))
+          .toBe(panel);
+        await expect.poll(() => el.evaluate((e) => getComputedStyle(e).borderColor)).toBe(edge);
+        await expect.poll(() => el.evaluate((e) => getComputedStyle(e).color)).toBe(text);
+      }
+
+      // The bare alert carries none of the four variant classes, so it never matches any panel
+      // rule's selector; its fill must differ from the error panel above, or the exclusion is
+      // not narrow enough.
+      const bare = page.getByTestId('tk-alert-bare');
+      const errorPanel = await resolveOn(bare, 'background-color', 'var(--cairn-error-tint)');
+      await expect
+        .poll(() => bare.evaluate((e) => getComputedStyle(e).backgroundColor))
+        .not.toBe(errorPanel);
+    });
+
+    test("the dropdown item's radius is concentric with the padded panel", async ({ page }) => {
+      const item = page.getByTestId('tk-dropdown-item');
+      await expect.poll(() => item.evaluate((e) => getComputedStyle(e).borderRadius)).toBe('4px');
+    });
+  });
+}
+
+test('the rendered admin nav carries no link to the fixture screen', async ({ page }) => {
+  await page.goto('/admin/posts');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('a[href="/admin/theme-kit"]')).toHaveCount(0);
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Site content' })
+      .getByRole('link', { name: /theme.kit/i }),
+  ).toHaveCount(0);
+});
+
+// Review focus 2: a hostile host stylesheet, and the public showcase's own compiled sheet, each
+// injected once before and once after the admin sheet in the page's own <head>. Neither order may
+// move the plain button, btn-sm's height, or the three radii; the two outline buttons are recorded
+// in each order, since rule 11 (the selected-outline ink repair) is the one property a losing layer
+// order could plausibly take from a host's own site-theme sublayer.
+const HOSTILE_CSS =
+  'div { font-family: Georgia; -webkit-font-smoothing: auto; scrollbar-width: auto; color-scheme: dark }';
+
+/** Finds the `<link rel="stylesheet">` whose fetched text carries the admin sheet's own fingerprint. */
+async function findAdminStylesheetHref(page: Page): Promise<string> {
+  const hrefs = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(
+      (l) => (l as HTMLLinkElement).href,
+    ),
+  );
+  for (const href of hrefs) {
+    const res = await page.request.get(href);
+    if ((await res.text()).includes('--radius-selector')) return href;
+  }
+  throw new Error('admin stylesheet link not found in <head>');
+}
+
+/** Fetches every stylesheet the public homepage links, concatenated into one CSS text blob. */
+async function fetchHomepageCss(page: Page, baseURL: string): Promise<string> {
+  const html = await (await page.request.get(baseURL)).text();
+  const hrefs = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(
+    (m) => m[1],
+  );
+  const texts = await Promise.all(
+    hrefs.map(async (href) => (await page.request.get(new URL(href, baseURL).toString())).text()),
+  );
+  return texts.join('\n');
+}
+
+/** Inserts a `<style>` element immediately before or after the admin sheet's own `<link>`. */
+async function injectAroundAdminSheet(
+  page: Page,
+  adminHref: string,
+  css: string,
+  order: 'before' | 'after',
+): Promise<void> {
+  await page.evaluate(
+    (args) => {
+      // The DOM link's own href PROPERTY is the browser-resolved absolute URL (what
+      // findAdminStylesheetHref read), while its href ATTRIBUTE is whatever relative or absolute
+      // string the page shipped; comparing the resolved property is what makes the two agree
+      // regardless of which form the markup used.
+      const admin = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+        (l) => (l as HTMLLinkElement).href === args.adminHref,
+      );
+      if (!admin || !admin.parentNode) throw new Error('admin stylesheet link vanished');
+      const style = document.createElement('style');
+      style.textContent = args.css;
+      if (args.order === 'before') admin.parentNode.insertBefore(style, admin);
+      else admin.parentNode.insertBefore(style, admin.nextSibling);
+    },
+    { adminHref, css, order },
+  );
+}
+
+for (const order of ['before', 'after'] as const) {
+  test(`review focus 2: host CSS injected ${order} the admin sheet leaves the plain button, btn-sm, and the radii unmoved`, async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await gotoThemed(page, context, baseURL!, 'cairn-admin');
+    const adminHref = await findAdminStylesheetHref(page);
+    const homepageCss = await fetchHomepageCss(page, baseURL!);
+    await injectAroundAdminSheet(page, adminHref, homepageCss, order);
+    await injectAroundAdminSheet(page, adminHref, HOSTILE_CSS, order);
+
+    const plain = page.getByTestId('tk-btn-plain');
+    const fill = await resolveOn(plain, 'background-color', 'var(--color-base-100)');
+    const edge = await resolveOn(
+      plain,
+      'border-color',
+      'color-mix(in oklab, var(--color-base-content) 22%, transparent)',
+    );
+    await expect.poll(() => plain.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(fill);
+    await expect.poll(() => plain.evaluate((e) => getComputedStyle(e).borderColor)).toBe(edge);
+
+    const small = page.getByTestId('tk-btn-sm');
+    await expect.poll(() => small.evaluate((e) => getComputedStyle(e).height)).toBe('36px');
+
+    const radii: { testId: string; px: string }[] = [
+      { testId: 'tk-btn-plain', px: '6px' },
+      { testId: 'tk-checkbox-unchecked', px: '4px' },
+      { testId: 'tk-card', px: '8px' },
+    ];
+    for (const { testId, px } of radii) {
+      const el = page.getByTestId(testId);
+      await expect.poll(() => el.evaluate((e) => getComputedStyle(e).borderRadius)).toBe(px);
+    }
+
+    // Recorded finding (both orders, run and read, not merely hoped for): the showcase's own
+    // homepage sheet carries no site-theme rule that touches a selected outline button's ink, so
+    // rule 11 (the widened outline/dash ink repair) holds in both host orders here. An uncolored
+    // btn-outline keeps daisyUI's own edge (unaffected either way, since no cairn-idiom rule
+    // targets it), and the selected btn-outline btn-active keeps the plain-ink reset in both
+    // orders. A future host sheet that DOES carry a competing site-theme rule on this property
+    // could still lose the after order to it; that risk is unpatched, per the review focus.
+    const outline = page.getByTestId('tk-btn-outline');
+    const outlineActive = page.getByTestId('tk-btn-outline-active');
+    const outlineEdge = await outline.evaluate((e) => getComputedStyle(e).borderColor);
+    expect(outlineEdge.length).toBeGreaterThan(0);
+    const expectedInk = await resolveOn(outlineActive, 'color', 'var(--color-base-content)');
+    await expect
+      .poll(() => outlineActive.evaluate((e) => getComputedStyle(e).color))
+      .toBe(expectedInk);
+  });
+}
+
+// Review focus 3: the ladder join, forced to dir="rtl" at a 320px viewport, must not overflow the
+// page, must round its outer corners on the logical start and end (which physically flip sides
+// under RTL), and its selected segment must keep its state hairline.
+test('review focus 3: the ladder join in RTL at 320px keeps its logical corners, no overflow, and the selected hairline', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await gotoThemed(page, context, baseURL!, 'cairn-admin');
+
+  const join = page.getByTestId('tk-join-ladder');
+  await join.evaluate((el) => el.setAttribute('dir', 'rtl'));
+
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(320);
+
+  const first = page.getByTestId('tk-join-ladder-plain');
+  const last = page.getByTestId('tk-join-ladder-current');
+  // The first DOM child sits at the inline start, which RTL renders on the physical right: its
+  // outer (start) corners round, its inner (end) corners stay the structural zero.
+  await expect
+    .poll(() => first.evaluate((e) => getComputedStyle(e).borderTopRightRadius))
+    .toBe('6px');
+  await expect
+    .poll(() => first.evaluate((e) => getComputedStyle(e).borderBottomRightRadius))
+    .toBe('6px');
+  await expect
+    .poll(() => first.evaluate((e) => getComputedStyle(e).borderTopLeftRadius))
+    .toBe('0px');
+  // The last DOM child sits at the inline end, physically on the left under RTL.
+  await expect
+    .poll(() => last.evaluate((e) => getComputedStyle(e).borderTopLeftRadius))
+    .toBe('6px');
+  await expect
+    .poll(() => last.evaluate((e) => getComputedStyle(e).borderBottomLeftRadius))
+    .toBe('6px');
+  await expect
+    .poll(() => last.evaluate((e) => getComputedStyle(e).borderTopRightRadius))
+    .toBe('0px');
+
+  // The selected segment (aria-current, this join's own middle-free third segment) keeps its
+  // state hairline regardless of direction.
+  const hairline = await resolveOn(
+    last,
+    'border-color',
+    'color-mix(in oklab, var(--color-base-content) 65%, transparent)',
+  );
+  await expect.poll(() => last.evaluate((e) => getComputedStyle(e).borderColor)).toBe(hairline);
+});

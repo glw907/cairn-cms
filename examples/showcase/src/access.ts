@@ -18,7 +18,12 @@ import { defineAccess } from '@glw907/cairn-cms';
  * this rule, and an owner-only list is written out as `['owner']` because `defineAccess` refuses an
  * empty one. The first argument is the site's role vocabulary; `undefined` takes the built-in
  * owner/editor roles, which is what a site declaring none of its own gets.
+ *
+ * The theme-kit fixture screen is owner-only for the same reason and carries no nav entry
+ * (cairn.config.ts's navLayout never mentions it): it is a CSS proof for the theme identity
+ * pass's own e2e specs, not a screen an editor should ever land on.
  */
 export const access = defineAccess(undefined, {
   '/admin/signups': ['owner'],
+  '/admin/theme-kit': ['owner'],
 });

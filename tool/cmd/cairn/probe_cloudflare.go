@@ -53,7 +53,8 @@ func cloudflareProbe(label string, cf *providers.Cloudflare, zoneID string) func
 }
 
 // observabilityProbeQuery is the one-hour window cairn auth check queries to confirm Workers
-// Observability read access, the same shape the retired auth probe command used.
+// Observability read access. cairn auth probe is a hidden alias of cairn auth check, so an
+// invocation under either name runs the identical query.
 func observabilityProbeQuery() map[string]any {
 	now := time.Now()
 	return map[string]any{

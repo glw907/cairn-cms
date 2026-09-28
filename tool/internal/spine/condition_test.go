@@ -35,7 +35,7 @@ func TestConditionsNeverCollideWithReasonOrParkCodes(t *testing.T) {
 		}
 	}
 
-	for _, p := range allParkCodes {
+	for _, p := range parkCodes {
 		if conditionSet[string(p)] {
 			t.Errorf("ParkCode %q collides with a Condition constant", p)
 		}

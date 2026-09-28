@@ -36,12 +36,7 @@ const (
 func renderPlain(t Theme, in RenderInput) Frame {
 	report := firstReport(in)
 	s := split(report)
-	// The tally is taken before the rows are filtered, so --quiet's body, the one a cron mail
-	// carries, counts the run that happened rather than the slice it drew.
-	verdict := t.verdictKeyLine(in.Verdict, Sanitize(report.Site), s.tally(", "))
-	if in.FailingOnly {
-		s = s.failingRowsOnly()
-	}
+	verdict := t.verdictKeyLine(in.Verdict, sanitize(report.Site), s.tally(", "))
 
 	f := Frame{Header: []string{
 		verdict,
@@ -87,7 +82,7 @@ func renderPlain(t Theme, in RenderInput) Frame {
 // frame's one piece of ink, so an operator who forced colour into a pipe still sees it and a
 // reader of the raw bytes still reads the word.
 func (t Theme) verdictKeyLine(v Verdict, site, tally string) string {
-	line := keyVerdict + t.Strong(verdictRole(v)).Render(v.String())
+	line := keyVerdict + t.strong(verdictRole(v)).Render(v.String())
 	if site != "" {
 		line += " - " + site
 	}
@@ -108,8 +103,8 @@ func checkedPhraseValue(at, now time.Time, elapsed time.Duration) string {
 // the hold rides the state line rather than inventing a fifth key an agent would have to learn.
 func plainCheck(c health.CheckResult, now time.Time) []string {
 	unrun := c.Outcome.State == spine.Unknown
-	line := Sanitize(c.ID) + ": " + spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)
-	detail := Sanitize(checkDetail(c))
+	line := sanitize(c.ID) + ": " + spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)
+	detail := sanitize(checkDetail(c))
 	if !unrun && detail != "" {
 		line += " - " + detail
 	}
@@ -151,7 +146,7 @@ func fixLines(fix health.Fix) []string {
 	if fix.Text == "" {
 		return nil
 	}
-	out := []string{keyFix + Sanitize(fix.Text), keyFixActor + actorPhrase(fix)}
+	out := []string{keyFix + sanitize(fix.Text), keyFixActor + actorPhrase(fix)}
 	if url := fixURL(fix); url != "" {
 		out = append(out, keyDocs+url)
 	}

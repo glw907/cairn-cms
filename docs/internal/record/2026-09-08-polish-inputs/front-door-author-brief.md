@@ -39,3 +39,12 @@ the first driver. The three drivers name the page's own frame: the one surface, 
 admin, the cost, and the extension-by-agent, support-by-one-idiom trade. "The setup most organizations already run" is where the WordPress and SSG
 experience is the author's record rather than a comparison, and the comparisons-never-strawman
 rule holds: the alternatives are drawn as competent with their advantages.
+
+## Amendment: the audience widened (Geoff, 2026-09-22)
+
+The small-organization framing above dates from when cairn could not tie into other
+authentication schemes. The identity seam (Cloudflare Access, an organization's own sign-in)
+changed that, so cairn can suit much larger organizations, especially ones already committed to
+Cloudflare. Audience work (profiles, the front door, the evaluator route) spans that whole
+range, never only small organizations. The comparisons-never-strawman rule named above now
+lives in `docs/internal/docs-register.md`, "The front door".

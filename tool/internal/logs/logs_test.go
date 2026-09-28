@@ -17,13 +17,33 @@ import (
 )
 
 // fixtureRoundTripper serves one fixed status and body for every request, standing in for
-// Cloudflare's API in a test.
+// Cloudflare's API in a test, and records the last request's method, path, and decoded JSON body,
+// so a test can assert on what a call actually sent rather than on the map buildQuery returned.
 type fixtureRoundTripper struct {
 	status int
 	body   []byte
+
+	method string
+	path   string
+	sent   map[string]any
 }
 
-func (rt fixtureRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (rt *fixtureRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	rt.method = req.Method
+	rt.path = req.URL.Path
+	if req.Body != nil {
+		data, err := io.ReadAll(req.Body)
+		if err != nil {
+			return nil, fmt.Errorf("fixtureRoundTripper: read request body: %w", err)
+		}
+		if len(data) > 0 {
+			var sent map[string]any
+			if err := json.Unmarshal(data, &sent); err != nil {
+				return nil, fmt.Errorf("fixtureRoundTripper: decode request body: %w", err)
+			}
+			rt.sent = sent
+		}
+	}
 	return &http.Response{
 		StatusCode: rt.status,
 		Body:       io.NopCloser(bytes.NewReader(rt.body)),
@@ -48,7 +68,7 @@ func newFixtureClient(t *testing.T) *providers.Cloudflare {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: status, body: body})
+	return providers.NewCloudflare("acct123", providers.Credential{}, &fixtureRoundTripper{status: status, body: body})
 }
 
 // TestFetchKeepsEachEntrysFieldKeyOrder asserts Fetch returns the corpus fixture's three events
@@ -142,7 +162,7 @@ func TestFetchOrdersEntriesNewestFirst(t *testing.T) {
 		{"timestamp":0,"source":{"level":"info","event":"undated-second"}},
 		{"timestamp":0,"source":{"timestamp":"2026-09-14T08:55:02.000Z","level":"info","event":"oldest"}}
 	]}}}`)
-	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, &fixtureRoundTripper{status: http.StatusOK, body: body})
 
 	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
 	if err != nil {
@@ -163,54 +183,165 @@ func TestFetchOrdersEntriesNewestFirst(t *testing.T) {
 // on does not move between runs.
 var queryNow = time.Date(2026, 9, 14, 12, 0, 0, 0, time.UTC)
 
-// queryFilters returns the parameters.filters array of a query buildQuery built.
-func queryFilters(t *testing.T, query map[string]any) []map[string]any {
+// sentFilters returns the decoded request body's parameters.filters array. json.Unmarshal decodes
+// a JSON array into []any, not []map[string]any, since it never assumes an element's shape.
+func sentFilters(t *testing.T, sent map[string]any) []any {
 	t.Helper()
-	params, ok := query["parameters"].(map[string]any)
-	if !ok {
-		t.Fatal("query[\"parameters\"] is not a map[string]any")
+	if sent == nil {
+		t.Fatal("the round tripper captured no request body")
 	}
-	filters, ok := params["filters"].([]map[string]any)
+	params, ok := sent["parameters"].(map[string]any)
 	if !ok {
-		t.Fatal("the query's parameters.filters is not a []map[string]any")
+		t.Fatalf("sent body's parameters = %v, want an object", sent["parameters"])
+	}
+	filters, ok := params["filters"].([]any)
+	if !ok {
+		t.Fatalf("sent body's parameters.filters = %v, want an array", params["filters"])
 	}
 	return filters
 }
 
-// TestBuildQueryCarriesEachCallersOwnFilters asserts Fetch narrows on the JSON "event" key by
-// value, while FetchRecords asks for a level and for the "event" key to exist at all, which is
-// what excludes a Worker's own console lines from the errors check's count.
-func TestBuildQueryCarriesEachCallersOwnFilters(t *testing.T) {
-	fetchFilters := queryFilters(t, buildQuery("site", time.Hour, queryNow, []filter{
-		{key: "event", operation: "eq", value: "auth.link.send_failed"},
-	}, 0))
-	recordFilters := queryFilters(t, buildQuery("site", time.Hour, queryNow, []filter{
-		{key: "level", operation: "eq", value: "error"},
-		{key: "event", operation: "exists"},
-	}, recordLimit))
+// wantLeafFilter asserts filter is an equality leaf carrying key and value, and the "string" type
+// every leaf filter in the Workers Observability query contract must declare (the endpoint
+// answers HTTP 400 with a ZodError for a leaf missing "type", which is what cairn sent for a week
+// until 2026-09-21). The expected type is the literal "string", never logs.go's own filterType
+// constant, so a wrong constant in logs.go cannot pass by agreeing with itself.
+func wantLeafFilter(t *testing.T, filter any, key, value string) {
+	t.Helper()
+	f, ok := filter.(map[string]any)
+	if !ok {
+		t.Fatalf("filter = %v, want an object", filter)
+	}
+	if f["key"] != key || f["operation"] != "eq" || f["value"] != value {
+		t.Errorf("filter = %v, want key %q operation \"eq\" value %q", f, key, value)
+	}
+	if f["type"] != "string" {
+		t.Errorf("filter %v carries type %v, want the contract's \"string\"", f, f["type"])
+	}
+}
 
-	if fetchFilters[1]["key"] != "event" || fetchFilters[1]["value"] != "auth.link.send_failed" {
-		t.Errorf("Fetch's second filter = %v, want key event, value auth.link.send_failed", fetchFilters[1])
+// wantTimeframe asserts the sent body's timeframe names from and to in epoch milliseconds, the
+// unit the Workers Observability query contract expects.
+func wantTimeframe(t *testing.T, sent map[string]any, from, to time.Time) {
+	t.Helper()
+	timeframe, ok := sent["timeframe"].(map[string]any)
+	if !ok {
+		t.Fatalf("sent body's timeframe = %v, want an object", sent["timeframe"])
 	}
-	if recordFilters[1]["key"] != "level" || recordFilters[1]["value"] != "error" {
-		t.Errorf("FetchRecords's second filter = %v, want key level, value error", recordFilters[1])
+	wantFrom := float64(from.UnixMilli())
+	wantTo := float64(to.UnixMilli())
+	if timeframe["from"] != wantFrom || timeframe["to"] != wantTo {
+		t.Errorf("timeframe = %v, want from %v to %v", timeframe, wantFrom, wantTo)
 	}
-	if recordFilters[2]["key"] != "event" || recordFilters[2]["operation"] != "exists" {
-		t.Errorf("FetchRecords's third filter = %v, want key event, operation exists", recordFilters[2])
+}
+
+// wantPostToTelemetryQuery asserts rt captured a POST to the account's telemetry query endpoint,
+// the literal path Cloudflare's own API documents, never a path logs.go itself assembles from a
+// stored constant.
+func wantPostToTelemetryQuery(t *testing.T, rt *fixtureRoundTripper, accountID string) {
+	t.Helper()
+	if rt.method != http.MethodPost {
+		t.Errorf("method = %q, want POST", rt.method)
 	}
-	// An operation taking no operand carries no value at all; the endpoint reads a filter by its
-	// operation, and a value beside "exists" would be a key it never asked for.
-	if _, ok := recordFilters[2]["value"]; ok {
-		t.Errorf("the exists filter %v carries a value", recordFilters[2])
+	wantPath := "/client/v4/accounts/" + accountID + "/workers/observability/telemetry/query"
+	if rt.path != wantPath {
+		t.Errorf("path = %q, want %q", rt.path, wantPath)
 	}
-	// The endpoint refuses a leaf filter that declares no type, which is what it did to every
-	// query cairn sent before 2026-09-21.
-	for _, filters := range [][]map[string]any{fetchFilters, recordFilters} {
-		for i, f := range filters {
-			if f["type"] != filterType {
-				t.Errorf("filter %d = %v, want a %q type", i, f, filterType)
+}
+
+// TestFetchSendsTheObservabilityQueryContract reads the request Fetch actually sent, rather than
+// calling buildQuery directly and inspecting its return value: a filter missing its "type" key
+// would still pass an assertion against buildQuery's own map, since both sides read the same
+// wrong constant. Only the captured wire body can catch that, which is what let a malformed query
+// reach production as a live HTTP 400 for a week.
+func TestFetchSendsTheObservabilityQueryContract(t *testing.T) {
+	tests := []struct {
+		name      string
+		limit     int
+		wantLimit float64
+	}{
+		{"default limit", 0, 200},
+		{"caller-supplied limit", 50, 50},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := &fixtureRoundTripper{
+				status: http.StatusOK,
+				body:   []byte(`{"success":true,"result":{"events":{"count":0,"events":[]}}}`),
 			}
-		}
+			cf := providers.NewCloudflare("acct123", providers.Credential{}, rt)
+
+			_, err := Fetch(context.Background(), cf, Query{
+				Worker: "example-site",
+				Since:  time.Hour,
+				Event:  "commit.failed",
+				Limit:  tt.limit,
+			}, queryNow)
+			if err != nil {
+				t.Fatalf("Fetch: %v", err)
+			}
+
+			wantPostToTelemetryQuery(t, rt, "acct123")
+
+			filters := sentFilters(t, rt.sent)
+			if len(filters) != 2 {
+				t.Fatalf("sent filters = %v, want 2 entries", filters)
+			}
+			wantLeafFilter(t, filters[0], "$metadata.service", "example-site")
+			wantLeafFilter(t, filters[1], "event", "commit.failed")
+
+			wantTimeframe(t, rt.sent, queryNow.Add(-time.Hour), queryNow)
+
+			if rt.sent["limit"] != tt.wantLimit {
+				t.Errorf("limit = %v, want %v", rt.sent["limit"], tt.wantLimit)
+			}
+		})
+	}
+}
+
+// TestFetchRecordsSendsTheObservabilityQueryContract reads the request FetchRecords actually
+// sent: the worker filter, a level filter with its type, and an exists filter that carries no
+// value at all, since the endpoint reads that filter by its operation and a value beside it would
+// name a key the endpoint never asked for.
+func TestFetchRecordsSendsTheObservabilityQueryContract(t *testing.T) {
+	rt := &fixtureRoundTripper{
+		status: http.StatusOK,
+		body:   []byte(`{"success":true,"result":{"events":{"count":0,"events":[]}}}`),
+	}
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, rt)
+
+	_, err := FetchRecords(context.Background(), cf, "example-site", "error", 24*time.Hour, queryNow)
+	if err != nil {
+		t.Fatalf("FetchRecords: %v", err)
+	}
+
+	wantPostToTelemetryQuery(t, rt, "acct123")
+
+	filters := sentFilters(t, rt.sent)
+	if len(filters) != 3 {
+		t.Fatalf("sent filters = %v, want 3 entries", filters)
+	}
+	wantLeafFilter(t, filters[0], "$metadata.service", "example-site")
+	wantLeafFilter(t, filters[1], "level", "error")
+
+	exists, ok := filters[2].(map[string]any)
+	if !ok {
+		t.Fatalf("third filter = %v, want an object", filters[2])
+	}
+	if exists["key"] != "event" || exists["operation"] != "exists" {
+		t.Errorf("third filter = %v, want key event operation exists", exists)
+	}
+	if exists["type"] != "string" {
+		t.Errorf("third filter %v carries type %v, want the contract's \"string\"", exists, exists["type"])
+	}
+	if _, ok := exists["value"]; ok {
+		t.Errorf("the exists filter %v carries a value", exists)
+	}
+
+	wantTimeframe(t, rt.sent, queryNow.Add(-24*time.Hour), queryNow)
+
+	if rt.sent["limit"] != float64(1000) {
+		t.Errorf("limit = %v, want the record-fetch cap 1000", rt.sent["limit"])
 	}
 }
 
@@ -225,7 +356,7 @@ func TestFetchRecordsCountsEngineRecordsAndIgnoresConsoleLines(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: status, body: body})
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, &fixtureRoundTripper{status: status, body: body})
 
 	warns, err := FetchRecords(context.Background(), cf, "example-site", "warn", 24*time.Hour, queryNow)
 	if err != nil {
@@ -264,7 +395,7 @@ func TestFetchRecordsReportsATruncatedPage(t *testing.T) {
 	}
 	body := fmt.Appendf(nil, `{"success":true,"result":{"events":{"count":%d,"events":[%s]}}}`,
 		recordLimit, strings.Join(events, ","))
-	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, &fixtureRoundTripper{status: http.StatusOK, body: body})
 
 	records, err := FetchRecords(context.Background(), cf, "example-site", "error", 24*time.Hour, queryNow)
 	if err != nil {
@@ -281,7 +412,7 @@ func TestFetchRecordsReportsATruncatedPage(t *testing.T) {
 // TestFetchMapsANotFoundToErrObservabilityOff asserts a 404 from the observability endpoint
 // resolves to ErrObservabilityOff, the one status that still does.
 func TestFetchMapsANotFoundToErrObservabilityOff(t *testing.T) {
-	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, &fixtureRoundTripper{
 		status: http.StatusNotFound,
 		body:   []byte(`{"success":false,"errors":[{"code":7003}],"result":null}`),
 	})
@@ -301,7 +432,7 @@ func TestFetchDoesNotReadARejectedRequestAsObservabilityOff(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: status, body: body})
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, &fixtureRoundTripper{status: status, body: body})
 
 	_, err = Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
 	if errors.Is(err, ErrObservabilityOff) {
@@ -325,7 +456,7 @@ func TestFetchDecodesTheRecordedLiveResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: status, body: body})
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, &fixtureRoundTripper{status: status, body: body})
 
 	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: 24 * time.Hour}, queryNow)
 	if err != nil {
@@ -351,7 +482,7 @@ func TestFetchDatesARecordFromTheEventWhenItCarriesNone(t *testing.T) {
 	body := []byte(`{"success":true,"result":{"events":{"count":1,"events":[
 		{"timestamp":1789931462614,"source":{"level":"info","message":"GET /"}}
 	]}}}`)
-	cf := providers.NewCloudflare("acct123", providers.Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
+	cf := providers.NewCloudflare("acct123", providers.Credential{}, &fixtureRoundTripper{status: http.StatusOK, body: body})
 
 	entries, err := Fetch(context.Background(), cf, Query{Worker: "example-site", Since: time.Hour}, queryNow)
 	if err != nil {

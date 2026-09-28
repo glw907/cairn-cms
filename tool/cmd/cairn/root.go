@@ -34,8 +34,10 @@ const (
 // site whose provider had stalled reported UNKNOWN rather than the fault it was measuring.
 const defaultTimeout = 480 * time.Second
 
-// The three --color values. Task 20a reads the chosen value to pick a colour profile; until it
-// lands the value is validated and carried, never acted on.
+// The three --color values. cairn health passes the chosen value into detectTerminal, which
+// hands it to render.DetectProfile as Env.Color: a non-empty NO_COLOR means no colour under all
+// three, and otherwise auto defers to the terminal's own colour support, always forces a coloured
+// frame regardless of the terminal, and never paints none. cairn doctor's report is plain text.
 const (
 	colorAuto   = "auto"
 	colorAlways = "always"
@@ -74,8 +76,9 @@ type rootFlags struct {
 	// this decides which palette it is painted from.
 	theme string
 	// width overrides the terminal column count render/profile.go's DetectProfile would
-	// otherwise read. Zero means unset: the operator's own terminal width applies. Task 20a
-	// reads the chosen value and carries it; the seam that composes a frame to it is Task 20b-i.
+	// otherwise read. Zero means unset: the operator's own terminal width applies. cairn health
+	// reads the value in renderInput, falling back to the detected terminal's column count when
+	// the operator set none, and passes it straight into the frame render.Render composes.
 	width int
 	// widthSet reports whether the operator passed --width explicitly, the same Changed-bit
 	// pattern timeoutSet uses: zero is both the flag's default and a value an operator could

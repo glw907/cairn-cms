@@ -126,8 +126,7 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", data)
-	return err
+	return writeJSONPayload(cmd.OutOrStdout(), data)
 }
 
 // writeAdoptListPlain writes the plain listing in its two groups: the Workers discovery can

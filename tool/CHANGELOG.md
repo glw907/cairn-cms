@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **`cairn doctor --help`'s first sentence is split in two.** The text still names every clause
+  the original did (the checked-in configuration, that it is read straight off the directory,
+  and what it covers), reworded so the sentence carries at most one comma.
+
 ## 1.1.0
 
 ### Added

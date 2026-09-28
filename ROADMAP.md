@@ -158,6 +158,15 @@ leading into beta, not the whole history before it. Treat any further pre-beta s
 same way: ship it, batch its `Consumers must:` line, and let this note stand as the ruling
 rather than re-litigating it pass by pass.
 
+**Clean breaks, no aliases, until the Waymark rebuilds land (Geoff, 2026-09-27).** Every
+production site (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub) is to be
+rebuilt from the Waymark theme, re-skinned to each site's personality. A site rebuilt from the
+template carries no migration burden, so a breaking rename (the `./components` to `./admin`
+case) is cheap now: take the clean break with one `Consumers must:` line rather than a
+compatibility alias or a compromise that keeps a confusing name or seam. Once the rebuilt sites
+are live, each break costs one migration per site again, so re-check this with Geoff when the first
+rebuilt site goes live.
+
 When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem / patch = everything else"
 scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
@@ -425,20 +434,19 @@ The original decision framing, for the record:
   CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
   already. The next unexplained red `main` on a media test is this.**
 
-- **`create-cairn-site` tells a reader the deploy is free, then deploys something that is not
-  (release-debt pass, 2026-08-19).** The engine and docs now state that a cairn site runs on
-  Workers Paid from its first deploy, but the tool's own interactive flow still says the opposite at
-  the point it matters. `packages/create-cairn-site/src/cloudflare/chapter.mjs:106-113` is the
-  consent text a reader approves before deploying, and it promises "Cloudflare's free workers.dev
-  hosting ... The free plan is enough; nothing in this step costs money." At 3.2 MiB gzipped that
-  deploy fails on a free plan, so the tool breaks the promise it just made. This is not a copy fix:
-  `chapter2.mjs`'s `EMAIL_ADMISSION_DETAIL` and its JSDoc both depend on chapter 1 having
-  established "nothing up to here costs money", and the later "Turn on Workers Paid now, so anyone
-  besides you can sign in?" prompt is premised on Paid arriving later. Fixing it means reworking the
-  tool's money narrative and probably its prompt order, plus the `01c-resume.txt` and
-  `01d-resume.txt` fixtures. **Scoped as its own pass (Geoff, 2026-08-19), deliberately cut from the
-  release-debt pass rather than absorbed into it. Trigger: before `create-cairn-site` publishes,
-  which is the same decision the release cut already owes.**
+- **`create-cairn-site` promises a free deploy; a cairn site runs on Workers Paid from its first
+  deploy (Geoff, 2026-09-27: "I don't think that it would ever work with the Free tier").** A
+  small chore, queued for the 2026-09-27 overnight run, not a pass. Chapter 2's email text
+  (`packages/create-cairn-site/src/cloudflare/chapter2.mjs:191-196`) already states the truth;
+  chapter 1's deploy consent (`chapter.mjs:108-113`) still says "Cloudflare's free workers.dev
+  hosting" and "nothing in this step costs money". The chore: confirm or turn on Workers Paid
+  before the first build and deploy, so the later email step no longer offers Paid as a fresh
+  choice; reword the deploy consent to match chapter 2; update the resume transcripts and the
+  `paid-plan-declined` path (declining stops setup before any deploy). It also adds one setup
+  prompt: the AI posture, written as `aiPosture: 'decline'` or `'invite'` into
+  `src/theme/cairn.config.ts`, with no preference as the default answer; the template ships the
+  field commented out today. `docs/extend/choose-an-ai-posture.md` then becomes the page for
+  changing that choice later, so its rewrite follows this change.
 
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
@@ -1149,7 +1157,11 @@ the named human gates only):**
   as the credential design test. The HUD imports the render package's theme
   (`NewTheme(dark, profile)`), its glyph set, its named width rungs, and its sectioned `Frame`
   unchanged, and adds only the cursor, the selection channel, the viewport, and the
-  generation-counted refresh. An MCP front end is declined (2026-09-20): a skill on disk reaches
+  generation-counted refresh. The HUD's look is a design deliverable, never an implementer
+  default (Geoff, 2026-09-20: best-quality CLI and TUI output is a top priority for the tool):
+  draw real-terminal renderings in both grounds and at 80 and 120 columns, let Geoff pick, cut
+  the goldens from the pick, and write every operator-facing string to
+  `tool/docs/design/copy-standard.md`. An MCP front end is declined (2026-09-20): a skill on disk reaches
   every agent while an MCP server reaches only the main loop, and `cairn help agents` already
   covers the same ground. The architectural rule stands whatever the front end: the spine's API
   is the product, every front end is a view over it, and no logic lives in a view.
@@ -1216,64 +1228,40 @@ the named human gates only):**
     captured from 1.1.0). A passing line wants the check's own neutral name. Needs a tool release,
     and the capture and `is-it-working.md`'s transcript re-taken after it.
 
-- **The B2 architecture reads, what retire-1 left (2026-09-21, updated 2026-09-22).** One read per
-  touched Go package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen
-  sound with nits, none escalated. **retire-1's `code-simplifier` round touched `doctor`, `spine`,
-  and `cmd/cairn`, and cleared only what fell there**: `spine`'s hand-retyped `condition_test.go`
-  list replaced by the package var (gaining the missing `ReasonRepoNotRecorded`), and `env.go`'s one
-  task citation removed. Every other B2 nit stands, since the round never reached `render` or
-  `health`. The two with teeth first:
-  - `internal/spine`'s `park_test.go:16` retypes the package's code list by hand as `allParkCodes`.
-    Read the backing list instead.
-  - `internal/logs`'s `fixtureRoundTripper` discards the request, so no test ever observes the
-    query body `Fetch` sends. **This is the seam that let the live 400 through.** Capture the
-    sent body in the fixture and assert from it.
-  - `store.Discover` and `store.Site` have no caller anywhere: the plan expected the auth probe
-    to read through `Discover`, and it calls `st.Load` directly. An unwired deliverable, not in
-    the seams table. Wire it or delete it.
-  - Exported surface with no outside caller, to unexport: `health`'s `FailSeverityOf`, `HasRepo`,
-    and `FixForCondition`, and `providers.RepoOwnership`, whose doc names a caller that does not
-    exist. `spine`'s and `render`'s callerless-export counts are folded into the retire-1 chores
-    entry below, not restated here.
-  - Hand-kept parallel lists, the theme across packages: `spine`'s code lists, `health`'s
-    `Catalogue` of about 35 functions restated in its own test, `providers`'s three parallel
-    lists of the ten `Reason` values, `fixtures`'s hand copy of the nine check ids and its
-    hand-recomputed `Degraded`/`Acknowledged`, and `mangen`'s build helper duplicating
-    `usage_test.go`'s. Derive each from its source, as `cmd/copylist` does by AST.
-  - Process citations in shipped comments: about thirty "reviewed at the 1.0 editorial gate"
-    notes in `cmd/cairn/messages.go`, task-name citations in `root.go` and `deps.go`, about 25
-    plan citations in `render` (one of them stale), and three in `health/fixes.go`. A comment
-    carries the reason the code is what it is, never which pass wrote it.
-  - **Not a defect, recorded so it is not re-filed:** `store`'s `perm_linux.go` and
-    `perm_darwin.go` are byte-identical. That is deliberate. The `hygiene` package forbids build
-    tags module-wide and asserts the pair's byte-identity instead, so a `//go:build linux ||
-    darwin` merge would break its own gate. The ruling belongs in the files' header.
-  Full text: `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
+- **Go tool architecture, declined and unplanned (2026-09-27).** What the two source entries left
+  behind after the Go tool architecture chores pass (thirteen tasks, `docs/HISTORY.md`) shipped
+  their items. Each declined item carries the reason a chore did not fix it:
+  - **`spine.FromKind` and `spine.Kind` stay exported**, not unexported as callerless. Both are
+    pre-adjudicated 2.0 seams: the 1.0 plan's seams table
+    (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md:282-305`) names `FromKind` with its
+    2.0 caller, the HUD's detail view, and `Kind` is its parameter type (Decision 2).
+  - **`render`'s `Role` and its eight constants, the `Profile` constants, and `Glyphs`/`GlyphSet`
+    stay exported**, not folded into the eighteen names the render cut unexported. Each is load-
+    bearing for a seams-table signature: `Role` for `Style(role)`, `Profile` for
+    `NewTheme(dark, p Profile)` and `DetectProfile`'s return, the glyph set for the glyph row
+    (Decision 5).
+  - **`fixtures`'s `Acknowledged` stays scenario data**, not derived against `health.Run` the way
+    its `Degraded` now is. `health.Run` derives `Acknowledged` from the acknowledgement file
+    (`activeAckIDs`), which a fixture does not have, so the fixture's own list is the scenario's
+    statement (Decision 7).
+  - **`probe_token.go` keeps its file name**, not renamed to `auth_check.go`. The rename would
+    break two facts citations and the test-file allowlist in `messages_test.go:34`; the file's
+    actual defect, stale wording naming a retired command, was the chore that shipped (Decision
+    10).
+  - **The B2 record's nits outside the two source entries' bullets stay unplanned**, the same as
+    before this pass (Decision 12): `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
+    None of it blocks a release. **Trigger:** the next pass touching that package.
 
-- **Go tool architecture chores filed at retire-1's close (2026-09-22).** Four
-  `go-architecture-reader` reads at the merge, `doctor` and `render` and `cmd/cairn` sound with
-  nits, `spine` workmanlike. None blocks a release; each carries the condition that makes it bite.
-  - **`cmd/copylist` collects only `*ast.BasicLit`, so a concatenated const never reaches the copy
-    golden.** A real gap in the copy-review gate, found when `cairn doctor`'s `longDoctor` escaped
-    it. `TestCatalogueCarriesEveryCheckString` now folds concatenations for the doctor's own
-    catalogue; the generator itself still does not. **Trigger:** the next operator-facing string
-    written as a concatenation, or any pass touching `cmd/copylist`.
-  - **`spine` carries callerless exports and a five-copy vocabulary.** `FromKind`, `Kind`,
-    `CombineState`, `ExitCodeFor`, and `ParkCodes` have no caller outside the package, and the same
-    code vocabulary is restated in five places. **Trigger:** the next pass that adds a code or a
-    state word, which pays for the drift.
-  - **`render` holds roughly thirty callerless exports pinned by `purity_test.go`**, plus the
-    test-only `Height` and `FailingOnly` fields, and 23 process citations in shipped comments.
-    **Trigger:** draft docs pass A, which already renames `layout.go`'s docs-URL constant, or the
-    HUD, which imports this package wholesale.
-  - **`cmd/cairn` carries stale comments and duplicated printing.** `root.go:37-43,77-78` still
-    claim `--color` and `--width` are inert when `cairn health` acts on both, `probe_token.go`
-    names a retired command, eight `Fprintf(w, "%s\n", data)` copies want one helper, and
-    `deps.go`'s `checks` seam exists for tests alone. **Trigger:** the `tool/v1.1.0` tag session,
-    which re-reads the help text anyway.
-  - **The doctor's `Result.ID` stamp is unobserved by any test.** `Run` stamps each result's id and
-    nothing asserts it, so a wrong id would reach the JSON payload silently. **Trigger:** the next
-    check added to `internal/doctor`.
+- **Go tool architecture, round 2 (2026-09-27).** The chores pass's ten `go-architecture-reader`
+  reads, full findings and best passages at
+  `docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`. Nine of ten packages read
+  sound with nits; most findings predate this pass, since the reader grades a whole package rather
+  than a diff. Structural-finding counts per package, descending: `cmd/cairn` 13 (**needs work**,
+  first in line: the `deps` seam's one test hook per field, duplicated bodies across `adopt`,
+  `auth check`, and the health paths, and a two-path process-exit split), `health` 11, `render` 9,
+  `providers` 7, `spine` 5, `store` 4, `mangen` 4, `fixtures` 2, `copylist` 2, `exe` 1. **Trigger:**
+  the next pass
+  touching any of these packages, or a dedicated architecture pass before tool `1.2`.
 
 - **`design.yml` uploads no Playwright report artifact on failure (found closing the 2026-09-27
   chores batch, the same gap `e2e.yml` had).** The design gate's styleguide e2e job

@@ -1,9 +1,6 @@
 package providers
 
-import (
-	"net/http"
-	"slices"
-)
+import "net/http"
 
 // Reason classifies why a provider API call failed, past the raw HTTP status, so a health check
 // can render one stable, translatable message instead of branching on a provider's own numeric
@@ -13,7 +10,9 @@ import (
 // ever treat as a specific, actionable condition.
 type Reason int
 
-// The Reason values a provider call classifies to.
+// The Reason values a provider call classifies to. reasonCount stays the block's last member so
+// reasonNames below is sized to it: a Reason appended anywhere before reasonCount grows the table
+// with no entry, which TestReasonNamesCoverEveryReason catches.
 const (
 	ReasonUnauthorized Reason = iota
 	ReasonForbidden
@@ -36,52 +35,42 @@ const (
 	// Logs query report for a week as "the Worker has no observability dataset".
 	ReasonRequestRejected
 	ReasonUnknown
+	reasonCount
 )
 
-// reasons is every Reason above, in declaration order.
-var reasons = []Reason{
-	ReasonUnauthorized,
-	ReasonForbidden,
-	ReasonNotFound,
-	ReasonBuildsNotConnected,
-	ReasonBuildsRepoNotSelected,
-	ReasonBuildsAppNotAuthorized,
-	ReasonSenderNotConfigured,
-	ReasonRateLimited,
-	ReasonRequestRejected,
-	ReasonUnknown,
+// reasonNames names every Reason above, index-keyed by the Reason value itself, so String and
+// Reasons both read the one table instead of each restating the vocabulary.
+var reasonNames = [reasonCount]string{
+	ReasonUnauthorized:           "unauthorized",
+	ReasonForbidden:              "forbidden",
+	ReasonNotFound:               "not-found",
+	ReasonBuildsNotConnected:     "builds-not-connected",
+	ReasonBuildsRepoNotSelected:  "builds-repo-not-selected",
+	ReasonBuildsAppNotAuthorized: "builds-app-not-authorized",
+	ReasonSenderNotConfigured:    "sender-not-configured",
+	ReasonRateLimited:            "rate-limited",
+	ReasonRequestRejected:        "request-rejected",
+	ReasonUnknown:                "unknown",
 }
 
-// Reasons is every known Reason. spine.ReasonCodes spends it to build the reason.api.<reason>
-// family, so the published reason vocabulary is read off these constants rather than retyped.
+// Reasons is every known Reason, in declaration order. spine.ReasonCodes spends it to build the
+// reason.api.<reason> family, so the published reason vocabulary is read off reasonNames rather
+// than retyped.
 func Reasons() []Reason {
-	return slices.Clone(reasons)
+	out := make([]Reason, len(reasonNames))
+	for i := range reasonNames {
+		out[i] = Reason(i)
+	}
+	return out
 }
 
-// String names the Reason for a log line or an error message.
+// String names the Reason for a log line or an error message. An out-of-range Reason, one this
+// package never constructs, names the same "unknown" ReasonUnknown does.
 func (r Reason) String() string {
-	switch r {
-	case ReasonUnauthorized:
-		return "unauthorized"
-	case ReasonForbidden:
-		return "forbidden"
-	case ReasonNotFound:
-		return "not-found"
-	case ReasonBuildsNotConnected:
-		return "builds-not-connected"
-	case ReasonBuildsRepoNotSelected:
-		return "builds-repo-not-selected"
-	case ReasonBuildsAppNotAuthorized:
-		return "builds-app-not-authorized"
-	case ReasonSenderNotConfigured:
-		return "sender-not-configured"
-	case ReasonRateLimited:
-		return "rate-limited"
-	case ReasonRequestRejected:
-		return "request-rejected"
-	default:
-		return "unknown"
+	if r < 0 || r >= reasonCount {
+		return reasonNames[ReasonUnknown]
 	}
+	return reasonNames[r]
 }
 
 // ProviderError is satisfied by this package's two provider-specific response failure types, a

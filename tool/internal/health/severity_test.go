@@ -43,8 +43,8 @@ func TestEngineIsTheOnlyWarningFailure(t *testing.T) {
 // TestFailSeverityOfAnUnknownCheckIsCritical covers the map's own miss: a check id nothing
 // declares is reported at full weight, never softened by accident.
 func TestFailSeverityOfAnUnknownCheckIsCritical(t *testing.T) {
-	if got := FailSeverityOf("no-such-check"); got != spine.CriticalFailure {
-		t.Errorf("FailSeverityOf(%q) = %v, want CriticalFailure", "no-such-check", got)
+	if got := failSeverityOf("no-such-check"); got != spine.CriticalFailure {
+		t.Errorf("failSeverityOf(%q) = %v, want CriticalFailure", "no-such-check", got)
 	}
 }
 
@@ -140,7 +140,7 @@ func TestAHeldFailureWarnsAndALapsedHoldTakesItsOwnSeverity(t *testing.T) {
 				t.Errorf("a held failing %s check = %v, want %v", id, got, spine.VerdictWarning)
 			}
 			want := spine.VerdictCritical
-			if FailSeverityOf(id) == spine.WarningFailure {
+			if failSeverityOf(id) == spine.WarningFailure {
 				want = spine.VerdictWarning
 			}
 			if got := verdictOf(lapsed); got != want {

@@ -241,3 +241,27 @@ func TestDocsURLIsEmptyForNoAnchor(t *testing.T) {
 		t.Errorf("docsURL(\"\") = %q, want empty", got)
 	}
 }
+
+// TestRunStampsResultIDFromCheck holds Run's contract that every Result carries its own Check's
+// ID, and that the stamp survives into Verdicts: an exit-code fold keyed on the wrong id would
+// attribute one check's failure to another.
+func TestRunStampsResultIDFromCheck(t *testing.T) {
+	snap := buildSnapshot(t, cleanSiteFiles(), cleanOrigin(), cleanRobots())
+	checked := Run(snap)
+
+	for _, cr := range checked {
+		if cr.Result.ID != cr.Check.ID {
+			t.Errorf("Result.ID = %q, want Check.ID %q", cr.Result.ID, cr.Check.ID)
+		}
+	}
+
+	verdicts := Verdicts(Results(checked))
+	if len(verdicts) != len(checked) {
+		t.Fatalf("Verdicts returned %d entries, want %d", len(verdicts), len(checked))
+	}
+	for i, cr := range checked {
+		if verdicts[i].ID != cr.Check.ID {
+			t.Errorf("Verdicts[%d].ID = %q, want %q", i, verdicts[i].ID, cr.Check.ID)
+		}
+	}
+}

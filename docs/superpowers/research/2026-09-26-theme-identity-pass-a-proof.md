@@ -114,6 +114,49 @@ manifest's own band, so it needed no edit.
 
 No radius row in the regenerated manifest carries `ratified-drift`.
 
+### Moved bands
+
+The manifest had not been regenerated since long before this pass (its last touching commit was
+`268c315e`, a pre-pass dependency and toolkit-seams chore), so this task's `norms:generate` run is
+the first one to read every CSS and markup change tasks 1 to 12 landed. Diffing the manifest's
+`entries` array, keyed by role and property, between this task's start point (`e426f011`) and this
+commit surfaces every band a task before this one moved, not only the five radius rows task 13
+itself ratifies. Every changed entry, its old and new band, its observation count before and
+after, and the task whose change explains it:
+
+| Role / property | Old band | New band | Observations (before to now) | Moved by |
+| --- | --- | --- | --- | --- |
+| `button-ghost` / `border-radius` | 10px | 6px | 31 to 31 | Task 13 (this task's `RATIFIED_NORMS` ladder move) |
+| `button-ghost` / `height` | 23, 24, 30.5, 32, 40px | 25.5, 27, 34, 36, 45px | 31 to 31 | Task 4 (`--size-field` 0.25rem to 0.28125rem, commit `199471d6`) |
+| `button-ghost` / `padding-inline` | 0, 8, 12px | 0, 8, 14px | 31 to 31 | Task 5 (`--btn-p: 0.875rem` on `.btn-sm`, commit `84c84aaa`) |
+| `button-ghost` / `padding-inline-to-font-size` | 0, 0.75, 1 | 0, 0.75, 1.15 | 31 to 31 | Task 5 (the ratio band derived from the padding-inline move above) |
+| `button-primary` / `background-color` | `var(--btn-bg)` | unchanged | 11 to 16 | Task 9 (the Publish-tint recipe collapsed onto `btn-soft btn-primary`, commit `4c82b654`, adds observation sites) |
+| `button-primary` / `border-color` | `var(--btn-border)` | unchanged | 11 to 16 | Task 9 (same) |
+| `button-primary` / `border-radius` | 10px | 6px | 11 to 16 | Task 13 (ladder move); the observation growth is Task 9 |
+| `button-primary` / `border-style` | solid | unchanged | 11 to 16 | Task 9 |
+| `button-primary` / `border-width` | 1px | unchanged | 11 to 16 | Task 9 |
+| `button-primary` / `color` | (relationship, unchanged) | unchanged | 11 to 16 | Task 9 |
+| `button-primary` / `font-size` | 12, 14px | unchanged | 11 to 16 | Task 9 |
+| `button-primary` / `height` | 30.5, 32, 40px | 34, 36, 45px | 11 to 16 | Task 4 (`--size-field` move); the observation growth is Task 9 |
+| `button-primary` / `padding-block` | 1px | unchanged | 11 to 16 | Task 9 |
+| `button-primary` / `padding-block-to-font-size` | 0.05, 0.1 | unchanged | 11 to 16 | Task 9 |
+| `button-primary` / `padding-inline` | 12, 16px | 14, 16px | 11 to 16 | Task 5 (`--btn-p` move); the observation growth is Task 9 |
+| `button-primary` / `padding-inline-to-font-size` | 1, 1.15 | 1.15 | 11 to 16 | Task 5; the observation growth is Task 9 |
+| `card` / `border-radius` | 16px | 8px | 15 to 15 | Task 13 (ladder move) |
+| `input-text` / `border-radius` | 10px | 6px | 12 to 12 | Task 13 (ladder move) |
+| `input-text` / `height` | 32, 38, 40px | 36, 42.5, 43, 45px | 12 to 12 | Task 4 (`--size-field` move) |
+| `page-title` / `font-weight` | 700 | 550 | 5 to 5 | Task 9 (the page-heading weight dropped to `font-[550]`, commit `4c82b654`) |
+| `select` / `border-radius` | 10px | 6px | 3 to 3 | Task 13 (ladder move) |
+| `select` / `height` | 32, 40px | 36, 45px | 3 to 3 | Task 4 (`--size-field` move) |
+| `status-chip` / `border-radius` | 8px | 4px | 16 to 16 | Task 4 (`--radius-selector` 0.5rem to 0.25rem); `StatusChip.svelte` itself is untouched this pass, only the token it reads |
+| `status-chip` / `height` | 16px | 18px | 16 to 16 | Task 4 (`--size-selector` move) |
+| `status-chip` / `padding-inline` | 7px | 8px | 16 to 16 | Task 4 (`--size-selector` move; the badge's own padding scales off the same token) |
+| `status-chip` / `padding-inline-to-font-size` | 0.7 | 0.8 | 16 to 16 | Task 4 (same) |
+
+Every other entry in the manifest (button-ghost's own color, border, and font properties;
+select's and input-text's non-radius, non-height properties; every remaining role) is
+byte-identical between the two commits.
+
 ## The 320 and 390 check
 
 `examples/showcase/cairn-audit.config.json` gained `rendered.extraPages`:
@@ -157,8 +200,8 @@ known variance named above; every other rule's finding count, including all seve
 byte-identical between the two runs.
 
 The seven tracked rules, run 2, compared against task 0's before-state
-(`docs/internal/record/2026-09-26-theme-identity/pass-a-before/README.md`) by finding identity on
-the six shared default routes; the three added routes are recorded as new, not compared:
+(`docs/internal/record/2026-09-26-theme-identity/pass-a-before/README.md`), counting report lines
+on the six shared default routes; the three added routes are recorded as new, not compared:
 
 | Rule | Before (core) | Now (core) | Now (added routes) | Now (total) |
 | --- | --- | --- | --- | --- |
@@ -170,16 +213,53 @@ the six shared default routes; the three added routes are recorded as new, not c
 | `border-contrast` | 238 | 261 | 135 | 396 |
 | `chip-ground-collision` | 50 | 60 | 64 | 124 |
 
-`weight-budget`, `touch-targets`, `focus-renders`, and `interactive-contrast` match the before-state
-exactly on the shared routes. `norms-bands` stays at zero on the shared routes; every one of its 24
-findings sits on a route this task just added to the rendered set, which the norms generator itself
-never measured before (a new observation, not a regression). `border-contrast` and
-`chip-ground-collision` grew on the shared routes (+23 and +10), both advisory tier; every
-`border-contrast` finding sampled carries the same `RULING 2` hairline exemption the before-state's
-own findings did, consistent with the corner-ladder and markup sweep (tasks 9 and 10) adding more
-hairline-bearing elements to the same routes rather than a defect this task introduces. This task
-changes no CSS or markup; both counts are a read of work already landed in earlier tasks that the
-wider default page set had not previously reached.
+### By finding identity, not totals
+
+A line count can hide a rule that lost one finding and gained another of equal weight. The
+before-state's full per-finding output survives from task 0's own capture (the same run this
+plan's `pass-a-before/README.md` summarizes; its totals there, 144 and 129 errors, 204 advisories,
+135 suppressed over 6 files and 17 rules, match this raw output exactly). Both that output and
+this task's own two runs above parse into one identity per finding, `(page, theme, state,
+selector)`, and the two sides are compared on the six shared default routes; a changed identity is
+new or gone, a repeated identity whose message differs only in a measured value (a contrast
+number, an observation count) is unchanged in identity.
+
+`touch-targets`, `focus-renders`, and `interactive-contrast` carry zero findings on the shared
+routes on both sides, so there is nothing to diff. `weight-budget` flags the same two `/admin/media`
+`<h1>` elements, light and dark, on both sides; the flagged selector's class list moved from
+`h1.page-h1.m-0.type-title.font-bold` to `h1.page-h1.m-0.type-title.font-[550]` (the page-heading
+weight recipe), so the identity is the same page and role, not a new violation. `norms-bands`
+carries zero findings on the shared routes on both sides; every one of its 24 findings sits on a
+route this task adds, which the norms generator never measured before.
+
+`border-contrast`: 145 distinct `(page, theme, selector)` identities before, 142 now, on the shared
+routes. 10 are new, 13 are gone, 8 keep their identity but change only in how many times that
+identity was observed, and 124 are unchanged.
+
+- New (10): `kbd.ml-auto.hidden.rounded-field.border`, on `/admin/editors`, `/admin/media`,
+  `/admin/pages`, `/admin/posts`, and `/admin/vocabulary`, light and dark.
+- Gone (13): `kbd.ml-auto.hidden.rounded.border` on the same five pages, light and dark (10);
+  `button.join-item.btn.btn-sm.btn-active` on `/admin/media` light, `/admin/pages` light, and
+  `/admin/posts` light (3).
+- Changed only in observation count, same identity (8): `button.join-item.btn.btn-sm` on
+  `/admin/media`, `/admin/pages`, and `/admin/posts`, light and dark (3 to 5 observations on
+  `/admin/media`, 5 to 7 on the other two); `input.checkbox` on `/admin/media`, light and dark (8
+  to 16 observations).
+
+`chip-ground-collision`: 12 distinct identities before, 22 now. 12 are new, 2 are gone, 0 change
+only in count, and 10 are unchanged.
+
+- New (12): `span.cairn-chip-quiet.rounded-selector.px-1\.5.py-px` on `/admin/editors`,
+  `/admin/media`, `/admin/pages`, `/admin/posts`, and `/admin/vocabulary`, light and dark (10);
+  `span.rounded-selector.bg-base-content\/\[0.06\].px-2.py-0\.5` on `/admin/vocabulary`, light and
+  dark (2).
+- Gone (2): `span.rounded-full.bg-base-content\/\[0.06\].px-2.py-0\.5` on `/admin/vocabulary`,
+  light and dark.
+
+Every new and gone identity above is named, not diagnosed: this record does not assert which
+earlier task's change produced it. This task changes no CSS or markup of its own; the shift is a
+read of work already landed in tasks 1 to 12 that the wider default page set, and the freshly
+regenerated manifest that backs `norms-bands`, had not previously reached.
 
 ## Public-site checks
 

@@ -458,6 +458,10 @@ the admin screens in both themes, reads the computed styles of each semantic rol
 bands the query returns. The query exists so an agent or a developer building a new admin surface
 reads a measured number instead of inferring one from a screenshot.
 
+A role a shipped recipe covers also prints a `recipe:` line: the plain class to write and the look
+it produces, right under the role's own header. A role no recipe covers prints as it always has,
+with no `recipe:` line.
+
 ```bash
 npx cairn-audit norms card
 ```
@@ -465,6 +469,8 @@ npx cairn-audit norms card
 ```text
 card  (container)  .card-shell
   The floating card surface: the list table, the editor panes, the auth card.
+  recipe: card-shell
+    a floating card surface, with the box radius and a hairline edge.
 
   background-color  var(--color-base-100)  15 sites  observed
   border-color  var(--cairn-card-border)  15 sites  ratified

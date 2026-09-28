@@ -166,12 +166,9 @@ describe('MediaInsertPopover vertical placement', () => {
   it('clamps the panel so its own box stays inside the viewport when the caret sits near the bottom', async () => {
     const { api } = fakePlaceholders();
     const editor = fakeEditor(api);
-    editor.caretCoords = () => ({
-      left: 10,
-      right: 12,
-      top: window.innerHeight - 40,
-      bottom: window.innerHeight - 20,
-    });
+    // Far below any real viewport: the clamp always takes its vh-based ceiling regardless of the
+    // caret's own exact position, the same way a caret anywhere below the fold would.
+    editor.caretCoords = () => ({ left: 10, right: 12, top: 9994, bottom: 10000 });
     const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',

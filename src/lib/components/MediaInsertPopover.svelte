@@ -429,6 +429,12 @@ rule). The CSRF token is read from the admin context.
     z-index: 40;
   }
   .cairn-media-popover {
+    /* Explicit rather than relying on an ambient Preflight reset (PreviewBanner's own scoped rule
+       carries the identical declaration for the same reason): the padding and border below would
+       otherwise add to, rather than count against, the max-height cap the vertical clamp above
+       reserves space for, growing the rendered box past what the clamp accounted for in a host
+       with no global border-box reset. */
+    box-sizing: border-box;
     position: fixed;
     z-index: 41;
     width: 22rem;

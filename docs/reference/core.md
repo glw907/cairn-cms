@@ -492,11 +492,13 @@ declare function defineFieldset<const R extends Record<string, FieldDescriptor>>
 Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors as
 plain data for the editor form, a server-derived validator that coerces each value to its type and
 returns field-keyed errors or normalized data, and a Standard Schema conformance property whose
-issues map each error to a single-segment path. The validator enforces each descriptor's declared
-constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
-`pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the `defineFieldset()`
-call, not on a later save. The validator reads a parsed value as well as a form string, so a numeric
-`number`, a `Date` on a `datetime` field, and a lone scalar on a `multiselect` all normalize.
+issues are the same `ValidationIssue[]` the validator returns, each located by the field's own path
+(a nested `object`/`array` failure carries the leaf key or row index too). The validator enforces
+each descriptor's declared constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
+`pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the
+`defineFieldset()` call, not on a later save. The validator reads a parsed value as well as a form
+string, so a numeric `number`, a `Date` on a `datetime` field, and a lone scalar on a `multiselect`
+all normalize.
 `config.refine` runs after the per-field rules pass, for cross-field and body-dependent checks.
 
 [`FieldsetConfig.refine`](#field-types) is deliberately synchronous: it returns
@@ -1064,7 +1066,7 @@ function signatures above reference these.
 | `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. See the preceding [`nav` adapter `editor` member](#nav-adapter-editor-member). |
 | `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
 | `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, and the upload limits. Omitting it leaves media off. See the preceding [`media` adapter member](#media-adapter-member). |
-| `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. See [Choose an AI posture](../extend/choose-an-ai-posture.md) for what each direction does and doesn't buy. |
+| `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. [`buildRobots`](delivery-data.md#buildrobots) records each posture's output and the limits of declining, and [Choose an AI posture](../extend/choose-an-ai-posture.md) wires the posture through a site. |
 | `CairnRuntime` | Extension API | `interface CairnRuntime` | The composed runtime the engine serves from. |
 | `ComposeInput` | Extension API | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig. |
 | `NamedField` | Extension API | `type NamedField` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` carries. |

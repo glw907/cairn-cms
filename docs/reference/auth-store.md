@@ -8,8 +8,8 @@ manages editors from its own server code, a setup script, or a migration, outsid
 
 This subpath carries D1 editor-roster reads and writes, provisioning surface only. The auth-flow
 functions the engine's magic-link guard uses internally, `findEditor`, `issueToken`,
-`recentlyIssued`, `consumeToken`, `createSession`, `resolveSession`, and `deleteSession`, stay
-unexported here. They back the login flow only; no real caller outside the engine needs them, so
+`recentlyIssued`, `consumeToken`, `rebindToken`, `createSession`, `resolveSession`, and
+`deleteSession`, stay unexported here. They back the login flow only; no real caller outside the engine needs them, so
 they are not proven surface. A token or session primitive lives on
 [`/auth-crypto`](./auth-crypto.md) instead, even one this store's own rows carry a hash of.
 
@@ -60,9 +60,9 @@ the names out. A hand-written list that omits a name the vocabulary maps to owne
 undercounts the roster's owners. The guard then refuses a safe removal, or allows an unsafe one
 when the omitted name sits on the row the caller removes.
 
-Every function on this page returns a discriminated `outcome` result rather than a `boolean` or
-`void`, so a caller reads the refusal reason off the type rather than re-deriving it from a
-separate read. `deleteEditor` and `setEditorRole` distinguish `'not-found'` (no row matched the
+Each of the four guarded write functions on this page returns a discriminated `outcome` result
+rather than a `boolean` or `void`, so a caller reads the refusal reason off the type rather than
+re-deriving it from a separate read. `deleteEditor` and `setEditorRole` distinguish `'not-found'` (no row matched the
 email) from `'last-owner'` (the row is present and is the last owner-capability row), because
 their own atomic write's `WHERE` matches any row, owner or not, so a `changes === 0` result can
 only mean one or the other. `removeOwnerIfNotLast` and `demoteOwnerIfNotLast` instead report
@@ -124,8 +124,8 @@ declare function deleteEditor(
 ): Promise<DeleteEditorOutcome>;
 ```
 
-Remove an editor and cut their live access: any session and pending magic-link token for the email
-go too. `ownerRoles` (see [`resolveOwnerLevelRoles`](./core.md#resolvecapability-resolveownerlevelroles))
+Remove an editor and cut their live access: any session, pending magic-link token, and preview
+link the editor minted go too. `ownerRoles` (see [`resolveOwnerLevelRoles`](./core.md#resolvecapability-resolveownerlevelroles))
 is folded into the same atomic `DELETE`: a non-owner row is removed unconditionally, and an
 owner-capability row is refused when it's the last one. Returns `{ outcome: 'removed' }` on
 success, `{ outcome: 'last-owner' }` when the row is the last owner-capability row (writes
@@ -152,10 +152,10 @@ literal `'owner'` string), derived with
 [`resolveOwnerLevelRoles`](./core.md#resolvecapability-resolveownerlevelroles), so a site with more than
 one owner-level role name stays safe. The count check runs inside the same statement as the delete,
 so two concurrent removals cannot both pass a separate check and strand the allowlist below one
-owner. Returns `{ outcome: 'ok' }` on success (the editor's session and pending token go too, the
-same as `deleteEditor`), `{ outcome: 'last-owner' }` when this is the last owner-capability row, or
-`{ outcome: 'not-eligible' }` when no owner-capability row matched the email; writes nothing on
-either refusal.
+owner. Returns `{ outcome: 'ok' }` on success (the editor's session, pending token, and minted
+preview links go too, the same as `deleteEditor`), `{ outcome: 'last-owner' }` when this is the
+last owner-capability row, or `{ outcome: 'not-eligible' }` when no owner-capability row matched
+the email; writes nothing on either refusal.
 
 ---
 

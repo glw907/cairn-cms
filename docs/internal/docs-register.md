@@ -62,6 +62,26 @@ fail.
   `Cairn.TwoHeadedHeading` Vale rule fires on the comma-and shape in any heading (Geoff,
   2026-09-08). Serial lists in a heading ("Roles, capability, and the access map") are not
   this tell.
+- **The voice is technical and academic (Geoff, 2026-09-08; scope restated 2026-09-28).** It
+  governs every published page on every track, and cairn's public-facing writing broadly:
+  READMEs, the changelog, admin copy, and cairn.pub. It is a standard for public-facing
+  writing only. Internal specs, plans, and agent-facing documents take whatever voice is most
+  effective for Claude Code (Geoff, 2026-09-28). The prose reads as a technical report or a systems paper's introduction:
+  measured, precise, with qualification carried inside the sentence rather than split off,
+  and a restrained first person only where the author's own evidence is stated. It is not a
+  blog post and it is not graded against general written norms. The comparison set is
+  technical and academic writing (SQLite's "Appropriate uses" page, a systems paper's
+  introduction, a standards document's overview section, a mature database's own description
+  of itself), and the cadence to match is theirs: longer sentences than a blog, fewer of
+  them, each carrying one qualified claim. Chatty asides, imperatives to the reader outside a
+  task's own steps, and staccato runs of short sentences are out of register even when every
+  word is true. The editor track keeps its plainer Microsoft floor inside this voice.
+- **A heading names its section's subject in the academic voice.** A section heading is a
+  noun phrase naming what the section covers ("Robots file output", "Limits of declining"),
+  or, for a step in a task, an imperative naming the action ("Pass the posture to the robots
+  route", "Verify the served file"). It is never a conversational, teaser, or question-shaped
+  phrase: "What each posture emits", "What declining doesn't buy", and "You know it worked
+  when" are the specimens (Geoff, 2026-09-28, from the draft docs proof).
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling,
   Geoff, 2026-08-14). A reader does not need to know the taxonomy a page was planned under;
   this document may name the forms (task guide, reference, and so on) for its own internal
@@ -238,9 +258,9 @@ code span (`` `Powered by Cairn` ``), which Vale skips, and that is the sanction
 a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose word "Cairn"
 inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
 already sits in a code span, so the rule never sees it as prose to begin with.
-Existing pages on the three frozen narrative arms (`docs/admin/`, `docs/editors/`,
-`docs/extend/`) are swept at the docs rebuild, never before; a pass touching a frozen page for
-an unrelated reason does not take on a naming sweep of the whole page. A new page, or a page
+Existing pages on a narrative arm still frozen (`docs/admin/`, `docs/editors/`,
+`docs/extend/`) are swept at that arm's own stage merge, never before; a pass touching a
+still-frozen page for an unrelated reason does not take on a naming sweep of the whole page. A new page, or a page
 already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
 `.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
 the Names rule reaches them once they do.
@@ -262,10 +282,15 @@ anatomy it follows by following it, not by naming it; the shapes below exist so 
 reviewer can check a page against a checklist rather than a feeling.
 
 - **Task guide** (most admin and extend pages): a one-line contract, preconditions stated
-  with links to whatever produces them, runnable steps, a "you know it worked when" check,
+  with links to whatever produces them, runnable steps, a verification section (headed as an
+  imperative, such as "Verify the served file") naming the observable result,
   and failure paths that point at the track's recovery surface (`admin/setup-recovery.md`,
   `admin/troubleshooting.md`, or `extend/debug-your-site.md`) rather than restating recovery
-  prose inline.
+  prose inline. Explanation stays subordinate to the steps. A guide carries only the
+  explanation a reader needs to choose or verify, and each such section opens with a sentence
+  tying it to the task, so the page never turns from instruction to exposition without a
+  lead-in. Anything more (a full output listing, the behavior's limits, its rationale) belongs
+  on the reference entry or its own page, linked from the step that needs it.
 - **Tutorial milestone** (the extend track's deep path): stated objectives, the state the
   prior milestone produced, steps, a checklist before advancing, and a disclosure block (the
   Astro "Show me the steps" device) for a reader who wants to try first and check the answer
@@ -480,17 +505,8 @@ audience lands, and they carry the whole cairn story.
   agent tooling for. The lesson is different shapes with different trade-offs, cairn collapsing
   several concerns into one app on one platform, and no vendor is named. This extends the
   no-pitch keystone from prose to comparisons.
-- **The voice is technical and academic (Geoff, 2026-09-08).** The front door, and
-  `docs/why-cairn.md` above all, reads as a technical report or a systems paper's
-  introduction: measured, precise, with qualification carried inside the sentence rather
-  than split off, and a restrained first person only where the author's own evidence is
-  stated. It is not a blog post and it is not graded against general written norms. The
-  comparison set for any read of it is technical and academic writing (SQLite's "Appropriate
-  uses" page, a systems paper's introduction, a standards document's overview section, a
-  mature database's own description of itself), and the cadence to match is theirs: longer
-  sentences than a blog, fewer of them, each carrying one qualified claim. Chatty asides,
-  imperatives to the reader, and staccato runs of short sentences are out of register even
-  when every word is true.
+- The front door carries the universal contract's technical and academic voice at its
+  fullest, `docs/why-cairn.md` above all.
 
 ## Calibration specimens
 

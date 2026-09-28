@@ -10,13 +10,18 @@
 // over-firing on a page thick with narrative text that happens to mention a real word in
 // passing.
 //
-// Five token classes, each resolved against a different ground truth, chosen because each
+// Six token classes, each resolved against a different ground truth, chosen because each
 // resolves reliably without guessing:
 //   - a CLI flag (`--some-flag`) inside a shell-tagged fenced block, resolved against the two
 //     CLIs this repository owns: `packages/create-cairn-site`'s own argument parser, and the Go
 //     tool's committed flag list at `tool/testdata/flags.json`, which `make -C tool flags`
 //     writes from the real cobra tree; anything else (npm, npx, wrangler, git, gh, node) comes
 //     from the allowlist
+//   - a `cairn` line (a shell-fenced line whose first word, after an optional `$ ` prompt, is
+//     exactly `cairn`), resolved word by word against `tool/testdata/flags.json`'s per-command
+//     flag map: the command path is the longest run of leading words that map names, and a word
+//     in subcommand position fails when the matched path has subcommands of its own and does not
+//     recognize it, the same way a flag fails when the matched path does not accept it
 //   - an environment variable (SCREAMING_SNAKE_CASE), resolved against the source tree
 //   - an exported identifier named in an `import ... from '@glw907/cairn-cms...'` line inside a
 //     fenced block, resolved against the generated `api-surface.md` snapshot, exactly against the
@@ -197,6 +202,64 @@ export function extractCliFlags(segments) {
   return out;
 }
 
+/**
+ * @typedef {{ line: number, token: string }} CairnLineWord one word of a `cairn` line, tagged
+ * with the source line it actually came from (a continuation line's words carry that line, not
+ * the line the logical `cairn` line opened on).
+ */
+
+/**
+ * Every `cairn` line inside a shell-tagged fence: a line whose first word, after an optional
+ * `$ ` prompt, is exactly `cairn`. A trailing `\` joins it with the fence's next line before
+ * tokenizing, so a wrapped invocation reads as the one line it is; each resulting word keeps the
+ * line it was written on, which is what lets a bad flag on a continuation line be reported there
+ * rather than at the line the command started on. A non-shell fence, and a shell line whose first
+ * word is not `cairn` (`npx cairn-audit`, `npm run cairn:manifest`, a bare `my-cairn-site`), is
+ * never read.
+ * @param {CodeVoiceSegment[]} segments
+ * @returns {CairnLineWord[][]}
+ */
+export function extractCairnLines(segments) {
+  /** @type {CairnLineWord[][]} */
+  const lines = [];
+  /** @type {CairnLineWord[] | null} */
+  let pending = null;
+  /** @type {number | null} */
+  let lastLine = null;
+  for (const seg of segments) {
+    if (!seg.fenced || !seg.lang || !SHELL_LANGS.has(seg.lang)) {
+      pending = null;
+      lastLine = null;
+      continue;
+    }
+    // Two fences back to back with no inline code between them leave no segment for either the
+    // closing or the opening fence marker, so this segment and the last one can belong to two
+    // unrelated fences even though both are fenced shell. Within one fence, every line (including
+    // a fence carried over a blank line) yields a segment, so a gap in line numbers here can only
+    // mean the previous fence closed and a new one opened; a pending continuation from the old
+    // fence must not swallow the new fence's first line as though it were the same command.
+    if (pending && lastLine !== null && seg.line !== lastLine + 1) pending = null;
+    lastLine = seg.line;
+    const continues = /\\\s*$/.test(seg.text);
+    const body = seg.text.replace(/\\\s*$/, '').trim();
+    const words = body.length > 0 ? body.split(/\s+/) : [];
+    if (pending) {
+      for (const word of words) pending.push({ line: seg.line, token: word });
+      if (continues) continue;
+      lines.push(pending);
+      pending = null;
+      continue;
+    }
+    if (words.length === 0) continue;
+    const start = words[0] === '$' ? 1 : 0;
+    if (words[start] !== 'cairn') continue;
+    const items = words.slice(start).map((token) => ({ line: seg.line, token }));
+    if (continues) pending = items;
+    else lines.push(items);
+  }
+  return lines;
+}
+
 /** @param {CodeVoiceSegment[]} segments */
 export function extractEnvVars(segments) {
   /** @type {SymbolCandidate[]} */
@@ -349,6 +412,133 @@ export function cairnToolFlags(root = ROOT) {
 }
 
 /**
+ * Read the Go tool's per-command flag map (`tool/testdata/flags.json`'s `commands` field) into a
+ * `Map` from command path (`"cairn"`, `"cairn auth set"`, ...) to the `Set` of long flags that
+ * path accepts, inherited ones included. Written by the same Go test as `cairnToolFlags`, so it
+ * throws the same way on a missing file or a file that predates the field: a doc's `cairn <path>
+ * --flag` line silently passing because the map came back empty would be worse than the check
+ * not landing at all.
+ * @param {string} root
+ */
+export function cairnCommandFlags(root = ROOT) {
+  const path = join(root, 'tool/testdata/flags.json');
+  if (!existsSync(path)) {
+    throw new Error(`check-symbols: ${path} is missing; run \`make -C tool flags\` to write it`);
+  }
+  const { commands } = JSON.parse(readFileSync(path, 'utf8'));
+  if (!commands || typeof commands !== 'object') {
+    throw new Error(`check-symbols: ${path} carries no "commands" map; run \`make -C tool flags\``);
+  }
+  return new Map(
+    Object.entries(commands).map(([cmdPath, flags]) => [cmdPath, new Set(/** @type {string[]} */ (flags))]),
+  );
+}
+
+/**
+ * Every command path in `commandFlags` that has at least one subcommand of its own, derived from
+ * the map's own keys: a path is a parent exactly when some other path is `<path> <word>`. This is
+ * what tells `resolveCairnLine` whether the word right after a matched path is a subcommand to
+ * validate (`cairn doctor fix`, if `fix` existed) or a positional argument to leave alone
+ * (`cairn doctor ./site`), and why `cairn help agents` never checks `agents`: cobra's default
+ * `help` command takes a command path, not a subcommand, so it has none of its own in the map.
+ * @param {Map<string, Set<string>>} commandFlags
+ */
+function commandPathsWithChildren(commandFlags) {
+  const parents = new Set();
+  for (const cmdPath of commandFlags.keys()) {
+    const boundary = cmdPath.lastIndexOf(' ');
+    if (boundary !== -1) parents.add(cmdPath.slice(0, boundary));
+  }
+  return parents;
+}
+
+/**
+ * The long flag name a word spells, or `null` when it is not flag-shaped. Matches the same shape
+ * `extractCliFlags` resolves (`--dry-run`, and `--timeout` out of `--timeout=30s`), applied to one
+ * already-split word rather than scanned across a whole line.
+ * @param {string} word
+ * @returns {string | null}
+ */
+function flagNameFromWord(word) {
+  const m = word.match(/^--([a-z][a-z0-9]*(?:-[a-z0-9]+)*)/);
+  return m ? `--${m[1]}` : null;
+}
+
+// A word that ends a shell-parsed cairn invocation early: a pipe, a redirect, a background or
+// sequencing operator, or the compound-command joiners. Extraction reads a line's words with no
+// shell grammar at all (`extractCairnLines`), so `cairn logs --json | jq --arg x y` still carries
+// jq's own words as though they belonged to the cairn line; resolution is what must stop reading
+// at the boundary a real shell would honor, or a defect in the piped-to program (`jq --arg`)
+// reports as a cairn defect instead.
+const SHELL_OPERATOR_WORDS = new Set(['|', '||', '&&', ';', '>', '>>', '<', '2>', '&']);
+
+/**
+ * The prefix of a cairn line's words up to, but not including, the first shell operator word or a
+ * word starting with `#` (a shell comment): words past either boundary belong to a different
+ * command, or to no command at all, and neither should be checked against this line's own path or
+ * flags.
+ * @param {CairnLineWord[]} items
+ * @returns {CairnLineWord[]}
+ */
+function truncateAtShellBoundary(items) {
+  const cut = items.findIndex(({ token }) => SHELL_OPERATOR_WORDS.has(token) || token.startsWith('#'));
+  return cut === -1 ? items : items.slice(0, cut);
+}
+
+/**
+ * Resolve one `cairn` line's command path and flags against the committed map, and return its
+ * findings: a class `cairn-subcommand` entry for a subcommand-position word the matched path does
+ * not recognize, and a class `cairn-flag` entry for a flag the matched path does not accept.
+ * `token` is the bare word or flag name, the shape `check-symbols-allowlist.mjs` keys on for
+ * every other class; `path` carries the command path it was checked against, for the finding's
+ * printed message. The line is first truncated at the first shell operator or `#` comment
+ * (`truncateAtShellBoundary`), since neither belongs to the cairn invocation itself. The command
+ * path is the longest run of leading words, starting from `cairn`, that names a path in
+ * `commandFlags`; the walk stops at the first flag (a word starting with `-`) as well as at the
+ * first word that fails to extend the path, so a value-taking flag's value
+ * (`cairn adopt --domain example.com`, `cairn --color never`) is never mistaken for a path word:
+ * a word before a flag is always a command word or a bare positional, never a flag's value,
+ * whereas a word right after a flag could be either. A line with no such word (`cairn`,
+ * `cairn --version`) resolves to the root path. The word the walk stopped on is read as a
+ * subcommand only when it is not itself a flag and the matched path has subcommands of its own
+ * (`commandPathsWithChildren`): otherwise it is a flag or a positional argument (a site id, a
+ * directory), and the line's flags are still checked against the path that did match.
+ * @param {CairnLineWord[]} items
+ * @param {Map<string, Set<string>>} commandFlags
+ * @returns {{ line: number, class: string, token: string, path: string }[]}
+ */
+export function resolveCairnLine(items, commandFlags) {
+  const truncated = truncateAtShellBoundary(items);
+  const words = truncated.slice(1);
+  let cmdPath = 'cairn';
+  let consumed = 0;
+  while (consumed < words.length && !words[consumed].token.startsWith('-')) {
+    const candidate = `${cmdPath} ${words[consumed].token}`;
+    if (!commandFlags.has(candidate)) break;
+    cmdPath = candidate;
+    consumed++;
+  }
+
+  /** @type {{ line: number, class: string, token: string, path: string }[]} */
+  const findings = [];
+  if (consumed < words.length) {
+    const word = words[consumed];
+    if (!word.token.startsWith('-') && commandPathsWithChildren(commandFlags).has(cmdPath)) {
+      findings.push({ line: word.line, class: 'cairn-subcommand', token: word.token, path: cmdPath });
+    }
+  }
+
+  const accepted = commandFlags.get(cmdPath) ?? new Set();
+  for (const item of words) {
+    const flagName = flagNameFromWord(item.token);
+    if (flagName && !accepted.has(flagName)) {
+      findings.push({ line: item.line, class: 'cairn-flag', token: flagName, path: cmdPath });
+    }
+  }
+  return findings;
+}
+
+/**
  * Every flag name the CLI-flag class resolves against: the union of the two CLIs this repository
  * owns. A flag belonging to neither is either an allowlisted third-party flag or a finding.
  * @param {string} root
@@ -450,6 +640,35 @@ function envVarInSourceTree(token, root = ROOT) {
 }
 
 /**
+ * Every `cairn`-line finding in one file's code-voice segments, each carrying the `file` it came
+ * from alongside `resolveCairnLine`'s own `line`, `class`, and composed `token` message
+ * (`${word} (not accepted by/not a subcommand of \`${path}\`)`), with an allowlisted finding
+ * dropped. Split out of `findUnresolvedSymbols`'s per-file loop so the file/line wiring is
+ * directly testable without a scratch corpus.
+ * @param {string} file the file path a finding is attributed to
+ * @param {CodeVoiceSegment[]} segments
+ * @param {Map<string, Set<string>>} commandFlags
+ * @returns {{ file: string, line: number, class: string, token: string }[]}
+ */
+export function cairnLineFindings(file, segments, commandFlags) {
+  /** @type {{ file: string, line: number, class: string, token: string }[]} */
+  const findings = [];
+  for (const items of extractCairnLines(segments)) {
+    for (const finding of resolveCairnLine(items, commandFlags)) {
+      if (ALLOWLIST.has(`${finding.class}:${finding.token}`)) continue;
+      const reason = finding.class === 'cairn-flag' ? 'not accepted by' : 'not a subcommand of';
+      findings.push({
+        file,
+        line: finding.line,
+        class: finding.class,
+        token: `${finding.token} (${reason} \`${finding.path}\`)`,
+      });
+    }
+  }
+  return findings;
+}
+
+/**
  * Every unresolved symbol across the files in scope. Each entry names the file, the line, the
  * class, and the offending token.
  * @param {string} root
@@ -457,6 +676,7 @@ function envVarInSourceTree(token, root = ROOT) {
 export function findUnresolvedSymbols(root = ROOT) {
   const apiSurface = parseApiSurface(root);
   const cliFlags = cliFlagNames(root);
+  const cairnCommands = cairnCommandFlags(root);
   const logEvents = logEventNames(root);
   const conditions = conditionIds(root);
   const checkIds = toolCheckIds();
@@ -495,6 +715,7 @@ export function findUnresolvedSymbols(root = ROOT) {
     recordUnresolved(file, 'cli-flag', extractCliFlags(segments), ({ token }) =>
       cliFlags.has(token.slice(2)),
     );
+    findings.push(...cairnLineFindings(file, segments, cairnCommands));
     recordUnresolved(file, 'env-var', extractEnvVars(segments), ({ token }) =>
       envVarInSourceTree(token, root),
     );

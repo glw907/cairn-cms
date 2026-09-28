@@ -29,7 +29,7 @@ column only; the rest of this page is accurate as of its last edit.
 
 **`@sveltejs/kit` `^2.70`.** The floor tracks the version cairn develops and tests against, so
 the engine may use SvelteKit's current capabilities with no guard for an older minor. The edit
-page's `$app/state` dependency, which forced the earlier `^2.12` floor (the `0.51.0` changelog
+page's `$app/state` dependency, which forced the earlier `^2.12` floor (the `0.41.0` changelog
 entry made that range an enforced consumer requirement rather than an advisory), still holds;
 `^2.70` raises the floor to the version cairn installs.
 

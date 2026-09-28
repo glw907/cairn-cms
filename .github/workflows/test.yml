@@ -34,8 +34,9 @@ jobs:
       # with cairn's own and breaks check:snippets on the Handle type (tried and reverted,
       # 2026-08-20).
       - run: npm run check
-      # The component test project runs in real Chromium via @vitest/browser-playwright.
-      - run: npx playwright install --with-deps chromium
+      # The component test project runs in real Chromium via @vitest/browser-playwright, and the
+      # docs-review page test (a unit spec) clicks the review page's controls in real Firefox too.
+      - run: npx playwright install --with-deps chromium firefox
       # dist-sveltekit-app-import-boundary.test.ts (and packaging-boundary.test.ts) need a real
       # dist/ to run their gate against. `npm ci` above already triggers this through the
       # `prepare` life cycle script, but that is an implicit dependency on a hook a future
@@ -62,8 +63,6 @@ jobs:
           node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
       - run: npm --prefix packages/create-cairn-site test
       - run: npm run check:package
-      - run: npm run check:reference
-      - run: npm run check:reference:signatures
       - run: npm run check:surface
       - run: npm run check:self-use
       - run: npm run check:custom-surface
@@ -72,19 +71,7 @@ jobs:
       - run: npm run check:idioms
       - run: npm run check:invisible-craft
       - run: npm run check:admin-css-classes
-      - run: npm run check:readiness
-      - run: npm run check:tool-conditions
-      - run: npm run check:docs
       - run: npm run check:rulings-format
-      - run: npm run check:target-stack
-      - run: npm run check:arm-indexes
-      - run: npm run check:editor-quotes
-      - run: npm run check:facts
-      - run: npm run check:provenance
-      - run: npm run check:visuals
-      - run: npm run check:transcripts
-      - run: npm run check:symbols
-      - run: npm run check:snippets
       - run: npm run check:prose
       - run: npm run check:version
       - run: npm run check:dev-package
@@ -109,8 +96,16 @@ jobs:
           curl -sfL https://github.com/errata-ai/vale/releases/download/v3.15.1/vale_3.15.1_Linux_64-bit.tar.gz \
             | sudo tar -xz -C /usr/local/bin vale
           vale --version
-      # Error-tier only: warnings and suggestions are advisory and are not gated (the standing
-      # repo rule). The Google and Microsoft style packages are vendored under .vale/styles, so
-      # this runs offline against the exact rules committed to the repo.
-      - run: npm run check:vale
+      # The docs gate: every CI check that reads a doc arm's content (check:docs, check:vale,
+      # check:facts, check:provenance, check:symbols, check:snippets, check:transcripts,
+      # check:visuals, check:arm-indexes, check:editor-quotes, check:readiness,
+      # check:tool-conditions, check:target-stack, check:reference, check:reference:signatures),
+      # run through the one docs-gate.mjs script so CI and a page chain's own gate read the
+      # identical list. It runs here, after Vale is installed, since check:vale is one of its
+      # components. Error-tier only for Vale: warnings and suggestions are advisory and are not
+      # gated (the standing repo rule). The Google and Microsoft style packages are vendored under
+      # .vale/styles, so this runs offline against the exact rules committed to the repo.
+      - run: npm run check:docs-gate
+      # Tripwire for the engine literals `cairn doctor`'s heuristics grep for.
+      - run: npm run check:tool-heuristics
       - run: npm run check:comments

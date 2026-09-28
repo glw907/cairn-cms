@@ -61,8 +61,8 @@ For each manifest row with a `slug`, `hash`, and `ext`, the command downloads
 route](./sveltekit.md) reads on every request. The command stores each object with the
 `Content-Type` its extension implies, so local reads serve the same header production does. Re-running the command overwrites each key with
 the same bytes, so it's safe to run again after the deployed library gains new objects. A row
-missing any of those three fields is dropped rather than failing the run. The manifest reader
-applies the same tolerance elsewhere.
+missing, or carrying a malformed, `slug`, `hash`, or `ext` is dropped rather than failing the run.
+The manifest reader applies the same tolerance elsewhere.
 
 ## Exit codes
 
@@ -72,8 +72,9 @@ applies the same tolerance elsewhere.
 | 1 | At least one entry failed to download or write. Each failure prints `FAILED <slug>: <message>` to stderr before the summary line. |
 | 2 | Bad flags, or the R2 bucket name could not be resolved. The message names the fix. |
 
-A clean run always prints a summary line to stdout: `cairn-media-seed: <ok> synced, <failed>
-failed, of <total> manifest entries`.
+Any run that gets past flag parsing and bucket resolution prints a summary line to stdout, whether
+or not any entry failed: `cairn-media-seed: <ok> synced, <failed> failed, of <total> manifest
+entries`.
 
 ## See also
 

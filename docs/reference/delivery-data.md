@@ -144,11 +144,54 @@ and one `User-agent`/`Disallow: /` group per training-crawler token in its inter
 `'invite'` adds `Content-Signal: search=yes, ai-train=yes` and no `Disallow`, since no robots
 directive invites a crawler.
 
+The output keeps one fixed line order. With `sitemapUrl: 'https://example.com/sitemap.xml'` and
+`disallow: ['/admin']`, `'decline'` produces the following file, the seven crawler groups in table
+order:
+
+```text
+User-agent: *
+Content-Signal: ai-train=no
+Allow: /
+Disallow: /admin
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+Sitemap: https://example.com/sitemap.xml
+```
+
 Declining is a request that named crawlers say they honor, not enforcement. robots.txt has no
-mechanism to block a fetch. OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are exempt
-from robots.txt by their own operators' first-party design, so a fully declining site can still
-receive a live fetch when someone asks an assistant about it. See the [`AiPosture`](#types) row
-below for the full honesty constraint, carried on `CairnAdapter.aiPosture`.
+mechanism to block a fetch. Four of the seven operators in the table (Amazon, Anthropic, Google,
+and Common Crawl) state outright that they honor robots.txt, and the other three document it as
+the control for their training crawler without that promise. OpenAI's `ChatGPT-User` and
+Perplexity's `Perplexity-User` are exempt from robots.txt by their own operators' first-party
+design, so a fully declining site can still receive a live fetch when someone asks an assistant
+about it. See the [`AiPosture`](#types) row below for the full honesty constraint, carried on
+`CairnAdapter.aiPosture`.
+
+The crawler table is fixed, and no option declines a crawler outside it. `disallow` cannot stand
+in for one, because its paths always emit under the `User-agent: *` group. A token ships only
+with first-party documentation from its operator, which is why Bytespider is absent. Search
+crawlers such as Googlebot stay out of the table, since disallowing one costs search presence and brings
+no training benefit.
 
 `Content-Signal` syntax follows Cloudflare's published policy
 (https://blog.cloudflare.com/content-signals-policy/): directive `Content-Signal`, keys
@@ -495,14 +538,17 @@ Stability tier: Extension API.
 function buildNewlyPublished(before: Manifest | null, after: Manifest): ManifestEntry[];
 ```
 
-Build the list of entries a deploy just carried across the first-publish transition: `after`
-entries that carry a `publishedAt` stamp, whose same concept-and-id counterpart in `before` was
-absent or itself unstamped. An entry that carried its stamp forward from `before`, an entry that
-was already non-draft but never stamped, and a draft never match, since none of them changes the
-stamp between the two manifests. An entry deleted from `after` never returns. The helper is pure
-and node-safe. It performs no I/O and reads no clock, so a caller supplies both manifests and gets a
-deterministic result back. The engine sends nothing over the network and runs no scheduler. A
-consumer diffs and then acts on the result, the seam an announce-on-publish integration builds on.
+Build the list of entries a deploy just carried across the first-publish transition: `after` entries
+that carry a `publishedAt` stamp, whose same concept-and-id counterpart in `before` was absent or
+itself unstamped. An entry that carried its stamp forward from `before`, and an entry that was
+already non-draft but never stamped, never match, since neither changes the stamp between the two
+manifests. A draft entry never matches either, but for a different reason: `upsertEntry` preserves a
+prior `publishedAt` stamp through any save, including one that re-drafts the entry. A drafted entry
+can therefore carry a stamp the stamp comparison alone would not catch. The explicit draft check is
+what excludes it. An entry deleted from `after` never returns. The helper is pure and node-safe. It
+performs no I/O and reads no clock, so a caller supplies both manifests and gets a deterministic
+result back. The engine sends nothing over the network and runs no scheduler. A consumer diffs and
+then acts on the result, the seam an announce-on-publish integration builds on.
 
 Pass `before: null` to mean no prior manifest exists. Every stamped entry in `after` then comes back,
 a full fan-out. A consumer wiring announce-on-publish has to persist the prior deployed manifest

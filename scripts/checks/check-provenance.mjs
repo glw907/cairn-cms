@@ -8,7 +8,10 @@
 // Run it over every brief with `node scripts/checks/check-provenance.mjs`, or over just the
 // briefs a page chain drafted with `node scripts/checks/check-provenance.mjs <brief path>...`
 // (each path must exist and sit under docs/internal/briefs/), so one page's gate does not fail
-// on a sibling page's in-flight brief.
+// on a sibling page's in-flight brief. The full run also reads the committed list of rebuilt
+// page paths at docs/internal/briefs-rebuilt.json (docs/internal/briefs/README.md) and fails any
+// listed path no brief's "page" field names, so a page rebuilt in one stage cannot silently lose
+// its brief in a later one; this coverage check does not run in the single-brief mode.
 //
 // The gate is deny-by-default. A script cannot decide which sentences state facts, but it can
 // refuse a page whose author declined to decide, so it fails:
@@ -59,7 +62,7 @@
 //   only machine-visible token is an ordinary word;
 // - a path compared by substring, so a shorter path inside a longer cited one passes.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import {
@@ -76,6 +79,7 @@ import {
 const ROOT = repoRoot(import.meta.url);
 const BRIEFS_DIR = join(ROOT, 'docs/internal/briefs');
 const FACTS_DIR = join(ROOT, 'docs/internal/facts');
+const REBUILT_LIST_PATH = join(ROOT, 'docs/internal/briefs-rebuilt.json');
 
 /** The literal a sentence carries when it states no fact. */
 const NO_CLAIM = 'no-claim';
@@ -567,33 +571,154 @@ export function checkBrief(briefPath, index, root) {
 }
 
 /**
+ * @typedef {{ list: string[], defects: string[] }} RebuiltListResult
+ */
+
+/**
+ * The committed list of page paths a stage has rebuilt, read, parsed, and validated. The list
+ * itself is invalid, with an empty `list` returned alongside the one defect naming why, when it
+ * is absent, not valid JSON, or not a JSON array; a valid list still fails one entry at a time
+ * when an entry is not a string or sits outside `docs/`, and that entry alone is dropped.
+ * @param {string} listPath
+ * @param {string} root The directory `listPath`'s own message is reported relative to.
+ * @returns {RebuiltListResult}
+ */
+export function loadRebuiltList(listPath, root) {
+  const rel = relative(root, listPath);
+  if (!existsSync(listPath)) {
+    return { list: [], defects: [`${rel}: does not exist (see docs/internal/briefs/README.md)`] };
+  }
+  /** @type {unknown} */
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(listPath, 'utf8'));
+  } catch (error) {
+    return { list: [], defects: [`${rel}: not valid JSON (${error instanceof Error ? error.message : String(error)})`] };
+  }
+  if (!Array.isArray(parsed)) {
+    return { list: [], defects: [`${rel}: not a JSON array`] };
+  }
+  /** @type {string[]} */
+  const list = [];
+  /** @type {string[]} */
+  const defects = [];
+  parsed.forEach((entry, i) => {
+    // Normalized first, so a literal "docs/../outside.md" (which the un-normalized string itself
+    // starts with "docs/") cannot pass the prefix test on the strength of a prefix it does not
+    // actually keep. The bare "docs" (the directory, not a page) is rejected outright: every real
+    // entry names a file under it.
+    const normalized = typeof entry === 'string' ? posix.normalize(entry) : null;
+    if (normalized === null || normalized === 'docs' || !normalized.startsWith('docs/')) {
+      defects.push(`${rel}: entry ${i} (${JSON.stringify(entry)}) is not a path under docs/`);
+      return;
+    }
+    list.push(normalized);
+  });
+  return { list, defects };
+}
+
+/**
+ * Every distinct `page` field a set of brief files names, skipping a brief that fails to parse
+ * (checkBrief reports that defect on its own).
+ * @param {string[]} briefs Absolute brief paths.
+ * @returns {Set<string>}
+ */
+function pagesNamedByBriefs(briefs) {
+  /** @type {Set<string>} */
+  const pages = new Set();
+  for (const briefPath of briefs) {
+    try {
+      const parsed = /** @type {{ page?: unknown }} */ (JSON.parse(readFileSync(briefPath, 'utf8')));
+      if (typeof parsed === 'object' && parsed !== null && typeof parsed.page === 'string') pages.add(parsed.page);
+    } catch {
+      // A brief that is not valid JSON is reported by checkBrief; coverage skips it here.
+    }
+  }
+  return pages;
+}
+
+/**
+ * The defects between the rebuilt-page list and the briefs that actually exist: a listed page
+ * whose file no longer exists is a stale list entry, reported as such rather than as a missing
+ * brief; a listed page whose file still exists but no brief's `page` field names (matched by
+ * that field, never a brief's file name) is a coverage gap.
+ * @param {string[]} list Every path the rebuilt list carries.
+ * @param {string[]} briefs Every brief path already found under the briefs directory.
+ * @param {string} root The directory a listed page path is relative to.
+ * @returns {string[]}
+ */
+export function checkBriefCoverage(list, briefs, root) {
+  const pages = pagesNamedByBriefs(briefs);
+  /** @type {string[]} */
+  const defects = [];
+  for (const page of list) {
+    if (!existsSync(join(root, page))) {
+      defects.push(`docs/internal/briefs-rebuilt.json lists "${page}" as rebuilt, but that page no longer exists: a stale list entry`);
+    } else if (!pages.has(page)) {
+      defects.push(`docs/internal/briefs-rebuilt.json lists "${page}" as rebuilt, but no brief names it in its "page" field`);
+    }
+  }
+  return defects;
+}
+
+/**
  * Run the provenance check: either every brief under `briefsDir` against the container in
  * `factsDir` (the default), or, when `briefArgs` names any paths, exactly those briefs, each
  * checked to exist and to sit under `briefsDir`. Pages resolve from `root`. With no brief to
  * check, it passes and says so.
+ *
+ * The default (no `briefArgs`) run also checks brief coverage: it reads the committed rebuilt-
+ * page list at `rebuiltListPath` and fails any listed path no brief covers, before it decides
+ * whether any brief exists at all, so an empty briefs directory does not hide a coverage gap.
+ * The single-brief mode skips coverage entirely, since it exists to check one in-flight brief in
+ * isolation.
  * @param {string} briefsDir
  * @param {string} factsDir
  * @param {string} root
  * @param {string[]} [briefArgs] CLI-style brief paths, absolute or relative to `root`. Omitted
- * or empty runs every brief under `briefsDir`.
+ * or empty runs every brief under `briefsDir` and checks coverage.
+ * @param {string} [rebuiltListPath] The committed rebuilt-page list. Required whenever
+ * `briefArgs` is omitted or empty; unused otherwise.
  * @returns {{ defects: string[], report: string[] }}
  */
-export function checkProvenance(briefsDir, factsDir, root, briefArgs) {
+export function checkProvenance(briefsDir, factsDir, root, briefArgs, rebuiltListPath) {
   /** @type {string[]} */
   let briefs;
-  if (briefArgs && briefArgs.length > 0) {
-    const resolved = resolveBriefArgs(briefArgs, briefsDir, root);
+  const briefArgsGiven = Boolean(briefArgs && briefArgs.length > 0);
+  if (briefArgsGiven) {
+    const resolved = resolveBriefArgs(/** @type {string[]} */ (briefArgs), briefsDir, root);
     if (resolved.defects.length > 0) return { defects: resolved.defects, report: [] };
     briefs = resolved.briefs;
   } else {
     briefs = findBriefs(briefsDir);
   }
-  if (briefs.length === 0) return { defects: [], report: ['  no page has a brief yet'] };
-  const index = loadFactIndex(factsDir);
+
   /** @type {string[]} */
   const defects = [];
   /** @type {string[]} */
   const report = [];
+  if (!briefArgsGiven) {
+    if (!rebuiltListPath) {
+      // Default mode always needs the rebuilt-page list to check coverage against; a caller that
+      // omits it would otherwise reach loadRebuiltList's `relative(root, listPath)` with
+      // `listPath` undefined and throw a TypeError instead of failing the gate.
+      defects.push('checkProvenance: rebuiltListPath is required in default mode (no brief paths given)');
+    } else {
+      const { list, defects: listDefects } = loadRebuiltList(rebuiltListPath, root);
+      defects.push(...listDefects, ...checkBriefCoverage(list, briefs, root));
+      report.push(
+        list.length === 0
+          ? '  nothing is rebuilt yet'
+          : `  ${list.length} page(s) marked rebuilt in docs/internal/briefs-rebuilt.json`,
+      );
+    }
+  }
+
+  if (briefs.length === 0) {
+    report.push('  no page has a brief yet');
+    return { defects, report };
+  }
+  const index = loadFactIndex(factsDir);
   for (const briefPath of briefs) {
     const rel = relative(root, briefPath);
     const result = checkBrief(briefPath, index, root);
@@ -604,7 +729,7 @@ export function checkProvenance(briefsDir, factsDir, root, briefArgs) {
 }
 
 function main() {
-  const { defects, report } = checkProvenance(BRIEFS_DIR, FACTS_DIR, ROOT, process.argv.slice(2));
+  const { defects, report } = checkProvenance(BRIEFS_DIR, FACTS_DIR, ROOT, process.argv.slice(2), REBUILT_LIST_PATH);
   if (defects.length === 0) {
     console.log('check-provenance: OK');
     console.log(report.join('\n'));

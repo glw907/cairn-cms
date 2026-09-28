@@ -8,6 +8,7 @@ import {
   isGrounded,
   candidatesForFile,
   findStrandedQuotes,
+  hasQuotesToCheck,
 } from '../../../scripts/checks/check-editor-quotes.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -159,5 +160,18 @@ describe('findStrandedQuotes against the real repo', () => {
     );
     const candidates = walkExts(LIB_DIR, ['.svelte', '.ts']).flatMap(candidatesForFile);
     expect(findStrandedQuotes(markdown, candidates)).toEqual(['choose a date for this entry.']);
+  });
+});
+
+describe('hasQuotesToCheck (the zero-quote floor)', () => {
+  it('is true for the real editors page', () => {
+    const markdown = readFileSync(DOC_PATH, 'utf8');
+    expect(hasQuotesToCheck(markdown)).toBe(true);
+  });
+
+  it('is false for a page stripped of every bolded quote, so the gate cannot pass vacuously', () => {
+    const markdown = readFileSync(DOC_PATH, 'utf8').replace(/\*\*"[^"]+"\*\*/g, 'a message');
+    expect(extractDocQuotes(markdown)).toEqual([]);
+    expect(hasQuotesToCheck(markdown)).toBe(false);
   });
 });

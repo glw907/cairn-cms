@@ -1,82 +1,108 @@
 # Choose an AI posture
 
-Decide whether your site's `robots.txt` asks AI training crawlers to stay away, invites them
-explicitly, or states no preference at all, the same default every cairn site ships with today.
+Decide whether your site declines AI training crawlers, invites them, or states no preference, and
+carry that choice through to the file its robots route serves.
 
-## The fork
+**Precondition:** the prerendered robots route at `src/routes/robots.txt/+server.ts` that the
+scaffold writes, which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt)
+describes.
 
-Set `aiPosture` on your adapter:
+## Choose a posture
 
-<!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the aiPosture member -->
+The choice is among three states of the adapter's optional `aiPosture` member: `'decline'`,
+`'invite'`, or unset, which is the default. A declining site adds a `Content-Signal: ai-train=no`
+line and appends a `User-agent`/`Disallow: /` group for each token in the engine's
+training-crawler table. That line leaves the `search` key unset, since an absent key in
+Cloudflare's [Content Signals Policy](https://blog.cloudflare.com/content-signals-policy/) states
+no preference. An inviting site adds `Content-Signal: search=yes, ai-train=yes` and nothing else,
+because no `robots.txt` directive grants a crawler access. An unset posture adds no
+`Content-Signal` line and no crawler groups, so the file is byte-identical to that of a site that
+never declared a posture. The scaffold leaves `aiPosture` unset on
+purpose, so a scaffolded site states nothing until you choose.
+
+A `robots.txt` file cannot block a fetch, so `'decline'` reaches only crawlers whose operators
+honor it. The [`buildRobots`](../reference/delivery-data.md#buildrobots) entry records which
+operators promise that, which assistants exempt a user-initiated fetch, and why the table leaves
+out search crawlers and any token without first-party documentation.
+
+## Set the posture on the adapter
+
+Set `aiPosture` in the adapter the scaffold exports as `cairn` from `src/theme/cairn.config.ts`.
+The member is optional, and [`defineAdapter`](../reference/core.md#defineadapter) accepts it
+alongside the four groups it requires, which the snippet elides:
+
+<!-- snippet-check-skip: elides the adapter's required content, backend, email, and rendering groups -->
 ```ts
 // src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
-  // ...content, backend, email, rendering...
-  aiPosture: 'decline', // or 'invite', or omit the field entirely
+  // content, backend, email, and rendering stay as the scaffold wrote them
+  aiPosture: 'decline',
 });
 ```
 
-Declaring the field alone changes no bytes. `robotsResponse` reads its posture from its own
-`posture` option, not from the adapter, so your `robots.txt` route has to pass it through:
+To state no posture, leave the member out.
+
+## Pass the posture to the robots route
+
+`create-cairn-site`, the setup command, asks for a stance toward AI training crawlers. It writes
+your answer into the adapter's `aiPosture`. A site it scaffolds needs no edit here: the scaffold's
+`src/routes/robots.txt/+server.ts` already passes `cairn.aiPosture` as the `posture` option to
+[`robotsResponse`](../reference/delivery-data.md#robotsresponse).
+
+For a site scaffolded before this pass-through existed, pass `cairn.aiPosture` as the `posture`
+option in the robots route, since declaring `aiPosture` on the adapter changes no output bytes on
+its own:
 
 ```ts
 // src/routes/robots.txt/+server.ts
+import type { RequestHandler } from './$types';
 import { robotsResponse } from '@glw907/cairn-cms/delivery';
+import { siteMeta } from '$chassis/content.js';
 import { cairn } from '$theme/cairn.config.js';
-import { ORIGIN } from '$lib/content.js';
 
-export const GET = () =>
-  robotsResponse({ sitemapUrl: ORIGIN + '/sitemap.xml', disallow: ['/admin'], posture: cairn.aiPosture });
+export const prerender = true;
+
+export const GET: RequestHandler = () =>
+  robotsResponse({
+    sitemapUrl: siteMeta.origin + '/sitemap.xml',
+    disallow: ['/admin'],
+    posture: cairn.aiPosture,
+  });
 ```
 
-[Wire the delivery surface](./wire-the-delivery-surface.md) builds this route without the
-`posture` option. Add it there once you've decided a stance.
+`robotsResponse` passes `posture` to `buildRobots` unchanged. The route is prerendered, so a
+changed posture reaches the served file once the build carrying it deploys.
 
-Leaving `aiPosture` unset is the default and states nothing: the emitted `robots.txt` is
-byte-identical to a site with no opinion, which is every cairn site's behavior before this field
-existed. `'decline'` adds a `Content-Signal: ai-train=no` line and a `User-agent`/`Disallow: /`
-pair for each token in the engine's own training-crawler table. `'invite'` adds `Content-Signal:
-search=yes, ai-train=yes` and adds no crawler-specific `Disallow` lines of its own, since no
-`robots.txt` directive grants access; the only thing a site can do to invite a crawler is state
-that it's welcome and otherwise stay out of the way. Any path you pass in the general-purpose
-`disallow` option, `/admin` for instance, still emits under both postures and under no posture at
-all, since that option is a separate mechanism from `aiPosture` entirely.
+## Verify the served file
 
-## What declining actually buys you, honestly
+Fetch the served file from the deployed site and confirm that the posture's `Content-Signal` line
+sits directly after `User-agent: *`. With no posture, the route emits `User-agent: *`, `Allow: /`,
+`Disallow: /admin`, and the `Sitemap` line, with no `Content-Signal` line. Under `'invite'`, the
+only difference from that output is `Content-Signal: search=yes, ai-train=yes` in the same
+position. Under `'decline'`, the line is `Content-Signal: ai-train=no`, and the seven tokens in the
+engine's training-crawler table follow as their own `User-agent` groups, each with `Disallow: /`,
+before the `Sitemap` line. The `Disallow: /admin` line emits the same way under every posture. The
+[`buildRobots`](../reference/delivery-data.md#buildrobots) entry shows the complete declining file.
 
-A `Disallow` line is a request among cooperating crawlers, never enforcement. `robots.txt` has no
-mechanism to block a fetch. The crawlers in cairn's own table are the ones a first-party page
-documents as complying with it; a token with no such first-party documentation doesn't ship in
-the table at all, however widely it's repeated elsewhere. And even full compliance has a
-documented hole: at least one major operator's own documentation states that a *user-triggered*
-fetch, someone asking an assistant about your page directly, may fall outside its own crawler's
-robots.txt compliance by design. A fully declining site can still be fetched live that way. This
-honesty constraint is why `aiPosture` exists as a named, typed field rather than a raw
-`Disallow` list you assemble yourself: the engine states what each direction does and doesn't
-buy, rather than letting the mechanism read as stronger than it is.
+Run [`cairn doctor`](../reference/cli-cairn-doctor.md) in the site directory and confirm that its
+`ai.posture-effective` check passes. The check fetches the `/robots.txt` the public origin serves
+and compares it with the posture declared in `src/content/.cairn/site-facts.json`, and an unset
+posture passes whatever the served file carries. The check reports `UNCHECKED` when it cannot read
+one of those two inputs: with the detail `needs engine 0.97.0 or later, and one build` when
+`site-facts.json` is absent, and with the fetch's own reason when no origin resolves or the
+origin's `/robots.txt` cannot be fetched.
 
-## The disallow seam has no per-crawler override
+## Resolve a posture warning
 
-`robots.txt`'s general-purpose `disallow` option (the plain path list every `robotsResponse` call
-already accepts, for `/admin` and the like) and the `aiPosture`-driven crawler table are two
-separate mechanisms, and they don't compose the way you might expect. `disallow` paths are always
-emitted under the blanket `User-agent: *` group, ahead of any posture-specific group; they have no
-way to target one named crawler by itself. The only way to disallow a *specific* named crawler
-token is the fixed table `posture: 'decline'` already iterates. There's no seam for declining one
-crawler your site cares about that isn't already in that table.
-
-This is deliberate, not an oversight: cairn ships no crawler token it has no first-party
-documentation for. A token repeated widely across blog posts and community lists, with no
-operator page actually confirming it, doesn't earn a place in the shipped table, and the engine
-gives you no side door to add one yourself with the same claimed authority. If a crawler you want
-to decline isn't in the table, that's a fact about what's documented, not a gap this page tells
-you how to route around.
-
-## You know it worked when
-
-`robots.txt` on your deployed site carries the `Content-Signal` line matching your chosen posture,
-and, under `'decline'`, a `User-agent`/`Disallow: /` pair for every crawler token cairn ships.
-Compare it against the byte-identical no-posture output by unsetting `aiPosture` temporarily if
-you want to confirm the field changes nothing when absent.
+A failing `ai.posture-effective` check reports the `ai.posture-not-effective` warning, which means
+the served file carries nothing consistent with the declared posture, or carries the other
+posture's directives. Check first that the robots route passes `aiPosture` to `robotsResponse`
+and that the build carrying it has deployed. If both hold, look for a managed layer that the
+zone's operator controls ahead of the origin.
+[Cloudflare's managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/),
+when enabled, prepends its own content, including its own `Content-Signal` line, to the origin's
+file in one combined response.
+[Make the stated AI posture effective](../admin/is-it-working.md#make-the-stated-ai-posture-effective)
+covers the condition for whoever runs the zone.

@@ -22,10 +22,10 @@ Stability tier: Extension API.
 
 Stability tier: Extension API.
 
-`renderGlyph` (documented on [Core](./core.md)) stamps a fixed set of classes onto the hast it
-builds, and a site's own component grammar commonly builds toward the same names, so a site's
-prose CSS can target them consistently. A site's own prose CSS targets these names to style the
-built-in directives.
+This is the fixed set of class names the render pipeline and a site's own component grammar build
+toward, so a site's prose CSS can target them consistently. Only `cairn-glyph` comes directly from
+`renderGlyph` (documented on [Core](./core.md)); the others are stamped by a site's own chassis
+code, or, for `cairn-grid`, by the engine's internal `markFirstList`.
 
 - `cairn-head` is the icon-plus-heading row of a card or an alert; a site typically builds it in
   its own chassis code (see, for example, `examples/showcase/src/chassis/render.ts`'s `headRow`).

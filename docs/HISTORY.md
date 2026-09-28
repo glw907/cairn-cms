@@ -7,6 +7,106 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Draft docs pass 0+1: setup and reference, 2026-09-28
+
+Branch `draft-docs-0` (worktree `.claude/worktrees/draft-docs-0`), draft PR #91 (unmerged at
+this close, per Geoff's hold: the merge itself waits on his word). Plan:
+`docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md`. Stood up the lean page chain, the
+four docs-gate check extensions, the `check:docs-gate` runner, and the R10 review-page template;
+lifted the narrative-arm freeze to a per-arm rule; settled four stale owner facts; and checked
+every reference page's claims in place.
+
+**What landed, by task:**
+
+- Tasks 1-2, freeze lift and rule sweep (cairn-cms and workstation sides, `2427856a` plus
+  `4b2916fc`/`353cc61e`/`9f2ebe36`): the narrative-arm freeze becomes per-arm (each arm lifts at
+  its own stage merge, not all at once), and `agents/site-implementer.md` plus
+  `agents/cairn-implementer.md` also carry the rule, widened from the task's original scope.
+- Task 3, `check:symbols` flag pairing (`d0639043`, `85efee59`): a `cairn` CLI line's flags now
+  resolve against its own command path, not a flat flag list, so a value-taking flag's value is
+  never mistaken for a path word. Two edge cases the 2026-09-26 hardening (`2d960720`) still does
+  not close carry forward (see below).
+- Task 4, `check:provenance` brief coverage (`d17d716c`): fails a rebuilt page whose brief
+  coverage lapses, catching a stale `briefs-rebuilt.json` entry as itself, not a missing brief.
+- Task 5, `check:readiness` shipped-anchor list (`0713d110`, `3e452fdc`): a released tag's anchor
+  removed from `is-it-working.md` alongside its `conditions.ts` entry still fails the check.
+- Task 6, the docs gate script and the editor-quotes floor (`d87ee318`, `14d3f7ac`): one
+  `npm run check:docs-gate` command now runs all fifteen doc-content checks, scoped with
+  `--page`/`--brief` for a single page's gate; `check:editor-quotes` fails a pinned page stripped
+  of its quotes.
+- Task 7, the lean page chain and drafter (workstation-side chain commits): the runner drops the
+  v2 chain's profile grader; `cairn-docs-drafter` files no facts, only the page-inputs step does;
+  one redraft by default, a second `fix` escalates to the conductor rather than a third round.
+- Task 8, the R10 review-page template (`db4bac98`, `2abc278e`, `9503b0c2`): an Artifact page
+  embedding a batch of markdown files with per-file edit mode; writability is learned only from
+  the first `not_writer`/`not_granted` rejection, and a `conflict` reload restores stashed edits
+  while a successful publish's reload restores none.
+- Task 9, chain proof and review-page round trip (conductor-led, `6ad6dee8`, `0f7ab264`,
+  `82c906e2`, `c634f43c`): the four owner facts were checked and fixed first; the chain drafted
+  `docs/extend/choose-an-ai-posture.md` for real (not thrown away, per this closing task's
+  direction) and Geoff's Firefox review of the published page found the register itself under-
+  scoped (the academic voice and heading rule were front-door-only, with no "AI phrasing" heading
+  test), fixed in the register rather than the page (`07d5c87e`, `fb5238d1`, plus the
+  `cairn-register-editor` agent definition on the workstation). Geoff approved the redraft (v4)
+  with no edits.
+- Task 10, stage 1 reference claim check (five batches, `716cd90e` through `11bd4809`; full
+  record `docs/superpowers/research/2026-09-26-draft-docs-stage-1-record.md`): 1204 claims
+  checked across 28 of 29 reference pages (the two theme identity pass B moves deferred by
+  Geoff's split), 35 discrepancies found and 33 applied; a batch 1 apply agent's wrong-worktree
+  mistake was caught by `diff-reviewer` and moved by the conductor rather than repeated.
+- Task 11 (this close): merged `main` (PR #96, setup-paid) into `draft-docs-0`, resolving four
+  real conflicts (the front-door voice bullets, the AI-posture facts and their line numbers, the
+  gate-tier docs string, and `gate-tier.mjs`'s `DOCS_GATE`/`SCRIPTS_GATE` constants, keeping both
+  sides' intent in each). Fixed `choose-an-ai-posture.md`'s owed deficiency (fact `f:1ij5h5`,
+  filed on the `setup-paid` branch): the "Pass the posture to the robots route" step now states
+  plainly that a site scaffolded by the current setup command needs no edit there, and keeps the
+  step and its snippet only for a site scaffolded before that fix.
+
+**What a gate caught:** the batch 1 apply agent's uncommitted edits landing in the wrong worktree
+(`draft-docs-0-proof` instead of `draft-docs-0`), caught by its `diff-reviewer` read before batch
+2 dispatched; the register's front-door-only voice scoping, caught by Geoff's own Firefox read of
+the published review page, not by any automated reviewer, since the register itself carried the
+gap the reviewers graded against.
+
+**What would be wrong to rediscover:**
+- The register's academic voice and heading rule now govern every published page, not only the
+  front door (`docs/internal/docs-register.md`, "Universal contract"); a page reviewed against
+  the older, front-door-only framing is reviewed against a stale rule.
+- `check:symbols` still misreads an attached shell redirect (`2>&1`, `>out.json`, no space before
+  the operator) as an ordinary word, and drops a continuation left pending when a fence closes
+  without a following line; both survive the 2026-09-26 hardening and are filed to `ROADMAP.md`'s
+  Next tier, not fixed here.
+- `rendered.test.ts`'s `BASE_URL` contract tests assume nothing listens on `localhost:4173`; a
+  concurrent worktree's preview server holding that port makes them fail for a reason unrelated
+  to the change under test (filed to `ROADMAP.md`'s Next tier).
+- Draft docs stage 1 covers 28 of 29 reference pages; `docs/reference/components.md` (renamed to
+  `admin.md` by theme identity pass B) and the `./public` page pass B creates need the same
+  fact-read batch once pass B lands, with stage 1's own acceptance.
+- The page-chain's claim inventory has no disposition for a claim a redraft relocates to a linked
+  reference entry (task 9's proof record, "Finding: the page-chain's brief format and the
+  register's anatomy disagree"; filed to `ROADMAP.md`'s Next tier).
+- `admin-toolkit.md`'s outline-chip contrast ratios (about 2.4:1, 2.97:1) were removed as untraced
+  to any source; re-measure before restoring specific numbers (filed to `ROADMAP.md`'s Next tier).
+
+**Cost:** the plan's ceiling is about 9.6M, flagged at about 7.7M planned spend. Measured
+`subagent_tokens` pieces recorded in the plan's own ledger: segment A (tasks 1-5 plus the
+hardening and simplifier rounds) about 2.7M plus the conductor; task 9's chain proof about 0.65M
+against its 0.2M review-page estimate; task 10's stage 1 about 4.9M against its 4.5M
+first-batch-projection checkpoint. Those three alone total about 8.25M, already past the 7.7M
+flag and within the 9.6M ceiling. Tasks 6, 7, 8, the segment B boundary, and this closing task
+(11) are not separately measured in the plan's ledger; the plan's own pre-flight framing already
+recorded this pattern (a projection past its checkpoint is the checkpoint question, not a hard
+stop) and this record does not manufacture a number where the ledger carries none.
+
+**Attended time:** one planning miss (the register's academic voice and its "You know it worked
+when" heading rule were scoped front-door-only, found at task 9's owner review of the published
+proof page); one execution sitting (task 9's owner review, 2026-09-28): Geoff's Firefox read of
+the published review page across four versions (v1 code fix, v2, v3 with four comments, v4
+approved with no edits), per `pass-core`'s rule that this sitting counts as one regardless of its
+round count.
+
+`code-simplifier` ran after this close, on the closed head, as `bd935c9d`.
+
 ## Workers Paid confirmation and AI posture prompt, 2026-09-28
 
 Branch `setup-paid` (worktree `.claude/worktrees/setup-paid`), PR #96, merge commit `e6a2b717`.

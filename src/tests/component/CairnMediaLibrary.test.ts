@@ -187,6 +187,21 @@ describe('CairnMediaLibrary grid', () => {
       ) as HTMLElement;
       expect(describedTitle.getBoundingClientRect().width).toBe(needsAltTitle.getBoundingClientRect().width);
     });
+
+    // S3 Q8: the density toggle is hand-rolled (no daisyUI `.btn` class of its own), so it never
+    // picked up the size step's `--size-field` bump the neighboring `btn-sm` orphan-scan trigger
+    // reads automatically. The compiled sheet carries the real `--size-field` value.
+    it('sizes the grid/list density toggle level with its btn-sm neighbor', async () => {
+      const screen = await render(CairnMediaLibrary, { data: fixture() });
+      const gridButton = screen.getByRole('button', { name: 'Grid view' }).element() as HTMLElement;
+      const orphanButton = screen
+        .getByRole('button', { name: 'Find orphaned files' })
+        .element() as HTMLElement;
+      expect(gridButton.getBoundingClientRect().height).toBeCloseTo(
+        orphanButton.getBoundingClientRect().height,
+        0,
+      );
+    });
   });
 });
 
@@ -517,6 +532,28 @@ describe('CairnMediaLibrary detail slide-over', () => {
     await expect.poll(() => screen.container.querySelector('[role="region"]')).toBeNull();
     const orphan = await openSlideOver(screen, /meadow-fence/);
     expect(orphan.textContent ?? '').toMatch(/no references found/i);
+  });
+
+  // S3 Q10: the size step grew the panel's own form controls about 17px in total, so at 390 the
+  // where-used row's last entry scrolled under the sheet's own bottom edge on the old 16px (p-4)
+  // bottom padding. pb-8 (32px) gives the last row room to clear it. The compiled sheet carries
+  // the real utility values, the same reason the tile-title-width suite above injects it.
+  it('gives the scrollable panel body extra bottom padding past the size step\'s own growth', async () => {
+    const sheet = document.createElement('style');
+    sheet.textContent = compiledAdminCss;
+    document.head.appendChild(sheet);
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    try {
+      const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+      const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) });
+      const panel = await openSlideOver(screen, /first-light/);
+      const body = panel.querySelector(':scope > div.overflow-y-auto') as HTMLElement;
+      expect(body).not.toBeNull();
+      expect(getComputedStyle(body).paddingBottom).toBe('32px');
+    } finally {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    }
   });
 
   it('carries the media: reference and the alt editor + rename in one ?/mediaUpdate form', async () => {

@@ -294,31 +294,10 @@ The original decision framing, for the record:
   walkthrough's template fixes). B stays unmerged, C branches from it, and both merge at C's close
   with one `0.98.0` cut carrying A, B, and C. Draft documentation (below) waits for C.
 
-- **Theme identity pass A's carried items (pass A close, 2026-09-28).** Each is small and none
-  blocked the close. Trigger: Geoff's S3 sitting on pass A (a correction there lands on
-  `theme-identity-a` and merges forward), else the first pass after it that edits
-  `cairn-admin.css` or the named component, and in any case before the `0.98.0` cut ships the
-  retheme to every consumer.
-  - The theme-kit fixture's error alert shows about a 50px gap between its title and body at 390,
-    and a 73px panel at 1440 against 46px for the other alerts. `ConceptList`'s refused-delete
-    banner uses the same markup (`max-sm:grid-flow-row max-sm:grid-cols-1` on a grid `.alert`),
-    so it likely shares the gap. Measure both, then fix the stacking recipe once.
-  - At 320 the top-bar search trigger truncates to "S." (pre-existing,
-    `CairnAdminShell.svelte`, the palette trigger's `max-w-md` flex row).
-  - The command palette's focus ring clips at the panel top (pre-existing).
-  - The soft primary's hover step sits outside `@media (hover: hover)`
-    (`cairn-admin.css`, the `.btn-soft.btn-primary` `:is(:hover, :focus-visible)` rule), the one
-    `cairn-idiom` hover value that breaks the modality-gate ruling. Split it the way the selected
-    segment's rules are split. The Write/Preview tab seam rules in `EditorToolbar.svelte`'s scoped
-    style carry an ungated `:hover` too.
-  - The theme-kit fixture (`examples/showcase/src/routes/admin/theme-kit/+page.svelte`) has no
-    `<svelte:head><title>`, its four `<section>`s carry no accessible name, and its forced-open
-    dropdown trigger has no `aria-expanded`.
-  - `CairnTidySettings.svelte`'s variant radiogroup container carries `overflow-hidden`
-    (pre-existing), which may clip an outward focus ring on its segments; check it.
-  - S1's cosmetic and owner-taste items wait for the same sitting; the list is in the plan's
-    ledger (`docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`, "S1 and task 15" and
-    S1's verdict record).
+- **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
+  correction round, 2026-09-28, except the two below).** Trigger for what remains: the first pass
+  after this one that edits `cairn-admin.css` or the named component, and in any case before the
+  `0.98.0` cut ships the retheme to every consumer.
   - Coverage notes the `paint` class batched rather than blocked on: the destructive-edge contrast
     test proves the ratio but not that `border-error` wins the cascade over the 55% field edge;
     the disabled-stock switch test covers the `:checked` form only; `::before` carries no

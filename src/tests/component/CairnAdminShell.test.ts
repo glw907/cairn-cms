@@ -519,6 +519,16 @@ describe('CairnAdminShell', () => {
     expect(screen.container.querySelector('[data-testid="desk-control"]')).toBeNull();
   });
 
+  // S3 Q15: below `sm` the search trigger's own label truncated to an unreadable "S." rather
+  // than reading as the icon alone. The label moves to `sr-only` at that width instead of
+  // `hidden`, so the trigger's accessible name (WCAG 4.1.2) is unchanged at every width.
+  it('keeps the search trigger\'s accessible name once its label is visually hidden below sm', async () => {
+    const screen = await render(CairnAdminShellDeskHarness, { data: data(true) });
+    await expect
+      .element(screen.getByRole('button', { name: 'Search or jump to…' }))
+      .toBeInTheDocument();
+  });
+
   it('toggles the theme on the admin root and persists it to a cookie', async () => {
     // The toggle scopes the cookie to path=/admin (production correctness), but the browser test
     // page is served at "/", so a path=/admin cookie is invisible to document.cookie here. Capture
@@ -1572,6 +1582,19 @@ describe('CairnAdminShell', () => {
       const resolvedPrimary = getComputedStyle(probe).color;
       probe.remove();
       expect(style.outlineColor).toBe(resolvedPrimary);
+    });
+
+    // S3 Q16: with the box otherwise flush (p-0), the search input's own :focus-visible ring (a
+    // 2px outline at a 2px offset, cairn-admin.css's page-wide rule) had no room above it and
+    // clipped against this scrolling box's own top edge. `pt-1` (4px) matches the ring's own
+    // outward reach.
+    it('gives the palette box top padding matching the focus ring\'s own outward reach', async () => {
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
+      await screen.getByRole('button', { name: /search or jump to/i }).click();
+      const box = screen.container.ownerDocument.querySelector<HTMLElement>(
+        'dialog[aria-label="Commands"] .modal-box',
+      )!;
+      expect(getComputedStyle(box).paddingTop).toBe('4px');
     });
   });
 });

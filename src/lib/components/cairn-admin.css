@@ -652,6 +652,19 @@
   ol.toolkit-list {
     padding-inline-start: 0;
   }
+
+  /* 8. A radio or checkbox `.join-item` (the input-as-button join pattern) leaves a seam a plain
+     `<button>` join never shows: the browser's own UA stylesheet gives `input[type='radio']` and
+     `input[type='checkbox']` a non-zero margin on all four sides (measured in Chromium: 3px 3px 0
+     5px for radio, 3px 3px 3px 4px for checkbox), while a `<button>`'s UA margin is already zero.
+     DaisyUI's own `.join-item` rule sets only the leading edge's margin (the negative overlap that
+     fuses the seam), so the trailing edge's UA margin survives untouched and reopens a 1-2px gap.
+     Resetting the full shorthand here, in `base`, still loses on the leading edge to DaisyUI's own
+     `utilities`-layer declaration (layers resolve before specificity, and `utilities` sorts after
+     `base`), so only the trailing edges this rule alone declares take effect. */
+  .join-item:is(input[type='radio'], input[type='checkbox']) {
+    margin: 0;
+  }
 }
 
 /* Anchors inherit their color and drop the underline by default, which the omitted Preflight used to
@@ -848,6 +861,23 @@
      matching. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) svg.lucide[stroke-width='2'] {
     stroke-width: 1.75;
+  }
+
+  /* The admin root's own page ground. A page taller in scrollable overflow than the themed
+     layout's own flow height (a forced-open dropdown menu is the common case, since daisyUI
+     positions dropdown-content absolutely, outside normal flow) leaves that extra height painted
+     by the real, unthemed document canvas, white in every browser. Fixed positioning pins this
+     pseudo-element to the viewport rather than the document's scroll height, so it keeps covering
+     the full canvas at any scroll position without needing the theme root's own box to grow past
+     its content; the negative z-index keeps it behind the admin's own chrome, which sets none of
+     its own. This overrides no daisyUI declaration; it only paints where daisyUI paints nothing. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--color-base-200);
+    pointer-events: none;
   }
 }
 
@@ -1125,12 +1155,31 @@
       --btn-bg: color-mix(in oklab, var(--color-primary) 10%, transparent);
       --btn-fg: var(--color-primary);
     }
+    /* Split from one merged :is(:hover, :focus-visible) selector (the modality-gate ruling, S3
+       Q17): a focus-visible ring is keyboard/AT-triggered regardless of device, so it steps
+       unconditionally; :hover alone gates on @media (hover: hover), since a touch tap fires
+       :hover with no release event and could otherwise strand this deeper wash on the
+       last-tapped button, the same reasoning the selected segment's own hover step documents
+       below. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-      .btn-soft.btn-primary:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):is(
-        :hover,
-        :focus-visible
-      ) {
+      .btn-soft.btn-primary:not(
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ):focus-visible {
       --btn-bg: color-mix(in oklab, var(--color-primary) 15%, transparent);
+    }
+    @media (hover: hover) {
+      :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+        .btn-soft.btn-primary:not(
+          .btn-disabled,
+          :disabled,
+          [disabled],
+          [aria-disabled='true']
+        ):hover {
+        --btn-bg: color-mix(in oklab, var(--color-primary) 15%, transparent);
+      }
     }
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .btn-soft.btn-primary:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):active {
@@ -1292,6 +1341,49 @@
       }
     }
 
+    /* The uncolored outline/dash wash, S3 Q5: daisyUI's own selected-control rule
+       (`.btn-active`/aria-pressed/etc., in daisyui.l1.l2) fills an outline or dashed button with
+       `color-mix(in oklab, var(--btn-color, var(--color-base-200)) , #000 5%)`, and with no color
+       variant `--btn-color` is unset, so the fallback is a straight 5% BLACK mix into base-200:
+       barely visible in light (base-200 already near-white) and a near-black hole in dark (base-200
+       already dark), one wash reading two different directions across the two themes. Excluding
+       every color variant (a colored outline keeps daisyUI's own tinted fill, matching the ink
+       repair rule below) and reusing the neutral wash's own warm-tinted recipe instead gives the
+       plain selected outline/dash the identical one-direction wash the plain selected button
+       already carries. --btn-fg resets to the plain ink for the same reason the neutral wash rule
+       above resets it: daisyUI's own :checked rule sets --btn-color to --color-primary and --btn-fg
+       to --color-primary-content on ANY checked .btn regardless of variant (a checked radio styled
+       as a join segment, this rule's own :checked form), and this rule's own --btn-bg already
+       overrides that primary tint on the fill; leaving --btn-fg unreset would pair a
+       primary-content ink against this neutral wash instead of against the primary fill it was
+       meant to sit on, failing contrast outright. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .btn:is(.btn-outline, .btn-dash):not(
+        .btn-primary,
+        .btn-secondary,
+        .btn-accent,
+        .btn-neutral,
+        .btn-info,
+        .btn-success,
+        .btn-warning,
+        .btn-error,
+        .btn-link,
+        .btn-disabled,
+        :disabled,
+        [disabled],
+        [aria-disabled='true']
+      ):is(
+        .btn-active,
+        [aria-pressed='true'],
+        [aria-checked='true'],
+        [aria-current]:not([aria-current='false'], [aria-current='']),
+        :checked:not(.filter [type='radio'].btn)
+      ) {
+      --btn-bg: color-mix(in oklab, var(--color-base-content) 7%, var(--color-base-100));
+      --btn-fg: var(--color-base-content);
+      font-weight: 600;
+    }
+
     /* The outline/dash ink repair for a selected control, widened: moved out of the unlayered
        block and widened from .btn-active alone to every one of the five selected forms, since the
        selected-segment rule above now keys on all five and an outline or dashed button selected by
@@ -1379,9 +1471,15 @@
        sized to its own panel. Keyed on the dropdown-content/menu pair specifically (a developer's
        own `<ul class="dropdown-content menu">`), since a plain sidebar or inline .menu with no
        dropdown-content already reads the ambient value correctly and needs no adjustment. Sets the
-       variable, not border-radius directly, so an item's own rounded-none utility still wins. */
+       variable, not border-radius directly, so an item's own rounded-none utility still wins.
+       The same rule also carries the warm elevation vocabulary onto the panel: daisyUI's own
+       `.dropdown-content` sets no box-shadow of its own (a developer reaches for a Tailwind
+       `shadow-sm` for that, the theme-kit fixture's own prior markup did), which paints DaisyUI's
+       stock achromatic shadow rather than the theme's warm one; `.modal-box` gets the identical
+       repair below for the same reason. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .dropdown-content.menu {
       --radius-field: calc(var(--radius-box) - 0.25rem);
+      box-shadow: var(--cairn-shadow);
     }
 
     /* The unchecked checkbox/radio edge, moved out of the unlayered block: a components-layer rule

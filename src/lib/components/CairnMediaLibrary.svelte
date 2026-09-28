@@ -980,7 +980,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </button>
     </div>
 
-    <div class="flex flex-col gap-5 overflow-y-auto p-4">
+    <div class="flex flex-col gap-5 overflow-y-auto p-4 pb-8">
       <!-- The large preview, object-fit contain on the quiet mat, with the broken-image affordance. -->
       <div class="flex aspect-[16/10] items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
         {#if brokenHashes.has(asset.hash)}
@@ -1264,5 +1264,16 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      allowlist a rename would silently orphan. */
   .cairn-ml-name {
     --cairn-naming-hook: true;
+  }
+
+  /* The grid/list density toggle is hand-rolled (no daisyUI `.btn` class of its own), so it never
+     picked up the size step's `--size-field` bump the neighboring `btn-sm` orphan-scan trigger
+     reads automatically; explicit height and width (the toggle's targets are square) keep it
+     level with that neighbor at any `--size-field` value, the same technique ListToolbar's own
+     'menu' facet chrome uses for the identical reason (a plain element carries no
+     `--size-field`-driven size of its own). */
+  [aria-label='Layout density'] > button {
+    height: calc(var(--size-field, 0.25rem) * 8);
+    width: calc(var(--size-field, 0.25rem) * 8);
   }
 </style>

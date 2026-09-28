@@ -326,13 +326,16 @@ Filtering, sorting, and paging run over the loaded entries in component state.
        grid columns (an icon-plus-message alert's own intended shape). Below `sm`, `grid-flow-row`
        plus a single-column template stack the title, the body paragraph, and the link list instead
        of crushing them into a narrow auto-sized column; at `sm` and above the alert keeps its
-       existing column layout. -->
+       existing column layout. Each stacked `<p>` carries `m-0`: the admin omits global Preflight, so
+       a bare `<p>` keeps the browser's own UA block margin, which does not collapse between CSS grid
+       items and so stacks on top of the grid's own 1rem gap, roughly tripling the title-to-body
+       space. -->
   <div class="alert alert-error mb-4 max-sm:grid-flow-row max-sm:grid-cols-1 items-start type-body">
-    <p class="font-medium">This {refusedNoun} could not be deleted.</p>
+    <p class="m-0 font-medium">This {refusedNoun} could not be deleted.</p>
     {#if deleteRefused.inboundKind === 'include'}
-      <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
+      <p class="m-0">{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}
-      <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+      <p class="m-0">{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     {/if}
     <ul class="mt-1 w-full">
       {#each deleteRefused.inboundLinks as link (link.concept + '/' + link.id)}

@@ -23,7 +23,7 @@ Warm Stone admin theme ships as a CSS side effect of the import. The TypeScript 
 against them.
 
 Anything built on this surface shares the shell and theme's design grammar: an emphasis ladder for
-buttons and states, reserved semantic colors, a status-pill family, and a documented spacing scale.
+buttons and states, reserved semantic colors, a status-chip family, and a documented spacing scale.
 A custom screen composed from these components and the theme's tokens uses the same tokens as the
 built-in views. The shell composes its chrome at every width, and the components recompose rather
 than squeeze, so a screen built from them adapts from phone to ultrawide without added per-screen
@@ -160,12 +160,12 @@ button whose confirm dialog lists the held entries grouped by concept and posts 
 `?/publishAll` action to the absolute `/admin` catch-all. A null pending set (GitHub unreachable)
 hides the button rather than showing a stale count.
 
-**Attention pills.** `data.attention` (see [the attention seam](./sveltekit.md#the-attention-seam))
-decorates a visible nav entry with a quiet count pill when its `href` carries a positive count; a
-zero or absent count renders no pill at all, never a "0" one. A collapsed section's header shows
+**Attention badges.** `data.attention` (see [the attention seam](./sveltekit.md#the-attention-seam))
+decorates a visible nav entry with a quiet count badge when its `href` carries a positive count; a
+zero or absent count renders no badge at all, never a "0" one. A collapsed section's header shows
 the sum of its visible children's own counts, computed from the same `data.attention` record the
-leaf pills read, never a separate total, so the header sum and its children can never drift out of
-sync; the header's pill disappears once the section opens (the item pills remain, since they carry
+leaf badges read, never a separate total, so the header sum and its children can never drift out of
+sync; the header's badge disappears once the section opens (the item badges remain, since they carry
 their own accessible names). Every count caps its display at `99+`. The count lives in the entry
 link's accessible name ("Asset requests, 3 pending requests"), built from the item's `label`
 (defaulting to "pending items"); the pill span itself is `aria-hidden`, so a screen reader

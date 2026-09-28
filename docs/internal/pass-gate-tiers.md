@@ -22,7 +22,8 @@ rule would otherwise swallow, so they have to be tried before the broader tiers 
 diff resolves to the highest tier present.
 
 Each npm tier's gate string is a strict superset of the npm tier below it: `scripts`/`engine` add
-`check && test` on top of the `docs` string, `admin-visual` adds the admin-visual spec run on top
+`check`, the node test projects, and the component project run serially (`--no-file-parallelism`)
+on top of the `docs` string, `admin-visual` adds the admin-visual spec run on top
 of that, and `full` adds the remaining CI-only checks plus the whole showcase e2e suite on top of
 `admin-visual`. A sixth tier, `tool`, stands outside that chain (see below).
 

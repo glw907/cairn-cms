@@ -1,3 +1,79 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+This window ships as a minor, `0.98.0` planned, because it restyles every consumer's admin; a
+caret patch must not carry a visible retheme. A hotfix before that cut branches from `v0.97.0`.
+
+### Changed
+
+- The admin's look now lives in daisyUI's theme layer. The two admin themes (`cairn-admin` and
+  `cairn-admin-dark`) are daisyUI theme blocks, and every rule that overrides a daisyUI
+  declaration sits in one named sublayer, `utilities.cairn-idiom`, pinned after daisyUI's own.
+  What an editor sees:
+  - One corner ladder: 4px for chips and small markers (`--radius-selector`), 6px for controls
+    (`--radius-field`), and 8px for cards and dialogs (`--radius-box`). The engine's own markup
+    writes `rounded-selector`, `rounded-field`, or `rounded-box`, never a fixed radius.
+  - A plain `btn` is a hairline button: a quiet 22% edge on the base fill, with a small hover
+    step. A checked or pressed `btn` renders as the selected segment (a wash, a hairline, and
+    weight 600), in any of five forms: `.btn-active`, `aria-pressed="true"`,
+    `aria-checked="true"`, `aria-current`, or `:checked`. `btn-link` and color variants keep
+    their own look.
+  - Calmer type: page headings at weight 550, plain and ghost button labels at 500.
+  - Quiet alerts: each of the four status alerts is a tinted panel with a hairline edge and an
+    accessible ink. daisyUI's `alert-soft`, `alert-outline`, and `alert-dash` keep daisyUI's
+    look.
+  - A round switch knob, concentric corners inside menus, and one icon stroke weight.
+  - The size step: `--size-field` moves from `0.25rem` to `0.28125rem`, so a `btn-sm` or
+    `input-sm` renders 36px tall instead of 32px, and a default control 45px instead of 40px.
+  - A modal carries the admin's warm shadow.
+
+  The admin sheet now compiles every daisyUI component and utility class except calendar: 580
+  daisyUI classes, up from the 217 cairn's own markup used. A custom admin screen can use any
+  daisyUI class and it renders under cairn's theme. The minified sheet grows about 1.7x gzipped
+  (31.8 KB to 53.2 KB measured at design time) and loads only on `/admin/**`. The compatibility
+  safelist also grows: every class the sweep retired from the engine's own markup (`shadow-none`,
+  `rounded`, `rounded-sm`, `rounded-md`, `rounded-lg`, `rounded-xl`, `rounded-t-2xl`,
+  `rounded-[0.55rem]`, `rounded-[var(--radius-field)]`, `hover:bg-[var(--cairn-ink-hover)]`, and
+  `hover:bg-primary/15`) stays compiled, so a consumer's markup that uses one renders as before.
+
+  `cairn-audit`'s ratified norms move with the theme: the `button-ghost`, `button-primary`,
+  `input-text`, and `select` radius bands go from 10px to 6px, `card` from 16px to 8px, and
+  `status-chip` from 8px to 4px; the control height bands follow the size step. The
+  `chip-ground-collision` rule no longer reads a `select`, a `textarea`, or an element carrying a
+  daisyUI control class (`btn`, `input`, `select`, `textarea`) as a chip.
+
+  Consumers must: nothing. A site with custom admin screens should re-check them, because a plain
+  daisyUI class there now renders cairn's ladder and hairlines, and a fixed Tailwind radius
+  (`rounded-lg`) does not follow the ladder. Write `rounded-selector`, `rounded-field`, or
+  `rounded-box` to follow it.
+
+- The Waymark starter's two themes (`src/theme/theme.css`) take the same corner ladder
+  (`0.25rem`, `0.375rem`, `0.5rem`), and an uncolored `btn-outline` or `badge-outline` gets a
+  hairline edge instead of daisyUI's full-ink default; a color variant such as
+  `btn-outline btn-primary` keeps its own edge. The file's citations of cairn-internal documents
+  now state their rule inline. Consumers must: nothing. A site scaffolded earlier can copy the
+  same rules from `templates/waymark/src/theme/theme.css`.
+
+### Fixed
+
+- The admin's overlay drawer (below the `lg` breakpoint) now moves focus into the drawer when it
+  opens. daisyUI keeps the drawer hidden for 0.1s after its toggle, so the single focus call ran
+  against a hidden element and did nothing; the shell now retries once per frame, bounded, until
+  focus lands.
+- Five destructive-confirmation controls (the orphan purge, the alt-fill overwrite, and the
+  type-to-confirm inputs in the media library and the replace dialog) now draw their resting edge
+  with `border-error`, at 5.0:1 in light and 5.6:1 in dark. The old edge measured under WCAG
+  1.4.11's 3:1 floor once the field edges moved into the theme layer.
+- The refused-delete banner on a concept list stacks its title, body, and links into one column
+  below `sm`, instead of crushing the body into a column about 60px wide at 320px.
+- The media insert popover stays inside the viewport vertically when the caret sits near the
+  bottom of a tall page.
+- `ListToolbar`'s segmented filter scrolls horizontally when it does not fit, instead of wrapping
+  its last option onto a second row, and its focus ring is no longer clipped.
+- `cairn-audit`'s `motion-vocabulary` rule now matches a theme root selector inside a
+  comma-separated selector list.
+
 ## 0.97.0
 
 <!-- release-size: minor -->

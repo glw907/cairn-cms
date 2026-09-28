@@ -1823,9 +1823,9 @@ rendered in the shell's foot slot, engine order, empty once every screen was ref
 
 ## The attention seam
 
-A site surfaces its own pending-work counts as quiet pill badges on the sidebar, the shell's
+A site surfaces its own pending-work counts as quiet count badges on the sidebar, the shell's
 answer to "what needs my attention right now": an unreviewed signup queue, an unread message
-inbox, whatever a site's own domain tracks. The engine renders the pills; the site computes what
+inbox, whatever a site's own domain tracks. The engine renders the badges; the site computes what
 counts. Stability tier: Unstable API for the `attention` dep itself (grouped with the other
 `ContentRoutesConfig` members), Extension API for the `AttentionItem` shape it returns.
 
@@ -1842,9 +1842,9 @@ interface AttentionItem {
 ```
 
 One pending-work badge a site's `attention` dep contributes for one nav entry. `href` names the
-admin route whose nav entry carries the pill, the same href a resolved nav entry or engine door
-already carries; it is also the pill's click-through target. `count` is the pending actionable
-count; a zero or negative `count` is dropped rather than rendering a "0" pill. `label` is the
+admin route whose nav entry carries the badge, the same href a resolved nav entry or engine door
+already carries; it is also the badge's click-through target. `count` is the pending actionable
+count; a zero or negative `count` is dropped rather than rendering a "0" badge. `label` is the
 accessible noun for the count ("pending requests"), joined into the entry's accessible name
 ("Asset requests, 3 pending requests"); it defaults to `'pending items'`.
 
@@ -1898,10 +1898,10 @@ inside its own callback and returns an empty array rather than letting it propag
 the shell payload serializes an empty record and renders exactly as before this seam existed.
 
 [`CairnAdminShell`](./components.md#cairnadminshell) renders the surviving items: a quiet count
-pill on the matching visible nav entry, capped at `99+`; a collapsed section's header shows the
-sum of its visible children's counts, computed from the same live items as the leaf pills, and
-disappears once the section opens (the item pills remain); the count lives in the entry link's
-accessible name, never on the pill span itself, which is `aria-hidden`. That is the rendering
+badge on the matching visible nav entry, capped at `99+`; a collapsed section's header shows the
+sum of its visible children's counts, computed from the same live items as the leaf badges, and
+disappears once the section opens (the item badges remain); the count lives in the entry link's
+accessible name, never on the badge span itself, which is `aria-hidden`. That is the rendering
 contract in full. See [Organize your admin nav](../extend/organize-your-admin-nav.md) for the
 layout these counts attach to.
 

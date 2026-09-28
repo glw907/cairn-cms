@@ -285,12 +285,60 @@ The original decision framing, for the record:
 - **Theme identity, passes A, B, and C (Geoff, 2026-09-26 and 2026-09-27).** cairn's own look moves
   into the daisyUI theme layer, and the public site gets one theme contract that any theme can meet.
   Pass A (the admin theme, spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`) is
-  executing on `theme-identity-a`. Passes B and C share one spec,
+  closed on `theme-identity-a` (PR #92), unmerged; Geoff's before-and-after sitting (its S3) is
+  still to run, and any correction it asks for lands on that branch and merges forward into B.
+  Pass B's plan (branch `theme-b-plan`) is reviewed and runs next, from A's closed head. Passes B and C share one spec,
   `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renames `./components` to
   `./admin` and ships the admin agent path; C is the one public theme (`cairn-public.css`, derived
   inks, heading levers, the three public audit rules, the `cairn-public` skill, and the designer
   walkthrough's template fixes). B stays unmerged, C branches from it, and both merge at C's close
   with one `0.98.0` cut carrying A, B, and C. Draft documentation (below) waits for C.
+
+- **Theme identity pass A's carried items (pass A close, 2026-09-28).** Each is small and none
+  blocked the close. Trigger: Geoff's S3 sitting on pass A (a correction there lands on
+  `theme-identity-a` and merges forward), else the first pass after it that edits
+  `cairn-admin.css` or the named component, and in any case before the `0.98.0` cut ships the
+  retheme to every consumer.
+  - The theme-kit fixture's error alert shows about a 50px gap between its title and body at 390,
+    and a 73px panel at 1440 against 46px for the other alerts. `ConceptList`'s refused-delete
+    banner uses the same markup (`max-sm:grid-flow-row max-sm:grid-cols-1` on a grid `.alert`),
+    so it likely shares the gap. Measure both, then fix the stacking recipe once.
+  - At 320 the top-bar search trigger truncates to "S." (pre-existing,
+    `CairnAdminShell.svelte`, the palette trigger's `max-w-md` flex row).
+  - The command palette's focus ring clips at the panel top (pre-existing).
+  - The soft primary's hover step sits outside `@media (hover: hover)`
+    (`cairn-admin.css`, the `.btn-soft.btn-primary` `:is(:hover, :focus-visible)` rule), the one
+    `cairn-idiom` hover value that breaks the modality-gate ruling. Split it the way the selected
+    segment's rules are split. The Write/Preview tab seam rules in `EditorToolbar.svelte`'s scoped
+    style carry an ungated `:hover` too.
+  - The theme-kit fixture (`examples/showcase/src/routes/admin/theme-kit/+page.svelte`) has no
+    `<svelte:head><title>`, its four `<section>`s carry no accessible name, and its forced-open
+    dropdown trigger has no `aria-expanded`.
+  - `CairnTidySettings.svelte`'s variant radiogroup container carries `overflow-hidden`
+    (pre-existing), which may clip an outward focus ring on its segments; check it.
+  - S1's cosmetic and owner-taste items wait for the same sitting: the status chips' quiet gray
+    fill against the reference's white outline chips, the outline role chip's 55% edge beside the
+    plain button's 22%, the plain button's 5% hover step, the kit radio join's 1-2px seam, the
+    kit `btn-outline btn-active` disagreeing between themes, the kit dropdown's black
+    `shadow-sm`, the media grid/list toggle and the editor footer controls missing the size step,
+    the bottom sheet's where-used row scrolling under its edge at 390, the settings "On" chips
+    rendering as wide gray bars, and the 20x20 numbered step markers now on `rounded-selector`
+    rather than circles. The record is the plan's ledger
+    (`docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`, "S1").
+  - Coverage notes the `paint` class batched rather than blocked on: the destructive-edge contrast
+    test proves the ratio but not that `border-error` wins the cascade over the 55% field edge;
+    the disabled-stock switch test covers the `:checked` form only; `::before` carries no
+    `transition: none`; the bare `.alert` oracle does not prove `--alert-color` unset;
+    `alert-ink-contrast.test.ts` copies its tone and ink values by hand; no component test
+    covers `alert-outline` or `alert-dash` on a colored variant; `screen-anatomy.test.ts`'s
+    fixture still reads `type-title font-bold` where the page heading is now 550.
+  - The showcase's public `theme.css` carries an unscoped `.btn-outline` rule that reaches the
+    admin's outline-button edges too, whichever order the sheets load in. Scope it to the public
+    site; pass C's public-theme work is the natural home.
+  - Runner friction (`~/.claude/workflows/pass-execute.js`, a dotfiles fix filed here because
+    cairn passes hit it): `diff-reviewer` reads a gate-string addition the task's criteria permit
+    (a new sibling test file on the unit leg) as a MISMATCH, and the runner's resolved gate string
+    cannot learn the added file.
 
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25).** cairn's docs are still
   to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,
@@ -891,12 +939,13 @@ the named human gates only):**
     command, match nothing any report prints; and a command written inline in prose is not run
     until the page puts it in a fence. Trigger: the reset's admin-arm drafting.
 
-- **The Waymark template's theme files cite cairn-internal documents a scaffolded site does not
-  carry (docs reset pass 1 validation, 2026-09-24).** `templates/waymark/src/theme/theme.css:6,68,201`,
-  `site.css:18,34`, and `src/chassis/prose.css:40` point at `docs/internal/public-design-system.md`
-  and `docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`. A designer reader
-  followed one and found nothing. Point the comments at a published page or state the rule inline.
-  Trigger: the next pass that edits the template's CSS.
+- **The Waymark template's `site.css` and `prose.css` cite cairn-internal documents a scaffolded
+  site does not carry (docs reset pass 1 validation, 2026-09-24).** `templates/waymark/src/theme/site.css:18,34`
+  and `src/chassis/prose.css:40` point at `docs/internal/public-design-system.md` and
+  `docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`. A designer reader followed
+  one and found nothing. Point the comments at a published page or state the rule inline. Theme
+  identity pass A fixed the same cites in `theme.css`. Trigger: the next pass that edits either
+  file (pass C's template sweep is the likely one).
 
 - **Real defects the pass 1 readers found on current pages (2026-09-24).** The pass changed no
   published page, and the reset rebuilds these pages from the container, so each is evidence for
@@ -2497,6 +2546,23 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **Move pinned unlayered rules 1 to 9 into the `cairn-idiom` sublayer (theme identity pass A,
+  2026-09-28).** Pass A moved rules 10 to 14 into `utilities.cairn-idiom` and retired their pins.
+  Rules 1 to 9 stay pinned and unlayered in `src/lib/components/cairn-admin.css`; rule 2, the
+  guarded-button rule, stands under the timing-scoped reading of decision 4
+  (`docs/internal/engine-rulings.md`, `motion-conform-to-daisyui-conventions`). Moving the rest is
+  a ratchet shrink: each move takes an entry out of `unlayeredAllowlist` in
+  `scripts/checks/custom-surface-budget.json` and needs its own full-state test. The nine
+  comments still count "of 14"; renumber them in the same pass. Trigger: a pass that edits one of
+  those rules, or the pre-1.0 CSS audit.
+
+- **Retire `ADMIN_CSS_SAFELIST` (theme identity pass A, 2026-09-28).** The admin build now compiles
+  every daisyUI class except calendar, so the list in `src/lib/components/admin-css-safelist.ts`
+  no longer decides which daisyUI classes ship; its own header says it stays only as a grouped,
+  explained vocabulary. Retire it, or reduce it to the non-daisyUI names it still documents, and
+  move the explanation to `docs/reference/admin-toolkit.md`. Trigger: pass B's rename of
+  `src/lib/components/` (the file moves anyway), or the next pass that edits it.
 
 - **Symbol-anchored `Source:` pointers for the Go `tool/` tree (docs reset pass 1, 2026-09-23).**
   `check:facts` resolves `path#Symbol` only for `.ts` and `.js` files under `src/`, through the

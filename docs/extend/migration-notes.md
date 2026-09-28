@@ -9,6 +9,17 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
+## Unreleased
+
+The release step sets the version number at the cut and renames this section to match it.
+
+- **Re-check any custom admin screen.** Nothing is required, but the admin now takes its look
+  from daisyUI's theme layer. A plain daisyUI class on your own screen renders cairn's corner
+  ladder and hairline edges, a plain `btn` is a hairline button, and a checked or pressed `btn`
+  renders as the selected segment. A fixed Tailwind radius such as `rounded-lg` still renders,
+  but it does not follow the ladder. Write `rounded-selector`, `rounded-field`, or `rounded-box`
+  to follow it.
+
 ## 0.97.0
 
 - **Run `npx cairn-manifest` once and commit the new `src/content/.cairn/site-facts.json`.**

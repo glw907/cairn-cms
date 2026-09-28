@@ -63,9 +63,10 @@ fail.
   2026-09-08). Serial lists in a heading ("Roles, capability, and the access map") are not
   this tell.
 - **The voice is technical and academic (Geoff, 2026-09-08; scope restated 2026-09-28).** It
-  governs every published page on every track, and cairn writing broadly: READMEs, the
-  changelog, admin copy, and cairn.pub. Internal specs and plans are written in it but not
-  graded against it. The prose reads as a technical report or a systems paper's introduction:
+  governs every published page on every track, and cairn's public-facing writing broadly:
+  READMEs, the changelog, admin copy, and cairn.pub. It is a standard for public-facing
+  writing only. Internal specs, plans, and agent-facing documents take whatever voice is most
+  effective for Claude Code (Geoff, 2026-09-28). The prose reads as a technical report or a systems paper's introduction:
   measured, precise, with qualification carried inside the sentence rather than split off,
   and a restrained first person only where the author's own evidence is stated. It is not a
   blog post and it is not graded against general written norms. The comparison set is

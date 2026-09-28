@@ -12,6 +12,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -26,6 +27,14 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/health"
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
+
+// errNonLiteralConstValue is cairnCatalogue's named error for a package-level const whose value
+// is neither a bare string literal, a `+`-fold of string literals, nor some other kind of literal
+// (an int, a float, a char, or an imaginary value, none of which this catalogue tracks). A const
+// built from a reference to another identifier, a function call, or a fold that mixes a string
+// with something else stops the generator rather than silently leaving a string out of the
+// golden.
+var errNonLiteralConstValue = errors.New("const value is not a string literal, a fold of string literals, or a non-string literal")
 
 // cairnMessagesPath resolves cmd/cairn's own messages table from this source file's own
 // location via runtime.Caller, so the parse below finds it regardless of the caller's working
@@ -91,19 +100,58 @@ func cairnCatalogue(path string) ([]string, error) {
 				continue
 			}
 			for _, val := range vs.Values {
-				lit, ok := val.(*ast.BasicLit)
-				if !ok || lit.Kind != token.STRING {
-					continue
-				}
-				s, err := strconv.Unquote(lit.Value)
+				s, isString, err := foldStringConst(val)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("%s: %w", fset.Position(val.Pos()), err)
+				}
+				if !isString {
+					continue
 				}
 				entries = append(entries, s)
 			}
 		}
 	}
 	return entries, nil
+}
+
+// foldStringConst returns val's string value when val is a bare string literal or a `+`-fold of
+// string literals, parenthesized or not; isString reports whether val is a string at all, since a
+// literal of another kind (an int, a float, a char, or an imaginary value) folds to "" with ok
+// false and no error, plainly not an operator-facing string this catalogue tracks. Any other
+// shape, a reference, a call, or a fold mixing a string operand with a non-string one, returns
+// errNonLiteralConstValue.
+func foldStringConst(val ast.Expr) (value string, isString bool, err error) {
+	switch v := val.(type) {
+	case *ast.ParenExpr:
+		return foldStringConst(v.X)
+	case *ast.BasicLit:
+		if v.Kind != token.STRING {
+			return "", false, nil
+		}
+		s, err := strconv.Unquote(v.Value)
+		if err != nil {
+			return "", false, err
+		}
+		return s, true, nil
+	case *ast.BinaryExpr:
+		left, leftIsString, err := foldStringConst(v.X)
+		if err != nil {
+			return "", false, err
+		}
+		right, rightIsString, err := foldStringConst(v.Y)
+		if err != nil {
+			return "", false, err
+		}
+		if v.Op == token.ADD && leftIsString && rightIsString {
+			return left + right, true, nil
+		}
+		if !leftIsString && !rightIsString {
+			return "", false, nil
+		}
+		return "", false, errNonLiteralConstValue
+	default:
+		return "", false, errNonLiteralConstValue
+	}
 }
 
 // sortedUnique returns entries sorted and de-duplicated, so a string two tables happen to share

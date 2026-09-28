@@ -275,7 +275,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:plng3z` A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency in
   `package.json` is not a cairn-cms site: the run prints one line, exits 3, and settles no check.
   Source: `tool/internal/doctor/fileread.go:89-104`, `tool/cmd/cairn/doctor.go:60-61,113-129`,
-  `tool/cmd/cairn/messages.go:322-330`. [verified]
+  `tool/cmd/cairn/messages.go:323-331`. [verified]
 - `f:ee48yi` `--json` is the command's own flag and writes the payload instead of the report; it beats
   `--quiet`, so the payload always prints under `--json`. Source:
   `tool/cmd/cairn/doctor.go:42,88-97`, `tool/cmd/cairn/messages.go:309`. [verified]
@@ -398,7 +398,7 @@ re-sourced to Go on this tree rather than to the page.
   `tool/cmd/cairn/health.go:58`, `tool/cmd/cairn/root.go:235`. [verified]
 - `f:zlqdbn` The absence rule above covers only the default file. An `--ack-file` path the operator names
   explicitly and that does not exist, or cannot be read, is a usage error. Source:
-  `tool/cmd/cairn/messages.go:557,562`, `tool/cmd/cairn/messages.go:570-573`. [candidate: filed
+  `tool/cmd/cairn/messages.go:558,563`, `tool/cmd/cairn/messages.go:571-574`. [candidate: filed
   during the cli-cairn-exit-codes.md redraft, 2026-09-22, re-sourced against `main`]
 - `f:50ifoh` An exit code is decided in exactly two ways, which cannot disagree: a run that produced reports
   folds site verdicts, listing errors, and the expected site count; a run that produced no report

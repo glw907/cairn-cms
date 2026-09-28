@@ -309,9 +309,10 @@ func healthTooManyArgsError() error {
 // than copied, since the catalogue carries no row for a credential-less directory preflight.
 const (
 	shortDoctor = "Check a cairn-cms site's own configuration, no credential or deploy needed"
-	longDoctor  = "Check a cairn-cms site's checked-in configuration: bindings, CSRF wiring, the site config, " +
-		"and more, read straight off the directory. It needs no credential and no adopted site, and " +
-		"makes at most one network request, a GET of the declared origin's own /robots.txt.\n\n" +
+	longDoctor  = "Check a cairn-cms site's checked-in configuration, read straight off the directory. " +
+		"It covers bindings, CSRF wiring, the site config, and more. It needs no credential and no " +
+		"adopted site, and makes at most one network request, a GET of the declared origin's own " +
+		"/robots.txt.\n\n" +
 		"The report is plain text, so --color, --theme, and --width do not change it.\n\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
 		"Run `cairn health` after deploying to reach the checks that need a live site."

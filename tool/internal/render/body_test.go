@@ -302,7 +302,7 @@ func TestSectionLabels(t *testing.T) {
 // TestFixIsNeverTruncated is criterion 10: every word of a fix reaches the frame at every width,
 // and the tool's own bookkeeping about a missing page never does.
 func TestFixIsNeverTruncated(t *testing.T) {
-	fix, ok := health.FixForCode(spine.CodeDeployBuildFailed)
+	fix, ok := health.FixFor(spine.Outcome{Code: spine.CodeDeployBuildFailed})
 	if !ok {
 		t.Fatal("the fix table carries no line for a failed build")
 	}

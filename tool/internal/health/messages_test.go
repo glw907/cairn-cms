@@ -130,54 +130,34 @@ func assertDetailIsProseOrEmpty(t *testing.T, label, detail string) {
 	}
 }
 
-// TestMessagesAreProseOrEmpty drives every messages.go function that takes no argument, and a
-// representative call for each that does, asserting each result is either empty or prose-shaped.
-// This is the messages table's own half of criterion 5; the check bodies that consume these
-// functions are exercised by each check's own test file.
+// TestMessagesAreProseOrEmpty drives every messages.go function that takes an argument with a
+// representative call, and every zero-argument message through Catalogue's own output, asserting
+// each result is either empty or prose-shaped. An argument-carrying function keeps its own case
+// here because Catalogue lists the template it formats from rather than a rendered example (see
+// messageExemptions below); a zero-argument function needs no such case, since calling it is
+// exactly what Catalogue already does.
 func TestMessagesAreProseOrEmpty(t *testing.T) {
 	fixedExpiry := time.Date(2026, 9, 26, 0, 0, 0, 0, time.UTC)
 	fixedNow := fixedExpiry.Add(-6 * 24 * time.Hour)
 
 	cases := map[string]string{
-		"detailHTTPSAlwaysUseHTTPSOff":          detailHTTPSAlwaysUseHTTPSOff(),
-		"detailHTTPSHSTSOff":                    detailHTTPSHSTSOff(),
-		"detailHTTPSBothOff":                    detailHTTPSBothOff(),
-		"detailHTTPSNoAlwaysUseHTTPSSetting":    detailHTTPSNoAlwaysUseHTTPSSetting(),
-		"detailDelegationWrongNameservers":      detailDelegationWrongNameservers(),
-		"detailDelegationNoAssignedNS":          detailDelegationNoAssignedNS(),
-		"detailDelegationNoZone":                detailDelegationNoZone(),
-		"detailServingHostnameMismatch":         detailServingHostnameMismatch(),
-		"detailServingNotCairn":                 detailServingNotCairn(),
-		"detailEmailDMARCMissing":               detailEmailDMARCMissing(),
-		"detailEmailDMARCPolicyNone":            detailEmailDMARCPolicyNone(),
-		"detailEmailDMARCNoPolicy":              detailEmailDMARCNoPolicy(),
 		"detailEmailSPFMissing":                 detailEmailSPFMissing(cloudflareSPFInclude),
-		"detailEmailDKIMMissing":                detailEmailDKIMMissing(),
-		"detailEmailSenderNotOnboarded":         detailEmailSenderNotOnboarded(),
-		"detailDeployWorkerNotFound":            detailDeployWorkerNotFound(),
-		"detailDeployBuildsNotConnected":        detailDeployBuildsNotConnected(),
-		"detailDeployBuildFailed":               detailDeployBuildFailed(),
-		"detailPublishNothingWaiting":           detailPublishNothingWaiting(),
-		"detailNoRepoRecorded":                  detailNoRepoRecorded(),
 		"detailPublishStaleBranches(1)":         detailPublishStaleBranches(1),
 		"detailPublishStaleBranches(3)":         detailPublishStaleBranches(3),
 		"detailEngineCurrent":                   detailEngineCurrent("0.78.0"),
 		"detailEngineBehind":                    detailEngineBehind("0.71.0", "0.78.0", 7),
 		"detailEngineBehindActionable":          detailEngineBehindActionable("0.71.0", "0.78.0", 7),
-		"detailEngineNoCairnDependency":         detailEngineNoCairnDependency(),
-		"detailEngineVersionNotFound":           detailEngineVersionNotFound(),
-		"detailErrorsObservabilityOff":          detailErrorsObservabilityOff(),
 		"detailErrorsCount":                     detailErrorsCount(0, false, time.Hour*24),
 		"detailErrorsCount(truncated)":          detailErrorsCount(1000, true, time.Hour*24),
 		"detailErrorsAboveThreshold":            detailErrorsAboveThreshold(31, false, time.Hour*24, 10),
 		"detailErrorsAboveThreshold(truncated)": detailErrorsAboveThreshold(1000, true, time.Hour*24, 10),
-		"detailCredsGitHubNoExpiry":             detailCredsGitHubNoExpiry(),
 		"detailCredsGitHubExpiring":             detailCredsGitHubExpiring(fixedExpiry, fixedNow),
-		"detailCredsUnauthorized":               detailCredsUnauthorized(),
-		"detailCredsForbidden":                  detailCredsForbidden(),
 	}
 	for label, detail := range cases {
 		assertDetailIsProseOrEmpty(t, label, detail)
+	}
+	for _, detail := range Catalogue() {
+		assertDetailIsProseOrEmpty(t, "Catalogue entry", detail)
 	}
 }
 
@@ -282,5 +262,105 @@ func TestEveryReasonCodeHasAPhrase(t *testing.T) {
 		if phrase == "" || strings.Contains(phrase, "reason.") {
 			t.Errorf("the phrase for %q is %q, which is not prose", r, phrase)
 		}
+	}
+}
+
+// messageExemptions names a messages.go message declaration TestEveryMessageDeclarationReachesCatalogue
+// does not require Catalogue to name directly, with the reason: Catalogue lists the template
+// constant the function formats from instead of a value the function's own argument would have to
+// be invented to supply.
+var messageExemptions = map[string]string{
+	"detailEmailSPFMissing":        "Catalogue lists tmplEmailSPFMissing, the template this function formats, rather than a fabricated include mechanism",
+	"detailPublishStaleBranches":   "Catalogue lists the singular and plural templates this function chooses between, rather than a fabricated count",
+	"detailEngineBehind":           "Catalogue lists tmplEngineBehind, the template this function formats, rather than fabricated version numbers",
+	"detailEngineBehindActionable": "Catalogue lists tmplEngineBehind and its actionable suffix, the two templates this function joins",
+	"detailErrorsCount":            "Catalogue lists the two count templates this function chooses between, rather than a fabricated count",
+	"detailErrorsAboveThreshold":   "Catalogue lists the two threshold templates this function chooses between, rather than a fabricated count",
+	"detailCredsGitHubExpiring":    "Catalogue lists tmplCredsGitHubExpiring, the template this function formats, rather than a fabricated date",
+}
+
+// messageDeclarations parses path and returns every top-level detailXxx function and tmplXxx
+// constant it declares: the two shapes an operator-facing message in this package takes.
+func messageDeclarations(t *testing.T, path string) []string {
+	t.Helper()
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, path, nil, 0)
+	if err != nil {
+		t.Fatalf("parse %s: %v", path, err)
+	}
+	var names []string
+	for _, decl := range file.Decls {
+		switch d := decl.(type) {
+		case *ast.FuncDecl:
+			if d.Recv == nil && strings.HasPrefix(d.Name.Name, "detail") {
+				names = append(names, d.Name.Name)
+			}
+		case *ast.GenDecl:
+			if d.Tok != token.CONST {
+				continue
+			}
+			for _, spec := range d.Specs {
+				vs, ok := spec.(*ast.ValueSpec)
+				if !ok {
+					continue
+				}
+				for _, name := range vs.Names {
+					if strings.HasPrefix(name.Name, "tmpl") {
+						names = append(names, name.Name)
+					}
+				}
+			}
+		}
+	}
+	return names
+}
+
+// catalogueReferencedIdentifiers parses path and returns every identifier Catalogue's own
+// function body references, so TestEveryMessageDeclarationReachesCatalogue can tell a message
+// this package declares from one Catalogue actually names.
+func catalogueReferencedIdentifiers(t *testing.T, path string) map[string]bool {
+	t.Helper()
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, path, nil, 0)
+	if err != nil {
+		t.Fatalf("parse %s: %v", path, err)
+	}
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "Catalogue" || fn.Body == nil {
+			continue
+		}
+		referenced := make(map[string]bool)
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			if id, ok := n.(*ast.Ident); ok {
+				referenced[id.Name] = true
+			}
+			return true
+		})
+		return referenced
+	}
+	t.Fatal("messages.go declares no Catalogue function; the completeness proof has nothing to check against")
+	return nil
+}
+
+// TestEveryMessageDeclarationReachesCatalogue asserts every detailXxx function and tmplXxx
+// constant messages.go declares is either called or referenced inside Catalogue's own body, or
+// named in messageExemptions with a reason. Without this proof, a message function declared and
+// never wired into Catalogue would still print correctly at its own call site while silently
+// dropping out of `make copy-list`'s golden and the copy gate that reads it.
+func TestEveryMessageDeclarationReachesCatalogue(t *testing.T) {
+	declared := messageDeclarations(t, "messages.go")
+	if len(declared) == 0 {
+		t.Fatal("found no detailXxx function or tmplXxx constant in messages.go; the AST walk is broken")
+	}
+	referenced := catalogueReferencedIdentifiers(t, "messages.go")
+	for _, name := range declared {
+		if referenced[name] {
+			continue
+		}
+		if _, exempt := messageExemptions[name]; exempt {
+			continue
+		}
+		t.Errorf("%s is declared in messages.go but Catalogue does not reference it, and no exemption names a reason", name)
 	}
 }

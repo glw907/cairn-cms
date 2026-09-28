@@ -96,7 +96,7 @@ func staleBranchCount(branches []providers.Branch, botCommitAt, now time.Time) i
 // same verdict also fires when the repository already carries a bot commit, which proves the App
 // did reach and write it, so blaming the App would mislead.
 func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
-	if !HasRepo(r) {
+	if !hasRepo(r) {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonRepoNotRecorded, Detail: detailNoRepoRecorded()}
 	}
 	owner, repo := r.GitHub.Repo.Owner, r.GitHub.Repo.Repo

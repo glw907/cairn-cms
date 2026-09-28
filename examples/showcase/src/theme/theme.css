@@ -275,6 +275,25 @@
    own `currentColor` edge. */
 @layer utilities {
   @layer site-theme {
+    .btn-outline {
+      --btn-border: var(
+        --btn-color,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent)
+      );
+    }
+
+    .badge-outline:not(
+      .badge-primary,
+      .badge-secondary,
+      .badge-accent,
+      .badge-neutral,
+      .badge-info,
+      .badge-success,
+      .badge-warning,
+      .badge-error
+    ) {
+      border-color: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    }
   }
 }
 

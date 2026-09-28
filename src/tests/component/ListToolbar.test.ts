@@ -876,8 +876,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
   });
 
   // The Members-refinement-round-1 recomposition: the band is a flat flex row (not the prior
-  // grid), search/select/facet controls force one shared 30px height rather than trusting
-  // input-sm/btn-sm to already agree, and the search/count text land at the ruled 13px.
+  // grid), search/select/facet/segmented controls share one row height because they all derive
+  // from --size-field, and the search/count text land at the ruled 13px.
   it('lays out the band as a wrapped flex row, not a grid', async () => {
     const screen = await render(ListToolbar, {
       search: '',
@@ -893,7 +893,11 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(style.flexWrap).toBe('wrap');
   });
 
-  it('forces the search box and the menu facet control to the same 30px height', async () => {
+  // Was 30px (a hand-pinned height on both elements, task 15 item 1): `--size-field`'s
+  // `0.28125rem` step now makes `input-sm` and `btn-sm` agree on their own, so the search box
+  // needs no forced height at all, and the facet container (a plain div) matches them at 36px
+  // through the same `calc(var(--size-field) * 8)` formula daisyUI's own `-sm` variants use.
+  it('keeps the search box and the menu facet control at the same 36px row height', async () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
@@ -903,8 +907,35 @@ describe('ListToolbar layout (compiled CSS)', () => {
     });
     const search = screen.container.querySelector('.toolkit-toolbar-search')!;
     const facet = screen.container.querySelector('.toolkit-toolbar-facet')!;
-    expect(getComputedStyle(search).height).toBe('30px');
-    expect(getComputedStyle(facet).height).toBe('30px');
+    expect(getComputedStyle(search).height).toBe('36px');
+    expect(getComputedStyle(facet).height).toBe('36px');
+  });
+
+  // Task 15 item 1: the segmented join's own buttons used to be pinned to 30px, orphaned below
+  // the 36px header CTA. `btn-sm` now reads the same `--size-field` step as `input-sm`, so a
+  // segmented option needs no forced height either.
+  it('keeps a segmented filter option at the same 36px row height', async () => {
+    const screen = await render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [
+        {
+          id: 'publish-state',
+          label: 'Publish state',
+          display: 'segmented',
+          options: [
+            { value: 'all', label: 'All' },
+            { value: 'published', label: 'Published' },
+          ],
+          value: 'all',
+          onChange: () => {},
+        },
+      ],
+      count: 6,
+      itemLabel: 'entries',
+    });
+    const option = screen.container.querySelector('[role="radio"]')!;
+    expect(getComputedStyle(option).height).toBe('36px');
   });
 
   it('sets the search input and count line text to the ruled 13px (0.8125rem)', async () => {
@@ -952,7 +983,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
   // Regression: `.toolkit-toolbar-facet` (daisyUI's own `.dropdown`, `position: relative`) used to
   // carry `overflow: hidden` to tidy the trigger/clear corner. daisyUI's `.dropdown-content` is
   // `position: absolute`, so this element is its containing block -- `overflow: hidden` clipped the
-  // option list away entirely below the 30px-tall trigger, invisible in jsdom (no layout) and
+  // option list away entirely below the trigger, invisible in jsdom (no layout) and
   // undetected by any markup-only assertion (the list was present in the DOM, just unpainted).
   // This test only fails against real layout, hence the compiled-CSS/real-browser describe block.
   it("does not clip an open 'menu' facet's option list under its own container", async () => {
@@ -1003,7 +1034,9 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(getComputedStyle(value).textOverflow).toBe('ellipsis');
   });
 
-  it("restyles the 'select' variant to the shared 30px height and 13px text", async () => {
+  // Was 30px (task 15 item 1): `select-sm`'s own `--size-field`-derived height now agrees with
+  // `input-sm`/`btn-sm`, so only the font-size still needs restyling to the ruled 13px.
+  it("restyles the 'select' variant to the shared 36px row height and 13px text", async () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
@@ -1013,7 +1046,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
     });
     const select = screen.container.querySelector('.toolkit-toolbar-select')!;
     const style = getComputedStyle(select);
-    expect(style.height).toBe('30px');
+    expect(style.height).toBe('36px');
     expect(style.fontSize).toBe('13px');
   });
 
@@ -1063,7 +1096,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
   });
 
   // C2's family-harmony requirement: a select facet and a `'menu'` facet sitting side by side
-  // must read as one visual family (the same 30px height and 13px text already covered above,
+  // must read as one visual family (the same 36px row height and 13px text already covered above,
   // plus the same border treatment), not two different control vocabularies.
   it("harmonizes a select facet's border with the 'menu' facet's own border treatment", async () => {
     const screen = await render(ListToolbar, {

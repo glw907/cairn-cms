@@ -14,9 +14,11 @@ vocabulary is entirely the consumer's own filter definitions passed in, never ha
 
 The controls cluster is a single flex row (`flex-wrap: wrap`), not a grid: search grows and
 shrinks (`flex: 1 1 240px`, `min-width: 140px`) while every filter control keeps its own
-intrinsic width, and every control across the row (search, select, segmented, menu) shares one
-forced 30px height rather than trusting `input-sm`/`btn-sm` to already agree (they render
-slightly different heights in practice). `computeAppliedFilters` and `computeCountLine`
+intrinsic width. Every control across the row (search, select, segmented, menu) shares one
+height because `input-sm`/`select-sm`/`btn-sm` all derive their `--size` from the shared
+`--size-field` token, so no forced height is needed on a daisyUI-classed control; only the
+`'menu'` facet's own bordered container, a plain `div` with no daisyUI sizing of its own, still
+sets its height explicitly, from that same token. `computeAppliedFilters` and `computeCountLine`
 (imported from the sibling `list-toolbar.ts` module, the same split `Pagination` uses for its own
 windowing math) are the count line's scope-label source; there is no longer a separate
 applied-pills row (a refinement audit retired it: an applied filter now renders its value
@@ -24,7 +26,7 @@ in-control instead, on the `'menu'` display below).
 
 Graduation extensions over the graduated consumer-site contract (both additive, that consumer's
 own existing usage stays valid): a filter's `display` chooses `'select'` (the original contract,
-unchanged, restyled to the shared 30px height and 13px text and, since a coherence fix, `width:
+unchanged, restyled to the shared row height and 13px text and, since a coherence fix, `width:
 auto` so it sizes to its own content rather than daisyUI's fixed 320px clamp, `max-width: 100%`
 so it never exceeds its container, and a border tinted to the same `--cairn-card-border` a
 `'menu'` facet carries, so a select and a menu facet sitting side by side read as one control
@@ -422,11 +424,11 @@ reflows its neighboring characters.
 <style>
   /* Layout only: shape and color come from the daisyUI classes above, except the facet's own
      applied treatment (mixed from --color-primary, since no daisy utility carries that ratio),
-     the shared control height, and the muted count line, matching `Pagination`'s own range-line
-     color. Values stay literal where there's no shared token that survives an `/admin/**` route,
-     per the compiled-CSS constraint the header comment documents. Recomposed per the
-     refuter-verified recipe: flex row, forced 30px control height, the menu facet's applied
-     treatment and 14rem ellipsis cap. */
+     the facet container's own height, and the muted count line, matching `Pagination`'s own
+     range-line color. Values stay literal where there's no shared token that survives an
+     `/admin/**` route, per the compiled-CSS constraint the header comment documents. Recomposed
+     per the refuter-verified recipe: flex row, one control height across the row, the menu
+     facet's applied treatment and 14rem ellipsis cap. */
   .toolkit-toolbar {
     display: flex;
     flex-direction: column;
@@ -447,18 +449,17 @@ reflows its neighboring characters.
   .toolkit-toolbar-search {
     flex: 1 1 240px;
     min-width: 140px;
-    height: 30px;
   }
 
   /* Strips the browser's own `type="search"` chrome (a clear button, and on some engines a
      second, separately-drawn focus ring that layers on top of `.input`'s own themed one, reading
      as a doubled outline): `.input:focus-within`'s outline on the wrapping label then becomes the
-     only ring a reader sees. The forced height/font-size join every other control on the row's
-     shared 30px/13px sizing (input-sm's own size math does not already agree with btn-sm's). */
+     only ring a reader sees. Height is unset here: the wrapping `label.input.input-sm` already
+     sizes itself from `--size-field`, the same token `btn-sm` reads, so no forced height is
+     needed to keep this row's controls level. Only the font-size still joins every control on
+     the row at the ruled 13px. */
   .toolkit-toolbar-search :global(input) {
     appearance: none;
-    height: 30px;
-    min-height: 30px;
     font-size: var(--cairn-type-meta, 0.8125rem);
   }
 
@@ -479,8 +480,6 @@ reflows its neighboring characters.
     flex: 0 0 auto;
     width: auto;
     max-width: 100%;
-    height: 30px;
-    min-height: 30px;
     font-size: var(--cairn-type-meta, 0.8125rem);
     --input-color: var(--cairn-card-border);
   }
@@ -490,20 +489,16 @@ reflows its neighboring characters.
      count badges renders past 320px on its own, and the prior `flex: 0 0 auto` refused to yield
      that width back). The shrink half alone fixes the overflow; the group keeps its own no-grow
      basis rather than claiming free space from the row, so the toolbar stays flush right at
-     desktop widths. `flex-wrap: wrap` then wraps the group's own buttons onto a second line
-     inside whatever width it was given, rather than the whole row scrolling past the viewport. */
+     desktop widths. `overflow-x: auto` replaces a prior `flex-wrap: wrap` (task 15 item 2): the
+     `btn-sm` size step widened each segment enough that wrapping split the join across two rows,
+     orphaning its last option; a join reads as one control, never two, so it now scrolls
+     horizontally inside its own bounding box, contained by `max-width: 100%`, rather than
+     breaking onto a second line or letting the page itself scroll sideways. */
   .toolkit-toolbar-segmented {
     flex: 0 1 auto;
     min-width: 0;
     max-width: 100%;
-    flex-wrap: wrap;
-  }
-
-  /* The segmented buttons join the row's shared 30px control height, the same reasoning the
-     search box and the menu facet's own trigger already carry it. */
-  .toolkit-toolbar-segmented :global(button) {
-    height: 30px;
-    min-height: 30px;
+    overflow-x: auto;
   }
 
   /* The per-option count: visually secondary to its own label, opacity-dimmed (not a separate
@@ -514,9 +509,12 @@ reflows its neighboring characters.
     opacity: 0.65;
   }
 
-  /* The 'menu' facet's own box chrome: a quiet bordered pair (trigger plus optional clear),
-     sharing the toolbar row's 30px height. `display: inline-flex; align-items: stretch` stretches
-     both children to that height, since neither sets its own; `overflow` stays default (visible),
+  /* The 'menu' facet's own box chrome: a quiet bordered pair (trigger plus optional clear). This
+     element is a plain `div`, not a daisyUI-classed control, so it carries no `--size-field`-driven
+     height of its own; `calc(var(--size-field, 0.25rem) * 8)` matches the same multiplier
+     `input-sm`/`select-sm`/`btn-sm` use, so the facet stays level with the rest of the row at any
+     `--size-field` value. `display: inline-flex; align-items: stretch` stretches both children to
+     that height, since neither sets its own; `overflow` stays default (visible),
      since this element is also the panel's own `position: absolute` containing block (daisyUI's
      own `.dropdown`/`.dropdown-content` pair, via `ToolbarDisclosure`'s own always-applied
      `dropdown` class) and `hidden` would clip the panel away entirely rather than just tidy the
@@ -532,7 +530,7 @@ reflows its neighboring characters.
     display: inline-flex;
     align-items: stretch;
     flex: 0 0 auto;
-    height: 30px;
+    height: calc(var(--size-field, 0.25rem) * 8);
     border-radius: var(--radius-field);
     border: 1px solid var(--cairn-card-border);
     background: transparent;
@@ -547,8 +545,8 @@ reflows its neighboring characters.
     background: color-mix(in oklab, var(--color-primary) 7%, transparent);
   }
 
-  /* The 'menu' facet's own trigger: shares the row's 30px height inside `ToolbarDisclosure`'s own
-     bordered box (`containerClass="toolkit-toolbar-facet ..."`, styled above). */
+  /* The 'menu' facet's own trigger: shares the facet container's own height (styled above) inside
+     `ToolbarDisclosure`'s own bordered box (`containerClass="toolkit-toolbar-facet ..."`). */
   .toolkit-toolbar-facet-trigger {
     display: inline-flex;
     align-items: center;
@@ -623,16 +621,9 @@ reflows its neighboring characters.
     min-width: 10rem;
   }
 
-  .toolkit-toolbar-overflow-trigger {
-    height: 30px;
-    min-height: 30px;
-  }
-
   .toolkit-toolbar-primary {
     flex-shrink: 0;
     margin-left: auto;
-    height: 30px;
-    min-height: 30px;
   }
 
   .toolkit-toolbar-overflow {

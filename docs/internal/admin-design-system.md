@@ -73,10 +73,10 @@ Calibration (Geoff, 2026-07-15):
   itself never matches. Put `data-theme` on an outer `<div>` and the styled layout one level in. This
   broke the drawer (it stayed `display:block`) and both auth pages (they would not center); both were
   real shipped bugs.
-- **A scoped rule has exactly three homes (amended 2026-09-27, the theme identity pass).**
+- **A scoped override has exactly three homes (amended 2026-09-27, the theme identity pass).**
   `@layer components`: a rule on cairn's own classes that competes with nothing DaisyUI ships (the
-  anchor reset, the `<summary>`/caret rules, `::selection`, `:focus-visible`, the box-sizing
-  reset, the bare-button Preflight replacement). `@layer utilities { @layer cairn-idiom { ... } }`:
+  anchor reset, the `<summary>`/caret rules, `::selection`, `:focus-visible`, the bare-button
+  Preflight replacement). `@layer utilities { @layer cairn-idiom { ... } }`:
   every rule that overrides a DaisyUI declaration (the button ladder, the selected-segment wash,
   the alert panels, the toggle geometry and its checked fill, the field-edge fixes, the
   `.btn-primary` lift, the `.modal-box` repair), because DaisyUI 5 compiles its own component
@@ -86,12 +86,17 @@ Calibration (Geoff, 2026-07-15):
   (`@layer utilities.daisyui, utilities.cairn-idiom;`), so a `cairn-idiom` rule beats every
   DaisyUI sublayer and still loses to a plain markup utility, which Tailwind compiles unlayered.
   Unlayered, outside every layer: the plain rule on the two `[data-theme]` selectors (cairn's own
-  tokens and the non-custom declarations) and a small pinned set of forced workarounds a layered
-  rule structurally cannot win (the developer-facing vocabulary section below names the current
-  set). Do not add a fourth home, and do not add an unlayered rule without the same forcing
-  reason a pinned one already carries; the newest re-asserts `will-change: auto` on a showing
-  drawer panel, which daisyUI's own `:where()`-wrapped reset cannot win
-  (`daisyui-drawer-will-change-where-wrapper` in the rulings ledger).
+  tokens and the non-custom declarations), the box-sizing reset on every descendant of both theme
+  roots (embed-anywhere infrastructure, not an override of any DaisyUI declaration), and a small
+  pinned set of forced workarounds a layered rule structurally cannot win (the developer-facing
+  vocabulary section below names the current set). Do not add a fourth home for an override, and
+  do not add an unlayered rule without the same forcing reason a pinned one already carries; the
+  newest re-asserts `will-change: auto` on a showing drawer panel, which daisyUI's own
+  `:where()`-wrapped reset cannot win (`daisyui-drawer-will-change-where-wrapper` in the rulings
+  ledger). This three-home rule covers overrides only: the sheet also carries a scoped `@layer
+  base` block (the UA-reset floor for form controls, `dialog`, `fieldset`/`legend`, and `.list`,
+  sorted below `components` so DaisyUI's own classes still win), which is not an override home
+  and never grows a fourth entry in this list.
 - **The build flattens CSS nesting before scoping.** `build-admin-css.mjs` runs lightningcss with
   `Features.Nesting` between the Tailwind compile and `postcss-prefix-selector`, because the prefixer
   prepends the scope to the front of every rule and would sever a nested combinator selector
@@ -124,8 +129,8 @@ Calibration (Geoff, 2026-07-15):
   build/preview, mounting the authed shell at `/admin/posts`) for anything a computed-style
   assertion cannot see: layout, spacing, and the felt read.
 - **Identity lives in the theme layer.** A new idiom is a theme variable, on the two
-  `[data-theme]` blocks, or a `cairn-idiom` rule (see "A scoped rule has exactly three homes"
-  below), never a per-element patch (a bracketed inline style, a one-off recipe built from raw
+  `[data-theme]` blocks, or a `cairn-idiom` rule (see "A scoped override has exactly three homes"
+  above), never a per-element patch (a bracketed inline style, a one-off recipe built from raw
   utility classes, a hand-tuned radius on a single component). A per-element idiom is a defect: it
   never reaches a screen built from plain DaisyUI classes, which is the whole promise a
   developer's own admin route depends on.
@@ -367,12 +372,12 @@ Recipes:
   old `font-bold` (700) in the theme identity pass; the 18px `type-heading` dialog heading and the
   editor's 30px document title stay at 700.
 - Icon strokes: Lucide glyphs render at 1.75px by default, down from the library's stock 2px
-  (`svg.lucide[stroke-width='2'] { stroke-width: 1.75 }`, a `cairn-idiom` rule keyed on Lucide's
-  own default attribute value, so an icon size or an `absoluteStrokeWidth` pick that still
-  computes to exactly 2 is caught the same way an explicit `strokeWidth={2}` is). A hand-authored
-  inline SVG at the default 2px stroke moves to 1.75 the same way. A deliberate 2px stroke is
-  written `2.01`, or documented as a scoped exception, never bare `2`, since the rule keys on the
-  literal attribute value.
+  (`svg.lucide[stroke-width='2'] { stroke-width: 1.75 }`, a `@layer components` rule keyed on
+  Lucide's own default attribute value, so an icon size or an `absoluteStrokeWidth` pick that
+  still computes to exactly 2 is caught the same way an explicit `strokeWidth={2}` is). A
+  hand-authored inline SVG carrying `class="lucide"` and `stroke-width="2"` moves to 1.75 the
+  same way. A deliberate 2px stroke is written `2.01`, or documented as a scoped exception, never
+  bare `2`, since the rule keys on the literal attribute value.
 - Eyebrow (sidebar group headers and table column labels):
   `type-label font-semibold uppercase tracking-[0.08em] text-muted`. The size comes from the role
   utility; the weight, case, and tracking are this recipe's own.

@@ -49,6 +49,16 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+**`contributor`.** Local development collides with another workstation project that holds port
+4173, in two places that hardcode it instead of following the `E2E_PORT` setting:
+`src/tests/unit/audit/rendered.test.ts` (the `BASE_URL` contract tests) and
+`examples/showcase/wrangler.jsonc:61`'s `PUBLIC_ORIGIN`, which every minted preview URL is built
+against. Theme identity pass B's segment A hit the second one directly: with another project
+already bound to 4173, `e2e/preview.spec.ts` failed 8 tests on 404s from minted preview URLs,
+traced to `PUBLIC_ORIGIN`'s hardcoded value feeding `requireOrigin` independent of `E2E_PORT`; CI,
+with no such collision, passed the same suite. Filed rather than fixed in place, since both sites
+are outside that pass's task scope.
+
 Theme identity pass A's close (2026-09-28) triaged the whole log and found no open entry. The
 pass routed its own findings straight to `ROADMAP.md` in the same step: its carried cosmetics,
 review minors, batched coverage notes, and the showcase `theme.css` scoping leak to one Now entry beside the theme identity initiative, and the pinned-rule

@@ -864,7 +864,7 @@ discriminant, not the fields, gates the chrome).
               <!-- The keyboard shortcut hint is meaningless on a touch device (no ⌘K to press), so
                    it gates on pointer:fine, not only the sm width breakpoint: a touch tablet at or
                    above sm would otherwise still show it. -->
-              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 type-label font-medium sm:pointer-fine:inline">&#8984;K</kbd>
+              <kbd class="ml-auto hidden rounded-field border border-[var(--cairn-card-border)] px-1.5 type-label font-medium sm:pointer-fine:inline">&#8984;K</kbd>
             </button>
           </div>
           {#await data.pendingEntries then pending}
@@ -1054,12 +1054,12 @@ discriminant, not the fields, gates the chrome).
              wordmark link to the admin home. -->
         <div class="flex h-16 flex-none items-center border-b border-[var(--cairn-card-border)] px-3">
           <a href="/admin" aria-label="Cairn admin home" class="flex items-center gap-2.5 rounded-field px-2 py-1.5 transition-colors hover:bg-base-content/[0.06]">
-            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
+            <span class="flex h-8 w-8 items-center justify-center rounded-box bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
             <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
             <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
-            <span class="cairn-chip-quiet rounded-md px-1.5 py-px type-chip uppercase tracking-[0.12em]">CMS</span>
+            <span class="cairn-chip-quiet rounded-selector px-1.5 py-px type-chip uppercase tracking-[0.12em]">CMS</span>
           </a>
         </div>
 

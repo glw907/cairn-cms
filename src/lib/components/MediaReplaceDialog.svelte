@@ -476,7 +476,7 @@ full-page POST to `?/mediaReplace` navigates away.
               </div>
               <div class="col-span-3 flex items-start gap-2 border-t border-[var(--cairn-card-border)] pt-2.5">
                 <CheckIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
-                <span class="type-meta leading-relaxed">The name <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta">{asset.slug}</code> stays the same. Only the content hash changes, so every published entry is repointed to the new file in one commit.</span>
+                <span class="type-meta leading-relaxed">The name <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta">{asset.slug}</code> stays the same. Only the content hash changes, so every published entry is repointed to the new file in one commit.</span>
               </div>
             </div>
           {/if}
@@ -493,7 +493,7 @@ full-page POST to `?/mediaReplace` navigates away.
                        -1 keeps it out of the tab order). svelte-ignore: the rule allows a literal -1 but
                        does not see through the per-row conditional that selects which row carries it. -->
                   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-                  <li class="flex items-start gap-2.5 rounded px-1.5 py-1.5" tabindex={i === REPLACE_ROW_CAP ? -1 : undefined}>
+                  <li class="flex items-start gap-2.5 rounded-field px-1.5 py-1.5" tabindex={i === REPLACE_ROW_CAP ? -1 : undefined}>
                     <FileTextIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
                     <span class="flex min-w-0 flex-col">
                       <span class="truncate type-meta font-medium">{entry.title}</span>
@@ -506,7 +506,7 @@ full-page POST to `?/mediaReplace` navigates away.
                 <div class="border-t border-[var(--cairn-card-border)] p-1.5">
                   <button
                     type="button"
-                    class="flex w-full items-center justify-center gap-1.5 rounded px-2 py-1 type-meta font-medium text-primary hover:bg-primary/[0.08]"
+                    class="flex w-full items-center justify-center gap-1.5 rounded-field px-2 py-1 type-meta font-medium text-primary hover:bg-primary/[0.08]"
                     aria-expanded={replaceShowAll}
                     aria-controls="cairn-ml-replace-entries"
                     onclick={showAllReplaceEntries}
@@ -542,7 +542,7 @@ full-page POST to `?/mediaReplace` navigates away.
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="type-body" for="cairn-ml-replace-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta font-bold">{asset.slug}</code> to replace the file in all {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}.</label>
+            <label class="type-body" for="cairn-ml-replace-confirm">Type <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta font-bold">{asset.slug}</code> to replace the file in all {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}.</label>
             <input id="cairn-ml-replace-confirm" data-cairn-replace-confirm class="input input-sm border-error font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={replaceConfirmInput} />
           </div>
         </div>

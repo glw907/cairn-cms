@@ -111,7 +111,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
       <div class="flex flex-col items-center text-center">
         <div class="mb-7">{@render brand()}</div>
         <div
-          class="flex h-12 w-12 items-center justify-center rounded-xl bg-success/15 ring-1 ring-inset ring-success/22 cairn-text-success"
+          class="flex h-12 w-12 items-center justify-center rounded-field bg-success/15 ring-1 ring-inset ring-success/22 cairn-text-success"
         >
           <MailCheckIcon class="h-6 w-6" aria-hidden="true" />
         </div>
@@ -119,7 +119,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
         <p class="mt-2 type-body leading-relaxed text-muted">
           We sent a sign-in link to your inbox. Open it within 10 minutes to finish signing in.
         </p>
-        <div class="mt-6 flex w-full items-start gap-2.5 rounded-[var(--radius-field)] bg-base-content/[0.04] p-3.5 text-left">
+        <div class="mt-6 flex w-full items-start gap-2.5 rounded-field bg-base-content/[0.04] p-3.5 text-left">
           <InfoIcon class="mt-px h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
           <p class="type-meta leading-relaxed text-subtle">
             No link after a minute or two? Check your spam folder first. If it still hasn’t arrived, the

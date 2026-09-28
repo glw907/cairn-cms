@@ -509,10 +509,10 @@ persistent "?" carries Markdown help).
   function segButtonClass(pressed: boolean): string {
     return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 type-meta font-normal ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
-  // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
+  // A standalone writing-mode toggle (the mockup's .ftr-toggle): field-radius, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 type-meta font-normal hover:bg-base-content/[0.06] ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-field px-2 py-1 type-meta font-normal hover:bg-base-content/[0.06] ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -2178,7 +2178,7 @@ persistent "?" carries Markdown help).
           <div
             role="group"
             aria-label="Editing surface"
-            class="bg-base-100 inline-flex shrink-0 items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]"
+            class="bg-base-100 inline-flex shrink-0 items-center overflow-hidden rounded-field border border-[var(--cairn-card-border)]"
           >
             <button
               type="button"
@@ -2415,7 +2415,7 @@ persistent "?" carries Markdown help).
      it, so it never disappears mid-fade the way an `{#if prefs.zen}` gate would. -->
 {#if chipMounted}
   <div
-    class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 type-meta text-muted shadow-[var(--cairn-shadow)]"
+    class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 type-meta text-muted shadow-[var(--cairn-shadow)]"
     class:zen-active={prefs.zen}
     inert={!prefs.zen}
   >
@@ -2432,7 +2432,7 @@ persistent "?" carries Markdown help).
       <!-- The Esc hint is meaningless on a touch device (no Esc key to press), so it gates on
            pointer:coarse rather than hiding by viewport width, which does not track touch capability
            on a tablet. -->
-      Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 type-chip no-underline pointer-coarse:hidden" aria-hidden="true">Esc</kbd>
+      Exit zen<kbd class="ml-1.5 inline-block rounded-field border border-[var(--cairn-card-border)] px-1 type-chip no-underline pointer-coarse:hidden" aria-hidden="true">Esc</kbd>
     </button>
   </div>
 {/if}

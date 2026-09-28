@@ -70,13 +70,15 @@
    text-[var(...)] form at their few call sites (a wider in-tree migration is a separate,
    deliberate change, not part of adding the idiom). */
 @source inline("cairn-text-warning cairn-text-success");
-/* MARKUP SWEEP SAFELIST (theme identity pass A, the markup sweep). Same de facto public API as the
-   compatibility safelist above: this sweep folded the ink-opener and Publish-tint button recipes
+/* MARKUP SWEEP SAFELIST (the admin markup sweep). Same de facto public API as the
+   compatibility safelist above: the sweep folded the ink-opener and Publish-tint button recipes
    into `btn-neutral` and `btn-soft btn-primary`, whose cairn-idiom rules already reproduce the
-   hover step and the transparent edge, so these three classes lose their last admin call site.
-   Held so a consumer's own admin markup still riding the old recipe keeps resolving; each leaves
-   only as a deliberate, changelog-carried act. */
-@source inline("shadow-none hover:bg-[var(--cairn-ink-hover)] hover:bg-primary/15");
+   hover step and the transparent edge, and separately moved every fixed corner radius onto the
+   three-token corner ladder (`rounded-selector`/`rounded-field`/`rounded-box`), so these classes
+   lose their last admin call site. Held so a consumer's own admin markup still riding an old
+   button recipe or a fixed radius keeps resolving; each leaves only as a deliberate,
+   changelog-carried act. */
+@source inline("shadow-none hover:bg-[var(--cairn-ink-hover)] hover:bg-primary/15 rounded rounded-sm rounded-md rounded-lg rounded-xl rounded-t-2xl rounded-[0.55rem] rounded-[var(--radius-field)]");
 /* FULL DAISYUI COMPILE (spec, "One compiler, every component"). The admin compiles every daisyUI
    component and utility class, calendar excluded (it skins third-party date pickers cairn does
    not ship), so a class with no admin markup call site of its own (`.timeline`, `.rating`,

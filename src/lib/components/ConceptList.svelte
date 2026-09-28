@@ -366,7 +366,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     <AdminTable density="sm" rowCount={pageRows.length}>
       {#snippet header()}
         <!-- Frame zones (the column-header row) carry the sidebar's gentle band so content rows are
-             the card's only white rows; the first column insets to the card's rounded edge. -->
+             the card's only white rows; the first column insets to the card's own corner radius. -->
         <th class="pl-6" scope="col" aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
           <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
             Title

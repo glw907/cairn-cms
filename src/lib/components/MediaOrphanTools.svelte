@@ -353,8 +353,8 @@ restores there on close.
         <!-- The dry-run: the keys to remove, each with a checkerboard mat (record-not-picture). -->
         <ul role="list" class="flex max-h-40 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
           {#each orphanBytes.filter((b) => orphanKeys.has(b.key)) as byte (byte.key)}
-            <li class="flex items-center gap-2.5 rounded px-1.5 py-1">
-              <span class="h-6 w-8 flex-none rounded border border-[var(--cairn-card-border)] bg-base-200 [background-image:linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%),linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%)] [background-position:0_0,4px_4px] [background-size:8px_8px]" aria-hidden="true"></span>
+            <li class="flex items-center gap-2.5 rounded-field px-1.5 py-1">
+              <span class="h-6 w-8 flex-none rounded-field border border-[var(--cairn-card-border)] bg-base-200 [background-image:linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%),linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%)] [background-position:0_0,4px_4px] [background-size:8px_8px]" aria-hidden="true"></span>
               <span class="min-w-0 flex-1 truncate font-[family-name:var(--font-editor)] type-meta">{byte.key}</span>
             </li>
           {/each}
@@ -366,7 +366,7 @@ restores there on close.
         </div>
         <!-- The typed-count gate, reserved for the irreversible path. -->
         <div class="flex flex-col gap-1.5">
-          <label class="type-meta" for="cairn-ml-purge-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">{orphanSelectedCount}</code> to purge these files for good.</label>
+          <label class="type-meta" for="cairn-ml-purge-confirm">Type <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">{orphanSelectedCount}</code> to purge these files for good.</label>
           <input
             id="cairn-ml-purge-confirm"
             class="input input-sm"
@@ -417,9 +417,9 @@ restores there on close.
         <!-- SECTION 1: orphaned BYTES, the irreversible purge surface. -->
         <section>
           <div class="mb-2 flex items-baseline justify-between gap-2">
-            <span class="inline-flex items-center gap-2 type-meta font-semibold">Orphaned files <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 type-label tabular-nums">{orphanBytes.length}</span></span>
+            <span class="inline-flex items-center gap-2 type-meta font-semibold">Orphaned files <span class="rounded-selector bg-base-content/[0.07] px-1.5 py-0.5 type-label tabular-nums">{orphanBytes.length}</span></span>
           </div>
-          <p class="mb-2 type-meta leading-relaxed text-muted">Stored files with no record in the library. No <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-label">media:</code> reference can point to these, so nothing on the site uses them through cairn.</p>
+          <p class="mb-2 type-meta leading-relaxed text-muted">Stored files with no record in the library. No <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-label">media:</code> reference can point to these, so nothing on the site uses them through cairn.</p>
           {#if orphanBytes.length === 0}
             <!-- The calm empty state: a clean scan, no purge control. -->
             <div class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 type-meta text-muted">
@@ -457,7 +457,7 @@ restores there on close.
                       aria-label={`Select ${byte.key}`}
                       onchange={() => toggleOrphanKey(byte.key)}
                     />
-                    <span class="h-6 w-8 flex-none rounded border border-[var(--cairn-card-border)] bg-base-200 [background-image:linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%),linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%)] [background-position:0_0,4px_4px] [background-size:8px_8px]" aria-hidden="true"></span>
+                    <span class="h-6 w-8 flex-none rounded-field border border-[var(--cairn-card-border)] bg-base-200 [background-image:linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%),linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%)] [background-position:0_0,4px_4px] [background-size:8px_8px]" aria-hidden="true"></span>
                     <div class="min-w-0 flex-1">
                       <div class="truncate font-[family-name:var(--font-editor)] type-meta">{byte.key}</div>
                       <div class="type-label text-muted">No library record</div>
@@ -490,13 +490,13 @@ restores there on close.
         {#if orphanBroken.length > 0}
           <section data-testid="cairn-broken-refs">
             <div class="mb-2 flex items-baseline justify-between gap-2">
-              <span class="inline-flex items-center gap-2 type-meta font-semibold">Broken references <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 type-label tabular-nums">{orphanBroken.length}</span></span>
+              <span class="inline-flex items-center gap-2 type-meta font-semibold">Broken references <span class="rounded-selector bg-base-content/[0.07] px-1.5 py-0.5 type-label tabular-nums">{orphanBroken.length}</span></span>
             </div>
             <p class="mb-2 type-meta leading-relaxed text-muted">A record points at a file that is no longer in storage. This is not something to delete here. Re-upload or remove the reference from the entries below.</p>
             <ul role="list" class="flex list-none flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] p-0">
               {#each orphanBroken as ref (ref.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
-                  <span class="flex h-7 w-9 flex-none items-center justify-center rounded border border-[var(--cairn-card-border)] bg-base-200 text-muted" aria-hidden="true">
+                  <span class="flex h-7 w-9 flex-none items-center justify-center rounded-field border border-[var(--cairn-card-border)] bg-base-200 text-muted" aria-hidden="true">
                     <ImageOffIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div class="min-w-0 flex-1">

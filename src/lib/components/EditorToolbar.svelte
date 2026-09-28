@@ -271,8 +271,8 @@ stays pinned at the row's right end, reachable at every width.
        The squared-edge machinery (rounded-r-none / rounded-l-none / -ml-px) still matters despite
        the missing seam: it holds the right radii and adjacency for the states where a boundary
        DOES paint, an unselected tab's own hover fill and the focus ring's outline geometry, so
-       hovering or tabbing to the ghost tab reveals a clean shared edge rather than a stray rounded
-       corner or a doubled border where the two tabs meet. Manual rounding rather than daisyUI's
+       hovering or tabbing to the ghost tab reveals a clean shared edge rather than a stray curved
+       corner or a doubled border where the two tabs meet. Manual corner-squaring rather than daisyUI's
        .join, because join radii follow direct children and the device trigger must sit outside the
        tablist (ARIA required children); the tabs square their shared edges themselves instead.
        Preview squares its right edge only while the trigger extends the row.

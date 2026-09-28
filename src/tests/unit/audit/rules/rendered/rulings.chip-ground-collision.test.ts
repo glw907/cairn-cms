@@ -119,12 +119,13 @@ describe('chip-ground-collision: a ground the ancestor chain does not carry', ()
   it('reports an unmeasurable ground rather than an error, for a chip over a sibling image', async () => {
     const findings = await findingsFor(
       chipGroundCollision,
-      `<body style="margin:0">
+      `<body style="margin:0;--radius-selector: 4px">
          <div style="position:relative;width:400px;height:300px;background-color:oklch(96.5% 0.006 75)">
            <img alt="" src="data:image/svg+xml;utf8,${encodeURIComponent(
              '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="rgb(32,32,32)"/></svg>'
            )}" style="width:400px;height:300px;display:block">
            <span class="cairn-usage-chip" style="position:absolute;right:8px;top:8px;${CHIP_STYLE}
+                 border-radius:var(--radius-selector);
                  background-color:color-mix(in oklab, oklch(99% 0.004 75) 90%, transparent)">used 3</span>
          </div>
        </body>`,
@@ -140,9 +141,10 @@ describe('chip-ground-collision: a ground the ancestor chain does not carry', ()
   it('still measures a positioned chip when nothing but its own ancestors paints behind it', async () => {
     const findings = await findingsFor(
       chipGroundCollision,
-      `<body style="margin:0">
+      `<body style="margin:0;--radius-selector: 4px">
          <div style="position:relative;width:400px;height:300px;background-color:oklch(96.5% 0.006 75)">
            <span class="cairn-usage-chip" style="position:absolute;right:8px;top:8px;${CHIP_STYLE}
+                 border-radius:var(--radius-selector);
                  background-color:oklch(96% 0.006 75)">used 3</span>
          </div>
        </body>`,

@@ -423,7 +423,7 @@ rule). The CSRF token is read from the admin context.
     max-width: calc(100vw - 1rem);
     max-height: min(28rem, 80vh);
     overflow: auto;
-    border-radius: var(--radius-box, 0.75rem);
+    border-radius: var(--radius-box, 0.5rem);
     border: 1px solid var(--cairn-card-border, oklch(90% 0.01 75));
     background: var(--color-base-100, oklch(99% 0.004 75));
     padding: 0.875rem;
@@ -443,7 +443,7 @@ rule). The CSRF token is read from the admin context.
       width: 100%;
       max-width: 100%;
       max-height: 90vh;
-      border-radius: var(--radius-box, 0.75rem) var(--radius-box, 0.75rem) 0 0;
+      border-radius: var(--radius-box, 0.5rem) var(--radius-box, 0.5rem) 0 0;
     }
   }
 </style>

@@ -29,7 +29,11 @@
 //     (CairnMediaLibrary, VocabularyAdmin, CairnTidySettings) render a filled `rounded-full`
 //     chip carrying no daisyUI badge class at all. "Chip" is now a RENDERED shape rather than a
 //     class name, which is the same reason this rule reads paint instead of markup: a pill-radius,
-//     chip-height, filled, text-carrying element is a chip whatever it is called.
+//     chip-height, filled, text-carrying element is a chip whatever it is called. The pill-radius
+//     test (every corner at least half the box height) was later retired: the theme identity work
+//     moved every shipped chip off the pill geometry onto the theme's `--radius-selector` token, a
+//     value far short of half the box height once a chip is taller than about 8px, so the shape
+//     test now resolves that token itself instead of assuming a pill.
 //  4. The chip's own translucent fill was resolved against an assumed white canvas rather than
 //     against the ground it paints on, so a 90%-alpha chip came back lightened by that white. Under
 //     a light ground the assumption is close enough to leave the verdict intact, which is why the
@@ -162,11 +166,15 @@ interface ChipGroundReading {
  * Runs inside the page. Playwright serializes this by source, so it stays self-contained: every
  * helper is nested and no constant is referenced from module scope.
  *
- * A chip is daisyUI's `.badge`, or any element that RENDERS as one: a pill (every corner rounded to
- * at least half the box height), no taller than a chip, carrying text and a background of its own.
- * Reading the shape rather than the class name is the same discipline that makes this a rendered
- * rule at all, and it is what reaches the seven filled `rounded-full` pills the admin ships with no
- * badge class.
+ * A chip is daisyUI's `.badge`, or any element that RENDERS as one: filled, no taller than a chip,
+ * carrying text, and rounded at the theme's own resolved `--radius-selector` on all four corners.
+ * The theme identity pass moved every shipped chip, tag, and count off the pill geometry
+ * (`rounded-full`) onto `rounded-selector`, so this rule resolves the token itself rather than
+ * keying on a literal pixel value or the old pill-shape test (every corner at least half the box
+ * height), which a `rounded-selector` chip no longer satisfies once its box is taller than twice
+ * the token. Reading the shape rather than the class name is the same discipline that makes this a
+ * rendered rule at all. A button, input, or link is never a chip even if its corners happen to
+ * match, since an interactive control answers a different question than a status pill does.
  */
 function readChipGrounds(): ChipGroundReading {
   const CHIP_MAX_HEIGHT = 32;
@@ -179,9 +187,34 @@ function readChipGrounds(): ChipGroundReading {
     return rect.width > 0 && rect.height > 0;
   }
 
-  function isPillShaped(el: Element, style: CSSStyleDeclaration): boolean {
+  /**
+   * The theme's own `--radius-selector`, resolved (never assumed) by painting it on a throwaway
+   * probe mounted as `el`'s child, the same technique `_idiom-probe.ts`'s `resolveColor` uses for a
+   * color expression. Mounting under `el` itself, rather than under a fixed root, means a nested
+   * theme override (or a page with no `--radius-selector` declared at all, which resolves to the
+   * `border-radius` initial value of 0) is read exactly where the candidate chip sits.
+   */
+  function resolveRadiusSelectorPx(el: Element): number {
+    const probe = document.createElement('div');
+    probe.style.cssText =
+      'position:absolute;visibility:hidden;pointer-events:none;top:-9999px;left:-9999px;border-radius:var(--radius-selector)';
+    el.appendChild(probe);
+    const value = Number.parseFloat(getComputedStyle(probe).borderTopLeftRadius);
+    probe.remove();
+    return value;
+  }
+
+  function isChipShaped(el: Element, style: CSSStyleDeclaration): boolean {
     const rect = el.getBoundingClientRect();
-    if (rect.height > CHIP_MAX_HEIGHT) return false;
+    if (rect.height === 0 || rect.height > CHIP_MAX_HEIGHT) return false;
+    if ((el.textContent ?? '').trim() === '') return false;
+    const radiusSelector = resolveRadiusSelectorPx(el);
+    // A page with no `--radius-selector` declared resolves the probe to the `border-radius`
+    // initial value, 0, which every plain unstyled ancestor (an unstyled table row or a bare div
+    // wrapping a filled descendant) ALSO measures as its own corner radius. Matching a real
+    // element's corners against a token that was never actually declared is not what "at the
+    // resolved token" means, so a resolved value of 0 or less never reads as a chip's shape.
+    if (Number.isNaN(radiusSelector) || radiusSelector <= 0) return false;
     const radii = [
       style.borderTopLeftRadius,
       style.borderTopRightRadius,
@@ -190,7 +223,7 @@ function readChipGrounds(): ChipGroundReading {
     ];
     return radii.every((radius) => {
       const value = Number.parseFloat(radius);
-      return !Number.isNaN(value) && value >= rect.height / 2 - 0.5;
+      return !Number.isNaN(value) && Math.abs(value - radiusSelector) < 0.5;
     });
   }
 
@@ -254,8 +287,11 @@ function readChipGrounds(): ChipGroundReading {
   const chips: ChipGroundCandidate[] = [];
   for (const el of document.querySelectorAll('*')) {
     if (!isPainted(el)) continue;
+    // A button, input, or link answers to its own interaction affordance, never a status pill,
+    // whatever its resolved corner radius happens to be.
+    if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'A') continue;
     const style = getComputedStyle(el);
-    const isChip = el.classList.contains('badge') || (isPillShaped(el, style) && (el.textContent ?? '').trim() !== '');
+    const isChip = el.classList.contains('badge') || isChipShaped(el, style);
     if (!isChip) continue;
     chips.push({
       // The shared page helpers name an element the one way every rendered rule names it, escaped

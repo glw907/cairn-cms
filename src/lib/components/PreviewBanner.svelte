@@ -92,7 +92,7 @@ docs/extend/share-a-draft-preview.md ("Override the banner's palette").
     margin: 0 0 1rem;
     padding: 0.75rem 1rem;
     border: 1px solid var(--cairn-preview-border, #e6cf8a);
-    border-radius: var(--cairn-preview-radius, 0.5rem);
+    border-radius: var(--cairn-preview-radius, var(--radius-box, 0.5rem));
     background: var(--cairn-preview-bg, #fff6dd);
     color: var(--cairn-preview-fg, #3a2f12);
     font: 0.9375rem/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;

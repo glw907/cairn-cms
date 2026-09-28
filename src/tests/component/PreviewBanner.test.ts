@@ -125,6 +125,33 @@ describe('PreviewBanner', () => {
     expect(time?.textContent).toBe('custom:2026-08-20T12:34:00.000Z');
   });
 
+  it('falls back to 8px (the radius-box default) with no daisyUI and no site override', async () => {
+    const preview: PreviewData['preview'] = {
+      state: 'draft',
+      expiresAt: '2026-08-20T12:00:00.000Z',
+      published: null,
+    };
+    const screen = await render(PreviewBanner, { preview });
+    const banner = screen.container.querySelector('.cairn-preview-banner') as HTMLElement;
+    expect(getComputedStyle(banner).borderTopLeftRadius).toBe('8px');
+  });
+
+  it("lets a site's --cairn-preview-radius win over the radius-box fallback, since the seam is public", async () => {
+    const preview: PreviewData['preview'] = {
+      state: 'draft',
+      expiresAt: '2026-08-20T12:00:00.000Z',
+      published: null,
+    };
+    document.documentElement.style.setProperty('--cairn-preview-radius', '2px');
+    try {
+      const screen = await render(PreviewBanner, { preview });
+      const banner = screen.container.querySelector('.cairn-preview-banner') as HTMLElement;
+      expect(getComputedStyle(banner).borderTopLeftRadius).toBe('2px');
+    } finally {
+      document.documentElement.style.removeProperty('--cairn-preview-radius');
+    }
+  });
+
   it('lets a site override the default palette from :root, since the scoped element never declares the custom property itself', async () => {
     const preview: PreviewData['preview'] = {
       state: 'draft',

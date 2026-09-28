@@ -20,7 +20,7 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-One conductor session (2026-09-27, `claude-opus-5-5`) is running four streams unattended toward an
+One conductor session (2026-09-27, `claude-opus-5-5`) is running three streams unattended toward an
 overnight run. If it dies, resume each from its plan's ledger foot:
 
 - **Theme identity pass A**, worktree `.claude/worktrees/theme-identity-a`, draft PR #92, class
@@ -36,18 +36,17 @@ overnight run. If it dies, resume each from its plan's ledger foot:
   branches from pass A's closed but unmerged head, not from `main` after A merges; pass C
   branches from B. S3 corrections land on A and merge forward into B and C; A, B, and C merge
   with the one `0.98.0` cut.
-- **Go tool architecture chores**, worktree `.claude/worktrees/go-chores-plan`, plan
-  `docs/superpowers/plans/2026-09-27-go-tool-architecture-chores.md` (approved), class `tool`,
-  light gate only. S1 and S2 done, S3 in flight; about 4M of 8.5M.
 - **Draft docs pass 0+1**, resumed for segment B only (Geoff lifted the hold for its tooling
   tasks): tasks 6 and 8 accepted, task 7 in flight, plan amended to pass classes (`14d3f7ac`).
   Task 9 is Geoff's sitting; task 10 waits on pass B's rename.
 
-The chores batch merged as PR #93 (`283a63d1`).
+The chores batch merged as PR #93 (`283a63d1`). The Go tool architecture chores pass merged as
+PR #94 (`8c6327f6`), untagged; its ten architecture reads are filed as the ROADMAP entry "Go tool
+architecture, round 2".
 
 ## Open decisions and watches
 
-- Rulings (Geoff, 2026-09-27): the Go pass merges on a green close. Draft docs task 10 splits:
+- Rulings (Geoff, 2026-09-27): Draft docs task 10 splits:
   it runs overnight on every reference page except the admin subpath page pass B renames and the
   `./public` page it creates, which run after pass B lands. The `checkOrigin` to
   `csrf.trustedOrigins` migration becomes its own small `auth-data` pass after the `0.98.0` cut:

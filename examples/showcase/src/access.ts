@@ -21,8 +21,8 @@ import { defineAccess } from '@glw907/cairn-cms';
  * cairn-template:exclude-start
  *
  * The theme-kit fixture screen is owner-only for the same reason and carries no nav entry
- * (cairn.config.ts's navLayout never mentions it): it is a CSS proof for the theme identity
- * pass's own e2e specs, not a screen an editor should ever land on. The route is excluded from
+ * (cairn.config.ts's navLayout never mentions it): it is a CSS proof for the theme-kit e2e
+ * specs, not a screen an editor should ever land on. The route is excluded from
  * the template copy, and this entry rides along with it.
  * cairn-template:exclude-end
  */

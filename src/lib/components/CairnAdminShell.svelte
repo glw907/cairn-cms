@@ -615,6 +615,7 @@ discriminant, not the fields, gates the chrome).
   $effect(() => {
     if (!isDrawerOverlay) return;
     drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const MAX_FOCUS_ATTEMPTS = 60;
     let cancelled = false;
     let attempts = 0;
     function focusIn(): void {
@@ -623,7 +624,7 @@ discriminant, not the fields, gates the chrome).
       if (!target) return;
       target.focus();
       attempts += 1;
-      if (document.activeElement !== target && attempts < 60) requestAnimationFrame(focusIn);
+      if (document.activeElement !== target && attempts < MAX_FOCUS_ATTEMPTS) requestAnimationFrame(focusIn);
     }
     tick().then(focusIn);
     return () => {

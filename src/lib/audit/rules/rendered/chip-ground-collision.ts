@@ -30,7 +30,7 @@
 //     chip carrying no daisyUI badge class at all. "Chip" is now a RENDERED shape rather than a
 //     class name, which is the same reason this rule reads paint instead of markup: a pill-radius,
 //     chip-height, filled, text-carrying element is a chip whatever it is called. The pill-radius
-//     test (every corner at least half the box height) was later retired: the theme identity work
+//     test (every corner at least half the box height) was later retired: the admin theme
 //     moved every shipped chip off the pill geometry onto the theme's `--radius-selector` token, a
 //     value far short of half the box height once a chip is taller than about 8px, so the shape
 //     test now resolves that token itself instead of assuming a pill.
@@ -168,7 +168,7 @@ interface ChipGroundReading {
  *
  * A chip is daisyUI's `.badge`, or any element that RENDERS as one: filled, no taller than a chip,
  * carrying text, and rounded at the theme's own resolved `--radius-selector` on all four corners.
- * The theme identity pass moved every shipped chip, tag, and count off the pill geometry
+ * The admin theme moved every shipped chip, tag, and count off the pill geometry
  * (`rounded-full`) onto `rounded-selector`, so this rule resolves the token itself rather than
  * keying on a literal pixel value or the old pill-shape test (every corner at least half the box
  * height), which a `rounded-selector` chip no longer satisfies once its box is taller than twice
@@ -225,6 +225,22 @@ function readChipGrounds(): ChipGroundReading {
       const value = Number.parseFloat(radius);
       return !Number.isNaN(value) && Math.abs(value - radiusSelector) < 0.5;
     });
+  }
+
+  /**
+   * A button, input, select, textarea, or link answers to its own interaction affordance, never a
+   * status pill, whatever its resolved corner radius happens to be. daisyUI also builds controls on
+   * other tags (`label.input`, `span.btn`), so an element carrying a daisyUI control class or an
+   * explicit button role counts too.
+   */
+  function isControl(el: Element): boolean {
+    const CONTROL_TAGS = ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'];
+    const CONTROL_CLASSES = ['btn', 'input', 'select', 'textarea'];
+    return (
+      CONTROL_TAGS.includes(el.tagName) ||
+      CONTROL_CLASSES.some((name) => el.classList.contains(name)) ||
+      el.getAttribute('role') === 'button'
+    );
   }
 
   function layersFor(el: Element): PaintLayer[] {
@@ -286,24 +302,7 @@ function readChipGrounds(): ChipGroundReading {
 
   const chips: ChipGroundCandidate[] = [];
   for (const el of document.querySelectorAll('*')) {
-    if (!isPainted(el)) continue;
-    // A button, input, select, textarea, or link answers to its own interaction affordance,
-    // never a status pill, whatever its resolved corner radius happens to be. daisyUI also
-    // builds controls on other tags (`label.input`, `span.btn`), so the same skip covers any
-    // element carrying a daisyUI control class or an explicit button role.
-    if (
-      el.tagName === 'BUTTON' ||
-      el.tagName === 'INPUT' ||
-      el.tagName === 'SELECT' ||
-      el.tagName === 'TEXTAREA' ||
-      el.tagName === 'A' ||
-      el.classList.contains('btn') ||
-      el.classList.contains('input') ||
-      el.classList.contains('select') ||
-      el.classList.contains('textarea') ||
-      el.getAttribute('role') === 'button'
-    )
-      continue;
+    if (!isPainted(el) || isControl(el)) continue;
     const style = getComputedStyle(el);
     const isChip = el.classList.contains('badge') || isChipShaped(el, style);
     if (!isChip) continue;

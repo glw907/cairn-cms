@@ -4,7 +4,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"time"
 
@@ -27,8 +26,7 @@ func writeSiteJSON(w io.Writer, d deps, rf *rootFlags, r health.Report, verdict 
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(w, "%s\n", data)
-	return err
+	return writeJSONPayload(w, data)
 }
 
 // writeSweepLineJSON writes one NDJSON line of a many-site stream: the single-site payload less
@@ -44,8 +42,7 @@ func writeSweepLineJSON(w io.Writer, d deps, rf *rootFlags, r health.Report, ver
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(w, "%s\n", data)
-	return err
+	return writeJSONPayload(w, data)
 }
 
 // writeSweepSummaryJSON writes the stream's final line. A stream that carries none is UNKNOWN,
@@ -64,6 +61,5 @@ func writeSweepSummaryJSON(w io.Writer, d deps, reports []health.Report, verdict
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(w, "%s\n", data)
-	return err
+	return writeJSONPayload(w, data)
 }

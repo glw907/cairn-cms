@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -75,14 +76,12 @@ type deps struct {
 	scrubSkipped int
 }
 
-// healthChecks returns the checks a run sweeps: the caller's own set when one was injected, and
-// health.All otherwise. A deps built by a test that never sets the field gets the production set,
-// so injecting is opt-in rather than something every test has to remember.
-func (d deps) healthChecks() []health.Check {
-	if d.checks == nil {
-		return health.All
-	}
-	return d.checks
+// writeJSONPayload writes a marshaled JSON payload followed by its one trailing newline, the
+// shape every --json command's stdout takes so a consumer piping the output into a
+// line-oriented tool gets one line per invocation.
+func writeJSONPayload(w io.Writer, data []byte) error {
+	_, err := fmt.Fprintf(w, "%s\n", data)
+	return err
 }
 
 // secretProviders returns the providers loadEnv chains after the environment. A deps built by a
@@ -144,6 +143,7 @@ func newDeps() deps {
 		now:            time.Now,
 		stdin:          os.Stdin,
 		exit:           os.Exit,
+		checks:         health.All,
 	}
 	d.readPassword = func(cmd *cobra.Command, name string) (string, error) {
 		return promptPassword(cmd, name, d.stdin)

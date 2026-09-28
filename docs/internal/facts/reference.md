@@ -274,7 +274,7 @@ re-sourced to Go on this tree rather than to the page.
   [docs-drift: the retired page said the one request "is bounded at 15 seconds inside it"]
 - `f:plng3z` A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency in
   `package.json` is not a cairn-cms site: the run prints one line, exits 3, and settles no check.
-  Source: `tool/internal/doctor/fileread.go:89-104`, `tool/cmd/cairn/doctor.go:60-61,113-129`,
+  Source: `tool/internal/doctor/fileread.go:89-104`, `tool/cmd/cairn/doctor.go:60-61,112-128`,
   `tool/cmd/cairn/messages.go:323-331`. [verified]
 - `f:ee48yi` `--json` is the command's own flag and writes the payload instead of the report; it beats
   `--quiet`, so the payload always prints under `--json`. Source:
@@ -485,11 +485,11 @@ re-sourced to Go on this tree rather than to the page.
   130-137,149-159,172-179`, `tool/internal/doctor/json.go:28-38`. [verified]
 - `f:dzsdcf` Bare `cairn health --json` writes newline-delimited JSON: one `site` object per site, flushed as
   that site settles, each being the single-site payload less its `exitCode`, then one `summary`
-  line carrying the run's own `exitCode`. Source: `tool/cmd/cairn/health_json.go:16-69`,
+  line carrying the run's own `exitCode`. Source: `tool/cmd/cairn/health_json.go:15-65`,
   `tool/internal/render/json.go:61-64,216-229`. [verified]
 - `f:khcwri` A stream carrying no summary line reads `UNKNOWN`, since a truncated stream and a complete one
   are otherwise indistinguishable. Source: `tool/internal/render/json.go:114-116`,
-  `tool/cmd/cairn/health_json.go:51-53`. [verified]
+  `tool/cmd/cairn/health_json.go:48-50`. [verified]
 - `f:dm3u5v` A site the run's budget or a signal cut short is counted into the summary's `counts` as
   `UNKNOWN` with no line of its own; `sites` is how many the run was meant to cover, which exceeds
   the number of lines written. Source: `tool/internal/render/json.go:350-352,369-371`. [verified]

@@ -101,7 +101,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 
 		siteCtx, siteCancel := siteBudget(envelope, rf, len(entries)-i)
 		siteStarted := d.now()
-		report, err := health.Run(siteCtx, e.Record, clients, d.healthChecks(), health.Options{
+		report, err := health.Run(siteCtx, e.Record, clients, d.checks, health.Options{
 			ErrorThreshold: f.errorThreshold,
 			LogWindow:      window,
 			Now:            d.now,

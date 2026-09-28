@@ -138,7 +138,7 @@ func runAuthCheck(cmd *cobra.Command, d deps, args []string, asJSON bool) error 
 		if err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintf(out, "%s\n", data); err != nil {
+		if err := writeJSONPayload(out, data); err != nil {
 			return err
 		}
 	}

@@ -10,10 +10,23 @@
 export const STATE_ELEMENT_ID = 'cairn-docs-review-state';
 
 /**
- * Serializes the review page's state as JSON safe to sit inside an HTML <script> element: every
- * "<" is escaped to its JSON unicode form, so a literal "</script" inside a file's own markdown
- * (a fenced code block quoting a <script> tag, say) can never end the element early. decodeState
- * reverses the escape through JSON.parse, which treats < as an ordinary string escape.
+ * The literal closing tag of an HTML script element, and the literal open and close delimiters
+ * of an HTML comment, each split by concatenation so this file's own source never spells one out
+ * as a contiguous literal. This file is copied verbatim into the page's own inline script (see
+ * the header comment above), and a real HTML parser ends a script element's raw text, or changes
+ * how it tokenizes the rest of it, at these exact sequences wherever they appear in that text,
+ * string and comment literals included, regardless of what the surrounding JavaScript means. Every
+ * place this module needs one of these values builds it from these constants instead.
+ */
+const SCRIPT_CLOSE_TAG = '<' + '/script>';
+const HTML_COMMENT_OPEN = '<' + '!--';
+const HTML_COMMENT_CLOSE = '--' + '>';
+
+/**
+ * Serializes the review page's state as JSON safe to sit inside an HTML script element: every
+ * "<" is escaped to its JSON unicode form, so a literal script closing tag inside a file's own
+ * markdown (a fenced code block quoting a script element, say) can never end the element early.
+ * decodeState reverses the escape through JSON.parse, which treats < as an ordinary string escape.
  * @param {DocsReviewState} state
  * @returns {string}
  */
@@ -32,8 +45,8 @@ export function decodeState(raw) {
 
 /**
  * Reads the embedded state out of a full page document's source, by locating the state script
- * element's own content. Returns null when the document carries no such element (so a caller can
- * tell "no state" apart from "empty batch").
+ * element by its id, then its closing marker. Returns null when the document carries no such
+ * element (so a caller can tell "no state" apart from "empty batch").
  * @param {string} html
  * @returns {DocsReviewState | null}
  */
@@ -42,8 +55,9 @@ export function extractEmbeddedState(html) {
   const openIdx = html.indexOf(marker);
   if (openIdx === -1) return null;
   const tagEnd = html.indexOf('>', openIdx);
-  const closeIdx = html.indexOf('</script>', tagEnd);
-  if (tagEnd === -1 || closeIdx === -1) return null;
+  if (tagEnd === -1) return null;
+  const closeIdx = html.indexOf(SCRIPT_CLOSE_TAG, tagEnd);
+  if (closeIdx === -1) return null;
   return decodeState(html.slice(tagEnd + 1, closeIdx));
 }
 
@@ -179,15 +193,21 @@ export function renderMarkdown(markdown) {
       i += 1;
       continue;
     }
-    if (/^<!--/.test(line.trim())) {
+    if (line.trim().startsWith(HTML_COMMENT_OPEN)) {
       const body = [line];
-      while (!body[body.length - 1].includes('-->') && i + 1 < lines.length) {
+      while (!body[body.length - 1].includes(HTML_COMMENT_CLOSE) && i + 1 < lines.length) {
         i += 1;
         body.push(lines[i]);
       }
       i += 1;
-      const inner = body.join('\n').replace(/^\s*<!--/, '').replace(/-->\s*$/, '');
-      out.push(`<!--${escapeHtml(inner)}-->`);
+      const trimmed = body.join('\n').trim();
+      const withoutOpen = trimmed.startsWith(HTML_COMMENT_OPEN)
+        ? trimmed.slice(HTML_COMMENT_OPEN.length)
+        : trimmed;
+      const inner = withoutOpen.endsWith(HTML_COMMENT_CLOSE)
+        ? withoutOpen.slice(0, withoutOpen.length - HTML_COMMENT_CLOSE.length)
+        : withoutOpen;
+      out.push(HTML_COMMENT_OPEN + escapeHtml(inner) + HTML_COMMENT_CLOSE);
       continue;
     }
     const para = [line];

@@ -68,31 +68,24 @@ export interface ReviewWindow {
   __cairnDocsReview?: ReviewTestHooks;
 }
 
+const GLUE_SCRIPT_ID_MARKER = 'id="cairn-docs-review-script"';
+const GLUE_SCRIPT_END_MARKER = '// cairn-docs-review-script-end';
+
 /**
- * Pulls the page's own inline glue script (the bare `<script>` after the JSON state element).
- * The glue script's own source can legitimately contain the substrings "<script>" and
- * "</script>" inside comments and string literals (it is the code that parses those markers),
- * so this anchors off the state element's own id rather than a naive last-occurrence search: the
- * glue tag's open is the first "<script>" after the state element closes, and its close is the
- * document's last "</script>" (nothing in either document shape follows it but "</body></html>").
+ * Pulls the page's own inline glue script's content. Located by its own id (not the first
+ * `<script>` after some other element) and its own end-of-script marker comment (not the next
+ * closing tag in the document), so this stays correct regardless of what other elements or
+ * scripts the document carries and regardless of what the glue script's own source contains.
  */
 export function extractGlueScript(html: string): string {
-  const afterState = extractEmbeddedStateEnd(html);
-  const openMarker = '<script>';
-  const openIdx = html.indexOf(openMarker, afterState);
+  const openIdx = html.indexOf(GLUE_SCRIPT_ID_MARKER);
   if (openIdx === -1) throw new Error('no glue script found in document');
-  const contentStart = openIdx + openMarker.length;
-  const end = html.lastIndexOf('</script>');
-  return html.slice(contentStart, end);
-}
-
-function extractEmbeddedStateEnd(html: string): number {
-  const marker = 'id="cairn-docs-review-state"';
-  const openIdx = html.indexOf(marker);
-  if (openIdx === -1) throw new Error('no embedded state found in document');
   const tagEnd = html.indexOf('>', openIdx);
-  const closeIdx = html.indexOf('</script>', tagEnd);
-  return closeIdx + '</script>'.length;
+  if (tagEnd === -1) throw new Error('no glue script found in document');
+  const contentStart = tagEnd + 1;
+  const endIdx = html.indexOf(GLUE_SCRIPT_END_MARKER, contentStart);
+  if (endIdx === -1) throw new Error('no glue script end marker found in document');
+  return html.slice(contentStart, endIdx);
 }
 
 /** Pulls the raw (still JSON-escaped) text of the embedded state script element. */
@@ -121,7 +114,9 @@ export async function runReviewPage(
       if (id === 'cairn-docs-review-state') return makeElement({ textContent: stateRaw });
       return makeElement();
     },
-    currentScript: { outerHTML: `<script>${glueScript}</script>` },
+    currentScript: {
+      outerHTML: `<script id="cairn-docs-review-script">${glueScript}${GLUE_SCRIPT_END_MARKER}\n</script>`,
+    },
     querySelector: () => null,
     addEventListener: () => {},
   };

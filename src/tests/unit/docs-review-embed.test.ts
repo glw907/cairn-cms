@@ -139,3 +139,18 @@ describe('runtime encode/decode', () => {
     expect(decodeState(encoded)).toEqual(state);
   });
 });
+
+describe('runtime.mjs source safety', () => {
+  it('never spells a literal script-boundary sequence in its own source', () => {
+    // runtime.mjs's source is copied verbatim into the page's own inline script (its header
+    // comment states this). An HTML parser ends a script element's raw text, or switches how it
+    // tokenizes the rest of it, at these exact sequences wherever they appear in that raw text,
+    // string and comment literals included, regardless of what the surrounding JavaScript means.
+    // So this file must never spell one out as a contiguous literal, only ever assemble one (by
+    // concatenation) where its own logic genuinely needs the value.
+    expect(RUNTIME_SOURCE).not.toContain('</script>');
+    expect(RUNTIME_SOURCE).not.toContain('<script');
+    expect(RUNTIME_SOURCE).not.toContain('<!--');
+    expect(RUNTIME_SOURCE).not.toContain('-->');
+  });
+});

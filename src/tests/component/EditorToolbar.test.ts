@@ -223,6 +223,40 @@ describe('EditorToolbar', () => {
         0,
       );
     });
+
+    // Task 15 item 5: a prior unconditional rounded-r-none/rounded-l-none pair squared the
+    // selected tab's own outer corner even though its ghost sibling painted no border to share
+    // it with. At rest, only the selected tab's own border ever shows, so it keeps all four of
+    // its own --radius-field corners.
+    it('rounds all four corners of the resting selected tab, not one squared edge', async () => {
+      const screen = await render(EditorToolbar, baseProps({ mode: 'write' }));
+      const writeTab = screen.getByRole('tab', { name: 'Write' }).element() as HTMLElement;
+      const style = getComputedStyle(writeTab);
+      expect(style.borderTopLeftRadius).toBe('6px');
+      expect(style.borderTopRightRadius).toBe('6px');
+      expect(style.borderBottomLeftRadius).toBe('6px');
+      expect(style.borderBottomRightRadius).toBe('6px');
+    });
+
+    // The squaring rule varies by state (rest vs. both-painting), so it takes the per-state proof
+    // the Global constraints ask for rather than the single cascade check above.
+    it('squares the shared corner only once the ghost sibling also paints a border on focus', async () => {
+      const screen = await render(EditorToolbar, baseProps({ mode: 'write' }));
+      const writeTab = screen.getByRole('tab', { name: 'Write' }).element() as HTMLElement;
+      const previewTab = screen.getByRole('tab', { name: 'Preview' }).element() as HTMLElement;
+      // At rest, Preview is ghost (no border), so nothing shares an edge with Write yet.
+      expect(getComputedStyle(writeTab).borderTopRightRadius).toBe('6px');
+      expect(getComputedStyle(previewTab).borderTopLeftRadius).toBe('6px');
+
+      writeTab.focus();
+      await userEvent.keyboard('{ArrowRight}');
+      await expect.poll(() => document.activeElement).toBe(previewTab);
+
+      // Preview's own ghost fill now paints a border under keyboard :focus-visible, alongside
+      // Write's still-selected border, so the shared seam squares on both sides.
+      await expect.poll(() => getComputedStyle(writeTab).borderTopRightRadius).toBe('0px');
+      await expect.poll(() => getComputedStyle(previewTab).borderTopLeftRadius).toBe('0px');
+    });
   });
 
   it('drives the More menu as a popover with aria-expanded and Escape', async () => {

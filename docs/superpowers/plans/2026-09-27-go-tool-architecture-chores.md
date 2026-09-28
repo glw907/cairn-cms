@@ -1005,3 +1005,14 @@ task's acceptance. No task's Files list, decision, or acceptance criterion neede
 - **Task 6** accepted (`9a6ba169`, `41e3d185`): `RepoOwnership` deleted, one index-keyed `Reason`
   name table. Note: a constant added after the `reasonCount` sentinel escapes the test.
 - **Spend:** S2 about 1.9M (0.25M of it the escalated first launch). Pass total about 3.7M of 8.5M.
+
+### S3 (2026-09-27, conductor)
+
+- **Tasks 7 to 10** accepted, no fix rounds (`69b3fb92`, `183ecab2`, `b486c45c`, `95de343e`): the
+  fixture ids and `Degraded` derive from `health`; one `exe` build helper serves `mangen` and the
+  usage tests; `render` exports only the seams-table surface and h024 is gone; `render`'s comments
+  carry reasons. Notes: the fixtures' stubs cover only settled cred-missing results; `exe`'s
+  package doc still reads as history; `render.go` keeps one citation of a design brief as a
+  design-fact source. Task 8's computed gate chained `check:facts` ahead of `make -C tool check`,
+  so the baseline facts defect stopped the chain; its implementer ran the legs separately.
+- **Spend:** S3 about 1.2M. Pass total about 4.9M of 8.5M.

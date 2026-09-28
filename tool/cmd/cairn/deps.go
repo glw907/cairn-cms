@@ -76,9 +76,8 @@ type deps struct {
 	scrubSkipped int
 }
 
-// writeJSONPayload writes a marshaled JSON payload followed by its one trailing newline, the
-// shape every --json command's stdout takes so a consumer piping the output into a
-// line-oriented tool gets one line per invocation.
+// writeJSONPayload writes a marshaled JSON payload followed by one newline, the shape every
+// --json command's stdout takes, so a line-oriented consumer reads each payload as one line.
 func writeJSONPayload(w io.Writer, data []byte) error {
 	_, err := fmt.Fprintf(w, "%s\n", data)
 	return err

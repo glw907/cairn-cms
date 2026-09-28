@@ -68,7 +68,7 @@ func Reasons() []Reason {
 // package never constructs, names the same "unknown" ReasonUnknown does.
 func (r Reason) String() string {
 	if r < 0 || r >= reasonCount {
-		return "unknown"
+		return reasonNames[ReasonUnknown]
 	}
 	return reasonNames[r]
 }

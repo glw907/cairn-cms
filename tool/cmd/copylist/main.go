@@ -115,11 +115,10 @@ func cairnCatalogue(path string) ([]string, error) {
 }
 
 // foldStringConst returns val's string value when val is a bare string literal or a `+`-fold of
-// string literals, parenthesized or not; isString reports whether val is a string at all, since a
-// literal of another kind (an int, a float, a char, or an imaginary value) folds to "" with ok
-// false and no error, plainly not an operator-facing string this catalogue tracks. Any other
-// shape, a reference, a call, or a fold mixing a string operand with a non-string one, returns
-// errNonLiteralConstValue.
+// string literals, parenthesized or not. A literal of another kind (an int, a float, a char, or an
+// imaginary value), or a fold of only such literals, returns isString false and no error, since
+// the catalogue tracks no such const. Any other shape, a reference, a call, or a fold mixing a
+// string operand with a non-string one, returns errNonLiteralConstValue.
 func foldStringConst(val ast.Expr) (value string, isString bool, err error) {
 	switch v := val.(type) {
 	case *ast.ParenExpr:

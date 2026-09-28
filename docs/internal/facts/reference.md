@@ -587,8 +587,10 @@ re-sourced to Go on this tree rather than to the page.
 
 - `f:fh6kod` `cairn-manifest` reuses the `cairnManifest()` Vite plugin's own options (globs, config module,
   manifest path) rather than taking its own flags, so the regenerated manifest is guaranteed to
-  match what a build verifies against. Source: page text plus `src/lib/vite/internal.ts` doc
-  comments referencing shared option resolution. [verified: structurally]
+  match what a build verifies against. The bin calls two internal functions in sequence,
+  `writeManifest` and `writeSiteFacts`. Source: page text plus `src/lib/vite/internal.ts` doc
+  comments referencing shared option resolution; `src/lib/vite/bin.ts:9` (header comment naming
+  both functions) and `:27-29` (sequential calls). [verified: structurally]
 - `f:6t5tzu` Only `publishedAt` survives a rebuild across entries: the command reads existing stamps from
   the file about to be overwritten, merges them into the new manifest, and drops any stamp whose
   entry the corpus no longer holds. On a corrupt existing file, it warns to stderr and writes the
@@ -607,18 +609,22 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/media-seed/assemble.ts:147-172`. [verified]
 - `f:fs5tpa` Each manifest row's public delivery URL is derived as `<from>/media/<slug>.<hash>.<ext>`, and
   the written local-R2 key is `media/<hash[0:2]>/<hash>.<ext>` (content-addressed, matching what
-  the media route reads). Source: `src/lib/media-seed/assemble.ts:118-122` (delivery URL builder)
-  plus page text for the write-side key shape (not independently re-derived from the write
-  function in this harvest). [verified: for the URL builder; candidate for the exact write-key
-  format string]
-- `f:5a5oq0` A manifest row missing `slug`, `hash`, or `ext` is silently dropped rather than failing the
-  run; the same tolerance applies elsewhere in the manifest reader. Source:
-  `src/lib/media-seed/assemble.ts:80-101` (`normalizeManifest`'s doc comment and implementation: a
-  row failing the `slug`/`hash`/`ext` shape checks is not pushed to `items`), `src/lib/media/manifest.ts:107`
-  ("a failing element is dropped"). [verified]
+  the media route reads). Source: `src/lib/media-seed/assemble.ts:118-122` (delivery URL builder);
+  `src/lib/media/naming.ts:113-121` (`r2Key`, returning `` `media/${shortHash.slice(0, 2)}/${shortHash}.${ext}` ``,
+  matching the write-side key shape exactly). [verified]
+- `f:5a5oq0` A manifest row missing, or carrying a malformed, `slug`, `hash`, or `ext` is dropped rather than
+  failing the run; the same tolerance applies elsewhere in the manifest reader. Source:
+  `src/lib/media-seed/assemble.ts:80-105` (`normalizeManifest`: the guard requires each field be a
+  string AND match its shape regexp, `SLUG_RE`/`HASH_RE`/`R2_EXT_RE`, so a present-but-malformed
+  field is dropped the same as a missing one), `src/lib/media/manifest.ts:107` ("a failing element
+  is dropped"). [verified]
 - `f:4as382` Exit codes: 0 (`--help`, or every entry synced, or manifest holds none), 1 (at least one entry
-  failed, each printing `FAILED <slug>: <message>`), 2 (bad flags or unresolved bucket name).
-  Source: `src/lib/media-seed/bin.ts:92-150`. [verified]
+  failed, each printing `FAILED <slug>: <message>`), 2 (bad flags or unresolved bucket name). The
+  summary line (`cairn-media-seed: <ok> synced, <failed> failed, of <total> manifest entries`)
+  prints on both exit 0 and exit 1, any run past flag parsing and bucket resolution; only the two
+  exit-2 paths return before it. Source: `src/lib/media-seed/bin.ts:92-150` (summary print at
+  :139-147, before the `process.exitCode` assignment; the two exit-2 returns at :106-108 and
+  :129-133 precede it). [verified]
 
 ## docs/reference/cloudflare.md
 
@@ -1089,6 +1095,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:4d9ssv` `cairn-icon-label` is an admin-toolkit label class, not emitted by any render helper. Source:
   `docs/internal/admin-design-system.md:1109` (`.cairn-icon-label` recipe in `cairn-admin.css`);
   no occurrence under `src/lib/render/`. [verified]
+- `f:x8y1hd` `renderGlyph` itself stamps only the `cairn-glyph` class; `cairn-head` and
+  `cairn-icon`/`cairn-icon-secondary` are built by site (chassis) code, not by `renderGlyph` or
+  any other engine export. Source: `src/lib/render/glyph.ts:16-22` (single `className:
+  ['cairn-glyph']`), `examples/showcase/src/chassis/render.ts:20-23,28-33` (`makeIconRenderer`,
+  `headRow` building `cairn-head`/`cairn-icon`). [verified]
 
 ## docs/reference/reproductions.md
 

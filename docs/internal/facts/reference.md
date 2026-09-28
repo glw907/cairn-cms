@@ -411,7 +411,7 @@ re-sourced to Go on this tree rather than to the page.
   `tool/cmd/cairn/main.go:133-141`, `tool/cmd/cairn/probe_token.go:20-29`. [verified]
 - `f:hi5cw3` A usage error exits 3 with byte-empty stdout, and its message goes to stderr, so stdout carries
   payloads alone. Source: `tool/cmd/cairn/main.go:153-167`, test
-  `tool/cmd/cairn/usage_test.go:133-146`. [verified]
+  `tool/cmd/cairn/usage_test.go:125-138`. [verified]
 - `f:mcjbpm` `--json` beats `--quiet`: the payload always prints, so empty stdout under `--json` means the
   invocation was wrong rather than that the site is healthy. Source:
   `tool/cmd/cairn/health_sweep.go:49-53`, `tool/cmd/cairn/doctor.go:88-97`. [verified]
@@ -433,11 +433,11 @@ re-sourced to Go on this tree rather than to the page.
 - `f:v2mrvq` The per-check request counts live on the published page and in no Go table; a drift test reads
   them back off the page, requires exactly the ids the sweep runs, and fails when the total times
   the 15-second cap exceeds the single-site budget. Source:
-  `tool/cmd/cairn/usage_test.go:507-564`. [verified]
+  `tool/cmd/cairn/usage_test.go:499-556`. [verified]
 - `f:p8ie34` The nine published counts are `creds` 2, `serving` 6, `delegation` 2, `https-forced` 1, `email`
   9, `deploy` 4, `publish-path` 2, `engine` 4, and `errors` 1, totalling 31, which at 15 seconds
   each is 465 seconds and is what the 480-second default rounds up from. Source:
-  `tool/cmd/cairn/usage_test.go:507-527` reads and enforces these values. [candidate: no Go table
+  `tool/cmd/cairn/usage_test.go:499-519` reads and enforces these values. [candidate: no Go table
   declares the nine counts, so the values themselves trace only to the page the drift test reads]
 - `f:g4arh0` A multi-site sweep's default whole-run budget is the single-site budget times the site count,
   capped at four times the single-site default, and each site gets the envelope's remaining time
@@ -446,7 +446,7 @@ re-sourced to Go on this tree rather than to the page.
   same inside it. Source: `tool/cmd/cairn/health_sweep.go:20-26,215-253`. [verified]
 - `f:6tm5nr` The formula the page publishes is pinned by a test that builds it from the two constants, so the
   worked examples stay arithmetic rather than assertion. Source:
-  `tool/cmd/cairn/usage_test.go:566-576`. [verified]
+  `tool/cmd/cairn/usage_test.go:558-568`. [verified]
 - `f:qgeq2i` A budget miss or a signal stops a sweep after the site already in flight settles; every site
   still to come is counted toward the run's exit code as `UNKNOWN`, and under `--json` it is
   omitted from the stream rather than emitted empty, since a plain-text line would corrupt the

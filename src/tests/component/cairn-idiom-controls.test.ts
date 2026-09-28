@@ -1,10 +1,10 @@
 // cairn-cms: the field-edge idiom rules moved into cairn-idiom (the unchecked checkbox/radio edge
 // and the unfocused input/select/textarea edge, both unchanged in mechanism), the switch's
-// geometry and checked fill, the dropdown-content.menu concentric-corner rule, and the Lucide
-// stroke retune. Every color comparison resolves through the shared resolveColor oracle, every
-// state read through the shared styleOf probe, and the Lucide cases mount a real @lucide/svelte
-// icon rather than a hand-built <svg>, so the attribute shape this rule keys on is proven against
-// the library's own output.
+// geometry and checked fill, the dropdown-content.menu concentric-corner rule, the bare .badge
+// edge (the plain button's own 22% mix), and the Lucide stroke retune. Every color comparison
+// resolves through the shared resolveColor oracle, every state read through the shared styleOf
+// probe, and the Lucide cases mount a real @lucide/svelte icon rather than a hand-built <svg>, so
+// the attribute shape this rule keys on is proven against the library's own output.
 import { describe, expect, it } from 'vitest';
 import { mount as mountSvelte, unmount as unmountSvelte } from 'svelte';
 import CheckIcon from '@lucide/svelte/icons/check';
@@ -107,6 +107,50 @@ describe.each(THEMES)('the unfocused field-family edge, moved into cairn-idiom (
     });
     try {
       const el = wrapper.querySelector('input')!;
+      expect(getComputedStyle(el).borderTopColor).toBe(resolveColor('var(--color-error)', theme));
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+// Task 15 item 6: a bare .badge's own border falls back to daisyUI's --color-base-200, about
+// 1.05:1 against the card, so an uncolored chip reads as loose text. The rule sets border-color
+// directly (never --badge-color, which also feeds --badge-bg's fallback) at the plain button's
+// own 22% base-content mix, one value with no state table since a badge is not interactive.
+describe.each(THEMES)('the bare .badge edge, moved into cairn-idiom (%s)', (theme) => {
+  const BADGE_EDGE = 'color-mix(in oklab, var(--color-base-content) 22%, transparent)';
+
+  it('computes the 22%% mix on an uncolored badge', async () => {
+    const { wrapper, cleanup } = renderInTheme('<span class="badge">Chip</span>', theme);
+    try {
+      const el = wrapper.querySelector('.badge')!;
+      expect(getComputedStyle(el).borderTopColor).toBe(resolveColor(BADGE_EDGE, theme));
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('leaves a colored badge-primary at its own daisyUI edge', async () => {
+    const { wrapper, cleanup } = renderInTheme('<span class="badge badge-primary">Chip</span>', theme);
+    try {
+      const el = wrapper.querySelector('.badge')!;
+      expect(getComputedStyle(el).borderTopColor).not.toBe(resolveColor(BADGE_EDGE, theme));
+      expect(getComputedStyle(el).borderTopColor).toBe(resolveColor('var(--color-primary)', theme));
+    } finally {
+      cleanup();
+    }
+  });
+
+  // A markup border utility still wins, supplied through hostCss for the same reason the
+  // checkbox/radio and input cases above need it.
+  it('loses to a border-error utility on a badge', () => {
+    const hostCss = '@layer utilities { .border-error { border-color: var(--color-error); } }';
+    const { wrapper, cleanup } = renderInTheme('<span class="badge border-error">Chip</span>', theme, {
+      hostCss,
+    });
+    try {
+      const el = wrapper.querySelector('.badge')!;
       expect(getComputedStyle(el).borderTopColor).toBe(resolveColor('var(--color-error)', theme));
     } finally {
       cleanup();

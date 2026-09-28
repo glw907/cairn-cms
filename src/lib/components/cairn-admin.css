@@ -1029,6 +1029,33 @@
       }
     }
 
+    /* The bare .badge edge (task 15 item 6): daisyUI's own uncolored badge border falls back to
+       var(--color-base-200), which measures about 1.05:1 against the card, so the chip reads as
+       loose text rather than a bounded control. --badge-color also feeds --badge-bg's own
+       fallback, so overriding that variable would tint the fill too; this sets border-color
+       directly instead, the same longhand daisyUI's own border shorthand sets, which this
+       sublayer's layer order still outranks regardless of specificity, leaving an uncolored
+       badge's fill untouched. One value, no state table: a badge is not interactive, so its edge
+       never needs to move. The exclusion list is every color and style variant daisyUI ships,
+       each of which already carries its own deliberate border treatment. */
+    :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+      .badge:not(
+        .badge-primary,
+        .badge-secondary,
+        .badge-accent,
+        .badge-neutral,
+        .badge-info,
+        .badge-success,
+        .badge-warning,
+        .badge-error,
+        .badge-outline,
+        .badge-dash,
+        .badge-soft,
+        .badge-ghost
+      ) {
+      border-color: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    }
+
     /* The emphasis ladder's opener: btn-neutral hovers one step into --cairn-ink-hover (the same
        ink each theme root already defines for its own state hover), while its rest, focus-visible,
        and active fills stay daisyUI's stock .btn-neutral. A mouse press still matches :hover in

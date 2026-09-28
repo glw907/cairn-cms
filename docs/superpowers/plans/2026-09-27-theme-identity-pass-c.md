@@ -1491,6 +1491,18 @@ cairn-pass ritual:
   toggle's `color-scheme` resolution, the radius-token corners, and the heading levers).
 - **Facts** for every public behavior the pass changed that tasks 11 and 13 did not file, including
   the three rules' tiers and `previewMarkdown`. `check:facts` green.
+- **An outline input for the docs rebuild** (Geoff, 2026-09-28): facts carry atomic claims, and
+  the draft docs stages also need page-level intent. Write
+  `docs/internal/record/<date>-theme-contract-docs-input.md`, an outline input for draft docs
+  stage 2 (extend) and stage 5 (the front door), in the form the draft docs approach spec
+  (`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`) takes outline inputs. It
+  covers passes A, B, and C together: each narrative page the theme work creates, changes, or
+  retires (at least `design-your-site.md`, a theme-building task guide if the contract warrants
+  one, and the custom admin screen pages the `./admin` and `./public` split touches), each with
+  its reader, its job, its page type, and the fact ids it rests on. It also states what the
+  `cairn-public` skill teaches and what the docs teach, so the two neither duplicate nor
+  contradict, and it lists the frozen-page fixes this pass made in place, which the rebuild must
+  keep. The close's STATUS entry names the file as a stage 2 input.
 - **`check:surface`** is verified current (task 6 regenerated `api-surface.md`; the full gate
   runs it).
 - **`docs/internal/engine-rulings.md`** records `public-css-export`, with the corrected Verdict text

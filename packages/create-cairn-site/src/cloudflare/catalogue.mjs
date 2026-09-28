@@ -546,9 +546,8 @@ const ROWS = {
   // This row fires from chapter 2's own email admission, once the site is already live on
   // Cloudflare's Workers Paid plan: declining here turns down email sign-in for the connected
   // domain specifically, not the plan itself, which is already on. Its code and the `step` it
-  // writes are both the stable, pre-existing name `paid-plan-declined`: the Go tool mirrors this
-  // step name (tool/internal/spine/step.go) and existing site records already carry it, so only
-  // this row's own text changed to drop the now-stale Workers Paid framing.
+  // writes are both the stable name `paid-plan-declined`, since the Go tool mirrors this step
+  // name (tool/internal/spine/step.go) and existing site records already carry it.
   'paid-plan-declined': {
     kind: 'declined',
     build(params) {

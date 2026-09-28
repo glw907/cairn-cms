@@ -16,19 +16,18 @@ const DEFAULTS = { name: 'Waymark', description: '', brandColor: '' };
 const BRAND_COLOR_HINT = 'Enter a hex color, an oklch(...) string, or a number 0-360.';
 
 /**
- * Every value the AI-posture question accepts, whether typed on a flag or returned by the
- * select prompt: `'decline'` and `'invite'` write into `cairn.config.ts`, and `'none'` (the
- * default) writes nothing.
+ * The AI-posture select's options, one line of consequence each so the choice needs no
+ * marketing to explain it. `'decline'` and `'invite'` write into `cairn.config.ts`, and `'none'`
+ * (the default) writes nothing.
  */
-const AI_POSTURE_VALUES = ['decline', 'invite', 'none'];
-
-/** The AI-posture select's three options, one line of consequence each so the choice needs no
- * marketing to explain it. */
 const AI_POSTURE_OPTIONS = [
   { value: 'none', label: 'No preference (default)', hint: 'writes nothing' },
   { value: 'decline', label: 'Decline', hint: 'asks AI training crawlers to stay away' },
   { value: 'invite', label: 'Invite', hint: 'states they are welcome' },
 ];
+
+/** Every value the AI-posture question accepts, whether typed on a flag or chosen in the select. */
+const AI_POSTURE_VALUES = AI_POSTURE_OPTIONS.map((option) => option.value);
 
 /**
  * End the process after a cancelled prompt (the user pressing Ctrl+C), printing a next step

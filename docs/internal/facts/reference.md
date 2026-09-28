@@ -44,10 +44,29 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   production. Source: `src/lib/components/chrome-guard.ts:1-54`. [verified]
 - `f:1mgfhj` The ten media-janitorial actions run at runtime on `createCairnAdmin`'s returned object but are
   absent from the type-level `CairnAdminRoutes` contract; recovering them for a typed caller needs
-  a spread (`{ ...admin.actions }`) or a cast. This is a documented type-vs-runtime narrowing, not
-  independently re-verifiable by grep alone. Source: `src/lib/sveltekit/cairn-admin.ts`. [candidate: searched
-  that file for `CairnAdminRoutes`, found no type definition in it
-  to diff against the runtime object directly, pending a dedicated type-level check]
+  a spread (`{ ...admin.actions }`) or a cast. `mediaUpload` is deliberately excluded from the
+  narrowed set: it stays in the declared type, wrapping the same `uploadAction` the kept `upload`
+  action wraps, gated to the media view instead of the edit view. Source:
+  `src/lib/sveltekit/cairn-admin.ts` (`CairnAdminRoutes` interface and the `actions` object).
+  [verified]
+- `f:6toyed` `previewMint` and `previewRevoke` are `edit`-gated actions present at runtime and kept
+  (not narrowed away) in the declared `CairnAdminRoutes` type, alongside the other named actions.
+  Source: `src/lib/sveltekit/cairn-admin.ts:301-304,399-400`. [verified]
+- `f:hjhp4w` Logout and publish-all always post to the fixed absolute `/admin?/logout` and
+  `/admin?/publishAll` paths, both of which parse to the `index` view, never to the editor's
+  current page URL. Source: `src/lib/components/CairnAdminShell.svelte:12,1160`;
+  `src/lib/sveltekit/cairn-admin.ts:260-262,279,340` (`authedViews`/`anyView`). [verified]
+- `f:p3vmug` The showcase's admin route files differ from `admin-routes.md`'s "reproduced from the
+  showcase" snippets in two ways: they import the composer through the showcase-internal
+  `$chassis` alias (not `$lib`), and `+layout.svelte` imports a compiled `.cairn/admin.css`,
+  present in both the showcase and the `create-cairn-site` scaffold template
+  (`templates/waymark/src/routes/admin/+layout.svelte`). Source:
+  `examples/showcase/src/routes/admin/+layout.server.ts`,
+  `examples/showcase/src/routes/admin/+layout.svelte`,
+  `templates/waymark/src/routes/admin/+layout.svelte`. [candidate: unclear whether the
+  `.cairn/admin.css` import is required for the base single-mount admin to render, or only for a
+  site that adds its own Tailwind-styled admin screens per the style-sheet seam ruling;
+  `docs/extend/build-a-site-by-hand.md`'s hand-build walkthrough also omits it]
 
 ## docs/reference/admin-toolkit.md
 
@@ -822,6 +841,12 @@ re-sourced to Go on this tree rather than to the page.
   `before` was [absent or unstamped]... `upsertEntry` preserves a prior `publishedAt` through an
   ordinary save") and `:59-62` (`priorStamps` keyed by `keyOf(e)` = concept+id; `if (!e.publishedAt)
   return false`). [verified]
+- `f:wv457z` `buildNewlyPublished`'s draft exclusion is a separate, necessary check, not implied by
+  the stamp comparison: a drafted entry can carry a `publishedAt` stamp forward from a prior
+  publish (`upsertEntry` preserves it through a re-draft), so without the explicit
+  `if (e.draft) return false` check such an entry could read as newly published even though its
+  stamp differs from `before`. Source: `src/lib/delivery/manifest.ts:38-46` (doc comment) and
+  `:60-64` (draft check precedes the stamp comparison). [verified]
 - `f:gkrell` `ManifestEntry.publishedAt` (ISO 8601 UTC) is set once, at the publish commit that first lands
   the entry non-draft, and never overwritten or cleared afterward; `upsertEntry` preserves a prior
   `publishedAt` through an ordinary save. Source: `src/lib/delivery/manifest.ts:44` (doc comment,

@@ -6,7 +6,10 @@ and a single `actions` record, so the site restates no route table and wires no 
 hand. The showcase at `examples/showcase` is the working model of this shape; copy its files, not
 a guess at them. The showcase's own `svelte.config.js` predates the current scaffold shape below;
 it is this repo's hand-maintained config, not a fresh scaffold's output, and both settings still
-work there too.
+work there too. The showcase also imports its composer through its own `$chassis` alias and
+imports a compiled .cairn/admin.css in its shell layout; the snippets below use the generic
+`$lib` alias and omit that stylesheet import, which a Tailwind-based scaffold needs only once it
+adds its own admin screens (see the stylesheet seam in `docs/extend/`).
 
 This wiring assumes the site disables SvelteKit's own origin check for form posts, `csrf: {
 checkOrigin: false }`, since cairn's guard owns CSRF for the admin through a double-submit token.
@@ -126,7 +129,8 @@ The one route answers every admin URL. `createCairnAdmin`'s load parses `event.u
 | `/admin/help` | help | The Help home: getting started, the formatting reference, and the support hand-off. |
 
 Any other shape is a 404, and one trailing slash is tolerated. Logout has no URL of its own; the
-admin shell posts it as the named `?/logout` action on whatever page the editor is on.
+admin shell always posts it to the fixed `/admin?/logout` action, regardless of which page the
+editor is on, which is why `logout` accepts any parsed view.
 
 ## The actions vocabulary
 
@@ -147,6 +151,8 @@ so a `save` posted to a list URL refuses rather than misfiring:
 | `publish` | edit | the entry publish |
 | `discard` | edit | the pending-edit discard |
 | `rename` | edit | the entry rename |
+| `previewMint` | edit | mint a public preview link for the entry's pending draft |
+| `previewRevoke` | edit | revoke every outstanding preview link for the entry |
 | `dictionaryAdd` | edit | the personal-dictionary add |
 | `tidy` | edit | the language-model tidy copy-edit |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
@@ -168,11 +174,12 @@ so a `save` posted to a list URL refuses rather than misfiring:
 The engine's components post these names, so an action-adding release reaches a site through the
 version bump alone; there is no per-site action table to keep in sync.
 
-The ten media-janitorial actions (`mediaDelete`, `mediaUpdate`, `mediaUpload`,
+The ten media-janitorial actions (`mediaDelete`, `mediaUpdate`,
 `mediaLibraryUpload`, `mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`,
 `mediaAltPropagate`, `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`) all run at
 runtime on the object `createCairnAdmin` returns, but are absent from the declared
-[`CairnAdminRoutes`](./sveltekit.md#types) type. The narrowing is type-level, not a runtime
+[`CairnAdminRoutes`](./sveltekit.md#types) type. `mediaUpload` is not one of the ten: it stays in
+the declared type, gated to the media view instead of the edit view. The narrowing is type-level, not a runtime
 boundary: `export const actions = admin.actions` still wires every one of them, since it reads
 the actual object rather than the declared type; a caller that needs the narrowed members typed
 recovers them with a spread (`{ ...admin.actions }`) or a cast.

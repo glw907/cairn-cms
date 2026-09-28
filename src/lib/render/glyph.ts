@@ -4,7 +4,11 @@
 import { s } from 'hastscript';
 import type { Element } from 'hast';
 
-/** A glyph name to SVG path-data map (the site owns the icon set). */
+/**
+ * A glyph name to SVG path-data map (the site owns the icon set). Each path is filled shape
+ * data on a `0 0 256 256` box: renderGlyph renders it with fill=currentColor and no stroke, so a
+ * stroke-only path (one whose `d` encloses no area) renders invisible.
+ */
 export type IconSet = Record<string, string>;
 
 /**

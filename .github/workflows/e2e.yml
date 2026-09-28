@@ -117,7 +117,11 @@ jobs:
           echo "OK: gate self-test: markers present in the flagged build's deployable bundle"
       - name: Run the e2e suite
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true') }}
-        run: npm --prefix examples/showcase run test:e2e
+        # playwright.config.ts leaves reporter unset, so CI falls back to Playwright's own
+        # CI-detected default (`dot`), which writes no HTML report. `dot` still prints pass/fail
+        # to the run log; `html` additionally writes playwright-report so the upload step below
+        # has something to attach on failure.
+        run: npm --prefix examples/showcase run test:e2e -- --reporter=dot,html
       # Manual regen mode: a dispatcher ticks `update_snapshots` after a deliberate rendering
       # change. Runs both visual specs BY FILE PATH (never a title grep, which silently skips
       # any test whose name doesn't match), on the CI runner itself, since baselines are
@@ -127,7 +131,7 @@ jobs:
       # artifact for manual copy-back.
       - name: Regenerate the visual baseline snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' }}
-        run: npm --prefix examples/showcase run test:e2e -- e2e/admin-visual.spec.ts e2e/site-visual.spec.ts --update-snapshots
+        run: npm --prefix examples/showcase run test:e2e -- e2e/admin-visual.spec.ts e2e/site-visual.spec.ts --update-snapshots --reporter=dot,html
       - name: Commit the regenerated visual baselines
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' }}
         run: |
@@ -142,3 +146,23 @@ jobs:
             git pull --rebase
             git push
           fi
+      # examples/showcase/playwright.config.ts sets testDir: 'e2e' and leaves outputDir unset, so
+      # Playwright writes test-results (its outputDir default, package-dir-relative) regardless of
+      # reporter; the `--reporter=dot,html` flag on both run steps above additionally writes
+      # playwright-report (the html reporter's own default path), also package-dir-relative. Both
+      # paths are relative to examples/showcase. `if: failure()` catches a failure from any prior
+      # step in this job, not only the test run. `if-no-files-found: ignore` keeps the step from
+      # failing the job itself when a path has nothing to upload (a failure before the run step,
+      # such as the build or bundle-budget checks above, leaves neither directory written). The
+      # name is job-scoped so a future matrix leg gets its own artifact instead of two legs
+      # colliding on one name.
+      - name: Upload the Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ github.job }}
+          path: |
+            examples/showcase/playwright-report
+            examples/showcase/test-results
+          retention-days: 7
+          if-no-files-found: ignore

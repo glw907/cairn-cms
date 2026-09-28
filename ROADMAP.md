@@ -282,6 +282,16 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Theme identity, passes A, B, and C (Geoff, 2026-09-26 and 2026-09-27).** cairn's own look moves
+  into the daisyUI theme layer, and the public site gets one theme contract that any theme can meet.
+  Pass A (the admin theme, spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`) is
+  executing on `theme-identity-a`. Passes B and C share one spec,
+  `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renames `./components` to
+  `./admin` and ships the admin agent path; C is the one public theme (`cairn-public.css`, derived
+  inks, heading levers, the three public audit rules, the `cairn-public` skill, and the designer
+  walkthrough's template fixes). B stays unmerged, C branches from it, and both merge at C's close
+  with one `0.98.0` cut carrying A, B, and C. Draft documentation (below) waits for C.
+
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25).** cairn's docs are still
   to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,
   and 2a, spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
@@ -294,6 +304,8 @@ The original decision framing, for the record:
   - The six-audience ruling and the audience-profile format on the unmerged branch
     `docs-reset-2a-audiences` (on origin). The profiles themselves were never written.
   - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
+  - The designer's theme guide is a primary page (Geoff, 2026-09-27): it documents the one
+    public theme contract (Now, "Theme identity", pass C) and is drafted after that contract settles.
   - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
     on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
     DaisyUI. It links to DaisyUI's theme docs rather than restating them.
@@ -314,6 +326,21 @@ The original decision framing, for the record:
   step: a hand run of `cairn-audit --rendered --rule viewport-overflow` against the showcase with
   the drawer closed versus open, reading the flagged elements to confirm or rule out the drawer
   hypothesis.
+
+- **Inserting a component fuses its closing fence onto the text after the caret (designer
+  walkthrough, 2026-09-27; friction log F12).** A live editor-facing defect.
+  `insertAtCursor` in `src/lib/components/MarkdownEditor.svelte:1133-1143` prepends `\n\n` when the
+  caret is past position 0 but appends nothing after the block. `serializeComponent`
+  (`src/lib/render/component-grammar.ts:44`) ends the block on its bare closing fence. Any text
+  after the caret therefore joins that fence, and the directive never closes. Repro: open a post
+  whose body has text, put the caret at the start of the body, choose Insert block, pick any
+  component, and press Insert. The editor shows `:::The original body.` on one line. The e2e at
+  `examples/showcase/e2e/golden-path.spec.ts:449-453` asserts only the opening line, so it cannot
+  see this. Leanest fix: pad the inserted block with a blank line on each side whenever the
+  caret's line has text before or after it, and assert the whole inserted block in the e2e. Owner:
+  the next engine pass, as its own small task. Pass B's rename moves the file to
+  `src/lib/admin/`. Evidence: `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`,
+  F12.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -375,16 +402,6 @@ The original decision framing, for the record:
   release-debt pass rather than absorbed into it. Trigger: before `create-cairn-site` publishes,
   which is the same decision the release cut already owes.**
 
-- **`check:surface` is blind to an index signature, so a real breaking change passes it silently
-  (release-debt pass, 2026-08-19).** That pass removed `[key: string]: unknown` from the exported
-  `SiteConfig` interface, which breaks dynamic indexing and `Record<string, unknown>` assignability
-  for a consumer, and `npm run check:surface -- --update` produced zero diff: the snapshot's member
-  listing never renders index signatures at all. The gate exists to catch public-surface drift and
-  cannot see this whole class of it. Same shape as the `check:reference` subpath hole below, and the
-  same preferred form applies: make the snapshot render index signatures so the drift fails the gate
-  rather than relying on a reviewer noticing. **Trigger: the next pass that touches an exported
-  interface's shape.**
-
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
   in favour of `csrf.trustedOrigins`. It will be removed in a future version." This is the standing
@@ -433,17 +450,14 @@ The original decision framing, for the record:
   are already enumerated in `manifest.ts`), then assert `complete && naturalWidth > 0` rather than
   the composed string. Found by the seam pass's Svelte review.
 
-- **`check:reference` cannot see a subpath nobody told it about.** `scripts/checks/reference-coverage.mjs`
-  holds a hardcoded `CONFIG` list, so a new export subpath ships with no reference page while the gate
-  reports OK across the subpaths it does know. The seam pass added two subpaths and hit exactly this.
-  Deriving the list from `package.json`'s `exports` (with an explicit, asserted exclusion list for
-  anything deliberately undocumented) turns a silent gap into a failure. The same shape of hole exists
-  for component props: the gate matches exported names, so a new public prop is invisible to it, and
-  the live-reproduction seam pass proved it twice in one window: `CairnAdminShell` and `EditPage` each
-  gained a public prop (`themeOverride`, `spellcheckOverride`) while `docs/reference/components.md`
-  kept printing the older, shorter signature until a later manual pass caught both. Converting this
-  into a failing check, not a watch note, is this repo's own preferred form for a mechanically
-  detectable, silent-failure gap.
+- **`check:reference` cannot see a new public component prop.** `scripts/checks/reference-coverage.mjs`
+  matches exported names, so a new public prop is invisible to it, and the live-reproduction seam pass
+  proved it twice in one window: `CairnAdminShell` and `EditPage` each gained a public prop
+  (`themeOverride`, `spellcheckOverride`) while `docs/reference/components.md` kept printing the older,
+  shorter signature until a later manual pass caught both. (The sibling hole, a subpath nobody told the
+  gate about, shipped a fix in the 2026-09-27 chores batch: the list now derives from `package.json`'s
+  `exports`.) Converting the props gap into a failing check, not a watch note, is this repo's own
+  preferred form for a mechanically detectable, silent-failure gap.
 
 - **The published docs have no visual layer at all, and half of that was never decided
   (Geoff, 2026-08-15, reading the editors track).** The corpus ships zero images and zero
@@ -917,15 +931,6 @@ the named human gates only):**
   index sees, and no brief existed yet to index. Trigger: the first committed brief whose cited
   fact is later edited, or the first page drafted under the new approach.
 
-- **`npm run check:surface -- --update` cannot regenerate the surface snapshot (doctor-retirement
-  pre-task, 2026-09-21).** The script is three commands joined by `&&`, and npm appends run
-  arguments to the end of the whole string, so `--update` reaches `check-surface-leaks.mjs` only
-  and `check-surface.mjs` never sees it. A regen therefore takes
-  `node scripts/checks/check-surface.mjs --update` by hand, which Task 3 had to discover after a
-  reviewer flagged a stale `docs/internal/api-surface.md`. The fix is a second npm script that
-  calls the generator alone. Trigger: the next pass that changes the public surface, or the next
-  reviewer finding of a stale surface snapshot.
-
 - **`cairn-run-gate` needs a silence watchdog for browser gates (doctor-retirement pre-task,
   2026-09-21; a dotfiles chore, filed here because cairn passes are what hit it).** This pass lost
   over an hour to a stock `npm test` that held the heavy lock while producing no output, because
@@ -1007,23 +1012,6 @@ the named human gates only):**
   made the visual baselines depend on the CI runner's font fallback for `U+2318` rather than on
   cairn's own markup. Draw both from the icon library (`@lucide/svelte`) or a pinned symbol font
   instead. Trigger: the next pass that touches either component.
-
-- **`publish.yml` uses `npm install --no-audit --no-fund`, not `npm ci`, for the published build
-  (pre-cut pass, 2026-09-21).** A reviewer proposed the switch during the pass; declined for the
-  cut because `npm install` with a committed lockfile already honors it, and changing the release
-  pipeline sat outside the owner's four rulings for that pass. Evaluate `npm ci` for the
-  reproducibility guarantee it adds over a committed lockfile in a release workflow. Trigger: the
-  next pass that touches `publish.yml`.
-
-- **The `cairn-release` skill has no step enforcing that `package.json` and
-  `packages/cairn-cms-dev/package.json` carry the same version (pre-cut pass, 2026-09-21).**
-  Task 6 of the pre-cut plan hand-asserts the two versions are equal before tagging
-  (`docs/superpowers/plans/2026-09-21-pre-cut-pass.md`, Task 6), but neither the skill's own
-  procedure nor `check:version` or `check:dev-package` enforces the lockstep bump as a gate, so a
-  future cut that skips the plan's hand step can silently publish a mismatched dev-package version
-  the way `0.95.0` almost did. Add the assertion to the skill's own steps, or extend
-  `check:version` (or `check:dev-package`) to fail when the two manifests disagree. Trigger: the
-  next release cut, or the next pass that touches either gate script.
 
 - **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
   until a site pass has filed about twenty facts by hand and the shape has stopped moving
@@ -1153,14 +1141,9 @@ the named human gates only):**
   prose that no longer runs. This pass never edits another repo; both need a fix in cairn-pub's
   own next pass, filed here since no engine record reaches that repo.
 
-- **Five small items retire-2a left, filed at retire-2b's close (2026-09-22).** Four came from
-  the friction log and the fifth from the close's own ROADMAP reconciliation. Each was verified
-  against the tree at filing.
-  - **No scaffolder test pins the install pointer.** `packages/create-cairn-site/src/scaffold.mjs`
-    prints the `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` literal and the
-    release-page URL beside its `cairn doctor` reminder, but `resume-chapter2.test.mjs` asserts
-    only the reminder's first sentence, so a wrong module path or URL ships green. Trigger: the
-    next pass touching the scaffolder's hand-over text.
+- **Three small items retire-2a left, filed at retire-2b's close (2026-09-22).** Verified against
+  the tree at filing. (A fourth, the scaffolder test pinning the install pointer, shipped in the
+  2026-09-27 chores batch.)
   - **`cairn-guidance`'s containment is a text-prefix check.** `readFileUnderCwd` in
     `src/lib/guidance/bin.ts` compares `resolve(cwd, relPath)` against `cwd + sep` with no
     realpath step, so a symlink inside the project can lead the read outside it. It predates the
@@ -1253,9 +1236,14 @@ the named human gates only):**
     nothing asserts it, so a wrong id would reach the JSON payload silently. **Trigger:** the next
     check added to `internal/doctor`.
 
-- **`e2e.yml` uploads no Playwright report artifact on failure (found closing the pre-cut pass,
-  2026-09-21).** A CI e2e failure can only be diagnosed by a local reproduction; wire an artifact
-  upload on failure so a CI-only visual diff is viewable without one.
+- **`design.yml` uploads no Playwright report artifact on failure (found closing the 2026-09-27
+  chores batch, the same gap `e2e.yml` had).** The design gate's styleguide e2e job
+  (`.github/workflows/design.yml`) runs `npm --prefix examples/showcase run test:e2e -- styleguide`
+  with no reporter selection and no upload-on-failure step, so a CI-only failure (a token or
+  axe regression) leaves no downloadable report, the same diagnosability hole `e2e.yml` had before
+  this batch closed it. Apply the same fix: `--reporter=dot,html` plus an `actions/upload-artifact`
+  step scoped to the job, bounded retention, `if: failure()`. Trigger: the next pass that touches
+  `design.yml`, or the next CI-only design-gate failure nobody can reproduce locally.
 
 - **The Names convention reaches only prose Vale lints (promoted from the friction log,
   2026-09-22).** `docs-register.md`'s "Names" section and the `Cairn.Names`/`Cairn.NamesRetired`
@@ -2078,9 +2066,14 @@ the named human gates only):**
   `:::figure` natively, and the name is reserved — the docs pass records this.
   (3) **Glyph rendering is fill-only** (from the friction log, Waymark final review T1,
   2026-07-17) — a line-shaped subpath (the flag glyph's pole) paints nothing under a fill-only
-  renderer, reading as an ~14x8px smudge at standalone size. Close the subpath in the engine icon
-  set or paint stroke+fill. Deferred because a stroke change sweeps all 27 icons just after the
-  icon vocabulary shipped.
+  renderer, reading as an ~14x8px smudge at standalone size; the `snowflake` glyph is stroke-only
+  too, and both it and `flag` render as near-invisible dashes in the Insert-block picker
+  (`examples/showcase/src/theme/icons.ts:7,14`, copied to `templates/waymark`). The leanest half,
+  one sentence on `IconSet` stating a path must be a filled shape on a `0 0 256 256` box
+  (`src/lib/render/glyph.ts:7`, `docs/reference/core.md:1081`), shipped in the 2026-09-27 chores
+  batch. Still open: redraw `flag` and `snowflake` as closed-shape paths in the showcase and the
+  template, short of the full stroke sweep across all 27 icons. Owner: theme identity pass C.
+
 - **Mechanical hardening: gate the `sideEffects` coverage of the server-only browser stubs (from the
   seams pass-two review, 2026-08-01).** `package.json`'s `sideEffects` now lists `dist/*/browser.js`, so
   a bundler cannot tree-shake away the module-level throw that makes `./auth-crypto` and `./cloudflare`

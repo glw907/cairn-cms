@@ -71,11 +71,38 @@ function resolveAlias(checker, sym) {
   return sym.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(sym) : sym;
 }
 
-// Render an interface's shape as `{ member: type; ... }` in declaration order. A bare
-// `typeToString` of an interface prints only its name, and `InTypeAlias` does not expand it, so the
-// members are expanded by hand. Each member's type renders with the shape flags; a referenced named
-// type (for example `role: Role`) stays a name, which is correct because that type carries its own
-// snapshot entry and a change to IT drifts there.
+// Render an interface's index signatures (`[key: string]: T`, `readonly [index: number]: T`,
+// `[key: symbol]: T`) as `[key: keyType]: valueType` strings, `readonly`-prefixed where the
+// signature declares it. `getPropertiesOfType` never sees an index signature, so
+// `renderInterface` folds this in separately; dropping one is exactly the class of drift a
+// removed named field causes (a consumer loses dynamic indexing or `Record<K, V>` assignability),
+// so it must snapshot the same as a named member. Sorted string, number, symbol so the rendering
+// is deterministic across a TypeScript version that may reorder `getIndexInfosOfType`'s result.
+/**
+ * @param {import('typescript').TypeChecker} checker
+ * @param {import('typescript').Type} type
+ */
+function renderIndexSignatures(checker, type) {
+  /** @type {Record<string, number>} */
+  const keyOrder = { string: 0, number: 1, symbol: 2 };
+  return checker
+    .getIndexInfosOfType(type)
+    .map((info) => ({
+      keyType: checker.typeToString(info.keyType),
+      valueType: checker.typeToString(info.type, undefined, SHAPE_FLAGS),
+      isReadonly: info.isReadonly,
+    }))
+    .sort(
+      (a, b) => (keyOrder[a.keyType] ?? 3) - (keyOrder[b.keyType] ?? 3) || a.keyType.localeCompare(b.keyType),
+    )
+    .map((info) => `${info.isReadonly ? 'readonly ' : ''}[key: ${info.keyType}]: ${info.valueType}`);
+}
+
+// Render an interface's shape as `{ member: type; ... }` in declaration order, index signatures
+// last. A bare `typeToString` of an interface prints only its name, and `InTypeAlias` does not
+// expand it, so the members are expanded by hand. Each member's type renders with the shape flags;
+// a referenced named type (for example `role: Role`) stays a name, which is correct because that
+// type carries its own snapshot entry and a change to IT drifts there.
 /**
  * @param {import('typescript').TypeChecker} checker
  * @param {import('typescript').Type} type
@@ -89,7 +116,8 @@ function renderInterface(checker, type) {
     const optional = p.flags & ts.SymbolFlags.Optional ? '?' : '';
     return `${p.name}${optional}: ${checker.typeToString(memberType, undefined, SHAPE_FLAGS)}`;
   });
-  return `{ ${parts.join('; ')} }`;
+  const indexParts = renderIndexSignatures(checker, type);
+  return `{ ${[...parts, ...indexParts].join('; ')} }`;
 }
 
 // The type that carries an export's shape. A type-only symbol (an interface, a type alias, an enum
@@ -122,7 +150,7 @@ function shapeTypeOf(checker, sym) {
  * @param {import('typescript').TypeChecker} checker
  * @param {import('typescript').Symbol} exportSym
  */
-function renderExport(checker, exportSym) {
+export function renderExport(checker, exportSym) {
   const sym = resolveAlias(checker, exportSym);
   const type = shapeTypeOf(checker, sym);
   let rendered;

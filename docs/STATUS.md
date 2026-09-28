@@ -20,32 +20,38 @@ plugin's `buildStart`.
 
 ## Immediate next action
 
-Executing theme identity pass A overnight (Geoff's grant, 2026-09-26): plan
-[`2026-09-26-theme-identity-pass-a.md`](superpowers/plans/2026-09-26-theme-identity-pass-a.md),
-implementing the approved spec
-[`2026-09-26-theme-identity-design.md`](superpowers/specs/2026-09-26-theme-identity-design.md).
-Ceiling 20M, flag 16M. The run covers tasks 0 to 14 and the settle round, then stops at the resume
-point before Geoff's S3 before/after sitting; nothing merges or publishes. Resume prompt: "Resume
-theme identity pass A from the plan's ledger at the S3 sitting." The next release carrying it is
-`0.98.0`.
+One conductor session (2026-09-27, `claude-opus-5-5`) is running four streams unattended toward an
+overnight run. If it dies, resume each from its plan's ledger foot:
 
-Draft docs pass 0+1 is **paused** on `draft-docs-0` (Geoff, 2026-09-26: "We can hold further docs
-work until we've completed this effort"); it resumes after the theme initiative merges (pass B,
-pending Geoff's confirmation at S3) and merges `main` into its branch first. Its plan:
-[`2026-09-26-draft-docs-pass-0-1.md`](superpowers/plans/2026-09-26-draft-docs-pass-0-1.md).
-Segment A (tasks 1 to 5) is done; the branch's plan ledger records it, and draft PR #91 carries
-the CI proof. It resumes at segment B.
+- **Theme identity pass A**, worktree `.claude/worktrees/theme-identity-a`, draft PR #92, class
+  `paint`. Segments A and B done; segment C (tasks 9 to 11) in flight. PR #92 conflicts with
+  `main` in `package.json` (both sides add a script line), so no CI has run since segment A: the
+  segment C boundary merges `main` in, keeping both lines, before it pushes. Owner glance page:
+  https://claude.ai/artifact/84VPNnuk9uwNwHnTtvTobx. Geoff's rulings (2026-09-27): pass A runs past
+  S3 on async review, through S1, task 15, S4, and its close, with the merge held for his
+  before-and-after.
+- **Theme identity passes B and C**, spec approved. Pass C's plan is reviewed and cleared to run
+  (`theme-c-plan` branch, `a6722a6e` plus the 29M ceiling ruling `8000a3f3`). Pass B's plan is
+  written and reviewed after pass A's segment D lands, then run without Geoff's read (standing rule, `pass-core`). **Ruling (Geoff, 2026-09-27):** pass B
+  branches from pass A's closed but unmerged head, not from `main` after A merges; pass C
+  branches from B. S3 corrections land on A and merge forward into B and C; A, B, and C merge
+  with the one `0.98.0` cut.
+- **Go tool architecture chores**, worktree `.claude/worktrees/go-chores-plan`, plan
+  `docs/superpowers/plans/2026-09-27-go-tool-architecture-chores.md` (approved), class `tool`,
+  light gate only. S1 and S2 done, S3 in flight; about 4M of 8.5M.
+- **Draft docs pass 0+1**, resumed for segment B only (Geoff lifted the hold for its tooling
+  tasks): tasks 6 and 8 accepted, task 7 in flight, plan amended to pass classes (`14d3f7ac`).
+  Task 9 is Geoff's sitting; task 10 waits on pass B's rename.
 
-Open items for Geoff: the four stale owner facts (`what-cairn-is-and-is-not.md:49` rule count,
-`f:ab9kzr`, `f:75hawi`, `docs/why-cairn.md:41` against line 84) settle in the plan's task 9
-sitting; the earlier Cloudflare token mints to revoke; the global `CLAUDE.md` trim (now ~5,999 of 6,000) awaits his dotfiles commit.
-
-The reader harness is removed. Still Geoff's: revoke `CAIRN_SCRATCH_CF_TOKEN` (Cloudflare
-dashboard) and `CAIRN_DOCS_READER_OAUTH_TOKEN` (claude.ai settings), then drop both from the age
-store and `~/.dotfiles/secrets/registry.md`; the scratch site `cairn-scratch-b` (Worker, D1,
-GitHub repo) awaits his delete confirmation.
+The chores batch merged as PR #93 (`283a63d1`).
 
 ## Open decisions and watches
+
+- Rulings (Geoff, 2026-09-27): the Go pass merges on a green close. Draft docs task 10 splits:
+  it runs overnight on every reference page except the admin subpath page pass B renames and the
+  `./public` page it creates, which run after pass B lands. The `checkOrigin` to
+  `csrf.trustedOrigins` migration becomes its own small `auth-data` pass after the `0.98.0` cut:
+  planned and reviewed unattended, run when Geoff can make the magic-link click.
 
 - Node 26 becomes the floor at beta only if it is Active LTS by then (Current until Oct 2026);
   TypeScript 7 stays held until `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly).
@@ -63,7 +69,15 @@ GitHub repo) awaits his delete confirmation.
 
 ## Resume prompt
 
-Draft docs, after the theme pass merges: in a fresh session started with
+Passes B and C plans, once pass A's plan ledger records segment D accepted: in a fresh session
+started with `claude --model claude-opus-5-5` at effort `high`, in
+`/var/home/glw907/Projects/cairn-cms`, confirm Geoff has approved the pass B and C spec, then
+author both plans from it (each with its `Pass class:`, token ceiling, and checkpoint interval per
+`pass-core`), run `spec-plan-review` on both, and bring them to Geoff in one sitting. Read the
+spec's "Open for the plan" and the fold record's moved detail first; never touch pass A's
+worktree.
+
+Draft docs, after passes B and C merge: in a fresh session started with
 `claude --model claude-opus-5-5` at effort `medium`, in `/var/home/glw907/Projects/cairn-cms`,
 resume draft docs pass 0+1 as a thin conductor at segment B: merge `main` into `draft-docs-0`,
 read the plan's ledger on that branch, then dispatch tasks 6 and 8 through `pass-execute`.

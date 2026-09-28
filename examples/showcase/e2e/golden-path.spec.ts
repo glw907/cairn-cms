@@ -414,8 +414,8 @@ test('the component picker groups the catalog, opens the callout two-pane with i
   await page.goto('/admin/posts/2026-06-hello');
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
-  // Replace the body with a known line, then return the caret to the document start (the F12
-  // repro's exact position): the caret sits before existing body text, with nothing above it.
+  // Replace the body with a known line, then return the caret to the document start: the caret
+  // sits before existing body text, with nothing above it.
   const editor = page.locator('.cm-content');
   await expect(editor).toBeVisible();
   await editor.click();

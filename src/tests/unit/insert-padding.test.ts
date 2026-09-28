@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { padInsertedBlock } from '../../lib/admin/insert-padding.js';
 
-// Table-driven proof of decision 10 (the 2026-09-27 theme identity pass B): a block insert
-// separates from adjacent non-blank text by exactly one blank line on each side, never a double
-// blank line, and never padding at a document edge. Each row asserts the whole resulting document
-// and the caret offset, which lands at the end of the inserted block (its closing fence).
+// Table-driven proof of the padding rule behind EditorApi.insert: a block insert separates from
+// adjacent non-blank text by exactly one blank line on each side, never a double blank line, and
+// never padding at a document edge, without disturbing the indentation of a line that holds
+// content. Each row asserts the whole resulting document and the caret offset, which lands at the
+// end of the inserted block (its closing fence).
 const rows: { name: string; doc: string; pos: number; text: string; out: string; caret: number }[] = [
   {
     name: 'an empty document',
@@ -15,7 +16,7 @@ const rows: { name: string; doc: string; pos: number; text: string; out: string;
     caret: 19,
   },
   {
-    name: 'the caret at the document start before body text (the F12 repro)',
+    name: 'the caret at the document start before body text',
     doc: 'The original body.',
     pos: 0,
     text: '::::note\nBLOCK\n::::',
@@ -73,18 +74,34 @@ const rows: { name: string; doc: string; pos: number; text: string; out: string;
   {
     name: "the pre-mount fallback's case, the caret at the end of a non-empty value",
     doc: 'A plain prose line.',
-    pos: 20,
+    pos: 19,
     text: '::::note\nBLOCK\n::::',
     out: 'A plain prose line.\n\n::::note\nBLOCK\n::::',
     caret: 40,
   },
   {
-    name: "a caller's inline text inserted mid-sentence (Review focus 4)",
+    name: "a caller's inline text inserted mid-sentence",
     doc: 'I love the sunset.',
     pos: 6,
     text: 'really ',
     out: 'I love\n\nreally \n\nthe sunset.',
     caret: 15,
+  },
+  {
+    name: 'the caret at the document start before an indented code line, which keeps its indentation',
+    doc: '    const x = 1;',
+    pos: 0,
+    text: 'X',
+    out: 'X\n\n    const x = 1;',
+    caret: 1,
+  },
+  {
+    name: "the caret at a line's end above a nested list item, which keeps its indentation",
+    doc: '- a\n  - nested',
+    pos: 3,
+    text: 'X',
+    out: '- a\n\nX\n\n  - nested',
+    caret: 6,
   },
 ];
 

@@ -1677,3 +1677,25 @@ targeted tasks draw a MISMATCH, so check the first task's report for the fallbac
   Notes: spaced em dashes in the corner-ladder bullets; some "pill" names outside the banned
   phrase survive as descriptions.
 - **Spend:** segment D about 3.4M including both relaunches. Pass A total about 14.6M of 20M.
+
+### S4 (2026-09-28, conductor)
+
+- **CI regen** (`36405365977`) succeeded and committed `8549316a`: 92 baselines, 4 new
+  (admin-theme-kit light and dark at 1440 and 390), 88 unchanged in dimensions, none blank or
+  undecodable.
+- **Visual-verifier read** (fresh context) of the 20 PNGs outside S1's set (admin-signups and
+  styleguide, 10 each): 20 INTENDED, 0 STRUCTURAL, 0 new COSMETIC.
+- **S1's STRUCTURAL items, resolved:** the office toolbar's 30px fixed height (36px matches); the
+  theme-kit modal renders; the theme-kit error alert stacks at 390 (320 is covered by `8c770707`'s
+  e2e assertion that the body spans over 75% of the alert width); the posts segmented join at 320
+  is not confirmable from baselines (no 320 office baseline), claimed by `e4a87c99` and covered at
+  390 in `admin-drawer-overlay-dark-390`.
+- **Carried cosmetics, for the close or pass B:** the theme-kit error alert shows about a 50px gap
+  between title and body at 390 (and a 73px panel at 1440 against 46px for other alerts;
+  `ConceptList`'s refused-delete banner likely shares it); the 320 top-bar search trigger truncates
+  to "S." (pre-existing); the palette focus ring clips at the panel top (pre-existing).
+- **Note:** the regen commit was pushed by the workflow token, so PR CI did not run on it; this
+  ledger's push is what triggers it.
+
+**Resume here (next session):** run task 16, the close, with the merge held for Geoff's
+before-and-after.

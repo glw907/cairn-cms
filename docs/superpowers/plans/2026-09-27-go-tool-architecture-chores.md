@@ -1061,7 +1061,8 @@ task's acceptance. No task's Files list, decision, or acceptance criterion neede
   `CHANGELOG.md` untouched. `docs/STATUS.md` is left for the conductor to update on `main` after
   the merge, per this fold's own instructions.
 - **Fold review.** This fold agent authored the close's docs and ledgers (steps 4 and 5); one
-  independent `diff-reviewer` read the diff before commit.
+  independent `diff-reviewer` read the committed fold and returned `fix` with five doc-text
+  findings (`b66b6718`), all folded in the one round that followed.
 - **Spend:** close (simplify, reviews, fold, this ledger) about 0.2M beyond the S1-S4 total, plus
   the ten architecture reads at about 0.7M. Pass total about 7.1M of 8.5M.
 
@@ -1075,16 +1076,21 @@ task's acceptance. No task's Files list, decision, or acceptance criterion neede
   about 0.2M, the ten architecture reads about 0.7M. The ceiling held; no segment approached the
   80% finish-in-flight trigger until the close's own reads pushed the running total past it, by
   which point every task had already landed.
-- **Attended time:** two planning-miss-free approvals. Geoff approved the plan in one line at the
-  gate before execution, with no question reaching him about scope, method, or design during
-  planning. One combined question reached him mid-pass: Task 4's `diff-reviewer` escalation over
-  an absolute-versus-relative gate-string mismatch, which he ruled in one line (normalize both
-  forms in the runner). No other sitting interrupted him; S1 through S4 and the close ran to
-  completion on the conductor's own rulings.
+- **Attended time:** Planning misses: 0. Geoff approved the plan in one line at the gate before
+  execution, with no question reaching him about scope, method, or design during planning.
+  Execution sittings: 1. Geoff ruled the merge on green close in one line at the pass's end; no
+  other sitting reached him during execution. Task 4's `diff-reviewer` escalation over an
+  absolute-versus-relative gate-string mismatch was ruled by the conductor, not Geoff, per the
+  plan's one-re-dispatch-then-conductor-decides rule; the conductor accepted Task 4 and had the
+  runner normalize both gate-string forms. S1 through S4 and the close otherwise ran to completion
+  on the conductor's own rulings.
 
-**What a later pass would be wrong to conclude from this pass's smoothness.** Twelve of thirteen
-tasks and both fix-round tasks (4 and 13) cleared on their first or second dispatch with no
-conductor split and no scope change, which is not the norm for a `tool`-class pass; it reflects
+**What a later pass would be wrong to conclude from this pass's smoothness.** Eleven of thirteen
+tasks cleared on a single dispatch and review with no fix round and no escalation. Two (Task 1 and
+Task 13) each needed one fix round, a second implementer dispatch after a `diff-reviewer` `fix`
+verdict. Task 4 needed no fix round: its `diff-reviewer` escalation was resolved by conductor
+ruling alone, without re-dispatching the implementer. No task was split and no scope changed,
+which is not the norm for a `tool`-class pass; it reflects
 Task 0's unusually thorough pre-flight (fourteen findings, all but one confirmed exact) and the
 plan's thirteen decisions closing every judgment call before dispatch. A future Go architecture
 pass with a thinner pre-flight should expect more fix rounds, not assume this pass's ratio.

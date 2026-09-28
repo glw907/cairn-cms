@@ -61,9 +61,12 @@ thirteen tasks across four segments (S1 to S4), each `cairn-implementer` on `son
 - Close simplifier (`010f10e6`): three edits over the pass's changed Go code, accepted by
   `diff-reviewer`.
 
-**What the gates caught.** Task 13's first comment draft made four false claims (`NO_COLOR`
-precedence, a copy-standard section misattributed, which commands print the account id, and a
-leftover task citation), caught by `diff-reviewer` and fixed in one round. Task 8's implementer hit
+**What the gates caught.** Task 1's vocabulary-completeness test originally failed silently against
+a dropped constant; `diff-reviewer` sent it back so the AST test names the offending constant, and
+the fix round (`d121fd46`) landed that. Task 13's first comment draft made four false claims
+(`NO_COLOR` precedence, a copy-standard section misattributed, which commands print the account
+id, and a leftover task citation), caught by `diff-reviewer` and fixed in one round. Task 8's
+implementer hit
 a chained-gate ordering trap: its computed gate ran `check:facts` ahead of `make -C tool check`, so
 the pass's own pre-existing baseline facts defect (`docs/internal/facts/admin.md:53`, out of
 scope) stopped the chain before the real gate ran; the implementer ran the two legs separately.
@@ -112,8 +115,9 @@ of `make -C tool check`, resolved by normalizing both forms in the runner (dotfi
 
 **Spend:** about 7.1M of the 8.5M ceiling (Task 0 plus plan and review about 0.8M, S1 about 1.0M,
 S2 about 1.9M, S3 about 1.2M, S4 about 1.3M, the close's simplifier and reviews about 0.2M, the
-architecture reads about 0.7M). Attended time: Geoff approved the plan in one line and ruled one
-task's gate-string escalation in one line; no planning miss reached him.
+architecture reads about 0.7M). Attended time: planning misses 0 (Geoff approved the plan in one
+line); execution sittings 1 (he ruled the merge on green close in one line). Task 4's gate-string
+escalation was the conductor's own ruling, not a sitting.
 
 ## Chores batch: CI report uploads, check fixes, two docs fixes, 2026-09-27
 

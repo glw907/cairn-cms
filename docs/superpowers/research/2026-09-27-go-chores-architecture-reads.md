@@ -6,9 +6,9 @@ non-test source the pass touched. Each reader ran read-only, with no plan in con
 whole package on five axes (exported surface against grepped callers, duplication, file split,
 test-only seams, comment density against a named stdlib package). A finding therefore mostly
 predates this pass: the reader grades the package as it stands, not the pass's diff. Nine of ten
-verdicts are "sound with nits"; `cmd/cairn` is "needs work". Structural findings are transcribed
-in full below; nits are condensed to one line each, in the reader's own order. ROADMAP points here
-rather than restating any of it.
+verdicts are "sound with nits"; `cmd/cairn` is "needs work". Structural findings are condensed,
+keeping every location and recommended fix; nits are condensed to one line each, in the reader's
+own order. ROADMAP points here rather than restating any of it.
 
 ## `tool/internal/render/fixtures` — sound with nits (2 structural, 6 nits)
 
@@ -504,7 +504,10 @@ callerless finding against the seams-table exports in `spine`, `render`, or `hea
    drop the field, close over `os.Stdin` in `newDeps`.
 4. **`deps.go:69-72` with `health.go:245`.** `d.checks` is always `health.All` in production, yet
    `runStatus` reads `health.All` directly for `Disables`, so a run over injected checks could
-   report disabled checks it never ran. Pick one source (a package-level swappable var).
+   report disabled checks it never ran. Pick one source (a package-level swappable var). This
+   pass's Task 12 rejected a package-level swappable `var allChecks` for `deps.checks`: Decision 8
+   calls that mutable global state that would break `t.Parallel`, against `deps`'s own documented
+   design, so the seam stayed a field rather than becoming this reader's suggested var.
 5. **`registry.go:28-32` with `deps.go:46-50`.** `defaultRegistrySource` is an identity wrapper
    that duplicates `registryDirAndSource`; `deps` carries two parallel functions that must agree
    by hand. Keep one field.
@@ -527,8 +530,11 @@ callerless finding against the seams-table exports in `spine`, `render`, or `hea
     lookup loop restated; replace with one `lookup(name string) resolution`.
 13. **File split.** The auth-check concern spreads across `permissions.go`, `probe_cloudflare.go`,
     `probe_github.go`, and `probe_token.go` (still named after the retired probe-token command);
-    merge into `auth_check.go`. `writeJSONPayload` (`deps.go:79-84`) is an output helper misplaced
-    inside the dependency struct's file.
+    merge into `auth_check.go`. `health_json.go:1-3` and `health_sweep.go:1-3` say they were split
+    to satisfy `TestNoCommandFileExceedsItsBound`; the sweep split does read as a real concern
+    (single site versus fleet), so keep it but state the concern as the reason, not the line-bound
+    test. `writeJSONPayload` (`deps.go:79-84`) is an output helper misplaced inside the dependency
+    struct's file.
 
 ### Nits
 

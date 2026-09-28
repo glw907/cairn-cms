@@ -1198,16 +1198,17 @@ the named human gates only):**
     10).
   - **The B2 record's nits outside the two source entries' bullets stay unplanned**, the same as
     before this pass (Decision 12): `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
-    None of it blocks a release.
+    None of it blocks a release. **Trigger:** the next pass touching that package.
 
 - **Go tool architecture, round 2 (2026-09-27).** The chores pass's ten `go-architecture-reader`
   reads, full findings and best passages at
   `docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`. Nine of ten packages read
   sound with nits; most findings predate this pass, since the reader grades a whole package rather
-  than a diff. Structural-finding counts per package: `cmd/cairn` 13 (**needs work**, first in line:
-  the `deps` seam's one test hook per field, duplicated bodies across `adopt`, `auth check`, and
-  the health paths, and a two-path process-exit split), `health` 11, `render` 9, `providers` 7,
-  `store` 4, `mangen` 4, `spine` 5, `fixtures` 2, `copylist` 2, `exe` 1. **Trigger:** the next pass
+  than a diff. Structural-finding counts per package, descending: `cmd/cairn` 13 (**needs work**,
+  first in line: the `deps` seam's one test hook per field, duplicated bodies across `adopt`,
+  `auth check`, and the health paths, and a two-path process-exit split), `health` 11, `render` 9,
+  `providers` 7, `spine` 5, `store` 4, `mangen` 4, `fixtures` 2, `copylist` 2, `exe` 1. **Trigger:**
+  the next pass
   touching any of these packages, or a dedicated architecture pass before tool `1.2`.
 
 - **`design.yml` uploads no Playwright report artifact on failure (found closing the 2026-09-27

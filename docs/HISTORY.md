@@ -699,7 +699,8 @@ from a 2026-09-19 leak check had filled to 6168M, and the Go linker builds in `/
 - The component project runs serially on this workstation:
   `node scripts/test/contained.mjs npx vitest run --project component --no-file-parallelism`.
   Three files in parallel pass, twelve fail, and serial runs are clean. The root cause is
-  unknown, so this is a workaround, not a fix (`vitest-browser-parallel-pages-stall` memory).
+  unknown, so this is a workaround, not a fix (`docs/internal/durable-gotchas.md`, "The component
+  project stalls under file parallelism").
 - A Go gate that fails at the link step with a quota error is the machine, not the code. Check
   `/tmp` usage against the tmpfs quota before reading the failure as a build break.
 - `npm run check:surface -- --update` forwards the flag to `check-surface-leaks.mjs` only,

@@ -434,6 +434,26 @@ audience lands, and they carry the whole cairn story.
 - **Stack reasoning is welcome.** Explaining why cairn uses SvelteKit, DaisyUI, and
   Cloudflare is in-register here, in short form; the full argument, including the honest
   trade-offs, stays in `docs/why-cairn.md`.
+- **The author's own frame, not a reconstructed one.** Any "why cairn" prose traces to Geoff's
+  account of why cairn exists and who it serves:
+  `record/2026-09-08-polish-inputs/front-door-author-brief.md`. Read it before drafting or
+  reviewing the front door or any audience-facing rationale. The audience spans small
+  organizations through large ones already committed to Cloudflare (the brief's 2026-09-22
+  amendment), never only small ones.
+- **A comparison never strawmans the alternative (Geoff, 2026-09-04).** When a page or figure
+  contrasts cairn with a traditional CMS or a conventional stack, the other side is drawn as a
+  competent setup a good team would build: a managed CMS host bundling hosting, database, and
+  backups is one box, a member-management product is a mature tool. Its real advantages (mature
+  editorial features, a relational content database, independently replaceable tools,
+  specialist vendors) are stated in the same factual voice as cairn's, and cairn's own
+  trade-offs sit beside them: extending it means custom code (a developer, not a plugin
+  marketplace), content is files so relational queries are the developer's job, and one
+  platform account is one vendor. A drawback gets its factual counterweight beside it, never a
+  grading word; the custom code is scaffolded (`create-cairn-site`, documented seams, the agent
+  skills in the package) on widely documented technology that GitHub and Cloudflare publish
+  agent tooling for. The lesson is different shapes with different trade-offs, cairn collapsing
+  several concerns into one app on one platform, and no vendor is named. This extends the
+  no-pitch keystone from prose to comparisons.
 - **The voice is technical and academic (Geoff, 2026-09-08).** The front door, and
   `docs/why-cairn.md` above all, reads as a technical report or a systems paper's
   introduction: measured, precise, with qualification carried inside the sentence rather

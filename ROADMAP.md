@@ -316,15 +316,9 @@ The original decision framing, for the record:
     dropdown trigger has no `aria-expanded`.
   - `CairnTidySettings.svelte`'s variant radiogroup container carries `overflow-hidden`
     (pre-existing), which may clip an outward focus ring on its segments; check it.
-  - S1's cosmetic and owner-taste items wait for the same sitting: the status chips' quiet gray
-    fill against the reference's white outline chips, the outline role chip's 55% edge beside the
-    plain button's 22%, the plain button's 5% hover step, the kit radio join's 1-2px seam, the
-    kit `btn-outline btn-active` disagreeing between themes, the kit dropdown's black
-    `shadow-sm`, the media grid/list toggle and the editor footer controls missing the size step,
-    the bottom sheet's where-used row scrolling under its edge at 390, the settings "On" chips
-    rendering as wide gray bars, and the 20x20 numbered step markers now on `rounded-selector`
-    rather than circles. The record is the plan's ledger
-    (`docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`, "S1").
+  - S1's cosmetic and owner-taste items wait for the same sitting; the list is in the plan's
+    ledger (`docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`, "S1 and task 15" and
+    S1's verdict record).
   - Coverage notes the `paint` class batched rather than blocked on: the destructive-edge contrast
     test proves the ratio but not that `border-error` wins the cascade over the 55% field edge;
     the disabled-stock switch test covers the `:checked` form only; `::before` carries no
@@ -335,10 +329,6 @@ The original decision framing, for the record:
   - The showcase's public `theme.css` carries an unscoped `.btn-outline` rule that reaches the
     admin's outline-button edges too, whichever order the sheets load in. Scope it to the public
     site; pass C's public-theme work is the natural home.
-  - Runner friction (`~/.claude/workflows/pass-execute.js`, a dotfiles fix filed here because
-    cairn passes hit it): `diff-reviewer` reads a gate-string addition the task's criteria permit
-    (a new sibling test file on the unit leg) as a MISMATCH, and the runner's resolved gate string
-    cannot learn the added file.
 
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25).** cairn's docs are still
   to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,

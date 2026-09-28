@@ -1828,11 +1828,11 @@ documents record it. S4 regenerated 92 CI baselines.
 ### Score
 
 - **Tokens:** ceiling 20M, flag 16M; original plan 15.8M; re-projection 17.3M. Ledgered spend
-  through segment D is about 14.6M. S1, task 15, and S4 ran without a spend line in the ledger,
-  so their share is unrecorded here; the conductor's notification counter holds it. The close:
-  subagents about 0.22M (`code-simplifier` 0.09M, two `daisyui-a11y-reviewer` dispatches 0.14M)
-  plus this drafting agent's own session, about 0.4M (an estimate; the agent has no meter of its own). Known total: about 15.2M, before the
-  unrecorded S1 to S4 share, which the conductor adds.
+  through segment D is about 14.6M. S1, task 15, S4, and the close review: about 1.9M (the
+  conductor's estimate; no ledger line was written as they ran). The close: subagents about 0.22M
+  (`code-simplifier` 0.09M, two `daisyui-a11y-reviewer` dispatches 0.14M) plus this drafting
+  agent's own session, about 0.4M (an estimate; the agent has no meter of its own). Total: about
+  17.1M of the 20M ceiling, above the 16M flag and just under the 17.3M re-projection.
 - **Planning misses: 3.** The ceremony the plan set for a CSS pass (the full engine gate per task,
   4.4 test lines per source line), which Geoff re-scoped to the `paint` class mid-pass; the merge
   and sequencing (the plan merged A alone at its close, and Geoff's 2026-09-27 rulings hold A for

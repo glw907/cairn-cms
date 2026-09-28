@@ -168,7 +168,7 @@ leaf badges read, never a separate total, so the header sum and its children can
 sync; the header's badge disappears once the section opens (the item badges remain, since they carry
 their own accessible names). Every count caps its display at `99+`. The count lives in the entry
 link's accessible name ("Asset requests, 3 pending requests"), built from the item's `label`
-(defaulting to "pending items"); the pill span itself is `aria-hidden`, so a screen reader
+(defaulting to "pending items"); the badge span itself is `aria-hidden`, so a screen reader
 announces the count exactly once, through the link, not twice.
 
 ### `ConceptList`

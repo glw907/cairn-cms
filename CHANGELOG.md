@@ -24,8 +24,13 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
     accessible ink. daisyUI's `alert-soft`, `alert-outline`, and `alert-dash` keep daisyUI's
     look.
   - A round switch knob, concentric corners inside menus, and one icon stroke weight.
-  - The size step: `--size-field` moves from `0.25rem` to `0.28125rem`, so a `btn-sm` or
-    `input-sm` renders 36px tall instead of 32px, and a default control 45px instead of 40px.
+  - The size step: `--size-field` and `--size-selector` both move from `0.25rem` to
+    `0.28125rem` in both themes. A `btn-sm` or `input-sm` renders 36px tall instead of 32px, and
+    a default control 45px instead of 40px. Everything daisyUI sizes from `--size-selector`
+    grows by the same step: badges and status chips (16px to 18px), checkboxes, radios, and
+    toggles.
+  - `btn-sm` padding: `--btn-p` moves from daisyUI's `0.75rem` to `0.875rem` on `btn-sm` only;
+    other sizes keep daisyUI's padding.
   - A modal carries the admin's warm shadow.
 
   The admin sheet now compiles every daisyUI component and utility class except calendar: 580
@@ -40,12 +45,18 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   `cairn-audit`'s ratified norms move with the theme: the `button-ghost`, `button-primary`,
   `input-text`, and `select` radius bands go from 10px to 6px, `card` from 16px to 8px, and
   `status-chip` from 8px to 4px; the control height bands follow the size step. The
-  `chip-ground-collision` rule no longer reads a `select`, a `textarea`, or an element carrying a
-  daisyUI control class (`btn`, `input`, `select`, `textarea`) as a chip.
+  `chip-ground-collision` rule changes in two ways. It now skips controls: a `button`, `input`,
+  `select`, `textarea`, or `a` element, an element carrying a daisyUI control class (`btn`,
+  `input`, `select`, `textarea`), and an element with `role="button"`. Its shape test also changes:
+  an element without `.badge` counts as a chip when every corner equals the resolved
+  `--radius-selector`, where it used to count when it was pill-shaped. A `rounded-full` status
+  chip without `.badge` is no longer detected, and a page that declares no `--radius-selector`
+  detects `.badge` chips only.
 
   Consumers must: nothing. A site with custom admin screens should re-check them, because a plain
-  daisyUI class there now renders cairn's ladder and hairlines, and a fixed Tailwind radius
-  (`rounded-lg`) does not follow the ladder. Write `rounded-selector`, `rounded-field`, or
+  daisyUI class there now renders cairn's ladder and hairlines, the size step makes controls and
+  selector-sized marks taller (a screen laid out around 40px controls is the likeliest to shift),
+  and a fixed Tailwind radius (`rounded-lg`) does not follow the ladder. Write `rounded-selector`, `rounded-field`, or
   `rounded-box` to follow it.
 
 - The Waymark starter's two themes (`src/theme/theme.css`) take the same corner ladder

@@ -51,8 +51,7 @@ New findings start below this line, one per finding, with its perspective and a 
 
 Theme identity pass A's close (2026-09-28) triaged the whole log and found no open entry. The
 pass routed its own findings straight to `ROADMAP.md` in the same step: its carried cosmetics,
-review minors, batched coverage notes, the showcase `theme.css` scoping leak, and the runner's
-gate-string friction to one Now entry beside the theme identity initiative, and the pinned-rule
+review minors, batched coverage notes, and the showcase `theme.css` scoping leak to one Now entry beside the theme identity initiative, and the pinned-rule
 ratchet shrink and the `ADMIN_CSS_SAFELIST` retirement to Later. The Waymark citation entry in
 Next was narrowed to the `site.css` and `prose.css` cites the pass did not touch. See Clearings.
 

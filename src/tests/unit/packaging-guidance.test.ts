@@ -90,10 +90,15 @@ describe('claude/snippets/* against their in-repo counterparts', () => {
     }
   });
 
-  it('cairn-audit.config.json is byte-identical to the showcase copy', () => {
-    const snippet = readFileSync(join(CLAUDE_ROOT, 'snippets/cairn-audit.config.json'), 'utf8');
-    const source = readFileSync(resolve(ROOT, 'examples/showcase/cairn-audit.config.json'), 'utf8');
-    expect(snippet).toBe(source);
+  it('cairn-audit.config.json carries the same sheet paths the showcase copy declares', () => {
+    // Only `sheet` is universal boilerplate a new site should copy verbatim. The showcase's own
+    // copy also carries `rendered.extraPages`, wiring its own fixture routes (/admin/theme-kit
+    // and friends) into its rendered audit; a new site has none of those routes, so the snippet
+    // must not recommend them.
+    const snippet = JSON.parse(readFileSync(join(CLAUDE_ROOT, 'snippets/cairn-audit.config.json'), 'utf8'));
+    const source = JSON.parse(readFileSync(resolve(ROOT, 'examples/showcase/cairn-audit.config.json'), 'utf8'));
+    expect(snippet.sheet).toEqual(source.sheet);
+    expect(snippet.rendered).toBeUndefined();
   });
 
   it('check.yml is byte-identical to the showcase workflow', () => {

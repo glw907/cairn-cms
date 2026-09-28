@@ -47,12 +47,9 @@ const ROOT = repoRoot(import.meta.url);
 // drift. TOOL_GATE stands alone: `make -C tool check` proves the Go module's own three legs and
 // is never folded into or out of the npm chain.
 //
-// DOCS_GATE is the one `check:docs-gate` script (scripts/checks/docs-gate.mjs): it already runs
-// check:docs, check:vale, check:facts, check:provenance, check:symbols, check:snippets,
-// check:transcripts, check:visuals, check:arm-indexes, check:editor-quotes, check:readiness,
-// check:tool-conditions, check:target-stack, check:reference, and check:reference:signatures, so
-// FULL_GATE does not repeat check:snippets, check:transcripts, or check:symbols on top of it; a
-// diff-touching path list would otherwise run those three twice.
+// DOCS_GATE is the one `check:docs-gate` script (scripts/checks/docs-gate.mjs), which owns the
+// full docs check list. That list already includes check:snippets, check:transcripts, and
+// check:symbols, so FULL_GATE does not repeat them.
 const DOCS_GATE = 'npm run check:docs-gate';
 // `npm test` (root) runs the engine's own vitest projects; it never reaches the
 // create-cairn-site workspace member's own `node --test` suite, so a diff scoped to that package

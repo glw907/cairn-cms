@@ -1,24 +1,20 @@
-// cairn-cms: the docs gate. One script that runs every check the spec's "Docs gate" section lists
-// (docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md), so CI, the gate-tier
-// classifier's `docs` tier, and a page-chain page's own gate all read the identical list from one
-// place instead of fifteen separate steps that can drift out of sync with each other.
-// `check:package` is deliberately not in this list; it checks the tarball's own shape (publint,
-// attw, the file manifest), not a doc arm's content, so it keeps its own CI step.
+// cairn-cms: the docs gate. One script runs every docs check, so CI, the gate-tier classifier's
+// `docs` tier, and a page-chain page's own gate all read the identical list from one place
+// instead of fifteen separate steps that can drift apart. `check:package` is deliberately not in
+// this list: it checks the tarball's own shape (publint, attw, the file manifest), not a doc
+// arm's content, so it keeps its own CI step.
 //
 // Interface: `node scripts/checks/docs-gate.mjs [--page <path>] [--brief <path>]`. Every component
-// below reads the whole tree except two: `--page <path>` narrows Vale to that one path in place
-// of the fixed list `check:vale` runs by default (package.json's `docs README.md
-// examples/showcase/README.md`), and `--brief <path>` narrows check:provenance to that one brief,
-// using check-provenance.mjs's own positional-argument mode. Both flags exist so a page-chain
-// page's gate (npm run check:docs-gate -- --page {page} --brief {brief}) proves only the page and
-// brief it drafted, not every sibling page's in-flight brief or every other page's prose.
+// reads the whole tree except two: `--page <path>` narrows Vale to that one path in place of the
+// fixed list `check:vale` runs by default, and `--brief <path>` narrows check:provenance to that
+// one brief through check-provenance.mjs's own positional-argument mode. Both flags exist so a
+// page-chain page's gate (npm run check:docs-gate -- --page {page} --brief {brief}) proves only
+// the page and brief it drafted, not every sibling page's in-flight brief or prose.
 //
-// `dist` is built exactly once here, before any component runs, rather than once per component:
-// five of the fifteen checks (check:snippets, check:visuals, check:readiness,
-// check:tool-conditions, check:reference, check:reference:signatures) call `npm run package`
-// themselves when run as their own npm script. This runner calls each component's underlying node
-// script directly instead of its npm wrapper, so `npm run package`'s cost is paid once for the
-// whole gate, never five times.
+// `dist` is built exactly once, before any component runs. Six of the fifteen checks
+// (check:snippets, check:visuals, check:readiness, check:tool-conditions, check:reference,
+// check:reference:signatures) call `npm run package` themselves when run as their own npm script,
+// so this runner calls each component's underlying node script directly and pays that cost once.
 import { spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,8 +41,8 @@ export function parseArgs(argv) {
 
 /**
  * The ordered component list this gate runs, each a label plus the command and args `spawnSync`
- * runs (relative to ROOT). Order matches the spec's "Docs gate" list. `page` and `brief` reach
- * only the two components that read them; every other component runs unscoped.
+ * runs (relative to ROOT). `page` and `brief` reach only the two components that read them;
+ * every other component runs unscoped.
  * @param {{ page: string | null, brief: string | null }} args
  * @returns {{ label: string, command: string, args: string[] }[]}
  */

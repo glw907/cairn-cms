@@ -1,4 +1,4 @@
-// cairn-cms: builds a copy of the R10 owner-review page template with one batch of markdown
+// cairn-cms: builds a copy of the owner-review page template with one batch of markdown
 // files embedded, ready to hand to the Artifact tool (or to self-publish) as the page's source.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';

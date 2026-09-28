@@ -1,4 +1,4 @@
-// cairn-cms: shared logic for the R10 owner-review Artifact page. This file has no imports, so
+// cairn-cms: shared logic for the owner-review Artifact page. This file has no imports, so
 // its source is copied verbatim (with the `export` keyword stripped) into the page's own inline
 // script by the embed script; the embed script also imports it directly for the first embed.
 // Both paths run the identical code, so the batch state they encode and decode never drifts
@@ -72,9 +72,7 @@ export function extractEmbeddedState(html) {
  */
 export function computeRestoredFiles(stashedFiles, embeddedFiles) {
   if (!stashedFiles) return embeddedFiles;
-  /** @type {Map<string, DocsReviewFile>} */
-  const stashByPath = new Map();
-  for (const file of stashedFiles) stashByPath.set(file.path, file);
+  const stashByPath = new Map(stashedFiles.map((file) => [file.path, file]));
   return embeddedFiles.map((file) => {
     const stashed = stashByPath.get(file.path);
     return stashed && stashed.markdown !== file.markdown ? stashed : file;
@@ -109,16 +107,18 @@ export function escapeHtml(str) {
 /**
  * Renders one inline run of markdown text: an inline code span becomes <code>, everything else
  * is escaped literally. Bold and italic are left as literal asterisks, which the review page's
- * own content never needs and keeps the renderer small.
+ * own content never needs and keeps the renderer small. Splitting on a capturing group puts
+ * every matched code span at an odd index, so the index alone tells a span from plain text.
  * @param {string} text
  * @returns {string}
  */
 function renderInline(text) {
   return text
     .split(/(`[^`]*`)/g)
-    .map((part) => (part.startsWith('`') && part.endsWith('`') && part.length >= 2
-      ? `<code>${escapeHtml(part.slice(1, -1))}</code>`
-      : escapeHtml(part)))
+    .map((part, index) => {
+      if (index % 2 === 1) return `<code>${escapeHtml(part.slice(1, -1))}</code>`;
+      return escapeHtml(part);
+    })
     .join('');
 }
 
@@ -200,10 +200,7 @@ export function renderMarkdown(markdown) {
         body.push(lines[i]);
       }
       i += 1;
-      const trimmed = body.join('\n').trim();
-      const withoutOpen = trimmed.startsWith(HTML_COMMENT_OPEN)
-        ? trimmed.slice(HTML_COMMENT_OPEN.length)
-        : trimmed;
+      const withoutOpen = body.join('\n').trim().slice(HTML_COMMENT_OPEN.length);
       const inner = withoutOpen.endsWith(HTML_COMMENT_CLOSE)
         ? withoutOpen.slice(0, withoutOpen.length - HTML_COMMENT_CLOSE.length)
         : withoutOpen;

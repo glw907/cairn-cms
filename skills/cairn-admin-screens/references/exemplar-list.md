@@ -181,6 +181,10 @@ that should stay bounded.
       <section>
         <h2 class={HEADER_CELL}>Contacts</h2>
         ...
+      </section>
+    </div>
+  </div>
+{/snippet}
 ```
 
 - `ExpandableRow` supplies the summary `<tr>`, the trigger cell, and the panel's spanning

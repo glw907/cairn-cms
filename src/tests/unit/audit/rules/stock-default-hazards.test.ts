@@ -222,6 +222,98 @@ describe('stock-default-hazards: flat base-300 card border', () => {
   });
 });
 
+describe('stock-default-hazards: retired ink-opener patch', () => {
+  it('flags bg-neutral on a btn, naming btn btn-neutral', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      '<button class="btn bg-neutral text-neutral-content">Save</button>\n'
+    );
+    const findings = check(file);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('btn btn-neutral');
+  });
+
+  it('flags a variant-prefixed ink-hover patch on a btn', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      '<button class="btn hover:bg-[var(--cairn-ink-hover)]">Save</button>\n'
+    );
+    const findings = check(file);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('btn btn-neutral');
+  });
+
+  it('is silent once the element already carries btn-neutral', () => {
+    const file = parseComponent('Fixture.svelte', '<button class="btn btn-neutral">Save</button>\n');
+    expect(check(file)).toEqual([]);
+  });
+});
+
+describe('stock-default-hazards: retired Publish-tint patch', () => {
+  it('flags bg-primary/10 on a btn, naming btn btn-soft btn-primary', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      '<button class="btn bg-primary/10 text-primary">Publish</button>\n'
+    );
+    const findings = check(file);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('btn btn-soft btn-primary');
+  });
+
+  it('is silent once the element already carries btn-soft', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      '<button class="btn btn-soft btn-primary">Publish</button>\n'
+    );
+    expect(check(file)).toEqual([]);
+  });
+
+  it('is silent on a non-button element carrying the same tint', () => {
+    const file = parseComponent('Fixture.svelte', '<span class="bg-primary/10 text-primary">x</span>\n');
+    expect(check(file)).toEqual([]);
+  });
+});
+
+describe('stock-default-hazards: retired shadow-none cancel', () => {
+  it('flags shadow-none on a btn with no recipe patch, naming nothing to add', () => {
+    const file = parseComponent('Fixture.svelte', '<button class="btn shadow-none">Save</button>\n');
+    const findings = check(file);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('nothing to add');
+  });
+
+  it('flags a variant-prefixed shadow-none the same way', () => {
+    const file = parseComponent('Fixture.svelte', '<button class="btn sm:shadow-none">Save</button>\n');
+    expect(check(file)).toHaveLength(1);
+  });
+
+  it('stays silent when a recipe arm already fired on the same element', () => {
+    const inkRecipe = parseComponent(
+      'Fixture.svelte',
+      [
+        '<button class="btn border-transparent bg-neutral text-neutral-content shadow-none',
+        '  hover:bg-[var(--cairn-ink-hover)]">Save</button>',
+        '',
+      ].join('\n')
+    );
+    const inkFindings = check(inkRecipe);
+    expect(inkFindings).toHaveLength(1);
+    expect(inkFindings[0].message).toContain('btn btn-neutral');
+
+    const tintRecipe = parseComponent(
+      'Fixture.svelte',
+      '<button class="btn border-transparent bg-primary/10 text-primary shadow-none">Publish</button>\n'
+    );
+    const tintFindings = check(tintRecipe);
+    expect(tintFindings).toHaveLength(1);
+    expect(tintFindings[0].message).toContain('btn btn-soft btn-primary');
+  });
+});
+
 // design infrastructure Pass 3, Task 2: the ghost retirement leaves cairn's own admin tree with
 // zero stock-default-hazards findings. Parses the real repo files (not a fixture), the same
 // DEFAULT_STATIC_SCOPE directories the shipped audit walks, so this is the direct proof "the

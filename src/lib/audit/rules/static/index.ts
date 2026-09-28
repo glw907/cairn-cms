@@ -12,6 +12,7 @@ import { motionHoverGate } from './motion-hover-gate.js';
 import { motionProperty } from './motion-property.js';
 import { motionVocabulary } from './motion-vocabulary.js';
 import { noUncompiledClass } from './no-uncompiled-class.js';
+import { radiusScale } from './radius-scale.js';
 import { reducedMotion } from './reduced-motion.js';
 import { stockDefaultHazards } from './stock-default-hazards.js';
 import { stripeTrimParity } from './stripe-trim-parity.js';
@@ -26,6 +27,7 @@ export function staticRules(): StaticRule[] {
     noUncompiledClass,
     typeScale,
     gapScale,
+    radiusScale,
     stockDefaultHazards,
     tokenColors,
     grammarBoundary,

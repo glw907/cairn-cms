@@ -1,13 +1,15 @@
 // cairn-audit's stock-default-hazards rule: four stock DaisyUI patterns cairn's own recipes
 // deliberately replace, each a refuted alternative on record in the admin design docs, plus one
-// cairn-authored class the Tooltip primitive retires. Stock daisy is in-distribution for an agent
+// cairn-authored class the Tooltip primitive retires, plus three arms guarding the button patches
+// cairn's own ratified button recipes now replace. Stock daisy is in-distribution for an agent
 // reaching for a default; cairn's own deviations are not, so an unattended builder regresses
-// toward the stock pattern unless a gate catches it. Most of the five hazards depend on which
+// toward the stock pattern unless a gate catches it. Most of the eight hazards depend on which
 // OTHER attributes or classes an element carries, not on one class token in isolation, so this
 // rule groups `classTokens` by their owning element (`elementStart`) and reads each element's own
-// `attributes` off its `SourceNode`. The retirement arm is advisory (`Finding.tier`, read per
-// finding rather than inherited from this rule's own `error` tier), since the class stays compiled
-// for one minor past this arm's own landing; every other arm here is error tier.
+// `attributes` off its `SourceNode`. The retirement arm and the three retired-patch arms are
+// advisory (`Finding.tier`, read per finding rather than inherited from this rule's own `error`
+// tier); every other arm here is error tier.
+import { utilityBase } from './utility.js';
 import type { ClassToken, ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule } from '../../types.js';
 
@@ -50,6 +52,39 @@ const GUARDED_RETIREMENT_MESSAGE =
   `tier until ${GUARDED_RETIREMENT_PROMOTION_VERSION} promotes the finding to error; the class ` +
   'itself stays compiled until a later release removes it';
 
+// The promotion version stated in every finding the three retired-patch arms below raise: the
+// minor release that moves each finding out of advisory tier.
+const RETIRED_PATCH_PROMOTION_VERSION = '0.99.0';
+
+// The utility bases (compared via utilityBase(), so a variant-prefixed patch such as
+// hover:bg-[var(--cairn-ink-hover)] or sm:shadow-none is still caught) that name each retired
+// button patch cairn's own ratified button recipes replaced.
+const INK_OPENER_BASES = new Set(['bg-neutral', 'bg-[var(--cairn-ink-hover)]']);
+const PUBLISH_TINT_BASE = 'bg-primary/10';
+const SHADOW_NONE_BASE = 'shadow-none';
+
+function inkOpenerMessage(offending: string): string {
+  return (
+    `class "${offending}" is the retired ink-opener patch; cairn's own recipe is the class ` +
+    '"btn btn-neutral" instead (docs/internal/admin-design-system.md, "The ink story"). ' +
+    `Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the finding to error`
+  );
+}
+
+function publishTintMessage(offending: string): string {
+  return (
+    `class "${offending}" is the retired Publish-tint patch; cairn's own recipe is the class ` +
+    '"btn btn-soft btn-primary" instead (docs/internal/admin-design-system.md, "Buttons"). ' +
+    `Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the finding to error`
+  );
+}
+
+const SHADOW_NONE_MESSAGE =
+  'class "shadow-none" on a "btn" cancels a stock shadow the theme\'s own depth token already ' +
+  'zeroes (docs/internal/admin-design-system.md, "Component recipes"); there is nothing to add ' +
+  `in its place. Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the ` +
+  'finding to error';
+
 /** The class tokens written on one element, grouped by the element's own start offset. */
 function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
   const map = new Map<number, Set<string>>();
@@ -59,6 +94,36 @@ function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
     else map.set(token.elementStart, new Set([token.value]));
   }
   return map;
+}
+
+/**
+ * The class tokens written on one element, grouped by the element's own start offset and
+ * normalized through `utilityBase()`. The three retired-patch arms below read this map rather
+ * than `classesByElement`'s raw one, so a variant-prefixed patch is caught the way `type-scale`
+ * and `gap-scale` already catch one, unlike the five WATCH-noted arms above.
+ */
+function baseClassesByElement(file: ParsedComponent): Map<number, Set<string>> {
+  const map = new Map<number, Set<string>>();
+  for (const token of file.classTokens) {
+    const base = utilityBase(token.value);
+    const set = map.get(token.elementStart);
+    if (set) set.add(base);
+    else map.set(token.elementStart, new Set([base]));
+  }
+  return map;
+}
+
+/** The first class token on an element whose own `utilityBase()` is one of the given bases. */
+function tokenWithBase(
+  file: ParsedComponent,
+  elementStart: number,
+  bases: Set<string> | string
+): ClassToken | undefined {
+  return file.classTokens.find((token) => {
+    if (token.elementStart !== elementStart) return false;
+    const base = utilityBase(token.value);
+    return typeof bases === 'string' ? base === bases : bases.has(base);
+  });
 }
 
 function nodeAt(file: ParsedComponent, start: number): SourceNode | undefined {
@@ -116,6 +181,7 @@ export const stockDefaultHazards: StaticRule = {
       }
 
       const byElement = classesByElement(file);
+      const byElementBase = baseClassesByElement(file);
       for (const [elementStart, classes] of byElement) {
         const node = nodeAt(file, elementStart);
         const attributes = node?.attributes ?? [];
@@ -156,6 +222,22 @@ export const stockDefaultHazards: StaticRule = {
         if (isFloatingCard && classes.has('border-base-300')) {
           const token = tokenNamed(file, elementStart, 'border-base-300');
           if (token) findings.push(findingAt(file, token, CARD_BORDER_MESSAGE));
+        }
+
+        // The three retired-patch arms: btn only, and at most one finding per element, since
+        // writing a recipe's named replacement drops the shadow-none it carried with the rest.
+        const baseClasses = byElementBase.get(elementStart);
+        if (baseClasses?.has('btn')) {
+          const inkToken = tokenWithBase(file, elementStart, INK_OPENER_BASES);
+          const tintToken = tokenWithBase(file, elementStart, PUBLISH_TINT_BASE);
+          if (inkToken && !baseClasses.has('btn-neutral')) {
+            findings.push(findingAt(file, inkToken, inkOpenerMessage(utilityBase(inkToken.value)), 'advisory'));
+          } else if (tintToken && !baseClasses.has('btn-soft')) {
+            findings.push(findingAt(file, tintToken, publishTintMessage(utilityBase(tintToken.value)), 'advisory'));
+          } else {
+            const shadowToken = tokenWithBase(file, elementStart, SHADOW_NONE_BASE);
+            if (shadowToken) findings.push(findingAt(file, shadowToken, SHADOW_NONE_MESSAGE, 'advisory'));
+          }
         }
       }
     }

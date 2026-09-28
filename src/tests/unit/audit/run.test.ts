@@ -20,7 +20,9 @@ const NUMBER_WORDS: Record<string, number> = {
   two: 2,
   fifteen: 15,
   seventeen: 17,
+  eighteen: 18,
   'thirty-four': 34,
+  'thirty-five': 35,
 };
 
 /** A rule count as the reference page writes it, digits or one of `NUMBER_WORDS`. */
@@ -82,10 +84,10 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 describe('the static rule registry', () => {
   // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules,
   // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, the motion
-  // pass's motion-property, motion-hover-gate, and motion-vocabulary, and the extend pass's
-  // log-event-grammar and log-secret-field are the modules that have registered since, without
-  // touching run.ts.
-  it('carries the seventeen static rules registered since Task 7', () => {
+  // pass's motion-property, motion-hover-gate, and motion-vocabulary, the extend pass's
+  // log-event-grammar and log-secret-field, and the theme identity pass's radius-scale are the
+  // modules that have registered since, without touching run.ts.
+  it('carries the eighteen static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -94,6 +96,7 @@ describe('the static rule registry', () => {
         'no-uncompiled-class',
         'type-scale',
         'gap-scale',
+        'radius-scale',
         'stock-default-hazards',
         'token-colors',
         'grammar-boundary',
@@ -196,12 +199,13 @@ describe('runStatic', () => {
     // proven by each rule's own fixtures, not by this generic wiring test.
     const report = runStatic(loadConfig(root));
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
-    // default (no rules override) run wires up the full seventeen-rule registry. The new
+    // default (no rules override) run wires up the full eighteen-rule registry. The new
     // `src/lib/admin/AdminWidget.svelte` fixture carries no class and no CSS, so it trips
     // nothing beyond the two no-uncompiled-class findings the tree already carried; none of the
     // fixture components carries a log call, so log-event-grammar and log-secret-field raise
-    // nothing here either.
-    expect(report.ruleIds).toHaveLength(17);
+    // nothing here either, and none carries a rounded token, so radius-scale raises nothing here
+    // either.
+    expect(report.ruleIds).toHaveLength(18);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });

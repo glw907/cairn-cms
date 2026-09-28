@@ -115,8 +115,6 @@ S2 about 1.9M, S3 about 1.2M, S4 about 1.3M, the close's simplifier and reviews 
 architecture reads about 0.7M). Attended time: Geoff approved the plan in one line and ruled one
 task's gate-string escalation in one line; no planning miss reached him.
 
-## Docs reset reader-validation line, stopped, 2026-09-25 to 26
-
 ## Chores batch: CI report uploads, check fixes, two docs fixes, 2026-09-27
 
 Branch `chores-0927`. Eight ROADMAP items, each a small, independently gated fix:
@@ -157,7 +155,7 @@ gate did not include `npm run check`.
 - The chain runner halts at an escalation rather than skipping forward, so an escalated task's
   later siblings need a fresh relaunch, not a resume.
 
-
+## Docs reset reader-validation line, stopped, 2026-09-25 to 26
 
 Geoff stopped docs reset pass 2a mid-pilot and closed the reader-validation line: "cut our losses,
 clean up, and record the failure." The line built simulated readers (headless Claude sessions in

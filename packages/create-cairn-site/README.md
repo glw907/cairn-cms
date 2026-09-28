@@ -9,9 +9,9 @@ theme and run it locally.
 npm create cairn-site
 ```
 
-The command asks for the site's name, description, brand color, and target directory, then writes
-a ready-to-run SvelteKit site. Node.js 24 or later is required, tracking the `@glw907/cairn-cms`
-engine's own floor.
+The command asks for the site's name, description, brand color, its stance toward AI training
+crawlers, and target directory, then writes a ready-to-run SvelteKit site. Node.js 24 or later is
+required, tracking the `@glw907/cairn-cms` engine's own floor.
 
 **macOS and Linux only.** Windows is not supported, including Git Bash and PowerShell. The
 Cloudflare chapter shells out to `npm` and `wrangler` in a way Windows rejects, so a run there
@@ -26,9 +26,15 @@ Answer any prompt ahead of time with a flag, and the command skips it:
 | `--name` | The site's name, written into `site.config.yaml`. |
 | `--description` | A short, one-line description of the site. Omit for none. |
 | `--brand-color` | A hex color, an `oklch(...)` string, or a bare hue. Rotates the theme's brand accent. |
+| `--ai-posture` | `decline`, `invite`, or `none` (no preference, the default). Writes `aiPosture` into `cairn.config.ts`; `none` writes nothing. |
 | `--dir` | Where to create the site. Defaults to a slug of the name. |
 | `--yes` | Accept the defaults for anything not given by a flag. |
 | `--dry-run` | Print every action and perform none. |
+
+Setting `aiPosture` in `cairn.config.ts` is one half of stating it: the scaffolded
+`src/routes/robots.txt/+server.ts` also needs to pass it to `robotsResponse`, which the template
+does not do out of the box. See `docs/extend/choose-an-ai-posture.md` in the engine package for
+both halves of the wiring.
 
 ## The GitHub chapter
 

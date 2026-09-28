@@ -1,19 +1,34 @@
-// A thin @clack/prompts wrapper collecting the site's name, description, and brand color. Every
-// flag from parseArgs short-circuits its own prompt (a caller who already answered on the command
-// line is never asked again), and --yes fills in the Waymark defaults for whatever is still
-// unanswered, so a fully-flagged or fully---yes invocation runs end to end with no interactive
-// prompt. Validation lives here, not in substitute.mjs: this is the last chance to reject a bad
-// answer before any file gets written.
+// A thin @clack/prompts wrapper collecting the site's name, description, brand color, and AI
+// posture. Every flag from parseArgs short-circuits its own prompt (a caller who already
+// answered on the command line is never asked again), and --yes fills in the Waymark defaults
+// for whatever is still unanswered, so a fully-flagged or fully---yes invocation runs end to
+// end with no interactive prompt. Validation lives here, not in substitute.mjs: this is the last
+// chance to reject a bad answer before any file gets written.
 //
 // This module also owns the two prompt primitives every chapter shares, `exitOnCancel` and
 // `resolveField`, so the order a field resolves in and the Ctrl+C exit behave identically wherever
 // the tool asks a question. The GitHub chapter (src/github/chapter.mjs) imports both.
-import { intro, outro, text, password, isCancel, cancel } from '@clack/prompts';
+import { intro, outro, text, password, select, isCancel, cancel } from '@clack/prompts';
 import { slugify } from './slug.mjs';
 import { resolveHue } from './substitute.mjs';
 
 const DEFAULTS = { name: 'Waymark', description: '', brandColor: '' };
 const BRAND_COLOR_HINT = 'Enter a hex color, an oklch(...) string, or a number 0-360.';
+
+/**
+ * Every value the AI-posture question accepts, whether typed on a flag or returned by the
+ * select prompt: `'decline'` and `'invite'` write into `cairn.config.ts`, and `'none'` (the
+ * default) writes nothing.
+ */
+const AI_POSTURE_VALUES = ['decline', 'invite', 'none'];
+
+/** The AI-posture select's three options, one line of consequence each so the choice needs no
+ * marketing to explain it. */
+const AI_POSTURE_OPTIONS = [
+  { value: 'none', label: 'No preference (default)', hint: 'writes nothing' },
+  { value: 'decline', label: 'Decline', hint: 'asks AI training crawlers to stay away' },
+  { value: 'invite', label: 'Invite', hint: 'states they are welcome' },
+];
 
 /**
  * End the process after a cancelled prompt (the user pressing Ctrl+C), printing a next step
@@ -79,12 +94,13 @@ export async function promptSecret(message, passwordFn = password) {
 
 /**
  * Collect the scaffold's answers: the site name, an optional description, an optional brand
- * color, and the target directory. Each already-supplied flag short-circuits its own prompt;
- * --yes fills in the Waymark defaults for anything still unanswered.
- * @param {{ yes: boolean, name?: string, description?: string, brandColor?: string, dir?: string }} flags
- *  the parsed CLI flags, as returned by parseArgs
- * @returns {Promise<{ name: string, description: string, brandColor: string, dir: string }>} the
- *  validated answers
+ * color, the site's AI-training-crawler posture, and the target directory. Each already-supplied
+ * flag short-circuits its own prompt; --yes fills in the Waymark defaults for anything still
+ * unanswered, and the AI-posture default is `'none'`, no preference.
+ * @param {{ yes: boolean, name?: string, description?: string, brandColor?: string, dir?: string,
+ *  aiPosture?: string }} flags the parsed CLI flags, as returned by parseArgs
+ * @returns {Promise<{ name: string, description: string, brandColor: string, dir: string,
+ *  aiPosture: 'decline' | 'invite' | 'none' }>} the validated answers
  */
 export async function collectAnswers(flags) {
   intro('create-cairn-site');
@@ -114,10 +130,26 @@ export async function collectAnswers(flags) {
     });
   }
 
+  // Placed after the site's other identity answers (name, description, brand color) and before
+  // the purely mechanical target directory: like brand color, this is a content stance the site
+  // states about itself, not a filesystem detail, so it belongs with the other "what is this
+  // site" questions rather than trailing the whole flow as an afterthought.
+  const aiPosture = await resolveField(flags.aiPosture, flags.yes, 'none', () =>
+    select({
+      message: "AI training crawlers: what should this site's robots.txt tell them?",
+      options: AI_POSTURE_OPTIONS,
+      initialValue: 'none',
+    }));
+  if (!AI_POSTURE_VALUES.includes(aiPosture)) {
+    throw new Error(
+      `collectAnswers: aiPosture "${aiPosture}" must be "decline", "invite", or "none"`,
+    );
+  }
+
   const dirDefault = slugify(name, 'cairn-site');
   const dir = await resolveField(flags.dir, flags.yes, dirDefault, () =>
     text({ message: 'Directory', placeholder: dirDefault, defaultValue: dirDefault }));
 
   outro('Answers collected.');
-  return { name, description: description ?? '', brandColor: brandColor ?? '', dir };
+  return { name, description: description ?? '', brandColor: brandColor ?? '', aiPosture, dir };
 }

@@ -53,6 +53,35 @@ function readSiteConfigPath() {
 
 const SITE_CONFIG_RELATIVE = readSiteConfigPath();
 const THEME_CSS_RELATIVE = 'src/theme/theme.css';
+const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
+
+// The commented-out aiPosture field the template ships, exact-matched the same way every other
+// target in this file is: this is the block the AI-posture answer replaces when it is 'decline'
+// or 'invite'. A 'none' answer (no preference) never reaches this constant at all, which is what
+// keeps that answer's output byte-identical to the template.
+const AI_POSTURE_COMMENT_BLOCK = [
+  "  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the",
+  "  // site's robots.txt route (docs/extend/wire-the-delivery-surface.md) passes it to",
+  '  // robotsResponse, and CairnAdapter.aiPosture (docs/reference/core.md) documents both values.',
+  '  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate',
+  "  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.",
+].join('\n');
+
+/**
+ * Build the block that replaces the template's commented-out aiPosture field once an answer sets
+ * it: the same field explanation, minus the "left unset on purpose" sentence that would otherwise
+ * contradict the field the next line now declares, followed by the field itself.
+ * @param {'decline' | 'invite'} value the resolved posture
+ * @returns {string} the replacement block, ending in the `aiPosture:` line
+ */
+function aiPostureBlock(value) {
+  return [
+    "  // aiPosture states this site's stance toward AI training crawlers; the site's robots.txt",
+    '  // route (docs/extend/wire-the-delivery-surface.md) passes it to robotsResponse, and',
+    '  // CairnAdapter.aiPosture (docs/reference/core.md) documents both values.',
+    `  aiPosture: '${value}',`,
+  ].join('\n');
+}
 
 const SITE_NAME_LINE = 'siteName: Waymark';
 
@@ -176,20 +205,23 @@ async function readTarget(absolutePath, relativePath) {
 
 /**
  * Personalize a scaffolded site: the display name and optional description in
- * `src/theme/site.config.yaml`, and (only when a brand color is given) the hue of all four
- * `--color-primary`/`--color-primary-content` declarations in `src/theme/theme.css`. Every
- * lookup is exact-string and fails loud, naming the file and the missing string, so the
- * template drifting out from under this module surfaces immediately rather than shipping a
+ * `src/theme/site.config.yaml`, the hue of all four `--color-primary`/`--color-primary-content`
+ * declarations in `src/theme/theme.css` (only when a brand color is given), and, only when the
+ * answer is `'decline'` or `'invite'`, the `aiPosture` field in `src/theme/cairn.config.ts`. A
+ * `'none'` (or absent) aiPosture answer leaves `cairn.config.ts` untouched, byte-identical to the
+ * template. Every lookup is exact-string and fails loud, naming the file and the missing string,
+ * so the template drifting out from under this module surfaces immediately rather than shipping a
  * scaffold with unpersonalized fields.
  *
  * The description is written under the `description` key, the engine's own known top-level
  * site-config field (see `KNOWN_TOP_LEVEL_KEYS` in `src/lib/nav/site-config.ts`), not an
  * invented `tagline` key the engine would reject at build time.
  * @param {string} dir the scaffold root
- * @param {{ name: string, description?: string, brandColor?: string }} answers the collected answers
+ * @param {{ name: string, description?: string, brandColor?: string, aiPosture?: string }} answers
+ *  the collected answers
  * @returns {Promise<string[]>} the repo-relative paths this pass changed
  */
-export async function applySubstitutions(dir, { name, description, brandColor }) {
+export async function applySubstitutions(dir, { name, description, brandColor, aiPosture }) {
   const changed = [];
 
   // path.join already normalizes away "..", and verifySiteConfigPath already refused one in the
@@ -243,6 +275,19 @@ export async function applySubstitutions(dir, { name, description, brandColor })
     }
     await writeFile(themeCssPath, rotated);
     changed.push(THEME_CSS_RELATIVE);
+  }
+
+  if (aiPosture === 'decline' || aiPosture === 'invite') {
+    const cairnConfigPath = path.join(dir, CAIRN_CONFIG_RELATIVE);
+    const cairnConfig = await readTarget(cairnConfigPath, CAIRN_CONFIG_RELATIVE);
+    const withPosture = replaceExact(
+      cairnConfig,
+      AI_POSTURE_COMMENT_BLOCK,
+      aiPostureBlock(aiPosture),
+      CAIRN_CONFIG_RELATIVE,
+    );
+    await writeFile(cairnConfigPath, withPosture);
+    changed.push(CAIRN_CONFIG_RELATIVE);
   }
 
   return changed;

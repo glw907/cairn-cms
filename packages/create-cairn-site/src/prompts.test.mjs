@@ -1,10 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { promptSecret } from './prompts.mjs';
+import { promptSecret, collectAnswers } from './prompts.mjs';
 
-// Only promptSecret is covered here: it is the sole new export this pass adds to prompts.mjs,
-// and the file's older helpers (exitOnCancel, resolveField, collectAnswers) predate this test
-// file and are left alone rather than backfilled.
+// promptSecret and collectAnswers's new aiPosture question are covered here. exitOnCancel,
+// resolveField, and collectAnswers's older fields (name, description, brandColor, dir) predate
+// this test file and are left alone rather than backfilled.
+//
+// Every case below supplies every OTHER field as a flag too, so none of them ever reaches a real
+// interactive prompt: collectAnswers has no injectable text/select seam, so a case that left one
+// of those fields unanswered under a non-`--yes` flag set would hang on stdin in this suite.
+const OTHER_FIELDS = { name: 'Alpine Club', description: '', brandColor: '', dir: 'alpine-club' };
 
 test('promptSecret forwards the message to the injected prompt and returns its answer', async () => {
   let receivedOpts;
@@ -25,4 +30,26 @@ test('promptSecret takes only the message as required, leaving the prompt seam o
   // what this pins is the arity: a caller that passes a message alone is on a supported
   // signature, and turning passwordFn into a second required parameter would fail here.
   assert.equal(promptSecret.length, 1);
+});
+
+test('an explicit --ai-posture flag wins even under --yes', async () => {
+  const answers = await collectAnswers({ ...OTHER_FIELDS, yes: true, aiPosture: 'decline' });
+  assert.equal(answers.aiPosture, 'decline');
+});
+
+test('an explicit --ai-posture flag wins with no --yes too', async () => {
+  const answers = await collectAnswers({ ...OTHER_FIELDS, yes: false, aiPosture: 'invite' });
+  assert.equal(answers.aiPosture, 'invite');
+});
+
+test('--yes with no --ai-posture flag defaults to "none", no preference', async () => {
+  const answers = await collectAnswers({ ...OTHER_FIELDS, yes: true });
+  assert.equal(answers.aiPosture, 'none');
+});
+
+test('an --ai-posture value outside decline/invite/none throws naming the flag', async () => {
+  await assert.rejects(
+    () => collectAnswers({ ...OTHER_FIELDS, yes: true, aiPosture: 'sure' }),
+    /aiPosture/,
+  );
 });

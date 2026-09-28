@@ -387,15 +387,6 @@ The original decision framing, for the record:
   CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
   already. The next unexplained red `main` on a media test is this.**
 
-- **`create-cairn-site` adds an AI posture setup prompt.** A small chore. Writes
-  `aiPosture: 'decline'` or `'invite'` into `src/theme/cairn.config.ts`, with no preference as the
-  default answer; the template ships the field commented out today.
-  `docs/extend/choose-an-ai-posture.md` then becomes the page for changing that choice later, so
-  its rewrite follows this change. (The Workers Paid consent half of this item, which this same
-  entry used to describe, has shipped: chapter 1's deploy consent now states the plan and its cost
-  before the first build and deploy, matching chapter 2's own text, and declining stops the run
-  before anything is installed, built, or deployed.)
-
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
   in favour of `csrf.trustedOrigins`. It will be removed in a future version." This is the standing

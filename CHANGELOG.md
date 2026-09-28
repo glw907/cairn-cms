@@ -2,6 +2,16 @@
 
 <!-- release-size: patch -->
 
+### Added
+
+- `create-cairn-site` asks one more question: the site's stance toward AI training crawlers, with
+  three answers (decline, invite, or no preference, the default). Answer ahead of time with
+  `--ai-posture decline|invite|none`; `--yes` alone defaults to no preference. Choosing decline or
+  invite writes `aiPosture` into the scaffolded `src/theme/cairn.config.ts`; no preference leaves
+  the file exactly as the template ships it. The scaffolded `robots.txt` route does not yet pass
+  this field to `robotsResponse`, so wiring it through is a manual step for now; see
+  `docs/extend/choose-an-ai-posture.md` for both halves.
+
 ### Fixed
 
 - `create-cairn-site`'s Cloudflare deploy consent now states plainly that a cairn site needs

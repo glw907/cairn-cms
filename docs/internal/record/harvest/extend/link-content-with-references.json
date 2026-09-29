@@ -47,8 +47,8 @@
         7,
         8
       ],
-      "paraphrase": "Precondition of two declared concepts for the worked example, with a pointer to another page.",
-      "cut": "illustrative"
+      "paraphrase": "A reference needs a declared target concept, so the example needs a second concept; with a pointer to another page.",
+      "new-fact": "f:2dilwu"
     },
     {
       "lines": [
@@ -63,8 +63,8 @@
         12,
         12
       ],
-      "paraphrase": "Doc-tooling comment explaining why the snippet elides fields.",
-      "cut": "illustrative"
+      "paraphrase": "Snippet comment calling dir, label, and singular required concept fields.",
+      "new-fact": "f:z7n6u8"
     },
     {
       "lines": [
@@ -304,7 +304,7 @@
         126
       ],
       "paraphrase": "Rationale that a broken body link degrades visibly while a reference does not.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:yw7rs6"
     },
     {
       "lines": [

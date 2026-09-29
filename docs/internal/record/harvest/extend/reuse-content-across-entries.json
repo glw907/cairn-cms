@@ -79,8 +79,8 @@
         29,
         29
       ],
-      "paraphrase": "Doc-tooling comment explaining why the snippet elides adapter groups.",
-      "cut": "illustrative"
+      "paraphrase": "Snippet comment: the adapter carries other required groups; continues the concepts declared above.",
+      "fact": "f:2zytgf"
     },
     {
       "lines": [
@@ -160,7 +160,7 @@
         81
       ],
       "paraphrase": "Sample fragment file with a title and two sentences.",
-      "cut": "illustrative"
+      "new-fact": "f:kcm3gf"
     },
     {
       "lines": [
@@ -240,7 +240,7 @@
         119
       ],
       "paraphrase": "Advice to write shared content flat and split a shared piece into its own fragment.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:82eo9p"
     },
     {
       "lines": [

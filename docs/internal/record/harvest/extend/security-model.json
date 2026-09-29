@@ -88,7 +88,7 @@
         21
       ],
       "paraphrase": "Under an identity gate the realistic risk moves to JWT verification, gate scope, and email verification.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:jha9f7"
     },
     {
       "lines": [
@@ -104,7 +104,7 @@
         45
       ],
       "paraphrase": "Caption: the repository marks where this model ends and render safety begins.",
-      "cut": "illustrative"
+      "cut": "navigation"
     },
     {
       "lines": [
@@ -192,7 +192,7 @@
         65
       ],
       "paraphrase": "The throttled signal is an accepted trade to spare an editor a flooded inbox.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:z0296p"
     },
     {
       "lines": [
@@ -240,7 +240,7 @@
         85
       ],
       "paraphrase": "The binding closes a login-CSRF where an attacker link lands the editor in the attacker session.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:k3gfbi"
     },
     {
       "lines": [
@@ -248,7 +248,7 @@
         85
       ],
       "paraphrase": "The binding stops a link-following mail scanner from spending the link.",
-      "fact": "f:5iqvmt"
+      "fact": "f:k3gfbi"
     },
     {
       "lines": [
@@ -312,7 +312,7 @@
         108
       ],
       "paraphrase": "Rationale that the binding alone is a lockout an attacker could keep re-applying.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:qep9a9"
     },
     {
       "lines": [
@@ -320,7 +320,7 @@
         112
       ],
       "paraphrase": "Last-requester-wins is safe because asking alone grants nothing.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:8l4wwr"
     },
     {
       "lines": [
@@ -336,7 +336,7 @@
         114
       ],
       "paraphrase": "Recovery is asking again, and the rebind treats requesters symmetrically.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:91dwrk"
     },
     {
       "lines": [
@@ -552,7 +552,7 @@
         221
       ],
       "paraphrase": "Set the Access session to hours because cairn has no independent timeout.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:2glcaf"
     },
     {
       "lines": [
@@ -600,7 +600,7 @@
         239
       ],
       "paraphrase": "Rationale for not resolving identity ahead of the CSRF check on rejected posts.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:7qqhda"
     },
     {
       "lines": [
@@ -640,7 +640,7 @@
         258
       ],
       "paraphrase": "A short Access session narrows the exploit window but neither lever closes it.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:8rnym5"
     },
     {
       "lines": [
@@ -656,7 +656,7 @@
         264
       ],
       "paraphrase": "Enable only a login method that proves control of the asserted address.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:emrebl"
     },
     {
       "lines": [
@@ -1039,8 +1039,8 @@
         448,
         449
       ],
-      "paraphrase": "This section gives the complete ownerOnly rule.",
-      "cut": "stance-without-owner-basis"
+      "paraphrase": "Heading: ownerOnly stacks on top of the access map.",
+      "fact": "f:smbsa6"
     },
     {
       "lines": [
@@ -1184,7 +1184,7 @@
         522
       ],
       "paraphrase": "Serve strict-origin-when-cross-origin or same-origin and scope no-referrer to double-submit routes.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:qbfriw"
     },
     {
       "lines": [
@@ -1216,7 +1216,7 @@
         530
       ],
       "paraphrase": "The nonce machinery a correct CSP needs threads through the site own SvelteKit config.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:72xplg"
     },
     {
       "lines": [
@@ -1232,7 +1232,7 @@
         534
       ],
       "paraphrase": "The reasoning assumes the roster; under identity the admitted population can be broader.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:emrebl"
     },
     {
       "lines": [

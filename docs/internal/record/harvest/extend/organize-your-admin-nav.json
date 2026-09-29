@@ -79,8 +79,8 @@
         19,
         19
       ],
-      "paraphrase": "Doc-tooling comment explaining why the snippet elides adapter groups.",
-      "cut": "illustrative"
+      "paraphrase": "Snippet comment: the adapter carries other required groups besides the editor navLayout member.",
+      "fact": "f:2zytgf"
     },
     {
       "lines": [

@@ -184,7 +184,7 @@
         62
       ],
       "paraphrase": "PowerShell has an equivalent that produces the same unwrapped form.",
-      "cut": "external-trivia"
+      "new-fact": "f:dbue4k"
     },
     {
       "lines": [
@@ -192,7 +192,7 @@
         65
       ],
       "paraphrase": "PowerShell snippet encoding the PEM.",
-      "cut": "illustrative"
+      "fact": "f:dbue4k"
     },
     {
       "lines": [
@@ -288,7 +288,7 @@
         95
       ],
       "paraphrase": "Delete the local pem and b64 files so the Worker is the only place the key lives.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:kkp5bi"
     },
     {
       "lines": [
@@ -320,7 +320,7 @@
         102
       ],
       "paraphrase": "If the secret did not take, re-push and redeploy; otherwise re-check the key and encoding.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:86h9o6"
     },
     {
       "lines": [
@@ -352,7 +352,7 @@
         110
       ],
       "paraphrase": "Service restoration and diagnosis of the new key are separate problems.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:ejuoh6"
     },
     {
       "lines": [

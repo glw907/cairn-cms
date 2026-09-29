@@ -128,7 +128,7 @@
         44
       ],
       "paraphrase": "A migrated entry should stay a draft pending editorial review.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:0nw43j"
     },
     {
       "lines": [
@@ -144,15 +144,15 @@
         48
       ],
       "paraphrase": "Rebuild each shortcode as a registered component, then find and replace in bodies.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:tg9e0z"
     },
     {
       "lines": [
         50,
         61
       ],
-      "paraphrase": "Snippet mapping old frontmatter fields to new ones.",
-      "cut": "illustrative"
+      "paraphrase": "Snippet mapping old frontmatter fields, trimming a date by slicing its string form.",
+      "fact": "f:ettk66"
     },
     {
       "lines": [

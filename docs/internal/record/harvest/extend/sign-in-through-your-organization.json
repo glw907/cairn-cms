@@ -160,7 +160,7 @@
         49
       ],
       "paraphrase": "An Access application guarantee is only as strong as its weakest enabled login method.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:emrebl"
     },
     {
       "lines": [
@@ -168,7 +168,7 @@
         50
       ],
       "paraphrase": "Enable only a method that proves control of the asserted address.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:emrebl"
     },
     {
       "lines": [
@@ -184,7 +184,7 @@
         60
       ],
       "paraphrase": "Never enable a social provider or generic OIDC whose email claim the user can edit.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:emrebl"
     },
     {
       "lines": [
@@ -216,7 +216,7 @@
         68
       ],
       "paraphrase": "Group membership is unreliable on the token, so the seam does no group-to-role mapping.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:hilyos"
     },
     {
       "lines": [
@@ -232,7 +232,7 @@
         70
       ],
       "paraphrase": "Review both lists when someone standing changes.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:k40l86"
     },
     {
       "lines": [
@@ -336,7 +336,7 @@
         119
       ],
       "paraphrase": "A site rate limit is worth having because an ungated /admin spends an RSA verification per request.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:fhit7f"
     },
     {
       "lines": [
@@ -344,7 +344,7 @@
         124
       ],
       "paraphrase": "Never branch inside resolve for local development; swap the whole guard behind a build-time conditional.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:eiaqkh"
     },
     {
       "lines": [
@@ -485,10 +485,18 @@
     {
       "lines": [
         266,
+        268
+      ],
+      "paraphrase": "The verifier is handed to the createAuthGuard identity option.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        268,
         269
       ],
-      "paraphrase": "The verifier is handed to createAuthGuard identity option and composes with sequence.",
-      "fact": "f:fhit7f"
+      "paraphrase": "The identity-mode guard composes with sequence the same way the zero-config guard does.",
+      "new-fact": "f:dwc4kp"
     },
     {
       "lines": [
@@ -560,7 +568,7 @@
         305
       ],
       "paraphrase": "The recipe never checks Access revocation, so an issued token stays valid until its exp.",
-      "cut": "illustrative"
+      "new-fact": "f:fe0dyh"
     },
     {
       "lines": [
@@ -576,7 +584,7 @@
         309
       ],
       "paraphrase": "Set the session to hours and prefer the roster delete to remove someone right now.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:2glcaf"
     },
     {
       "lines": [

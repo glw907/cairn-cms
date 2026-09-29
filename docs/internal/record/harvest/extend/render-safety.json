@@ -40,7 +40,7 @@
         9
       ],
       "paraphrase": "Editors author through a web form, unlike a trusted-content static-site generator.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:0ij7do"
     },
     {
       "lines": [
@@ -72,7 +72,7 @@
         14
       ],
       "paraphrase": "Without a floor any editor could run script in every visitor browser.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:wgovy6"
     },
     {
       "lines": [
@@ -160,7 +160,7 @@
         59
       ],
       "paraphrase": "The floor exists because the reference delivery path once had none.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:r0cv6e"
     },
     {
       "lines": [
@@ -200,7 +200,7 @@
         75
       ],
       "paraphrase": "Do not reach for the switch because a sanitize finding is inconvenient.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:wgovy6"
     },
     {
       "lines": [

@@ -132,6 +132,61 @@ describe('rehypeDispatch', () => {
     expect(boundary.properties?.dataCairnHydrate).toBe('visible');
   });
 
+  // The engine serializes the island's props from `ctx.attributes` after `build()` returns, so a
+  // build that reassigns the context's attributes decides what reaches `data-cairn-props`.
+  const rebuildReg = defineRegistry({
+    components: [
+      {
+        name: 'clears',
+        label: '',
+        description: '',
+        hydrate: true,
+        attributes: { message: { type: 'text', label: 'Message' } },
+        build: (ctx) => {
+          ctx.attributes = {};
+          return h('p', ['gone']);
+        },
+      },
+      {
+        name: 'trims',
+        label: '',
+        description: '',
+        hydrate: true,
+        attributes: {
+          message: { type: 'text', label: 'Message' },
+          rate: { type: 'number', label: 'Rate' },
+        },
+        build: (ctx) => {
+          ctx.attributes = { rate: ctx.attributes.rate ?? '' };
+          return h('p', ['kept']);
+        },
+      },
+    ],
+  });
+
+  it('serializes the attributes a build() cleared, not the ones the author wrote', () => {
+    const tree: Root = {
+      type: 'root',
+      children: [h('div', { dataPrimitive: 'clears', dataAttrMessage: 'secret text' }, [])],
+    } as Root;
+    rehypeDispatch(rebuildReg)(tree);
+    const boundary = tree.children[0] as Element;
+    expect(boundary.properties?.dataCairnProps).toBe('{}');
+    expect(JSON.stringify(tree)).not.toContain('secret text');
+  });
+
+  it('serializes the attributes a build() replaced, coercing a number field from the new object', () => {
+    const tree: Root = {
+      type: 'root',
+      children: [
+        h('div', { dataPrimitive: 'trims', dataAttrMessage: 'secret text', dataAttrRate: '2.5' }, []),
+      ],
+    } as Root;
+    rehypeDispatch(rebuildReg)(tree);
+    const boundary = tree.children[0] as Element;
+    expect(JSON.parse(boundary.properties?.dataCairnProps as string)).toEqual({ rate: 2.5 });
+  });
+
   it('leaves a non-hydrate component unwrapped', () => {
     const tree: Root = {
       type: 'root',

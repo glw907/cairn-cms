@@ -474,6 +474,7 @@ items-baseline
 items-center
 items-end
 items-start
+items-stretch
 join
 join-horizontal
 join-item
@@ -578,7 +579,9 @@ max-sm:pb-24
 max-sm:pl-0
 max-sm:px-2
 max-sm:shrink-0
+max-sm:sr-only
 max-sm:top-12
+max-sm:w-auto
 max-w-[16rem]
 max-w-[30%]
 max-w-[40ch]
@@ -744,6 +747,7 @@ p-7
 pb-[calc(0.5rem+env(safe-area-inset-bottom))]
 pb-0.5
 pb-1.5
+pb-8
 pl-[3.875rem]
 pl-3
 pl-6

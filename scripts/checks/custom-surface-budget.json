@@ -20,8 +20,8 @@
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-warning",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked > :where(.input, .select, .textarea)"
         ],
-        "componentsLayerCap": 17,
-        "idiomLayerCap": 30,
+        "componentsLayerCap": 18,
+        "idiomLayerCap": 32,
         "retiredTokenBudget": 0
       }
     },

@@ -155,6 +155,28 @@ for (const theme of THEMES) {
         .toBe(hovered);
     });
 
+    // S3 Q17: the rest rule's hover/focus-visible step split into its own :focus-visible copy
+    // (unconditional) and a :hover copy gated on @media (hover: hover), so a keyboard-only reader
+    // on a device that reports no hover capability still gets the step. Tabbing in from a
+    // preceding element, never a mouse move, is what makes Chromium treat this as :focus-visible
+    // for a <button>, which a bare .focus() call does not reliably do.
+    test('the soft primary steps on keyboard focus with no pointer ever moved', async ({
+      page,
+    }) => {
+      const soft = page.getByTestId('tk-btn-soft-primary');
+      await page.getByTestId('tk-btn-primary').focus();
+      await page.keyboard.press('Tab');
+      await expect.poll(() => soft.evaluate((e) => e === document.activeElement)).toBe(true);
+      const focused = await resolveOn(
+        soft,
+        'background-color',
+        'color-mix(in oklab, var(--color-primary) 15%, transparent)',
+      );
+      await expect
+        .poll(() => soft.evaluate((e) => getComputedStyle(e).backgroundColor))
+        .toBe(focused);
+    });
+
     test("the switch's checked track and knob, and every switch's round knob", async ({ page }) => {
       const checked = page.getByTestId('tk-switch-checked');
       const track = await resolveOn(checked, 'background-color', 'var(--color-neutral)');
@@ -273,8 +295,74 @@ for (const theme of THEMES) {
       const item = page.getByTestId('tk-dropdown-item');
       await expect.poll(() => item.evaluate((e) => getComputedStyle(e).borderRadius)).toBe('4px');
     });
+
+    // S3 Q6: the dropdown panel carries no box-shadow utility of its own (removed from this
+    // fixture's markup), so a bare `.dropdown-content.menu` must supply the theme's own warm
+    // elevation, the same var the modal box reads, in place of no shadow at all.
+    test('the dropdown panel carries the warm elevation vocabulary', async ({ page }) => {
+      const content = page.getByTestId('tk-dropdown-content');
+      const warm = await resolveOn(content, 'box-shadow', 'var(--cairn-shadow)');
+      await expect.poll(() => content.evaluate((e) => getComputedStyle(e).boxShadow)).toBe(warm);
+    });
+
+    // S3 Q4: a radio join-item keeps the browser's own UA margin on every edge daisyUI's own
+    // `.join-item` rule does not restate (every edge but the leading one), which reopens a seam a
+    // button join, whose UA margin is already zero, never shows. The two radios must sit exactly
+    // one (negative, overlapping) border apart, the same gap the plain button join keeps.
+    test('the radio join fuses with no reopened seam', async ({ page }) => {
+      const first = page.getByTestId('tk-radio-join-first');
+      const second = page.getByTestId('tk-radio-join-second');
+      const firstBox = await first.evaluate((e) => e.getBoundingClientRect());
+      const secondBox = await second.evaluate((e) => e.getBoundingClientRect());
+      const border = await first.evaluate((e) => parseFloat(getComputedStyle(e).borderRightWidth));
+      // The second radio's left edge sits exactly one border-width inside the first radio's own
+      // right edge (the join's own -1px overlap); a reopened UA-margin seam would land it several
+      // pixels further right instead.
+      await expect
+        .poll(() => secondBox.left - (firstBox.left + firstBox.width))
+        .toBeCloseTo(-border, 0);
+    });
+
+    // S3 Q5: an uncolored selected outline/dash button used to fall through to daisyUI's own
+    // `--color-base-200` + 5% black mix, a wash that reads opposite directions across the two
+    // themes (a pale step in light, a near-black hole in dark). It now takes the identical
+    // warm-tinted neutral wash the plain selected button already carries, one direction in both
+    // themes.
+    test('the selected outline takes the same neutral wash as the plain selected button', async ({
+      page,
+    }) => {
+      const outlineActive = page.getByTestId('tk-btn-outline-active');
+      const plainSelected = page.getByTestId('tk-join-ladder-active');
+      const wash = await resolveOn(
+        outlineActive,
+        'background-color',
+        'color-mix(in oklab, var(--color-base-content) 7%, var(--color-base-100))',
+      );
+      await expect
+        .poll(() => outlineActive.evaluate((e) => getComputedStyle(e).backgroundColor))
+        .toBe(wash);
+      await expect
+        .poll(() => plainSelected.evaluate((e) => getComputedStyle(e).backgroundColor))
+        .toBe(wash);
+    });
   });
 }
+
+// S3 Q19: the fixture is the page developers are pointed at as the plain-daisyUI idiom proof, so
+// its own a11y gaps (a missing document title, unnamed sections, a forced-open dropdown trigger
+// with no aria-expanded) are fixed on the page itself.
+test('the fixture page is titled, its sections are named, and its dropdown trigger states its own expanded state', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await gotoThemed(page, context, baseURL!, 'cairn-admin');
+  await expect(page).toHaveTitle('Theme kit');
+  for (const name of ['Buttons and joins', 'Alerts', 'Controls', 'Chip, field, and card']) {
+    await expect(page.getByRole('region', { name })).toBeVisible();
+  }
+  await expect(page.getByTestId('tk-dropdown-trigger')).toHaveAttribute('aria-expanded', 'true');
+});
 
 test('the rendered admin nav carries no link to the fixture screen', async ({ page }) => {
   await page.goto('/admin/posts');

@@ -433,7 +433,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Fixes
               <span role="status" aria-live="polite">
-                <StatusChip label={conv.fixes ? 'On' : 'Off'} size="sm" />
+                <StatusChip label={conv.fixes ? 'On' : 'Off'} size="xs" />
                 <span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span>
               </span>
             </h2>
@@ -480,7 +480,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Style conventions
               <span role="status" aria-live="polite">
-                <StatusChip label={`${styleOnCount} on`} size="sm" />
+                <StatusChip label={`${styleOnCount} on`} size="xs" />
                 <span class="sr-only">, {styleOnCount} style {styleOnCount === 1 ? 'convention' : 'conventions'} on</span>
               </span>
             </h2>
@@ -505,16 +505,23 @@ bespoke (ruling 7): a single-use control, not a repeated device.
                        recipe (radiogroup + radio + aria-checked + roving tabindex + check glyph) -->
                   <div class="mt-3 flex flex-col gap-2">
                     <div id={`tidy-var-${String(row.key)}`} class="type-label font-semibold uppercase tracking-wide text-muted">{row.variantLabel}</div>
-                    <div role="radiogroup" aria-labelledby={`tidy-var-${String(row.key)}`} class="inline-flex flex-wrap self-start overflow-hidden rounded-field border border-[var(--cairn-card-border)] bg-base-100">
+                    <!-- `overflow-hidden` clipped the corners of the end buttons to the container's
+                         own rounded-field radius, but it also clipped a keyboard focus ring on
+                         either end button, drawn outside the button's own border box (S3 Q20). Each
+                         end button now rounds its own outer corners directly instead, so the
+                         container needs no clip at all. -->
+                    <div role="radiogroup" aria-labelledby={`tidy-var-${String(row.key)}`} class="inline-flex flex-wrap self-start rounded-field border border-[var(--cairn-card-border)] bg-base-100">
                       {#each row.variants as variant, vi (variant.value)}
                         {@const checked = conv[row.key] === variant.value}
+                        {@const isFirst = vi === 0}
+                        {@const isLast = vi === row.variants.length - 1}
                         <button
                           bind:this={radioEls[String(row.key)][vi]}
                           type="button"
                           role="radio"
                           aria-checked={checked}
                           tabindex={checked ? 0 : -1}
-                          class="{segClass(checked)} {vi > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}"
+                          class="{segClass(checked)} {isFirst ? 'rounded-l-field' : 'border-l border-[var(--cairn-card-border)]'} {isLast ? 'rounded-r-field' : ''}"
                           onclick={() => pickVariant(row.key, variant.value)}
                           onkeydown={(e) => onRadioKeydown(e, row, vi)}
                         >

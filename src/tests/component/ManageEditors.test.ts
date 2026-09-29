@@ -44,6 +44,17 @@ describe('ManageEditors', () => {
     await expect.element(screen.getByText('Ed Two')).toBeInTheDocument();
   });
 
+  // S3 Q2: the outline register's 55% edge is the audit's own border-contrast floor, darker than
+  // the plain button and field edges beside it in the same row, so the role chip read more
+  // button-like than the actual buttons. The quiet register carries no edge floor of its own.
+  it('renders a non-owner role chip in the quiet register, not the outline register', async () => {
+    const screen = await render(ManageEditors, { data: data(), form: null });
+    const badges = [...screen.container.querySelectorAll('.badge')];
+    const editorBadge = badges.find((badge) => badge.textContent?.trim() === 'editor');
+    expect(editorBadge?.classList.contains('cairn-chip-quiet')).toBe(true);
+    expect(editorBadge?.classList.contains('cairn-chip-outline')).toBe(false);
+  });
+
   it('disables the remove control for the acting owner (anti-lockout affordance)', async () => {
     const screen = await render(ManageEditors, { data: data(), form: null });
     const selfRemove = screen.getByRole('button', { name: /remove owner one/i });

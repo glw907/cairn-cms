@@ -92,6 +92,39 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   bottom of a tall page.
 - `ListToolbar`'s segmented filter scrolls horizontally when it does not fit, instead of wrapping
   its last option onto a second row, and its focus ring is no longer clipped.
+- The Editors role chip moves to the quiet register: its old outline edge, pinned at the audit's
+  3:1 border floor, read darker than the plain button and field edges beside it in the same row.
+- A radio styled as a `.join` segment (the input-as-button pattern) fuses with no reopened seam:
+  the browser's own UA margin on a radio or checkbox, which a `<button>` never carries, is reset
+  to zero on every edge daisyUI's own join rule does not restate.
+- An uncolored selected `btn-outline`/`btn-dash` (no color variant) takes the same neutral wash
+  the plain selected button already carries, in place of daisyUI's own base-200-plus-black mix,
+  which read as a pale step in light and a near-black hole in dark.
+- A `dropdown-content menu` panel with no shadow utility of its own now carries the theme's warm
+  elevation, the same var the modal box reads, instead of no shadow at all.
+- The admin root paints its own page background behind the app's content, so a page whose
+  scrollable overflow runs taller than the layout's own flow height (a forced-open dropdown menu is
+  the common case), or whose content is shorter than the viewport, no longer lets the real,
+  unthemed document canvas show beneath it.
+- The media library's grid/list density toggle now takes the size step's `--size-field` bump the
+  same way its neighboring `btn-sm` controls do, and its bordered outer frame measures exactly the
+  neighboring button's height, so their top and bottom edges line up.
+  The sheet gains one class for it, `items-stretch`.
+- Below `sm`, the top-bar search trigger's label drops to screen-reader-only text and the trigger
+  shrinks to its content, so it reads as an icon-only button that keeps its accessible name; the
+  label used to truncate to an unreadable fragment there.
+- The media detail panel's scrollable body carries more bottom padding, so its last where-used row
+  clears the panel's own edge instead of scrolling under it.
+- The Tidy settings screen's "On"/"Off" and count heading pills size to their own short content
+  instead of the `sm` chip size's 5rem width floor, and its variant radiogroup rounds its own end
+  buttons directly instead of clipping a keyboard focus ring against the container's edge.
+- The refused-delete banner's stacked title and body drop the browser's own UA paragraph margin,
+  which does not collapse between CSS grid items and stacked on top of the grid's own gap.
+- The command palette's search input no longer clips its own keyboard focus ring against the
+  panel's top edge.
+- The soft primary button's hover step and `EditorToolbar`'s Write/Preview seam-squaring now gate
+  their `:hover` copy on `@media (hover: hover)`, so a touch tap cannot strand either on the
+  last-tapped control.
 - `cairn-audit`'s `motion-vocabulary` rule now matches a theme root selector inside a
   comma-separated selector list.
 - `create-cairn-site`'s Cloudflare deploy consent now states plainly that a cairn site needs

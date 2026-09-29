@@ -514,17 +514,35 @@ stays pinned at the row's right end, reachable at every width.
      its ghost sibling's own hover/focus-visible fill. `write` and `preview` render as adjacent
      siblings inside the tablist, so the shared corner and the 1px seam collapse only then; at
      rest, whichever tab is selected keeps all four of its own corners rounded, since nothing
-     paints beside it to share an edge with. */
-  [role='tab']:is([aria-selected='true'], :hover, :focus-visible)
-    + [role='tab']:is([aria-selected='true'], :hover, :focus-visible) {
+     paints beside it to share an edge with. `aria-selected` and `:focus-visible` are state- and
+     keyboard/AT-driven, so they square the seam unconditionally below; `:hover` alone gates on
+     `@media (hover: hover)` in its own copy further down (the modality-gate ruling, S3 Q18): a
+     touch tap fires `:hover` with no release event and could otherwise strand the squared corner
+     on the last-tapped tab. */
+  [role='tab']:is([aria-selected='true'], :focus-visible)
+    + [role='tab']:is([aria-selected='true'], :focus-visible) {
     margin-inline-start: -1px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
   }
-  [role='tab']:is([aria-selected='true'], :hover, :focus-visible):has(
-      + [role='tab']:is([aria-selected='true'], :hover, :focus-visible)
+  [role='tab']:is([aria-selected='true'], :focus-visible):has(
+      + [role='tab']:is([aria-selected='true'], :focus-visible)
     ) {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+  }
+  @media (hover: hover) {
+    [role='tab']:is([aria-selected='true'], :hover, :focus-visible)
+      + [role='tab']:is([aria-selected='true'], :hover, :focus-visible) {
+      margin-inline-start: -1px;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+    [role='tab']:is([aria-selected='true'], :hover, :focus-visible):has(
+        + [role='tab']:is([aria-selected='true'], :hover, :focus-visible)
+      ) {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
   }
 </style>

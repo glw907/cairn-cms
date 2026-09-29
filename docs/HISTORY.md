@@ -7,6 +7,60 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Theme identity pass A: the admin theme in daisyUI's layer, 2026-09-28
+
+Branch `theme-identity-a`, PR #92, merged to `main` as `4d725057` (Geoff approved pass A merging
+on its own, 2026-09-28, which supersedes the plan's joint A-B-C merge). Plan and full
+post-mortem: `docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`. Unreleased; `0.98.0`
+is planned for pass C's close.
+
+**What landed:** the admin's identity moved into daisyUI's theme layer. The admin sheet compiles
+every daisyUI class except calendar (580, up from 217). The two theme roots are
+`@plugin "daisyui/theme"` blocks. Every override of a daisyUI declaration lives in
+`@layer utilities { @layer cairn-idiom { ... } }` with its full state set. The markup sweep put
+every fixed corner on the three-token ladder and folded the button recipes onto daisyUI variants.
+The starter took the ladder and the hairline outline. The `/admin/theme-kit` fixture proves plain
+daisyUI markup renders as cairn in both themes. Geoff's S3 before-and-after ("all per
+recommendation") produced 16 corrections (`9ef7b8b3`). The overnight S4 read caught one defect in
+those corrections: the media density toggle's frame stood 42px beside a 36px neighbor
+(`9b4b2c6c`). Baselines were regenerated twice on CI (`73fb6d2b`, `fd4c1ad5`), with a
+fresh-context visual read of each.
+
+**What the gates caught:** the overlay drawer's focus call ran while daisyUI held the drawer
+hidden (`c5d1239e`). A `--cairn-error-border` utility beat five destructive controls once rules
+moved into `cairn-idiom`, under 3:1. The host-CSS regex missed four of six stylesheets. Vite's
+minifier moves the sublayer pin below both blocks. S1 found four STRUCTURAL items the per-task
+gates could not see. The S3 corrections' first gate run caught daisyUI's checked `.btn` pairing
+`primary-content` ink with any variant.
+
+**What a later pass would be wrong to rediscover:**
+
+- daisyUI 5 emits component rules into sublayers of `utilities`, so a `@layer components`
+  override loses. Overrides go in `utilities.cairn-idiom`, pinned by
+  `@layer utilities.daisyui, utilities.cairn-idiom;`. A minified build reorders that pin, so
+  emission order decides (`e426f011` guards it).
+- A few daisyUI declarations are unnested in `@layer utilities` (`.alert`'s `border-color`,
+  `.kbd`'s `box-shadow`, `.collapse`'s `visibility`). Override them through daisyUI's variable.
+- The `@plugin "daisyui/theme"` block takes only daisyUI's keys and no top-level comma. Tailwind's
+  parser silently keeps only a value's last comma part.
+- daisyUI's `.alert` is a grid, so `flex-col` is inert on it. A statically open `.modal-box`
+  renders nothing outside `.modal[open]`.
+- Every `cairn-idiom` hover sits in `@media (hover: hover)`; `:active` and `:focus-visible` never
+  do.
+- Playwright's `fullPage` capture does not repaint a `position: fixed` page ground past the flow
+  box, so the theme-kit baselines keep a residual band under the forced-open dropdown. It is a
+  capture limit, not an unfixed rule.
+- A PR that conflicts with `main` gets no `pull_request` CI at all. A missing run on a pushed head
+  means "check mergeability" before it means "CI is slow".
+- The pass class belongs in the plan header from the start. The mid-pass switch to `paint` came
+  after 8.7M of a 15.8M plan.
+
+**Score:** about 17.1M of the 20M ceiling at the close, plus about 0.8M overnight for the S4 read,
+the toggle fix, and the two merges (an estimate from task notifications). Planning misses: 3.
+Execution sittings: 3 (the pass-class approval, the segment C rulings, and S3). The fold-rule
+trial went unassessed: the close's post-mortem did not check the plan review's refused findings
+against execution.
+
 ## Draft docs pass 0+1: setup and reference, 2026-09-28
 
 Branch `draft-docs-0` (worktree `.claude/worktrees/draft-docs-0`), draft PR #91 (unmerged at

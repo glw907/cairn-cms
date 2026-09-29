@@ -548,6 +548,28 @@ describe('ConceptList', () => {
       // spanning the alert keeps the body within a small margin of the banner's own content width.
       expect(bodyWidth).toBeGreaterThan(bannerWidth * 0.75);
     });
+
+    // S3 Q14: the admin omits global Preflight, so a bare <p> kept the browser's own UA block
+    // margin, which does not collapse between CSS grid items and so stacked on top of the grid's
+    // own 1rem gap, roughly tripling the title-to-body space. `m-0` on every stacked <p> leaves
+    // the grid's own gap as the only space between them.
+    it('carries no margin on the refused-delete banner\'s stacked title and body paragraphs', async () => {
+      const form = {
+        error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+        id: '2026-05-01-post-1',
+        inboundLinks: [
+          { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
+        ],
+      };
+      const screen = await render(ConceptList, { data: data(), form });
+      const banner = screen.container.querySelector('.alert-error')!;
+      const paragraphs = banner.querySelectorAll('p');
+      expect(paragraphs.length).toBeGreaterThan(0);
+      for (const p of paragraphs) {
+        expect(getComputedStyle(p).marginBlockStart).toBe('0px');
+        expect(getComputedStyle(p).marginBlockEnd).toBe('0px');
+      }
+    });
   });
 
   // Task 6 (audit finding 10): the mechanical polish tail. The compiled sheet carries daisyUI's

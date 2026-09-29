@@ -5,11 +5,19 @@ carries a stable `data-testid`, read by `theme-kit.spec.ts` and the `admin-visua
 `<style>` block anywhere on the page (spec, "G1: a consistent look by default"). The page heading
 carries `font-[550]`, the one arbitrary value the ratified page heading itself uses (PageHeader's
 own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
+<svelte:head>
+  <title>Theme kit</title>
+</svelte:head>
+
 <div class="max-w-3xl mx-auto card-shell p-6" data-testid="tk-root">
   <h1 class="type-title font-[550]">Theme kit</h1>
 
   <div class="flex flex-col gap-section">
-    <section class="flex flex-col gap-group" data-testid="tk-buttons">
+    <section
+      class="flex flex-col gap-group"
+      aria-label="Buttons and joins"
+      data-testid="tk-buttons"
+    >
       <div class="flex flex-wrap items-center gap-control">
         <button class="btn" data-testid="tk-btn-plain">Plain</button>
         <button class="btn btn-ghost" data-testid="tk-btn-ghost">Ghost</button>
@@ -63,7 +71,7 @@ own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
       </div>
     </section>
 
-    <section class="flex flex-col gap-group" data-testid="tk-alerts">
+    <section class="flex flex-col gap-group" aria-label="Alerts" data-testid="tk-alerts">
       <div class="alert" data-testid="tk-alert-bare">A bare alert.</div>
       <!-- The exact refusal-banner shape ConceptList.svelte:330 renders: an error alert carrying a
            nested link, so the fixture proves the same markup the office list uses. -->
@@ -71,8 +79,8 @@ own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
         class="alert alert-error mb-4 max-sm:grid-flow-row max-sm:grid-cols-1 items-start type-body"
         data-testid="tk-alert-error"
       >
-        <p class="font-medium">This entry could not be deleted.</p>
-        <p>
+        <p class="m-0 font-medium">This entry could not be deleted.</p>
+        <p class="m-0">
           1 page now links to it.
           <a class="link" href="/admin/posts" data-testid="tk-alert-error-link">Review the link</a>
         </p>
@@ -82,7 +90,11 @@ own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
       <div class="alert alert-info" data-testid="tk-alert-info">An info alert.</div>
     </section>
 
-    <section class="flex flex-wrap items-center gap-group" data-testid="tk-controls">
+    <section
+      class="flex flex-wrap items-center gap-group"
+      aria-label="Controls"
+      data-testid="tk-controls"
+    >
       <label class="flex items-center gap-control">
         <input type="checkbox" class="toggle" checked data-testid="tk-switch-checked" />
         <span class="type-body">Checked switch</span>
@@ -129,7 +141,11 @@ own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
       </label>
     </section>
 
-    <section class="flex flex-wrap items-end gap-group" data-testid="tk-misc">
+    <section
+      class="flex flex-wrap items-end gap-group"
+      aria-label="Chip, field, and card"
+      data-testid="tk-misc"
+    >
       <span class="badge" data-testid="tk-chip">Chip</span>
 
       <label class="flex flex-col gap-label" data-testid="tk-field">
@@ -151,9 +167,18 @@ own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
     </div>
 
     <div class="dropdown" class:dropdown-open={true} data-testid="tk-dropdown">
-      <button type="button" class="btn" data-testid="tk-dropdown-trigger">Menu</button>
+      <button
+        type="button"
+        class="btn"
+        aria-expanded="true"
+        aria-controls="tk-dropdown-menu"
+        data-testid="tk-dropdown-trigger"
+      >
+        Menu
+      </button>
       <ul
-        class="dropdown-content menu bg-base-100 rounded-box p-2 shadow-sm"
+        id="tk-dropdown-menu"
+        class="dropdown-content menu bg-base-100 rounded-box p-2"
         data-testid="tk-dropdown-content"
       >
         <li><a href="/admin/posts" data-testid="tk-dropdown-item">Item one</a></li>

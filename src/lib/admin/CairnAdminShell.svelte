@@ -858,10 +858,14 @@ discriminant, not the fields, gates the chrome).
               type="button"
               onclick={openPalette}
               aria-haspopup="dialog"
-              class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 type-body text-muted transition-colors hover:bg-base-200 hover:text-base-content"
+              class="flex max-sm:w-auto w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 type-body text-muted transition-colors hover:bg-base-200 hover:text-base-content"
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span class="truncate">Search or jump to&hellip;</span>
+              <!-- Below `sm` the trigger reads as the icon alone: the surrounding topbar's own
+                   width leaves too little room for the label, which truncated to an unreadable
+                   "S." before this fix. `sr-only`, not `hidden`, keeps the label as the button's
+                   accessible name (WCAG 4.1.2) at every width. -->
+              <span class="truncate max-sm:sr-only">Search or jump to&hellip;</span>
               <!-- The keyboard shortcut hint is meaningless on a touch device (no ⌘K to press), so
                    it gates on pointer:fine, not only the sm width breakpoint: a touch tablet at or
                    above sm would otherwise still show it. -->
@@ -906,7 +910,10 @@ discriminant, not the fields, gates the chrome).
       </main>
 
       <dialog bind:this={paletteDialog} class="modal" aria-label="Commands">
-        <div class="modal-box max-w-xl self-start mt-4 p-0 sm:mt-[12vh]">
+        <!-- `pt-1` (4px) matches the page-wide `:focus-visible` ring's own outward reach (a 2px
+             outline at a 2px offset): with `p-0` otherwise flush, the search input's ring, focused
+             on load, would clip against this scrolling box's own top edge with no room above it. -->
+        <div class="modal-box max-w-xl self-start mt-4 p-0 pt-1 sm:mt-[12vh]">
           <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
             <SearchIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input

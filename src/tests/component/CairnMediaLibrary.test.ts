@@ -187,6 +187,30 @@ describe('CairnMediaLibrary grid', () => {
       ) as HTMLElement;
       expect(describedTitle.getBoundingClientRect().width).toBe(needsAltTitle.getBoundingClientRect().width);
     });
+
+    // The density toggle is hand-rolled (no daisyUI `.btn` class of its own), so it never picked
+    // up the size step's `--size-field` bump the neighboring `btn-sm` orphan-scan trigger reads
+    // automatically. The eye reads the toggle's bordered outer frame, so the frame's own box is
+    // measured against the neighbor: the same height, and top and bottom edges on the same lines.
+    it('sizes the density toggle frame level with its btn-sm neighbor', async () => {
+      const screen = await render(CairnMediaLibrary, { data: fixture() });
+      const frame = screen.getByRole('group', { name: 'Layout density' }).element() as HTMLElement;
+      const orphanButton = screen
+        .getByRole('button', { name: 'Find orphaned files' })
+        .element() as HTMLElement;
+      const frameRect = frame.getBoundingClientRect();
+      const neighborRect = orphanButton.getBoundingClientRect();
+      expect(frameRect.height).toBeCloseTo(neighborRect.height, 0);
+      expect(frameRect.top).toBeCloseTo(neighborRect.top, 0);
+      expect(frameRect.bottom).toBeCloseTo(neighborRect.bottom, 0);
+      // The segmented look holds: each inner button stays square and sits inside the frame.
+      for (const name of ['Grid view', 'List view']) {
+        const inner = (screen.getByRole('button', { name }).element() as HTMLElement).getBoundingClientRect();
+        expect(inner.width).toBeCloseTo(inner.height, 0);
+        expect(inner.top).toBeGreaterThan(frameRect.top);
+        expect(inner.bottom).toBeLessThan(frameRect.bottom);
+      }
+    });
   });
 });
 
@@ -517,6 +541,28 @@ describe('CairnMediaLibrary detail slide-over', () => {
     await expect.poll(() => screen.container.querySelector('[role="region"]')).toBeNull();
     const orphan = await openSlideOver(screen, /meadow-fence/);
     expect(orphan.textContent ?? '').toMatch(/no references found/i);
+  });
+
+  // S3 Q10: the size step grew the panel's own form controls about 17px in total, so at 390 the
+  // where-used row's last entry scrolled under the sheet's own bottom edge on the old 16px (p-4)
+  // bottom padding. pb-8 (32px) gives the last row room to clear it. The compiled sheet carries
+  // the real utility values, the same reason the tile-title-width suite above injects it.
+  it('gives the scrollable panel body extra bottom padding past the size step\'s own growth', async () => {
+    const sheet = document.createElement('style');
+    sheet.textContent = compiledAdminCss;
+    document.head.appendChild(sheet);
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    try {
+      const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+      const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) });
+      const panel = await openSlideOver(screen, /first-light/);
+      const body = panel.querySelector(':scope > div.overflow-y-auto') as HTMLElement;
+      expect(body).not.toBeNull();
+      expect(getComputedStyle(body).paddingBottom).toBe('32px');
+    } finally {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    }
   });
 
   it('carries the media: reference and the alt editor + rename in one ?/mediaUpdate form', async () => {

@@ -339,7 +339,7 @@ Run `cairn-pass`'s close:
 
 | Task | Status | Tokens | Notes |
 | --- | --- | --- | --- |
-| 1 | pending | | |
+| 1 | done (`c56e68b8`, fix `94057384`) | 260k (impl 168k, review 92k) | one fix round: basename `Source:` citations; carried to tasks 4 and 7: bare `why-cairn.md` shadowed by the fixture, full path behind `../../` unmatched |
 | 2 | pending | | |
 | 3 to 6 | pending | | one row, from the chains run's `spent` |
 | 7 | pending | | |

@@ -160,7 +160,7 @@
         49
       ],
       "paraphrase": "An Access application guarantee is only as strong as its weakest enabled login method.",
-      "fact": "f:emrebl"
+      "new-fact": "f:33upyd"
     },
     {
       "lines": [
@@ -168,7 +168,7 @@
         50
       ],
       "paraphrase": "Enable only a method that proves control of the asserted address.",
-      "fact": "f:emrebl"
+      "fact": "f:33upyd"
     },
     {
       "lines": [
@@ -184,7 +184,7 @@
         60
       ],
       "paraphrase": "Never enable a social provider or generic OIDC whose email claim the user can edit.",
-      "fact": "f:emrebl"
+      "fact": "f:33upyd"
     },
     {
       "lines": [
@@ -336,7 +336,7 @@
         119
       ],
       "paraphrase": "A site rate limit is worth having because an ungated /admin spends an RSA verification per request.",
-      "fact": "f:fhit7f"
+      "new-fact": "f:4uqi5r"
     },
     {
       "lines": [

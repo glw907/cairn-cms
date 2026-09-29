@@ -184,7 +184,7 @@
         62
       ],
       "paraphrase": "PowerShell has an equivalent that produces the same unwrapped form.",
-      "new-fact": "f:dbue4k"
+      "new-fact": "f:4sb2nh"
     },
     {
       "lines": [
@@ -192,7 +192,7 @@
         65
       ],
       "paraphrase": "PowerShell snippet encoding the PEM.",
-      "fact": "f:dbue4k"
+      "new-fact": "f:dbue4k"
     },
     {
       "lines": [

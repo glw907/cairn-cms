@@ -60,8 +60,8 @@ export const RETIRED_PATCH_PROMOTION_VERSION = '0.99.0';
 // hover:bg-[var(--cairn-ink-hover)] or sm:shadow-none is still caught) that name each retired
 // button patch cairn's own ratified button recipes replaced.
 const INK_OPENER_BASES = new Set(['bg-neutral', 'bg-[var(--cairn-ink-hover)]']);
-const PUBLISH_TINT_BASE = 'bg-primary/10';
-const SHADOW_NONE_BASE = 'shadow-none';
+const PUBLISH_TINT_BASES = new Set(['bg-primary/10']);
+const SHADOW_NONE_BASES = new Set(['shadow-none']);
 
 function inkOpenerMessage(offending: string): string {
   return (
@@ -85,30 +85,22 @@ const SHADOW_NONE_MESSAGE =
   `in its place. Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the ` +
   'finding to error';
 
-/** The class tokens written on one element, grouped by the element's own start offset. */
-function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
-  const map = new Map<number, Set<string>>();
-  for (const token of file.classTokens) {
-    const set = map.get(token.elementStart);
-    if (set) set.add(token.value);
-    else map.set(token.elementStart, new Set([token.value]));
-  }
-  return map;
-}
-
 /**
- * The class tokens written on one element, grouped by the element's own start offset and
- * normalized through `utilityBase()`. The three retired-patch arms below read this map rather
- * than `classesByElement`'s raw one, so a variant-prefixed patch is caught the way `type-scale`
- * and `gap-scale` already catch one, unlike the five WATCH-noted arms above.
+ * The class tokens written on one element, grouped by the element's own start offset. With
+ * `normalize` set to `utilityBase`, the three retired-patch arms below read each token's base, so
+ * a variant-prefixed patch is caught the way `type-scale` and `gap-scale` already catch one,
+ * unlike the five WATCH-noted arms above, which read the raw token.
  */
-function baseClassesByElement(file: ParsedComponent): Map<number, Set<string>> {
+function classesByElement(
+  file: ParsedComponent,
+  normalize?: (token: string) => string
+): Map<number, Set<string>> {
   const map = new Map<number, Set<string>>();
   for (const token of file.classTokens) {
-    const base = utilityBase(token.value);
+    const value = normalize ? normalize(token.value) : token.value;
     const set = map.get(token.elementStart);
-    if (set) set.add(base);
-    else map.set(token.elementStart, new Set([base]));
+    if (set) set.add(value);
+    else map.set(token.elementStart, new Set([value]));
   }
   return map;
 }
@@ -117,13 +109,11 @@ function baseClassesByElement(file: ParsedComponent): Map<number, Set<string>> {
 function tokenWithBase(
   file: ParsedComponent,
   elementStart: number,
-  bases: Set<string> | string
+  bases: ReadonlySet<string>
 ): ClassToken | undefined {
-  return file.classTokens.find((token) => {
-    if (token.elementStart !== elementStart) return false;
-    const base = utilityBase(token.value);
-    return typeof bases === 'string' ? base === bases : bases.has(base);
-  });
+  return file.classTokens.find(
+    (token) => token.elementStart === elementStart && bases.has(utilityBase(token.value))
+  );
 }
 
 function nodeAt(file: ParsedComponent, start: number): SourceNode | undefined {
@@ -181,7 +171,7 @@ export const stockDefaultHazards: StaticRule = {
       }
 
       const byElement = classesByElement(file);
-      const byElementBase = baseClassesByElement(file);
+      const byElementBase = classesByElement(file, utilityBase);
       for (const [elementStart, classes] of byElement) {
         const node = nodeAt(file, elementStart);
         const attributes = node?.attributes ?? [];
@@ -229,7 +219,7 @@ export const stockDefaultHazards: StaticRule = {
         const baseClasses = byElementBase.get(elementStart);
         if (baseClasses?.has('btn')) {
           const inkToken = tokenWithBase(file, elementStart, INK_OPENER_BASES);
-          const tintToken = tokenWithBase(file, elementStart, PUBLISH_TINT_BASE);
+          const tintToken = tokenWithBase(file, elementStart, PUBLISH_TINT_BASES);
           if (inkToken && !baseClasses.has('btn-neutral')) {
             const message = inkOpenerMessage(utilityBase(inkToken.value));
             findings.push(findingAt(file, inkToken, message, 'advisory'));
@@ -237,7 +227,7 @@ export const stockDefaultHazards: StaticRule = {
             const message = publishTintMessage(utilityBase(tintToken.value));
             findings.push(findingAt(file, tintToken, message, 'advisory'));
           } else {
-            const shadowToken = tokenWithBase(file, elementStart, SHADOW_NONE_BASE);
+            const shadowToken = tokenWithBase(file, elementStart, SHADOW_NONE_BASES);
             if (shadowToken) {
               findings.push(findingAt(file, shadowToken, SHADOW_NONE_MESSAGE, 'advisory'));
             }

@@ -21,7 +21,8 @@ export interface PaddedInsert {
  *  words on the same line. A blank first line, and any further whole blank lines after it, are
  *  dropped up to the first non-blank line, whose own indentation is always kept.
  */
-function stripAfter(doc: string, pos: number, after: string): string {
+function stripAfter(doc: string, pos: number): string {
+  const after = doc.slice(pos);
   const atLineStart = pos === 0 || doc[pos - 1] === '\n';
   const firstNewline = after.indexOf('\n');
   const firstLineEnd = firstNewline === -1 ? after.length : firstNewline;
@@ -48,7 +49,8 @@ function stripAfter(doc: string, pos: number, after: string): string {
  *  last line, and any further whole blank lines above it, are dropped up to the first non-blank
  *  line, which is kept intact.
  */
-function stripBefore(doc: string, pos: number, before: string): string {
+function stripBefore(doc: string, pos: number): string {
+  const before = doc.slice(0, pos);
   const atLineEnd = pos === doc.length || doc[pos] === '\n';
   const lastNewline = before.lastIndexOf('\n');
   const lastLineStart = lastNewline === -1 ? 0 : lastNewline + 1;
@@ -75,8 +77,8 @@ function stripBefore(doc: string, pos: number, before: string): string {
  *  `before` or `after` is empty, so a document's start or end gets no padding on that side.
  */
 export function padInsertedBlock(doc: string, pos: number, text: string): PaddedInsert {
-  const before = stripBefore(doc, pos, doc.slice(0, pos));
-  const after = stripAfter(doc, pos, doc.slice(pos));
+  const before = stripBefore(doc, pos);
+  const after = stripAfter(doc, pos);
   const leading = before.length > 0 ? '\n\n' : '';
   const trailing = after.length > 0 ? '\n\n' : '';
   return {

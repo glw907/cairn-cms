@@ -29,12 +29,13 @@ verdict.
 - Does the change carry a retired button or badge patch: `bg-neutral` on a `btn` (write
   `btn btn-neutral`), `bg-primary/10` as a Publish tint (write `btn btn-soft btn-primary`),
   `shadow-none` on a `btn`, or `badge-ghost` (use `StatusChip`)? Each is a finding.
-- The audit is the mechanical net for the last two checks: `radius-scale` and
-  `stock-default-hazards` report them from `npx cairn-audit`. Read the diff for the same patterns
-  in markup the audit does not reach, and name the audit rule in the finding.
-- Does a new custom admin component sit under `src/routes/admin` or `src/lib/admin`, the roots the
-  audit reads and the site's admin sheet compiles? One anywhere else, `src/lib/components` for
-  one, is a finding.
+- For the radius and retired-patch checks, `npx cairn-audit` reports the same patterns as
+  `radius-scale` and `stock-default-hazards`. Read the diff by hand for any file outside the
+  audit's `static.scope`, and name the audit rule in each finding.
+- Does a new custom admin component sit under `src/routes/admin` or `src/lib/admin`, the two roots
+  the site's admin sheet compiles? A component anywhere else, such as `src/lib/components`, is a
+  finding: the default audit scope skips it, and a utility only it uses never reaches the admin
+  sheet.
 
 ## Write this, get this
 

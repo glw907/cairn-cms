@@ -5,8 +5,8 @@ The kit a custom admin screen is written in: plain daisyUI classes plus cairn's 
 The theme layer carries the look, so every fence below renders correctly as written. Copy the
 class strings, not a remembered variant of them.
 
-The page heading is not excerpted here. The `page-title` row of the recipe table in `../SKILL.md`
-gives its three classes.
+The page heading is not excerpted here. Its three classes are the first row of the "Write this,
+get this" table in `../SKILL.md`.
 
 ## Buttons
 
@@ -129,7 +129,7 @@ colored toggle adds only its color modifier.
 
 ## A chip, a field, and a card
 
-A chip is a bare `badge`; the corner ladder and the theme give it its shape. A field is a label
+A chip is a bare `badge`; the corner ladder and the theme give it its shape. A status label is `<StatusChip>`, not a hand-written badge. A field is a label
 that owns a `type-body font-medium` caption over a bare `input`. A card is `card-shell` with its
 own padding.
 

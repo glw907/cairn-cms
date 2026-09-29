@@ -134,9 +134,9 @@ than once:
   ask than a record-scoped one ("Edit household").
 - **The fence above already writes the cairn-native call, `<StatusChip label="Archived" />`.**
   The source screen's own markup for "Archived"/"Refunded" instead read
-  `badge-ghost badge-sm font-medium opacity-60`, exactly the ghost recipe cairn's own audit now
+  `badge-ghost badge-sm font-medium opacity-60`, the ghost recipe cairn's own audit now
   retires (`stock-default-hazards`'s `BADGE_GHOST_MESSAGE`). "Archived" and "Refunded" are
-  precisely the settled, put-away states `StatusChip`'s default `quiet` register exists for, and
+  the settled, put-away states `StatusChip`'s default `quiet` register exists for, and
   it carries the ratified recipe rather than a hand-tuned opacity demotion.
 - **Row-level verbs are uniformly `btn-ghost btn-xs`**, whether the row's own action is
   benign (Edit, Move) or destructive (Archive, carrying `text-error` on the label, still no

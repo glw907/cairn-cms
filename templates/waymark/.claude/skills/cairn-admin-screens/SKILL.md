@@ -89,7 +89,7 @@ Write the plain daisyUI or cairn role class a screen needs; the theme layer, not
 
 The kit as written markup, from buttons through a card, is in `references/exemplar-kit.md`.
 
-A custom admin component lives under `src/routes/admin` or `src/lib/admin`: the two roots `cairn-audit` reads by default and the site's admin sheet compiles. A component placed anywhere else, `src/lib/components` for one, is never audited and its utilities are never compiled.
+Put a custom admin component under `src/routes/admin` or `src/lib/admin`. Those are the two roots the site's admin sheet compiles (`@source` in `src/admin.css`), and both sit inside `cairn-audit`'s default static scope. A component anywhere else, such as `src/lib/components`, is outside the default audit scope, and a utility only it uses is missing from the compiled admin sheet, so it renders unstyled.
 
 ## Register rules
 

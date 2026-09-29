@@ -28,7 +28,7 @@ Write the plain daisyUI or cairn role class a screen needs; the theme layer, not
 | `rounded-field` | the corner for a control, button-like element, or small thumbnail. |
 | `rounded-box` | the corner for a panel, card, tile, popover, sheet, or the brand tile. |
 
-A custom admin component lives under `src/routes/admin` or `src/lib/admin`: the two roots `cairn-audit` reads by default and the site's admin sheet compiles. A component placed anywhere else, `src/lib/components` for one, is never audited and its utilities are never compiled.
+Put a custom admin component under `src/routes/admin` or `src/lib/admin`. Those are the two roots the site's admin sheet compiles (`@source` in `src/admin.css`), and both sit inside `cairn-audit`'s default static scope. A component anywhere else, such as `src/lib/components`, is outside the default audit scope, and a utility only it uses is missing from the compiled admin sheet, so it renders unstyled.
 
 ## Tooltip
 
@@ -59,7 +59,7 @@ their text in place instead. Ruling: `polish-busy-idiom`.
 DaisyUI's `.dropdown` is focus-driven: it opens on focus passing through the trigger and ignores
 Escape. Cairn's menus are built on the Popover API instead (`popovertarget`/`anchor-name`),
 reusing `dropdown menu` classes for styling only, never for the interaction. No ruling slug names
-the base decision on its own; `docs/internal/admin-design-system.md` carries it. Its motion
+the base decision on its own. Its motion
 treatment specifically, `display` and `overlay` passing the motion allowlist under
 `allow-discrete`, is its own ruling: `motion-discrete-popover`.
 
@@ -73,15 +73,15 @@ disappear into the row. Ruling: `audit-admin-statuschip`.
 
 ## Segmented-control contrast
 
-For the join-style pickers (a facet, `Pagination`, the editor's Write/Preview capsule), the
-selected segment is a neutral wash (a 7% mix of `base-content` over `base-100`) at weight 600,
-with a state hairline on the segment's own border in both themes. The rule keys on all five
-selected forms: `.btn-active`, `aria-pressed="true"`, `aria-checked="true"`, `aria-current`
-(unless `false` or empty), and a checked radio. A color variant, `btn-outline`, and `btn-dash`
-keep their own fill and ink, so a `join-item btn btn-primary` selected segment stays primary. A
-screen writes `join-item btn btn-active` and adds nothing; the check glyph, where the control
-shows one, is the screen's own job. `docs/internal/admin-design-system.md` carries the measured
-contrast numbers.
+For the join-style pickers (a facet, `Pagination`, the editor's Write/Preview capsule), write
+`join-item btn btn-active` on the selected segment and add nothing else. The rule renders the
+selected segment as a neutral wash (a 7% mix of `base-content` over `base-100`) at weight 600,
+with a state hairline on the segment's own border in both themes. It keys on all five selected
+forms: `.btn-active`, `aria-pressed="true"`, `aria-checked="true"`, `aria-current` (unless
+`false` or empty), and a checked radio. A color variant, `btn-outline`, and `btn-dash` keep their
+own fill and ink, so a `join-item btn btn-primary` selected segment stays primary. The check
+glyph, where the control shows one, is the screen's own job. `npx cairn-audit norms <role>`
+prints the measured values.
 
 ## Open opportunity, not yet built
 

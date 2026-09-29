@@ -200,7 +200,7 @@
         98
       ],
       "paraphrase": "Snippet: the today helper with a process.env fallback.",
-      "cut": "illustrative"
+      "new-fact": "f:iw346n"
     }
   ]
 }

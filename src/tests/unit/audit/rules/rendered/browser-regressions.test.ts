@@ -590,15 +590,17 @@ describe('chip-ground-collision against a real browser', () => {
   // manufactured 1.51 where the painted pixels measure 1.11. The values are /admin/media's, read off
   // the running admin: a 90%-alpha oklab fill on the dark media card. The light-theme twin of the
   // same chip kept firing throughout, because white is close enough to a light ground to leave the
-  // verdict intact, which is exactly how one theme's fail-open hid behind the other's green.
+  // verdict intact, which is exactly how one theme's fail-open hid behind the other's green. The
+  // fixture declares `--radius-selector` (the theme identity pass's chip token, the shipped chip's
+  // `rounded-selector` class resolves to) rather than the pill-radius the chip shape test retired.
   it('catches a translucent chip on a dark card, not the same chip lightened by the canvas', async () => {
     const findings = await findingsFor(
       chipGroundCollision,
-      `<body style="background-color: oklch(14% 0.008 75)">
+      `<body style="background-color: oklch(14% 0.008 75); --radius-selector: 4px">
          <div style="background-color: oklch(14% 0.008 75); padding: 24px; position: relative">
            <span class="absolute right-2 top-2 inline-flex"
                  style="background-color: oklab(0.24 0.00258819 0.00965926 / 0.9);
-                        border-radius: 9999px; padding: 1px 6px; font: 10px system-ui">image</span>
+                        border-radius: var(--radius-selector); padding: 1px 6px; font: 10px system-ui">image</span>
          </div>
        </body>`
     );
@@ -606,19 +608,21 @@ describe('chip-ground-collision against a real browser', () => {
     expect(findings[0]?.message).toContain('contrast 1.1');
   });
 
-  // Seven shipped sites render a filled rounded-full pill with no daisyUI badge class, so a
-  // class-name selector missed cairn's own chips. A chip is now a rendered shape.
-  it('catches a filled pill that carries no badge class', async () => {
+  // Seven shipped sites render a filled chip with no daisyUI badge class, so a class-name selector
+  // missed cairn's own chips. A chip is now a rendered shape: the theme's own resolved
+  // `--radius-selector`, the token every shipped chip moved onto from the pill geometry
+  // (`rounded-full`) this fixture used before the re-key.
+  it('catches a filled chip that carries no badge class', async () => {
     const findings = await findingsFor(
       chipGroundCollision,
-      `<body>
+      `<body style="--radius-selector: 4px">
          <div style="background-color: rgb(246,244,242); padding: 8px">
-           <span class="rounded-full type-chip" style="background-color:rgb(246,244,242);
-                 border-radius:9999px;padding:1px 6px;font:10px system-ui;display:inline-block">image</span>
+           <span class="rounded-selector type-chip" style="background-color:rgb(246,244,242);
+                 border-radius:var(--radius-selector);padding:1px 6px;font:10px system-ui;display:inline-block">image</span>
          </div>
        </body>`
     );
-    expect(selectors(findings)).toEqual(['span.rounded-full.type-chip']);
+    expect(selectors(findings)).toEqual(['span.rounded-selector.type-chip']);
   });
 
   // opacity was tested for exactly zero and never composited, so a chip painted at 4% opacity was

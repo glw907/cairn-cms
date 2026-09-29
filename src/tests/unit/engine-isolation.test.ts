@@ -66,8 +66,10 @@ describe('engine isolation', () => {
   });
 
   it('defines a dark Warm Stone palette under the dark theme root', () => {
+    // The palette lives in the dark theme's daisyUI theme block, named for the dark root; the
+    // plain root rule beside it carries cairn's own tokens and restates the color scheme.
     const css = readFileSync(join(libDir, 'components/cairn-admin.css'), 'utf8');
-    const dark = css.slice(css.indexOf("[data-theme='cairn-admin-dark']"));
+    const dark = css.slice(css.indexOf('name: "cairn-admin-dark";'), css.indexOf("[data-theme='cairn-admin-dark'] {"));
     expect(css).toContain("[data-theme='cairn-admin-dark'] {");
     expect(dark).toContain('color-scheme: dark');
     for (const token of ['--color-base-100', '--color-base-content', '--color-primary', '--color-error']) {

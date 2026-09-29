@@ -75,6 +75,11 @@ surface.
 | `card-shadow` | `box-shadow` | `--cairn-shadow` |
 
 `card-shell` is the universal surface: the shell's radius, its 1px hairline border, and its fill.
+Its radius is the top step of the admin's corner ladder, three daisyUI theme tokens set the same
+in both themes: `--radius-selector` (`0.25rem`) for chips and small markers, `--radius-field`
+(`0.375rem`) for controls, and `--radius-box` (`0.5rem`) for cards and dialogs. Markup reaches
+them as `rounded-selector`, `rounded-field`, and `rounded-box`. A fixed Tailwind radius such as
+`rounded-lg` still compiles, but it does not follow the ladder.
 `card-shadow` is its elevation, kept as a separate utility because the split is real: a nested
 surface inside an already-shadowed container (the media library's picked tiles, its row-link
 cards) takes `card-shell` alone, since a shadow on a surface already inside a shadowed one reads
@@ -176,4 +181,5 @@ Two cautions if you add a value of your own. A bracketed arbitrary size such as 
 `font-size` only, while a named Tailwind step such as `text-2xl` sets `line-height` too, so
 converting between the two silently changes leading. And a class used only in a directory the admin
 stylesheet does not scan never compiles at all, so it resolves to nothing at runtime rather than
-failing a build.
+failing a build. Every daisyUI class compiles regardless; this caution covers Tailwind's own
+utilities.

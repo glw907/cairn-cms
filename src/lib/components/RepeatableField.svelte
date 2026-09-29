@@ -212,7 +212,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
       {#each rows as row, i (row.id)}
         {@const rowSummary = summaryFor(row.value, i, row.id)}
         <li
-          class="rounded-[var(--radius-field)] border border-[var(--color-base-300)]"
+          class="rounded-field border border-[var(--color-base-300)]"
           data-cairn-row={row.id}
           oninput={(e) => onRowInput(row, i, e)}
         >

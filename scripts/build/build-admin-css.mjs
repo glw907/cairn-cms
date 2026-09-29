@@ -8,6 +8,7 @@ import prefixSelector from 'postcss-prefix-selector';
 import { transform, Features } from 'lightningcss';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { listDaisyuiClasses } from './daisyui-classes.mjs';
 
 const repoRoot = new URL('../../', import.meta.url);
 const inputPath = fileURLToPath(new URL('scripts/build/admin-css.input.css', repoRoot));
@@ -28,11 +29,17 @@ const SCOPE = ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'
  */
 export async function buildAdminCss({ extraSources = [] } = {}) {
   const base = readFileSync(inputPath, 'utf8');
+  // Every daisyUI class name, calendar excluded, generated fresh from the installed package so
+  // a daisyUI upgrade needs no hand-kept list; see the placeholder's own comment in
+  // admin-css.input.css. `listDaisyuiClasses` throws if it finds none, so a renamed daisyUI module
+  // layout fails the build loudly instead of silently shrinking the compiled sheet.
+  const daisyuiClasses = await listDaisyuiClasses({ exclude: ['calendar'] });
+  const withDaisyuiClasses = base.replace('__DAISYUI_CLASSES__', daisyuiClasses.join(' '));
   // Append any extra @source globs so a caller can widen the class scan without editing the shipped
   // input. Order does not matter: @source only tells Tailwind where to find used classes.
   const input = extraSources.length
-    ? `${base}\n${extraSources.map((glob) => `@source "${glob}";`).join('\n')}\n`
-    : base;
+    ? `${withDaisyuiClasses}\n${extraSources.map((glob) => `@source "${glob}";`).join('\n')}\n`
+    : withDaisyuiClasses;
   // Stage 1: Tailwind and DaisyUI compile. `from` is the input path so @source and @import resolve
   // relatively and the plugins resolve from the repo's node_modules.
   const compiled = await postcss([tailwind()]).process(input, { from: inputPath });
@@ -100,7 +107,25 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
   // statement; an undeclared layer registers after every declared one, so `properties` would land
   // after `utilities` and outrank it. Re-declaring the full order here, first in the output, pins
   // `properties` ahead of `utilities` regardless of file order.
-  const layerOrder = '@layer properties, theme, base, components, utilities;\n';
+  //
+  // The second statement pins the order of daisyUI's own `@layer utilities.daisyui...` sublayers
+  // against `utilities.cairn-idiom`, the sublayer every override of a daisyUI declaration lives in
+  // (spec, "The cairn-idiom sublayer"). Cascade layers resolve before specificity, so a rule in
+  // `cairn-idiom` beats every daisyUI sublayer only because this statement registers it after them,
+  // here, before either sublayer carries a single populated rule: a cascade layer's order is fixed
+  // by the first statement that names it, so declaring the pin early (rather than waiting for the
+  // first `cairn-idiom` rule to register it implicitly) keeps the order explicit and reviewable in
+  // one place instead of riding wherever that first rule happens to land in the source.
+  //
+  // A minifier downstream of this build (a consumer's own bundler) is free to relocate this
+  // statement below both sublayer blocks, where it registers nothing new: both blocks already
+  // fixed their own layer order by appearing first. Emission order, not this statement, is what
+  // decides the winner in that case, so the two sublayer blocks below must keep daisyUI's ahead of
+  // cairn-idiom's regardless of where this pin ends up. src/tests/unit/admin-css-build.test.ts
+  // guards that order against both the shipped sheet and a minified compile of it.
+  const layerOrder =
+    '@layer properties, theme, base, components, utilities;\n' +
+    '@layer utilities.daisyui, utilities.cairn-idiom;\n';
   // The idempotent host body-margin reset, declared here rather than in admin-css.input.css. The
   // real host `<body>` element sits ABOVE the admin theme root in the document, not inside it, so
   // the usual `[data-theme=...] descendant` scoping this sheet uses everywhere else cannot reach

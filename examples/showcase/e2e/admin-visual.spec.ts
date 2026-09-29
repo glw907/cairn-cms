@@ -506,3 +506,28 @@ test('admin edit page zen toggle — reduced motion samples at most two margin-l
   const samples = await sampleDrawerMarginLeft(page, 400);
   expect(samples.size).toBeLessThanOrEqual(2);
 });
+
+// The G1 fixture screen (theme-kit.spec.ts), captured at 1440 and 390 only: it is a CSS proof
+// screen, not a real page in the responsive bar's own swept surface, so it skips 320/768/2560.
+// New baselines; expected missing until the settle step regenerates them on CI.
+for (const width of [1440, 390]) {
+  test(`admin theme kit — light — ${width}px`, async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/admin/theme-kit');
+    await expect(page.getByRole('heading', { level: 1, name: 'Theme kit' })).toBeVisible();
+    await expect(page).toHaveScreenshot(`admin-theme-kit-light-${width}.png`, { fullPage: true });
+  });
+
+  test(`admin theme kit — dark — ${width}px`, async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      { name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! },
+    ]);
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/admin/theme-kit');
+    await expect(page.getByRole('heading', { level: 1, name: 'Theme kit' })).toBeVisible();
+    await expect(page).toHaveScreenshot(`admin-theme-kit-dark-${width}.png`, { fullPage: true });
+  });
+}

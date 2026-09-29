@@ -164,7 +164,7 @@ own name.
     <div
       role="radiogroup"
       aria-labelledby="cairn-figure-placement-label"
-      class="bg-base-100 inline-flex items-center self-start overflow-hidden rounded-lg border border-[var(--cairn-card-border)]"
+      class="bg-base-100 inline-flex items-center self-start overflow-hidden rounded-field border border-[var(--cairn-card-border)]"
     >
       {#each ROLE_OPTIONS as option, index (option.label)}
         {@const pressed = roleValue === option.value}
@@ -211,7 +211,7 @@ own name.
   <div role="status" aria-live="polite">
     {#if decorativeWithCaption}
     <div
-      class="flex items-start gap-2 rounded-[0.55rem] p-2.5 cairn-text-warning"
+      class="flex items-start gap-2 rounded-box p-2.5 cairn-text-warning"
       style="background: color-mix(in oklab, var(--cairn-warning-ink) 8%, transparent);"
     >
       <svg

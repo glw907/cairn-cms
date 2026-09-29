@@ -1,6 +1,9 @@
 ## Unreleased
 
-<!-- release-size: patch -->
+<!-- release-size: minor -->
+
+This window ships as a minor, `0.98.0` planned, because it restyles every consumer's admin; a
+caret patch must not carry a visible retheme. A hotfix before that cut branches from `v0.97.0`.
 
 ### Added
 
@@ -12,8 +15,118 @@
   `cairn.aiPosture` to `robotsResponse`, so a scaffolded site needs no route edit to serve the
   chosen posture; see `docs/extend/choose-an-ai-posture.md` for the full wiring.
 
+### Changed
+
+- The admin's look now lives in daisyUI's theme layer. The two admin themes (`cairn-admin` and
+  `cairn-admin-dark`) are daisyUI theme blocks, and every rule that overrides a daisyUI
+  declaration sits in one named sublayer, `utilities.cairn-idiom`, pinned after daisyUI's own.
+  What an editor sees:
+  - One corner ladder: 4px for chips and small markers (`--radius-selector`), 6px for controls
+    (`--radius-field`), and 8px for cards and dialogs (`--radius-box`). The engine's own markup
+    writes `rounded-selector`, `rounded-field`, or `rounded-box`, never a fixed radius.
+  - A plain `btn` is a hairline button: a quiet 22% edge on the base fill, with a small hover
+    step. A checked or pressed `btn` renders as the selected segment (a wash, a hairline, and
+    weight 600), in any of five forms: `.btn-active`, `aria-pressed="true"`,
+    `aria-checked="true"`, `aria-current`, or `:checked`. `btn-link` and color variants keep
+    their own look.
+  - Calmer type: page headings at weight 550, plain and ghost button labels at 500.
+  - Quiet alerts: each of the four status alerts is a tinted panel with a hairline edge and an
+    accessible ink. daisyUI's `alert-soft`, `alert-outline`, and `alert-dash` keep daisyUI's
+    look.
+  - A round switch knob, concentric corners inside menus, and one icon stroke weight.
+  - The size step: `--size-field` and `--size-selector` both move from `0.25rem` to
+    `0.28125rem` in both themes. A `btn-sm` or `input-sm` renders 36px tall instead of 32px, and
+    a default control 45px instead of 40px. Everything daisyUI sizes from `--size-selector`
+    grows by the same step: badges and status chips (16px to 18px), checkboxes, radios, and
+    toggles.
+  - `btn-sm` padding: `--btn-p` moves from daisyUI's `0.75rem` to `0.875rem` on `btn-sm` only;
+    other sizes keep daisyUI's padding.
+  - A modal carries the admin's warm shadow.
+
+  The admin sheet now compiles every daisyUI component and utility class except calendar: 580
+  daisyUI classes, up from the 217 cairn's own markup used. A custom admin screen can use any
+  daisyUI class and it renders under cairn's theme. The minified sheet grows about 1.7x gzipped
+  (31.8 KB to 53.2 KB measured at design time) and loads only on `/admin/**`. The compatibility
+  safelist also grows: every class the sweep retired from the engine's own markup (`shadow-none`,
+  `rounded`, `rounded-sm`, `rounded-md`, `rounded-lg`, `rounded-xl`, `rounded-t-2xl`,
+  `rounded-[0.55rem]`, `rounded-[var(--radius-field)]`, `hover:bg-[var(--cairn-ink-hover)]`, and
+  `hover:bg-primary/15`) stays compiled, so a consumer's markup that uses one renders as before.
+
+  `cairn-audit`'s ratified norms move with the theme: the `button-ghost`, `button-primary`,
+  `input-text`, and `select` radius bands go from 10px to 6px, `card` from 16px to 8px, and
+  `status-chip` from 8px to 4px; the control height bands follow the size step. The
+  `chip-ground-collision` rule changes in two ways. It now skips controls: a `button`, `input`,
+  `select`, `textarea`, or `a` element, an element carrying a daisyUI control class (`btn`,
+  `input`, `select`, `textarea`), and an element with `role="button"`. Its shape test also changes:
+  an element without `.badge` counts as a chip when every corner equals the resolved
+  `--radius-selector`, where it used to count when it was pill-shaped. A `rounded-full` status
+  chip without `.badge` is no longer detected, and a page that declares no `--radius-selector`
+  detects `.badge` chips only.
+
+  Consumers must: nothing. A site with custom admin screens should re-check them, because a plain
+  daisyUI class there now renders cairn's ladder and hairlines, the size step makes controls and
+  selector-sized marks taller (a screen laid out around 40px controls is the likeliest to shift),
+  and a fixed Tailwind radius (`rounded-lg`) does not follow the ladder. Write `rounded-selector`, `rounded-field`, or
+  `rounded-box` to follow it.
+
+- The Waymark starter's two themes (`src/theme/theme.css`) take the same corner ladder
+  (`0.25rem`, `0.375rem`, `0.5rem`), and an uncolored `btn-outline` or `badge-outline` gets a
+  hairline edge instead of daisyUI's full-ink default; a color variant such as
+  `btn-outline btn-primary` keeps its own edge. The file's citations of cairn-internal documents
+  now state their rule inline. Consumers must: nothing. A site scaffolded earlier can copy the
+  same rules from `templates/waymark/src/theme/theme.css`.
+
 ### Fixed
 
+- The admin's overlay drawer (below the `lg` breakpoint) now moves focus into the drawer when it
+  opens. daisyUI keeps the drawer hidden for 0.1s after its toggle, so the single focus call ran
+  against a hidden element and did nothing; the shell now retries once per frame, bounded, until
+  focus lands.
+- Five destructive-confirmation controls (the orphan purge, the alt-fill overwrite, and the
+  type-to-confirm inputs in the media library and the replace dialog) now draw their resting edge
+  with `border-error`, at 5.0:1 in light and 5.6:1 in dark. The old edge measured under WCAG
+  1.4.11's 3:1 floor once the field edges moved into the theme layer.
+- The refused-delete banner on a concept list stacks its title, body, and links into one column
+  below `sm`, instead of crushing the body into a column about 60px wide at 320px.
+- The media insert popover stays inside the viewport vertically when the caret sits near the
+  bottom of a tall page.
+- `ListToolbar`'s segmented filter scrolls horizontally when it does not fit, instead of wrapping
+  its last option onto a second row, and its focus ring is no longer clipped.
+- The Editors role chip moves to the quiet register: its old outline edge, pinned at the audit's
+  3:1 border floor, read darker than the plain button and field edges beside it in the same row.
+- A radio styled as a `.join` segment (the input-as-button pattern) fuses with no reopened seam:
+  the browser's own UA margin on a radio or checkbox, which a `<button>` never carries, is reset
+  to zero on every edge daisyUI's own join rule does not restate.
+- An uncolored selected `btn-outline`/`btn-dash` (no color variant) takes the same neutral wash
+  the plain selected button already carries, in place of daisyUI's own base-200-plus-black mix,
+  which read as a pale step in light and a near-black hole in dark.
+- A `dropdown-content menu` panel with no shadow utility of its own now carries the theme's warm
+  elevation, the same var the modal box reads, instead of no shadow at all.
+- The admin root paints its own page background behind the app's content, so a page whose
+  scrollable overflow runs taller than the layout's own flow height (a forced-open dropdown menu is
+  the common case), or whose content is shorter than the viewport, no longer lets the real,
+  unthemed document canvas show beneath it.
+- The media library's grid/list density toggle now takes the size step's `--size-field` bump the
+  same way its neighboring `btn-sm` controls do, and its bordered outer frame measures exactly the
+  neighboring button's height, so their top and bottom edges line up.
+  The sheet gains one class for it, `items-stretch`.
+- Below `sm`, the top-bar search trigger's label drops to screen-reader-only text and the trigger
+  shrinks to its content, so it reads as an icon-only button that keeps its accessible name; the
+  label used to truncate to an unreadable fragment there.
+- The media detail panel's scrollable body carries more bottom padding, so its last where-used row
+  clears the panel's own edge instead of scrolling under it.
+- The Tidy settings screen's "On"/"Off" and count heading pills size to their own short content
+  instead of the `sm` chip size's 5rem width floor, and its variant radiogroup rounds its own end
+  buttons directly instead of clipping a keyboard focus ring against the container's edge.
+- The refused-delete banner's stacked title and body drop the browser's own UA paragraph margin,
+  which does not collapse between CSS grid items and stacked on top of the grid's own gap.
+- The command palette's search input no longer clips its own keyboard focus ring against the
+  panel's top edge.
+- The soft primary button's hover step and `EditorToolbar`'s Write/Preview seam-squaring now gate
+  their `:hover` copy on `@media (hover: hover)`, so a touch tap cannot strand either on the
+  last-tapped control.
+- `cairn-audit`'s `motion-vocabulary` rule now matches a theme root selector inside a
+  comma-separated selector list.
 - `create-cairn-site`'s Cloudflare deploy consent now states plainly that a cairn site needs
   Cloudflare's Workers Paid plan, $5 US per month, from its first deploy, instead of promising
   "Cloudflare's free workers.dev hosting" and that "nothing in this step costs money"; declining

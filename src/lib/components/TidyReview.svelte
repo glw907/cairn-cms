@@ -290,14 +290,14 @@ must never make, so no such count exists.
   <div class="modal-box flex max-h-[85vh] w-[54rem] max-w-full flex-col overflow-hidden p-0">
     <!-- the review head -->
     <div class="flex items-center gap-3 border-b border-[var(--cairn-card-border)] px-4 py-3">
-      <span class="flex size-9 flex-none items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <span class="flex size-9 flex-none items-center justify-center rounded-field bg-primary/10 text-primary">
         <SparklesIcon class="size-5" aria-hidden="true" />
       </span>
       <div class="min-w-0 flex-1">
         <div id="cairn-tidy-title" class="type-heading font-bold font-[family-name:var(--font-display)] leading-tight">Review tidy</div>
         <div class="mt-0.5 flex flex-wrap items-center gap-2 type-meta text-muted">
           <span><b class="text-base-content">{hunks.length} {hunks.length === 1 ? 'change' : 'changes'}</b> to <b class="text-base-content">{title}</b></span>
-          <span class="rounded-full border border-[var(--cairn-card-border)] px-2 py-0.5 type-label font-semibold">{model}</span>
+          <span class="rounded-selector border border-[var(--cairn-card-border)] px-2 py-0.5 type-label font-semibold">{model}</span>
         </div>
       </div>
       <span class="hidden flex-none items-center gap-1.5 type-label text-muted sm:inline-flex" aria-hidden="true">
@@ -340,7 +340,7 @@ must never make, so no such count exists.
         {@const isJudgment = !h.objective}
         {@const undecided = decided === 'undecided'}
         <div
-          class="relative overflow-hidden rounded-xl border bg-base-100 {isJudgment && undecided
+          class="relative overflow-hidden rounded-box border bg-base-100 {isJudgment && undecided
             ? 'border-[color-mix(in_oklab,var(--cairn-warning-ink)_30%,var(--cairn-card-border))] shadow-[inset_3px_0_0_0_color-mix(in_oklab,var(--cairn-warning-ink)_55%,transparent)]'
             : 'border-[var(--cairn-card-border)]'} {decided === 'rejected' ? 'opacity-70' : ''} {i ===
           focusedPos
@@ -357,7 +357,7 @@ must never make, so no such count exists.
               : 'bg-[color-mix(in_oklab,var(--color-base-content)_1.5%,transparent)]'}"
           >
             <span
-              class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 type-label font-semibold {isJudgment
+              class="inline-flex items-center gap-1 rounded-selector px-2 py-0.5 type-label font-semibold {isJudgment
                 ? 'bg-[color-mix(in_oklab,var(--cairn-warning-ink)_11%,transparent)] cairn-text-warning'
                 : 'bg-[color-mix(in_oklab,var(--color-base-content)_6%,transparent)] text-muted'}"
             >
@@ -371,14 +371,14 @@ must never make, so no such count exists.
             <Tooltip text="Show this line in the editor">
               <button
                 type="button"
-                class="inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-1.5 font-mono type-label text-muted underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
+                class="inline-flex min-h-6 items-center gap-1 rounded-field px-1.5 py-1.5 font-mono type-label text-muted underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
                 onclick={() => showInText(h)}
               >
                 <EyeIcon class="size-3" aria-hidden="true" />line {h.line}
               </button>
             </Tooltip>
             <span class="flex-1"></span>
-            <span class="inline-flex flex-none items-center overflow-hidden rounded-md border border-[var(--cairn-card-border)]" role="group" aria-label={actsLabel(h)}>
+            <span class="inline-flex flex-none items-center overflow-hidden rounded-field border border-[var(--cairn-card-border)]" role="group" aria-label={actsLabel(h)}>
               <button
                 type="button"
                 class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 type-label font-medium {actClass(
@@ -413,14 +413,14 @@ must never make, so no such count exists.
             <div class="flex items-baseline bg-[var(--cairn-tidy-del-row)]">
               <span class="w-6 flex-none select-none text-center font-semibold text-muted" aria-hidden="true">&minus;</span>
               <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5">{h.delRun.pre}<span
-                  class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-px text-muted line-through decoration-1"
+                  class="rounded-selector bg-[var(--cairn-tidy-del-run)] px-px text-muted line-through decoration-1"
                   data-testid="tidy-del"
                 >{h.delRun.mid}</span>{h.delRun.post}</span>
             </div>
             <div class="flex items-baseline bg-[var(--cairn-tidy-add-row)] {decided === 'rejected' ? 'opacity-70' : ''}">
               <span class="w-6 flex-none select-none text-center font-semibold text-base-content" aria-hidden="true">+</span>
               <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5">{h.addRun.pre}<span
-                  class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-px font-semibold text-base-content {decided ===
+                  class="rounded-selector bg-[var(--cairn-tidy-add-run)] px-px font-semibold text-base-content {decided ===
                   'rejected'
                     ? 'line-through opacity-70'
                     : ''}"

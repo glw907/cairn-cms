@@ -16,8 +16,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
-// The compiled sheet, not the source partial: these are geometry assertions, so they need daisyUI's
-// real button sizing and Tailwind's real utilities, which only the built artifact carries.
+// The compiled sheet: these are geometry assertions, so they need daisyUI's real button sizing and
+// Tailwind's real utilities, which only the built artifact carries.
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import CairnTidySettings from '../../lib/components/CairnTidySettings.svelte';
 import EditorToolbar from '../../lib/components/EditorToolbar.svelte';

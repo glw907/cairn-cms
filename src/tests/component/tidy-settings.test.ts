@@ -82,6 +82,19 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     expect(fixesPill?.closest('[role="status"][aria-live="polite"]')).not.toBeNull();
   });
 
+  // S3 Q11: the "sm" size's 5rem width floor, kept deliberately for a longer generic label
+  // elsewhere, read as a wide, mostly-empty gray bar next to a two-or-three-character "On"/"2 on"
+  // heading pill. "xs" carries no floor of its own, sizing the pill to its own short content.
+  it('sizes the Fixes and Style heading pills to their content, not the sm floor', async () => {
+    const screen = await render(CairnTidySettings, { data: data() });
+    const pills = screen.container.querySelectorAll('h2 .status-chip');
+    expect(pills.length).toBe(2);
+    for (const pill of pills) {
+      expect(pill.classList.contains('status-chip-xs')).toBe(true);
+      expect(pill.classList.contains('badge-sm')).toBe(false);
+    }
+  });
+
   it('renders the read-only developer facts including the model', async () => {
     const screen = await render(CairnTidySettings, { data: data() });
     // Two copies of the pill exist (one per breakpoint, only one visible at a time via
@@ -138,6 +151,19 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     expect(radios[1].getAttribute('tabindex')).toBe('-1');
     // No radio carries aria-pressed (that is only the binary on/off).
     expect(group.querySelectorAll('[role="radio"][aria-pressed]').length).toBe(0);
+  });
+
+  // S3 Q20: the container's own overflow-hidden clipped a keyboard focus ring on either end
+  // radio, drawn outside its own border box. Each end radio now rounds its own outer corner
+  // directly, so the container carries no clip at all.
+  it('rounds the variant radiogroup end buttons directly instead of clipping the container', async () => {
+    const screen = await render(CairnTidySettings, { data: data() });
+    await screen.getByRole('button', { name: 'Time format' }).click();
+    const group = screen.container.querySelector('[role="radiogroup"]')!;
+    expect(group.className).not.toContain('overflow-hidden');
+    const radios = group.querySelectorAll('[role="radio"]');
+    expect(radios[0].className).toContain('rounded-l-field');
+    expect(radios[radios.length - 1].className).toContain('rounded-r-field');
   });
 
   it('updates the summary role=status region when a convention is toggled', async () => {

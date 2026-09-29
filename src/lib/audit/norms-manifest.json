@@ -124,10 +124,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          10
+          6
         ],
-        "min": 10,
-        "max": 10
+        "min": 6,
+        "max": 6
       },
       "observations": 31,
       "provenance": "ratified",
@@ -206,14 +206,14 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          23,
-          24,
-          30.5,
-          32,
-          40
+          25.5,
+          27,
+          34,
+          36,
+          45
         ],
-        "min": 23,
-        "max": 40
+        "min": 25.5,
+        "max": 45
       },
       "observations": 31,
       "provenance": "observed",
@@ -260,10 +260,10 @@
         "values": [
           0,
           8,
-          12
+          14
         ],
         "min": 0,
-        "max": 12
+        "max": 14
       },
       "observations": 31,
       "provenance": "observed",
@@ -277,10 +277,10 @@
         "values": [
           0,
           0.75,
-          1
+          1.15
         ],
         "min": 0,
-        "max": 1
+        "max": 1.15
       },
       "observations": 31,
       "provenance": "observed",
@@ -295,7 +295,7 @@
           "var(--btn-bg)"
         ]
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -308,7 +308,7 @@
           "var(--btn-border)"
         ]
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -319,12 +319,12 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          10
+          6
         ],
-        "min": 10,
-        "max": 10
+        "min": 6,
+        "max": 6
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "ratified",
       "flags": []
     },
@@ -337,7 +337,7 @@
           "solid"
         ]
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -353,7 +353,7 @@
         "min": 1,
         "max": 1
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -368,7 +368,7 @@
           "var(--btn-rest-fg,var(--btn-color,var(--color-base-content)))"
         ]
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -385,7 +385,7 @@
         "min": 12,
         "max": 14
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -396,14 +396,14 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          30.5,
-          32,
-          40
+          34,
+          36,
+          45
         ],
-        "min": 30.5,
-        "max": 40
+        "min": 34,
+        "max": 45
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -419,7 +419,7 @@
         "min": 1,
         "max": 1
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -435,7 +435,7 @@
         "min": 0.05,
         "max": 0.1
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -446,13 +446,13 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          12,
+          14,
           16
         ],
-        "min": 12,
+        "min": 14,
         "max": 16
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -462,13 +462,12 @@
       "band": {
         "kind": "ratio",
         "values": [
-          1,
           1.15
         ],
-        "min": 1,
+        "min": 1.15,
         "max": 1.15
       },
-      "observations": 11,
+      "observations": 16,
       "provenance": "observed",
       "flags": []
     },
@@ -505,10 +504,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          16
+          8
         ],
-        "min": 16,
-        "max": 16
+        "min": 8,
+        "max": 8
       },
       "observations": 15,
       "provenance": "ratified",
@@ -712,10 +711,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          10
+          6
         ],
-        "min": 10,
-        "max": 10
+        "min": 6,
+        "max": 6
       },
       "observations": 12,
       "provenance": "ratified",
@@ -787,12 +786,13 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          32,
-          38,
-          40
+          36,
+          42.5,
+          43,
+          45
         ],
-        "min": 32,
-        "max": 40
+        "min": 36,
+        "max": 45
       },
       "observations": 12,
       "provenance": "observed",
@@ -958,7 +958,7 @@
       "band": {
         "kind": "keyword",
         "values": [
-          "700"
+          "550"
         ]
       },
       "observations": 5,
@@ -1025,10 +1025,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          10
+          6
         ],
-        "min": 10,
-        "max": 10
+        "min": 6,
+        "max": 6
       },
       "observations": 3,
       "provenance": "ratified",
@@ -1100,11 +1100,11 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          32,
-          40
+          36,
+          45
         ],
-        "min": 32,
-        "max": 40
+        "min": 36,
+        "max": 45
       },
       "observations": 3,
       "provenance": "observed",
@@ -1209,10 +1209,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          8
+          4
         ],
-        "min": 8,
-        "max": 8
+        "min": 4,
+        "max": 4
       },
       "observations": 16,
       "provenance": "observed",
@@ -1285,10 +1285,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          16
+          18
         ],
-        "min": 16,
-        "max": 16
+        "min": 18,
+        "max": 18
       },
       "observations": 16,
       "provenance": "observed",
@@ -1332,10 +1332,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          7
+          8
         ],
-        "min": 7,
-        "max": 7
+        "min": 8,
+        "max": 8
       },
       "observations": 16,
       "provenance": "observed",
@@ -1347,10 +1347,10 @@
       "band": {
         "kind": "ratio",
         "values": [
-          0.7
+          0.8
         ],
-        "min": 0.7,
-        "max": 0.7
+        "min": 0.8,
+        "max": 0.8
       },
       "observations": 16,
       "provenance": "observed",

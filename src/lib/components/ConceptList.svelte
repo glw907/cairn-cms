@@ -293,7 +293,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 <div class="mx-auto w-full max-w-3xl">
 
 {#snippet headerAction()}
-  <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+  <button type="button" class="btn btn-sm w-full shrink-0 btn-neutral tracking-small-semibold sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
     <PlusIcon class="h-4 w-4" aria-hidden="true" /> New {createNoun}
   </button>
 {/snippet}
@@ -321,13 +321,21 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 {#if deleteRefused}
   <!-- A `?/delete` was refused: name the blockers up front, matching the editor's refusal banner,
        so the author sees why without re-opening a dialog. The polite region above announces it, so
-       the box itself carries no role or label (a bare div with an aria-label gets no accessible name). -->
-  <div class="alert alert-error mb-4 flex-col items-start type-body">
-    <p class="font-medium">This {refusedNoun} could not be deleted.</p>
+       the box itself carries no role or label (a bare div with an aria-label gets no accessible name).
+       `flex-col` was inert: daisyUI's `.alert` is `display: grid`, laying its three children out as
+       grid columns (an icon-plus-message alert's own intended shape). Below `sm`, `grid-flow-row`
+       plus a single-column template stack the title, the body paragraph, and the link list instead
+       of crushing them into a narrow auto-sized column; at `sm` and above the alert keeps its
+       existing column layout. Each stacked `<p>` carries `m-0`: the admin omits global Preflight, so
+       a bare `<p>` keeps the browser's own UA block margin, which does not collapse between CSS grid
+       items and so stacks on top of the grid's own 1rem gap, roughly tripling the title-to-body
+       space. -->
+  <div class="alert alert-error mb-4 max-sm:grid-flow-row max-sm:grid-cols-1 items-start type-body">
+    <p class="m-0 font-medium">This {refusedNoun} could not be deleted.</p>
     {#if deleteRefused.inboundKind === 'include'}
-      <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
+      <p class="m-0">{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}
-      <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+      <p class="m-0">{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     {/if}
     <ul class="mt-1 w-full">
       {#each deleteRefused.inboundLinks as link (link.concept + '/' + link.id)}
@@ -356,7 +364,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   <!-- The empty state owns the content area (no card): the cairn mark, concept-named copy, and the
        create CTA centered on a tall fill, so a first-run office reads as composed. -->
   {#snippet emptyAction()}
-    <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-sm btn-neutral tracking-small-semibold" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" aria-hidden="true" /> New {createNoun}
     </button>
   {/snippet}
@@ -366,7 +374,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     <AdminTable density="sm" rowCount={pageRows.length}>
       {#snippet header()}
         <!-- Frame zones (the column-header row) carry the sidebar's gentle band so content rows are
-             the card's only white rows; the first column insets to the card's rounded edge. -->
+             the card's only white rows; the first column insets to the card's own corner radius. -->
         <th class="pl-6" scope="col" aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
           <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
             Title

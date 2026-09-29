@@ -743,3 +743,34 @@ test('reference fields round-trip through the editor, commit their edges, and re
 // a non-cairn feature survives alongside the admin, and it undercut every page that linked it) now
 // lives in custom-screen.spec.ts's Signups test, which proves the stronger case: a custom admin
 // screen reading identity and writing its own D1 binding, registered through the same navLayout seam.
+
+// At 320px the publish-state segmented join (All / Pending edits / Published,
+// each carrying a count) used to wrap onto two lines, orphaning "Published 5" below "All" and
+// "Pending edits". The join now scrolls horizontally inside its own container instead of
+// wrapping, so its three options stay on one row and the page itself never scrolls sideways.
+test('at 320px the posts publish-state join keeps its options on one row with no page overflow', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto('/admin/posts');
+  await expect(page).toHaveURL(/\/admin\/posts$/);
+
+  const join = page.getByRole('radiogroup', { name: 'Filter by publish state' });
+  await expect(join).toBeVisible();
+  const options = join.getByRole('radio');
+  const count = await options.count();
+  expect(count).toBeGreaterThan(1);
+  const tops = new Set<number>();
+  for (let i = 0; i < count; i += 1) {
+    const box = await options.nth(i).boundingBox();
+    expect(box).not.toBeNull();
+    tops.add(Math.round(box!.y));
+  }
+  // One row: every option's own top sits at the same y, not split across two lines.
+  expect(tops.size).toBe(1);
+
+  // The join may scroll within its own container, but the document itself never gains a
+  // horizontal scrollbar from it.
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(320);
+});

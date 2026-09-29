@@ -37,7 +37,9 @@ the admin's type pairing, is out. Record: `record/2026-09-13-blueprint-design-sp
 - **The token grammar matches the admin; only the palette differs.** The role names, the `-content`
   pairs, the on-surface `-ink` customs, the radius/size/border tokens, and the inline-doc convention are
   identical to `cairn-admin.css`. This is differentiator #4 (one design language across the admin and the
-  public site). Hold the grammar; vary only the palette.
+  public site). Hold the grammar; vary only the palette. The corner ladder's three VALUES also start
+  identical to the admin's (ruling 2), a shared family default rather than only a shared name; a
+  re-skin is still free to retune them (recipe step 7).
 - **The on-surface inks are `--cairn-*-ink`, never `--color-*-ink`.** The status inks (the darker
   on-surface tones for the callout and alert titles and left rules, and the code highlighter's
   string/function/number colors) are `--cairn-{info,success,warning,error}-ink`. `prose.css` referencing
@@ -82,8 +84,9 @@ The exhaustive oklch values are in `theme.css`; this is the structure.
 - **The DaisyUI role tokens** (the two `@plugin "daisyui/theme"` blocks): the `base-100/200/300` plus
   `base-content` ladder, a clean near-white to near-black progression with no hue tint; `primary` plus
   `primary-content` (the deep ink-blue accent); `secondary`, `accent`, `neutral` plus their `-content`;
-  the `info/success/warning/error` fills plus `-content`; and the geometry (`--radius-box/field/selector`,
-  `--size-field/selector`, `--border`, `--depth: 0`, `--noise: 0`).
+  the `info/success/warning/error` fills plus `-content`; and the geometry (`--radius-selector:
+  0.25rem`, `--radius-field: 0.375rem`, `--radius-box: 0.5rem`, the admin's own corner ladder by
+  ruling 2, plus `--size-field/selector`, `--border`, `--depth: 0`, `--noise: 0`).
 - **The cairn-authored customs** (`:root`, with dark siblings under `@media (prefers-color-scheme:
   dark)`): `--color-muted`; the `--cairn-{info,success,warning,error}-ink` set; `--color-card-border` and
   `--cairn-shadow` (the theme-adaptive elevation); the `--cairn-cta-*` pair; the type scale
@@ -268,8 +271,12 @@ The admin refinement arc ruled several grammars that are METHOD, not admin value
 ratified the family direction: cairn's own artifacts (Waymark, the chassis, the admin) express one
 design system — an editor moving between admin and a scaffolded site should feel one hand. These
 rules apply here in the theme's own palette and faces; the admin's values (Warm Stone, the violet,
-its component recipes) never cross over. The Waymark/chassis alignment pass in ROADMAP executes the
-application; until it runs, these are the standard new theme work is held to:
+its component recipes) never cross over, with one named exception: the corner ladder and the
+uncolored-outline hairline edge are shared family geometry and edge grammar, not admin values
+(ruling 2, the 2026-09-26 theme identity design). The starter takes the admin's own three radius
+tokens and the same hairline-outline mechanism, each keeping its own palette; see "The starter
+template's design" in `admin-design-system.md`. The Waymark/chassis alignment pass in ROADMAP
+executes the wider application; until it runs, these are the standard new theme work is held to:
 
 - **The proximity spacing scale.** Vertical gaps come from one named 4/8px scale where the SIZE
   carries the structure: a small step (8px) hugs elements within a group, a medium step (12px)

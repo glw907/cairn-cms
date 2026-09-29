@@ -62,6 +62,7 @@
 import { cssRulePosition, cssScopeRules } from './css-scope.js';
 import { animateCustomProperty, customPropertyValue } from './motion.js';
 import { utilityBase } from './utility.js';
+import { splitSelectorList } from '../../sheet.js';
 import type { CompiledSheet } from '../../sheet.js';
 import type { ClassToken, ParsedComponent } from '../../markup.js';
 import type { Finding, StaticRule, StaticRuleContext } from '../../types.js';
@@ -205,7 +206,12 @@ function companionAssertionOk(sheet: CompiledSheet): boolean {
   return ADMIN_ROOT_SELECTORS.every((selector) =>
     sheet.rules.some(
       (rule) =>
-        normalizeSelectorQuotes(rule.selector) === selector &&
+        // A theme root's own rule can share its selector list with another selector (the
+        // reduced-motion blanket rule's `[data-theme='cairn-admin'], [data-theme='cairn-admin'] *`,
+        // for instance), so each comma-separated alternative is checked on its own rather than the
+        // whole list compared as one string, which would never match unless the root were the
+        // list's sole member.
+        splitSelectorList(rule.selector).some((part) => normalizeSelectorQuotes(part) === selector) &&
         rule.declarations.some((decl) => decl.property === '--default-transition-duration' && DURATION_VAR.test(decl.value)) &&
         rule.declarations.some(
           (decl) => decl.property === '--default-transition-timing-function' && EASE_VAR.test(decl.value)

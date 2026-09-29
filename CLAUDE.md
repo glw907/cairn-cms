@@ -123,7 +123,10 @@ the same pass, gated by that page's own gates, per the facts container's fix rul
 stage is in flight, which is filed, never fixed, and feeds that stage's page inputs instead.
 Every pass that changes a public behavior files a bullet in
 [`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`. Each arm's own
-stage rebuilds it from the container before its freeze lifts (`docs-rebuild-not-edit` memory);
+stage rebuilds it from the container before its freeze lifts. The order is harvest, then delete,
+then draft: every old narrative page's facts land in the container, the old arms and front door
+are deleted, and only then does drafting start, so a writer never sees an old page (the
+2026-09-29 amendment in `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`);
 the site round that follows tests and fixes the rebuilt arms. The site pass's own agents edit
 cairn-cms on a `site-docs/<site>-<pass>` branch off `main`, merged by PR under the docs gate
 before the site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md`

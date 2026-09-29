@@ -1,6 +1,6 @@
 # Draft docs on a conventional approach: design
 
-**Date:** 2026-09-26. **Status:** revision 2 folded four review lenses
+**Date:** 2026-09-26. **Status:** amended 2026-09-29 (harvest, then delete; see the amendment section). Revision 2 folded four review lenses
 (`docs/superpowers/research/2026-09-26-draft-docs-approach-fold.md`); owner rulings R8 and R9
 (2026-09-26) settle its two open rulings; a second fold took the fold verification; a third took the
 prose review and owner ruling R10. **Replaces:** the reader-validation line of
@@ -79,8 +79,8 @@ ledger replaces any reading that the whole standard stands.
 | Part of the standard | Status here |
 | --- | --- |
 | Direction (a): rebuild, never edit; reference entries edited in place | Stands |
-| Direction (b), quarantine: drafters never open the page they replace | Stands. The page-inputs agent reads the old page's claims only; the drafter never opens it |
-| Direction (b), per-track harvest before any brief | Replaced by the per-page harvest in page inputs |
+| Direction (b), quarantine: drafters never open the page they replace | Stands, enforced by deleting the old pages before drafting (amendment, 2026-09-29) |
+| Direction (b), per-track harvest before any brief | Stands again: the harvest completes before any outline (amendment, 2026-09-29) |
 | Direction (c) and decision 14: plan one, pass 2a, five stages | Replaced by this spec's stages |
 | Rule 1: owner and stance claims resolve to an owner brief | Stands, enforced by the facts owner tier and `check:provenance` |
 | Rule 2: an outside-reader page is drafted one section per read | Stands for the front door only (R9): `why-cairn.md`, `docs/README.md`, and the four arm READMEs are drafted one section per dispatch with a register-editor read between sections. Extend, admin, and editors are drafted whole by the chain |
@@ -93,6 +93,32 @@ ledger replaces any reading that the whole standard stands.
 | Part V reader test and the nine reader sittings | Replaced by R4 |
 | Demonstration page (unit 4) | Retires |
 | Seven-item tuning checkpoint and the gauging protocol | Replaced by this spec's checkpoints |
+
+## Amendment: harvest, then delete (Geoff, 2026-09-29)
+
+"The writer shouldn't ever see the original content." A 2026-09-28 proof run passed the old
+`enable-tidy.md` to page inputs "for its claims only", as the quarantine row below allowed, and the
+draft carried the old page's framing. The program changes order:
+
+1. **Harvest.** Every factual claim on every old narrative page and front-door page gets a fact in
+   `docs/internal/facts/` (verified against source) or a recorded cut. The harvest is complete
+   before any outline is approved; page inputs no longer harvest from an old page.
+2. **Outline.** Each arm's outline is drawn fresh from the jobs it serves and approved as before
+   (flow step 1).
+3. **Delete.** The old narrative arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) and the front
+   door (`docs/why-cairn.md`, `docs/README.md`) are deleted on `main` right after the harvest. The
+   reference arm stays; it is maintained against the code every pass. The deletion is the
+   enforcement: no input guard is built ("I'm not sure we need to rule if we simply remove the old
+   content").
+4. **Draft.** Stages run as below against an empty arm, from the facts, the job, and the register's
+   exemplars only.
+
+**Release.** cairn.pub stays pinned to `0.97.0`'s docs until the rebuilt arms ship; a release cut in
+between (theme pass C's `0.98.0`) publishes with the reference arm only, and its changelog says so.
+
+**Superseded:** the quarantine row's "the page-inputs agent reads the old page's claims only", the
+"per-page harvest in page inputs" row, and the per-arm freeze with its discovered-deficiency fixes
+on frozen pages (nothing remains to freeze once the old pages are deleted).
 
 ## Budget
 

@@ -64,7 +64,7 @@
         17
       ],
       "paraphrase": "Pointer to the admin track, which takes a no-code reader to a live site.",
-      "cut": "navigation"
+      "fact": "f:y6n5ma"
     },
     {
       "lines": [
@@ -144,7 +144,7 @@
         33
       ],
       "paraphrase": "Git alone supplies the record of changes, the credit, and the ability to undo.",
-      "cut": "external-trivia"
+      "fact": "f:hcydfe"
     },
     {
       "lines": [
@@ -152,7 +152,7 @@
         33
       ],
       "paraphrase": "The writer never sees the git machinery.",
-      "cut": "marketing"
+      "fact": "f:5jbaej"
     },
     {
       "lines": [
@@ -192,7 +192,7 @@
         42
       ],
       "paraphrase": "Contributor-facing planning and design records are kept in the internal directory.",
-      "cut": "navigation"
+      "new-fact": "f:am80o6"
     }
   ]
 }

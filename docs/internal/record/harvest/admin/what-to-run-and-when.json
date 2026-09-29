@@ -64,7 +64,7 @@
         13
       ],
       "paraphrase": "Node releases follow its long-term-support calendar.",
-      "cut": "external-trivia"
+      "new-fact": "f:qwkhep"
     },
     {
       "lines": [
@@ -80,7 +80,7 @@
         14
       ],
       "paraphrase": "Wrangler changes when Cloudflare ships a new major.",
-      "cut": "external-trivia"
+      "new-fact": "f:kn3mic"
     },
     {
       "lines": [
@@ -128,7 +128,7 @@
         28
       ],
       "paraphrase": "Node and Wrangler release cadence and Wrangler role in deploying.",
-      "cut": "external-trivia"
+      "new-fact": "f:5g348q"
     },
     {
       "lines": [
@@ -168,7 +168,7 @@
         41
       ],
       "paraphrase": "A deploy failure naming an old version usually means an old local toolchain.",
-      "cut": "external-trivia"
+      "new-fact": "f:l5y90z"
     },
     {
       "lines": [

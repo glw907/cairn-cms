@@ -168,7 +168,7 @@
         24
       ],
       "paraphrase": "None of the plumbing reaches the editor.",
-      "cut": "marketing"
+      "new-fact": "f:5jbaej"
     },
     {
       "lines": [
@@ -184,7 +184,7 @@
         27
       ],
       "paraphrase": "The setup command narrates its work throughout.",
-      "cut": "marketing"
+      "new-fact": "f:u6cp78"
     },
     {
       "lines": [
@@ -192,7 +192,7 @@
         30
       ],
       "paraphrase": "Setting up a git-backed CMS by hand means wiring OAuth, a repository, and hosting yourself.",
-      "cut": "marketing"
+      "new-fact": "f:0on5qx"
     },
     {
       "lines": [
@@ -200,7 +200,7 @@
         30
       ],
       "paraphrase": "The tool reduces setup to a few questions instead of a checklist of accounts.",
-      "cut": "marketing"
+      "fact": "f:wyrn4z"
     },
     {
       "lines": [
@@ -256,7 +256,7 @@
         42
       ],
       "paraphrase": "Cloudflare is preferred for its security-oriented defaults and a free tier that holds up at small-site traffic.",
-      "cut": "marketing"
+      "new-fact": "f:8p1cjx"
     },
     {
       "lines": [
@@ -264,7 +264,7 @@
         44
       ],
       "paraphrase": "SvelteKit is a framework a fixed CMS can commit to and gain real leverage from.",
-      "cut": "marketing"
+      "fact": "f:djoxr9"
     },
     {
       "lines": [
@@ -272,7 +272,7 @@
         43
       ],
       "paraphrase": "SvelteKit offers full server rendering and first-class TypeScript.",
-      "cut": "external-trivia"
+      "new-fact": "f:tf4vfb"
     },
     {
       "lines": [
@@ -304,7 +304,7 @@
         46
       ],
       "paraphrase": "Git itself supplies the change history, the credit, and the means to roll back.",
-      "cut": "external-trivia"
+      "new-fact": "f:hcydfe"
     },
     {
       "lines": [
@@ -504,7 +504,7 @@
         86
       ],
       "paraphrase": "With the tool driving, setup is manageable, yet still involves several steps rather than one sign-up.",
-      "cut": "marketing"
+      "fact": "f:50md0e"
     },
     {
       "lines": [
@@ -536,7 +536,7 @@
         91
       ],
       "paraphrase": "Git itself supplies the change history, the credit, and the means to roll back.",
-      "cut": "external-trivia"
+      "fact": "f:hcydfe"
     },
     {
       "lines": [
@@ -568,7 +568,7 @@
         100
       ],
       "paraphrase": "For an admin setup with no code, the admin track suffices; the extend track is for developers going further.",
-      "cut": "navigation"
+      "fact": "f:y6n5ma"
     },
     {
       "lines": [

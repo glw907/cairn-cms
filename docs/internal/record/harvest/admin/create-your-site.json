@@ -48,7 +48,7 @@
         9
       ],
       "paraphrase": "Opening either account is free.",
-      "cut": "external-trivia"
+      "new-fact": "f:zd124l"
     },
     {
       "lines": [
@@ -232,7 +232,7 @@
         86
       ],
       "paraphrase": "Definition of deploy as putting the site live.",
-      "cut": "external-trivia"
+      "fact": "f:ln5ug0"
     },
     {
       "lines": [

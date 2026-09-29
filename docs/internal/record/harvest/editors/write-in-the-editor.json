@@ -360,7 +360,7 @@
         103
       ],
       "paraphrase": "Advice on writing alt text and when to mark an image decorative.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:4w1v5h"
     },
     {
       "lines": [
@@ -384,7 +384,7 @@
         109
       ],
       "paraphrase": "The flag does not affect publishing and the published image is still treated as decorative.",
-      "cut": "external-trivia"
+      "new-fact": "f:pzct1u"
     },
     {
       "lines": [
@@ -416,7 +416,7 @@
         122
       ],
       "paraphrase": "Defines a caption as visible text and alt text as screen-reader text.",
-      "cut": "external-trivia"
+      "new-fact": "f:at9qqj"
     },
     {
       "lines": [

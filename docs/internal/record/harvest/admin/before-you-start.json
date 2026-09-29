@@ -40,7 +40,7 @@
         30
       ],
       "paraphrase": "Caption: the tool holds none of the assets afterward.",
-      "cut": "marketing"
+      "fact": "f:58xph1"
     },
     {
       "lines": [
@@ -96,7 +96,7 @@
         44
       ],
       "paraphrase": "The assets belong to the operator, not to cairn.",
-      "cut": "marketing"
+      "fact": "f:58xph1"
     },
     {
       "lines": [
@@ -120,7 +120,7 @@
         50
       ],
       "paraphrase": "Framing that three things stand between you and setup, two of them money.",
-      "cut": "marketing"
+      "fact": "f:ewm3zx"
     },
     {
       "lines": [
@@ -256,7 +256,7 @@
         94
       ],
       "paraphrase": "Setup needs no code, but a few tasks need a developer.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:y6n5ma"
     },
     {
       "lines": [
@@ -272,7 +272,7 @@
         99
       ],
       "paraphrase": "Engine updates are a developer task; pointer to the upgrade page.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:jtl15v"
     },
     {
       "lines": [
@@ -280,7 +280,7 @@
         102
       ],
       "paraphrase": "Building beyond what cairn ships belongs to the extend track.",
-      "cut": "navigation"
+      "fact": "f:bhyvqg"
     },
     {
       "lines": [
@@ -296,7 +296,7 @@
         109
       ],
       "paraphrase": "Everything else in the track you do alone.",
-      "cut": "marketing"
+      "fact": "f:y6n5ma"
     },
     {
       "lines": [

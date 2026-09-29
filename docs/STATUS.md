@@ -38,8 +38,14 @@ Three initiatives are live; resume each from its plan's ledger foot:
   check (workflow run `wf_1a23dd8e-98b`): landed R1 (`7bf6a110`, `f9723e50`), R2p (`5d82b505`,
   review unfinished), W1 `79c5e23`, W2 `b44f414`/`ead04af`, W3 `4461c1f`. R2a and R2b not started.
   A leanness audit and a web-research round both flag unbuilt breadth (four R2b rules, the
-  promoted-list JSON, R8, the structure-config pair) and the drafter brief's size; Geoff decides the
-  cuts before anything resumes.
+  promoted-list JSON, R8, the structure-config pair) and the drafter brief's size. **Geoff's
+  ruling (2026-09-28): a proven, battle-tested system, nothing invented.** The pass does not resume
+  as planned; a fresh `high` session re-scopes the spec and plan to the conventional stack (base
+  guide plus a short deviations section, stock Vale packages with a few custom rules promoted per
+  rule, stock markdownlint, Anthropic's few-exemplars prompting, one checklist-driven editor pass)
+  and walks back the invented parts already on the branch (R1's `q:`/`x:` markers and provenance
+  table, W1's extraction validator and forced-blocking coercion). Inputs: the audit and research
+  syntheses in this session's record, `docs/superpowers/research/2026-09-28-style-guide-sync-leanness.md`.
 ## Open decisions and watches
 
 - Draft docs stage 1's two pages deferred to theme identity pass B (the admin subpath rename, the

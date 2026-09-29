@@ -1,0 +1,62 @@
+# Style-guide sync: leanness check and Geoff's ruling
+
+Date: 2026-09-28. Segment A was paused mid-run (workflow `wf_1a23dd8e-98b`) after a fresh-context
+leanness audit and a web-research round. Landed before the pause: R1 (`7bf6a110`, `f9723e50`),
+R2p (`5d82b505`, review unfinished), and in dotfiles W1 `79c5e23`, W2 `b44f414`/`ead04af`,
+W3 `4461c1f`. R2a and R2b never started.
+
+## Geoff's ruling
+
+"I'm not looking to invent anything new. I want a proven and battle-tested system." The re-scope
+takes the conventional method at every fork and walks back what the branch invented.
+
+## The prior overbuild (why this check ran)
+
+`docs/HISTORY.md:279-292`: the docs reset's reader-validation line (2026-09-23 to 26) spent about
+43M tokens over three passes, drafted zero pages, and built toward an unreachable detection bar.
+Its lesson: take the conventional method first, and check a bar is reachable before building
+toward it. This pass repeated the pattern in part: four review folds each turned a hypothetical
+failure mode into machinery, and a 12M-token system pass touched one real page.
+
+## Research findings (web, about 12 sources)
+
+- GitLab adds a Vale rule at warning, fixes hits, then promotes that rule to error; one
+  `.vale.ini`, no per-page staging, no fixture tests
+  (https://docs.gitlab.com/development/documentation/testing/vale/).
+- Elastic and Spectro Cloud test rules with a pass and a fail case, but they ship shared packages
+  (https://github.com/elastic/vale-rules,
+  https://www.spectrocloud.com/blog/how-we-use-vale-to-enforce-better-writing-in-docs-and-beyond).
+  Vale 3.x ships `vale test` for this.
+- Elastic's three tiers: error for structural, warning for high-confidence, suggestion for
+  context-dependent; noisy rules demoted with a rationale comment
+  (https://www.elastic.co/docs/contribute-docs/vale-linter).
+- Anthropic recommends 3 to 5 canonical examples over long rule lists
+  (https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices).
+  Instruction-following all-pass rates fall steeply as simultaneous rules grow
+  (https://arxiv.org/pdf/2509.21051).
+- Unguided self-critique often fails to help; checklist-driven critique with external feedback does
+  better (https://arxiv.org/abs/2310.01798, https://arxiv.org/pdf/2410.06458).
+- No team found uses quote-provenance markers, a promoted-pages list, or an LLM-chain-plus-Vale
+  hybrid as a norm.
+
+## Mechanism verdicts under the ruling
+
+| Mechanism | Built | Verdict |
+|---|---|---|
+| Base guide first, stock Google/Microsoft Vale packages, vocabulary | partly | Keep |
+| Deviations from the base guide, as a plain section | R1 (as exceptions tables) | Keep as a plain "Deviations" section, the GitLab/Grafana pattern |
+| `q:`/`x:` markers and the provenance table | R1 | Walk back; a plain sources list of links |
+| Drafter brief (about 4,500 words of rules reach the developer drafter) | R1, W1 | Replace with a short supplement, 3 to 5 exemplars, a short tell list |
+| Deterministic section extraction, sentinel validator | W1 | Walk back; the drafter reads the supplement file directly |
+| Forced-blocking coercion of guide findings | W1 | Walk back; the editor works a checklist plus Vale output |
+| Per-rule warning-then-error promotion | no | Keep (GitLab) |
+| Promoted-pages list, fail-closed JSON | no | Cut |
+| Fixture harness meta-check, legacy allowlist | no | Cut; `vale test` pairs for custom regex rules only |
+| Heading rules | no | One merged rule, at warning (77 measured hits) |
+| ProseProcedure | no | Keep at warning (52 measured hits) |
+| LinkText, LinkInHeading, CodeFont, ListItemCase | no | Cut, no observed instance |
+| markdownlint-cli2 | no | Stock config; custom rules only for a measured defect |
+| R8 repo tripwire, `.vale-structure.ini` pair, sanctioned-copy parity | no | Cut |
+| Planted-defect controls (J4's planted loosening) | no | Cut |
+| J2 real-page proof run | no | Keep: the first measurement that the system writes better pages |
+| R2p Vale 3.23.0 pin, W2/W3 agent-definition syncs | yes | Keep, adjusted to the slimmer supplement |

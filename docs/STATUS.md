@@ -18,19 +18,15 @@ un-pinnable against the registry since `0.95.0`. Live contracts:
 
 ## Immediate next action
 
-Three initiatives are live; resume each from its plan's ledger foot:
+Resume each initiative from its plan's ledger foot. Theme identity pass A is merged (PR #92).
 
-- **Theme identity pass A**: merged to `main` (PR #92, `4d725057`), unreleased; `main` now has an
-  `## Unreleased` window (`release-size: minor`). Record: `docs/HISTORY.md`.
-- **Theme identity pass B** (branch `theme-identity-b`, PR #95): segments A and B done. Owed
-  first: merge `main` (pass A's merge) into it across B's `src/lib/admin` rename, per the plan's
-  merge-forward protocol. Then segment C (the shipped guidance and its exemplar, then the sync
-  test). Ledger foot: `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`.
-- **Theme identity pass C**: reviewed plan waits on branch `theme-c-plan`
-  (`docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`), runs after pass B, cuts `0.98.0`.
-- **Draft docs pass 0+1**: merged (PR #91, `8bbe78f5`); the stage 2a plan is next (below), after
-  pass B merges (Geoff, S3 Q21). The style-guide sync must land before stage 2a drafts its
-  first page.
+- **Theme identity pass B**: finished, unmerged (PR #95, draft, head `b938725b`, holding `main`
+  at `1056432d`). It is pass C's base and merges with C; record in its post-mortem and HISTORY.
+- **Theme identity pass C** (next; plan `docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`
+  on `theme-c-plan`) branches from `theme-identity-b` and cuts `0.98.0` over A, B, and C. Its
+  "Branch topology" predates A's solo merge (`main` holds A; B holds `main`). It carries the
+  tripwire's `0.98.0` question (F2), the dotfiles and cairn-pub repoints, and ROADMAP Now's
+  `viewport-overflow` timing fix.
 - **Style-guide sync** (branch `style-guide-sync`, worktree `.claude/worktrees/style-guide-sync`,
   head `fb1aeba3`; chain W in `~/Projects/.worktrees/dotfiles-style-guide-sync`): paused in
   segment A for a re-scope. **Geoff's ruling (2026-09-28): a proven, battle-tested system, nothing
@@ -38,14 +34,14 @@ Three initiatives are live; resume each from its plan's ledger foot:
   on the branch.
 ## Open decisions and watches
 
-- Draft docs stage 1's two pages deferred to theme identity pass B (the admin subpath rename, the
-  new `./public` page) need the same fact-read batch once pass B lands. `checkOrigin` to
+- Draft docs stage 1's two pages deferred to pass B (the `./admin` rename, the new `./public`
+  page) take the same fact-read batch once B merges. `checkOrigin` to
   `csrf.trustedOrigins` becomes its own small `auth-data` pass after `0.98.0`, run when Geoff can
   make the magic-link click.
 - Node 26 becomes the floor at beta only if Active LTS by then; TypeScript 7 stays held until
   `svelte-check --tsgo` runs green (`tsgo.yml` checks weekly). extend-1's two advisory audit rules
-  go to error tier at `0.98.0`; `cairn-audit --rendered` counts differently on identical runs (133
-  then 116), stabilize before trusting either.
+  go to error tier at `0.98.0`. `cairn-audit --rendered`'s unstable counts are diagnosed as
+  `viewport-overflow` measuring before the shell's layout settles (ROADMAP Now, before the cut).
 - Monthly routines (a Cloudflare review, a Claude Code guidance-schema check) email only on a
   mismatch; `CAIRN_GH_READ_TOKEN` expires 2026-10-19, the daily `cairn-tripwire` catches it early.
   A consumer `guard.rejected` (`detail: 'mismatch'`, `witness: 'field'`) can be the known
@@ -54,9 +50,9 @@ Three initiatives are live; resume each from its plan's ledger foot:
 
 ## Resume prompt
 
-Theme identity, fresh session (`claude-opus-5-5`, `high`): pass A is merged. Merge `main` into
-`theme-identity-b`, carrying A's `src/lib/components` fixes across B's rename to `src/lib/admin`;
-confirm PR #95 is green; resume pass B at segment C. Pass C follows B.
+Theme identity pass C, fresh session (`claude-opus-5-5`, `medium`): invoke `cairn-pass`, read
+pass C's plan on `theme-c-plan` and pass B's post-mortem, then run pass C's task 0 from
+`theme-identity-b`'s head under the topology note above.
 Style-guide sync re-scope, fresh session (`claude-opus-5-5`, `high`): in
 `.claude/worktrees/style-guide-sync`, read the leanness record, then revise the spec and plan to
 the conventional stack it names, walking back R1's markers and provenance table and W1's

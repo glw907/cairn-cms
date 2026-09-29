@@ -113,15 +113,15 @@ Outcomes: the spec's R1t bullets. Each drafting brief becomes a supplement: the 
 a structure checklist (one line per base-guide rule, linked, unquoted), the voice with its
 specimens (the why-cairn front-door specimen, the `choose-an-ai-posture.md` lines 23-26 paragraph
 at `8bbe78f5` verbatim, every `Killed:` specimen), the exemplar list, and a short tell list. Every
-`q:` and `x:` marker and every verbatim guide quotation goes; the guide-quotes provenance becomes
+`q:` and `x:` marker and every verbatim guide quotation inside the briefs goes; the guide-quotes provenance becomes
 a plain sources list; the tightening test, the two exceptions sections, and the Provenance
 voice-departure table merge into `## Deviations from the base guides`, keeping all four Google
 rows with their Evidence column. Every other R1 section stays, with `## Names` and every remaining
 quotation byte-identical.
 Acceptance: criteria 1 and 2. The `diff-reviewer` dispatch for R1t carries criterion 2's
 instruction verbatim: enumerate the ratified rules from the register at `feca3348` yourself, never
-from the implementer's list. The report carries `wc -w` per brief and a `grep` showing no `<!--
-q:` or `<!-- x:` marker and the posture paragraph present.
+from the implementer's list. The report carries a `grep` showing no `<!-- q:` or `<!-- x:` marker,
+the posture paragraph present, and every heading the spec's W1r list names present verbatim.
 
 ### Task R2. The Vale rules
 
@@ -152,8 +152,8 @@ throw stays, the editor runs plain `vale` on the page and grades the checklist, 
 alerts together, and the drafter reads the exemplar sources whole in place of trimmed excerpts.
 The test covers all six track values (`editors`, `admin`, `extend`, `reference`, `front-door`,
 `readme`) plus one unknown value that throws.
-Acceptance: criterion 5's first clause; each named heading exists verbatim in the register at
-`style-guide-sync`'s HEAD (the task notes carry the absolute register path); review focus 3;
+Acceptance: criterion 5's first clause; the prompts name exactly the spec's W1r heading list
+(R1t lands those headings in parallel; the boundary checks the two agree); review focus 3;
 `scripts/check.sh` passes.
 
 ### Task W2r. Drafter definition
@@ -226,7 +226,9 @@ existing scanner passes on the tree with no new baseline entry; `scripts/check.s
 2. Re-run P0 against `~/.dotfiles`. Merge chain W into dotfiles `main` with `--no-ff`; record the
    merge SHA in STATUS as the rollback point.
 3. `claude-tooling-sync verify` passes on the merged `main`.
-4. STATUS written.
+4. One `grep` confirms every register heading `docs-page-chain.js`'s prompts name exists verbatim
+   in the register at `style-guide-sync`'s HEAD; a miss is fixed before J1.
+5. STATUS written.
 
 ## Join (sequential, Agent tool)
 
@@ -235,7 +237,8 @@ existing scanner passes on the tree with no new baseline entry; `scripts/check.s
 Class `docs`, `model: opus`, under "Edits after the chain". Files:
 `docs/extend/choose-an-ai-posture.md` and its brief.
 Outcomes: the spec's R5. Acceptance: criterion 6 except Geoff's read, the no-alert check run
-with plain `vale` on the page; the register editor's voice verdict on the diff is in the report.
+with plain `vale` on the page. After J1 lands, the conductor dispatches one `cairn-register-editor`
+read of the diff for the voice verdict (the implementer cannot dispatch agents).
 
 ### Task J2. Proof run
 

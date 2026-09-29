@@ -66,7 +66,7 @@ New rulings (Geoff, 2026-09-28):
     per-mechanism ruling.
 16. **The target register is preserved.** The re-scope removes machinery, never voice. Every
     ratified register rule survives, as do the voice specimens (the why-cairn front-door specimen,
-    the `choose-an-ai-posture.md` paragraph at `8bbe78f5` lines 23-26 verbatim, the "Killed:"
+    the `choose-an-ai-posture.md` paragraph at `8bbe78f5` lines 23-26 verbatim, every "Killed:"
     specimen), the Names section, the page anatomies, the track and front-door sections, and
     every recorded deviation. What shrinks is prose that restates the base guide, which the stock
     Vale packages and the guide itself already carry.
@@ -197,7 +197,9 @@ validator, the coercion, `docs-chain-render.mjs`, and their tests. Then `docs-pa
 prompts name, by exact heading, the register sections the agent reads from the file: the track's
 brief (`## Drafting brief: editor docs` for `editors`, `## Drafting brief: developer docs` for
 every other track), `## Names`, `## Visuals (every page that carries one)`, `## The page
-anatomies`, and the track's own section, with `## Deviations from the base guides` added for the
+anatomies`, and the track's own section (the register's `### The <x> track (...)` heading for
+`editors`, `admin`, and `extend`, `## The reference (...)` for `reference`, and `## The front door
+(...)` for `front-door` and `readme`, each copied verbatim from the register at R1t's commit), with `## Deviations from the base guides` added for the
 editor. The revert's "universal contract" line goes, and W1's unknown-track throw stays. The
 editor runs plain `vale` on the page, never the gate, and grades the brief's checklist and tells
 with Vale's alerts together. The drafter reads the page's exemplar sources whole (ruling 17), so

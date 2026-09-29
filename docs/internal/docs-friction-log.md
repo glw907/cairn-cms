@@ -147,6 +147,14 @@ shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not 
 `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` all
 promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
+Style-guide sync pass, R2p (2026-09-28), `contributor`: the suppression comment in
+`docs/editors/when-something-goes-wrong.md` (around line 46) still says CI's pinned Vale is 3.15.1
+and that 3.19.0 false-fires `Microsoft.Quotes` there. The pin is now 3.23.0 and the survey record
+(`record/2026-09-28-vale-3-23-and-markdownlint-survey.md`) found `Microsoft.Quotes` does not fire
+on either version, so the `<!-- vale Microsoft.Quotes = NO -->` comment and its wording are stale.
+The page is frozen until the editors arm's own stage, so it is filed here, not edited; fix the
+comment (or drop the suppression) when that stage rebuilds the page.
+
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in

@@ -258,6 +258,28 @@ test.describe('public theme computed-value equivalence', () => {
     });
   }
 
+  // The hero title reads the same two levers as every other heading, so a theme that sets them moves
+  // the styleguide masthead with the rest. The probe sets the levers on the root the way a theme's
+  // own `:root` block would, at a value Waymark does not use.
+  test('the styleguide masthead follows the heading levers', async ({ page }) => {
+    await page.goto('/styleguide');
+    await expect(page.locator('main#main')).toBeVisible();
+    const read = async (): Promise<{ weight: string; transform: string }> =>
+      page
+        .locator('h1.cairn-hero-title')
+        .first()
+        .evaluate((el) => {
+          const computed = getComputedStyle(el);
+          return { weight: computed.fontWeight, transform: computed.textTransform };
+        });
+    expect(await read()).toEqual({ weight: '600', transform: 'none' });
+    await page.evaluate(() => {
+      document.documentElement.style.setProperty('--font-weight-heading', '800');
+      document.documentElement.style.setProperty('--cairn-heading-case', 'uppercase');
+    });
+    expect(await read()).toEqual({ weight: '800', transform: 'uppercase' });
+  });
+
   const expected = JSON.parse(readFileSync(FIXTURE_URL, 'utf8')) as Expectation;
 
   for (const state of STATES) {

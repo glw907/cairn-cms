@@ -11,7 +11,7 @@ Rendered markup:
 Reads:
 
 - The display face `--font-display`, the size `--text-step-5`, the leading `--leading-tight`, and the tracking `--tracking-tight`.
-- The weight is a fixed 600 in `composition.css`, so `--font-weight-heading` and `--cairn-heading-case` do not reach it today.
+- The weight `--font-weight-heading` and the case `--cairn-heading-case`, the two heading levers, so one value moves it with every other heading.
 
 Override seams:
 

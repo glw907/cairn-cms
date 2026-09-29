@@ -190,6 +190,11 @@ const cases: Case[] = [
     expect: ['claims[3]', 'lines'],
   },
   {
+    name: 'a span reaching the empty element after the final newline fails',
+    mutate: (r) => r.ledger('editors/beta.json', (l) => (l.claims[1].lines = [3, 4])),
+    expect: ['claims[1]', 'lines'],
+  },
+  {
     name: 'a paraphrase over 25 words fails',
     mutate: (r) =>
       r.ledger('editors/beta.json', (l) => (l.claims[1].paraphrase = Array.from({ length: 26 }, (_, i) => `w${i}`).join(' '))),
@@ -298,6 +303,48 @@ const cases: Case[] = [
     mutate: (r) =>
       r.edit('docs/internal/facts/editors.md', (t) => t.replace('`src/beta.ts:1`', 'the page (docs/admin/alpha.md:338)')),
     expect: ['f:be0001', 'names deletion-list page docs/admin/alpha.md'],
+  },
+  {
+    name: 'a Source naming a deletion-list page by bare basename fails',
+    mutate: (r) => r.edit('docs/internal/facts/editors.md', (t) => t.replace('`src/beta.ts:1`', 'the copy in bravo.md')),
+    expect: ['f:be0001', 'names deletion-list page docs/admin/bravo.md', '"bravo.md"'],
+  },
+  {
+    name: 'a Source naming a deletion-list page by arm-relative path fails',
+    mutate: (r) => r.edit('docs/internal/facts/editors.md', (t) => t.replace('`src/beta.ts:1`', '`admin/bravo.md`')),
+    expect: ['f:be0001', 'names deletion-list page docs/admin/bravo.md', '"admin/bravo.md"'],
+  },
+  {
+    name: 'a Source naming a deletion-list page by a ../ relative path fails',
+    mutate: (r) => r.edit('docs/internal/facts/editors.md', (t) => t.replace('`src/beta.ts:1`', '`../admin/bravo.md`')),
+    expect: ['f:be0001', 'names deletion-list page docs/admin/bravo.md'],
+  },
+  {
+    name: 'a bare basename shared with another file is ambiguous and is not flagged',
+    mutate: (r) => r.edit('docs/internal/facts/editors.md', (t) => t.replace('`src/beta.ts:1`', '`README.md:1`')),
+    expect: 'pass',
+  },
+  {
+    name: 'a bare basename that names only a kept-set page is not flagged',
+    mutate: (r) => r.edit('docs/internal/facts/editors.md', (t) => t.replace('`src/beta.ts:1`', 'kept-record.md')),
+    expect: 'pass',
+  },
+  {
+    name: 'a longer name that merely ends like a page basename is not flagged',
+    mutate: (r) => r.edit('docs/internal/facts/editors.md', (t) => t.replace('`src/beta.ts:1`', 'the-bravo.md and mybravo.md')),
+    expect: 'pass',
+  },
+  {
+    name: 'an unscoped run reads a non-page section too (the whole container)',
+    mutate: (r) =>
+      r.edit('docs/internal/facts/front-door.md', (t) => t.replace('`README.md:1`', '`docs/admin/bravo.md:3`')),
+    expect: ['docs/internal/facts/front-door.md', 'f:fd0002', 'names deletion-list page docs/admin/bravo.md'],
+  },
+  {
+    name: 'an unscoped run reads a kept-page section too',
+    mutate: (r) =>
+      r.edit('docs/internal/facts/extend.md', (t) => t.replace('`docs/extend/kept-record.md`. [verified]', '`docs/admin/bravo.md:3`. [verified]')),
+    expect: ['f:kr0001', 'names deletion-list page docs/admin/bravo.md'],
   },
 ];
 

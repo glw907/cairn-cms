@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
-import { extractBullets, extractFactId, checkTag, factsFiles, SKIPPED_SECTIONS } from '../checks/check-facts.mjs';
+import { extractBullets, extractFactId, checkTag, factsFiles, buildBasenameIndex, SKIPPED_SECTIONS } from '../checks/check-facts.mjs';
 
 /** The four harvest arms, in report order. */
 export const ARMS = ['admin', 'editors', 'extend', 'front-door'];
@@ -228,20 +228,34 @@ function sourceField(text) {
 }
 
 /**
- * True when `text` names `page` as a whole path, not as the tail of a longer path.
- * @param {string} text
+ * The matcher for the ways a `Source:` can name a deletion-list page: its full repo path, its
+ * arm-relative path (`extend/data-tiers.md`, optionally behind `./` or `../`), and its bare
+ * basename (`data-tiers.md`). A citation carrying no `:line` slips past `check:facts`, so the
+ * verifier catches all three forms. The bare basename counts only when no other file in the repo
+ * shares it, so `README.md` never matches. Every form needs whole-token boundaries.
  * @param {string} page
- * @returns {boolean}
+ * @param {Map<string, string[]>} basenameIndex Every repo basename mapped to its paths.
+ * @returns {RegExp}
  */
-function namesPage(text, page) {
-  const escaped = page.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(?<![\\w./-])${escaped}(?![\\w-])`).test(text);
+function pageCitationPattern(page, basenameIndex) {
+  const escape = (/** @type {string} */ text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const arm = armOf(page);
+  const base = page.slice(page.lastIndexOf('/') + 1);
+  /** @type {string[]} */
+  const relative = [];
+  if (arm && arm !== 'front-door') relative.push(escape(page.slice('docs/'.length)));
+  const shared = (basenameIndex.get(base) ?? []).some((path) => path !== page);
+  if (!shared) relative.push(escape(base));
+  const forms = [escape(page)];
+  if (relative.length > 0) forms.push(`(?:\\.{1,2}/)*(?:${relative.join('|')})`);
+  return new RegExp(`(?<![\\w./-])(?:${forms.join('|')})(?![\\w-])`);
 }
 
 /**
- * The 0-based indexes of the lines that need no claim: front matter, when the page opens with it.
+ * The 0-based index of the last front-matter line, when the page opens with front matter; front
+ * matter needs no claim.
  * @param {string[]} lines
- * @returns {number} The index of the last front-matter line, or -1 when there is none.
+ * @returns {number} The index, or -1 when the page has no front matter.
  */
 function frontMatterEnd(lines) {
   if (lines[0]?.trim() !== '---') return -1;
@@ -305,6 +319,7 @@ function checkLedgerContent(ledgerFile, ledger, root, facts, counts, failures) {
     if (typeof ledger.blob !== 'string') fail('blob is missing (the page\'s `git hash-object` when audited)');
     else if (ledger.blob !== actual) fail(`blob is stale: the ledger says ${ledger.blob}, ${ledger.page} is now ${actual} (the page was edited after its audit)`);
     pageLines = new TextDecoder().decode(bytes).split('\n');
+    if (pageLines[pageLines.length - 1] === '') pageLines.pop();
   }
 
   if (!Array.isArray(ledger.claims) || ledger.claims.length === 0) {
@@ -490,12 +505,15 @@ export function verifyHarvest(options = {}) {
 
   // No bullet cites a deletion-list page: the whole container unscoped, otherwise only the
   // sections of the scoped pages.
+  const basenameIndex = buildBasenameIndex(root);
+  const citations = list.deleted.map((page) => ({ page, pattern: pageCitationPattern(page, basenameIndex) }));
   for (const fact of facts.all) {
     if (scoped && !scope.some((page) => sectionIsPage(fact.section, page))) continue;
     const source = sourceField(fact.text);
     if (source === null) continue;
-    for (const page of list.deleted) {
-      if (namesPage(source, page)) failures.push(`${fact.file}:${fact.line}: bullet ${fact.id} Source names deletion-list page ${page}; re-source it to code, a vendor, or the owner brief`);
+    for (const { page, pattern } of citations) {
+      const cited = pattern.exec(source);
+      if (cited) failures.push(`${fact.file}:${fact.line}: bullet ${fact.id} Source names deletion-list page ${page} (as "${cited[0]}"); re-source it to code, a vendor, or the owner brief`);
     }
   }
 

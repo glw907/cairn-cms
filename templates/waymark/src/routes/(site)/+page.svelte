@@ -46,7 +46,9 @@
 </svelte:head>
 
 <section class="mx-auto max-w-measure pb-xl pt-l">
-  <h1 class="m-0 mb-s font-display text-step-5 font-semibold leading-tight tracking-tight">
+  <h1
+    class="m-0 mb-s font-display font-heading heading-case text-step-5 leading-tight tracking-tight"
+  >
     Notes, stacked one stone at a time.
   </h1>
   <p class="m-0 max-w-[38rem] text-step-1 leading-snug text-muted">
@@ -187,7 +189,8 @@
   .lead__title {
     margin: 0 0 var(--spacing-2xs);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-4);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
@@ -249,7 +252,8 @@
     padding-top: var(--spacing-m);
     border-top: var(--border) solid var(--color-base-300);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-2);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);

@@ -32,8 +32,8 @@ the mechanism.
 | `render.ts` | The component-grammar wiring (a theme's icon set into the engine's glyph-rendering helpers) and the prose-typography remark plugin seam. |
 | `archive.ts` | The archive shape: year-grouped, paginated segments over the posts index, shared by the home page (page one) and the `/archive/[page]` route so the slicing rule never drifts between them. |
 | `date.ts` | The site's one date vocabulary: every date-bearing surface formats through the single `formatDate` helper. |
-| `theme-toggle.ts` | The light/dark toggle mechanism: resolve the active theme, apply a choice, persist it to a cookie. |
-| `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the engine's `cairn-public.css` import (the roles, the code-highlight binding, and the focus-ring class), and the design-scale keys with generic defaults. |
+| `theme-toggle.ts` | The light/dark toggle mechanism: resolve the active theme (from `data-theme`, else the root's computed `color-scheme`, else the system scheme), apply a choice, persist it to a cookie. |
+| `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the engine's `cairn-public.css` import (the roles, the code-highlight binding, and the focus-ring class), the design-scale keys with generic defaults, and the two heading levers (`--font-weight-heading`, `--cairn-heading-case`) with the `heading-case` utility. |
 | `prose.css` | The reading-surface foundation: every prose element bound to tokens, with the signature flourish gestures behind `[data-flourish]`. |
 | `composition.css` | The composition primitives: card, band, section, hero, sidebar-layout, site-shell. |
 
@@ -137,7 +137,23 @@ both the public render and the editor's live preview inherit it.
 nothing about which two DaisyUI theme names or which cookie name a theme uses; every call site
 passes its own `ThemeToggleConfig` (`SiteHeader.svelte` is the worked example). A theme with
 differently named themes, or a second theme entirely, reuses this module unchanged by supplying
-its own config.
+its own config. With no `data-theme` on `<html>`, `resolveTheme` reads the root's computed
+`color-scheme`, so a dark-first theme needs no edit to `app.html`; a computed value other than
+exactly `light` or `dark` (`normal`, or `light dark`) leaves the system scheme to decide. This
+theme's config lives in `src/theme/theme-names.ts`, which `SiteHeader.svelte` imports. Two places
+cannot import it and change by hand with it: the inline script in `app.html` (the cookie name and
+the regex, which keeps naming both themes so a stale cookie left by a rename falls back to the
+system scheme) and the `name:` values of the two `@plugin "daisyui/theme"` blocks in `theme.css`.
+`theme-names.test.ts` fails when either drifts.
+
+**The heading levers (`tokens.css`).** `--font-weight-heading` (default `600`, in `@theme`,
+generating the `font-heading` utility) and `--cairn-heading-case` (default `none`, a plain role in
+`@layer theme`, applied by the `heading-case` utility) are the two keys every heading reads.
+`prose.css`'s `h1`/`h2`/`h3` rules and the chrome's titles use them in place of a literal weight, so
+a theme sets them once, in its own `@theme` block and `:root`, to move every heading. Chrome markup
+applies `font-heading heading-case`; a scoped `<style>` rule reads the two keys directly with
+`var()`. An eyebrow keeps its own `uppercase tracking-eyebrow` and weight, and a bold run, a
+label, or a control keeps a literal weight, since none of them is a heading.
 
 **The archive page size (`archive.ts`).** `ARCHIVE_PAGE_SIZE` is a site's own knob, not a chassis
 constant tuned for this site: `paginateArchive` reads it as a default, and both the home
@@ -214,7 +230,7 @@ a build it silently breaks) fails this file's own promise.
 | `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
 | `dev-gate.ts` | `hooks.server.ts`, `cairn.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), the one branch in `hooks.server.ts` and the one in `cairn.server.ts` that read the flag, and the `__CAIRN_DEV_BUILD__` define in `vite.config.ts` with its `app.d.ts` declaration; the gate defaults closed everywhere else, so nothing else changes behavior. |
 | `render.ts` | `markdown-components.ts` (the `makeIconRenderer` and `headRow` imports) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon and `headRow` imports (inlining `headRow`'s icon-plus-heading shape at its one call site), and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or its own remark plugin instead), needs nothing else. |
-| `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example). | Delete the file, `SiteHeader.svelte`'s one import line, its `themeConfig` constant, `theme` state, and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
+| `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example), through `src/theme/theme-names.ts`'s `ThemeToggleConfig`. | Delete the file, `SiteHeader.svelte`'s imports of it and of `theme-names.ts`, its `theme` state and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block; delete `theme-names.ts` and `theme-names.test.ts` with them. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
 | `archive.ts` | `(site)/+page.server.ts`, `(site)/archive/[page]/+page.server.ts`. | Not a bare deletion while the paginated archive exists: a theme wanting a different archive shape (a flat list, an infinite scroll, no pagination) replaces both server routes' imports with its own slicing in the same change, and may delete the `/archive/[page]` route directory with it. |
 | `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's own vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |

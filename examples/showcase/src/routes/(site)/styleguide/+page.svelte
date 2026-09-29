@@ -464,7 +464,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-h2 {
     margin: 0 0 var(--spacing-xs);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-3);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
@@ -473,7 +474,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-h3 {
     margin: var(--spacing-l) 0 var(--spacing-s);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-1);
     color: var(--color-base-content);
   }
@@ -591,7 +593,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-card-title {
     margin: 0 0 var(--spacing-2xs);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-1);
     color: var(--color-base-content);
   }
@@ -704,7 +707,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-cta-title {
     margin: 0 0 var(--spacing-3xs);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-2);
   }
   .sg-cta-sub {

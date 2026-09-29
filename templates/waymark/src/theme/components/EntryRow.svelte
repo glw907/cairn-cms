@@ -60,7 +60,8 @@ copy.
   .site-entry__title {
     margin: 0 0 0.35rem;
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-2);
     line-height: var(--leading-snug);
     letter-spacing: var(--tracking-tight);

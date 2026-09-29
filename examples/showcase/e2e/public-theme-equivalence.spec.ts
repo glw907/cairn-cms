@@ -235,6 +235,29 @@ test.describe('public theme computed-value equivalence', () => {
     expect(outlines.both).toBe('true dotted 4px 7px');
   });
 
+  // The heading levers' defaults under Waymark: every heading the chassis and chrome read the keys
+  // for renders at the weight and case it had when the weight and case were literals.
+  const HEADINGS = [
+    { name: 'a prose h2', path: PROSE_PAGE, selector: '.prose h2' },
+    { name: 'the home lead title', path: ROOT_PAGE, selector: '.lead__title' },
+    { name: 'a styleguide section heading', path: '/styleguide', selector: '#sg-color' },
+  ];
+
+  for (const heading of HEADINGS) {
+    test(`${heading.name} computes weight 600 and text-transform none`, async ({ page }) => {
+      await page.goto(heading.path);
+      await expect(page.locator('main#main')).toBeVisible();
+      const style = await page
+        .locator(heading.selector)
+        .first()
+        .evaluate((el) => {
+          const computed = getComputedStyle(el);
+          return { weight: computed.fontWeight, transform: computed.textTransform };
+        });
+      expect(style).toEqual({ weight: '600', transform: 'none' });
+    });
+  }
+
   const expected = JSON.parse(readFileSync(FIXTURE_URL, 'utf8')) as Expectation;
 
   for (const state of STATES) {

@@ -56,7 +56,9 @@ who wants to change the footer edits `site.config.yaml` directly.
       class="brand-link inline-flex min-h-11 items-center text-muted no-underline"
       aria-label={siteName || 'Home'}
     >
-      <span class="font-display text-step-1 font-semibold tracking-tight">{siteName}</span>
+      <span class="font-display font-heading heading-case text-step-1 tracking-tight"
+        >{siteName}</span
+      >
     </a>
 
     <nav class="site-nav flex flex-wrap items-center gap-s text-step--1" aria-label="Footer">

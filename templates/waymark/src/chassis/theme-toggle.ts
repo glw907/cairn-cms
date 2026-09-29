@@ -1,5 +1,5 @@
-// The chassis's light/dark theme-toggle mechanism: read the live `data-theme` (or the system
-// scheme, with no explicit choice yet), flip it, and persist the choice to a cookie so it
+// The chassis's light/dark theme-toggle mechanism: read the live `data-theme` (or the scheme the
+// root renders in, with no explicit choice yet), flip it, and persist the choice to a cookie so it
 // survives a reload. The mechanism knows nothing about which two DaisyUI theme names a theme
 // declares; every call site passes its own ThemeToggleConfig, so a differently-named theme (or a
 // second theme entirely) reuses this module unchanged. Every function here assumes it runs in the
@@ -18,13 +18,21 @@ export interface ThemeToggleConfig<T extends string> {
 /**
  * Resolves which of a theme's two names should be showing right now: `<html>`'s live
  * `data-theme` if an explicit choice (the visitor's toggle, or the head script reading the
- * persistence cookie) already set one, otherwise the current system scheme.
+ * persistence cookie) already set one. With no explicit choice, the scheme the root actually
+ * renders in, read from its computed `color-scheme`, so a dark-first theme resolves dark on a light
+ * OS with no edit to the page shell. A computed value other than exactly `light` or `dark`
+ * (`normal` from a block that omits the key, or `light dark`) says nothing definite, so the system
+ * scheme decides.
  */
 export function resolveTheme<T extends string>(config: ThemeToggleConfig<T>): T {
-  const attr = document.documentElement.getAttribute('data-theme');
+  const root = document.documentElement;
+  const attr = root.getAttribute('data-theme');
   // Equality narrowing against a generic parameter does not narrow `attr`'s type to `T`; the
   // check above already proves it, so the cast just states what the runtime check guarantees.
   if (attr === config.light || attr === config.dark) return attr as T;
+  const scheme = getComputedStyle(root).getPropertyValue('color-scheme').trim();
+  if (scheme === 'dark') return config.dark;
+  if (scheme === 'light') return config.light;
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? config.dark : config.light;
 }
 

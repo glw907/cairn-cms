@@ -38,6 +38,11 @@
        Tailwind still generates every named utility (`text-step-*`, `gap-m`, `font-display`,
        `max-w-measure`, ...) even before a theme overrides the numbers. A theme redeclares the same
        keys, in its own later `@theme` block, with its real scale.
+     - Two heading levers are a theme's own to set: `--font-weight-heading` (in `@theme`, generating
+       the `font-heading` utility) and `--cairn-heading-case` (a plain role, since `text-transform`
+       has no Tailwind namespace, applied by the `heading-case` utility below). `prose.css`'s
+       heading rules and the chrome's titles read them, so one value moves every heading; an eyebrow
+       keeps its own `uppercase tracking-eyebrow` and weight.
      - The CTA panel keys and the nav caption tracking are a theme's own tokens. The theme defines
        them, and this file holds no default for them.
      - prose.css (the reading-surface foundation) and composition.css (the card/band/section/hero/
@@ -67,11 +72,30 @@
     menu, dock, typography, glass, join;
 }
 
+/* The heading-case role, in the lowest layer so a theme's own `:root` or daisyUI block value
+   wins. `none` leaves a heading as authored; a theme that sets `uppercase` here uppercases every
+   heading that applies `heading-case` or reads the key in its own rule. */
+@layer theme {
+  :root,
+  [data-theme] {
+    --cairn-heading-case: none;
+  }
+}
+
+/* Chrome markup applies `font-heading heading-case`; a scoped `<style>` rule reads
+   `var(--font-weight-heading)` and `var(--cairn-heading-case)` directly. */
+@utility heading-case {
+  text-transform: var(--cairn-heading-case);
+}
+
 @theme {
   /* Generic system-font defaults; a theme overrides these three with its own face choices. */
   --font-display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* The weight every heading reads; the key's name also generates the `font-heading` utility. */
+  --font-weight-heading: 600;
 
   /* A modest, non-fluid default scale (no clamp math of its own): legible, but a theme almost
      always wants its own fluid formula here. The named utilities (`text-step-*`) generate from

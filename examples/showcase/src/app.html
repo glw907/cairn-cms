@@ -7,7 +7,10 @@
       // The no-flash theme read. Runs synchronously before the first paint, so a returning
       // visitor's explicit choice (SiteHeader.svelte's toggle) never flashes the system default
       // first. No cookie leaves `data-theme` unset, and theme.css's own prefers-color-scheme
-      // block picks the system scheme with no JS involved at all.
+      // block picks the system scheme with no JS involved at all. The cookie name and the two theme
+      // names below must agree with src/theme/theme-names.ts, which this inline script cannot
+      // import; the regex names both themes on purpose, so a stale cookie left by a rename fails it
+      // and the page falls back to the system scheme. theme-names.test.ts guards the agreement.
       (function () {
         var match = document.cookie.match(/(?:^|; )cairn-site-theme=(cairn-dark|cairn)(?:;|$)/);
         if (match) document.documentElement.setAttribute('data-theme', match[1]);

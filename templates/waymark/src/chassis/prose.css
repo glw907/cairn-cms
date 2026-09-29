@@ -76,7 +76,8 @@
      because the lead binds to it; tight leading reads as a masthead. */
   .prose > h1 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-5);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
@@ -99,7 +100,8 @@
      heading belongs to the text it introduces (the typography criterion). */
   .prose h2 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-3);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
@@ -112,7 +114,8 @@
   }
   .prose h3 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-2);
     line-height: var(--leading-snug);
     --flow-space: var(--spacing-l);

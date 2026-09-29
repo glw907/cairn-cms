@@ -853,7 +853,11 @@ changes.
   no color literal anywhere, fallbacks included (task 7's public scope scans it). Each
   `cairn-public.css` role it reads carries a daisyUI-variable fallback, so a site that bumps the
   range before adding the import still paints both states legibly. The draft and published states
-  stay visually distinct.
+  stay visually distinct. **The tokens (conductor ruling at the segment B boundary, 2026-09-29):**
+  text reads `--color-base-content` in both states; the draft state paints `--color-base-200` with
+  a `--color-warning` border and links in `var(--cairn-warning-ink, var(--color-base-content))`; the
+  published state paints `--color-base-100` with a `--color-info` border and links in
+  `var(--cairn-info-ink, var(--color-base-content))`. These are the contract tokens the e2e names.
 - **The preview reset** paints `var(--color-base-100, #fff)` in place of the pinned white. The
   `WATCH` comment above it is rewritten to state what the reset now reads, and it no longer calls
   the value unaudited.
@@ -877,8 +881,9 @@ changes.
   expected-red set).
 - `gateTier: "targeted"`, `gate`:
   `npm run check && npx vitest run --project unit src/tests/unit/preview-doc.test.ts && npm run test:component -- --no-file-parallelism src/tests/component/PreviewBanner.test.ts && npm run check:template && npm --prefix examples/showcase run check && npm --prefix examples/showcase run format:check && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- public-theme-equivalence.spec.ts preview.spec.ts public-preview-tokens.spec.ts`.
-  Task checks: the port check, quoted; the comments check; the idioms check; the audit wrappers
-  (`check:invisible-craft` scans `preview-doc.ts`).
+  Task checks: the port check, quoted; the comments check; the idioms check. (Segment B amendment:
+  `check:invisible-craft` deliberately does not scan `preview-doc.ts`, per
+  `check-invisible-craft.mjs:16-29`, so `preview-doc.test.ts` is the reset string's only guard.)
 
 ---
 
@@ -967,7 +972,8 @@ unit test that proves a throwaway registry entry reaches the styleguide, and `te
   `--tag-filter-radius` goes, so a theme's root value reaches it.
 - **The comment scrub.** Each `docs/internal/` path and "Verdict" citation in the emitted sources
   becomes a one-line reason or a public docs link. At task 0 four remain in the source: the showcase
-  `theme/site.css:18` and `:34`, `theme/theme.css:398` (`Verdict 7`), and `chassis/prose.css:40`.
+  `theme/site.css:18` and `:34`, `theme/theme.css:396` (`Verdict 7`; 398 at task 0, moved by tasks 2 and
+  3), and `chassis/prose.css:40`. The video facade's shape exception is at `prose.css:638` at segment B.
 - **The gate.** `check:template` fails on an emitted file under `src/` or a root config file that
   contains `docs/internal/` or `Verdict` followed by a number (decision 12), and on an emitted
   `cairn-audit.config.json` holding any path that starts with `..` (decision 27).
@@ -1615,3 +1621,43 @@ A peer session (style-guide-sync) touches `docs/internal/public-design-system.md
 `main` only after that lands.
 
 Spend: about 0.43M in subagents plus the conductor.
+
+### Segment A (tasks 1 to 3), boundary 2026-09-29
+
+- **Task 1** accepted, no fix round (`6c13bcb8`). Fused declarations 22, 7, 3, 8 before, 0 after. The
+  fix surfaced no finding. Non-blocking: an empty-string comment replacement can join tokens
+  (`1px/**/2px` reads `1px2px`); the regression case ends a theme block at the first `}`.
+- **Task 2** accepted, no fix round. Expectation commit **`913523e0`** (81 keys, 29 focus elements, 11
+  element checks per state, no empty key); the move is `900a188f`. Deferred to later tasks:
+  `scripts/checks/reference-coverage.mjs:543` excludes `./cairn-public.css` so the coverage check
+  passes, and task 11 removes the exclusion when it adds `public-css.md` (the plan's claim that an
+  untyped export is invisible to `check:reference` was false). `cairn-public-surface.test.ts`
+  widens the reader roots to all of `examples/showcase/src`, since `--cairn-focus-ring-radius` has
+  readers only in theme chrome. The chassis README's override-seam paragraph is stale and goes to
+  task 13.
+- **Task 3** escalated once, then accepted after two fix rounds (`6c164b25`, `763b9418`, `7978e9a0`).
+  All four inks take `N` = 50, with warning on Waymark light `base-200` the narrowest margin at 4.89.
+  Decision 2's muted rule could not choose a value, because pass count rises monotonically to
+  `M` = 100, which is `base-content` itself. **Conductor ruling:** muted takes the lowest `M` that
+  meets the hard constraint and passes at least as many themes as the best chosen ink
+  (success, 34/39). The reason: the inks accept failures only because their chroma floor forces
+  them, and muted has no such force and is body-size text. The ruling gives `M` = 80 (37/39;
+  retro and valentine fail). The first round applied the ruling's misstated "lowest" wording and got
+  70. That was the conductor's error, corrected in round two. The fix rounds also repaired task 2's
+  stale `theme.css` comments.
+- **Boundary merge:** `main` at `dc9bb99b` (style-guide sync, PR #98) merged in (`1fb24faa`). STATUS
+  took `main`'s version, HISTORY kept both sides, and the register adopted `main`'s structure with our
+  component-names additions re-homed. `70322977` repoints five `facts/extend.md` citations. Fact
+  `f:ylmc9c`'s claim (re-tuning a fill without its ink desyncs code colors) holds now only when a
+  theme overrides an ink, so task 13 rewrites it.
+- **Gap found:** targeted gates omit `check:facts`, and task 2 emptied a cited line range with nothing
+  catching it. From segment B on, a task that moves or deletes source lines runs
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:facts'` as a task check.
+- **Segment B pre-flight:** two lines moved (`theme.css:396`, `prose.css:638`), and one claim was wrong:
+  `check:invisible-craft` does not scan `preview-doc.ts`. Task 4 named no banner tokens; the conductor
+  ruled them (task 4's outcome). No `admin-visual` capture shows the preview frame, so task 4 adds
+  nothing to the expected-red set.
+- **Batched notes:** none acted on mid-segment. The over-long comment lines at `theme.css:15` and
+  `measure-status-inks.mjs:22` are cosmetic.
+- **Spend:** segment A's workflow 0.67M. The fix rounds, reviews, merge, and pre-flights came to
+  about 0.45M. The running total is about 1.6M plus the conductor.

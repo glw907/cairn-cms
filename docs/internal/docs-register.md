@@ -285,7 +285,12 @@ flat taste.
 - **No noir overcorrection.** Clipped, dramatic declaratives at high density, runs of consecutive
   short sentences, and dramatic verbs (tools that "lie," "fight," or "betray") are the failure
   the "qualified claims stay whole" rule in "Voice" guards against. A claim cut into fragments to
-  strip its caveat is the tell.
+  strip its caveat is the tell. Shortform-video compression is the same failure at the sentence
+  level: telegraphic delivery in place of the measured report voice.
+- **No consumer-help softeners.** Google's
+  [word list](https://developers.google.com/style/word-list) says to eliminate "simply" and to
+  replace or drop "just," and the register extends that to "obviously." Folksy softeners, a
+  micro-instructed action, and hand-holding such as "you never have to..." are the same family.
 - **No invented material.** A manufactured concrete scenario (an editor on hotel Wi-Fi), a
   metaphor no sentence established, and biography or deliberation the author never reported all
   read as evidence and are not.
@@ -425,9 +430,12 @@ flat taste.
   product" are tells. A paragraph ends where its content does.
 - **No virtue claims.** "A real answer," "the honest truth," "a fair question," "to be clear,"
   "genuinely," and "very real" assert the quality that the following sentences must demonstrate.
-- **No consumer-help softeners.** Microsoft's own list bans "just," "simply," and "obviously," and
-  the same holds for folksy softeners ("a little goes a long way," "gets tangled") and anonymous
-  circumlocutions. A micro-instructed action is Microsoft's how-to voice and is not a finding.
+- **No consumer-help softeners.** Microsoft's
+  [word list](https://learn.microsoft.com/en-us/style-guide/a-z-word-list-term-collections/s/simply)
+  says not to use "simply" to mean that something is easy to do, and the register extends that to
+  "just" and "obviously." The same holds for folksy softeners ("a little goes a long way," "gets
+  tangled") and anonymous circumlocutions. A micro-instructed action is Microsoft's how-to voice
+  and is not a finding.
 - **No invented material.** A manufactured concrete scenario (an editor on hotel Wi-Fi), a
   metaphor no sentence established, and biography or deliberation the author never reported all
   read as evidence and are not.

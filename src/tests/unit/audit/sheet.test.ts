@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { conditionalConditions, parseSheet } from '../../../lib/audit/sheet.js';
 
@@ -176,6 +177,72 @@ describe('parseSheet', () => {
       'url("data:image/svg+xml;base64,AA")',
       'color-mix(in oklab, red 50%, blue)',
     ]);
+  });
+});
+
+describe('parseSheet comment handling', () => {
+  const pairs = (css: string) =>
+    parseSheet(css).rules.flatMap((rule) => rule.declarations.map((d) => [d.property, d.value]));
+
+  // A comment in any position around a declaration is dropped from the property and the value,
+  // and every other character of both survives.
+  it.each([
+    ['before a declaration', '.a { /* note */ color: red }', [['color', 'red']]],
+    ['between two declarations', '.a { color: red; /* note */ margin: 0 }', [['color', 'red'], ['margin', '0']]],
+    ['before the first of two on one line', '.a { /* one */ color: red; /* two */ margin: 0 }', [['color', 'red'], ['margin', '0']]],
+    ['inside a value', '.a { margin: 1px /* top */ 2px }', [['margin', '1px  2px']]],
+    ['at the start of a value', '.a { color: /* note */ red }', [['color', 'red']]],
+    ['inside a property name', '.a { col/* x */or: red }', [['color', 'red']]],
+    ['holding a colon and a semicolon', '.a { /* a: b; c */ color: red }', [['color', 'red']]],
+    ['after the last declaration', '.a { color: red /* trailing */ }', [['color', 'red']]],
+    ['with no trailing semicolon before a close', '.a { color: red; /* end */ }', [['color', 'red']]],
+    [
+      'inside a @plugin block',
+      '@plugin "daisyui/theme" { name: "cairn"; /* the brand */ --color-primary: #123456; /* on it */ --color-primary-content: #fff }',
+      [['name', '"cairn"'], ['--color-primary', '#123456'], ['--color-primary-content', '#fff']],
+    ],
+    [
+      'inside a @theme block',
+      '@theme { /* faces */ --font-display: "X"; --text-step-0: 1rem /* body */; }',
+      [['--font-display', '"X"'], ['--text-step-0', '1rem']],
+    ],
+    [
+      'inside a nested rule parent',
+      '.a { /* own */ color: red; .b { /* child */ margin: 0 } }',
+      [['color', 'red'], ['margin', '0']],
+    ],
+    ['leaving a comment marker inside a string alone', '.a { content: "/* not a comment */" }', [['content', '"/* not a comment */"']]],
+  ])('drops a comment %s', (_label, css, expected) => {
+    expect(pairs(css)).toEqual(expected);
+  });
+
+  it('keeps offsets pointing at the same source positions', () => {
+    const css = '/* lead */ .a { /* x */ color: red }\n/* mid */\n.b {\n  /* y */ margin: 0;\n}';
+    const [a, b] = parseSheet(css).rules;
+    expect(css.slice(a.start, a.end)).toBe('.a');
+    expect(css.slice(b.start, b.end)).toBe('.b');
+  });
+
+  it('never fuses a comment into a property of the showcase theme and token sheets', () => {
+    const root = new URL('../../../../examples/showcase/src/', import.meta.url);
+    for (const file of ['theme/theme.css', 'chassis/tokens.css']) {
+      const css = readFileSync(new URL(file, root), 'utf8');
+      const sheet = parseSheet(css);
+      for (const rule of sheet.rules) {
+        for (const decl of rule.declarations) {
+          expect(decl.property, `${file}: ${rule.selector}`).not.toContain('/*');
+          expect(decl.value, `${file}: ${rule.selector}`).not.toContain('/*');
+        }
+      }
+      // Each daisyUI key of a theme block reads back by its exact name.
+      for (const rule of sheet.rules.filter((r) => r.selector.startsWith('@plugin "daisyui/theme"'))) {
+        const block = css.slice(css.indexOf('{', rule.end) + 1, css.indexOf('}', rule.end));
+        const stripped = block.replace(/\/\*[\s\S]*?\*\//g, '');
+        const keys = [...stripped.matchAll(/(?:^|;|\n)\s*([a-z0-9-]+)\s*:/g)].map((m) => m[1]);
+        expect(keys.length, `${file}: ${rule.selector}`).toBeGreaterThan(10);
+        expect(rule.declarations.map((d) => d.property)).toEqual(keys);
+      }
+    }
   });
 });
 

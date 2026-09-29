@@ -82,8 +82,11 @@ function skipString(css: string, index: number): number {
   return css.length;
 }
 
-/** A prelude with its comments removed, so a selector commented out never reads as a rule. */
-function stripComments(text: string): string {
+/**
+ * A text with its comments replaced by `replacement`, so a selector commented out never reads as
+ * a rule. A prelude keeps a space where the comment stood; a declaration drops it outright.
+ */
+function stripComments(text: string, replacement = ' '): string {
   let out = '';
   let i = 0;
   while (i < text.length) {
@@ -94,7 +97,7 @@ function stripComments(text: string): string {
     }
     if (text[i] === '/' && text[i + 1] === '*') {
       i = skipComment(text, i);
-      out += ' ';
+      out += replacement;
       continue;
     }
     if (text[i] === '"' || text[i] === "'") {
@@ -174,7 +177,9 @@ function parseDeclarations(text: string): { property: string; value: string }[] 
   let start = 0;
   let i = 0;
   const flush = (end: number) => {
-    const decl = text.slice(start, end).trim();
+    // A comment is dropped before the property boundary is read, so one never fuses into the name
+    // or the value, and a colon inside it never reads as the boundary.
+    const decl = stripComments(text.slice(start, end), '').trim();
     const colon = decl.length > 0 ? propertyBoundary(decl) : -1;
     if (colon > 0) {
       out.push({ property: decl.slice(0, colon).trim(), value: decl.slice(colon + 1).trim() });

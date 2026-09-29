@@ -285,3 +285,14 @@ implementer dispatch per repo; new phrases join W6's list. Acceptance: criterion
   Carry: W1r renamed the chain arg `registerPaths` to `registerPath` (old name silently ignored);
   W1r's track headings are pre-R1t copies (boundary grep); ProseProcedure's verb list grows with
   arm stages. Implementers ran on `claude-sonnet-5-5`, their first pass.
+- **Segment B** (`wf_12c8c764-c1f`, then `wf_9262db99-3f5`): R6 `82337de2` accepted. W4 `710a35f`
+  escalated on a surviving "admin walkthroughs" and the unrun evals re-run; a one-line fix task,
+  W4f `39e7ea3` (not a plan section; dispatched from the escalation), cleared the phrase. The
+  conductor ruled W4's eval deltas accepted in place of a re-run: numbered procedure exemplars
+  (the base guides' own rule), measures sections to a pointer line (no drafting guidance), the Go
+  Applies-to correction, and ruling 12's routing. W5 `f9727ce` accepted (retired-phrase ruling
+  citations are the implementer's mapping, reviewer-checked).
+- **Boundary:** dotfiles merge `fc53c6e` (rollback: `git -C ~/.dotfiles revert -m 1 fc53c6e`);
+  `claude-tooling-sync verify` passes; all 11 register headings the chain names exist once.
+  Until this branch merges, `site-implementer`'s new `check:docs-gate -- --page` line and the
+  chain's register headings match only `style-guide-sync`, not cairn-cms `main`.

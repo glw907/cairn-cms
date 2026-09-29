@@ -38,6 +38,15 @@ recheck file (rule 4) with the change it needs.
   xv2ien, vcthwj, sjo4cx, gxdg1k, fcqs22, iel6v5, bdnzcy, kt0epf.
 - `reference.md`: the harvest never edits `reference.md`.
 
+**The one exception (conductor ruling, 2026-09-29, after tasks 3 and 6 escalated).** When the
+verifier fails a frozen bullet because its `Source:` names a deletion-list page, edit that
+`Source:` field alone and drop only the page pointer, keeping every code, vendor, or owner cite.
+Change nothing else on the line. Log the edit in your recheck file as "Source-only edit under
+the rule 2 exception; expect a one-line merge conflict with the lineage's path repoint, keep
+both changes". Frozen bullets the verifier does not flag stay untouched and go to the recheck
+file as before. A `[rejected: describes a deleted page]` retag may cite the page's own ledger
+JSON as its `Source:`.
+
 Every other bullet in `admin.md`, `editors.md`, and `extend.md` is yours per the plan. New bullets
 are fine anywhere in your pages' sections: task 7 keeps distinct ids from both sides.
 

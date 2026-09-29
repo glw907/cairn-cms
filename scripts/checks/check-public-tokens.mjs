@@ -39,6 +39,10 @@ const CAIRN_THEME_CSS = resolve(ROOT, 'examples/cairn-theme/cairn.css');
 // unconditionally overridden by theme.css's later declarations, so it is a definitions layer the
 // same way theme.css is, and is excluded from the no-literals walk on that basis.
 const CHASSIS_TOKENS_CSS = resolve(ROOT, 'examples/showcase/src/chassis/tokens.css');
+// The engine's public stylesheet: the roles and the code-ramp binding a site imports rather than
+// copies. Its declarations are token definitions, the same as tokens.css's, and the code ramp it
+// declares is held to the same resolution check.
+const ENGINE_PUBLIC_CSS = resolve(ROOT, 'src/lib/public/cairn-public.css');
 
 // ============================================================================
 // (a) The no-literals grep.
@@ -637,13 +641,22 @@ function codeRampBody(css) {
  * @param {string} proseCss the contents of prose.css
  * @param {string} chassisTokensCss the contents of chassis/tokens.css
  * @param {string} [siteCss] the contents of site.css
+ * @param {string} [publicCss] the contents of the engine's cairn-public.css, a definition source
+ *   beside the chassis token system; defaults to the file in this repository
  * @returns {{ token: string, source: string }[]}
  */
-export function checkTokenResolution(themeCss, proseCss, chassisTokensCss, siteCss) {
+export function checkTokenResolution(
+  themeCss,
+  proseCss,
+  chassisTokensCss,
+  siteCss,
+  publicCss = readFileSync(ENGINE_PUBLIC_CSS, 'utf8'),
+) {
   const defined = new Set([
     ...collectDefinedTokens(themeCss),
     ...collectDefinedTokens(proseCss),
     ...collectDefinedTokens(chassisTokensCss),
+    ...collectDefinedTokens(publicCss),
     ...(siteCss ? collectDefinedTokens(siteCss) : []),
     ...DAISYUI_GENERATED_ROLES,
   ]);
@@ -653,6 +666,7 @@ export function checkTokenResolution(themeCss, proseCss, chassisTokensCss, siteC
   const sources = [
     ['prose.css', proseCss],
     ['chassis/tokens.css code ramp', codeRampBody(chassisTokensCss)],
+    ['cairn-public.css code ramp', codeRampBody(publicCss)],
   ];
   if (siteCss) sources.push(['theme/site.css', siteCss]);
   for (const [source, css] of sources) {

@@ -351,11 +351,12 @@
      in every current engine). The scroll container is a wrapper the engine's
      own render pipeline emits around every table by default (`RendererConfig.
      tableScroll`, src/lib/render/table-scroll.ts, not a site-side step):
-     `.table-scroll` carries `display: block; overflow-x: auto`, `role="region"`,
-     a `tabindex` and an `aria-label` naming the table, so a keyboard user can
-     tab to the region and scroll it. Cells stay `nowrap` so a narrow viewport
-     cannot satisfy the table's own `width: 100%` by wrapping words inside a
-     cell; the auto table-layout algorithm then grows the table past its
+     `.table-scroll` carries `role="region"`, a `tabindex` and an `aria-label`
+     naming the table, so a keyboard user can tab to the region and scroll it.
+     The engine's public stylesheet (`cairn-public.css`) supplies its structural
+     `display: block; overflow-x: auto` pair; this file keeps the design. Cells
+     stay `nowrap` so a narrow viewport cannot satisfy the table's own
+     `width: 100%` by wrapping words inside a cell; the auto table-layout algorithm then grows the table past its
      specified width to fit the unbroken content, and the wrapper's
      `overflow-x: auto` turns that into a horizontal scroll instead of a
      squeezed, word-broken column. A wide table (many columns, like the gear
@@ -364,8 +365,6 @@
      scroll-edge affordance as `.prose pre` (see its own comment) reads the
      scroll position with no JS. */
   .prose .table-scroll {
-    display: block;
-    overflow-x: auto;
     --flow-space: var(--spacing-m);
     background-image:
       linear-gradient(to right, transparent, var(--color-base-100) 85%),

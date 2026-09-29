@@ -1,0 +1,104 @@
+/* cairn-cms: the engine's public stylesheet, exported at the `/cairn-public.css` subpath. It holds
+   cairn's role defaults and the rules that style the classes the engine emits into public
+   markup, and nothing that is a site's own design. A site imports it once, after
+   `@import "tailwindcss"` and before its own reading-surface sheet, so a later declaration in the
+   site's own `@theme` block wins over the two colors below.
+
+   It holds four things:
+     1. The roles, in `@layer theme` on `:root, [data-theme]`. That is the lowest layer Tailwind
+        declares, so a value written anywhere else (unlayered in `:root`, or in a daisyUI theme
+        block) overrides it, and the `[data-theme]` selector recomputes a role inside a nested
+        theme region.
+     2. Two utility-bearing colors in `@theme`, so `text-muted` and `border-card-border` exist.
+        They resolve at `:root` and do not recompute under a nested theme.
+     3. `@layer components` rules whose styling carries no design choice: the highlighter's
+        `pre.shiki` and `.cairn-tok-*` binding, the structural `.table-scroll` pair, and the
+        `cairn-focus-ring` class a site's markup applies.
+     4. One `@source` line over the engine's public component directory, so the utilities those
+        components use compile in the site's own sheet. */
+
+@layer theme {
+  :root,
+  [data-theme] {
+    /* The one rhythm variable the reading surface's owl selector reads. */
+    --flow-space: 1.35em;
+
+    /* The code-block ramp. Each key names a role a theme colors; the binding below reads them. */
+    --cairn-code-bg: var(--color-base-200);
+    --cairn-code-border: var(--color-base-300);
+    --cairn-code-ink: var(--color-base-content);
+    --cairn-code-comment: var(--color-muted);
+    --cairn-code-keyword: var(--color-primary);
+    --cairn-code-string: var(--cairn-success-ink);
+    --cairn-code-function: var(--cairn-info-ink);
+    --cairn-code-number: var(--cairn-warning-ink);
+    --cairn-code-punct: var(--color-muted);
+
+    /* On-surface status inks. A fill is usually too light as small text, so a theme that wants
+       a tuned ink sets its own; the default reads the fill directly. */
+    --cairn-success-ink: var(--color-success);
+    --cairn-warning-ink: var(--color-warning);
+    --cairn-error-ink: var(--color-error);
+    --cairn-info-ink: var(--color-info);
+
+    /* Elevation: a hairline plus a soft shadow carry a floating card. */
+    --cairn-shadow:
+      0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
+      0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
+
+    /* The one focus-ring language. The radius is read by markup that wants a rounded corner. */
+    --cairn-focus-ring-outline: 2px solid var(--color-primary);
+    --cairn-focus-ring-offset: 2px;
+    --cairn-focus-ring-radius: 2px;
+  }
+}
+
+@theme {
+  --color-muted: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+  --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
+}
+
+@layer components {
+  /* The engine's build-time highlighter emits `.cairn-tok-*` classes with no inline style. The
+     class contract is the engine's; the colors are the `--cairn-code-*` roles above. */
+  pre.shiki {
+    background-color: var(--cairn-code-bg);
+    color: var(--cairn-code-ink);
+    border: 1px solid var(--cairn-code-border);
+  }
+  .cairn-tok-keyword {
+    color: var(--cairn-code-keyword);
+  }
+  .cairn-tok-string {
+    color: var(--cairn-code-string);
+  }
+  .cairn-tok-comment {
+    color: var(--cairn-code-comment);
+  }
+  .cairn-tok-function {
+    color: var(--cairn-code-function);
+  }
+  .cairn-tok-number {
+    color: var(--cairn-code-number);
+  }
+  .cairn-tok-punct {
+    color: var(--cairn-code-punct);
+  }
+
+  /* The engine wraps every rendered table in this region so it scrolls instead of squeezing.
+     Only the structural pair lives here; a site's reading surface adds its own design. */
+  .table-scroll {
+    display: block;
+    overflow-x: auto;
+  }
+
+  /* Carries only the outline pair, never the radius, so a call site's own border-radius is
+     untouched on focus. A utility that sets `outline-*` on the same element wins, since utilities
+     sit in a later layer. */
+  .cairn-focus-ring:focus-visible {
+    outline: var(--cairn-focus-ring-outline);
+    outline-offset: var(--cairn-focus-ring-offset);
+  }
+}
+
+@source ".";

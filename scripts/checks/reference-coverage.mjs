@@ -541,6 +541,12 @@ export const SUBPATH_EXCLUSIONS = [
       'rather than its own reference page (see ROADMAP.md).',
   },
   {
+    subpath: '/cairn-public.css',
+    reason:
+      'a CSS asset with no .d.ts to enumerate; its reference page, docs/reference/public-css.md, ' +
+      'replaces this exclusion when it lands.',
+  },
+  {
     subpath: '/package.json',
     reason:
       "the npm self-reference convention for resolving the package's own metadata, not a " +

@@ -188,6 +188,7 @@
       "default": "./dist/log/public.js"
     },
     "./admin-sources.css": "./dist/admin-sources.css",
+    "./cairn-public.css": "./dist/public/cairn-public.css",
     "./package.json": "./package.json"
   },
   "bin": {

@@ -205,6 +205,36 @@ test.describe('public theme computed-value equivalence', () => {
     return;
   }
 
+  test('a utility that sets outline on the same element beats cairn-focus-ring', async ({
+    page,
+  }) => {
+    await page.goto(ROOT_PAGE);
+    await expect(page.locator('main#main')).toBeVisible();
+    await page.keyboard.press('Shift');
+    // The utility joins the page's own `utilities` layer, the layer Tailwind declares after
+    // `components`, where the engine's ring rule sits.
+    const outlines = await page.evaluate(() => {
+      const style = document.createElement('style');
+      style.textContent =
+        '@layer utilities { .probe-outline { outline: 4px dotted rebeccapurple; outline-offset: 7px; } }';
+      document.head.append(style);
+      const read = (className: string): string => {
+        const button = document.createElement('button');
+        button.className = className;
+        document.body.append(button);
+        button.focus();
+        const computed = getComputedStyle(button);
+        const focused = button.matches(':focus-visible');
+        const value = `${focused} ${computed.outlineStyle} ${computed.outlineWidth} ${computed.outlineOffset}`;
+        button.remove();
+        return value;
+      };
+      return { ring: read('cairn-focus-ring'), both: read('cairn-focus-ring probe-outline') };
+    });
+    expect(outlines.ring).toBe('true solid 2px 2px');
+    expect(outlines.both).toBe('true dotted 4px 7px');
+  });
+
   const expected = JSON.parse(readFileSync(FIXTURE_URL, 'utf8')) as Expectation;
 
   for (const state of STATES) {

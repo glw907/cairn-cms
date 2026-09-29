@@ -33,7 +33,7 @@ the mechanism.
 | `archive.ts` | The archive shape: year-grouped, paginated segments over the posts index, shared by the home page (page one) and the `/archive/[page]` route so the slicing rule never drifts between them. |
 | `date.ts` | The site's one date vocabulary: every date-bearing surface formats through the single `formatDate` helper. |
 | `theme-toggle.ts` | The light/dark toggle mechanism: resolve the active theme, apply a choice, persist it to a cookie. |
-| `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the design-scale keys with generic defaults, and the semantic (code-highlight, ink, elevation, CTA) bindings. |
+| `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the engine's `cairn-public.css` import (the roles, the code-highlight binding, and the focus-ring class), and the design-scale keys with generic defaults. |
 | `prose.css` | The reading-surface foundation: every prose element bound to tokens, with the signature flourish gestures behind `[data-flourish]`. |
 | `composition.css` | The composition primitives: card, band, section, hero, sidebar-layout, site-shell. |
 

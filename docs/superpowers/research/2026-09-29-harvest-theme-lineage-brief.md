@@ -88,6 +88,17 @@ Each audit task writes `docs/superpowers/research/harvest-recheck/<task>.md` (fo
 An empty case list still writes the file with the line `none`. The post-merge task reads these
 files and repoints or retraces each line against the merged code.
 
+## Cut discipline (learned in tasks 2 to 6)
+
+A task 6 sweep found 46 of 65 `stance-without-owner-basis` and `illustrative` cuts miscut, all
+checkable security, behavior, or failure-mode claims. A cut stands only when nothing in the claim
+can be checked against code, a vendor doc, or an owner-tier fact. `illustrative` is only for a
+snippet that mirrors no real file, and a snippet whose comments state something false is a
+`[rejected]` fact. A definition is not a stance, and a "who does this work" claim is not
+navigation. Before reporting, sweep your own non-navigation cuts against this rule. A
+`[rejected]` bullet opens with the false page claim, with the correction in its tag. A ledger
+paraphrase keeps no verbatim run of eight or more page words.
+
 ## Known behavior notes
 
 - `docs/editors/write-in-the-editor.md` lines 155 to 160: Insert block behavior changed in code,

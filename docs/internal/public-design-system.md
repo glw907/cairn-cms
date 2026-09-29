@@ -17,9 +17,11 @@ which predates the neutral default and records the earlier branded starting poin
 cairn theme.
 
 **Where cairn's own register lives (Geoff, 2026-09-13).** The admin and cairn.pub are cairn's
-face, "the 'brand' such as it is", and share one register: the admin's Warm Stone tokens, the
+face, "the 'brand' such as it is", and share one set of recipes: the admin's Warm Stone tokens, the
 Bricolage Grotesque display face (wordmark and page title only), IBM Plex Sans body text, and the
-recipes and voice in `admin-design-system.md`. cairn.pub adopts it as a public reading surface
+recipes in `admin-design-system.md`. The two do not share a voice. The admin's copy follows the
+Voice section of that document, and cairn.pub's own prose follows the developer drafting brief in
+`docs-register.md`. cairn.pub adopts the recipes as a public reading surface
 (a wider measure, calmer density) and starts from the admin tokens, never a generated theme.
 Waymark is the chassis every new site reskins, so it stays neutral: "not stock DaisyUI" means
 craft (type scale, spacing, restraint), never a cairn identity a site would have to strip out.

@@ -3,3 +3,14 @@ Topo
 cairn
 DaisyUI
 SvelteKit
+GitHub
+Workers Builds
+Cloudflare
+Cloudflare Email Sending
+Tidy
+AuditSink
+CSRF
+URL
+SEO
+navLayout
+GitHub App

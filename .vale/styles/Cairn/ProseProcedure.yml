@@ -1,0 +1,9 @@
+# WATCH: 31 alerts under plain `vale` over the docs tree, README.md, and examples/showcase/README.md at
+# landing (2026-09-28). Move this rule to `error` once the count reaches zero. `max: 1` because Vale
+# 3.23.0 raises no alert on `max: 0`; the rule fires on the second imperative in a paragraph.
+extends: occurrence
+message: "This paragraph reads as a procedure in prose; use a numbered list."
+level: warning
+scope: paragraph
+max: 1
+token: '(?:[.;:]\s+|,\s+(?:then\s+)?|\bthen\s+|\botherwise,?\s+)(?:[Rr]un|[Oo]pen|[Cc]heck|[Ss]et|[Aa]dd|[Ss]elect|[Cc]lick|[Cc]opy|[Pp]aste|[Rr]emove|[Rr]e-?run|[Pp]ush|[Ee]dit|[Ss]ave|[Rr]estart|[Cc]onfirm|[Ee]nter|[Cc]hoose|[Rr]eplace|[Dd]elete|[Cc]reate|[Gg]o|[Rr]ead|[Ww]ait|[Ii]nstall|[Dd]eploy|[Rr]evert|[Rr]eview|[Pp]ublish|[Ll]ook|[Rr]e-push|[Rr]e-check|[Rr]edeploy)\b'

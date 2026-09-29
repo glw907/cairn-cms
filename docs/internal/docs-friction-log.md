@@ -49,6 +49,14 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+The style-guide sync's close (2026-09-29) triaged the whole log and found two open entries, both
+its own, each verified against the tree first. Tidy's pinned default model
+(`DEFAULT_TIDY_MODEL = 'claude-sonnet-5'`, still at `src/lib/nav/site-config.ts:133`) was promoted
+whole to `ROADMAP.md`'s Next tier with Geoff's ruling that Tidy track the latest Sonnet. The
+entry on the stale Vale suppression comment in `docs/editors/when-something-goes-wrong.md` (the
+comment still sits at lines 43-55, naming a 3.15.1 pin and a 3.19.0 false fire) was deleted as
+overtaken: the harvest-then-delete program deletes that page, so no fix is owed. See Clearings.
+
 Theme identity pass A's close (2026-09-28) triaged the whole log and found no open entry. The
 pass routed its own findings straight to `ROADMAP.md` in the same step: its carried cosmetics,
 review minors, batched coverage notes, and the showcase `theme.css` scoping leak to one Now entry beside the theme identity initiative, and the pinned-rule
@@ -195,6 +203,7 @@ history holds every pruned entry in full.
 | 2026-09-24 | docs reset pass 1's close | no open finding in the log; the pass's own findings routed to `ROADMAP.md` (the docs reset to Now; the deferred chain and harness items, the Waymark theme comments, and the readers' real page defects to Next); the page-only `[candidate]` re-sourcing entry in Next reworded to the 25 bullets the triage excluded |
 | 2026-09-28 | theme identity pass A's close | no open finding in the log; the pass's own findings routed to `ROADMAP.md` (the carried items to Now, the pinned-rule shrink and the safelist retirement to Later); the Waymark citation entry in Next narrowed |
 | 2026-09-28 | draft docs pass 0+1's close | two open entries, both verified and promoted whole to `ROADMAP.md`'s Next tier: the `admin-toolkit.md` outline-chip contrast ratios needing re-measurement, and the page-chain claim inventory's missing disposition for a relocated claim; the close's own two carried findings (`check:symbols`'s attached-redirect and dropped-continuation gaps, `rendered.test.ts`'s hardcoded port 4173) filed straight to the same tier; the segment A boundary's third carried item, the duplicate-shipped-anchor gap, verified already fixed by the 2026-09-26 hardening commit and needed no filing |
+| 2026-09-29 | the style-guide sync's close | two open entries, both its own: Tidy's pinned default model promoted whole to `ROADMAP.md`'s Next tier; the entry on the stale `Microsoft.Quotes` suppression comment in `docs/editors/when-something-goes-wrong.md` deleted as overtaken, since the harvest-then-delete program deletes the page. The whole-log sweep found no other open finding |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

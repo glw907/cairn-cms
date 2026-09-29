@@ -320,8 +320,22 @@ The original decision framing, for the record:
 
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
   `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
-  to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,
-  and 2a, spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
+  to be rebuilt from the facts container.
+  **Current step: harvest, then delete (Geoff, 2026-09-29; the spec's "Amendment: harvest, then
+  delete").** Every claim on the old narrative and front-door pages (`docs/admin/`,
+  `docs/editors/`, `docs/extend/`, `docs/why-cairn.md`, `docs/README.md`) becomes a fact in
+  `docs/internal/facts/` or a recorded cut. Those pages are then deleted on `main`, and each arm
+  is outlined and drafted against an empty directory from the facts, the job, and the register's
+  briefs and exemplars, so no drafter ever sees an old page. The reference arm stays. cairn.pub
+  renders no docs past `0.97.0`'s until the rebuilt arms ship; a release in between ships the
+  reference arm only, and its changelog says so. The style-guide sync (2026-09-28 to 29) settled
+  the drafting inputs: each track's brief in `docs/internal/docs-register.md`, the AI posture page
+  as the developer exemplar, and a Microsoft Learn capture for editors. Baselines at the start:
+  711 verified facts plus 10 Tidy facts, facts sections for 77 of 80 old pages, and about 600
+  intensifier "own" uses across the arms. A brainstorm opens the program (STATUS, "Next action");
+  theme pass C's `0.98.0` cut comes before any deletion.
+  The docs reset's reader-validation line (passes 1, 1b, and 2a, spec
+  `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
   ruling: its reader instrument failed validation across three passes (`docs/HISTORY.md`, "Docs
   reset pass 2a"). The next approach is designed from conventional practice: a published style
   guide with a linter, SME review, docs-as-tests for procedures, and human task-based usability
@@ -887,7 +901,8 @@ the named human gates only):**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or
   defer") deferred these, and pass 1 built none of them. Trigger for the chain items: the new
   draft-documentation approach adopts the v2 chain, and a run records the failure the item answers.
-  - Page chain (`docs-page-chain-v2.js`): the register editor fed Vale and `tellgrader` output;
+  - Page chain (now `docs-page-chain.js`, whose register editor runs plain `vale` on the page
+    since the style-guide sync, 2026-09-28): the register editor fed `tellgrader` output;
     the register editor reporting every finding, with a separate Opus filter that drops only
     findings contradicting the register or the brief; source material wrapped as content; a
     text-only turn end treated as a report; bounded auto-continue of two.
@@ -987,6 +1002,44 @@ the named human gates only):**
   `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-proof.md`, "Finding: the page-chain's
   brief format and the register's anatomy disagree." Trigger: the next page-chain redraft that
   relocates a claim to a linked page, or the stage 2 pilot if it hits this first.
+
+- **cairn-pub adopts Vale and routes its own prose to the developer brief (style-guide sync ruling
+  13, 2026-09-28).** cairn.pub's own prose, everything it serves outside the engine's shipped doc
+  arms, takes the Google base, and the workstation `writing-voice` skill already routes it to the
+  developer brief in `docs/internal/docs-register.md`. No gate reads it: cairn-pub carries no Vale
+  config. The work is cairn-pub's: vendor the same Google package and `Cairn.*` styles this repo
+  pins (Vale 3.23.0), point its repo guidance at the brief, and fix what the first run reports.
+  Trigger: cairn-pub's next pass that edits its own prose, or its pin bump to the rebuilt arms.
+
+- **Promote each warning Vale rule to error as its tree count reaches zero (style-guide sync,
+  2026-09-28; GitLab's warning-then-error practice).** `Cairn.Headings` (49 alerts) and
+  `Cairn.ProseProcedure` (31 at landing, 30 at the pass close) ship at `warning`, each with its
+  count in a `WATCH` comment at the top of its file under `.vale/styles/Cairn/`. The docs gate and
+  `check:vale` filter at `--minAlertLevel=error`, so a warning rule shows only under plain
+  `vale <path>` and CI never sees it. The harvest-then-delete step (Now, draft documentation)
+  removes 31 of the Headings hits and 27 of the ProseProcedure hits. What survives sits on
+  reference pages (17 and 3) and in `README.md` (1 Headings), which the reference arm's every-pass
+  maintenance can clear. Trigger: each arm stage's merge, and the deletion itself, re-measure with
+  plain `vale` over the tree; a rule at zero moves to `level: error` in the same merge, and its
+  `WATCH` comment goes.
+
+- **Adopt stock `markdownlint-cli2` at the first rebuilt arm (style-guide sync, deferred
+  2026-09-28).** The re-scope deferred markdownlint. On today's tree, nine stock rules fire (MD013
+  alone 7,203 times), so adopting it now means disabling each, and every rule left enabled has
+  zero hits and catches nothing. An arm drafted from empty starts clean instead. Adopt the stock
+  configuration, with a custom rule only for a defect measured on a rebuilt page. Evidence:
+  `docs/superpowers/research/2026-09-28-style-guide-sync-rescope-review-leanness.md` (M2); package
+  survey `docs/internal/record/2026-09-28-vale-3-23-and-markdownlint-survey.md`. Trigger: the first
+  arm stage that drafts pages into an emptied arm.
+
+- **Tidy's default model should track the latest Sonnet (Geoff, 2026-09-29; promoted from the
+  friction log).** `DEFAULT_TIDY_MODEL` is pinned to `'claude-sonnet-5'`
+  (`src/lib/nav/site-config.ts:133`, fact `f:fmv6m8`), and Sonnet 5.5 has shipped. The fix is the
+  engine's: an Anthropic model alias that resolves to the newest Sonnet, if the API offers one,
+  or a default that moves with each Sonnet release. `supportsEffort()`'s prefix list
+  (`src/lib/sveltekit/content-routes-tidy.ts`, fact `f:wlohtk`) and the Tidy facts follow, and the
+  rebuilt Tidy page names no version. Trigger: the next engine pass that touches Tidy, or before
+  `0.98.0`'s successor ships if no pass touches it first.
 
 - **Report the drawer `:where()` specificity defect upstream to daisyUI (pre-cut, 2026-09-21).**
   `components/drawer.css` releases its open panel's `will-change` through a rule whose prelude is

@@ -123,7 +123,10 @@ the same pass, gated by that page's own gates, per the facts container's fix rul
 stage is in flight, which is filed, never fixed, and feeds that stage's page inputs instead.
 Every pass that changes a public behavior files a bullet in
 [`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`. Each arm's own
-stage rebuilds it from the container before its freeze lifts (`docs-rebuild-not-edit` memory);
+stage rebuilds it from the container before its freeze lifts. The order is harvest, then delete,
+then draft: every old narrative page's facts land in the container, the old arms and front door
+are deleted, and only then does drafting start, so a writer never sees an old page (the
+2026-09-29 amendment in `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`);
 the site round that follows tests and fixes the rebuilt arms. The site pass's own agents edit
 cairn-cms on a `site-docs/<site>-<pass>` branch off `main`, merged by PR under the docs gate
 before the site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md`
@@ -293,8 +296,8 @@ GitHub App and D1 `AUTH_DB` credentials:
 ## Authoring
 
 Claude's drafting on this repo follows the workstation authoring charter at
-`~/.claude/docs/authoring-charter.md`: every audience writes to a published external standard,
-with no house voice. Code comments follow TSDoc, enforced by ESLint (`eslint.config.js`, run by
+`~/.claude/docs/authoring-charter.md`: every audience writes to a published external standard as
+its base, with a recorded house voice overlay. Code comments follow TSDoc, enforced by ESLint (`eslint.config.js`, run by
 `npm run check:comments` over `src/lib` plus the showcase's `.ts`/`e2e`/`.svelte`):
 `eslint-plugin-tsdoc` validates syntax, `eslint-plugin-jsdoc` holds the doc-block shape and
 forbids `{type}` tags, `jsdoc/informative-docs` flags a comment that only restates the symbol
@@ -307,10 +310,10 @@ onto Google, overrides `docs/editors/**` to Microsoft for its plainer editor voi
 internal planning docs, since the Google standard governs published documentation, not
 write-once specs, plans, post-mortems, the rolling STATUS, or the friction log); the global
 `vale-hook` surfaces findings on save and skips `superpowers/`, where the em dash is allowed
-(Google's own recommendation, no surrounding spaces). On top of the Google floor, every published docs
-page follows the register standard at
-[`docs/internal/docs-register.md`](docs/internal/docs-register.md) (the arm registers, the
-front-door register, the no-pitch keystone); read it before writing or reviewing docs prose.
+(Google's own recommendation, no surrounding spaces). Every published docs page is drafted from the brief for its track in the register at
+[`docs/internal/docs-register.md`](docs/internal/docs-register.md), "Drafting brief: developer
+docs" (Google base) or "Drafting brief: editor docs" (Microsoft base); read it before writing or
+reviewing docs prose.
 Separate from `check:prose`, spellcheck, and tidy, which serve editors, not Claude.
 
 Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte

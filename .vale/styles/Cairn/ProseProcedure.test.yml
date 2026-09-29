@@ -1,0 +1,20 @@
+- name: fails on the posture-warning paragraph, an imperative after each clause boundary
+  input: |
+    A failing `ai.posture-effective` check reports the `ai.posture-not-effective` warning, which means
+    the served file carries nothing consistent with the declared posture, or carries the other
+    posture's directives. Check first that the robots route passes `aiPosture` to `robotsResponse`
+    and that the build carrying it has deployed. If both hold, look for a managed layer that the
+    zone's operator controls ahead of the origin.
+  contains: Cairn.ProseProcedure
+- name: fails on the key-rotation paragraph, a procedure chained through semicolons and commas
+  input: |
+    A publish from the deployed admin produces a commit authored by `cairn-cms[bot]` on `main`. If
+    step 4 doesn't produce that commit, check Workers Logs for `publish.failed` or `commit.failed`
+    first; if the Worker secret from step 3 didn't take, re-push it and redeploy, otherwise re-check
+    the new key and the encoding from step 2.
+  contains: Cairn.ProseProcedure
+- name: passes a paragraph that describes without instructing
+  input: |
+    The engine commits each save to a per-entry branch. A publish copies that branch to `main`,
+    and the deploy follows from the push.
+  absent: [Cairn.ProseProcedure]

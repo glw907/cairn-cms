@@ -7,6 +7,109 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Style-guide sync: the base guides first, the register as cairn's voice, 2026-09-28 to 29
+
+Branch `style-guide-sync` (worktree `.claude/worktrees/style-guide-sync`), closed with `main`
+merged in (`c84a7d40`); its PR and merge follow the close. Plan, ledger, and post-mortem:
+`docs/superpowers/plans/2026-09-28-style-guide-sync.md`. Spec with rulings 1 to 21:
+`docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`. No release, no version bump, and
+`CHANGELOG.md` untouched (no public behavior changed). The pass paused in the first plan's segment
+A for a leanness check (`docs/superpowers/research/2026-09-28-style-guide-sync-leanness.md`) and
+was re-scoped under Geoff's ruling 15: "I'm not looking to invent anything new. I want a proven
+and battle-tested system." The re-scope walked back the first plan's quote-provenance markers, its
+provenance table, and the page chain's section extraction and finding coercion, and cut every
+mechanism without a published source.
+
+**What landed in cairn-cms:**
+
+- R9 `63db0ca7`: three exemplar captures under `docs/internal/exemplars/` (two Google pages, one
+  Microsoft Learn procedure page from a CC BY 4.0 MicrosoftDocs repository), skipped by
+  `check:docs`.
+- R1t `9b32104a`, on the first plan's R1 (`7bf6a110`, `f9723e50`): each drafting brief in
+  `docs/internal/docs-register.md` is a supplement to its base guide. It carries the guide link, a
+  one-line-per-rule structure checklist, the voice with its specimens, the exemplar list, and a
+  short tell list. The departures sit in one `## Deviations from the base guides` section with
+  the four Google rows.
+- R2 `2c444b0e`: `Cairn.Headings` (a leading -ing word or a trailing `?`) and
+  `Cairn.ProseProcedure`, both at warning, each with pass and fail cases that the docs gate's tree
+  mode runs through `vale test` under `.vale/tests/vale.ini`. Measured over the tree: 49 and 31.
+  R2p `5d82b505` pinned CI's Vale to 3.23.0.
+- R6 `82337de2`: the admin design system's voice and the repo `CLAUDE.md` Authoring section base
+  admin copy on Microsoft's UI-text guidance and docs prose on the track's drafting brief.
+- J1 `787c56f3` and `851430f2`, then J7 `26827b59`: `docs/extend/choose-an-ai-posture.md`
+  restructured to the developer brief. It is the developer track's primary exemplar (ruling 17).
+  J7 folded Geoff's four taste calls and cut the intensifier "own" (register 40 uses to 5,
+  exemplar 5 to 3), with a tell against it in both briefs, and removed the
+  announcement-scaffolding tell.
+- J5a `47f5c81d`, `bf8a464f`, `a15e1802`: `CONTRIBUTING.md`, `docs/internal/README.md`, both
+  design systems, and `check-admin-prose.mjs` route to the briefs; the editor tell catalogue's
+  families moved into the briefs.
+- `04dfc824`: ten Tidy facts the J2 proof run verified. `742fc54f`: the draft-docs approach spec
+  amended to harvest, then delete, then draft, with `CLAUDE.md` pointing at it. `01d30285`:
+  ruling 21 records the sitting. Close: `code-simplifier` `823b3bec`, then the merge of `main`.
+
+**What landed in dotfiles:** W1r `fcfd54a` and `446e067` (W1 reverted; the page chain names each
+register heading by track, and the register editor runs plain `vale` on the page), W2r `18018af`
+(the drafter definition), W3r `1a52582` (the register-editor definition), W4 `710a35f` with W4f
+`39e7ea3` (the voice docs, ruling 12's charter correction, numbered-procedure exemplars), and W5
+`f9727ce` (both implementer definitions and nine retired phrases), merged as `fc53c6e`. J5b
+`6e82a36` and `4761b14`, merged as `53c5b09`. The output style's page-describing-itself tell went
+in `7c998b4`, merged as `d97d9d0`. The close's simplify pass `cbd736a`, merged as `32a30a7`.
+
+**What the gates and reviews caught:**
+
+- The re-scope's four review lenses: the conductor's spec claimed Vale 3.23.0 has no `vale test`.
+  The fold ran `vale test --help` and restored it, which removed a planned custom test runner.
+- R2 took one fix round. W4 escalated on a surviving retired phrase and an unrun evals re-run;
+  the one-line W4f cleared the phrase, and the conductor ruled the eval deltas accepted.
+- J1's register-editor voice read found the voice held and returned eight findings. Findings 1
+  to 4 folded in `851430f2`, one blocking (the decline bullet lost its precision); findings 5 to
+  8, all taste calls, went to Geoff.
+- J5, a fresh read of the whole writing infrastructure, found 12 routing mismatches (8 dotfiles, 4
+  cairn) that a phrase grep would have missed. J5a took two fix rounds, both correcting an
+  unsourced claim about what Microsoft's or Google's word list says.
+- J2's chain on `enable-tidy.md` passed the gate and the fact read and ended `escalate` on one
+  blocking register finding. Geoff's read caught what no reviewer did: the draft carried the old
+  page's framing, because the old page reached the drafter as an input.
+- The close gate: `check:consumers` failed in the fresh worktree until `npm ci` ran in
+  `examples/showcase`. After it, `npm test && npm run check:close` exited 0.
+
+**The sitting's rulings (Geoff, 2026-09-29; ruling 21):** J1's page is accepted with all four
+taste calls. The intensifier "own" is cut, with a tell in both briefs. The announcement-scaffolding
+tell leaves the register ("You can remove the 'this section covers…' register rule") and the
+workstation output style. J2 is dropped and its branch deleted. The draft-docs program becomes
+harvest, then delete, then draft, and no input guard is built, since the deletion is the
+enforcement. Tidy's default model should track the latest Sonnet.
+
+**What a later pass would be wrong to rediscover:**
+
+- Harvest before deleting, and never pass an old page to a drafter, even "for its claims only".
+  The J2 draft took the old page's framing through the claims-only input.
+- Vale 3.23.0 ships `vale test`, though `vale --help` omits it from its command list;
+  `vale test --help` confirms it.
+- A fresh worktree needs `npm ci` in `examples/showcase` before `check:close`, or
+  `check:consumers` fails.
+- An unsourced "Google says" or "Microsoft says" claim in the register was wrong twice in one
+  task. A new tell cites the live guide page and quotes it.
+- The docs gate and `check:vale` filter at `--minAlertLevel=error`, so the two warning rules are
+  visible only to plain `vale <path>` until each is promoted.
+- W1r renamed the page chain's `registerPaths` arg to `registerPath`, and the old name is silently
+  ignored. `Cairn.ProseProcedure`'s verb list grows as each arm stage finds new procedure verbs.
+
+**Fold-rule trial, review 1 of 3 (the fourth measure):** the re-scope fold refused three findings:
+replacing the W7 read with a grep (L-M6), a lower ceiling (L-m5), and moving DC-28 and AW-24 out
+of W4 (L-m1). None proved a real defect in execution. The W7 refusal was vindicated: the read
+found 12 routing mismatches a grep would have missed. The lower ceiling would not have bound,
+since execution spent about 3.4M.
+
+**Score:** about 3.4M execution subagent tokens against the 6M ceiling, plus about 1.2M for the
+re-scope's four review lenses, its fold, its verification, and two research agents. Conductor
+tokens are not counted, nor is the first plan's spend before the pause. Implementers ran on
+`claude-sonnet-5-5` for the first time. Attended time: one opening sitting on three forks, mid-run
+approvals, and one owner sitting (J1, J2, the filler word, the harvest ruling). Planning misses: 2
+(J2's input choice, which passed the old page to the drafter, and the conductor's false claim that
+Vale lacks `vale test`, caught by review).
+
 ## Theme identity pass A: the admin theme in daisyUI's layer, 2026-09-28
 
 Branch `theme-identity-a`, PR #92, merged to `main` as `4d725057` (Geoff approved pass A merging

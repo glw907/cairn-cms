@@ -43,7 +43,7 @@ defaults:
     shell: bash
 
 env:
-  VALE_VERSION: '3.15.1'
+  VALE_VERSION: '3.23.0'
 
 jobs:
   check:

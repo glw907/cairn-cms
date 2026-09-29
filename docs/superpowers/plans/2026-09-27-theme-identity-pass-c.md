@@ -1571,3 +1571,47 @@ the final `main`; the pass score recorded.
 ## Ledger
 
 (written by the conductor at each segment boundary)
+
+### Task 0 (2026-09-29, conductor `cairn-cms-02`)
+
+1. PR #92 (pass A) merged 2026-09-29. Pass B finished on `theme-identity-b` at `8c3caea2` (draft PR
+   #95), green on all six CI workflows, and carries `main` through `1056432d` (it lacks only
+   `d033af97`, a STATUS-only commit). Holds.
+2. No live executor: no process on either worktree, pass B's tree clean, no `theme-identity-c` before
+   this session. Holds.
+3. Worktree `.claude/worktrees/theme-identity-c` on `theme-identity-c` from `8c3caea2`, with
+   `theme-c-plan` merged in (`3f63d75f`). Showcase `node_modules/@glw907/cairn-cms` resolves into
+   the worktree. Sweep `43e6bff7` (record `docs/internal/record/2026-09-29-theme-pass-c-dependency-sweep.md`):
+   taken daisyui 5.7.44 to 5.7.46, wrangler 4.137.0 to 4.143.0, `@cloudflare/workers-types`
+   5.20260923.1 to 5.20260929.1, vite 8.3.0 to 8.3.1, `@anthropic-ai/sdk` 0.128.0 to 0.129.0,
+   `@lezer/common` 1.5.3, `@lezer/highlight` 1.2.5, `@lucide/svelte` 1.48.0, `@types/node` 24.19.0,
+   `typescript-eslint` 8.71.0; Tailwind stays 4.3.3. Held majors: devalue 6, TypeScript 7, Vitest 5,
+   `@types/node` 26, and a new one, eslint-plugin-jsdoc 65 (for Geoff at the next checkpoint).
+   `npm audit`'s seven pre-existing dev-only findings take only a `--force` downgrade, so they are held.
+   The target-stack table drift the sweep caused is fixed at `e5797f7a`.
+4. Pre-flight: every fact holds except the comment-fusion counts (now 22, 7, 3, 8), the styleguide
+   paths (under `(site)/`), and the four template citations (listed in task 6). Pass B did not
+   build the named-root rule's public half, as expected, since decision 6 is this pass's. The
+   `PreviewBanner` doc comment says four properties; task 4 carries it. Amended at `4274bf74`.
+5. The engine string moved to
+   `npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site`
+   (amended under Gates).
+6. Freeze rule on the branch: the narrative arms are frozen against rewrites until each arm's own
+   stage merges, and a discovered deficiency is fixed on the page. A peer session reports Geoff's
+   2026-09-28 amendment, under which the arms are harvested and then deleted after the `0.98.0` cut,
+   so `0.98.0` ships today's docs.
+7. Baseline: the first run went red only on the sweep's target-stack drift, which was fixed. The rerun
+   had `check:docs-gate`, `check`, and `test:node-projects` green (5370 tests), `test:component`
+   green (1769 passed, 2 skipped), and create-cairn-site red on 5 tests because its template was
+   not baked. `npm ci` does not run the workspace's `prepack`, so a fresh worktree must run
+   `npm run prepack -w packages/create-cairn-site` first. After the bake, that leg printed
+   `gate exit: 0 (log: /tmp/cairn-gate-1000/ec52d0463c639d04/gate.log, 857 lines)`.
+8. `0.98.0` is free (newest `0.97.0`).
+9. Draft PR #97 opened at `e5797f7a`. All six workflows are green there, so the sweep adds nothing
+   to the expected-red set.
+
+A peer session (style-guide-sync) touches `docs/internal/public-design-system.md`,
+`docs/internal/facts/extend.md`, and `ROADMAP.md` and will merge to `main` first. This branch merges
+`main` only after that lands.
+
+Spend: about 0.43M in subagents plus the conductor.

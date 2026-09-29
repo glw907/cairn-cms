@@ -1,0 +1,198 @@
+{
+  "page": "docs/README.md",
+  "blob": "6191961d1d60c2ec8e2d58f94444e2ea6ecaa216",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "cairn is an embedded, magic-link CMS for SvelteKit sites on Cloudflare.",
+      "fact": "f:4zpvor"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "cairn publishes through a GitHub App.",
+      "fact": "f:zmih7p"
+    },
+    {
+      "lines": [
+        6,
+        8
+      ],
+      "paraphrase": "The setup command is run as npx create-cairn-site.",
+      "new-fact": "f:yvfzr2"
+    },
+    {
+      "lines": [
+        10,
+        10
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "Pointer to the page on why cairn fits.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        14,
+        15
+      ],
+      "paraphrase": "Pointer to the editors welcome page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        16,
+        17
+      ],
+      "paraphrase": "Pointer to the admin track, which takes a no-code reader to a live site.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        17,
+        17
+      ],
+      "paraphrase": "Most sites finish with the admin track alone.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        18,
+        19
+      ],
+      "paraphrase": "Pointer to the extend track after running the admin setup.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        19,
+        22
+      ],
+      "paraphrase": "Pointers to building a site by hand and adding cairn to an existing SvelteKit app.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "The reference has one page per package subpath plus the CLI commands.",
+      "fact": "f:k439hm"
+    },
+    {
+      "lines": [
+        25,
+        26
+      ],
+      "paraphrase": "Pointer to the contributor guide.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        28
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        30,
+        31
+      ],
+      "paraphrase": "cairn is an editor-first, git-backed CMS and a SvelteKit toolkit a developer extends, built as one.",
+      "fact": "f:wvediq"
+    },
+    {
+      "lines": [
+        31,
+        33
+      ],
+      "paraphrase": "Content lives as markdown in the organization's own repository.",
+      "fact": "f:jzgztr"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "Every publish is a commit under the writer's name.",
+      "fact": "f:w379wu"
+    },
+    {
+      "lines": [
+        33,
+        33
+      ],
+      "paraphrase": "History, attribution, and rollback come from git itself.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        33,
+        33
+      ],
+      "paraphrase": "The writer never sees the git machinery.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        33,
+        35
+      ],
+      "paraphrase": "The admin is also a toolkit: a developer's own screen mounts inside it, sharing its components and sign-in.",
+      "fact": "f:9xthnq"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "What gets built next reads as one product, not a second app beside the CMS.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        38,
+        38
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        40,
+        41
+      ],
+      "paraphrase": "Links to the project files at the repository root.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        41,
+        42
+      ],
+      "paraphrase": "Internal planning and design records for contributors live under the internal directory.",
+      "cut": "navigation"
+    }
+  ]
+}

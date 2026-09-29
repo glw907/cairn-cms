@@ -1,0 +1,70 @@
+{
+  "page": "docs/admin/README.md",
+  "blob": "a5466114d0377bc19aacc11de83bd5f6d93176c2",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Track title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "The track reader is the site operator.",
+      "new-fact": "f:kk03ic"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "Reader is comfortable with terminals and dashboards, not a developer, and writes no code.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        5,
+        6
+      ],
+      "paraphrase": "create-cairn-site performs the setup.",
+      "fact": "f:u9q6am"
+    },
+    {
+      "lines": [
+        8,
+        10
+      ],
+      "paraphrase": "Pointers to the editor and extend tracks.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        12,
+        12
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        14,
+        27
+      ],
+      "paraphrase": "Ordered list of the eight pages with one-line summaries.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        29,
+        32
+      ],
+      "paraphrase": "Where to start and routers to recovery and troubleshooting.",
+      "cut": "navigation"
+    }
+  ]
+}

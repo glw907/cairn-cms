@@ -1,0 +1,414 @@
+{
+  "page": "docs/admin/create-your-site.md",
+  "blob": "c684d84099047040a86b745e3eb75e5a31d75d95",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page tagline.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        5
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        7,
+        8
+      ],
+      "paraphrase": "Setup needs Node.js 24 or later on a Mac or Linux computer.",
+      "fact": "f:ujo1e9"
+    },
+    {
+      "lines": [
+        8,
+        10
+      ],
+      "paraphrase": "Setup needs an existing GitHub account and Cloudflare account; the tool creates neither.",
+      "fact": "f:zpjl8k"
+    },
+    {
+      "lines": [
+        9,
+        9
+      ],
+      "paraphrase": "Opening either account is free.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        11,
+        12
+      ],
+      "paraphrase": "The tool checks the Node version itself before asking any question.",
+      "fact": "f:ujo1e9"
+    },
+    {
+      "lines": [
+        14,
+        16
+      ],
+      "paraphrase": "Windows is unsupported; a Windows run fails partway with an unclear error; use WSL instead.",
+      "fact": "f:52gpo3"
+    },
+    {
+      "lines": [
+        16,
+        18
+      ],
+      "paraphrase": "A developer can set the site up and hand it over.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        20,
+        20
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        22,
+        26
+      ],
+      "paraphrase": "The setup command is npx create-cairn-site.",
+      "fact": "f:wyrn4z"
+    },
+    {
+      "lines": [
+        28,
+        30
+      ],
+      "paraphrase": "Terminal excerpts come from recorded fixtures of a real setup.",
+      "fact": "f:kouawx"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "The tool opens with the cost picture, the same facts as the earlier page.",
+      "new-fact": "f:ewm3zx"
+    },
+    {
+      "lines": [
+        35,
+        41
+      ],
+      "paraphrase": "Transcript block quoting the start of the cost preamble.",
+      "new-fact": "f:ewm3zx"
+    },
+    {
+      "lines": [
+        43,
+        45
+      ],
+      "paraphrase": "Five questions: name, description, brand color, AI-crawler stance, folder.",
+      "fact": "f:wyrn4z"
+    },
+    {
+      "lines": [
+        45,
+        47
+      ],
+      "paraphrase": "Enter accepts defaults for name and folder, skips optional fields, and no preference is preselected.",
+      "new-fact": "f:v9ilw9"
+    },
+    {
+      "lines": [
+        49,
+        51
+      ],
+      "paraphrase": "The run scaffolds locally, then GitHub, then Cloudflare, each stage asking first.",
+      "fact": "f:u9q6am"
+    },
+    {
+      "lines": [
+        53,
+        53
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        55,
+        55
+      ],
+      "paraphrase": "Transition into the consent prompt.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        57,
+        66
+      ],
+      "paraphrase": "Transcript block: GitHub App and repository confirmation prompt.",
+      "new-fact": "f:bs54xv"
+    },
+    {
+      "lines": [
+        68,
+        69
+      ],
+      "paraphrase": "Yes creates a private repository and an App used only by this site.",
+      "new-fact": "f:bs54xv"
+    },
+    {
+      "lines": [
+        69,
+        70
+      ],
+      "paraphrase": "The App lets the tool and writers publish without personal GitHub accounts.",
+      "fact": "f:5f4kmk"
+    },
+    {
+      "lines": [
+        70,
+        71
+      ],
+      "paraphrase": "GitHub cannot reduce App permissions later.",
+      "fact": "f:bu5k2r"
+    },
+    {
+      "lines": [
+        71,
+        74
+      ],
+      "paraphrase": "The workflow permission lets the tool push the scaffold check workflow.",
+      "fact": "f:3jjrzt"
+    },
+    {
+      "lines": [
+        74,
+        76
+      ],
+      "paraphrase": "Two browser trips: create the App, then install it and sign in to GitHub.",
+      "new-fact": "f:d1apm0"
+    },
+    {
+      "lines": [
+        78,
+        81
+      ],
+      "paraphrase": "An organization owner may need to approve the install; the tool stops and resumes.",
+      "fact": "f:kj72z6"
+    },
+    {
+      "lines": [
+        83,
+        83
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        85,
+        85
+      ],
+      "paraphrase": "The tool asks whether to install, build, and deploy now.",
+      "new-fact": "f:ln5ug0"
+    },
+    {
+      "lines": [
+        86,
+        86
+      ],
+      "paraphrase": "Definition of deploy as putting the site live.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        86,
+        88
+      ],
+      "paraphrase": "Yes installs dependencies, signs in to Cloudflare if needed, and deploys.",
+      "new-fact": "f:ln5ug0"
+    },
+    {
+      "lines": [
+        88,
+        93
+      ],
+      "paraphrase": "Deploying creates one Worker, two databases, and one storage bucket.",
+      "fact": "f:gcuj1j"
+    },
+    {
+      "lines": [
+        95,
+        95
+      ],
+      "paraphrase": "The Worker runs on Workers Paid at five dollars a month from deploy.",
+      "fact": "f:4gii31"
+    },
+    {
+      "lines": [
+        95,
+        97
+      ],
+      "paraphrase": "Databases, bucket, and repository cost nothing at this scale.",
+      "new-fact": "f:ewm3zx"
+    },
+    {
+      "lines": [
+        97,
+        98
+      ],
+      "paraphrase": "Content lives in the GitHub repository, not in either database.",
+      "fact": "f:jzgztr"
+    },
+    {
+      "lines": [
+        98,
+        100
+      ],
+      "paraphrase": "The tool moves the App private key into a Worker secret.",
+      "fact": "f:14tfj2"
+    },
+    {
+      "lines": [
+        100,
+        101
+      ],
+      "paraphrase": "It asks for the sign-in email, writes the owner record, and opens a sign-in page.",
+      "new-fact": "f:ln5ug0"
+    },
+    {
+      "lines": [
+        101,
+        103
+      ],
+      "paraphrase": "Clicking Sign in there lands you signed in as owner, the last browser step.",
+      "new-fact": "f:ln5ug0"
+    },
+    {
+      "lines": [
+        105,
+        129
+      ],
+      "paraphrase": "Diagram: scaffold, GitHub create and install, Cloudflare sign-in and deploy, then sign-in page.",
+      "new-fact": "f:50md0e"
+    },
+    {
+      "lines": [
+        131,
+        132
+      ],
+      "paraphrase": "Three browser moments, four when Cloudflare sign-in is needed.",
+      "new-fact": "f:50md0e"
+    },
+    {
+      "lines": [
+        134,
+        134
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        136,
+        147
+      ],
+      "paraphrase": "Transcript block: closing summary with URLs and what exists now.",
+      "new-fact": "f:xw0bit"
+    },
+    {
+      "lines": [
+        149,
+        150
+      ],
+      "paraphrase": "Landing on the admin already signed in means setup finished.",
+      "new-fact": "f:ln5ug0"
+    },
+    {
+      "lines": [
+        150,
+        152
+      ],
+      "paraphrase": "Pointer to what a second editor needs.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        154,
+        156
+      ],
+      "paraphrase": "The workers.dev address keeps working after a domain is connected.",
+      "new-fact": "f:06qd1n"
+    },
+    {
+      "lines": [
+        158,
+        158
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        160,
+        160
+      ],
+      "paraphrase": "The sign-in link the tool opens works for ten minutes.",
+      "fact": "f:zc8vy2"
+    },
+    {
+      "lines": [
+        161,
+        165
+      ],
+      "paraphrase": "Run create-cairn-site with --dir and --sign-in for a fresh link.",
+      "fact": "f:bfgxvr"
+    },
+    {
+      "lines": [
+        167,
+        168
+      ],
+      "paraphrase": "The command writes a link into the database and opens it with no email.",
+      "fact": "f:bfgxvr"
+    },
+    {
+      "lines": [
+        168,
+        169
+      ],
+      "paraphrase": "It works at any point after the site is live, from the creating machine.",
+      "new-fact": "f:o8uoci"
+    },
+    {
+      "lines": [
+        169,
+        170
+      ],
+      "paraphrase": "A session created through the link lasts 30 days.",
+      "fact": "f:zc8vy2"
+    },
+    {
+      "lines": [
+        170,
+        172
+      ],
+      "paraphrase": "Earlier failures go to setup recovery.",
+      "cut": "navigation"
+    }
+  ]
+}

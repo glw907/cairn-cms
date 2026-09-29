@@ -1,0 +1,190 @@
+{
+  "page": "docs/admin/what-to-run-and-when.md",
+  "blob": "f0c7be1be3fdd6e34885e58f02b44b18004bd051",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        6
+      ],
+      "paraphrase": "Intro: what depends on what, and a pointer to exact version numbers.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        10,
+        11
+      ],
+      "paraphrase": "Table header.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        12,
+        12
+      ],
+      "paraphrase": "cairn version is whatever a developer installed, set in package.json, moving per release.",
+      "new-fact": "f:82egr3"
+    },
+    {
+      "lines": [
+        12,
+        12
+      ],
+      "paraphrase": "You are fine if no Consumers must line names an untaken action.",
+      "fact": "f:s3kk8p"
+    },
+    {
+      "lines": [
+        13,
+        13
+      ],
+      "paraphrase": "Node target is 24 or newer; the site creator refuses older Node while a plain install only warns.",
+      "fact": "f:58j5t3"
+    },
+    {
+      "lines": [
+        13,
+        13
+      ],
+      "paraphrase": "Node releases follow its long-term-support calendar.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "Wrangler version is whatever the site was created with, set once in its setup files.",
+      "new-fact": "f:82egr3"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "Wrangler changes when Cloudflare ships a new major.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        15,
+        15
+      ],
+      "paraphrase": "The App private key has no version, rotates on demand, and lives only in the Worker secret store.",
+      "fact": "f:72yc97"
+    },
+    {
+      "lines": [
+        17,
+        17
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "cairn is pre-1.0; any release can change something but most touch nothing noticeable.",
+      "fact": "f:mu3c6p"
+    },
+    {
+      "lines": [
+        20,
+        22
+      ],
+      "paraphrase": "A Consumers must line in the changelog, not the version number, signals a needed upgrade.",
+      "fact": "f:s3kk8p"
+    },
+    {
+      "lines": [
+        24,
+        25
+      ],
+      "paraphrase": "cairn row moves when a changelog carries a Consumers must line.",
+      "fact": "f:s3kk8p"
+    },
+    {
+      "lines": [
+        25,
+        28
+      ],
+      "paraphrase": "Node and Wrangler release cadence and Wrangler role in deploying.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        30,
+        30
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "Lead-in to the list of triggers.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "A Consumers must line naming an action means a developer should upgrade.",
+      "fact": "f:s3kk8p"
+    },
+    {
+      "lines": [
+        37,
+        39
+      ],
+      "paraphrase": "A Dependency floors failure from cairn doctor means Svelte or SvelteKit is below the floor.",
+      "fact": "f:jwwwov"
+    },
+    {
+      "lines": [
+        40,
+        41
+      ],
+      "paraphrase": "A deploy failure naming an old version usually means an old local toolchain.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        42,
+        42
+      ],
+      "paraphrase": "GitHub sends a notice about an expiring or revoked App key.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        42,
+        43
+      ],
+      "paraphrase": "Rotating the App key is developer work.",
+      "fact": "f:3jpoi3"
+    }
+  ]
+}

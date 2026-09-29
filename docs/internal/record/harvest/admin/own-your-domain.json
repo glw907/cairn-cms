@@ -1,0 +1,486 @@
+{
+  "page": "docs/admin/own-your-domain.md",
+  "blob": "586e642a9ba1b779f8cac87254fd46b1a885a7f7",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page tagline.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        7
+      ],
+      "paraphrase": "Auto-deploy through Workers Builds needs no custom domain; skip ahead to that section.",
+      "new-fact": "f:2v7bnh"
+    },
+    {
+      "lines": [
+        9,
+        10
+      ],
+      "paraphrase": "Connecting the domain and sign-in email share one Cloudflare token.",
+      "fact": "f:vh8xc9"
+    },
+    {
+      "lines": [
+        10,
+        11
+      ],
+      "paraphrase": "Workers Builds needs a second, wider token.",
+      "fact": "f:pctgii"
+    },
+    {
+      "lines": [
+        11,
+        15
+      ],
+      "paraphrase": "The domain and email steps run from re-running create-cairn-site on the live site.",
+      "new-fact": "f:wfkd1o"
+    },
+    {
+      "lines": [
+        17,
+        18
+      ],
+      "paraphrase": "Running the command again resumes where it left off.",
+      "fact": "f:qoqd31"
+    },
+    {
+      "lines": [
+        20,
+        20
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        22,
+        23
+      ],
+      "paraphrase": "You connect a domain you already own, registered anywhere; the tool sells none.",
+      "new-fact": "f:eafj4h"
+    },
+    {
+      "lines": [
+        23,
+        25
+      ],
+      "paraphrase": "Creating the zone and connecting the domain cost nothing on the free plan.",
+      "fact": "f:8ypin3"
+    },
+    {
+      "lines": [
+        24,
+        25
+      ],
+      "paraphrase": "Definition of a Cloudflare zone.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Pointer to the Cloudflare stage.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        29
+      ],
+      "paraphrase": "The tool asks whether to connect a domain, then which domain.",
+      "new-fact": "f:eafj4h"
+    },
+    {
+      "lines": [
+        29,
+        30
+      ],
+      "paraphrase": "Cloudflare create-token page opens with five permissions preselected.",
+      "fact": "f:vh8xc9"
+    },
+    {
+      "lines": [
+        30,
+        31
+      ],
+      "paraphrase": "Read every permission row before pasting the token back.",
+      "new-fact": "f:rnju5o"
+    },
+    {
+      "lines": [
+        31,
+        32
+      ],
+      "paraphrase": "One browser trip covers the domain step.",
+      "new-fact": "f:eafj4h"
+    },
+    {
+      "lines": [
+        34,
+        34
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        36,
+        38
+      ],
+      "paraphrase": "Cloudflare creates the zone and gives nameservers; the domain keeps old ones until changed at the registrar.",
+      "new-fact": "f:h2ajav"
+    },
+    {
+      "lines": [
+        38,
+        42
+      ],
+      "paraphrase": "Propagation takes minutes to 48 hours; the site keeps answering at workers.dev; re-running rechecks.",
+      "new-fact": "f:h2ajav"
+    },
+    {
+      "lines": [
+        44,
+        44
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        46,
+        46
+      ],
+      "paraphrase": "Definition of DNS records.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        47,
+        51
+      ],
+      "paraphrase": "The tool reads the domain current records, shows them, and copies them unchanged.",
+      "fact": "f:3f4tej"
+    },
+    {
+      "lines": [
+        51,
+        53
+      ],
+      "paraphrase": "If the domain is already active in this account, nothing is copied.",
+      "new-fact": "f:vtngsr"
+    },
+    {
+      "lines": [
+        55,
+        66
+      ],
+      "paraphrase": "Diagram: existing mail records carried over, cairn sending records added at onboarding, sign-in mail from no-reply.",
+      "new-fact": "f:2r737s"
+    },
+    {
+      "lines": [
+        68,
+        69
+      ],
+      "paraphrase": "Claim that nothing cairn adds touches the organization existing mail.",
+      "new-fact": "f:bxe9ns"
+    },
+    {
+      "lines": [
+        71,
+        71
+      ],
+      "paraphrase": "Framing: two things share the domain and are easy to conflate.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        73,
+        74
+      ],
+      "paraphrase": "Sign-in mail sends from no-reply at your domain via Cloudflare, added when email sign-in is turned on.",
+      "new-fact": "f:2r737s"
+    },
+    {
+      "lines": [
+        75,
+        76
+      ],
+      "paraphrase": "Existing mail records carry over unchanged.",
+      "fact": "f:3f4tej"
+    },
+    {
+      "lines": [
+        78,
+        80
+      ],
+      "paraphrase": "Advice to talk to whoever controls the DNS before going further.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        80,
+        82
+      ],
+      "paraphrase": "A domain active under another Cloudflare account cannot be connected; the fix is asking that owner to remove it.",
+      "fact": "f:ncuov6"
+    },
+    {
+      "lines": [
+        82,
+        82
+      ],
+      "paraphrase": "Forcing past this risks existing mail.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        84,
+        84
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        86,
+        88
+      ],
+      "paraphrase": "The tool confirms HTTPS, switches the site address, redeploys once; both addresses answer.",
+      "new-fact": "f:06qd1n"
+    },
+    {
+      "lines": [
+        90,
+        90
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        92,
+        95
+      ],
+      "paraphrase": "Workers Paid was confirmed at deploy; this step only onboards the domain for Email Sending.",
+      "fact": "f:gr325s"
+    },
+    {
+      "lines": [
+        95,
+        96
+      ],
+      "paraphrase": "The prompt asks whether to turn on email sign-in for the domain.",
+      "fact": "f:gr325s"
+    },
+    {
+      "lines": [
+        96,
+        99
+      ],
+      "paraphrase": "Saying no leaves the site serving, the owner signs in with --sign-in, and re-running turns it on later.",
+      "new-fact": "f:bu0hiz"
+    },
+    {
+      "lines": [
+        101,
+        103
+      ],
+      "paraphrase": "Yes onboards the domain then sends a real test message to your address.",
+      "fact": "f:1pi1x6"
+    },
+    {
+      "lines": [
+        105,
+        108
+      ],
+      "paraphrase": "A new domain has no sending history, so first links may be slow to arrive.",
+      "new-fact": "f:u5k82m"
+    },
+    {
+      "lines": [
+        110,
+        110
+      ],
+      "paraphrase": "Onboarding writes a DMARC policy at the domain underscore-dmarc name.",
+      "fact": "f:4x6s6a"
+    },
+    {
+      "lines": [
+        110,
+        112
+      ],
+      "paraphrase": "The policy rejects unauthenticated mail claiming the domain, wherever it came from.",
+      "new-fact": "f:8izfeu"
+    },
+    {
+      "lines": [
+        112,
+        112
+      ],
+      "paraphrase": "The record stays in place if Email Sending is turned off.",
+      "fact": "f:4x6s6a"
+    },
+    {
+      "lines": [
+        112,
+        115
+      ],
+      "paraphrase": "A newsletter or mailing tool added later needs its own sender setup or its mail is rejected.",
+      "new-fact": "f:8izfeu"
+    },
+    {
+      "lines": [
+        115,
+        116
+      ],
+      "paraphrase": "The record sets only the policy and lists no allowed senders.",
+      "new-fact": "f:8izfeu"
+    },
+    {
+      "lines": [
+        118,
+        118
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        120,
+        121
+      ],
+      "paraphrase": "Cloudflare accepts a real test message sent from your site to your address.",
+      "fact": "f:1pi1x6"
+    },
+    {
+      "lines": [
+        123,
+        123
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        125,
+        127
+      ],
+      "paraphrase": "Connecting to Workers Builds makes every push to the default branch deploy itself.",
+      "fact": "f:qca0t0"
+    },
+    {
+      "lines": [
+        129,
+        131
+      ],
+      "paraphrase": "Command: run create-cairn-site with --dir and --connect.",
+      "fact": "f:qca0t0"
+    },
+    {
+      "lines": [
+        133,
+        133
+      ],
+      "paraphrase": "The connect step works once the site is live, with or without a domain.",
+      "new-fact": "f:2v7bnh"
+    },
+    {
+      "lines": [
+        133,
+        136
+      ],
+      "paraphrase": "The tool explains three needs: authorizing Cloudflare GitHub App, a fresh token, a later sign-in click.",
+      "new-fact": "f:04nmg7"
+    },
+    {
+      "lines": [
+        136,
+        137
+      ],
+      "paraphrase": "The second token has eight permissions: the five plus three for Workers Builds.",
+      "fact": "f:pctgii"
+    },
+    {
+      "lines": [
+        138,
+        140
+      ],
+      "paraphrase": "The token becomes the build token given to every build; treat default-branch committers as able to read it.",
+      "new-fact": "f:04nmg7"
+    },
+    {
+      "lines": [
+        140,
+        144
+      ],
+      "paraphrase": "The free tier covers a stated number of build minutes and one concurrent build, dated 2026-08-12.",
+      "new-fact": "f:04nmg7"
+    },
+    {
+      "lines": [
+        146,
+        149
+      ],
+      "paraphrase": "Two browser moments: the token page, and a sign-in click for the config commit under your name.",
+      "new-fact": "f:04nmg7"
+    },
+    {
+      "lines": [
+        149,
+        150
+      ],
+      "paraphrase": "If the App is not authorized the run stops; re-running with --connect continues without a fresh token.",
+      "new-fact": "f:856rgt"
+    },
+    {
+      "lines": [
+        152,
+        152
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        154,
+        155
+      ],
+      "paraphrase": "The tool watches the first Workers Builds deploy and confirms the site answers.",
+      "new-fact": "f:04nmg7"
+    },
+    {
+      "lines": [
+        155,
+        156
+      ],
+      "paraphrase": "Every commit to the default branch then deploys itself.",
+      "fact": "f:qca0t0"
+    },
+    {
+      "lines": [
+        156,
+        158
+      ],
+      "paraphrase": "Engine updates remain developer work; pointer to the upgrade page.",
+      "cut": "navigation"
+    }
+  ]
+}

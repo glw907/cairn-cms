@@ -15,7 +15,7 @@
         3,
         3
       ],
-      "paraphrase": "cairn is an embedded, magic-link CMS for SvelteKit sites on Cloudflare.",
+      "paraphrase": "The product is a CMS embedded in a SvelteKit site, using magic-link sign-in, running on Cloudflare.",
       "fact": "f:4zpvor"
     },
     {
@@ -95,7 +95,7 @@
         23,
         24
       ],
-      "paraphrase": "The reference has one page per package subpath plus the CLI commands.",
+      "paraphrase": "The reference is organized as a page per package export path, with CLI commands included.",
       "fact": "f:k439hm"
     },
     {
@@ -119,7 +119,7 @@
         30,
         31
       ],
-      "paraphrase": "cairn is an editor-first, git-backed CMS and a SvelteKit toolkit a developer extends, built as one.",
+      "paraphrase": "cairn combines an editor-oriented git-backed CMS with a SvelteKit toolkit developers build on.",
       "fact": "f:wvediq"
     },
     {
@@ -127,7 +127,7 @@
         31,
         33
       ],
-      "paraphrase": "Content lives as markdown in the organization's own repository.",
+      "paraphrase": "The content is stored as markdown files inside the repository the organization itself owns.",
       "fact": "f:jzgztr"
     },
     {
@@ -135,7 +135,7 @@
         32,
         33
       ],
-      "paraphrase": "Every publish is a commit under the writer's name.",
+      "paraphrase": "Each publish lands in git as a commit credited to the person who wrote it.",
       "fact": "f:w379wu"
     },
     {
@@ -143,7 +143,7 @@
         33,
         33
       ],
-      "paraphrase": "History, attribution, and rollback come from git itself.",
+      "paraphrase": "Git alone supplies the record of changes, the credit, and the ability to undo.",
       "cut": "external-trivia"
     },
     {
@@ -159,7 +159,7 @@
         33,
         35
       ],
-      "paraphrase": "The admin is also a toolkit: a developer's own screen mounts inside it, sharing its components and sign-in.",
+      "paraphrase": "A developer's custom screen mounts within the admin, reusing its components and login; the admin doubles as a toolkit.",
       "fact": "f:9xthnq"
     },
     {
@@ -167,7 +167,7 @@
         35,
         36
       ],
-      "paraphrase": "What gets built next reads as one product, not a second app beside the CMS.",
+      "paraphrase": "Later-built screens feel like part of one product instead of an app bolted alongside.",
       "cut": "marketing"
     },
     {
@@ -191,7 +191,7 @@
         41,
         42
       ],
-      "paraphrase": "Internal planning and design records for contributors live under the internal directory.",
+      "paraphrase": "Contributor-facing planning and design records are kept in the internal directory.",
       "cut": "navigation"
     }
   ]

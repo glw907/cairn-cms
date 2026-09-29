@@ -39,7 +39,7 @@
         6,
         8
       ],
-      "paraphrase": "Static generators with a git-backed editor were cleaner to work on, but editing for non-technical users stayed hard.",
+      "paraphrase": "Static generators paired with a git-based editor were easier to work with, but non-technical editing stayed unsolved.",
       "cut": "marketing"
     },
     {
@@ -55,7 +55,7 @@
         11,
         12
       ],
-      "paraphrase": "Google Workspace or Office 365 usually covers basic productivity.",
+      "paraphrase": "Basic office productivity tools are normally supplied by Google or Microsoft suites.",
       "cut": "external-trivia"
     },
     {
@@ -87,7 +87,7 @@
         17,
         18
       ],
-      "paraphrase": "cairn is an editor-first, git-backed CMS and also a SvelteKit toolkit a developer extends.",
+      "paraphrase": "cairn is both an editor-oriented git-backed CMS and a SvelteKit toolkit developers build on.",
       "fact": "f:wvediq"
     },
     {
@@ -95,7 +95,7 @@
         18,
         19
       ],
-      "paraphrase": "Under the zero-config default, cairn is the organization's own identity system for its editors.",
+      "paraphrase": "By default cairn itself acts as the identity provider for the site's editors.",
       "new-fact": "f:u77pea"
     },
     {
@@ -103,7 +103,7 @@
         19,
         20
       ],
-      "paraphrase": "By default an editor signs in from an emailed link, with no GitHub account and no password.",
+      "paraphrase": "By default an editor signs in via a mailed link, needing neither a GitHub account nor a password.",
       "fact": "f:0ij7do"
     },
     {
@@ -151,7 +151,7 @@
         22,
         23
       ],
-      "paraphrase": "A deliberate publish copies the held edit to the main branch with the editor as commit author.",
+      "paraphrase": "A deliberate publish copies the held edit onto main, crediting the editor as the commit author.",
       "fact": "f:qehbx3"
     },
     {
@@ -207,7 +207,7 @@
         32,
         34
       ],
-      "paraphrase": "A developer's own screen mounts inside the same admin, sharing cairn's components and its sign-in.",
+      "paraphrase": "A developer's custom screen lives inside the same admin, reusing cairn's components and its login.",
       "fact": "f:9xthnq"
     },
     {
@@ -231,8 +231,16 @@
         39,
         40
       ],
-      "paraphrase": "cairn commits fully to SvelteKit, Cloudflare, and GitHub, with no layer trying to hide any of them.",
+      "paraphrase": "cairn commits fully to SvelteKit and Cloudflare, with no layer trying to hide either.",
       "new-fact": "f:djoxr9"
+    },
+    {
+      "lines": [
+        39,
+        40
+      ],
+      "paraphrase": "The same no-hiding-layer commitment is claimed for GitHub.",
+      "new-fact": "f:mpy6za"
     },
     {
       "lines": [
@@ -247,7 +255,7 @@
         41,
         42
       ],
-      "paraphrase": "Cloudflare is chosen because nothing else pairs security-forward defaults with a durable free tier.",
+      "paraphrase": "Cloudflare is preferred for its security-oriented defaults and a free tier that holds up at small-site traffic.",
       "cut": "marketing"
     },
     {
@@ -295,7 +303,7 @@
         46,
         46
       ],
-      "paraphrase": "History, attribution, and rollback come from existing git tooling.",
+      "paraphrase": "Git itself supplies the change history, the credit, and the means to roll back.",
       "cut": "external-trivia"
     },
     {
@@ -343,7 +351,7 @@
         53,
         54
       ],
-      "paraphrase": "Committing to cairn means committing to Cloudflare, and to GitHub unless a developer builds the backend seam.",
+      "paraphrase": "Adopting cairn ties a site to Cloudflare, and to GitHub too unless a developer writes the backend seam.",
       "fact": "f:hk24xs"
     },
     {
@@ -383,7 +391,7 @@
         63,
         64
       ],
-      "paraphrase": "cairn is built for a small, coordinated editorial team, not a large or anonymous one.",
+      "paraphrase": "cairn suits a small editorial group that coordinates closely; big or anonymous contributor pools fall outside the default design.",
       "new-fact": "f:7iwb7f"
     },
     {
@@ -391,7 +399,7 @@
         64,
         65
       ],
-      "paraphrase": "The zero-config identity model assumes one to a handful of editors who already know each other.",
+      "paraphrase": "The default identity model expects a handful of editors at most, acquainted with each other.",
       "fact": "f:7iwb7f"
     },
     {
@@ -423,7 +431,7 @@
         69,
         70
       ],
-      "paraphrase": "Editors write, publish, and manage the media library and tag list on their own; anything beyond that keeps a developer involved.",
+      "paraphrase": "Without developer help, an editor can author and release entries, and also curate images and the tag vocabulary.",
       "new-fact": "f:dpbswc"
     },
     {
@@ -431,7 +439,7 @@
         70,
         72
       ],
-      "paraphrase": "Declaring a content type, adding a custom admin screen, or changing what a role can do needs a developer.",
+      "paraphrase": "A developer is needed to define a new content type, build a custom screen, or change role permissions.",
       "fact": "f:dpbswc"
     },
     {
@@ -455,7 +463,7 @@
         76,
         77
       ],
-      "paraphrase": "cairn is a CMS and admin toolkit, not a platform; it manages markdown content and the admin frame and stops there.",
+      "paraphrase": "cairn is a content manager plus admin toolkit rather than a platform, and deliberately limits itself to content and the admin frame.",
       "fact": "f:99f221"
     },
     {
@@ -471,15 +479,15 @@
         79,
         81
       ],
-      "paraphrase": "A general feature for every organization's need would make the engine bigger and slower to build on.",
-      "cut": "stance-without-owner-basis"
+      "paraphrase": "Building a general feature for every organization's need would bloat the engine and slow everyone who builds on it.",
+      "fact": "f:bhyvqg"
     },
     {
       "lines": [
         83,
         84
       ],
-      "paraphrase": "The setup tool needs a GitHub account, a Cloudflare account, and a paid Cloudflare plan from the first deploy.",
+      "paraphrase": "Even automated setup requires accounts on GitHub and Cloudflare, with the paid Cloudflare tier active from the initial deploy.",
       "fact": "f:zpjl8k"
     },
     {
@@ -495,7 +503,7 @@
         85,
         86
       ],
-      "paraphrase": "Setup is not complicated with the tool driving it, but it is not a single sign-up screen.",
+      "paraphrase": "With the tool driving, setup is manageable, yet still involves several steps rather than one sign-up.",
       "cut": "marketing"
     },
     {
@@ -511,7 +519,7 @@
         90,
         90
       ],
-      "paraphrase": "Committing to git-backed content is itself a choice.",
+      "paraphrase": "Adopting git-backed content is a commitment in its own right.",
       "cut": "marketing"
     },
     {
@@ -519,15 +527,23 @@
         90,
         91
       ],
-      "paraphrase": "Every publish is a commit, which gives history, attribution, and rollback.",
+      "paraphrase": "Each publish is recorded as a commit.",
       "fact": "f:w379wu"
+    },
+    {
+      "lines": [
+        90,
+        91
+      ],
+      "paraphrase": "Git itself supplies the change history, the credit, and the means to roll back.",
+      "cut": "external-trivia"
     },
     {
       "lines": [
         91,
         93
       ],
-      "paraphrase": "Content lives in a repository the organization needs a GitHub account to reach, even if editors never see it.",
+      "paraphrase": "The organization needs a GitHub account to reach its content repository, though editors never touch it.",
       "fact": "f:oyiv3h"
     },
     {
@@ -551,7 +567,7 @@
         98,
         100
       ],
-      "paraphrase": "If the trade-offs suit you, the admin track gets a default site running with no code and the extend track goes further.",
+      "paraphrase": "For an admin setup with no code, the admin track suffices; the extend track is for developers going further.",
       "cut": "navigation"
     },
     {

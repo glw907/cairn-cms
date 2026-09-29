@@ -32,11 +32,12 @@ pass's changed JavaScript, TypeScript, and Go.
 - Task 2: one Agent-tool chain, the same shape, in this worktree. It is the rate checkpoint.
 - Tasks 3 to 6: `pass-execute-chains` by name, three chains in three worktrees branched from task
   2's commit, with `classifier: false`, `gateLane: "light"`, each task's `gate` as below, and the
-  required `args.gate`, `args.implementer`, and `args.planPath`. Chain X is
-  `draft-docs-harvest-x` (task 3, then task 4). Chain Y is `draft-docs-harvest-y` (task 5).
-  Chain Z is `draft-docs-harvest-z` (task 6). The chains' gates need no `node_modules`, so the
-  chain worktrees get no install. The chains are independent: each edits only its own pages'
-  facts sections and ledgers (task 6 also owns the sections named in its outcomes).
+  required `args.gate`, `args.implementer`, and `args.planPath`; each task's `criteria` carries
+  task 2's Acceptance. Chain X is `draft-docs-harvest-x` (task 3, then task 4). Chain Y is
+  `draft-docs-harvest-y` (task 5). Chain Z is `draft-docs-harvest-z` (task 6). The chains' gates
+  need no `node_modules`, so the chain worktrees get no install. The chains are independent: each
+  edits only its own pages' facts sections and ledgers (task 6 also owns the sections named in
+  its outcomes).
 - Task 8: independent of tasks 3 to 6 (it edits `scripts/`, `src/tests/`, `tool/`, and
   `.github/`, never facts or ledgers). It runs in this worktree while the chains run, as one
   Agent-tool chain with the implementer upshifted to `model: opus`, because gate narrowing is
@@ -64,13 +65,13 @@ usage block as the conductor reads it from the completion result (a subagent can
 own tokens), plus the `pass-execute-chains` run's `spent`. Tasks 3 to 6 take one ledger row, from
 `spent`.
 
-**Checkpoints:** after task 1 (STATUS written, then the hold); after task 2 (the rate
-checkpoint: re-project tasks 3 to 6 per page line from task 2's measured tokens, since extend
-averages about 188 lines a page against admin's 139, and if the projection breaks the ceiling,
-write STATUS and ask Geoff one question before launching the chains); after task 7; after
-task 9. Segments: S1 is task 1; S2 is task 2; S3 is tasks 3 to 6 and task 8, in parallel on
-disjoint files (the disjoint-Files-seam override of the three-to-four-task segment); S4 is tasks
-7, 9, and 10. Every boundary is a gate-green commit.
+**Checkpoints:** after task 1 (`main`'s STATUS names this branch, the plan path, and the trigger,
+B and C merged; then the hold); after task 2 (the rate checkpoint: re-project tasks 3 to 6 per
+page line from task 2's measured tokens, since extend averages about 188 lines a page against
+admin's 139, and if the projection breaks the ceiling, write STATUS and ask Geoff one question
+before launching the chains); after task 7; after task 9. Segments: S1 is task 1; S2 is task 2;
+S3 is tasks 3 to 6 and task 8, in parallel on disjoint files (the disjoint-Files-seam override of
+the three-to-four-task segment); S4 is tasks 7, 9, and 10. Every boundary is a gate-green commit.
 
 ## Rulings for Geoff
 
@@ -82,6 +83,15 @@ and the re-derived plan is about 7.8 to 9.5M, above the approved 7M. **Recommend
 - **No** keeps 7M: the 80% stop (5.6M) fires inside the audit chains on a run that stays within
   plan, so the pass stops at the task 2 checkpoint to ask again or splits, with the deletion
   (tasks 8 and 9) moving to a follow-up pass.
+
+**R2. Drop the old `docs/README.md` from the register's front-door exemplars?** Task 9 deletes it,
+and `docs-register.md` names it an exemplar. **Recommendation: yes (drop).** Capturing it puts
+the page's own old text before the stage 5 drafter who rebuilds it, which the parent amendment
+forbids ("The writer shouldn't ever see the original content").
+- **Yes:** task 9 removes it from the register's exemplar list and records that in `relink.json`
+  for stage 5.
+- **No:** task 9 first captures it verbatim to `docs/internal/exemplars/`, and the stage 5 plan
+  bars its drafter from that capture.
 
 ## Global constraints
 
@@ -109,7 +119,8 @@ and the re-derived plan is about 7.8 to 9.5M, above the approved 7M. **Recommend
   constants, `tool/internal/spine/conditions.json`, and `scripts/checks/shipped-anchors.json` are
   shipped contracts: this pass never changes them.
 - Commit specific files, never `git add -A`. Commit messages carry the attribution trailer.
-- No task edits `docs/STATUS.md` except the conductor's checkpoint writes and task 10.
+- No task edits this branch's `docs/STATUS.md` except task 10; the conductor's checkpoint
+  writes go to `main`'s.
 - The conductor never reads a diff or resolves a conflict; a merge that conflicts goes to a
   dispatched agent under task 7's rule.
 
@@ -120,8 +131,7 @@ and the re-derived plan is about 7.8 to 9.5M, above the approved 7M. **Recommend
 2. **A ledger that skips a claim.** The span-coverage rule fails it by line range; the reviewer's
    sample then checks what each span was disposed as.
 3. **A fact that is near the claim but not it, and a true claim cut or rejected.** Each audit's
-   `diff-reviewer` takes the spec's sample (near-miss mappings, new facts, judgment cuts,
-   rejections, fan-in ids).
+   `diff-reviewer` takes the sample in task 2's Acceptance.
 4. **A reference grep misses, or a contract gets "repaired".** Task 9's residue printout
    classifies every remaining hit against the spec's allowed-residue classes.
 5. **A gate that passes because its subject vanished.** Each narrowing keys on the arm state from
@@ -147,7 +157,8 @@ the test's fixtures. Modify `scripts/checks/gate-tier.mjs` only if the new direc
 - The verifier implements every rule in the spec's "The verifier" section, reading both lists
   from `deletion-list.json`.
 - `--arm` and `--pages` scope a run; a scoped run still fails on a missing ledger in its scope,
-  and a `--pages` path off the list fails by name. With no flag it checks all 49.
+  checks `Source:` only in the scoped pages' facts sections, and fails a `--pages` path off the
+  list by name. With no flag it checks all 49 and the whole container.
 - Output names each failure with the ledger path and claim index (an uncovered span by line
   range), reports every failure in the run, and prints per-arm counts on success.
 - The unit test uses fixtures only and never reads the real tree, so it survives the deletion.
@@ -157,7 +168,8 @@ the test's fixtures. Modify `scripts/checks/gate-tier.mjs` only if the new direc
 ledger for a page off the list; an uncovered paragraph; an empty `claims`; a missing ledger in a
 scoped run; a `--pages` typo; an absent record directory; malformed JSON; a `page` field that
 disagrees with its location; two ledgers for one page; a list that disagrees with the tree; a
-fact whose `Source:` names a deletion-list page. The check and the test are green.
+fact whose `Source:` names a deletion-list page; a scoped run that passes while an out-of-scope
+section cites one. The check and the test are green.
 
 ### Task 2: audit admin (rate checkpoint)
 
@@ -177,8 +189,11 @@ what pins it; the anchor sources are every anchor string under `tool/` (includin
 `src/lib/diagnostics/conditions.ts`, `scripts/checks/shipped-anchors.json`, and any gate.
 
 **Acceptance:** the gate is green; the report gives the claim count, facts reused, facts filed,
-cuts by reason, and bullets re-sourced. The conductor reads the dispatch's tokens from the Agent
-usage blocks (implementer plus reviewer) and computes tokens per page line.
+cuts by reason, and bullets re-sourced. The `diff-reviewer` traces five `fact` mappings against
+claim and bullet, five `new-fact` bullets to source, five judgment cuts, every `[rejected]`
+retag, and every id three or more claims fan into. Tasks 3 to 6 carry this same acceptance. The
+conductor reads the dispatch's tokens from the Agent usage blocks (implementer plus reviewer) and
+computes tokens per page line.
 
 ### Task 3: audit editors (chain X)
 
@@ -267,6 +282,7 @@ launches no browser; CI runs the component suite, and this task changes no compo
   `check:symbols` allowlist takes the `migration-notes.md` code-span path mention.
 - `.github/workflows/tool.yml`'s two path filters add `scripts/checks/shipped-anchors.json`.
 - Every narrowed gate is still green on today's tree, where every arm is in the rebuilt state.
+- Each narrowing and allowlist entry is recorded in `relink.json`, per the spec's entry shape.
 
 **Acceptance:** test-first. The shared function is pinned in all three states. Each gate has a
 test in its narrowed state; `check:arm-indexes`, `check:package-files`, and `check:readiness` with
@@ -296,8 +312,7 @@ them).
 - `CLAUDE.md`'s docs section, `docs/internal/facts/README.md`'s "How this container grows", and
   `docs/internal/docs-register.md`'s freeze line drop the per-arm freeze for the deleted arms and
   state that the arms are empty until their stages rebuild them.
-- `docs/internal/record/harvest/relink.json` records every repaired link, narrowed assertion (from
-  task 8), and allowlist entry, per the spec's entry shape.
+- Every repaired link is appended to task 8's `relink.json`, per the spec's entry shape.
 - `CHANGELOG.md` `## Unreleased` gains the spec's entry, `Consumers must:` line included.
 
 **Acceptance:** the implementer prints the residue of both greps with each line classified
@@ -316,7 +331,9 @@ Run `cairn-pass`'s close:
   waived and the waiver recorded: the pass drafts no published prose, and its link repairs are
   agent-facing fixes.
 - The pin ceiling (the last release cut before this merge) written into
-  `docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`.
+  `docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`, and committed as one line in
+  `~/Projects/cairn-pub/docs/STATUS.md`: the pin must not pass `<ceiling>` until the narrative
+  arms are rebuilt, since later releases ship the reference arm only; see that handoff record.
 - STATUS rewritten with the stage 2a plan as the next action (a fresh brainstorm session writes
   it, drawing the extend outline from jobs, the facts, and `relink.json`), the fold record's owed
   errata as an open decision for Geoff, and a watch that the kept per-version records' paths are

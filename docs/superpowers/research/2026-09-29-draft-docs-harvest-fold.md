@@ -101,3 +101,25 @@ and the re-derived plan is about 7.8 to 9.5M, above the approved 7M. **Recommend
 - **Line counts:** spec 163 before, 261 after; plan 254 before, 339 after; 417 total before, 600
   after.
 - **Token ceiling:** 7M pending R1; 12M (flag 9.6M) on yes, re-derived as 7.8 to 9.5M planned.
+
+## Second fold (fold verification, FV-1 to FV-12)
+
+Source: `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold-verification.md`, read at
+`da3a923b`.
+
+| ID | Disposition | Where |
+| --- | --- | --- |
+| FV-1 (blocker) | Folded. A scoped run checks `Source:` only in the scoped pages' facts sections; the unscoped run (task 7) checks the whole container. New fixture: a scoped run passes while an out-of-scope section cites a deletion-list page. | Spec "The verifier"; plan task 1 outcomes and acceptance. |
+| FV-2 | Folded. The sample moves into task 2's Acceptance; tasks 3 to 6 carry the same acceptance, and each chain task's `criteria` arg carries it, since the runner's reviewer reads only its task section, Global constraints, and `criteria`. Review focus 3 points there. | Plan Execution mode, review focus 3, task 2. |
+| FV-3 | Folded. Three residue classes added: arm-directory or kept-set mentions, non-link mentions in the rulings ledger and consultations (dated evidence), and register or brief lines naming a page a stage rebuilds (entered in `relink.json`). | Spec "Allowed residue". |
+| FV-4 | **Owner fork: R2** (drop the old `docs/README.md` from the register's exemplars; recommendation yes). The answer folds into task 9 once ruled. | Plan "Rulings for Geoff". |
+| FV-5 | Folded. Task 10 also commits one line to cairn-pub's `docs/STATUS.md` (content stated in the task). This supersedes the first fold's "no cross-repo edit" on DR-8, CO-5. | Spec "Delete and relink", acceptance; plan task 10. |
+| FV-6 | Folded. A `[rejected: describes a deleted page]` bullet cites its ledger as `Source:`. | Spec "The audit" step 5. |
+| FV-7 | Owed. Define "names a deletion-list page": path, arm-relative path, or bare basename in `Source:` up to the tag; "page text" in that page's section counts; tag qualifiers excluded. | None yet. |
+| FV-8 | Folded (one sentence). The spec now says gate narrowing runs beside the audit and the deletion waits for the verifier. | Spec "The deletion". |
+| FV-9 | Owed. The shared arm-state function should also report the front door (`docs/README.md`, `docs/why-cairn.md`) as absent or rebuilt, for `check:visuals` and `check:package-files`. | None yet. |
+| FV-10 | Folded. The hold's STATUS write, and every conductor checkpoint write, goes to `main`'s STATUS; this branch's STATUS is untouched until task 10. | Plan checkpoints, global constraints. |
+| FV-11 | Not folded here: the conductor asks Geoff directly to confirm H5's reversed third call. | None. |
+| FV-12 | Folded. Task 8 writes its own narrowing and allowlist entries to `relink.json`; task 9 appends the link repairs. | Plan tasks 8 and 9. |
+
+**Line counts after:** spec 269 (was 261); plan 356 (was 339).

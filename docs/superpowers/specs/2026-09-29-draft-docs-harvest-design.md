@@ -91,8 +91,8 @@ deletion-list page, and never edits the facts files outside its own pages' secti
 5. Re-sources every bullet in its sections whose `Source:` names a deletion-list page, whether or
    not a claim maps to it. The page pointer is dropped where a code, vendor, or owner-brief
    source stands beside it; otherwise the bullet is retraced to such a source, or, if its claim
-   is about the page's own wording, retagged `[rejected: describes a deleted page]`. A bullet it
-   retags or re-sources drops any quotation of the old page.
+   is about the page's own wording, retagged `[rejected: describes a deleted page]` with its
+   ledger as `Source:`. A bullet it retags or re-sources drops any quotation of the old page.
 
 One named batch (the second extend half) also runs step 5 over the kept pages' sections and any
 bullet outside every page section, since no other batch owns them (`f:65atya` in the
@@ -124,7 +124,8 @@ only when:
 - every `fact` and `new-fact` id resolves to a bullet in the container, and every resolved
   bullet is `[verified]`, `[external]`, `[vendor]`, or `[rejected]`;
 - no claim lacks a disposition, and every `cut` reason is on the list;
-- no bullet anywhere in the container names a deletion-list page in its `Source:`.
+- no bullet names a deletion-list page in its `Source:`: in a scoped run, the bullets in the
+  scoped pages' own facts sections; in an unscoped run, the whole container.
 
 It takes `--arm <admin|editors|extend|front-door>` and `--pages <path,...>` to scope a run; a
 `--pages` path off the deletion list fails by name. It prints per-arm counts (claims, facts
@@ -135,7 +136,8 @@ with a checkout. `npm run check:facts` and `npm run check:provenance` stay green
 
 ## The deletion
 
-After the verifier passes, the deletion runs in two steps.
+Gate narrowing runs beside the audit, while the pages exist; the pages are deleted only after the
+verifier passes.
 
 **Gate narrowing** (before the pages go, test-first against fixtures). Every gate that pins an
 old page is narrowed so it passes with the arms empty and still fails on its defect once an arm
@@ -184,7 +186,11 @@ the goldens, testdata, and design records that carry it (`tool/**/testdata/**`, 
 `scripts/checks/shipped-anchors.json`); the reference arm's pages documenting shipped URLs; the
 facts files' page-path section headings; dated history (`CHANGELOG.md`, `docs/HISTORY.md`,
 `docs/STATUS.md`, `docs/internal/record/**`, `docs/internal/history/**`,
-`docs/internal/feedback/**`, historical entries in `migration-notes.md`); and `docs/superpowers/**`.
+`docs/internal/feedback/**`, historical entries in `migration-notes.md`); `docs/superpowers/**`; a
+hit naming an arm directory or a kept-set page, not a deleted page; non-link mentions in
+`docs/internal/engine-rulings.md` and `docs/internal/consultations/**`, kept as dated evidence
+(their Markdown links are still repaired); and a register or brief line naming a page a stage
+will rebuild, left in place and entered in `relink.json` against that stage.
 
 Every repaired link, narrowed assertion, and allowlist entry is recorded in
 `docs/internal/record/harvest/relink.json`, one entry per item: the file, a short grep-able
@@ -203,7 +209,8 @@ Released Go binaries print `https://cairn.pub/docs/admin/is-it-working#...`. cai
 deletion breaks no live link. The exposure is the repin: if cairn.pub moves to a release cut
 after the deletion merges, it relaunches its docs with the reference arm only. The **pin ceiling**
 is the last release cut before the deletion merges; the close writes it into
-`docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`, the record a cairn-pub pass reads.
+`docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md` and one line in cairn-pub's
+`docs/STATUS.md`, which a cairn-pub pass reads.
 The admin stage's outline carries the pinned slugs from the harvest's facts.
 
 The `## Unreleased` changelog entry states that the narrative arms and the front door were
@@ -252,8 +259,9 @@ admin batch re-projects the rest per page line.
 - The packed tarball's docs are exactly `docs/reference/**` plus the kept set.
 - The full repo gate, the docs gate, `check:facts`, `check:provenance`, the create-cairn-site
   tests, `test:emit`, and `make -C tool check` are green.
-- The pin ceiling is in the cairn-pub handoff record, the fold record's owed errata are an open
-  decision in STATUS, and STATUS names the stage 2a plan as the next action.
+- The pin ceiling is in the cairn-pub handoff record and cairn-pub's STATUS, the fold record's
+  owed errata are an open decision in STATUS, and STATUS names the stage 2a plan as the next
+  action.
 
 ## Out of scope
 

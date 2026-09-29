@@ -67,12 +67,13 @@ full post-mortem: `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`. 
   `check:prose` gained `src/lib/public`, and its 16 `token-colors` suppressions stay exercised.
   The admin sheet's `@source` leaves `src/lib/public` out because the banner writes no utility
   class.
-- **A merge-forward across a rename** needs git's rename detection, and the conflict is
-  `CONFLICT (file location)`. Pass A's seven changed files carried into `src/lib/admin/` on their
-  own; verify with `test ! -e src/lib/components` and the five greps.
+- **A merge-forward across a rename** has two cases. Git's rename detection carried pass A's edits
+  to renamed files into `src/lib/admin/` without a conflict (seven files here). `CONFLICT (file
+  location)` appears only for a new file added under the old folder, and this merge had none.
+  Verify with `test ! -e src/lib/components` and the five greps.
 - **The audit parser could not read five of 13 guidance fences raw**, and two still failed after
-  normalization. Decision 14's test normalizes `{...}` and bare `...` lines and fails a fence that
-  still does not parse, never skips it. The only retired pattern in a fence was `badge-ghost`.
+  normalization. Task 3 repaired those two fences, and decision 14's test normalizes `{...}` and
+  bare `...` lines and fails a fence that still does not parse, never skips it. The only retired pattern in a fence was `badge-ghost`.
 - **The promotion tripwire.** `promotion-versions.test.ts` is green on `0.97.0` and turns red on
   the `0.98.0` version commit while any `0.98.0` constant stands (`log-event-grammar`,
   `log-secret-field`, the guarded-retirement arm). Pass C's owner sitting decides each from
@@ -95,9 +96,11 @@ full post-mortem: `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`. 
 
 **Score:** about 6.6M of the 19M ceiling (flag 15.2M) before this close's draft, plus the close's
 draft, review, and fold (capped near 0.6M). Estimates from task notifications and `/cost`. Geoff
-set the 19M ceiling at the plan review (ruling F1). Planning misses: 2, decision 20's
-emitter recipe (an invalid first probe) and decision 18's stale fixture facts (a heading weight
-and post-plan edits, amended at pre-flight). Execution sittings: 0 in this session.
+set the 19M ceiling at the plan review (ruling F1). Planning misses: 3, decision 20's
+emitter recipe (an invalid first probe), decision 18's stale fixture facts (a heading weight and
+post-plan edits, amended at pre-flight), and decision 15's "the three radius role classes by
+role", whose ambiguity only a reviewer's blocking finding settled. Execution sittings: 1, Geoff's
+2026-09-28 ruling that pass A merges to `main` on its own.
 Fold-rule trial: the fold refused one finding of 49 (mechanics O2, keep task 1's full local e2e).
 It was not a real defect. The refusal cost a longer local leg, and the ledger records no break the
 four extra specs caught; whether they earned that cost was not measured.

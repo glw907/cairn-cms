@@ -1764,9 +1764,10 @@ tripwire, the probe's emitter trap, and `viewport-overflow`'s timing trap). It i
 - **Tokens:** about 6.6M before task 8's draft, plus the draft, one Opus review, and the fold
   (capped near 0.6M), against the 19M ceiling and the 15.2M flag. The estimates come from task
   notifications and `/cost`, not a token-by-token audit.
-- **Planning misses: 2.** Decision 20's emitter recipe (the first probe ran on a tree with no
+- **Planning misses: 3.** Decision 20's emitter recipe (the first probe ran on a tree with no
   shipped guidance and was invalid, so it did not spend the retry), and decision 18's stale fixture
   facts (the heading weight, the fixture's post-plan edits, and two formatting artifacts, amended at
-  pre-flight).
-- **Execution sittings: 0** in this session. Geoff's rulings F1, F2, and A1 came at the plan sitting
-  (2026-09-27), and his call to merge pass A alone came on 2026-09-28.
+  pre-flight), and decision 15's "the three radius role classes by role", whose ambiguity only a
+  reviewer's blocking finding settled.
+- **Execution sittings: 1.** Geoff's 2026-09-28 ruling that pass A merges to `main` on its own.
+  His rulings F1, F2, and A1 came at the plan sitting (2026-09-27), before execution.

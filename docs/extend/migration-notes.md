@@ -34,8 +34,8 @@ The release step sets the version number at the cut and renames this section to 
   config you pass with `--config`) and any site script that names the old path.
 - **Know what the audit no longer reads.** `src/lib/components` left `DEFAULT_STATIC_SCOPE`, so
   the rules that read it by default stop reading your own components there unless you restore the
-  root with `static.scope`, as above. `stripe-trim-parity` and `unlayered-font-clobber` stay
-  admin-only, so they never read your public components. The
+  root with `static.scope`, as above. `stripe-trim-parity` and `unlayered-font-clobber` read only the admin roots in
+  `static.scope`, so they never read your public components. The
   [`cairn-audit` reference](../reference/cairn-audit.md) states the same restore form.
 - **Expect `DEFAULT_ADMIN_SCOPE` to reach `src/lib/admin`.** It is now `src/routes/admin`,
   `src/lib/admin`, and `src/lib/admin-toolkit`, the same three roots as the static default. The

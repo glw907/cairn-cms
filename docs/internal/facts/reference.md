@@ -1230,9 +1230,9 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   markup, and it carries `PreviewBanner` only. The membership rule: such a component lives here and
   never on `/admin`; a loader or a type belongs on `/sveltekit` or another data-only subpath; and
   `CairnHead` stays at `./delivery/head` because it renders only document-head tags. The compiled
-  admin sheet does not scan `src/lib/public`, since the banner writes no utility class of its own.
+  admin sheet's input scans `src/lib/admin` and `src/lib/admin-toolkit` but not `src/lib/public`, since the banner writes no utility class of its own.
   Source: `package.json:110-114` (the `./public` export), `src/lib/public/index.ts:1-6` (the
-  membership rule and the one export), `scripts/build/admin-css.input.css:14` (the `@source` root, `src/lib/admin` only).
+  membership rule and the one export), `scripts/build/admin-css.input.css:14,22` (the `@source` roots, `src/lib/admin` and `src/lib/admin-toolkit`).
   [verified]
 
 ## docs/reference/README.md

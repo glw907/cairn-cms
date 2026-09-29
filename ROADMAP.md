@@ -301,7 +301,7 @@ The original decision framing, for the record:
   the placement line, the exemplar, `radius-scale`); C is the one public theme (`cairn-public.css`,
   derived inks, heading levers, the three public audit rules, the `cairn-public` skill, and the
   designer walkthrough's template fixes). Pass C branches from B and both merge at C's close with
-  one `0.98.0` cut carrying B and C; pass C removes this entry. Draft documentation (below) waits
+  one `0.98.0` cut carrying A, B, and C (A is on `main`, unreleased); pass C removes this entry. Draft documentation (below) waits
   for C.
 
 - **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
@@ -349,9 +349,10 @@ The original decision framing, for the record:
   showed `scrollWidth` equal to `clientWidth` and nothing past the viewport. The rule is error
   tier, so a consumer running `--rendered` gets false errors. The fix is in
   `src/lib/audit/rules/rendered/viewport-overflow.ts`: wait for a stable `scrollWidth` after each
-  resize, and filter content origins to `right > viewport`. This supersedes the earlier
-  off-canvas-drawer hypothesis for the same 200 findings and STATUS's "counts differently on
-  identical runs" watch. Trigger: before the `0.98.0` cut, since it ships an error-tier rule that
+  resize, and filter content origins to `right > viewport`. This likely explains the
+  earlier 200 findings, whose off-canvas-drawer hypothesis stays open until the fix lands; after it,
+  compare a run with the drawer closed against one with it open as the proof step. It also
+  supersedes STATUS's "counts differently on identical runs" watch. Trigger: before the `0.98.0` cut, since it ships an error-tier rule that
   reports false errors to every consumer.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the

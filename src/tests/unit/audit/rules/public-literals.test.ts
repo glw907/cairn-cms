@@ -150,6 +150,37 @@ describe('public-literals: what it passes', () => {
   });
 });
 
+describe('public-literals: a color word inside a quoted string', () => {
+  // A quoted string is content or a family name, not a color the declaration paints with.
+  const quoted: [string, string][] = [
+    ['generated content', '.card::before { content: "red"; }'],
+    ['single-quoted content', ".card::before { content: 'white'; }"],
+    ['a quoted font family', '.card { font-family: "Tomato Grotesk", sans-serif; }'],
+    ['an escaped quote inside the string', '.card::before { content: "say \\"hi\\" red"; }'],
+  ];
+
+  it.each(quoted)('passes %s', (_label, rule) => {
+    expect(check(routeStyle(rule))).toEqual([]);
+  });
+
+  it('passes a quoted color word in a standalone CSS file and a style attribute', () => {
+    expect(check([], [{ file: 'src/chassis/prose.css', source: '.x::after { content: "red"; }' }])).toEqual([]);
+    expect(check(route('<p style="font-family: \'Gold\', serif">x</p>'))).toEqual([]);
+  });
+
+  it('still flags a bare color word beside a quoted string', () => {
+    const findings = check(routeStyle('.card { background: url("a.png") white; }'));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('white');
+  });
+
+  it('leaves token-colors reading the quoted word as before', () => {
+    const files = routeStyle('.card::before { content: "red"; }');
+    const parsed = files.map((file) => parseComponent(file.path, file.source));
+    expect(tokenColors.check({ files: parsed, sheet: SHEET, config: CONFIG, cssFiles: [] })).toHaveLength(1);
+  });
+});
+
 describe('public-literals: the shared core against token-colors', () => {
   // A chromatic oklch() is a literal `public-literals` names and `token-colors` never did, so the
   // admin tree's findings cannot move when the core learns a form.

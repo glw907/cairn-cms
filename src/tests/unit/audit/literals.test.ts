@@ -57,6 +57,20 @@ describe('findColorLiteral: each literal form', () => {
   });
 });
 
+describe('findColorLiteral: skipStrings', () => {
+  const quoted = ['"red"', "'white'", '"Tomato Grotesk", sans-serif', '"a \\" red"'];
+
+  it.each(quoted)('reads a color word in %s by default and skips it with skipStrings', (value) => {
+    expect(findColorLiteral(value)?.form).toBe('named');
+    expect(findColorLiteral(value, { skipStrings: true })).toBeNull();
+  });
+
+  it('still reads a bare color word and a non-word form beside a quoted string', () => {
+    expect(findColorLiteral('"red" white', { skipStrings: true })?.text).toBe('white');
+    expect(findColorLiteral('"red" #abc', { skipStrings: true })?.form).toBe('hex');
+  });
+});
+
 describe('isPureAchromatic', () => {
   it.each(['oklch(50% 0 75)', 'oklab(50% 0 0)', 'hsl(0 0% 50%)'])('is true for %s', (value) => {
     expect(isPureAchromatic(value)).toBe(true);

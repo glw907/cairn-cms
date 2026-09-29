@@ -345,7 +345,9 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `lch()`, `oklab()`, `oklch()`, `color()`, named colors) or an absolute font size (`px`, `pt`,
   `rem`, the `font` shorthand included) in a declaration, a `style=` value, a `style:` directive,
   or a Tailwind arbitrary value (`text-[#abc]`, `text-[14px]`); `em`, `%`, `var()` and `calc()`
-  over tokens pass, and the root element's `font-size` is exempt. Detection is the shared core
+  over tokens pass, and the root element's `font-size` is exempt. A color word inside a quoted
+  string (`content: "red"`, a quoted font-family name) is not read, a skip only the public scope
+  opts into (`token-colors` still reads it). Detection is the shared core
   `src/lib/audit/literals.ts`, which `token-colors` also reads while keeping its own narrower
   verdict set. The repo's own tree runs it from the showcase through
   `scripts/checks/public-scope.config.json`, which names the engine's `../../src/lib/public`,

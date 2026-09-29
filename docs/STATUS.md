@@ -44,21 +44,29 @@ Theme identity pass C, fresh session (`claude-opus-5-5`, `medium`): invoke `cair
 pass C's plan on `theme-c-plan` and pass B's post-mortem, then run pass C's task 0 from
 `theme-identity-b`'s head under the topology note above.
 
-### Next action (draft docs harvest, R3 audit running, then held for #97)
+### Next action (draft docs harvest, held for #97 after the R3 audit)
 
 > **Goal.** Prove every claim on the 49 old narrative and front-door pages is a fact or a recorded
 > cut, then delete them with every reference and gate repaired. **Settled (do not re-brainstorm):**
 > spec `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` and plan
 > `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`, both on branch `draft-docs-harvest`
-> (worktree `.claude/worktrees/draft-docs-harvest`), with Geoff's rulings R1 (12M ceiling), R2,
-> and R3 (audit now, away from the theme lineage; the brief is
-> `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`). **State:** tasks 1 and 2
-> done (task 2 at `a330c633`, 657k, rate 0.53k per page line). Tasks 3 to 6 run as
-> `pass-execute-chains` run `wf_01d09570-176` in worktrees `draft-docs-harvest-{x,y,z}`, with six
-> theme-touched extend pages deferred to task 6b. Next is task 7a: merge the chains and verify the
-> audited pages. **Hold:** task 6b, the rest of task 7, and tasks 8 to 10 wait for PR #97 (pass C,
-> carrying B) to merge, which needs Geoff's sitting. **Resume.** If this session died, a fresh
-> `claude-opus-5-5` session at `medium` invokes `cairn-pass`, reads the plan's R3 and ledger, and
-> resumes the run with `resumeFromRunId`, or runs task 7a if the run finished. Carry into tasks 4
-> and 7: the verifier treats a bare `why-cairn.md` as ambiguous and misses a full path behind
-> `../../`, so a reviewer checks front-door `Source:` fields by eye.
+> (worktree `.claude/worktrees/draft-docs-harvest`, head `c6286cad`, unpushed), with Geoff's
+> rulings R1 (12M ceiling), R2, and R3 (audit away from the theme lineage; rules in
+> `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`, which also carries the
+> cut discipline and the frozen-bullet Source exception). **State:** tasks 1 to 7a done and
+> reviewed; 43 pages audited (2,050 claims), verifier green on every one. Spend about 4.2M of 12M.
+> **Trigger:** PR #97 (pass C, carrying B) merges to `main`. **Approach.** Fresh `claude-opus-5-5`
+> session at `medium`: invoke `cairn-pass`, read the plan's R3 and ledger and the brief, have a
+> Sonnet agent merge `main` into `draft-docs-harvest` (facts conflicts on the two Source-only
+> frozen edits, f:rbm80t and f:0gltjq, keep both sides), then task 6b (six deferred extend pages
+> plus every `docs/superpowers/research/harvest-recheck/*.md` line, including frozen f:pgv0o5,
+> which is false), task 7's remainder (full verifier, no flag), then tasks 8 to 10. The chain
+> worktrees `draft-docs-harvest-{x,y,z}` are merged and can be removed.
+>
+> **Found outside the harvest's scope (file at the close's friction triage):** the scaffold's CI
+> (`templates/waymark/.github/workflows/check.yml:16`) pins Node 22 below `engines.node >=24`;
+> the `github.app-unreachable` remediation in `src/lib/diagnostics/conditions.ts` names
+> `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` env vars, while `createGithubApp` takes adapter
+> config; the showcase comment at `(admin)/signups/+page.svelte:154-156` has been stale since the
+> site admin sheet (`b911cb98`); the media orphan scan and purge are open to any editor unless the
+> access map restricts `media`.

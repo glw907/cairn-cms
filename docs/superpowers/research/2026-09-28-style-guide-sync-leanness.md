@@ -60,3 +60,16 @@ failure mode into machinery, and a 12M-token system pass touched one real page.
 | Planted-defect controls (J4's planted loosening) | no | Cut |
 | J2 real-page proof run | no | Keep: the first measurement that the system writes better pages |
 | R2p Vale 3.23.0 pin, W2/W3 agent-definition syncs | yes | Keep, adjusted to the slimmer supplement |
+
+## Constraint: the target register is preserved (Geoff, 2026-09-28)
+
+The re-scope removes machinery, never voice. Every ratified register rule survives, as does the
+voice R1 carries: the developer brief's voice specimens (the why-cairn front-door specimen, the
+`choose-an-ai-posture.md` paragraph at `8bbe78f5` lines 23-26 verbatim, the "Killed:" specimen),
+the Names section, the page anatomies, the track and front-door sections, and every recorded
+deviation from the base guide. What shrinks is prose that restates the base guide, which Vale's
+stock packages already enforce. The exemplars become the primary carrier of the register, per
+Anthropic's few-examples guidance, so slimming the rule text strengthens the voice signal rather
+than diluting it. Acceptance for the re-scope: R1's rule-disposition list (each ratified rule kept,
+reworded, or changed by ruling) is re-run against the slimmed register, and no voice rule moves to
+"dropped". J2's real-page run and Geoff's R5 read are the proof the register still lands.

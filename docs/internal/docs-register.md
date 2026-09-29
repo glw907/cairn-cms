@@ -43,17 +43,17 @@ follows there.
 | `CHANGELOG.md` | A developer reading what an upgrade changes | Google | Developer docs |
 | cairn.pub's own prose | A visitor to the rendered docs site | Google | Developer docs |
 | `docs/editors/` | Writes on a cairn site through `/admin` and never opens a terminal | Microsoft | Editor docs |
-| The admin interface's own copy | An editor at work in `/admin` | Microsoft, UI text | None; `docs/internal/admin-design-system.md` states the voice |
+| The admin interface's copy | An editor at work in `/admin` | Microsoft, UI text | None; `docs/internal/admin-design-system.md` states the voice |
 | `CONTRIBUTING.md` and `docs/internal/` | A contributor working on cairn itself | None; unpublished and unlinted | None |
 
 The cairn docs voice, which the developer brief defines, governs every surface whose base guide
-is Google. Editor docs take Microsoft's voice, tightened only by the editor brief's own rules.
+is Google. Editor docs take Microsoft's voice, tightened only by the editor brief's rules.
 Admin UI copy takes Microsoft's UI-text voice, tightened to professional and restrained copy with
 nothing cute and nothing chatty (Geoff, 2026-09-28), and a departure there is recorded in the
 Microsoft table of "Deviations from the base guides" like any other. The register governs
 public-facing writing only, and internal specs, plans, and agent-facing documents take whatever
 voice works best for Claude Code (Geoff, 2026-09-28). A Vale finding that is wrong about a specific line is a separate case with
-its own procedure, "When a Vale finding is wrong," which corrects a misfiring regex and leaves the
+a separate procedure, "When a Vale finding is wrong," which corrects a misfiring regex and leaves the
 guide untouched.
 
 ## Drafting brief: developer docs
@@ -135,15 +135,15 @@ guide is silent.
   - Killed: "You know it worked when"
 - **A vendor's specifics get a link, never a copy** (Geoff, 2026-08-05). Dashboard navigation,
   plan-availability tiers, expression-language signatures, field references, console walkthroughs,
-  and pricing all sit behind a link to the vendor's own page. Whatever cairn copies, cairn owns
+  and pricing all sit behind a link to the vendor's page. Whatever cairn copies, cairn owns
   keeping in sync, and a copy goes stale silently, because vendors rename dashboard sections and
   move features between tiers without notice; a restated detail is therefore wrong on a schedule
   cairn does not control, and a reader trusts it precisely because it looks specific. A page
-  writes out in full only cairn's own reasoning, which does not drift: why the engine cannot do a
+  writes out in full only cairn's reasoning, which does not drift: why the engine cannot do a
   thing itself, what an architectural choice costs, and which of two mechanisms is the true source
   and which a reconstruction. A vendor is quoted verbatim only for a short load-bearing
   distinction, with the link. A page keeps at most one illustrative snippet, framed as
-  illustrative, with the authoritative reference beside it. When two of a vendor's own pages
+  illustrative, with the authoritative reference beside it. When two of a vendor's pages
   disagree, linking one disposes of the conflict that restating both would force the page to
   reconcile.
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
@@ -166,10 +166,10 @@ as readily.
 - **Qualified claims stay whole.** Qualification stays inside the sentence that carries the
   claim. In explanatory prose, a sentence carries one qualified claim whole, and it may run past
   26 words when splitting it would separate the claim from its qualification.
-- **A restrained first person** appears only where a sentence states the author's own evidence.
+- **A restrained first person** appears only where a sentence states the author's evidence.
 - **The comparison set** is technical and academic writing, such as SQLite's "Appropriate uses"
   page, a systems paper's introduction, a standards document's overview section, and a mature
-  database's own description of itself. The cadence to match is theirs, with longer sentences
+  database's description of itself. The cadence to match is theirs, with longer sentences
   than a blog carries, fewer of them, and each one carrying one qualified claim.
 - **Imperatives** address the reader only in steps, task headings, cross-references ("For more
   information, see"), and notices. Chatty asides and staccato runs of short sentences are out of
@@ -192,7 +192,7 @@ reference entry that owns it.
 > out search crawlers and any token without first-party documentation.
 
 Killed: the same paragraph flattened into Google's default conversational register. It detaches
-each qualification into a short sentence of its own, turns the pointer into an imperative
+each qualification into a separate short sentence, turns the pointer into an imperative
 addressed to the reader outside any step, and drops the qualifier about first-party documentation
 on the way.
 
@@ -206,7 +206,7 @@ The concept paragraph is `docs/extend/choose-an-ai-posture.md` lines 23 to 26 as
 beside it was written for this register to show that failure.
 
 Ratified-good, for the front door only and the one specimen in the first person: the why-cairn
-opener, from Geoff's own account (re-ratified 2026-09-08; the earlier specimen, an editor emailing
+opener, from Geoff's account (re-ratified 2026-09-08; the earlier specimen, an editor emailing
 changes for the author to commit, was invented and is withdrawn): "Before cairn, the small
 organizations I run sites for lived on WordPress, and later on static site generators with a
 git-backed editor in front. WordPress was hard to manage and hard to design in, a mass of plugins
@@ -242,13 +242,13 @@ flat taste.
 - **No figurative language.** Google's
   [voice and tone page](https://developers.google.com/style/tone) rules out figurative language,
   metaphor included, and the register holds that ban. A metaphor does the most damage in a
-  definitional or structural position, where it defines what something is or names the docs' own
+  definitional or structural position, where it defines what something is or names the docs'
   anatomy.
   - Killed: "writing room" as the docs opener's definition of cairn. Its earlier ratification did
     not save it, and ratification never defends prose against a live read.
-  - Killed: "The four arms" as the heading for the docs' own structure, a metaphor dressing the
+  - Killed: "The four arms" as the heading for the docs' structure, a metaphor dressing the
     docs' anatomy.
-- **No prose about the docs' own writing.** The docs never admire themselves. Killed: "Eight words
+- **No prose about the docs' writing.** The docs never admire themselves. Killed: "Eight words
   the docs use precisely" as the vocabulary intro.
 - **No setup-colon triad**, the inline cadence of a clause, a colon, and three parallel items
   ("When something breaks: X diagnoses..., Y explains..., Z maps..."). A sequence of actions or
@@ -269,7 +269,7 @@ flat taste.
 - **No balanced-halves constructions.** Two clauses set against each other for their symmetry
   and not for their claim: "The price is X; the payoff is Y," "for X, A; for Y, B," an echo pair
   such as "small enough to..., and small enough that...," and a two-beat closer. Each half either
-  carries a claim of its own or goes. This is the residue Geoff catches most often, so a review
+  carries a separate claim or goes. This is the residue Geoff catches most often, so a review
   hunts it first.
 - **No list cadence in prose.** Semicolon-chained inventories, section skeletons that repeat one
   three-sentence shape, and reflexive triads are the setup-colon triad's relatives. Parallel items
@@ -279,9 +279,6 @@ flat taste.
   product" are tells. A paragraph ends where its content does.
 - **No virtue claims.** "A real answer," "the honest truth," "a fair question," "to be clear,"
   "genuinely," and "very real" assert the quality that the following sentences must demonstrate.
-- **No announcement scaffolding.** A meta-line that says what the text will do, such as "This page
-  is the two-minute version of...", and a verbless fragment as a section opener, tell the reader
-  about the page instead of starting it.
 - **No noir overcorrection.** Clipped, dramatic declaratives at high density, runs of consecutive
   short sentences, and dramatic verbs (tools that "lie," "fight," or "betray") are the failure
   the "qualified claims stay whole" rule in "Voice" guards against. A claim cut into fragments to
@@ -293,6 +290,10 @@ flat taste.
   the register extends the ban to "obviously." Folksy softeners, a micro-instructed action in
   explanatory prose outside a procedure's steps (a step carries one imperative action), and
   hand-holding such as "you never have to..." are the same family.
+- **No intensifier "own."** "Its own," "cairn's own," and "the author's own" add emphasis and no
+  information. Keep "own" only where it marks a real contrast of ownership that the sentence needs,
+  such as each crawler token taking its own `User-agent` group; otherwise cut it, or say
+  "separate" where separateness is the point (Geoff, 2026-09-29).
 - **No invented material.** A manufactured concrete scenario (an editor on hotel Wi-Fi), a
   metaphor no sentence established, and biography or deliberation the author never reported all
   read as evidence and are not.
@@ -337,7 +338,7 @@ states it.
   ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
 - Headings at one level share one sentence structure
   ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
-- A heading ends without a period, and it may be the reader's own question
+- A heading ends without a period, and it may be the reader's question
   ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
 - A heading carries no link
   ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
@@ -406,7 +407,7 @@ flat taste.
   rule out idioms and colloquial or culture-bound phrasing. A
   metaphor does the most damage where it defines what something is. Killed: "writing room" as the
   docs opener's definition of cairn.
-- **No prose about the docs' own writing.** The docs never admire themselves. Killed: "Eight words
+- **No prose about the docs' writing.** The docs never admire themselves. Killed: "Eight words
   the docs use precisely" as the vocabulary intro.
 - **No setup-colon triad**, the inline cadence of a clause, a colon, and three parallel items. A
   sequence of actions becomes a numbered list, parallel options become a bulleted list, and only
@@ -422,7 +423,7 @@ flat taste.
 - **No balanced-halves constructions.** Two clauses set against each other for their symmetry
   and not for their claim: "The price is X; the payoff is Y," "for X, A; for Y, B," an echo pair
   such as "small enough to..., and small enough that...," and a two-beat closer. Each half either
-  carries a claim of its own or goes. This is the residue Geoff catches most often, so a review
+  carries a separate claim or goes. This is the residue Geoff catches most often, so a review
   hunts it first.
 - **No list cadence in prose.** Semicolon-chained inventories, section skeletons that repeat one
   three-sentence shape, and reflexive triads are the setup-colon triad's relatives. Parallel items
@@ -438,6 +439,10 @@ flat taste.
   "just" and "obviously." The same holds for folksy softeners ("a little goes a long way," "gets
   tangled") and anonymous circumlocutions. A micro-instructed action is Microsoft's how-to voice
   and is not a finding.
+- **No intensifier "own."** "Its own," "cairn's own," and "the author's own" add emphasis and no
+  information. Keep "own" only where it marks a real contrast of ownership that the sentence needs,
+  such as each crawler token taking its own `User-agent` group; otherwise cut it, or say
+  "separate" where separateness is the point (Geoff, 2026-09-29).
 - **No invented material.** A manufactured concrete scenario (an editor on hotel Wi-Fi), a
   metaphor no sentence established, and biography or deliberation the author never reported all
   read as evidence and are not.
@@ -471,7 +476,7 @@ cannot: which sense of "the package" or "the tool" is meant.
 | Retired as names | the library (the word stays for the media library and the content library); the Go tool; the binary, except for the install artifact itself; a bare "the tool" | |
 <!-- vale Google.Quotes = YES -->
 
-**The precedent this expresses by font instead of case.** Git's own contributor guide draws the
+**The precedent this expresses by font instead of case.** Git's contributor guide draws the
 same line by sense, not by regex: "Use 'git' (all lowercase) when talking about commands ...
 and 'Git' when talking about the version control system" (`Documentation/CodingGuidelines`).
 cairn's brand is lowercase even as a proper noun, so it cannot split the same way by
@@ -491,7 +496,7 @@ a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose 
 inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
 already sits in a code span, so the rule never sees it as prose to begin with.
 Existing pages on a narrative arm still frozen (`docs/admin/`, `docs/editors/`,
-`docs/extend/`) are swept at that arm's own stage merge, never before; a pass touching a
+`docs/extend/`) are swept at that arm's stage merge, never before; a pass touching a
 still-frozen page for an unrelated reason does not take on a naming sweep of the whole page. A new page, or a page
 already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
 `.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
@@ -545,10 +550,10 @@ This section carries the rules a writer needs at the page, so the records stay r
   2026-08-15 on the evidence that WCAG 1.4.10 exempts diagrams from reflow by name and prescribes
   a text alternative, and that no platform or style guide binds diagram legibility at 320px. In
   its place, each diagram keeps a complexity budget (about 15 nodes; split or simplify past it),
-  scrolls inside its own `overflow-x: auto` figure at narrow widths rather than shrinking, and
+  scrolls inside its `overflow-x: auto` figure at narrow widths rather than shrinking, and
   carries the two-part text alternative. The bar still binds live reproductions and every
   non-docs family artifact.
-- **Diagrams render in cairn's own theme.** Mermaid is the authoring form; the stock `neutral`
+- **Diagrams render in cairn's theme.** Mermaid is the authoring form; the stock `neutral`
   render never ships, and a diagram the themed render cannot carry at the polish bar is
   hand-authored SVG, never a drawing-tool screenshot.
 
@@ -582,7 +587,7 @@ reviewer can check a page against a checklist rather than a feeling.
   needs to choose or verify, and each such section opens with a sentence tying it to the task,
   so the page never turns from instruction to exposition without a lead-in. Anything more (a
   full output listing, the behavior's limits, its rationale) belongs on the reference entry or
-  its own page, linked from the step that needs it.
+  a separate page, linked from the step that needs it.
 - **Tutorial milestone** (the extend track's deep path): stated objectives, the state the
   prior milestone produced, steps, a checklist before advancing, and a disclosure block (the
   Astro "Show me the steps" device) for a reader who wants to try first and check the answer
@@ -663,12 +668,12 @@ state, and is any cost or prerequisite revealed after the step that incurs it?
 
 **Profile:** a Svelte-fluent web developer building an organization's site on cairn's
 seams. **Base guide:** Google. **Register:** contract-first task, tutorial, and concept
-prose; this reader is fluent in their own stack and resents padding or hand-holding on it.
+prose; this reader is fluent in their stack and resents padding or hand-holding on it.
 
 **Vocabulary contract.** Free: the full developer vocabulary, plus cairn's product terms
 (concept, adapter, render, seam, island, holding branch, manifest, role) defined once in the
 track and used precisely after. Nothing is banned; imprecision is. A vendor's specifics get
-a link, cairn's own reasoning gets prose.
+a link, cairn's reasoning gets prose.
 
 **Arrival state.** Through npm, GitHub, or the root README, often evaluating cairn against
 alternatives, or taking over a scaffolded site and wanting to know what the tool wrote and
@@ -680,7 +685,7 @@ an archaeology session.
 
 **Counterpart question:** does the page state the contract and its stability tier rather
 than narrating implementation, and would a competent SvelteKit developer find any sentence
-here that their own stack's docs already own?
+here that their stack's docs already own?
 
 ### The contributor zone (`CONTRIBUTING.md` and `docs/internal/`)
 
@@ -745,7 +750,7 @@ audience lands, and they carry the whole cairn story.
 - **Five routes, not four, in the first screenful.** The evaluator route comes first
   ("deciding whether cairn fits" → `docs/why-cairn.md`), then editor, admin, extender,
   contributor, in that order. One copyable `create-cairn-site` command sits above the routes.
-  No Diátaxis citation appears anywhere, and the root README's own positioning sections sit
+  No Diátaxis citation appears anywhere, and the root README's positioning sections sit
   below the command and routes, for the same reason a pitch never leads.
 - **Primary persona: the seasoned developer serving an organization.** Most readers are
   developers, and jargon-stripped prose would cost the tool their respect. The full story is
@@ -775,7 +780,7 @@ audience lands, and they carry the whole cairn story.
 - **Stack reasoning is welcome.** Explaining why cairn uses SvelteKit, DaisyUI, and
   Cloudflare is in-register here, in short form; the full argument, including the honest
   trade-offs, stays in `docs/why-cairn.md`.
-- **The author's own frame, not a reconstructed one.** Any "why cairn" prose traces to Geoff's
+- **The author's frame, not a reconstructed one.** Any "why cairn" prose traces to Geoff's
   account of why cairn exists and who it serves:
   `record/2026-09-08-polish-inputs/front-door-author-brief.md`. Read it before drafting or
   reviewing the front door or any audience-facing rationale. The audience spans small
@@ -786,7 +791,7 @@ audience lands, and they carry the whole cairn story.
   competent setup a good team would build: a managed CMS host bundling hosting, database, and
   backups is one box, a member-management product is a mature tool. Its real advantages (mature
   editorial features, a relational content database, independently replaceable tools,
-  specialist vendors) are stated in the same factual voice as cairn's, and cairn's own
+  specialist vendors) are stated in the same factual voice as cairn's, and cairn's
   trade-offs sit beside them: extending it means custom code (a developer, not a plugin
   marketplace), content is files so relational queries are the developer's job, and one
   platform account is one vendor. A drawback gets its factual counterweight beside it, never a
@@ -874,8 +879,8 @@ no page today, and its "What cairn does instead" cell says so.
 |---|---|---|---|
 | [Voice and tone](https://developers.google.com/style/tone): "Use a voice that's casual, natural, and approachable, not pedantic or pushy." and "But, aim for a conversational tone rather than a formal one." | Pages read as a measured, precise technical report. Google's friendly and respectful manner stays, with no slang and no jokes. | Geoff's 2026-09-08 voice ruling; the 2026-09-28 draft docs proof, whose tone succeeded while its defects were structural | Geoff, 2026-09-28 (rulings 3 and 10) |
 | [Accessibility](https://developers.google.com/style/accessibility): "Use shorter sentences. Try to use fewer than 26 words per sentence." | An explanatory sentence may run past 26 words when splitting it would separate a claim from its qualification. Steps, list items, and task sections stay under 26 words, and a step or list item over that length is a blocking guide finding. | The same ruling and proof; the guidance is an accessibility rule, so it holds wherever the reader acts | Geoff, 2026-09-28 (rulings 3 and 10) |
-| [Pronouns](https://developers.google.com/style/pronouns): "Avoid first-person pronouns (I, we, us, our, and ours) except in the following contexts:" | The author uses a restrained first person where a sentence states the author's own evidence, and `.vale.ini` turns off `Google.FirstPerson` on every Google surface. Google's own list admits a document whose author comments in the first person, and the row records the rule's removal from the gate. | The authorial first person is the register for design decisions | Geoff, 2026-07-02 |
-| [Periods and other end punctuation](https://developers.google.com/style/exclamation-points): "In general, avoid exclamation points." | The root README may carry Geoff's voiced headings, such as `Love your editors!`, and `.vale.ini` holds `Google.Exclamation` at warning for `README.md`. The README carries no such heading today. | Geoff's sanction of his own voiced headings | Geoff, 2026-07-02 |
+| [Pronouns](https://developers.google.com/style/pronouns): "Avoid first-person pronouns (I, we, us, our, and ours) except in the following contexts:" | The author uses a restrained first person where a sentence states the author's evidence, and `.vale.ini` turns off `Google.FirstPerson` on every Google surface. Google's list admits a document whose author comments in the first person, and the row records the rule's removal from the gate. | The authorial first person is the register for design decisions | Geoff, 2026-07-02 |
+| [Periods and other end punctuation](https://developers.google.com/style/exclamation-points): "In general, avoid exclamation points." | The root README may carry Geoff's voiced headings, such as `Love your editors!`, and `.vale.ini` holds `Google.Exclamation` at warning for `README.md`. The README carries no such heading today. | Geoff's sanction of his voiced headings | Geoff, 2026-07-02 |
 
 ### Microsoft
 
@@ -898,7 +903,7 @@ first person, and the first three rows of the Google table record them.
 
 The rest of the developer brief tightens Google and needs no row. Restricting imperatives to
 steps, task headings, cross-references, and notices is a tightening, and so are the ban on
-question and teaser headings and every tell. The figurative-language rule adopts Google's own ban
+question and teaser headings and every tell. The figurative-language rule adopts Google's ban
 in place of the register's earlier allowance for an explanatory metaphor (Geoff, 2026-09-28,
 ruling 8), and the "writing room" and "The four arms" specimens stay as illustrations of it.
 
@@ -907,7 +912,7 @@ keystone, the tells that pass this section's test against Microsoft, and the Nam
 developer-brief rules fail that test on the editors track and stay out of the editor brief: the
 ban on staccato runs of short sentences and the longer cadence it implies, which contradict
 Microsoft's "Shorter is always better," and the ban on question headings, which contradicts
-Microsoft's allowance for the reader's own question. The editor brief carries no academic
+Microsoft's allowance for the reader's question. The editor brief carries no academic
 framing.
 
 ## Sources
@@ -941,7 +946,7 @@ date.
 - [Top 10 tips for Microsoft style and voice](https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice)
 - [Writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
 
-The exemplar captures carry their own source URLs and licenses in
+The exemplar captures carry their source URLs and licenses in
 [`exemplars/README.md`](./exemplars/README.md).
 
 ## For reviewers grading against this standard
@@ -949,7 +954,7 @@ The exemplar captures carry their own source URLs and licenses in
 - Grade structure against the page's base guide first, and treat a guide violation as blocking.
   Then grade against the track's drafting brief, reading "Deviations from the base guides" to
   tell a recorded departure from a defect.
-- Grade the page against its own track's profile next: which reader, which vocabulary contract,
+- Grade the page against its track's profile next: which reader, which vocabulary contract,
   which arrival state, which success criterion, and whether the counterpart question would fail
   it. A page graded against the wrong profile can look fine while failing its real reader.
 - Cite the rule a finding violates and quote the offending text; propose a rewrite in the voice

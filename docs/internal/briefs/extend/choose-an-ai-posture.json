@@ -6,11 +6,7 @@
       "id": "f:m2v7qd"
     },
     {
-      "text": "This page assumes the following precondition:",
-      "id": "no-claim"
-    },
-    {
-      "text": "The prerendered robots route at `src/routes/robots.txt/+server.ts` that the scaffold writes, which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt) describes.",
+      "text": "This page assumes the prerendered robots route at `src/routes/robots.txt/+server.ts` that the scaffold writes, which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt) describes.",
       "id": "f:gnlib7"
     },
     {
@@ -82,15 +78,15 @@
       "id": "f:gnlib7"
     },
     {
-      "text": "To verify the served file, follow these steps:",
+      "text": "To confirm that the served file carries the declared posture, follow these steps:",
       "id": "no-claim"
     },
     {
-      "text": "From the deployed site, fetch the served file.",
-      "id": "f:6g7mpp"
+      "text": "From the deployed site, fetch `/robots.txt`.",
+      "id": "f:65atya"
     },
     {
-      "text": "In the served file, confirm that the lines after `User-agent: *` match your posture.",
+      "text": "In that file, confirm that the lines after `User-agent: *` match your posture.",
       "id": "f:6g7mpp"
     },
     {
@@ -146,7 +142,7 @@
       "id": "f:b970xo"
     },
     {
-      "text": "When no origin resolves, or the origin's `/robots.txt` cannot be fetched, the detail is the fetch's own reason.",
+      "text": "When no origin resolves, or the fetch of the origin's `/robots.txt` fails, the detail is the fetch's reason.",
       "id": "f:b970xo"
     },
     {
@@ -158,7 +154,7 @@
       "id": "f:65atya"
     },
     {
-      "text": "To find the cause, follow these steps:",
+      "text": "To find why the served posture differs from the declared one, follow these steps:",
       "id": "no-claim"
     },
     {
@@ -174,7 +170,7 @@
       "id": "f:tno8hh"
     },
     {
-      "text": "[Cloudflare's managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/), when enabled, prepends its own content, including its own `Content-Signal` line, to the origin's file in one combined response.",
+      "text": "[Cloudflare's managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/), when enabled, prepends its own content, including its `Content-Signal` line, to the origin's file in one combined response.",
       "id": "f:tno8hh"
     },
     {

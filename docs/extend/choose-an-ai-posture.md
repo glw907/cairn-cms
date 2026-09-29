@@ -3,11 +3,9 @@
 Decide whether your site declines AI training crawlers, invites them, or states no preference, and
 carry that choice through to the file its robots route serves.
 
-This page assumes the following precondition:
-
-- The prerendered robots route at `src/routes/robots.txt/+server.ts` that the scaffold writes,
-  which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt)
-  describes.
+This page assumes the prerendered robots route at `src/routes/robots.txt/+server.ts` that the
+scaffold writes, which
+[Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt) describes.
 
 ## Choose a posture
 
@@ -79,10 +77,10 @@ changed posture reaches the served file once the build carrying it deploys.
 
 ## Verify the served file
 
-To verify the served file, follow these steps:
+To confirm that the served file carries the declared posture, follow these steps:
 
-1. From the deployed site, fetch the served file.
-2. In the served file, confirm that the lines after `User-agent: *` match your posture.
+1. From the deployed site, fetch `/robots.txt`.
+2. In that file, confirm that the lines after `User-agent: *` match your posture.
 
    The expected file depends on the posture:
 
@@ -110,8 +108,8 @@ To verify the served file, follow these steps:
 
    - When `site-facts.json` is absent, the detail is
      `needs engine 0.97.0 or later, and one build`.
-   - When no origin resolves, or the origin's `/robots.txt` cannot be fetched, the detail is the
-     fetch's own reason.
+   - When no origin resolves, or the fetch of the origin's `/robots.txt` fails, the detail is the
+     fetch's reason.
 
 ## Resolve a posture warning
 
@@ -119,7 +117,7 @@ A failing `ai.posture-effective` check reports the `ai.posture-not-effective` wa
 means the served file carries nothing consistent with the declared posture, or carries the other
 posture's directives.
 
-To find the cause, follow these steps:
+To find why the served posture differs from the declared one, follow these steps:
 
 1. In the robots route, check that `robotsResponse` receives `cairn.aiPosture` as its `posture`
    option.
@@ -127,7 +125,7 @@ To find the cause, follow these steps:
 3. If both hold, look for a managed layer that the zone's operator controls ahead of the origin.
 
    [Cloudflare's managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/),
-   when enabled, prepends its own content, including its own `Content-Signal` line, to the
+   when enabled, prepends its own content, including its `Content-Signal` line, to the
    origin's file in one combined response.
 
 [Make the stated AI posture effective](../admin/is-it-working.md#make-the-stated-ai-posture-effective)

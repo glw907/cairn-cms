@@ -3,6 +3,7 @@
 // keeps the rule core pure and testable against fixtures.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { loadImportChain } from './import-chain.js';
 import { parseComponent } from './markup.js';
 import { parseSheet } from './sheet.js';
 import { applySuppressions } from './suppress.js';
@@ -192,9 +193,11 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   // The public scope is read only when a selected rule resolves over it, so an admin-only run
   // over an admin-only tree never fails on a scope none of its rules reads.
   const publicScope = rules.some((rule) => rule.publicScope) ? loadPublicScope(config) : null;
+  // The import chain is read for the same reason: only a rule that reads it pays for the walk.
+  const chain = rules.some((rule) => rule.importChain) ? loadImportChain(config.root, config.publicStylesheets) : undefined;
   const raised = rules.flatMap((rule) => {
     if (rule.publicScope && publicScope) {
-      return rule.check({ files: publicScope.files, sheet, config, cssFiles: publicScope.cssFiles, sources });
+      return rule.check({ files: publicScope.files, sheet, config, cssFiles: publicScope.cssFiles, sources, chain: rule.importChain ? chain : undefined });
     }
     return rule.adminOnly
       ? rule.check({ files: adminFiles, sheet, config, cssFiles: adminCssFiles, sources })
@@ -224,5 +227,6 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
     filesScanned:
       files.length + sources.length + (publicScope ? publicScope.files.length + publicScope.cssFiles.length : 0),
     ruleIds: rules.map((rule) => rule.id),
+    ...(chain && chain.unread.length > 0 ? { unreadImports: chain.unread } : {}),
   };
 }

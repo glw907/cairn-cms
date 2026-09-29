@@ -4,6 +4,7 @@
 // the suppression idiom resolves a directive to the next AST NODE and suppresses matching findings
 // anywhere in that node's range, which a line number alone cannot express.
 import type { AuditConfig } from './config.js';
+import type { ImportChain, UnreadImport } from './import-chain.js';
 import type { ParsedComponent } from './markup.js';
 import type { CompiledSheet } from './sheet.js';
 
@@ -62,6 +63,12 @@ export interface StaticRuleContext {
    * omits it.
    */
   sources?: SourceFile[];
+  /**
+   * The import chain of the `public.stylesheets` entries, read once per run. Present only when a
+   * selected rule sets `importChain`; a rule that sets it reads this, and every other rule never
+   * sees it.
+   */
+  chain?: ImportChain;
 }
 
 /** A static rule: an id, a tier, and a pure check over the run's context. */
@@ -85,6 +92,12 @@ export interface StaticRule {
    * reads a public file.
    */
   publicScope?: boolean;
+  /**
+   * Whether this rule reads `ctx.chain`, the `@import` chain of `config.publicStylesheets`. A rule
+   * that sets it also sets `publicScope`: the chain is the stylesheet half of the public scope, and
+   * the runner hands it over only in that scope's context.
+   */
+  importChain?: boolean;
   check(ctx: StaticRuleContext): Finding[];
 }
 
@@ -97,4 +110,9 @@ export interface AuditReport {
   filesScanned: number;
   /** The ids of the rules that ran, in registry order. */
   ruleIds: string[];
+  /**
+   * The `@import`s and entry stylesheets the chain loader could not read, when a rule that reads
+   * the chain ran. Reported, never a finding: an uninstalled font package is not a conformance error.
+   */
+  unreadImports?: UnreadImport[];
 }

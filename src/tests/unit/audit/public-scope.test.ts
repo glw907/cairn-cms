@@ -5,12 +5,19 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, resolveConfig } from '../../../lib/audit/config.js';
 import { runStatic } from '../../../lib/audit/run.js';
+import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import { staticRules } from '../../../lib/audit/rules/static/index.js';
 import { publicLiterals } from '../../../lib/audit/rules/static/public-literals.js';
 import type { StaticRule, StaticRuleContext } from '../../../lib/audit/types.js';
 
 /** The registry without the public-scope rules, for a tree that holds admin files only. */
 const adminRules = () => staticRules().filter((rule) => !rule.publicScope);
+
+/**
+ * The two rules whose scope split these tests read. The theme rules read daisyUI and Tailwind from
+ * the audited root, which a temporary fixture site does not install.
+ */
+const scopeSplitRules = () => staticRules().filter((rule) => rule.id === 'token-colors' || rule.id === 'public-literals');
 
 const REPO = fileURLToPath(new URL('../../../../', import.meta.url));
 
@@ -92,7 +99,7 @@ describe('the public scope in a run', () => {
   });
 
   it('raises token-colors on an admin file and public-literals on a public file, never both on one', () => {
-    const report = runStatic(loadConfig(siteRoot), staticRules());
+    const report = runStatic(loadConfig(siteRoot), scopeSplitRules());
     const pairs = report.findings
       .filter((finding) => finding.ruleId === 'token-colors' || finding.ruleId === 'public-literals')
       .map((finding) => `${finding.ruleId} ${finding.file}`);
@@ -143,7 +150,7 @@ describe('the public scope in a run', () => {
   ])('leaves src/routes/admin under token-colors and out of public-literals with %s', (_label, raw) => {
     const configPath = join(siteRoot, 'wide-public.json');
     writeFileSync(configPath, JSON.stringify(raw));
-    const report = runStatic(loadConfig(siteRoot, configPath), staticRules());
+    const report = runStatic(loadConfig(siteRoot, configPath), scopeSplitRules());
     const adminFindings = report.findings.filter((finding) => finding.file.startsWith('src/routes/admin'));
     expect(adminFindings.map((finding) => finding.ruleId)).toEqual(['token-colors']);
   });
@@ -162,7 +169,7 @@ describe('the public scope in a run', () => {
           public: { scope: ['src/lib/components', 'src/theme'] },
         })
       );
-      const report = runStatic(loadConfig(shared, configPath), staticRules());
+      const report = runStatic(loadConfig(shared, configPath), scopeSplitRules());
       const forWidget = report.findings.filter((finding) => finding.file === 'src/lib/components/Widget.svelte');
       expect(forWidget.map((finding) => finding.ruleId)).toEqual(['token-colors']);
     } finally {
@@ -178,11 +185,59 @@ describe('the public scope in a run', () => {
       put(named, 'src/routes/admin/+page.svelte', '<div class="card"></div>\n');
       const configPath = join(named, 'public-named.json');
       writeFileSync(configPath, JSON.stringify({ public: { scope: ['src/lib/admin-toolkit'] } }));
-      const report = runStatic(loadConfig(named, configPath), staticRules());
+      const report = runStatic(loadConfig(named, configPath), scopeSplitRules());
       const forField = report.findings.filter((finding) => finding.file === 'src/lib/admin-toolkit/Field.svelte');
       expect(forField.map((finding) => finding.ruleId)).toEqual(['public-literals']);
     } finally {
       rmSync(named, { recursive: true, force: true });
+    }
+  });
+
+  /** A public rule that asks for the import chain and records what it received. */
+  function chainProbe(seen: StaticRuleContext[]): StaticRule {
+    return { ...publicProbe(seen), id: 'probe-chain', importChain: true };
+  }
+
+  it('hands the import chain only to a rule that asks for it', () => {
+    const asked: StaticRuleContext[] = [];
+    const notAsked: StaticRuleContext[] = [];
+    runStatic(loadConfig(siteRoot), [chainProbe(asked), publicProbe(notAsked)]);
+    expect(asked[0].chain?.files.map((file) => file.file)).toEqual(['src/theme/theme.css']);
+    expect(notAsked[0].chain).toBeUndefined();
+  });
+
+  it('reports an unread import beside the findings, and prints it without failing the run', () => {
+    const site = mkdtempSync(join(tmpdir(), 'cairn-audit-public-unread-'));
+    try {
+      put(site, 'dist/admin/cairn-admin.css', '.card { border: 1px solid black }');
+      put(site, 'src/routes/admin/+page.svelte', '<div class="card"></div>\n');
+      put(site, 'src/theme/theme.css', '@import "@fontsource-variable/fraunces/opsz.css";\n:root { --site-tint: red; }\n');
+      const report = runStatic(loadConfig(site), [chainProbe([])]);
+      expect(report.findings).toEqual([]);
+      expect(report.unreadImports).toEqual([
+        { file: 'src/theme/theme.css', specifier: '@fontsource-variable/fraunces/opsz.css', reason: 'the package is not installed' },
+      ]);
+      expect(formatReport(report)).toContain('@fontsource-variable/fraunces/opsz.css (the package is not installed)');
+      expect(exitCodeFor(report)).toBe(0);
+    } finally {
+      rmSync(site, { recursive: true, force: true });
+    }
+  });
+
+  it('never loads the chain, or reports unread imports, when no selected rule reads it', () => {
+    const report = runStatic(loadConfig(siteRoot), [publicProbe([])]);
+    expect(report.unreadImports).toBeUndefined();
+  });
+
+  it('keeps an admin-only selection clear of the peers a theme rule needs', () => {
+    const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-public-peers-'));
+    try {
+      put(bare, 'dist/admin/cairn-admin.css', '.card { border: 1px solid black }');
+      put(bare, 'src/routes/admin/+page.svelte', '<div class="card"></div>\n');
+      // No node_modules here: daisyui and tailwindcss are unresolvable, and this run never needs them.
+      expect(() => runStatic(loadConfig(bare), adminRules())).not.toThrow();
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
     }
   });
 

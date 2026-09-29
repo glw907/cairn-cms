@@ -28,11 +28,11 @@ skill in a consumer repo.
 ## What ships
 
 `cairn-audit` ships whole, as consumer product: every registered rule, the static and rendered
-rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 36
+rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 37
 registered rules ship, and 35 of them audit the `/admin` surface. A consumer's admin IS cairn's
 own admin toolkit, so conformance to cairn's design system is exactly the product being audited,
-not apparatus that measures the engine from outside. The other one, `public-literals`, audits the
-site's public files instead: see [The public scope](#the-public-scope).
+not apparatus that measures the engine from outside. The other two, `public-literals` and
+`theme-conformance`, audit the site's public files instead: see [The public scope](#the-public-scope).
 
 Two things stay engine-side, both apparatus for producing the manifest the CLI ships rather than
 part of the audit a consumer runs: the norms generator that renders the admin and derives the
@@ -71,8 +71,8 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Nineteen rules run: fifteen error tier, and four advisory (`radius-scale`, `log-event-grammar`,
-`log-secret-field`, `public-literals`, all below). (`motion-reduced-delay`, the rendered counterpart to the two
+Twenty rules run: fifteen error tier, and five advisory (`radius-scale`, `log-event-grammar`,
+`log-secret-field`, `public-literals`, `theme-conformance`, all below). (`motion-reduced-delay`, the rendered counterpart to the two
 vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rendered mode.)
 
 | ID | What it checks |
@@ -96,6 +96,7 @@ vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rende
 | `log-event-grammar` **advisory** | A name heuristic over `<ident>.info(`, `.warn(`, `.error(` calls whose first argument is a plain string literal: the literal collides with a name `CairnLogEvent` already reserves, or its shape doesn't read as `area[.subject].verb_phrase`. It has no way to tell your own logger from `console.info` or another library's, and it never resolves a computed event name, a template literal, or a re-exported logger, since none of those carry a string literal it can read. Scans `static.sourceScope`, not `static.scope`: a log call isn't confined to an admin surface |
 | `log-secret-field` **advisory** | The same call heuristic, over each call's second, fields argument: a property key that whole-matches (never a substring) a member of `REDACTED_LOG_KEYS` (`@glw907/cairn-cms/log`). It can't tell your logger from `console.info` or another library's: if the call goes through a cairn `createLogger` instance the runtime already redacts that field's value, but on a bare `console` call the value ships as written. Either way this rule exists for what redaction can't reach even when it applies, the same secret's value also written directly into the message string |
 | `public-literals` **advisory** | A color literal or an absolute font size in a public file, in a CSS declaration, a `style=` value (the static parts of a mixed one included), a Svelte `style:` directive, or a Tailwind arbitrary value such as `text-[#abc]` or `text-[14px]`. It reads the [public scope](#the-public-scope), never the admin surfaces. Color literals are hex, `rgb()`, `hsl()`, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color()`, and the named colors; `transparent`, `currentColor`, and the CSS-wide keywords are not literals. An absolute font size is `px`, `pt`, or `rem`, including the size inside the `font` shorthand; `em`, `%`, a keyword, and a `var()` or `calc()` over tokens pass. A custom-property definition is legal anywhere under a theme root, a component's `<style>` block included, and the root element's `font-size` is exempt, since it defines `rem` for the page. Tailwind's own utilities (`text-sm`, `bg-red-500`) are tokens a designer may choose, so it never flags them. It stays advisory for a consumer, since it polices your own markup |
+| `theme-conformance` **advisory** | A public theme that defines everything the public stylesheets read. **Completeness:** each `@plugin "daisyui/theme"` block defines every key daisyUI's theme object carries, `color-scheme` included, except a block named after a built-in daisyUI theme (a partial block named `nord`), which daisyUI completes by merging. A hole in the default block reads as a runtime hole, and one in a secondary block as a value the default block fills. A scope with no theme block is a finding. The key list is read from `daisyui/theme/object`, and the rule fails when that list is empty or lacks `--color-base-100` or `--radius-box`. **Resolution:** a `var(--x)` with no fallback resolves to a property in the site's real [`@import` chain](#the-import-chain), a Tailwind theme variable (from Tailwind's own theme file, or the `--tw-` namespace), a key of a theme block found complete, or a custom property declared anywhere in the scanned tree (in CSS, a `<style>` block, a `style=` value, a `style:` directive, or a Tailwind arbitrary property). A `var()` with a fallback, and a name that isn't a plain custom-property identifier, are skipped. **Three more findings:** the chain never imports the engine's public stylesheet, `cairn-public.css`; a chassis file redeclares a default `cairn-public.css` sets (a stale copy of the old `tokens.css` beats the engine's layered default and cancels the derived status inks); and an `@theme` block declares a `--font-<name>` face beside a `--font-weight-<name>` weight, which Tailwind resolves to the face, so the weight utility never generates. It needs `daisyui` and `tailwindcss` installed beside the site, and stays advisory until every consumer site reports none |
 
 `list-role`'s two halves are complementary, not redundant: the static mode is the cheap own-class
 check every run gets for free, and the rendered mode is the only one that sees a descendant-selector
@@ -104,8 +105,8 @@ change. A consumer that runs `cairn-audit` without `--rendered` gets the static 
 
 ### The public scope
 
-The admin rules read the admin surfaces. `public-literals` reads a second scope, the public files a
-site ships to its visitors: the `.svelte` and `.css` files under `public.scope`, minus
+The admin rules read the admin surfaces. `public-literals` and `theme-conformance` read a second
+scope, the public files a site ships to its visitors: the `.svelte` and `.css` files under `public.scope`, minus
 `public.exclude`. The default roots are `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`,
 and `src/lib/components`, with `src/routes/admin` excluded. `src/lib/components` is where a site
 keeps its shared public components.
@@ -124,6 +125,26 @@ fails the run when it doesn't exist. When a run includes a public rule and every
 matches no file, the run fails, naming `public.scope`, so a scan that read nothing never reports a
 clean tree. A run that selects no public rule, such as `--rule` naming only admin rules, never reads
 the public scope and never raises that error.
+
+#### The import chain
+
+`theme-conformance` reads the site's real stylesheets, not just the files that sit in the public
+scope. It starts at each entry in `public.stylesheets` and follows every `@import` in order:
+relative paths from the importing file, and package specifiers from the packages installed for
+your site. A package specifier resolves the way a CSS bundler resolves it, through the package's
+`exports` map under the `style` condition, then its `style` field, and to the plain file path when
+the package has no `exports` field. It never uses Node's own resolution, which sends `tailwindcss`
+to a JavaScript file. The rule doesn't follow `tailwindcss` itself and reads its variables from
+its own theme file. The `layer()`, `source()`, and `supports()` modifiers on an `@import` are
+accepted.
+
+An import the audit can't read is never a finding. A package that isn't installed, a subpath the
+package doesn't export, and a missing file are listed at the end of the report under the Unread imports heading, so a font package you haven't installed doesn't fail a run. An import that resolves to a
+file that isn't CSS is a finding, and the audit never parses the file.
+
+The rule resolves `daisyui` and `tailwindcss` from the audited root when it runs. When either is
+missing, the run exits nonzero and names the package and the `npm install --save-dev` command. Both
+are optional peer dependencies of the engine: a run that selects only admin rules doesn't need them.
 
 The theme roots (`public.themeRoots`) are where a design value may legally be defined: a directory
 or a single file, `src/theme` and the chassis `tokens.css` by default. A custom-property definition
@@ -204,7 +225,7 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 | `public.scope` | `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`, `src/lib/components` | The roots the [public scope](#the-public-scope) reads `.svelte` and `.css` files under, recursively. Naming this key replaces the defaults, and a configured root your tree doesn't have fails the run |
 | `public.exclude` | `src/routes/admin` | Paths the public scope never reads. A list you write merges with the default, never replaces it |
 | `public.themeRoots` | `src/theme`, `src/chassis/tokens.css` | Directories or files where a design value may legally be defined. `public-literals` allows a custom-property definition under one |
-| `public.stylesheets` | `src/theme/theme.css` | The entry stylesheets whose `@import` chain is the site's real chain |
+| `public.stylesheets` | `src/theme/theme.css` | The entry stylesheets whose [`@import` chain](#the-import-chain) is the site's real chain. `theme-conformance` reads it. Name a second entry to audit an overlay layered after the theme |
 | `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css"]` |
 | `rendered.pages` | the core admin routes | The pages rendered mode visits. Naming this key replaces the default list |
 | `rendered.extraPages` | none | Pages rendered mode visits IN ADDITION to `rendered.pages` (or, absent that key, the core admin routes). Name your own screen here rather than restating the six core routes beside it |

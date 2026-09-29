@@ -311,7 +311,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `f:3kvawo` Exit codes: 0 (clean), 1 (unsuppressed error-tier finding), 2 (run couldn't start/finish: bad
   flag, no server, no browser, redirect-trap refusal). Codes route through `process.exitCode`,
   never `process.exit`, so piped stdout flushes fully first. Source: `src/lib/audit/bin.ts:5-68`,
-  `src/lib/audit/report.ts:48` (`exitCodeFor`). [verified]
+  `src/lib/audit/report.ts:55` (`exitCodeFor`). [verified]
 - `f:djd62h` `touch-targets`'s enforced floor is `23.984375` CSS px (24px minus one Chromium LayoutUnit,
   1/64 CSS px, allowed for rect-snapping tolerance). Source:
   `src/lib/audit/rules/rendered/touch-targets.ts:81-110`. [verified]
@@ -326,11 +326,11 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   browser"), `:28-36` (`norms` calls `loadNormsManifest()`), `:62` (other modes call
   `loadConfig(process.cwd(), ...)`). [verified]
 
-- `f:z1rbea` Exactly 36 rules are registered: 19 static (15 error tier, 4 advisory: `log-event-grammar`,
-  `log-secret-field`, `radius-scale`, `public-literals`) plus 17 rendered (7 error-tier, 10
-  advisory-tier). Count by the registry arrays or by tier grep, not by a literal-string grep, which
+- `f:z1rbea` Exactly 37 rules are registered: 20 static (15 error tier, 5 advisory: `log-event-grammar`,
+  `log-secret-field`, `radius-scale`, `public-literals`, `theme-conformance`) plus 17 rendered (7
+  error-tier, 10 advisory-tier). Count by the registry arrays or by tier grep, not by a literal-string grep, which
   undercounts the rendered total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
-  `src/lib/audit/rules/static/index.ts#staticRules` (the 19-entry array),
+  `src/lib/audit/rules/static/index.ts#staticRules` (the 20-entry array),
   `src/lib/audit/rules/rendered/index.ts#renderedRules` (the 17-entry array). [verified]
 - `f:o4ctu5` `public-literals` is the one static rule that resolves over the public scope
   (`publicScope: true` on the rule): `.svelte` and `.css` files under `public.scope` (default
@@ -340,8 +340,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `publicScope`; when it loads and matches no file the run fails naming `public.scope`, and a
   configured root the tree lacks throws while a missing default root is skipped. `public.themeRoots`
   (default `src/theme`, `src/chassis/tokens.css`) are where a custom-property definition is legal;
-  `public.stylesheets` (default `src/theme/theme.css`) resolves into the config and no rule reads it
-  yet. The rule flags a color literal (hex, `rgb()`, `hsl()`, `hwb()`, `lab()`,
+  `public.stylesheets` (default `src/theme/theme.css`) is the entry list `theme-conformance` follows
+  (`f:tbq6gh`). The rule flags a color literal (hex, `rgb()`, `hsl()`, `hwb()`, `lab()`,
   `lch()`, `oklab()`, `oklch()`, `color()`, named colors) or an absolute font size (`px`, `pt`,
   `rem`, the `font` shorthand included) in a declaration, a `style=` value, a `style:` directive,
   or a Tailwind arbitrary value (`text-[#abc]`, `text-[14px]`); `em`, `%`, `var()` and `calc()`
@@ -354,6 +354,33 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `check-admin-css-classes.mjs`) hand `runStatic` every rule except the public-scope ones.
   Source: `src/lib/audit/rules/static/public-literals.ts#publicLiterals`,
   `src/lib/audit/run.ts#loadPublicScope`, `src/lib/audit/config.ts#isPublicFile`. [verified]
+- `f:tbq6gh` `theme-conformance` is a static advisory rule over the public scope (`publicScope: true`,
+  `importChain: true`), built by `createThemeConformance(peers)` so a test injects the peer access.
+  `runStatic` reads the `@import` chain of `public.stylesheets` once, through
+  `src/lib/audit/import-chain.ts#loadImportChain`, only when a selected rule sets `importChain`, and
+  hands it to those rules alone. The loader lists top-level `@import` statements through
+  `sheet.ts#parseStatements` (a block-less at-rule that `parseSheet` drops at its `;`), follows
+  relative paths from the importing file and package specifiers under the `style` export
+  condition, then the `style` field, then the file path when the package has no `exports` field
+  (never Node resolution, which sends `tailwindcss` to `dist/lib.js`). `tailwindcss` and remote URLs
+  are not traversed; an import that cannot be resolved or read lands in `AuditReport.unreadImports`,
+  which the report prints under "Unread imports", and never raises a finding; a target that is not
+  `.css` is a finding and is never parsed. The key list is the union of keys in `daisyui/theme/object`
+  and the built-in names are its theme names, loaded lazily from the audited root by
+  `src/lib/audit/peers.ts` (a missing `daisyui` or `tailwindcss` throws a message naming the peer and
+  `npm install --save-dev <peer>`; an empty list, or one without `--color-base-100` or `--radius-box`,
+  throws). A block named after a built-in theme is complete by merging; a hole in the default block
+  (or the only block) reads as a runtime hole, one in a secondary block as a value the default fills.
+  A `var(--x)` with no fallback resolves against declarations in the scope and the chain, the
+  variables of `tailwindcss/theme.css` and the `--tw-` prefix, and the daisyUI keys only when some
+  block is complete. The chassis-redeclare finding lists, per chassis file in the chain, the names
+  `cairn-public.css` declares that the file sets on `:root`, `html`, `[data-theme]`, or in `@theme`
+  (a class-scoped rule such as prose.css's `--flow-space` is not one). `parseSheet` now keeps the
+  own declarations of a `@theme` or `@plugin` block that nests another block, since Tailwind's own
+  theme file nests `@keyframes` in `@theme default`. Source:
+  `src/lib/audit/rules/static/theme-conformance.ts#createThemeConformance`,
+  `src/lib/audit/import-chain.ts#loadImportChain`, `src/lib/audit/peers.ts#loadDaisyThemeKeys`,
+  `src/lib/audit/sheet.ts#parseStatements`. [verified]
 - `f:eqsngu` `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are both `src/routes/admin`, `src/lib/admin`,
   `src/lib/admin-toolkit`; `src/lib/components` is no longer a default root. They stay two constants
   and two config keys (`static.scope`, `static.adminScope`) so a site can narrow one without the
@@ -373,7 +400,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/components` from `stripe-trim-parity` and `unlayered-font-clobber`, which stay
   admin-only by owner ruling (Geoff, 2026-09-27). Source:
   `src/lib/audit/config.ts#DEFAULT_STATIC_SCOPE`, `src/lib/audit/config.ts#DEFAULT_ADMIN_SCOPE`,
-  `src/lib/audit/config.ts:264-265` (`asPathList` calls), `src/lib/audit/run.ts:56`
+  `src/lib/audit/config.ts:264-265` (`asPathList` calls), `src/lib/audit/run.ts:57`
   (`readScope`'s missing-root throw), `src/lib/audit/config.ts#isPublicFile`. [verified]
 - `f:h4ztuy` `radius-scale` is a static rule at advisory tier that reads class tokens (through `utilityBase()`,
   so `md:rounded-lg` is caught) and raises one finding per offending token: a bare `rounded`, the

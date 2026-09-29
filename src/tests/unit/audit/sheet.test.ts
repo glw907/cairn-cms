@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { conditionalConditions, parseSheet } from '../../../lib/audit/sheet.js';
+import { conditionalConditions, parseSheet, parseStatements } from '../../../lib/audit/sheet.js';
 
 describe('parseSheet', () => {
   it('resolves a class token to its declarations', () => {
@@ -267,5 +267,50 @@ describe('conditionalConditions', () => {
     expect(conditionalConditions(['@layer components', '@media (min-width: 40rem)'])).toEqual([
       '@media (min-width: 40rem)',
     ]);
+  });
+});
+
+describe('parseSheet on a theme block that nests another block', () => {
+  it('keeps the @theme declarations beside a nested @keyframes', () => {
+    const css = '@theme default {\n  --color-red-500: red;\n  --animate-spin: spin 1s linear infinite;\n  @keyframes spin { to { transform: rotate(360deg) } }\n}';
+    const theme = parseSheet(css).rules.find((rule) => rule.selector === '@theme default');
+    expect(theme?.declarations.map((d) => d.property)).toEqual(['--color-red-500', '--animate-spin']);
+  });
+});
+
+describe('parseStatements', () => {
+  it('lists a block-less @import that parseSheet drops at its semicolon', () => {
+    const css = '@import "tailwindcss";\n@import "./prose.css" layer(base);\n.a { color: red }';
+    expect(parseSheet(css).rules.map((rule) => rule.selector)).toEqual(['.a']);
+    expect(parseStatements(css).map((s) => [s.name, s.prelude])).toEqual([
+      ['import', '"tailwindcss"'],
+      ['import', '"./prose.css" layer(base)'],
+    ]);
+  });
+
+  it('reports offsets that slice back to the statement', () => {
+    const css = '/* lead */ @import "a.css";\n@source not "./.claude";\n';
+    const [first, second] = parseStatements(css);
+    expect(css.slice(first.start, first.end)).toBe('@import "a.css";');
+    expect(css.slice(second.start, second.end)).toBe('@source not "./.claude";');
+  });
+
+  it('skips block at-rules and everything nested inside a block', () => {
+    const css = '@theme { --a: 1; }\n@layer base { @import "inner.css"; }\n.x { @apply p-1; }\n@import "kept.css";';
+    expect(parseStatements(css).map((s) => s.prelude)).toEqual(['"kept.css"']);
+  });
+
+  it('never reads a commented or quoted @import', () => {
+    const css = '/* @import "gone.css"; */\n.a { content: "@import x;" }\n@import "real.css";';
+    expect(parseStatements(css).map((s) => s.prelude)).toEqual(['"real.css"']);
+  });
+
+  it('keeps a semicolon inside url() and a string with the statement', () => {
+    const css = '@import url("a;b.css") screen;\n@import "c;d.css";';
+    expect(parseStatements(css).map((s) => s.prelude)).toEqual(['url("a;b.css") screen', '"c;d.css"']);
+  });
+
+  it('reads the last statement with no terminating semicolon', () => {
+    expect(parseStatements('@import "a.css"').map((s) => s.prelude)).toEqual(['"a.css"']);
   });
 });

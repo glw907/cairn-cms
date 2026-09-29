@@ -102,7 +102,7 @@ describe('the static rule registry', () => {
   // pass's motion-property, motion-hover-gate, and motion-vocabulary, the extend pass's
   // log-event-grammar and log-secret-field, and radius-scale are the modules that have
   // registered since, without touching run.ts.
-  it('carries the nineteen static rules registered since Task 7', () => {
+  it('carries the twenty static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -127,6 +127,7 @@ describe('the static rule registry', () => {
         'log-event-grammar',
         'log-secret-field',
         'public-literals',
+        'theme-conformance',
       ].sort(),
     );
   });

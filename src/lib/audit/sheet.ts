@@ -434,6 +434,9 @@ export function conditionalConditions(conditions: string[]): string[] {
   return conditions.filter((condition) => CONDITIONAL_GROUP_RULE.test(condition.trim()));
 }
 
+/** A block at-rule whose direct declarations are design values even when it also nests a block. */
+const THEME_AT_RULE = /^@(theme|plugin)\b/;
+
 /**
  * Walk a stylesheet's blocks, recursing through groups and collecting the style rules.
  * `baseOffset` is the position, in the top-level string `parseSheet` was called with, that this
@@ -470,10 +473,12 @@ function collectRules(css: string, conditions: string[], out: SheetRule[], baseO
       const inner = css.slice(i + 1, end);
       if (nested) {
         const inherited = prelude.startsWith('@') ? [...conditions, prelude] : conditions;
-        if (!prelude.startsWith('@')) {
+        if (!prelude.startsWith('@') || THEME_AT_RULE.test(prelude)) {
           // A nested style rule's own declarations, before its children. The children recurse with
           // their selectors as written, `&` unresolved: a rule comparing selector text compares
-          // within one nesting level, which is the level an author writes the pairing at.
+          // within one nesting level, which is the level an author writes the pairing at. A
+          // `@theme` or `@plugin` block that nests a `@keyframes` (Tailwind's own theme file does)
+          // still declares its own custom properties, so it reads like a style rule here.
           const declarations = parseDeclarations(ownDeclarationText(inner));
           if (declarations.length > 0) {
             out.push({
@@ -546,6 +551,111 @@ export function splitSelectorList(selector: string): string[] {
   }
   parts.push(selector.slice(start));
   return parts.map((part) => part.trim()).filter((part) => part.length > 0);
+}
+
+/** One top-level statement at-rule: a block-less `@import`, `@source`, `@charset`, and the like. */
+export interface SheetStatement {
+  /** The at-rule's name without the `@`, lowercased. */
+  name: string;
+  /** Everything between the name and the terminating semicolon, comments removed and trimmed. */
+  prelude: string;
+  /** Character offset of the `@`. */
+  start: number;
+  /** Character offset just past the terminating semicolon, or the end of the text when absent. */
+  end: number;
+}
+
+/**
+ * The top-level statement at-rules of a stylesheet, in source order. `parseSheet` reads rules that
+ * open a block, so a block-less `@import` is dropped at its semicolon and never reaches it; this
+ * is the sibling that lists them. A block at-rule (`@theme`, `@layer x { ... }`) and everything
+ * nested inside a block is skipped, so an `@import` inside a group is never reported, and a
+ * comment or a string holding `@import` is never read as one.
+ */
+export function parseStatements(css: string): SheetStatement[] {
+  const out: SheetStatement[] = [];
+  let atStart = true;
+  let i = 0;
+  while (i < css.length) {
+    const ch = css[i];
+    if (ch === '\\') {
+      i += 2;
+      atStart = false;
+      continue;
+    }
+    if (ch === '/' && css[i + 1] === '*') {
+      i = skipComment(css, i);
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      i = skipString(css, i);
+      atStart = false;
+      continue;
+    }
+    if (ch === ';' || ch === '}') {
+      i++;
+      atStart = true;
+      continue;
+    }
+    if (ch === '{') {
+      i = scanBlock(css, i).end + 1;
+      atStart = true;
+      continue;
+    }
+    if (/\s/.test(ch)) {
+      i++;
+      continue;
+    }
+    if (ch === '@' && atStart) {
+      const start = i;
+      const { name, next } = readIdent(css, i + 1);
+      let depth = 0;
+      let j = next;
+      let terminated = false;
+      while (j < css.length) {
+        const c = css[j];
+        if (c === '\\') {
+          j += 2;
+          continue;
+        }
+        if (c === '/' && css[j + 1] === '*') {
+          j = skipComment(css, j);
+          continue;
+        }
+        if (c === '"' || c === "'") {
+          j = skipString(css, j);
+          continue;
+        }
+        if (c === '(') depth++;
+        else if (c === ')') depth = Math.max(0, depth - 1);
+        else if (c === '{' && depth === 0) break;
+        else if (c === ';' && depth === 0) {
+          terminated = true;
+          break;
+        }
+        j++;
+      }
+      if (j < css.length && css[j] === '{') {
+        // A block at-rule: not a statement, and its body is skipped whole.
+        i = scanBlock(css, j).end + 1;
+        atStart = true;
+        continue;
+      }
+      const end = terminated ? j + 1 : css.length;
+      out.push({
+        name: name.toLowerCase(),
+        prelude: stripComments(css.slice(next, terminated ? j : css.length)).trim(),
+        start,
+        end,
+      });
+      i = end;
+      atStart = true;
+      continue;
+    }
+    atStart = false;
+    i++;
+  }
+  return out;
 }
 
 /** Index a compiled stylesheet for exact class-token lookup. */

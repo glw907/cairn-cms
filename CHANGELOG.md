@@ -92,12 +92,15 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   which read as a pale step in light and a near-black hole in dark.
 - A `dropdown-content menu` panel with no shadow utility of its own now carries the theme's warm
   elevation, the same var the modal box reads, instead of no shadow at all.
-- The admin root paints its own page background behind the app's content, so a page whose content
-  is shorter than the viewport no longer lets the real, unthemed document canvas show beneath it.
-- The media library's grid/list density toggle and the top-bar search trigger (the latter dropping
-  to an icon-only button with its label kept as its accessible name below `sm`, where the label
-  used to truncate to an unreadable fragment) now take the size step's `--size-field` bump the
-  same way their neighboring `btn-sm` controls do.
+- The admin root paints its own page background behind the app's content, so a page whose
+  scrollable overflow runs taller than the layout's own flow height (a forced-open dropdown menu is
+  the common case), or whose content is shorter than the viewport, no longer lets the real,
+  unthemed document canvas show beneath it.
+- The media library's grid/list density toggle now takes the size step's `--size-field` bump the
+  same way its neighboring `btn-sm` controls do.
+- Below `sm`, the top-bar search trigger's label drops to screen-reader-only text and the trigger
+  shrinks to its content, so it reads as an icon-only button that keeps its accessible name; the
+  label used to truncate to an unreadable fragment there.
 - The media detail panel's scrollable body carries more bottom padding, so its last where-used row
   clears the panel's own edge instead of scrolling under it.
 - The Tidy settings screen's "On"/"Off" and count heading pills size to their own short content

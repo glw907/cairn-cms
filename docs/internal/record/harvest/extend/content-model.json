@@ -1,0 +1,326 @@
+{
+  "page": "docs/extend/content-model.md",
+  "blob": "12ad5b9fc6b9dfed05130b2a1124269c71fb7d56",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Page summary pointing to the core reference.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        6,
+        6
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        8,
+        9
+      ],
+      "paraphrase": "A site declares a small fixed set of concepts, typically Posts and Pages.",
+      "fact": "f:kn5rze"
+    },
+    {
+      "lines": [
+        8,
+        9
+      ],
+      "paraphrase": "Concepts are declared through the adapter's content map.",
+      "fact": "f:r03vis"
+    },
+    {
+      "lines": [
+        9,
+        10
+      ],
+      "paraphrase": "Each concept is a directory of markdown files plus a fieldset built with defineFieldset.",
+      "fact": "f:phdgof"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "The fieldset draws on fifteen named field builders.",
+      "fact": "f:2hxm4t"
+    },
+    {
+      "lines": [
+        12,
+        15
+      ],
+      "paraphrase": "The fieldset is the single source for the form, the validator, and the inferred type.",
+      "fact": "f:phdgof"
+    },
+    {
+      "lines": [
+        17,
+        18
+      ],
+      "paraphrase": "A concept is not a generic collection type.",
+      "fact": "f:kn5rze"
+    },
+    {
+      "lines": [
+        18,
+        19
+      ],
+      "paraphrase": "A field type the builders lack is a gap to raise, not a local workaround.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "Pointer to declaring your own concept.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        22,
+        24
+      ],
+      "paraphrase": "A container inside a container throws at declaration, and an array's item must be a leaf.",
+      "new-fact": "f:2268rp"
+    },
+    {
+      "lines": [
+        22,
+        27
+      ],
+      "paraphrase": "An object holds only leaves, an array holds a leaf or flat object, and a reference inside an object throws.",
+      "fact": "f:68fh1k"
+    },
+    {
+      "lines": [
+        27,
+        28
+      ],
+      "paraphrase": "A field key never contains a dot, since a dotted path addresses a nested field.",
+      "fact": "f:t4hh8w"
+    },
+    {
+      "lines": [
+        30,
+        30
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "An entry's id is its filename minus .md, with no separate slug codec.",
+      "fact": "f:46edxb"
+    },
+    {
+      "lines": [
+        33,
+        35
+      ],
+      "paraphrase": "A dated concept adds a leading date to the filename.",
+      "fact": "f:46edxb"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "The URL slug strips only that leading date prefix.",
+      "fact": "f:46edxb"
+    },
+    {
+      "lines": [
+        36,
+        37
+      ],
+      "paraphrase": "Renaming changes the filename through a real git operation, not a metadata flip.",
+      "new-fact": "f:z4j689"
+    },
+    {
+      "lines": [
+        36,
+        37
+      ],
+      "paraphrase": "The rename operation happens on the holding branch.",
+      "new-fact": "f:xipx83"
+    },
+    {
+      "lines": [
+        39,
+        42
+      ],
+      "paraphrase": "An entry's date comes from its own frontmatter, so a dated permalink makes date required.",
+      "fact": "f:zce3pt"
+    },
+    {
+      "lines": [
+        44,
+        44
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        46,
+        48
+      ],
+      "paraphrase": "routing is one of three shorthands: feed, page, or embedded.",
+      "fact": "f:s2zbzm"
+    },
+    {
+      "lines": [
+        48,
+        48
+      ],
+      "paraphrase": "page is the default routing.",
+      "fact": "f:s2zbzm"
+    },
+    {
+      "lines": [
+        49,
+        50
+      ],
+      "paraphrase": "An embedded concept has no public URL but its entries stay editable.",
+      "fact": "f:vs77a6"
+    },
+    {
+      "lines": [
+        52,
+        52
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        54,
+        56
+      ],
+      "paraphrase": "The save action runs the fieldset validator before any commit and bounces field-keyed errors.",
+      "fact": "f:hdrzxd"
+    },
+    {
+      "lines": [
+        56,
+        58
+      ],
+      "paraphrase": "A behavior.validate that throws is caught and the field treated as valid.",
+      "fact": "f:dccnyu"
+    },
+    {
+      "lines": [
+        58,
+        59
+      ],
+      "paraphrase": "Pointer to the debug page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        61,
+        61
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        63,
+        64
+      ],
+      "paraphrase": "Entries are read directly from git; the committed manifest serves the rest of the content graph.",
+      "new-fact": "f:z5boz6"
+    },
+    {
+      "lines": [
+        64,
+        67
+      ],
+      "paraphrase": "The manifest has one row per entry carrying identity, routing, links, reference edges, tags, includes.",
+      "fact": "f:t5ebsr"
+    },
+    {
+      "lines": [
+        67,
+        68
+      ],
+      "paraphrase": "A build regenerates and verifies the manifest.",
+      "fact": "f:t5ebsr"
+    },
+    {
+      "lines": [
+        67,
+        69
+      ],
+      "paraphrase": "A save patches the manifest entry in the same commit as the content change.",
+      "new-fact": "f:7bladx"
+    },
+    {
+      "lines": [
+        69,
+        70
+      ],
+      "paraphrase": "Pointer to the data tiers page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        72,
+        72
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        74,
+        77
+      ],
+      "paraphrase": "A reference field holds a typed concept and id pointer and the manifest carries both edge sides.",
+      "fact": "f:a8ecm0"
+    },
+    {
+      "lines": [
+        75,
+        75
+      ],
+      "paraphrase": "Pointer to linking content across entries.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        77,
+        79
+      ],
+      "paraphrase": "Fragments are declared under the reserved fragments key and spliced in with include.",
+      "fact": "f:880bg6"
+    },
+    {
+      "lines": [
+        79,
+        80
+      ],
+      "paraphrase": "A fragment has no permalink and reaches a reader only through an including entry.",
+      "fact": "f:880bg6"
+    }
+  ]
+}

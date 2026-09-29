@@ -1,0 +1,278 @@
+{
+  "page": "docs/extend/add-an-island.md",
+  "blob": "6c396363cae1255ecc28e2f753c76d5ce48a7cc3",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "An island is one interactive Svelte component hydrated inside static rendered content.",
+      "new-fact": "f:4hd2vg"
+    },
+    {
+      "lines": [
+        5,
+        6
+      ],
+      "paraphrase": "Precondition pointer to the configure rendering page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        8,
+        10
+      ],
+      "paraphrase": "Components render to static markup by default; an island is the opt-in exception mounted over a fallback.",
+      "new-fact": "f:4hd2vg"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "cairn ships no framework abstraction; the runtime uses Svelte mount and unmount directly.",
+      "new-fact": "f:bwaj5c"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        16,
+        16
+      ],
+      "paraphrase": "Declare an island by adding hydrate to the component definition.",
+      "fact": "f:nm3bbo"
+    },
+    {
+      "lines": [
+        18,
+        33
+      ],
+      "paraphrase": "Snippet: a unit converter component defined with hydrate true.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "build() still runs; its output is the fallback and the only content without JavaScript.",
+      "fact": "f:1uk9sw"
+    },
+    {
+      "lines": [
+        36,
+        38
+      ],
+      "paraphrase": "Advice to write the fallback as real content matching the mounted initial state.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        40,
+        41
+      ],
+      "paraphrase": "hydrate true mounts eagerly and again after every client navigation.",
+      "fact": "f:nm3bbo"
+    },
+    {
+      "lines": [
+        41,
+        42
+      ],
+      "paraphrase": "hydrate visible defers the mount to first intersection.",
+      "fact": "f:nm3bbo"
+    },
+    {
+      "lines": [
+        42,
+        42
+      ],
+      "paraphrase": "Visible suits a component far down the page where immediate mounting is wasted work.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        44,
+        44
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        46,
+        57
+      ],
+      "paraphrase": "Snippet: the live Converter Svelte component.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        59,
+        61
+      ],
+      "paraphrase": "Props arrive as the declared scalar attributes, numbers and booleans typed, others as strings.",
+      "new-fact": "f:hje4zb"
+    },
+    {
+      "lines": [
+        61,
+        63
+      ],
+      "paraphrase": "Every prop is untrusted: escaped on emit, parsed in a try/catch on the client.",
+      "fact": "f:jz4qka"
+    },
+    {
+      "lines": [
+        63,
+        65
+      ],
+      "paraphrase": "An island author must bind props to text only, never into html, href, src, or style.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        65,
+        65
+      ],
+      "paraphrase": "The engine guarantees only that a prop arrives as escaped data.",
+      "fact": "f:jz4qka"
+    },
+    {
+      "lines": [
+        67,
+        67
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        69,
+        70
+      ],
+      "paraphrase": "The live component is registered under the same directive name on rendering.islands.",
+      "fact": "f:thjrvl"
+    },
+    {
+      "lines": [
+        72,
+        81
+      ],
+      "paraphrase": "Snippet: registering the Converter island in the adapter's rendering object.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        83,
+        84
+      ],
+      "paraphrase": "defineAdapter fails closed on a hydrate component with no islands entry or the reverse.",
+      "fact": "f:mv684d"
+    },
+    {
+      "lines": [
+        86,
+        86
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        88,
+        88
+      ],
+      "paraphrase": "One call from the root layout after every navigation mounts the islands.",
+      "new-fact": "f:drsabs"
+    },
+    {
+      "lines": [
+        90,
+        107
+      ],
+      "paraphrase": "Snippet: a root layout calling hydrateIslands from afterNavigate behind an empty-registry guard.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        109,
+        110
+      ],
+      "paraphrase": "An empty-registry guard keeps the dynamic import out of a static site's bundle.",
+      "fact": "f:59u3b9"
+    },
+    {
+      "lines": [
+        110,
+        112
+      ],
+      "paraphrase": "hydrateIslands tears down the previous pass, so re-navigation mounts one instance.",
+      "fact": "f:rmlwca"
+    },
+    {
+      "lines": [
+        112,
+        114
+      ],
+      "paraphrase": "One bad island keeps its static fallback while every other island still mounts.",
+      "fact": "f:urw3z7"
+    },
+    {
+      "lines": [
+        116,
+        116
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        118,
+        120
+      ],
+      "paraphrase": "The edit page's preview frame is sandboxed, shows only fallbacks; verify islands on the deployed page or preview.",
+      "fact": "f:8o2gbl"
+    },
+    {
+      "lines": [
+        122,
+        122
+      ],
+      "paraphrase": "The page shows the static fallback on first paint with JavaScript disabled.",
+      "fact": "f:1uk9sw"
+    },
+    {
+      "lines": [
+        123,
+        123
+      ],
+      "paraphrase": "The live component replaces the fallback once JavaScript runs.",
+      "fact": "f:nm3bbo"
+    },
+    {
+      "lines": [
+        123,
+        123
+      ],
+      "paraphrase": "The swap causes no layout shift.",
+      "cut": "stance-without-owner-basis"
+    }
+  ]
+}

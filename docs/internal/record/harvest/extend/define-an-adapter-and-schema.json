@@ -1,0 +1,294 @@
+{
+  "page": "docs/extend/define-an-adapter-and-schema.md",
+  "blob": "60735b5fc5180e3be10a39b42c99b04ba2f418a7",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Contract line: declare what the site publishes, where it commits, and how it renders in one config.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "Precondition pointers to the two install pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        12
+      ],
+      "paraphrase": "defineAdapter takes four required groups and five optional members.",
+      "fact": "f:hkh101"
+    },
+    {
+      "lines": [
+        12,
+        17
+      ],
+      "paraphrase": "Pointers to the pages covering each remaining member.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        19,
+        19
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        21,
+        21
+      ],
+      "paraphrase": "A concept is one content type: a directory of markdown files sharing a fieldset.",
+      "fact": "f:phdgof"
+    },
+    {
+      "lines": [
+        23,
+        38
+      ],
+      "paraphrase": "Snippet: a posts concept with title, date, description, and a taxonomy tags field.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        40,
+        43
+      ],
+      "paraphrase": "dir names the directory, label names the concept in the nav, and singular defaults to label when omitted.",
+      "fact": "f:gwmmkx"
+    },
+    {
+      "lines": [
+        43,
+        46
+      ],
+      "paraphrase": "routing is one of three shorthands with page as the default.",
+      "fact": "f:s2zbzm"
+    },
+    {
+      "lines": [
+        46,
+        47
+      ],
+      "paraphrase": "An embedded concept is never routable and reachable through reference or include, as fragments are.",
+      "fact": "f:880bg6"
+    },
+    {
+      "lines": [
+        49,
+        52
+      ],
+      "paraphrase": "The field vocabulary is the fifteen builders including the object and array containers.",
+      "fact": "f:2hxm4t"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "fields is a fieldset of fields descriptors.",
+      "fact": "f:phdgof"
+    },
+    {
+      "lines": [
+        53,
+        55
+      ],
+      "paraphrase": "taxonomy true on a multiselect marks the tag field, at most one per concept.",
+      "new-fact": "f:sz71ur"
+    },
+    {
+      "lines": [
+        57,
+        59
+      ],
+      "paraphrase": "defineConcept validates at declaration, so a bad permalink, datePrefix, or routing throws at module load.",
+      "fact": "f:lkgubp"
+    },
+    {
+      "lines": [
+        61,
+        61
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        63,
+        63
+      ],
+      "paraphrase": "routing feed alone gives a default permalink.",
+      "new-fact": "f:g39nkp"
+    },
+    {
+      "lines": [
+        65,
+        78
+      ],
+      "paraphrase": "Snippet: a posts concept with a dated permalink and a month date prefix.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        80,
+        82
+      ],
+      "paraphrase": "A date-token permalink requires a date field, throws if missing, and normalizes it to required.",
+      "fact": "f:2i6u6o"
+    },
+    {
+      "lines": [
+        83,
+        85
+      ],
+      "paraphrase": "datePrefix sets the filename's date granularity independently of the permalink.",
+      "fact": "f:cg1eo5"
+    },
+    {
+      "lines": [
+        87,
+        87
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        89,
+        99
+      ],
+      "paraphrase": "Snippet: createGithubApp called with owner, repo, branch, and IDs.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        101,
+        103
+      ],
+      "paraphrase": "owner, repo, appId, and installationId are non-secret; the private key is a Worker secret.",
+      "fact": "f:twcsgm"
+    },
+    {
+      "lines": [
+        103,
+        104
+      ],
+      "paraphrase": "Pointer to the install-into-an-app page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        106,
+        106
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        108,
+        110
+      ],
+      "paraphrase": "Snippet: an email sender config with a from address.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        112,
+        112
+      ],
+      "paraphrase": "The from address is where magic-link emails come from.",
+      "new-fact": "f:z7lprs"
+    },
+    {
+      "lines": [
+        112,
+        113
+      ],
+      "paraphrase": "A real send needs Email Sending onboarded on the Cloudflare zone.",
+      "fact": "f:xhwl32"
+    },
+    {
+      "lines": [
+        113,
+        114
+      ],
+      "paraphrase": "Pointer to the admin before-you-start page for the cost.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        116,
+        116
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        118,
+        153
+      ],
+      "paraphrase": "Snippet: a full cairn.config.ts assembling content, backend, email, and rendering.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        155,
+        156
+      ],
+      "paraphrase": "defineAdapter narrows the return type so reads carry declared field types with no cast.",
+      "fact": "f:68w9k9"
+    },
+    {
+      "lines": [
+        158,
+        159
+      ],
+      "paraphrase": "The module loads with no throw once the URL policy is valid.",
+      "fact": "f:lkgubp"
+    },
+    {
+      "lines": [
+        158,
+        159
+      ],
+      "paraphrase": "A malformed component fails at import time.",
+      "fact": "f:htxey1"
+    },
+    {
+      "lines": [
+        159,
+        160
+      ],
+      "paraphrase": "npm run check typechecks against the declared fields.",
+      "fact": "f:a98mnn"
+    },
+    {
+      "lines": [
+        162,
+        169
+      ],
+      "paraphrase": "Where to go next pointers.",
+      "cut": "navigation"
+    }
+  ]
+}

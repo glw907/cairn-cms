@@ -1,0 +1,310 @@
+{
+  "page": "docs/extend/data-tiers.md",
+  "blob": "a74a149fd0b771428e473eba8ed0dbc6f57663e4",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page summary.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        6
+      ],
+      "paraphrase": "Table header row.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        7,
+        9
+      ],
+      "paraphrase": "Three tiers hold Git content and manifests, D1 auth and opt-in tables, and R2 media bytes, each keyed as stated.",
+      "fact": "f:b6gquz"
+    },
+    {
+      "lines": [
+        7,
+        9
+      ],
+      "paraphrase": "The selection rule column: what belongs in each tier.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        11,
+        11
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        13,
+        14
+      ],
+      "paraphrase": "Git is the source of truth for content.",
+      "fact": "f:z5boz6"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "Git is already the deploy trigger.",
+      "fact": "f:qca0t0"
+    },
+    {
+      "lines": [
+        14,
+        15
+      ],
+      "paraphrase": "Git history serves as an audit trail at no extra infrastructure cost.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        15,
+        17
+      ],
+      "paraphrase": "cairn stores no copy of an entry body outside git, only projections.",
+      "new-fact": "f:6ign7q"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "The content manifest holds one JSON row per entry with identity, routing, links, edges, tags, includes.",
+      "fact": "f:t5ebsr"
+    },
+    {
+      "lines": [
+        20,
+        21
+      ],
+      "paraphrase": "A save patches its manifest entry in the same commit as the content change.",
+      "new-fact": "f:7bladx"
+    },
+    {
+      "lines": [
+        21,
+        23
+      ],
+      "paraphrase": "The manifest lets admin and delivery answer graph questions without crawling GitHub.",
+      "fact": "f:z5boz6"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "Pointers to the content model and the media manifest section.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        29
+      ],
+      "paraphrase": "D1 holds what an admin request must look up in milliseconds, nothing from git history.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        29,
+        29
+      ],
+      "paraphrase": "There are five tables across five migrations.",
+      "fact": "f:gffvfd"
+    },
+    {
+      "lines": [
+        29,
+        30
+      ],
+      "paraphrase": "Each migration beyond the first is opt-in.",
+      "new-fact": "f:rlrtfo"
+    },
+    {
+      "lines": [
+        30,
+        32
+      ],
+      "paraphrase": "The baseline 0000 migration creates editor, magic_token, and session, present once AUTH_DB is wired.",
+      "fact": "f:gffvfd"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "A token and a session id are looked up by their SHA-256 hash.",
+      "fact": "f:pzbmhq"
+    },
+    {
+      "lines": [
+        33,
+        35
+      ],
+      "paraphrase": "0001_roles.sql drops the role CHECK so the app layer validates the declared vocabulary.",
+      "fact": "f:xkkt1o"
+    },
+    {
+      "lines": [
+        36,
+        36
+      ],
+      "paraphrase": "Pointer to the security model.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        38,
+        41
+      ],
+      "paraphrase": "audit_log is opt-in, written only through createD1AuditSink, one row per audited action.",
+      "fact": "f:wnvqlz"
+    },
+    {
+      "lines": [
+        41,
+        43
+      ],
+      "paraphrase": "The audit timestamp is ISO 8601 because the column is read by people.",
+      "new-fact": "f:0435ck"
+    },
+    {
+      "lines": [
+        43,
+        45
+      ],
+      "paraphrase": "preview_tokens is opt-in, holds a hashed single-use token, and is swept on expiry without cron.",
+      "fact": "f:dtwvtz"
+    },
+    {
+      "lines": [
+        47,
+        48
+      ],
+      "paraphrase": "D1's role is narrow; a fact for git's audit trail goes in a commit.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        50,
+        50
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        52,
+        53
+      ],
+      "paraphrase": "A media block on the adapter gets an R2 bucket resolved at request time from the declared binding.",
+      "fact": "f:2hnxsr"
+    },
+    {
+      "lines": [
+        53,
+        55
+      ],
+      "paraphrase": "Each media manifest row carries display name, alt text, original filename, and pixel dimensions.",
+      "new-fact": "f:db0cx6"
+    },
+    {
+      "lines": [
+        55,
+        56
+      ],
+      "paraphrase": "Delivery serves the stored MIME type verbatim.",
+      "new-fact": "f:db0cx6"
+    },
+    {
+      "lines": [
+        56,
+        60
+      ],
+      "paraphrase": "The resolver returns the full-size path and adds a srcset ladder when transformations are on.",
+      "fact": "f:2hnxsr"
+    },
+    {
+      "lines": [
+        62,
+        76
+      ],
+      "paraphrase": "Diagram: an upload splits into R2 bytes and a git manifest row named by one hash prefix.",
+      "fact": "f:4t707i"
+    },
+    {
+      "lines": [
+        78,
+        80
+      ],
+      "paraphrase": "Bytes are addressed by content hash and the media manifest keyed by the 16-hex prefix is the dedup lookup.",
+      "fact": "f:4t707i"
+    },
+    {
+      "lines": [
+        82,
+        84
+      ],
+      "paraphrase": "R2 holds bytes because git and D1 do not suit large binaries; both manifests stay committed JSON.",
+      "fact": "f:lu67dk"
+    },
+    {
+      "lines": [
+        86,
+        86
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        88,
+        89
+      ],
+      "paraphrase": "Choose a tier by what must read the fact and how fast.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        89,
+        91
+      ],
+      "paraphrase": "A site's extension data is unconstrained beyond the reserved cairn_ naming conventions.",
+      "fact": "f:qrwncf"
+    },
+    {
+      "lines": [
+        92,
+        93
+      ],
+      "paraphrase": "Pointers to the two security model pages.",
+      "cut": "navigation"
+    }
+  ]
+}

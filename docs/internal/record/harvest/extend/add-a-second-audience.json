@@ -1,0 +1,454 @@
+{
+  "page": "docs/extend/add-a-second-audience.md",
+  "blob": "3d1d9ba16760574aa0799eeb9ec8dea94774b7f5",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        6
+      ],
+      "paraphrase": "The choice of mechanism turns on whether the audience signs in as editors do.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        10,
+        13
+      ],
+      "paraphrase": "A staff-shaped audience restricted to one admin corner should use a none-capability role with its own home.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        13,
+        14
+      ],
+      "paraphrase": "Such users are rows in the AUTH_DB editor table.",
+      "new-fact": "f:5t6hz6"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "They are invited and removed through the same screen as editors.",
+      "fact": "f:hcjb3o"
+    },
+    {
+      "lines": [
+        14,
+        16
+      ],
+      "paraphrase": "The role path is the default for a small, editor-trusted audience sharing the invite flow.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        18,
+        20
+      ],
+      "paraphrase": "A separate population needing its own login should not be modeled in the editor roster.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        20,
+        22
+      ],
+      "paraphrase": "createAuthChannel is a separate login with its own D1 store, never AUTH_DB.",
+      "fact": "f:rcpe0n"
+    },
+    {
+      "lines": [
+        22,
+        22
+      ],
+      "paraphrase": "The channel has its own session, resolved by hashed lookup like the admin session.",
+      "fact": "f:1rstld"
+    },
+    {
+      "lines": [
+        22,
+        24
+      ],
+      "paraphrase": "The site builds the member area itself outside /admin; the channel ships no UI.",
+      "new-fact": "f:q7fj6p"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "Nothing plugs into CairnAdminShell because channel sessions are not editor sessions.",
+      "new-fact": "f:q7fj6p"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        28
+      ],
+      "paraphrase": "Declare a role with capability none and a home path.",
+      "fact": "f:4673n6"
+    },
+    {
+      "lines": [
+        30,
+        45
+      ],
+      "paraphrase": "Snippet: defineRoles with an instructor role and the adapter's roles member.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        47,
+        48
+      ],
+      "paraphrase": "none capability makes the engine's content and roster screens refuse the role; it signs in by magic link.",
+      "fact": "f:4673n6"
+    },
+    {
+      "lines": [
+        48,
+        49
+      ],
+      "paraphrase": "locals.cairnEditor populates the same way for a none-capability session.",
+      "new-fact": "f:5t6hz6"
+    },
+    {
+      "lines": [
+        49,
+        50
+      ],
+      "paraphrase": "home is where the /admin index sends that role.",
+      "new-fact": "f:7n28wc"
+    },
+    {
+      "lines": [
+        50,
+        52
+      ],
+      "paraphrase": "A none role with no home lands on a minimal signed-in screen.",
+      "fact": "f:kqcyv1"
+    },
+    {
+      "lines": [
+        50,
+        52
+      ],
+      "paraphrase": "Declare a home whenever the role exists only for a custom screen.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        54,
+        54
+      ],
+      "paraphrase": "Pointer to the custom admin screen page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        54,
+        55
+      ],
+      "paraphrase": "The custom screen needs an access-map rule for the role's name or it is refused.",
+      "fact": "f:3lbdl6"
+    },
+    {
+      "lines": [
+        55,
+        57
+      ],
+      "paraphrase": "navLayout's roles field places the screen in the sidebar and hides other entries.",
+      "new-fact": "f:16paho"
+    },
+    {
+      "lines": [
+        59,
+        65
+      ],
+      "paraphrase": "Snippet: a navLayout section gated to the instructor role.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        67,
+        69
+      ],
+      "paraphrase": "The invite screen's role selector renders the declared vocabulary once larger than owner and editor.",
+      "fact": "f:hcjb3o"
+    },
+    {
+      "lines": [
+        71,
+        71
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        73,
+        74
+      ],
+      "paraphrase": "createAuthChannel builds request, confirm, and logout actions over a code of 8 to 10 digits.",
+      "fact": "f:we2lmp"
+    },
+    {
+      "lines": [
+        73,
+        75
+      ],
+      "paraphrase": "The channel takes a delivery function and other required config.",
+      "fact": "f:41kl6q"
+    },
+    {
+      "lines": [
+        74,
+        75
+      ],
+      "paraphrase": "Its D1 binding is never AUTH_DB.",
+      "fact": "f:rcpe0n"
+    },
+    {
+      "lines": [
+        77,
+        96
+      ],
+      "paraphrase": "Snippet: a member channel built from delivery, lookup, normalize, and challenge functions.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        98,
+        99
+      ],
+      "paraphrase": "lookup and verify take an env context so a roster read reaches its own binding.",
+      "fact": "f:ffskeq"
+    },
+    {
+      "lines": [
+        99,
+        101
+      ],
+      "paraphrase": "Neither may read request data; lookup decides membership and verify false destroys the session.",
+      "new-fact": "f:dtz8oa"
+    },
+    {
+      "lines": [
+        103,
+        105
+      ],
+      "paraphrase": "normalize, lookup, and challenge carry obligations the factory cannot verify.",
+      "fact": "f:pa2hqh"
+    },
+    {
+      "lines": [
+        105,
+        107
+      ],
+      "paraphrase": "Pointers to the reference and the security model.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        109,
+        112
+      ],
+      "paraphrase": "Mount the channel actions on the site's own route and gate the member area by resolveSubject.",
+      "new-fact": "f:q7fj6p"
+    },
+    {
+      "lines": [
+        110,
+        110
+      ],
+      "paraphrase": "Apply the packaged channel migration once against the channel's own binding.",
+      "fact": "f:6ab2z6"
+    },
+    {
+      "lines": [
+        112,
+        113
+      ],
+      "paraphrase": "The member area need not look like cairn's admin.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        113,
+        114
+      ],
+      "paraphrase": "Advice to reuse the admin-toolkit for a shared list-and-form look.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        114,
+        116
+      ],
+      "paraphrase": "Toolkit primitives carry no dependency on a cairn editor session.",
+      "new-fact": "f:mfmmof"
+    },
+    {
+      "lines": [
+        118,
+        119
+      ],
+      "paraphrase": "The channel database needs its own wrangler entry and a migrations_dir distinct from AUTH_DB's.",
+      "fact": "f:rcpe0n"
+    },
+    {
+      "lines": [
+        121,
+        132
+      ],
+      "paraphrase": "Snippet: wrangler d1_databases entries for AUTH_DB and a member database.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        134,
+        135
+      ],
+      "paraphrase": "A shared migrations_dir runs each schema against the other database.",
+      "new-fact": "f:5rkxfp"
+    },
+    {
+      "lines": [
+        135,
+        137
+      ],
+      "paraphrase": "The packaged migration ships at a path inside the package and is copied to a separate directory.",
+      "fact": "f:6ab2z6"
+    },
+    {
+      "lines": [
+        137,
+        139
+      ],
+      "paraphrase": "Applying it to a hand-provisioned database changes nothing and records the marker, as every statement is idempotent.",
+      "fact": "f:6ab2z6"
+    },
+    {
+      "lines": [
+        139,
+        140
+      ],
+      "paraphrase": "Insert the marker by hand only if the migration runner cannot run.",
+      "new-fact": "f:5rkxfp"
+    },
+    {
+      "lines": [
+        140,
+        141
+      ],
+      "paraphrase": "Pointer to the reference's packaged migration section.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        143,
+        144
+      ],
+      "paraphrase": "createChannelDb from the dev package tests a channel and needs node:sqlite.",
+      "fact": "f:fcqs22"
+    },
+    {
+      "lines": [
+        144,
+        145
+      ],
+      "paraphrase": "The engines.node field enforces the floor at install time.",
+      "new-fact": "f:xlej3f"
+    },
+    {
+      "lines": [
+        145,
+        145
+      ],
+      "paraphrase": "createChannelDb carries no runtime guard.",
+      "new-fact": "f:tnvu0a"
+    },
+    {
+      "lines": [
+        147,
+        147
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        149,
+        149
+      ],
+      "paraphrase": "The role signs in through the same magic link.",
+      "fact": "f:4673n6"
+    },
+    {
+      "lines": [
+        149,
+        150
+      ],
+      "paraphrase": "The role lands on its declared home.",
+      "new-fact": "f:7n28wc"
+    },
+    {
+      "lines": [
+        149,
+        150
+      ],
+      "paraphrase": "It reaches nothing else the access map does not name for it.",
+      "fact": "f:3lbdl6"
+    },
+    {
+      "lines": [
+        150,
+        151
+      ],
+      "paraphrase": "A member requests a code, confirms it, and holds a channel session.",
+      "fact": "f:1rstld"
+    },
+    {
+      "lines": [
+        151,
+        151
+      ],
+      "paraphrase": "resolveSubject returns their subject id on the next request.",
+      "new-fact": "f:q7fj6p"
+    },
+    {
+      "lines": [
+        151,
+        152
+      ],
+      "paraphrase": "A wrong code fails closed and a missing challenge never silently passes.",
+      "new-fact": "f:vo4m61"
+    }
+  ]
+}

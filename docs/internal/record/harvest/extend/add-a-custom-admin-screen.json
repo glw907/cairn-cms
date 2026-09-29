@@ -1,0 +1,574 @@
+{
+  "page": "docs/extend/add-a-custom-admin-screen.md",
+  "blob": "7d6e3fb6ee19ee717f41baa9c63c092956feea03",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Contract line: a custom admin route is gated, audited, and composed like the built-in screens.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        6,
+        9
+      ],
+      "paraphrase": "Precondition: an adapter plus the single-mount admin layout pair and catch-all.",
+      "new-fact": "f:b8rkq9"
+    },
+    {
+      "lines": [
+        11,
+        12
+      ],
+      "paraphrase": "A custom route wins over the catch-all because SvelteKit resolves the more specific route first.",
+      "fact": "f:03zj56"
+    },
+    {
+      "lines": [
+        14,
+        17
+      ],
+      "paraphrase": "No engine-specific filesystem step: a normal SvelteKit route inside src/routes/admin works.",
+      "new-fact": "f:brfitv"
+    },
+    {
+      "lines": [
+        19,
+        23
+      ],
+      "paraphrase": "Example route tree for a club events screen.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        25,
+        26
+      ],
+      "paraphrase": "A custom route renders inside CairnAdminShell automatically.",
+      "new-fact": "f:brfitv"
+    },
+    {
+      "lines": [
+        26,
+        28
+      ],
+      "paraphrase": "The guard gates the whole subtree before any load but leaves per-screen access to the site.",
+      "fact": "f:2sd4if"
+    },
+    {
+      "lines": [
+        30,
+        30
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "createSectionAction is built once per section and reused by every action inside it.",
+      "fact": "f:3j02dk"
+    },
+    {
+      "lines": [
+        33,
+        34
+      ],
+      "paraphrase": "Claims no shipped example wires createSectionAction yet.",
+      "new-fact": "f:s5pdrz"
+    },
+    {
+      "lines": [
+        34,
+        35
+      ],
+      "paraphrase": "A hand-rolled guard skipping the audit call and access-map check is discouraged.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        37,
+        46
+      ],
+      "paraphrase": "Snippet: a club section action built with createSectionAction and a resolveDb.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        48,
+        52
+      ],
+      "paraphrase": "Env is a site-declared type for its own platform env, not one cairn ships.",
+      "new-fact": "f:esp93u"
+    },
+    {
+      "lines": [
+        54,
+        75
+      ],
+      "paraphrase": "Snippet: events page load with requireAccess and an approve action.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        77,
+        79
+      ],
+      "paraphrase": "requireAccess in load and createSectionAction in actions share one fail-closed predicate.",
+      "fact": "f:10ojk8"
+    },
+    {
+      "lines": [
+        79,
+        81
+      ],
+      "paraphrase": "With no rule declared for the route path every session, owner included, gets a 403.",
+      "fact": "f:3lbdl6"
+    },
+    {
+      "lines": [
+        83,
+        85
+      ],
+      "paraphrase": "createSectionAction runs createAdminAction's audit and authentication work underneath.",
+      "fact": "f:lblh3u"
+    },
+    {
+      "lines": [
+        85,
+        87
+      ],
+      "paraphrase": "A one-off action outside a gated section uses createAdminAction alone.",
+      "new-fact": "f:hroqbu"
+    },
+    {
+      "lines": [
+        89,
+        89
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        91,
+        91
+      ],
+      "paraphrase": "Advice to reach for the admin-toolkit before hand-rolling a list, table, or field.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        91,
+        92
+      ],
+      "paraphrase": "The admin-toolkit is general-purpose scaffolding.",
+      "fact": "f:mfa5vi"
+    },
+    {
+      "lines": [
+        92,
+        96
+      ],
+      "paraphrase": "The toolkit exports the named primitives.",
+      "fact": "f:7ik6ng"
+    },
+    {
+      "lines": [
+        92,
+        96
+      ],
+      "paraphrase": "What each named primitive is for.",
+      "new-fact": "f:clyg9r"
+    },
+    {
+      "lines": [
+        96,
+        100
+      ],
+      "paraphrase": "Wrap AdminTable in a div with overflow-hidden card-shell card-shadow and no overflow-x-auto.",
+      "fact": "f:8x0qpa"
+    },
+    {
+      "lines": [
+        100,
+        103
+      ],
+      "paraphrase": "Toolkit primitives ship pre-compiled in the admin stylesheet; the site's own markup compiles through its own build.",
+      "new-fact": "f:zpi2ux"
+    },
+    {
+      "lines": [
+        105,
+        130
+      ],
+      "paraphrase": "Snippet: a toolkit-composed events screen.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        132,
+        134
+      ],
+      "paraphrase": "A component rendering cairn's own concepts does not belong in the toolkit.",
+      "fact": "f:mfa5vi"
+    },
+    {
+      "lines": [
+        134,
+        137
+      ],
+      "paraphrase": "Building from the toolkit keeps a screen correct across releases and reads as one surface.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        139,
+        139
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        141,
+        143
+      ],
+      "paraphrase": "ctx.audit needs a bound D1 database wired through createD1AuditSink in hooks.server.ts.",
+      "fact": "f:68h31z"
+    },
+    {
+      "lines": [
+        144,
+        160
+      ],
+      "paraphrase": "Snippet: hooks.server.ts sequencing createAuthGuard and an audit-sink wiring handle.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        162,
+        163
+      ],
+      "paraphrase": "hooks.server.ts holds one handle export, so handles compose.",
+      "fact": "f:rurhey"
+    },
+    {
+      "lines": [
+        163,
+        166
+      ],
+      "paraphrase": "createAuthGuard takes no argument or roles and access, depending on the site's setup.",
+      "new-fact": "f:4xrx5f"
+    },
+    {
+      "lines": [
+        166,
+        166
+      ],
+      "paraphrase": "sequence runs each Handle in order.",
+      "fact": "f:rurhey"
+    },
+    {
+      "lines": [
+        166,
+        167
+      ],
+      "paraphrase": "Advice to put createAuthGuard first in the sequence.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        169,
+        170
+      ],
+      "paraphrase": "The audit sink is fail-open and logs a rejected write.",
+      "fact": "f:ff3l1u"
+    },
+    {
+      "lines": [
+        170,
+        173
+      ],
+      "paraphrase": "createSectionAction audits every refusal, so pair a bound audit database with a rate limit.",
+      "fact": "f:da6d2z"
+    },
+    {
+      "lines": [
+        175,
+        175
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        177,
+        178
+      ],
+      "paraphrase": "The recipes are worth writing out because the failure path takes a few tries.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        178,
+        179
+      ],
+      "paraphrase": "A primitive is worth adding only once a second consumer needs the same shape.",
+      "new-fact": "f:asujoi"
+    },
+    {
+      "lines": [
+        181,
+        184
+      ],
+      "paraphrase": "enhance returns one of four action result types and update() treats each differently.",
+      "new-fact": "f:xgy3iu"
+    },
+    {
+      "lines": [
+        186,
+        188
+      ],
+      "paraphrase": "The recipe reports failure and error inside the dialog and keeps it open.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        188,
+        191
+      ],
+      "paraphrase": "update() runs applyAction, which renders the nearest error page for an error result.",
+      "fact": "f:9fwsz5"
+    },
+    {
+      "lines": [
+        192,
+        193
+      ],
+      "paraphrase": "The recipe closes the dialog on success before calling update().",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        192,
+        193
+      ],
+      "paraphrase": "invalidateAll follows a successful submission inside update().",
+      "new-fact": "f:xgy3iu"
+    },
+    {
+      "lines": [
+        194,
+        196
+      ],
+      "paraphrase": "A redirect result calls update and lets default handling proceed.",
+      "new-fact": "f:xgy3iu"
+    },
+    {
+      "lines": [
+        198,
+        200
+      ],
+      "paraphrase": "reset is consulted only on a success result, never after failure.",
+      "fact": "f:cdllbv"
+    },
+    {
+      "lines": [
+        200,
+        201
+      ],
+      "paraphrase": "The recipe never sets reset.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        203,
+        204
+      ],
+      "paraphrase": "The dialog carries aria-labelledby pointing at its own heading.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        204,
+        205
+      ],
+      "paraphrase": "Escape closes a native dialog opened with showModal.",
+      "new-fact": "f:ho6dxa"
+    },
+    {
+      "lines": [
+        205,
+        208
+      ],
+      "paraphrase": "The Cancel button uses a click handler because method=dialog needs its own nested form, which is invalid.",
+      "new-fact": "f:ho6dxa"
+    },
+    {
+      "lines": [
+        210,
+        213
+      ],
+      "paraphrase": "An alert element created only on failure has nothing to announce the first failure.",
+      "new-fact": "f:tkqoia"
+    },
+    {
+      "lines": [
+        213,
+        221
+      ],
+      "paraphrase": "The recipe's sr-only swap, aria wiring, focus move, and disabled submit button.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        223,
+        302
+      ],
+      "paraphrase": "Snippet: the approve dialog component.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        304,
+        304
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        306,
+        310
+      ],
+      "paraphrase": "Advice to fetch expandable-row detail on open and cache it per row.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        312,
+        395
+      ],
+      "paraphrase": "Snippet: a roster page with lazy-loaded expandable rows.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        397,
+        399
+      ],
+      "paraphrase": "ExpandableRow adds a trailing trigger cell, so the header has a second column and colspan counts both.",
+      "new-fact": "f:vao0dd"
+    },
+    {
+      "lines": [
+        399,
+        400
+      ],
+      "paraphrase": "The trigger column header is screen-reader-only.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        400,
+        403
+      ],
+      "paraphrase": "role=status is an implicitly polite live region that announces the panel's state changes.",
+      "new-fact": "f:tkqoia"
+    },
+    {
+      "lines": [
+        405,
+        412
+      ],
+      "paraphrase": "The recipe caches only successful fetches and disables retry while a request runs.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        412,
+        416
+      ],
+      "paraphrase": "Streaming a load promise still runs the fetch for every row on first paint.",
+      "new-fact": "f:b5mcea"
+    },
+    {
+      "lines": [
+        418,
+        424
+      ],
+      "paraphrase": "A nested detail endpoint needs its own requireAccess and access-map entry.",
+      "fact": "f:lmtfkt"
+    },
+    {
+      "lines": [
+        426,
+        435
+      ],
+      "paraphrase": "Snippet: a roster detail endpoint with requireAccess.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        437,
+        437
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        439,
+        440
+      ],
+      "paraphrase": "The route renders inside the shell chrome with no wrapper code.",
+      "new-fact": "f:brfitv"
+    },
+    {
+      "lines": [
+        440,
+        441
+      ],
+      "paraphrase": "An editor outside the access map's named roles gets a 403 on the page and actions.",
+      "fact": "f:10ojk8"
+    },
+    {
+      "lines": [
+        441,
+        441
+      ],
+      "paraphrase": "A successful mutating action leaves a row in the audit table.",
+      "fact": "f:68h31z"
+    },
+    {
+      "lines": [
+        441,
+        444
+      ],
+      "paraphrase": "Visible chrome around /admin in the root layout stops the shell filling the viewport.",
+      "fact": "f:g7zuji"
+    },
+    {
+      "lines": [
+        446,
+        446
+      ],
+      "paraphrase": "Pointer to organizing the admin nav.",
+      "cut": "navigation"
+    }
+  ]
+}

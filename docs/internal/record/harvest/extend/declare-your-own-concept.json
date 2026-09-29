@@ -1,0 +1,238 @@
+{
+  "page": "docs/extend/declare-your-own-concept.md",
+  "blob": "fb6a913c9da8ff614aa4682d131e8ca495ff2ed1",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Contract line: add a second content type and decide whether it gets public pages.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "Precondition pointer to the adapter page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        12
+      ],
+      "paraphrase": "Posts and pages are not reserved names; the concept set is the site's, each a key in the content map.",
+      "fact": "f:r03vis"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        16,
+        18
+      ],
+      "paraphrase": "Motivating example: a shared author identity reused across posts as its own concept.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        20,
+        33
+      ],
+      "paraphrase": "Snippet: an authors concept with name and bio fields and page routing.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        35,
+        35
+      ],
+      "paraphrase": "Add a concept to the adapter's content map beside posts.",
+      "fact": "f:r03vis"
+    },
+    {
+      "lines": [
+        37,
+        43
+      ],
+      "paraphrase": "Snippet: the adapter's content map holding posts and authors.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        45,
+        46
+      ],
+      "paraphrase": "The admin nav and create affordances follow the new concept's name.",
+      "fact": "f:r03vis"
+    },
+    {
+      "lines": [
+        48,
+        50
+      ],
+      "paraphrase": "createSiteIndexes throws at build for a declared concept with no glob, since Vite needs the literal pattern.",
+      "fact": "f:4mz4tp"
+    },
+    {
+      "lines": [
+        51,
+        52
+      ],
+      "paraphrase": "Pointer to the content index section of the delivery page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        54,
+        72
+      ],
+      "paraphrase": "Snippet: a content index adding an authors glob to createSiteIndexes.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        74,
+        78
+      ],
+      "paraphrase": "A concept missing from the cairnManifest plugin's content option fails silently with no rows and no warning.",
+      "fact": "f:7az6m2"
+    },
+    {
+      "lines": [
+        80,
+        80
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        82,
+        83
+      ],
+      "paraphrase": "routing is the most important decision for a supporting concept and changes what it is for.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        85,
+        86
+      ],
+      "paraphrase": "page gives each entry its own routable undated page and puts it in the sitemap.",
+      "fact": "f:6e06p2"
+    },
+    {
+      "lines": [
+        87,
+        89
+      ],
+      "paraphrase": "feed suits dated chronological content in feeds and an archive.",
+      "fact": "f:6e06p2"
+    },
+    {
+      "lines": [
+        90,
+        92
+      ],
+      "paraphrase": "embedded has no public page, and fits a reference-only concept like authors better.",
+      "fact": "f:6e06p2"
+    },
+    {
+      "lines": [
+        92,
+        94
+      ],
+      "paraphrase": "fragments is the one reserved embedded concept, resolved by the include directive.",
+      "fact": "f:y3s3t9"
+    },
+    {
+      "lines": [
+        96,
+        98
+      ],
+      "paraphrase": "An embedded concept keeps its own directory, fields, and admin list and editor; only the public page goes.",
+      "fact": "f:vs77a6"
+    },
+    {
+      "lines": [
+        100,
+        100
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        102,
+        103
+      ],
+      "paraphrase": "A reference field connects authors to posts so a post names its author entry.",
+      "fact": "f:i2k4jp"
+    },
+    {
+      "lines": [
+        105,
+        117
+      ],
+      "paraphrase": "Snippet: a posts concept with a reference field to authors.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        119,
+        120
+      ],
+      "paraphrase": "The editor renders a picker scoped to the target concept; the public side resolves title and permalink into a link.",
+      "fact": "f:i2k4jp"
+    },
+    {
+      "lines": [
+        120,
+        123
+      ],
+      "paraphrase": "Pointer to the reference-fields page for validation, resolution, build gate, and delete behavior.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        125,
+        125
+      ],
+      "paraphrase": "npm run check typechecks the new concept's fields.",
+      "new-fact": "f:a98mnn"
+    },
+    {
+      "lines": [
+        125,
+        126
+      ],
+      "paraphrase": "npm run build succeeds once the new glob is wired.",
+      "fact": "f:4mz4tp"
+    },
+    {
+      "lines": [
+        126,
+        127
+      ],
+      "paraphrase": "The admin nav shows the new concept's list.",
+      "fact": "f:r03vis"
+    }
+  ]
+}

@@ -94,4 +94,6 @@ Added by the conductor; the fold was dispatched before the measures rule landed 
 - **Target growth:** spec 276 to 299 lines (+8%), plan 269 to 274 lines (+2%); by words, spec +14%,
   plan +9%. Under the 25% signal.
 - **Ceiling change:** none; 6M stands (the leanness lens's lower estimate refused).
-- **Refused findings that prove real:** scored at this pass's close.
+- **Refused findings that prove real:** none of the three (L-M6, L-m5, L-m1), scored at the pass
+  close (2026-09-29). The L-M6 refusal was vindicated: the W7 read found 12 routing mismatches a
+  grep would have missed.

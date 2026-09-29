@@ -453,8 +453,9 @@ gaps this plan found while verifying the spec against the tree.
     for `CairnHead` and `PreviewBanner`, one per `cairn-*` class `composition.css` defines (hero's
     title and lead sit on the hero page), and six prose pages: headings and lead, links, lists,
     blockquote, code (`pre.shiki` and `.cairn-tok-*`), and tables and figures (`table-scroll`,
-    `cairn-place-*`). About 27 pages. The coverage gate, not this list, is the arbiter: a source it
-    walks that has no page fails.
+    `cairn-place-*`). 29 pages (segment D pre-flight, 2026-09-29): 11 directive pages, 1 island,
+    `CairnHead` and `PreviewBanner`, 9 composition classes, and 6 prose pages. The coverage gate,
+    not this list, is the arbiter: a source it walks that has no page fails.
 23. **The theme-name config** is a new `examples/showcase/src/theme/theme-names.ts` exporting the
     toggle's `ThemeToggleConfig`. Its agreement test is a new
     `examples/showcase/src/theme/theme-names.test.ts`, which the template receives, since a
@@ -470,7 +471,9 @@ gaps this plan found while verifying the spec against the tree.
     `docs/internal/what-cairn-is-and-is-not.md`'s rule-count sentence to name the public scope and
     its advisory tier on consumers, and writes the count read from the registries at execution. The
     count is already stale at plan time (the line says 28; the registries hold 34, 17 static and 17
-    rendered, and pass B adds `radius-scale`). STATUS lists that stale count among Geoff's open
+    rendered, and pass B adds `radius-scale`). At the segment D pre-flight (2026-09-29) the
+    registries hold 38, 21 static and 17 rendered: 35 audit `/admin`, and the three
+    public rules run at advisory tier on a consumer (task 13's amendments carry the sentence). STATUS lists that stale count among Geoff's open
     owner facts for the draft docs plan's task 9 sitting; the close notes in STATUS that this pass
     settled the count, so that sitting drops it.
 26. **The old `check-public-tokens.mjs` stays green until task 9 retires it** (plan gap). Its
@@ -1327,6 +1330,7 @@ fixes", each harness check; decisions 4, 18, and 19.
 with its Playwright spec and config, `package.json` (`test:theme-fixture`), `.gitignore`
 (`.cairn-theme-fixture-*/`), `scripts/lab/reskin-fixture.mjs` (the fixture as a third case),
 `scripts/checks/check-public-scope.mjs` (the fixture variant), and `.github/workflows/design.yml`.
+The pre-flight changed how the fixture variant runs (see the amendments below); it adds no file.
 
 **Outcome:**
 - **The fixture theme** is deliberately unlike Waymark: system-stack faces, a square corner ladder
@@ -1353,6 +1357,30 @@ with its Playwright spec and config, `package.json` (`test:theme-fixture`), `.gi
   visible once focused; and a tag pill and a focused entry link compute a `0` corner. **The template
   arm** builds the template under Waymark and under the fixture and asserts decision 19's sentinel.
 - **CI:** `design.yml` runs both arms.
+- **Segment D pre-flight amendments (2026-09-29):**
+  - **The fixture's import and its variant (G1, conductor chose (a)).** The fixture `theme.css`
+    carries the in-place import `@import "../chassis/tokens.css"`, which resolves at the harness
+    copy's `src/theme/theme.css` (the showcase's own `theme.css:90` carries the same line). The
+    fixture has no `@import` today. `check:public-tokens`'s fixture variant runs over a temporary
+    copy the harness makes, with the variant's `public.scope`, `themeRoots`, and `stylesheets`
+    retargeted at that copy. The existing variants (`check-public-scope.mjs:37-38`) run
+    unchanged.
+  - **The theme-owned tokens (G6).** The fixture defines the tokens the styleguide and chrome read
+    with no chassis default: `--cairn-cta-bg`, `--cairn-cta-content`, `--cairn-cta-border`,
+    `--cairn-cta-btn-bg`, `--cairn-cta-btn-content` (read at the styleguide's `+page.svelte:729-754`),
+    and `--cairn-caption-tracking` (read at `SiteHeader.svelte:162`). No `--tracking-caption` key
+    exists or is added. The square corner ladder already sits in the fixture's daisyUI blocks
+    (`theme.css:34-36` and `:71-73`), and the `--radius-box` mutation targets those lines. The
+    custom token needs both its definition and a reader the fixture adds. The nested `data-theme`
+    assertion relies on `cairn-public.css`'s `:root, [data-theme]` role selector (`:21-22`), the
+    selector the nesting mutation edits.
+  - **The CI slot (G4).** In `design.yml`, `test:theme-fixture` runs after the Chromium install
+    step (`:48`, `playwright install --with-deps chromium`), not beside `check:public-tokens` and
+    `test:reskin` at `:43-44`. The template arm needs the network for its registry dependencies.
+  - **`check:close` (G5).** `test:theme-fixture` follows `test:reskin`'s precedent and stays out of
+    `check:close`: it needs a browser and the network. Decision 4 already runs both arms as task
+    checks in this task and at the close. This is the named exception to the global constraint
+    that a check added to CI goes into `check:close`.
 
 **Acceptance:**
 - Both arms pass locally and each assertion above appears by name in the spec. The report quotes
@@ -1363,8 +1391,13 @@ with its Playwright spec and config, `package.json` (`test:theme-fixture`), `.gi
 - One run of each probe mode passes: `--build-only` with `--theme-dir` pointed at Waymark's
   `src/theme`, and the template arm's `--probe` on a styleguide element, reporting its color and
   radius under both themes.
-- `check:public-tokens`'s fixture variant reports zero findings; the report quotes its scanned
-  count and per-scheme pair count.
+- `check:public-tokens`'s fixture variant reports zero findings over the harness's temporary copy
+  (the Segment D amendments); the report quotes the fixture run's scanned count and per-scheme pair
+  count, and states that the copy was removed.
+- The fixture defines the six theme-owned tokens the Segment D amendments name, and its custom
+  token has both a definition and a reader in the fixture.
+- `design.yml` runs `test:theme-fixture` after the Chromium install step, and `check:close` does
+  not gain it (the Segment D amendments).
 - The run leaves no `.cairn-theme-fixture-*` directory and no listener on 4393, after the green run
   and after the failing `--radius-box` mutation run.
 - `gateTier: "targeted"`, `gate`:
@@ -1379,9 +1412,11 @@ with its Playwright spec and config, `package.json` (`test:theme-fixture`), `.gi
 records" (reference pages), "Proof" (the snapshot's page-sync and registry assertions).
 
 **Files:** a new `docs/reference/public-css.md`, `docs/reference/README.md` (its index entry),
-`docs/reference/render.md` (the emitted-class registry), `docs/reference/public.md`
-(`PreviewBanner`'s styling and its five override properties),
+`docs/reference/render.md` (the emitted-class registry),
 `src/tests/unit/cairn-public-surface.test.ts`, and facts bullets in `docs/internal/facts/`.
+Changed at the pre-flight (see the amendments below): `docs/reference/public.md` leaves the list,
+since task 4 already wrote `PreviewBanner`'s styling there, and
+`scripts/checks/reference-coverage.mjs` (the `/cairn-public.css` exclusion's reason) joins it.
 
 **Outcome:**
 - **`public-css.md`** opens with the governing principle and carries the whole contract: daisyUI's
@@ -1397,14 +1432,33 @@ records" (reference pages), "Proof" (the snapshot's page-sync and registry asser
 - **The snapshot test** gains the page-sync assertions (the page lists each key with its default and
   names nothing the file lacks) and the registry assertion (every emitted class the sheet styles is
   in the registry).
-- Facts bullets for the contract's public behaviors: the export, the derived defaults and their
-  changed values, the nesting limit, and the `PreviewBanner` token styling.
+- Facts bullets for the contract's public behaviors: the `cairn-public.css` export, the derived
+  defaults and their changed values, and the nesting limit.
+- **Segment D pre-flight amendments (2026-09-29):**
+  - **`PreviewBanner`'s page is already done (M1).** `docs/reference/public.md:45-53` already
+    carries `PreviewBanner`'s token styling and its five override properties, written in task 4.
+    This task only checks that the text still holds against the component; it writes no
+    `public.md` outcome. `PreviewBanner`'s facts are task 4's `f:xssf06` and `f:6q5q05`, so no
+    new `PreviewBanner` bullet lands here.
+  - **The `/cairn-public.css` exclusion stays (M2, conductor chose (a)).** The
+    `SUBPATH_EXCLUSIONS` entry for `/cairn-public.css` in `reference-coverage.mjs` (`:544-548`)
+    stays, since `checkOne` throws on a missing `.d.ts` (`:748-749`) and a CSS asset has none.
+    Its reason is rewritten to say the subpath is a CSS asset with no `.d.ts` to enumerate, and
+    that its page, `docs/reference/public-css.md`, is held by
+    `cairn-public-surface.test.ts`'s page-sync assertions. The snapshot test adds an assertion
+    that the page exists.
+  - **The docs gate (G7).** The gate adds `npm run check:docs-gate`, which includes
+    `check:symbols` and `check:snippets`; the new page meets both.
 
 **Acceptance:**
 - The snapshot test passes and fails on a planted key missing from the page and a planted extra key
-  on the page (mutation ledger).
+  on the page (mutation ledger). It asserts that `docs/reference/public-css.md` exists.
+- The `/cairn-public.css` entry stays in `SUBPATH_EXCLUSIONS` with the rewritten reason, and
+  `check:reference` passes (the Segment D amendments).
+- `public.md`'s `PreviewBanner` text matches the component's five override properties and token
+  defaults; the report states the check and changes nothing on the page unless it has drifted.
 - `gateTier: "targeted"`, `gate`:
-  `npm run check:docs && npm run check:vale && npm run check:reference && npm run check:facts && npm run check:arm-indexes && npx vitest run --project unit src/tests/unit/cairn-public-surface.test.ts`.
+  `npm run check:docs && npm run check:vale && npm run check:reference && npm run check:facts && npm run check:arm-indexes && npm run check:docs-gate && npx vitest run --project unit src/tests/unit/cairn-public-surface.test.ts`.
 
 ---
 
@@ -1419,6 +1473,9 @@ guidance lives" (the skill, its two halves, the coverage gate); decisions 11, 21
 `check:close`), `.github/workflows/test.yml`, `skills/cairn-extend/SKILL.md` (one routing line),
 `docs/reference/guidance.md` (the shipped-skill list), any unit test that enumerates shipped skills,
 and `templates/waymark/**` (re-emitted; the bake ships the new skill under `.claude/skills`).
+Added at the pre-flight (see the amendments below): a compile test proving the `.claude/`
+exclusion (its location is the implementer's), and, only if that test fails, the chassis
+`tokens.css` in `examples/showcase/src/chassis/` with its re-emitted template copy.
 
 **Outcome:**
 - **`SKILL.md`** is a router within the 3,500-token packaged budget, deferring to the official
@@ -1439,10 +1496,45 @@ and `templates/waymark/**` (re-emitted; the bake ships the new skill under `.cla
   showcase's own sources only, never the skill's snippet files, or every valid utility would
   compile and the class check would pass vacuously.
 - **`cairn-extend`** gains one routing line to `cairn-public`.
+- **Segment D pre-flight amendments (2026-09-29):**
+  - **The shipped-skill list (M3).** `docs/reference/guidance.md`'s `## The three skills` (`:110`)
+    becomes `## The four skills`, with a fourth bullet for `cairn-public`. The `install` section at
+    `:20-25` already says "every directory the package ships under `skills/`" and stays.
+  - **The engine built-ins (G2).** `RESERVED_DIRECTIVE_NAMES` in `src/lib/render/registry.ts`
+    (`:158`) is private, and this task changes no `src/lib` file. The coverage gate therefore names
+    the built-ins `figure` and `include` directly, and asserts, by reading that source, that its
+    list still equals the engine's set, so an added built-in fails the gate.
+  - **Counting directives (G3).** The gate counts directives from the showcase registry's component
+    list, never only from `previewMarkdown` output, so a directive with no preview (`alert` today)
+    still needs its catalogue page.
+  - **The page count.** Decision 22's list comes to 29 pages: 11 directive pages, 1 island,
+    `CairnHead` and `PreviewBanner`, 9 composition classes, and 6 prose pages. The gate stays the
+    arbiter.
+  - **The CI and `check:close` slot.** `check:public-skill` runs in `test.yml` after the showcase
+    `format:check` step (`:96`), and in `check:close` after the showcase `format:check`, before
+    `check:vale`.
+  - **The `.claude/` exclusion (G8).** The template chassis `tokens.css:55` declares
+    `@source not "./.claude"`. Tailwind resolves that path relative to the CSS file, so it may not
+    exclude the project-root `.claude/`, where this task ships the skill's snippets. A compile test
+    proves that no utility used only in `.claude/skills/cairn-public/**` reaches a scaffolded
+    site's compiled CSS. If one does, the fix changes the chassis `@source not` path so it excludes
+    the root `.claude/` directory; the showcase copy carries the fix, and the template re-emits to
+    match. `guidance.md`'s `.claude/` exclusion section (`:126`) stays true either way; the report
+    says whether it needed an edit.
 
 **Acceptance:**
 - `check:public-skill` passes, and its unit tests prove each assertion fails on a planted gap: a
   directive with no page, an uncompiled class in a snippet, an unresolved token, and an empty parse.
+- Two more planted gaps fail the gate (the Segment D amendments): a registry directive with no
+  `preview` and no page, and an engine built-in added to the gate's list but absent from
+  `registry.ts` (or the reverse).
+- A compile test proves that a utility used only under a scaffolded site's
+  `.claude/skills/cairn-public/**` does not reach its compiled CSS. If the test first fails, the
+  report names the `@source not` fix, and the showcase and template `tokens.css` match after the
+  re-emit.
+- `guidance.md` carries `## The four skills` with a `cairn-public` bullet.
+- `check:public-skill` sits in `test.yml` and `check:close` at the positions the Segment D
+  amendments name.
 - `check:package` passes with the skill budget; the report quotes each packaged `SKILL.md`'s token
   estimate.
 - `templates/waymark/.claude/skills/cairn-public/SKILL.md` exists after the re-emit, and
@@ -1462,6 +1554,10 @@ internal docs, the charter); decision 25.
 **Files:** `examples/showcase/src/chassis/README.md`, `docs/internal/public-design-system.md`,
 `docs/extend/design-your-site.md`, `docs/internal/what-cairn-is-and-is-not.md`, facts bullets in
 `docs/internal/facts/`, and `templates/waymark/**` (re-emitted).
+Added at the pre-flight (see the amendments below): `docs/internal/facts/front-door.md`
+(`f:xh2mwb`), `docs/internal/facts/extend.md` (its named bullets), and two stale extend pages,
+`docs/extend/animate-a-custom-screen.md` and `docs/extend/what-the-scaffold-wrote.md`, fixed
+under the frozen-page deficiency rule.
 
 **Outcome:**
 - **The chassis README:** the `tokens.css` row names the two heading keys and the `heading-case`
@@ -1479,12 +1575,103 @@ internal docs, the charter); decision 25.
   ships.
 - **The charter** line, per decision 25.
 - `npm run emit:template` re-emits the template after the README change.
+- **Segment D pre-flight amendments (2026-09-29):**
+  - **The charter line (M4).** The registries hold 38 rules: 21 static and 17 rendered. The
+    sentence at `what-cairn-is-and-is-not.md:49-51` ("all 34 registered rules (17 static, 17
+    rendered) audit the `/admin` surface") is rewritten to stay true: 35 of the 38 registered rules
+    (18 static, 17 rendered) audit the `/admin` surface; the other three,
+    `public-literals`, `theme-conformance`, and `theme-contrast`, audit a site's public files under
+    the public scope and run at advisory tier on a consumer. The sentence makes no error-tier claim
+    for the 35, since some `/admin` rules report at advisory tier (`log-event-grammar`,
+    `log-secret-field`, `form-font-parity`, and arms of `stock-default-hazards`). The bullet's heading ("ships whole, as
+    consumer product") stays. Fact `f:xh2mwb` (`facts/front-door.md:178`) mirrors the new sentence
+    and its repointed line citation. The executor reads the facts key-phrase rule
+    (`docs/internal/facts/README.md:45-53`) before editing this owner-tier bullet, and keeps its
+    key phrase verbatim in the charter.
+  - **`design-your-site.md` beyond the three named sentences (M5).** Each fix is mirrored in its
+    fact:
+    - `:22-27`: `--color-muted` and `--color-card-border` now come from the engine's
+      `cairn-public.css` (`:59-60`), not `tokens.css`. `tokens.css` still holds `--font-*`,
+      `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`, `--container-measure*`, and
+      `--font-weight-heading`.
+    - `:37-39`: the ink warning holds only when a theme overrides an ink, since the engine derives
+      each ink from its fill at 50 percent.
+    - `:41-48`: the `check:public-tokens` description and "Neither ships". The three public rules
+      ship in `cairn-audit`, and the scaffold's `check:cairn` (`templates/waymark/package.json:16`)
+      runs it; `check:public-tokens` and `test:reskin` themselves do not ship. The copy-the-scripts
+      sentence is corrected to match.
+    - `:52-55`: the styleguide's directive list. The route now renders every registered directive
+      from the registry (`styleguide/+page.server.ts:97-102`: a sample per entry that declares a
+      `preview`, the rest listed by name), so the hand-written list goes. This is fact `f:bdnzcy`.
+  - **`public-design-system.md` (M6).**
+    - The ink rule at `:52-55` and `:253-255`: each status carries a fill and an on-surface ink;
+      the ink follows the fill, derived in `cairn-public.css` as `color-mix(in oklab,
+      var(--color-<status>) 50%, var(--color-base-content))`; a theme hand-tunes an ink only by
+      overriding `--cairn-<status>-ink` in its daisyUI block, and only then retunes fill and ink
+      together.
+    - `:92-97`, the `:root` customs list: the inks, `--color-muted`, `--color-card-border`, and
+      `--cairn-shadow` now live in the engine's `cairn-public.css`.
+    - `:199-201`: the focus-ring keys moved from `chassis/tokens.css` to `cairn-public.css`.
+  - **The chassis README (M7, G10).**
+    - "The token system" (`:69-82`) is rewritten: `tokens.css` imports
+      `@glw907/cairn-cms/cairn-public.css` right after Tailwind (`tokens.css:51-52`); the engine
+      owns the roles (the status inks, the shadow, the focus ring, the code ramp, `--flow-space`,
+      `--color-muted`, `--color-card-border`); a theme overrides one in its `:root` or daisyUI
+      block; the CTA keys and `--cairn-caption-tracking` stay site-owned with no chassis default.
+    - The spacing trap (`:84-94`) names the five keys `--spacing-3xs`, `-2xs`, `-xs`, `-xl`, and
+      `-2xl`, which collide with Tailwind's `--container-*` keys (`max-w-3xs`, `2xs`, `xs`, `xl`,
+      `2xl`). The "Tailwind 4.3.2" version is dropped or updated to the installed one.
+    - The directive-class sentence (`:55-59`) is corrected against the `render.md` registry task
+      11 writes: directive classes are emitted by the theme's `markdown-components.ts`, and a theme
+      may rename them; `.card` is not a directive, and the chassis primitive is `.cairn-card`. The
+      engine-fixed emitted names are `figure` with `cairn-place-*`, `.table-scroll`, `pre.shiki`
+      with `.cairn-tok-*`, and `include`. The prefix list's ownership wording (`:50-53`) is checked
+      against the same registry.
+    - A new custom-property namespaces paragraph states the naming rule: daisyUI's names for
+      daisyUI's keys, a Tailwind namespace for a utility-bearing key, `--cairn-*` for every other
+      role, and `--flow-space` grandfathered. The existing "Class namespaces" section (`:47`)
+      covers classes only. The template re-emits.
+  - **Facts (M8).** In `facts/extend.md`:
+    - `f:ylmc9c` (`:232`) is rewritten: the engine derives each ink from its fill at 50 percent,
+      so retuning a fill retunes its ink; only a theme that overrides an ink must retune both. It
+      cites `cairn-public.css:40-43`.
+    - `f:iel6v5` (`:230`): its `--color-muted` citation repoints to `cairn-public.css:59`, and its
+      claim follows the `:22-27` fix.
+    - `f:xv2ien` (`:233`): the trailing "neither ships in a scaffolded site's own `package.json`"
+      is fixed as the `:41-48` fix states.
+    - `f:bdnzcy` (`:234`) is updated for the registry-driven styleguide.
+    - `f:kt0epf` (`:231`) stays.
+  - **Stale extend pages (the frozen-page deficiency fix rule).** These fixes follow the extend
+    track's drafting brief with no register polish, and Vale's error tier runs over them:
+    - `animate-a-custom-screen.md:125-127`: `static.adminScope` defaults to `src/routes/admin`,
+      `src/lib/admin`, and `src/lib/admin-toolkit` (`src/lib/audit/config.ts:28`).
+    - `what-the-scaffold-wrote.md:137`: `theme.css` is layered over the engine's `cairn-public.css`
+      roles and the chassis's generic defaults.
+    - `what-the-scaffold-wrote.md:159`: the styleguide renders every registered markdown
+      component from the registry, the type scale, and the component recipes.
+    - `what-the-scaffold-wrote.md:171`: "base design tokens" becomes base design tokens that
+      import the engine's `cairn-public.css`.
+    - The tree at `what-the-scaffold-wrote.md:19-92` gains `.claude/skills/` with its four skills
+      (`cairn-public` included), and the "The tree above is complete" sentence (`:99`) is
+      corrected to match.
+    - `facts/extend.md` carries a bullet for each fix: `f:n2skkz` (`:450`) is reworded if the
+      tree fix affects it, and new bullets land as needed.
 
 **Acceptance:**
 - `grep` finds none of the three superseded sentences on `design-your-site.md`, and the README no
   longer holds "share a suffix with three of Tailwind's built-in" (the plan-time wording).
+- `grep` finds none of these on the named pages: "all 34 registered rules" in the charter or
+  `facts/front-door.md`; "(callout, alert, video" on `design-your-site.md` or in `facts/extend.md`;
+  "retuning BOTH the fill" in `public-design-system.md`; "defaults to `src/routes/admin` and
+  `src/lib/admin-toolkit`" on `animate-a-custom-screen.md`; and ".card`) is engine-fixed" in the
+  chassis README.
+- The charter and `f:xh2mwb` both state 38 registered rules, 35 on `/admin` and the
+  three public rules at advisory tier; `check:facts` and `check:provenance` pass with the key
+  phrase intact.
+- The README carries the custom-property namespaces paragraph, and the template's copy matches
+  after the re-emit.
 - `gateTier: "targeted"`, `gate`:
-  `npm run check:docs && npm run check:vale && npm run check:facts && npm run check:chassis-boundary && npm run check:template`.
+  `npm run check:docs && npm run check:vale && npm run check:facts && npm run check:provenance && npm run check:chassis-boundary && npm run check:template`.
 
 ---
 

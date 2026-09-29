@@ -98,9 +98,12 @@ the rules a draft breaks most often, each quoted from its page in the guide.
   [accessibility page](https://developers.google.com/style/accessibility): "Use shorter
   sentences. Try to use fewer than 26 words per sentence." <!-- q:g-sentence-length -->
 - **Heading form.** Headings take sentence case. A task section's heading starts with a bare
-  infinitive, such as "Verify the served file" or "Pass the posture to the robots route," and a
+  <!-- vale Google.Quotes = NO -->
+  <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
+  infinitive, such as "Verify the served file" or "Pass the posture to the robots route", and a
   concept section's heading is a noun phrase with no leading -ing word, such as "Robots file
-  output" or "Limits of declining." The
+  output" or "Limits of declining". The
+  <!-- vale Google.Quotes = YES -->
   [headings page](https://developers.google.com/style/headings): "For a task-based heading, start
   with a bare infinitive, also known as a plain form or base form verb." <!-- q:g-heading-task -->
   "For a conceptual or non-task-based heading, use a noun phrase that doesn't start with an -ing
@@ -188,8 +191,11 @@ as readily.
   register even when every word is true.
 - **Product terms** are the precise vocabulary, never jargon to remove: concept, adapter, render,
   seam, island, holding branch, manifest, and role and capability each name a real system object.
-  Other jargon is checked against the page's actual reader, so an extend page says "admin,"
-  "route," and "frontmatter" freely.
+  <!-- vale Google.Quotes = NO -->
+  <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
+  Other jargon is checked against the page's actual reader, so an extend page says "admin",
+  "route", and "frontmatter" freely.
+  <!-- vale Google.Quotes = YES -->
 
 The following concept paragraph, from `docs/extend/choose-an-ai-posture.md`, is the voice at its
 most common. It states one limit together with its consequence and hands the detail to the
@@ -251,9 +257,12 @@ flat taste.
   for a comma or a colon.
 - **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,
   and a heading names one thing, so a section with two subjects splits or takes a name for the
-  whole. Killed: "The shape, and cairn as one build of it." The `Cairn.TwoHeadedHeading` Vale rule
+  <!-- vale Google.Quotes = NO -->
+  <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
+  whole. Killed: "The shape, and cairn as one build of it". The `Cairn.TwoHeadedHeading` Vale rule
   fires on the comma-and shape in any heading (Geoff, 2026-09-08). A serial list in a heading, such
-  as "Roles, capability, and the access map," is a different form and passes.
+  as "Roles, capability, and the access map", is a different form and passes.
+  <!-- vale Google.Quotes = YES -->
 
 ## Drafting brief: editor docs
 
@@ -377,7 +386,10 @@ flat taste.
   carries it, so the remedy restructures it into a second sentence instead of swapping the glyph
   for a comma or a colon.
 - **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,
-  and a heading names one thing. Killed: "The shape, and cairn as one build of it."
+  <!-- vale Google.Quotes = NO -->
+  <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
+  and a heading names one thing. Killed: "The shape, and cairn as one build of it".
+  <!-- vale Google.Quotes = YES -->
 
 ## Names
 
@@ -448,7 +460,10 @@ This section carries the rules a writer needs at the page, so the records stay r
   prose.
 - **Alt text is mandatory.** Every image carries `alt`; a decorative image gets `alt=""`, never
   an omitted attribute. At most 150 characters. Start by naming the kind (diagram, screenshot,
-  reproduction), never "Image of," and describe what the reader learns in context, not what the
+  <!-- vale Google.Quotes = NO -->
+  <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
+  reproduction), never "Image of", and describe what the reader learns in context, not what the
+  <!-- vale Google.Quotes = YES -->
   pixels depict. The exemplars: MDN's "The settings icon is in the navigation bar below the
   search field", and Kubernetes' control-plane alt naming the relationship the diagram draws.
 - **Every authored diagram and live reproduction carries a caption.** Complete sentences,
@@ -500,7 +515,10 @@ reviewer can check a page against a checklist rather than a feeling.
   2. Preconditions, each stated with a link to whatever produces it.
   3. The steps, as a numbered list with one action to a step and the location named before the
      action. A procedure of one step is a single bulleted item.
-  4. A verification section, headed with a bare infinitive such as "Verify the served file,"
+     <!-- vale Google.Quotes = NO -->
+     <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
+  4. A verification section, headed with a bare infinitive such as "Verify the served file",
+     <!-- vale Google.Quotes = YES -->
      that names the observable result. Checks the reader runs in order form a numbered list.
   5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md`,
      `admin/troubleshooting.md`, or `extend/debug-your-site.md`) rather than restating recovery

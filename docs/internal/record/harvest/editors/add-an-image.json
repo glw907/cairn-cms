@@ -1,0 +1,214 @@
+{
+  "page": "docs/editors/add-an-image.md",
+  "blob": "eaedc59ebe091f071fef651c83f3fdc5386ad0a9",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page purpose line.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        5
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        7,
+        10
+      ],
+      "paraphrase": "The Insert image toolbar button, a drag, or a paste all start the same insert flow.",
+      "fact": "f:103hij"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "The insert panel leads with an Upload an image control and a search to reuse a stored image.",
+      "new-fact": "f:tvg0h6"
+    },
+    {
+      "lines": [
+        13,
+        14
+      ],
+      "paraphrase": "Picking a stored image places it immediately.",
+      "fact": "f:tvg0h6"
+    },
+    {
+      "lines": [
+        16,
+        16
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        18,
+        18
+      ],
+      "paraphrase": "After a file is chosen the capture card appears.",
+      "fact": "f:13rn9u"
+    },
+    {
+      "lines": [
+        20,
+        22
+      ],
+      "paraphrase": "The Name field is prefilled and marked Suggested for a meaningful file name and left empty for a generic camera stem.",
+      "fact": "f:nkh3fm"
+    },
+    {
+      "lines": [
+        23,
+        23
+      ],
+      "paraphrase": "The capture card offers writing a description or marking the image decorative.",
+      "new-fact": "f:13rn9u"
+    },
+    {
+      "lines": [
+        24,
+        25
+      ],
+      "paraphrase": "Alt text is the spoken substitute for the image read out by screen readers.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        26,
+        27
+      ],
+      "paraphrase": "Pointer to guidance on writing alt text.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        29,
+        30
+      ],
+      "paraphrase": "An image can be inserted without alt text and stays flagged as needing alt text.",
+      "fact": "f:er8yog"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "Pointer to the accepted file types.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        35,
+        35
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        37,
+        37
+      ],
+      "paraphrase": "An inserted or uploaded image lands at the caret.",
+      "fact": "f:tvg0h6"
+    },
+    {
+      "lines": [
+        37,
+        38
+      ],
+      "paraphrase": "The image can take a caption and a placement of Measure, Center, Wide, or Full.",
+      "fact": "f:qsdjk5"
+    },
+    {
+      "lines": [
+        39,
+        39
+      ],
+      "paraphrase": "Pointer to the images section.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        41,
+        42
+      ],
+      "paraphrase": "Pointer to upload failure help.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        44,
+        44
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        46,
+        46
+      ],
+      "paraphrase": "The lead picture is set from Details.",
+      "fact": "f:38bu9u"
+    },
+    {
+      "lines": [
+        46,
+        47
+      ],
+      "paraphrase": "The lead picture leads the page.",
+      "new-fact": "f:n9zk71"
+    },
+    {
+      "lines": [
+        47,
+        48
+      ],
+      "paraphrase": "The lead picture is also the social card and its dialog previews the crop shape.",
+      "fact": "f:n9zk71"
+    },
+    {
+      "lines": [
+        48,
+        49
+      ],
+      "paraphrase": "The lead picture gets the describe-or-decorative alt choice and a caption like an in-text image.",
+      "fact": "f:n9zk71"
+    },
+    {
+      "lines": [
+        51,
+        51
+      ],
+      "paraphrase": "Horizontal rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        53,
+        53
+      ],
+      "paraphrase": "A freshness stamp naming a review date.",
+      "cut": "marketing"
+    }
+  ]
+}

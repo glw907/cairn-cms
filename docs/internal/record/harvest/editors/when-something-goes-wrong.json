@@ -1,0 +1,534 @@
+{
+  "page": "docs/editors/when-something-goes-wrong.md",
+  "blob": "39e610ef0c8c2538832cabafce8d0bc6ce027082",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page purpose line.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        4,
+        5
+      ],
+      "paraphrase": "Each message on the page is quoted exactly as the editor shows it.",
+      "new-fact": "f:jsrpae"
+    },
+    {
+      "lines": [
+        7,
+        7
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        11
+      ],
+      "paraphrase": "A failed email send shows a message to contact the site owner.",
+      "fact": "f:25zrne"
+    },
+    {
+      "lines": [
+        13,
+        15
+      ],
+      "paraphrase": "A too-soon repeat request shows a message to check the inbox or wait a minute.",
+      "fact": "f:uhxwem"
+    },
+    {
+      "lines": [
+        17,
+        19
+      ],
+      "paraphrase": "An expired or used link shows the expired message or the confirm-page heading.",
+      "fact": "f:5zpheb"
+    },
+    {
+      "lines": [
+        21,
+        22
+      ],
+      "paraphrase": "A failed confirm shows a This didn’t work heading with an error and a way back to sign in.",
+      "new-fact": "f:hbnji7"
+    },
+    {
+      "lines": [
+        24,
+        24
+      ],
+      "paraphrase": "Advice to check the spam folder first.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        24,
+        25
+      ],
+      "paraphrase": "An address the owner did not add receives no email.",
+      "fact": "f:ygjlmh"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Continuation of the ask-the-owner advice.",
+      "fact": "f:ygjlmh"
+    },
+    {
+      "lines": [
+        28,
+        28
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        30,
+        32
+      ],
+      "paraphrase": "A refused save or publish keeps the typed text on screen.",
+      "new-fact": "f:772sb6"
+    },
+    {
+      "lines": [
+        34,
+        37
+      ],
+      "paraphrase": "A concurrent edit on Save shows the file-changed message, usually because another editor saved.",
+      "fact": "f:owwbs9"
+    },
+    {
+      "lines": [
+        35,
+        35
+      ],
+      "paraphrase": "The draft is kept in the editor after the conflict.",
+      "fact": "f:772sb6"
+    },
+    {
+      "lines": [
+        39,
+        41
+      ],
+      "paraphrase": "Publish shows this only when the save half succeeded and the publish half conflicted.",
+      "fact": "f:veh9xq"
+    },
+    {
+      "lines": [
+        43,
+        46
+      ],
+      "paraphrase": "A linter suppression comment explaining a Vale false positive on this page.",
+      "fact": "f:h044k3"
+    },
+    {
+      "lines": [
+        47,
+        54
+      ],
+      "paraphrase": "A save with broken internal links shows a singular or plural message, a list of addresses, and a Remove link button.",
+      "fact": "f:s4fa1s"
+    },
+    {
+      "lines": [
+        55,
+        55
+      ],
+      "paraphrase": "Closing marker of the Vale suppression.",
+      "fact": "f:h044k3"
+    },
+    {
+      "lines": [
+        57,
+        59
+      ],
+      "paraphrase": "A save linking to an unpublished page succeeds with a warning that the link will 404 until published.",
+      "new-fact": "f:ha0aa1"
+    },
+    {
+      "lines": [
+        60,
+        60
+      ],
+      "paraphrase": "Continuation of the unpublished-link warning.",
+      "fact": "f:ha0aa1"
+    },
+    {
+      "lines": [
+        62,
+        64
+      ],
+      "paraphrase": "A fragment cannot include another fragment.",
+      "fact": "f:6xixb1"
+    },
+    {
+      "lines": [
+        66,
+        66
+      ],
+      "paraphrase": "A missing date on a dated entry is refused with a prompt to choose one.",
+      "new-fact": "f:29c7gp"
+    },
+    {
+      "lines": [
+        68,
+        70
+      ],
+      "paraphrase": "An address already used by a published or pending entry is refused.",
+      "new-fact": "f:yb0quy"
+    },
+    {
+      "lines": [
+        72,
+        73
+      ],
+      "paraphrase": "A linter suppression comment for a quoted contraction.",
+      "fact": "f:7gpm8a"
+    },
+    {
+      "lines": [
+        74,
+        77
+      ],
+      "paraphrase": "Saving a tag absent from the shared vocabulary is refused.",
+      "fact": "f:i52c3j"
+    },
+    {
+      "lines": [
+        75,
+        75
+      ],
+      "paraphrase": "Closing marker of the contraction suppression.",
+      "fact": "f:7gpm8a"
+    },
+    {
+      "lines": [
+        78,
+        79
+      ],
+      "paraphrase": "Pointer to the tag list page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        81,
+        81
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        83,
+        85
+      ],
+      "paraphrase": "A rename is blocked while the entry has unpublished edits.",
+      "fact": "f:i7t7mu"
+    },
+    {
+      "lines": [
+        87,
+        88
+      ],
+      "paraphrase": "Another open unpublished branch that references the entry blocks a rename.",
+      "new-fact": "f:sezz71"
+    },
+    {
+      "lines": [
+        89,
+        89
+      ],
+      "paraphrase": "The message names the editors to ask.",
+      "new-fact": "f:1g71du"
+    },
+    {
+      "lines": [
+        89,
+        90
+      ],
+      "paraphrase": "The rename stays blocked until the referencing drafts publish or are discarded.",
+      "fact": "f:sezz71"
+    },
+    {
+      "lines": [
+        92,
+        93
+      ],
+      "paraphrase": "Deleting an entry others link to or include is refused.",
+      "fact": "f:bw36y2"
+    },
+    {
+      "lines": [
+        93,
+        94
+      ],
+      "paraphrase": "The refusal lists each linking entry with a link to its editor.",
+      "fact": "f:rz76zl"
+    },
+    {
+      "lines": [
+        96,
+        96
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        98,
+        99
+      ],
+      "paraphrase": "Publish site sends every pending entry live together.",
+      "fact": "f:0ny3ga"
+    },
+    {
+      "lines": [
+        101,
+        102
+      ],
+      "paraphrase": "A linter suppression comment for a quoted contraction.",
+      "fact": "f:7gpm8a"
+    },
+    {
+      "lines": [
+        103,
+        103
+      ],
+      "paraphrase": "Publish site with no pending entry says nothing is left to publish.",
+      "new-fact": "f:negd9e"
+    },
+    {
+      "lines": [
+        104,
+        106
+      ],
+      "paraphrase": "A commit conflict during Publish site loses nothing and asks for a reload.",
+      "fact": "f:negd9e"
+    },
+    {
+      "lines": [
+        107,
+        109
+      ],
+      "paraphrase": "An unexpected Publish site failure says to try again and ask the developer.",
+      "fact": "f:negd9e"
+    },
+    {
+      "lines": [
+        110,
+        110
+      ],
+      "paraphrase": "Closing marker of the contraction suppression.",
+      "fact": "f:7gpm8a"
+    },
+    {
+      "lines": [
+        112,
+        112
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        114,
+        114
+      ],
+      "paraphrase": "A blocking draft refuses a revert with a message naming the editor and save time.",
+      "new-fact": "f:kfgv09"
+    },
+    {
+      "lines": [
+        115,
+        116
+      ],
+      "paraphrase": "Reverting is blocked until the other editor publishes or discards their draft.",
+      "fact": "f:2w5n52"
+    },
+    {
+      "lines": [
+        118,
+        120
+      ],
+      "paraphrase": "A stale history or unknown version refuses a revert with a reload message.",
+      "fact": "f:kfgv09"
+    },
+    {
+      "lines": [
+        122,
+        122
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        124,
+        125
+      ],
+      "paraphrase": "Sharing before saving is refused with a message to save an edit first.",
+      "new-fact": "f:lvmb1c"
+    },
+    {
+      "lines": [
+        127,
+        127
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        129,
+        132
+      ],
+      "paraphrase": "An expired session shows a sign-in-again message on the share panel and the image insert.",
+      "new-fact": "f:q9kml6"
+    },
+    {
+      "lines": [
+        134,
+        134
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        136,
+        138
+      ],
+      "paraphrase": "A linter suppression comment for quoted upload messages.",
+      "fact": "f:7gpm8a"
+    },
+    {
+      "lines": [
+        139,
+        140
+      ],
+      "paraphrase": "An unsupported image format is refused with a message naming the accepted types.",
+      "fact": "f:xg2j0r"
+    },
+    {
+      "lines": [
+        142,
+        144
+      ],
+      "paraphrase": "A failed conversion shows a message to export as JPEG first.",
+      "fact": "f:xg2j0r"
+    },
+    {
+      "lines": [
+        146,
+        146
+      ],
+      "paraphrase": "An oversize image is refused with a too-large message.",
+      "fact": "f:xg2j0r"
+    },
+    {
+      "lines": [
+        146,
+        147
+      ],
+      "paraphrase": "A site limits the upload file size.",
+      "new-fact": "f:ydw4pb"
+    },
+    {
+      "lines": [
+        148,
+        148
+      ],
+      "paraphrase": "Continuation of the try-again advice.",
+      "fact": "f:ydw4pb"
+    },
+    {
+      "lines": [
+        150,
+        151
+      ],
+      "paraphrase": "A network failure during upload shows a connection message.",
+      "fact": "f:xg2j0r"
+    },
+    {
+      "lines": [
+        152,
+        152
+      ],
+      "paraphrase": "Closing marker of the contraction suppression.",
+      "fact": "f:7gpm8a"
+    },
+    {
+      "lines": [
+        154,
+        154
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        156,
+        158
+      ],
+      "paraphrase": "An overlong draft is refused by Tidy with a message to select a passage.",
+      "fact": "f:3opbwr"
+    },
+    {
+      "lines": [
+        160,
+        162
+      ],
+      "paraphrase": "The Tidy button hides when the copy-edit key fails and returns on its own once fixed.",
+      "new-fact": "f:ayciqa"
+    },
+    {
+      "lines": [
+        164,
+        164
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        166,
+        168
+      ],
+      "paraphrase": "Advice to report the exact message and steps to the owner or developer.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        170,
+        170
+      ],
+      "paraphrase": "Horizontal rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        172,
+        172
+      ],
+      "paraphrase": "A freshness stamp naming a review date.",
+      "cut": "marketing"
+    }
+  ]
+}

@@ -1,0 +1,582 @@
+{
+  "page": "docs/why-cairn.md",
+  "blob": "2211be6c4b3c4e1a993bdd0692070264c95072c1",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The author's client organizations moved from WordPress to static generators fronted by a git-backed editor.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        4,
+        6
+      ],
+      "paraphrase": "The author found the earlier CMS hard to manage and to design in, with plugins that resisted integration.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        6,
+        6
+      ],
+      "paraphrase": "Casual editors found the earlier CMS's block editor confusing.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        6,
+        8
+      ],
+      "paraphrase": "Static generators paired with a git-based editor were easier to work with, but non-technical editing stayed unsolved.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        10,
+        11
+      ],
+      "paraphrase": "The organizations' users needed one integrated place for nearly all work beyond basic productivity.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        11,
+        12
+      ],
+      "paraphrase": "Basic office productivity tools are normally supplied by Google or Microsoft suites.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        11,
+        12
+      ],
+      "paraphrase": "The author wanted a technical side that could be left alone, which is why Cloudflare.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "Cost mattered underneath both needs, since a small organization often has little to spend.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        15,
+        15
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        17,
+        18
+      ],
+      "paraphrase": "cairn is both an editor-oriented git-backed CMS and a SvelteKit toolkit developers build on.",
+      "fact": "f:wvediq"
+    },
+    {
+      "lines": [
+        18,
+        19
+      ],
+      "paraphrase": "By default cairn itself acts as the identity provider for the site's editors.",
+      "new-fact": "f:u77pea"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "By default an editor signs in via a mailed link, needing neither a GitHub account nor a password.",
+      "fact": "f:0ij7do"
+    },
+    {
+      "lines": [
+        20,
+        21
+      ],
+      "paraphrase": "Behind Cloudflare Access an editor can sign in through the site's own identity gate instead of the emailed link.",
+      "fact": "f:8289h7"
+    },
+    {
+      "lines": [
+        20,
+        21
+      ],
+      "paraphrase": "An Access-gated site can offer the organization's Google or Microsoft accounts for sign-in.",
+      "new-fact": "f:gw1oas"
+    },
+    {
+      "lines": [
+        20,
+        21
+      ],
+      "paraphrase": "Link to the organization sign-in recipe.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        21,
+        22
+      ],
+      "paraphrase": "An editor writes in a markdown editor whose live preview renders through the same function the public site uses.",
+      "fact": "f:dl1trb"
+    },
+    {
+      "lines": [
+        22,
+        22
+      ],
+      "paraphrase": "A save holds the edit on a per-entry branch.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        22,
+        23
+      ],
+      "paraphrase": "A deliberate publish copies the held edit onto main, crediting the editor as the commit author.",
+      "fact": "f:qehbx3"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "After publish the site deploys the way any push to its repository already does.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        24,
+        24
+      ],
+      "paraphrase": "None of the plumbing reaches the editor.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        26,
+        27
+      ],
+      "paraphrase": "The setup command creates the GitHub App, the repository, and the Cloudflare bindings, then deploys, in one run.",
+      "fact": "f:kldwss"
+    },
+    {
+      "lines": [
+        27,
+        27
+      ],
+      "paraphrase": "The setup command narrates its work throughout.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        27,
+        30
+      ],
+      "paraphrase": "Setting up a git-backed CMS by hand means wiring OAuth, a repository, and hosting yourself.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        29,
+        30
+      ],
+      "paraphrase": "The tool reduces setup to a few questions instead of a checklist of accounts.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        32,
+        34
+      ],
+      "paraphrase": "A developer's custom screen lives inside the same admin, reusing cairn's components and its login.",
+      "fact": "f:9xthnq"
+    },
+    {
+      "lines": [
+        34,
+        35
+      ],
+      "paraphrase": "Added screens read as one product, not a second app beside the CMS.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        37,
+        37
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        39,
+        40
+      ],
+      "paraphrase": "cairn commits fully to SvelteKit and Cloudflare, with no layer trying to hide either.",
+      "new-fact": "f:djoxr9"
+    },
+    {
+      "lines": [
+        39,
+        40
+      ],
+      "paraphrase": "The same no-hiding-layer commitment is claimed for GitHub.",
+      "new-fact": "f:mpy6za"
+    },
+    {
+      "lines": [
+        40,
+        42
+      ],
+      "paraphrase": "Every production cairn site the author runs is hosted on Cloudflare.",
+      "fact": "f:i74t7g"
+    },
+    {
+      "lines": [
+        41,
+        42
+      ],
+      "paraphrase": "Cloudflare is preferred for its security-oriented defaults and a free tier that holds up at small-site traffic.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        42,
+        44
+      ],
+      "paraphrase": "SvelteKit is a framework a fixed CMS can commit to and gain real leverage from.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        42,
+        43
+      ],
+      "paraphrase": "SvelteKit offers full server rendering and first-class TypeScript.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        43,
+        44
+      ],
+      "paraphrase": "Islands build directly on the component model, with no adapter layer over it.",
+      "fact": "f:ychaxj"
+    },
+    {
+      "lines": [
+        44,
+        45
+      ],
+      "paraphrase": "A small organization's content belongs in GitHub even when nobody there has used git.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        45,
+        46
+      ],
+      "paraphrase": "Every publish becomes a commit.",
+      "fact": "f:w379wu"
+    },
+    {
+      "lines": [
+        46,
+        46
+      ],
+      "paraphrase": "Git itself supplies the change history, the credit, and the means to roll back.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        46,
+        47
+      ],
+      "paraphrase": "Using git spares cairn from building and running a content database of its own.",
+      "fact": "f:jzgztr"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "None of the three platform choices can be reversed one at a time.",
+      "fact": "f:djoxr9"
+    },
+    {
+      "lines": [
+        49,
+        50
+      ],
+      "paraphrase": "cairn has no abstraction layer for swapping Cloudflare for another host later.",
+      "fact": "f:hk24xs"
+    },
+    {
+      "lines": [
+        50,
+        53
+      ],
+      "paraphrase": "GitHub is the default and only repository provider the tool wires up; a developer can implement BackendProvider for another store.",
+      "fact": "f:hk24xs"
+    },
+    {
+      "lines": [
+        52,
+        52
+      ],
+      "paraphrase": "Link to the backend-provider recipe section.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        53,
+        54
+      ],
+      "paraphrase": "Adopting cairn ties a site to Cloudflare, and to GitHub too unless a developer writes the backend seam.",
+      "fact": "f:hk24xs"
+    },
+    {
+      "lines": [
+        56,
+        56
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        58,
+        60
+      ],
+      "paraphrase": "cairn is pre-1.0 and an Extension-tier seam has already moved across two minor releases.",
+      "fact": "f:h0xykj"
+    },
+    {
+      "lines": [
+        60,
+        60
+      ],
+      "paraphrase": "Until 1.0 an upgrade should be verified against the site's own code, not just installed.",
+      "fact": "f:gknz29"
+    },
+    {
+      "lines": [
+        61,
+        61
+      ],
+      "paraphrase": "The migration notes are the per-version record of changes.",
+      "fact": "f:h0xykj"
+    },
+    {
+      "lines": [
+        63,
+        64
+      ],
+      "paraphrase": "cairn suits a small editorial group that coordinates closely; big or anonymous contributor pools fall outside the default design.",
+      "new-fact": "f:7iwb7f"
+    },
+    {
+      "lines": [
+        64,
+        65
+      ],
+      "paraphrase": "The default identity model expects a handful of editors at most, acquainted with each other.",
+      "fact": "f:7iwb7f"
+    },
+    {
+      "lines": [
+        65,
+        65
+      ],
+      "paraphrase": "The zero-config identity model has two roles, owner and editor.",
+      "fact": "f:zzc2m5"
+    },
+    {
+      "lines": [
+        65,
+        67
+      ],
+      "paraphrase": "Scaling past a small team, with more roles or a wider contributor pool, is developer work on the auth seams.",
+      "fact": "f:7iwb7f"
+    },
+    {
+      "lines": [
+        66,
+        67
+      ],
+      "paraphrase": "Link to the second-audience recipe.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        69,
+        70
+      ],
+      "paraphrase": "Without developer help, an editor can author and release entries, and also curate images and the tag vocabulary.",
+      "new-fact": "f:dpbswc"
+    },
+    {
+      "lines": [
+        70,
+        72
+      ],
+      "paraphrase": "A developer is needed to define a new content type, build a custom screen, or change role permissions.",
+      "fact": "f:dpbswc"
+    },
+    {
+      "lines": [
+        72,
+        74
+      ],
+      "paraphrase": "An organization with no developer, and no plan for one, should weigh that before starting.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        73,
+        74
+      ],
+      "paraphrase": "Link to the admin track's list of what needs a developer.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        76,
+        77
+      ],
+      "paraphrase": "cairn is a content manager plus admin toolkit rather than a platform, and deliberately limits itself to content and the admin frame.",
+      "fact": "f:99f221"
+    },
+    {
+      "lines": [
+        77,
+        79
+      ],
+      "paraphrase": "Member signups, rosters, event registration, and other organization-specific features are developer code on cairn's seams, not shipped.",
+      "fact": "f:bhyvqg"
+    },
+    {
+      "lines": [
+        79,
+        81
+      ],
+      "paraphrase": "Building a general feature for every organization's need would bloat the engine and slow everyone who builds on it.",
+      "fact": "f:bhyvqg"
+    },
+    {
+      "lines": [
+        83,
+        84
+      ],
+      "paraphrase": "Even automated setup requires accounts on GitHub and Cloudflare, with the paid Cloudflare tier active from the initial deploy.",
+      "fact": "f:zpjl8k"
+    },
+    {
+      "lines": [
+        84,
+        85
+      ],
+      "paraphrase": "A domain purchase may be needed once a second person has to sign in.",
+      "fact": "f:rlur7t"
+    },
+    {
+      "lines": [
+        85,
+        86
+      ],
+      "paraphrase": "With the tool driving, setup is manageable, yet still involves several steps rather than one sign-up.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        87,
+        88
+      ],
+      "paraphrase": "Links to the cost picture and the second-editor requirements.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        90,
+        90
+      ],
+      "paraphrase": "Adopting git-backed content is a commitment in its own right.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        90,
+        91
+      ],
+      "paraphrase": "Each publish is recorded as a commit.",
+      "fact": "f:w379wu"
+    },
+    {
+      "lines": [
+        90,
+        91
+      ],
+      "paraphrase": "Git itself supplies the change history, the credit, and the means to roll back.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        91,
+        93
+      ],
+      "paraphrase": "The organization needs a GitHub account to reach its content repository, though editors never touch it.",
+      "fact": "f:oyiv3h"
+    },
+    {
+      "lines": [
+        93,
+        94
+      ],
+      "paraphrase": "An organization that avoids GitHub entirely should name that friction before starting.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        96,
+        96
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        98,
+        100
+      ],
+      "paraphrase": "For an admin setup with no code, the admin track suffices; the extend track is for developers going further.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        100,
+        102
+      ],
+      "paraphrase": "An editor on an already-configured site starts at the editors welcome page.",
+      "cut": "navigation"
+    }
+  ]
+}

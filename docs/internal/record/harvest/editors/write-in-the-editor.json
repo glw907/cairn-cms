@@ -1,0 +1,814 @@
+{
+  "page": "docs/editors/write-in-the-editor.md",
+  "blob": "46d4d0befa47ca725375fc08f79f8ef34cacda2b",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        6
+      ],
+      "paraphrase": "Intro listing the topics with pointers to the image and publish pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        10,
+        13
+      ],
+      "paraphrase": "The sidebar names each concept and selecting one lists its entries with a status per row.",
+      "fact": "f:rpbh0p"
+    },
+    {
+      "lines": [
+        15,
+        17
+      ],
+      "paraphrase": "New opens a create dialog for title, address, and sometimes date, then lands in the editor.",
+      "new-fact": "f:dy0x62"
+    },
+    {
+      "lines": [
+        19,
+        19
+      ],
+      "paraphrase": "The address becomes part of the published location through the permalink pattern.",
+      "fact": "f:6ebew3"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "A blank address fills from the title as it is typed.",
+      "fact": "f:dy0x62"
+    },
+    {
+      "lines": [
+        20,
+        21
+      ],
+      "paraphrase": "The generated address is lowercase with hyphens for spaces and punctuation.",
+      "fact": "f:00zwz5"
+    },
+    {
+      "lines": [
+        21,
+        22
+      ],
+      "paraphrase": "The address can be typed instead of generated.",
+      "fact": "f:dy0x62"
+    },
+    {
+      "lines": [
+        22,
+        23
+      ],
+      "paraphrase": "The address can be changed later from Details.",
+      "fact": "f:i7t7mu"
+    },
+    {
+      "lines": [
+        25,
+        25
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        27,
+        28
+      ],
+      "paraphrase": "The title has its own large field above the editor.",
+      "new-fact": "f:kv9hap"
+    },
+    {
+      "lines": [
+        28,
+        29
+      ],
+      "paraphrase": "A toolbar with Write and Preview tabs sits above the text.",
+      "fact": "f:qwbmyj"
+    },
+    {
+      "lines": [
+        29,
+        30
+      ],
+      "paraphrase": "Preview shows the entry roughly as the site will render it.",
+      "fact": "f:kv9hap"
+    },
+    {
+      "lines": [
+        30,
+        30
+      ],
+      "paraphrase": "Every entry opens on Write.",
+      "fact": "f:qwbmyj"
+    },
+    {
+      "lines": [
+        32,
+        34
+      ],
+      "paraphrase": "The body is markdown and the toolbar buttons insert the marks.",
+      "new-fact": "f:eeua6z"
+    },
+    {
+      "lines": [
+        35,
+        37
+      ],
+      "paraphrase": "A rich paste converts headings, emphasis, links, and lists and reduces other elements to plain text.",
+      "new-fact": "f:6zu34k"
+    },
+    {
+      "lines": [
+        39,
+        40
+      ],
+      "paraphrase": "Preview has a device-width control remembered per device.",
+      "fact": "f:59kf07"
+    },
+    {
+      "lines": [
+        42,
+        43
+      ],
+      "paraphrase": "A Details panel opens from a header icon.",
+      "new-fact": "f:8cgk98"
+    },
+    {
+      "lines": [
+        43,
+        44
+      ],
+      "paraphrase": "Details holds tags, date, and lead picture where declared.",
+      "fact": "f:8cgk98"
+    },
+    {
+      "lines": [
+        43,
+        43
+      ],
+      "paraphrase": "Hidden is a Details-panel checkbox.",
+      "fact": "f:i4fj93"
+    },
+    {
+      "lines": [
+        43,
+        43
+      ],
+      "paraphrase": "The entry address is changed in Details.",
+      "fact": "f:i7t7mu"
+    },
+    {
+      "lines": [
+        44,
+        45
+      ],
+      "paraphrase": "Characterizes Details as settings configured once.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        47,
+        47
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "The toolbar groups its buttons into clusters.",
+      "fact": "f:eeua6z"
+    },
+    {
+      "lines": [
+        51,
+        58
+      ],
+      "paraphrase": "The Format cluster holds Bold, Italic, Strikethrough, and Inline code.",
+      "fact": "f:eeua6z"
+    },
+    {
+      "lines": [
+        53,
+        58
+      ],
+      "paraphrase": "Bold is Ctrl+B, Italic Ctrl+I, Inline code Ctrl+E, and Strikethrough has none.",
+      "fact": "f:yq93oc"
+    },
+    {
+      "lines": [
+        60,
+        69
+      ],
+      "paraphrase": "The Structure cluster holds Heading, Smaller heading, both lists, Quote, and Table.",
+      "fact": "f:eeua6z"
+    },
+    {
+      "lines": [
+        64,
+        68
+      ],
+      "paraphrase": "Shortcuts for Heading, Smaller heading, both list types, and Quote.",
+      "fact": "f:84uow3"
+    },
+    {
+      "lines": [
+        71,
+        72
+      ],
+      "paraphrase": "The overflow menu next to Structure carries three rarer block tools.",
+      "fact": "f:eeua6z"
+    },
+    {
+      "lines": [
+        74,
+        75
+      ],
+      "paraphrase": "The Insert cluster holds link, page link, image, and where enabled fragment and block tools.",
+      "fact": "f:eeua6z"
+    },
+    {
+      "lines": [
+        77,
+        77
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        79,
+        79
+      ],
+      "paraphrase": "Web link and Link to page are separate tools.",
+      "new-fact": "f:q6v78n"
+    },
+    {
+      "lines": [
+        81,
+        81
+      ],
+      "paraphrase": "Web link is Ctrl+K and links to an ordinary web address.",
+      "fact": "f:n8bxwo"
+    },
+    {
+      "lines": [
+        81,
+        83
+      ],
+      "paraphrase": "A selection becomes the link text; otherwise the dialog takes an address and words.",
+      "new-fact": "f:ticahk"
+    },
+    {
+      "lines": [
+        85,
+        86
+      ],
+      "paraphrase": "Link to page searches site entries and inserts a link.",
+      "fact": "f:q6v78n"
+    },
+    {
+      "lines": [
+        86,
+        87
+      ],
+      "paraphrase": "Advice to use Link to page for internal targets.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        87,
+        88
+      ],
+      "paraphrase": "An internal link survives a change of the target address.",
+      "fact": "f:ef7w0u"
+    },
+    {
+      "lines": [
+        89,
+        91
+      ],
+      "paraphrase": "The internal link is stored with a cairn: prefix and resolved to a real address at publish.",
+      "fact": "f:ef7w0u"
+    },
+    {
+      "lines": [
+        93,
+        93
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        95,
+        96
+      ],
+      "paraphrase": "Insert image, drag, and paste start the same flow.",
+      "fact": "f:103hij"
+    },
+    {
+      "lines": [
+        96,
+        97
+      ],
+      "paraphrase": "Pointer to the upload panel page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        97,
+        98
+      ],
+      "paraphrase": "The lead picture is edited in the Details panel, not the body.",
+      "fact": "f:38bu9u"
+    },
+    {
+      "lines": [
+        99,
+        99
+      ],
+      "paraphrase": "Pointer to the lead picture section.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        101,
+        103
+      ],
+      "paraphrase": "Advice on writing alt text and when to mark an image decorative.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        103,
+        104
+      ],
+      "paraphrase": "An image lacking both stays marked as missing alt text until described.",
+      "fact": "f:er8yog"
+    },
+    {
+      "lines": [
+        106,
+        108
+      ],
+      "paraphrase": "A decorative body image stays flagged because markdown alt has no slot for the choice.",
+      "new-fact": "f:05aczh"
+    },
+    {
+      "lines": [
+        108,
+        109
+      ],
+      "paraphrase": "The flag does not affect publishing and the published image is still treated as decorative.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        110,
+        111
+      ],
+      "paraphrase": "Only the lead picture stores the decorative choice and clears the flag.",
+      "fact": "f:05aczh"
+    },
+    {
+      "lines": [
+        113,
+        113
+      ],
+      "paraphrase": "An image in the draft can take a caption and placement.",
+      "fact": "f:qsdjk5"
+    },
+    {
+      "lines": [
+        114,
+        118
+      ],
+      "paraphrase": "The figure button wraps the image at the cursor, is dim until the cursor is on an image, then reads Edit the figure.",
+      "new-fact": "f:vr5ui4"
+    },
+    {
+      "lines": [
+        120,
+        122
+      ],
+      "paraphrase": "Defines a caption as visible text and alt text as screen-reader text.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        123,
+        125
+      ],
+      "paraphrase": "Placements Measure, Center, Wide, and Full and how each sits relative to the text column.",
+      "new-fact": "f:eynv7q"
+    },
+    {
+      "lines": [
+        127,
+        130
+      ],
+      "paraphrase": "A decorative image with a caption triggers a warning because a screen reader skips it.",
+      "fact": "f:eufvqw"
+    },
+    {
+      "lines": [
+        132,
+        132
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        134,
+        137
+      ],
+      "paraphrase": "Fragments are written once, published, and included through the Include a fragment control where the site has them.",
+      "new-fact": "f:tj3h4c"
+    },
+    {
+      "lines": [
+        137,
+        139
+      ],
+      "paraphrase": "An included fragment renders its current published version everywhere it is included.",
+      "fact": "f:9r4fv1"
+    },
+    {
+      "lines": [
+        141,
+        143
+      ],
+      "paraphrase": "A fragment inserts as an ::include line that Preview and the site resolve to the real text.",
+      "fact": "f:9r4fv1"
+    },
+    {
+      "lines": [
+        145,
+        145
+      ],
+      "paraphrase": "The picker says so when no fragment is published.",
+      "fact": "f:tj3h4c"
+    },
+    {
+      "lines": [
+        147,
+        147
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        149,
+        153
+      ],
+      "paraphrase": "Layout blocks are colon-fenced directives whose fence lines mark the block boundaries.",
+      "fact": "f:onrbcb"
+    },
+    {
+      "lines": [
+        155,
+        156
+      ],
+      "paraphrase": "Insert block opens a palette and a guided form when the site registers components.",
+      "new-fact": "f:megde2"
+    },
+    {
+      "lines": [
+        157,
+        158
+      ],
+      "paraphrase": "The pencil beside Insert block reopens the form for the block at the caret.",
+      "fact": "f:onrbcb"
+    },
+    {
+      "lines": [
+        159,
+        160
+      ],
+      "paraphrase": "The pencil is unavailable when the block cannot be edited as a form.",
+      "fact": "f:megde2"
+    },
+    {
+      "lines": [
+        162,
+        164
+      ],
+      "paraphrase": "Blocks open folded and spring open when touched.",
+      "new-fact": "f:ie7lpk"
+    },
+    {
+      "lines": [
+        166,
+        166
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        168,
+        169
+      ],
+      "paraphrase": "Introduces two in-editor reference sheets.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        171,
+        172
+      ],
+      "paraphrase": "The question-mark button opens a one-screen syntax-to-result table.",
+      "new-fact": "f:egat2k"
+    },
+    {
+      "lines": [
+        173,
+        173
+      ],
+      "paraphrase": "The shortcuts sheet opens with Ctrl+/.",
+      "fact": "f:nndzys"
+    },
+    {
+      "lines": [
+        173,
+        174
+      ],
+      "paraphrase": "The sheet enumerates all chords, from Save and Publish through formatting and issue navigation.",
+      "fact": "f:oyokzv"
+    },
+    {
+      "lines": [
+        176,
+        177
+      ],
+      "paraphrase": "Typed markdown always works and buttons are conveniences.",
+      "fact": "f:bv358u"
+    },
+    {
+      "lines": [
+        179,
+        179
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        181,
+        182
+      ],
+      "paraphrase": "Display controls sit in the editor footer and change appearance only.",
+      "new-fact": "f:b3deva"
+    },
+    {
+      "lines": [
+        184,
+        184
+      ],
+      "paraphrase": "Focus mode dims all but the cursor paragraph.",
+      "fact": "f:b3deva"
+    },
+    {
+      "lines": [
+        185,
+        186
+      ],
+      "paraphrase": "Typewriter mode keeps the caret line roughly centered vertically while typing.",
+      "fact": "f:b3deva"
+    },
+    {
+      "lines": [
+        187,
+        188
+      ],
+      "paraphrase": "Zen hides the toolbar and controls and Escape or the shortcut restores them.",
+      "new-fact": "f:fy7fam"
+    },
+    {
+      "lines": [
+        189,
+        189
+      ],
+      "paraphrase": "Prose and Wide switch the writing surface width.",
+      "fact": "f:b3deva"
+    },
+    {
+      "lines": [
+        190,
+        190
+      ],
+      "paraphrase": "Claims the wide surface suits tables and long addresses.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        192,
+        193
+      ],
+      "paraphrase": "Below the small breakpoint the controls move into More formatting.",
+      "fact": "f:b3deva"
+    },
+    {
+      "lines": [
+        195,
+        196
+      ],
+      "paraphrase": "The modes are per-browser preferences and not saved to the entry.",
+      "fact": "f:bbg1w2"
+    },
+    {
+      "lines": [
+        198,
+        198
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        200,
+        205
+      ],
+      "paraphrase": "Spellcheck underlines unknown words, offers suggestions and a shared-dictionary add, and can be turned off.",
+      "new-fact": "f:wmjusv"
+    },
+    {
+      "lines": [
+        207,
+        209
+      ],
+      "paraphrase": "The underline also flags doubled words, double spaces, and repeated punctuation, never style.",
+      "fact": "f:x7009q"
+    },
+    {
+      "lines": [
+        211,
+        212
+      ],
+      "paraphrase": "A Tidy button appears only when the site has a copy-edit tool.",
+      "fact": "f:objj1x"
+    },
+    {
+      "lines": [
+        212,
+        212
+      ],
+      "paraphrase": "Tidy reads the selection when one exists, else the whole draft.",
+      "new-fact": "f:qwjr4p"
+    },
+    {
+      "lines": [
+        213,
+        213
+      ],
+      "paraphrase": "Tidy suggests fixes for spelling, grammar, and mild rewording.",
+      "fact": "f:objj1x"
+    },
+    {
+      "lines": [
+        213,
+        214
+      ],
+      "paraphrase": "Nothing changes until review, and each change shows what it removes and adds.",
+      "fact": "f:qwjr4p"
+    },
+    {
+      "lines": [
+        215,
+        216
+      ],
+      "paraphrase": "Judgment changes are marked Review this.",
+      "fact": "f:objj1x"
+    },
+    {
+      "lines": [
+        216,
+        218
+      ],
+      "paraphrase": "Accept fixes takes only objective fixes and never sweeps Review this changes.",
+      "fact": "f:qwjr4p"
+    },
+    {
+      "lines": [
+        218,
+        218
+      ],
+      "paraphrase": "Reject all rejects every proposed change.",
+      "fact": "f:qwjr4p"
+    },
+    {
+      "lines": [
+        219,
+        221
+      ],
+      "paraphrase": "Apply writes to the editor as one undoable step and the next save keeps it.",
+      "fact": "f:qwjr4p"
+    },
+    {
+      "lines": [
+        223,
+        224
+      ],
+      "paraphrase": "Typing is blocked during a Tidy review as it is on Preview.",
+      "fact": "f:zvkaa3"
+    },
+    {
+      "lines": [
+        224,
+        224
+      ],
+      "paraphrase": "Finishing the review restores typing.",
+      "fact": "f:qwjr4p"
+    },
+    {
+      "lines": [
+        225,
+        225
+      ],
+      "paraphrase": "Selecting Reject all brings typing back.",
+      "new-fact": "f:9swwku"
+    },
+    {
+      "lines": [
+        225,
+        227
+      ],
+      "paraphrase": "An overlong draft cannot be tidied in one pass; the error page explains the workaround.",
+      "fact": "f:l9t5ce"
+    },
+    {
+      "lines": [
+        229,
+        229
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        231,
+        231
+      ],
+      "paraphrase": "Pointer to the publish page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        232,
+        233
+      ],
+      "paraphrase": "Save keeps changes private while working.",
+      "fact": "f:1q8j2n"
+    },
+    {
+      "lines": [
+        233,
+        233
+      ],
+      "paraphrase": "Publish makes changes live.",
+      "fact": "f:9sk0at"
+    },
+    {
+      "lines": [
+        235,
+        235
+      ],
+      "paraphrase": "Horizontal rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        237,
+        237
+      ],
+      "paraphrase": "A freshness stamp naming a review date.",
+      "cut": "marketing"
+    }
+  ]
+}

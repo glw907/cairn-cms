@@ -19,20 +19,24 @@ un-pinnable against the registry since `0.95.0`. Live contracts:
 
 Three initiatives are live; resume each from its plan's ledger foot:
 
-- **Theme identity pass A** (branch `theme-identity-a`, closed at `7e64a388`): closed, unmerged;
-  Geoff's S3 owner sitting is done ("all per recommendation"), a correction run is folding its
-  fixes in, and pass A then merges `main` on its own (Geoff's ruling, 2026-09-28, overriding the
-  earlier A-B-C joint-merge ruling). Ledger foot:
-  `docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`.
+- **Theme identity pass A** (branch `theme-identity-a`, PR #92, head `8640528f`): S3 sitting done
+  ("all per recommendation"), its corrections landed (`9ef7b8b3`, gate green). Owed, in order: the
+  S4 baseline regeneration, a `diff-reviewer` read of the correction run, `code-simplifier` over
+  it, CI green, then merge PR #92 (Geoff approved pass A merging on its own, 2026-09-28). Ledger
+  foot: `docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`.
 - **Theme identity pass B** (branch `theme-identity-b`): segments A and B done, segment C (the
   shipped guidance and its exemplar, then the sync test) next. Ledger foot:
   `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`.
 - **Theme identity pass C**: reviewed plan waits on branch `theme-c-plan`
   (`docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`), runs after pass B, cuts `0.98.0`.
 - **Draft docs pass 0+1**: merged (PR #91, `8bbe78f5`); the stage 2a plan is next (below), after
-  pass B merges (Geoff, S3 Q21). Geoff's style-guide sync
-  brainstorm (`docs/superpowers/research/2026-09-28-style-guide-sync-brainstorm-brief.md`, `main`,
-  a separate session) must land before stage 2a drafts its first page.
+  pass B merges (Geoff, S3 Q21). The style-guide sync must land before stage 2a drafts its
+  first page.
+- **Style-guide sync** (branch `style-guide-sync`, worktree `.claude/worktrees/style-guide-sync`,
+  head `2fd8eea8`): spec and plan reviewed and folded (rulings 1 to 14). It waited on a workstation
+  Claude infra sweep, whose passes A-core and B are merged in dotfiles (`c3e709c`, `7de1210`; spec
+  and state in `~/.dotfiles/docs/STATUS.md`). Next: re-baseline the plan on the corrected infra
+  (resume prompt below), then execute.
 
 ## Open decisions and watches
 
@@ -52,9 +56,17 @@ Three initiatives are live; resume each from its plan's ledger foot:
 
 ## Resume prompt
 
-Theme identity: in a fresh session (`claude-opus-5-5`, `high`), resume pass B at segment C per its
-own plan's ledger foot; pass C waits for pass B's close; never touch pass A's worktree, whose merge
-to `main` is pass A's own act.
+Theme identity, fresh session (`claude-opus-5-5`, `high`): finish pass A per its bullet above,
+then merge `main` into `theme-identity-b`, carrying A's `src/lib/components` fixes across B's
+rename to `src/lib/admin`; confirm PR #95 is green; resume pass B at segment C. Pass C follows B.
+Style-guide sync, fresh session (`claude-opus-5-5`, `medium`): in
+`.claude/worktrees/style-guide-sync`, merge `main` into the branch, then apply the ten amendments
+the infra sweep spec lists (`~/.dotfiles/docs/superpowers/specs/2026-09-28-claude-infra-sweep-design.md`,
+"Amendments to the style-guide-sync plan") to
+`docs/superpowers/plans/2026-09-28-style-guide-sync.md`, including amendment 10's pre-flight
+render against the real amended plan. Then run the plan's held verification read (the fold record
+is `docs/superpowers/research/2026-09-28-style-guide-sync-plan-fold.md`), and on a clean read
+execute through `cairn-pass`. Geoff's one attended read is the R5 diff right after J1 (ruling 14).
 Draft docs, after pass B merges: in a fresh session (`claude-opus-5-5`, `high`), confirm the
 style-guide sync brainstorm has landed, author the stage 2a plan (with its extend outline) from the
 approach spec's stage 2 outline, run `spec-plan-review`, and bring it to Geoff on an R10 page.

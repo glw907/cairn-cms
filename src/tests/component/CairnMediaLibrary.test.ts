@@ -188,19 +188,28 @@ describe('CairnMediaLibrary grid', () => {
       expect(describedTitle.getBoundingClientRect().width).toBe(needsAltTitle.getBoundingClientRect().width);
     });
 
-    // S3 Q8: the density toggle is hand-rolled (no daisyUI `.btn` class of its own), so it never
-    // picked up the size step's `--size-field` bump the neighboring `btn-sm` orphan-scan trigger
-    // reads automatically. The compiled sheet carries the real `--size-field` value.
-    it('sizes the grid/list density toggle level with its btn-sm neighbor', async () => {
+    // The density toggle is hand-rolled (no daisyUI `.btn` class of its own), so it never picked
+    // up the size step's `--size-field` bump the neighboring `btn-sm` orphan-scan trigger reads
+    // automatically. The eye reads the toggle's bordered outer frame, so the frame's own box is
+    // measured against the neighbor: the same height, and top and bottom edges on the same lines.
+    it('sizes the density toggle frame level with its btn-sm neighbor', async () => {
       const screen = await render(CairnMediaLibrary, { data: fixture() });
-      const gridButton = screen.getByRole('button', { name: 'Grid view' }).element() as HTMLElement;
+      const frame = screen.getByRole('group', { name: 'Layout density' }).element() as HTMLElement;
       const orphanButton = screen
         .getByRole('button', { name: 'Find orphaned files' })
         .element() as HTMLElement;
-      expect(gridButton.getBoundingClientRect().height).toBeCloseTo(
-        orphanButton.getBoundingClientRect().height,
-        0,
-      );
+      const frameRect = frame.getBoundingClientRect();
+      const neighborRect = orphanButton.getBoundingClientRect();
+      expect(frameRect.height).toBeCloseTo(neighborRect.height, 0);
+      expect(frameRect.top).toBeCloseTo(neighborRect.top, 0);
+      expect(frameRect.bottom).toBeCloseTo(neighborRect.bottom, 0);
+      // The segmented look holds: each inner button stays square and sits inside the frame.
+      for (const name of ['Grid view', 'List view']) {
+        const inner = (screen.getByRole('button', { name }).element() as HTMLElement).getBoundingClientRect();
+        expect(inner.width).toBeCloseTo(inner.height, 0);
+        expect(inner.top).toBeGreaterThan(frameRect.top);
+        expect(inner.bottom).toBeLessThan(frameRect.bottom);
+      }
     });
   });
 });

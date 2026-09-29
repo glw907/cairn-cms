@@ -686,7 +686,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <DatabaseIcon class="h-4 w-4" aria-hidden="true" /> Find orphaned files
       </button>
 
-      <div role="group" aria-label="Layout density" class="bg-base-100 inline-flex items-center gap-1 rounded-field border border-[var(--cairn-card-border)] p-0.5">
+      <div role="group" aria-label="Layout density" class="bg-base-100 inline-flex items-stretch gap-1 rounded-field border border-[var(--cairn-card-border)] p-0.5">
         <button type="button" aria-label="Grid view" aria-pressed={density === 'grid'} class={densityButtonClass(density === 'grid')} onclick={() => (density = 'grid')}>
           <LayoutGridIcon class="h-4 w-4" aria-hidden="true" />
         </button>
@@ -1268,12 +1268,16 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   /* The grid/list density toggle is hand-rolled (no daisyUI `.btn` class of its own), so it never
      picked up the size step's `--size-field` bump the neighboring `btn-sm` orphan-scan trigger
-     reads automatically; explicit height and width (the toggle's targets are square) keep it
-     level with that neighbor at any `--size-field` value, the same technique ListToolbar's own
-     'menu' facet chrome uses for the identical reason (a plain element carries no
-     `--size-field`-driven size of its own). */
-  [aria-label='Layout density'] > button {
+     reads automatically. The eye reads the toggle's bordered outer frame, so the frame itself takes
+     that neighbor's height (the same `--size-field` * 8 a `btn-sm` resolves to, the technique
+     ListToolbar's own 'menu' facet chrome uses for the identical reason). The frame is
+     border-box, so its border and padding come out of that height; the two buttons stretch to fill
+     what is left and stay square through their aspect ratio, at any `--size-field` value. */
+  [aria-label='Layout density'] {
     height: calc(var(--size-field, 0.25rem) * 8);
-    width: calc(var(--size-field, 0.25rem) * 8);
+  }
+
+  [aria-label='Layout density'] > button {
+    aspect-ratio: 1;
   }
 </style>

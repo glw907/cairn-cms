@@ -1985,3 +1985,41 @@ Spend: about 0.43M in subagents plus the conductor.
   out on its retries; it stays in the expected set, and S1's regenerated baseline must render it
   cleanly. `preview.spec.ts` passed on CI, confirming task 4's environmental reading. The boundary
   passes.
+
+### Segment C (tasks 7 to 9), boundary 2026-09-29
+
+- **Task 7** accepted, no fix round (`6ffe6136`, `607f1474`). The shared detection core is
+  `src/lib/audit/literals.ts`, and `StaticRule.publicScope` marks a public rule. One scope per file
+  holds by construction (`config.isPublicFile`); `static.cssFiles` entries are admin-claimed too. The
+  wrappers' finding counts are equal before and after (0/0/0). `check-symbols-allowlist.mjs` gained
+  `src/chassis/tokens.css`.
+- **Task 8** accepted, no fix round (`954366c2`). `src/lib/audit/import-chain.ts` is the loader.
+- **Task 9** (Opus) accepted, no fix round (`12e575a8`). Its transcript passed the 1.8MB guard limit.
+  The tail showed varied progress, so the guard was re-armed at the `writer` tier and nothing was
+  stopped. **Accepted departures:** `check:audit-pack` also installs `svelte`, because
+  `markup.ts` imports `svelte/compiler` and `svelte` is a required peer every consumer has, so decision
+  20's intent holds. The Chromium comparison accepts one unit in the last printed digit, a culori
+  matrix gap of about 1e-5 on sRGB operands.
+- **To task 14 (settle):** (4) remove the SKILL.md tier map's promise to promote
+  `theme-conformance` to error tier, which no decision makes; (5) `public-literals` flags color words
+  inside quoted strings (`content: "red"`, a font family), a false positive for consumers; (6)
+  `cairn-audit.md:101` and `theme-contrast.ts`'s header name only `oklab` for the tint while the
+  regex accepts `oklch`.
+- **To the close:** the CHANGELOG records culori as a runtime dependency and `daisyui` and
+  `tailwindcss` as optional peers. ROADMAP records the edge case where `public.scope` names
+  `src/routes/admin` while the non-removable default exclude still drops it.
+- **Segment C CI (`12e575a8`):** five workflows green, and e2e red only on the ten planned
+  `styleguide-*` mismatches. `check:audit-pack`, `check:public-tokens`, and `test:reskin` all passed
+  on CI. The boundary passes.
+- **Harvest coordination:** Geoff started the draft-docs harvest audit in a peer session
+  (`cairn-cms-c9`). It received the full B and C brief: fact ids, pages, renames, and behaviors. Its
+  auditors add only ledgers and facts bullets and defer the pages pass C edits. It deletes nothing
+  before this pass merges.
+- **Segment D pre-flight:** 8 moved items and 10 gaps, amended at `1eaa539e` under conductor
+  rulings. The amender corrected two of the conductor's statements: several `/admin` rules run
+  advisory, so the charter sentence makes no error-tier claim, and the styleguide lists
+  preview-less entries by name.
+- **Unattended run:** Geoff is away from about 10:30 for 6+ hours; the conductor runs through S2
+  and stops before S3.
+- **Spend:** segment C's workflow 1.37M; boundary and pre-flight agents about 0.9M. The running
+  total is about 6.2M plus the conductor.

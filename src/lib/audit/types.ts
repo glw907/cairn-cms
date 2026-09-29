@@ -77,6 +77,14 @@ export interface StaticRule {
    * component tree it was never meant to police.
    */
   adminOnly?: boolean;
+  /**
+   * Whether this rule resolves over the public scope (`config.publicScope`, config.ts) instead of
+   * `config.staticScope`: `ctx.files` and `ctx.cssFiles` hold the public scope's components and
+   * standalone CSS. A run reads the public scope only when a selected rule sets this, and fails
+   * with an actionable message when that scope matches no file. Absent or false, a rule never
+   * reads a public file.
+   */
+  publicScope?: boolean;
   check(ctx: StaticRuleContext): Finding[];
 }
 

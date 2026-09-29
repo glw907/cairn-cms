@@ -21,8 +21,14 @@ const NUMBER_WORDS: Record<string, number> = {
   fifteen: 15,
   seventeen: 17,
   eighteen: 18,
+  nineteen: 19,
+  twenty: 20,
+  'twenty-one': 21,
   'thirty-four': 34,
   'thirty-five': 35,
+  'thirty-six': 36,
+  'thirty-seven': 37,
+  'thirty-eight': 38,
 };
 
 /** A rule count as the reference page writes it, digits or one of `NUMBER_WORDS`. */
@@ -33,6 +39,15 @@ function parseRuleCount(text: string): number {
   const known = NUMBER_WORDS[word];
   if (known === undefined) throw new Error(`unrecognized rule count "${text}" in the reference page`);
   return known;
+}
+
+/**
+ * The registry without the public-scope rules: what a test runs over a fixture tree that holds
+ * only admin files, since a public rule over such a tree ends in the public empty-scope error by
+ * design.
+ */
+function adminRules(): StaticRule[] {
+  return staticRules().filter((rule) => !rule.publicScope);
 }
 
 let root: string;
@@ -87,7 +102,7 @@ describe('the static rule registry', () => {
   // pass's motion-property, motion-hover-gate, and motion-vocabulary, the extend pass's
   // log-event-grammar and log-secret-field, and radius-scale are the modules that have
   // registered since, without touching run.ts.
-  it('carries the eighteen static rules registered since Task 7', () => {
+  it('carries the nineteen static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -111,6 +126,7 @@ describe('the static rule registry', () => {
         'list-role',
         'log-event-grammar',
         'log-secret-field',
+        'public-literals',
       ].sort(),
     );
   });
@@ -135,7 +151,7 @@ describe('the static rule registry', () => {
   it('states the same total and static rule counts docs/reference/cairn-audit.md carries', () => {
     const doc = readFileSync(CAIRN_AUDIT_REFERENCE, 'utf8');
     const totalMatch = /All\s+([A-Za-z0-9-]+)\s+registered rules/.exec(doc);
-    const staticRunMatch = /^([A-Za-z]+) rules run:/m.exec(doc);
+    const staticRunMatch = /^([A-Za-z0-9-]+) rules run:/m.exec(doc);
     if (!totalMatch || !staticRunMatch) {
       throw new Error('could not find both rule-count sentences in docs/reference/cairn-audit.md');
     }
@@ -197,9 +213,10 @@ describe('runStatic', () => {
     // sheet above, which only defines type-body. Neither fixture component carries a <style>
     // block, so the CSS-family rules Task 9b added have nothing to scan here; a clean tree is
     // proven by each rule's own fixtures, not by this generic wiring test.
-    const report = runStatic(loadConfig(root));
+    const report = runStatic(loadConfig(root), adminRules());
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
-    // default (no rules override) run wires up the full eighteen-rule registry. The new
+    // registry minus its public-scope rule (this fixture tree holds admin files only) wires up as
+    // the eighteen admin rules. The new
     // `src/lib/admin/AdminWidget.svelte` fixture carries no class and no CSS, so it trips
     // nothing beyond the two no-uncompiled-class findings the tree already carried; none of the
     // fixture components carries a log call, so log-event-grammar and log-secret-field raise
@@ -306,7 +323,7 @@ describe('runStatic', () => {
         configPath,
         JSON.stringify({ sheet: ['dist/admin/cairn-admin.css', 'src/theme/absent.css'] })
       );
-      expect(() => runStatic(loadConfig(siteRoot, configPath))).toThrow(/absent\.css/);
+      expect(() => runStatic(loadConfig(siteRoot, configPath), adminRules())).toThrow(/absent\.css/);
     });
   });
 
@@ -377,7 +394,7 @@ describe('runStatic', () => {
     });
 
     it('raises no suppression finding for either mention, while the real directive still silences its offender', () => {
-      const report = runStatic(loadConfig(mentionRoot));
+      const report = runStatic(loadConfig(mentionRoot), adminRules());
       expect(report.findings.filter((f) => f.ruleId === 'suppression')).toEqual([]);
       expect(report.suppressed.map((f) => f.ruleId)).toContain('log-event-grammar');
     });
@@ -481,7 +498,7 @@ describe('static.adminScope', () => {
       // No src/routes/admin: the default admin root this tree does not have. The `sources`
       // walk (default scope `src`) finds the same fixture again as plain text, so the total is
       // two rather than one.
-      const report = runStatic(loadConfig(bare));
+      const report = runStatic(loadConfig(bare), adminRules());
       expect(report.filesScanned).toBe(2);
     } finally {
       rmSync(bare, { recursive: true, force: true });

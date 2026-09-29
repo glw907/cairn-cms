@@ -140,7 +140,7 @@ describe('list-role', () => {
   it('runs clean on the engine\'s own tree', () => {
     const root = resolve(process.cwd());
     const config = resolveConfig(root, null, (path) => existsSync(resolve(root, path)));
-    const report = runStatic(config, staticRules());
+    const report = runStatic(config, staticRules().filter((rule) => !rule.publicScope));
     expect(report.findings.filter((finding) => finding.ruleId === 'list-role')).toEqual([]);
   });
 

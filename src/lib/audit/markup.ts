@@ -56,6 +56,30 @@ export interface ElementAttribute {
   value?: string;
 }
 
+/**
+ * The static text of one inline style declaration: a piece of a `style=` attribute, or a piece of
+ * a Svelte `style:` directive's value. An interpolation is never part of it, so a rule reads only
+ * what the author wrote as a literal, and `start`/`end` land on that text in the source.
+ */
+export interface StyleValue {
+  /** `attribute` for a `style=` declaration, `directive` for a `style:` directive. */
+  kind: 'attribute' | 'directive';
+  /**
+   * The CSS property this text is the value of: a directive's own name, or the name written before
+   * the colon. Absent when the text follows an interpolation, where the property sits earlier in
+   * the attribute than the text this piece can see.
+   */
+  property?: string;
+  /** The static value text, trimmed. Never empty. */
+  value: string;
+  /** Character offset of the value's first character in the component source. */
+  start: number;
+  /** Character offset just past the value. */
+  end: number;
+  /** 1-based line of `start`. */
+  line: number;
+}
+
 /** One template node's identity and source range, the unit a suppression directive attaches to. */
 export interface SourceNode {
   /** The svelte AST node type, for example `RegularElement`, `Comment`, or `IfBlock`. */
@@ -95,6 +119,12 @@ export interface ParsedComponent {
    * `svelte/compiler`'s own structured CSS AST instead.
    */
   styleClassNames: Set<string>;
+  /**
+   * The static text of every inline style the template writes, in document order: each declaration
+   * of a `style=` attribute (the static parts of a mixed value included) and each `style:`
+   * directive whose value is a literal. A value that is one expression contributes nothing.
+   */
+  styleValues: StyleValue[];
   /**
    * The component's own scoped `<style>` block: its raw CSS text and the offset its first
    * character sits at in `source`. Absent when the component carries no `<style>` block. The
@@ -548,11 +578,77 @@ function attributesOf(node: RawNode, starts: number[]): ElementAttribute[] {
   return out;
 }
 
+/**
+ * The declarations one static text piece of a `style=` value writes. The text is split at each
+ * semicolon; a piece with no colon is the tail of a declaration an interpolation began, so it
+ * carries no property.
+ */
+function declarationsIn(text: string, base: number, starts: number[]): StyleValue[] {
+  const out: StyleValue[] = [];
+  const piece = /[^;]+/g;
+  let match: RegExpExecArray | null;
+  while ((match = piece.exec(text)) !== null) {
+    const colon = match[0].indexOf(':');
+    const property = colon === -1 ? '' : match[0].slice(0, colon).trim();
+    const valueText = match[0].slice(colon + 1);
+    const value = valueText.trim();
+    if (value === '') continue;
+    const start = base + match.index + colon + 1 + (valueText.length - valueText.trimStart().length);
+    out.push({
+      kind: 'attribute',
+      ...(property === '' ? {} : { property }),
+      value,
+      start,
+      end: start + value.length,
+      line: lineOfIndex(starts, start),
+    });
+  }
+  return out;
+}
+
+/** The literal text parts of an attribute or directive value, skipping every interpolation. */
+function textParts(value: unknown): RawNode[] {
+  if (!Array.isArray(value)) return [];
+  return (value as RawNode[]).filter(
+    (part) => part.type === 'Text' && typeof part.start === 'number' && typeof part.raw === 'string'
+  );
+}
+
+/** The inline style text one node writes, from its `style=` attribute and its `style:` directives. */
+function styleValuesOf(node: RawNode, starts: number[]): StyleValue[] {
+  if (!Array.isArray(node.attributes)) return [];
+  const out: StyleValue[] = [];
+  for (const attr of node.attributes) {
+    if (attr.type === 'Attribute' && attr.name === 'style') {
+      for (const part of textParts(attr.value)) {
+        out.push(...declarationsIn(part.raw as string, part.start as number, starts));
+      }
+    } else if (attr.type === 'StyleDirective' && typeof attr.name === 'string') {
+      for (const part of textParts(attr.value)) {
+        const text = part.raw as string;
+        const value = text.trim();
+        if (value === '') continue;
+        const start = (part.start as number) + (text.length - text.trimStart().length);
+        out.push({
+          kind: 'directive',
+          property: attr.name,
+          value,
+          start,
+          end: start + value.length,
+          line: lineOfIndex(starts, start),
+        });
+      }
+    }
+  }
+  return out;
+}
+
 /** What one walk of a component's template writes into, assembled once by `parseComponent`. */
 interface Collector {
   starts: number[];
   nodes: SourceNode[];
   tokens: ClassToken[];
+  styleValues: StyleValue[];
   resolution: Resolution;
   /** The `start:end:value` of each token already recorded, so one script string counts once. */
   seen: Set<string>;
@@ -580,6 +676,7 @@ function collect(node: RawNode, into: Collector, parentEnd: number | undefined):
       parentEnd,
     });
   }
+  into.styleValues.push(...styleValuesOf(node, starts));
   if (Array.isArray(node.attributes)) {
     const elementStart = typeof node.start === 'number' ? node.start : -1;
     for (const attr of node.attributes) {
@@ -654,6 +751,7 @@ export function parseComponent(file: string, source: string): ParsedComponent {
   const starts = lineStarts(source);
   const nodes: SourceNode[] = [];
   const classTokens: ClassToken[] = [];
+  const styleValues: StyleValue[] = [];
   const scope = collectScope([root.module?.content, root.instance?.content]);
   if (root.fragment) {
     collect(
@@ -662,6 +760,7 @@ export function parseComponent(file: string, source: string): ParsedComponent {
         starts,
         nodes,
         tokens: classTokens,
+        styleValues,
         resolution: { scope, blocked: new Set() },
         seen: new Set(),
       },
@@ -675,5 +774,5 @@ export function parseComponent(file: string, source: string): ParsedComponent {
     typeof content?.start === 'number' && typeof content?.end === 'number'
       ? { source: source.slice(content.start, content.end), start: content.start }
       : undefined;
-  return { file, source, nodes, classTokens, styleClassNames, styleBlock };
+  return { file, source, nodes, classTokens, styleClassNames, styleValues, styleBlock };
 }

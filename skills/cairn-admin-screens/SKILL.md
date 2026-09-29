@@ -17,8 +17,8 @@ component usually measure" as data instead of inference from a screenshot.
 ## Tier map
 
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
-running dev server, both themes) runs thirty-five rules across two modes: eighteen static,
-fifteen error tier and three advisory, and seventeen rendered, seven error and ten advisory. Full
+running dev server, both themes) runs thirty-six rules across two modes: nineteen static,
+fifteen error tier and four advisory, and seventeen rendered, seven error and ten advisory. Full
 descriptions live at `node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`, a path from
 your site's root (the installed package's copy).
 
@@ -28,7 +28,9 @@ your site's root (the installed package's copy).
 `stripe-trim-parity`, `unlayered-font-clobber`, `list-role`.
 
 **Static, advisory tier**, each promoted to error tier at its own named version: `radius-scale`
-(`0.99.0`), `log-event-grammar` (`0.98.0`), `log-secret-field` (`0.98.0`).
+(`0.99.0`), `log-event-grammar` (`0.98.0`), `log-secret-field` (`0.98.0`). `public-literals` reads
+the site's public files instead of the admin surfaces and stays advisory for a consumer, so it has
+no promotion version.
 
 **Rendered, error tier:** `one-filled-action`, `focus-renders`, `interactive-contrast`,
 `touch-targets`, `viewport-overflow`, `panel-width`, `list-role`.

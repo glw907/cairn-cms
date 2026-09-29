@@ -6,6 +6,7 @@ import { scopeReport } from '../../../scripts/checks/audit-gate.mjs';
 import { ADMIN_SCOPE, CSS_FILES, SCAN_SCOPE } from '../../../scripts/checks/check-invisible-craft.mjs';
 import { resolveConfig } from '../../lib/audit/config.js';
 import { runStatic } from '../../lib/audit/run.js';
+import { staticRules } from '../../lib/audit/rules/static/index.js';
 import type { AuditReport } from '../../lib/audit/types.js';
 
 // Each rule's own behavioral coverage lives under src/tests/unit/audit/rules/. What is specific to
@@ -106,7 +107,7 @@ describe('the engine gate: static.adminScope narrows the admin-only motion rules
       { static: { scope: SCAN_SCOPE, adminScope: ADMIN_SCOPE, cssFiles: CSS_FILES } },
       (candidate) => existsSync(resolve(root, candidate))
     );
-    const report = runStatic(config);
+    const report = runStatic(config, staticRules().filter((rule) => !rule.publicScope));
     const motionPropertyFiles = report.findings.filter((f) => f.ruleId === 'motion-property').map((f) => f.file);
     expect(motionPropertyFiles).toEqual(['src/lib/admin/Fixture.svelte']);
     const gapScaleFiles = report.findings.filter((f) => f.ruleId === 'gap-scale').map((f) => f.file).sort();

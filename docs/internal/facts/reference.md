@@ -326,12 +326,34 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   browser"), `:28-36` (`norms` calls `loadNormsManifest()`), `:62` (other modes call
   `loadConfig(process.cwd(), ...)`). [verified]
 
-- `f:z1rbea` Exactly 35 rules are registered: 18 static (15 error tier, 3 advisory: `log-event-grammar`,
-  `log-secret-field`, `radius-scale`) plus 17 rendered (7 error-tier, 10 advisory-tier). Count by the
-  registry arrays or by tier grep, not by a literal-string grep, which undercounts the rendered
-  total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
-  `src/lib/audit/rules/static/index.ts#staticRules` (the 18-entry array),
+- `f:z1rbea` Exactly 36 rules are registered: 19 static (15 error tier, 4 advisory: `log-event-grammar`,
+  `log-secret-field`, `radius-scale`, `public-literals`) plus 17 rendered (7 error-tier, 10
+  advisory-tier). Count by the registry arrays or by tier grep, not by a literal-string grep, which
+  undercounts the rendered total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
+  `src/lib/audit/rules/static/index.ts#staticRules` (the 19-entry array),
   `src/lib/audit/rules/rendered/index.ts#renderedRules` (the 17-entry array). [verified]
+- `f:o4ctu5` `public-literals` is the one static rule that resolves over the public scope
+  (`publicScope: true` on the rule): `.svelte` and `.css` files under `public.scope` (default
+  `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`, `src/lib/components`), minus
+  `public.exclude` (default `src/routes/admin`, a configured list merges) and minus every admin
+  root. It is advisory permanently for a consumer. The scope loads only when a selected rule sets
+  `publicScope`; when it loads and matches no file the run fails naming `public.scope`, and a
+  configured root the tree lacks throws while a missing default root is skipped. `public.themeRoots`
+  (default `src/theme`, `src/chassis/tokens.css`) are where a custom-property definition is legal;
+  `public.stylesheets` (default `src/theme/theme.css`) resolves into the config and no rule reads it
+  yet. The rule flags a color literal (hex, `rgb()`, `hsl()`, `hwb()`, `lab()`,
+  `lch()`, `oklab()`, `oklch()`, `color()`, named colors) or an absolute font size (`px`, `pt`,
+  `rem`, the `font` shorthand included) in a declaration, a `style=` value, a `style:` directive,
+  or a Tailwind arbitrary value (`text-[#abc]`, `text-[14px]`); `em`, `%`, `var()` and `calc()`
+  over tokens pass, and the root element's `font-size` is exempt. Detection is the shared core
+  `src/lib/audit/literals.ts`, which `token-colors` also reads while keeping its own narrower
+  verdict set. The repo's own tree runs it from the showcase through
+  `scripts/checks/public-scope.config.json`, which names the engine's `../../src/lib/public`,
+  since the showcase's own config is emitted into every scaffolded site and a configured root the
+  tree lacks throws. The two repo wrappers (`check-invisible-craft.mjs`,
+  `check-admin-css-classes.mjs`) hand `runStatic` every rule except the public-scope ones.
+  Source: `src/lib/audit/rules/static/public-literals.ts#publicLiterals`,
+  `src/lib/audit/run.ts#loadPublicScope`, `src/lib/audit/config.ts#isPublicFile`. [verified]
 - `f:eqsngu` `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are both `src/routes/admin`, `src/lib/admin`,
   `src/lib/admin-toolkit`; `src/lib/components` is no longer a default root. They stay two constants
   and two config keys (`static.scope`, `static.adminScope`) so a site can narrow one without the
@@ -341,14 +363,18 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   and a configured root the tree lacks fails the run (`readScope` throws when `fromConfig` and the
   path is missing), so a site keeping custom components in `src/lib/components` lists the default
   roots it has plus `src/lib/components`; naming `src/lib/components` alone drops
-  `src/routes/admin` from every static rule. A root a site names under `static.scope` is an admin
-  root, and the audit treats it as one wherever another scope's defaults would also reach it (pass
-  B implements no separate named-root mechanism, since the public scope arrives with the public
-  theme). The narrowing also removes a site's own `src/lib/components` from `stripe-trim-parity` and
-  `unlayered-font-clobber`, which stay admin-only by owner ruling (Geoff, 2026-09-27). Source:
+  `src/routes/admin` from every static rule. A root a site names under `static.scope` or
+  `static.adminScope` is an admin root: `resolveConfig` drops it from the public defaults, and
+  `isPublicFile` never claims a file under any admin root (default or configured) or a file named
+  in `static.cssFiles`, so no file answers to both grammars. The same holds the other way: an
+  admin default a site names under `public.scope` leaves the admin defaults unless the admin
+  lists are configured, and a wide `public.scope` (`src`) or a custom `public.exclude` never moves
+  an admin file to the advisory public rule. The narrowing also removes a site's own
+  `src/lib/components` from `stripe-trim-parity` and `unlayered-font-clobber`, which stay
+  admin-only by owner ruling (Geoff, 2026-09-27). Source:
   `src/lib/audit/config.ts#DEFAULT_STATIC_SCOPE`, `src/lib/audit/config.ts#DEFAULT_ADMIN_SCOPE`,
-  `src/lib/audit/config.ts:211,215` (`asPathList` calls), `src/lib/audit/run.ts:53-54`
-  (`readScope`'s missing-root throw). [verified]
+  `src/lib/audit/config.ts:264-265` (`asPathList` calls), `src/lib/audit/run.ts:56`
+  (`readScope`'s missing-root throw), `src/lib/audit/config.ts#isPublicFile`. [verified]
 - `f:h4ztuy` `radius-scale` is a static rule at advisory tier that reads class tokens (through `utilityBase()`,
   so `md:rounded-lg` is caught) and raises one finding per offending token: a bare `rounded`, the
   fixed sizes `xs` through `4xl`, an arbitrary radius in either of Tailwind v4's forms

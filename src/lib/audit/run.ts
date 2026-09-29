@@ -7,7 +7,7 @@ import { parseComponent } from './markup.js';
 import { parseSheet } from './sheet.js';
 import { applySuppressions } from './suppress.js';
 import { staticRules } from './rules/static/index.js';
-import { CONFIG_FILE } from './config.js';
+import { CONFIG_FILE, isPublicFile, isUnderRoots } from './config.js';
 import type { Dirent } from 'node:fs';
 import type { AuditConfig } from './config.js';
 import type { ParsedComponent } from './markup.js';
@@ -39,21 +39,23 @@ function filePaths(root: string, dir: string, extensions: readonly string[]): st
  * since honoring a misspelled one as an empty scan is the silent green the spec rejected the
  * ESLint route over, while a default path a given tree does not have is skipped, since the
  * default spans the library and a consumer site. `missingScope` builds that error's own message,
- * which names the config key the caller's scope came from.
+ * which names the config key the caller's scope came from. `keep` narrows the walk to the paths a
+ * scope actually claims, before any file is read.
  */
 function readScope(
   config: AuditConfig,
   dirs: string[],
   fromConfig: boolean,
   extensions: readonly string[],
-  missingScope: (dir: string) => string
+  missingScope: (dir: string) => string,
+  keep: (path: string) => boolean = () => true
 ): SourceFile[] {
   const seen = new Set<string>();
   const files: SourceFile[] = [];
   for (const dir of dirs) {
     if (fromConfig && !existsSync(resolve(config.root, dir))) throw new Error(missingScope(dir));
     for (const path of filePaths(config.root, dir, extensions)) {
-      if (seen.has(path)) continue;
+      if (seen.has(path) || !keep(path)) continue;
       seen.add(path);
       files.push({ file: path, source: readFileSync(resolve(config.root, path), 'utf8') });
     }
@@ -94,9 +96,35 @@ function loadSources(config: AuditConfig): SourceFile[] {
   );
 }
 
-/** Whether a root-relative path lies inside one of the given root directories. */
-function isUnderRoots(path: string, roots: string[]): boolean {
-  return roots.some((root) => path === root || path.startsWith(`${root}/`));
+/** What the public scope holds: its components, parsed, and its standalone CSS files. */
+interface PublicScope {
+  files: ParsedComponent[];
+  cssFiles: CssSource[];
+}
+
+/**
+ * Every `.svelte` and `.css` file the public scope claims (`isPublicFile`, config.ts), read once.
+ * A run whose public roots together match no file fails naming `public.scope`, since a public rule
+ * that scanned nothing would read as a clean tree.
+ */
+function loadPublicScope(config: AuditConfig): PublicScope {
+  const claimed = readScope(
+    config,
+    config.publicScope,
+    config.publicScopeFromConfig,
+    ['.svelte', '.css'],
+    (dir) => `${dir}: the configured public scan scope does not exist (${CONFIG_FILE}, public.scope)`,
+    (path) => isPublicFile(config, path)
+  );
+  if (claimed.length === 0) {
+    throw new Error(
+      `the public scan matched no files under ${config.publicScope.join(', ')}. Name the public scope in ${CONFIG_FILE} (public.scope).`
+    );
+  }
+  return {
+    files: claimed.filter((file) => file.file.endsWith('.svelte')).map((file) => parseComponent(file.file, file.source)),
+    cssFiles: claimed.filter((file) => file.file.endsWith('.css')),
+  };
 }
 
 function byPosition(a: Finding, b: Finding): number {
@@ -161,11 +189,17 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
       `the static scan matched no files under ${config.staticScope.join(', ')}. Name the scan scope in ${CONFIG_FILE} (static.scope).`
     );
   }
-  const raised = rules.flatMap((rule) =>
-    rule.adminOnly
+  // The public scope is read only when a selected rule resolves over it, so an admin-only run
+  // over an admin-only tree never fails on a scope none of its rules reads.
+  const publicScope = rules.some((rule) => rule.publicScope) ? loadPublicScope(config) : null;
+  const raised = rules.flatMap((rule) => {
+    if (rule.publicScope && publicScope) {
+      return rule.check({ files: publicScope.files, sheet, config, cssFiles: publicScope.cssFiles, sources });
+    }
+    return rule.adminOnly
       ? rule.check({ files: adminFiles, sheet, config, cssFiles: adminCssFiles, sources })
-      : rule.check({ files, sheet, config, cssFiles, sources })
-  );
+      : rule.check({ files, sheet, config, cssFiles, sources });
+  });
   // A file `adminScope` and `staticScope` both cover (the two roots overlap by default) is
   // deduplicated by path so its suppression directives resolve once, never once per scope. The
   // source-text walk is inserted first and the markup/CSS walks overwrite it by path, so a
@@ -176,7 +210,9 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   // tell a real directive from a mention of one in a string, a fixture, or a doc comment).
   const suppressionSources = new Map<string, ParsedComponent | CssSource | (SourceFile & { suppressionsOnly: true })>();
   for (const file of sources) suppressionSources.set(file.file, { ...file, suppressionsOnly: true });
-  for (const file of [...files, ...adminFiles, ...cssFiles]) suppressionSources.set(file.file, file);
+  for (const file of [...files, ...adminFiles, ...cssFiles, ...(publicScope?.files ?? []), ...(publicScope?.cssFiles ?? [])]) {
+    suppressionSources.set(file.file, file);
+  }
   // A `--rule`-scoped run passes a narrowed `rules`, so a directive naming a rule outside that
   // selection is judged against the ids this run actually executed, not the full registry, which
   // is what keeps a scoped run from reporting every ordinary out-of-scope directive as dead.
@@ -185,7 +221,8 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   return {
     findings: [...split.findings].sort(byPosition),
     suppressed: [...split.suppressed].sort(byPosition),
-    filesScanned: files.length + sources.length,
+    filesScanned:
+      files.length + sources.length + (publicScope ? publicScope.files.length + publicScope.cssFiles.length : 0),
     ruleIds: rules.map((rule) => rule.id),
   };
 }

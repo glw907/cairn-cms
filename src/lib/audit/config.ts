@@ -27,6 +27,32 @@ export const DEFAULT_SOURCE_SCOPE = ['src'];
 // itself, the same override `staticScope` already carries.
 export const DEFAULT_ADMIN_SCOPE = ['src/routes/admin', 'src/lib/admin', 'src/lib/admin-toolkit'];
 
+// The public scope: the roots a public-scope rule (`public-literals`) reads `.svelte` and `.css`
+// files under, the design a site ships to its visitors. `src/lib/components` is where a consumer
+// keeps shared public components, and `src/lib/public` is the engine's own public tree. The
+// defaults and the admin roots above never overlap: `src/routes/admin` sits under the
+// `src/routes` root and is removed by `DEFAULT_PUBLIC_EXCLUDE`.
+export const DEFAULT_PUBLIC_SCOPE = [
+  'src/theme',
+  'src/chassis',
+  'src/routes',
+  'src/lib/public',
+  'src/lib/components',
+];
+
+// Paths removed from the public scope. A configured list merges with this default, never
+// replaces it, so a site that names its own exclusion still cannot pull its admin routes in.
+export const DEFAULT_PUBLIC_EXCLUDE = ['src/routes/admin'];
+
+// The theme roots: where a site's design values are legally defined. A custom-property definition
+// is a token definition under one of these, and a literal there is the point rather than a hazard.
+// Each entry is a directory or a single file, the same path-list shape `paletteFiles` takes.
+export const DEFAULT_THEME_ROOTS = ['src/theme', 'src/chassis/tokens.css'];
+
+// The entry stylesheets whose `@import` chain is the site's real chain, the starting point for a
+// rule that needs to know what the public stylesheet actually pulls in.
+export const DEFAULT_PUBLIC_STYLESHEETS = ['src/theme/theme.css'];
+
 // Where the built admin stylesheet is, first in the library's own tree and then in a consumer's
 // installed package. The first candidate is the fallback when neither exists, so the run fails
 // naming a path a developer can act on.
@@ -138,6 +164,24 @@ export interface AuditConfig {
    */
   renderedPages: string[];
   renderedAllowlist: RenderedAllowlistEntry[];
+  /**
+   * The roots the public scope reads `.svelte` and `.css` files under, recursively. A default
+   * root the config's admin scope names is already removed, so this list is what the run reads.
+   * Never read on its own to decide whether a file is public: `isPublicFile` also applies
+   * `publicExclude` and every admin root.
+   */
+  publicScope: string[];
+  /**
+   * Whether the config file named `public.scope` itself: a configured root the tree does not have
+   * throws, while a default root a given tree does not have is skipped.
+   */
+  publicScopeFromConfig: boolean;
+  /** Paths the public scope never reads: `DEFAULT_PUBLIC_EXCLUDE` plus `public.exclude`. */
+  publicExclude: string[];
+  /** Paths (directories or files) where a design value may legally be defined. */
+  themeRoots: string[];
+  /** The entry stylesheets of the site's real import chain. */
+  publicStylesheets: string[];
 }
 
 function fail(message: string): never {
@@ -206,16 +250,45 @@ export function resolveConfig(
   const file = asRecord(raw, 'the config');
   const staticSection = asRecord(file.static, 'static');
   const renderedSection = asRecord(file.rendered, 'rendered');
+  const publicSection = asRecord(file.public, 'public');
+  const configuredPublicScope = publicSection.scope !== undefined;
+  const publicRoots = asPathList(publicSection.scope, 'public.scope', DEFAULT_PUBLIC_SCOPE);
+  const staticScopeFromConfig = staticSection.scope !== undefined;
+  const adminScopeFromConfig = staticSection.adminScope !== undefined;
+  // A root named for one scope leaves the other scope's defaults, so a file a site deliberately
+  // routed answers to one grammar. A public root a site names drops out of the admin defaults;
+  // an admin root a site names drops out of the public defaults. A configured list is never
+  // narrowed: it is the site's own statement.
+  const adminDefaults = (defaults: string[]) =>
+    configuredPublicScope ? defaults.filter((root) => !publicRoots.includes(root)) : defaults;
+  const staticScope = asPathList(staticSection.scope, 'static.scope', adminDefaults(DEFAULT_STATIC_SCOPE));
+  const adminScope = asPathList(staticSection.adminScope, 'static.adminScope', adminDefaults(DEFAULT_ADMIN_SCOPE));
+  const namedAdminRoots = [
+    ...(staticScopeFromConfig ? staticScope : []),
+    ...(adminScopeFromConfig ? adminScope : []),
+  ];
   return {
     root,
-    staticScope: asPathList(staticSection.scope, 'static.scope', DEFAULT_STATIC_SCOPE),
-    staticScopeFromConfig: staticSection.scope !== undefined,
+    staticScope,
+    staticScopeFromConfig,
     sourceScope: asPathList(staticSection.sourceScope, 'static.sourceScope', DEFAULT_SOURCE_SCOPE),
     sourceScopeFromConfig: staticSection.sourceScope !== undefined,
-    adminScope: asPathList(staticSection.adminScope, 'static.adminScope', DEFAULT_ADMIN_SCOPE),
-    adminScopeFromConfig: staticSection.adminScope !== undefined,
+    adminScope,
+    adminScopeFromConfig,
     staticCssFiles: asPathList(staticSection.cssFiles, 'static.cssFiles', []),
     paletteCssFiles: asPathList(staticSection.paletteFiles, 'static.paletteFiles', DEFAULT_PALETTE_CSS_FILES),
+    publicScope: configuredPublicScope
+      ? publicRoots
+      : publicRoots.filter((root) => !namedAdminRoots.includes(root)),
+    publicScopeFromConfig: configuredPublicScope,
+    publicExclude: [
+      ...DEFAULT_PUBLIC_EXCLUDE,
+      ...asPathList(publicSection.exclude, 'public.exclude', []).filter(
+        (path) => !DEFAULT_PUBLIC_EXCLUDE.includes(path)
+      ),
+    ],
+    themeRoots: asPathList(publicSection.themeRoots, 'public.themeRoots', DEFAULT_THEME_ROOTS),
+    publicStylesheets: asPathList(publicSection.stylesheets, 'public.stylesheets', DEFAULT_PUBLIC_STYLESHEETS),
     sheetPaths: asPathOrPathList(file.sheet, 'sheet', () => [
       DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ?? DEFAULT_SHEET_CANDIDATES[0],
     ]),
@@ -244,6 +317,27 @@ export function loadConfig(root: string, configPath?: string): AuditConfig {
     throw new Error(`${path}: no such config file`);
   }
   return resolveConfig(root, raw, (candidate) => existsSync(resolve(root, candidate)));
+}
+
+/** Whether a root-relative path lies inside one of the given root paths, each a directory or a file. */
+export function isUnderRoots(path: string, roots: readonly string[]): boolean {
+  return roots.some((root) => path === root || path.startsWith(`${root}/`));
+}
+
+/**
+ * Whether the public scope claims a file. It lies under a public root and under no exclusion, and
+ * under no root the admin scope reads (from `static.scope` or `static.adminScope`, default or
+ * configured) and is no standalone file `static.cssFiles` names, so no file answers to the admin
+ * grammar and the public one at once, and widening `public.scope` to `src` or replacing
+ * `public.exclude` can never move an admin file from an error-tier rule to an advisory one.
+ */
+export function isPublicFile(config: AuditConfig, path: string): boolean {
+  return (
+    isUnderRoots(path, config.publicScope) &&
+    !isUnderRoots(path, config.publicExclude) &&
+    !isUnderRoots(path, [...config.staticScope, ...config.adminScope]) &&
+    !config.staticCssFiles.includes(path)
+  );
 }
 
 /** The flags both invocations share. */

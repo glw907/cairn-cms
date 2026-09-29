@@ -29,6 +29,10 @@
 // engine's CSS-family substrate). Every named root must exist, so a rename fails the gate rather
 // than quietly narrowing it.
 //
+// The run hands `runStatic` every rule except the public-scope ones: this gate's scan roots are its
+// own, so the public scope (and its empty-scope error) has no place in it, and leaving only those
+// rules out keeps every suppression resolving against the same rule set as before.
+//
 // Wired as `npm run check:invisible-craft`.
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -85,9 +89,8 @@ export const CSS_FILES = ['examples/showcase/src/theme/theme.css', 'src/lib/admi
 
 async function main() {
   try {
-    const { DEFAULT_PALETTE_CSS_FILES, exitCodeFor, formatReport, resolveConfig, runStatic } = await import(
-      '../../dist/audit/index.js'
-    );
+    const { DEFAULT_PALETTE_CSS_FILES, exitCodeFor, formatReport, resolveConfig, runStatic, staticRules } =
+      await import('../../dist/audit/index.js');
     const config = resolveConfig(
       ROOT,
       {
@@ -100,7 +103,7 @@ async function main() {
       },
       (candidate) => existsSync(resolve(ROOT, candidate))
     );
-    const report = scopeReport(runStatic(config), RULE_IDS);
+    const report = scopeReport(runStatic(config, staticRules().filter((rule) => !rule.publicScope)), RULE_IDS);
     console.log(formatReport(report));
     process.exitCode = exitCodeFor(report);
   } catch (err) {

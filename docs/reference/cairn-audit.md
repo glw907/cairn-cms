@@ -28,10 +28,11 @@ skill in a consumer repo.
 ## What ships
 
 `cairn-audit` ships whole, as consumer product: every registered rule, the static and rendered
-rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 35
-registered rules audit the `/admin` surface, and a consumer's admin IS cairn's own admin toolkit,
-so conformance to cairn's design system is exactly the product being audited, not apparatus that
-measures the engine from outside.
+rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 36
+registered rules ship, and 35 of them audit the `/admin` surface. A consumer's admin IS cairn's
+own admin toolkit, so conformance to cairn's design system is exactly the product being audited,
+not apparatus that measures the engine from outside. The other one, `public-literals`, audits the
+site's public files instead: see [The public scope](#the-public-scope).
 
 Two things stay engine-side, both apparatus for producing the manifest the CLI ships rather than
 part of the audit a consumer runs: the norms generator that renders the admin and derives the
@@ -70,8 +71,8 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Eighteen rules run: fifteen error tier, and three advisory (`radius-scale`, `log-event-grammar`,
-`log-secret-field`, all below). (`motion-reduced-delay`, the rendered counterpart to the two
+Nineteen rules run: fifteen error tier, and four advisory (`radius-scale`, `log-event-grammar`,
+`log-secret-field`, `public-literals`, all below). (`motion-reduced-delay`, the rendered counterpart to the two
 vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rendered mode.)
 
 | ID | What it checks |
@@ -94,11 +95,40 @@ vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rende
 | `list-role` | A `<ul>`/`<ol>`/`<menu>` carries no role attribute while its marker is suppressed: either its own classes remove it, a `list-style`/`list-style-type: none` declaration such as Tailwind's `list-none`, or an item's classes change that item's rendered display away from `list-item` to another display that still renders the item, such as `flex`, `grid`, `block`, or `inline-flex`, the way daisyUI's own `.list-row` renders `display: grid`. `display: none` (Tailwind's `hidden` and its responsive variants) is excluded: a hidden item never reaches the accessibility tree, so it cannot strip the enclosing list's implicit role. WebKit/VoiceOver stop announcing a marker-suppressed list as a list once it loses its implicit role this way; the fix is `role="list"`, plus `role="listitem"` on the item whose class caused the change (HTML-AAM's implicit `li` mapping depends on the parent relationship that change already disrupts). A list already carrying a different explicit role stays exempt: the explicit role already overrides the implicit one on purpose, so a second, conflicting role would be the wrong remedy. Coverage is own-class only: the rule resolves an element's display from classes that element itself carries, so a descendant-selector rule that reshapes an item from the *list's* own class, daisyUI's `.menu :where(li)` or breadcrumbs' `> li`, sits outside what it can see. That gap is closed by the rendered-mode `list-role` rule below, which reads each item's actual computed display in a live browser instead |
 | `log-event-grammar` **advisory** | A name heuristic over `<ident>.info(`, `.warn(`, `.error(` calls whose first argument is a plain string literal: the literal collides with a name `CairnLogEvent` already reserves, or its shape doesn't read as `area[.subject].verb_phrase`. It has no way to tell your own logger from `console.info` or another library's, and it never resolves a computed event name, a template literal, or a re-exported logger, since none of those carry a string literal it can read. Scans `static.sourceScope`, not `static.scope`: a log call isn't confined to an admin surface |
 | `log-secret-field` **advisory** | The same call heuristic, over each call's second, fields argument: a property key that whole-matches (never a substring) a member of `REDACTED_LOG_KEYS` (`@glw907/cairn-cms/log`). It can't tell your logger from `console.info` or another library's: if the call goes through a cairn `createLogger` instance the runtime already redacts that field's value, but on a bare `console` call the value ships as written. Either way this rule exists for what redaction can't reach even when it applies, the same secret's value also written directly into the message string |
+| `public-literals` **advisory** | A color literal or an absolute font size in a public file, in a CSS declaration, a `style=` value (the static parts of a mixed one included), a Svelte `style:` directive, or a Tailwind arbitrary value such as `text-[#abc]` or `text-[14px]`. It reads the [public scope](#the-public-scope), never the admin surfaces. Color literals are hex, `rgb()`, `hsl()`, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color()`, and the named colors; `transparent`, `currentColor`, and the CSS-wide keywords are not literals. An absolute font size is `px`, `pt`, or `rem`, including the size inside the `font` shorthand; `em`, `%`, a keyword, and a `var()` or `calc()` over tokens pass. A custom-property definition is legal anywhere under a theme root, a component's `<style>` block included, and the root element's `font-size` is exempt, since it defines `rem` for the page. Tailwind's own utilities (`text-sm`, `bg-red-500`) are tokens a designer may choose, so it never flags them. It stays advisory for a consumer, since it polices your own markup |
 
 `list-role`'s two halves are complementary, not redundant: the static mode is the cheap own-class
 check every run gets for free, and the rendered mode is the only one that sees a descendant-selector
 change. A consumer that runs `cairn-audit` without `--rendered` gets the static half alone, so full
 `list-role` coverage needs both modes run.
+
+### The public scope
+
+The admin rules read the admin surfaces. `public-literals` reads a second scope, the public files a
+site ships to its visitors: the `.svelte` and `.css` files under `public.scope`, minus
+`public.exclude`. The default roots are `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`,
+and `src/lib/components`, with `src/routes/admin` excluded. `src/lib/components` is where a site
+keeps its shared public components.
+
+No file answers to two scopes. The public scope never claims a file under a root the admin scope
+reads, whether the root comes from `static.scope` or `static.adminScope`, by default or by your
+config, and never a standalone CSS file you name under `static.cssFiles`. Widening `public.scope` to
+`src` or writing your own `public.exclude` therefore can't move an admin file from an error-tier
+rule to the advisory public one, and `token-colors` and `public-literals` never both report the same
+file. A root you name under one scope leaves the other scope's defaults: naming
+`src/lib/components` under `static.scope` removes it from the public defaults, and naming an admin
+default such as `src/lib/admin-toolkit` under `public.scope` removes it from the admin defaults.
+
+A default public root your tree doesn't have is skipped. A root you wrote in `public.scope` yourself
+fails the run when it doesn't exist. When a run includes a public rule and every root together
+matches no file, the run fails, naming `public.scope`, so a scan that read nothing never reports a
+clean tree. A run that selects no public rule, such as `--rule` naming only admin rules, never reads
+the public scope and never raises that error.
+
+The theme roots (`public.themeRoots`) are where a design value may legally be defined: a directory
+or a single file, `src/theme` and the chassis `tokens.css` by default. A custom-property definition
+under one is a token definition, and a literal there is the point, not a finding. The report's
+scanned-file count includes the public files.
 
 ### What the motion rules don't cover
 
@@ -171,6 +201,10 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 | `static.adminScope` | `src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit` | Roots the three motion rules (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) resolve over instead of `static.scope`, since they're `adminOnly`. Name your own screens here if they live outside those three defaults |
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
+| `public.scope` | `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`, `src/lib/components` | The roots the [public scope](#the-public-scope) reads `.svelte` and `.css` files under, recursively. Naming this key replaces the defaults, and a configured root your tree doesn't have fails the run |
+| `public.exclude` | `src/routes/admin` | Paths the public scope never reads. A list you write merges with the default, never replaces it |
+| `public.themeRoots` | `src/theme`, `src/chassis/tokens.css` | Directories or files where a design value may legally be defined. `public-literals` allows a custom-property definition under one |
+| `public.stylesheets` | `src/theme/theme.css` | The entry stylesheets whose `@import` chain is the site's real chain |
 | `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css"]` |
 | `rendered.pages` | the core admin routes | The pages rendered mode visits. Naming this key replaces the default list |
 | `rendered.extraPages` | none | Pages rendered mode visits IN ADDITION to `rendered.pages` (or, absent that key, the core admin routes). Name your own screen here rather than restating the six core routes beside it |

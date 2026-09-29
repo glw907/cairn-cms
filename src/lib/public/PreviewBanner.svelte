@@ -94,7 +94,7 @@ docs/extend/share-a-draft-preview.md ("Override the banner's palette").
     border-radius: var(--cairn-preview-radius, var(--radius-box, 0.5rem));
     background: var(--cairn-preview-bg, var(--color-base-200));
     color: var(--cairn-preview-fg, var(--color-base-content));
-    font: 0.9375rem/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font: 0.9375em/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
 
   .cairn-preview-banner[data-state='published'] {

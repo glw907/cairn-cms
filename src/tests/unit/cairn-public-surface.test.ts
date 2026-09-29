@@ -64,6 +64,12 @@ function declaredValue(selector: string, property: string): string | undefined {
  */
 const INK_SHARES = { success: 50, warning: 50, error: 50, info: 50 };
 
+/**
+ * The share of the body ink the muted default keeps over `base-100`, as the derivation record
+ * chose it. It moves with the record the same way the ink shares do.
+ */
+const MUTED_SHARE = 70;
+
 const ROLES = customProperties(':root, [data-theme]');
 const THEME_COLORS = customProperties('@theme');
 
@@ -180,6 +186,12 @@ describe('the public stylesheet surface', () => {
       );
     },
   );
+
+  it('derives the muted color from the body ink at the recorded share', () => {
+    expect(declaredValue('@theme', '--color-muted')).toBe(
+      `color-mix(in oklab, var(--color-base-content) ${MUTED_SHARE}%, var(--color-base-100))`,
+    );
+  });
 
   it('gives every key a reader in the engine or the template source', () => {
     const sources = readerSources();

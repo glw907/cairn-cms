@@ -14,9 +14,12 @@
 // both schemes on every ground (the hard constraint), then keep those where the median ink-to-fill
 // chroma ratio, across themes whose fill has OKLCH chroma of at least CHROMA_FLOOR_FILL, reaches
 // CHROMA_FLOOR_RATIO (with CHROMA_TOLERANCE), then take the highest pass count and break ties toward
-// the higher `N` (more hue). Muted has no chroma floor; its ties break toward the lower `M`, since
-// the highest `M` on a plateau is the least muted value that scores the same. When no value meets
-// the hard constraint the script reports that and exits nonzero rather than choosing.
+// the higher `N` (more hue). Muted has no chroma floor, and its pass count rises with `M` until it
+// reaches base-content itself, so the pass count alone cannot choose it. Muted takes the lowest `M`
+// that meets the hard constraint and whose themes-passing count is at least the lowest count among
+// the four chosen inks: it trades stock failures for a visible step from the body ink by the same
+// margin the inks do. When no value meets the hard constraint the script reports that and exits
+// nonzero rather than choosing.
 //
 // Run from the repository root: `node scripts/lab/measure-status-inks.mjs`. It prints the markdown
 // tables the record embeds, and exits nonzero on a hard-constraint failure.
@@ -305,15 +308,26 @@ function chromaRatio(themes, computed, status, n, include) {
 /**
  * Applies the selection rule to a status's table.
  * @param {{ n: number, themesPassing: number, hard: boolean, chromaOk: boolean }[]} rows
- * @param {'higher' | 'lower'} tieBreak
  * @returns {number | null} the chosen share, or null when none satisfies the constraints
  */
-function select(rows, tieBreak) {
+function select(rows) {
   const eligible = rows.filter((r) => r.hard && r.chromaOk);
   if (eligible.length === 0) return null;
   const best = Math.max(...eligible.map((r) => r.themesPassing));
   const tied = eligible.filter((r) => r.themesPassing === best).map((r) => r.n);
-  return tieBreak === 'higher' ? Math.max(...tied) : Math.min(...tied);
+  return Math.max(...tied);
+}
+
+/**
+ * Applies the muted rule: the lowest share that meets the hard constraint and passes at least as
+ * many themes as the worst chosen ink.
+ * @param {{ n: number, themesPassing: number, hard: boolean }[]} rows
+ * @param {number} passFloor
+ * @returns {number | null} the chosen share, or null when none satisfies the constraints
+ */
+function selectMuted(rows, passFloor) {
+  const eligible = rows.filter((r) => r.hard && r.themesPassing >= passFloor);
+  return eligible.length === 0 ? null : Math.min(...eligible.map((r) => r.n));
 }
 
 /**
@@ -392,7 +406,7 @@ for (const status of STATUSES) {
       chromaOk: ratio >= CHROMA_FLOOR_RATIO - CHROMA_TOLERANCE,
     };
   });
-  const chosen = select(rows, 'higher');
+  const chosen = select(rows);
   chosenInk[status] = chosen;
   if (rows.every((r) => !r.hard)) hardFailed = true;
   if (chosen === null) hardFailed = true;
@@ -425,7 +439,14 @@ const mutedRows = SHARES.map((m) => {
     chromaOk: true,
   };
 });
-const chosenMuted = select(mutedRows, 'lower');
+/** The lowest themes-passing count among the four chosen inks, the bar muted must clear. */
+const inkPassFloor = Math.min(
+  ...STATUSES.map((status) => {
+    const n = chosenInk[status];
+    return n === null ? 0 : tally(inkResults(themes, computed, status, n)).themesPassing;
+  }),
+);
+const chosenMuted = selectMuted(mutedRows, inkPassFloor);
 if (chosenMuted === null) hardFailed = true;
 out.push(table('muted', mutedRows, chosenMuted, 'M'));
 out.push('');

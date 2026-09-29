@@ -9,10 +9,10 @@
    ordinary re-skin edit (see the recipe below), not gated by that attribute.
 
    This file is the THEME half of the chassis boundary (src/chassis/README.md): it `@import`s the
-   chassis token SYSTEM (Tailwind, the DaisyUI plugin activation, prose.css, composition.css, and
-   every design-scale key with a generic default) and then redeclares every one of those keys with
-   Waymark's own concrete numbers and colors, plus the two named DaisyUI themes the chassis
-   deliberately never declares. Cascade order does the override: a property declared again later
+   chassis token SYSTEM (Tailwind, the engine's cairn-public.css role defaults, the DaisyUI plugin
+   activation, prose.css, composition.css, and every design-scale key with a generic default) and
+   then redeclares every one of those design-scale keys with Waymark's own concrete numbers and
+   colors, plus the two named DaisyUI themes the chassis deliberately never declares. Cascade order does the override: a property declared again later
    in the same build wins, so nothing below duplicates chassis machinery, only chassis VALUES, plus
    the one declared rule near the bottom of this file that gives an uncolored outline its hairline
    edge (see "Hairline outlines" below).
@@ -345,11 +345,11 @@
      header nav's tracked eyebrow letter-spacing (SiteHeader's `.site-nav a` reads it directly, at
      every width, not just the mobile lockup); it is deliberately narrower than
      `--tracking-eyebrow` (0.12em), which is the wider, all-caps label device used above the home
-     listing and archive ("Latest", "Archive"). --cairn-focus-ring-radius now lives in
-     chassis/tokens.css, whose 2px default this theme happens to want unchanged; a theme that
-     wants a different focus-ring corner redeclares it here. --cairn-caption-tracking also has a
-     chassis default now (a plain :root there); this override is Waymark's own tuned value, not
-     a theme-only token a second theme would leave dangling. */
+     listing and archive ("Latest", "Archive"). --cairn-caption-tracking is a theme's own token:
+     neither the engine's cairn-public.css nor the chassis declares a default for it, so this
+     theme declares it. --cairn-focus-ring-radius has a 2px default in the engine's
+     cairn-public.css, which this theme happens to want unchanged; a theme that wants a different
+     focus-ring corner redeclares it here. */
   --cairn-caption-tracking: 0.09em;
 }
 

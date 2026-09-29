@@ -1,15 +1,13 @@
 # Style-guide sync: the base guides first, the register as cairn's voice
 
-**Status:** approved design (Geoff, 2026-09-28), revised by two `spec-plan-review` folds
-(`docs/superpowers/research/2026-09-28-style-guide-sync-fold.md`). The owner rulings are answered
-(rulings 7 to 11); the plan review's fold added rulings 12 to 14
-(`docs/superpowers/research/2026-09-28-style-guide-sync-plan-fold.md`).
-**Inputs:** the brainstorm brief
-(`docs/superpowers/research/2026-09-28-style-guide-sync-brainstorm-brief.md`) and the audit beside
-it (`2026-09-28-style-guide-sync-audit.md`). The audit's conflict ids (C1 to C8), gap ids (S1 to
-S14), and design sections (4a to 4g) are cited here without restating their evidence.
-**Planned against:** `main` at `feca3348`. `docs/internal/docs-register.md` and
-`docs/extend/choose-an-ai-posture.md` are as merged by PR #91 at `8bbe78f5`.
+**Status:** re-scoped design (2026-09-28, evening). The first design, approved and revised by two
+`spec-plan-review` folds, is in git history at `fb1aeba3`. The re-scope follows Geoff's ruling
+that the system be proven and battle-tested, with nothing invented (ruling 15), and the leanness
+record that prompted it: `docs/superpowers/research/2026-09-28-style-guide-sync-leanness.md`.
+**Planned against:** `main` at `feca3348`; `docs/internal/docs-register.md` and
+`docs/extend/choose-an-ai-posture.md` as merged by PR #91 at `8bbe78f5`. Landed on this branch
+before the pause: R1 (`7bf6a110`, `f9723e50`) and R2p (`5d82b505`); on the dotfiles branch
+`style-guide-sync`, W1 (`79c5e23`), W2 (`b44f414`, `ead04af`), and W3 (`4461c1f`).
 
 ## Goals
 
@@ -18,456 +16,261 @@ best practices of the established standard." And: "The first order of business i
 docs adhere to the appropriate style guide. The register is essentially an overlay on top of that
 ... never letting the register supplant those guidelines."
 
-The academic register's tone succeeded on the draft docs proof; its defects were structural. This
-pass keeps the tone and restores the structure. Both halves are acceptance goals. Two carry over
-from the theme identity spec (`2026-09-26-theme-identity-design.md`, G1 and G2), restated for
-prose, and G3 protects the half that already works:
-
 - **G1.** A writer who follows the track's drafting brief gets the base guide's structure and
-  cairn's voice by default, with nothing to reconcile and no page-local negotiation.
-- **G2.** A drafting agent reproduces that voice from its brief alone. A reviewing agent, holding
-  the brief plus the provenance and exceptions, tells a structural defect from a recorded
-  departure, and a structural departure from the base guide fails a gate or a blocking finding.
-- **G3.** The measured, academic voice survives the structural fixes: no page this pass touches
-  is flattened into the base guide's default conversational register.
+  cairn's voice by default, with nothing to reconcile.
+- **G2.** A drafting agent reproduces that voice from its brief and its exemplars. A reviewing
+  agent, holding the brief, the recorded deviations, and Vale's output, tells a structural defect
+  from a recorded departure.
+- **G3.** The measured, academic voice survives the structural fixes: no page this pass touches is
+  flattened into the base guide's default conversational register.
+- **G4.** Every mechanism the pass keeps is a documented practice of a named docs team or a
+  published source. A mechanism with no source is cut.
 
-### The governing analogy
+## Rulings
 
-The theme identity pass kept every stock daisyUI component and moved cairn's identity into the
-theme's own levers, instead of per-element patches that fight the defaults. Prose works the same
-way. The base guide is the stock component set: procedures, lists, headings, code font, tables,
-link text, and notices stay standard. The cairn docs voice is the theme: one named whole that
-gives cairn its measured, precise sound. A register rule that contradicts a guide rule is the
-prose equivalent of a patch fighting daisyUI, and it exists only as a recorded exception. The
-admin's visual feel ("warmth stays material", iA Writer's restraint) and this prose voice read as
-one identity.
+Rulings 1 to 14 stand from the first design (text at `fb1aeba3`, lines 45-129) except where a
+later ruling here supersedes a mechanism. Their substance, in short:
 
-## Rulings (Geoff, 2026-09-28)
+1. Google governs every reader who types commands (admin, extend, reference, the front door, the
+   root README, the changelog, cairn.pub); Microsoft governs `docs/editors/` and admin UI copy.
+2. A departure from the base guide exists only by Geoff's recorded ruling. A rule that forbids a
+   form the guide prescribes or recommends is an override and needs a row; a tightening forbids
+   only what the guide permits or is silent on and needs none.
+3. The Google arms take the cairn docs voice: Google's tone with three deltas. Measured, not
+   casual (an override, with a row). Qualified claims stay whole, while steps, list items, and
+   task sections stay under 26 words (an override, with a row). Imperatives appear only in steps,
+   task headings, cross-references, and notices (a tightening).
+4. The editors arm takes Microsoft's voice unmodified, plus tightenings only: the no-pitch
+   keystone, the tells that pass ruling 2's test, and the Names rules.
+5. Admin UI copy takes Microsoft's UI-text voice, tightened to "professional and restrained: no
+   cute, no chatty." No string sweep in this pass.
+6. Agent-facing documents, including the register, are written in the cairn docs voice.
+7. Geoff reads the R5 diff once, beside the register editor's voice verdict.
+8. The register adopts Google's ban on figurative language.
+9. The pass branches off `main`.
+10. The first fold's edits to rulings 1 to 6 are confirmed, with two seed deviation rows (tone,
+    sentence length).
+11. The cairn docs voice is one positively defined whole, never "Google minus X", and each base
+    guide gets one drafting brief the drafter reads. *Superseded in part by ruling 15:* the
+    brief no longer restates the base guide, so no sync check keeps it in step.
+12. The charter's "no house voice" rule is corrected: every audience starts from a published
+    external standard, and a repo may carry a named house voice as a recorded overlay.
+13. cairn.pub's own prose routes to the developer brief now; its Vale adoption is a ROADMAP item.
+14. Geoff's R5 read comes right after R5 lands; the proof run may run meanwhile.
 
-Rulings 1 to 6 carry the first fold's edits, which Geoff confirmed (ruling 10); the rulings text
-stands on his word.
+New rulings (Geoff, 2026-09-28):
 
-1. **The base guide follows the terminal.** A reader who types commands reads under Google:
-   `docs/admin/`, `docs/extend/`, `docs/reference/`, the front door, the root README, the
-   changelog, and cairn.pub. A reader who works only in the product's UI reads under Microsoft:
-   `docs/editors/` and the admin interface's own copy. Today's `.vale.ini` mapping stands.
-2. **An exception exists only by Geoff's recorded ruling**, as a row naming the base rule it
-   overrides, what cairn does instead, the evidence, and the date. The register's "a floor is not
-   a ceiling" clause goes (C1). A tightening needs no row. **The test:** a rule that forbids a form
-   the base guide prescribes or recommends is an override and needs a row; a tightening forbids
-   only what the guide permits or is silent on. A register rule that fails the test and has no row
-   is a blocking finding.
-3. **The Google arms take a combined voice:** Google's tone as the base, with three deltas. This
-   is the voice's provenance; ruling 11 sets how the drafter receives it.
-   - *Measured, not casual.* The register reads as a technical report: measured, precise,
-     qualification carried inside the sentence, a restrained first person only where the author's
-     own evidence is stated. It keeps Google's "friendly and respectful", no slang, no jokes. Google's
-     tone page prescribes "casual, natural, and approachable" and "a conversational tone rather
-     than a formal one", so this delta is an **override** and takes a Google exception row
-     (evidence: Geoff's 2026-09-08 voice ruling and the 2026-09-28 draft docs proof).
-   - *Qualified claims stay whole.* An explanatory sentence may run past Google's 26-word guidance
-     when splitting it would detach a qualification from its claim. Steps, list items, and task
-     sections stay under 26 words, since that guidance is an accessibility rule and matters most
-     where the reader acts; a step or list item over 26 words is a blocking guide finding. An
-     override, with a row.
-   - *Imperatives only in steps, task headings, cross-references ("For more information, see"),
-     and notices.* A tightening.
-4. **The editors arm takes Microsoft's voice unmodified, plus tightenings only:** the no-pitch
-   keystone, the tell catalogue (only the families that pass ruling 2's test against Microsoft),
-   and the Names rules. The reader's own question headings are allowed (Microsoft, M-headings).
-   "Professional academic introduction" is dropped (C3, C4). The Microsoft exceptions table
-   starts empty and also serves admin UI copy.
-5. **Admin UI copy takes Microsoft's UI-text voice, tightened to "professional and restrained: no
-   cute, no chatty."** "Slightly academic" leaves the admin design system. No sweep of existing
-   strings in this pass.
-6. **Agent-facing documents take the voice that works best for Claude**, per the authoring
-   charter's agent-facing row (Anthropic / Claude Code best practices). Anthropic's "match your
-   prompt style to the desired output style" guidance picks the register's own voice: the register
-   is rewritten in the cairn docs voice (audit 4f).
-7. **Tone read (owner ruling 1): yes.** The close waits on one attended read of the R5 diff by
-   Geoff, beside the register editor's voice verdict (criterion 9).
-8. **Metaphor (owner ruling 2): yes.** The register adopts Google's ban on figurative language
-   ("Avoid figurative language, which includes metaphors"). R1 narrows the universal-contract
-   bullet to Google's rule; the definitional ban and the "writing room" and "four arms" Killed
-   specimens stay as illustrations.
-9. **Branch base (owner ruling 3): resolved by events.** PR #91 merged into `main` at `8bbe78f5`.
-   The pass branches off `main`, and the approach spec's merge-before-next rule holds as written.
-10. **The first fold's edits are confirmed.** Geoff confirmed the fold's edits to the Rulings
-    text: ruling 1's changelog and cairn.pub under Google; ruling 2's tightening-versus-override
-    test; ruling 3's tone and sentence-length deltas as recorded Google exceptions, with the
-    imperatives delta scoped to exempt cross-references and notices; ruling 4's tell catalogue
-    filtered by ruling 2's test; ruling 6's citation of the charter row. The two seed exception
-    rows (tone, sentence length) are recorded on this ruling.
-11. **A named voice, flattened for the drafter.** Geoff asked whether layering is as easy for the
-    drafting agent, and ruled: "If we have to absorb complexity, I'd rather front-load it into the
-    infrastructure."
-    - The sources stay layered: the base guide by reference, the register as the overlay,
-      exceptions only by recorded ruling.
-    - The Google-arm tone is one positively defined whole, **the cairn docs voice**: measured,
-      precise, qualification inside the sentence, a restrained first person on the author's own
-      evidence, the comparison set, the ratified specimen, and short steps where the reader acts.
-      It is never described as "Google minus X".
-    - The register holds one self-contained **drafting brief** per base guide. The drafter reads
-      only its brief; the layering (provenance, exceptions, rationale) lives elsewhere in the
-      register for reviewers.
-    - A check keeps each brief in step with its sources, so the flattening costs no drift.
-12. **The charter's "no house voice" rule is corrected (Geoff, 2026-09-28).** Verbatim: "The cairn
-    overlay or the cairn docs voice is absolutely a house voice, so the workstation charter is
-    wrong." Every audience starts from a published external standard as its base. A repo may carry
-    a named house voice as a recorded overlay on that base; the overlay never replaces the base
-    standard's structure, and every departure carries provenance and Geoff's ruling. W4 carries
-    the correction into the authoring charter, the global `CLAUDE.md` "Writing voice" section, the
-    `writing-voice` output style, and the `writing-voice` skill; the repo `CLAUDE.md` Authoring
-    section ("with no house voice", "On top of the Google floor") takes it in chain R, since the
-    file is this repo's. "No house voice" joins W6's retired phrases where it asserts the old rule.
-13. **cairn.pub: route now, adopt later (Geoff, 2026-09-28).** W4's routing names cairn.pub's own
-    prose as developer-brief. A ROADMAP item covers cairn-pub adopting Vale and a `CLAUDE.md` line
-    pointing at the brief, in a cairn-pub pass.
-14. **Tone-read timing (conductor's decision under ruling 7, 2026-09-28).** The same single read
-    moves: Geoff reads the R5 diff right after R5 lands. The proof run may run meanwhile; R1b waits
-    for his read and takes its specimen only from text he has read. This supersedes the placement
-    "the close waits on" in ruling 7; the read itself is unchanged.
+15. **A proven system, nothing invented.** Verbatim: "I'm not looking to invent anything new. I
+    want a proven and battle-tested system." The re-scope takes the conventional method at every
+    fork and walks back what the branch invented. The leanness record's verdict table is the
+    per-mechanism ruling.
+16. **The target register is preserved.** The re-scope removes machinery, never voice. Every
+    ratified register rule survives, as do the voice specimens (the why-cairn front-door specimen,
+    the `choose-an-ai-posture.md` paragraph at `8bbe78f5` lines 23-26 verbatim, the "Killed:"
+    specimen), the Names section, the page anatomies, the track and front-door sections, and
+    every recorded deviation. What shrinks is prose that restates the base guide, which the stock
+    Vale packages and the guide itself already carry.
+17. **The AI posture page is the developer track's primary exemplar**, as a whole page, for both
+    anatomy (choose, set, pass, verify, resolve) and voice.
+18. **The editor track's exemplar is a captured Microsoft Learn procedure page.** An in-repo editor
+    exemplar is named when the editors stage redrafts its first page, as the AI posture page
+    earned the developer slot.
+19. **The register editor stays in the chain, with no A/B test.** It works a checklist plus Vale's
+    output, the checklist-with-external-feedback form the research supports. A one-page A/B has a
+    sample of one and cannot separate a signal from noise.
+20. **The remainder of the pass carries a 6M token ceiling.**
+
+## Sources
+
+Each kept mechanism names its source here; the leanness record carries the full research.
+
+- **Warning first, then promote a rule to error once the tree is clean:** GitLab's Vale practice
+  (https://docs.gitlab.com/development/documentation/testing/vale/).
+- **Three severity tiers, noisy rules demoted with a rationale comment:** Elastic
+  (https://www.elastic.co/docs/contribute-docs/vale-linter).
+- **A pass example and a fail example per custom rule:** Elastic's and Spectro Cloud's rule
+  repositories (https://github.com/elastic/vale-rules,
+  https://www.spectrocloud.com/blog/how-we-use-vale-to-enforce-better-writing-in-docs-and-beyond).
+  Vale 3.23.0 has no `vale test` command, so a short script runs Vale over the example pairs; the
+  leanness record's "Vale 3.x ships `vale test`" is wrong.
+- **A style guide that names its base guide and lists its deviations in one section:** GitLab's
+  and Grafana's writing guides.
+- **Three to five canonical examples over long rule lists:** Anthropic's prompting guidance
+  (https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices);
+  instruction-following falls as simultaneous rules grow (https://arxiv.org/pdf/2509.21051).
+- **Checklist-driven critique with external feedback over unguided self-critique:**
+  https://arxiv.org/abs/2310.01798, https://arxiv.org/pdf/2410.06458.
+- **Vendored example pages under their license:** Google's developer documentation and Microsoft
+  Learn content are both published under CC BY 4.0, which permits copying with attribution.
+- **markdownlint-cli2 with a stock config, rules with existing hits disabled and re-enabled as
+  pages are fixed:** the same warning-first ratchet as GitLab's Vale rollout, applied to
+  markdownlint's on/off rules.
 
 ## Design
 
 Two chains with disjoint files run in parallel, then join. Chain R works in this repo; chain W in
-`~/.dotfiles` (stowed into `~/.claude`). The join runs after both chains merge, since each join
-step needs R's rules and W's lens together: R5, the proof run (criterion 7), R1b, then the
-register review (criterion 8).
+the dotfiles worktree `~/Projects/.worktrees/dotfiles-style-guide-sync`.
 
 ### Chain R: the repo
 
-**R1. Register rewrite** (`docs/internal/docs-register.md`).
+**R1t. Trim the register** (`docs/internal/docs-register.md`). R1 stays; it is trimmed, not
+reverted, because it carries everything ruling 16 preserves. The trim:
 
-- The header names two base guides, picked by ruling 1, with a table mapping each arm, the
-  changelog, and cairn.pub to its guide. "Floor" becomes "base" in the style-guide sense only: the
-  front door's "Legibility floor" and the "When a Vale finding is wrong" procedure keep their
-  wording.
-- **Two drafting briefs**, the single source a drafter reads: "Drafting brief: developer docs"
-  (Google base, the cairn docs voice) and "Drafting brief: editor docs" (Microsoft base plus
-  ruling 4's tightenings). Each is flat and complete, in one order:
-  1. The structural rules quoted from the guide's own pages, each with its URL: procedures, lists,
-     headings, code font, tables, link text, notices, conditions before instructions, no links in
-     headings, no directional-only references, and the step and list-item length limit.
-  2. The voice, with its specimen. The developer brief states the cairn docs voice positively
-     (ruling 11) and carries the ratified-good specimen; the editor brief states Microsoft's voice
-     with the tightenings folded in.
-  3. The tells that apply to that guide.
+- Each drafting brief becomes a short supplement to its base guide, in the GitLab and Grafana
+  pattern: a link to the base guide as the structure source, the voice stated positively with its
+  specimens, the exemplar list (below), and a short tell list. Prose that restates a base-guide
+  rule the stock Vale package or the guide itself carries goes. A register rule stricter than the
+  guide stays, stated once. Each brief stays under 1,000 words, specimens and exemplar list
+  excluded.
+- The `q:` and `x:` markers go. The "Guide quotes" provenance table becomes a plain sources list
+  of links. "The tightening test" and the two "Recorded exceptions" sections merge into one
+  "Deviations from the base guides" section: the test, then one short table per guide, each row
+  naming the base rule, what cairn does instead, the ruling, and the date.
+- Everything else R1 landed stays: the base-guide header and arm table, Names (heading and anchor
+  byte-identical), Visuals, the page anatomies, the tracks, the reference, the front door, "When a
+  Vale finding is wrong", "For reviewers" (its pointer to provenance now points at the deviations
+  section), and every quotation byte for byte.
+- The exemplars: the developer brief names `docs/extend/choose-an-ai-posture.md` (whole page,
+  anatomy and voice), the why-cairn front-door specimen (voice, front door only), and the two
+  Google captures (anatomy). The editor brief names the Microsoft Learn capture.
+- Acceptance: R1's rule-disposition list is re-run against the register at `feca3348`, and no
+  voice rule moves to "dropped".
 
-  A brief holds no cross-reference, no "except where", and nothing for the drafter to reconcile.
-  Every quote is checked against the live page when written. The briefs replace the separately
-  placed structural digest the first fold proposed.
-- **The layering**, read by reviewers and never handed to the drafter: a provenance table naming
-  each Google tone rule the cairn docs voice departs from, the ruling, and the guide source text
-  each brief quote was taken from; a "Recorded exceptions" section with one table per guide; and
-  the rationale. Google seed rows: `Google.FirstPerson` off (2026-07-02), the README exclamation
-  headings (a dormant sanction; the README carries none today), and the tone and sentence-length
-  deltas (rulings 3 and 10). Microsoft: empty, and it also governs admin UI copy. The
-  tightening-versus-override test from ruling 2 is stated above the tables.
-- The universal-contract metaphor bullet narrows to Google's ban (ruling 8). The clause "not
-  graded against general written norms" goes.
-- The voice-scope sentence narrows to ruling 1 and rulings 4-5: the academic voice governs the
-  Google arms, not editors or admin copy. "The editor track keeps its plainer Microsoft floor
-  inside this voice" goes.
-- The heading rule follows Google's split (C8) on the Google arms: a task section takes a bare
-  infinitive, a concept section a noun phrase with no leading -ing word, and no question or
-  wh-clause teaser (Geoff's 2026-09-28 specimens stand). Editors headings follow Microsoft,
-  reader's questions allowed (C4).
-- The colon-triad rule gains the list remedy (C5): a sequence of actions or checks becomes a
-  numbered list introduced by a complete sentence, parallel options a bulleted list, and only items
-  that are neither fold into prose.
-- The task-guide anatomy becomes a numbered list of sections and states the step form (C7): steps
-  numbered, one action each, location before action, a single step as a bullet, and ordered checks
-  in a verification or failure section numbered too.
-- The reference section's "Dry contract prose" becomes "spare contract prose" (Google: "don't aim
-  for super-dry").
-- "For reviewers" opens with: grade structure against the base guide first, a guide violation is
-  blocking, then grade against the track's brief, reading the provenance and exceptions to tell a
-  recorded departure from a defect.
-- The whole document is rewritten in the cairn docs voice (ruling 6). The rewrite changes voice,
-  not meaning, except where a ruling says so. It keeps: the keystone's meaning that flat prose is
-  the other way to fail (the audit 4f capper may be rephrased, not dropped); the diagram 320/390
-  deviation, which is from the family responsive standard, not a guide, so it stays out of the
-  exceptions tables and cites 2026-08-15; the `Names` heading (`#names` is linked from CLAUDE.md);
-  every quotation (the Names table's Google and Git text, the ratified-good specimen) byte for
-  byte; the vendor-link and Diátaxis rulings in substance. Anti-pattern specimens stay, fenced or
-  quoted and tagged "Killed:".
-- The "When a Vale finding is wrong" procedure stays as it is.
+**R2p. Vale pin** (landed at `5d82b505`). Its `diff-reviewer` read runs first.
 
-R1 lands without the structure-plus-voice specimen; R1b adds it at the join.
+**R2. The Vale rules.** Three custom rules, all at `warning` in `.vale.ini`, each with one pass
+and one fail example under a fixtures directory outside the docs globs:
 
-**R1b. The structure-plus-voice specimen** (join step, after the proof run). The developer brief
-gains one specimen taken from R5's accepted page: a task section's lead-in sentence and a numbered
-step. The sync check (R7) runs after the edit.
+- `Cairn.Headings`, one merged rule on the Google arms (off under `docs/editors/**`): a leading
+  -ing word, a question, or a wh-clause teaser. About 77 measured hits today.
+- `Cairn.ProseProcedure`: an imperative after a clause boundary, counted per paragraph. About 52
+  measured hits today. Its fail examples are `choose-an-ai-posture.md:99-103` and
+  `rotate-the-github-app-key.md:99-102` at `8bbe78f5`.
+- Whatever vocabulary entries `Google.Headings` and `Microsoft.Headings` need to stop firing on
+  product names (GitHub App, Workers Builds, and the rest), in the accept list; vendored styles are
+  never edited.
 
-**R2a. Vale harness, pin, heading rules, and rollout.**
+A script (`scripts/checks/vale-rule-examples.mjs`) runs Vale over the pairs and fails when a fail
+example raises no alert from its rule or a pass example raises one. It runs in the docs gate's
+tree mode. A rule moves to `error` once its tree-wide count reaches zero, one rule at a time; none
+moves this pass. The pre-existing Cairn rules are unchanged and need no retroactive examples.
 
-- The CI Vale pin moves from 3.15.1 to 3.23.0 through the `dependency-upgrade` skill (a minor,
-  taken by default), so the workstation, the chain's `--page` gate, and CI run one version. The
-  `.vale.ini` arbiter note keeps "CI's pin governs" and updates the number.
-- A fixture harness under `scripts/checks/` runs Vale with an explicit config over a fixtures tree
-  outside the docs globs, in mirrored paths where a rule is path-dependent. Each must-fire fixture
-  must raise that rule id; each must-not-fire fixture must raise nothing from that rule. It runs in
-  the docs gate's tree mode only (CI and close), never in `--page` mode and never inside
-  `npm test`. It also runs R3's custom markdownlint rules and R7's drift fixtures.
-- Heading rules, three ids since Vale scopes rules by section, not by branch:
-  `Cairn.HeadingIng` (leading -ing word, Google arms only, per ruling 4),
-  `Cairn.HeadingQuestion` (a `?` heading or a wh-word opener; off under `docs/editors/**`), and
-  `Cairn.HeadingTeaser`. A pinned heading gets a static exemption in the rule's YAML before its
-  page is promoted; none is needed this pass, since R5's page carries no pinned heading (first
-  needed at the admin stage, for `is-it-working.md`). `Google.Headings` and `Microsoft.Headings`
-  join the promoted set once the vocab entries the mechanics probe found (GitHub App, Workers
-  Builds, CSRF, SEO, Tidy, and the rest) are added; the vendored style files are never edited.
-- **Rollout mechanism.** Every new rule, and both Headings rules, sits at `warning` in
-  `.vale.ini`, so the tree run stays green on frozen pages. One list in the repo names the
-  **promoted rules** and the **promoted pages**. The docs gate reads it. The workflow runtime
-  cannot read files, so the page-inputs agent or the conductor passes the promoted-rule list into
-  the chain's `valeErrorRules`, which only feeds the drafter forward; the `--page` gate enforces.
-  In `--page` mode the gate adds a second Vale pass filtered to the promoted rules and fails on any
-  alert. In tree mode it runs the same filtered pass over the promoted pages, so an accepted page
-  cannot regress (the ratchet). A page joins the list when it is chain-accepted under the new
-  lens; an arm joins wholesale when its stage sweep closes. No page outside R5 is fixed in this
-  pass.
-- **The reference arm and root README are deferred, with a trigger.** They follow the per-page
-  ratchet, and no stage schedules their rerun. When R2a lands, the task records their
-  promoted-rule finding count and files a ROADMAP entry whose trigger is that count: a small count
-  earns a one-task sweep at a named stage that promotes both wholesale.
-- The gate tier is pinned to `--pin scripts` plus the harness: `gate-tier.mjs` defaults `.vale/**`
-  and config paths to `full`, which buys two e2e suites that prove nothing about a Vale rule.
+**R3. markdownlint.** `markdownlint-cli2` as a dev dependency with the stock rule set, run by the
+docs gate over the published docs arms. Every stock rule with hits on today's tree is disabled in
+the config with a comment giving its count; a later pass re-enables a rule once its hits are
+fixed. No custom rules.
 
-**R2b. The remaining rules**, each with fixtures in the R2a harness.
+**R5. The trigger page** (`docs/extend/choose-an-ai-posture.md`), at the join. Unchanged from the
+first design (at `fb1aeba3`, "R5"): the freeze warrant holds, the edit follows "Edits after the
+chain", the restructured ranges are the bold precondition (lines 6-8), `## Verify the served file`
+(78-96), and `## Resolve a posture warning` (97-108), and every other sentence stays
+byte-identical to `8bbe78f5`. The page must raise no `Cairn.ProseProcedure` or `Cairn.Headings`
+alert and pass `check:provenance` with its brief.
 
-- `Cairn.ProseProcedure` (warning, not promoted): an imperative after a clause boundary
-  (sentence start, a conditional clause, `otherwise`, `then`), counted per paragraph. Must-fire:
-  verbatim copies of `choose-an-ai-posture.md:99-103` and `rotate-the-github-app-key.md:99-102`
-  (the latter is caught by the clause-boundary arm, not sentence-initial imperatives), plus one
-  held-out passage the rule was not tuned on (`docs/editors/publish-and-history.md:93-109`).
-  Must-not-fire: a numbered list of imperatives and a concept paragraph using "then" as an adverb.
-  The tree-wide count at landing is recorded as the promotion baseline.
-- `Cairn.LinkText` (promoted): vague link text and a bare URL as link text (S11).
-- `Cairn.LinkInHeading` (promoted): a link inside a heading (S8, G-headings).
-- `Cairn.CodeFont` (warning): uncoded filenames and paths (S9).
-- `Cairn.ListItemCase` (warning): a list item opening lowercase (S4), exempting an opening code
-  span and the Names rule's lowercase `cairn`; fixtures include a nested item.
+**R6. Admin design system and the repo `CLAUDE.md`.** `docs/internal/admin-design-system.md`'s
+voice passages name Microsoft as the base for UI copy and apply ruling 5; "slightly academic",
+"friendly-but-professional", and the cairn/stacking metaphor line go. The repo `CLAUDE.md`
+Authoring section takes ruling 12 ("a published external standard as its base, with a recorded
+house voice overlay") and names the drafting briefs in place of "On top of the Google floor".
 
-**R3. `check:markdown`.** markdownlint-cli2 as a dev dependency, wired into `docs-gate.mjs` for
-`--page` pages and the promoted pages only (the tree holds dozens of findings on frozen pages).
-Stock rules MD001, MD024 (siblings only), MD025, MD029, MD032, MD040, MD055, MD056, and MD058,
-plus two custom rules: a heading directly after a heading, and a table with no introductory
-sentence (S7, S10). The `docs-gate` unit test's pinned step list is updated in the same task. This
-pass supersedes two lines of the 2026-09-26 approach spec for structural checks, on Geoff's
-2026-09-28 direction: "No new check is built" and the retirement of `check:headings` and
-markdownlint as a gate. The templates and the registry stay retired.
-
-**R7. `check:register-briefs`**, the brief sync check, run by the docs gate in tree mode, with
-drift fixtures in the R2a harness. After R1. Outcome: each drafting brief stays true to the
-provenance and exceptions it flattens. It fails when:
-
-- a guide rule quoted in a brief does not match, verbatim, the source text the provenance records
-  for it;
-- a brief quotes a guide rule the provenance does not record;
-- an exception row names no brief passage, or the passage it names is absent from the brief.
-
-The plan fixes the markers the check keys on. The check reads the register only; it never fetches
-the live guide pages.
-
-**R5. The trigger page** (`docs/extend/choose-an-ai-posture.md`), at the join. The freeze warrant:
-CLAUDE.md ("Documentation is a pass dimension") freezes the narrative arms against rewrites until
-each arm's own stage merges, and a deficiency a pass discovers on a page is fixed on the page in
-the same pass, per the facts container's fix rule (`docs/internal/facts/README.md`, "How this
-container grows"). The one exception, a site edit to an arm whose stage is in flight, does not
-apply: this is an engine pass, and extend's stage 2a has not started (STATUS: its plan is next,
-after this sync lands). The page has a brief, so the fix follows the approach spec's "Edits after
-the chain" rule.
-
-A scoped structural edit: the failure checks and the verify section become numbered lists, the
-bold run-in precondition becomes a list or a section, and headings meet R1's rule. The `f:1ij5h5`
-scoping from `b8bfd30f` stays. Per "Edits after the chain", the brief's `sentences` update in the
-same change, changed sentences go through the register editor and the fact read, and the gate runs
-with `--brief`. **Byte-identical check:** the base is the page as merged on `main` at `8bbe78f5`;
-the method is a sentence-level diff against that commit, and every sentence outside the named
-restructured passages is identical. The page then joins the promoted pages.
-
-**R6. Admin design system** (`docs/internal/admin-design-system.md`). The voice principle at line
-56, the Voice section, and the `writing-voice` pointer near line 1236 name Microsoft as the base
-for UI copy, apply ruling 5, and point exceptions at the register's Microsoft table. The em-dash
-ban stays as a tightening. No component string changes.
+**R9. Exemplar captures.** Three pages captured as markdown into `docs/internal/exemplars/`, each
+with its source URL, capture date, and CC BY 4.0 attribution: a Google developer task page with a
+numbered procedure, a Google concept page, and a Microsoft Learn procedure page. The directory
+sits under `docs/internal/**`, which Vale already skips; the other docs checks skip it too. In the
+repo, every chain worktree can read them.
 
 ### Chain W: the workstation
 
-**W1. `workflows/docs-page-chain.js`.**
+**W1r. Revert W1 and wire the brief by track.** `git revert 79c5e23` removes the extraction
+validator, the coercion, `docs-chain-render.mjs`, and their tests. Then one small change to
+`docs-page-chain.js`: the drafter and editor prompts name the register section for the page's
+track (`## Drafting brief: editor docs` for `editors`, `## Drafting brief: developer docs` for
+every other track) and tell the agent to read it from the file. The editor prompt also has the
+editor run Vale on the page and grade the brief's tell list and Vale's alerts together. One test
+covers the track-to-brief mapping for every track value.
 
-- `common` becomes a function of the page. It derives the base guide from the page's track
-  (`editors` gives Microsoft; every other value, including the front door and the root README,
-  gives Google) and selects that guide's drafting brief.
-- **The drafter receives only its brief plus conforming exemplars.** The workflow runtime has no
-  filesystem access, so the page-inputs agent or the conductor extracts the brief section from the
-  register by its exact heading and passes the text in (the plan picks which, one home). A missing
-  heading fails the step. The drafter prompt carries no provenance, exceptions table, or rationale.
-- The register editor receives the brief plus the provenance and exceptions sections, extracted
-  the same way, and grades guide conformance first. `FINDING` gains a required
-  `source: 'guide' | 'register'`; the runner forces `blocking` on `source: guide`, and the combined
-  findings print the source for the redrafter.
-- The page-inputs step names, in each excerpt's note, any way the excerpt departs from the base
-  guide, so the drafter does not copy it.
-- `valeErrorRules` carries the promoted-rule list from R2a, passed in as that bullet states.
-- Tests land in `~/.dotfiles/tests/docs-page-chain-derivation.test.mjs` through its
-  marker-extraction pattern: the track-to-guide derivation for every track value, the `source`
-  coercion, a static guard that the editor preamble names the guide before the register, and a
-  guard that the rendered drafter prompt contains the brief section and no exceptions table or
-  provenance.
+**W2r. Drafter definition.** `b44f414` stays in substance: the brief is the structure and voice
+source and outranks the definition, and the definition's own tell list is gone. `ead04af`'s
+"exemplar roles as the dispatch renders them" is reworded to the plain form: an exemplar excerpt
+is imitated for anatomy and rhythm, never its wording.
 
-**W2. `agents/cairn-docs-drafter.md`.** The definition carries no digest of its own. A short
-section above the five rules says the drafting brief in the prompt is the structural and voice
-source and outranks this file. The setup-colon tell gains the list remedy.
+**W3r. Register-editor definition.** `4461c1f` stays in substance (the base guide first, the
+editors arm graded to ruling 4, the dead references gone). Its `source` field and `q:`-id rule
+references go; guide findings come from the base guide and Vale's alerts, and a register rule
+stricter than the guide that has no row in the deviations section is a finding.
 
-**W3. `agents/cairn-register-editor.md`.** The base guide becomes item 0 of the living contract,
-with the register as the overlay that outranks this file. A "Guide conformance, first lens"
-section comes before register grading; it reads the provenance and exceptions it is handed to
-tell a recorded departure from a structural defect, and a register delta missing from the
-exceptions tables is a finding. The List-cadence family gains the list remedy. The editors arm is
-graded to ruling 4: "academic introduction" and the 25-40-word baseline go; Noir overcorrection
-and the micro-instructed-actions item scope to the Google arms; Consumer-help keeps only what
-Microsoft itself bans (just, simply, folksy softeners); the shortform-compression line scopes to
-the Google arms; the editors genre exemplar becomes `editor.md`'s Microsoft exemplars. When
-dispatched with no track (`register-check` on a spec or plan), the guide lens applies Google to
-published arms and the register itself, and stays off for internal records.
+**W4. The voice docs and the charter correction.** As the first design's W4 (at `fb1aeba3`) and
+the plan's W4 task, minus the "one sanctioned copy" parity clause: ruling 12 lands in the
+authoring charter, the global `CLAUDE.md` "Writing voice", the output style, and the
+`writing-voice` skill; the cairn-docs route names the drafting brief by track and cairn.pub's own
+prose as developer-brief; the voice exemplars write procedures as numbered lists; the audit's
+doc-hygiene items (DC-26 to DC-28, AW-24, PS-07) land.
 
-**W4. The voice docs.** Ruling 12's correction lands in `docs/authoring-charter.md`, the global
-`CLAUDE.md` "Writing voice" section, `output-styles/writing-voice.md`, and the skill, and the
-cairn-docs route names cairn.pub's own prose as developer-brief (ruling 13).
-`skills/writing-voice/SKILL.md` gains "a sequence of actions is a numbered
-list" beside "paragraphs over bullets", and qualifies its editor-copy routing row ("admin
-walkthroughs") to a UI walkthrough with no terminal step. `docs/voice/technical-doc-web.md` gains
-one line: a repo's register may record voice deltas against this standard, and within that repo
-they outrank this file. `technical-doc-web.md` and `docs/voice/editor.md` replace their
-prose-procedure exemplars with numbered procedures (C6); a short same-place exemplar stays in
-`editor.md`, labeled as Microsoft's combine allowance. `editor.md` qualifies "someone following a
-setup guide" and "setup walkthroughs" to UI-only setups. These files reach every repo on the
-workstation; the report states whether `writing-voice/evals` re-run.
+**W5. Implementer definitions.** Unchanged: the "plain voice" line in `cairn-implementer.md` and
+`site-implementer.md` points docs prose at the track's drafting brief, and `site-implementer`'s
+cairn-cms docs gate runs `check:docs-gate -- --page` on each page it touches.
 
-**W5. `agents/cairn-implementer.md`.** Its "plain voice" line gains: docs prose follows the
-track's drafting brief in the register. The implementer writes the reference arm and the
-per-version extend records every pass.
+**W6. Retired phrases.** The ruled phrases are appended to the dotfiles scanner's existing list
+(`claude/.claude/tooling/retired-phrases.txt`), each with a comment naming its ruling. The scanner
+and its tests already exist; no new check.
 
-**W4 addition (Geoff, 2026-09-28): the brief reaches writers outside the chain by routing, never
-by a new skill.** `writing-voice`'s cairn-docs route says to read the drafting brief for the
-page's track in `docs/internal/docs-register.md` and write to it. No drafting skill carries a copy
-of the brief, since a copy is the drift R7 exists to catch.
+**W7. Infra read at pass end.** Unchanged: one fresh reader lists every file that tells a writer
+how to write cairn docs or cairn UI copy and returns a verdict per file (routes to the right
+brief, restates no rule of its own, carries no retired phrase). Mismatches are fixed before the
+close.
 
-**W6. Stale-reference tripwire.** A list of retired phrases fails the dotfiles `scripts/check.sh`
-and a cairn docs check wherever one appears in `~/.dotfiles/claude` (agents, skills, workflows,
-`docs/`), both `CLAUDE.md` files, or cairn's `docs/internal` (excluding dated records, specs,
-plans, and research, which are history). The seed list: "Vale-enforced floor", "a floor is not a
-ceiling", "academic introduction", "slightly academic", the 25-40-word baseline, "on top of the
-Google floor", "admin walkthroughs" routed to Microsoft, and "no house voice" and "not a house
-voice" (ruling 12). The plan fixes the literal strings. Each fixture proves the check fires
-on a planted phrase and passes on the clean tree. A later voice change adds its retired phrases.
+### The join
 
-**W7. Infra read at pass end (Geoff, 2026-09-28: "we failed on that front earlier").** After the
-join, one fresh-context reviewer lists every file that tells any writer how to write cairn docs
-or cairn UI copy, including the agents, `writing-voice` and its routed docs, `cairn-pass`,
-`site-pass`, `pass-core`, `engine-consult`, `register-check`, `spec-plan-review`, the authoring
-charter, the repo `CLAUDE.md`, and the admin design system. For each file it returns a verdict:
-routes to the right drafting brief (or states the Microsoft UI-copy voice), restates no rule of
-its own, and carries no retired term. Every mismatch is fixed before the close, and every phrase
-it finds joins W6's list. The owed `CLAUDE.md` erratum ("On top of the Google floor") lands in
-chain R with ruling 12's edit; W7 verifies it.
+R9, then R5, then Geoff's one sitting, then the register review and W7.
 
-### Exemplars
+- **J2, the proof run.** The chain drafts one real page under the new system:
+  `docs/extend/enable-tidy.md`, which the audit found breaks the base guide and which the extend
+  stage rebuilds anyway. It runs on a throwaway branch, `style-guide-proof`, never merged in this
+  pass; stage 2a may adopt the draft. This is the first measurement that the system writes better
+  pages.
+- **Geoff's sitting.** One attended read covering the R5 diff (ruling 7) and the J2 draft beside
+  the current page.
+- **J4, the register review.** One fresh `cairn-register-editor` read of the trimmed register, plus
+  the re-run disposition list (R1t's acceptance). Blocking findings fold through one dispatch.
 
-`enable-tidy.md` and `restrict-admin-access.md` fail the new checks; their rebuild belongs to the
-extend stage. The capture corpus (`~/.local/share/cairn/exemplars/`) holds no Google Cloud or
-Microsoft Learn page, so this pass captures three: a Google developer task page with a numbered
-procedure, a Google concept page, and a Microsoft Learn procedure page. Until in-repo exemplars
-qualify, stage 2a takes anatomy from those captures, and register and vocabulary from the rebuilt
-`choose-an-ai-posture.md`. The exemplar check is a plan-time conductor step: each
-`exemplarSources` entry is copied to a scratch path and run against a structure-only config (R2's
-structural rules plus R3, never the house rules), and the result goes in the plan's per-type list
-(audit 4g). A chain-accepted page that passes becomes eligible for its page type.
+## Walked back or cut (ruling 15)
+
+The first design's R7 (`check:register-briefs`), R8 (the repo tripwire), R1b (the specimen, now
+covered by the whole-page exemplar), the promoted-pages list and its fail-closed JSON, the fixture
+harness meta-check and legacy allowlist, `.vale-structure.ini`, `Cairn.LinkText`,
+`Cairn.LinkInHeading`, `Cairn.CodeFont`, `Cairn.ListItemCase`, markdownlint custom rules, the
+planted-defect positive controls, the sanctioned-copy parity clause, W1's extraction and coercion,
+and the exemplar role rendering.
 
 ## Acceptance criteria
 
-1. The register opens with the two base guides and the arm table. It holds both drafting briefs,
-   each flat and complete in the stated order, with no cross-reference or "except where" (each
-   quoted rule carries its URL; the task report lists each quote as fetched and matched). It holds
-   the provenance table, both exceptions tables with the seed rows, and the tightening test, and
-   carries no self-serve deviation clause.
-2. A meaning ledger of the old and new register, read by a fresh `claude-opus-5-5` reader, lists
-   every ratified rule as kept, reworded, or changed by ruling N; the `#names` anchor and every
-   quotation are byte-identical.
-3. The fixture harness runs in the docs gate's tree mode under the pinned Vale, and every rule in
-   R2a, R2b, and R3 has a must-fire and a must-not-fire fixture that it passes.
-4. `Cairn.ProseProcedure` fires on both trigger passages and the held-out passage; its tree-wide
-   baseline is recorded.
-5. The unscoped docs gate exits 0 on the tree, and a harness case proves the promoted-rule pass
-   fails a promoted page carrying a planted defect.
-6. The W1 tests pass: the derivation for every track value, the `source` coercion, the
-   preamble-order guard, and the drafter-prompt guard (brief present; no exceptions table or
-   provenance).
-7. The proof run, at the stage level: (a) the register-editor prompt the chain renders, given a
-   planted page with a prose procedure and an -ing heading, returns a blocking `source: guide`
-   finding on the prose procedure; (b) the docs gate on the same page fails on
-   `Cairn.HeadingIng`; (c) the same prompt on the rebuilt `choose-an-ai-posture.md` returns no
-   blocking `source: guide` finding.
-8. After R1b, the register, read by the register editor under the new lens, has no blocking
-   finding. A positive control runs first: the pre-rewrite register draws blocking findings at the
-   audit 4f passages, and the prompt treats an unrecorded loosening as a blocking `source: guide`
-   finding. This is R1's one review.
-9. `choose-an-ai-posture.md` passes the docs gate as a promoted page, raises zero
-   `Cairn.ProseProcedure` and `Cairn.CodeFont` findings, and passes `check:provenance` with its
-   brief. The sentence-level diff against `8bbe78f5` shows every sentence outside the restructured
-   passages identical. The register editor's read against that base carries no blocking
-   voice-delta finding, and Geoff reads the diff once (ruling 7).
-10. No voice exemplar in `technical-doc-web.md` or `editor.md` writes a procedure that crosses
-    screens, or exceeds Microsoft's same-place combine allowance, as prose.
-11. `check:register-briefs` passes on the landed register and fails on each planted drift in the
-    harness: an edited quote in a brief, a brief quote with no provenance entry, and an exception
-    row with no brief passage.
-12. Per-task outcomes: R6's voice passages name Microsoft and no longer say "slightly academic";
-    W2's section sits above the five rules and the definition carries no digest; W3's editors-arm
-    families are scoped as stated; W5's line is present; the three exemplar captures are in the
-    corpus; the reference-arm ROADMAP entry carries its measured count.
-13. The dotfiles gate (`scripts/check.sh`) and `claude-tooling-sync verify` pass.
-
-## Pass shape
-
-- **Class:** mixed. R2a, R2b, R3, and R7 are `engine-logic` (fixture-first), gated at
-  `--pin scripts` plus the harness. W1 is `engine-logic`, gated by the dotfiles
-  `scripts/check.sh`. R1, R1b, R5, R6, and W2 to W5 are `docs`. R1's review is criterion 8, at
-  the join. R6 and W2 to W5 are agent-facing and take `diff-reviewer` against their stated
-  outcomes, not the register chain. R5 follows "Edits after the chain".
-- **Size:** about fourteen tasks: chain R (R1, R2a, R2b, R3, R7, R6), chain W (W1 to W5), the
-  exemplar captures, and the join (R5, criterion 7, R1b, criterion 8). `pass-execute-chains`.
-- **Order within chain R:** R1 first (R2's rules, R7, and R5's page cite it); R2a before R2b, R3,
-  and R7 (the harness and the promoted list).
-- **Branch:** off `main` (ruling 9). This branch is already rebased onto `feca3348`.
-- **Close:** a `docs` close for the prose tasks; the fixture suite and gate for the tooling tasks.
+1. The register's two drafting briefs are each under 1,000 words (specimens and exemplar list
+   excluded), carry no `q:` or `x:` marker, and link their base guide. The register holds one
+   "Deviations from the base guides" section with the seed rows and a plain sources list.
+2. The re-run disposition list against `feca3348` lists every ratified rule as kept, reworded, or
+   changed by ruling N, with none dropped; the `#names` anchor and every quotation are
+   byte-identical.
+3. `Cairn.Headings` and `Cairn.ProseProcedure` sit at `warning`, their pass and fail examples
+   pass under `vale-rule-examples.mjs`, and each rule's tree-wide count is recorded in a `WATCH`
+   comment beside it.
+4. `markdownlint-cli2` runs in the docs gate with a stock config, and each disabled rule carries
+   its count.
+5. The unscoped docs gate exits 0 on the tree.
+6. `docs-page-chain.js` carries no extraction, validator, or coercion code, and its track test
+   passes; the dotfiles `scripts/check.sh` and `claude-tooling-sync verify` pass.
+7. `choose-an-ai-posture.md` raises no alert from either new rule, passes `check:provenance` with
+   its brief, and shows every sentence outside the restructured ranges byte-identical to
+   `8bbe78f5`; Geoff reads the diff once.
+8. The J2 draft passes the docs gate on its branch and draws no blocking register-editor finding;
+   Geoff reads it beside the current page.
+9. The register review draws no blocking finding after one fold.
+10. W7 returns no open mismatch, and the retired-phrase scanner passes.
 
 ## Out of scope
 
 - Fixing existing pages beyond R5; each frozen arm is swept at its own stage.
-- Rebuilding the two extend exemplars.
+- Merging the J2 draft.
+- Promoting any rule to `error`.
 - An admin UI string sweep.
-- Gating explanatory sentence length on any arm (S14).
-- A separate guide-conformance agent; the lens rides inside the register editor's read (audit 4b).
-- An in-chain exemplar pre-check; the plan-time step covers it until in-repo exemplars exist.
-- Promoting the reference arm and root README; R2a files the trigger.
-
-## Open for the plan
-
-- The exact brief wording, quoted from the live guide pages, and the markers R7 keys on.
-- Which of the page-inputs agent and the conductor extracts the brief (W1).
-- Whether PostToolUse hooks fire inside workflow subagents, which decides whether `vale-hook`
-  warnings reach the drafter at all.
-- `Cairn.HeadingIng`'s exception list (reference-arm symbol headings, fixed phrases, if any
-  survive).
-- Whether `docs/extend/debug-your-site.md:36` (a `Google.Headings` false positive vocab cannot
-  clear) needs a Cairn copy of the rule when that page is promoted.
-
-## Risks
-
-- **`Cairn.ProseProcedure` noise.** A heuristic on imperative runs will misfire; warning level, a
-  recorded baseline, and a measured promotion contain it, and the guide lens carries the judgment.
-- **Workstation reach.** W4 changes voice docs every repo loads. The changes add a list rule,
-  qualify two routing lines, and replace exemplars; they remove nothing another repo relies on.
+- Gating explanatory sentence length (S14).
+- Promoting the reference arm and root README.

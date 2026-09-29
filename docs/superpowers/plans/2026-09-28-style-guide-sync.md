@@ -275,3 +275,13 @@ implementer dispatch per repo; new phrases join W6's list. Acceptance: criterion
    `CHANGELOG.md` untouched.
 5. PR opened; its CI run is R2p's proof. Merge on green.
 6. Score both budgets: tokens against 6M, attended time as planning misses and sittings.
+
+## Ledger
+
+- **Pre-flight (2026-09-28):** P0 clean; P1 R2p accepted (`5d82b505`); P2 40+ citations verified.
+- **Segment A** (`wf_9903c415-ce7`, 23 agents, 1.15M tokens): all six tasks accepted. R9 `63db0ca7`,
+  R1t `9b32104a`, R2 `2c444b0e` (one fix round); W1r `fcfd54a` + `446e067`, W2r `18018af`,
+  W3r `1a52582` (dotfiles branch). Measured: `Cairn.Headings` 49, `Cairn.ProseProcedure` 31.
+  Carry: W1r renamed the chain arg `registerPaths` to `registerPath` (old name silently ignored);
+  W1r's track headings are pre-R1t copies (boundary grep); ProseProcedure's verb list grows with
+  arm stages. Implementers ran on `claude-sonnet-5-5`, their first pass.

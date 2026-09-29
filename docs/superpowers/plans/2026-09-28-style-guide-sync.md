@@ -305,3 +305,39 @@ implementer dispatch per repo; new phrases join W6's list. Acceptance: criterion
   precondition list) and a pre-existing citation gap on the invite bullet (`f:qgtfu6`).
 - **J2:** proof worktree `.claude/worktrees/style-guide-proof` at `787c56f3`; `docs-page-chain`
   run `wf_2bfd79f2-efa` on `docs/extend/enable-tidy.md`.
+- **J2:** chain `wf_2bfd79f2-efa` ended `escalate` after round 2: gate pass, fact read accept (92
+  claims, 24 ids), register editor one blocking finding (a 26-word refusal-list item; it recommends a
+  table). Criterion 7 treats the editor's findings as reported, so J2 meets its acceptance. Draft
+  `17e6cd4a` on `style-guide-proof` (not for merge); its ten new Tidy facts `b5ce3f60` cherry-picked
+  here as `04dfc824` (`check:facts` OK).
+- **J5:** the W7 read found 12 mismatches (8 dotfiles, 4 cairn), no retired phrase live. J5a
+  `47f5c81d` (cairn routing, CONTRIBUTING, README, public design system, the editor catalogue's tell
+  families moved into the briefs) took two fix rounds: `bf8a464f` (two missing developer tells; the
+  editor brief's Microsoft "just/simply/obviously" claim narrowed to the one entry that exists) and
+  `a15e1802` (the Google word-list claim corrected: Google prescribes "just" for "simpler than",
+  so the tell now keeps that use; "micro-instructed action" scoped to prose outside steps). The
+  conductor accepted `a15e1802` without a third review: its quoted page text matches the prior
+  reviewer's independent fetch verbatim. J5b `6e82a36` + `4761b14` accepted; dotfiles merge
+  `53c5b09` (rollback `git -C ~/.dotfiles revert -m 1 53c5b09`), verify passes.
+- **Spend:** execution about 3.1M subagent tokens (runner workflows 2.24M plus single dispatches)
+  against the 6M ceiling; conductor tokens not counted.
+
+### For Geoff's sitting
+
+1. **J1, the R5 diff** (ruling 7): `git diff 8bbe78f5 851430f2 -- docs/extend/choose-an-ai-posture.md`.
+   Voice read: held. Open taste calls: the three "follow these steps" lead-ins, the "served file"
+   echo in Verify, one `Google.Passive` at the UNCHECKED detail, and whether a one-item precondition
+   list beats a sentence.
+2. **J2, the proof draft** of `docs/extend/enable-tidy.md` on `style-guide-proof` beside the current
+   page on `main`. Unresolved from the chain: the refusal list as a table (blocking), the
+   `timeFormat` values (need a fact), the structural-check section's placement, the spellcheck
+   paragraph, "roughly 24,000" for an exact cap.
+3. **One ruling:** announcement scaffolding stays out of the editor brief (Microsoft's topic intros
+   state what an article covers, so the tell would need a deviation row). Confirm, or add the row.
+4. **Observation, outside this pass:** the engine's default Tidy model is `claude-sonnet-5`
+   (`f:fmv6m8`); Sonnet 5.5 is out.
+
+After the sitting: the close (code-simplifier, full gate, ROADMAP's three Planned items, STATUS and
+HISTORY, merge `main` into this branch, PR, the leanness record's two errata, the fold-rule
+trial's fourth measure). Close notes: `prose-voice-reviewer`'s description says "the workstation
+tell catalogue"; the register editor keeps two heading-rule copies that agree with the briefs.

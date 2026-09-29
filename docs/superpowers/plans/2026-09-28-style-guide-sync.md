@@ -321,6 +321,17 @@ implementer dispatch per repo; new phrases join W6's list. Acceptance: criterion
   `53c5b09` (rollback `git -C ~/.dotfiles revert -m 1 53c5b09`), verify passes.
 - **Spend:** execution about 3.1M subagent tokens (runner workflows 2.24M plus single dispatches)
   against the 6M ceiling; conductor tokens not counted.
+- **Sitting (Geoff, 2026-09-29; ruling 21, `01d30285`):** J1 accepted with all four taste calls.
+  J7 `26827b59` (accepted by `diff-reviewer`, `check:docs-gate` green on the final tree) folded
+  them, cut the intensifier "own" (register 40 uses to 5, exemplar 5 to 3), added a "No
+  intensifier 'own'" tell to both briefs, and removed the announcement-scaffolding tell, which
+  also left the output style (dotfiles `7c998b4`, merged `d97d9d0`). J2 dropped: the draft carried
+  the old page's framing; `style-guide-proof` and its worktree are deleted, the ten Tidy facts
+  (`04dfc824`) stay. The draft-docs approach spec is amended to harvest, then delete, then draft
+  (`742fc54f`), with no input guard.
+- **Close:** `code-simplifier` `823b3bec` (cairn) and `cbd736a` (dotfiles, merged `32a30a7`); merge
+  of `main` `c84a7d40`; `npm test && npm run check:close` exit 0 after `npm ci` in
+  `examples/showcase`.
 
 ### For Geoff's sitting
 
@@ -341,3 +352,59 @@ After the sitting: the close (code-simplifier, full gate, ROADMAP's three Planne
 HISTORY, merge `main` into this branch, PR, the leanness record's two errata, the fold-rule
 trial's fourth measure). Close notes: `prose-voice-reviewer`'s description says "the workstation
 tell catalogue"; the register editor keeps two heading-rule copies that agree with the briefs.
+
+## Post-mortem
+
+**What worked.**
+
+- The re-scope under ruling 15 held. It cut the first plan's invented machinery (quote markers,
+  the provenance table, section extraction, finding coercion, a custom rule-test runner, a
+  markdownlint ratchet) and kept every ratified voice rule. J1's register-editor read found the
+  voice held on the one page rewritten under the trimmed briefs.
+- Two parallel chains through `pass-execute-chains` accepted all six segment A tasks, five of them
+  first time, and ran segment B with one escalation.
+- The fresh W7 reader (J5) was worth its cost. Its 12 routing mismatches (8 dotfiles, 4 cairn)
+  were file-level reads a phrase grep could not make, and the re-scope fold had refused the grep
+  in its favour.
+- The owner sitting settled every open call at once: J1 and its four taste calls, J2, the
+  filler word, and the harvest ruling.
+- Implementers ran on `claude-sonnet-5-5` for the first time. Fix rounds: R2 one, J5a two, and W4
+  escalated once (cleared by the one-line W4f).
+
+**What went wrong.**
+
+- J2 passed the old `enable-tidy.md` to the drafter for its claims, as the approach spec allowed,
+  and the draft carried the old page's framing. No reviewer in the chain flagged it; Geoff's read
+  caught it. The fix is structural (harvest, then delete, then draft), not a guard.
+- The conductor's re-scope spec said Vale 3.23.0 has no `vale test`. The fold's verification ran
+  `vale test --help` and restored it. Checking a tool's own help before writing a claim about it
+  would have saved a review finding.
+- J5a's register edits made two unsourced claims about the base guides (Microsoft's
+  "just/simply/obviously" and Google's word-list "just"), each caught by review and corrected
+  against the live page. A tell that cites a guide now quotes it.
+- W4 shipped with a retired phrase still live and its evals re-run skipped; the conductor ruled
+  the deltas instead of re-running. W1r silently renamed a chain arg (`registerPaths` to
+  `registerPath`), and its track headings were pre-R1t copies that only the boundary grep checked.
+- A fresh worktree's `check:consumers` fails until `npm ci` runs in `examples/showcase`; the
+  close lost a gate run to it.
+- The first plan's pre-pause spend (the first design's review folds, R1, R2p, W1 to W3) was never
+  measured, so the pass's whole cost is unknown.
+
+**Measures.**
+
+- Tokens: about 3.4M execution subagent tokens against the 6M ceiling (57%), plus about 1.2M for
+  the re-scope's four review lenses, fold, verification, and two research agents. Conductor tokens
+  not counted.
+- Attended time: one opening sitting (three forks), mid-run approvals, and one owner sitting.
+  Planning misses: 2 (J2's input choice; the false `vale test` claim).
+- Fold-rule trial, review 1 of 3, fourth measure: the fold refused three findings (L-M6, the W7
+  read replaced by a grep; L-m5, a lower ceiling; L-m1, DC-28 and AW-24 moved out of W4). None
+  proved a real defect in execution. The W7 refusal was vindicated, and the lower ceiling would
+  not have bound at 3.4M.
+- Warning rules at landing: `Cairn.Headings` 49, `Cairn.ProseProcedure` 31 (30 at the close).
+  Intensifier "own": register 40 to 5, exemplar 5 to 3, about 600 left across the old arms.
+
+**Carried, not done here.** `prose-voice-reviewer`'s description (dotfiles) still names "the
+workstation tell catalogue", which no longer exists as one document since `4761b14` split tell
+ownership between the output style and the repo briefs. The register editor's definition keeps
+two heading-rule copies; both agree with the briefs today.

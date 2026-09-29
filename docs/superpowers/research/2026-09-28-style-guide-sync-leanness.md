@@ -82,3 +82,25 @@ page, carrying both roles: anatomy (choose, set, pass, verify, resolve) and voic
 only its concept paragraph (lines 23-26) as a specimen. The audit found both earlier in-repo
 exemplars break the base guide, so this page replaces them as the model the drafter imitates. The
 re-scope builds the developer drafter's 3 to 5 exemplars around it.
+
+## Errata (2026-09-29)
+
+Recorded at the pass close; the text above stands as written. Source for each: the re-scope fold
+record (`2026-09-28-style-guide-sync-rescope-fold.md`, "Errata owed") and the plan's ledger.
+
+1. **Verdict table, the Headings and ProseProcedure rows.** "77 measured hits" and "52 measured
+   hits" were the audit's uncalibrated heuristic estimates, not measurements. Under the rules as
+   merged (R2, `2c444b0e`), plain `vale` over the tree measured 49 and 31.
+2. **Verdict table, the markdownlint row.** "Stock config" did not ship in this pass. The fold
+   deferred markdownlint (conductor decision 3); `ROADMAP.md` carries its adoption at the first
+   rebuilt arm.
+3. **Verdict table, the Headings row.** The merged rule fires on a leading -ing word or a trailing
+   `?` only. The wh-teaser check was dropped (conductor decision 2); the register editor judges
+   wh-teasers.
+4. **The constraint paragraph (ruling 16).** It says what shrinks is prose "Vale's stock packages
+   already enforce". The trim went further: verbatim quotations of base-guide rules that Vale does
+   not enforce also left the briefs. Each such rule survives as a linked line in its brief's
+   structure checklist, so no rule was lost, but the stated boundary understated the cut.
+5. **Research findings, "Vale 3.x ships `vale test` for this".** The claim was right. The
+   conductor's contrary correction in the re-scoped spec was wrong; the fold removed it after
+   `vale test --help` ran on 3.23.0. `vale --help` omits it from its command list.

@@ -1223,8 +1223,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `YYYY-MM-DD HH:MM UTC` string (never the visitor's locale), specifically because the same
   formatter must run identically during SSR and hydration to avoid a hydration mismatch when the
   Worker's runtime zone differs from the browser's. Source:
-  `src/lib/public/PreviewBanner.svelte:42-46` (`defaultFormatExpiry`), `:52-58` (doc comment:
-  hydration-mismatch rationale), `:68` (`<time datetime={preview.expiresAt}>`). [verified]
+  `src/lib/public/PreviewBanner.svelte:45-49` (`defaultFormatExpiry`), `:55-61` (doc comment:
+  hydration-mismatch rationale), `:71` (`<time datetime={preview.expiresAt}>`). [verified]
 
 - `f:vvag2y` `@glw907/cairn-cms/public` (`./public`) is the barrel for built-in public components that render styled
   markup, and it carries `PreviewBanner` only. The membership rule: such a component lives here and

@@ -19,7 +19,7 @@ describe('buildPreviewDoc', () => {
 
   it('places the pre-site reset before the stylesheet links so the site CSS wins', () => {
     const doc = buildPreviewDoc('<p>hi</p>', preview);
-    const reset = doc.indexOf('<style>body{margin:0;background:#fff}</style>');
+    const reset = doc.indexOf('<style>body{margin:0;background:var(--color-base-100,#fff)}</style>');
     const link = doc.indexOf('<link rel="stylesheet"');
     expect(reset).toBeGreaterThan(-1);
     expect(link).toBeGreaterThan(reset);

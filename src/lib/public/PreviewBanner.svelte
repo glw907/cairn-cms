@@ -19,21 +19,24 @@ there is nothing for a live region to announce, and `role="status"`'s implicit
 notice discoverable through landmark navigation, the honest fit for a static, supplementary piece
 of page status.
 
-Ships with a small scoped default, legible in both colour schemes via `prefers-color-scheme`, with
-no DaisyUI or Tailwind class dependency (a consuming site may have neither) and no bundled font
-choice to fight. Every visual value reads a CSS custom property with a fallback
-(`var(--cairn-preview-bg, <default>)` and friends); it never declares one on the scoped element, since
-Svelte's scoping class would raise a declared property's own specificity past a plain `:root` rule,
-making a site's override silently lose. Reading the property instead lets a site set
-`--cairn-preview-bg` and friends on `:root` or any ancestor and win, no `:global` or specificity fight
-required.
+Ships with a small scoped default that reads the site's theme tokens: daisyUI's role colors
+(`--color-base-100`, `--color-base-200`, `--color-base-content`, `--color-warning`,
+`--color-info`) and the `--cairn-warning-ink` and `--cairn-info-ink` roles `cairn-public.css`
+defines. The draft state paints the `base-200` surface under a `warning` border and the ended state
+paints `base-100` under an `info` border, so the two stay distinct in every scheme the site's theme
+supports, with no `prefers-color-scheme` block of its own. It uses no DaisyUI component class and no
+Tailwind class (a consuming site may have neither) and no bundled font choice to fight. Every
+visual value reads a CSS custom property with a token fallback
+(`var(--cairn-preview-bg, var(--color-base-200))` and friends); it never declares one on the scoped
+element, since Svelte's scoping class would raise a declared property's own specificity past a
+plain `:root` rule, making a site's override silently lose. Reading the property instead lets a site
+set `--cairn-preview-bg` and friends on `:root` or any ancestor and win, no `:global` or specificity
+fight required.
 
-The four custom properties, `--cairn-preview-bg`, `--cairn-preview-fg`, `--cairn-preview-border`,
-and `--cairn-preview-link`, are the intended site-override seam, not an implementation detail: the
-built-in default only flips palette by `prefers-color-scheme`, the OS-level signal, so a site that
-themes by its own toggle (a `data-theme` attribute, a class) declares all four in its own light
-root and in both its `prefers-color-scheme: dark` and its own dark selector, so the banner always
-follows the toggle instead of the OS preference. A worked `data-theme` example lives in
+The five custom properties, `--cairn-preview-bg`, `--cairn-preview-fg`, `--cairn-preview-border`,
+`--cairn-preview-link`, and `--cairn-preview-radius`, are the intended site-override seam, not an
+implementation detail. A site that sets a color property applies it to both states, since each
+property replaces the default for the whole banner. A worked `data-theme` example lives in
 docs/extend/share-a-draft-preview.md ("Override the banner's palette").
 -->
 <script lang="ts">
@@ -77,32 +80,26 @@ docs/extend/share-a-draft-preview.md ("Override the banner's palette").
 </aside>
 
 <style>
-  /* Every colour below is a literal fallback inside a var(), not a palette token, and the
-     `token-colors` suppressions that follow all rest on this one reason: PreviewBanner is the only
-     component in this barrel that renders on a PUBLIC page, where a site may load neither
-     cairn-admin.css nor Tailwind, so a token reference would resolve to nothing and ship an
-     unstyled notice. Each literal is a fallback for a custom property a site overrides from its own
-     stylesheet (`:root`, an ancestor, or the class below), never a declaration on this scoped
+  /* Every color is a token read: a daisyUI role, or a `cairn-public.css` role that carries a
+     daisyUI-variable fallback so the notice paints legibly on a site that has not yet imported
+     that sheet. Each `--cairn-preview-*` property is read here, never declared on this scoped
      element: Svelte's scoping class would raise a declared property's own specificity past a plain
      `:root` rule, making a site's override silently lose. */
 
-  /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
   .cairn-preview-banner {
     box-sizing: border-box;
     margin: 0 0 1rem;
     padding: 0.75rem 1rem;
-    border: 1px solid var(--cairn-preview-border, #e6cf8a);
+    border: 1px solid var(--cairn-preview-border, var(--color-warning));
     border-radius: var(--cairn-preview-radius, var(--radius-box, 0.5rem));
-    background: var(--cairn-preview-bg, #fff6dd);
-    color: var(--cairn-preview-fg, #3a2f12);
+    background: var(--cairn-preview-bg, var(--color-base-200));
+    color: var(--cairn-preview-fg, var(--color-base-content));
     font: 0.9375rem/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
 
-  /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
   .cairn-preview-banner[data-state='published'] {
-    border-color: var(--cairn-preview-border, #cdd3d9);
-    background: var(--cairn-preview-bg, #eef0f2);
-    color: var(--cairn-preview-fg, #2c333a);
+    border-color: var(--cairn-preview-border, var(--color-info));
+    background: var(--cairn-preview-bg, var(--color-base-100));
   }
 
   .cairn-preview-banner p {
@@ -110,42 +107,14 @@ docs/extend/share-a-draft-preview.md ("Override the banner's palette").
   }
 
   /* Underlined, not colour alone (WCAG 1.4.1): Tailwind Preflight strips the UA underline on a
-     consuming site, which would otherwise leave the link distinguished only by its `--cairn-preview-link`
-     colour against the surrounding text. */
-  /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
+     consuming site, which would otherwise leave the link distinguished only by its
+     `--cairn-preview-link` colour against the surrounding text. */
   .cairn-preview-banner a {
-    color: var(--cairn-preview-link, #7a4f00);
+    color: var(--cairn-preview-link, var(--cairn-warning-ink, var(--color-base-content)));
     text-decoration: underline;
   }
 
-  /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
   .cairn-preview-banner[data-state='published'] a {
-    color: var(--cairn-preview-link, #1f4fd8);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
-    .cairn-preview-banner {
-      border-color: var(--cairn-preview-border, #6b5420);
-      background: var(--cairn-preview-bg, #3a2f12);
-      color: var(--cairn-preview-fg, #f5e7bc);
-    }
-
-    /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
-    .cairn-preview-banner[data-state='published'] {
-      border-color: var(--cairn-preview-border, #444b52);
-      background: var(--cairn-preview-bg, #23262a);
-      color: var(--cairn-preview-fg, #dfe3e7);
-    }
-
-    /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
-    .cairn-preview-banner a {
-      color: var(--cairn-preview-link, #ffd066);
-    }
-
-    /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
-    .cairn-preview-banner[data-state='published'] a {
-      color: var(--cairn-preview-link, #8fb4ff);
-    }
+    color: var(--cairn-preview-link, var(--cairn-info-ink, var(--color-base-content)));
   }
 </style>

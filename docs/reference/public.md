@@ -42,12 +42,14 @@ formatter runs during SSR and hydration, so a Worker whose runtime locale or tim
 the browser's own cannot render two different strings and cause a hydration mismatch. Pass the
 optional `formatExpiry` prop to render the expiry in a site's own fixed date vocabulary instead.
 
-The four custom properties the component's default palette reads
-(`--cairn-preview-bg`/`-fg`/`-border`/`-link`) are the site-override seam: they fall back to
-literal light- and dark-mode colors switched only by `prefers-color-scheme`, the OS-level signal.
-A site that themes by its own toggle (a `data-theme` attribute, a class) declares all four in its
-own light root and in both its `prefers-color-scheme: dark` and its own dark selector, so the
-banner follows the toggle rather than the OS preference; see [Override the banner's
+The default palette reads your site's theme tokens: the daisyUI roles `--color-base-100`,
+`--color-base-200`, `--color-base-content`, `--color-warning`, and `--color-info`, plus the
+`--cairn-warning-ink` and `--cairn-info-ink` roles from `cairn-public.css`.
+The draft state sits on the `base-200` surface with a `warning` border, and the ended state sits on
+`base-100` with an `info` border, so the banner follows whatever theme the page carries in every
+color scheme. The five custom properties
+`--cairn-preview-bg`, `-fg`, `-border`, `-link`, and `-radius` are the site-override seam: each one
+you declare replaces the token default in both states. See [Override the banner's
 palette](../extend/share-a-draft-preview.md#override-the-banners-palette) for a worked example.
 
 ```svelte

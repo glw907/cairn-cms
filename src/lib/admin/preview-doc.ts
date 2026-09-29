@@ -96,13 +96,13 @@ export function buildPreviewDoc(html: string, preview: ResolvedPreview | null): 
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     '<base target="_blank">',
-    // WATCH: this #fff was a ratified entry in the pre-graduation invisible-craft budget
-    // ("pure-white fallback ground for the preview iframe body"). cairn-audit's CSS-family
-    // rules scan component <style> blocks and named .css files only, never a style string
-    // embedded in a .ts file, so the exception did not migrate to a directive: it stopped
-    // being seen at all. Closing it needs a substrate extension, and until then any embedded
-    // style in a .ts file is unaudited. Recorded 2026-07-28.
-    '<style>body{margin:0;background:#fff}</style>',
+    // The reset paints the site's own paper: `--color-base-100` resolves once the site's stylesheet
+    // links below load, and the `#fff` fallback covers a site whose stylesheet does not define it
+    // (or a styleless preview). The frame's `<html>` carries no `data-theme`, so only the OS color
+    // scheme reaches it. cairn-audit scans component <style> blocks and named .css files only, so
+    // this embedded style string is guarded by preview-doc.test.ts and the preview-tokens e2e
+    // instead.
+    '<style>body{margin:0;background:var(--color-base-100,#fff)}</style>',
     FRAGMENT_BOUNDARY_STYLE,
     links,
     '</head>',

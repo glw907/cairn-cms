@@ -199,7 +199,9 @@ Gate strings never contain a single quote. Every string that launches a browser 
 lane (no `CAIRN_GATE_LANE` prefix); a check that launches none runs light.
 - **The engine string**, which `gate-tier.mjs --pin engine` prints after pass A's task 0 (task 0
   here confirms it; a different string replaces it and is recorded):
-  `npm run check:docs && npm run check:vale && npm run check:reference && npm run check:reference:signatures && npm run check:facts && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism`.
+  `npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site`
+  (task 0 amendment, 2026-09-29: the classifier prints this string at `43e6bff7`; the plan-time string
+  was the docs legs joined one by one, which `check:docs-gate` now runs).
 - **The reduced string** (`args.reducedGate`), run by a fix round whose blocking findings are all
   comment-only or test-only, each leg dropped when it has no file:
   `npm run check && npx vitest run --project unit <touched unit test files> && npm run test:component -- --no-file-parallelism <touched component test files> && E2E_PORT=4392 npm --prefix examples/showcase run test:e2e -- <touched e2e specs>`.
@@ -639,7 +641,7 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
    - The registries: 17 static and 17 rendered rules at plan time, plus pass B's `radius-scale`;
      `run.test.ts`'s rule-count assertion; the tier map in `skills/cairn-admin-screens/SKILL.md`.
    - `sheet.ts`'s comment fusion reproduces: `parseSheet` over the showcase's `theme.css`,
-     `tokens.css`, and `prose.css` and the admin sheet yields 23, 7, 3, and 5 declarations whose
+     `tokens.css`, and `prose.css` and the admin sheet yields 22, 7, 3, and 8 declarations (task 0 amendment; plan time 23, 7, 3, 5) whose
      property carries a comment (plan time).
    - The walkthrough's lines: `resolveTheme` at `examples/showcase/src/chassis/theme-toggle.ts:23-29`
      falls back to `matchMedia`; `app.html:12`'s regex names `cairn-dark|cairn` and cookie
@@ -649,8 +651,8 @@ takes no tier gate. Item 7's baseline runs in a gate agent.
      `EntryRow.svelte:71`, and `prose.css:154`; the three shape exceptions at `prose.css:302` (the
      diamond marker, `1px`), `prose.css:639` (the video facade, `999px`), and
      `(site)/+page.svelte:274,288` (`--tag-filter-radius: 999px` declared in the route's scoped
-     style); the styleguide's hand-written kit in `styleguide/+page.server.ts` and the "auto-themes
-     with your system light or dark setting" sentence at `styleguide/+page.svelte:156`; the heading
+     style); the styleguide's hand-written kit in `(site)/styleguide/+page.server.ts` and the "auto-themes
+     with your system light or dark setting" sentence at `(site)/styleguide/+page.svelte:156`; the heading
      readers (`font-weight: 600` at `prose.css:79,102,115`, `font-semibold` at
      `SiteHeader.svelte:101`, `SiteFooter.svelte:59`, and `(site)/+page.svelte:49`, and the scoped
      `600`s in the home, archive, `EntryRow`, and styleguide routes).
@@ -707,7 +709,7 @@ reasoned suppression and a `ROADMAP.md` line. None is left red.
   that parses the showcase's `theme.css` and `tokens.css` and asserts no property contains `/*` and
   every daisyUI key in each `@plugin "daisyui/theme"` block reads back by its exact name. The case
   fails with the fix reverted (mutation ledger).
-- The report lists, per file, the fused-declaration count before and after (plan time 23, 7, 3, 5)
+- The report lists, per file, the fused-declaration count before and after (22, 7, 3, 8 at task 0; plan time 23, 7, 3, 5)
   and every finding the fix surfaced with its disposition.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line (missing or red is
   blocking): the idioms check, the comments check, the audit wrappers, and the showcase set.
@@ -845,7 +847,9 @@ changes.
 - **`PreviewBanner`** reads contract tokens (daisyUI roles, `cairn-public.css` roles) and drops its
   literal palettes and its `prefers-color-scheme` blocks. Its five `--cairn-preview-*` properties
   stay as named overrides whose fallbacks are tokens, so a site's existing override still wins. Its
-  rules stay in its scoped `<style>` block (decision 11). It uses no daisyUI component class and
+  rules stay in its scoped `<style>` block (decision 11). Its `@component` doc says "four custom
+  properties" at task 0 (`PreviewBanner.svelte:31-32`) and omits `--cairn-preview-radius`; the doc
+  names all five. It uses no daisyUI component class and
   no color literal anywhere, fallbacks included (task 7's public scope scans it). Each
   `cairn-public.css` role it reads carries a daisyUI-variable fallback, so a site that bumps the
   range before adding the import still paints both states legibly. The draft and published states
@@ -962,7 +966,8 @@ unit test that proves a throwaway registry entry reaches the styleguide, and `te
   tag pill reads `var(--tag-filter-radius, 999px)`, and the route's scoped declaration of
   `--tag-filter-radius` goes, so a theme's root value reaches it.
 - **The comment scrub.** Each `docs/internal/` path and "Verdict" citation in the emitted sources
-  becomes a one-line reason or a public docs link.
+  becomes a one-line reason or a public docs link. At task 0 four remain in the source: the showcase
+  `theme/site.css:18` and `:34`, `theme/theme.css:398` (`Verdict 7`), and `chassis/prose.css:40`.
 - **The gate.** `check:template` fails on an emitted file under `src/` or a root config file that
   contains `docs/internal/` or `Verdict` followed by a number (decision 12), and on an emitted
   `cairn-audit.config.json` holding any path that starts with `..` (decision 27).

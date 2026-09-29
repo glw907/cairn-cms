@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ROOT_DOCS = ['README.md', 'SECURITY.md', 'ROADMAP.md', 'CHANGELOG.md', 'CONTRIBUTING.md'];
+// Captured third-party pages keep their original links, so the link gate skips them.
+const EXEMPLARS_DIR = join('docs', 'internal', 'exemplars');
 
 // Recursively collect `.md` files under a directory, skipping a name list.
 /**
@@ -46,7 +48,9 @@ function walkIfPresent(root, dirName) {
 // Every Markdown file in scope, as repo-relative paths, sorted.
 /** @param {string} root */
 export function filesInScope(root = ROOT) {
-  const docs = walkMarkdown(join(root, 'docs'), new Set(['superpowers']), []);
+  const docs = walkMarkdown(join(root, 'docs'), new Set(['superpowers']), []).filter(
+    (p) => !relative(root, p).startsWith(EXEMPLARS_DIR + '/'),
+  );
   const rootDocs = ROOT_DOCS.map((p) => join(root, p)).filter(existsSync);
   const skills = walkIfPresent(root, 'skills');
   const claude = walkIfPresent(root, 'claude');

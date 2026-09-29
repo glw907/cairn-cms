@@ -18,6 +18,7 @@ describe('buildSteps', () => {
   const LABELS = [
     'check:docs',
     'check:vale',
+    'check:vale-rules',
     'check:facts',
     'check:provenance',
     'check:symbols',
@@ -55,6 +56,23 @@ describe('buildSteps', () => {
     expect(vale?.args).toEqual(['--minAlertLevel=error', 'docs/extend/README.md']);
   });
 
+  it('runs the Cairn rules\' vale test cases over both test files under the fixture config in tree mode', () => {
+    const steps = buildSteps({ page: null, brief: null });
+    const rules = steps.find((step) => step.label === 'check:vale-rules');
+    expect(rules?.command).toBe('vale');
+    expect(rules?.args).toEqual([
+      '--config=.vale/tests/vale.ini',
+      'test',
+      '.vale/styles/Cairn/Headings.test.yml',
+      '.vale/styles/Cairn/ProseProcedure.test.yml',
+    ]);
+  });
+
+  it('leaves the rule test cases out of a page-scoped run', () => {
+    const steps = buildSteps({ page: 'docs/extend/README.md', brief: null });
+    expect(steps.map((step) => step.label)).not.toContain('check:vale-rules');
+  });
+
   it('runs check:provenance with no brief argument (whole-tree mode) when no --brief is given', () => {
     const steps = buildSteps({ page: null, brief: null });
     const provenance = steps.find((step) => step.label === 'check:provenance');
@@ -74,7 +92,7 @@ describe('buildSteps', () => {
     const scoped = buildSteps({ page: 'docs/extend/README.md', brief: 'docs/internal/briefs/extend/README.json' });
     const unscoped = buildSteps({ page: null, brief: null });
     for (const label of LABELS) {
-      if (label === 'check:vale' || label === 'check:provenance') continue;
+      if (label === 'check:vale' || label === 'check:vale-rules' || label === 'check:provenance') continue;
       const scopedStep = scoped.find((step) => step.label === label);
       const unscopedStep = unscoped.find((step) => step.label === label);
       expect(scopedStep).toEqual(unscopedStep);

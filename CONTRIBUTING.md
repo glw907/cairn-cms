@@ -109,7 +109,10 @@ which invariant broke, not that the gate is wrong:
   [Microsoft Writing Style Guide](https://learn.microsoft.com/style-guide/welcome/) instead,
   because its reader is a non-technical writer. All four directories ship inside the npm
   package, so a docs edit is a product change, and a public-API change is not done until its
-  reference page matches. `npm run check:reference` enforces the coverage.
+  reference page matches. `npm run check:reference` enforces the coverage. Each track is drafted
+  from its brief in `docs/internal/docs-register.md`, and the front door and `CHANGELOG.md` take
+  the developer brief. Admin UI strings follow the Voice section of
+  `docs/internal/admin-design-system.md`.
 - Commit subjects are imperative, in the
   [Conventional Commits](https://www.conventionalcommits.org/) shape:
   `fix(auth): reject expired tokens`.

@@ -1593,3 +1593,41 @@ about 0.25M; task 1 about 1.3M including its fix round; the segment A to B bound
 estimates from task notifications and `/cost`, not a token-by-token audit.
 
 **Next:** segment C (tasks 5 and 6, the shipped guidance and its exemplar, then the sync test).
+
+### Merge-forward and segment C: tasks 5 and 6 (2026-09-28, overnight session)
+
+**Merge-forward.** Pass A merged to `main` on its own (PR #92, `4d725057`) after its S4 regen,
+a density-toggle frame fix (`9b4b2c6c`), and a `main` merge. This branch took `origin/main`
+(`1056432d`) in `80ee205f`. The three docs conflicts (`ROADMAP.md`, the friction log,
+`pass-gate-tiers.md`) went to one Sonnet `cairn-implementer` under the protocol. Git's rename
+detection carried pass A's seven changed files into `src/lib/admin/`, `test ! -e
+src/lib/components` holds, and the five rename greps printed nothing new. The engine string and
+the theme-kit e2e were green. PR #95's CI was green on `80ee205f` in every job, with both visual
+specs comparing against pass A's regenerated baselines. That proves the rename carried pass A's
+corrections without moving paint. New base: `main` at `1056432d`.
+
+**Pre-flight** (Sonnet) found three stale claims, amended in `f83af5e7`: decision 18's fixture
+heading (`font-[550]`, not `font-bold`), the fixture's post-plan S3 edits and the two formatting
+artifacts the normalization must absorb, and decision 14's line drift.
+
+**Task 5: the shipped guidance and its exemplar.** Commit `1b5fcb8f`. Verdict: `accept`, no fix
+round. The three guidance files carry `RECIPE_MODEL` and the 15-row table in source order. The
+extension reviewer flags fixed radii and each retired patch. `daisyui-first.md`'s segmented-control
+section describes the ratified wash. `exemplar-kit.md` holds seven fences, all matching the fixture
+under decision 18's normalization. The custom-admin-home line is in all three files (the reviewer's
+copy goes beyond the task, and was disclosed and accepted). `cairn-admin-screens` SKILL.md went
+from 1774 to 2266 estimated tokens. The grep has seven hits, all prose flag-or-avoid mentions.
+- **Carried to task 7 (a factual slip):** `skills/cairn-admin-screens/SKILL.md:92` says
+  `cairn-audit` reads "the two roots" by default. `DEFAULT_STATIC_SCOPE`
+  (`src/lib/audit/config.ts:15`) has three.
+
+**Task 6: the sync test.** Commit `759a1003`. Verdict: `accept`, no fix round. The mutation proof
+was quoted, and the tree is clean after reverting. Non-blocking notes: the kit-topic check is a
+class regex that a rewording could trip, the model sentence must stay on one line, and the
+normalization does not fold attribute order (correct for a verbatim excerpt).
+
+**Spend.** Segment C workflow about 0.36M; merge-forward, pre-flight, and boundary about 0.3M.
+Running pass total: about 5.3M of the 19M ceiling (conductor estimate).
+
+**Next:** segment D. S1 (probe 1), then task 7 (the SKILL.md roots slip, plus any S1 gap), then
+task 8 (the close).

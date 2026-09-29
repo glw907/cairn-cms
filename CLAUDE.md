@@ -292,8 +292,8 @@ GitHub App and D1 `AUTH_DB` credentials:
 ## Authoring
 
 Claude's drafting on this repo follows the workstation authoring charter at
-`~/.claude/docs/authoring-charter.md`: every audience writes to a published external standard,
-with no house voice. Code comments follow TSDoc, enforced by ESLint (`eslint.config.js`, run by
+`~/.claude/docs/authoring-charter.md`: every audience writes to a published external standard as
+its base, with a recorded house voice overlay. Code comments follow TSDoc, enforced by ESLint (`eslint.config.js`, run by
 `npm run check:comments` over `src/lib` plus the showcase's `.ts`/`e2e`/`.svelte`):
 `eslint-plugin-tsdoc` validates syntax, `eslint-plugin-jsdoc` holds the doc-block shape and
 forbids `{type}` tags, `jsdoc/informative-docs` flags a comment that only restates the symbol
@@ -306,10 +306,10 @@ onto Google, overrides `docs/editors/**` to Microsoft for its plainer editor voi
 internal planning docs, since the Google standard governs published documentation, not
 write-once specs, plans, post-mortems, the rolling STATUS, or the friction log); the global
 `vale-hook` surfaces findings on save and skips `superpowers/`, where the em dash is allowed
-(Google's own recommendation, no surrounding spaces). On top of the Google floor, every published docs
-page follows the register standard at
-[`docs/internal/docs-register.md`](docs/internal/docs-register.md) (the arm registers, the
-front-door register, the no-pitch keystone); read it before writing or reviewing docs prose.
+(Google's own recommendation, no surrounding spaces). Every published docs page is drafted from the brief for its track in the register at
+[`docs/internal/docs-register.md`](docs/internal/docs-register.md), "Drafting brief: developer
+docs" (Google base) or "Drafting brief: editor docs" (Microsoft base); read it before writing or
+reviewing docs prose.
 Separate from `check:prose`, spellcheck, and tidy, which serve editors, not Claude.
 
 Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte

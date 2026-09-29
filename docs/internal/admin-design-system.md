@@ -53,8 +53,9 @@ Calibration (Geoff, 2026-07-15):
 - **The archetypal editor is the ASC volunteer**, the less technical writer. When a design choice
   trades their ease against a technical user's power, the volunteer wins; technical editors
   adapt, and the harder design problem is the one worth solving.
-- **Microcopy voice: professional, restrained, slightly academic.** Warmth stays material (color,
-  type, spacing); it does not become cute, chatty, or illustrated.
+- **Microcopy voice: professional and restrained, no cute, no chatty.** UI copy takes Microsoft's
+  UI-text voice as its base. Warmth stays material (color, type, spacing); it does not become
+  cute, chatty, or illustrated.
 - **A phone is a full writing device.** The edit experience must be genuinely good at phone
   widths, designed for the context rather than merely responsive, while accepting it cannot equal
   a desktop.
@@ -1233,14 +1234,16 @@ The copy is part of the brand, held to the same bar as the visuals. Editors read
 every screen, so a single AI-flavored line cheapens the whole admin. Treat every user-facing string as
 brand prose, not filler.
 
-The standard is the repo's `writing-voice` standard, applied to UI copy:
+The base is the Microsoft Writing Style Guide's UI-text voice, tightened to professional and
+restrained: no cute, no chatty. The repo's `writing-voice` tells apply on top:
 
-- Plain and friendly-but-professional. No marketing gloss.
+- Plain and professional. No marketing gloss.
 - One idea per sentence. Short sentences are good. A two-sentence hint beats one clause-stacked line.
 - No AI tells: no em dashes, no "not X, but Y" frame, no tacked-on closer ("No password to remember."),
   no reflexive three-item lists.
 - Name the concept, not a generic noun ("No posts yet", not "No entries").
-- Lean on the cairn/stacking metaphor where it fits naturally, never forced.
+- No figurative language. Say the plain thing (Google's developer style guide bans it; the
+  admin follows).
 
 This covers button labels, headings, empty states, hints, confirmations, and the standalone pages the
 engine serves outside the components (the guard's HTTPS-required page in `https-required-page.ts`).

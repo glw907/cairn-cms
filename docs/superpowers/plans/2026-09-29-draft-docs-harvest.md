@@ -4,133 +4,186 @@
 cut, then delete those pages with every inbound reference and gate repaired.
 
 **Spec:** `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` (the claim ledger, the
-audit, the verifier, the deletion, acceptance) and its parent,
+audit, the verifier, the deletion, timing, acceptance) and its parent,
 `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`, "Amendment: harvest, then
 delete". Executors read the harvest spec in full. Where this plan and the spec disagree, stop and
-report.
+report. Review record: `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md`.
 
-**Approach:** Build the ledger format and its verifier first, test-first. Audit one arm alone to
-measure the per-page rate, then run the other four batches as three parallel chains. Merge the
-chains, run the verifier over all 49 pages, and only then delete. Plans specify outcomes and
-acceptance, never implementation code.
+**Approach:** Build the ledger format and its verifier first, test-first, now. Hold everything
+else until the theme lineage (passes B and C) merges to `main`, then merge `main` in. Audit admin
+alone to measure the rate, then run the other four batches as three parallel chains while the
+gate narrowing runs beside them. Merge, run the verifier over all 49 pages, and only then delete.
+Plans specify outcomes and acceptance, never implementation code.
 
-**Pass class:** mixed. Task 1 is `engine-logic`. Tasks 2 to 6 are `docs`, with a gate the plan
-names (below) instead of the docs tier, since their diff is ledgers and facts bullets, not
-published prose. Task 8 is `engine-logic` for its `scripts/` and `src/tests/` changes and `tool`
-for its `tool/` changes, gated by the union. `code-simplifier` runs once at the close (task 9)
-over the pass's changed JavaScript, TypeScript, and Go.
+**Pass class:** mixed. Task 1 is `engine-logic`. Tasks 2 to 6 are `docs`, with the gate the plan
+names instead of the docs tier, since their diff is ledgers and facts bullets, not published
+prose. Task 8 is `engine-logic` for `scripts/` and `src/tests/` and `tool` for `tool/`, gated by
+the union. Task 9 is `engine-logic`. `code-simplifier` runs once at the close (task 10) over the
+pass's changed JavaScript, TypeScript, and Go.
 
 **Execution mode:**
+- Before task 1, the conductor runs `npm ci` in this worktree (root and `examples/showcase`), so
+  later gates prove this worktree's engine, never the main checkout's.
 - Task 1: one Agent-tool chain (`cairn-implementer` on `sonnet`, then `diff-reviewer` on
-  `claude-opus-5-5`), in this worktree.
+  `claude-opus-5-5`), in this worktree. It runs now.
+- **Hold.** Task 2 starts only after the theme lineage has merged to `main`. A dispatched Sonnet
+  agent merges `main` into this branch first (conflicts per task 7's rule); the conductor never
+  resolves a conflict.
 - Task 2: one Agent-tool chain, the same shape, in this worktree. It is the rate checkpoint.
 - Tasks 3 to 6: `pass-execute-chains` by name, three chains in three worktrees branched from task
-  2's commit, with `classifier: false`, `gateLane: "light"`, and each task's `gate` set as below.
-  Chain X is `draft-docs-harvest-x` (task 3, then task 4). Chain Y is `draft-docs-harvest-y`
-  (task 5). Chain Z is `draft-docs-harvest-z` (task 6). The conductor creates each worktree and
-  runs `npm ci` in it before launch. The chains are independent: X touches only `editors.md`,
-  `front-door.md`, and their ledgers; Y and Z touch disjoint page sections of `extend.md` and
-  their own ledgers.
-- Task 7: conductor-led merge and verification (below).
-- Task 8: one Agent-tool chain, upshifted to `model: opus` for the implementer, because the
-  gate narrowing is correctness-critical and the plan names outcomes, not the shape of each
-  narrowing.
-- Task 9: the close, authored by one fold agent with one independent `diff-reviewer` read.
+  2's commit, with `classifier: false`, `gateLane: "light"`, each task's `gate` as below, and the
+  required `args.gate`, `args.implementer`, and `args.planPath`. Chain X is
+  `draft-docs-harvest-x` (task 3, then task 4). Chain Y is `draft-docs-harvest-y` (task 5).
+  Chain Z is `draft-docs-harvest-z` (task 6). The chains' gates need no `node_modules`, so the
+  chain worktrees get no install. The chains are independent: each edits only its own pages'
+  facts sections and ledgers (task 6 also owns the sections named in its outcomes).
+- Task 8: independent of tasks 3 to 6 (it edits `scripts/`, `src/tests/`, `tool/`, and
+  `.github/`, never facts or ledgers). It runs in this worktree while the chains run, as one
+  Agent-tool chain with the implementer upshifted to `model: opus`, because gate narrowing is
+  correctness-critical and the plan names outcomes, not the shape of each narrowing.
+- Task 7: starts when the chains and task 8 are done. A dispatched Sonnet agent runs the merges.
+- Task 9: one Agent-tool chain, Sonnet implementer.
+- Task 10: the close, authored by one fold agent with one independent `diff-reviewer` read.
 
-**Token ceiling:** 7M, flag at 5.5M. Derivation: audit 3 to 4.5M (49 pages at 60 to 90k each),
-deletion about 1M, review and close about 1M. **Counting rule:** what `/cost` reports for the
-conductor session, as draft docs pass 0+1 recorded it; subagent and workflow tokens come from
-each dispatch's reported usage, summed in the ledger below.
+**Token ceiling:** 12M if Geoff rules yes on R1 below, flag at 9.6M; otherwise 7M, flag at 5.6M.
+Derivation (re-derived by the review fold from the enlarged task list):
 
-**Checkpoints:** after task 1 (STATUS written); after task 2 (the rate checkpoint: re-project
-tasks 3 to 6 from task 2's measured tokens per page, and if the projection puts the pass over
-the 7M ceiling, write STATUS and ask Geoff one question on ceiling before launching the chains);
-after task 7; after task 8. Segments: S1 is tasks 1 and 2, S2 is tasks 3 to 7, S3 is tasks 8
-and 9. Every boundary is a gate-green commit.
+| Share | Estimate |
+| --- | --- |
+| Task 1, the verifier (about 15 fixture cases) | 0.5M |
+| Tasks 2 to 6, the audit: 7770 page lines at 0.38 to 0.57k per line (pass 0+1's 60 to 90k per page over a 159-line mean), plus 15% for line spans, step 5, and the wider review sample | 3.4 to 5.1M |
+| Task 7, merges and the full verifier | 0.3M |
+| Task 8, gate narrowing (Opus implementer) | 1.0M |
+| Task 9, delete and relink (about 125 files) | 1.3M |
+| Task 10, the close with its reviewers | 1.0M |
+| Conductor | 0.3M |
+| **Total** | **about 7.8 to 9.5M** |
+
+**Counting rule:** what `/cost` reports for the conductor session, plus each Agent dispatch's
+usage block as the conductor reads it from the completion result (a subagent cannot report its
+own tokens), plus the `pass-execute-chains` run's `spent`. Tasks 3 to 6 take one ledger row, from
+`spent`.
+
+**Checkpoints:** after task 1 (STATUS written, then the hold); after task 2 (the rate
+checkpoint: re-project tasks 3 to 6 per page line from task 2's measured tokens, since extend
+averages about 188 lines a page against admin's 139, and if the projection breaks the ceiling,
+write STATUS and ask Geoff one question before launching the chains); after task 7; after
+task 9. Segments: S1 is task 1; S2 is task 2; S3 is tasks 3 to 6 and task 8, in parallel on
+disjoint files (the disjoint-Files-seam override of the three-to-four-task segment); S4 is tasks
+7, 9, and 10. Every boundary is a gate-green commit.
+
+## Rulings for Geoff
+
+**R1. Raise the pass's token ceiling from 7M to 12M?** The review enlarged the pass (coverage
+spans, facts re-sourcing, two deletion tasks, about four times the relink files first counted),
+and the re-derived plan is about 7.8 to 9.5M, above the approved 7M. **Recommendation: yes.**
+- **Yes** builds the plan as written: 9.5M sits at 80% of 12M, so the global 80% stop fires only
+  on an overrun, and the task 2 checkpoint still re-projects from measured cost.
+- **No** keeps 7M: the 80% stop (5.6M) fires inside the audit chains on a run that stays within
+  plan, so the pass stops at the task 2 checkpoint to ask again or splits, with the deletion
+  (tasks 8 and 9) moving to a follow-up pass.
 
 ## Global constraints
 
 - The deletion list is exactly 49 pages: every `.md` under `docs/admin/` (9), `docs/editors/` (8),
-  and `docs/extend/` (33) minus `docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`,
-  and `docs/extend/choose-an-ai-posture.md` (30), plus `docs/why-cairn.md` and `docs/README.md`.
-  The three kept extend pages are never audited, edited, or deleted by this pass.
+  and `docs/extend/` (33) minus the kept set, `docs/extend/migration-notes.md`,
+  `docs/extend/upgrade-cairn.md`, and `docs/extend/choose-an-ai-posture.md` (30), plus
+  `docs/why-cairn.md` and `docs/README.md`. It and the kept set live in
+  `docs/internal/record/harvest/deletion-list.json`, the one source the verifier and the gates
+  read.
+- The kept set is never audited or deleted. Task 9 edits it for link repair only, and a changed
+  sentence on `choose-an-ai-posture.md` changes its brief's matching sentence in the same commit.
+- No task edits a deletion-list page before task 9. A false claim is recorded as a `[rejected]`
+  fact, never fixed on the page (this overrides the implementer definition's fix-the-page rule).
 - Facts follow `docs/internal/facts/README.md` exactly: a minted id from
   `node scripts/checks/check-facts.mjs --mint`, one tag at the end, a `Source:` that resolves, and
   no em dash anywhere in the container.
-- A new fact is filed inside the facts-file section of the page being audited, never elsewhere,
-  so parallel chains never edit the same hunk.
+- An auditor edits only its own pages' facts sections (task 6 also owns the sections its outcomes
+  name), never `## Harvest record`, `## Provenance`, or another chain's section. Per-batch counts
+  live in the verifier output and the pass record.
 - A ledger paraphrases a claim in at most 25 words and never copies a sentence from the page.
-- `npm run check:facts` is green after every task.
+- `npm run check:facts` and `npm run check:provenance` are green after every task.
 - `templates/waymark/` is emitted from `examples/showcase` (`npm run emit:template`), never
   hand-edited.
-- A released Go binary's docs URLs (`https://cairn.pub/docs/...`) and the anchor strings in
-  `tool/` constants are shipped contracts: they are never changed by this pass.
+- A released Go binary's docs URLs (`https://cairn.pub/docs/...`), the anchor strings in `tool/`
+  constants, `tool/internal/spine/conditions.json`, and `scripts/checks/shipped-anchors.json` are
+  shipped contracts: this pass never changes them.
 - Commit specific files, never `git add -A`. Commit messages carry the attribution trailer.
-- No task edits `docs/STATUS.md` except the conductor's checkpoint writes and task 9.
+- No task edits `docs/STATUS.md` except the conductor's checkpoint writes and task 10.
+- The conductor never reads a diff or resolves a conflict; a merge that conflicts goes to a
+  dispatched agent under task 7's rule.
 
 ## Review focus
 
-1. **A page edited on `main` after its audit.** Pass C or a site pass may touch an old page while
-   the chains run. The verifier's `blob` check must fail such a page by name, and task 7 re-audits
-   only the changed claims before the deletion.
-2. **A fact that is near the claim but not it.** An auditor may map a claim to a bullet that is
-   broader, narrower, or about a neighboring behavior. Each audit's `diff-reviewer` spot-traces at
-   least five `fact` dispositions per batch against the claim paraphrase and the bullet.
-3. **A reference grep misses.** Inbound references include anchor fragments, JSON, Go test reads,
-   a GitHub workflow, the shipped skill, and emitted templates. Task 8's post-condition is a
-   repo-wide grep for every deleted path's basename that returns only the allowed residue.
-4. **A gate that passes because its subject vanished.** A narrowed gate must still fail on the
-   defect it exists for once an arm has pages again. Task 8's tests pin each narrowing both ways.
-5. **The tarball.** `package.json` `files` lists the deleted paths and `check:package-files`
-   requires the front doors. After the deletion, `npm run check:package` passes and the packed
-   tarball carries `docs/reference/` and the three kept extend pages.
+1. **A page edited on `main` after its audit.** The verifier's `blob` check fails such a page by
+   name up to task 7; task 10's pre-merge check covers the window after it.
+2. **A ledger that skips a claim.** The span-coverage rule fails it by line range; the reviewer's
+   sample then checks what each span was disposed as.
+3. **A fact that is near the claim but not it, and a true claim cut or rejected.** Each audit's
+   `diff-reviewer` takes the spec's sample (near-miss mappings, new facts, judgment cuts,
+   rejections, fan-in ids).
+4. **A reference grep misses, or a contract gets "repaired".** Task 9's residue printout
+   classifies every remaining hit against the spec's allowed-residue classes.
+5. **A gate that passes because its subject vanished.** Each narrowing keys on the arm state from
+   `deletion-list.json`, never on a directory or index existing.
+6. **The tarball.** After the deletion the packed docs are exactly `docs/reference/**` plus the
+   kept set.
 
 ## Tasks
 
 ### Task 1: the claim ledger format and its verifier
 
-**Pass class:** `engine-logic`. **Gate:** `npm run check` and the verifier's own unit test file,
+**Pass class:** `engine-logic`. **Gate:** `npm run check` and the verifier's unit test file,
 through `cairn-run-gate`, light lane (the test runs in Node only; name the vitest project that
 holds it).
 
 **Files:** create `scripts/oneshot/verify-harvest.mjs`, its unit test under `src/tests/unit/`,
-`docs/internal/record/harvest/README.md` (the ledger schema and the cut-reason list, copied from
-the spec, for the auditors), and one fixture ledger set under the test's fixtures. Modify
-`scripts/checks/gate-tier.mjs` only if the new directory needs a tier.
+`docs/internal/record/harvest/deletion-list.json` (deleted and kept lists),
+`docs/internal/record/harvest/README.md` (the ledger schema, the span rule, the cut-reason list,
+and the audit's five steps, copied from the spec, for the auditors), and fixture ledgers under
+the test's fixtures. Modify `scripts/checks/gate-tier.mjs` only if the new directory needs a tier.
 
 **Outcomes:**
-- The verifier implements every rule in the spec's "The verifier" section, reading the deletion
-  list from one exported constant that task 8 also uses.
-- It takes `--arm <admin|editors|extend|front-door>` to scope a run to one arm's pages (the
-  auditors' self-check) and `--pages <path,...>` to scope to a batch; with no flag it checks all
-  49 and fails on any missing ledger.
-- Its output names each failure with the ledger path and the claim index, and prints per-arm
-  counts on success.
+- The verifier implements every rule in the spec's "The verifier" section, reading both lists
+  from `deletion-list.json`.
+- `--arm` and `--pages` scope a run; a scoped run still fails on a missing ledger in its scope,
+  and a `--pages` path off the list fails by name. With no flag it checks all 49.
+- Output names each failure with the ledger path and claim index (an uncovered span by line
+  range), reports every failure in the run, and prints per-arm counts on success.
+- The unit test uses fixtures only and never reads the real tree, so it survives the deletion.
 
-**Acceptance:** test-first, each rule has a failing fixture case and a passing one, including a
-stale `blob`, an unresolved id, a `[candidate]` target, an unknown cut reason, an undisposed
-claim, and a ledger for a page off the list. The check and the test are green.
+**Acceptance:** test-first; each rule has a failing fixture case and a passing one: a stale
+`blob`; an unresolved id; a `[candidate]` target; an unknown cut reason; an undisposed claim; a
+ledger for a page off the list; an uncovered paragraph; an empty `claims`; a missing ledger in a
+scoped run; a `--pages` typo; an absent record directory; malformed JSON; a `page` field that
+disagrees with its location; two ledgers for one page; a list that disagrees with the tree; a
+fact whose `Source:` names a deletion-list page. The check and the test are green.
 
 ### Task 2: audit admin (rate checkpoint)
 
-**Pass class:** `docs`. **Gate:** `npm run check:facts && node scripts/oneshot/verify-harvest.mjs
---arm admin`, light lane.
+**Starts after the hold.** **Pass class:** `docs`. **Gate:** `npm run check:facts && npm run
+check:provenance && node scripts/oneshot/verify-harvest.mjs --arm admin`, light lane.
 
 **Pages (9):** every `.md` under `docs/admin/`, `README.md` included.
 
-**Outcomes:** per the spec's "The audit" section, for these pages: a ledger per page, missing facts
-filed, and every `[candidate]` and `[docs-drift]` bullet in `docs/internal/facts/admin.md`
-resolved. `admin/README.md` gains its facts-file section. Every heading slug that
-`tool/internal/spine/conditions.json`, `tool/internal/doctor/`, `scripts/checks/shipped-anchors.json`,
-or a gate names on `is-it-working.md` is recorded as a fact naming the slug and what pins it.
+**Outcomes:** per the spec's "The audit" section (all five steps), for these pages: a ledger per
+page with full span coverage, missing facts filed, every `[candidate]` and `[docs-drift]` bullet
+in these pages' sections of `docs/internal/facts/admin.md` resolved, and every bullet there that
+cites a deletion-list page re-sourced. `admin/README.md` gains its facts section. Every heading
+slug on `is-it-working.md` that any anchor source names is recorded as a fact naming the slug and
+what pins it; the anchor sources are every anchor string under `tool/` (including
+`tool/internal/health/fixes.go`, `tool/internal/render/layout.go`, and
+`tool/internal/doctor/check_referrer.go`), `tool/internal/spine/conditions.json`,
+`src/lib/diagnostics/conditions.ts`, `scripts/checks/shipped-anchors.json`, and any gate.
 
 **Acceptance:** the gate is green; the report gives the claim count, facts reused, facts filed,
-cuts by reason, and the tokens the dispatch used, so the conductor can compute tokens per page.
+cuts by reason, and bullets re-sourced. The conductor reads the dispatch's tokens from the Agent
+usage blocks (implementer plus reviewer) and computes tokens per page line.
 
 ### Task 3: audit editors (chain X)
 
-**Pass class:** `docs`. **Gate:** `npm run check:facts && node scripts/oneshot/verify-harvest.mjs
---arm editors`, light lane.
+**Pass class:** `docs`. **Gate:** `npm run check:facts && npm run check:provenance && node
+scripts/oneshot/verify-harvest.mjs --arm editors`, light lane.
 
 **Pages (8):** every `.md` under `docs/editors/`, `README.md` included. It gains a facts section.
 
@@ -140,20 +193,20 @@ sourced to the component or message file that renders them.
 
 ### Task 4: audit the front door (chain X, after task 3)
 
-**Pass class:** `docs`. **Gate:** `npm run check:facts && node scripts/oneshot/verify-harvest.mjs
---arm front-door`, light lane.
+**Pass class:** `docs`. **Gate:** `npm run check:facts && npm run check:provenance && node
+scripts/oneshot/verify-harvest.mjs --arm front-door`, light lane.
 
 **Pages (2):** `docs/why-cairn.md` and `docs/README.md`.
 
 **Outcomes and acceptance:** as task 2, against `docs/internal/facts/front-door.md`. A stance claim
 maps to an owner-tier fact with its verbatim key phrase, or is cut as
-`stance-without-owner-basis`. The facts file's `README.md` and `CLAUDE.md` sections are not
-audited: those files are not being deleted.
+`stance-without-owner-basis`. The facts file's `README.md` and `CLAUDE.md` sections and its
+owner-brief section are not audited: those files are not being deleted.
 
 ### Task 5: audit extend, first half (chain Y)
 
-**Pass class:** `docs`. **Gate:** `npm run check:facts && node scripts/oneshot/verify-harvest.mjs
---pages <the 15 paths>`, light lane.
+**Pass class:** `docs`. **Gate:** `npm run check:facts && npm run check:provenance && node
+scripts/oneshot/verify-harvest.mjs --pages <the 15 paths>`, light lane.
 
 **Pages (15, about 2830 lines):** `add-a-custom-admin-screen`, `add-an-island`,
 `add-a-second-audience`, `add-cairn-to-a-sveltekit-app`, `animate-a-custom-screen`,
@@ -163,8 +216,7 @@ audited: those files are not being deleted.
 `animate-a-custom-screen` gains its facts section.
 
 **Outcomes and acceptance:** as task 2, against these pages' sections of
-`docs/internal/facts/extend.md` only. Candidates and drift bullets outside these sections are
-left for task 6.
+`docs/internal/facts/extend.md` only.
 
 ### Task 6: audit extend, second half (chain Z)
 
@@ -177,67 +229,102 @@ left for task 6.
 `sign-in-through-your-organization`, `what-the-scaffold-wrote`, `wire-the-delivery-surface`
 (each `docs/extend/<name>.md`).
 
-**Outcomes and acceptance:** as task 5, for these sections. Any `[candidate]` or `[docs-drift]`
-bullet in `extend.md` outside every page section (under no page heading) is resolved here too.
+**Outcomes and acceptance:** as task 5, for these sections. Task 6 also owns, for audit steps 4
+and 5: any bullet in `extend.md` outside every page section, and, for step 5 only, the kept
+pages' sections (`f:65atya` in the `choose-an-ai-posture.md` section is the known case; a
+brief-cited bullet keeps a citable tag).
 
-### Task 7: merge the chains and verify the whole harvest
+### Task 7: merge and verify the whole harvest
 
-**Conductor-led.** Merge chains X, Y, and Z into `draft-docs-harvest` in that order. A conflict in
-a facts file is resolved by keeping both sides' bullets, never by editing a claim; any other
-conflict stops the task. Merge `main` in as well, so the verifier sees current pages. Run
-`npm run check:facts` and `node scripts/oneshot/verify-harvest.mjs` with no flag. A stale-`blob`
-failure dispatches one Sonnet auditor for only the named pages' changed claims (it diffs the page
-against the audited blob). Record the verifier's per-arm counts in this plan's ledger.
+**Starts when tasks 3 to 6 and task 8 are done.** A dispatched Sonnet agent merges chains X, Y,
+and Z into `draft-docs-harvest` in that order, then merges `main` in, so the verifier sees current
+pages. **Conflict rule:** in a facts file, bullets with distinct ids from both sides are all kept;
+where both sides changed the same id, the agent keeps one bullet, retraces it to source, and
+reports it (`check:facts`'s duplicate-id check proves no id doubled). Any other conflict stops the
+task and reports. It then runs `npm run check:facts`, `npm run check:provenance`, and
+`node scripts/oneshot/verify-harvest.mjs` with no flag.
 
-**Acceptance:** the full verifier and `check:facts` are green on the merged head; the counts are
-recorded.
+A stale-`blob` failure dispatches one Sonnet auditor for only the named pages' changed spans (it
+diffs the page against the audited blob), and that re-audit's diff gets one `diff-reviewer`
+read. Record the verifier's per-arm counts, the commit it passed on, and the `main` SHA merged in
+this plan's ledger.
 
-### Task 8: delete the pages and repair every reference
+**Acceptance:** the full verifier, `check:facts`, and `check:provenance` are green on the merged
+head; the counts and both SHAs are recorded.
 
-**Pass class:** `engine-logic` plus `tool`. **Gate:** the repo's full gate (`npm test` exit 0 and
-`npm run check:close`), `npm run check:package`, and `make -C tool check` on the light lane, each
-through `cairn-run-gate`.
+### Task 8: narrow the gates (while the pages still exist)
+
+**Pass class:** `engine-logic` plus `tool`. **Gate:** `npm run test:node-projects && npm run
+check:close` and `make -C tool check`, each through `cairn-run-gate`, light lane (`check:close`
+launches no browser; CI runs the component suite, and this task changes no component).
+
+**Outcomes:**
+- One shared arm-state function reads `deletion-list.json` and reports each arm as absent,
+  kept-only, or rebuilt, per the spec; no gate keys on a directory or index existing.
+- Every gate on the spec's narrowing list is narrowed per the spec. `check:readiness` and
+  `fixes_test.go` take the spec's shipped-anchors rule (list mode only while the admin arm holds
+  no page). `docs-links` takes the spec's dated-records and `LEGACY_PATH_MAP` rules. The
+  `check:symbols` allowlist takes the `migration-notes.md` code-span path mention.
+- `.github/workflows/tool.yml`'s two path filters add `scripts/checks/shipped-anchors.json`.
+- Every narrowed gate is still green on today's tree, where every arm is in the rebuilt state.
+
+**Acceptance:** test-first. The shared function is pinned in all three states. Each gate has a
+test in its narrowed state; `check:arm-indexes`, `check:package-files`, and `check:readiness` with
+`fixes_test.go` are pinned in all three, including the extend fixtures (kept set only passes; kept
+set plus one new page and no index fails; the same with the index passes) and the spec's
+anchor-list fixture states. The gate is green.
+
+### Task 9: delete the pages and repair every reference
+
+**Pass class:** `engine-logic`. **Gate:** `npm run test:node-projects && npm run check:close`,
+`npm --prefix packages/create-cairn-site run prepack && npm --prefix packages/create-cairn-site
+test`, `npm run test:emit`, and `make -C tool check`, each through `cairn-run-gate`, light lane.
 
 **Discovery (the implementer runs it first and works from its output, never from this list):**
-`git grep -nIE 'docs/(admin|editors|extend)/|why-cairn|docs/README' -- ':!docs/internal/record' ':!docs/superpowers' ':!docs/HISTORY.md' ':!CHANGELOG.md'`,
-plus a grep for each deleted page's basename, since anchors and relative links omit the directory.
-At plan time the first grep found about 45 live files outside `docs/`, among them
-`package.json` `files`; `scripts/checks/{check-package-files,check-arm-indexes,check-readiness,check-editor-quotes,check-symbols,check-symbols-allowlist,check-public-tokens,docs-links,gate-tier}.mjs`;
-unit tests in `src/tests/unit/`; `tool/internal/health/fixes_test.go`; `.github/workflows/tool.yml`;
-`packages/create-cairn-site/`; `examples/showcase/` and `examples/cairn-theme/` READMEs and source
-comments; `templates/waymark/`; `skills/cairn-extend/SKILL.md`; and the repo-root `README.md`,
-`CONTRIBUTING.md`, `SECURITY.md`, `CLAUDE.md`, and `ROADMAP.md`. Links inside `docs/internal/`
-(other than `record/`) and `docs/reference/` are repaired too.
+`git grep -nIE 'docs/(admin|editors|extend)/|why-cairn|docs/README' -- ':!docs/superpowers'`,
+plus a link-shaped grep per deleted page (`<basename>.md`, and the path-qualified forms
+`(admin|editors|extend)/README` and `../README.md` inside the arms), since anchors and relative
+links omit the directory. At review time the first grep hit about 204 files, 88 of them live
+repo-path references outside `docs/`, and the second added 37 more (13 reference pages among
+them).
 
 **Outcomes:**
 - The 49 pages are deleted. Nothing else under `docs/` is deleted.
-- Every reference is repaired per the spec's "The deletion" section: a prose link retargets to a
-  reference page covering the same ground, or is removed with its sentence reworded; a test
-  fixture using a real old path moves to a surviving or synthetic path.
-- Each pinning gate is narrowed per the spec, scoped to the arm's absence. `check:readiness` and
-  `fixes_test.go` check every live `docsAnchor` against a committed anchor list while
-  `is-it-working.md` is absent, and against the page when it exists.
-- `CLAUDE.md`'s docs section and `docs/internal/facts/README.md`'s "How this container grows"
-  drop the per-arm freeze language for the deleted arms, per the parent amendment's
-  "Superseded" paragraph, and state that the arms are empty until their stages rebuild them.
-- `docs/internal/record/harvest/relink.json` records every removed link and narrowed assertion
-  with its file, line, old target, action, and the stage (`2a`, `2b`, `3`, `4`, `5`) that
-  restores or re-arms it.
-- `CHANGELOG.md` `## Unreleased` gains the spec's entry.
+- Every repo-relative reference outside the allowed residue is repaired per the spec's "Delete and
+  relink" section, the kept pages and the `AI_POSTURE_COMMENT_BLOCK` lockstep edit (showcase
+  config, `emit:template`, `substitute.mjs`, its two tests) included.
+- `CLAUDE.md`'s docs section, `docs/internal/facts/README.md`'s "How this container grows", and
+  `docs/internal/docs-register.md`'s freeze line drop the per-arm freeze for the deleted arms and
+  state that the arms are empty until their stages rebuild them.
+- `docs/internal/record/harvest/relink.json` records every repaired link, narrowed assertion (from
+  task 8), and allowlist entry, per the spec's entry shape.
+- `CHANGELOG.md` `## Unreleased` gains the spec's entry, `Consumers must:` line included.
 
-**Acceptance:** test-first for every gate change, each narrowing pinned both ways (passes on the
-empty arm, still fails on its defect once a page exists); the discovery grep returns only
-`relink.json`, `CHANGELOG.md`, the ledgers, and Go constants naming `cairn.pub` anchors; the full
-gate, `check:package`, and `make -C tool check` are green.
+**Acceptance:** the implementer prints the residue of both greps with each line classified
+against the spec's allowed-residue classes, and the task's `diff-reviewer` reads that printout;
+no line is unclassified. `npm pack --dry-run` lists exactly `docs/reference/**` plus the kept set
+under `docs/`. The gate is green.
 
-### Task 9: close
+### Task 10: close
 
-Run `cairn-pass`'s close. `code-simplifier:code-simplifier` over the pass's changed `.mjs`, `.ts`,
-and `.go`; the full gate; STATUS rewritten with the stage 2a plan as the next action (a fresh
-brainstorm session writes it, drawing the extend outline from jobs, the facts, and `relink.json`);
-the HISTORY entry with the verifier's counts, what the gates caught, what a later pass would be
-wrong to rediscover, and whether any refused review finding turned out real; ROADMAP updated;
-this plan's post-mortem with both budgets scored. Push, open the PR, and merge on Geoff's go.
+Run `cairn-pass`'s close:
+- **Pre-merge check:** `git diff <task 7 main SHA>..origin/main` over the 49 paths is empty. A
+  non-empty result, or a modify/delete conflict on a deletion-list page at any merge, stops the
+  merge and dispatches task 7's targeted re-audit (from `git show`) with its `diff-reviewer` read.
+- `code-simplifier:code-simplifier` over the pass's changed `.mjs`, `.ts`, and `.go`; one
+  `go-architecture-reader` per touched Go package; the full gate. The `docs` register chain is
+  waived and the waiver recorded: the pass drafts no published prose, and its link repairs are
+  agent-facing fixes.
+- The pin ceiling (the last release cut before this merge) written into
+  `docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`.
+- STATUS rewritten with the stage 2a plan as the next action (a fresh brainstorm session writes
+  it, drawing the extend outline from jobs, the facts, and `relink.json`), the fold record's owed
+  errata as an open decision for Geoff, and a watch that the kept per-version records' paths are
+  hardcoded in `cairn-pass`, `CLAUDE.md`, and the facts README.
+- The HISTORY entry with the verifier's counts and commit, what the gates caught, what a later
+  pass would be wrong to rediscover, and whether any refused review finding turned out real;
+  ROADMAP updated; this plan's post-mortem with both budgets scored.
+- Push, open the PR, and merge on Geoff's go.
 
 ## Ledger
 
@@ -245,10 +332,8 @@ this plan's post-mortem with both budgets scored. Push, open the PR, and merge o
 | --- | --- | --- | --- |
 | 1 | pending | | |
 | 2 | pending | | |
-| 3 | pending | | |
-| 4 | pending | | |
-| 5 | pending | | |
-| 6 | pending | | |
+| 3 to 6 | pending | | one row, from the chains run's `spent` |
 | 7 | pending | | |
 | 8 | pending | | |
 | 9 | pending | | |
+| 10 | pending | | |

@@ -80,6 +80,13 @@ New rulings (Geoff, 2026-09-28):
     output, the checklist-with-external-feedback form the research supports. A one-page A/B has a
     sample of one and cannot separate a signal from noise.
 20. **The remainder of the pass carries a 6M token ceiling.**
+21. **The sitting (Geoff, 2026-09-29).** J1's AI posture page is accepted, with all four of the
+    voice read's taste calls. "Own" as an intensifier is cut from the register and the exemplar, and
+    a tell against it lands in both briefs. The announcement-scaffolding tell ("this section
+    covers…") is removed from the register: "You can remove the 'this section covers…' register
+    rule." J2's proof draft is dropped: the old page reached the drafter as an input, and the
+    draft-docs program is amended to harvest, then delete, then draft (the 2026-09-29 amendment in
+    `2026-09-26-draft-docs-approach-design.md`).
 
 ## Sources
 

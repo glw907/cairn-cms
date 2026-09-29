@@ -44,17 +44,15 @@ Theme identity pass C, fresh session (`claude-opus-5-5`, `medium`): invoke `cair
 pass C's plan on `theme-c-plan` and pass B's post-mortem, then run pass C's task 0 from
 `theme-identity-b`'s head under the topology note above.
 
-### Next action (draft docs: harvest, then delete)
+### Next action (draft docs harvest, runs beside pass C)
 
-> **Goal.** Make every claim on the old narrative and front-door pages a fact or a recorded cut,
-> then delete those pages on `main`. **Scope.** `docs/{admin,editors,extend}/`, `docs/why-cairn.md`,
-> `docs/README.md`; reference stays. **Settled (do not re-brainstorm):**
-> `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`, "Amendment: harvest, then
-> delete": that scope; delete right after the harvest; cairn.pub takes no docs past `0.97.0`'s until
-> rebuilt arms ship; a release between ships reference only and says so. Drafting uses the briefs
-> and exemplars (AI posture page; Microsoft Learn capture). No input guard. Pass C's `0.98.0` cut is
-> first. **Still open, brainstorm these:** proving each page's harvest complete; the outline format
-> and review surface (R10); `docs/extend/migration-notes.md` and `upgrade-cairn.md`; the arm order.
-> Baselines: 711 verified plus 10 Tidy facts, 77 of 80 old pages sectioned, about 600 intensifier
-> "own". **Approach.** Once `style-guide-sync` merges, Geoff and a fresh `claude-opus-5-5` session
-> (`high`, `~/Projects/cairn-cms`) brainstorm, then plan, `spec-plan-review`, `cairn-pass`.
+> **Goal.** Prove every claim on the 49 old narrative and front-door pages is a fact or a recorded
+> cut, then delete them with every reference and gate repaired. **Settled (do not re-brainstorm):**
+> spec `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` and plan
+> `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`, both on branch `draft-docs-harvest`
+> (worktree `.claude/worktrees/draft-docs-harvest`), reviewed (four lenses, fold, verification,
+> second fold) with Geoff's rulings R1 (12M ceiling), R2 (drop the old `docs/README.md`
+> exemplar), and the ordering. **Approach.** Mixed class (`engine-logic`, `docs`, `tool`). Task 1
+> (the verifier) runs now. Tasks 2 onward wait until theme passes B and C have merged to `main`;
+> the task 1 checkpoint rewrites this block with that trigger. Fresh `claude-opus-5-5` session at
+> `medium` in `~/Projects/cairn-cms`: invoke `cairn-pass`, read the plan and spec, run task 1.

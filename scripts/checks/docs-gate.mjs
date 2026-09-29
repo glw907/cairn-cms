@@ -27,12 +27,14 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // check:vale's own default target list (package.json's check:vale script, unscoped).
 const DEFAULT_VALE_PATHS = ['docs', 'README.md', 'examples/showcase/README.md'];
 
-// The custom rules that keep `vale test` cases beside them, and the fixture config that applies
-// the Cairn style to test input (test input matches no section of the root .vale.ini).
+// The custom rules that keep `vale test` cases beside them.
 const VALE_RULE_TESTS = [
   '.vale/styles/Cairn/Headings.test.yml',
   '.vale/styles/Cairn/ProseProcedure.test.yml',
 ];
+// The fixture config that applies the Cairn style to test input, which matches no section of the
+// root .vale.ini.
+const VALE_RULE_TEST_CONFIG = '.vale/tests/vale.ini';
 
 /**
  * Parse the fixed CLI shape: an optional `--page <path>` and an optional `--brief <path>`.
@@ -76,7 +78,7 @@ export function buildSteps({ page, brief }) {
           {
             label: 'check:vale-rules',
             command: 'vale',
-            args: ['--config=.vale/tests/vale.ini', 'test', ...VALE_RULE_TESTS],
+            args: [`--config=${VALE_RULE_TEST_CONFIG}`, 'test', ...VALE_RULE_TESTS],
           },
         ]),
     { label: 'check:facts', ...node('scripts/checks/check-facts.mjs') },

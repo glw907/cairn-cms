@@ -151,8 +151,8 @@
         71,
         72
       ],
-      "paraphrase": "Glosses blocker and warning as stopping sign-in versus real but non-blocking.",
-      "cut": "stance-without-owner-basis"
+      "paraphrase": "Defines blocker and warning as severities of a condition.",
+      "fact": "f:kjp61u"
     },
     {
       "lines": [
@@ -256,7 +256,7 @@
         101
       ],
       "paraphrase": "Send-failed has no check and is diagnosed from the log record.",
-      "new-fact": "f:bw5uk0"
+      "fact": "f:ug1ekb"
     },
     {
       "lines": [

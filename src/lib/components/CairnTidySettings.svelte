@@ -324,7 +324,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
   // on/off toggle speaks through weight and a neutral wash instead (the design arc's accent
   // reservation, 2026-07-15).
   function onoffClass(on: boolean): string {
-    return `inline-flex h-[30px] items-center gap-1.5 rounded-lg border px-2.5 type-meta font-semibold ${
+    return `inline-flex h-[30px] items-center gap-1.5 rounded-field border px-2.5 type-meta font-semibold ${
       on
         ? `border-base-content/20 ${segmentTintClass(true)}`
         : 'border-[var(--cairn-card-border)] bg-base-100 text-muted hover:border-primary/35 hover:text-base-content'
@@ -359,7 +359,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
        a stated fact (never an editable control). Shown in both the enabled and gate states. -->
   {#if data.enabled}
     <div class="mt-6 flex items-start gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-4">
-      <span class="mt-0.5 inline-flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-base-content/[0.07] text-muted">
+      <span class="mt-0.5 inline-flex h-9 w-9 flex-none items-center justify-center rounded-field bg-base-content/[0.07] text-muted">
         <CodeIcon class="h-5 w-5" aria-hidden="true" />
       </span>
       <div class="min-w-0 flex-1">
@@ -393,12 +393,12 @@ bespoke (ruling 7): a single-use control, not a repeated device.
         <!-- Below sm the "Set by your developer" pill drops out of the head row (its sm+ copy
              just below is hidden here) and renders on its own line under the grid above. -->
         <div class="mt-2 sm:hidden">
-          <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 type-chip font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
+          <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-selector border border-[var(--cairn-card-border)] px-2.5 py-1 type-chip font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
         </div>
         <div class="mt-3 border-t border-dashed border-[var(--cairn-card-border)] pt-2.5">
           <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
           <div class="mt-1 type-meta leading-relaxed text-muted">
-            Tidy is on (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">{data.model}</code>. Switch to <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">claude-haiku-4-5</code> for a cheaper, faster run.
+            Tidy is on (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">{data.model}</code>. Switch to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">claude-haiku-4-5</code> for a cheaper, faster run.
           </div>
         </div>
       </div>
@@ -408,14 +408,14 @@ bespoke (ruling 7): a single-use control, not a repeated device.
            padding box on the heading's first line box, which is what the eye reads. Levelling the
            two on a baseline instead would move the wrong thing (cairn-admin.css carries why). -->
       <span class="cairn-line-slot type-meta hidden flex-none sm:flex">
-        <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 type-chip font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
+        <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-selector border border-[var(--cairn-card-border)] px-2.5 py-1 type-chip font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
       </span>
     </div>
 
     <!-- THE GENERATED SUMMARY LINE, inside the live region. Rendered unconditionally so it can
          announce when it changes. -->
     <div role="status" aria-live="polite" class="mb-6 mt-6 flex items-start gap-3 rounded-box border border-primary/[0.16] bg-primary/[0.05] p-3.5">
-      <span class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-primary/[0.12] text-primary" aria-hidden="true"><ListIcon class="h-4 w-4" /></span>
+      <span class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-field bg-primary/[0.12] text-primary" aria-hidden="true"><ListIcon class="h-4 w-4" /></span>
       <div class="min-w-0 flex-1 type-meta leading-relaxed">
         <span class="font-semibold">Tidy will fix</span> {summaryFixes}.
         <span class="text-muted"><b class="font-semibold text-subtle">It leaves alone</b> {summaryLeaves}.</span>
@@ -433,7 +433,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Fixes
               <span role="status" aria-live="polite">
-                <StatusChip label={conv.fixes ? 'On' : 'Off'} size="sm" />
+                <StatusChip label={conv.fixes ? 'On' : 'Off'} size="xs" />
                 <span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span>
               </span>
             </h2>
@@ -451,16 +451,16 @@ bespoke (ruling 7): a single-use control, not a repeated device.
                    is muted strikethrough, an insertion is semibold ink, both on a neutral wash -->
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug" aria-hidden="true">
                 <span class="mr-0.5 type-label font-semibold uppercase tracking-wide text-muted">changes</span>
-                <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">accomodate</span>
+                <span class="rounded-selector bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">accomodate</span>
                 <span class="type-label text-muted">to</span>
-                <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">accommodate</span>
+                <span class="rounded-selector bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">accommodate</span>
               </div>
               <!-- the "kept as written" cue: regional spelling is never normalized, dialect-aware -->
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug" aria-hidden="true">
                 <span class="mr-0.5 type-label font-semibold uppercase tracking-wide text-muted">keeps</span>
-                <span class="rounded-sm bg-[var(--cairn-code-chip)] px-1">colour</span>
+                <span class="rounded-selector bg-[var(--cairn-code-chip)] px-1">colour</span>
                 <span class="type-label text-muted">and</span>
-                <span class="rounded-sm bg-[var(--cairn-code-chip)] px-1">organise</span>
+                <span class="rounded-selector bg-[var(--cairn-code-chip)] px-1">organise</span>
                 <span class="type-label text-muted">as written, following your site's English</span>
               </div>
             </div>
@@ -480,7 +480,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Style conventions
               <span role="status" aria-live="polite">
-                <StatusChip label={`${styleOnCount} on`} size="sm" />
+                <StatusChip label={`${styleOnCount} on`} size="xs" />
                 <span class="sr-only">, {styleOnCount} style {styleOnCount === 1 ? 'convention' : 'conventions'} on</span>
               </span>
             </h2>
@@ -505,16 +505,23 @@ bespoke (ruling 7): a single-use control, not a repeated device.
                        recipe (radiogroup + radio + aria-checked + roving tabindex + check glyph) -->
                   <div class="mt-3 flex flex-col gap-2">
                     <div id={`tidy-var-${String(row.key)}`} class="type-label font-semibold uppercase tracking-wide text-muted">{row.variantLabel}</div>
-                    <div role="radiogroup" aria-labelledby={`tidy-var-${String(row.key)}`} class="inline-flex flex-wrap self-start overflow-hidden rounded-lg border border-[var(--cairn-card-border)] bg-base-100">
+                    <!-- `overflow-hidden` clipped the corners of the end buttons to the container's
+                         own rounded-field radius, but it also clipped a keyboard focus ring on
+                         either end button, drawn outside the button's own border box (S3 Q20). Each
+                         end button now rounds its own outer corners directly instead, so the
+                         container needs no clip at all. -->
+                    <div role="radiogroup" aria-labelledby={`tidy-var-${String(row.key)}`} class="inline-flex flex-wrap self-start rounded-field border border-[var(--cairn-card-border)] bg-base-100">
                       {#each row.variants as variant, vi (variant.value)}
                         {@const checked = conv[row.key] === variant.value}
+                        {@const isFirst = vi === 0}
+                        {@const isLast = vi === row.variants.length - 1}
                         <button
                           bind:this={radioEls[String(row.key)][vi]}
                           type="button"
                           role="radio"
                           aria-checked={checked}
                           tabindex={checked ? 0 : -1}
-                          class="{segClass(checked)} {vi > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}"
+                          class="{segClass(checked)} {isFirst ? 'rounded-l-field' : 'border-l border-[var(--cairn-card-border)]'} {isLast ? 'rounded-r-field' : ''}"
                           onclick={() => pickVariant(row.key, variant.value)}
                           onkeydown={(e) => onRadioKeydown(e, row, vi)}
                         >
@@ -526,9 +533,9 @@ bespoke (ruling 7): a single-use control, not a repeated device.
                 {:else}
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug {on ? '' : 'opacity-55'}" aria-hidden="true">
                     <span class="mr-0.5 type-label font-semibold uppercase tracking-wide text-muted">changes</span>
-                    <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">{row.egBefore}</span>
+                    <span class="rounded-selector bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">{row.egBefore}</span>
                     <span class="type-label text-muted">to</span>
-                    <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">{row.egAfter}</span>
+                    <span class="rounded-selector bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">{row.egAfter}</span>
                   </div>
                 {/if}
               </div>
@@ -546,9 +553,9 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       <section class="mb-6">
         <details class="overflow-hidden card-shell card-shadow">
           <summary class="flex cursor-pointer list-none items-center gap-3 p-3.5">
-            <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-base-content/[0.06] text-muted"><SettingsIcon class="h-4 w-4" aria-hidden="true" /></span>
+            <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-field bg-base-content/[0.06] text-muted"><SettingsIcon class="h-4 w-4" aria-hidden="true" /></span>
             <span class="min-w-0 flex-1">
-              <span class="flex items-center gap-2 type-subtitle font-semibold">Advanced <span class="rounded-full bg-warning/[0.14] px-2 py-0.5 type-chip font-semibold uppercase tracking-wide cairn-text-warning">Needs care</span></span>
+              <span class="flex items-center gap-2 type-subtitle font-semibold">Advanced <span class="rounded-selector bg-warning/[0.14] px-2 py-0.5 type-chip font-semibold uppercase tracking-wide cairn-text-warning">Needs care</span></span>
               <span class="mt-0.5 block type-meta leading-snug text-muted">Two more changes that need a careful eye. Off by default. Open this only if you want them.</span>
             </span>
             <ArrowRightIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
@@ -565,9 +572,9 @@ bespoke (ruling 7): a single-use control, not a repeated device.
                   <div class="type-subtitle font-semibold leading-snug">{row.name}</div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug {on ? '' : 'opacity-55'}" aria-hidden="true">
                     <span class="mr-0.5 type-label font-semibold uppercase tracking-wide text-muted">changes</span>
-                    <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">{row.egBefore}</span>
+                    <span class="rounded-selector bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">{row.egBefore}</span>
                     <span class="type-label text-muted">to</span>
-                    <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">{row.egAfter}</span>
+                    <span class="rounded-selector bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">{row.egAfter}</span>
                   </div>
                 </div>
                 <span class="flex-none">
@@ -615,18 +622,18 @@ bespoke (ruling 7): a single-use control, not a repeated device.
         revoked or was never valid. Until it’s fixed, editors won’t see the Tidy control at all.
       </div>
       <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
-        <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 opacity-60">
+        <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3 opacity-60">
           <span class="flex-none text-muted"><CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
           <span class="type-meta leading-snug">Your developer turned tidy on for the site.</span>
         </div>
-        <div class="flex items-start gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--cairn-warning-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_6%,var(--color-base-100))] p-3">
+        <div class="flex items-start gap-2.5 rounded-box border border-[color-mix(in_oklab,var(--cairn-warning-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_6%,var(--color-base-100))] p-3">
           <span class="flex-none cairn-text-warning"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
           <span class="type-meta leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn’t been revoked or rotated elsewhere.</span></span>
         </div>
       </div>
       <div class="w-full max-w-md text-left">
         <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
-        <div class="mt-1 type-meta leading-relaxed text-muted">Verify or rotate the secret with <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">wrangler secret put ANTHROPIC_API_KEY</code>, then reload this page.</div>
+        <div class="mt-1 type-meta leading-relaxed text-muted">Verify or rotate the secret with <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">wrangler secret put ANTHROPIC_API_KEY</code>, then reload this page.</div>
       </div>
     </div>
   {:else}
@@ -642,24 +649,24 @@ bespoke (ruling 7): a single-use control, not a repeated device.
         is where you choose what it can change.
       </div>
       <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
-        <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 {data.tidyEnabled ? 'opacity-60' : ''}">
+        <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3 {data.tidyEnabled ? 'opacity-60' : ''}">
           <span class="flex-none {data.tidyEnabled ? 'text-muted' : 'text-subtle'}">
-            {#if data.tidyEnabled}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-base-content/[0.09] type-label font-semibold">1</span>{/if}
+            {#if data.tidyEnabled}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-selector bg-base-content/[0.09] type-label font-semibold">1</span>{/if}
           </span>
           <span class="type-meta leading-snug">Your developer turns tidy on for the site.<span class="mt-0.5 block text-muted">It is one setting in the site config.</span></span>
         </div>
-        <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 {data.keyConfigured ? 'opacity-60' : ''}">
+        <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3 {data.keyConfigured ? 'opacity-60' : ''}">
           <span class="flex-none {data.keyConfigured ? 'text-muted' : 'text-subtle'}">
-            {#if data.keyConfigured}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-base-content/[0.09] type-label font-semibold">2</span>{/if}
+            {#if data.keyConfigured}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-selector bg-base-content/[0.09] type-label font-semibold">2</span>{/if}
           </span>
           <span class="type-meta leading-snug">Your developer adds an Anthropic API key.<span class="mt-0.5 block text-muted">It stays on the server and never reaches the browser.</span></span>
         </div>
       </div>
       <div class="w-full max-w-md text-left">
         <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
-        <div class="mt-1 type-meta leading-relaxed text-muted">Set <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">tidy.enabled: true</code> in the site config and add the Anthropic key as the <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">ANTHROPIC_API_KEY</code> Worker secret. The setup guide has the steps.</div>
+        <div class="mt-1 type-meta leading-relaxed text-muted">Set <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">tidy.enabled: true</code> in the site config and add the Anthropic key as the <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">ANTHROPIC_API_KEY</code> Worker secret. The setup guide has the steps.</div>
       </div>
-      <div class="mt-1 flex max-w-lg items-center gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 type-meta text-muted">
+      <div class="mt-1 flex max-w-lg items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3 type-meta text-muted">
         <CheckIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
         <span><b class="font-semibold text-base-content">Spellcheck is already working.</b> It runs in your browser, so it needs no setup and underlines misspellings as you type.</span>
       </div>

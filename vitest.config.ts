@@ -2,12 +2,43 @@ import { defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { playwright } from '@vitest/browser-playwright';
+import { statSync } from 'node:fs';
 import path from 'node:path';
+import type { Plugin } from 'vite';
 
 // Read committed SQL migrations from Node context (workerd cannot read the FS).
 // In 0.16 both `cloudflareTest` and `readD1Migrations` ship from the package
 // entry; there is no `/config` subpath.
 const migrations = await readD1Migrations(path.resolve('migrations'));
+
+const SOURCE_ADMIN_SHEET = path.resolve('src/lib/components/cairn-admin.css');
+const COMPILED_ADMIN_SHEET = path.resolve('dist/components/cairn-admin.css');
+
+/**
+ * Redirects every import that resolves to the source admin partial onto the compiled sheet, for
+ * the component project only. The partial is compile-input, not browser-ready: its daisyUI theme
+ * variables live in `@plugin "daisyui/theme"` blocks a browser drops, and it declares
+ * `utilities.cairn-idiom` ahead of `utilities.daisyui`, which would reverse the sublayer pin if it
+ * loaded beside the compiled sheet. The redirect keys on the resolved file, so CairnAdminShell,
+ * LoginPage, ConfirmPage, ReproContext, and any test that imports the partial by any relative path
+ * all get the sheet that ships. A `?raw` import still reads the source text, which is what the
+ * source-reading tests want. The package build never sees this plugin, so the shipped `dist`
+ * import resolves exactly as before. The project's globalSetup rebuilds the compiled sheet first.
+ */
+function compiledAdminSheet(): Plugin {
+  return {
+    name: 'cairn-compiled-admin-sheet',
+    enforce: 'pre',
+    async resolveId(source, importer, options) {
+      if (!/cairn-admin\.css(\?|$)/.test(source)) return null;
+      const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+      if (!resolved) return null;
+      const [file, query] = resolved.id.split('?');
+      if (file !== SOURCE_ADMIN_SHEET || query === 'raw') return null;
+      return query ? `${COMPILED_ADMIN_SHEET}?${query}` : COMPILED_ADMIN_SHEET;
+    },
+  };
+}
 
 export default defineConfig({
   test: {
@@ -109,7 +140,7 @@ export default defineConfig({
         },
       },
       {
-        plugins: [svelte()],
+        plugins: [svelte(), compiledAdminSheet()],
         resolve: {
           // EditPage imports $app/navigation (the leave guard) and $app/state (the page URL),
           // which only a SvelteKit app provides. The component project resolves them to stubs:
@@ -140,6 +171,12 @@ export default defineConfig({
           unstubGlobals: true,
           include: ['src/tests/component/**/*.test.ts'],
           setupFiles: ['./src/tests/component/_setup.ts'],
+          // Rebuilds dist/components/cairn-admin.css before this project's test files start, so every
+          // idiom-probe render, mutation, and TDD loop reads a fresh compiled sheet rather than a stale
+          // one left over from a previous package build. A project's own globalSetup runs once, in
+          // Node, ahead of its test files; an npm pre-step would not reach a direct `npx vitest run
+          // --project component <file>` invocation, but this does.
+          globalSetup: ['./src/tests/component/_global-setup.ts'],
           // The heaviest component tests mount the full EditPage with the CodeMirror editor, and on a
           // slower CI runner the editor surface and toolbar occasionally are not ready before the
           // matcher times out (the EditPage and CairnAdmin toolbar/insert assertions flake this way;
@@ -151,6 +188,15 @@ export default defineConfig({
             provider: playwright(),
             headless: true,
             instances: [{ browser: 'chromium' }],
+            // The one Node-side escape hatch a browser-mode test needs: reading a file's mtime to
+            // prove the sheet above is actually fresh (`_idiom-probe.test.ts`'s guard). A real
+            // Chromium page has no fs access, so this runs server-side and the test calls it over
+            // Vitest's own browser-command RPC.
+            commands: {
+              async mtimeMs(_context, relativePath: string) {
+                return statSync(path.resolve(relativePath)).mtimeMs;
+              },
+            },
           },
         },
       },

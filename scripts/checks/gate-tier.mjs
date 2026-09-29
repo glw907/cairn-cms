@@ -51,12 +51,15 @@ const ROOT = repoRoot(import.meta.url);
 // full docs check list. That list already includes check:snippets, check:transcripts, and
 // check:symbols, so FULL_GATE does not repeat them.
 const DOCS_GATE = 'npm run check:docs-gate';
-// `npm test` (root) runs the engine's own vitest projects; it never reaches the
-// create-cairn-site workspace member's own `node --test` suite, so a diff scoped to that package
-// needs its own invocation appended here to be proven at all. Folding it into SCRIPTS_GATE (and
-// so into every tier built on top of it) is cheap and Node-only, and keeps the five-tier superset
-// chain intact rather than adding a sixth severity level for one workspace member.
-const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm test && npm test -w packages/create-cairn-site`;
+// Stock `npm test` runs the vitest component project (real Chromium) in parallel with the three
+// node projects, and that parallel component run stalls on the maintainer's workstation. This
+// gate runs the node projects first, then the component project alone with file parallelism off,
+// so the local gate stays reliable. CI's `test.yml` keeps running `npm test` and stays parallel;
+// this serialization is local-gate-only. `npm test` (root) never reaches the create-cairn-site
+// workspace member's own `node --test` suite, so its own invocation is appended here too, to
+// keep the five-tier superset chain intact rather than adding a sixth severity level for one
+// workspace member.
+const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
 const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';

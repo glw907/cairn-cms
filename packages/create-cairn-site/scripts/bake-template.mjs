@@ -21,6 +21,13 @@ const repoRoot = path.resolve(packageDir, '../..');
 export const PRUNED_SCRIPTS = ['pretest:e2e', 'test:e2e', 'design:probe'];
 export const PRUNED_DEV_DEPENDENCIES = ['@playwright/test', '@axe-core/playwright'];
 
+// cairn-audit.config.json's `rendered.extraPages` names showcase-only fixture and content
+// screens (the theme-kit CSS proof among them). A JSON file cannot carry the
+// cairn-template:exclude-start/-end comment marker emitTemplate strips from a source file, so the
+// path exclusion manifest drops this file from the copy outright, and the bake regenerates it
+// here from the showcase's own file instead.
+export const AUDIT_CONFIG_FILE = 'cairn-audit.config.json';
+
 const SITE_README = `# Your cairn site
 
 This site runs on [cairn-cms](https://github.com/glw907/cairn-cms), a markdown CMS for
@@ -139,6 +146,26 @@ export function pruneShowcaseOnlyPackageFields(pkg) {
     }
     delete pkg.devDependencies[dep];
   }
+}
+
+/**
+ * Drop the showcase-only `rendered` section from a parsed cairn-audit.config.json, mutating
+ * nothing (the caller re-stringifies the result). Throws naming the missing section when the
+ * showcase's own file no longer carries one, so a future rename or removal surfaces here rather
+ * than silently shipping whatever the showcase currently has, the same rot-gate contract
+ * pruneShowcaseOnlyPackageFields carries for the showcase-only package.json fields.
+ * @param {Record<string, unknown>} config the parsed showcase cairn-audit.config.json
+ * @returns {Record<string, unknown>} the config with `rendered` removed
+ */
+export function pruneShowcaseOnlyAuditConfig(config) {
+  if (!('rendered' in config)) {
+    throw new Error(
+      'bake: expected the showcase cairn-audit.config.json to carry a "rendered" section to prune, but it is missing',
+    );
+  }
+  const rest = { ...config };
+  delete rest.rendered;
+  return rest;
 }
 
 // The scaffolded site's own root CLAUDE.md: the import line every cairn-guidance-installed site
@@ -281,6 +308,16 @@ export async function bake({ to, engineSpec, devSpec }) {
   rewriteDevScript(pkg);
   pruneShowcaseOnlyPackageFields(pkg);
   await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+  // AUDIT_CONFIG_FILE is excluded from the copy (.cairn-template.json), so this is the emitted
+  // tree's only source for it: the showcase's own file, pruned of its showcase-only `rendered`
+  // section.
+  const auditConfig = JSON.parse(
+    await readFile(path.join(repoRoot, 'examples', 'showcase', AUDIT_CONFIG_FILE), 'utf8'),
+  );
+  await writeFile(
+    path.join(emitted, AUDIT_CONFIG_FILE),
+    JSON.stringify(pruneShowcaseOnlyAuditConfig(auditConfig), null, 2) + '\n',
+  );
   await writeFile(path.join(emitted, 'README.md'), SITE_README);
   // scripts/ is excluded from the copy, so the bake creates it fresh to hold the dev shim.
   const emittedScriptsDir = path.join(emitted, 'scripts');

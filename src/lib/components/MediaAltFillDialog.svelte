@@ -230,7 +230,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
             {#if altFillRows.length > 0}
               <div class="overflow-hidden card-shell">
                 <div class="flex items-center gap-2.5 p-3">
-                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-primary/10 text-primary" aria-hidden="true">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-field bg-primary/10 text-primary" aria-hidden="true">
                     <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div class="min-w-0 flex-1">
@@ -249,7 +249,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div class="flex items-center gap-1.5">
                           <span class="truncate type-meta font-semibold">{row.title}</span>
-                          <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
+                          <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline gap-1.5 type-meta leading-snug">
                           <span class="text-muted">(no alt)</span>
@@ -264,7 +264,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                   <div class="border-t border-[var(--cairn-card-border)] p-1.5">
                     <button
                       type="button"
-                      class="flex w-full items-center justify-center gap-1.5 rounded px-2 py-1 type-meta font-medium text-primary hover:bg-primary/[0.08]"
+                      class="flex w-full items-center justify-center gap-1.5 rounded-field px-2 py-1 type-meta font-medium text-primary hover:bg-primary/[0.08]"
                       aria-expanded={altShowAll}
                       aria-controls="cairn-ml-alt-fill"
                       onclick={showAllAltFill}
@@ -287,7 +287,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
             {#if altCustomRows.length > 0}
               <div data-cairn-alt-custom class="overflow-hidden card-shell">
                 <div class="flex items-center gap-2.5 p-3">
-                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-[var(--cairn-warning-ink)]/10 cairn-text-warning" aria-hidden="true">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-field bg-[var(--cairn-warning-ink)]/10 cairn-text-warning" aria-hidden="true">
                     <MegaphoneIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div class="min-w-0 flex-1">
@@ -305,7 +305,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                     <input
                       type="checkbox"
                       data-cairn-alt-optin
-                      class="checkbox checkbox-sm mt-px border-[var(--cairn-error-border)] checked:border-[var(--cairn-error-ink)] checked:bg-[var(--cairn-error-ink)]"
+                      class="checkbox checkbox-sm mt-px border-error checked:border-[var(--cairn-error-ink)] checked:bg-[var(--cairn-error-ink)]"
                       aria-describedby="cairn-ml-alt-optin-hint"
                       bind:checked={altOverwrite}
                     />
@@ -322,7 +322,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div class="flex items-center gap-1.5">
                           <span class="truncate type-meta font-semibold">{row.title}</span>
-                          <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
+                          <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline gap-1.5 type-meta leading-snug">
                           {#if altOverwrite}
@@ -346,7 +346,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
             {#if altSkipRows.length > 0}
               <div data-cairn-alt-skip class="overflow-hidden card-shell opacity-90">
                 <div class="flex items-center gap-2.5 p-3">
-                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-base-content/[0.07] text-muted" aria-hidden="true">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-field bg-base-content/[0.07] text-muted" aria-hidden="true">
                     <ImageOffIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div class="min-w-0 flex-1">
@@ -359,7 +359,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                   {#each altSkipRows as row (row.key)}
                     <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 type-meta text-muted first:border-t-0">
                       <span class="truncate">{row.title}</span>
-                      <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide">{row.kind}</span>
+                      <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide">{row.kind}</span>
                     </li>
                   {/each}
                 </ul>

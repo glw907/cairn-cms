@@ -436,7 +436,7 @@ Swapping the editor stays a one-file change.
           fontSize: '0.8125rem',
           lineHeight: '1.4',
         },
-        // The thumbnail: a small square crop, rounded to match the chip. object-fit keeps a
+        // The thumbnail: a small square crop, curved to match the chip. object-fit keeps a
         // non-square source from distorting. A faint border lifts a light image off the chip tint.
         '.cm-cairn-media-thumb': {
           width: '1.4em',

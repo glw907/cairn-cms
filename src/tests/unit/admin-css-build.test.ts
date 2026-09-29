@@ -3,6 +3,8 @@ import postcss from 'postcss';
 import prefixSelector from 'postcss-prefix-selector';
 import { transform, Features } from 'lightningcss';
 import { chromium } from 'playwright';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 // The build script is plain ESM under scripts/; the unit project runs in Node.
 import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import type { Browser } from 'playwright';
@@ -16,6 +18,61 @@ describe('admin css build', () => {
   beforeAll(async () => {
     css = await buildAdminCss();
   }, 60_000);
+
+  // The cairn-idiom sublayer pin (spec, "The cairn-idiom sublayer"): cascade layers resolve before
+  // specificity, so a rule in cairn-idiom beats every daisyUI sublayer only because this statement
+  // registers `utilities.cairn-idiom` AFTER `utilities.daisyui`. It must follow the four-layer
+  // ordering statement directly, and the two sublayer names must not be reversed (a reversed pin
+  // would make every idiom override lose to daisyUI's own declarations instead of winning).
+  it('pins the cairn-idiom sublayer after the daisyUI sublayer, directly following the layer-order statement', () => {
+    const layerOrderStatement = '@layer properties, theme, base, components, utilities;';
+    const layerOrderAt = css.indexOf(layerOrderStatement);
+    expect(layerOrderAt, 'expected the four-layer ordering statement').toBeGreaterThan(-1);
+    const pinAt = css.indexOf('@layer utilities.daisyui, utilities.cairn-idiom;');
+    expect(pinAt, 'expected the cairn-idiom sublayer pin').toBeGreaterThan(-1);
+    // Only whitespace sits between the two statements: the pin is the very next thing in the sheet.
+    const between = css.slice(layerOrderAt + layerOrderStatement.length, pinAt);
+    expect(between.trim()).toBe('');
+    expect(css).not.toContain('@layer utilities.cairn-idiom, utilities.daisyui;');
+  });
+
+  // The split theme roots: daisyUI's own theme variables come from `@plugin "daisyui/theme"`
+  // blocks, which daisyUI emits through addBase, so they land in `@layer base`. Everything else a
+  // root sets stays in the plain root rule, unlayered, so an unlayered host rule on the wrapper
+  // element cannot outrank it. Each theme's color-scheme is declared in both places.
+  it('emits the theme blocks in @layer base and keeps the plain root rule unlayered', () => {
+    const rootDecls = new Map<string, { layer: string | null; theme: string }[]>();
+    postcss.parse(css).walkRules((rule) => {
+      const theme = rule.selectors
+        .map((s) => s.replace(/"/g, "'").trim())
+        .find((s) => s === "[data-theme='cairn-admin']" || s === "[data-theme='cairn-admin-dark']");
+      if (!theme) return;
+      let layer: string | null = null;
+      for (let node = rule.parent; node && node.type !== 'root'; node = node.parent) {
+        if (node.type === 'atrule' && (node as postcss.AtRule).name === 'layer') layer = (node as postcss.AtRule).params;
+      }
+      rule.each((node) => {
+        if (node.type !== 'decl') return;
+        const seen = rootDecls.get(node.prop) ?? [];
+        seen.push({ layer, theme });
+        rootDecls.set(node.prop, seen);
+      });
+    });
+    for (const theme of ["[data-theme='cairn-admin']", "[data-theme='cairn-admin-dark']"]) {
+      // The set of layers a property is declared in on this root. Tailwind splits the root into
+      // several rules (a color-mix value gets an @supports twin), so one property can appear in
+      // more than one rule; only the layer each sits in matters here.
+      const layersOf = (prop: string) =>
+        new Set((rootDecls.get(prop) ?? []).filter((d) => d.theme === theme).map((d) => d.layer));
+      for (const prop of ['--color-primary', '--color-base-100', '--radius-box', '--size-field', '--border', '--depth', '--noise']) {
+        expect(layersOf(prop), `${theme} ${prop}`).toEqual(new Set(['base']));
+      }
+      for (const prop of ['--cairn-shadow', '--font-body', '--color-muted', 'font-family', 'scrollbar-color', 'font-synthesis']) {
+        expect(layersOf(prop), `${theme} ${prop}`).toEqual(new Set([null]));
+      }
+      expect(layersOf('color-scheme'), `${theme} color-scheme`).toEqual(new Set(['base', null]));
+    }
+  });
 
   // INVARIANT DISCIPLINE (do not weaken). The assertions in this suite guard the embed-anywhere and
   // cascade-layer contracts. As the sheet shrinks, a present-class LIST may lose an entry, but no
@@ -299,5 +356,55 @@ describe('the admin transition defaults: runtime computed style', () => {
     const { duration, timing } = await computedTransition('cairn-admin-dark');
     expect(duration).toBe('0.15s');
     expect(timing).toBe('cubic-bezier(0.2, 0, 0.38, 0.9)');
+  });
+});
+
+// The source-order guard the pin statement above cannot carry on its own: a minifier downstream of
+// this build (a consumer's own bundler, the showcase's Vite build) is free to relocate the
+// `@layer utilities.daisyui, utilities.cairn-idiom;` statement below both sublayer blocks, where it
+// registers nothing new, since a cascade layer's order is fixed by the first statement that names
+// it and both sublayers already did that by appearing first. Emission order is the guarantee a
+// minified build actually reads, so this asserts it directly against the file the package ships and
+// against a minified compile of that same file, rather than trusting the pin statement's position.
+describe('the shipped sheet: the daisyUI sublayer precedes cairn-idiom by emission order', () => {
+  const outPath = fileURLToPath(new URL('../../../dist/components/cairn-admin.css', import.meta.url));
+  const outDir = fileURLToPath(new URL('../../../dist/components/', import.meta.url));
+  // Matches the nested sublayer a Tailwind/postcss compile emits (`@layer daisyui.l1.l2 { ... }`)
+  // and the merged form a minifier can produce (no space before the brace).
+  const DAISYUI_SUBLAYER = /@layer\s+daisyui(?:\.[\w-]+)*\s*\{/;
+  const CAIRN_IDIOM_SUBLAYER = /@layer\s+cairn-idiom\s*\{/;
+
+  let variants: { label: string; css: string }[];
+  beforeAll(async () => {
+    const shipped = await buildAdminCss();
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(outPath, shipped);
+    const fromDisk = readFileSync(outPath, 'utf8');
+    const minified = new TextDecoder().decode(
+      transform({
+        filename: outPath,
+        code: new TextEncoder().encode(fromDisk),
+        minify: true,
+      }).code,
+    );
+    variants = [
+      { label: 'dist/components/cairn-admin.css, the file the package ships', css: fromDisk },
+      { label: 'the same sheet after a minifier relocates same-priority layer statements', css: minified },
+    ];
+  }, 60_000);
+
+  it('places the first daisyUI sublayer block ahead of the first cairn-idiom block', () => {
+    for (const { label, css } of variants) {
+      const daisyuiAt = css.search(DAISYUI_SUBLAYER);
+      const idiomAt = css.search(CAIRN_IDIOM_SUBLAYER);
+      expect(daisyuiAt, `${label}: expected a daisyUI sublayer block`).toBeGreaterThan(-1);
+      expect(idiomAt, `${label}: expected a cairn-idiom sublayer block`).toBeGreaterThan(-1);
+      expect(
+        daisyuiAt < idiomAt,
+        `${label}: expected the daisyUI sublayer (at ${daisyuiAt}) to precede cairn-idiom ` +
+          `(at ${idiomAt}); the pin statement sets nothing once a minifier moves it past both ` +
+          'blocks, so a reversed emission order would flip which sublayer wins.',
+      ).toBe(true);
+    }
   });
 });

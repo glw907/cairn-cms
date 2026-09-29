@@ -1,5 +1,10 @@
 import { defineConfig } from '@playwright/test';
 
+// Another project on this workstation can hold port 4173, so a fixed port would let a local e2e
+// run connect to that project's server and silently test the wrong site. E2E_PORT overrides the
+// port for a local run; CI never sets it, so CI keeps the 4173 default.
+const E2E_PORT = process.env.E2E_PORT ?? '4173';
+
 export default defineConfig({
   // CI's renderer produces run-to-run anti-aliasing jitter of a few dozen pixels;
   // baselines are CI-canonical (the regen dispatch), and a much lower allowance would go
@@ -27,11 +32,11 @@ export default defineConfig({
   // backend, then serve it with `preview`. A default build (no flag) folds the backend out; this
   // flagged build keeps it in for the specs, which exercise the real production output path.
   webServer: {
-    command: 'VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port 4173',
-    port: 4173,
+    command: `VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port ${E2E_PORT}`,
+    port: Number(E2E_PORT),
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: { CAIRN_DEV_BACKEND: '1' },
   },
-  use: { baseURL: 'http://localhost:4173' },
+  use: { baseURL: `http://localhost:${E2E_PORT}` },
 });

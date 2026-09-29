@@ -1,0 +1,5 @@
+/* A fixture holding the cairn-idiom-pass.css rule with no @layer wrapper at all, so the gate reads
+   it as an unsanctioned unlayered rule rather than a sublayer rule counted against idiomLayerCap. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-primary:not(:disabled) {
+  --btn-shadow: 0 1px 2px -1px oklch(35% 0.04 75 / 0.35);
+}

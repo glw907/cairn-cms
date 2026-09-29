@@ -406,7 +406,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
     width: max-content;
     max-width: 16rem;
     padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
+    border-radius: var(--radius-field, 0.375rem);
     font-size: var(--cairn-type-label, 0.6875rem);
     line-height: var(--cairn-type-label--leading, 0.875rem);
     text-align: start;

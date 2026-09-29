@@ -70,6 +70,7 @@ the readable on-surface ink counterparts at locked, measured contrast.
 | `--cairn-error-ink` | ink | on base-100 ~5.2:1, on error tint ~4.9:1 | on base-100 ~7:1, on error tint ~5.3:1 |
 | `--cairn-error-tint` | ink (surface for the ink above) | the locked break-list surface | the locked dark surface |
 | `--cairn-error-border` | ink (hairline for the tint) | the danger hairline | the dark danger hairline |
+| `--cairn-info-ink` | ink (info alert) | on base-100 7.30:1, on the 7% info alert panel 6.64:1 | on base-100 9.54:1, on the 12% info alert panel 7.95:1 |
 | `--cairn-tidy-del-row` | ink (tidy diff row tint) | deletion ink on row tint 5.81:1 | deletion ink on row tint 7.12:1 |
 | `--cairn-tidy-del-run` | ink (tidy diff run highlight) | deletion ink on run tint 5.08:1 | deletion ink on run tint 5.89:1 |
 | `--cairn-tidy-add-row` | ink (tidy diff row tint) | insertion ink on row tint 5.56:1 | insertion ink on row tint 8.01:1 |
@@ -135,10 +136,13 @@ reset, and the `prefers-reduced-motion` block also live outside `@layer componen
 floor (seven rules total). A swapped rule that merely *contains* `.menu li` or `.cairn-btn-guarded` no
 longer passes; an eighth unlayered rule fails the length check and the set-equality check.
 
-### The `.btn-primary` lift (resolved: stays Tier 2)
+### The `.btn-primary` lift (resolved: stays Tier 2, now in the `cairn-idiom` sublayer)
 
-The bespoke soft-violet shadow lift in the `.btn-primary:not(:disabled)` and its `:hover` rule. It
-cannot fold onto the theme's native `--depth`; see the resolved investigation below.
+The bespoke warm shadow lift, one `--btn-shadow` rule per theme root. It cannot fold onto
+the theme's native `--depth`; see the resolved investigation below. It moved out of
+`@layer components` into the `cairn-idiom` sublayer (see "The `cairn-idiom` category" below),
+where it renders for the first time: a `@layer components` rule cannot outrank daisyUI's own
+utilities-layer `.btn` declarations, so the lift never painted before the move.
 
 ### The theme-adaptive elevation pair
 
@@ -508,3 +512,202 @@ not live in `@layer components`; it is the fifth pinned unlayered rule,
 reaches for in dark). No new Tier-2 token: the selector references only Tier-1 theme color. Light
 is untouched (its wider `base-100`/`base-200` gap already reads legibly; verified by render).
 `componentsLayerCap` stays 14, unchanged.
+
+## The `cairn-idiom` category: a third gate signal, and its first two rules
+
+`check:custom-surface` gains a third category beside the pinned unlayered set and the
+`@layer components` cap: the `cairn-idiom` sublayer inside `@layer utilities`, the one home every
+rule that overrides a daisyUI declaration lives in from here on. daisyUI 5 compiles every
+component into named sublayers of `@layer utilities`; cascade layers resolve before specificity,
+so neither an unlayered rule (which also beats every markup utility, the defect pinned rule 10
+once carried) nor a `@layer components` rule (which loses outright) can override a daisyUI
+declaration. `build-admin-css.mjs` registers `utilities.cairn-idiom` after daisyUI's own
+`utilities.daisyui` sublayers, so a `cairn-idiom` rule outranks daisyUI regardless of the
+competing rule's own pseudo-class, and still loses to a markup utility, which Tailwind compiles
+unnested directly into `utilities` (an unnested declaration always outranks a nested sublayer).
+
+The gate parses the `cairn-idiom` block by brace matching, the same mechanism `componentsLayerCap`
+already uses for `@layer components`, and counts its selectors against a new `idiomLayerCap` in
+`scripts/checks/custom-surface-budget.json` (the showcase tree, which authors no admin sheet, gets
+`0`). The block's own selectors are excluded from the pinned-unlayered-rule scan, the same way the
+`@layer components` block already is, so a rule written in house style inside `cairn-idiom` is not
+mistaken for an unsanctioned unlayered rule.
+
+Two rules move in, both dead in `@layer components` until now (a `@layer components` rule cannot
+outrank daisyUI's own utilities-layer declarations regardless of specificity, the same mechanism
+every unlayered forced workaround above documents):
+
+- **The `.btn-primary` warm lift**, one `--btn-shadow` rule per theme root (see the Tier-2 entry
+  above): `0 1px 2px -1px oklch(35% 0.04 75 / .35)` in light, the dark theme's own warmer, darker
+  shadow tint (`oklch(10% 0.02 75)`) at the same geometry and alpha in dark. Consolidated from the
+  old dead rule's two selectors (rest, `:hover`) into one value held across every interaction
+  state, since a lift that grows on hover reads as the primary action fidgeting rather than
+  lifting. The selector's `:not()` list (`.btn-soft`, `.btn-outline`, `.btn-dash`, `.btn-ghost`,
+  `.btn-link`, `.btn-disabled`, `:disabled`, `[disabled]`, `[aria-disabled='true']`) excludes every
+  daisyUI variant and disabled form that already zeroes `--btn-shadow` itself, so the rule paints
+  only the filled, enabled primary it is meant to lift.
+- **The `.modal-box` repair**, moved unchanged: `border: 1px solid var(--cairn-card-border);
+  box-shadow: var(--cairn-shadow);`, replacing daisyUI's flat, theme-invariant black modal shadow
+  with the same theme-adaptive elevation pair every other floating surface carries.
+
+`idiomLayerCap` was `3` (two theme-scoped primary-lift selectors plus the one modal-box selector).
+`componentsLayerCap` drops from 19 to 16: the three selectors these two rules used to occupy in
+`@layer components` (dead there) leave it.
+
+## The button rules: the plain hairline, the type, the `btn-sm` padding, the soft primary
+
+Five more rule groups land in `cairn-idiom`, all button-only, raising `idiomLayerCap` from `3` to
+`11`:
+
+- **The plain `btn` hairline**, two selectors: an unconditional one holding `--btn-border` (a
+  `color-mix` toward `--color-base-content` at 22%) and the rest/focus-visible `--btn-bg`
+  (`--color-base-100`) across every state, and a combined `:is(:hover, :active)` selector stepping
+  `--btn-bg` to a 5% `color-mix` since both states share the same value. The `:not()` list
+  excludes every daisyUI color and style variant, the five forms daisyUI and this admin key a
+  selected control on (`.btn-active`, `[aria-pressed='true']`, `[aria-checked='true']`,
+  `[aria-current]:not(...)`, and `:checked:not(.filter [type='radio'].btn)`, daisyUI's own selector
+  for a checked radio styled as a `.btn`), and every disabled form, so a selected or disabled plain
+  button is left to whatever already governs it. `--btn-color` is never set, since daisyUI draws
+  the focus ring in `--btn-color` and a base-100 ring would vanish on a base-100 card.
+- **`btn-neutral`'s hover step**, `.btn-neutral:hover:not(:active)` setting `--btn-bg` to
+  `var(--cairn-ink-hover)`. The `:not(:active)` guard keeps a held press on daisyUI's own pressed
+  fill instead of this hover ink, since a press still matches `:hover` and this sublayer would
+  otherwise outrank daisyUI's `:active` rule regardless of specificity.
+- **Button type**, one selector setting `font-weight: 500` on a plain or ghost button (daisyUI's
+  base `.btn` rule hardcodes 600 with no variable to redirect, so this is a direct property
+  override). The `:not()` list excludes every color and style variant that keeps 600 by not being
+  matched (`.btn-primary`, `.btn-neutral`, `.btn-soft`, `.btn-error`, and the rest) and the five
+  selected-control forms, so a selected plain or ghost segment keeps daisyUI's own 600 rather than
+  reading 500 from this rule.
+- **`btn-sm` padding**, `.btn-sm { --btn-p: 0.875rem }`, 2px wider per side than daisyUI's own
+  default; no other size changes, since a global `--btn-p` would shrink the default `btn` from its
+  own 1rem.
+- **Soft primary**, three selectors on `.btn-soft.btn-primary`, each excluding the four disabled
+  forms: an unconditional one pinning `--btn-border` to `transparent`, `--btn-fg` to
+  `var(--color-primary)`, and rest's `--btn-bg` to a 10% `color-mix`; a combined
+  `:is(:hover, :focus-visible)` selector stepping `--btn-bg` to 15%; and an `:active` selector,
+  declared after the hover/focus-visible one so a held press (which still matches `:hover`) reads
+  its own deeper step, stepping `--btn-bg` to 22%. Pinning `--btn-fg` matters because daisyUI's own
+  `.btn-soft` reads `color` off `--btn-rest-fg`/`--btn-color` at rest but swaps to a direct
+  `color: var(--btn-fg)` declaration at hover, focus-visible, active, and `:checked`, and
+  `.btn-primary` sets `--btn-fg` to `--color-primary-content`, so a stock soft-primary button swaps
+  its own tinted-primary text for primary-content the moment it is touched. Disabled is left to
+  daisyUI entirely.
+
+`idiomLayerCap` is `11`: the three prior selectors plus two for the hairline, one for the
+`btn-neutral` hover step, one for button type, one for `btn-sm` padding, and three for soft
+primary. `componentsLayerCap` stays `16`; none of these five rule groups previously lived there.
+
+## The selected segment: pinned rules 10 and 12 superseded, rule 11 widened and moved in
+
+The two unlayered rules that hardcoded dark's `.btn-active` fill (rule 10) and its hover step (rule
+12) are retired outright, replaced by one selected-segment rule group in `cairn-idiom`, widened
+from `.btn-active` alone to every form daisyUI (and this admin) key a selected control on:
+`.btn-active`, `[aria-pressed='true']`, `[aria-checked='true']`, a non-false non-empty
+`[aria-current]`, and `:checked:not(.filter [type='radio'].btn)` (a checked radio styled as a join
+segment). Rule 11 (the outline/dash ink repair) moves in unchanged in mechanism, widened the same
+way.
+
+- **The wash and weight**, one selector: `--btn-bg: color-mix(in oklab, var(--color-base-content)
+  7%, var(--color-base-100))`, `--btn-fg: var(--color-base-content)`, `font-weight: 600`, in both
+  themes. The `--btn-fg` reset neutralizes daisyUI's own `:checked` rule, which sets `--btn-fg` to
+  `--color-primary-content` on any checked `.btn` regardless of variant; since this selector
+  already excludes every color variant, the reset only ever touches the plain checked case. No
+  pseudo-class, so it holds across focus-visible and active the same way the plain hairline does.
+- **The state hairline, two selectors** (one per theme, since the literal differs): decision 2
+  seeds light from the identical 55% base-content mix `segmentTintClass` compiles to from
+  `ring-base-content/55`, and dark from rule 10's own locked `oklch(57% 0.012 75)`. Both seeds
+  clear 3:1 against `base-100`, but neither clears 3:1 against a resting sibling's own 22% edge
+  (task 5's plain hairline) composited on `base-100`: light measures 2.303:1, dark 1.935:1.
+  Measured against the seed value, each seed measures over 3:1 on the base-100 row and under 3:1 on
+  the resting-sibling row; per decision 2 each moves in lightness only, staying inside its own
+  seed's formula: light from 55% to 65% (4.873:1 base-100, 3.136:1 resting sibling), dark's own `L`
+  channel from 57% to 70% (6.115:1 base-100, 3.233:1 resting sibling).
+- **The hover step**, one selector, `:hover:not(:active)`, stepping the wash to a 12% mix. The
+  `:not(:active)` guard is the same one `btn-neutral`'s own hover step uses, so a held press reads
+  the resting wash, matching the Outcome's "holds them at focus-visible and active."
+- **Rule 11, widened**, one selector: `.btn:is(.btn-outline, .btn-dash):not(<disabled forms>):is(<
+  five selected forms>) { color: var(--btn-fg, var(--color-base-content)) }`. No color-variant
+  exclusion, unlike the wash rule above: an outline or dashed variant control needs this same ink
+  repair, not the neutral wash.
+
+`idiomLayerCap` rises from `11` to `17`: the wash/weight/ink-reset selector, the two per-theme
+hairline selectors, the hover selector (guarded on `@media (hover: hover)`, the modality gate), the
+widened rule 11 selector, and the plain hairline's own fill step, split into an unguarded `:active`
+copy and a hover copy under the same guard. `.btn-link` also joins the wash/weight/ink-reset and
+hairline selectors' exclusion list, so a selected nav or breadcrumb link keeps daisyUI's own link
+look. The unlayered allowlist drops from 18 to 15: rules 10, 11 (its old unwidened form), and 12 all
+leave the unlayered block.
+
+## Fields and marks: rules 13 and 14 move in, the switch, concentric corners, Lucide strokes
+
+Two more rules move in, unchanged in mechanism, widened at nothing:
+
+- **Rules 13 and 14** (the unchecked checkbox/radio edge and the unfocused `.input`/`.select`/
+  `.textarea` edge, both the 55% `color-mix` toward `--color-base-content`), moved out of the
+  unlayered block for the identical reason rules 10-12 were: a components-layer rule cannot outrank
+  daisyUI's own utilities-layer border declaration regardless of specificity, and an unlayered rule,
+  while it can, also outranks every markup utility along with it. Every selector and exclusion
+  carries over unchanged (`.checkbox`'s own `:indeterminate` exclusion, `.radio`'s deliberate lack
+  of one, the field family's `:focus`/`:focus-within`/`:disabled`/`[disabled]`/
+  `.toolkit-toolbar-select`/daisyUI's own error-family exclusions). After the move a
+  `border-error` markup utility on a field, or `.toolkit-toolbar-select`'s own scoped
+  `--input-color` override, wins where it could not before.
+
+The unlayered allowlist drops from 15 to 13. `idiomLayerCap` rises from 17 to 19 for these two
+(one selector-count match each, since a comma-joined multi-selector rule counts once, the same
+mechanism `componentsLayerCap` already relies on).
+
+Three more rule groups land in `cairn-idiom`, raising `idiomLayerCap` from 19 to 23:
+
+- **The switch's geometry**, one selector pair: `border-radius: 9999px` on `.toggle` and its
+  `::before`, unconditional (no color-variant or state exclusion), since daisyUI derives both radii
+  from `--radius-selector` and shape does not change with color, checked state, or disabled state.
+- **The switch's checked fill**, two selectors (track, knob), each excluding the eight color
+  modifiers and `:disabled` (mirroring daisyUI's own `.toggle:disabled` selector, which carries no
+  `[disabled]`/`[aria-disabled]` form of its own): `background-color: var(--color-neutral)` on the
+  track, `background-color: var(--color-base-100)` on the knob's own `::before`, across all three
+  daisyUI checked forms (`:checked`, `[aria-checked='true']`, `:has(> input:checked)`). The knob is
+  set directly on `::before` rather than through `--input-color`, since daisyUI draws both the knob
+  and the `:focus-visible` ring from `currentColor`; setting the knob through the shared variable
+  would have turned the ring `base-100` too, and a `base-100` ring vanishes on a `base-100` card.
+- **Concentric corners**, one selector: `--radius-field: calc(var(--radius-box) - 0.25rem)` on the
+  `dropdown-content.menu` pair, since daisyUI's own `.menu` item rule reads `--radius-field` but
+  `.menu` itself never declares it, so an item's radius otherwise floats free of its own panel's.
+  Sets the variable, not `border-radius` directly, so an item's own `rounded-none` utility still
+  wins.
+
+`componentsLayerCap` rises from 16 to 17: Lucide's stroke retune,
+`svg.lucide[stroke-width='2'] { stroke-width: 1.75 }`, lands in `@layer components` rather than
+`cairn-idiom`, since it overrides no daisyUI declaration (only Lucide's own default SVG attribute
+value), so it only needs to sort before the utilities layer, not after daisyUI's own sublayers
+inside it. A markup `stroke-[2.5]` utility still wins from its later, unnested position regardless.
+
+## Alerts: the four color variants become a tinted panel, raising `idiomLayerCap` from 23 to 29
+
+Six selectors land in `cairn-idiom`, one rule group per alert color:
+
+- **`.alert-error`**, one combined selector (both roots): sets `--alert-color` to the locked
+  `--cairn-error-tint` and `--alert-border-color` to the locked `--cairn-error-border`, reusing
+  the danger family already tuned for the safe-delete dialog, and `color` to `--cairn-error-ink`.
+- **`.alert-warning`**, one combined selector: the panel and edge each mix `--color-warning`
+  toward `--color-base-100` (12% and 45%), the same percentage in both roots, and `color` reads
+  the already-locked `--cairn-warning-ink`.
+- **`.alert-success`** and **`.alert-info`**, two selectors each (one per root): the panel mixes
+  7% in light and 12% in dark, since dark's darker base-100 needs a stronger mix to hold the same
+  visible tint; the edge holds 30% in both. Success's ink is the already-locked
+  `--color-positive-ink`; info's ink is the new `--cairn-info-ink` (`oklch(44% 0.12 240)` light,
+  `oklch(82% 0.08 240)` dark), added to the plain root rule's Tier-2 cluster, locked at 7.30:1
+  (light, on base-100) / 6.64:1 (light, on the 7% panel) and 9.54:1 (dark, on base-100) / 7.95:1
+  (dark, on the 12% panel), all clearing the 4.5:1 AA floor.
+
+Every rule excludes daisyUI's own `alert-soft`/`alert-outline`/`alert-dash` style variants, so a
+developer's own styled alert keeps daisyUI's stock look, and a bare `.alert` (setting neither
+variable) is untouched. `--alert-color` and `--alert-border-color` are set through the variables
+daisyUI's own `.alert` rule reads via `var(...)`, not `background-color`/`border-color` directly:
+`border-color` sits at the plain, unnested `.alert` selector position (one of the file's known
+unnested cases, alongside `.kbd`'s `box-shadow` and `.collapse`'s `visibility`), which a sublayer
+rule cannot outrank directly, so only the variable form reaches it; `background-color` sits inside
+daisyUI's own nested sublayer and so is reachable the same way `color` is. A markup `color`
+utility still wins over the ink, since Tailwind compiles it unlayered while this rule lives in a
+nested sublayer.

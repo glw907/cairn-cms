@@ -383,24 +383,24 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                 {#if formIncomplete}
                   <!-- The skeleton: never a fabricated finished block. The empty required regions are
                        called out by name so the editor knows exactly what the preview still needs. -->
-                  <!-- rounded not rounded-box: nested at this panel's p-3 (12px) inset inside the
-                       outer rounded-box (1rem) panel, so the inner radius is 1rem minus 12px. -->
-                  <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
+                  <!-- The three preview slots below are a tile nested inside the outer panel, so
+                       each takes rounded-box, the same as the panel it stands in for. -->
+                  <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
                     <p class="type-body font-medium">Fill the required fields to preview this.</p>
                     <p class="flex flex-wrap justify-center gap-1.5 type-label">
                       {#each emptyRequired as label (label)}
-                        <span class="rounded border border-dashed border-[color-mix(in_oklab,var(--color-error)_55%,var(--cairn-card-border))] px-2 py-0.5 font-medium text-error">{label} needed</span>
+                        <span class="rounded-selector border border-dashed border-[color-mix(in_oklab,var(--color-error)_55%,var(--cairn-card-border))] px-2 py-0.5 font-medium text-error">{label} needed</span>
                       {/each}
                     </p>
                   </div>
                 {:else if previewState === 'failed'}
                   <!-- The render threw. Say so and keep the form intact; the editor can still insert. -->
-                  <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
+                  <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-box border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
                     <p class="type-body font-semibold">Preview could not render</p>
                     <p class="type-meta text-muted">Your settings are kept. You can still insert and check it on the page.</p>
                   </div>
                 {:else}
-                  <div class="flex min-h-64 flex-1 overflow-hidden rounded border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+                  <div class="flex min-h-64 flex-1 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
                     <iframe sandbox="" title="Component preview" srcdoc={previewDoc} class="block w-full flex-1"></iframe>
                   </div>
                 {/if}
@@ -454,7 +454,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                     <li role="listitem">
                       <button type="button" data-testid="cairn-pk-row" class="flex items-start gap-3 py-2" onclick={() => choose(def)} onkeydown={onRowKeydown}>
                         {#if def.icon && icons?.[def.icon]}
-                          <span class="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-base-200 text-base-content">
+                          <span class="flex h-8 w-8 flex-none items-center justify-center rounded-field bg-base-200 text-base-content">
                             <svg class="cairn-glyph h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d={icons[def.icon]} /></svg>
                           </span>
                         {/if}

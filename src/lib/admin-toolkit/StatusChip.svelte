@@ -9,7 +9,7 @@ The probe measured the 6px dot illegible toolkit-wide across three consumer scre
 fusing tone INTO the register instead: `register` alone now carries both shape and color, `tone`
 retires with the dot, and the whole chip vocabulary is three registers, no more.
 
-Assembles from one daisyUI 5 primitive already in cairn's admin CSS build: `badge` (the pill
+Assembles from one daisyUI 5 primitive already in cairn's admin CSS build: `badge` (the chip
 shape), with `badge-outline` supplying the inherited-border box model every register composes on
 top of. `badge-outline` retired from cairn's own tree on its own: it compiles to an explicit
 background and border color that can match one of

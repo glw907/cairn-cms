@@ -83,9 +83,19 @@ function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
-/** Whether a modal dialog still paints its backdrop, which `inert` must not take away. */
-function backdropPainted(dialog: Element): boolean {
-  return getComputedStyle(dialog, '::backdrop').display !== 'none';
+/**
+ * Whether a modal dialog still paints its backdrop, which `inert` must not take away. A plain
+ * dialog paints the native `::backdrop`. daisyUI's `.modal` hides that pseudo-element and paints
+ * its scrim as the open dialog's own background instead, which fades in on a transition, so the
+ * read suspends the transition to see the scrim's settled color and then restores it.
+ */
+function backdropPainted(dialog: HTMLElement): boolean {
+  if (getComputedStyle(dialog, '::backdrop').display !== 'none') return true;
+  const transition = dialog.style.transition;
+  dialog.style.transition = 'none';
+  const scrim = getComputedStyle(dialog).backgroundColor;
+  dialog.style.transition = transition;
+  return scrim !== 'rgba(0, 0, 0, 0)';
 }
 
 /**

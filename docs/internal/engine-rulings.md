@@ -6060,6 +6060,15 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verified:** the vendor-exemption fixtures in `motion-property` and `motion-vocabulary`'s own
   test suites, asserting a DaisyUI component class produces no finding while the same property on
   a cairn-authored class still does.
+- **Note (theme identity pass A, 2026-09-28):** decision 4 reads as timing-scoped. It bars an
+  unlayered override of the four components' motion (durations, easings, delays, and the
+  properties they animate), not every unlayered declaration on those classes. On that reading the
+  guarded-button rule (`.btn.cairn-btn-guarded[aria-disabled='true']`, a pinned unlayered rule in
+  `src/lib/components/cairn-admin.css`) stands, since it sets `pointer-events` and a background,
+  not a timing. The theme identity pass moved every other override of a DaisyUI declaration into
+  the `utilities.cairn-idiom` sublayer, so this rule is the one unlayered `.btn` override left.
+  Record: `docs/superpowers/specs/2026-09-26-theme-identity-design.md`, the paragraph on retiring
+  rules 10 to 12 (review finding CS-B1).
 
 ## motion-tooltip-menu-hover-guards-dropped: dropping the `.tooltip`/`.menu` hover guards  (decline, 2026-09-15, admin motion)
 

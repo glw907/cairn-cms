@@ -172,7 +172,7 @@ describe('LoginPage', () => {
 
   it('paints the confirmation mark with the on-surface success ink token', async () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
-    const mark = screen.container.querySelector('.rounded-xl');
+    const mark = screen.container.querySelector('.rounded-field');
     expect(mark).toHaveClass('cairn-text-success');
   });
 

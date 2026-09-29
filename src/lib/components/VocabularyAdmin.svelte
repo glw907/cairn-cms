@@ -216,7 +216,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
       {:else if newSlug}
         <span class="text-muted"
           >Stored as
-          <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">{newSlug}</code>
+          <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">{newSlug}</code>
           &middot; editors see the name, entries keep the slug</span
         >
       {:else}
@@ -232,7 +232,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
       <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
         Your tags
         <span
-          class="rounded-full bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
+          class="rounded-selector bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
           >{working.length}</span
         >
       </h2>
@@ -300,7 +300,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
                     ? 'entry'
                     : 'entries'}. Remove it from those entries first."
                   onclick={() => remove(entry.value)}
-                  class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-subtle opacity-50 sm:col-start-4 sm:row-span-1"
+                  class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-field text-subtle opacity-50 sm:col-start-4 sm:row-span-1"
                 >
                   <Trash2Icon class="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -312,7 +312,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
                   data-value={entry.value}
                   aria-label="Remove {entry.label}"
                   onclick={() => remove(entry.value)}
-                  class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-error hover:bg-error/10 sm:col-start-4 sm:row-span-1"
+                  class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-field text-error hover:bg-error/10 sm:col-start-4 sm:row-span-1"
                 >
                   <Trash2Icon class="h-4 w-4" aria-hidden="true" />
                 </button>

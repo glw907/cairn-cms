@@ -19,12 +19,13 @@ import { formatCivilDate, formatTimestamp } from '@glw907/cairn-cms/admin-toolki
 The TypeScript types in `src/lib/admin-toolkit` are the source of truth, and the
 export-coverage gate checks every name here against them.
 
-Every component this subpath carries assembles daisyUI classes only from the blessed set
-compiled into cairn's own `cairn-admin.css` (`src/lib/components/admin-css-safelist.ts`); each
-component's own section below lists its exact class inventory as the grep surface a future
-daisyUI upgrade checks against. Spacing, truncation, and wrapper layout live in each
-component's own scoped `<style>` block rather than an arbitrary Tailwind utility string, since
-only a safelisted component class is guaranteed to survive into the compiled admin sheet.
+Every component this subpath carries assembles daisyUI classes only. cairn's own
+`cairn-admin.css` compiles every daisyUI component and utility class except calendar, so each
+one renders under the admin theme; each component's own section below lists its exact class
+inventory as the grep surface a future daisyUI upgrade checks against. Spacing, truncation, and
+wrapper layout live in each component's own scoped `<style>` block rather than an arbitrary
+Tailwind utility string, since the admin sheet compiles a Tailwind utility only when cairn's own
+source uses it.
 
 ---
 
@@ -322,10 +323,8 @@ contract: omit both for the original behavior unchanged, or pass both to add a p
 `onPageSizeChange` with the chosen size on change.
 
 **daisyUI assembly:** `join` + `join-item` + `btn`/`btn-sm`/`btn-active` for the page nav, plus
-`select`/`select-sm` for the optional page-size control. Every class already compiles from
-cairn's own admin usage or the blessed safelist (`join` itself, `join-item`, and the `join`
-orientation modifiers; see `ListToolbar`'s own daisyUI-assembly note for why `join` moved from an
-incidental compile to an explicit safelist entry).
+`select`/`select-sm` for the optional page-size control. Every one compiles into the admin
+sheet with the rest of daisyUI.
 
 **Exact class inventory:** `join`, `join-item`, `btn`, `btn-sm`, `btn-active`, `btn-disabled`,
 `select`, `select-sm`.
@@ -528,6 +527,10 @@ always-visible scan-ability segmented display exists for. `trailing` is an optio
 rendered after the toolbar band, for a screen-specific view control this component has no
 vocabulary for (a grid/list density toggle).
 
+Each control on the row shares one height, derived from the theme's `--size-field`. A segmented
+group that does not fit its row scrolls horizontally inside its own box and never wraps an option
+onto a second line, since a join reads as one control.
+
 A segmented filter is a real ARIA radiogroup: the wrapping group is `role="radiogroup"` and each
 option is `role="radio"` with `aria-checked`, never `aria-pressed`. Only the checked option is a
 tab stop; ArrowRight/ArrowDown, ArrowLeft/ArrowUp, Home, and End move the selection and the focus
@@ -568,10 +571,9 @@ filter, promoted or overflow), `join`/`join-item`/`btn`/`btn-sm`/`btn-active` (a
 display filter, the same assembly `Pagination`'s own page nav uses), `btn`/`btn-sm`/`btn-primary`/
 `btn-outline` (the primary action and the overflow trigger), `dropdown`/`dropdown-content`/
 `dropdown-open`/`menu` (the overflow disclosure and each `'menu'`-display facet's own option list).
-The CSS build's `@source` now scans `src/lib/admin-toolkit` (it didn't when this component first
-graduated there, the visual regression `check:admin-css-classes` now guards against), and `join`
-carries an explicit, deliberate safelist entry alongside `join-item`; every other class already
-compiles from cairn's own admin usage.
+Every one compiles into the admin sheet with the rest of daisyUI. The CSS build's `@source` also
+scans `src/lib/admin-toolkit` for the Tailwind utilities its markup uses, which
+`check:admin-css-classes` guards.
 
 **Exact class inventory:** `input`, `input-sm`, `select`, `select-sm`, `join`, `join-item`, `btn`,
 `btn-sm`, `btn-active`, `btn-primary`, `btn-outline`, `dropdown`, `dropdown-content`,

@@ -288,6 +288,13 @@ describe('TIER_ORDER and TIER_GATES', () => {
     expect(TIER_GATES.full.endsWith('npm --prefix examples/showcase run test:e2e')).toBe(true);
   });
 
+  it('the engine gate runs the node projects, then the serialized component run, then the create-cairn-site suite', () => {
+    expect(TIER_GATES.engine).toContain(
+      'npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site',
+    );
+    expect(TIER_GATES.engine.endsWith('npm test -w packages/create-cairn-site')).toBe(true);
+  });
+
   it('runs no npm check script twice in the full tier, since check:docs-gate already carries the docs-gate components', () => {
     const scripts = [...TIER_GATES.full.matchAll(/npm run (check:[a-z:-]+)/g)].map((m) => m[1]);
     expect(scripts.length).toBeGreaterThan(0);

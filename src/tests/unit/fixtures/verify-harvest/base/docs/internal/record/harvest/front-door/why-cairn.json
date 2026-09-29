@@ -1,0 +1,8 @@
+{
+  "page": "docs/why-cairn.md",
+  "blob": "34284e6134129621a7ecb0ab796b0c63bebd8fb5",
+  "claims": [
+    { "lines": [1, 1], "paraphrase": "Page heading.", "cut": "navigation" },
+    { "lines": [3, 3], "paraphrase": "A stance claim backed by the owner brief.", "fact": "f:fd0001" }
+  ]
+}

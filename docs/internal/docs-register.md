@@ -288,9 +288,11 @@ flat taste.
   strip its caveat is the tell. Shortform-video compression is the same failure at the sentence
   level: telegraphic delivery in place of the measured report voice.
 - **No consumer-help softeners.** Google's
-  [word list](https://developers.google.com/style/word-list) says to eliminate "simply" and to
-  replace or drop "just," and the register extends that to "obviously." Folksy softeners, a
-  micro-instructed action, and hand-holding such as "you never have to..." are the same family.
+  [word list](https://developers.google.com/style/word-list) says to try eliminating "simply" and
+  to avoid "just" as filler, keeping "just" where it says one approach is simpler than another;
+  the register extends the ban to "obviously." Folksy softeners, a micro-instructed action in
+  explanatory prose outside a procedure's steps (a step carries one imperative action), and
+  hand-holding such as "you never have to..." are the same family.
 - **No invented material.** A manufactured concrete scenario (an editor on hotel Wi-Fi), a
   metaphor no sentence established, and biography or deliberation the author never reported all
   read as evidence and are not.

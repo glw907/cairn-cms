@@ -56,10 +56,12 @@ describe('check-public-scope runs', () => {
     expect([...PUBLIC_RULES].sort()).toEqual(registered.sort());
   });
 
-  it('runs the showcase alone and with the cairn-theme overlay after its theme', () => {
+  it('runs the showcase alone, then with the cairn-theme overlay after its theme, then as a fixture-theme copy', () => {
     expect(VARIANTS.map((variant) => variant.stylesheets)).toEqual([
       undefined,
       ['src/theme/theme.css', '../cairn-theme/cairn.css'],
+      ['src/theme/theme.css'],
     ]);
+    expect(VARIANTS.map((variant) => Boolean(variant.fixture))).toEqual([false, false, true]);
   });
 });

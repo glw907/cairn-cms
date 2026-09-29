@@ -18,6 +18,12 @@ migrated).
 
 ```
 your-site/
+├── .claude/
+│   └── skills/
+│       ├── cairn-admin-screens/
+│       ├── cairn-consult/
+│       ├── cairn-extend/
+│       └── cairn-public/
 ├── .gitattributes
 ├── .gitignore
 ├── .prettierignore
@@ -96,7 +102,9 @@ site scaffolded from the published package carries both.*
 
 ## Root
 
-The tree above is complete; the map below is not. It covers the entries that are cairn-specific
+The tree above shows the entries this page names, with the four skills under `.claude/skills/`. It
+leaves out some tooling files, such as `.github/` and `.dev.vars.example`. The map below is not
+complete either. It covers the entries that are cairn-specific
 or otherwise need explaining, and skips the tooling and plain SvelteKit files a developer already
 recognizes (`tsconfig.json`, `README.md`, `scripts/`, `src/app.html`, the `src/chassis/` files
 not named below, and the `admin` `+layout.server.ts`/`+layout.svelte`/home
@@ -115,6 +123,7 @@ site by hand](./build-a-site-by-hand.md) writes the first two from nothing.
 | `migrations/` | The auth store's schema. See [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md#provision-the-auth-database) for what each numbered file does. |
 | `migrations-app/` | `APP_DB`'s own schema, applied the same way (`wrangler d1 migrations apply`) but against `APP_DB`, never `migrations/`: each database walks its own directory. |
 | `package.json` | Standard SvelteKit dependencies plus `@glw907/cairn-cms`. `npm run dev` starts a local admin backed by an in-memory double; `npm run build` produces the deployable Worker. |
+| `.claude/skills/` | Four agent skills for the site: `cairn-public` (restyle the public side), `cairn-admin-screens` (build an admin screen), `cairn-extend` (build on the seams), and `cairn-consult` (consult the engine before a pass). |
 
 ## Content (`src/content/`)
 
@@ -134,7 +143,7 @@ you have something to look at, edit, and delete before you write your own.
 | `markdown-components.ts` | The registered markdown components (`defineComponent` declarations) the adapter's `rendering.components` registry lists. |
 | `site-config.ts` | Parses `site.config.yaml` with [`parseSiteConfig`](../reference/core.md#parsesiteconfig). |
 | `site.config.yaml` | Site name, description, nav menus, and the tag vocabulary. See [Manage your tag vocabulary](../editors/manage-your-tag-vocabulary.md) for the editor side of that file. |
-| `theme.css`, `site.css` | The theme's own design tokens and page-level styling, layered over the chassis's generic defaults. See [Design your site](./design-your-site.md). |
+| `theme.css`, `site.css` | The theme's own design tokens and page-level styling, layered over the engine's `cairn-public.css` roles and the chassis's generic defaults. See [Design your site](./design-your-site.md). |
 | `components/` | The theme's article renderer (`ArticleView`) and public-facing chrome (`SiteHeader`, `SiteFooter`). The registered markdown components live in `markdown-components.ts`, not here. |
 | `islands/` | The one hydrated component the scaffold ships (`Banner.svelte`) as a worked example. See [Add an island](./add-an-island.md). |
 
@@ -156,7 +165,7 @@ screen](./add-a-custom-admin-screen.md) walks through building from nothing; it 
 | `(site)/[...path=md]/+server.ts` | The raw-markdown twin of the same catch-all, matched by the `md` param matcher in `src/params/md.ts`. See [Wire the delivery surface](./wire-the-delivery-surface.md#the-markdown-twin-and-its-md-route). |
 | `(site)/archive/[page]/` | A paginated post archive, built on the chassis's `archive.ts` slicing helper. |
 | `(site)/preview/[token]/` | The [share-a-draft-preview](./share-a-draft-preview.md) landing page. |
-| `(site)/styleguide/` | A living reference of the theme's own components and typography; useful while you're editing the theme, safe to delete otherwise. |
+| `(site)/styleguide/` | A living reference: it renders every registered markdown component from the registry, the type scale, and the component recipes. Useful while you're editing the theme, safe to delete otherwise. |
 | `feed.xml/`, `feed.json/` | RSS and JSON Feed, via [`rssResponse`/`jsonFeedResponse`](../reference/delivery-data.md#rssresponse). |
 | `sitemap.xml/` | Via [`sitemapResponse`](../reference/delivery-data.md#sitemapresponse). |
 | `robots.txt/` | Via [`robotsResponse`](../reference/delivery-data.md#robotsresponse); see [Choose an AI posture](./choose-an-ai-posture.md) for the `posture` option it reads. |
@@ -169,7 +178,7 @@ screen](./add-a-custom-admin-screen.md) walks through building from nothing; it 
 Genre-free plumbing the theme mounts onto: the content-index glob, the feed and delivery config
 literals, the runtime composition point (`cairn.server.ts`), the dev-backend gate, the render
 wiring, the archive-slicing helper, the date formatter, the theme toggle, and the base design
-tokens and prose CSS every theme starts from. You'll read it more than you'll edit it; [Design
+tokens (which import the engine's `cairn-public.css`) and prose CSS every theme starts from. You'll read it more than you'll edit it; [Design
 your site](./design-your-site.md) covers the seams it exposes for a theme to override, and
 `src/chassis/README.md` in your own repository lists the directory file by file, which is why
 this page doesn't.

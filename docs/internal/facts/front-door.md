@@ -175,13 +175,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   `docs/internal/what-cairn-is-and-is-not.md:83-90`, "The `cairn` tool is the operator's cockpit,
   not engine surface", "a second front over the same contracts", and "never adds to the engine's
   public surface or models a domain actor". [verified]
-- `f:xh2mwb` `cairn-audit` ships whole as a consumer product: all 34 registered rules (17 static, 17
-  rendered) audit the `/admin` surface, which is itself cairn's own admin toolkit, so
-  design-conformance auditing is the product being shipped, not engine-internal apparatus. Key
-  phrase: "ships whole, as consumer product". Source:
-  `docs/internal/what-cairn-is-and-is-not.md:45-52`, "`cairn-audit` ships whole, as consumer
-  product," citing `docs/reference/cairn-audit.md`, and `src/lib/audit/rules/static/index.ts#staticRules`,
-  `src/lib/audit/rules/rendered/index.ts#renderedRules`. [verified]
+- `f:xh2mwb` `cairn-audit` ships whole as a consumer product: 35 of the 38 registered rules (18 static, 17 rendered) audit the `/admin` surface, which is itself cairn's own admin toolkit, so design-conformance auditing is the product being shipped, not engine-internal apparatus. The other three, `public-literals`, `theme-conformance`, and `theme-contrast`, audit a site's public files under the public scope and run at advisory tier on a consumer. Key phrase: "ships whole, as consumer product". Source: `docs/internal/what-cairn-is-and-is-not.md:45-55`, "`cairn-audit` ships whole, as consumer product," citing `docs/reference/cairn-audit.md`, and `src/lib/audit/rules/static/index.ts#staticRules`, `src/lib/audit/rules/rendered/index.ts#renderedRules`. [verified]
 
 ## Harvest record
 Decisions/opinions found, not harvested as facts:

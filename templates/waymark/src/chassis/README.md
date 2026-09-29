@@ -47,16 +47,19 @@ image of `$chassis` for everything that is not genre-free.
 ## Class namespaces
 
 Four class prefixes appear across this site, and each names who owns it, not enforced by a
-gate but stated here so a new class reaches for the right one. `cairn-*` is the chassis's: a
-class the engine or a chassis file defines and a theme only ever colors through tokens, never
-restyles the structure of (`cairn-place-center`/`-wide`/`-full`, `cairn-tok-*`, `cairn-router-scrolling`,
-`cairn-focus-ring`). `site-*` is the theme's own chrome and page classes and custom properties
-(`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`). `sg-*` is the styleguide
-route's own demo classes, scoped to `/styleguide` and never read anywhere else. A directive class
-with no prefix at all (`.callout`, `.alert`, `.card`) is engine-fixed under `.prose`: the markdown
-render pipeline emits it directly from a directive, so it is neither the chassis's nor a theme's
-to rename; a theme-registered custom directive component (`.banner`, this theme's own) is free to
-pick its own bare name the same way, since it never collides with the fixed set.
+gate but stated here so a new class reaches for the right one. `cairn-*` is shared between the
+engine and the chassis: the engine writes or styles `cairn-place-*`, `cairn-tok-*`, and
+`cairn-focus-ring`, and the chassis defines the rest (`cairn-card`, `cairn-band`, `cairn-section`,
+`cairn-hero`, `cairn-sidebar-layout`, `cairn-router-scrolling`). A theme colors a `cairn-*` class
+through tokens and never restyles its structure. `site-*` is the theme's own chrome and page
+classes and custom properties (`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`).
+`sg-*` is the styleguide route's own demo classes, scoped to `/styleguide` and never read anywhere
+else. A directive class with no prefix at all (`.callout`, `.alert`, `.banner`) comes from the
+theme's own `markdown-components.ts`, which stamps it in each component's `build()`; a theme may
+rename it, and it never collides with anything the engine fixes. `.card` is not a directive, and the
+chassis primitive is `.cairn-card`. The names the engine itself fixes are `figure` with
+`cairn-place-*`, `.table-scroll`, `pre.shiki` with `.cairn-tok-*`, and `include`; the registry is the
+"Emitted classes" section of the engine's `render` reference page.
 
 ## Every override seam
 
@@ -66,32 +69,46 @@ them declares any content model or component of their own. A theme with a differ
 concepts or fields changes only `cairn.config.ts`; a different set of registered components
 changes `markdown-components.ts` (and `icons.ts` for a different glyph set).
 
-**The token system (`tokens.css`).** Every design-scale key (`--font-*`, `--text-step-*`,
-`--spacing-*`, `--leading-*`, `--tracking-*`, `--container-measure*`, `--color-muted`,
-`--color-card-border`) is declared inside `@theme` with a generic default. A theme `@import`s
-`tokens.css` first, then redeclares the same keys in its own later `@theme` block with its real
-numbers; cascade order does the override (`theme.css` is the worked example). The semantic
-bindings (`--cairn-code-*`, `--cairn-*-ink`, `--cairn-shadow`, `--cairn-cta-*`) read a DaisyUI role
-directly as their generic default (for example `--cairn-success-ink: var(--color-success)`), so
-they resolve to something reasonable under any theme's own colors with zero tuning; a theme that
-wants a hand-tuned on-surface ink (a fill is usually too light for small text) redeclares these in
-its own `:root` and dark-mode blocks. The named DaisyUI themes themselves
-(`@plugin "daisyui/theme"`, every role color and geometry value) are never declared here: that is
-100% a theme's own choice, light and dark. The `.cairn-tok-*` syntax-highlight class contract and
-the `pre.shiki` binding are pure structure and never need a theme's edit at all; only the token
-values they read do.
+**The token system (`tokens.css`).** `tokens.css` imports `@glw907/cairn-cms/cairn-public.css`
+right after Tailwind. The engine owns the roles that file carries: the status inks
+(`--cairn-*-ink`), the shadow (`--cairn-shadow`), the focus ring, the code-highlight ramp
+(`--cairn-code-*`), `--flow-space`, `--color-muted`, and `--color-card-border`. Each one is a
+generic default that resolves under any theme's colors with no tuning. A theme overrides one by
+declaring it in its own `:root` or daisyUI block, since a later or unlayered declaration beats the
+engine's `@layer theme` default. An override of a status ink is hand-tuning, and a theme that
+retunes a fill without overriding its ink gets the derived ink for free, since the engine mixes each
+ink from its fill.
 
-A Tailwind v4 trap this file's own key names sit inside: `--spacing-xs`, `--spacing-xl`, and
-`--spacing-2xl` share a suffix with three of Tailwind's built-in `max-w-*` scale keys, and Tailwind
-resolves `max-w-<key>` against a theme's `--spacing-<key>` variable when one exists, silently
-shadowing its own built-in container width with the spacing value instead (`max-w-2xl` compiles to
-`max-width: var(--spacing-2xl)`, 4rem, not Tailwind's 42rem default) with no warning; declaring a
-matching `--container-<key>` override does not win the utility back (verified directly against
-`@tailwindcss/node`'s compiler, Tailwind 4.3.2). The Foxi port hit this while composing a marketing
-page and worked around it by using `max-w-measure`/`max-w-measure-wide` (this file's own reading-
-measure tokens) or a plain arbitrary value; a theme built on this chassis should do the same and
-never reach for `max-w-xs`, `max-w-xl`, or `max-w-2xl` specifically, since those three key names
-are already spoken for.
+`tokens.css` itself declares the design-scale keys (`--font-*`, `--text-step-*`, `--spacing-*`,
+`--leading-*`, `--tracking-*`, `--container-measure*`, `--font-weight-heading`) inside `@theme`
+with a generic default. A theme `@import`s `tokens.css` first, then redeclares the same keys in its
+own later `@theme` block with its real numbers; cascade order does the override (`theme.css` is the
+worked example). The CTA panel keys (`--cairn-cta-*`) and `--cairn-caption-tracking` stay
+site-owned: the chassis holds no default for them, and a theme that uses them defines them. The
+named DaisyUI themes themselves (`@plugin "daisyui/theme"`, every role color and geometry value)
+are never declared here: that is 100% a theme's own choice, light and dark. The `.cairn-tok-*`
+syntax-highlight class contract and the `pre.shiki` binding are pure structure and never need a
+theme's edit at all; only the token values they read do.
+
+**Custom-property namespaces.** A custom property takes its name from the role it plays. daisyUI's
+own names go to daisyUI's keys (`--color-primary`, `--radius-box`). A key that generates a Tailwind
+utility takes that utility's namespace (`--font-*`, `--text-step-*`, `--spacing-*`,
+`--container-*`, `--color-muted`), so `text-muted` and `max-w-measure` exist. Every other role takes
+`--cairn-*` (`--cairn-code-*`, `--cairn-*-ink`, `--cairn-shadow`, `--cairn-heading-case`).
+`--flow-space` is grandfathered under no prefix. A theme's own properties take `--site-*`. The
+"Class namespaces" section above covers classes only.
+
+A Tailwind v4 trap this file's own key names sit inside: `--spacing-3xs`, `--spacing-2xs`,
+`--spacing-xs`, `--spacing-xl`, and `--spacing-2xl` share a suffix with five of Tailwind's built-in
+`--container-*` scale keys, and Tailwind resolves `max-w-<key>` against a theme's `--spacing-<key>`
+variable when one exists, silently shadowing its own built-in container width with the spacing value
+instead (`max-w-2xl` compiles to `max-width: var(--spacing-2xl)`, 4rem, not Tailwind's 42rem default)
+with no warning; declaring a matching `--container-<key>` override does not win the utility back
+(verified directly against `@tailwindcss/node`'s compiler). The Foxi port hit this while composing a
+marketing page and worked around it by using `max-w-measure`/`max-w-measure-wide` (this file's own
+reading-measure tokens) or a plain arbitrary value; a theme built on this chassis should do the same
+and never reach for `max-w-3xs`, `max-w-2xs`, `max-w-xs`, `max-w-xl`, or `max-w-2xl`, since those five
+key names are already spoken for.
 
 **Cascade layers: an unlayered site rule always beats a layered Tailwind utility.** Tailwind v4's
 own utilities live inside `@layer utilities`, and CSS cascade layers make an unlayered rule win

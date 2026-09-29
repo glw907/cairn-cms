@@ -19,12 +19,14 @@ cairn's own repository enforces this boundary on the showcase, the tree Waymark 
 with a `check:chassis-boundary` gate; a scaffolded site inherits the boundary as a convention, not
 a gate of its own.
 
-The rule this buys you: a re-skin never touches chassis. Every design-scale key `tokens.css`
-declares (`--font-*`, `--text-step-*`, `--spacing-*`, `--color-muted`, and the rest) carries a
-generic default; a theme `@import`s `tokens.css` first, then redeclares the same keys with its
-own numbers in a later `@theme` block, and cascade order does the override. The named DaisyUI
-themes themselves, every role color and geometry value, are never declared in chassis at all;
-that's entirely the theme's own choice.
+The rule this buys you: a re-skin never touches chassis. `tokens.css` declares the design-scale
+keys (`--font-*`, `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`,
+`--container-measure*`, and `--font-weight-heading`), each with a generic default. The engine's
+`cairn-public.css`, which `tokens.css` imports, supplies the roles: `--color-muted`,
+`--color-card-border`, the status inks, the shadow, and the focus ring. A theme `@import`s
+`tokens.css` first, then redeclares the same keys with its own numbers in a later `@theme` block,
+and cascade order does the override. The named DaisyUI themes themselves, every role color and
+geometry value, are never declared in chassis at all; that's entirely the theme's own choice.
 
 ## The re-skin recipe
 
@@ -33,25 +35,26 @@ values, light and dark: rotate `--color-primary`'s hue while holding lightness a
 contrast-stable recolor, and edit the `base-100/200/300` ladder plus `base-content`. Optionally
 swap the two `--font-*` tokens, retune the one type ratio, or one space-scale step. The reading
 surface (`prose.css`) comes along for free at zero extra edits, since it reads the same role
-tokens rather than any color of its own; a full status-color rebrand costs more, since each status
-carries both a fill (in the `@plugin` block) and a matching on-surface ink
-(`--cairn-{info,success,warning,error}-ink`, light and dark), and re-tuning one without the other
-desyncs directive text and code-highlight colors from the fills around them.
+tokens rather than any color of its own; a full status-color rebrand costs
+one fill per status, light and dark. The engine derives each on-surface ink
+(`--cairn-{info,success,warning,error}-ink`) from its fill at 50 percent, so retuning a fill retunes
+its ink. Only a theme that overrides an ink in its daisyUI block has to retune the fill and the ink
+together.
 
 Two CI gates hold this recipe honest on cairn's own showcase, the tree your scaffold was baked
-from: `check:public-tokens` (a dual-gamut AA contrast check plus a dangling-`var()` check) and
-`test:reskin` (a hue-rotated fixture theme proves AA still holds and the prose still reads from
-one token source). Neither ships in a scaffolded site's own `package.json`. Check your own edit by
-eye against `/styleguide` and a browser contrast checker, or copy the two scripts in from cairn's
-own [`scripts/checks/`](https://github.com/glw907/cairn-cms/tree/main/scripts/checks) and
-[`scripts/lab/`](https://github.com/glw907/cairn-cms/tree/main/scripts/lab) directories if you
-want the same automated bar in your own CI.
+from: `check:public-tokens` (the audit's three public rules over the showcase) and `test:reskin`
+(a hue-rotated fixture theme proves AA still holds and the prose still reads from one token
+source). Those two scripts don't ship in a scaffolded site's own `package.json`. The three public
+rules do ship, in `cairn-audit`: `public-literals`, `theme-conformance`, and `theme-contrast`. Your
+site's `check:cairn` script runs the audit, and on a consumer the three rules report at advisory
+tier. Run `npm run check:cairn` after a theme edit, then check the result by eye against
+`/styleguide`.
 
 ## Local iteration
 
-`/styleguide` is the live demo surface: every registered directive (callout, alert, video
-facade, pull-quote, CTA, FAQ), the type scale, and the component recipes render there against
-whatever `theme.css` currently holds, so a token edit shows up across the whole page in one dev
+`/styleguide` is the live demo surface: the route renders every registered directive from the
+registry (a sample for each entry that declares a `preview`, and the rest listed by name), plus
+the type scale and the component recipes, against whatever `theme.css` currently holds, so a token edit shows up across the whole page in one dev
 reload. Run your own dev server and iterate against that route directly rather than guessing at a
 value's effect from the token declaration alone; several of the theme's relationships (the CTA's
 ink, the status inks, the card border and shadow pairing) are deliberately not obvious from a

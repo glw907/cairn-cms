@@ -61,7 +61,7 @@ rename to `src/lib/admin`; confirm PR #95 is green; resume pass B at segment C. 
 Style-guide sync re-scope, fresh session (`claude-opus-5-5`, `high`): in
 `.claude/worktrees/style-guide-sync`, read the leanness record, then revise the spec and plan to
 the conventional stack it names, walking back R1's markers and provenance table and W1's
-extraction validator and coercion on the branch. Every kept mechanism names its published source.
+extraction validator and coercion on the branch. Every kept mechanism names its published source, and the target register is preserved in full (the record's "Constraint" section).
 Run `spec-plan-review`, bring the revised task list and ceiling to Geoff, then execute.
 Draft docs, after pass B merges: in a fresh session (`claude-opus-5-5`, `high`), confirm the
 style-guide sync brainstorm has landed, author the stage 2a plan (with its extend outline) from the

@@ -1242,8 +1242,9 @@ restrained: no cute, no chatty. The repo's `writing-voice` tells apply on top:
 - No AI tells: no em dashes, no "not X, but Y" frame, no tacked-on closer ("No password to remember."),
   no reflexive three-item lists.
 - Name the concept, not a generic noun ("No posts yet", not "No entries").
-- No figurative language. Say the plain thing (Google's developer style guide bans it; the
-  admin follows).
+- No figurative language. Say the plain thing (Microsoft's
+  [writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
+  rule out idioms and colloquial phrasing).
 
 This covers button labels, headings, empty states, hints, confirmations, and the standalone pages the
 engine serves outside the components (the guard's HTTPS-required page in `https-required-page.ts`).

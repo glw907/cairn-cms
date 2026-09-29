@@ -266,6 +266,32 @@ flat taste.
   fires on the comma-and shape in any heading (Geoff, 2026-09-08). A serial list in a heading, such
   as "Roles, capability, and the access map", is a different form and passes.
   <!-- vale Google.Quotes = YES -->
+- **No balanced-halves constructions.** Two clauses set against each other for their symmetry
+  and not for their claim: "The price is X; the payoff is Y," "for X, A; for Y, B," an echo pair
+  such as "small enough to..., and small enough that...," and a two-beat closer. Each half either
+  carries a claim of its own or goes. This is the residue Geoff catches most often, so a review
+  hunts it first.
+- **No list cadence in prose.** Semicolon-chained inventories, section skeletons that repeat one
+  three-sentence shape, and reflexive triads are the setup-colon triad's relatives. Parallel items
+  take a list, as the guide prescribes.
+- **No crafted pivots or cappers.** A short turn such as "Markdown flips the trade.", a paragraph
+  that ends on its strongest line every time, and an aphoristic equation such as "The stack is the
+  product" are tells. A paragraph ends where its content does.
+- **No virtue claims.** "A real answer," "the honest truth," "a fair question," "to be clear,"
+  "genuinely," and "very real" assert the quality that the following sentences must demonstrate.
+- **No announcement scaffolding.** A meta-line that says what the text will do, such as "This page
+  is the two-minute version of...", and a verbless fragment as a section opener, tell the reader
+  about the page instead of starting it.
+- **No noir overcorrection.** Clipped, dramatic declaratives at high density, runs of consecutive
+  short sentences, and dramatic verbs (tools that "lie," "fight," or "betray") are the failure
+  the "qualified claims stay whole" rule in "Voice" guards against. A claim cut into fragments to
+  strip its caveat is the tell.
+- **No invented material.** A manufactured concrete scenario (an editor on hotel Wi-Fi), a
+  metaphor no sentence established, and biography or deliberation the author never reported all
+  read as evidence and are not.
+- **No restatement or filler.** A trailing evaluative tail, a sentence that ties up the paragraph
+  it ends, a phrase recycled across pages, and a re-explanation of what the reader was just told
+  add length and no information.
 
 ## Drafting brief: editor docs
 
@@ -386,6 +412,28 @@ flat taste.
   <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
   and a heading names one thing. Killed: "The shape, and cairn as one build of it".
   <!-- vale Google.Quotes = YES -->
+- **No balanced-halves constructions.** Two clauses set against each other for their symmetry
+  and not for their claim: "The price is X; the payoff is Y," "for X, A; for Y, B," an echo pair
+  such as "small enough to..., and small enough that...," and a two-beat closer. Each half either
+  carries a claim of its own or goes. This is the residue Geoff catches most often, so a review
+  hunts it first.
+- **No list cadence in prose.** Semicolon-chained inventories, section skeletons that repeat one
+  three-sentence shape, and reflexive triads are the setup-colon triad's relatives. Parallel items
+  take a list, as the guide prescribes.
+- **No crafted pivots or cappers.** A short turn such as "Markdown flips the trade.", a paragraph
+  that ends on its strongest line every time, and an aphoristic equation such as "The stack is the
+  product" are tells. A paragraph ends where its content does.
+- **No virtue claims.** "A real answer," "the honest truth," "a fair question," "to be clear,"
+  "genuinely," and "very real" assert the quality that the following sentences must demonstrate.
+- **No consumer-help softeners.** Microsoft's own list bans "just," "simply," and "obviously," and
+  the same holds for folksy softeners ("a little goes a long way," "gets tangled") and anonymous
+  circumlocutions. A micro-instructed action is Microsoft's how-to voice and is not a finding.
+- **No invented material.** A manufactured concrete scenario (an editor on hotel Wi-Fi), a
+  metaphor no sentence established, and biography or deliberation the author never reported all
+  read as evidence and are not.
+- **No restatement or filler.** A trailing evaluative tail, a sentence that ties up the paragraph
+  it ends, a phrase recycled across pages, and a re-explanation of what the reader was just told
+  add length and no information.
 
 ## Names
 

@@ -48,9 +48,9 @@ subdirectories, each of which keeps its own filing rule and its own index.
 - [`docs-maintenance.md`](docs-maintenance.md): the three layers, gates, pass rule, monthly
   drift routine, that keep the docs current.
 - [`docs-register.md`](docs-register.md): the register standard for published docs prose (the
-  page anatomies, the four track registers with their audience profiles folded in as grading
-  rubrics, the front-door register, the calibration specimens). Read it before writing or
-  reviewing any published docs page.
+  base-guide map, the developer and editor drafting briefs, Names, Visuals, the page anatomies,
+  the track profiles, and the recorded deviations from the base guides). Read it before writing
+  or reviewing any published docs page.
 - [`durable-gotchas.md`](durable-gotchas.md): non-obvious operational traps (Cloudflare email's
   two error vocabularies, the CI-canonical visual baselines, Vite 8 shipping TypeScript in dist
   `.svelte`), moved out of `CLAUDE.md` to keep that file inside its context budget.

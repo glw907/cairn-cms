@@ -14,8 +14,8 @@
 // extracted string for a release-time read against the Microsoft UI-text voice (a human, or the
 // register editor).
 //
-//   node scripts/check-admin-prose.mjs          scan and fail on a hit
-//   node scripts/check-admin-prose.mjs --list    print every extracted string, grouped by file
+//   node scripts/checks/check-admin-prose.mjs          scan and fail on a hit
+//   node scripts/checks/check-admin-prose.mjs --list    print every extracted string, grouped by file
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -264,7 +264,7 @@ function scanCopy(files) {
   }
   if (hits > 0) {
     console.error(`\nadmin-copy prose gate: ${hits} tell(s) found. Rewrite in a plain human voice.`);
-    console.error('Run `node scripts/check-admin-prose.mjs --list` to read all admin copy at once.');
+    console.error('Run `node scripts/checks/check-admin-prose.mjs --list` to read all admin copy at once.');
     process.exitCode = 1;
     return;
   }

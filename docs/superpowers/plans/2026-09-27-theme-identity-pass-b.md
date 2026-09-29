@@ -1644,3 +1644,47 @@ Running pass total: about 5.3M of the 19M ceiling (conductor estimate).
 
 **Next:** segment D. S1 (probe 1), then task 7 (the SKILL.md roots slip, plus any S1 gap), then
 task 8 (the close).
+
+### S1: probe 1 (2026-09-28, overnight session)
+
+**First run, invalid.** The setup followed decision 20's `emit-template.mjs` recipe. That raw
+emitter drops `.claude/`, `CLAUDE.md`, and `cairn-audit.config.json`, so the probe saw none of the
+shipped guidance. Its audit also fell back to the packaged sheet, which produced two false
+`no-uncompiled-class` errors that the clean template shares (0 errors once the shipped config is
+present). This run did not spend decision 21's retry. Decision 20 is amended in `4b6e05d4` to
+use the `create-site.yml` bake path.
+
+**Second run** (the consumer path: bake, pack the CLI, `create-cairn-site --yes`, then specs
+repointed at the fresh tarballs). The site carried `.claude/` with `exemplar-kit.md` and the recipe
+table, plus `CLAUDE.md` and the audit config's `sheet`. The probe ran on `claude -p --model sonnet
+--setting-sources project,local`. It wrote `src/routes/admin/probe/+page.svelte` and
+`+page.server.ts`, and edited `src/access.ts` (owner-only) and `src/theme/cairn.config.ts` (a nav
+entry). It used a `PageHeader` with one `btn-primary` in the action slot, a radio `join` filter,
+a toggle switch, an `AdminTable` in `card-shell card-shadow`, and a `StatusChip` per row.
+- **Static:** 67 files, 18 rules, 0 errors, 0 advisories. Every probe `.svelte` file lies under
+  `src/routes/admin`, a default scanned root.
+- **Rendered:** `/admin/probe` rendered the real screen (HTTP 200; no 500 in the preview log).
+  There were zero `radius-scale` and zero `stock-default-hazards` findings anywhere. It had 21
+  `viewport-overflow` errors, stable across three runs. A settled measurement then loaded the page
+  fresh in a new context at 390 and 320 in both themes: `scrollWidth` equals `clientWidth`, no
+  element passes the viewport, and the join is 180px wide ending at x=196. All 21 are the rule's
+  own timing defect (below), so none is a guidance gap. The conductor read the 390-light and
+  320-dark renders: clean and recognizably cairn. Advisories on the page: 42 `border-contrast`
+  (15 exempt), 6 `chip-ground-collision`, 1 `state-unreachable`.
+- **Verdict:** pass. No guidance gap, so task 7 carries only the task 5 roots slip and the close's
+  review findings.
+- **Stated limit:** `--setting-sources project,local` excludes user settings, but user-scope
+  skills, agents, `~/.claude/CLAUDE.md`, and MCP servers exist on this machine. Whether any
+  loaded into the probe is unverified.
+- **Pre-existing engine defects the probe surfaced**, filed to `ROADMAP.md` at the close:
+  - The `viewport-overflow` rendered rule measures in the same tick as `setViewportSize`, before
+    the admin shell's `matchMedia` listeners settle the layout. It reports transient overflow at
+    390 and 320 (83 to 123 errors across template pages, varying run to run), and it lists
+    content whose right edge is inside the viewport ("overflows by -11px"). The rule is error
+    tier, so a consumer running `--rendered` gets false errors. This is the "counts differently
+    on identical runs" watch in STATUS.
+  - `@glw907/cairn-cms-dev`'s `devBackendHandle` overwrites the platform proxy's `APP_DB` with a
+    fake D1 that answers only the signups SQL. `DevBackendConfig` has no binding hook, and no
+    shipped page says so. A developer's D1-backed admin screen returns a 500 under the dev
+    backend. The invalid first run hit this.
+- The probe dirs are deleted after this entry.

@@ -62,7 +62,10 @@ Style-guide sync re-scope, fresh session (`claude-opus-5-5`, `high`): in
 `.claude/worktrees/style-guide-sync`, read the leanness record, then revise the spec and plan to
 the conventional stack it names, walking back R1's markers and provenance table and W1's
 extraction validator and coercion on the branch. Every kept mechanism names its published source, and the target register is preserved in full (the record's "Constraint" section).
-Run `spec-plan-review`, bring the revised task list and ceiling to Geoff, then execute.
+No open brainstorm: open with one short sitting on three forks (the editor-track exemplar, keep
+or A/B-test the LLM editor pass in J2, the pass ceiling), each with a recommendation; decide the
+method calls (trim or revert R1, W1's walk-back, the companion exemplars around the AI posture
+page) and show them. Then revise, run `spec-plan-review`, and execute.
 Draft docs, after pass B merges: in a fresh session (`claude-opus-5-5`, `high`), confirm the
 style-guide sync brainstorm has landed, author the stage 2a plan (with its extend outline) from the
 approach spec's stage 2 outline, run `spec-plan-review`, and bring it to Geoff on an R10 page.

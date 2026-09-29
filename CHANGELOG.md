@@ -99,6 +99,7 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
 - The media library's grid/list density toggle now takes the size step's `--size-field` bump the
   same way its neighboring `btn-sm` controls do, and its bordered outer frame measures exactly the
   neighboring button's height, so their top and bottom edges line up.
+  The sheet gains one class for it, `items-stretch`.
 - Below `sm`, the top-bar search trigger's label drops to screen-reader-only text and the trigger
   shrinks to its content, so it reads as an icon-only button that keeps its accessible name; the
   label used to truncate to an unreadable fragment there.

@@ -474,6 +474,7 @@ items-baseline
 items-center
 items-end
 items-start
+items-stretch
 join
 join-horizontal
 join-item

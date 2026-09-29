@@ -1728,3 +1728,45 @@ a toggle switch, an `AdminTable` in `card-shell card-shadow`, and a `StatusChip`
   `gate exit: 0`.
 - **Spend.** The close so far is about 0.95M (simplifier 0.09M, reviews 0.15M, task 7 workflow
   0.31M, gate 0.05M, S1 and its diagnosis about 0.35M). Running pass total: about 6.6M of 19M.
+
+## Post-mortem (2026-09-29)
+
+**What was built.** Tasks 0 to 8, in four segments. `./components` became `./admin` and
+`PreviewBanner` moved to a new `./public` subpath (task 1). `EditorApi.insert` stopped fusing its
+closing fence, then stopped stripping indentation and rewriting the whole document (tasks 2 and 7a).
+`radius-scale`, three retired-patch arms, and `promotion-versions.test.ts` landed at advisory tier
+(task 3). The recipe table, the norms `recipe:` line, the guidance table and placement line, the
+exemplar, and their sync test landed (tasks 4 to 6). Probe 1 (S1) passed. Task 8 wrote the
+changelog, the migration note, the facts, the roadmap, the friction-log triage, and the history
+entry. The branch is `theme-identity-b`, unmerged, as pass C's base.
+
+**What the gates caught.** The ledger holds the detail; the short list:
+
+- Task 2: `trimStart()`/`trimEnd()` stripped a content line's indentation, and the e2e evidence was
+  unit-level only.
+- Task 3: per-finding assertions (tier, `0.99.0`) were missing.
+- Task 4: the `card` row contradicted the design system, and the radius role classes were prose,
+  not rows.
+- S1: the first probe was invalid because `emit-template.mjs` drops the shipped guidance.
+- The close reviews: B1 (a caret in leading indentation stripped it) and B2 (the whole-document
+  dispatch unfolded folds and moved upload placeholders) on the insert, "two roots" false in three
+  guidance files, and a guidance pointer at an internal doc the tarball does not ship. B3 was the
+  missing `Consumers must:` entry, written in task 8.
+
+**What a later pass would be wrong to rediscover.** `docs/HISTORY.md`, "Theme identity pass B",
+holds the list (the rename grep's four blind forms and its allowlist, `static.scope` replacing the
+defaults, the permanent reach narrowing under ruling A1, `PreviewBanner`'s kept coverage, the
+merge-forward across a rename, the guidance fences the audit parser could not read, the promotion
+tripwire, the probe's emitter trap, and `viewport-overflow`'s timing trap). It is not repeated here.
+
+**Score.**
+
+- **Tokens:** about 6.6M before task 8's draft, plus the draft, one Opus review, and the fold
+  (capped near 0.6M), against the 19M ceiling and the 15.2M flag. The estimates come from task
+  notifications and `/cost`, not a token-by-token audit.
+- **Planning misses: 2.** Decision 20's emitter recipe (the first probe ran on a tree with no
+  shipped guidance and was invalid, so it did not spend the retry), and decision 18's stale fixture
+  facts (the heading weight, the fixture's post-plan edits, and two formatting artifacts, amended at
+  pre-flight).
+- **Execution sittings: 0** in this session. Geoff's rulings F1, F2, and A1 came at the plan sitting
+  (2026-09-27), and his call to merge pass A alone came on 2026-09-28.

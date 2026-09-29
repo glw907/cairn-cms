@@ -12,14 +12,24 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `registerEditor?.(null)`); a grep of the file for `registerFocusEditor`, `registerImagePlaceholders`,
   `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`, and
   `registerFormat` finds none of them. [verified]
-- `f:dr2k4a` `EditorApi.insert` pads a block insertion by exactly one blank line on each side that
+- `f:dr2k4a` `EditorApi.insert` is block insertion: it pads the block by exactly one blank line on each side that
   touches non-blank text, collapsing any blank lines already adjacent to the caret so they never
-  double up; nothing is added at a document's start or end, and the indentation of a line that
-  holds content (an indented code line, a nested list item) is never stripped, even when that line
-  sits right at the caret. Both the mounted CodeMirror path and the pre-mount textarea fallback
-  call the same pure function. Source: `src/lib/admin/insert-padding.ts#padInsertedBlock` (calls
-  `stripBefore`/`stripAfter`), `src/lib/admin/MarkdownEditor.svelte:1138-1150` (`insertAtCursor`
-  calling `padInsertedBlock` on both paths). [verified]
+  double up; nothing is added at a document's start or end, though a document that ended with a
+  newline keeps one. The indentation of a line that holds content (an indented code line, a nested
+  list item) is never stripped, even when the caret sits inside it. The mounted CodeMirror path
+  dispatches one change over only the whitespace the padding strips, isolated as its own history
+  step, so a fold or an upload placeholder elsewhere in the document is left alone; the pre-mount
+  textarea fallback calls `padInsertedBlock` and sets the whole value. Source:
+  `src/lib/admin/insert-padding.ts#paddedInsertSpan`, `src/lib/admin/insert-padding.ts#padInsertedBlock`,
+  `src/lib/admin/MarkdownEditor.svelte:1145-1158` (`insertAtCursor` on both paths). [verified]
+- `f:9xm710` The admin barrel is the `./admin` subpath and its built files sit under `dist/admin/`, with the compiled
+  sheet at `dist/admin/cairn-admin.css`; the `./components` export and the `dist/components/` path
+  no longer exist, and `package.json` carries no `./components` key. The source folder is
+  `src/lib/admin/`, and `docs/reference/admin.md` replaced `components.md`. A consumer changes
+  every `@glw907/cairn-cms/components` import to `/admin` and any config or script path from
+  `dist/components/` to `dist/admin/`. Source: `package.json:105-109` (the `./admin` export),
+  `src/lib/audit/config.ts#DEFAULT_SHEET_CANDIDATES` (the sheet path), `src/tests/unit/admin-barrel-prune.test.ts`
+  (the assertion that `./components` is gone). [verified]
 - `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
   deliberate hardening so the token survives `use:enhance`'s native form reset after a successful
   submit. Source: `src/lib/admin/CsrfField.svelte:7,24`. [verified]
@@ -297,7 +307,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   interactive-contrast, touch-targets, list-role, viewport-overflow) / 10 advisory
   (container-inset-asymmetry, form-font-parity, field-edge-alignment, border-contrast, norms-bands,
   screen-anatomy, relational-spacing, weight-budget, chip-ground-collision, motion-reduced-delay).
-  [verified]
+  [rejected: rule count grew after this fact was filed; the audit now registers 35 rules (18 static, 17 rendered), see `f:z1rbea`]
 - `f:3kvawo` Exit codes: 0 (clean), 1 (unsuppressed error-tier finding), 2 (run couldn't start/finish: bad
   flag, no server, no browser, redirect-trap refusal). Codes route through `process.exitCode`,
   never `process.exit`, so piped stdout flushes fully first. Source: `src/lib/audit/bin.ts:5-68`,
@@ -315,6 +325,67 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   shipped manifest, so it reads no consumer tree and needs no config, no built stylesheet, and no
   browser"), `:28-36` (`norms` calls `loadNormsManifest()`), `:62` (other modes call
   `loadConfig(process.cwd(), ...)`). [verified]
+
+- `f:z1rbea` Exactly 35 rules are registered: 18 static (15 error tier, 3 advisory: `log-event-grammar`,
+  `log-secret-field`, `radius-scale`) plus 17 rendered (7 error-tier, 10 advisory-tier). Count by the
+  registry arrays or by tier grep, not by a literal-string grep, which undercounts the rendered
+  total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
+  `src/lib/audit/rules/static/index.ts#staticRules` (the 18-entry array),
+  `src/lib/audit/rules/rendered/index.ts#renderedRules` (the 17-entry array). [verified]
+- `f:eqsngu` `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are both `src/routes/admin`, `src/lib/admin`,
+  `src/lib/admin-toolkit`; `src/lib/components` is no longer a default root. They stay two constants
+  and two config keys (`static.scope`, `static.adminScope`) so a site can narrow one without the
+  other. `DEFAULT_ADMIN_SCOPE` gained `src/lib/admin`, so the three `adminOnly` motion rules
+  (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) now read it. Restore form: a
+  configured `static.scope` replaces the defaults (`asPathList` returns a configured list as is),
+  and a configured root the tree lacks fails the run (`readScope` throws when `fromConfig` and the
+  path is missing), so a site keeping custom components in `src/lib/components` lists the default
+  roots it has plus `src/lib/components`; naming `src/lib/components` alone drops
+  `src/routes/admin` from every static rule. A root a site names under `static.scope` is an admin
+  root, and the audit treats it as one wherever another scope's defaults would also reach it (pass
+  B implements no separate named-root mechanism, since the public scope arrives with the public
+  theme). The narrowing also removes a site's own `src/lib/components` from `stripe-trim-parity` and
+  `unlayered-font-clobber`, which stay admin-only by owner ruling (Geoff, 2026-09-27). Source:
+  `src/lib/audit/config.ts#DEFAULT_STATIC_SCOPE`, `src/lib/audit/config.ts#DEFAULT_ADMIN_SCOPE`,
+  `src/lib/audit/config.ts:211,215` (`asPathList` calls), `src/lib/audit/run.ts:53-54`
+  (`readScope`'s missing-root throw). [verified]
+- `f:h4ztuy` `radius-scale` is a static rule at advisory tier that reads class tokens (through `utilityBase()`,
+  so `md:rounded-lg` is caught) and raises one finding per offending token: a bare `rounded`, the
+  fixed sizes `xs` through `4xl`, an arbitrary radius in either of Tailwind v4's forms
+  (`rounded-[...]` and the `rounded-(--x)` shorthand), and each side or corner form of those. It
+  passes `rounded-selector`, `rounded-field`, `rounded-box` and their side forms, `rounded-full`,
+  `rounded-none`, and side zeros, except that `rounded-full` on an element carrying `badge` is
+  flagged. The message names the replacement role class (`badge` to `rounded-selector`; `btn`,
+  `input`, `select`, `textarea` to `rounded-field`; `card`, `modal-box`, `dropdown-content` to
+  `rounded-box`) and `0.99.0`. A `border-radius` literal in a `<style>` block is outside it.
+  Source: `src/lib/audit/rules/static/radius-scale.ts#radiusScale`,
+  `src/lib/audit/rules/static/radius-scale.ts#RADIUS_SCALE_PROMOTION_VERSION`. [verified]
+- `f:l882gl` `stock-default-hazards` has three retired-patch arms, each on an element carrying `btn` and each at
+  advisory tier: the ink opener (`bg-neutral` or `bg-[var(--cairn-ink-hover)]` with no
+  `btn-neutral`, names `btn btn-neutral`), the Publish tint (`bg-primary/10` with no `btn-soft`,
+  names `btn btn-soft btn-primary`), and `shadow-none` (names nothing to add; the theme's depth is
+  already zero). The arms compare `utilityBase()`, so a variant-prefixed patch is caught; an
+  element without `btn` never fires one; a recipe arm takes precedence, and `shadow-none` stays
+  silent where a recipe arm fired, so one retired recipe raises exactly one finding. The messages
+  name `0.99.0`. Source: `src/lib/audit/rules/static/stock-default-hazards.ts#RETIRED_PATCH_PROMOTION_VERSION`,
+  `src/lib/audit/rules/static/stock-default-hazards.ts#inkOpenerMessage`,
+  `src/lib/audit/rules/static/stock-default-hazards.ts#publishTintMessage`. [verified]
+- `f:37t8wk` `promotion-versions.test.ts` is the promotion tripwire. It reads every `*PROMOTION_VERSION = '<x>'`
+  constant under `src/lib/audit` as source text (never a git ref, since CI checks out at depth 1)
+  and `package.json`'s `version`; it asserts at least one constant exists, asserts
+  `RADIUS_SCALE_PROMOTION_VERSION` and `RETIRED_PATCH_PROMOTION_VERSION` by name while the package
+  version is below `0.99.0`, and fails when any constant's version is at or below the package
+  version, naming the file, the constant, the version, and the choice owed: promote the finding to
+  error and delete the constant, or re-date it with a disclosed changelog line. It is green while
+  `package.json` is below `0.98.0` and turns red on the `0.98.0` version commit unless the three
+  `0.98.0` constants (`log-event-grammar`, `log-secret-field`, the guarded-retirement arm) are
+  decided. Source: `src/tests/unit/audit/promotion-versions.test.ts:27-83`. [verified]
+- `f:2kja0n` `cairn-audit norms <role>` prints one `recipe:` line, and one indented line for the look it
+  produces, under a role's header when a row of `ROLE_RECIPES` names that role; a role no recipe
+  covers prints exactly as before. The recipe rows live outside the norms manifest, so the manifest
+  and `norms:check` do not change, and `ROLE_RECIPES` adds no package export. Source:
+  `src/lib/audit/norms.ts#formatNormsQuery`, `src/lib/audit/norms.ts#ROLE_RECIPES`,
+  `docs/reference/cairn-audit.md:461-472`. [verified]
 
 ## docs/reference/cli-cairn-doctor.md
 
@@ -1154,6 +1225,15 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   Worker's runtime zone differs from the browser's. Source:
   `src/lib/public/PreviewBanner.svelte:42-46` (`defaultFormatExpiry`), `:52-58` (doc comment:
   hydration-mismatch rationale), `:68` (`<time datetime={preview.expiresAt}>`). [verified]
+
+- `f:vvag2y` `@glw907/cairn-cms/public` (`./public`) is the barrel for built-in public components that render styled
+  markup, and it carries `PreviewBanner` only. The membership rule: such a component lives here and
+  never on `/admin`; a loader or a type belongs on `/sveltekit` or another data-only subpath; and
+  `CairnHead` stays at `./delivery/head` because it renders only document-head tags. The compiled
+  admin sheet does not scan `src/lib/public`, since the banner writes no utility class of its own.
+  Source: `package.json:110-114` (the `./public` export), `src/lib/public/index.ts:1-6` (the
+  membership rule and the one export), `scripts/build/admin-css.input.css:14` (the `@source` root, `src/lib/admin` only).
+  [verified]
 
 ## docs/reference/README.md
 

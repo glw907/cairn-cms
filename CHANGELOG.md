@@ -14,6 +14,38 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   the file exactly as the template ships it. The scaffolded `robots.txt` route already passes
   `cairn.aiPosture` to `robotsResponse`, so a scaffolded site needs no route edit to serve the
   chosen posture; see `docs/extend/choose-an-ai-posture.md` for the full wiring.
+- A new `@glw907/cairn-cms/public` subpath (`./public`) exports the engine's built-in public
+  components. It carries `PreviewBanner` today, moved out of the admin barrel because it renders on
+  a site's public preview route, not in the admin. A component that renders styled markup belongs
+  on `./public` and never on `./admin`; a loader or a type belongs on `/sveltekit` or another
+  data-only subpath. `docs/reference/public.md` documents it.
+- `cairn-audit` gains the `radius-scale` static rule, at **advisory** tier. It flags a bare
+  `rounded`, a fixed size (`rounded-lg`, `rounded-2xl`), an arbitrary radius (`rounded-[0.55rem]`
+  or the `rounded-(--x)` shorthand), and each side or corner form of those, and it names the role
+  class to write instead: `rounded-selector`, `rounded-field`, or `rounded-box`. It also flags
+  `rounded-full` on an element that carries `badge`. It passes the three role classes,
+  `rounded-full` elsewhere, and `rounded-none`. It reads class tokens only, so a `border-radius`
+  literal in a `<style>` block is outside it.
+- `stock-default-hazards` gains three arms, each on a `btn` element only and each at **advisory**
+  tier: the ink-opener patch (`bg-neutral` or `bg-[var(--cairn-ink-hover)]` with no
+  `btn-neutral`, which names `btn btn-neutral`), the Publish-tint patch (`bg-primary/10` with no
+  `btn-soft`, which names `btn btn-soft btn-primary`), and a `shadow-none` cancel (the theme's
+  depth is already zero). A recipe arm takes precedence over `shadow-none`, so one retired recipe
+  raises one finding. `radius-scale` and the three arms name `0.99.0` as the release that
+  promotes them to error tier; a unit test (`promotion-versions.test.ts`) fails once the package
+  version reaches any audit promotion constant that has not been decided, so the promise cannot
+  lapse unseen. The full audit now registers 35 rules (18 static, 17 rendered).
+- `cairn-audit norms <role>` prints a `recipe:` line under a role's header when a shipped recipe
+  covers it: the plain class string to write, and the look it produces. A role no recipe covers
+  prints as before.
+- The shipped agent guidance teaches what to write, not only what to avoid. `cairn-admin-screens`,
+  `cairn-extend`'s `daisyui-first.md`, and the `cairn-extension-reviewer` agent each carry the same
+  one-sentence model and a "Write this, get this" table of 15 class strings (page title, eyebrow,
+  buttons, inputs, card, the three corner-role classes, and more). Each also carries a placement
+  line: put a custom admin component under `src/routes/admin` or `src/lib/admin`. A new
+  `cairn-admin-screens/references/exemplar-kit.md` excerpts seven kit sections verbatim from the
+  `/admin/theme-kit` fixture. A test binds the table, the model sentence, and the excerpts to their
+  source, so a copy cannot drift alone.
 
 ### Changed
 
@@ -75,6 +107,35 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   `btn-outline btn-primary` keeps its own edge. The file's citations of cairn-internal documents
   now state their rule inline. Consumers must: nothing. A site scaffolded earlier can copy the
   same rules from `templates/waymark/src/theme/theme.css`.
+
+- The engine's admin subpath is now `@glw907/cairn-cms/admin`. It replaces
+  `@glw907/cairn-cms/components`, which is removed: `package.json` no longer exports
+  `./components`, and the built files move from `dist/components/` to `dist/admin/` (the compiled
+  sheet is `dist/admin/cairn-admin.css`). The reference page `docs/reference/components.md` is now
+  `docs/reference/admin.md`, and `PreviewBanner` is exported from the new `./public` subpath
+  instead.
+
+  Consumers must: import admin components from `@glw907/cairn-cms/admin` instead of
+  `@glw907/cairn-cms/components`; import `PreviewBanner` from `@glw907/cairn-cms/public`; move any
+  custom admin components out of `src/lib/components` into `src/lib/admin` and add
+  `@source "./lib/admin";` to the site's admin stylesheet, or keep them there and set
+  `static.scope` in `cairn-audit.config.json` to the default roots the site has plus
+  `src/lib/components` (for example `["src/routes/admin", "src/lib/components"]`), since a
+  configured list replaces the defaults and a configured root that does not exist fails the run;
+  and change any path into `dist/components/` to `dist/admin/`, whether an audit config's `sheet`
+  (including a config passed with `--config`) or a site script names it.
+- `cairn-audit`'s default static scope is now `src/routes/admin`, `src/lib/admin`, and
+  `src/lib/admin-toolkit`, and `static.adminScope` (the roots the three admin-only motion rules
+  read) defaults to the same three. `src/lib/components` is no longer a default root, because it is
+  a site's own shared components and the engine's admin folder no longer bears that name. A root the
+  site does not have is skipped. The narrowing is disclosed and permanent: with `src/lib/components`
+  out of the defaults, every non-admin-only static rule stops reading a site's own
+  `src/lib/components`, and `stripe-trim-parity` and `unlayered-font-clobber` stay admin-only, so
+  they never read a site's public components again (Geoff's ruling, A1). A site restores the old
+  reach for its own components with `static.scope`, listing the default roots it has plus
+  `src/lib/components`. The motion rules now also read `src/lib/admin`, so a site that moves custom
+  components there brings them under `motion-property`, `motion-vocabulary`, and
+  `motion-hover-gate`.
 
 ### Fixed
 
@@ -138,6 +199,12 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   the connected domain. Operator-visible: a fresh `npx create-cairn-site` run and its README now
   state the true cost up front rather than at the email step. No consumer action for an existing
   site.
+- Inserting a block from the editor's Insert block button no longer fuses the block's closing
+  fence onto the text after the caret. The insert now separates the block from adjacent text by
+  one blank line on each side, keeps the indentation of an indented code line or a nested list item
+  at the caret, and changes only the whitespace around the caret. It no longer unfolds folded
+  blocks or moves an in-flight image upload's placeholder to the end of the document, and it is its
+  own undo step. `EditorApi.insert` is block insertion, and `docs/reference/admin.md` says so.
 
 ## 0.97.0
 

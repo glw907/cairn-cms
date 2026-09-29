@@ -294,14 +294,15 @@ The original decision framing, for the record:
 - **Theme identity, passes A, B, and C (Geoff, 2026-09-26 and 2026-09-27).** cairn's own look moves
   into the daisyUI theme layer, and the public site gets one theme contract that any theme can meet.
   Pass A (the admin theme, spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`) is
-  closed on `theme-identity-a` (PR #92), unmerged; Geoff's before-and-after sitting (its S3) is
-  still to run, and any correction it asks for lands on that branch and merges forward into B.
-  Pass B's plan (branch `theme-b-plan`) is reviewed and runs next, from A's closed head. Passes B and C share one spec,
-  `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renames `./components` to
-  `./admin` and ships the admin agent path; C is the one public theme (`cairn-public.css`, derived
-  inks, heading levers, the three public audit rules, the `cairn-public` skill, and the designer
-  walkthrough's template fixes). B stays unmerged, C branches from it, and both merge at C's close
-  with one `0.98.0` cut carrying A, B, and C. Draft documentation (below) waits for C.
+  merged to `main` (PR #92, `4d725057`), with Geoff's before-and-after corrections landed. Pass B is
+  finished on `theme-identity-b` (draft PR #95), unmerged, and is pass C's base. Passes B and C
+  share one spec, `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renamed
+  `./components` to `./admin`, added `./public`, and shipped the admin agent path (the recipe table,
+  the placement line, the exemplar, `radius-scale`); C is the one public theme (`cairn-public.css`,
+  derived inks, heading levers, the three public audit rules, the `cairn-public` skill, and the
+  designer walkthrough's template fixes). Pass C branches from B and both merge at C's close with
+  one `0.98.0` cut carrying B and C; pass C removes this entry. Draft documentation (below) waits
+  for C.
 
 - **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
   correction round, 2026-09-28, except the two below).** Trigger for what remains: the first pass
@@ -338,32 +339,20 @@ The original decision framing, for the record:
   - Job-doing readers as an optional advisory pass, about 35k tokens per page: they find real
     defects on their own path and miss what sits off it. They are not a measured gate.
 
-- **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
-  and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
-  pass.** The unscoped run (`cairn-audit --rendered`, no `--rule`) had never actually run in CI
-  before that dispatch; all 200 findings are this one rule, on `/admin/editors`, `/admin/media`,
-  `/admin/pages`, `/admin/posts`, and `/admin/vocabulary`, example `div.flex-none: renders 405px
-  wide against a 390px viewport`. Hypothesis: the off-canvas drawer's transformed layer is being
-  measured (405px against a 390px viewport), since the admin-visual suite is green at those same
-  widths, so the defect may be the rule's transform handling rather than the actual layout. Next
-  step: a hand run of `cairn-audit --rendered --rule viewport-overflow` against the showcase with
-  the drawer closed versus open, reading the flagged elements to confirm or rule out the drawer
-  hypothesis.
-
-- **Inserting a component fuses its closing fence onto the text after the caret (designer
-  walkthrough, 2026-09-27; friction log F12).** A live editor-facing defect.
-  `insertAtCursor` in `src/lib/admin/MarkdownEditor.svelte:1133-1143` prepends `\n\n` when the
-  caret is past position 0 but appends nothing after the block. `serializeComponent`
-  (`src/lib/render/component-grammar.ts:44`) ends the block on its bare closing fence. Any text
-  after the caret therefore joins that fence, and the directive never closes. Repro: open a post
-  whose body has text, put the caret at the start of the body, choose Insert block, pick any
-  component, and press Insert. The editor shows `:::The original body.` on one line. The e2e at
-  `examples/showcase/e2e/golden-path.spec.ts:449-453` asserts only the opening line, so it cannot
-  see this. Leanest fix: pad the inserted block with a blank line on each side whenever the
-  caret's line has text before or after it, and assert the whole inserted block in the e2e. Owner:
-  the next engine pass, as its own small task. Pass B's rename moves the file to
-  `src/lib/admin/`. Evidence: `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`,
-  F12.
+- **Fix `viewport-overflow`'s measurement timing before the `0.98.0` cut (theme identity pass B,
+  2026-09-29).** The rendered rule measures in the same tick as `setViewportSize`, before the admin
+  shell's `matchMedia` listeners settle the layout. It reports transient overflow at 390 and 320
+  that varies by run (83 to 123 errors across the template's pages in one probe; 200 on the first
+  CI run, run 35016669005, on `/admin/editors`, `/admin/media`, `/admin/pages`, `/admin/posts`, and
+  `/admin/vocabulary`), and it lists content whose right edge is inside the viewport ("overflows
+  by -11px"). A settled measurement of the same page, loaded fresh at 390 and 320 in both themes,
+  showed `scrollWidth` equal to `clientWidth` and nothing past the viewport. The rule is error
+  tier, so a consumer running `--rendered` gets false errors. The fix is in
+  `src/lib/audit/rules/rendered/viewport-overflow.ts`: wait for a stable `scrollWidth` after each
+  resize, and filter content origins to `right > viewport`. This supersedes the earlier
+  off-canvas-drawer hypothesis for the same 200 findings and STATUS's "counts differently on
+  identical runs" watch. Trigger: before the `0.98.0` cut, since it ships an error-tier rule that
+  reports false errors to every consumer.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -883,6 +872,38 @@ the named human gates only):**
 
 ## Next
 
+- **`@glw907/cairn-cms-dev`'s `devBackendHandle` breaks a D1-backed admin screen (theme identity
+  pass B probe, 2026-09-29).** It overwrites the platform proxy's `APP_DB` with a fake D1 that
+  answers only the signups SQL. `DevBackendConfig` has no binding hook, and no shipped page says
+  so, so a site's own D1-backed admin screen returns a 500 under the dev backend. Fix: a binding
+  option, or stop overwriting a binding the site already provides; add a line to
+  `docs/extend/add-a-custom-admin-screen.md` and to the `cairn-admin-screens` skill either way.
+  Trigger: the next pass that touches `packages/cairn-cms-dev`, and before any site is told to
+  build a D1-backed screen against the dev backend.
+
+- **Promote `radius-scale` and the three retired-patch arms to error tier at `0.99.0` (theme
+  identity pass B, 2026-09-29).** They ship at advisory tier in `0.98.0` and every finding names
+  `0.99.0`. `src/tests/unit/audit/promotion-versions.test.ts` enforces it: it reads every
+  `*PROMOTION_VERSION` constant under `src/lib/audit` and fails once the package version reaches
+  one, naming the choice owed (promote and delete the constant, or re-date with a disclosed
+  changelog line). It also turns red on the `0.98.0` version commit while the three older
+  `0.98.0` promises stand (`log-event-grammar`, `log-secret-field`, the guarded-retirement arm);
+  pass C's owner sitting decides those from measured counts on the five sites. Trigger: the
+  `0.99.0` version commit.
+
+- **`MarkdownEditor`'s `transformSelection` still replaces the whole document (theme identity pass
+  B, 2026-09-29).** `insertLink` and `insertImage` dispatch `from: 0, to: doc.length`, the pattern
+  the block insert dropped for a changed-span dispatch. The same consequences apply: every folded
+  block unfolds and an in-flight upload placeholder moves to the end. Fix: dispatch only the span
+  the format transform changed. Trigger: the next pass that edits `MarkdownEditor.svelte`, or the
+  first report of a fold or a placeholder moving after a link or image insert.
+
+- **`skills/cairn-extend/SKILL.md:12` sends a consumer's agent to a file the tarball does not ship
+  (theme identity pass B, 2026-09-29).** It tells the agent to check
+  `docs/internal/engine-rulings.md` in the imperative; `docs/internal/` is not in the package. Lines
+  20 to 23 already mark the other internal paths as source-repo paths. Fix: reword line 12 the same
+  way. Trigger: the next guidance pass.
+
 - **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or
   defer") deferred these, and pass 1 built none of them. Trigger for the chain items: the new
@@ -966,6 +987,14 @@ the named human gates only):**
   the tests' own default-URL assertions failing. Trigger: the next concurrent-pass collision on
   this port, or the next pass that touches this file, either takes a free ephemeral port instead of
   the hardcoded default.
+
+- **The showcase hardcodes `PUBLIC_ORIGIN` to `http://localhost:4173`, so a port collision breaks
+  minted preview URLs (friction log, found again by theme identity pass B task 1, 2026-09-28).**
+  `examples/showcase/wrangler.jsonc:61` feeds `requireOrigin` independent of `E2E_PORT`, so with
+  another project bound to 4173 every minted preview URL 404s and `e2e/preview.spec.ts` fails 8
+  tests; CI, with no collision, passes. Fix: derive the origin from `E2E_PORT`, the way the
+  Playwright config already reads it. Trigger: the next concurrent-pass collision on this port, or
+  the pass that fixes the `rendered.test.ts` half above.
 
 - **`admin-toolkit.md`'s outline-chip contrast ratios need re-measuring (draft docs stage 1,
   2026-09-28).** The outline-chip contrast paragraph once cited two specific ratios (about 2.4:1
@@ -2528,6 +2557,14 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **`rounded-t-full` and the other side forms of `full` pass `radius-scale` silently on a `badge`
+  (theme identity pass B, 2026-09-29).** The rule flags `rounded-full` on an element that carries
+  `badge`, but only the whole-corner form; a side form of `full` falls through. No plan decision
+  names it, so no behavior changed. Fix: extend the `FULL_TOKEN` arm in
+  `src/lib/audit/rules/static/radius-scale.ts` to the side forms. Trigger: the first real
+  `radius-scale` run over a consumer site that shows one, or the `0.99.0` promotion, whichever
+  comes first.
 
 - **Move pinned unlayered rules 1 to 9 into the `cairn-idiom` sublayer (theme identity pass A,
   2026-09-28).** Pass A moved rules 10 to 14 into `utilities.cairn-idiom` and retired their pins.

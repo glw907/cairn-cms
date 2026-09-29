@@ -13,6 +13,42 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **Import admin components from `@glw907/cairn-cms/admin`.** The `@glw907/cairn-cms/components`
+  subpath is removed, and the admin barrel is now `./admin`. Change every
+  `from '@glw907/cairn-cms/components'` to `from '@glw907/cairn-cms/admin'`.
+- **Import `PreviewBanner` from `@glw907/cairn-cms/public`.** The banner renders on a site's public
+  preview route, so it moved to the new `./public` subpath and no longer sits on `./admin`. Change
+  the import on your preview route (see [Share a draft preview](share-a-draft-preview.md)).
+- **Move custom admin components into `src/lib/admin`, or keep them and set `static.scope`.** The
+  audit's default roots no longer include `src/lib/components`. To move them, put your custom admin
+  components under `src/lib/admin` and add `@source "./lib/admin";` to your admin stylesheet
+  (`src/admin.css`), so the admin sheet compiles the utilities that only those files use. To keep
+  them where they are, set `static.scope` in `cairn-audit.config.json` to the default roots your site
+  has plus `src/lib/components`, for example `["src/routes/admin", "src/lib/components"]`. A
+  configured list replaces the defaults instead of adding to them, so naming
+  `src/lib/components` alone drops `src/routes/admin` from every static rule, and a configured
+  root that your tree lacks fails the run. A root you name under `static.scope` counts as an admin
+  root, and the audit treats it as one wherever another scope's defaults would also reach it.
+- **Change any path into `dist/components/` to `dist/admin/`.** The built files moved, and the
+  compiled sheet is now `dist/admin/cairn-admin.css`. Check an audit config's `sheet` (including a
+  config you pass with `--config`) and any site script that names the old path.
+- **Know what the audit no longer reads.** `src/lib/components` left `DEFAULT_STATIC_SCOPE`, so
+  the rules that read it by default stop reading your own components there unless you restore the
+  root with `static.scope`, as above. `stripe-trim-parity` and `unlayered-font-clobber` stay
+  admin-only, so they never read your public components. The
+  [`cairn-audit` reference](../reference/cairn-audit.md) states the same restore form.
+- **Expect `DEFAULT_ADMIN_SCOPE` to reach `src/lib/admin`.** It is now `src/routes/admin`,
+  `src/lib/admin`, and `src/lib/admin-toolkit`, the same three roots as the static default. The
+  three admin-only motion rules therefore also read the custom components you move into
+  `src/lib/admin`. `motion-property` allows a transition to touch only paint properties and
+  composited transforms, `motion-vocabulary` requires a duration and an easing curve to resolve to
+  cairn's motion tokens, and `motion-hover-gate` requires a hand-authored `:hover` motion to sit
+  inside `@media (hover: hover)`. A component that breaks one of these now reports there.
+- **Expect new advisory findings.** `radius-scale` and three new `stock-default-hazards` arms
+  report at advisory tier, so a run still exits 0 on them. Each finding names the replacement class
+  and the `0.99.0` release that promotes it to error tier. Clear them before then: write
+  `rounded-selector`, `rounded-field`, or `rounded-box` for a corner, and `btn btn-neutral` or
+  `btn btn-soft btn-primary` for a retired button patch.
 - **Re-check any custom admin screen.** Nothing is required, but the admin now takes its look
   from daisyUI's theme layer. A plain daisyUI class on your own screen renders cairn's corner
   ladder and hairline edges, a plain `btn` is a hairline button, and a checked or pressed `btn`

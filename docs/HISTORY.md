@@ -7,6 +7,101 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Theme identity pass B: the rename, `./public`, and the admin agent path, 2026-09-29
+
+Branch `theme-identity-b`, draft PR #95, unmerged at this close and held as pass C's base. Built
+on pass A's closed head, then `main` at `1056432d` (pass A merged on its own, PR #92). Plan and
+full post-mortem: `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`. Unreleased;
+`0.98.0` is planned for pass C's close.
+
+**What landed:**
+
+- **The rename.** `./components` became `./admin` (`src/lib/admin/`, `dist/admin/`), and
+  `PreviewBanner` moved to a new `./public` subpath with a stated membership rule. The audit's
+  default roots became `src/routes/admin`, `src/lib/admin`, and `src/lib/admin-toolkit`, for both
+  `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE`. The Names section, two Vale rules, the gate
+  classifier, `check:reference`, and the template followed. No paint moved: the admin sheet's
+  bytes and the showcase's compiled CSS were identical before and after.
+- **Audit.** `radius-scale` (advisory) and three `stock-default-hazards` arms for the retired
+  button patches (advisory), all naming `0.99.0`, plus `promotion-versions.test.ts`.
+- **The agent path.** `ROLE_RECIPES` and `RECIPE_MODEL` in `norms.ts`, the `recipe:` line in the
+  norms print, a 15-row "Write this, get this" table and a placement line in three guidance files,
+  the seven-section `exemplar-kit.md`, and a sync test binding them to their sources.
+- **The insert.** `EditorApi.insert` pads a block with one blank line per touching side, keeps a
+  line's indentation, and dispatches only the changed span (fixes friction log F12).
+- **S1, probe 1.** A headless `claude -p` session, given only what a consumer receives, wrote a
+  real admin screen: 0 static findings, 0 `radius-scale`, 0 `stock-default-hazards`.
+
+**What the gates caught:**
+
+- Task 2's `trimStart()`/`trimEnd()` stripped a content line's indentation, and its e2e evidence
+  was unit-level only. The fix used line-aware strips and re-ran the golden path against the
+  pre-fix editor.
+- Task 4's `card` row read `card-shell` alone, against the design system's `card-shell
+  card-shadow`, and the three radius role classes were folded into prose instead of written as
+  rows.
+- Task 3 had per-finding assertions missing (tier, `0.99.0`) and no per-fixture promotion check.
+- The first probe was invalid (see the emitter trap below). Its fake-D1 500 was the dev backend
+  defect, filed to `ROADMAP.md`.
+- The close reviews: `prose-voice-reviewer` found "two roots" false in three files (the default
+  scope has three) and a guidance pointer at `docs/internal/`, which the tarball does not ship.
+  `svelte-reviewer` (B1, B2) found the insert stripping a caret-in-indentation line and the
+  whole-document dispatch unfolding folds and moving upload placeholders. B3, the missing
+  `Consumers must:`, was this close's job.
+
+**What a later pass would be wrong to rediscover:**
+
+- **The spec's rename grep has four blind forms**: relative imports of the old folder, the
+  subpath in backticks or `<code>`, links to the renamed reference page, and bare folder-relative
+  paths or `'components'` literals. The plan added four greps and a six-item rename allowlist
+  (lines that must still name the old path). Run all five, and expect the allowlist hits.
+- **`static.scope` replaces the defaults; it does not add to them**, and a configured root the
+  tree lacks fails the run. "Name `src/lib/components` under the admin scope" followed literally
+  silently drops `src/routes/admin`. The restore form lists the default roots the site has plus
+  `src/lib/components`.
+- **The reach narrowing is permanent** (Geoff's A1 ruling, 2026-09-27). Dropping
+  `src/lib/components` from the defaults also removes a site's own components from
+  `stripe-trim-parity` and `unlayered-font-clobber`. They stay admin-only, and pass C's public
+  scope does not add them.
+- **`PreviewBanner` keeps every check it had.** `check:invisible-craft`'s `SCAN_SCOPE` and
+  `check:prose` gained `src/lib/public`, and its 16 `token-colors` suppressions stay exercised.
+  The admin sheet's `@source` leaves `src/lib/public` out because the banner writes no utility
+  class.
+- **A merge-forward across a rename** needs git's rename detection, and the conflict is
+  `CONFLICT (file location)`. Pass A's seven changed files carried into `src/lib/admin/` on their
+  own; verify with `test ! -e src/lib/components` and the five greps.
+- **The audit parser could not read five of 13 guidance fences raw**, and two still failed after
+  normalization. Decision 14's test normalizes `{...}` and bare `...` lines and fails a fence that
+  still does not parse, never skips it. The only retired pattern in a fence was `badge-ghost`.
+- **The promotion tripwire.** `promotion-versions.test.ts` is green on `0.97.0` and turns red on
+  the `0.98.0` version commit while any `0.98.0` constant stands (`log-event-grammar`,
+  `log-secret-field`, the guarded-retirement arm). Pass C's owner sitting decides each from
+  measured counts on the five sites; do not re-date silently.
+- **The probe's emitter trap.** `emit:template` omits `.claude/`, `CLAUDE.md`, and the audit
+  config, so a probe on that tree sees no guidance and its audit falls back to the packaged sheet
+  (two false `no-uncompiled-class` errors). Build a probe site by the `create-site.yml` bake path
+  (`docs/internal/durable-gotchas.md`).
+- **`viewport-overflow` measures in the same tick as `setViewportSize`.** Its 21 probe errors,
+  stable across three runs, vanished on a settled measurement (`scrollWidth` equal to
+  `clientWidth`). The rule also lists content with a negative overflow. Filed to `ROADMAP.md` Now,
+  before the `0.98.0` cut; do not chase it as a layout bug.
+- **Owed spec errata**, recorded here because the spec stays unedited: the restore form reads
+  "the default roots the site has plus `src/lib/components`", not "name it under the admin scope";
+  part 4 covers any path into `dist/components/`; probe 1 is a headless `claude -p` session in a
+  baked site; `radius-scale` also flags the `rounded-(--x)` shorthand the parent pattern omits.
+- **Known gaps filed, not fixed**: `transformSelection` still replaces the whole document;
+  `rounded-t-full` passes `radius-scale` on a `badge`; `cairn-extend/SKILL.md:12` names a file the
+  tarball does not ship; the dev backend overwrites `APP_DB`.
+
+**Score:** about 6.6M of the 19M ceiling (flag 15.2M) before this close's draft, plus the close's
+draft, review, and fold (capped near 0.6M). Estimates from task notifications and `/cost`. Geoff
+set the 19M ceiling at the plan review (ruling F1). Planning misses: 2, decision 20's
+emitter recipe (an invalid first probe) and decision 18's stale fixture facts (a heading weight
+and post-plan edits, amended at pre-flight). Execution sittings: 0 in this session.
+Fold-rule trial: the fold refused one finding of 49 (mechanics O2, keep task 1's full local e2e).
+It was not a real defect. The refusal cost a longer local leg, and the ledger records no break the
+four extra specs caught; whether they earned that cost was not measured.
+
 ## Theme identity pass A: the admin theme in daisyUI's layer, 2026-09-28
 
 Branch `theme-identity-a`, PR #92, merged to `main` as `4d725057` (Geoff approved pass A merging

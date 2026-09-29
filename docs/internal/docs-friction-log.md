@@ -49,17 +49,15 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-**`contributor`.** Local development collides with another workstation project that holds port
-4173, in two places that hardcode it instead of following the `E2E_PORT` setting:
-`src/tests/unit/audit/rendered.test.ts` (the `BASE_URL` contract tests) and
-`examples/showcase/wrangler.jsonc:61`'s `PUBLIC_ORIGIN`, which every minted preview URL is built
-against. Theme identity pass B's segment A hit the second one directly: with another project
-already bound to 4173, `e2e/preview.spec.ts` failed 8 tests on 404s from minted preview URLs,
-traced to `PUBLIC_ORIGIN`'s hardcoded value feeding `requireOrigin` independent of `E2E_PORT`; CI,
-with no such collision, passed the same suite. The `rendered.test.ts` half of this finding was
-independently filed and promoted to `ROADMAP.md`'s Next tier by draft docs pass 0+1's close (see
-below); the `PUBLIC_ORIGIN`/`e2e/preview.spec.ts` half stays open here, since both sites are
-outside that pass's task scope.
+Theme identity pass B's close (2026-09-29) triaged the whole log and found one open entry, the
+`contributor` finding that the showcase's `wrangler.jsonc:61` hardcodes `PUBLIC_ORIGIN` to
+`http://localhost:4173`. It was verified against the tree (still present) and promoted whole to
+`ROADMAP.md`'s Next tier beside the `rendered.test.ts` half, which draft docs pass 0+1 had already
+promoted. The pass routed its own findings straight to `ROADMAP.md` in the same step: the
+`viewport-overflow` timing defect to Now, and the dev backend's `APP_DB` overwrite, the promotion
+at `0.99.0`, `transformSelection`'s whole-document dispatch, and the imperative internal-doc
+pointer in `cairn-extend` to Next, and the `rounded-t-full` gap to Later. The probe's emitter
+trap went to `docs/internal/durable-gotchas.md`. See Clearings.
 
 Theme identity pass A's close (2026-09-28) triaged the whole log and found no open entry. The
 pass routed its own findings straight to `ROADMAP.md` in the same step: its carried cosmetics,
@@ -207,6 +205,7 @@ history holds every pruned entry in full.
 | 2026-09-24 | docs reset pass 1's close | no open finding in the log; the pass's own findings routed to `ROADMAP.md` (the docs reset to Now; the deferred chain and harness items, the Waymark theme comments, and the readers' real page defects to Next); the page-only `[candidate]` re-sourcing entry in Next reworded to the 25 bullets the triage excluded |
 | 2026-09-28 | theme identity pass A's close | no open finding in the log; the pass's own findings routed to `ROADMAP.md` (the carried items to Now, the pinned-rule shrink and the safelist retirement to Later); the Waymark citation entry in Next narrowed |
 | 2026-09-28 | draft docs pass 0+1's close | two open entries, both verified and promoted whole to `ROADMAP.md`'s Next tier: the `admin-toolkit.md` outline-chip contrast ratios needing re-measurement, and the page-chain claim inventory's missing disposition for a relocated claim; the close's own two carried findings (`check:symbols`'s attached-redirect and dropped-continuation gaps, `rendered.test.ts`'s hardcoded port 4173) filed straight to the same tier; the segment A boundary's third carried item, the duplicate-shipped-anchor gap, verified already fixed by the 2026-09-26 hardening commit and needed no filing |
+| 2026-09-29 | theme identity pass B's close | one open entry, the showcase's hardcoded `PUBLIC_ORIGIN` on port 4173 (found again by pass B's task 1), verified and promoted whole to `ROADMAP.md`'s Next tier; the pass's own findings filed straight to Now, Next, and Later, and the probe emitter trap to `durable-gotchas.md` |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

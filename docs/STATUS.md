@@ -32,12 +32,14 @@ Three initiatives are live; resume each from its plan's ledger foot:
 - **Draft docs pass 0+1**: merged (PR #91, `8bbe78f5`); the stage 2a plan is next (below), after
   pass B merges (Geoff, S3 Q21). The style-guide sync must land before stage 2a drafts its
   first page.
-- **Style-guide sync** (branch `style-guide-sync`, worktree `.claude/worktrees/style-guide-sync`,
-  head `2fd8eea8`): spec and plan reviewed and folded (rulings 1 to 14). It waited on a workstation
-  Claude infra sweep, whose passes A-core and B are merged in dotfiles (`c3e709c`, `7de1210`; spec
-  and state in `~/.dotfiles/docs/STATUS.md`). Next: re-baseline the plan on the corrected infra
-  (resume prompt below), then execute.
-
+- **Style-guide sync** (branch `style-guide-sync`, worktree `.claude/worktrees/style-guide-sync`;
+  chain W in `~/Projects/.worktrees/dotfiles-style-guide-sync`): plan re-baselined on the corrected
+  infra (`fb227d59`..`d7a56526`, verification read folded). Segment A paused mid-run for a leanness
+  check (workflow run `wf_1a23dd8e-98b`): landed R1 (`7bf6a110`, `f9723e50`), R2p (`5d82b505`,
+  review unfinished), W1 `79c5e23`, W2 `b44f414`/`ead04af`, W3 `4461c1f`. R2a and R2b not started.
+  A leanness audit and a web-research round both flag unbuilt breadth (four R2b rules, the
+  promoted-list JSON, R8, the structure-config pair) and the drafter brief's size; Geoff decides the
+  cuts before anything resumes.
 ## Open decisions and watches
 
 - Draft docs stage 1's two pages deferred to theme identity pass B (the admin subpath rename, the

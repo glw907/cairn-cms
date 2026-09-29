@@ -329,10 +329,11 @@ gaps this plan found while verifying the spec against the tree.
      `src/lib/public`, `src/lib/components`. Like `static.scope`, a configured list replaces the
      defaults, and a configured root the tree lacks throws.
    - `public.exclude`: default `src/routes/admin`. A configured list merges with the default,
-     never replaces it. Every admin-scope root, default or configured, is also excluded from the
-     public scope, whatever `public.exclude` says. Reason: a consumer that broadens `public.scope`
-     to `src` or sets its own `exclude` must not move admin files from the error-tier admin rules
-     to advisory `public-literals`; with no overlap possible, "no file answers to two grammars"
+     never replaces it. Every root the admin scope reads, whether from `static.scope` or
+     `static.adminScope`, default or configured, is also excluded from the public scope, whatever
+     `public.exclude` says (segment C pre-flight, 2026-09-29). Reason: a consumer that broadens
+     `public.scope` to `src` or sets its own `exclude` must not move admin files from the
+     error-tier admin rules to advisory `public-literals`; with no overlap possible, "no file answers to two grammars"
      holds without a guard ever downgrading. (This narrows the spec's precedence sentence; see the
      fold record's owed errata.)
    - `public.themeRoots`: default `src/theme` and `src/chassis/tokens.css` (a directory or a file).
@@ -424,19 +425,20 @@ gaps this plan found while verifying the spec against the tree.
     over a `cairn-public.css` `@theme` color that no template source uses. It asserts the utility
     reaches the compiled CSS, and a mutation that drops the `@source` line from the temporary
     install's copy fails it. Probe 3 then proves the same path with a real component.
-20. **The pack smoke test is a real install.** `check:audit-pack` (a new script) packs the engine,
-    installs the tarball with production dependencies into an empty directory under `os.tmpdir()`
-    (outside the repository, removed on exit), verifies the installed `dist/audit` against the pack
+20. **The pack smoke test is a real install.** `check:audit-pack` (a new script) runs `npm run
+    package` first, packs the engine, installs the tarball with production dependencies and
+    `--omit=peer` (so the non-optional peers stay out; segment C pre-flight, 2026-09-29) into an
+    empty directory under `os.tmpdir()` (outside the repository, removed on exit), verifies the installed `dist/audit` against the pack
     by content hash, and fails if `daisyui` resolves from that directory before the no-peers run.
     Its minimal fixture site carries a `src/theme/theme.css` with one daisyUI block and one clean
     `src/routes/admin/+page.svelte`, so the run reaches peer resolution instead of the public
     scope's empty-scope error or `runStatic`'s "the static scan matched no files" throw (an empty
-    static scope with no CSS files, `run.ts:157-163`). The report quotes each run's message. It runs `dist/audit/bin.js` three
+    static scope with no CSS files, `run.ts:159-163`). The report quotes each run's message. It runs `dist/audit/bin.js` three
     times: the full registry without the optional peers (a nonzero exit and the named message, no
     stack trace); one admin-only `--rule` selection without the peers (a clean run, since the peers
     load only when a selected rule needs them, decision 16's logic); and the full registry after
-    installing `daisyui` and `tailwindcss` (a clean run with a nonzero scanned count). It also greps
-    the installed `dist/**/*.d.ts` for `culori` and fails on a hit. Reason: only a real install
+    installing `daisyui` and `tailwindcss` explicitly (a clean run with a nonzero scanned count).
+    It also greps the installed `dist/**/*.d.ts` for `culori` and fails on a hit. Reason: only a real install
     proves culori is a declared dependency; a symlinked or in-repo `node_modules` would hide exactly
     the failure the spec guards. It joins `test.yml` after `check:package`, and `check:close` gains
     it at the same position.
@@ -482,8 +484,8 @@ gaps this plan found while verifying the spec against the tree.
     the file.
 27. **The engine's public roots live in a repo-owned config, never the showcase's** (review
     blocker; departs from the spec's "rooted ... by the showcase config"). The showcase's
-    `cairn-audit.config.json` is emitted byte for byte into `templates/waymark` and baked into
-    every scaffolded site, and a configured root the tree lacks throws, so a `../../src/lib/public`
+    `cairn-audit.config.json` is emitted into `templates/waymark` with its `rendered` block dropped
+    by the bake, and baked into every scaffolded site, and a configured root the tree lacks throws, so a `../../src/lib/public`
     root there would break every scaffolded site's `check:cairn` (`create-site.yml` runs it). Task
     7 adds `scripts/checks/public-scope.config.json` (repo-owned, never emitted), which names
     `public.scope` as `src/theme`, `src/chassis`, `src/routes`, and `../../src/lib/public` (the
@@ -1015,6 +1017,10 @@ implementer's), `src/lib/audit/rules/static/token-colors.ts`, a new
 tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.test.ts`, a new
 `scripts/checks/public-scope.config.json` (decision 27), `docs/reference/cairn-audit.md`, and
 `skills/cairn-admin-screens/SKILL.md` (the tier map and its count sentence).
+Added at the pre-flight (see the amendments below): `scripts/checks/check-invisible-craft.mjs`,
+`scripts/checks/check-admin-css-classes.mjs`, `src/tests/unit/audit-gate.test.ts`,
+`src/tests/unit/audit/rules/list-role.test.ts`, `src/lib/public/PreviewBanner.svelte` with its
+component test, and `docs/internal/facts/reference.md`.
 
 **Outcome:**
 - **The public scope** reads `.svelte` and `.css` files under `public.scope` minus
@@ -1045,6 +1051,41 @@ tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.tes
 - **The docs:** `cairn-audit.md` gains the rule's entry, the public scope's section with its config
   keys and the named-root rule, and the updated counts; the admin-screens tier map lists the rule
   under "Static, advisory tier".
+- **Segment C pre-flight amendments (2026-09-29):**
+  - **The audit wrappers.** `check-invisible-craft.mjs` and `check-admin-css-classes.mjs` each
+    pass an explicit selection of the non-public-scope rules, so decision 16's empty-scope error
+    never fires from them. Their findings stay identical to before.
+  - **Existing full-registry tests.** Tests that run the full registry over admin-only fixtures
+    pass an explicit admin rule list: `src/tests/unit/audit/run.test.ts` (around :200, :227, :309,
+    :380, :484), `src/tests/unit/audit-gate.test.ts:109`, and
+    `src/tests/unit/audit/rules/list-role.test.ts:143` (lines re-verified at dispatch). A test
+    whose subject is the full registry instead gains a public-scope file in its fixture. The
+    static scan's "matched no files" error still fires before the public empty-scope error, so the
+    :227 test stays green unchanged.
+  - **The count parser.** `run.test.ts`'s static rule-count sentence regex accepts digits or
+    hyphenated words, and `NUMBER_WORDS` gains nineteen, twenty, twenty-one, thirty-six,
+    thirty-seven, and thirty-eight. This task's counts are 19 static and 36 total, with the advisory
+    static count at four (from three).
+  - **The "all rules" line.** `docs/reference/cairn-audit.md:31-32` ("All 35 registered rules
+    audit the `/admin` surface") is reworded to stay true once public rules register. It keeps
+    the "All N registered rules" prefix the test parses.
+  - **The tier map.** `skills/cairn-admin-screens/SKILL.md` lists `public-literals` in its own
+    sentence of the advisory paragraph, since the new rules carry no promotion version. No
+    non-rule backticked token (such as `public.scope`) goes in that paragraph, because its parser
+    reads every backticked token there as a rule id. The count sentence at `:20-21` is updated.
+  - **The scanned list.** The run report's `filesScanned` includes public-scope files. No new CLI
+    flag is added to expose it.
+  - **The `font` shorthand.** `public-literals` counts an absolute size inside the `font`
+    shorthand as an absolute font size. `src/lib/public/PreviewBanner.svelte:97` (`font:
+    0.9375rem/1.4 ...`) therefore changes to a relative (`em`) size in this task. A
+    `color-mix(... black ...)` inside a custom-property definition in `cairn-public.css` is a token
+    definition under a theme root, and is legal.
+  - **Admin roots.** Every root the admin scope reads, from `static.scope` or
+    `static.adminScope`, default or configured, is excluded from the public scope (decision 6).
+  - **The facts container.** The fact in `docs/internal/facts/reference.md` (around :346) that
+    says pass B implements no separate named-root mechanism "since the public scope arrives with
+    the public theme" is rewritten to the new behavior. Its `config.ts` and `run.ts` citations
+    that this task shifts are repointed.
 
 **Acceptance:**
 - Fixtures, each raising exactly the named finding: `public-literals` flags a `#hex` in a
@@ -1055,7 +1096,7 @@ tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.tes
 - A table-driven test covers the detection core per form: each literal form named above flags, and
   `transparent`, `currentColor`, `inherit`, and `unset` do not. A mixed
   `style="color: #abc; width: {w}px"` fixture lands its finding on the right offset.
-- A test asserts the two default root sets are disjoint, and that a root named for one scope leaves
+- A test asserts the two default root sets are disjoint after the default `public.exclude`, and that a root named for one scope leaves
   the other's defaults, in both directions. A test asserts the empty-scope error fires on a tree with
   no public files when a public rule runs, and not when none does. A configured missing root
   throws; a missing default root is skipped.
@@ -1066,13 +1107,22 @@ tests under `src/tests/unit/audit/` with fixtures, `src/tests/unit/audit/run.tes
   flagged by `public-literals` and not by `token-colors` (decision 15).
 - `templates/waymark/cairn-audit.config.json` is byte-identical to its pre-task state.
 - The packaged audit, run from the showcase directory with `--config` naming the repo-owned config
-  and the rule selected, reports zero `public-literals` findings and a scanned count that includes
-  `../../src/lib/public/PreviewBanner.svelte`; the report quotes both.
+  and the rule selected, reports zero `public-literals` findings; the report quotes the count. A
+  unit test over the run's report (its scanned file list, `filesScanned`) proves the scan includes
+  `../../src/lib/public/PreviewBanner.svelte`.
 - `check:invisible-craft` and `check:admin-css-classes` report the same findings as before; the
-  report lists any file that moved scopes.
+  report quotes each wrapper's finding count before and after, equal, and lists any file that
+  moved scopes.
+- A test asserts the `font` shorthand with an absolute size flags. `PreviewBanner.svelte`'s
+  component test and `public-preview-tokens.spec.ts` stay green after its `em` change.
+- The existing tests named in the Outcome pass with their explicit admin rule lists, and the
+  :227 "matched no files" test passes unmodified.
+- `npm --prefix examples/showcase run check:cairn` stays at zero findings (the new rule runs there
+  under the public defaults), and a scaffolded site's advisory findings do not fail
+  `create-site.yml`'s `check:cairn`.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line: the idioms check; the
-  comments check; the audit wrappers; the package check (the skill budget and tier map); the
-  showcase set.
+  comments check; the audit wrappers; the package check (the skill budget and tier map);
+  `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:facts'`; the showcase set.
 
 ---
 
@@ -1098,6 +1148,17 @@ the admin-screens tier map.
   parsed. `tailwindcss` itself is not traversed, since resolution source 2 covers its variables.
   Every file, and every `@import` statement, is read through `sheet.ts`, never a regex over raw
   text.
+- **Segment C pre-flight amendments (2026-09-29):**
+  - **An unresolvable import.** An `@import` whose package target cannot be resolved is recorded
+    as unread in the report. It never raises a finding and never fails the run. Resolution follows
+    the package's `exports` map under the `style` condition, and falls back to the file path when
+    the package has no `exports` field. Import modifiers such as `layer(...)` and `source(...)` are
+    tolerated.
+  - **Counts and tier map.** `run.test.ts`'s pinned counts move to 20 static and 37 total, with the
+    advisory static count at five. The
+    admin-screens tier map lists `theme-conformance` in the advisory paragraph's separate
+    new-rules sentence (task 7's), with no non-rule backticked token, and its count sentence at
+    `:20-21` is updated.
 - **The key list** is read from `daisyui/theme/object`, resolved from the audited root. When
   `daisyui` or `tailwindcss` cannot be resolved, the audit fails with a named message saying which
   peer is missing and how to install it. The rule fails loudly when the list is empty or lacks
@@ -1132,6 +1193,12 @@ the admin-screens tier map.
   injected, so the test needs no uninstall).
 - The rule reports zero findings over the showcase through the packaged audit with the repo-owned
   config; the report quotes the scanned count.
+- Fixtures: an `@import` of an uninstalled package is recorded
+  as unread with no finding; a package with no `exports` field resolves by file path; an `@import`
+  carrying `layer(...)` or `source(...)` resolves. The overlay run over `examples/cairn-theme`
+  (which imports the uninstalled `@fontsource-variable/fraunces/opsz.css`) exits clean.
+- `npm --prefix examples/showcase run check:cairn` stays at zero findings, and a scaffolded site's
+  advisory findings do not fail `create-site.yml`'s `check:cairn`.
 - `gateTier: "engine"`. Task checks, each quoted: the idioms check; the comments check; the audit
   wrappers; the package check; the showcase set.
 
@@ -1155,6 +1222,13 @@ the retirement of `scripts/checks/check-public-tokens.mjs` and
 `.github/workflows/design.yml` and `test.yml`, the dependency survey record under
 `docs/internal/record/`, `docs/reference/cairn-audit.md`, the admin-screens tier map, and the live
 prose that names the retired file.
+Added at the pre-flight (see the amendments below): `scripts/lab/measure-status-inks.mjs` and
+`src/tests/unit/alert-ink-contrast.test.ts` (both import `dualGamutRatio` from the retired script
+and move to the successor), `docs/internal/public-design-system.md` (around :261 and :374),
+`docs/internal/facts/extend.md` (around :233, plus its shifted `package.json` citations),
+`docs/internal/facts/admin.md` and `docs/internal/facts/reference.md` (their shifted
+`package.json` citations), and culori's type declaration (today `src/tests/culori.d.ts`, moved or
+replaced).
 
 **Outcome:**
 - **The resolver** (the fold's stated bound) follows `var()` chains to a literal and evaluates one
@@ -1190,6 +1264,22 @@ prose that names the retired file.
   `src/lib/audit`. `design.yml` runs `check:public-tokens` after the showcase install. A reference to
   the npm script name stays; a reference to the retired file is repointed.
 - **The docs** as task 7's, for this rule, with the coverage limits stated.
+- **Segment C pre-flight amendments (2026-09-29):**
+  - **The retired script's importers.** `measure-status-inks.mjs` and
+    `alert-ink-contrast.test.ts` import `dualGamutRatio` from the successor contrast core. The
+    `public-design-system.md` references repoint. `check-idioms.test.ts:83`'s
+    `'check-public-tokens'` string is updated, or the report explains why it stays (it names the
+    npm script, not the file).
+  - **culori's type declaration** lives where `npm run check` and `check:package` both pass and no
+    emitted `dist/**/*.d.ts` mentions culori.
+  - **`check:audit-pack`** follows decision 20 as amended: `npm run package` first, the tarball
+    installed with `--omit=peer`, and `daisyui` and `tailwindcss` installed explicitly for the
+    third run.
+  - **Citations.** The `package.json` line citations in `facts/extend.md`, `facts/admin.md`, and
+    `facts/reference.md` that this task's `package.json` edits shift are repointed.
+  - **Counts and tier map.** `run.test.ts`'s pinned counts move to 21 static and 38 total, with
+    the advisory static count at six. The admin-screens tier map lists `theme-contrast` in the
+    advisory paragraph's new-rules sentence, and its count sentence at `:20-21` is updated.
 
 **Acceptance:**
 - Fixtures, each raising exactly the named finding: a hand-set ink below AA; a derived ink that
@@ -1216,10 +1306,14 @@ prose that names the retired file.
   (mutation ledger, reverted).
 - `check:package` is green; `git grep -n check-public-tokens.mjs` prints only history and record
   files.
+- `npm run check` and `check:package` pass with culori's type declaration in its new home, and the
+  existing grep of the installed `dist/**/*.d.ts` for `culori` stays clean.
+- `npm --prefix examples/showcase run check:cairn` stays at zero findings, and a scaffolded site's
+  advisory findings do not fail `create-site.yml`'s `check:cairn`.
 - `gateTier: "engine"`. Task checks, each quoted with its `gate exit:` line: the idioms check; the
   comments check; the audit wrappers; the package check;
   `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:public-tokens && npm run test:reskin && npm run check:audit-pack'`
-  (no browser);
+  (no browser); `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:facts'`;
   the showcase set.
 
 ---

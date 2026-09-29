@@ -6,7 +6,11 @@
       "id": "f:m2v7qd"
     },
     {
-      "text": "**Precondition:** the prerendered robots route at `src/routes/robots.txt/+server.ts` that the scaffold writes, which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt) describes.",
+      "text": "This page assumes the following precondition:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The prerendered robots route at `src/routes/robots.txt/+server.ts` that the scaffold writes, which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt) describes.",
       "id": "f:gnlib7"
     },
     {
@@ -78,7 +82,19 @@
       "id": "f:gnlib7"
     },
     {
-      "text": "Fetch the served file from the deployed site and confirm that the posture's `Content-Signal` line sits directly after `User-agent: *`.",
+      "text": "To verify the served file, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "From the deployed site, fetch the served file.",
+      "id": "f:6g7mpp"
+    },
+    {
+      "text": "In the served file, confirm that the posture's `Content-Signal` line sits directly after `User-agent: *`.",
+      "id": "f:6g7mpp"
+    },
+    {
+      "text": "The expected file depends on the posture:",
       "id": "f:6g7mpp"
     },
     {
@@ -90,7 +106,7 @@
       "id": "f:qgtfu6"
     },
     {
-      "text": "Under `'decline'`, the line is `Content-Signal: ai-train=no`, and the seven tokens in the engine's training-crawler table follow as their own `User-agent` groups, each with `Disallow: /`, before the `Sitemap` line.",
+      "text": "Under `'decline'`, the line is `Content-Signal: ai-train=no`, and the engine's seven training-crawler tokens follow as `User-agent` groups, each with `Disallow: /`, before the `Sitemap` line.",
       "id": "f:6g7mpp"
     },
     {
@@ -102,23 +118,51 @@
       "id": "f:6g7mpp"
     },
     {
-      "text": "Run [`cairn doctor`](../reference/cli-cairn-doctor.md) in the site directory and confirm that its `ai.posture-effective` check passes.",
+      "text": "In the site directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md).",
       "id": "f:65atya"
     },
     {
-      "text": "The check fetches the `/robots.txt` the public origin serves and compares it with the posture declared in `src/content/.cairn/site-facts.json`, and an unset posture passes whatever the served file carries.",
+      "text": "In the output, confirm that the `ai.posture-effective` check passes.",
       "id": "f:65atya"
     },
     {
-      "text": "The check reports `UNCHECKED` when it cannot read one of those two inputs: with the detail `needs engine 0.97.0 or later, and one build` when `site-facts.json` is absent, and with the fetch's own reason when no origin resolves or the origin's `/robots.txt` cannot be fetched.",
+      "text": "The check fetches the `/robots.txt` the public origin serves and compares it with the posture declared in `src/content/.cairn/site-facts.json`.",
+      "id": "f:65atya"
+    },
+    {
+      "text": "An unset posture passes whatever the served file carries.",
+      "id": "f:65atya"
+    },
+    {
+      "text": "The check reports `UNCHECKED` when it cannot read one of those two inputs, with a detail that depends on the cause:",
       "id": "f:b970xo"
     },
     {
-      "text": "A failing `ai.posture-effective` check reports the `ai.posture-not-effective` warning, which means the served file carries nothing consistent with the declared posture, or carries the other posture's directives.",
+      "text": "When `site-facts.json` is absent, the detail is `needs engine 0.97.0 or later, and one build`.",
+      "id": "f:b970xo"
+    },
+    {
+      "text": "When no origin resolves, or the origin's `/robots.txt` cannot be fetched, the detail is the fetch's own reason.",
+      "id": "f:b970xo"
+    },
+    {
+      "text": "A failing `ai.posture-effective` check reports the `ai.posture-not-effective` warning.",
       "id": "f:65atya"
     },
     {
-      "text": "Check first that the robots route passes `aiPosture` to `robotsResponse` and that the build carrying it has deployed.",
+      "text": "The warning means the served file carries nothing consistent with the declared posture, or carries the other posture's directives.",
+      "id": "f:65atya"
+    },
+    {
+      "text": "To find the cause, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the robots route, check that `robotsResponse` receives `aiPosture`.",
+      "id": "f:65atya"
+    },
+    {
+      "text": "Check that the build carrying that route has deployed.",
       "id": "f:65atya"
     },
     {

@@ -3,9 +3,11 @@
 Decide whether your site declines AI training crawlers, invites them, or states no preference, and
 carry that choice through to the file its robots route serves.
 
-**Precondition:** the prerendered robots route at `src/routes/robots.txt/+server.ts` that the
-scaffold writes, which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt)
-describes.
+This page assumes the following precondition:
+
+- The prerendered robots route at `src/routes/robots.txt/+server.ts` that the scaffold writes,
+  which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt)
+  describes.
 
 ## Choose a posture
 
@@ -77,32 +79,56 @@ changed posture reaches the served file once the build carrying it deploys.
 
 ## Verify the served file
 
-Fetch the served file from the deployed site and confirm that the posture's `Content-Signal` line
-sits directly after `User-agent: *`. With no posture, the route emits `User-agent: *`, `Allow: /`,
-`Disallow: /admin`, and the `Sitemap` line, with no `Content-Signal` line. Under `'invite'`, the
-only difference from that output is `Content-Signal: search=yes, ai-train=yes` in the same
-position. Under `'decline'`, the line is `Content-Signal: ai-train=no`, and the seven tokens in the
-engine's training-crawler table follow as their own `User-agent` groups, each with `Disallow: /`,
-before the `Sitemap` line. The `Disallow: /admin` line emits the same way under every posture. The
-[`buildRobots`](../reference/delivery-data.md#buildrobots) entry shows the complete declining file.
+To verify the served file, follow these steps:
 
-Run [`cairn doctor`](../reference/cli-cairn-doctor.md) in the site directory and confirm that its
-`ai.posture-effective` check passes. The check fetches the `/robots.txt` the public origin serves
-and compares it with the posture declared in `src/content/.cairn/site-facts.json`, and an unset
-posture passes whatever the served file carries. The check reports `UNCHECKED` when it cannot read
-one of those two inputs: with the detail `needs engine 0.97.0 or later, and one build` when
-`site-facts.json` is absent, and with the fetch's own reason when no origin resolves or the
-origin's `/robots.txt` cannot be fetched.
+1. From the deployed site, fetch the served file.
+2. In the served file, confirm that the posture's `Content-Signal` line sits directly after
+   `User-agent: *`.
+
+   The expected file depends on the posture:
+
+   - With no posture, the route emits `User-agent: *`, `Allow: /`, `Disallow: /admin`, and the
+     `Sitemap` line, with no `Content-Signal` line.
+   - Under `'invite'`, the only difference from that output is
+     `Content-Signal: search=yes, ai-train=yes` in the same position.
+   - Under `'decline'`, the line is `Content-Signal: ai-train=no`, and the engine's seven
+     training-crawler tokens follow as `User-agent` groups, each with `Disallow: /`, before the
+     `Sitemap` line.
+
+   The `Disallow: /admin` line emits the same way under every posture. The
+   [`buildRobots`](../reference/delivery-data.md#buildrobots) entry shows the complete declining
+   file.
+
+3. In the site directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md).
+4. In the output, confirm that the `ai.posture-effective` check passes.
+
+   The check fetches the `/robots.txt` the public origin serves and compares it with the posture
+   declared in `src/content/.cairn/site-facts.json`. An unset posture passes whatever the served
+   file carries.
+
+   The check reports `UNCHECKED` when it cannot read one of those two inputs, with a detail that
+   depends on the cause:
+
+   - When `site-facts.json` is absent, the detail is
+     `needs engine 0.97.0 or later, and one build`.
+   - When no origin resolves, or the origin's `/robots.txt` cannot be fetched, the detail is the
+     fetch's own reason.
 
 ## Resolve a posture warning
 
-A failing `ai.posture-effective` check reports the `ai.posture-not-effective` warning, which means
-the served file carries nothing consistent with the declared posture, or carries the other
-posture's directives. Check first that the robots route passes `aiPosture` to `robotsResponse`
-and that the build carrying it has deployed. If both hold, look for a managed layer that the
-zone's operator controls ahead of the origin.
-[Cloudflare's managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/),
-when enabled, prepends its own content, including its own `Content-Signal` line, to the origin's
-file in one combined response.
+A failing `ai.posture-effective` check reports the `ai.posture-not-effective` warning. The warning
+means the served file carries nothing consistent with the declared posture, or carries the other
+posture's directives.
+
+To find the cause, follow these steps:
+
+1. In the robots route, check that `robotsResponse` receives `aiPosture`.
+2. Check that the build carrying that route has deployed.
+3. If both hold, look for a managed layer that the zone's operator controls ahead of the origin.
+
+   [Cloudflare's managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/),
+   when enabled, prepends its own content, including its own `Content-Signal` line, to the
+   origin's file in one combined response.
+
 [Make the stated AI posture effective](../admin/is-it-working.md#make-the-stated-ai-posture-effective)
 covers the condition for whoever runs the zone.

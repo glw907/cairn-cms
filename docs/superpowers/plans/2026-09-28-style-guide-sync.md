@@ -5,7 +5,8 @@
 > Chains run through the workflow runner `pass-execute-chains`, invoked by name once per segment
 > with both chains in one invocation; the join runs per task with the Agent tool. Implementer
 > `cairn-implementer` on `sonnet` at effort `high` unless a task names `model: opus`; reviewer
-> `diff-reviewer` on `claude-opus-5-5`. **The conductor never reads a diff, a test log, or a gate
+> `diff-reviewer` on `claude-opus-5-5`, except a `sweep` task (W6), which reviews on `sonnet` per
+> the runner's `PASS_CLASSES.sweep`. **The conductor never reads a diff, a test log, or a gate
 > transcript**; it consumes per-task records and decides accept, re-dispatch, split, or stop. One
 > re-dispatch on `fix`; a second `fix` is the conductor's decision. Tasks state outcomes and
 > acceptance criteria, never implementation code. **Resume:** the runner has none. After a halt,
@@ -37,8 +38,10 @@ boundary.
 **Gates (runner args, exact).**
 - Chain R `engine-logic` tasks (R2p, R2a, R2b, R3, R7, R8): `gateTier: "scripts"` and `gate`
   set to the literal `npm run check:docs-gate && npm run check && npm test && npm test -w
-  packages/create-cairn-site` (the `SCRIPTS_GATE` string; the harness runs inside
-  `check:docs-gate`). Default heavy lane: `npm test` launches Chromium.
+  packages/create-cairn-site` (the `SCRIPTS_GATE` string). Once R2a lands, the Vale fixture
+  harness runs inside `check:docs-gate`'s tree mode, so this string covers it from R2a's own
+  gate on.
+  Default heavy lane: `npm test` launches Chromium.
 - Chain R `docs` tasks (R1, R6): no pin; the classifier sizes the gate. Default lane.
 - Chain R carries no `classifier` field: the runner makes one cached `haiku` existence probe for
   its repo and reuses it for every R task.
@@ -192,9 +195,11 @@ a confirmation; the PR's CI run at the close is the proof.
 
 Class `engine-logic`. Files: `.vale.ini`, `.vale/styles/Cairn/Heading{Ing,Question,Teaser}.yml`,
 the vocab accept list, `scripts/checks/docs-gate.mjs` and its unit test,
-`scripts/checks/vale-fixtures.mjs` and its fixtures tree, `scripts/checks/promoted-docs.json`,
+`scripts/checks/vale-fixtures.mjs` (new) and its fixtures tree, `scripts/checks/promoted-docs.json`,
 `.vale-structure.ini` (the structure-only config), `ROADMAP.md`.
 Outcomes: the spec's R2a bullets except the pin, plus:
+- `docs-gate.mjs`'s tree mode runs the fixture harness (`vale-fixtures.mjs`), and the docs-gate
+  unit test's pinned step list includes it.
 - The promoted list is seeded per Ruled inputs. The gate fails closed on a missing or malformed
   list, a listed page that does not exist, and a listed rule whose style file is absent from
   `.vale/styles`.
@@ -365,15 +370,18 @@ Outcomes: the spec's W4, "W4 addition", and ruling 12, plus:
   `2026-09-08-docs-standard-design.md` spec, as the cairn docs standard (DC-27).
 - The output style is the single owner of the full tell catalogue and the em-dash policy;
   `writing-voice/SKILL.md` ("The em dash") points at it instead of restating it (AW-24, DC-26,
-  CS-15). The global `CLAUDE.md` "Writing voice" block is trimmed to the pointer plus its short
-  high-frequency tell list and em-dash line, and nothing else. Those lines are the one sanctioned
-  copy (the only route to subagent writers, which never receive the output style), named here for
-  the infra sweep's A-rest `parity.json` to declare later.
-Acceptance: criterion 10; the routing clauses present; the `CLAUDE.md` block holds only the
-pointer, the short tell list, and the em-dash line, and each of those tells and the em-dash line
-agrees with the output style; each of the five voice files carries the pointer line and no
-measures section; `writing-voice/evals` re-run with no regression, or each
-delta named; `scripts/check.sh` passes.
+  CS-15). The global `CLAUDE.md` "Writing voice" block is trimmed to three parts. The first is
+  the pointer: one short paragraph carrying the charter and output-style route, the "name the
+  audience and load its standard before drafting" rule, the ruling 12 overlay sentence, and the
+  cairn developer-brief route (DC-27). The other two are the short high-frequency tell list and
+  the em-dash line. The tell list and em-dash line are the one sanctioned copy of the output
+  style's content (the only route to subagent writers, which never receive the output style),
+  named here for the infra sweep's A-rest `parity.json` to declare later.
+Acceptance: criterion 10; the routing clauses present; the `CLAUDE.md` block holds exactly the
+pointer paragraph (with its four elements), the short tell list, and the em-dash line, and each
+of those tells and the em-dash line agrees with the output style; each of the five voice files
+carries the pointer line and no measures section; `writing-voice/evals` re-run with no
+regression, or each delta named; `scripts/check.sh` passes.
 
 ### Task W5. Implementer definitions
 

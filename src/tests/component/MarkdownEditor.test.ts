@@ -145,6 +145,49 @@ describe('MarkdownEditor', () => {
       .toContain('INSERTED');
   });
 
+  it('keeps a folded block folded when api.insert lands elsewhere in the document', async () => {
+    let api: EditorApi | undefined;
+    const screen = await render(MarkdownEditor, {
+      value: FOLD_DOC,
+      name: 'body',
+      foldOnMount: true,
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
+      },
+    });
+    // The mount folds the panel: its body is hidden and the chip stands in for it.
+    await expect.poll(() => foldPill(screen.container), COLD_START).toBeTruthy();
+    expect(lineWith(screen.container, 'body one')).toBeFalsy();
+    await expect.poll(() => typeof api?.insert).toBe('function');
+    // The default caret sits at the document start, on the intro line, away from the fold.
+    api!.insert('INSERTED');
+    await expect.poll(() => hiddenValue(screen.container)).toBe(`INSERTED\n\n${FOLD_DOC}`);
+    expect(foldPill(screen.container)).toBeTruthy();
+    expect(lineWith(screen.container, 'body one')).toBeFalsy();
+  });
+
+  it('makes an insert its own undo step, apart from typing that follows it', async () => {
+    let api: EditorApi | undefined;
+    const screen = await render(MarkdownEditor, {
+      value: 'start',
+      name: 'body',
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
+      },
+    });
+    await expect.poll(() => typeof api?.insert).toBe('function');
+    await focusEditorEnd(screen.container);
+    api!.insert('BLOCK');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('start\n\nBLOCK');
+    await userEvent.keyboard('!');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('start\n\nBLOCK!');
+    // One undo removes only the typed character; the insert is a separate history entry.
+    await userEvent.keyboard('{Control>}z{/Control}');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('start\n\nBLOCK');
+    await userEvent.keyboard('{Control>}z{/Control}');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('start');
+  });
+
   it("inserts an inline link through registerEditor's api.insertLink", async () => {
     let api: EditorApi | undefined;
     const screen = await render(MarkdownEditor, {

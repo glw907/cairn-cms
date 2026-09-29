@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { padInsertedBlock } from '../../lib/admin/insert-padding.js';
+import { padInsertedBlock, paddedInsertSpan } from '../../lib/admin/insert-padding.js';
 
 // Table-driven proof of the padding rule behind EditorApi.insert: a block insert separates from
 // adjacent non-blank text by exactly one blank line on each side, never a double blank line, and
@@ -60,7 +60,7 @@ const rows: { name: string; doc: string; pos: number; text: string; out: string;
     doc: 'Paragraph text.\n',
     pos: 16,
     text: 'X',
-    out: 'Paragraph text.\n\nX',
+    out: 'Paragraph text.\n\nX\n',
     caret: 18,
   },
   {
@@ -103,6 +103,38 @@ const rows: { name: string; doc: string; pos: number; text: string; out: string;
     out: '- a\n\nX\n\n  - nested',
     caret: 6,
   },
+  {
+    name: 'a caret inside the indentation of an indented code block, which stays a code block',
+    doc: 'para\n\n    code',
+    pos: 8,
+    text: 'X',
+    out: 'para\n\nX\n\n    code',
+    caret: 7,
+  },
+  {
+    name: 'a caret inside the indentation of a nested list item, which stays nested',
+    doc: '- a\n  - nested',
+    pos: 5,
+    text: 'X',
+    out: '- a\n\nX\n\n  - nested',
+    caret: 6,
+  },
+  {
+    name: 'the end of a document that ended with a newline, which keeps exactly one trailing newline',
+    doc: 'abc\n',
+    pos: 4,
+    text: 'X',
+    out: 'abc\n\nX\n',
+    caret: 6,
+  },
+  {
+    name: 'the end of a document that ended with several newlines, which collapses to one',
+    doc: 'abc\n\n\n',
+    pos: 6,
+    text: 'X',
+    out: 'abc\n\nX\n',
+    caret: 6,
+  },
 ];
 
 describe('padInsertedBlock', () => {
@@ -111,4 +143,30 @@ describe('padInsertedBlock', () => {
       expect(padInsertedBlock(row.doc, row.pos, row.text)).toEqual({ doc: row.out, caret: row.caret });
     });
   }
+});
+
+// The span form is what the mounted editor dispatches: it bounds only the whitespace the padding
+// rule strips around the caret, so the rest of the document (a folded block, an upload placeholder)
+// is never part of the change.
+describe('paddedInsertSpan', () => {
+  it('applies to the document exactly as padInsertedBlock reports it', () => {
+    for (const row of rows) {
+      const span = paddedInsertSpan(row.doc, row.pos, row.text);
+      expect(row.doc.slice(0, span.from) + span.insert + row.doc.slice(span.to)).toBe(row.out);
+      expect(span.caret).toBe(row.caret);
+    }
+  });
+
+  it('bounds only the stripped whitespace, leaving a position far from the caret outside the range', () => {
+    const doc = 'one\n\ntwo\n\nthree';
+    const span = paddedInsertSpan(doc, 3, 'X');
+    expect(span).toEqual({ from: 3, to: 5, insert: '\n\nX\n\n', caret: 6 });
+    // A position after the changed range, such as an upload placeholder later in the document,
+    // sits past `to`, so the change maps it by a shift instead of collapsing it.
+    expect(doc.indexOf('three')).toBeGreaterThan(span.to);
+  });
+
+  it('dispatches an empty range at a caret with nothing to strip', () => {
+    expect(paddedInsertSpan('abc', 0, 'X')).toEqual({ from: 0, to: 0, insert: 'X\n\n', caret: 1 });
+  });
 });

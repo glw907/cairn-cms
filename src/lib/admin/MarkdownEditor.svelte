@@ -28,8 +28,9 @@ Swapping the editor stays a one-file change.
    *  host is always EditPage, which always needs the whole surface. */
   export interface EditorApi {
     // Insertion: writes directly into the document.
-    /** Inserts a block at the cursor, separated from adjacent text by a blank line where text
-     *  touches it; the palette calls it. */
+    /** Inserts block text at the cursor, separated from adjacent text by a blank line where text
+     *  touches it; the palette calls it. It is for blocks only: mid-paragraph it splits the
+     *  paragraph at the caret rather than inserting inline. */
     insert: (text: string) => void;
     /** Inserts an inline link at the current selection; the link picker calls it. */
     insertLink: (href: string, title: string) => void;
@@ -179,7 +180,7 @@ Swapping the editor stays a one-file change.
   import { onMount, onDestroy, getContext } from 'svelte';
   import { applyMarkdownFormat, figureAtImage, insertImage as insertImageFormat, insertInlineLink, type FormatResult } from './markdown-format.js';
   import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
-  import { padInsertedBlock } from './insert-padding.js';
+  import { padInsertedBlock, paddedInsertSpan } from './insert-padding.js';
   import { firstImageFile, guardDropTarget } from './client-ingest.js';
   import { htmlToMarkdown } from './paste-html-to-markdown.js';
   import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
@@ -274,6 +275,9 @@ Swapping the editor stays a one-file change.
   // the base chrome the admin sheet does not reach (the autocomplete tooltip, the panels) follows
   // the theme instead of holding its first-mount polarity. The observer below is what notices.
   let themeCompartment: import('@codemirror/state').Compartment | null = null;
+  // The history annotation an insert carries so it is its own undo step. Assigned in onMount with
+  // the rest of the dynamic editor modules; the mounted insert path only runs after that.
+  let isolateHistory: typeof import('@codemirror/commands').isolateHistory | null = null;
   let themeObserver: MutationObserver | null = null;
 
   onMount(async () => {
@@ -281,6 +285,7 @@ Swapping the editor stays a one-file change.
     const stateMod = await import('@codemirror/state');
     const markdownMod = await import('@codemirror/lang-markdown');
     const commandsMod = await import('@codemirror/commands');
+    isolateHistory = commandsMod.isolateHistory;
     const languageMod = await import('@codemirror/language');
     const lintMod = await import('@codemirror/lint');
     const autocompleteMod = await import('@codemirror/autocomplete');
@@ -1132,19 +1137,23 @@ Swapping the editor stays a one-file change.
     view.focus();
   }
 
-  // Insert a block at the cursor, padded by padInsertedBlock so it never fuses onto adjacent text.
-  // The pre-mount fallback pads against the end of the raw value, the same rule the mounted path
-  // applies against the live caret.
+  // Insert a block at the cursor, padded by the rule in insert-padding so it never fuses onto
+  // adjacent text. The pre-mount fallback pads against the end of the raw value, the same rule the
+  // mounted path applies against the live caret. The mounted path changes only the span the rule
+  // strips around the caret, so a fold or an upload placeholder elsewhere in the document is left
+  // alone, and it is isolated in history so typing after it does not join its undo step.
   function insertAtCursor(text: string) {
     if (!view) {
       value = padInsertedBlock(value, value.length, text).doc;
       return;
     }
-    const doc = view.state.doc.toString();
-    const padded = padInsertedBlock(doc, view.state.selection.main.head, text);
+    const span = paddedInsertSpan(view.state.doc.toString(), view.state.selection.main.head, text);
     view.dispatch({
-      changes: { from: 0, to: doc.length, insert: padded.doc },
-      selection: { anchor: padded.caret },
+      changes: { from: span.from, to: span.to, insert: span.insert },
+      selection: { anchor: span.caret },
+      userEvent: 'input',
+      annotations: isolateHistory ? isolateHistory.of('full') : [],
+      scrollIntoView: true,
     });
     view.focus();
   }

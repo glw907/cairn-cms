@@ -22,6 +22,13 @@ every writer, in the chain or outside it, receives that standard as one flat dra
 audit, reviews, and folds under `docs/superpowers/research/2026-09-28-style-guide-sync-*`, the
 last being `...-plan-fold.md`.
 
+**Infra re-baseline.** Amended to run on the corrected workstation infra (dotfiles infra sweep
+A-core `c3e709c` and B `7de1210`, both on dotfiles `main`), applying the ten items under
+"Amendments to the style-guide-sync plan" in
+`/var/home/glw907/.dotfiles/docs/superpowers/specs/2026-09-28-claude-infra-sweep-design.md`.
+The runner stays `pass-execute-chains`, invoked by name; the runner merge (AW-11) waits for the
+sweep's pass E. Audit ids (AW-, DC-, PS-) are that sweep's audit record's.
+
 **Pass class:** mixed, per task. Each task carries `passClass` in the runner args.
 **Token ceiling:** 12M. **Checkpoint:** every segment boundary, any split, and before any question.
 At 80% (9.6M) finish the task in flight, write STATUS, and ask one combined question at the next
@@ -33,17 +40,28 @@ boundary.
   packages/create-cairn-site` (the `SCRIPTS_GATE` string; the harness runs inside
   `check:docs-gate`). Default heavy lane: `npm test` launches Chromium.
 - Chain R `docs` tasks (R1, R6): no pin; the classifier sizes the gate. Default lane.
-- Chain W tasks: `gate: "bash scripts/check.sh"`, `gateLane: "light"`, and `notes` carrying the
-  absolute spec path plus: "This repo has no npm; your gate is `bash scripts/check.sh` alone, and
-  items 2 and 3 of your definition of done do not apply."
-- Never set `args.gateLane`.
+- Chain R carries no `classifier` field: the runner makes one cached `haiku` existence probe for
+  its repo and reuses it for every R task.
+- Chain W sets `classifier: false` on its chain object (AW-13): no probe, no classifier paragraph.
+- Chain W tasks: `gate: "bash scripts/check.sh"`, `reducedGate: "bash scripts/check.sh"` (AW-01;
+  the same form as the named gate, step 1 of the runner's resolution order, since dotfiles has no
+  separate type check and the class default would run nothing), `gateLane: "light"`, and `notes`
+  carrying the absolute spec path. The runner reads `reducedGate` per task or from `args`, never
+  per chain, so each W task carries it. The implementer's definition of done is the gate the
+  dispatch names (AW-19), so the notes carry no override.
+- `args.gate` is the `SCRIPTS_GATE` literal above: chain R's fallback when the classifier prints
+  nothing. Every W task names its own `gate`, so W never reads it.
+- Chain W's condensed `criteria` name no npm command; a W task whose plan section names one
+  (W5's docs-gate line) says "per the plan section" instead.
+- Never set `args.gateLane`, `args.reducedGate`, or `args.classifier`: each would reach chain R.
 
 **Branches.** Chain R on `style-guide-sync` (this worktree). Chain W on `style-guide-sync` in a
-dotfiles worktree the **conductor** creates outside `~/.dotfiles`:
+dotfiles worktree the **conductor** creates outside `~/.dotfiles`, from dotfiles `main` (which
+carries the infra sweep's B merge, `7de1210`, so W5 branches from B3's implementer edits):
 `git -C ~/.dotfiles worktree add ~/Projects/.worktrees/dotfiles-style-guide-sync -b
-style-guide-sync` (inside `~/.dotfiles` it reads as drift; under `claude/` it would load as live
-agents). `planPath` is this file's absolute path. The repo branch merges to `main` by PR at the
-close. **No release, no version bump.**
+style-guide-sync main` (inside `~/.dotfiles` it reads as drift; under `claude/` it would load
+as live agents). `planPath` is this file's absolute path. The repo branch merges to `main` by PR
+at the close. **No release, no version bump.**
 
 **Owner time:** one attended read of the R5 diff (rulings 7 and 14), taken right after J1. J2 may
 run while it is pending; segment J-2 waits for it. Nothing else waits on Geoff.
@@ -106,7 +124,8 @@ and the tripwires key on them, byte for byte.
    not only `blocking`.
 5. **R5 rewording approved sentences** flattens the voice (G3). J1's sentence-level diff against
    `8bbe78f5` over the pinned ranges.
-6. **A tripwire red on today's tree, or vacuous on an empty list.** R8 and W6.
+6. **A tripwire red on today's tree, or vacuous on an empty list.** R8, and W6's appended phrases
+   on the dotfiles scanner.
 
 ---
 
@@ -114,10 +133,20 @@ and the tripwires key on them, byte for byte.
 
 - **P0.** No other executor holds `~/.dotfiles` or this worktree (`pgrep -f`, `git status`, other
   sessions' journals).
-- **P1.** One `haiku` agent checks every checkable claim in segments A and B at HEAD (paths, line
-  numbers, `common`, `FINDING`, `valeErrorRules`, the test file's markers, both CI Vale pins, the
-  runner's `Plan file` and `Task <id>` reads). Amend the plan, then dispatch.
-- **P2.** Create the dotfiles worktree (Branches above).
+- **P1.** One `haiku` agent checks every checkable claim in segments A and B against current
+  line numbers: cairn-cms at this worktree's HEAD and dotfiles at `main` (paths, line numbers,
+  `common`, `FINDING`, `valeErrorRules`, the test file's markers, both CI Vale pins, the runner's
+  `Plan file` and `Task <id>` reads, the ratchet baseline entries W tasks clear). The infra
+  sweep's B moved lines in files chain W edits (`cairn-implementer.md`, `site-implementer.md`,
+  `claude/.claude/CLAUDE.md`, `docs-page-chain.js`, `docs/voice/commit-and-pr.md`), so a check
+  run before B's merge does not count. Amend the plan, then dispatch.
+- **P1a.** Re-run B1's style-guide-sync fixture render (the "style-guide-sync fixture" case in
+  dotfiles `tests/pass-execute-runners.test.mjs`) from a scratch copy, with its chain arguments
+  replaced by this plan's Gates-block arguments for segment A and for segment B, and grep this
+  plan for the two workarounds the infra sweep spec's "Success tests" names (a chain W `notes`
+  override of the implementer's definition of done; W6 deferring the tooling check to the
+  boundary). Either failing halts the pass before dispatch.
+- **P2.** Create the dotfiles worktree from dotfiles `main` (Branches above).
 - **P3.** Run the `dependency-upgrade` skill's survey for Vale 3.15.1 to 3.23.0 and write its
   record to `docs/internal/record/`; run a new-package survey for `markdownlint-cli2` (current
   production version, license, maintenance, one line of rationale). Both paths go into R2p's and
@@ -151,8 +180,9 @@ ratified rule as kept, reworded, or changed by ruling N (graded at J4).
 
 ### Task R2p. Vale pin bump
 
-Class `engine-logic`. Files: `.github/workflows/test.yml`, `.github/workflows/tool.yml`
-(`VALE_VERSION`), the `.vale.ini` arbiter note, `docs/internal/docs-friction-log.md` (the frozen
+Class `engine-logic`. Files: `.github/workflows/test.yml` (the "Install Vale 3.15.1" step's name
+and download URL, which carry the pin literally), `.github/workflows/tool.yml` (`VALE_VERSION`),
+the `.vale.ini` arbiter note, `docs/internal/docs-friction-log.md` (the frozen
 page's stale pin comment). Notes: P3's survey record path.
 Outcomes: both CI pins read 3.23.0; the arbiter note keeps "CI's pin governs" with the new number.
 Acceptance: the existing gate green. The probe found 3.23.0 already clean on the tree, so this is
@@ -190,12 +220,18 @@ ListItemCase}.yml`, fixtures, `promoted-docs.json`.
 Outcomes: the spec's R2b bullets; `ProseProcedure`'s tree-wide count recorded in the report and in
 a `WATCH` comment beside the rule. Acceptance: criteria 3 (R2b) and 4.
 
-**Chain W, in order: W1, W2, W3.**
+**Chain W, in order: W1, W2, W3.** On every W task (both segments): a task whose change clears a
+ratchet baseline entry (a retired phrase or a self-mode dead reference) removes that entry in the
+same commit, and `claude/.claude/tooling/ratchet-baseline.json` is in its Files; the gate fails
+on a stale entry. Each task's audit ids are named so the close can map any halt to them.
 
 ### Task W1. `docs-page-chain.js`
 
 Class `engine-logic`. Files: `claude/.claude/workflows/docs-page-chain.js`,
 `tests/docs-page-chain-derivation.test.mjs`, `scripts/docs-chain-render.mjs` (new).
+Audit ids: AW-09 (the chain's prompt, not a July plan, carries the contract), AW-10
+(`registerPaths` at `docs-page-chain.js:32` reaches no editor prompt; the renderer test covers
+what replaces it).
 Outcomes: the spec's W1 bullets, resolved as follows.
 - **Extraction.** The page-inputs agent runs one fixed shell command per section, rendered by the
   runner (a range from the exact heading to the next heading of the same or higher level, ending
@@ -228,7 +264,8 @@ finding comes back `fix`. `scripts/check.sh` passes.
 
 ### Task W2. Drafter definition
 
-Class `docs`. Files: `claude/.claude/agents/cairn-docs-drafter.md`.
+Class `docs`. Files: `claude/.claude/agents/cairn-docs-drafter.md`. Audit id: AW-24 (drafter
+side).
 Outcomes: the spec's W2, plus: the definition says not to open the register; its own tell list is
 deleted (the brief's `### Tells` is the one source), keeping the first-sentence rule, the padding
 rule, and the `sentences` procedure; "sentence rhythm, and its register" applies to voice-role
@@ -236,13 +273,19 @@ exemplars only. Acceptance: criterion 12's W2 clause.
 
 ### Task W3. Register-editor definition
 
-Class `docs`. Files: `claude/.claude/agents/cairn-register-editor.md`.
-Outcomes: the spec's W3 in full, including the no-track default, plus: findings carry `source`
-and, for a guide finding, the `q:` id as `rule`; "25-40-word" is deleted and Noir overcorrection
-anchors to the brief's "qualified claims stay whole" delta; "What is sanctioned" is scoped to
-positioning and site copy, with docs sanctions living only in the exceptions tables; the
-developer-docs genre line points at the developer brief; a new tell lands in the register first,
-this catalogue second. Acceptance: criterion 12's W3 clause; no retired phrase remains.
+Class `docs`. Files: `claude/.claude/agents/cairn-register-editor.md`,
+`claude/.claude/tooling/ratchet-baseline.json`. Audit ids: AW-08, AW-09.
+Outcomes: the spec's W3 in full, including the no-track default, plus: the living contract loads
+no July plan on a run (AW-09: the 485-line craft-references plan, item 2 at `:31`); the
+definition cites no exemplar or path that does not exist (AW-08: the "ratified 2026-07-03"
+exemplar at `:19-20` and the corpus path `~/.claude/docs/register-exemplars/cairn/` at `:32`),
+and that path's `dead-reference` baseline entry (`GA-02`) leaves in the same commit; findings
+carry `source` and, for a guide finding, the `q:` id as `rule`; "25-40-word" is deleted and
+Noir overcorrection anchors to the brief's "qualified claims stay whole" delta; "What is
+sanctioned" is scoped to positioning and site copy, with docs sanctions living only in the
+exceptions tables; the developer-docs genre line points at the developer brief; a new tell lands
+in the register first, this catalogue second. Acceptance: criterion 12's W3 clause; no retired
+phrase remains; no baseline entry names this file; `scripts/check.sh` passes.
 
 ## Segment B
 
@@ -276,13 +319,16 @@ the release-time read to a Microsoft UI-text read, not `content-review`. Accepta
 
 ### Task R8. Stale-reference check, repo side
 
-Class `engine-logic`. Files: `scripts/checks/retired-phrases.json` (header names the dotfiles twin),
-the check, its wiring in the docs gate's tree mode, fixtures, `CLAUDE.md` (Authoring section).
+Class `engine-logic`. Files: `scripts/checks/retired-phrases.json` (header names the dotfiles
+twin, `claude/.claude/tooling/retired-phrases.txt`), the check, its wiring in the docs gate's
+tree mode, fixtures, `CLAUDE.md` (Authoring section).
 Outcomes: the spec's W6, repo half. Scope: `CLAUDE.md` and `docs/internal/**`, excluding
 `record/`, `consultations/`, dated specs, plans, and research, the list file, and the fixtures.
-The check fails on a missing or empty list. R8 lands the repo `CLAUDE.md` Authoring edit itself
-(ruling 12: the charter sentence becomes "a published external standard as its base, with a
-recorded house voice overlay"; "On top of the Google floor" names the drafting briefs instead).
+The check fails on a missing or empty list, and matches each phrase as a literal,
+case-insensitive substring tolerant of a line wrap inside the phrase, like its twin. R8 lands
+the repo `CLAUDE.md` Authoring edit itself (ruling 12: the charter sentence becomes "a published
+external standard as its base, with a recorded house voice overlay"; "On top of the Google
+floor" names the drafting briefs instead).
 Acceptance: fires on a planted phrase, fails on an empty and a missing list, honors `retired-ok`,
 and passes on the tree.
 
@@ -293,7 +339,12 @@ and passes on the tree.
 Class `docs`. Files: `claude/.claude/skills/writing-voice/SKILL.md`,
 `claude/.claude/docs/voice/technical-doc-web.md`, `claude/.claude/docs/voice/editor.md`,
 `claude/.claude/docs/authoring-charter.md`, `claude/.claude/CLAUDE.md` ("Writing voice"),
-`claude/.claude/output-styles/writing-voice.md`, `claude/.claude/skills/register-check/SKILL.md`.
+`claude/.claude/output-styles/writing-voice.md`, `claude/.claude/skills/register-check/SKILL.md`,
+and the three other voice files (S3): `claude/.claude/docs/voice/technical-doc-go.md`,
+`claude/.claude/docs/voice/commit-and-pr.md`, `claude/.claude/docs/voice/agent-facing.md`.
+Audit ids: PS-07, DC-25 (ruling 12), DC-27, DC-28, AW-24 with DC-26 and CS-15 (style, `CLAUDE.md`,
+skill). DC-25's poplar gap is out of scope: poplar's vendored `glw907` overlay is ruled canonical
+(S2) and its stale references go in the sweep's pass F.
 Outcomes: the spec's W4, "W4 addition", and ruling 12, plus:
 - The charter, the global `CLAUDE.md`, the output style, and the skill state ruling 12: every
   audience starts from a published external standard; a repo may carry a named house voice as a
@@ -304,25 +355,50 @@ Outcomes: the spec's W4, "W4 addition", and ruling 12, plus:
 - The output style gains "a sequence of actions is a numbered list."
 - `register-check` names `docs/internal/docs-register.md` as the rule set, not the July plan, and
   sends new tells to the register first.
-Acceptance: criterion 10; the routing clauses present; `writing-voice/evals` re-run with no
-regression, or each delta named.
+- All five voice files drop their "The docs-register measures" section and keep one pointer line
+  to `~/.claude/skills/writing-voice/evals/tellgrader/MEASURES.md` (DC-28).
+- `technical-doc-go.md`'s "Applies to" names only Go repos that exist (no `~/Projects/jrnl-md`
+  today), and its linter line matches what those repos' own `.vale.ini` files select (poplar
+  lints Go comments with its vendored `glw907` overlay; no Go repo selects the Vale Google
+  package today) (DC-28).
+- The global `CLAUDE.md` "Writing voice" names the register's developer brief, not the write-once
+  `2026-09-08-docs-standard-design.md` spec, as the cairn docs standard (DC-27).
+- The tell list and the em-dash policy have one owner, the output style; the global `CLAUDE.md`
+  "Writing voice" and `writing-voice/SKILL.md` ("The em dash") point at it instead of restating
+  it (AW-24, DC-26, CS-15).
+Acceptance: criterion 10; the routing clauses present; each of the five voice files carries the
+pointer line and no measures section; `writing-voice/evals` re-run with no regression, or each
+delta named; `scripts/check.sh` passes.
 
 ### Task W5. Implementer definitions
 
 Class `docs`. Files: `claude/.claude/agents/cairn-implementer.md`,
-`claude/.claude/agents/site-implementer.md`. Outcomes: the spec's W5 line in both;
-`site-implementer`'s cairn-cms docs gate adds `npm run check:docs-gate -- --page <page>` for each
-page it touches. Acceptance: criterion 12's W5 clause.
+`claude/.claude/agents/site-implementer.md`, both as the infra sweep's B3 left them (done means
+the dispatched gate, AW-19; the co-author footer names the repo's convention). Outcomes: the
+spec's W5 line in both (the "plain voice" line, `cairn-implementer.md:62` and
+`site-implementer.md:57` on dotfiles `main`); `site-implementer`'s cairn-cms docs gate
+(`site-implementer.md:106`) adds `npm run check:docs-gate -- --page <page>` for each page it
+touches. B3's edits stay intact. Acceptance: criterion 12's W5 clause; `scripts/check.sh` passes.
 
 ### Task W6. Stale-reference tripwire, dotfiles side
 
-Class `engine-logic`. Files: a retired-phrases list (header names the repo twin), a check in
-`scripts/check.sh`, fixtures. Scope: `claude/.claude/agents`, `skills`, `workflows`, `docs`,
-`output-styles`, and `CLAUDE.md`, excluding `docs/record/`, `skills/synced/`, `evals/research/`,
-dated files, the list file, and the fixtures. Fails on a missing or empty list; honors
-`retired-ok`. Acceptance: fires on a planted phrase, fails on an empty and a missing list, passes
-on the tree after W2 to W5; `scripts/check.sh` passes. (`claude-tooling-sync verify` reads the
-main checkout, so it runs at the boundary.)
+Class `sweep`. Files: `claude/.claude/tooling/retired-phrases.txt`,
+`tests/test_check_claude_refs.py` (the fixtures), `claude/.claude/tooling/ratchet-baseline.json`
+only if an entry clears. W6 adds no second check: the infra sweep's A-core scanner
+(`scripts/check-claude-refs.py`, run by the ratchet step of `scripts/check.sh`) already covers
+W6's scope (agents, authored and vendored skills except `skills/synced/`, workflows, `docs`
+except `docs/record/`, output styles, `instructions`, `CLAUDE.md`; no `evals/research/` segment
+and no dated path), matches case-insensitively and across a line wrap, honors `retired-ok`, and
+fails on a missing or comment-only list.
+Outcomes: every Ruled-inputs retired phrase is appended to the list, each with a comment naming
+its ruling (ruling 12 or the spec's W6) and the task that cleared its last hit, and the header's
+twin line names `scripts/checks/retired-phrases.json` in cairn-cms. The fixtures are the ones this
+section names: one planted-hit case per appended phrase, read from the real list, that the check
+fails on, and one `retired-ok` case that passes. The phrases enter with zero hits and no new
+baseline entry, since W2 to W5 cleared them.
+Acceptance: the fixtures pass; the existing missing-list and comment-only-list cases stay green;
+`bin/.local/bin/claude-tooling-sync lint --root <the chain W worktree>` passes inside the chain;
+`scripts/check.sh` passes on the tree after W2 to W5.
 
 ### Segment B boundary (conductor)
 
@@ -332,7 +408,8 @@ main checkout, so it runs at the boundary.)
    STATUS as the rollback point (`git revert -m 1 <sha>`). The folded symlinks make it live at
    once; no re-stow is needed. Until the repo PR merges, a `docs-page-chain` run against a cairn
    checkout off `main` fails closed at page inputs; STATUS says so.
-3. `claude-tooling-sync verify` passes.
+3. `claude-tooling-sync verify` passes on the merged `main`: a post-merge confirmation of the
+   machine checks W6 already ran in the chain.
 4. One `haiku` probe runs `~/.dotfiles/scripts/docs-chain-render.mjs` against this worktree's
    register for a Google page and an editors page, and confirms every Ruled-inputs section
    validates non-empty.
@@ -407,10 +484,15 @@ mismatch.
 2. The full repo gate, `scripts/check.sh`, and `claude-tooling-sync verify`, green.
 3. Owed errata recorded (not edited), per the plan fold record: the approach spec's "No new check
    is built" and retirement row; `docs/internal/record/2026-08-15-docs-outlines-with-visuals.md:58`;
-   the design spec's criterion 3 reading and W2 setup-colon clause.
+   the design spec's criterion 3 reading and W2 setup-colon clause; the design spec's W6 "fails
+   the dotfiles `scripts/check.sh`" as its own check (superseded by the infra sweep's amendment
+   2) and W4's file list (widened by S3).
 4. `ROADMAP.md` gains a Planned item: cairn-pub adopts Vale and a `CLAUDE.md` line pointing at the
    developer brief, in a cairn-pub pass (ruling 13).
 5. STATUS, HISTORY, ROADMAP per `cairn-pass`; a facts bullet only if a public behavior changed
    (none expected); `CHANGELOG.md` untouched unless the gate says otherwise.
 6. PR opened; its CI run is R2p's proof. Merge on green.
 7. Score both budgets: tokens against 12M, attended time as planning misses and sittings.
+8. Map every runner halt, escalation, and `fix` reason from both segments and the join to an
+   infra sweep audit id or to "not infra", recorded in HISTORY. The sweep's first goal
+   holds when none maps to an audit id (amendment 9).

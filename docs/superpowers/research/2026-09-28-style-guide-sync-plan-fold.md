@@ -180,3 +180,25 @@ here is method or scheduling.
   `debug-your-site.md:36` deferral); the hooks item is moot (C-OC2).
 - Carried from the plan: the approach spec's "No new check is built" and its retirement row;
   `docs/internal/record/2026-08-15-docs-outlines-with-visuals.md:58`.
+
+## Infra re-baseline (2026-09-28, after the infra sweep's A-core and B merged)
+
+The plan took the ten amendments in the dotfiles infra sweep spec
+(`/var/home/glw907/.dotfiles/docs/superpowers/specs/2026-09-28-claude-infra-sweep-design.md`,
+"Amendments to the style-guide-sync plan"). No ruling above is undone: K-M1's lanes, K-M2's
+pinned `SCRIPTS_GATE`, K-M3's notes spec path and conductor-made worktree, and K-m1's W6 scope all
+stand; W6's scope is now met by the A-core scanner, a superset of it.
+
+**P1, re-run** against this branch at `a9af1c92` and dotfiles `main` at `d7f0581`: 75 claims
+checked. Line numbers this record cites have moved on dotfiles `main` (`docs-page-chain.js`
+register path now `:154-155`, `site-implementer.md` docs gate now `:106`); the plan carries the
+current ones. Three plan claims were wrong or incomplete and were fixed: `test.yml` carries the
+Vale pin in a step name and URL, not `VALE_VERSION` (R2p); the runner requires `args.gate`, which
+the plan never set (now the `SCRIPTS_GATE` literal); the runner reads `reducedGate` per task or
+from `args`, never per chain (each W task carries it; `args.reducedGate` stays unset so it cannot
+reach chain R).
+
+**Amendment 10.** B1's style-guide-sync fixture, re-run from a scratch copy with both segments'
+real Gates-block arguments, passes (exit 0); the pre-amendment arguments fail it (negative
+control, exit 1). The two workarounds (the chain W notes override of the definition of done, and
+W6 deferring the tooling check to the boundary) have no hit in the plan.

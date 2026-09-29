@@ -49,6 +49,14 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+Style-guide sync pass, J2 (2026-09-29), `extender`: Tidy's default model is pinned to one version,
+`DEFAULT_TIDY_MODEL = 'claude-sonnet-5'` (`src/lib/nav/site-config.ts:133`, fact `f:fmv6m8`),
+and Sonnet 5.5 has shipped. Geoff (2026-09-29): Tidy should track the latest Sonnet rather than
+a specific version. The fix belongs to the engine, not the site: either an Anthropic model alias
+that resolves to the newest Sonnet, if the API offers one, or a default that moves with each
+Sonnet release. Either way `supportsEffort()`'s prefix list (`content-routes-tidy.ts:57-68`,
+`f:wlohtk`) and the Tidy facts must follow, and `enable-tidy.md` should stop naming a version.
+
 Draft docs pass 0+1's close (2026-09-28) triaged the whole log and found two open entries, both
 verified against the code and promoted whole to `ROADMAP.md`'s Next tier: the `admin-toolkit.md`
 outline-chip contrast ratios needing re-measurement, and the page-chain claim inventory's missing

@@ -1,0 +1,334 @@
+{
+  "page": "docs/extend/link-content-with-references.md",
+  "blob": "95b3b5754c31b851d35a73dcfb0897ba9632accd",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "A typed edge from one entry to another is a reference field.",
+      "fact": "f:563h9u"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "The public side resolves a reference to the target entry.",
+      "fact": "f:nibxrd"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "A build-time integrity check fails the build on a dangling reference.",
+      "fact": "f:6ggh4v"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "A delete guard refuses to strand a reference.",
+      "fact": "f:2zl9zw"
+    },
+    {
+      "lines": [
+        7,
+        8
+      ],
+      "paraphrase": "A reference needs a declared target concept, so the example needs a second concept; with a pointer to another page.",
+      "new-fact": "f:2dilwu"
+    },
+    {
+      "lines": [
+        10,
+        10
+      ],
+      "paraphrase": "A reference field stores another entry id in frontmatter, typed to one concept.",
+      "fact": "f:563h9u"
+    },
+    {
+      "lines": [
+        12,
+        12
+      ],
+      "paraphrase": "Snippet comment calling dir, label, and singular required concept fields.",
+      "new-fact": "f:z7n6u8"
+    },
+    {
+      "lines": [
+        13,
+        23
+      ],
+      "paraphrase": "Snippet declaring a reference field on a concept.",
+      "fact": "f:563h9u"
+    },
+    {
+      "lines": [
+        25,
+        26
+      ],
+      "paraphrase": "array(reference) holds several edges and renders as a removable chip list.",
+      "fact": "f:3zswxq"
+    },
+    {
+      "lines": [
+        28,
+        32
+      ],
+      "paraphrase": "Snippet declaring an array of references.",
+      "fact": "f:3zswxq"
+    },
+    {
+      "lines": [
+        34,
+        34
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        36,
+        37
+      ],
+      "paraphrase": "The stored value is the target permanent id, not a title or path.",
+      "fact": "f:563h9u"
+    },
+    {
+      "lines": [
+        37,
+        41
+      ],
+      "paraphrase": "The engine records each reference as a ReferenceEdge with concept taken from the field declaration.",
+      "fact": "f:9i99mg"
+    },
+    {
+      "lines": [
+        41,
+        42
+      ],
+      "paraphrase": "The manifest records reference edges per entry beside the outbound cairn: link edges.",
+      "new-fact": "f:5fs5o7"
+    },
+    {
+      "lines": [
+        44,
+        47
+      ],
+      "paraphrase": "A rename updates referencing ids by a byte-preserving splice that leaves other bytes untouched.",
+      "fact": "f:gk88bv"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        51,
+        52
+      ],
+      "paraphrase": "A public route resolves the stored id to the target title and permalink.",
+      "fact": "f:nibxrd"
+    },
+    {
+      "lines": [
+        54,
+        64
+      ],
+      "paraphrase": "Snippet calling resolveReferences with the site, descriptor, and frontmatter.",
+      "fact": "f:nibxrd"
+    },
+    {
+      "lines": [
+        66,
+        68
+      ],
+      "paraphrase": "A reference resolves to one ResolvedReference and an array field to an array in edge order.",
+      "fact": "f:nibxrd"
+    },
+    {
+      "lines": [
+        68,
+        71
+      ],
+      "paraphrase": "resolveReferences drops an id with no live target instead of throwing.",
+      "fact": "f:mpdshq"
+    },
+    {
+      "lines": [
+        71,
+        77
+      ],
+      "paraphrase": "Snippet rendering a resolved reference as a link from permalink and title.",
+      "new-fact": "f:jxgm4i"
+    },
+    {
+      "lines": [
+        79,
+        79
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        81,
+        83
+      ],
+      "paraphrase": "verifyReferences fails the build on a dangling reference, naming source entry, field, and target.",
+      "fact": "f:6ggh4v"
+    },
+    {
+      "lines": [
+        84,
+        85
+      ],
+      "paraphrase": "A reference has no prerender-time resolver fallback, so the build gate is its only check.",
+      "fact": "f:l32sb1"
+    },
+    {
+      "lines": [
+        87,
+        87
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        89,
+        91
+      ],
+      "paraphrase": "Delete checks inbound cairn: links and inbound reference edges from a cross-branch index.",
+      "fact": "f:2zl9zw"
+    },
+    {
+      "lines": [
+        91,
+        92
+      ],
+      "paraphrase": "Each blocking reference is reported with the referencing field names.",
+      "new-fact": "f:et9w8d"
+    },
+    {
+      "lines": [
+        92,
+        95
+      ],
+      "paraphrase": "A fragment delete guard uses the same shape against ::include edges.",
+      "fact": "f:3vndvj"
+    },
+    {
+      "lines": [
+        97,
+        109
+      ],
+      "paraphrase": "Diagram of the delete decision: link check, strict index build, reference check.",
+      "new-fact": "f:2g0v8u"
+    },
+    {
+      "lines": [
+        111,
+        112
+      ],
+      "paraphrase": "The index build fails closed: a read error refuses the delete.",
+      "fact": "f:7s52oz"
+    },
+    {
+      "lines": [
+        114,
+        114
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        116,
+        118
+      ],
+      "paraphrase": "An unpublished draft edge still blocks delete and rename of its target.",
+      "fact": "f:8on7h4"
+    },
+    {
+      "lines": [
+        116,
+        116
+      ],
+      "paraphrase": "Delete and rename read the cross-branch reference index built with strict true.",
+      "fact": "f:7s52oz"
+    },
+    {
+      "lines": [
+        118,
+        120
+      ],
+      "paraphrase": "Rename refuses, naming blockers, when a different open branch holds an inbound edge.",
+      "fact": "f:re5qlm"
+    },
+    {
+      "lines": [
+        122,
+        124
+      ],
+      "paraphrase": "Saving a reference to a missing or draft target only warns.",
+      "fact": "f:bz5j8f"
+    },
+    {
+      "lines": [
+        124,
+        126
+      ],
+      "paraphrase": "A body cairn: link to a missing target refuses the save.",
+      "fact": "f:bz5j8f"
+    },
+    {
+      "lines": [
+        125,
+        126
+      ],
+      "paraphrase": "Rationale that a broken body link degrades visibly while a reference does not.",
+      "new-fact": "f:yw7rs6"
+    },
+    {
+      "lines": [
+        128,
+        128
+      ],
+      "paraphrase": "The editor picker offers only entries from the field target concept.",
+      "new-fact": "f:bbovmp"
+    },
+    {
+      "lines": [
+        129,
+        129
+      ],
+      "paraphrase": "A build against a dangling id fails naming source and field.",
+      "fact": "f:6ggh4v"
+    },
+    {
+      "lines": [
+        129,
+        130
+      ],
+      "paraphrase": "Refusal to delete a referenced entry lists the entries that reference it.",
+      "new-fact": "f:2g0v8u"
+    }
+  ]
+}

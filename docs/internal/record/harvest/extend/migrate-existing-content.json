@@ -1,0 +1,286 @@
+{
+  "page": "docs/extend/migrate-existing-content.md",
+  "blob": "ce275c1b151b80589a8918242115165668530139",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Migrating a markdown-with-frontmatter corpus into cairn concepts is done by a short script.",
+      "fact": "f:qd7iat"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "Precondition pointer to the adapter page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        11
+      ],
+      "paraphrase": "Cairn ships no importer; migration is a mapping problem solved with a short script.",
+      "fact": "f:qd7iat"
+    },
+    {
+      "lines": [
+        13,
+        13
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        15,
+        16
+      ],
+      "paraphrase": "parseMarkdown splits frontmatter from body using the same parser as the save path.",
+      "fact": "f:qd7iat"
+    },
+    {
+      "lines": [
+        18,
+        24
+      ],
+      "paraphrase": "Snippet reading an old file with parseMarkdown.",
+      "fact": "f:qd7iat"
+    },
+    {
+      "lines": [
+        26,
+        27
+      ],
+      "paraphrase": "Frontmatter is claimed to be exactly what the old YAML block held.",
+      "new-fact": "f:ettk66"
+    },
+    {
+      "lines": [
+        27,
+        28
+      ],
+      "paraphrase": "Body is everything after the frontmatter block.",
+      "new-fact": "f:w77gj8"
+    },
+    {
+      "lines": [
+        28,
+        28
+      ],
+      "paraphrase": "The step assumes nothing about the old generator.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        30,
+        33
+      ],
+      "paraphrase": "Mapping the frontmatter is the real work and depends on the old generator.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        35,
+        37
+      ],
+      "paraphrase": "A date field expects YYYY-MM-DD while a datetime field keeps the full ISO string.",
+      "new-fact": "f:ivhuyc"
+    },
+    {
+      "lines": [
+        38,
+        41
+      ],
+      "paraphrase": "Tag values should be lowercase and consistent when a tag vocabulary is configured.",
+      "new-fact": "f:2p519o"
+    },
+    {
+      "lines": [
+        42,
+        43
+      ],
+      "paraphrase": "Draft flags map onto a draft state the admin controls, not a frontmatter key.",
+      "new-fact": "f:y8qw8f"
+    },
+    {
+      "lines": [
+        42,
+        44
+      ],
+      "paraphrase": "Draft state lives in the entry itself.",
+      "new-fact": "f:0nw43j"
+    },
+    {
+      "lines": [
+        44,
+        44
+      ],
+      "paraphrase": "A migrated entry should stay a draft pending editorial review.",
+      "fact": "f:0nw43j"
+    },
+    {
+      "lines": [
+        45,
+        47
+      ],
+      "paraphrase": "Cairn translates no shortcodes or includes automatically.",
+      "fact": "f:qd7iat"
+    },
+    {
+      "lines": [
+        46,
+        48
+      ],
+      "paraphrase": "Rebuild each shortcode as a registered component, then find and replace in bodies.",
+      "new-fact": "f:tg9e0z"
+    },
+    {
+      "lines": [
+        50,
+        61
+      ],
+      "paraphrase": "Snippet mapping old frontmatter fields, trimming a date by slicing its string form.",
+      "fact": "f:ettk66"
+    },
+    {
+      "lines": [
+        63,
+        63
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        65,
+        66
+      ],
+      "paraphrase": "An entry id is its filename stem, its only identity.",
+      "fact": "f:z68na4"
+    },
+    {
+      "lines": [
+        66,
+        69
+      ],
+      "paraphrase": "The permalink slug derives from the filename, with the date prefix stripped for a dated concept.",
+      "fact": "f:6ebew3"
+    },
+    {
+      "lines": [
+        69,
+        71
+      ],
+      "paraphrase": "A rename after import rewrites inbound references; nothing rewrites external links.",
+      "fact": "f:gk88bv"
+    },
+    {
+      "lines": [
+        73,
+        77
+      ],
+      "paraphrase": "Only a prefix at the declared datePrefix granularity is stripped; extra date digits stay in the slug.",
+      "fact": "f:grhib4"
+    },
+    {
+      "lines": [
+        79,
+        82
+      ],
+      "paraphrase": "A filename outside the id shape still serves but is invisible to cairn: links and the guards.",
+      "fact": "f:nhjraz"
+    },
+    {
+      "lines": [
+        84,
+        88
+      ],
+      "paraphrase": "serializeMarkdown is not public; a script writes the frontmatter block directly.",
+      "fact": "f:3r6rqn"
+    },
+    {
+      "lines": [
+        90,
+        99
+      ],
+      "paraphrase": "Snippet writing a migrated file with a YAML library.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        101,
+        102
+      ],
+      "paraphrase": "Any YAML library works if the output is a frontmatter block parseMarkdown can read.",
+      "fact": "f:3r6rqn"
+    },
+    {
+      "lines": [
+        104,
+        104
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        106,
+        109
+      ],
+      "paraphrase": "Cairn has no bulk media importer; an old image URL renders unchanged.",
+      "fact": "f:xl7d9s"
+    },
+    {
+      "lines": [
+        109,
+        112
+      ],
+      "paraphrase": "Adopting a picture into the media library is optional and one asset at a time.",
+      "new-fact": "f:xjdhau"
+    },
+    {
+      "lines": [
+        114,
+        114
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        116,
+        116
+      ],
+      "paraphrase": "Migrated files are checked by the concept validator.",
+      "new-fact": "f:4ikssa"
+    },
+    {
+      "lines": [
+        116,
+        119
+      ],
+      "paraphrase": "Opening each migrated entry in the admin shows an invalid field error inline.",
+      "fact": "f:my9dgx"
+    },
+    {
+      "lines": [
+        121,
+        122
+      ],
+      "paraphrase": "A migrated entry is expected to open in the admin editor with no validation errors.",
+      "fact": "f:my9dgx"
+    }
+  ]
+}

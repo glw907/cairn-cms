@@ -1,0 +1,12 @@
+- name: fails on a heading that leads with an -ing word
+  input: |
+    # Getting started
+  contains: Cairn.Headings
+- name: fails on a heading that ends in a question mark
+  input: |
+    # Is the key rotated?
+  contains: Cairn.Headings
+- name: passes a noun-phrase or imperative heading
+  input: |
+    # Rotate the key
+  absent: [Cairn.Headings]

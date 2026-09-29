@@ -1,0 +1,10 @@
+# WATCH: 49 alerts under plain `vale` over the docs tree, README.md, and examples/showcase/README.md at
+# landing (2026-09-28). Move this rule to `error` once the count reaches zero.
+extends: existence
+message: "Heading '%s': use a noun phrase or a task imperative, not an -ing lead or a question."
+level: warning
+scope: heading
+nonword: true
+tokens:
+  - '^[A-Z][a-z]+ing\b'
+  - '\?$'

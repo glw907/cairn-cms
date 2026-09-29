@@ -46,7 +46,7 @@ pass's changed JavaScript, TypeScript, and Go.
 - Task 9: one Agent-tool chain, Sonnet implementer.
 - Task 10: the close, authored by one fold agent with one independent `diff-reviewer` read.
 
-**Token ceiling:** 12M if Geoff rules yes on R1 below, flag at 9.6M; otherwise 7M, flag at 5.6M.
+**Token ceiling:** 12M, flag at 9.6M (R1, Geoff, 2026-09-29).
 Derivation (re-derived by the review fold from the enlarged task list):
 
 | Share | Estimate |
@@ -73,25 +73,15 @@ before launching the chains); after task 7; after task 9. Segments: S1 is task 1
 S3 is tasks 3 to 6 and task 8, in parallel on disjoint files (the disjoint-Files-seam override of
 the three-to-four-task segment); S4 is tasks 7, 9, and 10. Every boundary is a gate-green commit.
 
-## Rulings for Geoff
+## Owner rulings (Geoff, 2026-09-29)
 
-**R1. Raise the pass's token ceiling from 7M to 12M?** The review enlarged the pass (coverage
-spans, facts re-sourcing, two deletion tasks, about four times the relink files first counted),
-and the re-derived plan is about 7.8 to 9.5M, above the approved 7M. **Recommendation: yes.**
-- **Yes** builds the plan as written: 9.5M sits at 80% of 12M, so the global 80% stop fires only
-  on an overrun, and the task 2 checkpoint still re-projects from measured cost.
-- **No** keeps 7M: the 80% stop (5.6M) fires inside the audit chains on a run that stays within
-  plan, so the pass stops at the task 2 checkpoint to ask again or splits, with the deletion
-  (tasks 8 and 9) moving to a follow-up pass.
-
-**R2. Drop the old `docs/README.md` from the register's front-door exemplars?** Task 9 deletes it,
-and `docs-register.md` names it an exemplar. **Recommendation: yes (drop).** Capturing it puts
-the page's own old text before the stage 5 drafter who rebuilds it, which the parent amendment
-forbids ("The writer shouldn't ever see the original content").
-- **Yes:** task 9 removes it from the register's exemplar list and records that in `relink.json`
-  for stage 5.
-- **No:** task 9 first captures it verbatim to `docs/internal/exemplars/`, and the stage 5 plan
-  bars its drafter from that capture.
+- **R1, yes:** the ceiling is 12M, flag at 9.6M. The review enlarged the pass to a re-derived
+  7.8 to 9.5M; task 2's checkpoint still re-projects from measured cost.
+- **R2, yes (drop):** task 9 removes the old `docs/README.md` from `docs-register.md`'s
+  front-door exemplar list and records the gap in `relink.json` for stage 5. Capturing it would
+  put the page's old text before the stage 5 drafter who rebuilds it.
+- **Ordering confirmed:** task 1 runs now; tasks 2 onward wait for theme passes B and C to merge
+  to `main` (spec, "Timing"; H5's correction).
 
 ## Global constraints
 
@@ -313,6 +303,8 @@ them).
   `docs/internal/docs-register.md`'s freeze line drop the per-arm freeze for the deleted arms and
   state that the arms are empty until their stages rebuild them.
 - Every repaired link is appended to task 8's `relink.json`, per the spec's entry shape.
+- Per R2, the old `docs/README.md` leaves `docs-register.md`'s front-door exemplar list, with a
+  `relink.json` entry keyed to stage 5.
 - `CHANGELOG.md` `## Unreleased` gains the spec's entry, `Consumers must:` line included.
 
 **Acceptance:** the implementer prints the residue of both greps with each line classified

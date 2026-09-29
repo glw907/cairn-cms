@@ -1,0 +1,478 @@
+{
+  "page": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+  "blob": "3f1688da9fc8057c6634d63dbd1fba9f35560955",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Contract line: wire credentials and bindings so the App, backend, and auth store exist before adapter config.",
+      "new-fact": "f:e5vm42"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "The precondition app builds with adapter-cloudflare and deploys with wrangler.",
+      "new-fact": "f:xyizai"
+    },
+    {
+      "lines": [
+        7,
+        10
+      ],
+      "paraphrase": "The engine and workers-types must be installed; shipped types import from workers-types.",
+      "new-fact": "f:26kuvx"
+    },
+    {
+      "lines": [
+        11,
+        14
+      ],
+      "paraphrase": "Pointer to the build-by-hand page and why this page exists.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        16,
+        17
+      ],
+      "paraphrase": "Three things need creating in order, each producing a value the next needs.",
+      "new-fact": "f:e5vm42"
+    },
+    {
+      "lines": [
+        19,
+        19
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        21,
+        23
+      ],
+      "paraphrase": "cairn commits through a GitHub App, the editor as author and the App as committer.",
+      "fact": "f:5f4kmk"
+    },
+    {
+      "lines": [
+        23,
+        23
+      ],
+      "paraphrase": "The App is a credential the site owns, not cairn's.",
+      "new-fact": "f:gyu7jc"
+    },
+    {
+      "lines": [
+        24,
+        25
+      ],
+      "paraphrase": "Link to GitHub's guide to registering an App.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        27,
+        27
+      ],
+      "paraphrase": "Clear Active on the webhook, since cairn never receives one.",
+      "fact": "f:vgw8x9"
+    },
+    {
+      "lines": [
+        28,
+        30
+      ],
+      "paraphrase": "Repository Contents read and write is the one permission the commit pipeline needs.",
+      "fact": "f:vgw8x9"
+    },
+    {
+      "lines": [
+        31,
+        31
+      ],
+      "paraphrase": "Every other permission stays at no access.",
+      "fact": "f:vgw8x9"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "Install-scope advice: only on this account unless there is a reason.",
+      "new-fact": "f:rp65d2"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "The App's name and homepage are cosmetic and never reach an editor.",
+      "new-fact": "f:9yi7fu"
+    },
+    {
+      "lines": [
+        38,
+        40
+      ],
+      "paraphrase": "GitHub downloads the private key as a pem file; the App ID sits on the settings page.",
+      "new-fact": "f:02g94x"
+    },
+    {
+      "lines": [
+        39,
+        40
+      ],
+      "paraphrase": "Keep the pem file outside the repository as a credential.",
+      "new-fact": "f:7dtrwy"
+    },
+    {
+      "lines": [
+        42,
+        45
+      ],
+      "paraphrase": "Install the App on the account owning the content repository, per GitHub's guide.",
+      "new-fact": "f:rp65d2"
+    },
+    {
+      "lines": [
+        46,
+        48
+      ],
+      "paraphrase": "The installation settings URL ends with the Installation ID.",
+      "new-fact": "f:nbnq9c"
+    },
+    {
+      "lines": [
+        50,
+        53
+      ],
+      "paraphrase": "Contents permission is repository-wide; cairn's path confinement is engine code, not GitHub.",
+      "fact": "f:gglwt4"
+    },
+    {
+      "lines": [
+        53,
+        55
+      ],
+      "paraphrase": "Confinement does more work on a repository holding other content.",
+      "new-fact": "f:l5gx1t"
+    },
+    {
+      "lines": [
+        55,
+        56
+      ],
+      "paraphrase": "GitHub never lets an App's permissions be reduced after installation.",
+      "new-fact": "f:bbbfqb"
+    },
+    {
+      "lines": [
+        56,
+        56
+      ],
+      "paraphrase": "The permission choice is worth making once, deliberately.",
+      "fact": "f:bbbfqb"
+    },
+    {
+      "lines": [
+        58,
+        58
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        60,
+        61
+      ],
+      "paraphrase": "The secret is the PEM base64 on one line, decoded with atob before signing.",
+      "fact": "f:vpieos"
+    },
+    {
+      "lines": [
+        63,
+        71
+      ],
+      "paraphrase": "Snippets: base64 encoding commands for macOS or Linux and for PowerShell.",
+      "new-fact": "f:97fxdx"
+    },
+    {
+      "lines": [
+        73,
+        74
+      ],
+      "paraphrase": "Paste the encoded output into a Worker secret, never a tracked file.",
+      "new-fact": "f:7dtrwy"
+    },
+    {
+      "lines": [
+        76,
+        76
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        78,
+        80
+      ],
+      "paraphrase": "The sign-in store is a self-owned D1 database of editors, sessions, and magic-link tokens.",
+      "fact": "f:b6gquz"
+    },
+    {
+      "lines": [
+        82,
+        87
+      ],
+      "paraphrase": "Create the D1 database with wrangler and copy the auth migration into the site's migrations directory.",
+      "fact": "f:if45on"
+    },
+    {
+      "lines": [
+        89,
+        98
+      ],
+      "paraphrase": "The wrangler d1_databases entry binds AUTH_DB with a migrations_dir.",
+      "fact": "f:if45on"
+    },
+    {
+      "lines": [
+        100,
+        106
+      ],
+      "paraphrase": "Copy the shipped auth migrations into migrations and apply them locally and remotely.",
+      "new-fact": "f:xxtooz"
+    },
+    {
+      "lines": [
+        108,
+        110
+      ],
+      "paraphrase": "The first migration creates the editor, magic_token, and session tables.",
+      "fact": "f:gffvfd"
+    },
+    {
+      "lines": [
+        108,
+        111
+      ],
+      "paraphrase": "0000 and 0004 are the two every site needs; 0004 binds a sign-in link to its browser.",
+      "new-fact": "f:hft8s8"
+    },
+    {
+      "lines": [
+        111,
+        111
+      ],
+      "paraphrase": "Pointer to the security model.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        111,
+        115
+      ],
+      "paraphrase": "Roles and preview migrations are opt-in extensions of the auth tables.",
+      "fact": "f:rn62i1"
+    },
+    {
+      "lines": [
+        116,
+        116
+      ],
+      "paraphrase": "0002_audit.sql is a standalone audit_log table.",
+      "fact": "f:wnvqlz"
+    },
+    {
+      "lines": [
+        116,
+        120
+      ],
+      "paraphrase": "createD1AuditSink recommends a dedicated AUDIT_DB binding with its own migrations directory.",
+      "fact": "f:pkrwom"
+    },
+    {
+      "lines": [
+        119,
+        120
+      ],
+      "paraphrase": "The reference page holds a worked wrangler entry for the audit binding.",
+      "fact": "f:pkrwom"
+    },
+    {
+      "lines": [
+        122,
+        126
+      ],
+      "paraphrase": "The connection needs the D1 binding, an Email Sending binding, and the private key secret.",
+      "new-fact": "f:ntdafg"
+    },
+    {
+      "lines": [
+        128,
+        136
+      ],
+      "paraphrase": "The wrangler config carries the send_email EMAIL binding and a PUBLIC_ORIGIN var.",
+      "fact": "f:l3cxgc"
+    },
+    {
+      "lines": [
+        138,
+        141
+      ],
+      "paraphrase": "Email Sending must be onboarded on the PUBLIC_ORIGIN zone; a workers.dev subdomain has none.",
+      "fact": "f:xhwl32"
+    },
+    {
+      "lines": [
+        143,
+        145
+      ],
+      "paraphrase": "The wrangler command enables Email Sending on a domain.",
+      "fact": "f:xhwl32"
+    },
+    {
+      "lines": [
+        147,
+        150
+      ],
+      "paraphrase": "Sending is free to yourself and needs the paid plan for a second person.",
+      "fact": "f:t4pwpw"
+    },
+    {
+      "lines": [
+        152,
+        158
+      ],
+      "paraphrase": "The private key is a Worker secret read at request time, never a config value.",
+      "fact": "f:twcsgm"
+    },
+    {
+      "lines": [
+        160,
+        160
+      ],
+      "paraphrase": "App ID and Installation ID are not secrets and are never used to sign.",
+      "fact": "f:zcwf5i"
+    },
+    {
+      "lines": [
+        161,
+        162
+      ],
+      "paraphrase": "Pass the IDs into createGithubApp alongside the repository owner and name.",
+      "fact": "f:twcsgm"
+    },
+    {
+      "lines": [
+        164,
+        174
+      ],
+      "paraphrase": "Snippet: createGithubApp called with owner, repo, branch, and IDs.",
+      "new-fact": "f:0w7jar"
+    },
+    {
+      "lines": [
+        176,
+        178
+      ],
+      "paraphrase": "Pointers to the core, Cloudflare, and ambient reference pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        180,
+        180
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        182,
+        186
+      ],
+      "paraphrase": "Run cairn doctor from the site's directory.",
+      "fact": "f:m0ouh8"
+    },
+    {
+      "lines": [
+        188,
+        188
+      ],
+      "paraphrase": "The config.bindings check confirms AUTH_DB and EMAIL are wired.",
+      "fact": "f:m0ouh8"
+    },
+    {
+      "lines": [
+        188,
+        189
+      ],
+      "paraphrase": "No command checks the GitHub App; deploy and publish an edit instead.",
+      "fact": "f:m0ouh8"
+    },
+    {
+      "lines": [
+        189,
+        190
+      ],
+      "paraphrase": "A real publish leaves a commit authored by cairn-cms[bot] on main.",
+      "new-fact": "f:7y7act"
+    },
+    {
+      "lines": [
+        190,
+        191
+      ],
+      "paraphrase": "An empty error log proves nothing unless observability is enabled.",
+      "fact": "f:txgoyy"
+    },
+    {
+      "lines": [
+        191,
+        191
+      ],
+      "paraphrase": "A failing App logs publish.failed or commit.failed.",
+      "fact": "f:lmh555"
+    },
+    {
+      "lines": [
+        192,
+        193
+      ],
+      "paraphrase": "Pointer to the admin is-it-working page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        195,
+        195
+      ],
+      "paraphrase": "Success means config.bindings reports a pass.",
+      "fact": "f:m0ouh8"
+    },
+    {
+      "lines": [
+        195,
+        196
+      ],
+      "paraphrase": "And a real publish produces a cairn-cms[bot] commit on main.",
+      "new-fact": "f:7y7act"
+    }
+  ]
+}

@@ -8,7 +8,8 @@ Present tense only; past tense lives in [`docs/HISTORY.md`](HISTORY.md), durable
 Published: **`0.97.0`** on npm `latest` (release commit `eefd51b4`, GitHub release `v0.97.0`),
 with `@glw907/cairn-cms-dev` `0.97.0` beside it. It carries everything through the Go tool's B2,
 the doctor retirement, draft docs pass A, and the pre-cut dependency top-up (PR #86, `2e497a1a`).
-The Go `cairn` tool ships separately as `tool/v1.1.0`. `main` has no `## Unreleased` window yet.
+The Go `cairn` tool ships separately as `tool/v1.1.0`. `main`'s `## Unreleased` window holds
+theme identity pass A and draft docs pass 0+1.
 Held majors: `devalue` 6, TypeScript 7, Vitest 5, `@types/node` 26. CI is green.
 cairn.pub's own docs debt: [handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md),
 un-pinnable against the registry since `0.95.0`. Live contracts:
@@ -19,14 +20,12 @@ un-pinnable against the registry since `0.95.0`. Live contracts:
 
 Three initiatives are live; resume each from its plan's ledger foot:
 
-- **Theme identity pass A** (branch `theme-identity-a`, PR #92, head `8640528f`): S3 sitting done
-  ("all per recommendation"), its corrections landed (`9ef7b8b3`, gate green). Owed, in order: the
-  S4 baseline regeneration, a `diff-reviewer` read of the correction run, `code-simplifier` over
-  it, CI green, then merge PR #92 (Geoff approved pass A merging on its own, 2026-09-28). Ledger
-  foot: `docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`.
-- **Theme identity pass B** (branch `theme-identity-b`): segments A and B done, segment C (the
-  shipped guidance and its exemplar, then the sync test) next. Ledger foot:
-  `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`.
+- **Theme identity pass A**: merged to `main` (PR #92, `4d725057`), unreleased; `main` now has an
+  `## Unreleased` window (`release-size: minor`). Record: `docs/HISTORY.md`.
+- **Theme identity pass B** (branch `theme-identity-b`, PR #95): segments A and B done. Owed
+  first: merge `main` (pass A's merge) into it across B's `src/lib/admin` rename, per the plan's
+  merge-forward protocol. Then segment C (the shipped guidance and its exemplar, then the sync
+  test). Ledger foot: `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`.
 - **Theme identity pass C**: reviewed plan waits on branch `theme-c-plan`
   (`docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`), runs after pass B, cuts `0.98.0`.
 - **Draft docs pass 0+1**: merged (PR #91, `8bbe78f5`); the stage 2a plan is next (below), after
@@ -55,9 +54,9 @@ Three initiatives are live; resume each from its plan's ledger foot:
 
 ## Resume prompt
 
-Theme identity, fresh session (`claude-opus-5-5`, `high`): finish pass A per its bullet above,
-then merge `main` into `theme-identity-b`, carrying A's `src/lib/components` fixes across B's
-rename to `src/lib/admin`; confirm PR #95 is green; resume pass B at segment C. Pass C follows B.
+Theme identity, fresh session (`claude-opus-5-5`, `high`): pass A is merged. Merge `main` into
+`theme-identity-b`, carrying A's `src/lib/components` fixes across B's rename to `src/lib/admin`;
+confirm PR #95 is green; resume pass B at segment C. Pass C follows B.
 Style-guide sync re-scope, fresh session (`claude-opus-5-5`, `high`): in
 `.claude/worktrees/style-guide-sync`, read the leanness record, then revise the spec and plan to
 the conventional stack it names, walking back R1's markers and provenance table and W1's

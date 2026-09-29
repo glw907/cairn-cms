@@ -73,3 +73,12 @@ Anthropic's few-examples guidance, so slimming the rule text strengthens the voi
 than diluting it. Acceptance for the re-scope: R1's rule-disposition list (each ratified rule kept,
 reworded, or changed by ruling) is re-run against the slimmed register, and no voice rule moves to
 "dropped". J2's real-page run and Geoff's R5 read are the proof the register still lands.
+
+## Exemplar: the AI posture page (Geoff, 2026-09-28)
+
+`docs/extend/choose-an-ai-posture.md` (758 words, redrafted under the amended register in draft
+docs pass 0+1, `c634f43c`, `b8bfd30f`) becomes the developer track's primary exemplar as a whole
+page, carrying both roles: anatomy (choose, set, pass, verify, resolve) and voice. The plan used
+only its concept paragraph (lines 23-26) as a specimen. The audit found both earlier in-repo
+exemplars break the base guide, so this page replaces them as the model the drafter imitates. The
+re-scope builds the developer drafter's 3 to 5 exemplars around it.

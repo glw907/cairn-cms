@@ -1838,6 +1838,35 @@ Geoff's S3 verdict, verbatim: "all per recommendation."
 **Next:** S4 regeneration, a diff-reviewer read of this run, CI green, then merge PR #92 (Geoff
 approved pass A merging on its own, 2026-09-28), in a fresh session.
 
+### S4 after the S3 corrections (2026-09-28, conductor, overnight session)
+
+- **`diff-reviewer`** (Opus) on `7e64a388..9ef7b8b3`: accept, every Q item met. Two CHANGELOG
+  wording notes were taken in `1da6587d`: the search-trigger bullet now says what Q15 changed, and
+  the page-ground bullet agrees with the CSS comment. Batched, not acted on: Q15's test never
+  renders below `sm`; Q18 has no hover-gated test; the Q5 wash beats daisyUI's hover step, so a
+  selected outline button shows no hover; Q7's `::before` would stack under nested theme roots
+  (none exist); a checked Tidy end segment may leave a hairline at the curve; the showcase lockfile
+  refresh rode along.
+- **`code-simplifier`** (Opus) over the run's Svelte: no change.
+- **First regen** (`36519852082`, commit `73fb6d2b`): 34 admin baselines rewritten. A fresh-context
+  `visual-verifier` graded each pair: every change INTENDED (Q2, Q4, Q5, Q6, Q8, Q14, Q15, Q16), 0
+  STRUCTURAL, and three COSMETIC. C1 was a defect in Q8's own fix: the inner buttons matched
+  the `btn-sm` neighbor, but the toggle's bordered frame stood 42px against 36px. C2 was the 320
+  selection bar overlapping shifted cards, a scroll artifact. C3 was Q10's padding, which no
+  baseline shows, since the detail panel is cut at 720px; the component test carries it.
+- **C1 fixed** in `9b4b2c6c`: the frame takes the `btn-sm` height (`--size-field` times 8), and the
+  inner buttons stretch square to 30x30 (WCAG 2.5.8 clear). The test was written first and failed
+  on the old code (42 against 36). The reviewer returned `fix` because the new `items-stretch`
+  class was missing from the sheet inventory; `99743b35` records it (CHANGELOG plus the fixture),
+  and the inventory and custom-surface checks are green.
+- **Second regen** (`36521834224`, commit `fd4c1ad5`): exactly the 14 media baselines. A
+  fresh-context `visual-verifier` passed them: the frame is 36px and its edges match the
+  neighbor's rows in all 14, the content below moves up 6px, and nothing else changed.
+- **Still visible, known:** the Q7 residual band under the theme-kit's forced-open dropdown, the
+  capture-tooling limit this ledger names above. It paints white in the dark captures too.
+
+**Next:** this entry's push starts PR CI on the new head; merge PR #92 on green.
+
 ## Post-mortem (2026-09-28)
 
 ### What was built

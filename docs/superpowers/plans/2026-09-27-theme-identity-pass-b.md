@@ -495,7 +495,7 @@ settled here so no implementer invents it.
     `badge-ghost` chip (its line with `badge-ghost badge-sm font-medium opacity-60`), which the
     error-tier arm flags: task 3 rewrites that line to the ratified quiet chip
     (`<StatusChip label="Archived" />`, whose default register is `quiet`, per
-    `BADGE_GHOST_MESSAGE`). The prose at `:129-134` keeps naming `badge-ghost` in a code span, now
+    `BADGE_GHOST_MESSAGE`). The prose (now `exemplar-detail.md:135-140`) keeps naming `badge-ghost` in a code span, now
     as the pattern the source screen wrote and cairn retires, beside the fence's cairn-native form.
     A retired pattern in guidance may appear only in a prose code span, never in a fence.
 
@@ -534,10 +534,17 @@ settled here so no implementer invents it.
     alerts, controls, a chip, a field, a card). Every `svelte` fence in it must appear in
     `examples/showcase/src/routes/admin/theme-kit/+page.svelte` after whitespace normalization,
     with `data-testid` attributes and HTML comments removed (test hooks and fixture notes are not
-    guidance). The fixture's `<h1>` writes `type-title font-bold`, while the ratified page heading
-    is `PageHeader`'s `type-title font-[550]`, so the exemplar excerpts no heading and teaches the
-    heading through the recipe table's `page-title` row. The fixture itself does not change, so
-    its `admin-visual` baselines stay.
+    guidance). The fixture's `<h1>` writes `type-title font-[550]` and omits the ratified heading's
+    `font-[family-name:var(--font-display)]` (the `page-title` row in `ROLE_RECIPES` writes all
+    three), so the exemplar excerpts no heading and teaches the heading through the recipe table's
+    `page-title` row. The fixture itself does not change, so its `admin-visual` baselines stay.
+    **Pre-flight amendment (2026-09-28):** pass A's S3 corrections (`9ef7b8b3`) edited the fixture
+    after this plan was written. It now carries a `<svelte:head><title>`, and its error alert is the
+    stacked `ConceptList` shape with two `<p class="m-0">` children. The exemplar quotes the file
+    at HEAD, never a remembered shape. The normalization must also absorb two formatting
+    artifacts: Prettier's `</button\n>` (fixture `:26-28`, `:48-50`) and the stray space left
+    before `>` or `/>` once a `data-testid` is removed. Collapse whitespace before `>` on both
+    sides of the comparison.
 19. **The sync test** is a new `src/tests/unit/guidance-recipes-sync.test.ts`. It reads the source
     guidance (`skills/` and `claude/`), never the template's baked copies, which `check:template`
     already binds to the source. It asserts `RECIPE_MODEL` and the table rows in all three files,

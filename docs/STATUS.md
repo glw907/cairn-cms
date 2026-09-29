@@ -44,18 +44,21 @@ Theme identity pass C, fresh session (`claude-opus-5-5`, `medium`): invoke `cair
 pass C's plan on `theme-c-plan` and pass B's post-mortem, then run pass C's task 0 from
 `theme-identity-b`'s head under the topology note above.
 
-### Next action (draft docs harvest, held for theme B and C)
+### Next action (draft docs harvest, R3 audit running, then held for #97)
 
 > **Goal.** Prove every claim on the 49 old narrative and front-door pages is a fact or a recorded
 > cut, then delete them with every reference and gate repaired. **Settled (do not re-brainstorm):**
 > spec `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` and plan
 > `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`, both on branch `draft-docs-harvest`
 > (worktree `.claude/worktrees/draft-docs-harvest`), with Geoff's rulings R1 (12M ceiling), R2,
-> and the ordering. Task 1 (the verifier) is done at `94057384` (diff-reviewer accept after one
-> fix round; 260k of dispatch tokens). **Trigger:** task 2 starts only once theme passes B and C
-> have both merged to `main`; until then the branch holds. **Approach.** Fresh `claude-opus-5-5`
-> session at `medium` in `~/Projects/cairn-cms`: invoke `cairn-pass`, read the plan and spec,
-> have a dispatched Sonnet agent merge `main` into `draft-docs-harvest`, then run task 2 (the
-> admin rate checkpoint). Carry into tasks 4 and 7: the verifier treats a bare `why-cairn.md`
-> as ambiguous (its test fixture shadows it) and misses a full path behind `../../`, so a
-> reviewer checks front-door `Source:` fields for both by eye.
+> and R3 (audit now, away from the theme lineage; the brief is
+> `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`). **State:** tasks 1 and 2
+> done (task 2 at `a330c633`, 657k, rate 0.53k per page line). Tasks 3 to 6 run as
+> `pass-execute-chains` run `wf_01d09570-176` in worktrees `draft-docs-harvest-{x,y,z}`, with six
+> theme-touched extend pages deferred to task 6b. Next is task 7a: merge the chains and verify the
+> audited pages. **Hold:** task 6b, the rest of task 7, and tasks 8 to 10 wait for PR #97 (pass C,
+> carrying B) to merge, which needs Geoff's sitting. **Resume.** If this session died, a fresh
+> `claude-opus-5-5` session at `medium` invokes `cairn-pass`, reads the plan's R3 and ledger, and
+> resumes the run with `resumeFromRunId`, or runs task 7a if the run finished. Carry into tasks 4
+> and 7: the verifier treats a bare `why-cairn.md` as ambiguous and misses a full path behind
+> `../../`, so a reviewer checks front-door `Source:` fields by eye.

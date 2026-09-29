@@ -1755,3 +1755,40 @@ Spend: about 0.43M in subagents plus the conductor.
   `measure-status-inks.mjs:22` are cosmetic.
 - **Spend:** segment A's workflow 0.67M. The fix rounds, reviews, merge, and pre-flights came to
   about 0.45M. The running total is about 1.6M plus the conductor.
+
+### Segment B (tasks 4 to 6), boundary 2026-09-29
+
+- **Task 4** accepted after an escalation, with no fix round (`50607df7`). `PreviewBanner` reads the
+  tokens the conductor ruled at the boundary, and the preview reset paints
+  `var(--color-base-100,#fff)`. The escalation was environmental: another project holds port 4173
+  on this workstation, `examples/showcase/wrangler.jsonc` pins `PUBLIC_ORIGIN` to `:4173`, and
+  `preview.spec.ts` follows the minted absolute URL, so its eight tests 404 locally. With the origin
+  matched to the run port, all 15 passed. The reviewer found no code defect. CI proves it at the
+  segment B push. The new spec navigates by pathname. The task also fixed the stale banner docs
+  (`share-a-draft-preview.md`, `reference/public.md`, facts `f:xssf06` and `f:6q5q05`).
+- **Task 5** accepted, no fix round (`c8ac9926`). It adds the heading levers, the toggle's
+  `color-scheme` resolution, and `theme-names.ts` with five fired mutations. `--cairn-heading-case`
+  lives in `@layer theme`.
+- **Task 6** accepted, no fix round (`16d387b1`). It exports `previewMarkdown`, renders the
+  styleguide from the registry, and covers the skip link, the radius sweep, the citation scrub, and
+  the `check:template` gate. The registry-driven styleguide dropped the expired banner that
+  `islands.spec.ts` and `reading-surface-edge-cases.spec.ts` asserted. The first spec was updated;
+  the second's case moved to a showcase unit test (`banner-component.test.ts`).
+- **To task 14 (settle):** (1) `composition.css:87` `.cairn-hero-title` reads the heading levers;
+  (2) `alert` gains a `preview`, so the styleguide shows its tones again; (3) an engine unit test
+  restores the proof that an island's `data-cairn-props` reflects a `ctx.attributes` its `build()`
+  cleared, the coverage the removed e2e held.
+- **No action:** the members, login, `probe-craft`, and error h1s are fixtures, not template chrome.
+  `--site-banner-radius` is a token definition under a theme root.
+- **Async glance:** published at https://claude.ai/artifact/LsMc4YYFRNbMpnVfXtqXk7. Geoff replied
+  "The theme identity page looks great", so S3 has no correction from segment B.
+- **Expected-red set from the segment B push:** the `site-visual` `styleguide-*` captures (as
+  planned). No `admin-visual` capture shows the preview frame.
+- **Segment C pre-flight** found 15 gaps and two moved lines, amended at `e7562f82` under conductor
+  rulings. The main ones: the audit wrappers select admin rules only; admin-fixture tests pass
+  explicit rule lists; the count regex widens; `PreviewBanner`'s `font` shorthand moves to `em`; two
+  more readers of the retired script; `check:facts` on tasks 7 and 9; unresolvable package imports
+  count as unread; and `check:audit-pack` installs with `--omit=peer`.
+- **Open for Geoff:** take eslint-plugin-jsdoc 65 (the conductor recommends taking it).
+- **Spend:** segment B's two workflow runs 0.68M; boundary agents about 0.5M. Running total about
+  3.2M plus the conductor.

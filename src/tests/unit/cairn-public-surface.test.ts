@@ -49,6 +49,21 @@ function hasReader(key: string, sources: string[]): boolean {
   return sources.some((source) => reading.test(source));
 }
 
+/** The value a rule declares for one custom property. */
+function declaredValue(selector: string, property: string): string | undefined {
+  return sheet.rules
+    .filter((rule) => normalized(selector) === normalized(rule.selector))
+    .flatMap((rule) => rule.declarations)
+    .find((declaration) => declaration.property === property)?.value;
+}
+
+/**
+ * The share of its fill each status ink keeps, as the derivation record measured it. A change to a
+ * share is a change to every consumer's default ink, so it fails here until the record and this
+ * table move together.
+ */
+const INK_SHARES = { success: 50, warning: 50, error: 50, info: 50 };
+
 const ROLES = customProperties(':root, [data-theme]');
 const THEME_COLORS = customProperties('@theme');
 
@@ -156,6 +171,15 @@ describe('the public stylesheet surface', () => {
       }
     `);
   });
+
+  it.each(Object.entries(INK_SHARES))(
+    'derives the %s ink from its fill at the recorded share',
+    (status, share) => {
+      expect(declaredValue(':root, [data-theme]', `--cairn-${status}-ink`)).toBe(
+        `color-mix(in oklab, var(--color-${status}) ${share}%, var(--color-base-content))`,
+      );
+    },
+  );
 
   it('gives every key a reader in the engine or the template source', () => {
     const sources = readerSources();

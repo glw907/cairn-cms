@@ -34,17 +34,19 @@
     --cairn-code-number: var(--cairn-warning-ink);
     --cairn-code-punct: var(--color-muted);
 
-    /* On-surface status inks. A fill is usually too light as small text, so a theme that wants
-       a tuned ink sets its own; the default reads the fill directly. */
-    --cairn-success-ink: var(--color-success);
-    --cairn-warning-ink: var(--color-warning);
-    --cairn-error-ink: var(--color-error);
-    --cairn-info-ink: var(--color-info);
+    /* On-surface status inks. Each follows its fill: mixing the fill toward the body ink darkens it
+       on a light scheme and lightens it on a dark one, so the ink keeps the fill's hue and reads as
+       small text. A theme that wants a tuned ink sets its own in its daisyUI block. */
+    --cairn-success-ink: color-mix(in oklab, var(--color-success) 50%, var(--color-base-content));
+    --cairn-warning-ink: color-mix(in oklab, var(--color-warning) 50%, var(--color-base-content));
+    --cairn-error-ink: color-mix(in oklab, var(--color-error) 50%, var(--color-base-content));
+    --cairn-info-ink: color-mix(in oklab, var(--color-info) 50%, var(--color-base-content));
 
-    /* Elevation: a hairline plus a soft shadow carry a floating card. */
+    /* Elevation: a hairline plus a soft shadow carry a floating card. The shadow mixes black, so
+       it stays a shadow on a dark scheme instead of glowing pale. */
     --cairn-shadow:
-      0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
-      0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
+      0 1px 2px color-mix(in oklab, black 6%, transparent),
+      0 6px 20px -8px color-mix(in oklab, black 12%, transparent);
 
     /* The one focus-ring language. The radius is read by markup that wants a rounded corner. */
     --cairn-focus-ring-outline: 2px solid var(--color-primary);
@@ -54,7 +56,7 @@
 }
 
 @theme {
-  --color-muted: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+  --color-muted: color-mix(in oklab, var(--color-base-content) 95%, var(--color-base-100));
   --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
 }
 

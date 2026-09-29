@@ -337,16 +337,17 @@ const INK_TOKENS = [
 
 /**
  * Parse theme.css into the two themes' colour tokens. Each theme carries its role tokens (the daisyUI
- * block) and its on-surface inks (light inks on :root, dark inks under the prefers-color-scheme media
- * query), so a pair measures against the right base.
+ * block) and its on-surface inks, read from the same block first and then from the unlayered blocks
+ * (light inks on :root, dark inks under the prefers-color-scheme media query), so a pair measures
+ * against the right base.
  * @param {string} css the contents of theme.css
  * @returns {{ light: Record<string, string>, dark: Record<string, string> }}
  */
 export function parseThemeTokens(css) {
   const lightRoles = daisyThemeBlock(css, 'cairn');
   const darkRoles = daisyThemeBlock(css, 'cairn-dark');
-  // The light muted ink moved to the @theme block (so the text-muted utility generates), so the
-  // light ink source concatenates @theme with :root; the dark muted ink stays in the dark media root.
+  // The fallback ink sources for a theme that keeps an ink outside its daisyUI block: the light
+  // source concatenates @theme with :root, and the dark one is the dark media root.
   const rootInks = `${themeBlock(css)}\n${rootBlock(css)}`;
   const darkInks = darkMediaRoot(css);
 
@@ -360,7 +361,8 @@ export function parseThemeTokens(css) {
       out[name] = v;
     }
     for (const name of INK_TOKENS) {
-      const v = readOklch(inkBlock, name);
+      // A hand-set ink sits in the daisyUI block, or in the unlayered blocks a theme keeps beside it.
+      const v = readOklch(roleBlock, name) ?? readOklch(inkBlock, name);
       if (!v) throw new Error(`missing ink token --${name}`);
       out[name] = v;
     }

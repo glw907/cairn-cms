@@ -1,0 +1,79 @@
+/* The fixture theme's palette: two daisyUI blocks, dark-first, deliberately unlike Waymark's. The
+   dark block is the default, so a visitor with no stored choice and a light OS still sees it; the
+   light block applies only when the page names it. The values were fixed before any ink
+   measurement ran and are never adjusted to make a pair pass: a pair that fails here is a finding
+   about the derivation, not a reason to retune the palette. */
+
+@plugin "daisyui/theme" {
+  name: "cairn";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: oklch(99% 0.005 90);
+  --color-base-200: oklch(96% 0.008 90);
+  --color-base-300: oklch(91% 0.012 90);
+  --color-base-content: oklch(24% 0.02 260);
+  --color-primary: oklch(48% 0.11 195);
+  --color-primary-content: oklch(98% 0.01 195);
+  --color-secondary: oklch(50% 0.13 300);
+  --color-secondary-content: oklch(98% 0.01 300);
+  --color-accent: oklch(72% 0.14 75);
+  --color-accent-content: oklch(25% 0.05 75);
+  --color-neutral: oklch(30% 0.02 260);
+  --color-neutral-content: oklch(96% 0.006 260);
+  --color-info: oklch(52% 0.13 250);
+  --color-info-content: oklch(98% 0.01 250);
+  --color-success: oklch(52% 0.13 155);
+  --color-success-content: oklch(98% 0.01 155);
+  --color-warning: oklch(80% 0.14 85);
+  --color-warning-content: oklch(26% 0.05 85);
+  --color-error: oklch(55% 0.19 25);
+  --color-error-content: oklch(98% 0.01 25);
+
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "cairn-dark";
+  default: true;
+  prefersdark: false;
+  color-scheme: dark;
+
+  --color-base-100: oklch(21% 0.02 260);
+  --color-base-200: oklch(17% 0.02 260);
+  --color-base-300: oklch(28% 0.02 260);
+  --color-base-content: oklch(93% 0.01 260);
+  --color-primary: oklch(75% 0.14 195);
+  --color-primary-content: oklch(20% 0.04 195);
+  --color-secondary: oklch(70% 0.1 300);
+  --color-secondary-content: oklch(20% 0.03 300);
+  --color-accent: oklch(78% 0.13 75);
+  --color-accent-content: oklch(22% 0.04 75);
+  --color-neutral: oklch(30% 0.02 260);
+  --color-neutral-content: oklch(92% 0.01 260);
+  --color-info: oklch(72% 0.12 250);
+  --color-info-content: oklch(20% 0.04 250);
+  --color-success: oklch(72% 0.15 155);
+  --color-success-content: oklch(20% 0.05 155);
+  --color-warning: oklch(80% 0.14 85);
+  --color-warning-content: oklch(24% 0.05 85);
+  --color-error: oklch(68% 0.19 25);
+  --color-error-content: oklch(20% 0.06 25);
+
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}

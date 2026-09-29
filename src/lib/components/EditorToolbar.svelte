@@ -240,7 +240,7 @@ stays pinned at the row's right end, reachable at every width.
 {#snippet strokeIcon(paths: string[])}
   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
     {#each paths as d (d)}
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={d} />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d={d} />
     {/each}
   </svg>
 {/snippet}
@@ -268,14 +268,17 @@ stays pinned at the row's right end, reachable at every width.
        1.32:1 to 1.23:1 and flattening dark's unselected hover step from 1.20:1 to 1.01:1, which
        is the only hover feedback an unselected tab has; the selected tab's own visibility rides
        on the cairn-admin.css hairline instead.
-       The squared-edge machinery (rounded-r-none / rounded-l-none / -ml-px) still matters despite
-       the missing seam: it holds the right radii and adjacency for the states where a boundary
-       DOES paint, an unselected tab's own hover fill and the focus ring's outline geometry, so
-       hovering or tabbing to the ghost tab reveals a clean shared edge rather than a stray rounded
-       corner or a doubled border where the two tabs meet. Manual rounding rather than daisyUI's
-       .join, because join radii follow direct children and the device trigger must sit outside the
-       tablist (ARIA required children); the tabs square their shared edges themselves instead.
-       Preview squares its right edge only while the trigger extends the row.
+       Each tab keeps all four of its own corners rounded at rest: a prior
+       unconditional rounded-r-none/rounded-l-none pair squared write's right and preview's left
+       corner regardless of which tab was actually painting a border, so the selected tab always
+       showed one flat edge next to nothing. The scoped stylesheet below squares a tab's shared
+       corner (and collapses the 1px seam) only in the states where BOTH tabs paint a border at
+       once, selected plus the ghost sibling's own hover/focus-visible fill, the one case a
+       doubled border or a stray rounded notch could actually show. Preview's right corner still
+       squares unconditionally against the device trigger, a persistent sibling control, not a
+       transient hover state. Manual corner-squaring rather than daisyUI's .join, because join
+       radii follow direct children and the device trigger must sit outside the tablist (ARIA
+       required children); the tabs square their shared edges themselves instead.
        One thing neither class fixes: on light, a hovered unselected tab computes exactly the
        selected tab's resting fill either way, so fill alone cannot separate them. The check glyph
        does, and it is the non-color state cue WCAG 1.4.1 asks for besides, the same device
@@ -287,9 +290,7 @@ stays pinned at the row's right end, reachable at every width.
     aria-selected={mode === m}
     aria-controls={`cairn-pane-${m}`}
     class="btn btn-sm {mode === m ? 'btn-active' : 'btn-ghost'}"
-    class:rounded-r-none={m === 'write' || showDeviceTrigger}
-    class:rounded-l-none={m === 'preview'}
-    class:-ml-px={m === 'preview'}
+    class:rounded-r-none={m === 'preview' && showDeviceTrigger}
     onclick={() => onMode(m)}
   >
     <!-- The check glyph is always rendered, so the tab's own box reserves its width in every
@@ -506,5 +507,42 @@ stays pinned at the row's right end, reachable at every width.
      svelte-check's own lint. EditPage.svelte's own .menu-divider carries the identical rule. */
   .menu-divider {
     --cairn-naming-hook: true;
+  }
+
+  /* The Write/Preview pair only reads as a joined capsule in the states where
+     both tabs actually paint a border, the selected tab (always bordered, aria-selected) beside
+     its ghost sibling's own hover/focus-visible fill. `write` and `preview` render as adjacent
+     siblings inside the tablist, so the shared corner and the 1px seam collapse only then; at
+     rest, whichever tab is selected keeps all four of its own corners rounded, since nothing
+     paints beside it to share an edge with. `aria-selected` and `:focus-visible` are state- and
+     keyboard/AT-driven, so they square the seam unconditionally below; `:hover` alone gates on
+     `@media (hover: hover)` in its own copy further down (the modality-gate ruling, S3 Q18): a
+     touch tap fires `:hover` with no release event and could otherwise strand the squared corner
+     on the last-tapped tab. */
+  [role='tab']:is([aria-selected='true'], :focus-visible)
+    + [role='tab']:is([aria-selected='true'], :focus-visible) {
+    margin-inline-start: -1px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+  [role='tab']:is([aria-selected='true'], :focus-visible):has(
+      + [role='tab']:is([aria-selected='true'], :focus-visible)
+    ) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  @media (hover: hover) {
+    [role='tab']:is([aria-selected='true'], :hover, :focus-visible)
+      + [role='tab']:is([aria-selected='true'], :hover, :focus-visible) {
+      margin-inline-start: -1px;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+    [role='tab']:is([aria-selected='true'], :hover, :focus-visible):has(
+        + [role='tab']:is([aria-selected='true'], :hover, :focus-visible)
+      ) {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
   }
 </style>

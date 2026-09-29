@@ -4,7 +4,7 @@ import { page } from 'vitest/browser';
 import ConceptList from '../../lib/components/ConceptList.svelte';
 // The compiled sheet's text (daisyUI's real .badge/.input/.btn sizing), injected only for the
 // narrow/wide extremes suite below so its bounding-box measurements reflect production control
-// footprints, never the UA-default widths the source partial alone leaves (the EditPage pattern).
+// footprints, never the UA-default widths an unstyled render leaves (the EditPage pattern).
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 function data(over = {}) {
@@ -453,7 +453,7 @@ describe('ConceptList', () => {
   // freed width, the header search never collapses to an icon and a stray letter, and the Pending
   // edits filter chip stays on one line. The compiled sheet carries daisyUI's real .table/.input/
   // .badge sizing (the EditPage phone-width pattern), so these measurements reflect production
-  // footprints, not the UA-default widths the source partial alone leaves.
+  // footprints, not the UA-default widths an unstyled render leaves.
   describe('office composition at 320px (audit finding 8)', () => {
     let sheet: HTMLStyleElement;
 
@@ -519,10 +519,56 @@ describe('ConceptList', () => {
       pad320(screen.container);
       const pending = screen.getByRole('radio', { name: /^pending edits/i });
       const rect = (await pending.element()).getBoundingClientRect();
-      // The toolkit's segmented option is a real btn-sm (the standard 2rem control height every
-      // other toolbar/pagination button already uses), taller than the old bespoke pill; a
+      // The toolkit's segmented option is a real btn-sm, sized by the shared --size-field step
+      // every other toolbar/pagination button already uses, taller than the old bespoke pill; a
       // wrapped two-line label would roughly double even that height, which this still catches.
       expect(rect.height).toBeLessThanOrEqual(40);
+    });
+
+    // daisyUI's `.alert` is `display: grid`, and `flex-col` did nothing, so the
+    // refused-delete banner's title, body paragraph, and link list laid out as separate grid
+    // columns, crushing the body into a narrow sliver at 320. `max-sm:grid-flow-row
+    // max-sm:grid-cols-1` stacks them into one full-width column below `sm`.
+    it('spans the refused-delete banner body across the alert width at 320, not a crushed column', async () => {
+      await page.viewport(320, 700);
+      const form = {
+        error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+        id: '2026-05-01-post-1',
+        inboundLinks: [
+          { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
+        ],
+      };
+      const screen = await render(ConceptList, { data: data(), form });
+      pad320(screen.container);
+      const banner = screen.container.querySelector('.alert-error')!;
+      const body = banner.querySelector('p:nth-of-type(2)')!;
+      const bannerWidth = banner.getBoundingClientRect().width;
+      const bodyWidth = body.getBoundingClientRect().width;
+      // A crushed column measured about 60px against a roughly 290px banner (well under half);
+      // spanning the alert keeps the body within a small margin of the banner's own content width.
+      expect(bodyWidth).toBeGreaterThan(bannerWidth * 0.75);
+    });
+
+    // S3 Q14: the admin omits global Preflight, so a bare <p> kept the browser's own UA block
+    // margin, which does not collapse between CSS grid items and so stacked on top of the grid's
+    // own 1rem gap, roughly tripling the title-to-body space. `m-0` on every stacked <p> leaves
+    // the grid's own gap as the only space between them.
+    it('carries no margin on the refused-delete banner\'s stacked title and body paragraphs', async () => {
+      const form = {
+        error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+        id: '2026-05-01-post-1',
+        inboundLinks: [
+          { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
+        ],
+      };
+      const screen = await render(ConceptList, { data: data(), form });
+      const banner = screen.container.querySelector('.alert-error')!;
+      const paragraphs = banner.querySelectorAll('p');
+      expect(paragraphs.length).toBeGreaterThan(0);
+      for (const p of paragraphs) {
+        expect(getComputedStyle(p).marginBlockStart).toBe('0px');
+        expect(getComputedStyle(p).marginBlockEnd).toBe('0px');
+      }
     });
   });
 

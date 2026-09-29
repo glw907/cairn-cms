@@ -209,11 +209,11 @@ moment so a background re-render never shifts the dry-run.
           <!-- WILL BE DELETED: the no-reference items, each with its slug and the "no references" tag. -->
           <div>
             <span class="mb-2 inline-flex items-center gap-2 type-label font-semibold uppercase tracking-wide text-muted">
-              Will be deleted <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 tabular-nums">{bulkWillDelete.length}</span>
+              Will be deleted <span class="rounded-selector bg-base-content/[0.07] px-1.5 py-0.5 tabular-nums">{bulkWillDelete.length}</span>
             </span>
             <ul role="list" class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
               {#each bulkWillDelete as asset (asset.hash)}
-                <li class="flex items-center gap-2.5 rounded px-1.5 py-1">
+                <li class="flex items-center gap-2.5 rounded-field px-1.5 py-1">
                   <div class="min-w-0 flex-1">
                     <div class="truncate type-meta font-semibold">{asset.displayName}</div>
                     <div class="truncate font-[family-name:var(--font-editor)] type-label text-muted">{asset.slug}.{asset.hash}</div>
@@ -252,7 +252,7 @@ moment so a background re-render never shifts the dry-run.
         <!-- The recoverability reassurance: a git-tracked removal is reversible. -->
         <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 type-meta leading-relaxed">
           <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
-          <span><b class="font-semibold">Every removal is one revertible commit you can undo.</b> The deletes are one commit to <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">main</code>, so a developer can revert it and the images come back.</span>
+          <span><b class="font-semibold">Every removal is one revertible commit you can undo.</b> The deletes are one commit to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">main</code>, so a developer can revert it and the images come back.</span>
         </div>
 
         <div class="flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
@@ -297,7 +297,7 @@ moment so a background re-render never shifts the dry-run.
         <div class="flex-1">
           <h2 bind:this={bulkSummaryTitle} tabindex="-1" id="cairn-ml-bulk-title" class="type-heading font-bold font-[family-name:var(--font-display)] outline-hidden">Done. {res.deleted.length} deleted{res.skipped.length > 0 ? `, ${res.skipped.length} skipped` : ''}</h2>
           <p id="cairn-ml-bulk-desc" class="mt-1 type-meta leading-relaxed text-muted">
-            The {res.deleted.length} {res.deleted.length === 1 ? 'delete is' : 'deletes are'} one commit to <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">main</code>.{#if res.skipped.length > 0} The {res.skipped.length} skipped had a reference turn up on the recheck and {res.skipped.length === 1 ? 'was' : 'were'} left as {res.skipped.length === 1 ? 'it is' : 'they are'}.{/if}
+            The {res.deleted.length} {res.deleted.length === 1 ? 'delete is' : 'deletes are'} one commit to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">main</code>.{#if res.skipped.length > 0} The {res.skipped.length} skipped had a reference turn up on the recheck and {res.skipped.length === 1 ? 'was' : 'were'} left as {res.skipped.length === 1 ? 'it is' : 'they are'}.{/if}
           </p>
         </div>
         <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={() => void finishBulkDelete()}>

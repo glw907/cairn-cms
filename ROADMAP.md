@@ -294,12 +294,29 @@ The original decision framing, for the record:
 - **Theme identity, passes A, B, and C (Geoff, 2026-09-26 and 2026-09-27).** cairn's own look moves
   into the daisyUI theme layer, and the public site gets one theme contract that any theme can meet.
   Pass A (the admin theme, spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`) is
-  executing on `theme-identity-a`. Passes B and C share one spec,
+  closed on `theme-identity-a` (PR #92), unmerged; Geoff's before-and-after sitting (its S3) is
+  still to run, and any correction it asks for lands on that branch and merges forward into B.
+  Pass B's plan (branch `theme-b-plan`) is reviewed and runs next, from A's closed head. Passes B and C share one spec,
   `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renames `./components` to
   `./admin` and ships the admin agent path; C is the one public theme (`cairn-public.css`, derived
   inks, heading levers, the three public audit rules, the `cairn-public` skill, and the designer
   walkthrough's template fixes). B stays unmerged, C branches from it, and both merge at C's close
   with one `0.98.0` cut carrying A, B, and C. Draft documentation (below) waits for C.
+
+- **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
+  correction round, 2026-09-28, except the two below).** Trigger for what remains: the first pass
+  after this one that edits `cairn-admin.css` or the named component, and in any case before the
+  `0.98.0` cut ships the retheme to every consumer.
+  - Coverage notes the `paint` class batched rather than blocked on: the destructive-edge contrast
+    test proves the ratio but not that `border-error` wins the cascade over the 55% field edge;
+    the disabled-stock switch test covers the `:checked` form only; `::before` carries no
+    `transition: none`; the bare `.alert` oracle does not prove `--alert-color` unset;
+    `alert-ink-contrast.test.ts` copies its tone and ink values by hand; no component test
+    covers `alert-outline` or `alert-dash` on a colored variant; `screen-anatomy.test.ts`'s
+    fixture still reads `type-title font-bold` where the page heading is now 550.
+  - The showcase's public `theme.css` carries an unscoped `.btn-outline` rule that reaches the
+    admin's outline-button edges too, whichever order the sheets load in. Scope it to the public
+    site; pass C's public-theme work is the natural home.
 
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
   `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
@@ -882,12 +899,13 @@ the named human gates only):**
     command, match nothing any report prints; and a command written inline in prose is not run
     until the page puts it in a fence. Trigger: the reset's admin-arm drafting.
 
-- **The Waymark template's theme files cite cairn-internal documents a scaffolded site does not
-  carry (docs reset pass 1 validation, 2026-09-24).** `templates/waymark/src/theme/theme.css:6,68,201`,
-  `site.css:18,34`, and `src/chassis/prose.css:40` point at `docs/internal/public-design-system.md`
-  and `docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`. A designer reader
-  followed one and found nothing. Point the comments at a published page or state the rule inline.
-  Trigger: the next pass that edits the template's CSS.
+- **The Waymark template's `site.css` and `prose.css` cite cairn-internal documents a scaffolded
+  site does not carry (docs reset pass 1 validation, 2026-09-24).** `templates/waymark/src/theme/site.css:18,34`
+  and `src/chassis/prose.css:40` point at `docs/internal/public-design-system.md` and
+  `docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`. A designer reader followed
+  one and found nothing. Point the comments at a published page or state the rule inline. Theme
+  identity pass A fixed the same cites in `theme.css`. Trigger: the next pass that edits either
+  file (pass C's template sweep is the likely one).
 
 - **Real defects the pass 1 readers found on current pages (2026-09-24).** The pass changed no
   published page, and the reset rebuilds these pages from the container, so each is evidence for
@@ -2510,6 +2528,23 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **Move pinned unlayered rules 1 to 9 into the `cairn-idiom` sublayer (theme identity pass A,
+  2026-09-28).** Pass A moved rules 10 to 14 into `utilities.cairn-idiom` and retired their pins.
+  Rules 1 to 9 stay pinned and unlayered in `src/lib/components/cairn-admin.css`; rule 2, the
+  guarded-button rule, stands under the timing-scoped reading of decision 4
+  (`docs/internal/engine-rulings.md`, `motion-conform-to-daisyui-conventions`). Moving the rest is
+  a ratchet shrink: each move takes an entry out of `unlayeredAllowlist` in
+  `scripts/checks/custom-surface-budget.json` and needs its own full-state test. The nine
+  comments still count "of 14"; renumber them in the same pass. Trigger: a pass that edits one of
+  those rules, or the pre-1.0 CSS audit.
+
+- **Retire `ADMIN_CSS_SAFELIST` (theme identity pass A, 2026-09-28).** The admin build now compiles
+  every daisyUI class except calendar, so the list in `src/lib/components/admin-css-safelist.ts`
+  no longer decides which daisyUI classes ship; its own header says it stays only as a grouped,
+  explained vocabulary. Retire it, or reduce it to the non-daisyUI names it still documents, and
+  move the explanation to `docs/reference/admin-toolkit.md`. Trigger: pass B's rename of
+  `src/lib/components/` (the file moves anyway), or the next pass that edits it.
 
 - **Symbol-anchored `Source:` pointers for the Go `tool/` tree (docs reset pass 1, 2026-09-23).**
   `check:facts` resolves `path#Symbol` only for `.ts` and `.js` files under `src/`, through the

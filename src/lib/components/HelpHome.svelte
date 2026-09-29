@@ -254,7 +254,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            stroke-width="2"
+            stroke-width="1.75"
             stroke-linecap="round"
             stroke-linejoin="round"
             aria-hidden="true"
@@ -307,7 +307,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                stroke-width="2"
+                stroke-width="1.75"
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 aria-hidden="true"
@@ -323,7 +323,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                stroke-width="2"
+                stroke-width="1.75"
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 aria-hidden="true"
@@ -427,7 +427,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     flex: none;
     height: 40px;
     width: 40px;
-    border-radius: 0.75rem;
+    border-radius: var(--radius-field);
     background: color-mix(in oklab, var(--color-primary) 12%, transparent);
     color: var(--color-primary);
     display: inline-flex;
@@ -473,7 +473,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
   }
   .prog-bar {
     height: 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-box);
     margin-top: 8px;
     background: color-mix(in oklab, var(--color-base-content) 8%, transparent);
     overflow: hidden;
@@ -482,7 +482,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     display: block;
     height: 100%;
     min-width: 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-box);
     background: var(--color-primary);
   }
   /* the 0-of-3 seed: a faint desaturated fill, so the rail reads as a track, never as progress */
@@ -504,7 +504,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     gap: 13px;
     padding: 12px 14px;
     border: 1px solid var(--cairn-card-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-box);
     background: var(--color-base-100);
   }
   /* the unchecked ring is content-55% (about 3:1 on base-100), a control state perceivable on its
@@ -513,7 +513,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     flex: none;
     height: 24px;
     width: 24px;
-    border-radius: 7px;
+    border-radius: var(--radius-field);
     border: 2px solid color-mix(in oklab, var(--color-base-content) 55%, transparent);
     background: var(--color-base-100);
     display: inline-flex;
@@ -746,7 +746,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     font-family: var(--font-editor);
     font-size: var(--cairn-type-label);
     border: 1px solid var(--cairn-card-border);
-    border-radius: 0.25rem;
+    border-radius: var(--radius-field);
     padding: 1px 5px;
     background: var(--color-base-100);
     color: var(--color-base-content);

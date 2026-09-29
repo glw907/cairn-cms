@@ -10,7 +10,7 @@ recipe (`card-shell card-shadow`) rather than by a wrapping component, since `Ad
 owns its own horizontal overflow and a second `overflow-x-auto` on this div would double the
 scroll container. `overflow-hidden` on the div is the corner clip: `card-shell` rounds its
 border but sets no clipping of its own, so `AdminTable`'s square table would otherwise paint
-over the card's rounded corners. Keep this in lockstep with the doc snippet rather than
+over the card's curved corners. Keep this in lockstep with the doc snippet rather than
 improving on it; a drift here is a drift a reader of that page would hit.
 -->
 <script lang="ts">

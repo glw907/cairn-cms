@@ -607,12 +607,29 @@ discriminant, not the fields, gates the chrome).
   // not a modal, never receives this focus management, and re-runs only on the true/false edge
   // (isDrawerOverlay is a boolean $derived, so an unrelated dependency change with the same value
   // does not re-fire it).
+  //
+  // daisyUI's `.drawer-side` delays its visibility transition by 0.1s, so for a few frames after
+  // the toggle checks, the nav is still `visibility: hidden` and a focus call on it is a silent
+  // no-op. The focus attempt therefore repeats once per frame until it lands, for at most about a
+  // second, and stops if the overlay closes first.
   $effect(() => {
     if (!isDrawerOverlay) return;
     drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    tick().then(() => {
-      drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]')?.focus();
-    });
+    const MAX_FOCUS_ATTEMPTS = 60;
+    let cancelled = false;
+    let attempts = 0;
+    function focusIn(): void {
+      if (cancelled) return;
+      const target = drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]');
+      if (!target) return;
+      target.focus();
+      attempts += 1;
+      if (document.activeElement !== target && attempts < MAX_FOCUS_ATTEMPTS) requestAnimationFrame(focusIn);
+    }
+    tick().then(focusIn);
+    return () => {
+      cancelled = true;
+    };
   });
 
   // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user
@@ -841,20 +858,24 @@ discriminant, not the fields, gates the chrome).
               type="button"
               onclick={openPalette}
               aria-haspopup="dialog"
-              class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 type-body text-muted transition-colors hover:bg-base-200 hover:text-base-content"
+              class="flex max-sm:w-auto w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 type-body text-muted transition-colors hover:bg-base-200 hover:text-base-content"
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span class="truncate">Search or jump to&hellip;</span>
+              <!-- Below `sm` the trigger reads as the icon alone: the surrounding topbar's own
+                   width leaves too little room for the label, which truncated to an unreadable
+                   "S." before this fix. `sr-only`, not `hidden`, keeps the label as the button's
+                   accessible name (WCAG 4.1.2) at every width. -->
+              <span class="truncate max-sm:sr-only">Search or jump to&hellip;</span>
               <!-- The keyboard shortcut hint is meaningless on a touch device (no ⌘K to press), so
                    it gates on pointer:fine, not only the sm width breakpoint: a touch tablet at or
                    above sm would otherwise still show it. -->
-              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 type-label font-medium sm:pointer-fine:inline">&#8984;K</kbd>
+              <kbd class="ml-auto hidden rounded-field border border-[var(--cairn-card-border)] px-1.5 type-label font-medium sm:pointer-fine:inline">&#8984;K</kbd>
             </button>
           </div>
           {#await data.pendingEntries then pending}
             {#if pending && pending.length > 0}
               <div class="flex-none">
-                <button type="button" class="btn btn-sm border-transparent bg-primary/10 text-primary shadow-none hover:bg-primary/15" aria-haspopup="dialog" aria-controls="cairn-shell-publish-all" onclick={() => publishAllDialog?.showModal()}>
+                <button type="button" class="btn btn-sm btn-soft btn-primary" aria-haspopup="dialog" aria-controls="cairn-shell-publish-all" onclick={() => publishAllDialog?.showModal()}>
                   Publish site ({pending.length})
                 </button>
               </div>
@@ -889,7 +910,10 @@ discriminant, not the fields, gates the chrome).
       </main>
 
       <dialog bind:this={paletteDialog} class="modal" aria-label="Commands">
-        <div class="modal-box max-w-xl self-start mt-4 p-0 sm:mt-[12vh]">
+        <!-- `pt-1` (4px) matches the page-wide `:focus-visible` ring's own outward reach (a 2px
+             outline at a 2px offset): with `p-0` otherwise flush, the search input's ring, focused
+             on load, would clip against this scrolling box's own top edge with no room above it. -->
+        <div class="modal-box max-w-xl self-start mt-4 p-0 pt-1 sm:mt-[12vh]">
           <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
             <SearchIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input
@@ -1038,12 +1062,12 @@ discriminant, not the fields, gates the chrome).
              wordmark link to the admin home. -->
         <div class="flex h-16 flex-none items-center border-b border-[var(--cairn-card-border)] px-3">
           <a href="/admin" aria-label="Cairn admin home" class="flex items-center gap-2.5 rounded-field px-2 py-1.5 transition-colors hover:bg-base-content/[0.06]">
-            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
+            <span class="flex h-8 w-8 items-center justify-center rounded-box bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
             <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
             <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
-            <span class="cairn-chip-quiet rounded-md px-1.5 py-px type-chip uppercase tracking-[0.12em]">CMS</span>
+            <span class="cairn-chip-quiet rounded-selector px-1.5 py-px type-chip uppercase tracking-[0.12em]">CMS</span>
           </a>
         </div>
 

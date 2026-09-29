@@ -67,7 +67,7 @@ import { COLD_START } from './_fake-spell-worker.js';
 import { __setBuilding } from '../_app-environment.js';
 // The compiled sheet's text (daisyUI's real .badge/.btn sizing), injected only for the desk band
 // phone-width tests below so their bounding-box measurements reflect production control
-// footprints, never the UA-default widths the source partial alone leaves.
+// footprints, never the UA-default widths an unstyled render leaves.
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 function postProps(over = {}) {

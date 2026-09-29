@@ -91,7 +91,7 @@ for the bare form.
 Reach for [`@glw907/cairn-cms/admin-toolkit`](../reference/admin-toolkit.md) before hand-rolling a
 list, a table, or a form field. It's general-purpose scaffolding, not a bespoke page: `PageHeader`
 for the title band, `AdminTable` for the triage table, `ListToolbar` for search and filters,
-`ToolbarDisclosure` for a collapsible filter group, `Pagination`, `StatusChip` for a status pill,
+`ToolbarDisclosure` for a collapsible filter group, `Pagination`, `StatusChip` for a status chip,
 `EmptyState` for the zero-rows case, `FieldLabel` for a form control's label, `ExpandableRow` for
 a row that expands to show detail, and `MediaPicker` for choosing a stored image. Wrap `AdminTable` in a `<div>` carrying `overflow-hidden
 card-shell card-shadow`, the [floating-card recipe](../internal/admin-design-system.md) the

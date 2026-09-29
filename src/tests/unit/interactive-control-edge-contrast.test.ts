@@ -287,3 +287,63 @@ describe('ROADMAP-pinned deferral: .toolkit-toolbar-select / .toolkit-toolbar-fa
     });
   });
 }, 60_000);
+
+// The five destructive-confirmation controls (the orphan-purge select-all and per-row checkboxes,
+// the alt-fill overwrite checkbox, and the media-library and replace-dialog type-to-confirm
+// inputs) measured `--cairn-error-border` at only 1.492:1 light / 1.773:1 dark against base-100,
+// both under the 3:1 non-text floor. `border-error` (Tailwind's compiled utility for
+// `--color-error`, the same token the quiet-danger ink/tint/border triple pairs with everywhere
+// else) clears the floor in both themes, so the five controls now carry `border-error` instead of
+// the raw token; this proof pins that resting edge, on both control shapes those call sites use (a
+// `.checkbox` and an `.input`), never a palette change of its own.
+describe('destructive-confirmation control edge contrast (border-error)', () => {
+  describe.each(THEMES)('%s', (theme) => {
+    it('border-error on a checkbox clears the >= 3:1 non-text floor against base-100', async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html><head><style>${css}</style></head><body>` +
+            `<div data-theme="${theme}"><div style="background: var(--color-base-100); padding: 20px;">` +
+            `<input type="checkbox" class="checkbox checkbox-sm border-error" />` +
+            `</div></div></body></html>`,
+          { waitUntil: 'load' },
+        );
+        const raw = await page.evaluate(() => {
+          const el = document.querySelector('.checkbox')!;
+          const ground = el.parentElement!;
+          return { border: getComputedStyle(el).borderColor, ground: getComputedStyle(ground).backgroundColor };
+        });
+        const [border, ground] = await resolveColors(page as unknown as RenderedPage, [raw.border, raw.ground]);
+        if (!border || !ground) throw new Error('could not resolve the destructive checkbox edge');
+        const ratio = contrastRatio(composite(border, { ...ground, a: 1 }), ground);
+        expect(ratio).toBeGreaterThanOrEqual(NON_TEXT_FLOOR);
+      } finally {
+        await page.close();
+      }
+    });
+
+    it('border-error on an .input clears the >= 3:1 non-text floor against base-100', async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html><head><style>${css}</style></head><body>` +
+            `<div data-theme="${theme}"><div style="background: var(--color-base-100); padding: 20px;">` +
+            `<input class="input input-sm border-error" type="text" />` +
+            `</div></div></body></html>`,
+          { waitUntil: 'load' },
+        );
+        const raw = await page.evaluate(() => {
+          const el = document.querySelector('.input')!;
+          const ground = el.parentElement!;
+          return { border: getComputedStyle(el).borderColor, ground: getComputedStyle(ground).backgroundColor };
+        });
+        const [border, ground] = await resolveColors(page as unknown as RenderedPage, [raw.border, raw.ground]);
+        if (!border || !ground) throw new Error('could not resolve the destructive input edge');
+        const ratio = contrastRatio(composite(border, { ...ground, a: 1 }), ground);
+        expect(ratio).toBeGreaterThanOrEqual(NON_TEXT_FLOOR);
+      } finally {
+        await page.close();
+      }
+    });
+  });
+}, 60_000);

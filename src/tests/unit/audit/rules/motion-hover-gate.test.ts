@@ -41,7 +41,8 @@ describe('motion-hover-gate', () => {
     expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('.step-act:hover');
     expect(findings[0].message).toContain('@media (hover: hover)');
-    expect(findings[0].message).toContain('.btn-active:hover');
+    expect(findings[0].message).toContain("selected segment's :hover step");
+    expect(findings[0].message).toContain('cairn-idiom');
     expect(findings[0].message).toContain(':focus-visible');
   });
 
@@ -83,7 +84,7 @@ describe('motion-hover-gate', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('.btn:focus-visible');
     expect(findings[0].message).toContain('@media (hover: hover)');
-    expect(findings[0].message).toContain('.btn-active:hover');
+    expect(findings[0].message).toContain("selected segment's :hover step");
   });
 
   it('declares adminOnly, so it never reads a site\'s own public components', () => {

@@ -10,7 +10,7 @@
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
-@plugin "daisyui" { themes: false; }
+@plugin "daisyui" { themes: false; exclude: calendar; }
 @source "../../src/lib/components/**/*.{svelte,ts,js}";
 /* The admin-toolkit subpath (AdminTable, ListToolbar, Pagination, StatusChip, PageHeader,
    EmptyState, ...) was never added to the scan root when it graduated out of src/lib/components,
@@ -70,6 +70,27 @@
    text-[var(...)] form at their few call sites (a wider in-tree migration is a separate,
    deliberate change, not part of adding the idiom). */
 @source inline("cairn-text-warning cairn-text-success");
+/* MARKUP SWEEP SAFELIST (the admin markup sweep). Same de facto public API as the
+   compatibility safelist above: the sweep folded the ink-opener and Publish-tint button recipes
+   into `btn-neutral` and `btn-soft btn-primary`, whose cairn-idiom rules already reproduce the
+   hover step and the transparent edge, and separately moved every fixed corner radius onto the
+   three-token corner ladder (`rounded-selector`/`rounded-field`/`rounded-box`), so these classes
+   lose their last admin call site. Held so a consumer's own admin markup still riding an old
+   button recipe or a fixed radius keeps resolving; each leaves only as a deliberate,
+   changelog-carried act. */
+@source inline("shadow-none hover:bg-[var(--cairn-ink-hover)] hover:bg-primary/15 rounded rounded-sm rounded-md rounded-lg rounded-xl rounded-t-2xl rounded-[0.55rem] rounded-[var(--radius-field)]");
+/* FULL DAISYUI COMPILE (spec, "One compiler, every component"). The admin compiles every daisyUI
+   component and utility class, calendar excluded (it skins third-party date pickers cairn does
+   not ship), so a class with no admin markup call site of its own (`.timeline`, `.rating`,
+   `.rounded-selector`, ...) still compiles and works for any consumer's own admin markup:
+   daisyUI's own contract is that any of its classes works under a theme, and a hand-kept
+   safelist would be a bespoke partial version of that contract. Tailwind only compiles a class
+   it finds as literal text; this line is that text, generated fresh on every build by
+   scripts/build/daisyui-classes.mjs from every installed daisyUI component and utility module's
+   own object.js, so a daisyUI upgrade needs no hand-kept list. build-admin-css.mjs replaces the
+   placeholder below with the generated class list before this file reaches the Tailwind
+   compile. */
+@source inline("__DAISYUI_CLASSES__");
 @import "../../src/lib/components/cairn-admin.css";
 
 /* The named secondary-text roles. Rule 2: a component writes `text-muted`/`text-subtle`, never an

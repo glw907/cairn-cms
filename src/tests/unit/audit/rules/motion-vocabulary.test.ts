@@ -27,6 +27,15 @@ const COMPANION_GREEN_BUILD_QUOTES = [
 const COMPANION_RED =
   "[data-theme='cairn-admin'] { --default-transition-duration: .15s; --default-transition-timing-function: ease; }";
 
+// The comma-separated form the built sheet's minifier can produce when two selectors share
+// identical declarations (admin-css-build.test.ts's own "fixes the desktop sidebar" case): the
+// theme root's selector is the SECOND alternative in a comma-joined list, never the whole
+// selector text on its own.
+const COMPANION_GREEN_COMMA_JOINED = [
+  ".some-other-rule, [data-theme='cairn-admin'] { --default-transition-duration: var(--cairn-dur-base); --default-transition-timing-function: var(--cairn-ease-standard); }",
+  "[data-theme='cairn-admin-dark'] { --default-transition-duration: var(--cairn-dur-base); --default-transition-timing-function: var(--cairn-ease-standard); }",
+].join(' ');
+
 function cssFile(source: string): CssSource {
   return { file: 'src/lib/components/cairn-admin.css', source };
 }
@@ -145,6 +154,13 @@ describe('motion-vocabulary: the class-join surface', () => {
 
   it('passes transition-colors when the companion roots carry the double-quoted selector form the build emits', () => {
     const findings = check(`${COMPANION_GREEN_BUILD_QUOTES} ${CLASS_SHEET}`, [
+      component('<div class="transition-colors"></div>'),
+    ]);
+    expect(findings).toEqual([]);
+  });
+
+  it('passes transition-colors when the theme root is the second alternative of a comma-joined selector list', () => {
+    const findings = check(`${COMPANION_GREEN_COMMA_JOINED} ${CLASS_SHEET}`, [
       component('<div class="transition-colors"></div>'),
     ]);
     expect(findings).toEqual([]);

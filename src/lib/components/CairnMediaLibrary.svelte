@@ -606,7 +606,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   }
 
   function densityButtonClass(on: boolean): string {
-    return `inline-flex items-center justify-center rounded-md p-1.5 hover:bg-base-content/[0.06] ${segmentTintClass(on)}`;
+    return `inline-flex items-center justify-center rounded-field p-1.5 hover:bg-base-content/[0.06] ${segmentTintClass(on)}`;
   }
 
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
@@ -630,7 +630,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      comment). Plain, unstyled: every visual and layout class stays exactly where it already was. -->
 <div bind:this={rootEl}>
 {#snippet uploadAction()}
-  <button type="button" class="btn btn-sm shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
+  <button type="button" class="btn btn-sm shrink-0 btn-neutral tracking-small-semibold" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
     <UploadIcon class="h-4 w-4" aria-hidden="true" /> Upload
   </button>
 {/snippet}
@@ -657,7 +657,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
        until there is content. -->
   {#snippet emptyUploadAction()}
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
-      <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
+      <button type="button" class="btn btn-sm btn-neutral tracking-small-semibold" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
         <UploadIcon class="h-4 w-4" aria-hidden="true" /> Upload an image
       </button>
       <span class="type-meta">or drop a file anywhere on this page</span>
@@ -686,7 +686,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <DatabaseIcon class="h-4 w-4" aria-hidden="true" /> Find orphaned files
       </button>
 
-      <div role="group" aria-label="Layout density" class="bg-base-100 inline-flex items-center gap-1 rounded-lg border border-[var(--cairn-card-border)] p-0.5">
+      <div role="group" aria-label="Layout density" class="bg-base-100 inline-flex items-stretch gap-1 rounded-field border border-[var(--cairn-card-border)] p-0.5">
         <button type="button" aria-label="Grid view" aria-pressed={density === 'grid'} class={densityButtonClass(density === 'grid')} onclick={() => (density = 'grid')}>
           <LayoutGridIcon class="h-4 w-4" aria-hidden="true" />
         </button>
@@ -753,7 +753,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                  The wrapper is one step larger than daisyUI v5's default 24px `.checkbox` (h-7/w-7,
                  not h-6/w-6): at h-6 the checkbox exactly fills the plate and its own ring has no
                  room to paint, leaving no visible contrast plate at all. -->
-            <span class="absolute left-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md bg-base-100/90 shadow-sm">
+            <span class="absolute left-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-field bg-base-100/90 shadow-sm">
               <input
                 type="checkbox"
                 class="checkbox"
@@ -768,9 +768,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                    chip. The category reads "No references found" (renamed from "Unused"): a found
                    reference is not proof of use, and absence of one is not proof of disuse. -->
               {#if used > 0}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold text-muted">used {used}</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-selector border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold text-muted">used {used}</span>
               {:else}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold cairn-text-warning">Not referenced</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-selector border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold cairn-text-warning">Not referenced</span>
               {/if}
               {#if brokenHashes.has(asset.hash)}
                 <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">
@@ -824,7 +824,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         {#snippet header()}
           <!-- Frame zone (the column-header row) carries the office band grammar (design arc
                2026-07-15, propagated from ConceptList), and the first column insets to the card's
-               rounded edge. -->
+               own corner radius. -->
           <th class="w-10 pl-6"><span class="sr-only">Select</span></th>
           <th class={headerLabel}>Asset</th>
           <th class="{headerLabel} w-32">Alt status</th>
@@ -930,14 +930,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             Select all {visible.length}
           </button>
         {/if}
-        <button type="button" class="whitespace-nowrap rounded-lg border border-base-300 px-2.5 py-2 type-meta font-medium text-subtle" onclick={clearSelection}>
+        <button type="button" class="whitespace-nowrap rounded-field border border-base-300 px-2.5 py-2 type-meta font-medium text-subtle" onclick={clearSelection}>
           Clear
         </button>
         <!-- The reversible bulk Delete: a git-tracked removal of manifest rows, so the
              danger-OUTLINE register (the irreversible byte purge lives on a separate surface and
              keeps the solid fill). It opens the skip-and-report alertdialog over the current
              selection. -->
-        <button type="button" aria-haspopup="dialog" onclick={(e) => bulkDeleteDialog?.open([...selectedHashes], e.currentTarget as HTMLElement)} class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--cairn-error-border)] bg-base-100 px-3.5 py-2.5 type-meta font-semibold text-[var(--cairn-error-ink)]">
+        <button type="button" aria-haspopup="dialog" onclick={(e) => bulkDeleteDialog?.open([...selectedHashes], e.currentTarget as HTMLElement)} class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-field border border-[var(--cairn-error-border)] bg-base-100 px-3.5 py-2.5 type-meta font-semibold text-[var(--cairn-error-ink)]">
           <Trash2Icon class="h-3.5 w-3.5" aria-hidden="true" /> Delete {selectedCount}
         </button>
       </div>
@@ -971,7 +971,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     bind:this={panelEl}
     role="region"
     aria-label="{asset.displayName} details"
-    class="fixed inset-x-0 bottom-0 z-30 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)] sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-16 sm:max-h-none sm:w-[22rem] sm:rounded-t-none sm:border-l sm:border-t-0"
+    class="fixed inset-x-0 bottom-0 z-30 flex max-h-[85vh] flex-col rounded-t-box border-t border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)] sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-16 sm:max-h-none sm:w-[22rem] sm:rounded-t-none sm:border-l sm:border-t-0"
   >
     <div class="flex items-center justify-between border-b border-[var(--cairn-card-border)] px-4 py-3.5">
       <h2 class="type-label font-semibold uppercase tracking-[0.08em] text-muted">Asset</h2>
@@ -980,7 +980,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </button>
     </div>
 
-    <div class="flex flex-col gap-5 overflow-y-auto p-4">
+    <div class="flex flex-col gap-5 overflow-y-auto p-4 pb-8">
       <!-- The large preview, object-fit contain on the quiet mat, with the broken-image affordance. -->
       <div class="flex aspect-[16/10] items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
         {#if brokenHashes.has(asset.hash)}
@@ -1131,7 +1131,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <button
           type="button"
           data-cairn-replace-open
-          class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left type-meta font-medium text-base-content hover:bg-base-content/[0.06]"
+          class="flex w-full items-center gap-2.5 rounded-field px-2 py-1.5 text-left type-meta font-medium text-base-content hover:bg-base-content/[0.06]"
           aria-haspopup="dialog"
           onclick={(e) => replaceDialogRef?.open(asset, e.currentTarget)}
         >
@@ -1141,7 +1141,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <button
           type="button"
           data-cairn-pushalt-open
-          class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left type-meta font-medium text-base-content hover:bg-base-content/[0.06]"
+          class="flex w-full items-center gap-2.5 rounded-field px-2 py-1.5 text-left type-meta font-medium text-base-content hover:bg-base-content/[0.06]"
           aria-haspopup="dialog"
           onclick={(e) => altFillDialogRef?.open(asset, e.currentTarget)}
         >
@@ -1198,14 +1198,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               {#if deleteBreakingPublished.length > 0}
                 <li class="px-1.5 pb-0.5 pt-1 type-chip font-semibold uppercase tracking-wide text-muted">Published on the site</li>
                 {#each deleteBreakingPublished as entry (entry.concept + '/' + entry.id)}
-                  <li><a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2 rounded px-1.5 py-1 type-meta font-medium no-underline hover:bg-[var(--cairn-error-ink)]/10">{entry.title}</a></li>
+                  <li><a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2 rounded-field px-1.5 py-1 type-meta font-medium no-underline hover:bg-[var(--cairn-error-ink)]/10">{entry.title}</a></li>
                 {/each}
               {/if}
               {#if deleteBreakingBranch.length > 0}
                 <li class="px-1.5 pb-0.5 pt-1 type-chip font-semibold uppercase tracking-wide text-muted">In an unpublished edit</li>
                 {#each deleteBreakingBranch as entry (entry.concept + '/' + entry.id + branchNameOf(entry))}
                   <li>
-                    <a href="/admin/{entry.concept}/{entry.id}" class="flex flex-col rounded px-1.5 py-1 no-underline hover:bg-[var(--cairn-error-ink)]/10">
+                    <a href="/admin/{entry.concept}/{entry.id}" class="flex flex-col rounded-field px-1.5 py-1 no-underline hover:bg-[var(--cairn-error-ink)]/10">
                       <span class="type-meta font-medium">{entry.title}</span>
                       <span class="font-[family-name:var(--font-editor)] type-chip cairn-text-warning">{branchNameOf(entry)}</span>
                     </a>
@@ -1227,8 +1227,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {#if deleteInUse}
             <input type="hidden" name="confirmSlug" value={confirmSlugInput} />
             <div class="flex flex-col gap-1.5">
-              <label class="type-body" for="cairn-ml-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta font-bold">{asset.slug}</code> to delete it anyway.</label>
-              <input id="cairn-ml-confirm" class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={confirmSlugInput} />
+              <label class="type-body" for="cairn-ml-confirm">Type <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] type-meta font-bold">{asset.slug}</code> to delete it anyway.</label>
+              <input id="cairn-ml-confirm" class="input input-sm border-error font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={confirmSlugInput} />
             </div>
           {/if}
           <div class="flex justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
@@ -1264,5 +1264,20 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      allowlist a rename would silently orphan. */
   .cairn-ml-name {
     --cairn-naming-hook: true;
+  }
+
+  /* The grid/list density toggle is hand-rolled (no daisyUI `.btn` class of its own), so it never
+     picked up the size step's `--size-field` bump the neighboring `btn-sm` orphan-scan trigger
+     reads automatically. The eye reads the toggle's bordered outer frame, so the frame itself takes
+     that neighbor's height (the same `--size-field` * 8 a `btn-sm` resolves to, the technique
+     ListToolbar's own 'menu' facet chrome uses for the identical reason). The frame is
+     border-box, so its border and padding come out of that height; the two buttons stretch to fill
+     what is left and stay square through their aspect ratio, at any `--size-field` value. */
+  [aria-label='Layout density'] {
+    height: calc(var(--size-field, 0.25rem) * 8);
+  }
+
+  [aria-label='Layout density'] > button {
+    aspect-ratio: 1;
   }
 </style>

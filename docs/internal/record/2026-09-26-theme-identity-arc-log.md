@@ -64,3 +64,13 @@ Rename after the fold verification (2026-09-26): ruling 1's sublayer `cairn-them
 - Pass A plan approved (Geoff, 2026-09-26, chose "Approve and run overnight"): 20M ceiling, one
   pass; run tasks 0 to 14 and the settle round unattended, stopping at the resume point before the
   S3 owner sitting. Nothing merges or publishes overnight.
+
+Errata (pass A close, 2026-09-28), owed by the spec fold:
+
+- R4's "--btn-p 0.875rem" applies at `btn-sm` only. daisyUI's `.btn-sm` sets `--btn-p: .75rem`, and
+  the shipped `cairn-idiom` rule raises that one size step; other sizes keep daisyUI's padding
+  (review finding CS-m3).
+- R1's "faint warm lift on btn-primary" could not have come from the shipped rule. That rule set
+  `box-shadow` in `@layer components`, where daisyUI's own `.btn` shadow in `utilities` beat it,
+  so the lift that render showed came from somewhere other than the shipped sheet. Pass A moved the lift into
+  `cairn-idiom` as `--btn-shadow`, where it paints (review finding MX-M1).

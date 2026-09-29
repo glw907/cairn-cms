@@ -82,7 +82,7 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
           <li class="badge cairn-chip-outline max-w-[16rem] gap-1" role="listitem">
             <span class="min-w-0 truncate">{titleFor(id)}</span>
             <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label={`Remove ${titleFor(id)}`} onclick={() => remove(id)}>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
             </button>
             <input type="hidden" name={field.name} value={id} />
           </li>

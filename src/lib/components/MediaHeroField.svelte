@@ -477,7 +477,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
       ondragleave={onDropzoneDragleave}
     >
       <span class="flex h-7 w-7 flex-none items-center justify-center rounded-field bg-[color-mix(in_oklab,var(--color-primary)_10%,transparent)] text-[var(--color-primary)]" aria-hidden="true">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" /></svg>
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" /></svg>
       </span>
       <span class="flex min-w-0 flex-col gap-px">
         <span class="type-meta font-medium">Add {field.label.toLowerCase()}</span>
@@ -511,7 +511,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         {view === 'chooser' ? `Add ${field.label.toLowerCase()}` : field.label}
       </h2>
       <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={closeDialog}>
-        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
       </button>
     </div>
 
@@ -602,7 +602,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
       <div class="flex flex-col gap-3">
         <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-base-300 px-4 py-4 text-center text-muted">
           <span class="text-[var(--color-primary)]" aria-hidden="true">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></svg>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></svg>
           </span>
           <span class="type-body font-medium text-base-content">Drop an image, or upload</span>
           <span class="type-meta">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>

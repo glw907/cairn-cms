@@ -11,9 +11,17 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
-The release step sets the version number at the cut and renames this section to match it. No
-consumer action so far: the window's own `CHANGELOG.md` entry reads "No consumer action for an
-existing site."
+The release step sets the version number at the cut and renames this section to match it.
+
+- **Re-check any custom admin screen.** Nothing is required, but the admin now takes its look
+  from daisyUI's theme layer. A plain daisyUI class on your own screen renders cairn's corner
+  ladder and hairline edges, a plain `btn` is a hairline button, and a checked or pressed `btn`
+  renders as the selected segment. Controls also grow one size step: a default control is 45px
+  tall instead of 40px, a `btn-sm` or `input-sm` 36px instead of 32px, and badges, checkboxes,
+  radios, and toggles grow with them, so a screen laid out around 40px controls is the likeliest
+  to shift. A fixed Tailwind radius such as `rounded-lg` still renders,
+  but it does not follow the ladder. Write `rounded-selector`, `rounded-field`, or `rounded-box`
+  to follow it.
 
 ## 0.97.0
 

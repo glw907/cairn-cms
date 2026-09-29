@@ -5,8 +5,7 @@ import FieldLabel from '../../lib/admin-toolkit/FieldLabel.svelte';
 import StackedFieldGrid from './_StackedFieldGrid.svelte';
 import StackedCompactRow from './_StackedCompactRow.svelte';
 // The stacked register's width hook lives only in the built sheet's dedicated unlayered rule, so
-// this suite loads the real compiled artifact rather than the source partial the other tests here
-// import.
+// this suite injects the real compiled artifact under its own theme root.
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 describe('FieldLabel', () => {

@@ -31,8 +31,8 @@ your site's root (the installed package's copy).
 (`0.99.0`), `log-event-grammar` (`0.98.0`), `log-secret-field` (`0.98.0`). `public-literals` reads
 the site's public files instead of the admin surfaces and stays advisory for a consumer, so it has
 no promotion version. `theme-conformance` and `theme-contrast` also read the site's public files,
-need daisyUI installed beside the site (`theme-conformance` needs Tailwind too), and promote to
-error tier at the first minor cut after every consumer site reports none of their findings.
+need daisyUI installed beside the site (`theme-conformance` needs Tailwind too), and stay advisory
+with no promotion version.
 
 **Rendered, error tier:** `one-filled-action`, `focus-renders`, `interactive-contrast`,
 `touch-targets`, `viewport-overflow`, `panel-width`, `list-role`.

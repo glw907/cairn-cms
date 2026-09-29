@@ -198,7 +198,7 @@
   .lead__title a {
     color: inherit;
     text-decoration: none;
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
   }
   .lead__title a:hover {
     color: var(--color-primary);
@@ -229,7 +229,7 @@
   .lead__link:focus-visible {
     outline: var(--cairn-focus-ring-outline);
     outline-offset: var(--cairn-focus-ring-offset);
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
   }
 
   .index__head {
@@ -267,15 +267,13 @@
 
   /* The size-gated tag filter: a row of pill toggles over the index, reading the showcase tokens.
      The pressed option carries the primary ink so the active narrowing is visible without color
-     alone (the aria-pressed state backs assistive tech). The pill shape rides its own scoped
-     custom property (the `--flow-space` idiom in prose.css) rather than a literal 999px: the
-     theme's `--radius-selector` is a separate, smaller "modest" DaisyUI geometry knob (0.28rem),
-     so reading it here would change the shape, not just unlock it. --tag-filter-radius keeps the
-     default pill unchanged while giving a re-skin a token to override. Each pill reaches the 44px
+     alone (the aria-pressed state backs assistive tech). The pill is a shape, not a step on the
+     corner ladder: it reads --tag-filter-radius, which a theme sets at its root, and falls back to
+     999px. The theme's `--radius-selector` is a separate, smaller geometry knob (0.28rem), so reading
+     it here would change the shape, not just unlock it. Each pill reaches the 44px
      touch-target floor through its own vertical padding rather than a fixed height, so the visible
      pill grows with its content instead of clipping a longer label. */
   .tag-filter {
-    --tag-filter-radius: 999px;
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-2xs);
@@ -289,7 +287,8 @@
     line-height: var(--leading-snug);
     padding: 0.6rem 0.9rem;
     border: var(--border) solid var(--color-card-border);
-    border-radius: var(--tag-filter-radius);
+    /* A shape, not a step on the corner ladder: the pill reads its own token. */
+    border-radius: var(--tag-filter-radius, 999px);
     background: transparent;
     color: var(--color-muted);
     cursor: pointer;
@@ -331,7 +330,7 @@
     font-weight: 600;
     color: var(--color-primary);
     text-decoration: none;
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
   }
   .pagination__link:hover {
     text-decoration: underline;

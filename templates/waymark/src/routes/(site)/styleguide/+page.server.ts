@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { previewMarkdown } from '@glw907/cairn-cms';
 import { cairn } from '$theme/cairn.config.js';
 
 // The styleguide renders a representative markdown sample through the SAME adapter `render` the
@@ -10,9 +11,8 @@ export const prerender = true;
 // A sample that exercises every element the reading surface styles: the lead, headings, emphasis and
 // a link, an unordered list, an ordered list, a task list, a blockquote, inline code, two fenced
 // blocks in different languages (to show the highlighter across token kinds), a table, a horizontal
-// rule, a figure, and the full component kit (callout note/tip/warning, alert, icon, cta, micro-cta,
-// video, faq, and pull-quote, now the real directive rather than a hand-styled paragraph). It doubles
-// as documentation, the bar's "the prose is the documentation" principle.
+// rule, and a figure. The directive components are not written here: the load below renders one
+// sample per registry entry, so a new component appears on the page without an edit to this route.
 const SAMPLE = `<p class="lead">This is the reading surface. Every element below is rendered by the same theme a reader sees, so the styleguide shows the real prose output rather than an imitation of it.</p>
 
 You write in markdown, and the surface binds each element to the theme tokens. Change one token and the whole surface, this article included, re-skins in lockstep.
@@ -41,9 +41,6 @@ Inside a paragraph you can make a word **bold** or *italic*, and link to [the ca
 - [ ] One more left
 
 > A blockquote, set apart with a left accent rule and italic type, for a passage worth slowing down for.
-
-:::pull-quote[A pull-quote reads in the display face, set apart from the surrounding text.]
-:::
 
 For a short snippet inside a sentence, wrap it in backticks so a filename like \`cairn.config.ts\` reads as code. For anything longer, a fenced block turns on the highlighter:
 
@@ -82,72 +79,30 @@ A centered figure holds the measure of the text.
 
 ---
 
-The horizontal rule above is a plain hairline. Below are the directive components, dropped into the text with a fenced block syntax.
-
-::::callout[A quick definition]{tone="note"}
-A *concept* is a kind of content, like a post or a page. A note callout is the calm tone, for an aside.
-::::
-
-::::callout[Write the title last]{tone="tip"}
-A tip callout is for advice that saves the reader trouble.
-
-:::points
-- A vague title is a sign of a vague post.
-- If you cannot title it, the post is not finished.
-:::
-::::
-
-::::callout[Publishing is public]{tone="warning"}
-A warning callout flags something the reader needs to be careful about before they act.
-::::
-
-:::alert[Check the date before you publish]{role=caution}
-An alert is a heavier signal than a callout, set in a bordered card with an icon. Save it for the rare note a reader must not miss.
-:::
-
-A standalone icon is a single glyph with no card and no title, for a short line that wants a marker of its own:
-
-:::icon{name="flag"}
-:::
-
-A CTA is a single link styled like a button, for pointing the reader at the one next step that matters:
-
-:::cta{label="Read the getting-started guide" url="https://example.com/guide" variant="primary"}
-:::
-
-A micro-CTA is the cta's compact sibling, a further-reading pointer for the end of a section rather than a marketing button:
-
-:::micro-cta{label="Read the guide" url="#" note="an example pointer"}
-:::
-
-A video link never requests the platform until a reader clicks through; before that it is a static panel naming where the link goes:
-
-:::video{url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="A short walkthrough"}
-:::
-
-An FAQ question is a native disclosure widget that works with no JavaScript, its answer taking full markdown:
-
-:::faq{question="Does the FAQ component support formatting in the answer?"}
-Yes, including a **bold** term or a [link](https://example.com).
-:::
-
-## Islands
-
-An island is a directive that renders a static, no-JavaScript fallback on the server, then a small client
-runtime mounts a live Svelte component over it. The banner below shows its fallback first, then becomes
-interactive once the page hydrates, re-checking its own expiry rather than trusting the server's render.
-The second banner has already expired, so it renders nothing, on the server and again independently once
-the page hydrates.
-
-:::banner{message="Trail conditions updates move to the new radio channel next month." expires="2999-01-01"}
-:::
-
-:::banner{message="Early registration for the spring clinic has closed." expires="2020-01-01"}
-:::
+The horizontal rule above is a plain hairline.
 `;
 
-export const load: PageServerLoad = async () => ({
-  // Render once, on the server, through the adapter. The same call the article route makes; with no
-  // resolvers passed, the adapter's default public media resolver backs the render.
-  proseHtml: await cairn.rendering.render({ body: SAMPLE }),
-});
+/** One registered component's rendered sample. */
+interface ComponentSample {
+  name: string;
+  label: string;
+  html: string;
+}
+
+export const load: PageServerLoad = async () => {
+  // Render through the adapter, the same call the article route makes; with no resolvers passed,
+  // the adapter's default public media resolver backs the render.
+  const render = (body: string) => cairn.rendering.render({ body });
+
+  // One sample per registry entry, from the entry's `preview` serialized as directive markdown. An
+  // entry with no `preview` has nothing to render and is listed by name instead.
+  const components: ComponentSample[] = [];
+  const withoutPreview: string[] = [];
+  for (const def of cairn.rendering.components?.defs ?? []) {
+    const markdown = previewMarkdown(def);
+    if (markdown === undefined) withoutPreview.push(def.name);
+    else components.push({ name: def.name, label: def.label, html: await render(markdown) });
+  }
+
+  return { proseHtml: await render(SAMPLE), components, withoutPreview };
+};

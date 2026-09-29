@@ -374,6 +374,27 @@ const callout = defineComponent({
 });
 ```
 
+#### `previewMarkdown`
+
+Stability tier: Extension API.
+
+```ts
+declare function previewMarkdown(def: ComponentDef): string | undefined;
+```
+
+Return a component's `preview` sample as directive markdown, the string [`parseMarkdown`](#parsemarkdown)'s
+body and the render pipeline take. It returns `undefined` when the component declares no `preview`. A
+component with nested slots serializes to the four-colon fence, so the result parses back to the same
+values. A page that shows every registered component, such as a styleguide, walks the registry through
+this and renders each sample.
+
+```ts
+import { previewMarkdown } from '@glw907/cairn-cms';
+import { callout } from './components.js';
+
+const sample = previewMarkdown(callout);
+```
+
 ### Fields
 
 The field vocabulary. A concept declares its fields with the `fields` constructor namespace, then

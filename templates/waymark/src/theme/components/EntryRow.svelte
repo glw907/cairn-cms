@@ -69,7 +69,7 @@ copy.
   .site-entry__title a {
     color: inherit;
     text-decoration: none;
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
   }
   .site-entry__title a:hover {
     color: var(--color-primary);

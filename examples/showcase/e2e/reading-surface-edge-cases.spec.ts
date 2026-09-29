@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// Five edge cases on the reading-surface article and the styleguide's banner demo, each
-// reproducible without any special setup:
+// Four edge cases on the reading-surface article, each reproducible without any special setup:
 //   1. a standalone `:::icon` directive must size at a modest, text-height scale rather than the
 //      browser's default replaced-element SVG box, since prose.css sizes `.cairn-glyph` only inside
 //      a nested component (alert, video-facade, cta-link, faq-marker) unless the article also
@@ -14,8 +13,6 @@ import { test, expect } from '@playwright/test';
 //   4. `.prose` must wrap a long unbroken token (a bare URL) inside the column rather than
 //      overflowing it, since the body's `overflow-x: clip` (the full-bleed-figure guard) would
 //      otherwise hide the overflow instead of showing a scrollbar, silently swallowing the token.
-//   5. an expired banner's hydrate island must not serialize its message or expiry into
-//      `data-cairn-props`, even though `build()` already decided the banner is permanently expired.
 test.describe('Reading surface edge cases', () => {
   test('a standalone icon directive renders at a modest, text-height scale', async ({ page }) => {
     await page.goto('/posts/the-reading-surface');
@@ -93,21 +90,5 @@ test.describe('Reading surface edge cases', () => {
       return tokenWidth > columnWidth + 1;
     });
     expect(overflowed).toBe(false);
-  });
-
-  test('an expired banner does not serialize its message or expiry into the page markup', async ({
-    page,
-  }) => {
-    await page.goto('/styleguide');
-    const html = await page.content();
-    // The styleguide's second `:::banner` directive (see +page.server.ts) expired in 2020; its
-    // message and date must not reach the DOM in any form, not even an inert data attribute.
-    expect(html).not.toContain('Early registration for the spring clinic has closed.');
-    expect(html).not.toContain('2020-01-01');
-    // The island still mounts, with empty props: hydration still runs Banner.svelte's own re-check,
-    // which treats a missing `expires` as expired, so the swap-on-mount behavior is unchanged.
-    const islands = page.locator('[data-cairn-island="banner"]');
-    await expect(islands).toHaveCount(2);
-    await expect(islands.nth(1)).toHaveAttribute('data-cairn-props', '{}');
   });
 });

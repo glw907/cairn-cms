@@ -36,9 +36,8 @@
    Waymark identity re-enables all three by adding one `data-flourish` attribute
    to the `.prose` root, with no CSS edit.
 
-   TIER: the whole sheet is Tier 2 (owned design, the documented floor; the starter-template
-   custom-surface ledger, docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md). It is
-   the hand-authored reading surface, not @tailwindcss/typography, so it is not a fold target. It
+   TIER: the whole sheet is Tier 2 (owned design, the documented floor for a site's own look). It
+   is the hand-authored reading surface, not @tailwindcss/typography, so it is not a fold target. It
    reads the theme roles and the cairn tokens; a re-skin recolors it with no edit here. */
 @layer components {
   /* --------------------------------------------------------------------------
@@ -154,7 +153,7 @@
   .prose a:focus-visible {
     outline: var(--cairn-focus-ring-outline);
     outline-offset: var(--cairn-focus-ring-offset);
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
     box-shadow: 0 0 0 4px var(--color-base-100);
   }
 
@@ -302,6 +301,7 @@
     top: 0.62em;
     width: 0.4em;
     height: 0.4em;
+    /* A shape, not a step on the corner ladder: the diamond keeps its near-square corner. */
     border-radius: 1px;
     background: var(--color-primary);
     transform: rotate(45deg);
@@ -638,6 +638,7 @@
     justify-content: center;
     width: 3.4rem;
     height: 3.4rem;
+    /* A shape, not a step on the corner ladder: the play button is a circle. */
     border-radius: 999px;
     background: var(--color-primary);
     color: var(--color-primary-content);

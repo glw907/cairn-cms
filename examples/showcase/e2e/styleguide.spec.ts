@@ -53,6 +53,13 @@ test('the skip link is the first Tab stop and targets the main content', async (
   const skip = page.locator(':focus');
   await expect(skip).toHaveText('Skip to content');
   await expect(skip).toHaveAttribute('href', '#main');
+  // Focused, it is fully visible: not the 1px clipped box the hidden idiom leaves, and it keeps its
+  // padding, so the focus variant of the hiding utility does not zero it.
+  const box = await skip.boundingBox();
+  expect(box!.width).toBeGreaterThan(40);
+  expect(box!.height).toBeGreaterThan(16);
+  await expect(skip).toHaveCSS('padding-left', /^[1-9]/);
+  await expect(skip).toHaveCSS('position', 'absolute');
   // The href targets the <main id="main"> landmark the (site) layout renders, so the link is real.
   await expect(page.locator('main#main')).toBeVisible();
 });

@@ -96,6 +96,7 @@ export { formatManifest, parseManifest, verifyManifest, verifyReferences } from 
 export type { Manifest, ManifestEntry } from './content/manifest.js';
 // Render engine: generic directive pipeline; sites own the component registry.
 export { defineRegistry, defineComponent } from './render/registry.js';
+export { previewMarkdown } from './render/component-grammar.js';
 // `ComponentDef.build`'s parameter and `.slots` name these.
 export type { ComponentDef, ComponentRegistry, ComponentContext, SlotDef } from './render/registry.js';
 export { renderGlyph } from './render/glyph.js';

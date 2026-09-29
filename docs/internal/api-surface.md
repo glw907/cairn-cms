@@ -81,6 +81,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `parseMarkdown`: (source: string) => { frontmatter: Record<string, unknown>; body: string }
 - `parseSiteConfig`: (raw: string) => SiteConfig
 - `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
+- `previewMarkdown`: (def: ComponentDef) => string | undefined
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `readMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
 - `readVocabulary`: (config: SiteConfig) => VocabularyEntry[]

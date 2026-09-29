@@ -7,6 +7,7 @@ import {
   applyOverlay,
   composeTemplate,
   diffTrees,
+  findTemplateViolations,
   OVERLAY_DIR,
   TEMPLATE_DIR,
 } from './emit-template-dir.mjs';
@@ -108,4 +109,76 @@ test('the overlay directory holds only the repo-only files, not a second copy of
     .map((file) => path.relative(OVERLAY_DIR, file))
     .sort();
   assert.deepEqual(files, ['.dev.vars.example', '.gitignore', 'LICENSE', 'README.md']);
+});
+
+/**
+ * Write a file under a scratch tree, creating its directories.
+ * @param {string} root the tree's root
+ * @param {string} relativePath the file's path under root
+ * @param {string} content the file's text
+ * @returns {Promise<void>}
+ */
+async function put(root, relativePath, content) {
+  const full = path.join(root, relativePath);
+  await mkdir(path.dirname(full), { recursive: true });
+  await writeFile(full, content);
+}
+
+test('findTemplateViolations flags an internal path and a verdict citation under src', async (t) => {
+  const root = await tempDir(t);
+  await put(root, 'src/theme/a.css', '/* see docs/internal/design.md */\n');
+  await put(root, 'src/theme/b.css', '/* Verdict 7 (motion): a cross-fade */\n');
+  await put(root, 'src/theme/clean.css', '/* a public reason, docs at https://cairn.pub */\n');
+
+  const violations = await findTemplateViolations(root);
+
+  assert.deepEqual(violations, [
+    `${path.join('src', 'theme', 'a.css')}: cites docs/internal/`,
+    `${path.join('src', 'theme', 'b.css')}: cites a Verdict number`,
+  ]);
+});
+
+test('findTemplateViolations flags a citation in a root file', async (t) => {
+  const root = await tempDir(t);
+  await put(root, 'svelte.config.js', '// docs/internal/notes.md\n');
+
+  assert.deepEqual(await findTemplateViolations(root), [
+    'svelte.config.js: cites docs/internal/',
+  ]);
+});
+
+test('findTemplateViolations skips the baked guidance under .claude', async (t) => {
+  const root = await tempDir(t);
+  await put(root, '.claude/skills/cairn-consult/SKILL.md', 'writes to docs/internal/consultations\n');
+  await put(root, '.claude/notes.md', 'Verdict 3\n');
+
+  assert.deepEqual(await findTemplateViolations(root), []);
+});
+
+test('findTemplateViolations leaves a word Verdict with no number alone', async (t) => {
+  const root = await tempDir(t);
+  await put(root, 'src/a.ts', '// the verdict is in; Verdict without a number is prose\n');
+
+  assert.deepEqual(await findTemplateViolations(root), []);
+});
+
+test('findTemplateViolations flags a parent-relative path in the audit config', async (t) => {
+  const root = await tempDir(t);
+  await put(
+    root,
+    'cairn-audit.config.json',
+    JSON.stringify({ sheet: ['.cairn/admin.css'], public: { scope: ['src/theme', '../../src/lib/public'] } }),
+  );
+
+  assert.deepEqual(await findTemplateViolations(root), [
+    'cairn-audit.config.json: holds the parent-relative path ../../src/lib/public',
+  ]);
+});
+
+test('findTemplateViolations passes a clean tree with a clean audit config', async (t) => {
+  const root = await tempDir(t);
+  await put(root, 'src/theme/a.css', '/* nothing to cite */\n');
+  await put(root, 'cairn-audit.config.json', JSON.stringify({ sheet: ['.cairn/admin.css'] }));
+
+  assert.deepEqual(await findTemplateViolations(root), []);
 });

@@ -393,7 +393,7 @@
 }
 
 /* ----------------------------------------------------------------------------
-   Verdict 7 (motion): a token-level cross-fade on an explicit scheme change, and a plain root
+   Motion: a token-level cross-fade on an explicit scheme change, and a plain root
    cross-fade on internal navigation. Neither runs always-on: the toggle transition is scoped
    behind a class `theme-toggle.ts` adds only for the duration of one flip (SiteHeader.svelte), and
    the navigation transition only fires inside the View Transitions API's own transient pseudo-

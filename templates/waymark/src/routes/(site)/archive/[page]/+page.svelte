@@ -106,7 +106,7 @@
     font-weight: 600;
     color: var(--color-primary);
     text-decoration: none;
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
   }
   .pagination__link:hover {
     text-decoration: underline;

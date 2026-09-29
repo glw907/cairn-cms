@@ -15,7 +15,7 @@
    client and server builds, so the server-resolved ?url would 404 in the browser. Referenced only as
    an asset, both builds emit site.<hash>.css under one content hash, and the URL holds.
 
-   TIER MAP (docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md):
+   TIER MAP:
      - Tier 2 (owned): the `.site-main` reading column and the `.cairn-place-center/wide/full` figure
        contract. cairn defines the figure class contract; the site owns the pixels by styling them.
      - Tier 2 (owned): the `.banner*` demo block below. It reads the theme info tokens, so re-skinning
@@ -31,7 +31,7 @@
   --site-banner-radius: 0.25rem;
 }
 
-/* The ultrawide posture (locked; see docs/internal/public-design-system.md). Every layout dimension
+/* The ultrawide posture (a fixed posture, not a lever). Every layout dimension
    in this theme is rem-based, the reading measure included, so growing the root font-size grows the
    whole surface proportionally with no separate wide-layout reflow. Below ~1440px (phone through a
    laptop screen) the clamp floors at exactly 1rem; nothing here changes at or under that breakpoint.

@@ -116,6 +116,7 @@ export const ALLOWLIST = new Set([
   'file-path:docs/reference/doctor.md',
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
   'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
+  'file-path:src/chassis/tokens.css', // docs/reference/cairn-audit.md's default theme-root file, a site's own chassis token file
   'file-path:src/content/.cairn/index.json', // a site's own generated manifest, by convention
   'file-path:src/content/.cairn/media.json', // a site's own generated media manifest, by convention
   'file-path:src/content/.cairn/site-facts.json', // a site's own generated site-facts contract, by convention

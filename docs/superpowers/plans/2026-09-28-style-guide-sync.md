@@ -363,11 +363,16 @@ Outcomes: the spec's W4, "W4 addition", and ruling 12, plus:
   package today) (DC-28).
 - The global `CLAUDE.md` "Writing voice" names the register's developer brief, not the write-once
   `2026-09-08-docs-standard-design.md` spec, as the cairn docs standard (DC-27).
-- The tell list and the em-dash policy have one owner, the output style; the global `CLAUDE.md`
-  "Writing voice" and `writing-voice/SKILL.md` ("The em dash") point at it instead of restating
-  it (AW-24, DC-26, CS-15).
-Acceptance: criterion 10; the routing clauses present; each of the five voice files carries the
-pointer line and no measures section; `writing-voice/evals` re-run with no regression, or each
+- The output style is the single owner of the full tell catalogue and the em-dash policy;
+  `writing-voice/SKILL.md` ("The em dash") points at it instead of restating it (AW-24, DC-26,
+  CS-15). The global `CLAUDE.md` "Writing voice" block is trimmed to the pointer plus its short
+  high-frequency tell list and em-dash line, and nothing else. Those lines are the one sanctioned
+  copy (the only route to subagent writers, which never receive the output style), named here for
+  the infra sweep's A-rest `parity.json` to declare later.
+Acceptance: criterion 10; the routing clauses present; the `CLAUDE.md` block holds only the
+pointer, the short tell list, and the em-dash line, and each of those tells and the em-dash line
+agrees with the output style; each of the five voice files carries the pointer line and no
+measures section; `writing-voice/evals` re-run with no regression, or each
 delta named; `scripts/check.sh` passes.
 
 ### Task W5. Implementer definitions

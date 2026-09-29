@@ -14,7 +14,7 @@ open and designs the one pass that carries the harvest and the deletion.
 | H2 | `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` stay in place, outside the harvest and the deletion. They are per-version records, maintained every pass like the reference arm; the extend outline decides their final home. | Geoff, 2026-09-29 |
 | H3 | The arm order stays as the parent spec has it: extend (2a pilot, then 2b), admin, editors, front door. | Geoff, 2026-09-29 |
 | H4 | Outlines, page cards, and ledgers are agent scaffolding: their format is Claude's call, chosen for the agents that consume them, and they need not survive once their pages are built. | Geoff, 2026-09-29 |
-| H5 | `docs/admin/is-it-working.md` is deleted with the rest; `check:readiness`'s anchor assertion is parked until the admin stage re-arms it. The arm READMEs and `docs/README.md` are deleted too. The pass has no ordering constraint against theme pass C. | Geoff approved these three flagged calls with the design, 2026-09-29 |
+| H5 | `docs/admin/is-it-working.md` is deleted with the rest; `check:readiness`'s anchor assertion, and the Go tool's `fixes_test.go` heading scan, check a committed anchor list while the page is absent and re-arm against the page when the admin stage recreates it. The arm READMEs and `docs/README.md` are deleted too. The pass has no ordering constraint against theme pass C. | Geoff approved these three flagged calls with the design, 2026-09-29 |
 
 `extend/choose-an-ai-posture.md` survives the deletion: it is already a rebuilt page with a brief
 (draft docs pass 0+1, task 9), drafted from facts and never from the old page it replaced.
@@ -116,7 +116,10 @@ the entries keyed to it, which replaces the parent spec's per-stage contract tab
 
 Released Go binaries link to `https://cairn.pub/docs/admin/is-it-working#...`, and cairn.pub stays
 pinned to `0.97.0`'s docs until the rebuilt arms ship, so no shipped link breaks. The admin
-stage's outline carries the pinned slugs from the harvest's facts and re-arms `check:readiness`.
+stage's outline carries the pinned slugs from the harvest's facts. While the page is absent,
+`check:readiness` and `tool/internal/health/fixes_test.go` check every live `docsAnchor` against a
+committed anchor list (built from `scripts/checks/shipped-anchors.json` plus today's live anchors)
+rather than skipping, so the contract stays enforced; each re-arms against the page once it exists.
 
 The `## Unreleased` changelog entry states that the narrative arms and the front door were removed
 pending their rebuild and that a release before the rebuild ships the reference arm only. It

@@ -385,8 +385,8 @@ Run `cairn-pass`'s close:
 | --- | --- | --- | --- |
 | 1 | done (`c56e68b8`, fix `94057384`) | 260k (impl 168k, review 92k) | one fix round: basename `Source:` citations; carried to tasks 4 and 7: bare `why-cairn.md` shadowed by the fixture, full path behind `../../` unmatched |
 | 2 | done (`f8b4f116`, `f0011a96`, fix `a330c633`) | 657k (impl 519k, review 138k) | one fix round: `[rejected]` bullets stated the correction instead of the false claim, one near-miss mapping. 450 claims, 125 reused, 208 filed, 9 rejected. Rate 0.53k per page line; remaining R3 lines (5,077) project to about 2.7M, well inside 12M. Chains launched as run `wf_01d09570-176` from `a330c633` |
-| 3 to 6 | pending | | one row, from the chains run's `spent`; 24 extend pages under R3 |
-| 7a | pending | | R3: chains merged, verifier over audited pages; then hold for #97 |
+| 3 to 6 | done (X `608e3f9d`, `a6c2cd11`, fix `5d453cee`; Y `70577ef3`, `2cc8f829`, sweep `2b76b78a`, fix `66352e3f`; Z `a2df28fe`, fix `bcb32a58`, `7aed4148`) | about 2.6M (run `wf_01d09570-176` 975k, then direct dispatches) | 24 extend pages under R3. Tasks 3 and 6 escalated on a frozen bullet whose Source cited a deletion-list page; the conductor ruled a Source-only edit (brief, rule 2 exception). Task 6's review found checkable security claims cut as stance; its sweep re-disposed 46 of 65 judgment cuts, and the same sweep on task 5 re-disposed 73 of 86 (brief, "Cut discipline"). Task 6 took a second fix round (conductor's call: small, fully specified) |
+| 7a | done (merges `c426b000`, `2f33786d`, `29ea416b`; sweep `87796c7e`, fix `62a773b3`) | about 0.6M | Clean merges, no conflicts. A sweep over the admin, editors, and front-door cuts re-disposed 38 of 72. Verifier green on all 43 audited pages: admin 450 claims, editors 337, front door 96, extend 1167. Then held for #97 |
 | 6b | held for #97 | | R3: six deferred pages plus the recheck files |
 | 7 | held for #97 | | the remainder: merge `main`, full verifier |
 | 8 | pending | | |

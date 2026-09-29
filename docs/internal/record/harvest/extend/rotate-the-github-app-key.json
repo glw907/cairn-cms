@@ -1,0 +1,374 @@
+{
+  "page": "docs/extend/rotate-the-github-app-key.md",
+  "blob": "43e3750531eba946cd40eb5f1e12d9c1cac681fd",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Replace the App signing key without a window where the App cannot authenticate.",
+      "fact": "f:ixr3ny"
+    },
+    {
+      "lines": [
+        6,
+        6
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        8,
+        10
+      ],
+      "paraphrase": "The setup command creates a GitHub App for the site.",
+      "fact": "f:vfpai6"
+    },
+    {
+      "lines": [
+        8,
+        10
+      ],
+      "paraphrase": "Pointers to two pages that also create the App.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "The App settings page is reachable under the account or organization Developer settings.",
+      "new-fact": "f:zoekqt"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "Rotation needs wrangler secret put against the site Worker from a signed-in checkout.",
+      "fact": "f:3jpoi3"
+    },
+    {
+      "lines": [
+        15,
+        15
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        17,
+        28
+      ],
+      "paraphrase": "Diagram of overlapping old and new key validity with a milestone before the old key is deleted.",
+      "new-fact": "f:ejuoh6"
+    },
+    {
+      "lines": [
+        17,
+        28
+      ],
+      "paraphrase": "Diagram labels delete-old-key as step 6 and the confirmed swap as step 5.",
+      "new-fact": "f:0mxwyu"
+    },
+    {
+      "lines": [
+        30,
+        33
+      ],
+      "paraphrase": "Caption: the new key signs from generation and the old key from before, until the old is deleted.",
+      "new-fact": "f:ejuoh6"
+    },
+    {
+      "lines": [
+        30,
+        33
+      ],
+      "paraphrase": "Caption numbers the delete step 6 and the confirm step 5.",
+      "new-fact": "f:0mxwyu"
+    },
+    {
+      "lines": [
+        33,
+        34
+      ],
+      "paraphrase": "The diagram axis dates are placeholders that create the bar geometry.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        36,
+        38
+      ],
+      "paraphrase": "An App holds several keys; a new key does not invalidate the old, which signs until deleted.",
+      "fact": "f:ixr3ny"
+    },
+    {
+      "lines": [
+        38,
+        39
+      ],
+      "paraphrase": "Skipping the confirm step risks a lockout from a typo in the new key.",
+      "new-fact": "f:ejuoh6"
+    },
+    {
+      "lines": [
+        40,
+        43
+      ],
+      "paraphrase": "Pointer to GitHub docs and a statement of the page scope.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        45,
+        45
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        47,
+        49
+      ],
+      "paraphrase": "Generate a new key on the App settings page, download the PEM, and leave the old key.",
+      "new-fact": "f:zoekqt"
+    },
+    {
+      "lines": [
+        51,
+        52
+      ],
+      "paraphrase": "The Worker reads the key as GITHUB_APP_PRIVATE_KEY_B64, base64 of the PEM with no line breaks.",
+      "fact": "f:i4fg3o"
+    },
+    {
+      "lines": [
+        52,
+        54
+      ],
+      "paraphrase": "The Node command produces the same encoding the cairn tooling produces.",
+      "new-fact": "f:olofdb"
+    },
+    {
+      "lines": [
+        55,
+        57
+      ],
+      "paraphrase": "Snippet encoding the PEM to one base64 line with Node.",
+      "new-fact": "f:olofdb"
+    },
+    {
+      "lines": [
+        59,
+        61
+      ],
+      "paraphrase": "A shell base64 utility wraps lines differently and a wrapped value fails to decode.",
+      "new-fact": "f:w78j1b"
+    },
+    {
+      "lines": [
+        61,
+        62
+      ],
+      "paraphrase": "PowerShell has an equivalent that produces the same unwrapped form.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        63,
+        65
+      ],
+      "paraphrase": "PowerShell snippet encoding the PEM.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        67,
+        71
+      ],
+      "paraphrase": "Snippet piping the base64 file into wrangler secret put GITHUB_APP_PRIVATE_KEY_B64.",
+      "new-fact": "f:olofdb"
+    },
+    {
+      "lines": [
+        73,
+        74
+      ],
+      "paraphrase": "The secret put overwrites the running secret immediately.",
+      "new-fact": "f:86h9o6"
+    },
+    {
+      "lines": [
+        73,
+        74
+      ],
+      "paraphrase": "App id and installation id live in the adapter config, not in secrets.",
+      "new-fact": "f:9xqudi"
+    },
+    {
+      "lines": [
+        76,
+        78
+      ],
+      "paraphrase": "Local wrangler dev reads .dev.vars, never the deployed secret.",
+      "new-fact": "f:86h9o6"
+    },
+    {
+      "lines": [
+        80,
+        82
+      ],
+      "paraphrase": "No command checks the App credentials; only a real publish proves them.",
+      "fact": "f:zyguyn"
+    },
+    {
+      "lines": [
+        82,
+        83
+      ],
+      "paraphrase": "A commit authored by cairn-cms[bot] on main is claimed as the proof.",
+      "fact": "f:jk30dz"
+    },
+    {
+      "lines": [
+        83,
+        85
+      ],
+      "paraphrase": "Empty logs prove nothing unless observability is enabled in wrangler.jsonc.",
+      "new-fact": "f:prb2os"
+    },
+    {
+      "lines": [
+        85,
+        86
+      ],
+      "paraphrase": "A key that cannot authenticate is claimed to log publish.failed or commit.failed.",
+      "new-fact": "f:bffsa9"
+    },
+    {
+      "lines": [
+        86,
+        88
+      ],
+      "paraphrase": "github.unreachable fires only on three best-effort reads elsewhere.",
+      "new-fact": "f:7u49xs"
+    },
+    {
+      "lines": [
+        90,
+        92
+      ],
+      "paraphrase": "Delete the old key only after the confirming publish produces the commit.",
+      "new-fact": "f:ejuoh6"
+    },
+    {
+      "lines": [
+        91,
+        92
+      ],
+      "paraphrase": "GitHub needs a new key generated before the only key can be deleted.",
+      "new-fact": "f:zoekqt"
+    },
+    {
+      "lines": [
+        94,
+        95
+      ],
+      "paraphrase": "Delete the local pem and b64 files so the Worker is the only place the key lives.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        97,
+        97
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        99,
+        100
+      ],
+      "paraphrase": "A publish from the deployed admin is claimed to produce a bot-authored commit on main.",
+      "fact": "f:jk30dz"
+    },
+    {
+      "lines": [
+        100,
+        101
+      ],
+      "paraphrase": "When it fails, look in Workers Logs for publish.failed or commit.failed first.",
+      "new-fact": "f:bffsa9"
+    },
+    {
+      "lines": [
+        101,
+        102
+      ],
+      "paraphrase": "If the secret did not take, re-push and redeploy; otherwise re-check the key and encoding.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        104,
+        104
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        106,
+        106
+      ],
+      "paraphrase": "The fast way back applies before the old key is deleted in step 6.",
+      "new-fact": "f:0mxwyu"
+    },
+    {
+      "lines": [
+        106,
+        108
+      ],
+      "paraphrase": "Re-pushing the old key base64 value restores signing with it immediately.",
+      "fact": "f:sszb7b"
+    },
+    {
+      "lines": [
+        108,
+        110
+      ],
+      "paraphrase": "Service restoration and diagnosis of the new key are separate problems.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        112,
+        113
+      ],
+      "paraphrase": "If the old key is already deleted, generate a third key instead of recovering it.",
+      "fact": "f:lg2ae8"
+    },
+    {
+      "lines": [
+        113,
+        116
+      ],
+      "paraphrase": "Pointers to the admin checklist and troubleshooting page.",
+      "cut": "navigation"
+    }
+  ]
+}

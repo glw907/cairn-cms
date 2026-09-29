@@ -1,0 +1,1270 @@
+{
+  "page": "docs/extend/security-model.md",
+  "blob": "8880e194b000953f9871739b933320649113003e",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Cairn authenticates an editor by an emailed magic link.",
+      "new-fact": "f:u1bjul"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Cairn protects /admin from forgery with its own CSRF check.",
+      "fact": "f:gncd64"
+    },
+    {
+      "lines": [
+        4,
+        5
+      ],
+      "paraphrase": "Cairn controls which screens a signed-in session may reach.",
+      "fact": "f:vqh4a9"
+    },
+    {
+      "lines": [
+        5,
+        6
+      ],
+      "paraphrase": "A site can replace the built-in sign-in with its own identity gate.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        6,
+        8
+      ],
+      "paraphrase": "Pointer to the auth channel page for a second audience.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        10,
+        10
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        12,
+        16
+      ],
+      "paraphrase": "Saves go to a holding branch; visitors see content only after a deliberate publish and the site deploy.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "The roster of admin authors is small and owner-curated.",
+      "new-fact": "f:u1bjul"
+    },
+    {
+      "lines": [
+        16,
+        18
+      ],
+      "paraphrase": "The realistic risks are session handling, endpoint abuse, and a leaked commit credential.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        18,
+        21
+      ],
+      "paraphrase": "Under an identity gate the realistic risk moves to JWT verification, gate scope, and email verification.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        23,
+        41
+      ],
+      "paraphrase": "Diagram of where this page model ends and render safety begins.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        43,
+        45
+      ],
+      "paraphrase": "Caption: the repository marks where this model ends and render safety begins.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        47,
+        47
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        49,
+        51
+      ],
+      "paraphrase": "These sections describe the built-in sign-in, which an identity gate replaces entirely.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        53,
+        54
+      ],
+      "paraphrase": "A single-use token is stored as a SHA-256 hash and emailed as a link.",
+      "new-fact": "f:u1bjul"
+    },
+    {
+      "lines": [
+        54,
+        55
+      ],
+      "paraphrase": "The session is stored the same way, by hash rather than the raw value.",
+      "new-fact": "f:t6qtl6"
+    },
+    {
+      "lines": [
+        55,
+        57
+      ],
+      "paraphrase": "Token lifetime ten minutes, session lifetime thirty days, one send per address per minute.",
+      "fact": "f:f39xqq"
+    },
+    {
+      "lines": [
+        56,
+        57
+      ],
+      "paraphrase": "None of the three constants can be loosened through the adapter.",
+      "fact": "f:f39xqq"
+    },
+    {
+      "lines": [
+        57,
+        58
+      ],
+      "paraphrase": "There is no password in the sign-in path.",
+      "fact": "f:0ij7do"
+    },
+    {
+      "lines": [
+        58,
+        58
+      ],
+      "paraphrase": "No third-party identity provider is involved; sign-in proves only editor-table membership.",
+      "new-fact": "f:u1bjul"
+    },
+    {
+      "lines": [
+        60,
+        62
+      ],
+      "paraphrase": "An address not on the roster gets the same sent outcome a real editor gets.",
+      "fact": "f:s32y4a"
+    },
+    {
+      "lines": [
+        62,
+        65
+      ],
+      "paraphrase": "A repeat request inside the cooldown returns a distinct throttled status that reveals roster membership.",
+      "fact": "f:s32y4a"
+    },
+    {
+      "lines": [
+        64,
+        65
+      ],
+      "paraphrase": "The throttled signal is an accepted trade to spare an editor a flooded inbox.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        67,
+        67
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        69,
+        72
+      ],
+      "paraphrase": "The login load leaves a nonce in the pending-login cookie and the request action reuses it.",
+      "new-fact": "f:sj1kt9"
+    },
+    {
+      "lines": [
+        72,
+        74
+      ],
+      "paraphrase": "Confirm compares the nonce hash inside the same atomic DELETE that consumes the token.",
+      "fact": "f:6lmusm"
+    },
+    {
+      "lines": [
+        76,
+        78
+      ],
+      "paraphrase": "The cookie outlives the token but grants nothing once the row expires.",
+      "new-fact": "f:sj1kt9"
+    },
+    {
+      "lines": [
+        78,
+        80
+      ],
+      "paraphrase": "A late click arrives with the cookie and reads that the link expired.",
+      "new-fact": "f:9pmipf"
+    },
+    {
+      "lines": [
+        82,
+        85
+      ],
+      "paraphrase": "The binding closes a login-CSRF where an attacker link lands the editor in the attacker session.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        84,
+        85
+      ],
+      "paraphrase": "The binding stops a link-following mail scanner from spending the link.",
+      "fact": "f:5iqvmt"
+    },
+    {
+      "lines": [
+        87,
+        90
+      ],
+      "paraphrase": "The comparison is the consuming DELETE predicate, so a wrong-browser click burns nothing.",
+      "fact": "f:6lmusm"
+    },
+    {
+      "lines": [
+        91,
+        93
+      ],
+      "paraphrase": "A confirm with no cookie passes NULL; a bound row survives and an unbound row still signs in.",
+      "fact": "f:5iqvmt"
+    },
+    {
+      "lines": [
+        94,
+        95
+      ],
+      "paraphrase": "Only a bound row refusal takes the distinct no-pending-request code.",
+      "new-fact": "f:3gzxvd"
+    },
+    {
+      "lines": [
+        95,
+        96
+      ],
+      "paraphrase": "The code has its own page copy naming this browser missing pending sign-in.",
+      "new-fact": "f:9pmipf"
+    },
+    {
+      "lines": [
+        96,
+        98
+      ],
+      "paraphrase": "The engine exports the code as NO_PENDING_REQUEST_ERROR for a site own login page.",
+      "fact": "f:9uhscf"
+    },
+    {
+      "lines": [
+        100,
+        103
+      ],
+      "paraphrase": "A throttled repeat request moves the live token binding to the requesting browser.",
+      "fact": "f:91dwrk"
+    },
+    {
+      "lines": [
+        101,
+        103
+      ],
+      "paraphrase": "The rebind sends no new token or email and leaves the cooldown where it was.",
+      "new-fact": "f:uz38ef"
+    },
+    {
+      "lines": [
+        105,
+        108
+      ],
+      "paraphrase": "Rationale that the binding alone is a lockout an attacker could keep re-applying.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        110,
+        112
+      ],
+      "paraphrase": "Last-requester-wins is safe because asking alone grants nothing.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        112,
+        113
+      ],
+      "paraphrase": "A fresh request already replaced the previous token before the binding existed.",
+      "new-fact": "f:u1bjul"
+    },
+    {
+      "lines": [
+        113,
+        114
+      ],
+      "paraphrase": "Recovery is asking again, and the rebind treats requesters symmetrically.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        116,
+        122
+      ],
+      "paraphrase": "A holder of a forwarded token can rebind it inside the cooldown, so forwarding hands over an account.",
+      "new-fact": "f:678law"
+    },
+    {
+      "lines": [
+        124,
+        127
+      ],
+      "paraphrase": "The rebind skips an expired row and an unbound row and is a single UPDATE.",
+      "fact": "f:91dwrk"
+    },
+    {
+      "lines": [
+        125,
+        127
+      ],
+      "paraphrase": "A rebind racing the confirm loses cleanly whichever statement lands first.",
+      "new-fact": "f:uz38ef"
+    },
+    {
+      "lines": [
+        129,
+        131
+      ],
+      "paraphrase": "A row with a NULL nonce hash confirms from any browser.",
+      "fact": "f:5iqvmt"
+    },
+    {
+      "lines": [
+        131,
+        134
+      ],
+      "paraphrase": "Older engines, the bootstrap INSERT, and hand-seeded recovery rows write unbound rows.",
+      "new-fact": "f:an087n"
+    },
+    {
+      "lines": [
+        134,
+        137
+      ],
+      "paraphrase": "The request action writes a binding every time, so unbound rows never occur in steady state.",
+      "new-fact": "f:an087n"
+    },
+    {
+      "lines": [
+        137,
+        137
+      ],
+      "paraphrase": "An unbound row is a link a mail scanner can spend during its ten minutes.",
+      "fact": "f:5iqvmt"
+    },
+    {
+      "lines": [
+        139,
+        141
+      ],
+      "paraphrase": "A link opened in a different browser than the one that asked is refused.",
+      "fact": "f:6lmusm"
+    },
+    {
+      "lines": [
+        141,
+        142
+      ],
+      "paraphrase": "Integrity is judged worth more than the convenience of opening a link elsewhere.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        144,
+        146
+      ],
+      "paraphrase": "The nonce hash column comes from migration 0004, which must be applied before deploying.",
+      "fact": "f:jud805"
+    },
+    {
+      "lines": [
+        146,
+        148
+      ],
+      "paraphrase": "No command checks the column, so a missed migration fails the first sign-in.",
+      "fact": "f:jud805"
+    },
+    {
+      "lines": [
+        147,
+        148
+      ],
+      "paraphrase": "The nonce column allows NULL, so an emailed link survives the migration.",
+      "new-fact": "f:an087n"
+    },
+    {
+      "lines": [
+        150,
+        150
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        152,
+        155
+      ],
+      "paraphrase": "The session cookie takes the __Host- prefix on every https deploy and drops it on local http.",
+      "fact": "f:wzcgs3"
+    },
+    {
+      "lines": [
+        155,
+        157
+      ],
+      "paraphrase": "The session cookie derives Secure through the same rule as the CSRF cookie.",
+      "fact": "f:njh87y"
+    },
+    {
+      "lines": [
+        159,
+        160
+      ],
+      "paraphrase": "The CSRF cookie follows the same __Host- and Secure rules as the session cookie.",
+      "fact": "f:njh87y"
+    },
+    {
+      "lines": [
+        160,
+        176
+      ],
+      "paraphrase": "A monotonic Secure rule: https always Secure, local hosts bare, otherwise PUBLIC_ORIGIN decides.",
+      "new-fact": "f:g22dnw"
+    },
+    {
+      "lines": [
+        178,
+        182
+      ],
+      "paraphrase": "Logout deletes both name forms of both cookies.",
+      "new-fact": "f:8xxe3b"
+    },
+    {
+      "lines": [
+        184,
+        187
+      ],
+      "paraphrase": "The CSRF cookie is HttpOnly, Path slash, SameSite Lax set explicitly, with a thirty-day Max-Age.",
+      "fact": "f:9ik061"
+    },
+    {
+      "lines": [
+        189,
+        191
+      ],
+      "paraphrase": "The CSRF cookie refreshes its Max-Age at every issue; the session lifetime counts from sign-in.",
+      "new-fact": "f:0vofop"
+    },
+    {
+      "lines": [
+        191,
+        193
+      ],
+      "paraphrase": "The CSRF value rotates only at login and logout on the magic-link path.",
+      "fact": "f:9ik061"
+    },
+    {
+      "lines": [
+        193,
+        199
+      ],
+      "paraphrase": "A re-authentication through the confirm path can give another open tab one recoverable 403.",
+      "new-fact": "f:9exogy"
+    },
+    {
+      "lines": [
+        199,
+        200
+      ],
+      "paraphrase": "Under an identity gate, cairn has no login event to attach a rotation to.",
+      "new-fact": "f:8rnym5"
+    },
+    {
+      "lines": [
+        202,
+        208
+      ],
+      "paraphrase": "The identity option replaces the whole magic-link sign-in with a site-supplied gate.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        210,
+        214
+      ],
+      "paraphrase": "Cairn mints no token or session and looks the proven email up in the roster.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        216,
+        219
+      ],
+      "paraphrase": "Under identity the effective session lifetime moves to the gate, 24 hours by default.",
+      "fact": "f:2glcaf"
+    },
+    {
+      "lines": [
+        219,
+        221
+      ],
+      "paraphrase": "Set the Access session to hours because cairn has no independent timeout.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        223,
+        226
+      ],
+      "paraphrase": "The guard reads identity.resolve instead of a session cookie under identity.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        226,
+        229
+      ],
+      "paraphrase": "The session cookie is still read on logout and on a CSRF rejection, never to authenticate.",
+      "new-fact": "f:8xxe3b"
+    },
+    {
+      "lines": [
+        227,
+        229
+      ],
+      "paraphrase": "A CSRF rejection reads the session cookie only to set the presence flag.",
+      "fact": "f:diro7m"
+    },
+    {
+      "lines": [
+        229,
+        231
+      ],
+      "paraphrase": "A stale magic-link session cookie never authenticates a request under identity.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        233,
+        236
+      ],
+      "paraphrase": "hasSession on a CSRF rejection is always false under identity.",
+      "fact": "f:diro7m"
+    },
+    {
+      "lines": [
+        236,
+        239
+      ],
+      "paraphrase": "Rationale for not resolving identity ahead of the CSRF check on rejected posts.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        241,
+        244
+      ],
+      "paraphrase": "CSRF runs before session or identity resolution, so identity.resolve never runs on a refused request.",
+      "fact": "f:7qqhda"
+    },
+    {
+      "lines": [
+        246,
+        250
+      ],
+      "paraphrase": "Under identity the CSRF cookie mints on the first admin request and persists across identity changes.",
+      "new-fact": "f:8rnym5"
+    },
+    {
+      "lines": [
+        250,
+        253
+      ],
+      "paraphrase": "On a shared browser a second editor inherits the first editor CSRF token.",
+      "new-fact": "f:8rnym5"
+    },
+    {
+      "lines": [
+        253,
+        255
+      ],
+      "paraphrase": "A deliberate sign-out through cairn logout clears the CSRF cookie.",
+      "new-fact": "f:8xxe3b"
+    },
+    {
+      "lines": [
+        255,
+        258
+      ],
+      "paraphrase": "A short Access session narrows the exploit window but neither lever closes it.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        260,
+        262
+      ],
+      "paraphrase": "The email the gate proves is the sole link between gate and roster.",
+      "fact": "f:emrebl"
+    },
+    {
+      "lines": [
+        262,
+        264
+      ],
+      "paraphrase": "Enable only a login method that proves control of the asserted address.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        264,
+        267
+      ],
+      "paraphrase": "Pointer to the sign-in page for the full login-method guidance.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        269,
+        273
+      ],
+      "paraphrase": "The gate proves identity only on hostnames its application covers; another hostname admits any valid token.",
+      "new-fact": "f:jha9f7"
+    },
+    {
+      "lines": [
+        273,
+        277
+      ],
+      "paraphrase": "Close the workers.dev and preview hostnames and confirm every custom hostname is gated.",
+      "fact": "f:51uyqr"
+    },
+    {
+      "lines": [
+        279,
+        285
+      ],
+      "paraphrase": "No tool checks the workers.dev exposure gap yet; check both hostnames by hand.",
+      "fact": "f:iaqcq6"
+    },
+    {
+      "lines": [
+        285,
+        288
+      ],
+      "paraphrase": "Seed the first owner out of band before enabling identity, since the guard performs no bootstrap write.",
+      "fact": "f:qhmydf"
+    },
+    {
+      "lines": [
+        290,
+        292
+      ],
+      "paraphrase": "SvelteKit default CSRF check compares Origin with the site origin, as one global switch.",
+      "new-fact": "f:3cekcy"
+    },
+    {
+      "lines": [
+        292,
+        295
+      ],
+      "paraphrase": "A privacy-hardened browser can send no Origin on a legitimate same-origin form post.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        295,
+        296
+      ],
+      "paraphrase": "A site sets csrf checkOrigin false in svelte.config.js to hand the authority to the guard.",
+      "fact": "f:gncd64"
+    },
+    {
+      "lines": [
+        296,
+        298
+      ],
+      "paraphrase": "checkOrigin is deprecated in favor of trustedOrigins but stays supported across the tested range.",
+      "fact": "f:d2jumm"
+    },
+    {
+      "lines": [
+        298,
+        298
+      ],
+      "paraphrase": "Pointer to the supported toolchain reference.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        298,
+        303
+      ],
+      "paraphrase": "The guard enforces an Origin-independent double-submit token compared in constant time.",
+      "new-fact": "f:keuj8l"
+    },
+    {
+      "lines": [
+        303,
+        305
+      ],
+      "paraphrase": "Outside /admin the guard restores the framework Origin check the site disabled.",
+      "fact": "f:gncd64"
+    },
+    {
+      "lines": [
+        307,
+        310
+      ],
+      "paraphrase": "createAuthGuard is the handle hook and every request passes through it in a fixed order.",
+      "fact": "f:7qqhda"
+    },
+    {
+      "lines": [
+        312,
+        313
+      ],
+      "paraphrase": "Step 1 refuses closed when a deployed runtime carries the local-only flag.",
+      "new-fact": "f:tkpmxr"
+    },
+    {
+      "lines": [
+        313,
+        314
+      ],
+      "paraphrase": "Step 2 restores the Origin check outside /admin.",
+      "fact": "f:gncd64"
+    },
+    {
+      "lines": [
+        314,
+        315
+      ],
+      "paraphrase": "Step 3 shows a help page for /admin requests over plain http on non-local hosts.",
+      "new-fact": "f:n3k03a"
+    },
+    {
+      "lines": [
+        316,
+        317
+      ],
+      "paraphrase": "Step 4 names a condition when the AUTH_DB binding is missing.",
+      "new-fact": "f:n3k03a"
+    },
+    {
+      "lines": [
+        318,
+        319
+      ],
+      "paraphrase": "Step 5 accepts the double-submit field or a custom header.",
+      "new-fact": "f:keuj8l"
+    },
+    {
+      "lines": [
+        320,
+        322
+      ],
+      "paraphrase": "Step 6 attaches locals.cairnEditor and locals.cairnAccess.",
+      "new-fact": "f:n3k03a"
+    },
+    {
+      "lines": [
+        321,
+        322
+      ],
+      "paraphrase": "A site configuring identity replaces step 6 with the gate own resolution.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        324,
+        326
+      ],
+      "paraphrase": "Every refusing step but step 6 logs a named guard.refused reason.",
+      "fact": "f:7qqhda"
+    },
+    {
+      "lines": [
+        326,
+        328
+      ],
+      "paraphrase": "A missing session redirects to login without logging; identity refusals are logged.",
+      "new-fact": "f:n3k03a"
+    },
+    {
+      "lines": [
+        330,
+        332
+      ],
+      "paraphrase": "CAIRN_DEV_BACKEND is refused in two places on different terms from one shared module.",
+      "new-fact": "f:tkpmxr"
+    },
+    {
+      "lines": [
+        333,
+        336
+      ],
+      "paraphrase": "Only 1 and boolean true count as set, in either env source.",
+      "fact": "f:gh73p5"
+    },
+    {
+      "lines": [
+        336,
+        336
+      ],
+      "paraphrase": "Both places read platform.env and process.env.",
+      "new-fact": "f:tkpmxr"
+    },
+    {
+      "lines": [
+        338,
+        340
+      ],
+      "paraphrase": "The guard refuses on the flag alone, as it is mounted only in production builds.",
+      "new-fact": "f:tkpmxr"
+    },
+    {
+      "lines": [
+        340,
+        346
+      ],
+      "paraphrase": "The channel actions refuse only when the flag is set and the request is deployed, before other work.",
+      "new-fact": "f:tkpmxr"
+    },
+    {
+      "lines": [
+        348,
+        355
+      ],
+      "paraphrase": "The deployed-runtime test reads PUBLIC_ORIGIN before the request, moving only toward refusing.",
+      "new-fact": "f:i2udr5"
+    },
+    {
+      "lines": [
+        357,
+        363
+      ],
+      "paraphrase": "The tripwire cannot see a dev-shaped transport deployed with the flag unset.",
+      "new-fact": "f:irs7fg"
+    },
+    {
+      "lines": [
+        363,
+        365
+      ],
+      "paraphrase": "A dev-branch bundle that replaces the guard sits outside both refusals.",
+      "new-fact": "f:irs7fg"
+    },
+    {
+      "lines": [
+        365,
+        369
+      ],
+      "paraphrase": "CI greps a wrangler dry-run of a default build for dev-only markers.",
+      "new-fact": "f:irs7fg"
+    },
+    {
+      "lines": [
+        371,
+        374
+      ],
+      "paraphrase": "A role string resolves to one of three capabilities through the declared role vocabulary.",
+      "fact": "f:p1xmp5"
+    },
+    {
+      "lines": [
+        374,
+        376
+      ],
+      "paraphrase": "A zero-config site gets the built-in owner and editor pair.",
+      "fact": "f:grxpu5"
+    },
+    {
+      "lines": [
+        376,
+        376
+      ],
+      "paraphrase": "Capability alone gates the engine own screens.",
+      "fact": "f:p1xmp5"
+    },
+    {
+      "lines": [
+        377,
+        379
+      ],
+      "paraphrase": "The guard and the nav share one access declaration, so an unreachable route is absent from the nav.",
+      "fact": "f:vqh4a9"
+    },
+    {
+      "lines": [
+        379,
+        382
+      ],
+      "paraphrase": "requireAccess with no map entry refuses every session, owner included.",
+      "fact": "f:zo034s"
+    },
+    {
+      "lines": [
+        384,
+        386
+      ],
+      "paraphrase": "The engine screens read the map permissively.",
+      "fact": "f:vqh4a9"
+    },
+    {
+      "lines": [
+        384,
+        386
+      ],
+      "paraphrase": "A site own POST actions read the map fail-closed.",
+      "fact": "f:4q8kin"
+    },
+    {
+      "lines": [
+        388,
+        393
+      ],
+      "paraphrase": "A declared map narrows only the targets it names; only a none session is refused everywhere.",
+      "fact": "f:vqh4a9"
+    },
+    {
+      "lines": [
+        393,
+        396
+      ],
+      "paraphrase": "canReach is the one function deciding route enforcement and nav visibility.",
+      "fact": "f:vqh4a9"
+    },
+    {
+      "lines": [
+        396,
+        401
+      ],
+      "paraphrase": "An unmapped target still lets an editor save, publish, delete, upload, and change settings.",
+      "new-fact": "f:cvv6to"
+    },
+    {
+      "lines": [
+        403,
+        409
+      ],
+      "paraphrase": "The site-wide publish is open to any editor session and filters by canReach per concept.",
+      "new-fact": "f:ji8xa0"
+    },
+    {
+      "lines": [
+        411,
+        416
+      ],
+      "paraphrase": "The tidy and dictionary actions check access only when a concept parameter is present.",
+      "new-fact": "f:arr13a"
+    },
+    {
+      "lines": [
+        418,
+        423
+      ],
+      "paraphrase": "Deny-by-default needs a rule for every concept plus the four fixed engine screens.",
+      "fact": "f:hsk70g"
+    },
+    {
+      "lines": [
+        425,
+        440
+      ],
+      "paraphrase": "Snippet declaring an exhaustive access map.",
+      "fact": "f:0qb73i"
+    },
+    {
+      "lines": [
+        442,
+        444
+      ],
+      "paraphrase": "An exhaustive map closes the site-wide publish residual.",
+      "new-fact": "f:ji8xa0"
+    },
+    {
+      "lines": [
+        444,
+        446
+      ],
+      "paraphrase": "Composition warns with config.access_unmapped when a map covers only some targets.",
+      "new-fact": "f:8ciz2s"
+    },
+    {
+      "lines": [
+        448,
+        449
+      ],
+      "paraphrase": "This section gives the complete ownerOnly rule.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        450,
+        451
+      ],
+      "paraphrase": "Other pages link here rather than restating the rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        453,
+        456
+      ],
+      "paraphrase": "ownerOnly requires owner capability in addition to the map rule and only narrows.",
+      "fact": "f:smbsa6"
+    },
+    {
+      "lines": [
+        458,
+        459
+      ],
+      "paraphrase": "A target with no map rule refuses even an owner-only call.",
+      "fact": "f:4q8kin"
+    },
+    {
+      "lines": [
+        460,
+        461
+      ],
+      "paraphrase": "For a non-owner both the role list and the owner requirement must pass.",
+      "fact": "f:smbsa6"
+    },
+    {
+      "lines": [
+        463,
+        466
+      ],
+      "paraphrase": "This ownerOnly differs from the cosmetic one a navLayout entry carries.",
+      "fact": "f:zyjzeg"
+    },
+    {
+      "lines": [
+        468,
+        479
+      ],
+      "paraphrase": "authorizeAdminTarget is fail-closed at three ordered gates.",
+      "fact": "f:4q8kin"
+    },
+    {
+      "lines": [
+        481,
+        484
+      ],
+      "paraphrase": "An unmapped target is refused here, opposite to canReach, because the action opted into the map.",
+      "fact": "f:4q8kin"
+    },
+    {
+      "lines": [
+        484,
+        488
+      ],
+      "paraphrase": "createSectionAction and createAdminAction refuse with 403 through different channels and audit the refusal.",
+      "new-fact": "f:xbjxit"
+    },
+    {
+      "lines": [
+        490,
+        496
+      ],
+      "paraphrase": "Every admin response carries the fixed security headers and Cache-Control private, no-store.",
+      "fact": "f:ubuj1w"
+    },
+    {
+      "lines": [
+        497,
+        499
+      ],
+      "paraphrase": "A rejection response sends no HSTS header at all.",
+      "new-fact": "f:t976f1"
+    },
+    {
+      "lines": [
+        501,
+        504
+      ],
+      "paraphrase": "Mount every token-issuing load under /admin since the headers apply only there.",
+      "new-fact": "f:horkxq"
+    },
+    {
+      "lines": [
+        506,
+        507
+      ],
+      "paraphrase": "no-referrer is scoped to /admin, never a site-wide default.",
+      "new-fact": "f:ix10bm"
+    },
+    {
+      "lines": [
+        507,
+        510
+      ],
+      "paraphrase": "A blanket no-referrer strips Origin from a same-origin form POST so it arrives as null.",
+      "new-fact": "f:x2stjk"
+    },
+    {
+      "lines": [
+        510,
+        514
+      ],
+      "paraphrase": "originMatches stays a strict compare and rejects an Origin null request outside /admin.",
+      "new-fact": "f:ix10bm"
+    },
+    {
+      "lines": [
+        513,
+        514
+      ],
+      "paraphrase": "cairn doctor flags a blanket no-referrer heuristically.",
+      "new-fact": "f:qbfriw"
+    },
+    {
+      "lines": [
+        516,
+        518
+      ],
+      "paraphrase": "no-referrer is safe on /admin because its CSRF protection is the double-submit token.",
+      "fact": "f:gncd64"
+    },
+    {
+      "lines": [
+        518,
+        520
+      ],
+      "paraphrase": "Non-admin routes and every createAuthChannel action rely on the origin compare alone.",
+      "new-fact": "f:ix10bm"
+    },
+    {
+      "lines": [
+        520,
+        522
+      ],
+      "paraphrase": "Serve strict-origin-when-cross-origin or same-origin and scope no-referrer to double-submit routes.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        522,
+        524
+      ],
+      "paraphrase": "The same-origin policy still drops Referer cross-origin but keeps the true Origin on same-origin POSTs.",
+      "new-fact": "f:x2stjk"
+    },
+    {
+      "lines": [
+        526,
+        526
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        528,
+        529
+      ],
+      "paraphrase": "/admin carries no full Content-Security-Policy.",
+      "fact": "f:yzbvk4"
+    },
+    {
+      "lines": [
+        529,
+        530
+      ],
+      "paraphrase": "The nonce machinery a correct CSP needs threads through the site own SvelteKit config.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        530,
+        532
+      ],
+      "paraphrase": "The threat a CSP would add coverage for is low value against git-audited content.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        532,
+        534
+      ],
+      "paraphrase": "The reasoning assumes the roster; under identity the admitted population can be broader.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        533,
+        534
+      ],
+      "paraphrase": "The XSS surface that matters is governed on the public render path.",
+      "fact": "f:yzbvk4"
+    },
+    {
+      "lines": [
+        536,
+        536
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        538,
+        540
+      ],
+      "paraphrase": "Publishing authenticates as the site own GitHub App with a single Worker secret key.",
+      "fact": "f:kkp5bi"
+    },
+    {
+      "lines": [
+        540,
+        543
+      ],
+      "paraphrase": "Pointers to the key rotation page and the auth crypto reference.",
+      "cut": "navigation"
+    }
+  ]
+}

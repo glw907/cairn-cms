@@ -1,0 +1,366 @@
+{
+  "page": "docs/extend/restrict-admin-access.md",
+  "blob": "128ac87015ae22c1bf5047cbd5ca401d00e25d12",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The sidebar and every route agree on the access map in one place.",
+      "fact": "f:vqh4a9"
+    },
+    {
+      "lines": [
+        6,
+        9
+      ],
+      "paraphrase": "Capability is the enforced floor and the access map only narrows it, never widens.",
+      "fact": "f:p1xmp5"
+    },
+    {
+      "lines": [
+        11,
+        13
+      ],
+      "paraphrase": "If the adapter declares roles with defineRoles, pass that same value to defineAccess.",
+      "fact": "f:grxpu5"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "Pointer to a worked example on another page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        13,
+        16
+      ],
+      "paraphrase": "With no declared vocabulary, pass undefined and the map validates against the owner and editor pair.",
+      "fact": "f:grxpu5"
+    },
+    {
+      "lines": [
+        18,
+        18
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        20,
+        33
+      ],
+      "paraphrase": "Snippet declaring an access map keyed by concept, screen, and route path.",
+      "fact": "f:0qb73i"
+    },
+    {
+      "lines": [
+        35,
+        41
+      ],
+      "paraphrase": "A key is a screen id or an /admin route path; its value is the admitted role names; an owner always reaches it.",
+      "fact": "f:0qb73i"
+    },
+    {
+      "lines": [
+        43,
+        45
+      ],
+      "paraphrase": "Pass the same access value to the adapter access member and to createAuthGuard.",
+      "fact": "f:iwf4nu"
+    },
+    {
+      "lines": [
+        47,
+        54
+      ],
+      "paraphrase": "Snippet handing roles and access to createAuthGuard in hooks.server.ts.",
+      "new-fact": "f:gun084"
+    },
+    {
+      "lines": [
+        56,
+        57
+      ],
+      "paraphrase": "Other Handle functions chain with sequence from the SvelteKit hooks module.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        57,
+        58
+      ],
+      "paraphrase": "createAuthGuard is the handler that attaches locals.cairnAccess.",
+      "fact": "f:iwf4nu"
+    },
+    {
+      "lines": [
+        57,
+        58
+      ],
+      "paraphrase": "Every downstream requireAccess call reads locals.cairnAccess.",
+      "new-fact": "f:8anql1"
+    },
+    {
+      "lines": [
+        60,
+        61
+      ],
+      "paraphrase": "The guard sets locals.cairnAccess from the map on each request, next to the editor.",
+      "fact": "f:iwf4nu"
+    },
+    {
+      "lines": [
+        63,
+        63
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        65,
+        65
+      ],
+      "paraphrase": "Call requireAccess in the route load.",
+      "new-fact": "f:8anql1"
+    },
+    {
+      "lines": [
+        67,
+        75
+      ],
+      "paraphrase": "Snippet calling requireAccess in a load and returning the editor display name.",
+      "new-fact": "f:8anql1"
+    },
+    {
+      "lines": [
+        77,
+        78
+      ],
+      "paraphrase": "requireAccess checks the route id by default, not the request URL, which is attacker-chosen.",
+      "fact": "f:54d3ui"
+    },
+    {
+      "lines": [
+        78,
+        81
+      ],
+      "paraphrase": "The default target drops route groups; declare target for a multi-section or rest-parameter route.",
+      "new-fact": "f:8anql1"
+    },
+    {
+      "lines": [
+        83,
+        87
+      ],
+      "paraphrase": "An unmapped route refuses every session, owner included, while an unmapped engine screen stays open.",
+      "fact": "f:zo034s"
+    },
+    {
+      "lines": [
+        88,
+        89
+      ],
+      "paraphrase": "A route wanting any-editor behavior should call requireSession or requireEditor instead.",
+      "new-fact": "f:8anql1"
+    },
+    {
+      "lines": [
+        91,
+        94
+      ],
+      "paraphrase": "createSectionAction already runs the same access check before its handler.",
+      "new-fact": "f:3s23un"
+    },
+    {
+      "lines": [
+        91,
+        92
+      ],
+      "paraphrase": "A site action authorizes fail-closed against the map.",
+      "fact": "f:4q8kin"
+    },
+    {
+      "lines": [
+        94,
+        96
+      ],
+      "paraphrase": "A guarded load protecting a read leaves the page own POST action unprotected.",
+      "fact": "f:5pyozi"
+    },
+    {
+      "lines": [
+        98,
+        100
+      ],
+      "paraphrase": "Restricting media also restricts the inline image picker in every image-bearing concept.",
+      "fact": "f:iewhzh"
+    },
+    {
+      "lines": [
+        102,
+        102
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        104,
+        107
+      ],
+      "paraphrase": "createSectionAction and createAdminAction accept an ownerOnly option that is a real authorization check.",
+      "fact": "f:smbsa6"
+    },
+    {
+      "lines": [
+        106,
+        107
+      ],
+      "paraphrase": "The navLayout ownerOnly is cosmetic and gates nothing on its own.",
+      "fact": "f:zyjzeg"
+    },
+    {
+      "lines": [
+        107,
+        110
+      ],
+      "paraphrase": "The action ownerOnly requires owner in addition to the map rule and only ever narrows.",
+      "fact": "f:smbsa6"
+    },
+    {
+      "lines": [
+        110,
+        112
+      ],
+      "paraphrase": "Pointer to the security model page for the two cases.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        114,
+        129
+      ],
+      "paraphrase": "Snippet declaring a section action with action, entity, and ownerOnly.",
+      "new-fact": "f:3s23un"
+    },
+    {
+      "lines": [
+        131,
+        133
+      ],
+      "paraphrase": "Pointer to the security model page for the full check order.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        135,
+        135
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        137,
+        138
+      ],
+      "paraphrase": "The navLayout seam reads the same access map for visibility.",
+      "new-fact": "f:altcjp"
+    },
+    {
+      "lines": [
+        138,
+        140
+      ],
+      "paraphrase": "An unmapped href or a hidden engine reference removes a door from the sidebar.",
+      "new-fact": "f:dmlclv"
+    },
+    {
+      "lines": [
+        138,
+        139
+      ],
+      "paraphrase": "A hidden engine reference drops a sidebar door yet remains navigation, not authorization.",
+      "fact": "f:bvfs3e"
+    },
+    {
+      "lines": [
+        139,
+        142
+      ],
+      "paraphrase": "An editor who knows a hidden route URL still reaches it unless the map also refuses it.",
+      "fact": "f:bvfs3e"
+    },
+    {
+      "lines": [
+        140,
+        142
+      ],
+      "paraphrase": "Deny at the route first; the nav seam is never a substitute.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        144,
+        144
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        146,
+        148
+      ],
+      "paraphrase": "A non-owner outside the named roles gets a 403 from the load on that route.",
+      "new-fact": "f:8anql1"
+    },
+    {
+      "lines": [
+        146,
+        148
+      ],
+      "paraphrase": "The same session is refused on an action of that route.",
+      "fact": "f:4q8kin"
+    },
+    {
+      "lines": [
+        146,
+        148
+      ],
+      "paraphrase": "The same session never sees the sidebar entry for that route.",
+      "new-fact": "f:altcjp"
+    },
+    {
+      "lines": [
+        148,
+        149
+      ],
+      "paraphrase": "A session inside the roles reaches the screen, and an owner reaches it whatever the list.",
+      "fact": "f:p1xmp5"
+    },
+    {
+      "lines": [
+        149,
+        151
+      ],
+      "paraphrase": "Confirm the denial, the hide, and the owner bypass on at least one restricted route.",
+      "cut": "stance-without-owner-basis"
+    }
+  ]
+}

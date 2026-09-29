@@ -1,0 +1,270 @@
+{
+  "page": "docs/extend/organize-your-admin-nav.md",
+  "blob": "4dec8a4f4d2bbdcb65ccd3a2f7abe02cd17c110b",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "navLayout declares the whole sidebar as one ordered tree of engine references, site entries, and sections.",
+      "fact": "f:nvpcmk"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "An engine screen can be relabeled, reordered, or hidden.",
+      "new-fact": "f:rwefuj"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "A role gate hides what a given role should not see.",
+      "fact": "f:qzbfrd"
+    },
+    {
+      "lines": [
+        7,
+        8
+      ],
+      "paraphrase": "navLayout is declared on the adapter editor group in cairn.config.ts.",
+      "fact": "f:ys1iq1"
+    },
+    {
+      "lines": [
+        8,
+        11
+      ],
+      "paraphrase": "A site declaring no navLayout gets a flat, unsectioned list of concepts and engine screens.",
+      "fact": "f:ys1iq1"
+    },
+    {
+      "lines": [
+        8,
+        11
+      ],
+      "paraphrase": "The default and a declared layout resolve through the same primitives, so they never drift.",
+      "new-fact": "f:18d9so"
+    },
+    {
+      "lines": [
+        13,
+        13
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        15,
+        17
+      ],
+      "paraphrase": "navLayout mixes three node kinds: engine reference, site entry, and one-level section.",
+      "fact": "f:nvpcmk"
+    },
+    {
+      "lines": [
+        19,
+        19
+      ],
+      "paraphrase": "Doc-tooling comment explaining why the snippet elides adapter groups.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        20,
+        42
+      ],
+      "paraphrase": "Snippet declaring a layout with engine references, a section, and site entries.",
+      "fact": "f:nvpcmk"
+    },
+    {
+      "lines": [
+        44,
+        45
+      ],
+      "paraphrase": "An engine reference names a declared concept or one of the six fixed utility screens.",
+      "fact": "f:jsig0m"
+    },
+    {
+      "lines": [
+        45,
+        46
+      ],
+      "paraphrase": "A site entry has label, icon, and href and links one of the site own admin routes.",
+      "fact": "f:nvpcmk"
+    },
+    {
+      "lines": [
+        46,
+        47
+      ],
+      "paraphrase": "A site entry icon must come from the bundled NavIcon allowlist.",
+      "fact": "f:s4kynf"
+    },
+    {
+      "lines": [
+        47,
+        48
+      ],
+      "paraphrase": "A section groups a mix of engine references and site entries under one label.",
+      "fact": "f:nvpcmk"
+    },
+    {
+      "lines": [
+        50,
+        53
+      ],
+      "paraphrase": "The whole tree validates once at composition and a bad value fails the build with a navLayout-prefixed message.",
+      "fact": "f:ld6xam"
+    },
+    {
+      "lines": [
+        55,
+        55
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        57,
+        61
+      ],
+      "paraphrase": "A screen the tree never references still renders in a trailing fallback group in engine order.",
+      "fact": "f:yf1rrr"
+    },
+    {
+      "lines": [
+        63,
+        64
+      ],
+      "paraphrase": "Referencing a screen with hidden true removes its door from the sidebar.",
+      "fact": "f:yf1rrr"
+    },
+    {
+      "lines": [
+        65,
+        67
+      ],
+      "paraphrase": "Snippet hiding the vocabulary screen.",
+      "fact": "f:yf1rrr"
+    },
+    {
+      "lines": [
+        69,
+        72
+      ],
+      "paraphrase": "Hiding a screen is navigation, never authorization; the access map must deny the route.",
+      "fact": "f:bvfs3e"
+    },
+    {
+      "lines": [
+        74,
+        78
+      ],
+      "paraphrase": "A section collapsed setting applies only until a visitor toggles; then the cookie wins in both directions.",
+      "fact": "f:542r4m"
+    },
+    {
+      "lines": [
+        78,
+        80
+      ],
+      "paraphrase": "A section added later renders open for a visitor who already has the cookie.",
+      "new-fact": "f:pgwmi4"
+    },
+    {
+      "lines": [
+        82,
+        85
+      ],
+      "paraphrase": "A section roles list gates every child and only narrows; a site entry can carry its own roles.",
+      "fact": "f:qzbfrd"
+    },
+    {
+      "lines": [
+        87,
+        96
+      ],
+      "paraphrase": "Snippet with a roles-gated section and a stricter roles list on one entry.",
+      "fact": "f:qzbfrd"
+    },
+    {
+      "lines": [
+        98,
+        99
+      ],
+      "paraphrase": "The example shows the section to two roles and Payroll to one.",
+      "fact": "f:qzbfrd"
+    },
+    {
+      "lines": [
+        99,
+        101
+      ],
+      "paraphrase": "ownerOnly on a site entry is cosmetic; the route must still gate server-side.",
+      "fact": "f:zyjzeg"
+    },
+    {
+      "lines": [
+        103,
+        103
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        105,
+        105
+      ],
+      "paraphrase": "The declared order renders as written.",
+      "fact": "f:nvpcmk"
+    },
+    {
+      "lines": [
+        105,
+        106
+      ],
+      "paraphrase": "Sections collapse and remember their state across a reload.",
+      "fact": "f:542r4m"
+    },
+    {
+      "lines": [
+        106,
+        107
+      ],
+      "paraphrase": "A screen not mentioned still shows in the fallback group.",
+      "fact": "f:yf1rrr"
+    },
+    {
+      "lines": [
+        107,
+        108
+      ],
+      "paraphrase": "A role outside a gated section or entry no longer sees it in the sidebar.",
+      "fact": "f:qzbfrd"
+    },
+    {
+      "lines": [
+        108,
+        110
+      ],
+      "paraphrase": "A navLayout gate only controls what renders; the route must refuse the request itself.",
+      "fact": "f:bvfs3e"
+    }
+  ]
+}

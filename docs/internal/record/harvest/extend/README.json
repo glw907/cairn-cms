@@ -1,0 +1,270 @@
+{
+  "page": "docs/extend/README.md",
+  "blob": "869a26bb6be106caa55dc39876c01203729325af",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        6
+      ],
+      "paraphrase": "Intended reader is a Svelte-fluent developer extending cairn for an organization site.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        8,
+        12
+      ],
+      "paraphrase": "Pointers to the editor, admin, and evaluator pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        16,
+        17
+      ],
+      "paraphrase": "Every page assumes a working adapter declaring concepts, the GitHub target, and a render function.",
+      "new-fact": "f:2zytgf"
+    },
+    {
+      "lines": [
+        17,
+        22
+      ],
+      "paraphrase": "Two starting points that produce a working adapter.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        24,
+        34
+      ],
+      "paraphrase": "Index entries for the deep path and the first building blocks.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        35,
+        42
+      ],
+      "paraphrase": "Index entries for the remaining building blocks.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        44,
+        54
+      ],
+      "paraphrase": "Index of the admin surface pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        56,
+        59
+      ],
+      "paraphrase": "Index entry for the design page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        61,
+        66
+      ],
+      "paraphrase": "Index of the publishing-flow pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        68,
+        68
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        70,
+        72
+      ],
+      "paraphrase": "Every export carries one of three tiers; Extension and Scaffold are frozen and Unstable has no promise.",
+      "fact": "f:c1ujrl"
+    },
+    {
+      "lines": [
+        72,
+        75
+      ],
+      "paraphrase": "Tier membership and definitions live in the reference index.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        77,
+        78
+      ],
+      "paraphrase": "The tiers are a target discipline because cairn is still 0.x.",
+      "new-fact": "f:549u00"
+    },
+    {
+      "lines": [
+        78,
+        81
+      ],
+      "paraphrase": "A documented seam broke twice inside the Extension tier, at 0.86.0 and 0.94.0.",
+      "fact": "f:zm9tp4"
+    },
+    {
+      "lines": [
+        82,
+        84
+      ],
+      "paraphrase": "Until 1.0 each version bump deserves verification as a genuine upgrade.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        86,
+        89
+      ],
+      "paraphrase": "Index of the operate-across-versions pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        91,
+        100
+      ],
+      "paraphrase": "Index of the concept pages with a short lead-in.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        102,
+        105
+      ],
+      "paraphrase": "Lead-in saying the vocabulary terms carry one meaning across the docs.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        107,
+        108
+      ],
+      "paraphrase": "A concept is a content kind the adapter declares: a directory of markdown files plus a fieldset.",
+      "new-fact": "f:5eum60"
+    },
+    {
+      "lines": [
+        109,
+        111
+      ],
+      "paraphrase": "The adapter is the one object cairn.config.ts builds and the engine reads.",
+      "new-fact": "f:2zytgf"
+    },
+    {
+      "lines": [
+        112,
+        114
+      ],
+      "paraphrase": "Render is the createRenderer function that the admin preview and every public page call.",
+      "new-fact": "f:qvj951"
+    },
+    {
+      "lines": [
+        115,
+        117
+      ],
+      "paraphrase": "A seam is a documented extension point carrying a stability tier and a compatibility promise.",
+      "fact": "f:c1ujrl"
+    },
+    {
+      "lines": [
+        118,
+        119
+      ],
+      "paraphrase": "An island is a Svelte component hydrated inside static output and declared through an IslandRegistry.",
+      "new-fact": "f:keo8ze"
+    },
+    {
+      "lines": [
+        120,
+        122
+      ],
+      "paraphrase": "A save waits on the holding branch until a deliberate Publish copies it to the default branch.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        123,
+        123
+      ],
+      "paraphrase": "The manifest is the committed JSON index with one row per entry.",
+      "fact": "f:t5ebsr"
+    },
+    {
+      "lines": [
+        123,
+        124
+      ],
+      "paraphrase": "The admin and the delivery layer read the manifest instead of crawling the repository.",
+      "new-fact": "f:n520j9"
+    },
+    {
+      "lines": [
+        124,
+        125
+      ],
+      "paraphrase": "A build regenerates and verifies the manifest.",
+      "fact": "f:t5ebsr"
+    },
+    {
+      "lines": [
+        125,
+        125
+      ],
+      "paraphrase": "A save patches the manifest one changed row.",
+      "new-fact": "f:byoi1w"
+    },
+    {
+      "lines": [
+        126,
+        128
+      ],
+      "paraphrase": "A role is a site-defined name and a capability is one of none, editor, or owner.",
+      "fact": "f:3pposq"
+    },
+    {
+      "lines": [
+        126,
+        128
+      ],
+      "paraphrase": "Every role resolves to a capability that the engine gates check.",
+      "fact": "f:p1xmp5"
+    },
+    {
+      "lines": [
+        130,
+        140
+      ],
+      "paraphrase": "Pointers from the extend track to shared reference and admin pages.",
+      "cut": "navigation"
+    }
+  ]
+}

@@ -1,0 +1,678 @@
+{
+  "page": "docs/extend/sign-in-through-your-organization.md",
+  "blob": "31fa67faa774c5e05e5ff867d4ca42dca170041a",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "By default an editor proves who they are by clicking an emailed link.",
+      "fact": "f:0ij7do"
+    },
+    {
+      "lines": [
+        4,
+        6
+      ],
+      "paraphrase": "An organization on Workspace or Entra maintains a second identity system beside its directory.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        6,
+        8
+      ],
+      "paraphrase": "A gate in front of /admin replaces the magic link and the roster trusts what the gate says.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        9,
+        10
+      ],
+      "paraphrase": "The recipe needs a Cloudflare account with Zero Trust and an identity provider.",
+      "new-fact": "f:agif8l"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "The Access application fronts all of /admin; there is no partial adoption alongside magic links.",
+      "fact": "f:v5ndhs"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        16,
+        18
+      ],
+      "paraphrase": "Access sits in front of the Worker and refuses a request before it reaches cairn.",
+      "new-fact": "f:agif8l"
+    },
+    {
+      "lines": [
+        18,
+        21
+      ],
+      "paraphrase": "Create a self-hosted Access application scoped to the site hostname covering /admin.",
+      "new-fact": "f:agif8l"
+    },
+    {
+      "lines": [
+        21,
+        25
+      ],
+      "paraphrase": "Google Workspace and Entra ID each have their own dedicated connector.",
+      "new-fact": "f:agif8l"
+    },
+    {
+      "lines": [
+        26,
+        27
+      ],
+      "paraphrase": "Follow Cloudflare own steps since its console layout changes faster than a copy would stay true.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        29,
+        31
+      ],
+      "paraphrase": "Every Access application has an AUD tag, distinct from its id, which the verifier validates against.",
+      "fact": "f:gs23fb"
+    },
+    {
+      "lines": [
+        30,
+        31
+      ],
+      "paraphrase": "The AUD tag is found on the application Overview tab.",
+      "new-fact": "f:waqteu"
+    },
+    {
+      "lines": [
+        33,
+        33
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        35,
+        37
+      ],
+      "paraphrase": "The roster still decides who may edit by email and the gate only proves an email.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        35,
+        37
+      ],
+      "paraphrase": "The gate never assigns a role; a proven email with no roster row is refused.",
+      "new-fact": "f:hilyos"
+    },
+    {
+      "lines": [
+        37,
+        41
+      ],
+      "paraphrase": "Every roster email must match the primary address the IdP asserts, or that editor is locked out.",
+      "fact": "f:g0206o"
+    },
+    {
+      "lines": [
+        43,
+        43
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        45,
+        47
+      ],
+      "paraphrase": "The gate-proven email alone joins the gate to the roster.",
+      "fact": "f:emrebl"
+    },
+    {
+      "lines": [
+        47,
+        49
+      ],
+      "paraphrase": "An Access application guarantee is only as strong as its weakest enabled login method.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        49,
+        50
+      ],
+      "paraphrase": "Enable only a method that proves control of the asserted address.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        50,
+        52
+      ],
+      "paraphrase": "Cloudflare one-time PIN is available as a fallback login method.",
+      "new-fact": "f:agif8l"
+    },
+    {
+      "lines": [
+        54,
+        60
+      ],
+      "paraphrase": "Never enable a social provider or generic OIDC whose email claim the user can edit.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        55,
+        56
+      ],
+      "paraphrase": "Cairn has no means to distinguish directory-asserted from self-asserted addresses.",
+      "fact": "f:emrebl"
+    },
+    {
+      "lines": [
+        62,
+        62
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        64,
+        66
+      ],
+      "paraphrase": "Two admission lists, the Access application and the roster, are never reconciled automatically.",
+      "fact": "f:k40l86"
+    },
+    {
+      "lines": [
+        66,
+        68
+      ],
+      "paraphrase": "Group membership is unreliable on the token, so the seam does no group-to-role mapping.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        68,
+        69
+      ],
+      "paraphrase": "Removing someone from the directory blocks the gate; removing from the roster blocks cairn.",
+      "fact": "f:k40l86"
+    },
+    {
+      "lines": [
+        69,
+        70
+      ],
+      "paraphrase": "Review both lists when someone standing changes.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        71,
+        73
+      ],
+      "paraphrase": "The free Zero Trust plan is capped by editors authenticating through Access, not by roster size.",
+      "fact": "f:4olp4u"
+    },
+    {
+      "lines": [
+        74,
+        78
+      ],
+      "paraphrase": "Seed the first owner before enabling identity, since identity mode cannot bootstrap one.",
+      "fact": "f:qhmydf"
+    },
+    {
+      "lines": [
+        79,
+        80
+      ],
+      "paraphrase": "No Cloudflare cache rule may match /admin.",
+      "fact": "f:zt0oag"
+    },
+    {
+      "lines": [
+        81,
+        84
+      ],
+      "paraphrase": "The application covers /admin, every path beneath it, and the SvelteKit data-only fetch.",
+      "fact": "f:vnm1p5"
+    },
+    {
+      "lines": [
+        84,
+        85
+      ],
+      "paraphrase": "The application must not cover the /preview token route.",
+      "fact": "f:vnm1p5"
+    },
+    {
+      "lines": [
+        85,
+        88
+      ],
+      "paraphrase": "Access resolves overlapping rules most specific first, so check the resolved rule after any change.",
+      "fact": "f:vnm1p5"
+    },
+    {
+      "lines": [
+        89,
+        91
+      ],
+      "paraphrase": "Leave the application CORS settings off so the CSRF header cannot be set cross-origin.",
+      "fact": "f:0gltjq"
+    },
+    {
+      "lines": [
+        92,
+        95
+      ],
+      "paraphrase": "A hostname reaching the Worker without the gate admits anyone holding a valid token.",
+      "fact": "f:jha9f7"
+    },
+    {
+      "lines": [
+        95,
+        112
+      ],
+      "paraphrase": "Set workers_dev false and preview_urls false, and cover every custom hostname with the application.",
+      "fact": "f:51uyqr"
+    },
+    {
+      "lines": [
+        102,
+        106
+      ],
+      "paraphrase": "An Access application can instead gate the workers.dev and preview hostnames directly.",
+      "fact": "f:51uyqr"
+    },
+    {
+      "lines": [
+        111,
+        112
+      ],
+      "paraphrase": "No tool checks the workers.dev and preview exposure until a later 1.x release.",
+      "fact": "f:iaqcq6"
+    },
+    {
+      "lines": [
+        112,
+        116
+      ],
+      "paraphrase": "Check by hand with an unauthenticated GET of the workers.dev and preview hostnames.",
+      "fact": "f:iaqcq6"
+    },
+    {
+      "lines": [
+        116,
+        119
+      ],
+      "paraphrase": "A site rate limit is worth having because an ungated /admin spends an RSA verification per request.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        120,
+        124
+      ],
+      "paraphrase": "Never branch inside resolve for local development; swap the whole guard behind a build-time conditional.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        123,
+        124
+      ],
+      "paraphrase": "The showcase hooks file swaps its dev backend in behind a build-time conditional.",
+      "new-fact": "f:eiaqkh"
+    },
+    {
+      "lines": [
+        126,
+        131
+      ],
+      "paraphrase": "Cairn ships no OIDC client and does not depend on jose, so nothing typechecks the recipe.",
+      "fact": "f:lyaf6p"
+    },
+    {
+      "lines": [
+        133,
+        136
+      ],
+      "paraphrase": "The recipe imports the IdentityResolver types from the sveltekit subpath.",
+      "fact": "f:3p8yu8"
+    },
+    {
+      "lines": [
+        138,
+        153
+      ],
+      "paraphrase": "Recipe constants for the team domain and AUD tag with two import-time guards.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        155,
+        165
+      ],
+      "paraphrase": "Recipe JWKS setup with explicit timing options.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        167,
+        172
+      ],
+      "paraphrase": "The resolver reads the assertion header, never the CF_Authorization cookie.",
+      "fact": "f:42fdqq"
+    },
+    {
+      "lines": [
+        173,
+        181
+      ],
+      "paraphrase": "The resolver object has logoutUrl, label, and resolve, and refuses a missing assertion.",
+      "fact": "f:3p8yu8"
+    },
+    {
+      "lines": [
+        182,
+        196
+      ],
+      "paraphrase": "Recipe jwtVerify call with issuer, audience, and RS256.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        198,
+        202
+      ],
+      "paraphrase": "The token type claim is observed on real tokens but not documented.",
+      "new-fact": "f:0t56uj"
+    },
+    {
+      "lines": [
+        198,
+        205
+      ],
+      "paraphrase": "The recipe checks the type is app, not the org session token.",
+      "fact": "f:zas1dk"
+    },
+    {
+      "lines": [
+        206,
+        211
+      ],
+      "paraphrase": "A service-token request has no email and the recipe refuses it.",
+      "fact": "f:zas1dk"
+    },
+    {
+      "lines": [
+        213,
+        215
+      ],
+      "paraphrase": "The resolver returns ok true with the token email.",
+      "fact": "f:3p8yu8"
+    },
+    {
+      "lines": [
+        217,
+        224
+      ],
+      "paraphrase": "A certs outage logs as an operator fault rather than a wave of forged tokens.",
+      "new-fact": "f:fu4uis"
+    },
+    {
+      "lines": [
+        225,
+        252
+      ],
+      "paraphrase": "Recipe mapping of jose error codes onto refusal reasons.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        254,
+        256
+      ],
+      "paraphrase": "identity.resolve runs on every guarded admin request, never on the public login and auth paths.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        256,
+        258
+      ],
+      "paraphrase": "The assertion is the only proof, so there is no session to cache it against.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        258,
+        264
+      ],
+      "paraphrase": "audience, issuer, keys, and error are operator faults; guard.refused carries the split as its level.",
+      "new-fact": "f:fu4uis"
+    },
+    {
+      "lines": [
+        266,
+        269
+      ],
+      "paraphrase": "The verifier is handed to createAuthGuard identity option and composes with sequence.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        271,
+        277
+      ],
+      "paraphrase": "Snippet wiring the verifier into hooks.server.ts.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        279,
+        283
+      ],
+      "paraphrase": "The gate says who; the resolver returns no role and the guard requests none.",
+      "new-fact": "f:hilyos"
+    },
+    {
+      "lines": [
+        283,
+        285
+      ],
+      "paraphrase": "A proven identity with no roster row is refused and adding the row works on the next request.",
+      "new-fact": "f:hilyos"
+    },
+    {
+      "lines": [
+        287,
+        287
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        289,
+        291
+      ],
+      "paraphrase": "Under identity cairn logout clears its cookies and redirects to logoutUrl.",
+      "fact": "f:8xxe3b"
+    },
+    {
+      "lines": [
+        291,
+        296
+      ],
+      "paraphrase": "A stale tab after the gate session ended shows the identity-unresolved page.",
+      "new-fact": "f:ig5pn3"
+    },
+    {
+      "lines": [
+        296,
+        300
+      ],
+      "paraphrase": "Access logout clears the cookie at once and stops accepting tokens in 20 to 30 seconds.",
+      "fact": "f:q0icwk"
+    },
+    {
+      "lines": [
+        299,
+        300
+      ],
+      "paraphrase": "An administrator revocation locks the user out for up to a minute.",
+      "fact": "f:q0icwk"
+    },
+    {
+      "lines": [
+        300,
+        305
+      ],
+      "paraphrase": "The recipe never checks Access revocation, so an issued token stays valid until its exp.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        303,
+        307
+      ],
+      "paraphrase": "Under identity, the Access session duration acts as the actual admin session lifetime.",
+      "fact": "f:2glcaf"
+    },
+    {
+      "lines": [
+        306,
+        309
+      ],
+      "paraphrase": "Set the session to hours and prefer the roster delete to remove someone right now.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        307,
+        309
+      ],
+      "paraphrase": "A roster delete takes effect on the very next request whatever the gate session.",
+      "fact": "f:fhit7f"
+    },
+    {
+      "lines": [
+        311,
+        316
+      ],
+      "paraphrase": "The identity types sit in the Unstable API tier, recorded on the reference page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        314,
+        316
+      ],
+      "paraphrase": "The first production consumer promotes the seam to the frozen tier.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        318,
+        320
+      ],
+      "paraphrase": "Nothing about the seam is Cloudflare-specific.",
+      "fact": "f:3p8yu8"
+    },
+    {
+      "lines": [
+        320,
+        324
+      ],
+      "paraphrase": "identity takes any IdentityResolver with a resolve and a logoutUrl, so another proxy can implement it.",
+      "fact": "f:3p8yu8"
+    },
+    {
+      "lines": [
+        326,
+        329
+      ],
+      "paraphrase": "A reader replacing sign-in probably evaluates the entire authentication surface.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        331,
+        331
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        333,
+        336
+      ],
+      "paraphrase": "Magic-link mode sends through Cloudflare Email Sending unless auth.send supplies a sender.",
+      "new-fact": "f:lbetsq"
+    },
+    {
+      "lines": [
+        336,
+        338
+      ],
+      "paraphrase": "The custom sender receives the same message the built-in sender receives.",
+      "new-fact": "f:lbetsq"
+    },
+    {
+      "lines": [
+        340,
+        340
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        342,
+        344
+      ],
+      "paraphrase": "A BackendProvider commits every concept; the adapter backend carries its kind and default branch.",
+      "new-fact": "f:gcd8h7"
+    },
+    {
+      "lines": [
+        344,
+        347
+      ],
+      "paraphrase": "createGithubApp is the one provider cairn ships; another store implements BackendProvider itself.",
+      "fact": "f:n1om0r"
+    }
+  ]
+}

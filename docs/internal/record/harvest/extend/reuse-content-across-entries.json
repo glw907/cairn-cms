@@ -1,0 +1,286 @@
+{
+  "page": "docs/extend/reuse-content-across-entries.md",
+  "blob": "dadf47b3de6c5c7ee168d40bb96ca4e05ed7bd32",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "A fragment is markdown written once and included verbatim in other entries.",
+      "fact": "f:880bg6"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "Precondition pointer to the adapter page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        10
+      ],
+      "paraphrase": "Examples of a repeated safety notice and a shared pricing table.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        10,
+        11
+      ],
+      "paraphrase": "A block of markdown that belongs in several places is a fragment.",
+      "fact": "f:880bg6"
+    },
+    {
+      "lines": [
+        10,
+        11
+      ],
+      "paraphrase": "A fragment updates everywhere once it changes.",
+      "new-fact": "f:72pqil"
+    },
+    {
+      "lines": [
+        13,
+        13
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        15,
+        15
+      ],
+      "paraphrase": "fragments is a reserved concept key and declaring it turns on the include directive.",
+      "fact": "f:ojydmz"
+    },
+    {
+      "lines": [
+        17,
+        27
+      ],
+      "paraphrase": "Snippet declaring a fragments concept with embedded routing.",
+      "fact": "f:7wiuwr"
+    },
+    {
+      "lines": [
+        29,
+        29
+      ],
+      "paraphrase": "Doc-tooling comment explaining why the snippet elides adapter groups.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        30,
+        35
+      ],
+      "paraphrase": "Snippet adding the fragments concept to the adapter content.",
+      "fact": "f:ojydmz"
+    },
+    {
+      "lines": [
+        37,
+        37
+      ],
+      "paraphrase": "A fragments concept must use embedded routing or defineConcept throws.",
+      "fact": "f:7wiuwr"
+    },
+    {
+      "lines": [
+        37,
+        38
+      ],
+      "paraphrase": "An embedded concept entry has no public page of its own.",
+      "fact": "f:qcc0zd"
+    },
+    {
+      "lines": [
+        37,
+        38
+      ],
+      "paraphrase": "A fragment has no permalink and reaches a reader only through an including entry.",
+      "fact": "f:880bg6"
+    },
+    {
+      "lines": [
+        38,
+        40
+      ],
+      "paraphrase": "Rationale that a live page would make the same words reachable two ways.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        42,
+        44
+      ],
+      "paraphrase": "fragments needs its own content-index glob or createSiteIndexes throws at build time.",
+      "fact": "f:60zw5n"
+    },
+    {
+      "lines": [
+        46,
+        64
+      ],
+      "paraphrase": "Snippet wiring the posts and fragments globs into createSiteIndexes.",
+      "fact": "f:yef4lo"
+    },
+    {
+      "lines": [
+        66,
+        69
+      ],
+      "paraphrase": "A site using the cairnManifest plugin must add fragments to its content option or it fails silently.",
+      "fact": "f:i6zyab"
+    },
+    {
+      "lines": [
+        71,
+        72
+      ],
+      "paraphrase": "Fragments need only a title, which the admin supplies for every concept.",
+      "new-fact": "f:5adbqm"
+    },
+    {
+      "lines": [
+        74,
+        81
+      ],
+      "paraphrase": "Sample fragment file with a title and two sentences.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        83,
+        83
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        85,
+        85
+      ],
+      "paraphrase": "The include directive names the fragment id.",
+      "fact": "f:0w7xeu"
+    },
+    {
+      "lines": [
+        87,
+        93
+      ],
+      "paraphrase": "Snippet showing the include directive between two paragraphs.",
+      "fact": "f:0w7xeu"
+    },
+    {
+      "lines": [
+        95,
+        96
+      ],
+      "paraphrase": "The editor Include a fragment control writes the directive so authors never type an id.",
+      "fact": "f:0w7xeu"
+    },
+    {
+      "lines": [
+        98,
+        101
+      ],
+      "paraphrase": "At render the fragment markdown splices in place and resolves components, links, and media like native content.",
+      "new-fact": "f:72pqil"
+    },
+    {
+      "lines": [
+        101,
+        103
+      ],
+      "paraphrase": "The resolver type is FragmentResolve, supplied by createFragmentResolver.",
+      "fact": "f:zv3q45"
+    },
+    {
+      "lines": [
+        104,
+        105
+      ],
+      "paraphrase": "A dangling include fails the build like a dangling cairn: link.",
+      "fact": "f:xlgfqm"
+    },
+    {
+      "lines": [
+        107,
+        111
+      ],
+      "paraphrase": "A site render function must forward resolveFragment or includes publish as literal text.",
+      "fact": "f:k84qwy"
+    },
+    {
+      "lines": [
+        113,
+        117
+      ],
+      "paraphrase": "A fragment cannot include another fragment; resolution is one pass deep and the save is refused.",
+      "fact": "f:82eo9p"
+    },
+    {
+      "lines": [
+        117,
+        119
+      ],
+      "paraphrase": "Advice to write shared content flat and split a shared piece into its own fragment.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        121,
+        121
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        123,
+        126
+      ],
+      "paraphrase": "Deleting a still-included fragment is refused using the same guard shape as a reference field.",
+      "fact": "f:3vndvj"
+    },
+    {
+      "lines": [
+        126,
+        128
+      ],
+      "paraphrase": "A fragment edit screen shows the same where-used list.",
+      "new-fact": "f:7250yh"
+    },
+    {
+      "lines": [
+        130,
+        130
+      ],
+      "paraphrase": "The build succeeds once the fragments glob is wired in.",
+      "fact": "f:60zw5n"
+    },
+    {
+      "lines": [
+        130,
+        132
+      ],
+      "paraphrase": "Fragment content appears verbatim in the including entry and edits show on the next render.",
+      "new-fact": "f:72pqil"
+    }
+  ]
+}

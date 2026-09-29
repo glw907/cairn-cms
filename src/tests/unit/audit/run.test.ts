@@ -100,9 +100,10 @@ describe('the static rule registry', () => {
   // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules,
   // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, the motion
   // pass's motion-property, motion-hover-gate, and motion-vocabulary, the extend pass's
-  // log-event-grammar and log-secret-field, and radius-scale are the modules that have
-  // registered since, without touching run.ts.
-  it('carries the twenty static rules registered since Task 7', () => {
+  // log-event-grammar and log-secret-field, radius-scale, and the public scope's public-literals,
+  // theme-conformance, and theme-contrast are the modules that have registered since, without
+  // touching run.ts.
+  it('carries the twenty-one static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -128,6 +129,7 @@ describe('the static rule registry', () => {
         'log-secret-field',
         'public-literals',
         'theme-conformance',
+        'theme-contrast',
       ].sort(),
     );
   });

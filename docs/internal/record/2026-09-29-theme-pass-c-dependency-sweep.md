@@ -88,3 +88,63 @@ the notes marked below.
 sweep; the only offered fix is `npm audit fix --force`, which installs
 `@cloudflare/vitest-pool-workers@0.8.30`, a breaking downgrade, so it is held as a major. The
 path runs through `undici` in the dev-only test pool, not the shipped package.
+
+## The shipped audit's dependencies (added 2026-09-29, with the theme-contrast rule)
+
+Three dependency decisions, taken with the `theme-contrast` rule and the `check:audit-pack` smoke
+test. No version moved: culori 4.0.2, daisyUI 5.7.46, and Tailwind 4.3.3 were each the newest
+release on the registry at the change, so no bumped range needs a release-note read. Engine
+version 0.97.0 on the branch.
+
+| Package | Before | After | Why |
+| --- | --- | --- | --- |
+| culori | devDependency `^4.0.2` | dependency `^4.0.2` | `src/lib/audit/contrast.ts` imports it at runtime: the resolver's premultiplied mix, the OKLCH gamut clamp, and WCAG luminance. |
+| daisyui | devDependency `^5.7.46` | also an optional peer, `^5` | `theme-conformance` reads its key list and `theme-contrast` its built-in theme values, both from `daisyui/theme/object` resolved from the audited site. |
+| tailwindcss | devDependency `^4.3.2` | also an optional peer, `^4` | `theme-conformance` reads `tailwindcss/theme.css` from the audited site. |
+
+The two peers follow the existing `@anthropic-ai/sdk` pattern: listed in `peerDependencies`, marked
+optional in `peerDependenciesMeta`, and kept in `devDependencies` for the repo's own build. npm never
+installs an optional peer, and warns only when a site has one installed outside its range.
+
+### Survey
+
+- **culori 4.0.2.** Published 2025-06-27, the newest release. No dependencies of its own, MIT,
+  1.1 MB unpacked, ESM. It ships no type declarations, so the repo keeps an ambient one, moved
+  from `src/tests/culori.d.ts` to `src/types/culori.d.ts` (included by `tsconfig.json`). The new
+  home sits outside `src/lib`, so svelte-package never copies it into `dist`. No exported audit type
+  names a culori type, so no emitted `dist/**/*.d.ts` mentions culori, and `check:audit-pack` greps
+  the installed declarations for it.
+  - Features to leverage: `interpolateWithPremultipliedAlpha`, taken now, because CSS `color-mix()`
+    mixes in premultiplied alpha. The resolver matches Chromium 153's computed `color-mix()` to the
+    printed digit on eleven pairs (`src/tests/unit/audit/contrast.test.ts`). `wcagContrast` exists,
+    but the dual-gamut measure keeps its own clipped luminance, since it measures after an OKLCH
+    gamut clamp that `wcagContrast` does not apply. Ruling: file nothing.
+  - Practices to change: none.
+  - Gate risk: an operand written in sRGB converts into oklab through culori's matrices, which
+    differ from Chromium's in the fifth significant digit (Chromium reads white as L 0.999994). The
+    contrast test pins that bound at 1e-4, and the reference page states it as a coverage limit.
+- **daisyui `^5` (optional peer).** The range admits every 5.x. `daisyui/theme/object` has kept its
+  shape (35 themes, 29 keys each) across the 5.7 line this sweep reads. `peers.ts` fails loudly if a
+  later 5.x empties the list or drops `--color-base-100` or `--radius-box`, so a shape change never
+  passes silently.
+- **tailwindcss `^4` (optional peer).** `tailwindcss/theme.css` is read as a stylesheet under the
+  `style` export condition. `peers.ts` fails loudly if the file declares no theme variable.
+
+### Consumer-visible effect
+
+A site that installs the engine now also installs culori. A site without daisyUI or Tailwind keeps
+its admin-only audit (a `--rule` selection of admin rules loads neither peer). A full run fails with
+a message naming the missing peer and its install command, never a module-resolution stack.
+`check:audit-pack` proves both in a real install. The pass's changelog entry at the close owes one
+line on the new runtime dependency and the two optional peers. No `Consumers must:` line is needed:
+a scaffolded site already installs daisyUI 5 and Tailwind 4 (`templates/waymark/package.json`), so
+both peers are satisfied without a change.
+
+### Verification
+
+`npm run check:audit-pack` installs the packed tarball with `--omit=peer` and production
+dependencies into an empty directory under the OS temp directory. It adds `svelte` explicitly,
+because the audit parses components with `svelte/compiler` and every consumer site has svelte.
+With culori still in `devDependencies`, the no-peers run crashed with
+`ERR_MODULE_NOT_FOUND: Cannot find package 'culori' imported from .../dist/audit/contrast.js`.
+After the move, all three runs behave as the check requires.

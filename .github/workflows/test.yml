@@ -63,6 +63,9 @@ jobs:
           node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
       - run: npm --prefix packages/create-cairn-site test
       - run: npm run check:package
+      # The cairn-audit pack smoke test: a real install of the packed engine in an empty directory,
+      # with the optional daisyUI and Tailwind peers absent and then present. Needs the registry.
+      - run: npm run check:audit-pack
       - run: npm run check:surface
       - run: npm run check:self-use
       - run: npm run check:custom-surface

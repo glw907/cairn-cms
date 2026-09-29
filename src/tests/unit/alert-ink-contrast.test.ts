@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse, converter } from 'culori';
-import { dualGamutRatio } from '../../../scripts/checks/check-public-tokens.mjs';
+import { dualGamutRatio } from '../../lib/audit/contrast.js';
 
 // A sibling of role-layer-contrast.test.ts: the alert idiom rule's four inks, each measured
 // against its own composited panel rather than a plain surface, so this lives beside the ink's
@@ -29,7 +29,7 @@ function mixInOklab(tone: string, pct: number, base: string): string {
   const b = toOklab(mustParse(base));
   const p = pct / 100;
   const q = 1 - p;
-  // .a carries no explicit numeric field in the shared culori ambient shim (src/tests/culori.d.ts),
+  // .a carries no explicit numeric field in the shared culori ambient shim (src/types/culori.d.ts),
   // only its generic string-indexed fallback, so Number(...) narrows it back to the number channel
   // math the mix needs.
   const l = p * (t.l ?? 0) + q * (b.l ?? 0);

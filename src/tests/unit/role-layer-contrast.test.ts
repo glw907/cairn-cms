@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dualGamutRatio } from '../../../scripts/checks/check-public-tokens.mjs';
+import { dualGamutRatio } from '../../lib/audit/contrast.js';
 
 // The Warm Stone surfaces and ink, read from cairn-admin.css (the test's fixed truth; if these values
 // change in the sheet, update this deliberately).

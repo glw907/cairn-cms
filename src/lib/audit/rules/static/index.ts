@@ -18,6 +18,7 @@ import { reducedMotion } from './reduced-motion.js';
 import { stockDefaultHazards } from './stock-default-hazards.js';
 import { stripeTrimParity } from './stripe-trim-parity.js';
 import { themeConformance } from './theme-conformance.js';
+import { themeContrast } from './theme-contrast.js';
 import { tokenColors } from './token-colors.js';
 import { typeScale } from './type-scale.js';
 import { unlayeredFontClobber } from './unlayered-font-clobber.js';
@@ -46,5 +47,6 @@ export function staticRules(): StaticRule[] {
     logSecretField,
     publicLiterals,
     themeConformance,
+    themeContrast,
   ];
 }

@@ -54,26 +54,35 @@ export interface DaisyThemeKeys {
   keys: string[];
   /** The built-in theme names, which daisyUI completes by merging when a block reuses one. */
   builtInThemes: Set<string>;
+  /** Each built-in theme's own values by name, the values a merged block takes where it is silent. */
+  themes: Record<string, Record<string, string>>;
 }
 
 /** The keys a list must hold before the rule trusts it, since a list missing them would pass everything. */
 const REQUIRED_KEYS = ['--color-base-100', '--radius-box'];
 
 /**
- * daisyUI's theme key list and built-in theme names, read from `daisyui/theme/object` resolved
- * from `root`. Throws a named error when `daisyui` is not installed, and a loud one when the list
- * is empty or lacks `--color-base-100` or `--radius-box`, so a shape change in a later daisyUI
- * fails the audit instead of quietly passing every theme block.
+ * daisyUI's theme key list, built-in theme names, and built-in theme values, read from
+ * `daisyui/theme/object` resolved from `root`. Throws a named error when `daisyui` is not
+ * installed, its reason finished by `purpose` so the message says what the calling rule needed the
+ * peer for, and a loud one when the list is empty or lacks `--color-base-100` or `--radius-box`, so
+ * a shape change in a later daisyUI fails the audit instead of quietly passing every theme block.
  */
-export function loadDaisyThemeKeys(root: string, access: PeerAccess): DaisyThemeKeys {
+export function loadDaisyThemeKeys(
+  root: string,
+  access: PeerAccess,
+  purpose = 'read its theme key list to check each theme block for completeness'
+): DaisyThemeKeys {
   const path = access.resolve('daisyui/theme/object', root);
-  if (path === undefined) throw missingPeer('daisyui', 'read its theme key list to check each theme block for completeness');
+  if (path === undefined) throw missingPeer('daisyui', purpose);
   const themes = access.loadDefault(path);
   const entries =
     themes !== null && typeof themes === 'object' ? Object.entries(themes as Record<string, unknown>) : [];
   const keys: string[] = [];
-  for (const [, theme] of entries) {
+  const values: Record<string, Record<string, string>> = {};
+  for (const [name, theme] of entries) {
     if (theme === null || typeof theme !== 'object') continue;
+    values[name] = Object.fromEntries(Object.entries(theme).map(([key, value]) => [key, String(value)]));
     for (const key of Object.keys(theme)) if (!keys.includes(key)) keys.push(key);
   }
   if (keys.length === 0) {
@@ -84,7 +93,7 @@ export function loadDaisyThemeKeys(root: string, access: PeerAccess): DaisyTheme
       throw new Error(`the daisyUI theme key list read from ${path} lacks ${required}; the theme rules refuse to judge against an incomplete list`);
     }
   }
-  return { keys, builtInThemes: new Set(entries.map(([name]) => name)) };
+  return { keys, builtInThemes: new Set(entries.map(([name]) => name)), themes: values };
 }
 
 /**

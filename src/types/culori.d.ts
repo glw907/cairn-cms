@@ -1,12 +1,15 @@
 // culori ships JSDoc types in its source but no .d.ts, and its package.json declares no `types`
-// entry, so NodeNext sees it as an untyped module. scripts/checks/check-public-tokens.mjs imports it, and
-// role-layer-contrast.test.ts pulls that script (and culori directly) into the svelte-check program,
-// so this ambient declaration keeps the check at 0 errors. Only the members the type-checked files
-// use are declared, with the shapes those call sites rely on.
+// entry, so NodeNext sees it as an untyped module. cairn-audit's contrast core
+// (src/lib/audit/contrast.ts) imports it at runtime, and a few unit tests and lab scripts import it
+// directly, so this ambient declaration keeps `npm run check` at 0 errors. It lives outside
+// src/lib on purpose: svelte-package copies every file under src/lib into dist, and a shipped
+// declaration naming culori would ask a consumer to resolve culori's types. No exported audit type
+// mentions a culori type, so the emitted dist declarations never import it. Only the members the
+// type-checked files use are declared, with the shapes those call sites rely on.
 declare module 'culori' {
   /** A parsed or constructed colour. Mode-tagged; channels are optional per mode. `alpha` is the
    * optional opacity the compositing math reads. */
-  interface Color {
+  export interface Color {
     mode: string;
     r?: number;
     g?: number;
@@ -20,7 +23,7 @@ declare module 'culori' {
 
   /** An rgb-mode colour, the shape `converter('rgb')` produces: the three channels are always present
    * (a converter into rgb fills them), so a caller reads `r`/`g`/`b` without a guard. */
-  interface RgbColor extends Color {
+  export interface RgbColor extends Color {
     mode: 'rgb';
     r: number;
     g: number;
@@ -42,9 +45,16 @@ declare module 'culori' {
     mode?: string
   ): (t: number) => Color;
 
+  /** The same interpolator in premultiplied alpha, the way CSS `color-mix()` mixes. */
+  export function interpolateWithPremultipliedAlpha(
+    colors: (Color | string)[],
+    mode?: string
+  ): (t: number) => Color;
+
   /** A gamut clamper: reduce a colour into the target gamut, holding the given reference space. */
   export function toGamut(gamut: string, mode?: string): (color: Color) => Color;
 
   /** The WCAG relative luminance of a colour. */
   export function wcagLuminance(color: Color | string): number;
+
 }

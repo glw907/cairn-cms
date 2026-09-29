@@ -7,8 +7,8 @@
 // with the ink overrides ignored, and the fixture theme's two blocks. Grounds: `base-100`,
 // `base-200`, and the callout tint the chassis `prose.css` paints for the status (its highest tint
 // percentage; `base-100` alone for a status with no tint). A pair passes at 4.5:1 in both sRGB and
-// display-p3, the floor `check:public-tokens` measures, clamped the same way (it reuses that
-// module's `dualGamutRatio`).
+// display-p3, the floor `check:public-tokens` measures, clamped the same way (it reuses the audit's
+// contrast core, `dualGamutRatio` from src/lib/audit/contrast.ts, read from the packaged dist/audit).
 //
 // Selection, per status: keep the `N` values where Waymark and the fixture palette pass every pair in
 // both schemes on every ground (the hard constraint), then keep those where the median ink-to-fill
@@ -22,14 +22,14 @@
 // and is body-size text, so its default stays as conservative as the best ink. When no value meets the hard constraint the script reports that and exits
 // nonzero rather than choosing.
 //
-// Run from the repository root: `node scripts/lab/measure-status-inks.mjs`. It prints the markdown
+// Run from the repository root after `npm run package`: `node scripts/lab/measure-status-inks.mjs`. It prints the markdown
 // tables the record embeds, and exits nonzero on a hard-constraint failure.
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { parse, converter } from 'culori';
-import { dualGamutRatio } from '../checks/check-public-tokens.mjs';
+import { dualGamutRatio } from '../../dist/audit/index.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const WAYMARK_CSS = join(ROOT, 'examples/showcase/src/theme/theme.css');

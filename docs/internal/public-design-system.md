@@ -253,15 +253,19 @@ recolor), and edit the `base-100/200/300` ladder and `base-content`. Optionally 
 tokens, retune the one type ratio, or the one space-scale step. A full status rebrand is more, because
 each status carries a fill (the `@plugin` block) and an on-surface ink (the `--cairn-*-ink` layer, step
 6). The prose reading surface is included at zero extra edits, because it reads the same roles. The CI
-gates prove it: `check:public-tokens` (no literals, dual-gamut AA, token resolution) and `test:reskin`
-(the hue-rotated theme clears AA, the prose is single-source, every token resolves).
+gates prove it: `check:public-tokens` (the audit's public scope: `public-literals`, `theme-conformance`,
+`theme-contrast`) and `test:reskin` (the hue-rotated theme and the stripped-inks theme clear AA, the
+prose is single-source).
 
 ## Accessibility
 
-- The **dual-gamut contrast gate** (`scripts/checks/check-public-tokens.mjs`): every role/`-content` pair, the
-  on-surface inks, and `accent`/`accent-content` clear AA in both sRGB and P3 via culori. The
-  **token-resolution gate** fails on a dangling `var()`. The **re-skin fixture**
-  (`scripts/lab/reskin-fixture.mjs`) proves a hue rotation holds AA and the prose has no second color source.
+- The **dual-gamut contrast gate** is `cairn-audit`'s `theme-contrast` rule
+  (`src/lib/audit/rules/static/theme-contrast.ts`), run over the showcase by `check:public-tokens`
+  (`scripts/checks/check-public-scope.mjs`): every role/`-content` pair, `primary` on `base-100`, muted, and the
+  on-surface inks on `base-100`, `base-200`, and their callout tints clear AA in both sRGB and P3 in every
+  scheme. `theme-conformance` fails on a dangling `var()`. The **re-skin fixture**
+  (`scripts/lab/reskin-fixture.mjs`) proves a hue rotation and Waymark with its hand-tuned inks stripped
+  both hold AA, and that the prose has no second color source.
 - A consistent `:focus-visible` language (2px `primary`, 2px offset) across the chrome, the reading
   surface, and the styleguide, with the `base-100` halo on tinted grounds. `scroll-padding-top` for the
   sticky header. The skip link plus `<main tabindex="-1">`.
@@ -371,5 +375,5 @@ measure it, rather than trusting the read.
   `examples/showcase/src/chassis/prose.css`. The chrome: `examples/showcase/src/theme/components/`.
 - The live demo: `/styleguide`. The criteria and the settled design: the design bar
   ([`2026-06-25-cairn-b2-design-bar.md`](../superpowers/specs/2026-06-25-cairn-b2-design-bar.md)).
-- The gates: `scripts/checks/check-public-tokens.mjs`, `scripts/lab/reskin-fixture.mjs`, and the `design.yml`
-  workflow. The engine highlighter: `src/lib/render/highlight.ts`.
+- The gates: `scripts/checks/check-public-scope.mjs` (the audit's public-scope rules),
+  `scripts/lab/reskin-fixture.mjs`, and the `design.yml` workflow. The engine highlighter: `src/lib/render/highlight.ts`.

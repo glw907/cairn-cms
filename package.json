@@ -35,6 +35,7 @@
   "scripts": {
     "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/media-seed/bin.js dist/audit/bin.js dist/guidance/bin.js",
     "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error && node scripts/checks/check-package-files.mjs && node scripts/checks/check-skill-budget.mjs",
+    "check:audit-pack": "npm run package && node scripts/checks/check-audit-pack.mjs",
     "check:reference": "npm run package && node scripts/checks/reference-coverage.mjs",
     "check:reference:signatures": "npm run package && node scripts/checks/check-reference-signatures.mjs",
     "check:surface": "npm run package && node scripts/checks/check-surface-leaks.mjs && node scripts/checks/check-surface.mjs",
@@ -58,7 +59,7 @@
     "check:snippets": "npm run package && node scripts/checks/check-snippets.mjs",
     "check:version": "node scripts/checks/check-version.mjs",
     "check:prose": "node scripts/checks/check-admin-prose.mjs",
-    "check:public-tokens": "node scripts/checks/check-public-tokens.mjs",
+    "check:public-tokens": "npm run package && node scripts/checks/check-public-scope.mjs",
     "check:custom-surface": "npm run package && node scripts/checks/check-custom-surface.mjs",
     "check:chassis-boundary": "node scripts/checks/check-chassis-boundary.mjs",
     "check:cm-internals": "node scripts/checks/check-cm-internals.mjs",
@@ -68,7 +69,7 @@
     "update-admin-sheet-inventory": "npm run package && node scripts/build/update-admin-sheet-inventory.mjs",
     "check:interactive-contrast": "node scripts/checks/check-interactive-contrast.mjs",
     "check:touch-targets": "node scripts/checks/check-touch-targets.mjs",
-    "test:reskin": "node scripts/lab/reskin-fixture.mjs",
+    "test:reskin": "npm run package && node scripts/lab/reskin-fixture.mjs",
     "norms:generate": "npm run package && node scripts/lab/generate-norms-manifest.mjs",
     "norms:check": "npm run package && node scripts/lab/generate-norms-manifest.mjs --check",
     "lint": "eslint src/lib examples/showcase/src examples/showcase/e2e",
@@ -77,7 +78,7 @@
     "check:consumers": "npm run package && node scripts/checks/check-consumers.mjs",
     "prepare": "npm run package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "check:close": "npm run check && npm run check:package && npm run check:reference && npm run check:reference:signatures && npm run check:surface && npm run check:self-use && npm run check:custom-surface && npm run check:chassis-boundary && npm run check:cm-internals && npm run check:idioms && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:readiness && npm run check:tool-conditions && npm run check:docs && npm run check:rulings-format && npm run check:target-stack && npm run check:arm-indexes && npm run check:editor-quotes && npm run check:facts && npm run check:provenance && npm run check:visuals && npm run check:transcripts && npm run check:symbols && npm run check:snippets && npm run check:prose && npm run check:version && npm run check:dev-package && npm run check:template && npm run check:consumers && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm run check:vale && npm run check:comments && npm run check:public-tokens",
+    "check:close": "npm run check && npm run check:package && npm run check:audit-pack && npm run check:reference && npm run check:reference:signatures && npm run check:surface && npm run check:self-use && npm run check:custom-surface && npm run check:chassis-boundary && npm run check:cm-internals && npm run check:idioms && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:readiness && npm run check:tool-conditions && npm run check:docs && npm run check:rulings-format && npm run check:target-stack && npm run check:arm-indexes && npm run check:editor-quotes && npm run check:facts && npm run check:provenance && npm run check:visuals && npm run check:transcripts && npm run check:symbols && npm run check:snippets && npm run check:prose && npm run check:version && npm run check:dev-package && npm run check:template && npm run check:consumers && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm run check:vale && npm run check:comments && npm run check:public-tokens",
     "test:node-projects": "vitest run --project unit --project unit-dist-spawn --project integration",
     "test": "npm run test:node-projects && npm run test:component",
     "test:watch": "vitest",
@@ -215,10 +216,18 @@
     "@anthropic-ai/sdk": ">=0.105.0 <1",
     "@cloudflare/workers-types": "^5",
     "@sveltejs/kit": "^2.70",
-    "svelte": "^5.56.10"
+    "daisyui": "^5",
+    "svelte": "^5.56.10",
+    "tailwindcss": "^4"
   },
   "peerDependenciesMeta": {
     "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "daisyui": {
+      "optional": true
+    },
+    "tailwindcss": {
       "optional": true
     }
   },
@@ -236,6 +245,7 @@
     "@rodrigodagostino/svelte-sortable-list": "^2.1.17",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
+    "culori": "^4.0.2",
     "esm-env": "^1.2.2",
     "gray-matter": "^4",
     "hast-util-sanitize": "^5.0.2",
@@ -273,7 +283,6 @@
     "@types/node": "^24.19.0",
     "@vitest/browser": "^4.1.7",
     "@vitest/browser-playwright": "^4.1.7",
-    "culori": "^4.0.2",
     "daisyui": "^5.7.46",
     "devalue": "^5.9.4",
     "esbuild": "^0.28.2",

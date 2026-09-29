@@ -80,7 +80,7 @@ describe('selfIdentityVariantsUsed', () => {
 
   it('ignores a leading word that is not a plausible self-identity spelling', () => {
     const source = "console.log('OK done');\nconsole.error(`Contrast check (x): FAIL`);\n";
-    expect(selfIdentityVariantsUsed('check-public-tokens', source)).toEqual([]);
+    expect(selfIdentityVariantsUsed('check-public-scope', source)).toEqual([]);
   });
 });
 

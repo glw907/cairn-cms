@@ -27,7 +27,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   no longer exist, and `package.json` carries no `./components` key. The source folder is
   `src/lib/admin/`, and `docs/reference/admin.md` replaced `components.md`. A consumer changes
   every `@glw907/cairn-cms/components` import to `/admin` and any config or script path from
-  `dist/components/` to `dist/admin/`. Source: `package.json:105-109` (the `./admin` export),
+  `dist/components/` to `dist/admin/`. Source: `package.json:106-110` (the `./admin` export),
   `src/lib/audit/config.ts#DEFAULT_SHEET_CANDIDATES` (the sheet path), `src/tests/unit/admin-barrel-prune.test.ts`
   (the assertion that `./components` is gone). [verified]
 - `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
@@ -228,7 +228,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - `f:exqnwj` The subpath enforces server-only isolation via export conditions: a named import from the
   browser stub fails at build time (no such export), while a bare side-effect import passes the
-  build and throws only at runtime when executed in a browser. Source: `package.json:157-168`
+  build and throws only at runtime when executed in a browser. Source: `package.json:158-169`
   (`./auth-crypto` and `./cloudflare` export conditions each declare `worker`/`browser`/`default`),
   `src/lib/auth-crypto/browser.ts:1-4`, `src/lib/cloudflare/browser.ts:1-4` (both files are a bare
   module-level `throw new Error(...)` with no named export). [verified]
@@ -326,22 +326,22 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   browser"), `:28-36` (`norms` calls `loadNormsManifest()`), `:62` (other modes call
   `loadConfig(process.cwd(), ...)`). [verified]
 
-- `f:z1rbea` Exactly 37 rules are registered: 20 static (15 error tier, 5 advisory: `log-event-grammar`,
-  `log-secret-field`, `radius-scale`, `public-literals`, `theme-conformance`) plus 17 rendered (7
-  error-tier, 10 advisory-tier). Count by the registry arrays or by tier grep, not by a literal-string grep, which
+- `f:z1rbea` Exactly 38 rules are registered: 21 static (15 error tier, 6 advisory: `log-event-grammar`,
+  `log-secret-field`, `radius-scale`, `public-literals`, `theme-conformance`, `theme-contrast`) plus
+  17 rendered (7 error-tier, 10 advisory-tier). Count by the registry arrays or by tier grep, not by a literal-string grep, which
   undercounts the rendered total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
-  `src/lib/audit/rules/static/index.ts#staticRules` (the 20-entry array),
+  `src/lib/audit/rules/static/index.ts#staticRules` (the 21-entry array),
   `src/lib/audit/rules/rendered/index.ts#renderedRules` (the 17-entry array). [verified]
-- `f:o4ctu5` `public-literals` is the one static rule that resolves over the public scope
-  (`publicScope: true` on the rule): `.svelte` and `.css` files under `public.scope` (default
+- `f:o4ctu5` `public-literals` resolves over the public scope (`publicScope: true` on the rule), as
+  `theme-conformance` and `theme-contrast` also do: `.svelte` and `.css` files under `public.scope` (default
   `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`, `src/lib/components`), minus
   `public.exclude` (default `src/routes/admin`, a configured list merges) and minus every admin
   root. It is advisory permanently for a consumer. The scope loads only when a selected rule sets
   `publicScope`; when it loads and matches no file the run fails naming `public.scope`, and a
   configured root the tree lacks throws while a missing default root is skipped. `public.themeRoots`
   (default `src/theme`, `src/chassis/tokens.css`) are where a custom-property definition is legal;
-  `public.stylesheets` (default `src/theme/theme.css`) is the entry list `theme-conformance` follows
-  (`f:tbq6gh`). The rule flags a color literal (hex, `rgb()`, `hsl()`, `hwb()`, `lab()`,
+  `public.stylesheets` (default `src/theme/theme.css`) is the entry list `theme-conformance` and
+  `theme-contrast` follow (`f:tbq6gh`, `f:lqtwdt`). The rule flags a color literal (hex, `rgb()`, `hsl()`, `hwb()`, `lab()`,
   `lch()`, `oklab()`, `oklch()`, `color()`, named colors) or an absolute font size (`px`, `pt`,
   `rem`, the `font` shorthand included) in a declaration, a `style=` value, a `style:` directive,
   or a Tailwind arbitrary value (`text-[#abc]`, `text-[14px]`); `em`, `%`, `var()` and `calc()`
@@ -381,6 +381,32 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/audit/rules/static/theme-conformance.ts#createThemeConformance`,
   `src/lib/audit/import-chain.ts#loadImportChain`, `src/lib/audit/peers.ts#loadDaisyThemeKeys`,
   `src/lib/audit/sheet.ts#parseStatements`. [verified]
+- `f:lqtwdt` `theme-contrast` is a static advisory rule over the public scope (`publicScope: true`,
+  `importChain: true`), built by `createThemeContrast(peers)`. It measures, per daisyUI theme block
+  in the chain, body text (`--color-base-content`) on `--color-base-100` and `--color-base-200`,
+  `--color-primary` on `--color-base-100`, each role's `-content` on its fill, `--color-muted` on
+  `--color-base-100` and `--color-base-200`, and each `--cairn-<status>-ink` on `--color-base-100`,
+  `--color-base-200`, and its callout tint (the highest-percentage
+  `color-mix(in oklab, var(--color-<status>) N%, var(--color-base-100))` any chain declaration
+  holds), at 4.5:1 in both sRGB and display-p3 after clamping in OKLCH. The showcase's tints give 24
+  pairs per scheme. A scheme is one named block: measured with `data-theme="<name>"`, the default
+  block also with no `data-theme` on a light OS, and the `prefersdark` block (or the default block
+  when none is) also with no `data-theme` on a dark OS. `src/lib/audit/schemes.ts#readThemeCascade`
+  compiles each block the way daisyUI's plugin does (layer `base`; `[data-theme]` everywhere,
+  `:where(:root)` for the default, `:root:not([data-theme])` under the dark media query for
+  `prefersdark`), completes a built-in-named block from `daisyui/theme/object`'s values, reads
+  `@theme` as `:root` in layer `theme`, and ranks every root-matching custom property by
+  importance, layer, specificity, and order; a media condition other than `prefers-color-scheme`
+  never applies. The resolver (`src/lib/audit/contrast.ts#resolveColor`) follows `var()` chains to
+  a literal culori parses and evaluates only `color-mix(in oklab|oklch, A p%, B)` with exactly one
+  percentage, through culori's `interpolateWithPremultipliedAlpha`; every other form resolves to a
+  reason, and the rule reports it as "unmeasured", never a pass. One finding per failing
+  foreground per block, one per unmeasured reason per block, and one when the chain holds no
+  block; each points at the block. It needs `daisyui` beside the site (`loadDaisyThemeKeys`, named
+  error when missing). culori is a runtime dependency, and `daisyui` and `tailwindcss` are optional
+  peers. Source: `src/lib/audit/rules/static/theme-contrast.ts#createThemeContrast`,
+  `src/lib/audit/schemes.ts#readThemeCascade`, `src/lib/audit/contrast.ts#resolveColor`,
+  `package.json#peerDependenciesMeta`. [verified]
 - `f:eqsngu` `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are both `src/routes/admin`, `src/lib/admin`,
   `src/lib/admin-toolkit`; `src/lib/components` is no longer a default root. They stay two constants
   and two config keys (`static.scope`, `static.adminScope`) so a site can narrow one without the
@@ -1038,8 +1064,8 @@ re-sourced to Go on this tree rather than to the page.
 - `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
   `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
   distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`
-  itself, that is three other bins. Source: `package.json:187-192` (`bin` field),
-  `package.json:172-174` (`./vite` export). [verified]
+  itself, that is three other bins. Source: `package.json:188-193` (`bin` field),
+  `package.json:173-175` (`./vite` export). [verified]
 
 ## docs/reference/islands.md
 
@@ -1284,7 +1310,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   never on `/admin`; a loader or a type belongs on `/sveltekit` or another data-only subpath; and
   `CairnHead` stays at `./delivery/head` because it renders only document-head tags. The compiled
   admin sheet's input scans `src/lib/admin` and `src/lib/admin-toolkit` but not `src/lib/public`, since the banner writes no utility class of its own.
-  Source: `package.json:110-114` (the `./public` export), `src/lib/public/index.ts:1-6` (the
+  Source: `package.json:111-115` (the `./public` export), `src/lib/public/index.ts:1-6` (the
   membership rule and the one export), `scripts/build/admin-css.input.css:14,22` (the `@source` roots, `src/lib/admin` and `src/lib/admin-toolkit`).
   [verified]
 
@@ -1431,10 +1457,10 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7`.
   [verified]
 - `f:xg1per` `svelte` peerDependency is `^5.56.10`; `@sveltejs/kit` is `^2.70`; `@cloudflare/workers-types` is
-  `^5`. Source: `package.json:196-198`. [verified]
+  `^5`. Source: `package.json:197-199`. [verified]
 - `f:gjyk0p` The showcase's own devDependency pins `typescript` to `^6` and `@cloudflare/workers-types` to
-  `^5.20260821.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:44`,
-  `package.json:248`. [verified]
+  `^5.20260821.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:45`,
+  `package.json:258`. [verified]
 - `f:isd7vq` TypeScript floor for a consumer's own `tsc` is `5.0`, driven by `const` type parameters on
   `defineAdapter`/`defineConcept`/`defineFieldset`/`fields.*`; the package's own code and shipped
   `.d.ts` are TypeScript 7-clean, but the scaffolded template still installs `^6` because

@@ -1,8 +1,8 @@
 name: design
 
 # The B2 design gate: the public-theme token gates and the styleguide accessibility e2e. It is scoped
-# to the design dimension (the no-literals + dual-gamut contrast gate, the one-edit re-skin fixture,
-# and axe over /styleguide in both schemes). The full showcase e2e lives in e2e.yml; this job runs
+# to the design dimension (cairn-audit's public scope, the re-skin fixture, and axe over /styleguide
+# in both schemes). The full showcase e2e lives in e2e.yml; this job runs
 # only the styleguide spec so a token or a11y regression fails fast and on its own signal.
 
 on:
@@ -32,15 +32,18 @@ jobs:
       # Build the engine dist the showcase resolves through, so the token gates and the e2e read the
       # current render output (the styleguide renders prose through the packaged engine).
       - run: npm run package
-      # The token gates: no literal colors or hard-coded font-sizes in the public components or the
-      # prose surface, every role/-content pair clears AA in both sRGB and P3, and the one-edit re-skin
-      # (a hue rotation of the brand accent) still holds AA with the prose surface reading the same set.
+      # The showcase lockfile is committed and installed with `npm ci` so CI resolves the exact
+      # toolchain a developer reproduces locally. The token gates below read the showcase's installed
+      # engine (cairn-public.css) and daisyUI, so they run after this install.
+      - run: npm ci --prefix examples/showcase
+      # The token gates: cairn-audit's public scope over the showcase and the cairn-theme overlay
+      # (no literal colors or absolute font sizes, a complete theme with every var() resolved, every
+      # text pair at AA in both sRGB and P3), then the re-skin fixture (a hue rotation of the brand
+      # accent and Waymark with its hand-tuned inks stripped both hold AA, and prose reads one set).
       - run: npm run check:public-tokens
       - run: npm run test:reskin
-      # The styleguide accessibility e2e. The showcase lockfile is committed and installed with `npm ci`
-      # so CI resolves the exact toolchain a developer reproduces locally. The styleguide spec's own
-      # webServer builds (VITE_CAIRN_E2E=1) and serves the showcase, then axe scans /styleguide in both
-      # color schemes and a rendered article, and the skip-link and reduced-motion floors are checked.
-      - run: npm ci --prefix examples/showcase
+      # The styleguide accessibility e2e. The styleguide spec's own webServer builds
+      # (VITE_CAIRN_E2E=1) and serves the showcase, then axe scans /styleguide in both color schemes
+      # and a rendered article, and the skip-link and reduced-motion floors are checked.
       - run: npx --prefix examples/showcase playwright install --with-deps chromium
       - run: npm --prefix examples/showcase run test:e2e -- styleguide

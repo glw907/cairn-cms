@@ -16,6 +16,16 @@ carry-forwards) are in the design bar
 which predates the neutral default and records the earlier branded starting point that became the
 cairn theme.
 
+**Where cairn's own register lives (Geoff, 2026-09-13).** The admin and cairn.pub are cairn's
+face, "the 'brand' such as it is", and share one register: the admin's Warm Stone tokens, the
+Bricolage Grotesque display face (wordmark and page title only), IBM Plex Sans body text, and the
+recipes and voice in `admin-design-system.md`. cairn.pub adopts it as a public reading surface
+(a wider measure, calmer density) and starts from the admin tokens, never a generated theme.
+Waymark is the chassis every new site reskins, so it stays neutral: "not stock DaisyUI" means
+craft (type scale, spacing, restraint), never a cairn identity a site would have to strip out.
+A move that would brand Waymark, such as rotating its primary hue toward cairn's or adopting
+the admin's type pairing, is out. Record: `record/2026-09-13-blueprint-design-spike.md`.
+
 ## Load-bearing rules (break these and the theme renders wrong)
 
 - **`themes: false`, then two custom themes.** `theme.css` sets `@plugin "daisyui" { themes: false; }` to

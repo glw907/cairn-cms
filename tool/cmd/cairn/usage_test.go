@@ -25,22 +25,14 @@ import (
 
 // builtBinary builds cairn once per test run and returns its path. The falsification table below
 // has to run against the real process: a cobra.Command driven in memory never reaches the exit
-// code, and the exit code is the whole assertion.
+// code, and the exit code is the whole assertion. The module root is relative because a test
+// binary's own working directory is its package directory, where ./cmd/cairn does not resolve.
 var builtBinary = sync.OnceValues(func() (string, error) {
 	dir, err := os.MkdirTemp("", "cairn-usage")
 	if err != nil {
 		return "", err
 	}
-	bin := exe.Path(dir, "cairn")
-	// The build runs from the module root: a test binary's working directory is its own package
-	// directory, where ./cmd/cairn does not resolve.
-	build := exec.Command("go", "build", "-o", bin, "./cmd/cairn")
-	build.Dir = filepath.Join("..", "..")
-	out, err := build.CombinedOutput()
-	if err != nil {
-		return "", errors.New("go build: " + err.Error() + ": " + string(out))
-	}
-	return bin, nil
+	return exe.Build(filepath.Join("..", ".."), dir)
 })
 
 // runBinary runs the built cairn with args, against an empty registry and no credentials, and

@@ -41,6 +41,7 @@ interface CairnEvent<Env = CairnEnv> {
     cairnBackend?: Backend;
     cairnAuditSink?: AdminActionAuditSink;
     cairnAccess?: AccessMap;
+    cairnIdentity?: { label: string; logoutUrl: string };
   };
   platform?: PlatformContext<Env>;
 }
@@ -57,13 +58,15 @@ reading route identity out of a form body: a real kit event always carries both,
 `null`; a matched `load` or form action always sees a real route id. `cookies` and `setHeaders`
 are always present on a real kit server event.
 
-`locals` carries four optional keys, each sharing the flat `cairn` prefix so a grep for one name
+`locals` carries five optional keys, each sharing the flat `cairn` prefix so a grep for one name
 finds every engine read in any repo: `cairnEditor` (the session
 [`createAuthGuard`](#createauthguard) resolved), `cairnBackend` (a dev or test double for the
 content store; a production request leaves it absent and the real GitHub provider connects),
 `cairnAuditSink` (a site's optional [`AdminActionAuditSink`](#adminactionauditsink), wired through
-`createAdminAction`'s audit contract), and `cairnAccess` (the site's declared [access
-map](./core.md#access-map), attached by the guard alongside `cairnEditor`).
+`createAdminAction`'s audit contract), `cairnAccess` (the site's declared [access
+map](./core.md#access-map), attached by the guard alongside `cairnEditor`), and `cairnIdentity`
+(the [identity seam](#createauthguard)'s snapshot, set on every admin path under identity mode;
+see [Per-route factories](#per-route-factories-advanced) for its shape and readers).
 
 `Env` defaults to [`CairnEnv`](#cairnenv): a compile-only fixture proves every factory on this
 page assigns clean into a site's own generated route event, under a realistic compliant
@@ -189,6 +192,8 @@ params the wrapped action reads, and delegates:
 | `publish` | edit | the entry publish |
 | `discard` | edit | the pending-edit discard |
 | `rename` | edit | the entry rename |
+| `previewMint` | edit | mint a [public preview](#public-preview) link |
+| `previewRevoke` | edit | revoke every outstanding public preview link for the entry |
 | `dictionaryAdd` | edit | the personal-dictionary add |
 | `tidy` | edit | the language-model tidy copy-edit |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
@@ -947,11 +952,14 @@ token to the requesting browser when the two disagree, which is what keeps repea
 locking an editor out of their own link. See [the security
 model](../extend/security-model.md#sign-in-binds-to-the-browser-that-asked) for the full behavior.
 
-`requestAction` awaits the send, so its `RequestOutcome` (exported since 0.38.0) reflects the
-outcome. The `sent` outcome covers both a successful send and a non-allow-listed address (the two
-return identical results, so the response never reveals membership). A `send-error` means the email
-could not be sent; `throttled` means the same address requested a link inside the cooldown window.
-`sent` mirrors the old boolean, so a site rendering against `form.sent` keeps working.
+`requestAction` awaits the send, so its `RequestOutcome` reflects the outcome. The awaited-send
+behavior dates to `0.38.0`, under the type's earlier name `RequestResult` and a `status`
+discriminant (`sent`/`send_error`/`throttled`); the `0.97.0` outcome-idiom sweep renamed it to
+`RequestOutcome` with the `outcome` key and kebab-case `send-error`. The `sent` outcome covers both
+a successful send and a non-allow-listed address (the two return identical results, so the response
+never reveals membership). A `send-error` means the email could not be sent; `throttled` means the
+same address requested a link inside the cooldown window. `sent` mirrors the old boolean, so a site
+rendering against `form.sent` keeps working.
 
 `config.bootstrapOwner` names the address and display name that seeds the first owner row without
 a manual `wrangler d1 execute` insert. On a request whose normalized email matches it, when the
@@ -1167,15 +1175,18 @@ response (the one admin payload that carries a bearer credential), and logs
 every outstanding link for the entry in one call, returning `{ count }`; it is idempotent, since
 revoking with nothing minted still succeeds with a count of zero. Both actions answer the same
 `ActionFailure<ContentFormFailure>` when `AUTH_DB` is missing the `preview_tokens` table
-(`migrations/0003_preview.sql` not yet applied), naming the migration to apply rather than
-surfacing a raw D1 error, since the engine ships the share affordance to every upgraded site's edit
-screen regardless of adoption. `renameAction`, `deleteAction`/`listDeleteAction`, and
-`discardAction` each clear a never-published entry's outstanding preview rows as part of their own
-cascade, closing an id-reuse collision where a stale link could later resolve to a different
-entry's draft; publishing deliberately leaves the rows in place, since [`loadPreview`](#loadpreview)
-needs them to answer a stale link with "this preview has ended" rather than a bare 404. See [Public
-preview](#public-preview) below for the site-mounted page these actions feed, and [Share a draft
-preview](../extend/share-a-draft-preview.md) for the adopter's full walkthrough.
+(`migrations/0003_preview.sql` not yet applied), naming the migration to apply rather than surfacing
+a raw D1 error, since the engine ships the share affordance to every upgraded site's edit screen
+regardless of adoption. `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's
+outstanding preview rows unconditionally as part of their own cascade, since the id they touch stops
+naming that entry either way; `discardAction` clears them only when the entry was never published
+(discarding an edit to a live entry leaves its rows alone, since the id still names the same,
+still-live entry). All three close the same id-reuse collision, where a stale link could later
+resolve to a different entry's draft; publishing deliberately leaves the rows in place, since
+[`loadPreview`](#loadpreview) needs them to answer a stale link with "this preview has ended" rather
+than a bare 404. See [Public preview](#public-preview) below for the site-mounted page these actions
+feed, and [Share a draft preview](../extend/share-a-draft-preview.md) for the adopter's full
+walkthrough.
 
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
@@ -1226,11 +1237,14 @@ below. Their request shapes and `fail` payloads:
   (`{ corrected, model, tokens }`, the corrected markdown plus the model id and token counts; the diff is
   computed on the client) and marks the shared key-health cache healthy. A refusal returns `TidyFailure`
   (`{ error }`): `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled, the API key is
-  missing, or Anthropic rejects the key outright (a 401 or 403; this branch is not retryable, marks the
-  key unhealthy in the shared cache, and reads "Tidy isn't available right now" rather than the generic
-  retry copy), `fail(413)` for an over-long body (tidy a selection instead), `fail(502)` for a deadline
-  overrun, a different abort, a model error, or an empty result (all retryable), `fail(422)` for a model
-  refusal, `fail(400)` for a malformed body. The `TidyResult`, `TidyFailure`, `DictionaryAddResult`, and
+  missing, the optional `@anthropic-ai/sdk` peer is not installed (names the install command), Anthropic
+  rejects the key outright (a 401 or 403; this branch is not retryable, marks the key unhealthy in the
+  shared cache, and reads "Tidy isn't available right now" rather than the generic retry copy), or
+  Anthropic rejects the request itself (a 400 `invalid_request_error`, typically an unsupported
+  `tidy.model` setting, also not retryable and naming the model in the message), `fail(413)` for an
+  over-long body (tidy a selection instead), `fail(502)` for a deadline overrun, a different abort, a
+  model error, or an empty result (all retryable), `fail(422)` for a model refusal, `fail(400)` for a
+  malformed body. The `TidyResult`, `TidyFailure`, `DictionaryAddResult`, and
   `DictionaryAddFailure` shapes are admin-internal: the editor host reads them by `type`/`status` off the
   deserialized envelope, so they are not exported on the `sveltekit` subpath and carry no Types row. A
   consumer reaches each as `Exclude<Awaited<ReturnType<ContentRoutes['tidyAction']>>, ActionFailure<unknown>>`
@@ -1984,7 +1998,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
 | `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean; access?: { target: string; ownerOnly?: boolean } }` | Injectable dependencies for `createAdminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. `access` opts the action into the access-map authorization [`createSectionAction`](#createsectionaction) performs, against `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on the map check; omitted, `createAdminAction` authorizes nothing, its behavior for every caller written before the option existed. |
 | `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `createAdminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `createAdminAction`'s own authentication refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
-| `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. `mediaBase` is the resolved delivery base (the site's own `assets.publicBase`, or `/media`) that `CairnAdminShell` hands every descendant media surface through context, so a non-default base reaches admin thumbnails too. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. `NavConcept`, named in `concepts`, carries no export row of its own: a consumer reaches it as `Extract<AdminShellData, { public: false }>['concepts'][number]`. |
+| `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName; theme } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries the site name and the resolved admin theme (the theme cookie carries no auth, so a signed-out visitor's dark-mode choice still applies) and renders bare otherwise; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. `mediaBase` is the resolved delivery base (the site's own `assets.publicBase`, or `/media`) that `CairnAdminShell` hands every descendant media surface through context, so a non-default base reaches admin thumbnails too. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. `NavConcept`, named in `concepts`, carries no export row of its own: a consumer reaches it as `Extract<AdminShellData, { public: false }>['concepts'][number]`. |
 | `ListData` | Extension API | `interface ListData { conceptId; label; singular; dated; routable: boolean; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). `routable` mirrors the concept's `routing.routable`, so the create form asks a non-routable concept (Fragments) for a name rather than an address. `EntrySummary`, named in `entries`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'list' }>['page']['entries'][number]`. |
 | `EditData` | Extension API | `interface EditData { conceptId; id; label; singular; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; fragmentTargets: { id; title; body }[] \| null; routable: boolean; mediaTargets: Record<string, { slug; ext; contentType }>; mediaLibrary: Record<string, { hash; slug; ext; contentType; displayName; alt; width; height; bytes }>; inboundLinks; pending; published; publishedFlash; publishActions: PublishActionLink[]; discardedFlash; preview: ResolvedPreview \| null; advisories: AdvisoryNotice[]; orphanTags: string[] }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the media targets (the minimal resolver input keyed by content hash, empty when media is off or the read fails), the media library (the picker's full human layer keyed by the same content hash, projected from the same committed-manifest read, with the `hash` duplicated into each value for `Object.values` iteration, and degrading to empty on the same path as `mediaTargets`), the inbound links for the delete guard, the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch), the site's [publish-actions](#the-publish-actions-seam) resolved for this entry (`publishActions`, rendered only alongside `publishedFlash`), the adapter's `preview` knob resolved for this entry's concept (its `byConcept` override applied; null when the site sets none, which leaves the frame unstyled behind a hint), and the non-blocking server-built `advisories` (today the cross-branch address collision, empty when there is none). `singular` is the delete refusal's noun ("This post could not be deleted."), from the descriptor (defaulted to `label`), mirroring `ListData.singular`. `fragmentTargets` carries the published fragments this entry can include, for the fragment picker and the preview's include resolution, each a minimal `{ id; title; body }` projection; null when nothing here can include one, which covers both a site that declares no `fragments` concept and an entry that is itself a fragment (a fragment can't include a fragment), and empty when fragments are includable but none are published yet. `routable` mirrors the entry's concept `routing.routable`, so the Address fieldset shows a bare name instead of a URL for a non-routable concept (Fragments). `orphanTags` carries the entry's prior tags absent from the configured vocabulary, for the closed taxonomy picker's own-tag flag, and stays empty when the site configures no vocabulary, the concept has no taxonomy field, or every prior tag is already in the vocabulary. `AdvisoryNotice`, `PublishActionLink`, and `ResolvedPreview`, named in `advisories`, `publishActions`, and `preview`, carry no export row of their own: a consumer reaches them as `Extract<AdminData, { view: 'edit' }>['page']['advisories'][number]`, `Extract<AdminData, { view: 'edit' }>['page']['publishActions'][number]`, and `NonNullable<Extract<AdminData, { view: 'edit' }>['page']['preview']>` respectively. |
 | `HistoryData` | Extension API | `interface HistoryData { entries: HistoryEntry[]; draft: { editor: string; lastSavedAt: string } \| null; truncated: boolean; head: string \| null }` | `historyLoad`'s data for the `history` view: the most recent 25 publishes newest first (`entries`), a synthetic top row for an open draft (`draft`, null when there is none, `lastSavedAt` the draft branch's own last-saved moment), `truncated` when the backend's `limit + 1` probe found more publishes than the 25-row bound holds (an entry with exactly 25 stays `false`), and `head`, the default branch's head sha at load time, carried by the revert form as its staleness comparand. `HistoryEntry`, named in `entries`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'history' }>['page']['entries'][number]`. |

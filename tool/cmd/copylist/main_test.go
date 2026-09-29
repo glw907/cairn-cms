@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"go/parser"
 	"go/token"
 	"os"
@@ -52,6 +53,57 @@ func TestCataloguesAreSortedAndDeduplicated(t *testing.T) {
 			}
 			seen[e] = true
 		}
+	}
+}
+
+// TestCairnCatalogueFoldsAConcatenatedConst asserts cairnCatalogue reads a const built by `+`
+// over string literals, parenthesized or not, as one folded string rather than skipping it.
+func TestCairnCatalogueFoldsAConcatenatedConst(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "messages.go")
+	src := `package main
+
+const (
+	literalConst = "plain"
+	foldedConst  = "a" + ("b" + "c")
+	numberConst  = 5
+)
+`
+	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+
+	got, err := cairnCatalogue(path)
+	if err != nil {
+		t.Fatalf("cairnCatalogue(%q) = _, %v; want nil error", path, err)
+	}
+
+	want := []string{"plain", "abc"}
+	if !slices.Equal(got, want) {
+		t.Errorf("cairnCatalogue(%q) = %v; want %v", path, got, want)
+	}
+}
+
+// TestCairnCatalogueFailsLoudlyOnANonLiteralConst asserts cairnCatalogue names
+// errNonLiteralConstValue rather than silently skipping a package-level const whose value is
+// neither a string literal nor a fold of string literals, so a string composed some other way
+// cannot drop out of the golden unseen.
+func TestCairnCatalogueFailsLoudlyOnANonLiteralConst(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "messages.go")
+	src := `package main
+
+var otherIdent = "not a literal"
+
+const badConst = otherIdent
+`
+	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+
+	_, err := cairnCatalogue(path)
+	if !errors.Is(err, errNonLiteralConstValue) {
+		t.Errorf("cairnCatalogue(%q) = _, %v; want an error wrapping errNonLiteralConstValue", path, err)
 	}
 }
 

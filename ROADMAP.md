@@ -158,6 +158,15 @@ leading into beta, not the whole history before it. Treat any further pre-beta s
 same way: ship it, batch its `Consumers must:` line, and let this note stand as the ruling
 rather than re-litigating it pass by pass.
 
+**Clean breaks, no aliases, until the Waymark rebuilds land (Geoff, 2026-09-27).** Every
+production site (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub) is to be
+rebuilt from the Waymark theme, re-skinned to each site's personality. A site rebuilt from the
+template carries no migration burden, so a breaking rename (the `./components` to `./admin`
+case) is cheap now: take the clean break with one `Consumers must:` line rather than a
+compatibility alias or a compromise that keeps a confusing name or seam. Once the rebuilt sites
+are live, each break costs one migration per site again, so re-check this with Geoff when the first
+rebuilt site goes live.
+
 When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem / patch = everything else"
 scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
@@ -309,7 +318,8 @@ The original decision framing, for the record:
     admin's outline-button edges too, whichever order the sheets load in. Scope it to the public
     site; pass C's public-theme work is the natural home.
 
-- **Draft documentation on a conventional approach (Geoff, 2026-09-25).** cairn's docs are still
+- **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
+  `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
   to be rebuilt from the facts container. The docs reset's reader-validation line (passes 1, 1b,
   and 2a, spec `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
   ruling: its reader instrument failed validation across three passes (`docs/HISTORY.md`, "Docs
@@ -318,19 +328,15 @@ The original decision framing, for the record:
   testing. Inputs it inherits, each to keep or drop on its own merits:
   - The exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
     `docs/internal/record/docs-exemplars.md`), never reviewed as a set.
-  - The six-audience ruling and the audience-profile format on the unmerged branch
-    `docs-reset-2a-audiences` (on origin). The profiles themselves were never written.
   - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
   - The designer's theme guide is a primary page (Geoff, 2026-09-27): it documents the one
     public theme contract (Now, "Theme identity", pass C) and is drafted after that contract settles.
   - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
     on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
-    DaisyUI. It links to DaisyUI's theme docs rather than restating them.
+    DaisyUI. It links to DaisyUI's theme docs rather than restating them. Required topic in the stage 2
+    outline.
   - Job-doing readers as an optional advisory pass, about 35k tokens per page: they find real
     defects on their own path and miss what sits off it. They are not a measured gate.
-  - The reader harness and its clade infrastructure are retired (Geoff, 2026-09-26); the
-    conductor's cleanup commit records what was removed, and the branch `docs-reset-2a` (on
-    origin, unmerged) keeps the last working copy.
 
 - **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
   and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
@@ -403,21 +409,6 @@ The original decision framing, for the record:
   A poll with no upper bound on decoration mount is the wrong shape for a gate; wait on a signal
   CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
   already. The next unexplained red `main` on a media test is this.**
-
-- **`create-cairn-site` tells a reader the deploy is free, then deploys something that is not
-  (release-debt pass, 2026-08-19).** The engine and docs now state that a cairn site runs on
-  Workers Paid from its first deploy, but the tool's own interactive flow still says the opposite at
-  the point it matters. `packages/create-cairn-site/src/cloudflare/chapter.mjs:106-113` is the
-  consent text a reader approves before deploying, and it promises "Cloudflare's free workers.dev
-  hosting ... The free plan is enough; nothing in this step costs money." At 3.2 MiB gzipped that
-  deploy fails on a free plan, so the tool breaks the promise it just made. This is not a copy fix:
-  `chapter2.mjs`'s `EMAIL_ADMISSION_DETAIL` and its JSDoc both depend on chapter 1 having
-  established "nothing up to here costs money", and the later "Turn on Workers Paid now, so anyone
-  besides you can sign in?" prompt is premised on Paid arriving later. Fixing it means reworking the
-  tool's money narrative and probably its prompt order, plus the `01c-resume.txt` and
-  `01d-resume.txt` fixtures. **Scoped as its own pass (Geoff, 2026-08-19), deliberately cut from the
-  release-debt pass rather than absorbed into it. Trigger: before `create-cairn-site` publishes,
-  which is the same decision the release cut already owes.**
 
 - **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
   2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
@@ -918,8 +909,9 @@ the named human gates only):**
 
 - **Real defects the pass 1 readers found on current pages (2026-09-24).** The pass changed no
   published page, and the reset rebuilds these pages from the container, so each is evidence for
-  the page pass that redrafts it, or a freeze-rule fix if a site pass hits it first. They are
-  listed in the baseline record (F1 to F6, R1 to R4) and in the validation record's "Confirmed
+  the page pass that redrafts it, or a site-pass fix (or, while that arm's stage is still in
+  flight, a filing) if a site pass hits it first. They are listed in the baseline record (F1 to
+  F6, R1 to R4) and in the validation record's "Confirmed
   real, not counted" notes: the missing Email Sending price in "What it costs", the `send_email`
   binding shape no linked page states, the unexplained `UNCHECKED` reason on
   `is-it-working.md`, and seven contradictions on the three `cli-cairn-*` pages. Trigger: the
@@ -955,6 +947,46 @@ the named human gates only):**
   the gate runner waits on exit and nothing watches for a run that has stopped making progress.
   A watchdog that fails a browser-lane gate after a bounded silence would have surfaced it in
   minutes. Trigger: the next gate run that has to be killed by hand.
+
+- **`check:symbols` still misses an attached shell redirect and drops a continuation left pending
+  at a fence close (draft docs pass 0+1, segment A, 2026-09-26).** The 2026-09-26 hardening
+  (`2d960720`) truncates a `cairn` line's word list at a shell operator or `#` comment written as
+  its own word, so `cairn logs --json | jq --arg x y` no longer blames `cairn` for `jq`'s flag, but
+  an operator glued to its target with no space (`2>&1`, `>out.json`) still tokenizes as one word
+  and is read as a `cairn` argument. Separately, when a fence's last line ends with a `\`
+  continuation and the fence then closes with no further line, `extractCairnLines` sets `pending`
+  to `null` without ever pushing it to `lines`, so that invocation's flags are never checked at
+  all. Trigger: a docs page whose `cairn` line actually is silently unchecked this way, or the next
+  pass that touches `extractCairnLines`.
+
+- **`rendered.test.ts`'s `BASE_URL` contract tests assume nothing listens on `localhost:4173`
+  (draft docs pass 0+1, segment A, 2026-09-26).** The tests failed for the length of the segment
+  because another concurrent worktree's `sirv` preview server held that port; the suite never
+  starts a server itself, so a real one on the assumed port makes an unrelated regression look like
+  the tests' own default-URL assertions failing. Trigger: the next concurrent-pass collision on
+  this port, or the next pass that touches this file, either takes a free ephemeral port instead of
+  the hardcoded default.
+
+- **`admin-toolkit.md`'s outline-chip contrast ratios need re-measuring (draft docs stage 1,
+  2026-09-28).** The outline-chip contrast paragraph once cited two specific ratios (about 2.4:1
+  against a card ground, 2.97:1 against a page ground) for the
+  `color-mix(in oklab, currentColor 55%, transparent)` hairline inside a `text-muted` ancestor;
+  neither traced to a source in the repo (no test, no audit rule output, no computed constant), so
+  stage 1's batch 4/5 fact review removed them and the page now states only the traceable claim
+  (the mix reads under the audit's own 3:1 border-contrast floor against both grounds). Trigger:
+  re-measure the actual ratios, ideally with the rendered `border-contrast` rule itself against a
+  `text-muted` ancestor fixture, before restoring specific numbers to the page.
+
+- **The page-chain's claim inventory has no disposition for a claim a redraft relocates to a
+  linked reference entry (draft docs pass 0+1, task 9, 2026-09-28).** Task 9's chain-proof redraft
+  of `choose-an-ai-posture.md` moved the crawler-decline listing and the limits of declining into
+  the `buildRobots` reference entry, which the register's task-guide anatomy wants (explanation
+  subordinate to the steps), but the page-inputs step's claim inventory still lists those sentences
+  as claims the extend page itself carries, so a fact reader checking the brief against the page
+  reads it as dropped content. Detail:
+  `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-proof.md`, "Finding: the page-chain's
+  brief format and the register's anatomy disagree." Trigger: the next page-chain redraft that
+  relocates a claim to a linked page, or the stage 2 pilot if it hits this first.
 
 - **Report the drawer `:where()` specificity defect upstream to daisyUI (pre-cut, 2026-09-21).**
   `components/drawer.css` releases its open panel's `will-change` through a rule whose prelude is
@@ -1098,8 +1130,9 @@ the named human gates only):**
   after the `tool/v1.0.0` tag. The doctor-retirement track the cut was held behind (retire-1,
   draft docs pass A, the `tool/v1.1.0` release, then retire-2a and retire-2b) is complete through
   retire-2b, and the cut follows it (see `docs/STATUS.md`): the one release cut; a docs chore moving two overturned rules to
-  their execution paths (the narrative-arm freeze and the site-pass no-edit rule), which touches
-  the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
+  their execution paths (the narrative-arm freeze, which now lifts per arm at its own stage
+  merge, and the site-pass no-edit rule, now the `site-docs/<site>-<pass>` PR write path), which
+  touches the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
   the docs-infra currency pass
   (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`, its order against
   the draft docs unruled); the draft docs; the site round, upgrading aksailingclub-org, ecxc-ski,
@@ -1128,7 +1161,11 @@ the named human gates only):**
   as the credential design test. The HUD imports the render package's theme
   (`NewTheme(dark, profile)`), its glyph set, its named width rungs, and its sectioned `Frame`
   unchanged, and adds only the cursor, the selection channel, the viewport, and the
-  generation-counted refresh. An MCP front end is declined (2026-09-20): a skill on disk reaches
+  generation-counted refresh. The HUD's look is a design deliverable, never an implementer
+  default (Geoff, 2026-09-20: best-quality CLI and TUI output is a top priority for the tool):
+  draw real-terminal renderings in both grounds and at 80 and 120 columns, let Geoff pick, cut
+  the goldens from the pick, and write every operator-facing string to
+  `tool/docs/design/copy-standard.md`. An MCP front end is declined (2026-09-20): a skill on disk reaches
   every agent while an MCP server reaches only the main loop, and `cairn help agents` already
   covers the same ground. The architectural rule stands whatever the front end: the spine's API
   is the product, every front end is a view over it, and no logic lives in a view.
@@ -1195,64 +1232,40 @@ the named human gates only):**
     captured from 1.1.0). A passing line wants the check's own neutral name. Needs a tool release,
     and the capture and `is-it-working.md`'s transcript re-taken after it.
 
-- **The B2 architecture reads, what retire-1 left (2026-09-21, updated 2026-09-22).** One read per
-  touched Go package at B2's close; fifteen packages, two exemplary (`logx`, `adopt`), thirteen
-  sound with nits, none escalated. **retire-1's `code-simplifier` round touched `doctor`, `spine`,
-  and `cmd/cairn`, and cleared only what fell there**: `spine`'s hand-retyped `condition_test.go`
-  list replaced by the package var (gaining the missing `ReasonRepoNotRecorded`), and `env.go`'s one
-  task citation removed. Every other B2 nit stands, since the round never reached `render` or
-  `health`. The two with teeth first:
-  - `internal/spine`'s `park_test.go:16` retypes the package's code list by hand as `allParkCodes`.
-    Read the backing list instead.
-  - `internal/logs`'s `fixtureRoundTripper` discards the request, so no test ever observes the
-    query body `Fetch` sends. **This is the seam that let the live 400 through.** Capture the
-    sent body in the fixture and assert from it.
-  - `store.Discover` and `store.Site` have no caller anywhere: the plan expected the auth probe
-    to read through `Discover`, and it calls `st.Load` directly. An unwired deliverable, not in
-    the seams table. Wire it or delete it.
-  - Exported surface with no outside caller, to unexport: `health`'s `FailSeverityOf`, `HasRepo`,
-    and `FixForCondition`, and `providers.RepoOwnership`, whose doc names a caller that does not
-    exist. `spine`'s and `render`'s callerless-export counts are folded into the retire-1 chores
-    entry below, not restated here.
-  - Hand-kept parallel lists, the theme across packages: `spine`'s code lists, `health`'s
-    `Catalogue` of about 35 functions restated in its own test, `providers`'s three parallel
-    lists of the ten `Reason` values, `fixtures`'s hand copy of the nine check ids and its
-    hand-recomputed `Degraded`/`Acknowledged`, and `mangen`'s build helper duplicating
-    `usage_test.go`'s. Derive each from its source, as `cmd/copylist` does by AST.
-  - Process citations in shipped comments: about thirty "reviewed at the 1.0 editorial gate"
-    notes in `cmd/cairn/messages.go`, task-name citations in `root.go` and `deps.go`, about 25
-    plan citations in `render` (one of them stale), and three in `health/fixes.go`. A comment
-    carries the reason the code is what it is, never which pass wrote it.
-  - **Not a defect, recorded so it is not re-filed:** `store`'s `perm_linux.go` and
-    `perm_darwin.go` are byte-identical. That is deliberate. The `hygiene` package forbids build
-    tags module-wide and asserts the pair's byte-identity instead, so a `//go:build linux ||
-    darwin` merge would break its own gate. The ruling belongs in the files' header.
-  Full text: `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
+- **Go tool architecture, declined and unplanned (2026-09-27).** What the two source entries left
+  behind after the Go tool architecture chores pass (thirteen tasks, `docs/HISTORY.md`) shipped
+  their items. Each declined item carries the reason a chore did not fix it:
+  - **`spine.FromKind` and `spine.Kind` stay exported**, not unexported as callerless. Both are
+    pre-adjudicated 2.0 seams: the 1.0 plan's seams table
+    (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md:282-305`) names `FromKind` with its
+    2.0 caller, the HUD's detail view, and `Kind` is its parameter type (Decision 2).
+  - **`render`'s `Role` and its eight constants, the `Profile` constants, and `Glyphs`/`GlyphSet`
+    stay exported**, not folded into the eighteen names the render cut unexported. Each is load-
+    bearing for a seams-table signature: `Role` for `Style(role)`, `Profile` for
+    `NewTheme(dark, p Profile)` and `DetectProfile`'s return, the glyph set for the glyph row
+    (Decision 5).
+  - **`fixtures`'s `Acknowledged` stays scenario data**, not derived against `health.Run` the way
+    its `Degraded` now is. `health.Run` derives `Acknowledged` from the acknowledgement file
+    (`activeAckIDs`), which a fixture does not have, so the fixture's own list is the scenario's
+    statement (Decision 7).
+  - **`probe_token.go` keeps its file name**, not renamed to `auth_check.go`. The rename would
+    break two facts citations and the test-file allowlist in `messages_test.go:34`; the file's
+    actual defect, stale wording naming a retired command, was the chore that shipped (Decision
+    10).
+  - **The B2 record's nits outside the two source entries' bullets stay unplanned**, the same as
+    before this pass (Decision 12): `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
+    None of it blocks a release. **Trigger:** the next pass touching that package.
 
-- **Go tool architecture chores filed at retire-1's close (2026-09-22).** Four
-  `go-architecture-reader` reads at the merge, `doctor` and `render` and `cmd/cairn` sound with
-  nits, `spine` workmanlike. None blocks a release; each carries the condition that makes it bite.
-  - **`cmd/copylist` collects only `*ast.BasicLit`, so a concatenated const never reaches the copy
-    golden.** A real gap in the copy-review gate, found when `cairn doctor`'s `longDoctor` escaped
-    it. `TestCatalogueCarriesEveryCheckString` now folds concatenations for the doctor's own
-    catalogue; the generator itself still does not. **Trigger:** the next operator-facing string
-    written as a concatenation, or any pass touching `cmd/copylist`.
-  - **`spine` carries callerless exports and a five-copy vocabulary.** `FromKind`, `Kind`,
-    `CombineState`, `ExitCodeFor`, and `ParkCodes` have no caller outside the package, and the same
-    code vocabulary is restated in five places. **Trigger:** the next pass that adds a code or a
-    state word, which pays for the drift.
-  - **`render` holds roughly thirty callerless exports pinned by `purity_test.go`**, plus the
-    test-only `Height` and `FailingOnly` fields, and 23 process citations in shipped comments.
-    **Trigger:** draft docs pass A, which already renames `layout.go`'s docs-URL constant, or the
-    HUD, which imports this package wholesale.
-  - **`cmd/cairn` carries stale comments and duplicated printing.** `root.go:37-43,77-78` still
-    claim `--color` and `--width` are inert when `cairn health` acts on both, `probe_token.go`
-    names a retired command, eight `Fprintf(w, "%s\n", data)` copies want one helper, and
-    `deps.go`'s `checks` seam exists for tests alone. **Trigger:** the `tool/v1.1.0` tag session,
-    which re-reads the help text anyway.
-  - **The doctor's `Result.ID` stamp is unobserved by any test.** `Run` stamps each result's id and
-    nothing asserts it, so a wrong id would reach the JSON payload silently. **Trigger:** the next
-    check added to `internal/doctor`.
+- **Go tool architecture, round 2 (2026-09-27).** The chores pass's ten `go-architecture-reader`
+  reads, full findings and best passages at
+  `docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`. Nine of ten packages read
+  sound with nits; most findings predate this pass, since the reader grades a whole package rather
+  than a diff. Structural-finding counts per package, descending: `cmd/cairn` 13 (**needs work**,
+  first in line: the `deps` seam's one test hook per field, duplicated bodies across `adopt`,
+  `auth check`, and the health paths, and a two-path process-exit split), `health` 11, `render` 9,
+  `providers` 7, `spine` 5, `store` 4, `mangen` 4, `fixtures` 2, `copylist` 2, `exe` 1. **Trigger:**
+  the next pass
+  touching any of these packages, or a dedicated architecture pass before tool `1.2`.
 
 - **`design.yml` uploads no Playwright report artifact on failure (found closing the 2026-09-27
   chores batch, the same gap `e2e.yml` had).** The design gate's styleguide e2e job

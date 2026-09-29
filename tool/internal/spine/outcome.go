@@ -98,7 +98,7 @@ func (r ReasonCode) NotAttempted() bool {
 // added to any of them joins the published vocabulary without a second list to keep in step.
 func ReasonCodes() []ReasonCode {
 	out := slices.Clone(fixedReasonCodes)
-	for _, p := range ParkCodes() {
+	for _, p := range parkCodes {
 		out = append(out, ParkReason(p))
 	}
 	for _, r := range providers.Reasons() {

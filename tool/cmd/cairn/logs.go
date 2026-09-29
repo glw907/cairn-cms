@@ -114,8 +114,7 @@ func writeLogs(cmd *cobra.Command, d deps, rf *rootFlags, entries []logs.Entry, 
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", data)
-		return err
+		return writeJSONPayload(cmd.OutOrStdout(), data)
 	}
 	// A terminal gets the log body, which states the day once on its own rule and wraps a field
 	// into its own column. A pipe keeps the tab-separated line, which is what a grep, an awk,

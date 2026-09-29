@@ -11,24 +11,6 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
 
-// allParkCodes enumerates every ParkCode constant, so a test that needs the whole set does not
-// retype it.
-var allParkCodes = []ParkCode{
-	ParkDelegationPropagating,
-	ParkDelegationPending,
-	ParkHostnameRecordsAbsent,
-	ParkHostnameResolverLagging,
-	ParkCertificatePending,
-	ParkEmailNotReady,
-	ParkEmailSenderPropagating,
-	ParkEmailDailyLimit,
-	ParkBuildsAppNotAuthorized,
-	ParkBuildsRepoNotSelected,
-	ParkBuildNotStarted,
-	ParkBuildRunning,
-	ParkBuildsReconcileParked,
-}
-
 var (
 	catalogueRowKey = regexp.MustCompile(`^\s*'([a-z0-9-]+)':\s*\{`)
 	catalogueKind   = regexp.MustCompile(`kind:\s*'wait'`)
@@ -87,7 +69,7 @@ func TestParkCodesMatchWaitKindCatalogueRows(t *testing.T) {
 	slices.Sort(nodeCodes)
 
 	var goCodes []string
-	for _, c := range allParkCodes {
+	for _, c := range parkCodes {
 		goCodes = append(goCodes, string(c))
 	}
 	slices.Sort(goCodes)

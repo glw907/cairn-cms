@@ -1,7 +1,8 @@
 # Durable gotchas
 
-Detail moved out of `CLAUDE.md` to keep that file inside its context budget. Each entry below is
-pointed to from `CLAUDE.md`; read the relevant one before touching the area it names.
+Detail moved out of `CLAUDE.md` to keep that file inside its context budget. The first five
+entries are indexed from `CLAUDE.md`; the rest live only here. Read the relevant one before
+touching the area it names.
 
 ## Cloudflare email
 
@@ -55,3 +56,54 @@ Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-pac
 body and KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse).
 Do not remove the step or strip `lang="ts"`. Full post-mortem:
 [`docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](record/2026-06-21-e2e-dist-svelte-build-failure.md).
+
+## A components-layer rule cannot cancel a utility
+
+Tailwind v4 orders its layers theme, base, components, utilities, and cascade layers resolve
+before specificity. A rule in `@layer components` therefore loses to any utility class on the
+same element, whatever its selector's specificity. Chassis-B1 (2026-09-08) shipped a band-to-footer
+cancel (`.cairn-band + .site-footer { margin-top: 0 }` in
+`examples/showcase/src/chassis/composition.css`) that never applied, because the footer's `mt-2xl`
+was a utility. The regenerated visual baselines baked the 64 to 85 px strip in; only the
+fresh-context verifier's pixel probe saw it. The fix moved the base spacing out of the utility
+and into the same `@layer components` rule set, so the compound selector wins on specificity
+(the comment at `composition.css:42` records it). Prove a cancel in the built sheet (both rules
+in one layer) and by a measured height, never by the suite alone.
+
+The admin side has the same root. daisyUI 5 compiles its component rules into sublayers of
+`@layer utilities`, so an admin override in `@layer components` also loses to a daisyUI
+component rule (the `.btn-primary` lift never rendered). Today's fix is a pinned unlayered rule
+(the pinned-rule comments in `src/lib/components/cairn-admin.css`); the theme identity spec
+(`docs/superpowers/specs/2026-09-26-theme-identity-design.md`) introduces a named `cairn-idiom`
+sublayer pinned after daisyUI's (`@layer utilities.daisyui, utilities.cairn-idiom;`).
+
+## The component project stalls under file parallelism
+
+From 2026-09-21 the component project's parallel browser pages stopped reaching the Vite
+server on this workstation: every page prints `Cannot connect to the server in 60 seconds`
+(`@vitest/browser` `client.js:433`), and the stock `npm test` hangs while holding the heavy gate
+lock, because `cairn-run-gate` has no silence watchdog yet (ROADMAP chore). Three files in
+parallel pass, twelve fail, and serial runs are clean. Ruled out with evidence: the Playwright
+version, the gate's memory scope, orphaned headless shells, inotify, socket, file and process
+limits, conntrack, and `localhost` resolving to `::1`. During a failing run the Vite server
+listens on `[::1]:<port>`, Node is idle, and the port shows paired CLOSE-WAIT and FIN-WAIT-2
+sockets. Root cause unknown; full record in `docs/HISTORY.md` (the doctor-retirement pre-task
+entry).
+
+When a component run prints that line, do not retry the stock gate. Kill the run's scope, run
+`pkill -f 'chromium_headless_shel[l]'` (the bracket keeps the pattern from matching its own
+shell), then run the heavy gate serialized:
+
+```sh
+cairn-run-gate 'npm run check && npx vitest run --project unit --project unit-dist-spawn --project integration && node scripts/test/contained.mjs npx vitest run --project component --no-file-parallelism'
+```
+
+That is the same project set as `npm test`, about 90 seconds for the component project. Once a
+stock `npm test` passes after a reboot, delete this entry and the STATUS watch.
+
+Contention looks similar. When two gates ran at once (2026-09-08, before the machine-wide gate
+lock), a full `npm test` failed on exactly one unrelated file per run:
+`src/tests/unit/audit/rendered.test.ts` (its BASE_URL contract on port 4173) or
+`src/tests/unit/reference-coverage.test.ts` (the default 60-second timeout). Both reproduced green
+alone with `npx vitest run <file>`. Rerun a lone failing file by itself before calling it a
+regression.

@@ -46,7 +46,7 @@ an admin skeleton, not a platform: it does one job well and gets out of the way.
   a positioning question this doc used to hold open: whether the audit's design-conformance rules were
   consumer product or engine-internal apparatus, with a hypothesized split (consumer rules ship, engine
   ones don't) as the likely answer. The rule inventory dissolved that split on evidence rather than
-  confirming it: all 28 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's
+  confirming it: all 34 registered rules (17 static, 17 rendered) audit the `/admin` surface, and a consumer's admin IS cairn's
   admin toolkit, so conformance to cairn's own design system is exactly the product being audited, not
   apparatus that measures the engine from outside. See `docs/reference/cairn-audit.md` for what the
   package ships and what stays engine-side.
@@ -90,6 +90,15 @@ user management and site settings among them, as a second front over the same co
 never adds to the engine's public surface or models a domain actor. "Little else" is a rule
 about what a consumer inherits; the operator's own console is where the owner's work
 accumulates, and it stays lean by the same test, one job served by the thinnest mechanism.
+
+The `cairn` CLI is an assumed part of the cairn system, never an optional companion (Geoff,
+2026-09-21). It ships apart from the npm package only because its install targets differ
+(`go install` and prebuilt binaries per platform). Two consequences follow. Docs, the site
+upgrade brief, the scaffold, and the admin track may assume the operator has `cairn`
+installed, and no docs or packaging answer treats it as a separate product. And its docs
+single-source on cairn.pub with every other page: contracts under `docs/reference/`, operator
+how-tos under `docs/admin/`, while `tool/docs/` keeps only ADRs and design inputs, since a
+second docs home drifts.
 
 ## The failure mode this resists
 

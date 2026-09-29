@@ -79,7 +79,7 @@ func (t Theme) stripWidth(headings []string, siteCol, verdictCol int) int {
 		if i > 0 {
 			total += stripSep
 		}
-		total += t.Width(h)
+		total += t.width(h)
 	}
 	return total
 }
@@ -89,7 +89,7 @@ func (t Theme) stripWidth(headings []string, siteCol, verdictCol int) int {
 func (t Theme) siteColWidth(rs []health.Report) int {
 	n := siteColFloor
 	for _, r := range rs {
-		n = max(n, t.Width(Sanitize(r.Site)))
+		n = max(n, t.width(sanitize(r.Site)))
 	}
 	return min(n, siteColCap)
 }
@@ -164,13 +164,13 @@ const labelWhatToFix = "what to fix"
 // know needs the same work.
 //
 // Drafted to the copy standard's grammar rather than copied, since the catalogue carries no row
-// for a repair's second site, and reviewed at the 1.0 editorial gate.
+// for a repair's second site.
 const labelAlsoOn = "also on: "
 
 // wordTokens is the blocked-group head's collective word for a group more than one missing
 // token together explains, since no single token's own name would cover what stopped it.
 // copy-standard.md's section 2.9 fixes "token" as the word for one credential; this is its
-// plural rather than a fresh coinage, and was reviewed at the 1.0 editorial gate.
+// plural rather than a fresh coinage.
 const wordTokens = "tokens"
 
 // freshest returns the instant the most recently checked site settled, the one clock the fleet
@@ -209,7 +209,7 @@ func (t Theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 			head = append(head, " ")
 		}
 		heading := stripHeading(id)
-		head = append(head, t.cell(RoleMuted, heading, t.Width(heading)))
+		head = append(head, t.cell(RoleMuted, heading, t.width(heading)))
 	}
 	out := []string{strings.TrimRight(row(head...), " ")}
 
@@ -218,12 +218,12 @@ func (t Theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 		for _, c := range r.Checks {
 			byID[c.ID] = c
 		}
-		cells := []string{t.SizedStrong(RoleText, siteCol).Render(t.fitted(in.ASCII, r.Site, siteCol)), " "}
+		cells := []string{t.sizedStrong(RoleText, siteCol).Render(t.fitted(in.ASCII, r.Site, siteCol)), " "}
 		for i, id := range ids {
 			if i > 0 {
 				cells = append(cells, " ")
 			}
-			n := t.Width(stripHeading(id))
+			n := t.width(stripHeading(id))
 			c, found := byID[id]
 			if !found {
 				cells = append(cells, t.centredCell(RoleMuted, t.glyphs(in.ASCII).Sep, n))
@@ -234,7 +234,7 @@ func (t Theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 		}
 		v := siteVerdict(r)
 		cells = append(cells, " ",
-			t.SizedStrong(rowVerdictRole(v, in.Verdict), verdictColWidth).Render(v.String()))
+			t.sizedStrong(rowVerdictRole(v, in.Verdict), verdictColWidth).Render(v.String()))
 		out = append(out, strings.TrimRight(row(cells...), " "))
 	}
 	return out
@@ -244,12 +244,12 @@ func (t Theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 // was cut, so a fixed column holds one line whatever a site chose to name itself. A cell left to
 // wrap would push every column beside it onto a second line.
 func (t Theme) fitted(ascii bool, text string, n int) string {
-	text = Sanitize(text)
-	if t.Width(text) <= n {
+	text = sanitize(text)
+	if t.width(text) <= n {
 		return text
 	}
 	ell := t.glyphs(ascii).Ellipsis
-	return t.Clamp(text, max(n-t.Width(ell), 0)) + ell
+	return t.clamp(text, max(n-t.width(ell), 0)) + ell
 }
 
 // rowVerdictRole returns the ink one site's verdict word takes inside a frame whose own verdict
@@ -265,7 +265,7 @@ func rowVerdictRole(row, frame Verdict) Role {
 // centredCell renders one mark centred in a column measured by the layout's own width table, so
 // the marks form a grid under their headings rather than hugging each column's left edge.
 func (t Theme) centredCell(role Role, text string, n int) string {
-	w := t.Width(text)
+	w := t.width(text)
 	if w >= n {
 		return t.cell(role, text, n)
 	}
@@ -350,7 +350,7 @@ func engineVersion(r health.Report) string {
 			if err := json.Unmarshal(f.Value, &version); err != nil {
 				return ""
 			}
-			return Sanitize(version)
+			return sanitize(version)
 		}
 	}
 	return ""
@@ -394,14 +394,14 @@ func (t Theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 		StyleFunc(func(r, c int) lipgloss.Style {
 			role, strong := tableRole(r, c, rows, verdicts, in.Verdict)
 			if strong {
-				return t.SizedStrong(role, widths[c])
+				return t.sizedStrong(role, widths[c])
 			}
 			return t.Sized(role, widths[c])
 		})
 
 	var out []string
 	for l := range strings.SplitSeq(tb.String(), "\n") {
-		if strings.TrimSpace(Sanitize(l)) == "" {
+		if strings.TrimSpace(sanitize(l)) == "" {
 			continue
 		}
 		out = append(out, strings.TrimRight(l, " "))
@@ -527,7 +527,7 @@ func collectFleetFixes(in RenderInput, rs []health.Report) []fleetFix {
 		out = append(out, f)
 	}
 	for i, r := range rs {
-		site := Sanitize(r.Site)
+		site := sanitize(r.Site)
 		s := split(r)
 		for _, c := range s.Failing {
 			fix, ok := health.FixFor(c.Outcome)
@@ -535,7 +535,7 @@ func collectFleetFixes(in RenderInput, rs []health.Report) []fleetFix {
 				continue
 			}
 			add(fleetFix{
-				site: site, siteRank: i, check: Sanitize(c.ID), tail: conditionID(c.Outcome),
+				site: site, siteRank: i, check: sanitize(c.ID), tail: conditionID(c.Outcome),
 				class: severityClass(c.ID), severity: c.Outcome.State.Severity(), fix: fix,
 			})
 		}
@@ -616,7 +616,7 @@ func groupBlockedFixes(blocked []health.CheckResult) []blockedGroup {
 		if !ok || fix.Text == "" {
 			continue
 		}
-		id := Sanitize(c.ID)
+		id := sanitize(c.ID)
 		credMissing := c.Outcome.Reason == spine.ReasonCredMissing
 		found := false
 		for i := range out {
@@ -645,7 +645,7 @@ func missingVariables(s StatusState) []string {
 	var vars []string
 	for _, c := range s.Credentials {
 		if c.missing() {
-			vars = append(vars, Sanitize(c.Variable))
+			vars = append(vars, sanitize(c.Variable))
 		}
 	}
 	return vars
@@ -695,10 +695,10 @@ func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	// id is a greppable handle for nothing, and the id is the whole reason it is printed.
 	tail := f.tail
 	var tailLines []string
-	if tail != "" && min(fixCheckCol, room)+t.Width(tail) > room {
+	if tail != "" && min(fixCheckCol, room)+t.width(tail) > room {
 		// Below a width that holds the id whole on a line of its own it is not printed at all. A
 		// broken id is worse than an absent one, and --json carries it at every width.
-		if t.Width(tail) <= width-fixSentence {
+		if t.width(tail) <= width-fixSentence {
 			tailLines = atColumn(t.Style(RoleMuted), fixSentence, []string{tail})
 		}
 		tail = ""
@@ -709,23 +709,23 @@ func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	// every golden would carry.
 	checkCol := fixCheckCol
 	if tail == "" {
-		checkCol = t.Width(f.check)
+		checkCol = t.width(f.check)
 	}
 	checkCol = min(checkCol, room)
 	nameCell := t.Sized(RoleMuted, checkCol)
 	if url := fixURL(f.fix); url != "" && in.Profile != ProfileNoColor && linkable(url) {
-		nameCell = t.SizedLink(RoleMuted, url, checkCol)
+		nameCell = t.sizedLink(RoleMuted, url, checkCol)
 	}
 	head := row(
 		strings.Repeat(" ", fixIndent),
 		t.cell(RoleAccent, t.glyphs(in.ASCII).Arrow, fixArrowCol),
-		t.SizedStrong(RoleText, siteCol).Render(t.fitted(in.ASCII, f.site, siteCol-fixGutter)),
+		t.sizedStrong(RoleText, siteCol).Render(t.fitted(in.ASCII, f.site, siteCol-fixGutter)),
 		nameCell.Render(t.fitted(in.ASCII, f.check, checkCol)),
 		t.Style(RoleMuted).Render(tail),
 	)
 	out := append([]string{strings.TrimRight(head, " ")}, tailLines...)
 	out = append(out, atColumn(t.Style(RoleSubtle), fixSentence,
-		t.wrapNoOrphan(Sanitize(f.fix.Text), width-fixSentence))...)
+		t.wrapNoOrphan(sanitize(f.fix.Text), width-fixSentence))...)
 	// A merged entry can cover, or list "also on:", as many sites as the fleet holds: one shared
 	// token disables the same checks fleet-wide, so both lists below wrap through wrapNoOrphan
 	// rather than plain wrap, the same guard the sentence above already takes.
@@ -735,7 +735,7 @@ func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	}
 	if len(f.alsoOn) > 0 {
 		lead := strings.Repeat(" ", fixSentence) + t.Style(RoleMuted).Render(labelAlsoOn)
-		col := fixSentence + t.Width(labelAlsoOn)
+		col := fixSentence + t.width(labelAlsoOn)
 		out = append(out, t.hangingAtNoOrphan(t.Style(RoleMuted), lead, col,
 			strings.Join(t.fittedEach(in.ASCII, f.alsoOn, width-col), ", "), width)...)
 	}

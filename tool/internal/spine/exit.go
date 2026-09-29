@@ -174,31 +174,6 @@ func worseVerdict(a, b Verdict) Verdict {
 	return a
 }
 
-// CombineState returns whichever of a and b outranks the other by State.Severity, so a later
-// endpoint that merely could not be reached never silently downgrades an earlier rejected
-// credential.
-func CombineState(a, b State) State {
-	if b.Severity() > a.Severity() {
-		return b
-	}
-	return a
-}
-
-// ExitCodeFor maps one State to the verdict a run carrying nothing but that State reports. It is
-// the report-free path, for a command that probes endpoints rather than settling checks; holds
-// and an expected site count enter through ExitCode instead. A State this package does not know
-// reports UNKNOWN rather than OK, so an unrecognised value can never print a false green.
-func ExitCodeFor(s State) Verdict {
-	switch s {
-	case OK:
-		return VerdictOK
-	case Failing:
-		return VerdictCritical
-	default:
-		return VerdictUnknown
-	}
-}
-
 // StateWord returns the wire word one check's result carries: "pass", "fail", "held", "skip", or
 // "unknown".
 //

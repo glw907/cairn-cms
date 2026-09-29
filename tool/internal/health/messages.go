@@ -14,8 +14,8 @@ import (
 // prose at its own call site. A check returns its measured values; a function here renders the
 // line. Every string is written to the standard's section 2 grammar (2.4 for a detail line, 2.6
 // for a skip reason) and copied from its section 3 catalogue entry where one exists; a function
-// whose comment says so renders a string the catalogue does not cover, reported to the editorial
-// gate per section 4.6.
+// whose comment says so renders a string the catalogue does not cover instead, under section
+// 4.6's own rule for that case.
 
 // detailHTTPSAlwaysUseHTTPSOff renders the https-forced check's Always Use HTTPS half, catalogue
 // section 3.4.
@@ -66,7 +66,7 @@ func detailServingHostnameMismatch() string {
 // detailServingNotCairn renders the serving check's Failing verdict for a hostname whose home
 // page answers but whose /admin is not cairn's. The catalogue folds this case into the line
 // above, which tells an operator the opposite of what the probe found; this is the plainest
-// fragment satisfying 2.4, reported to the editorial gate.
+// fragment satisfying section 2.4.
 func detailServingNotCairn() string {
 	return "the hostname answers, but /admin is not cairn's sign-in page"
 }
@@ -108,16 +108,14 @@ func detailEmailSenderNotOnboarded() string {
 }
 
 // detailDeployWorkerNotFound renders the deploy check's absent-Worker verdict. The catalogue
-// carries no row for this case; this is the plainest fragment satisfying 2.4, reported to the
-// editorial gate.
+// carries no row for this case; this is the plainest fragment satisfying section 2.4.
 func detailDeployWorkerNotFound() string {
 	return "the Worker does not exist in this account"
 }
 
 // detailDeployBuildsNotConnected renders the deploy check's disconnected-Builds verdict,
-// catalogue section 3.4. The clause after the comma is this task's own addition, reported to the
-// editorial gate: the bare catalogue line reads as a fault, and the state it names is a site
-// deployed some other way.
+// catalogue section 3.4, with an added clause: the bare catalogue line reads as a fault, and the
+// state it names is a site deployed some other way.
 func detailDeployBuildsNotConnected() string {
 	return "Workers Builds is not connected to this Worker, so there is no deployment to read"
 }
@@ -125,8 +123,7 @@ func detailDeployBuildsNotConnected() string {
 // detailNoRepoRecorded renders the skipped verdict every repository-reading check returns
 // against a record that names none. One fragment serves all three: the fact is the record's, not
 // the check's, and three wordings for one fact would read as three different problems. The
-// catalogue carries no row; this is the plainest fragment satisfying 2.6, reported to the
-// editorial gate.
+// catalogue carries no row; this is the plainest fragment satisfying section 2.6.
 func detailNoRepoRecorded() string {
 	return "no GitHub repository recorded for this site"
 }
@@ -134,8 +131,7 @@ func detailNoRepoRecorded() string {
 // detailDeployBuildFailed renders the deploy check's failed-build verdict. The catalogue's own
 // build-failed row composes the commit and branch position (3.4's "build failed 26m ago
 // (3f0ba18), main is 2 commits ahead"), which belongs to the render layer reading Fields, not to
-// this bare Detail fallback; this is the plainest fragment satisfying 2.4, reported to the
-// editorial gate.
+// this bare Detail fallback; this is the plainest fragment satisfying section 2.4.
 func detailDeployBuildFailed() string {
 	return "the last build did not succeed"
 }
@@ -144,15 +140,15 @@ func detailDeployBuildFailed() string {
 // edit branch, so nothing is waiting on an editor. The catalogue's own row for this state words
 // it as an absence of observations ("no cairn branches or publish commits observed"), which
 // reads as a failure to measure rather than the ordinary state it names; this is the plainest
-// fragment satisfying 2.4, reported to the editorial gate.
+// fragment satisfying section 2.4.
 func detailPublishNothingWaiting() string {
 	return "no edits are waiting to publish"
 }
 
 // detailPublishStaleBranches renders the publish-path check's stale-branch verdict. The
 // catalogue's publish-path rows assume an App-installation check this package does not run; this
-// is the plainest fragment satisfying 2.4 for the branch-staleness verdict this package actually
-// measures, reported to the editorial gate.
+// is the plainest fragment satisfying section 2.4 for the branch-staleness verdict this package
+// actually measures.
 const (
 	tmplPublishStaleBranchSingular = "1 cairn branch is older than 14 days with no later publish"
 	tmplPublishStaleBranchesPlural = "%d cairn branches are older than 14 days with no later publish"
@@ -197,7 +193,7 @@ const tmplEngineBehindActionableSuffix = ", with a required change"
 // detailEngineBehindActionable renders the engine check's Failing verdict, when a skipped
 // release carries an actionable "Consumers must:" change. The catalogue's own behind-latest row
 // does not distinguish this case from the OK behind-latest one; this appends the one fact that
-// does, reported to the editorial gate.
+// does.
 func detailEngineBehindActionable(installed, latest string, releasesBehind int) string {
 	return detailEngineBehind(installed, latest, releasesBehind) + tmplEngineBehindActionableSuffix
 }
@@ -231,8 +227,8 @@ func detailAPIRequestRejected() string {
 // The format templates detailErrorsCount and detailErrorsAboveThreshold render from. The two
 // "at least" forms carry a count the fetch truncated at its own limit: the window holds that many
 // records and possibly more, so the line says what was measured rather than passing a floor off as
-// an exact number. They extend the catalogue's section 3.4 rows, reported to the editorial gate
-// per section 4.6.
+// an exact number. They extend the catalogue's section 3.4 rows, under section 4.6's own rule for
+// a template the catalogue does not carry.
 const (
 	tmplErrorsCount                 = "%d errors in %s"
 	tmplErrorsCountAtLeast          = "at least %d errors in %s"
@@ -296,8 +292,7 @@ func detailCredsForbidden() string {
 //
 // The codes name a condition rather than a provider, so the prose does too: a check that fell
 // back to its reason has no measured detail to name one with. Each line is written to the copy
-// standard's 2.6 grammar for a skip reason; the catalogue carries no rows for these, and the set
-// is reported to the editorial gate.
+// standard's 2.6 grammar for a skip reason; the catalogue carries no rows for these.
 var reasonPhrases = map[spine.ReasonCode]string{
 	spine.ReasonCredMissing:     "the token this check reads is not set",
 	spine.ReasonCredForbidden:   "the token lacks a permission this check reads",

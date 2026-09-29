@@ -102,8 +102,7 @@ func writeDoctorJSON(w io.Writer, d deps, dir string, checked []doctor.CheckedRe
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(w, "%s\n", data)
-	return err
+	return writeJSONPayload(w, data)
 }
 
 // writeOutsideCairnSite prints the one line a directory that is not a cairn site earns, instead

@@ -37,7 +37,7 @@ const logEmpty = "no records"
 // still line up with each other.
 func renderLogs(t Theme, in RenderInput) Frame {
 	width := in.width()
-	site := Sanitize(in.Site)
+	site := sanitize(in.Site)
 	if len(in.Entries) == 0 {
 		return Frame{Header: []string{t.Style(RoleMuted).Render(logEmpty)}}
 	}
@@ -49,17 +49,17 @@ func renderLogs(t Theme, in RenderInput) Frame {
 	// The field column only pays for itself where it leaves the fields a readable share of the
 	// line. Below that the record names itself on one line and its fields follow at the time
 	// column, which is a wrap the reader can follow rather than a token cut down the middle.
-	wide := width >= Width100
+	wide := width >= width100
 	var body []string
 	for _, e := range in.Entries {
 		cells := []string{
 			strings.Repeat(" ", logIndent),
 			t.cell(RoleMuted, e.At.Format("15:04:05"), logTime),
-			t.cell(logLevelRole(e.Level), Sanitize(e.Level), logLevel),
+			t.cell(logLevelRole(e.Level), sanitize(e.Level), logLevel),
 		}
 		fieldCol := logIndent + logTime + logLevel
 		if e.Event != "" {
-			cells = append(cells, t.SizedStrong(RoleText, logEvent).Render(Sanitize(e.Event)))
+			cells = append(cells, t.sizedStrong(RoleText, logEvent).Render(sanitize(e.Event)))
 			fieldCol += logEvent
 		}
 		lead := row(cells...)
@@ -111,12 +111,12 @@ func logLevelRole(level string) Role {
 // column, in the order the record carried them.
 //
 // A value is trimmed after it is sanitized rather than before. A Worker's own console line
-// commonly opens with a newline and a colour escape, which Sanitize turns into a leading space,
+// commonly opens with a newline and a colour escape, which sanitize turns into a leading space,
 // and that space reads as a value missing after its `key=` rather than as part of the message.
 func logFieldText(e logs.Entry) string {
 	pairs := make([]string, 0, len(e.Fields))
 	for _, f := range e.Fields {
-		pairs = append(pairs, Sanitize(f.Key)+"="+strings.TrimSpace(Sanitize(logFieldValue(f.Value))))
+		pairs = append(pairs, sanitize(f.Key)+"="+strings.TrimSpace(sanitize(logFieldValue(f.Value))))
 	}
 	return strings.Join(pairs, "  ")
 }

@@ -133,26 +133,6 @@ func (gh *GitHub) FileAtRef(ctx context.Context, owner, repo, path, ref string) 
 	return decoded, nil
 }
 
-// RepoOwnership reports whether owner/repo is private, via GET /repos/{owner}/{repo}. A public
-// repository answers this route with no token at all, so a 200 here proves nothing about a
-// token's own permissions; probe-token uses the result to warn an operator whose verification
-// set carries no private repository that the token's scope stays unconfirmed.
-func (gh *GitHub) RepoOwnership(ctx context.Context, owner, repo string) (private bool, err error) {
-	var raw map[string]json.RawMessage
-	path := fmt.Sprintf("/repos/%s/%s", owner, repo)
-	if err := gh.getJSON(ctx, path, &raw); err != nil {
-		return false, err
-	}
-	rawPrivate, ok := raw["private"]
-	if !ok {
-		return false, fmt.Errorf("providers: response carries no private field for %s/%s", owner, repo)
-	}
-	if err := json.Unmarshal(rawPrivate, &private); err != nil {
-		return false, fmt.Errorf("providers: decode private field for %s/%s: %w", owner, repo, err)
-	}
-	return private, nil
-}
-
 // Branch names one branch of a repository, with the last commit's date and the login of the
 // GitHub account that authored it, the two facts the publish-path check ages a "cairn/*" branch
 // by.

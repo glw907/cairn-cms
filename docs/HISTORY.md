@@ -7,6 +7,235 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Draft docs pass 0+1: setup and reference, 2026-09-28
+
+Branch `draft-docs-0` (worktree `.claude/worktrees/draft-docs-0`), draft PR #91 (unmerged at
+this close, per Geoff's hold: the merge itself waits on his word). Plan:
+`docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md`. Stood up the lean page chain, the
+four docs-gate check extensions, the `check:docs-gate` runner, and the R10 review-page template;
+lifted the narrative-arm freeze to a per-arm rule; settled four stale owner facts; and checked
+every reference page's claims in place.
+
+**What landed, by task:**
+
+- Tasks 1-2, freeze lift and rule sweep (cairn-cms and workstation sides, `2427856a` plus
+  `4b2916fc`/`353cc61e`/`9f2ebe36`): the narrative-arm freeze becomes per-arm (each arm lifts at
+  its own stage merge, not all at once), and `agents/site-implementer.md` plus
+  `agents/cairn-implementer.md` also carry the rule, widened from the task's original scope.
+- Task 3, `check:symbols` flag pairing (`d0639043`, `85efee59`): a `cairn` CLI line's flags now
+  resolve against its own command path, not a flat flag list, so a value-taking flag's value is
+  never mistaken for a path word. Two edge cases the 2026-09-26 hardening (`2d960720`) still does
+  not close carry forward (see below).
+- Task 4, `check:provenance` brief coverage (`d17d716c`): fails a rebuilt page whose brief
+  coverage lapses, catching a stale `briefs-rebuilt.json` entry as itself, not a missing brief.
+- Task 5, `check:readiness` shipped-anchor list (`0713d110`, `3e452fdc`): a released tag's anchor
+  removed from `is-it-working.md` alongside its `conditions.ts` entry still fails the check.
+- Task 6, the docs gate script and the editor-quotes floor (`d87ee318`, `14d3f7ac`): one
+  `npm run check:docs-gate` command now runs all fifteen doc-content checks, scoped with
+  `--page`/`--brief` for a single page's gate; `check:editor-quotes` fails a pinned page stripped
+  of its quotes.
+- Task 7, the lean page chain and drafter (workstation-side chain commits): the runner drops the
+  v2 chain's profile grader; `cairn-docs-drafter` files no facts, only the page-inputs step does;
+  one redraft by default, a second `fix` escalates to the conductor rather than a third round.
+- Task 8, the R10 review-page template (`db4bac98`, `2abc278e`, `9503b0c2`): an Artifact page
+  embedding a batch of markdown files with per-file edit mode; writability is learned only from
+  the first `not_writer`/`not_granted` rejection, and a `conflict` reload restores stashed edits
+  while a successful publish's reload restores none.
+- Task 9, chain proof and review-page round trip (conductor-led, `6ad6dee8`, `0f7ab264`,
+  `82c906e2`, `c634f43c`): the four owner facts were checked and fixed first; the chain drafted
+  `docs/extend/choose-an-ai-posture.md` for real (not thrown away, per this closing task's
+  direction) and Geoff's Firefox review of the published page found the register itself under-
+  scoped (the academic voice and heading rule were front-door-only, with no "AI phrasing" heading
+  test), fixed in the register rather than the page (`07d5c87e`, `fb5238d1`, plus the
+  `cairn-register-editor` agent definition on the workstation). Geoff approved the redraft (v4)
+  with no edits.
+- Task 10, stage 1 reference claim check (five batches, `716cd90e` through `11bd4809`; full
+  record `docs/superpowers/research/2026-09-26-draft-docs-stage-1-record.md`): 1204 claims
+  checked across 28 of 29 reference pages (the two theme identity pass B moves deferred by
+  Geoff's split), 35 discrepancies found and 33 applied; a batch 1 apply agent's wrong-worktree
+  mistake was caught by `diff-reviewer` and moved by the conductor rather than repeated.
+- Task 11 (this close): merged `main` (PR #96, setup-paid) into `draft-docs-0`, resolving four
+  real conflicts (the front-door voice bullets, the AI-posture facts and their line numbers, the
+  gate-tier docs string, and `gate-tier.mjs`'s `DOCS_GATE`/`SCRIPTS_GATE` constants, keeping both
+  sides' intent in each). Fixed `choose-an-ai-posture.md`'s owed deficiency (fact `f:1ij5h5`,
+  filed on the `setup-paid` branch): the "Pass the posture to the robots route" step now states
+  plainly that a site scaffolded by the current setup command needs no edit there, and keeps the
+  step and its snippet only for a site scaffolded before that fix.
+
+**What a gate caught:** the batch 1 apply agent's uncommitted edits landing in the wrong worktree
+(`draft-docs-0-proof` instead of `draft-docs-0`), caught by its `diff-reviewer` read before batch
+2 dispatched; the register's front-door-only voice scoping, caught by Geoff's own Firefox read of
+the published review page, not by any automated reviewer, since the register itself carried the
+gap the reviewers graded against.
+
+**What would be wrong to rediscover:**
+- The register's academic voice and heading rule now govern every published page, not only the
+  front door (`docs/internal/docs-register.md`, "Universal contract"); a page reviewed against
+  the older, front-door-only framing is reviewed against a stale rule.
+- `check:symbols` still misreads an attached shell redirect (`2>&1`, `>out.json`, no space before
+  the operator) as an ordinary word, and drops a continuation left pending when a fence closes
+  without a following line; both survive the 2026-09-26 hardening and are filed to `ROADMAP.md`'s
+  Next tier, not fixed here.
+- `rendered.test.ts`'s `BASE_URL` contract tests assume nothing listens on `localhost:4173`; a
+  concurrent worktree's preview server holding that port makes them fail for a reason unrelated
+  to the change under test (filed to `ROADMAP.md`'s Next tier).
+- Draft docs stage 1 covers 28 of 29 reference pages; `docs/reference/components.md` (renamed to
+  `admin.md` by theme identity pass B) and the `./public` page pass B creates need the same
+  fact-read batch once pass B lands, with stage 1's own acceptance.
+- The page-chain's claim inventory has no disposition for a claim a redraft relocates to a linked
+  reference entry (task 9's proof record, "Finding: the page-chain's brief format and the
+  register's anatomy disagree"; filed to `ROADMAP.md`'s Next tier).
+- `admin-toolkit.md`'s outline-chip contrast ratios (about 2.4:1, 2.97:1) were removed as untraced
+  to any source; re-measure before restoring specific numbers (filed to `ROADMAP.md`'s Next tier).
+
+**Cost:** the plan's ceiling is about 9.6M, flagged at about 7.7M planned spend. Measured
+`subagent_tokens` pieces recorded in the plan's own ledger: segment A (tasks 1-5 plus the
+hardening and simplifier rounds) about 2.7M plus the conductor; task 9's chain proof about 0.65M
+against its 0.2M review-page estimate; task 10's stage 1 about 4.9M against its 4.5M
+first-batch-projection checkpoint. Those three alone total about 8.25M, already past the 7.7M
+flag and within the 9.6M ceiling. Tasks 6, 7, 8, the segment B boundary, and this closing task
+(11) are not separately measured in the plan's ledger; the plan's own pre-flight framing already
+recorded this pattern (a projection past its checkpoint is the checkpoint question, not a hard
+stop) and this record does not manufacture a number where the ledger carries none.
+
+**Attended time:** one planning miss (the register's academic voice and its "You know it worked
+when" heading rule were scoped front-door-only, found at task 9's owner review of the published
+proof page); one execution sitting (task 9's owner review, 2026-09-28): Geoff's Firefox read of
+the published review page across four versions (v1 code fix, v2, v3 with four comments, v4
+approved with no edits), per `pass-core`'s rule that this sitting counts as one regardless of its
+round count.
+
+`code-simplifier` ran after this close, on the closed head, as `bd935c9d`.
+
+## Workers Paid confirmation and AI posture prompt, 2026-09-28
+
+Branch `setup-paid` (worktree `.claude/worktrees/setup-paid`), PR #96, merge commit `e6a2b717`.
+The setup command now confirms Workers Paid, with the price, before the first build and deploy;
+declining stops before anything deploys (catalogue row `deploy-plan-declined`). Chapter 2's own
+saved step stays the existing name `paid-plan-declined`, since the Go tool mirrors it and existing
+site records already carry it. A new AI posture setup prompt (no-preference default, decline,
+invite; `--ai-posture` flag) writes `aiPosture` into the new site's `cairn.config.ts`, and the
+showcase's `robots.txt` route (the template source) now passes `cairn.aiPosture` to
+`robotsResponse`. `scripts/checks/gate-tier.mjs` classifies `packages/create-cairn-site/**` into
+the scripts tier.
+
+What a later pass would be wrong to rediscover: an unrequested rename of a persisted setup step
+breaks the Go tool's `TestStepConstantsMatchNodeRecordSteps` and strands existing site records;
+captured pty transcripts are re-captured, never hand-edited; the template is emitted from
+`examples/showcase` (`npm run emit:template`), never hand-edited.
+
+## Go tool architecture chores, thirteen tasks, 2026-09-27
+
+Branch `go-chores-plan` (worktree `.claude/worktrees/go-chores-plan`), PR #94. Plan:
+`docs/superpowers/plans/2026-09-27-go-tool-architecture-chores.md`. A behavior-preserving refactor
+of `tool/` clearing every defect and nit the two ROADMAP Next-tier Go entries named, run as
+thirteen tasks across four segments (S1 to S4), each `cairn-implementer` on `sonnet` reviewed by
+`diff-reviewer` on `claude-opus-5-5`, gated per task by `make -C tool check` on the light lane.
+
+**What landed, by task:**
+
+- Task 1, `spine` callerless exports and vocabulary lists (`3e6aebd9`, `d121fd46`): `CombineState`,
+  `ExitCodeFor`, and `ParkCodes` deleted; an AST test proves each of the four string vocabularies
+  (`Code`, `ParkCode`, `ReasonCode`, `Condition`) complete against its own const block.
+- Task 2, `logs` fixture observes the sent request (`64503afc`, `d6c6f1e8`): `fixtureRoundTripper`
+  now captures method, path, and decoded body, and assertions read the wire body instead of
+  restating `buildQuery`'s arguments.
+- Task 3, `store` unwired walk and perm ruling (`355695b6`): `store.Discover` and `store.Site`
+  deleted (no caller's semantics matched); the byte-identical `perm_linux.go`/`perm_darwin.go`
+  pair carries a header stating why the pair stays two files.
+- Task 4, `doctor`'s `Result.ID` stamp observed (`39074399`): a test proves `doctor.Run` stamps
+  every result's id correctly, red against the stamp removed.
+- Task 5, `health` exports, `Catalogue`, and citations (`9975d489`): `FailSeverityOf`, `HasRepo`,
+  `FixForCondition`, and `FixForCode` unexported; an AST test proves every operator-facing message
+  reaches `Catalogue` or a reasoned exemption; about 18 process citations rewritten as reasons.
+- Task 6, `providers`' dead method and `Reason` lists (`9a6ba169`, `41e3d185`):
+  `GitHub.RepoOwnership` and its four tests deleted; `String` and `Reasons` both read one
+  index-keyed name table.
+- Task 7, `render/fixtures` ids and `Degraded` from source (`69b3fb92`): `nineCheckIDs` derives
+  from `health.All`; a fixtures test drives every fixture's check results through `health.Run` and
+  asserts the same `Degraded`.
+- Task 8, one build helper for `mangen` and `usage_test.go` (`183ecab2`): one `internal/exe`
+  helper builds the `cairn` binary for both callers.
+- Task 9, `render` surface and test-only fields (`b486c45c`): the eighteen callerless names in
+  finding 6 unexported or moved into tests; `RenderInput.Height` and `FailingOnly`, their reads,
+  the `tall` golden case, and the h024 golden deleted.
+- Task 10, `render`'s shipped comments (`95de343e`): every non-test comment states its rule's
+  reason instead of citing a task, plan, or review gate; the package comment names all four bodies.
+- Task 11, `cmd/copylist` folds concatenated consts (`a75179e0`, `137e7ee3`, `1ca19e9e`):
+  `cairnCatalogue` now folds string-literal concatenations (`longRoot`, `longHealth`,
+  `longDoctor`) and fails loudly on any other non-literal const; `longDoctor`'s first sentence
+  split to clear the copy gate's comma heuristic (the pass's one operator-visible change,
+  `cairn doctor --help`).
+- Task 12, `cmd/cairn` one JSON writer and an ordinary `checks` field (`13b6841c`): the eight
+  `fmt.Fprintf(w, "%s\n", data)` sites collapsed to one helper; `deps.checks` is now set by
+  `newDeps` from `health.All` with `healthChecks`'s nil-means-default branch gone.
+- Task 13, `cmd/cairn`'s stale and process comments (`bc8eca9b`, one fix round `e8d840a4`):
+  `root.go`'s `--color`/`--width` comments state what `cairn health` does with each value;
+  `probe_cloudflare.go`, `main.go`, and `f:cwtfs7` (`docs/internal/facts/reference.md`) now name
+  `cairn auth check` as the live command and state `codedError`'s current reason (`spine.ExitCode`
+  computes the verdict, `codedExit` hands it to `main`); every remaining process citation in
+  non-test `cmd/cairn` files removed.
+- Close simplifier (`010f10e6`): three edits over the pass's changed Go code, accepted by
+  `diff-reviewer`.
+
+**What the gates caught.** Task 1's vocabulary-completeness test originally failed silently against
+a dropped constant; `diff-reviewer` sent it back so the AST test names the offending constant, and
+the fix round (`d121fd46`) landed that. Task 13's first comment draft made four false claims
+(`NO_COLOR` precedence, a copy-standard section misattributed, which commands print the account
+id, and a leftover task citation), caught by `diff-reviewer` and fixed in one round. Task 8's
+implementer hit
+a chained-gate ordering trap: its computed gate ran `check:facts` ahead of `make -C tool check`, so
+the pass's own pre-existing baseline facts defect (`docs/internal/facts/admin.md:53`, out of
+scope) stopped the chain before the real gate ran; the implementer ran the two legs separately.
+Task 4's review escalated once on a gate-string mismatch between the absolute and relative forms
+of `make -C tool check`, resolved by normalizing both forms in the runner (dotfiles `fafa4f6`).
+
+**What a later pass would be wrong to rediscover:**
+
+- **The three hidden `Long` help strings.** `cmd/copylist` collected only `*ast.BasicLit`
+  constants, so `longRoot`, `longHealth`, and `longDoctor` (each a `+`-concatenation in
+  `cmd/cairn/messages.go`) never reached `tool/testdata/copy.golden.md` or the copy-review gate.
+  Task 11 taught `cairnCatalogue` to fold string-literal concatenations and fail loudly on any
+  other non-literal const, so the gap cannot reopen silently. `cmd/cairn/messages_test.go:117`
+  still hand-copies a narrower version of the same const-walking parse (no fold, swallows
+  `Unquote` errors), filed as a structural finding in the architecture-reads record, not fixed
+  in this pass.
+- **The `longDoctor` comma trip and `check-copy`'s first-line-only, period-means-fix-line reach.**
+  Once the fold reached `longDoctor`, its four-comma first sentence tripped the copy gate's comma
+  heuristic. The heuristic reads only each entry's first line and treats a line ending in a period
+  as a fix line; `longHealth`'s four-comma continuation line (not its first) passed unseen for the
+  same reason. The heuristic is reaching a help `Long`, not a fix-line violation, and stays as it
+  is: splitting the one sentence was cheaper than teaching the gate to tell the two apart.
+- **The seams-table rulings.** `spine.FromKind`/`Kind`, and `render`'s `Role`, `Profile`
+  constants, and glyph set, all read as callerless by a grep-based reader but are pre-adjudicated
+  2.0 seams (the 1.0 plan's seams table) or load-bearing for a kept seam's own signature. A future
+  chore should not re-flag them without re-reading the seams table first.
+- **The facts-gate coupling.** `check:facts` fails at HEAD on one pre-existing defect this pass
+  does not own (`docs/internal/facts/admin.md:53`). A per-task gate string that chains
+  `check:facts` ahead of `make -C tool check` lets that baseline defect stop the whole chain
+  before the real gate runs (Task 8 hit this). Run the two checks as separate legs, or order
+  `check:facts` after the real gate, not before it.
+- **The ~150 test-file process citations left in place.** The process-citation rule (Decision 11)
+  covers only non-test `.go` files under `tool/`; roughly 150 citations of a task, plan, or
+  criterion number remain in `_test.go` files, deliberately out of this pass's scope. A later pass
+  should not treat their presence as new drift.
+- **Absolute versus relative gate paths raised false mismatches until the runner normalized
+  them.** Task 4's `diff-reviewer` escalated over `make -C tool check` written two ways
+  (`make -C /abs/path/tool check` versus `make -C tool check`) that ran the identical target; the
+  runner now treats both forms as the same gate string.
+- **The architecture reads grade whole packages, so their findings mostly predate the pass.** The
+  ten `go-architecture-reader` reads at this pass's close
+  (`docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`) found 58 structural
+  findings and 96 nits, the large majority pre-existing rather than introduced by this pass's
+  diffs. `cmd/cairn` alone read "needs work" (13 structural findings), everything else "sound with
+  nits." Declined items and the round-2 follow-up are in `ROADMAP.md`, not restated here.
+
+**Spend:** about 7.1M of the 8.5M ceiling (Task 0 plus plan and review about 0.8M, S1 about 1.0M,
+S2 about 1.9M, S3 about 1.2M, S4 about 1.3M, the close's simplifier and reviews about 0.2M, the
+architecture reads about 0.7M). Attended time: planning misses 0 (Geoff approved the plan in one
+line); execution sittings 1 (he ruled the merge on green close in one line). Task 4's gate-string
+escalation was the conductor's own ruling, not a sitting.
+
 ## Chores batch: CI report uploads, check fixes, two docs fixes, 2026-09-27
 
 Branch `chores-0927`. Eight ROADMAP items, each a small, independently gated fix:
@@ -47,7 +276,7 @@ gate did not include `npm run check`.
 - The chain runner halts at an escalation rather than skipping forward, so an escalated task's
   later siblings need a fresh relaunch, not a resume.
 
-
+## Docs reset reader-validation line, stopped, 2026-09-25 to 26
 
 Geoff stopped docs reset pass 2a mid-pilot and closed the reader-validation line: "cut our losses,
 clean up, and record the failure." The line built simulated readers (headless Claude sessions in
@@ -587,7 +816,8 @@ from a 2026-09-19 leak check had filled to 6168M, and the Go linker builds in `/
 - The component project runs serially on this workstation:
   `node scripts/test/contained.mjs npx vitest run --project component --no-file-parallelism`.
   Three files in parallel pass, twelve fail, and serial runs are clean. The root cause is
-  unknown, so this is a workaround, not a fix (`vitest-browser-parallel-pages-stall` memory).
+  unknown, so this is a workaround, not a fix (`docs/internal/durable-gotchas.md`, "The component
+  project stalls under file parallelism").
 - A Go gate that fails at the link step with a quota error is the machine, not the code. Check
   `/tmp` usage against the tmpfs quota before reading the failure as a build break.
 - `npm run check:surface -- --update` forwards the flag to `check-surface-leaks.mjs` only,

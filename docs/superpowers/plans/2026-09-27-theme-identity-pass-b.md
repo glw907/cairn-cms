@@ -1688,3 +1688,43 @@ a toggle switch, an `AdminTable` in `card-shell card-shadow`, and a `StatusChip`
     shipped page says so. A developer's D1-backed admin screen returns a 500 under the dev
     backend. The invalid first run hit this.
 - The probe dirs are deleted after this entry.
+
+### Task 8 close review and task 7 (2026-09-29, overnight session)
+
+- **`code-simplifier`** (Opus), `c1ac9d0d`: `classesByElement` takes an optional normalizer, and
+  its near-duplicate is gone. `tokenWithBase` takes only a set. The insert helpers slice the
+  document themselves. Messages and `0.99.0` are unchanged.
+- **`prose-voice-reviewer`** (Opus) on the shipped guidance: two blocking findings. First, the
+  "two roots" claim was false in three files. The audit's default scope has three roots, and the
+  sheet compiles two. Second, `daisyui-first.md` pointed a consumer's agent at
+  `docs/internal/admin-design-system.md`, which the tarball does not ship. Five advisories were
+  also taken.
+- **`svelte-reviewer`** (Opus): the subpath split is clean. Two blocking findings on task 2's
+  insert fix:
+  - A caret inside a line's leading indentation stripped it, turning indented code into a
+    paragraph and a nested item into a top-level one.
+  - The whole-document dispatch unfolded every folded block and moved in-flight upload
+    placeholders to the document end.
+
+  B3, the missing `Consumers must:` entry, is the close drafter's job under this plan.
+- **Task 7a** (`engine-logic`), `7787389a`, accepted with no fix round. It adds
+  `paddedInsertSpan` and dispatches only the changed span. A caret in leading indentation keeps
+  the whole line. The insert carries `userEvent: 'input'`, `isolateHistory.of('full')`, and
+  `scrollIntoView`. A document that ended with a newline keeps one. The `EditorApi.insert` TSDoc
+  says block text only. Tests were written first and failed on the pre-fix code: unit rows for
+  indentation and the trailing newline, a component test for a fold surviving an insert, and one
+  for the undo step. The placeholder case is proven at unit level, since no placeholder harness
+  exists. One existing row's expectation changed ('Paragraph text.\n' now ends with a newline),
+  forced by the trailing-newline outcome. Gate green, golden-path e2e 13 passed.
+  `transformSelection` keeps the whole-document pattern, which goes to `ROADMAP.md`.
+- **Task 7b** (`docs`), `8d0ea9a3`, escalated on the literal grep check alone. The reviewer found
+  every item met. Four `docs/internal` hits remain, all pre-existing and outside the task's
+  files: `cairn-extend/SKILL.md:12,20,21`, whose lines 20-23 already mark them as source-repo
+  paths, and `cairn-consult/references/brief-template.md:4`, which names the consumer site's own
+  consultations path. **Conductor ruling:** the criterion was over-broad, so 7b is accepted with
+  those exempt. `SKILL.md:12`'s imperative pointer is noted for the next guidance pass.
+- **Full gate** on `8d0ea9a3`: `check:close`, the node projects, the component project (89 files,
+  1769 passed, 2 skipped), and the showcase unit suite gave `gate exit: 0`. The tool gate gave
+  `gate exit: 0`.
+- **Spend.** The close so far is about 0.95M (simplifier 0.09M, reviews 0.15M, task 7 workflow
+  0.31M, gate 0.05M, S1 and its diagnosis about 0.35M). Running pass total: about 6.6M of 19M.

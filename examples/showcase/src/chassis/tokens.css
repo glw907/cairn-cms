@@ -52,7 +52,7 @@
 @import "@glw907/cairn-cms/cairn-public.css";
 @import "./prose.css";
 @import "./composition.css";
-@source not "./.claude";
+@source not "../../.claude";
 
 @plugin "daisyui" {
   themes: false;

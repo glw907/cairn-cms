@@ -262,8 +262,13 @@ test("bake writes the template's root CLAUDE.md with the import line and a site 
 test('bake excludes .claude from the site\'s own Tailwind build', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
-  const tokens = await readFile(path.join(to, 'src', 'chassis', 'tokens.css'), 'utf8');
-  assert.match(tokens, /@source not "\.\/\.claude";/);
+  const tokensPath = path.join(to, 'src', 'chassis', 'tokens.css');
+  const tokens = await readFile(tokensPath, 'utf8');
+  // Tailwind resolves the path against the stylesheet that carries the directive, so the line must
+  // land on the project-root .claude, not a .claude beside the stylesheet.
+  const excluded = /@source not "([^"]+)";/.exec(tokens)?.[1];
+  assert.ok(excluded, 'tokens.css carries an @source not line');
+  assert.equal(path.resolve(path.dirname(tokensPath), excluded), path.join(to, '.claude'));
 });
 
 test('the emitted gitignore ignores .claude/agent-memory/', async (t) => {

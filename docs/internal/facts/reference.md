@@ -1066,6 +1066,8 @@ re-sourced to Go on this tree rather than to the page.
   distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`
   itself, that is three other bins. Source: `package.json:188-193` (`bin` field),
   `package.json:173-175` (`./vite` export). [verified]
+- `f:hiif6u` `cairn-guidance install` ships a fourth skill, `cairn-public`, for the public side of a site: a router `SKILL.md` within the 3,500-token packaged budget, and `references/` holding one catalogue page per public piece (each registry directive plus the built-in `figure` and `include`, each island, `CairnHead`, `PreviewBanner`, each `cairn-*` class the chassis `composition.css` defines, and six prose pages). `npm run check:public-skill` fails a source with no page, a snippet class absent from the showcase's compiled public sheet and the emitted-class registry, a named token that resolves nowhere, and a parser that matches nothing. Source: `skills/cairn-public/SKILL.md:1`, `scripts/checks/check-public-skill.mjs:1`. [verified]
+- `f:qzsspl` The chassis `tokens.css` excludes the project-root `.claude/` from Tailwind's automatic source detection with `@source not "../../.claude"`. Tailwind resolves that path against the stylesheet that carries it, so the earlier `./.claude` excluded only a directory beside `src/chassis/`, and a utility used only in an installed skill's files reached a scaffolded site's compiled CSS. `check:public-skill` compiles a standalone copy to prove the exclusion. Source: `examples/showcase/src/chassis/tokens.css:55`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 
 ## docs/reference/islands.md
 

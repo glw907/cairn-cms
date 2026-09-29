@@ -94,6 +94,10 @@ jobs:
       - run: npm --prefix examples/showcase run check:cairn
       - run: npm --prefix examples/showcase run test:unit
       - run: npm --prefix examples/showcase run format:check
+      # The cairn-public skill's coverage gate: every public piece has a catalogue page, every snippet
+      # class compiles in the showcase's public sheet, and every named token resolves. It compiles with
+      # the showcase's own Tailwind, so it runs after the showcase install.
+      - run: npm run check:public-skill
       - name: Install Vale 3.23.0
         run: |
           curl -sfL https://github.com/errata-ai/vale/releases/download/v3.23.0/vale_3.23.0_Linux_64-bit.tar.gz \

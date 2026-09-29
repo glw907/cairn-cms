@@ -107,7 +107,7 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
   (`@.claude/cairn/CLAUDE.md`) a site's root `CLAUDE.md` needs, printed by `check`'s import-line
   item when it is absent.
 
-## The three skills
+## The four skills
 
 `install` copies every directory the package ships under `skills/` into `.claude/skills/`:
 
@@ -117,6 +117,10 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
 - **`cairn-extend`** is the recipe router: given what a developer is building, it opens with
   whether a stock DaisyUI component already covers it, then names the atom, the seam, and the
   shipped recipe doc for each case, and closes with a pre-flight checklist reference.
+- **`cairn-public`** teaches an agent the public side of a site: the job-to-token table for a
+  theme, where a per-scheme value goes, the two escapes from a literal, and one catalogue page for
+  each public piece cairn ships, giving its rendered markup, the classes and tokens it reads, and
+  its override seams. It defers to the official DaisyUI skill for component classes.
 - **`cairn-consult`** triggers when a developer has worked around the engine twice, or wants
   something the seams do not reach, and writes a consultation brief in the four-field format
   (what the pass builds, the engine edge it presses, evidence for the any-site case, the site's
@@ -129,8 +133,10 @@ The installed skills' own reference files quote utility class names verbatim as 
 and Tailwind v4's automatic source detection scans any non-ignored file under the project,
 `.claude/` included. Exclude `.claude/` from the site's own Tailwind build (an `@source not`
 directive, available from Tailwind 4.1, or the equivalent of a `.gitignore` exclusion for the
-toolchain in use) so those examples never compile into the site's own shipped CSS. A gitignored
-`.claude` passes `check`'s item 6 outright, since Tailwind's own scanner already skips it.
+toolchain in use) so those examples never compile into the site's own shipped CSS. Tailwind
+resolves the path in that directive relative to the stylesheet that carries it, so a stylesheet
+under `src/chassis/` writes `../../.claude`, and a stylesheet at the project root writes
+`./.claude`. A gitignored `.claude` passes `check`'s item 6 outright, since Tailwind's own scanner already skips it.
 
 ## The trust boundary
 

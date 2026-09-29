@@ -6,6 +6,30 @@ DaisyUI is a deliberate, documented exception, never inertia; this page states t
 for each, with the ruling that is the why. A home-grown component in a site's own admin that
 this page cannot explain is a finding, not something to copy.
 
+## Write this, get this
+
+Write the plain daisyUI or cairn role class a screen needs; the theme layer, not the markup, carries the ratified look.
+
+| Write | Get |
+|---|---|
+| `type-title font-[550] font-[family-name:var(--font-display)]` | the page heading, 24px at weight 550, no bold, in the display face. |
+| `type-label font-semibold uppercase tracking-[0.08em] text-muted` | an eyebrow: quiet, uppercase, tracked out. |
+| `font-medium text-subtle` | a resting sidebar item; CairnAdminShell renders the nav itself, no screen writes one directly. |
+| `btn btn-primary` | the one accent-filled commit action on a surface. |
+| `btn btn-ghost` | a quiet button for chrome actions, toolbar controls, and row affordances. |
+| `input` | a single-line text field. |
+| `select` | a native select control. |
+| `card-shell card-shadow` | a floating card surface: the box radius, a hairline edge, and elevation. |
+| `btn` | the plain button: a hairline edge, no fill accent. |
+| `btn btn-neutral` | the ink opener: a solid neutral fill, the first commit-adjacent step up from plain. |
+| `btn btn-soft btn-primary` | the soft primary: a tinted act-on state, softer than the solid commit. |
+| `join-item btn btn-active` | the selected segment in a join or segmented control: a neutral wash plus a state hairline. |
+| `rounded-selector` | the corner for a chip, tag, count, or other small inline marker. |
+| `rounded-field` | the corner for a control, button-like element, or small thumbnail. |
+| `rounded-box` | the corner for a panel, card, tile, popover, sheet, or the brand tile. |
+
+A custom admin component lives under `src/routes/admin` or `src/lib/admin`: the two roots `cairn-audit` reads by default and the site's admin sheet compiles. A component placed anywhere else, `src/lib/components` for one, is never audited and its utilities are never compiled.
+
 ## Tooltip
 
 Native `title` no longer carries the engine's own tooltip content on an action control:
@@ -49,10 +73,15 @@ disappear into the row. Ruling: `audit-admin-statuschip`.
 
 ## Segmented-control contrast
 
-For the join-style pickers (a facet, `Pagination`, the editor's Write/Preview capsule), a
-lightened `.btn-active` fill on the dark theme measures 1.14:1 against an unselected sibling, so
-cairn pins a hairline ring on top of it. No ruling slug names this one on its own;
-`docs/internal/admin-design-system.md` carries the measured number.
+For the join-style pickers (a facet, `Pagination`, the editor's Write/Preview capsule), the
+selected segment is a neutral wash (a 7% mix of `base-content` over `base-100`) at weight 600,
+with a state hairline on the segment's own border in both themes. The rule keys on all five
+selected forms: `.btn-active`, `aria-pressed="true"`, `aria-checked="true"`, `aria-current`
+(unless `false` or empty), and a checked radio. A color variant, `btn-outline`, and `btn-dash`
+keep their own fill and ink, so a `join-item btn btn-primary` selected segment stays primary. A
+screen writes `join-item btn btn-active` and adds nothing; the check glyph, where the control
+shows one, is the screen's own job. `docs/internal/admin-design-system.md` carries the measured
+contrast numbers.
 
 ## Open opportunity, not yet built
 

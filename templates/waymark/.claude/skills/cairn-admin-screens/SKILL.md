@@ -65,6 +65,32 @@ ratified against a written decision or observed-only. Query by role id (`button-
 `node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`, again a path from your site's
 root) before inventing a height or a padding value from scratch.
 
+## Write this, get this
+
+Write the plain daisyUI or cairn role class a screen needs; the theme layer, not the markup, carries the ratified look.
+
+| Write | Get |
+|---|---|
+| `type-title font-[550] font-[family-name:var(--font-display)]` | the page heading, 24px at weight 550, no bold, in the display face. |
+| `type-label font-semibold uppercase tracking-[0.08em] text-muted` | an eyebrow: quiet, uppercase, tracked out. |
+| `font-medium text-subtle` | a resting sidebar item; CairnAdminShell renders the nav itself, no screen writes one directly. |
+| `btn btn-primary` | the one accent-filled commit action on a surface. |
+| `btn btn-ghost` | a quiet button for chrome actions, toolbar controls, and row affordances. |
+| `input` | a single-line text field. |
+| `select` | a native select control. |
+| `card-shell card-shadow` | a floating card surface: the box radius, a hairline edge, and elevation. |
+| `btn` | the plain button: a hairline edge, no fill accent. |
+| `btn btn-neutral` | the ink opener: a solid neutral fill, the first commit-adjacent step up from plain. |
+| `btn btn-soft btn-primary` | the soft primary: a tinted act-on state, softer than the solid commit. |
+| `join-item btn btn-active` | the selected segment in a join or segmented control: a neutral wash plus a state hairline. |
+| `rounded-selector` | the corner for a chip, tag, count, or other small inline marker. |
+| `rounded-field` | the corner for a control, button-like element, or small thumbnail. |
+| `rounded-box` | the corner for a panel, card, tile, popover, sheet, or the brand tile. |
+
+The kit as written markup, from buttons through a card, is in `references/exemplar-kit.md`.
+
+A custom admin component lives under `src/routes/admin` or `src/lib/admin`: the two roots `cairn-audit` reads by default and the site's admin sheet compiles. A component placed anywhere else, `src/lib/components` for one, is never audited and its utilities are never compiled.
+
 ## Register rules
 
 Three register rules the audit cannot check mechanically, because they need the builder's own
@@ -112,5 +138,5 @@ suppressing a finding is a disguised failure, not a pass.
 ## References
 
 `references/` carries the material that does not need to load every time: the annotated
-exemplars, the form-anatomy contract, the extension grammar, the craft chapter, and the grader
-prompt. See `references/README.md` for what is there and when to reach for it.
+exemplars, the plain-class kit, the form-anatomy contract, the extension grammar, the craft
+chapter, and the grader prompt. See `references/README.md` for what is there and when to reach for it.

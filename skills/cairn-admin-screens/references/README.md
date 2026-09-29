@@ -7,6 +7,7 @@ narrower question than the core does.
 |---|---|
 | `exemplar-list.md` | Building or reviewing a list screen (a Members-style table) |
 | `exemplar-detail.md` | Building or reviewing a detail or slide-over screen |
+| `exemplar-kit.md` | Writing buttons, joins, alerts, controls, a chip, a field, or a card in plain classes |
 | `form-anatomy.md` | Laying out a form's rows and labels |
 | `extension-grammar.md` | Deriving a component the toolkit doesn't ship yet |
 | `grader-prompt.md` | The done-gate's step 3: a coherence read against your own captures |

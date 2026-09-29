@@ -23,6 +23,40 @@ verdict.
   that forced it.
 - For every action with more than two outcomes, does it return a discriminated result on one
   `outcome` field, switched on rather than tested with a boolean flag?
+- Does the change write a fixed Tailwind radius (`rounded-md`, `rounded-lg`, an arbitrary
+  `rounded-[...]`, or `rounded-full` on a chip) instead of the corner ladder `rounded-selector`,
+  `rounded-field`, or `rounded-box`? Each is a finding.
+- Does the change carry a retired button or badge patch: `bg-neutral` on a `btn` (write
+  `btn btn-neutral`), `bg-primary/10` as a Publish tint (write `btn btn-soft btn-primary`),
+  `shadow-none` on a `btn`, or `badge-ghost` (use `StatusChip`)? Each is a finding.
+- The audit is the mechanical net for the last two checks: `radius-scale` and
+  `stock-default-hazards` report them from `npx cairn-audit`. Read the diff for the same patterns
+  in markup the audit does not reach, and name the audit rule in the finding.
+- Does a new custom admin component sit under `src/routes/admin` or `src/lib/admin`, the roots the
+  audit reads and the site's admin sheet compiles? One anywhere else, `src/lib/components` for
+  one, is a finding.
+
+## Write this, get this
+
+Write the plain daisyUI or cairn role class a screen needs; the theme layer, not the markup, carries the ratified look.
+
+| Write | Get |
+|---|---|
+| `type-title font-[550] font-[family-name:var(--font-display)]` | the page heading, 24px at weight 550, no bold, in the display face. |
+| `type-label font-semibold uppercase tracking-[0.08em] text-muted` | an eyebrow: quiet, uppercase, tracked out. |
+| `font-medium text-subtle` | a resting sidebar item; CairnAdminShell renders the nav itself, no screen writes one directly. |
+| `btn btn-primary` | the one accent-filled commit action on a surface. |
+| `btn btn-ghost` | a quiet button for chrome actions, toolbar controls, and row affordances. |
+| `input` | a single-line text field. |
+| `select` | a native select control. |
+| `card-shell card-shadow` | a floating card surface: the box radius, a hairline edge, and elevation. |
+| `btn` | the plain button: a hairline edge, no fill accent. |
+| `btn btn-neutral` | the ink opener: a solid neutral fill, the first commit-adjacent step up from plain. |
+| `btn btn-soft btn-primary` | the soft primary: a tinted act-on state, softer than the solid commit. |
+| `join-item btn btn-active` | the selected segment in a join or segmented control: a neutral wash plus a state hairline. |
+| `rounded-selector` | the corner for a chip, tag, count, or other small inline marker. |
+| `rounded-field` | the corner for a control, button-like element, or small thumbnail. |
+| `rounded-box` | the corner for a panel, card, tile, popover, sheet, or the brand tile. |
 
 ## What it returns
 

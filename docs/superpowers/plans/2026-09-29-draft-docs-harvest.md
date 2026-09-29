@@ -384,7 +384,7 @@ Run `cairn-pass`'s close:
 | Task | Status | Tokens | Notes |
 | --- | --- | --- | --- |
 | 1 | done (`c56e68b8`, fix `94057384`) | 260k (impl 168k, review 92k) | one fix round: basename `Source:` citations; carried to tasks 4 and 7: bare `why-cairn.md` shadowed by the fixture, full path behind `../../` unmatched |
-| 2 | pending | | |
+| 2 | done (`f8b4f116`, `f0011a96`, fix `a330c633`) | 657k (impl 519k, review 138k) | one fix round: `[rejected]` bullets stated the correction instead of the false claim, one near-miss mapping. 450 claims, 125 reused, 208 filed, 9 rejected. Rate 0.53k per page line; remaining R3 lines (5,077) project to about 2.7M, well inside 12M. Chains launched as run `wf_01d09570-176` from `a330c633` |
 | 3 to 6 | pending | | one row, from the chains run's `spent`; 24 extend pages under R3 |
 | 7a | pending | | R3: chains merged, verifier over audited pages; then hold for #97 |
 | 6b | held for #97 | | R3: six deferred pages plus the recheck files |

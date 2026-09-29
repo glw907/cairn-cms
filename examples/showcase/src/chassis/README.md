@@ -48,9 +48,12 @@ image of `$chassis` for everything that is not genre-free.
 
 Four class prefixes appear across this site, and each names who owns it, not enforced by a
 gate but stated here so a new class reaches for the right one. `cairn-*` is shared between the
-engine and the chassis: the engine writes or styles `cairn-place-*`, `cairn-tok-*`, and
-`cairn-focus-ring`, and the chassis defines the rest (`cairn-card`, `cairn-band`, `cairn-section`,
-`cairn-hero`, `cairn-sidebar-layout`, `cairn-router-scrolling`). A theme colors a `cairn-*` class
+engine and the chassis: the engine writes or styles `cairn-place-*`, `cairn-tok-*`, `cairn-glyph`,
+and `cairn-focus-ring`. The chassis composition primitives are `cairn-card`, `cairn-band`,
+`cairn-section`, `cairn-hero`, and `cairn-sidebar-layout`. The component-grammar names `cairn-head`,
+`cairn-icon`, and `cairn-grid` are stamped by the chassis render code and listed in the engine's
+"Emitted classes" registry. A `cairn-*` class not named here, such as `cairn-router-scrolling`, is
+the theme's own (`src/theme/site.css` and the `(site)` layout). A theme colors a `cairn-*` class
 through tokens and never restyles its structure. `site-*` is the theme's own chrome and page
 classes and custom properties (`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`).
 `sg-*` is the styleguide route's own demo classes, scoped to `/styleguide` and never read anywhere

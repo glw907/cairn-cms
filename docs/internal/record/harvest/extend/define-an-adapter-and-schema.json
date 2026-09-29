@@ -16,7 +16,7 @@
         4
       ],
       "paraphrase": "Contract line: declare what the site publishes, where it commits, and how it renders in one config.",
-      "cut": "marketing"
+      "fact": "f:hkh101"
     },
     {
       "lines": [
@@ -64,7 +64,7 @@
         38
       ],
       "paraphrase": "Snippet: a posts concept with title, date, description, and a taxonomy tags field.",
-      "cut": "illustrative"
+      "new-fact": "f:u4cfvv"
     },
     {
       "lines": [
@@ -176,7 +176,7 @@
         99
       ],
       "paraphrase": "Snippet: createGithubApp called with owner, repo, branch, and IDs.",
-      "cut": "illustrative"
+      "new-fact": "f:0w7jar"
     },
     {
       "lines": [
@@ -208,7 +208,7 @@
         110
       ],
       "paraphrase": "Snippet: an email sender config with a from address.",
-      "cut": "illustrative"
+      "fact": "f:z7lprs"
     },
     {
       "lines": [
@@ -248,7 +248,7 @@
         153
       ],
       "paraphrase": "Snippet: a full cairn.config.ts assembling content, backend, email, and rendering.",
-      "cut": "illustrative"
+      "new-fact": "f:u4cfvv"
     },
     {
       "lines": [

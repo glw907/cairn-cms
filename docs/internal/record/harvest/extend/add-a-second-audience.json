@@ -16,7 +16,7 @@
         6
       ],
       "paraphrase": "The choice of mechanism turns on whether the audience signs in as editors do.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:b3l3t0"
     },
     {
       "lines": [
@@ -32,7 +32,7 @@
         13
       ],
       "paraphrase": "A staff-shaped audience restricted to one admin corner should use a none-capability role with its own home.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:4673n6"
     },
     {
       "lines": [
@@ -64,7 +64,7 @@
         20
       ],
       "paraphrase": "A separate population needing its own login should not be modeled in the editor roster.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:nguseg"
     },
     {
       "lines": [
@@ -160,7 +160,7 @@
         52
       ],
       "paraphrase": "Declare a home whenever the role exists only for a custom screen.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:7n28wc"
     },
     {
       "lines": [
@@ -240,7 +240,7 @@
         96
       ],
       "paraphrase": "Snippet: a member channel built from delivery, lookup, normalize, and challenge functions.",
-      "cut": "illustrative"
+      "fact": "f:41kl6q"
     },
     {
       "lines": [
@@ -296,7 +296,7 @@
         113
       ],
       "paraphrase": "The member area need not look like cairn's admin.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:nguseg"
     },
     {
       "lines": [
@@ -304,7 +304,7 @@
         114
       ],
       "paraphrase": "Advice to reuse the admin-toolkit for a shared list-and-form look.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:lncjdr"
     },
     {
       "lines": [
@@ -328,7 +328,7 @@
         132
       ],
       "paraphrase": "Snippet: wrangler d1_databases entries for AUTH_DB and a member database.",
-      "cut": "illustrative"
+      "fact": "f:rcpe0n"
     },
     {
       "lines": [

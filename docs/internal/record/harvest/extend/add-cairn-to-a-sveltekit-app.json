@@ -16,7 +16,7 @@
         4
       ],
       "paraphrase": "Contract line: wire credentials and bindings so the App, backend, and auth store exist before adapter config.",
-      "cut": "marketing"
+      "new-fact": "f:e5vm42"
     },
     {
       "lines": [
@@ -48,7 +48,7 @@
         17
       ],
       "paraphrase": "Three things need creating in order, each producing a value the next needs.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:e5vm42"
     },
     {
       "lines": [
@@ -112,7 +112,7 @@
         33
       ],
       "paraphrase": "Install-scope advice: only on this account unless there is a reason.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:rp65d2"
     },
     {
       "lines": [
@@ -136,7 +136,7 @@
         40
       ],
       "paraphrase": "Keep the pem file outside the repository as a credential.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:7dtrwy"
     },
     {
       "lines": [
@@ -144,7 +144,7 @@
         45
       ],
       "paraphrase": "Install the App on the account owning the content repository, per GitHub's guide.",
-      "cut": "navigation"
+      "new-fact": "f:rp65d2"
     },
     {
       "lines": [
@@ -168,7 +168,7 @@
         55
       ],
       "paraphrase": "Confinement does more work on a repository holding other content.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:l5gx1t"
     },
     {
       "lines": [
@@ -184,7 +184,7 @@
         56
       ],
       "paraphrase": "The permission choice is worth making once, deliberately.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:bbbfqb"
     },
     {
       "lines": [
@@ -208,7 +208,7 @@
         71
       ],
       "paraphrase": "Snippets: base64 encoding commands for macOS or Linux and for PowerShell.",
-      "cut": "illustrative"
+      "new-fact": "f:97fxdx"
     },
     {
       "lines": [
@@ -216,7 +216,7 @@
         74
       ],
       "paraphrase": "Paste the encoded output into a Worker secret, never a tracked file.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:7dtrwy"
     },
     {
       "lines": [
@@ -384,7 +384,7 @@
         174
       ],
       "paraphrase": "Snippet: createGithubApp called with owner, repo, branch, and IDs.",
-      "cut": "illustrative"
+      "new-fact": "f:0w7jar"
     },
     {
       "lines": [

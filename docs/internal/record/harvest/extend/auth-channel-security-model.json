@@ -48,7 +48,7 @@
         13
       ],
       "paraphrase": "The channel is not a menu of interchangeable auth strategies.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:q7fj6p"
     },
     {
       "lines": [
@@ -336,7 +336,7 @@
         109
       ],
       "paraphrase": "A capture transport carries the same risk and must never point at real contacts.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:d2j9cj"
     },
     {
       "lines": [
@@ -352,7 +352,7 @@
         114
       ],
       "paraphrase": "Keep dev and capture transports strictly local, gated like cairn's dev backend.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:rv9gdc"
     },
     {
       "lines": [
@@ -376,7 +376,7 @@
         121
       ],
       "paraphrase": "A stale roster lookup is a data problem the factory cannot detect.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:pa2hqh"
     },
     {
       "lines": [

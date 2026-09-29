@@ -16,7 +16,7 @@
         5
       ],
       "paraphrase": "The page covers symptoms fixed only by changing site code, with a log event naming the cause.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:gy2h7p"
     },
     {
       "lines": [
@@ -168,7 +168,7 @@
         71
       ],
       "paraphrase": "Format dates derived from today in a timezone-stable way.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:2r6juw"
     },
     {
       "lines": [
@@ -184,7 +184,7 @@
         81
       ],
       "paraphrase": "Set the variable only in CI or local vars, never production, and read every date through the seam.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:f7tkkw"
     },
     {
       "lines": [

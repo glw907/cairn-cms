@@ -16,7 +16,7 @@
         4
       ],
       "paraphrase": "Contract line: build the one render function and register a first component.",
-      "cut": "marketing"
+      "fact": "f:3l7f56"
     },
     {
       "lines": [
@@ -96,7 +96,7 @@
         40
       ],
       "paraphrase": "A site needing no further directive is done at this point.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:dmn2uu"
     },
     {
       "lines": [
@@ -120,7 +120,7 @@
         72
       ],
       "paraphrase": "Snippet: a callout component with a select attribute and title and body slots.",
-      "cut": "illustrative"
+      "fact": "f:htxey1"
     },
     {
       "lines": [
@@ -192,7 +192,7 @@
         105
       ],
       "paraphrase": "Snippet: registering the callout on the registry passed to createRenderer.",
-      "cut": "illustrative"
+      "fact": "f:dmn2uu"
     },
     {
       "lines": [

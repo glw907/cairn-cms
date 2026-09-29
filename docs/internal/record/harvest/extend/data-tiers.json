@@ -40,7 +40,7 @@
         9
       ],
       "paraphrase": "The selection rule column: what belongs in each tier.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:pgy0mr"
     },
     {
       "lines": [
@@ -72,7 +72,7 @@
         15
       ],
       "paraphrase": "Git history serves as an audit trail at no extra infrastructure cost.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:70mf58"
     },
     {
       "lines": [
@@ -128,7 +128,7 @@
         29
       ],
       "paraphrase": "D1 holds what an admin request must look up in milliseconds, nothing from git history.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:pgy0mr"
     },
     {
       "lines": [
@@ -208,7 +208,7 @@
         48
       ],
       "paraphrase": "D1's role is narrow; a fact for git's audit trail goes in a commit.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:pgy0mr"
     },
     {
       "lines": [
@@ -288,7 +288,7 @@
         89
       ],
       "paraphrase": "Choose a tier by what must read the fact and how fast.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:pgy0mr"
     },
     {
       "lines": [

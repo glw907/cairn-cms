@@ -64,7 +64,7 @@
         33
       ],
       "paraphrase": "Snippet: a unit converter component defined with hydrate true.",
-      "cut": "illustrative"
+      "fact": "f:nm3bbo"
     },
     {
       "lines": [
@@ -80,7 +80,7 @@
         38
       ],
       "paraphrase": "Advice to write the fallback as real content matching the mounted initial state.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:9zxml1"
     },
     {
       "lines": [
@@ -104,7 +104,7 @@
         42
       ],
       "paraphrase": "Visible suits a component far down the page where immediate mounting is wasted work.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:mynt0l"
     },
     {
       "lines": [
@@ -120,7 +120,7 @@
         57
       ],
       "paraphrase": "Snippet: the live Converter Svelte component.",
-      "cut": "illustrative"
+      "fact": "f:hje4zb"
     },
     {
       "lines": [
@@ -144,7 +144,7 @@
         65
       ],
       "paraphrase": "An island author must bind props to text only, never into html, href, src, or style.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:8356mn"
     },
     {
       "lines": [
@@ -176,7 +176,7 @@
         81
       ],
       "paraphrase": "Snippet: registering the Converter island in the adapter's rendering object.",
-      "cut": "illustrative"
+      "fact": "f:thjrvl"
     },
     {
       "lines": [
@@ -208,7 +208,7 @@
         107
       ],
       "paraphrase": "Snippet: a root layout calling hydrateIslands from afterNavigate behind an empty-registry guard.",
-      "cut": "illustrative"
+      "new-fact": "f:lv29ox"
     },
     {
       "lines": [
@@ -272,7 +272,7 @@
         123
       ],
       "paraphrase": "The swap causes no layout shift.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:9zxml1"
     }
   ]
 }

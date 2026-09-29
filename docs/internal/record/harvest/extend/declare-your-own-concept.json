@@ -16,7 +16,7 @@
         4
       ],
       "paraphrase": "Contract line: add a second content type and decide whether it gets public pages.",
-      "cut": "marketing"
+      "fact": "f:r03vis"
     },
     {
       "lines": [
@@ -48,7 +48,7 @@
         18
       ],
       "paraphrase": "Motivating example: a shared author identity reused across posts as its own concept.",
-      "cut": "illustrative"
+      "fact": "f:i2k4jp"
     },
     {
       "lines": [
@@ -72,7 +72,7 @@
         43
       ],
       "paraphrase": "Snippet: the adapter's content map holding posts and authors.",
-      "cut": "illustrative"
+      "fact": "f:r03vis"
     },
     {
       "lines": [
@@ -96,7 +96,7 @@
         52
       ],
       "paraphrase": "Pointer to the content index section of the delivery page.",
-      "cut": "navigation"
+      "fact": "f:4mz4tp"
     },
     {
       "lines": [
@@ -104,7 +104,7 @@
         72
       ],
       "paraphrase": "Snippet: a content index adding an authors glob to createSiteIndexes.",
-      "cut": "illustrative"
+      "fact": "f:4mz4tp"
     },
     {
       "lines": [
@@ -128,7 +128,7 @@
         83
       ],
       "paraphrase": "routing is the most important decision for a supporting concept and changes what it is for.",
-      "cut": "stance-without-owner-basis"
+      "fact": "f:6e06p2"
     },
     {
       "lines": [
@@ -192,7 +192,7 @@
         117
       ],
       "paraphrase": "Snippet: a posts concept with a reference field to authors.",
-      "cut": "illustrative"
+      "fact": "f:i2k4jp"
     },
     {
       "lines": [

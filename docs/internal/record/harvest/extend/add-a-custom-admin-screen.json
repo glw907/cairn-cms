@@ -15,8 +15,8 @@
         3,
         4
       ],
-      "paraphrase": "Contract line: a custom admin route is gated, audited, and composed like the built-in screens.",
-      "cut": "marketing"
+      "paraphrase": "Contract line: a custom route is gated, audited, and composed like cairn's own screens; the audit parity is false.",
+      "new-fact": "f:2tqkv9"
     },
     {
       "lines": [
@@ -96,7 +96,7 @@
         35
       ],
       "paraphrase": "A hand-rolled guard skipping the audit call and access-map check is discouraged.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:chsstm"
     },
     {
       "lines": [
@@ -104,7 +104,7 @@
         46
       ],
       "paraphrase": "Snippet: a club section action built with createSectionAction and a resolveDb.",
-      "cut": "illustrative"
+      "fact": "f:esp93u"
     },
     {
       "lines": [
@@ -120,7 +120,7 @@
         75
       ],
       "paraphrase": "Snippet: events page load with requireAccess and an approve action.",
-      "cut": "illustrative"
+      "new-fact": "f:pyt58u"
     },
     {
       "lines": [
@@ -168,7 +168,7 @@
         91
       ],
       "paraphrase": "Advice to reach for the admin-toolkit before hand-rolling a list, table, or field.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:5t1i7o"
     },
     {
       "lines": [
@@ -216,7 +216,7 @@
         130
       ],
       "paraphrase": "Snippet: a toolkit-composed events screen.",
-      "cut": "illustrative"
+      "fact": "f:clyg9r"
     },
     {
       "lines": [
@@ -232,7 +232,7 @@
         137
       ],
       "paraphrase": "Building from the toolkit keeps a screen correct across releases and reads as one surface.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:7m5o61"
     },
     {
       "lines": [
@@ -288,7 +288,7 @@
         167
       ],
       "paraphrase": "Advice to put createAuthGuard first in the sequence.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:6quvqm"
     },
     {
       "lines": [
@@ -319,8 +319,8 @@
         177,
         178
       ],
-      "paraphrase": "The recipes are worth writing out because the failure path takes a few tries.",
-      "cut": "stance-without-owner-basis"
+      "paraphrase": "The recipes are plain markup rather than toolkit primitives, worth writing out for the failure path.",
+      "fact": "f:7ik6ng"
     },
     {
       "lines": [
@@ -344,7 +344,7 @@
         188
       ],
       "paraphrase": "The recipe reports failure and error inside the dialog and keeps it open.",
-      "cut": "illustrative"
+      "new-fact": "f:jra92k"
     },
     {
       "lines": [
@@ -360,7 +360,7 @@
         193
       ],
       "paraphrase": "The recipe closes the dialog on success before calling update().",
-      "cut": "illustrative"
+      "new-fact": "f:jra92k"
     },
     {
       "lines": [
@@ -392,7 +392,7 @@
         201
       ],
       "paraphrase": "The recipe never sets reset.",
-      "cut": "illustrative"
+      "new-fact": "f:jra92k"
     },
     {
       "lines": [
@@ -400,7 +400,7 @@
         204
       ],
       "paraphrase": "The dialog carries aria-labelledby pointing at its own heading.",
-      "cut": "illustrative"
+      "new-fact": "f:tskfz1"
     },
     {
       "lines": [
@@ -432,7 +432,7 @@
         221
       ],
       "paraphrase": "The recipe's sr-only swap, aria wiring, focus move, and disabled submit button.",
-      "cut": "illustrative"
+      "new-fact": "f:5vn194"
     },
     {
       "lines": [
@@ -456,7 +456,7 @@
         310
       ],
       "paraphrase": "Advice to fetch expandable-row detail on open and cache it per row.",
-      "cut": "stance-without-owner-basis"
+      "new-fact": "f:uy7vyc"
     },
     {
       "lines": [
@@ -480,7 +480,7 @@
         400
       ],
       "paraphrase": "The trigger column header is screen-reader-only.",
-      "cut": "illustrative"
+      "new-fact": "f:n2bhjw"
     },
     {
       "lines": [
@@ -496,7 +496,7 @@
         412
       ],
       "paraphrase": "The recipe caches only successful fetches and disables retry while a request runs.",
-      "cut": "illustrative"
+      "new-fact": "f:od9mww"
     },
     {
       "lines": [

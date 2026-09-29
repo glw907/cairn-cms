@@ -569,6 +569,19 @@ settled here so no implementer invents it.
       install`, then `git init` and one commit of the clean tree, so the probe's own changes read
       from `git ls-files -mo --exclude-standard` afterwards (tracked edits plus every untracked
       file; plain `git status --porcelain` lists a new folder, not its files).
+    - **Amendment (2026-09-28, after the first S1 run):** the setup above is wrong.
+      `emit-template.mjs` is the raw CI emitter. Its `.cairn-template.json` drops `.claude/`,
+      `CLAUDE.md`, `README.md`, `scripts/`, and `cairn-audit.config.json`, which the bake adds
+      back. The first probe therefore saw none of the shipped guidance, and its audit fell back to
+      the packaged sheet alone. The run was invalid; it does not spend decision 21's retry. The
+      setup now follows `.github/workflows/create-site.yml`: pack the engine and dev tarballs;
+      bake with `node scripts/bake-template.mjs --to template --engine-spec "^<version>"
+      --dev-spec "^<version>"` in `packages/create-cairn-site`; pack the CLI with
+      `--ignore-scripts`; install it into a scratch package under the probe dir; run
+      `npx create-cairn-site --yes` into `<probe dir>/site`; repoint the site's two dependency
+      specs at the tarballs the way that workflow does; then `npm install`, `git init`, and one
+      commit. The bake's `template/` output is gitignored or removed afterwards, and the worktree
+      stays clean.
     - **The probe** (the same setup agent runs it and returns its final message): `claude -p
       --model sonnet --setting-sources project,local --permission-mode acceptEdits --allowedTools
       'Bash(npm run:*)' 'Bash(npx cairn-audit:*)' < <probe dir>/brief.txt` with the site as its

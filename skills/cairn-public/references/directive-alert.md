@@ -1,6 +1,6 @@
 # The alert directive
 
-A bordered note whose icon defaults from its role. The directive declares no `preview`, so the editor palette shows no sample for it, and the styleguide names it in its list of preview-less entries. It still needs the rules below.
+A bordered note whose icon defaults from its role. The directive declares a `preview` (a caution), so the editor palette and the styleguide both render a sample of it.
 
 Authoring:
 

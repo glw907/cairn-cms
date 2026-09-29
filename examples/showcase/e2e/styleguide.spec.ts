@@ -45,6 +45,19 @@ test('axe finds no WCAG A/AA violations on a rendered article', async ({ page })
   expect(results.violations).toEqual([]);
 });
 
+test('the styleguide renders an alert sample from the registry preview', async ({ page }) => {
+  await page.goto('/styleguide');
+  const alert = page.locator('section.alert.alert-caution');
+  await expect(alert).toHaveCount(1);
+  await expect(alert.getByRole('heading', { name: 'Check the trailhead first' })).toBeVisible();
+  // The alert declares a preview now, so the page does not list it among the preview-less entries.
+  await expect(
+    page
+      .locator('.sg-note', { hasText: 'No preview declared' })
+      .getByText('alert', { exact: true }),
+  ).toHaveCount(0);
+});
+
 test('the skip link is the first Tab stop and targets the main content', async ({ page }) => {
   await page.goto('/styleguide');
   // The skip link sits off-screen until focused, the AstroPaper-signature affordance. The very first

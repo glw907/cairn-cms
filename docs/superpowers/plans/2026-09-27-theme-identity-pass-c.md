@@ -1792,3 +1792,9 @@ Spend: about 0.43M in subagents plus the conductor.
 - **Open for Geoff:** take eslint-plugin-jsdoc 65 (the conductor recommends taking it).
 - **Spend:** segment B's two workflow runs 0.68M; boundary agents about 0.5M. Running total about
   3.2M plus the conductor.
+- **Segment B CI (`16d387b1`):** five workflows green; e2e red on the ten planned `styleguide-*`
+  `site-visual` mismatches plus `spellcheck.spec.ts` (0 of 2 underlines). A failed-job rerun passed
+  `spellcheck.spec.ts`, so it is a flake. `styleguide — dark — 2560px` mismatched and then timed
+  out on its retries; it stays in the expected set, and S1's regenerated baseline must render it
+  cleanly. `preview.spec.ts` passed on CI, confirming task 4's environmental reading. The boundary
+  passes.

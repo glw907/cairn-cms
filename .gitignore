@@ -21,3 +21,6 @@ dist/
 
 # machine-local Claude Code agent scratch memory (never a project deliverable)
 **/.claude/agent-memory/
+
+# the theme-fixture harness's throwaway showcase copy, removed when the harness exits
+.cairn-theme-fixture-*/

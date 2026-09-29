@@ -1,6 +1,6 @@
 // cairn-cms: the re-skin fixture. It proves the headline B2 claim that editing only the documented N
 // role values re-skins the whole surface and AA still holds, the field's only complete and gated
-// re-skin recipe. Two theme cases run through the same `theme-contrast` measurement the live gate
+// re-skin recipe. Three theme cases run through the same `theme-contrast` measurement the live gate
 // runs (`check:public-tokens`), read from the packaged audit in dist/audit, over the showcase's real
 // import chain with the rewritten theme.css read in place of the file on disk:
 //
@@ -10,6 +10,10 @@
 //   2. The stripped inks. It deletes Waymark's four hand-tuned status inks from both daisyUI blocks,
 //      so each ink falls back to the engine's derived default in cairn-public.css, and asserts every
 //      pair in both schemes still clears AA. It prints that case's per-pair table.
+//   3. The fixture theme. It reads the committed second theme (scripts/lab/theme-fixture/theme.css),
+//      a palette and token set deliberately unlike Waymark's, in place of theme.css, and asserts
+//      every pair in both schemes clears AA. A pair that fails is a finding about the derivation,
+//      never a reason to retune the fixture.
 //
 // It also proves the prose reading surface has no second colour source: prose.css carries no colour
 // literal, and every colour-bearing property reads a `--color-*`/`--cairn-*` token, so the prose
@@ -25,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/theme/theme.css');
+const FIXTURE_CSS = resolve(ROOT, 'scripts/lab/theme-fixture/theme.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
 const SHOWCASE = resolve(ROOT, 'examples/showcase');
 
@@ -178,7 +183,11 @@ async function main() {
   }
   if (!reportCase('Re-skin contrast (stripped inks)', measure(audit, stripped.rewritten), true, audit.formatContrastTable)) failed = true;
 
-  // 3. Prove the prose surface has no second colour source.
+  // 3. The fixture theme.
+  console.log('');
+  if (!reportCase('Re-skin contrast (fixture theme)', measure(audit, readFileSync(FIXTURE_CSS, 'utf8')), false, audit.formatContrastTable)) failed = true;
+
+  // 4. Prove the prose surface has no second colour source.
   const proseViolations = checkProseSecondSource();
   console.log('');
   if (proseViolations.length) {

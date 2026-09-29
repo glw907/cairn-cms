@@ -70,6 +70,7 @@
     "check:interactive-contrast": "node scripts/checks/check-interactive-contrast.mjs",
     "check:touch-targets": "node scripts/checks/check-touch-targets.mjs",
     "test:reskin": "npm run package && node scripts/lab/reskin-fixture.mjs",
+    "test:theme-fixture": "npm run package && node scripts/lab/theme-fixture.mjs",
     "norms:generate": "npm run package && node scripts/lab/generate-norms-manifest.mjs",
     "norms:check": "npm run package && node scripts/lab/generate-norms-manifest.mjs --check",
     "lint": "eslint src/lib examples/showcase/src examples/showcase/e2e",

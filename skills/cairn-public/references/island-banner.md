@@ -5,10 +5,12 @@ The live half of the banner directive. The render pipeline emits a boundary carr
 Rendered markup:
 
 ```html
-<div data-cairn-island="banner" data-cairn-props='{"message":"...","expires":"2999-01-01"}'>
+<div data-cairn-island="banner" data-cairn-props='{...}'>
   <div class="banner" role="status"><p class="banner-message">...</p></div>
 </div>
 ```
+
+The props attribute holds the directive's props as JSON: `message` and `expires`.
 
 Reads:
 

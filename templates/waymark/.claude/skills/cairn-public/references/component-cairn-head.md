@@ -9,8 +9,10 @@ Rendered markup:
 <meta name="description" content="A one-line summary.">
 <link rel="canonical" href="https://example.com/page">
 <link rel="alternate" type="text/markdown" href="https://example.com/page.md">
-<script type="application/ld+json">{"@type":"Article"}</script>
+...
 ```
+
+After those tags it emits the page's JSON-LD as an `application/ld+json` script element.
 
 Reads:
 

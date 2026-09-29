@@ -1,0 +1,78 @@
+{
+  "page": "docs/editors/README.md",
+  "blob": "12b7d8f39668d0434631bc9bf022a029e024e8c3",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Introduces the page as help for the drafting and publishing screen.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        4,
+        5
+      ],
+      "paraphrase": "The editor has a Get help link that leads to this help.",
+      "new-fact": "f:z8qz85"
+    },
+    {
+      "lines": [
+        7,
+        7
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        16
+      ],
+      "paraphrase": "Four links to the core editor pages with one-line summaries.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        18,
+        18
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        20,
+        24
+      ],
+      "paraphrase": "Three links to the image, library, and tag pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Horizontal rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        28
+      ],
+      "paraphrase": "A freshness stamp naming a review date.",
+      "cut": "marketing"
+    }
+  ]
+}

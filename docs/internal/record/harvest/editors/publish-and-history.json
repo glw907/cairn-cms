@@ -1,0 +1,406 @@
+{
+  "page": "docs/editors/publish-and-history.md",
+  "blob": "5b776faba4da46b5166a8d243997f0b091f60185",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page purpose line.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        6
+      ],
+      "paraphrase": "Save and Publish sit near the top, or in a fixed bottom bar on a narrow screen.",
+      "fact": "f:pf6p3j"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "History, Discard changes, and Delete live in the overflow menu beside them.",
+      "fact": "f:nd1j3y"
+    },
+    {
+      "lines": [
+        9,
+        9
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        11,
+        13
+      ],
+      "paraphrase": "Save keeps changes private; other editors can open the saved draft and outsiders need a preview link.",
+      "fact": "f:1q8j2n"
+    },
+    {
+      "lines": [
+        15,
+        16
+      ],
+      "paraphrase": "The confirmation note after saving says the site still shows the published version.",
+      "fact": "f:h483v2"
+    },
+    {
+      "lines": [
+        16,
+        17
+      ],
+      "paraphrase": "Saving protects work and does not publish it.",
+      "fact": "f:1q8j2n"
+    },
+    {
+      "lines": [
+        19,
+        19
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        21,
+        23
+      ],
+      "paraphrase": "Publish saves first so the on-screen text goes live without a separate save.",
+      "fact": "f:9sk0at"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "The note after publishing says the live site is rebuilding.",
+      "fact": "f:9sk0at"
+    },
+    {
+      "lines": [
+        24,
+        24
+      ],
+      "paraphrase": "The rebuild usually takes a moment.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Publish stays visible but inactive when nothing is new.",
+      "fact": "f:vti6ws"
+    },
+    {
+      "lines": [
+        27,
+        27
+      ],
+      "paraphrase": "The inactive Publish button explains why on hover or focus.",
+      "new-fact": "f:11preu"
+    },
+    {
+      "lines": [
+        29,
+        32
+      ],
+      "paraphrase": "A page lives at the site address plus its address and other concepts under their own path such as /posts/.",
+      "fact": "f:6ebew3"
+    },
+    {
+      "lines": [
+        34,
+        34
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        36,
+        40
+      ],
+      "paraphrase": "An entry is New, Edited, or Published.",
+      "fact": "f:7h5rbo"
+    },
+    {
+      "lines": [
+        42,
+        44
+      ],
+      "paraphrase": "Hidden is a Details checkbox keeping an entry off lists and feeds while reachable by address.",
+      "fact": "f:i4fj93"
+    },
+    {
+      "lines": [
+        44,
+        45
+      ],
+      "paraphrase": "Advice on when to use Hidden.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        47,
+        47
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "Entries with a public page carry an Address.",
+      "fact": "f:dy0x62"
+    },
+    {
+      "lines": [
+        49,
+        52
+      ],
+      "paraphrase": "Change URL in Details renames an entry only while it has no unpublished changes.",
+      "fact": "f:i7t7mu"
+    },
+    {
+      "lines": [
+        54,
+        54
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        56,
+        57
+      ],
+      "paraphrase": "Discard changes sits in the overflow menu beside Save and Publish.",
+      "fact": "f:nd1j3y"
+    },
+    {
+      "lines": [
+        58,
+        59
+      ],
+      "paraphrase": "Discard restores the live version of a published entry and deletes a never-published one.",
+      "fact": "f:vg4sz5"
+    },
+    {
+      "lines": [
+        59,
+        60
+      ],
+      "paraphrase": "The dialog states the outcome and discarding cannot be undone.",
+      "new-fact": "f:1bicvg"
+    },
+    {
+      "lines": [
+        62,
+        62
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        64,
+        64
+      ],
+      "paraphrase": "Delete sits in the overflow menu.",
+      "fact": "f:nd1j3y"
+    },
+    {
+      "lines": [
+        64,
+        66
+      ],
+      "paraphrase": "An entry nothing links to gets a plain confirmation that it cannot be undone.",
+      "new-fact": "f:rz76zl"
+    },
+    {
+      "lines": [
+        68,
+        68
+      ],
+      "paraphrase": "An entry that others link to or include cannot be deleted.",
+      "fact": "f:bw36y2"
+    },
+    {
+      "lines": [
+        68,
+        70
+      ],
+      "paraphrase": "The blocked dialog names what links and links to each entry.",
+      "fact": "f:rz76zl"
+    },
+    {
+      "lines": [
+        72,
+        72
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        74,
+        77
+      ],
+      "paraphrase": "Publish site appears when several entries are pending, shows the count, and lists pending entries by type.",
+      "fact": "f:0ny3ga"
+    },
+    {
+      "lines": [
+        79,
+        79
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        81,
+        81
+      ],
+      "paraphrase": "Preview sharing is optional and lets a non-editor read a draft.",
+      "new-fact": "f:bydgww"
+    },
+    {
+      "lines": [
+        82,
+        82
+      ],
+      "paraphrase": "A preview link needs a saved draft.",
+      "fact": "f:fmx8pj"
+    },
+    {
+      "lines": [
+        83,
+        84
+      ],
+      "paraphrase": "Share preview link mints a private address anyone can open without signing in.",
+      "fact": "f:bydgww"
+    },
+    {
+      "lines": [
+        84,
+        86
+      ],
+      "paraphrase": "The link is shown once with an expiry date and stops working after it.",
+      "fact": "f:fmx8pj"
+    },
+    {
+      "lines": [
+        86,
+        88
+      ],
+      "paraphrase": "Revoke all links disables each outstanding link for the entry.",
+      "fact": "f:bydgww"
+    },
+    {
+      "lines": [
+        90,
+        91
+      ],
+      "paraphrase": "Preview sharing is not available on every site.",
+      "fact": "f:bydgww"
+    },
+    {
+      "lines": [
+        93,
+        93
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        95,
+        95
+      ],
+      "paraphrase": "History is opened from the overflow menu.",
+      "fact": "f:nd1j3y"
+    },
+    {
+      "lines": [
+        95,
+        98
+      ],
+      "paraphrase": "History lists past publishes newest first with who and when, and a pinned draft row without revert.",
+      "new-fact": "f:073sfq"
+    },
+    {
+      "lines": [
+        100,
+        101
+      ],
+      "paraphrase": "The list caps at the newest 25 publishes and states on screen when older ones exist.",
+      "fact": "f:5pjeig"
+    },
+    {
+      "lines": [
+        101,
+        102
+      ],
+      "paraphrase": "After an address change, history goes back only to that change.",
+      "fact": "f:ph60as"
+    },
+    {
+      "lines": [
+        104,
+        107
+      ],
+      "paraphrase": "Revert loads the earlier text as a private unpublished draft without touching the live site.",
+      "fact": "f:5l15u4"
+    },
+    {
+      "lines": [
+        107,
+        109
+      ],
+      "paraphrase": "Reverting is blocked while another editor has unpublished changes on the entry.",
+      "fact": "f:2w5n52"
+    },
+    {
+      "lines": [
+        111,
+        113
+      ],
+      "paraphrase": "Reverting to a version with a removed field or tag warns and keeps only what the form shows.",
+      "fact": "f:4owr3y"
+    },
+    {
+      "lines": [
+        115,
+        115
+      ],
+      "paraphrase": "Horizontal rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        117,
+        117
+      ],
+      "paraphrase": "A freshness stamp naming a review date.",
+      "cut": "marketing"
+    }
+  ]
+}

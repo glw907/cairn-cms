@@ -81,7 +81,25 @@ the three-to-four-task segment); S4 is tasks 7, 9, and 10. Every boundary is a g
   front-door exemplar list and records the gap in `relink.json` for stage 5. Capturing it would
   put the page's old text before the stage 5 drafter who rebuilds it.
 - **Ordering confirmed:** task 1 runs now; tasks 2 onward wait for theme passes B and C to merge
-  to `main` (spec, "Timing"; H5's correction).
+  to `main` (spec, "Timing"; H5's correction). Superseded in part by R3.
+- **R3 (Geoff, 2026-09-29, later the same day): audit now, away from theming.** "You should be
+  able to work on unrelated docs. This is just the theming system, so you can stay away from
+  that." PR #97 (pass C, carrying B) cannot merge before Geoff's attended sitting, so the audit
+  runs now on every page the theme lineage leaves alone. The pass C conductor supplied what the
+  lineage changes, recorded in
+  `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`. Every audit dispatch
+  (tasks 2 to 6 and 6b) reads that brief in full and obeys its four rules: six deferred pages,
+  frozen fact ids, renames to verify against, and a per-task recheck file.
+
+  The sequence under R3:
+  1. Now: task 2 (admin, 9 pages), its rate checkpoint, then tasks 3 to 6 as the three chains,
+     with tasks 5 and 6 each auditing 12 pages (their deferred pages removed, listed per task).
+  2. Now: task 7a merges chains X, Y, and Z and runs the verifier over every audited page
+     (`--arm admin`, `--arm editors`, `--arm front-door`, and `--pages` with the 24 audited extend
+     pages). Then the pass holds; the conductor writes `main`'s STATUS.
+  3. After #97 merges to `main`: merge `main` in, then task 6b, then task 7's remainder (the full
+     verifier, no flag), then tasks 8, 9, and 10. Task 8 waits too, since pass C edits
+     `scripts/checks/` heavily (`gate-tier.mjs`, `reference-coverage.mjs`, and a dozen more).
 
 ## Global constraints
 
@@ -223,6 +241,9 @@ scripts/oneshot/verify-harvest.mjs --pages <the 15 paths>`, light lane.
 **Outcomes and acceptance:** as task 2, against these pages' sections of
 `docs/internal/facts/extend.md` only.
 
+**R3 amendment:** `animate-a-custom-screen`, `architecture`, and `build-a-site-by-hand` move to
+task 6b, leaving 12 pages. The gate's `--pages` names those 12.
+
 ### Task 6: audit extend, second half (chain Z)
 
 **Pass class:** `docs`. **Gate:** as task 5, with its own 15 paths.
@@ -238,6 +259,29 @@ scripts/oneshot/verify-harvest.mjs --pages <the 15 paths>`, light lane.
 and 5: any bullet in `extend.md` outside every page section, and, for step 5 only, the kept
 pages' sections (`f:65atya` in the `choose-an-ai-posture.md` section is the known case; a
 brief-cited bullet keeps a citable tag).
+
+**R3 amendment:** `design-your-site`, `share-a-draft-preview`, and `what-the-scaffold-wrote` move
+to task 6b, leaving 12 pages. The gate's `--pages` names those 12. Frozen ids from the theme
+lineage brief stay out of the steps 4 and 5 ownership above.
+
+### Task 6b: audit the deferred pages and the rechecks (after #97 merges)
+
+**Starts after `main`, holding #97, is merged into this branch.** **Pass class:** `docs`.
+**Gate:** `npm run check:facts && npm run check:provenance && node
+scripts/oneshot/verify-harvest.mjs --arm extend`, light lane.
+
+**Pages (6):** `animate-a-custom-screen`, `architecture`, `build-a-site-by-hand`,
+`design-your-site`, `share-a-draft-preview`, and `what-the-scaffold-wrote` (each
+`docs/extend/<name>.md`), audited as their original task would have, against the merged code.
+
+**Outcomes:** the six pages audited per task 2's outcomes. Every line of every
+`docs/superpowers/research/harvest-recheck/task-*.md` is resolved against the merged code (a
+`Source:` repointed, a fact retraced and corrected or `[rejected]`, a frozen bullet's needed change
+made now that it is unfrozen), and each line records its resolution. `animate-a-custom-screen`
+gains its facts section.
+
+**Acceptance:** as task 2, plus every recheck line resolved; the `diff-reviewer` samples five
+recheck resolutions against the merged code.
 
 ### Task 7: merge and verify the whole harvest
 
@@ -341,8 +385,10 @@ Run `cairn-pass`'s close:
 | --- | --- | --- | --- |
 | 1 | done (`c56e68b8`, fix `94057384`) | 260k (impl 168k, review 92k) | one fix round: basename `Source:` citations; carried to tasks 4 and 7: bare `why-cairn.md` shadowed by the fixture, full path behind `../../` unmatched |
 | 2 | pending | | |
-| 3 to 6 | pending | | one row, from the chains run's `spent` |
-| 7 | pending | | |
+| 3 to 6 | pending | | one row, from the chains run's `spent`; 24 extend pages under R3 |
+| 7a | pending | | R3: chains merged, verifier over audited pages; then hold for #97 |
+| 6b | held for #97 | | R3: six deferred pages plus the recheck files |
+| 7 | held for #97 | | the remainder: merge `main`, full verifier |
 | 8 | pending | | |
 | 9 | pending | | |
 | 10 | pending | | |

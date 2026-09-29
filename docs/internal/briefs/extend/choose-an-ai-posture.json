@@ -90,7 +90,7 @@
       "id": "f:6g7mpp"
     },
     {
-      "text": "In the served file, confirm that the posture's `Content-Signal` line sits directly after `User-agent: *`.",
+      "text": "In the served file, confirm that the lines after `User-agent: *` match your posture.",
       "id": "f:6g7mpp"
     },
     {
@@ -102,11 +102,15 @@
       "id": "f:6g7mpp"
     },
     {
-      "text": "Under `'invite'`, the only difference from that output is `Content-Signal: search=yes, ai-train=yes` in the same position.",
+      "text": "Under `'invite'`, the only difference from that output is `Content-Signal: search=yes, ai-train=yes` directly after `User-agent: *`.",
       "id": "f:qgtfu6"
     },
     {
-      "text": "Under `'decline'`, the line is `Content-Signal: ai-train=no`, and the engine's seven training-crawler tokens follow as `User-agent` groups, each with `Disallow: /`, before the `Sitemap` line.",
+      "text": "Under `'decline'`, the line directly after `User-agent: *` is `Content-Signal: ai-train=no`.",
+      "id": "f:6g7mpp"
+    },
+    {
+      "text": "Before the `Sitemap` line, each token in the training-crawler table takes its own `User-agent` group with `Disallow: /`.",
       "id": "f:6g7mpp"
     },
     {
@@ -158,11 +162,11 @@
       "id": "no-claim"
     },
     {
-      "text": "In the robots route, check that `robotsResponse` receives `aiPosture`.",
-      "id": "f:65atya"
+      "text": "In the robots route, check that `robotsResponse` receives `cairn.aiPosture` as its `posture` option.",
+      "id": "f:rh0xv5"
     },
     {
-      "text": "Check that the build carrying that route has deployed.",
+      "text": "Check that the build carrying that pass-through has deployed.",
       "id": "f:65atya"
     },
     {

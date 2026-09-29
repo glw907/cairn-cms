@@ -82,18 +82,17 @@ changed posture reaches the served file once the build carrying it deploys.
 To verify the served file, follow these steps:
 
 1. From the deployed site, fetch the served file.
-2. In the served file, confirm that the posture's `Content-Signal` line sits directly after
-   `User-agent: *`.
+2. In the served file, confirm that the lines after `User-agent: *` match your posture.
 
    The expected file depends on the posture:
 
    - With no posture, the route emits `User-agent: *`, `Allow: /`, `Disallow: /admin`, and the
      `Sitemap` line, with no `Content-Signal` line.
    - Under `'invite'`, the only difference from that output is
-     `Content-Signal: search=yes, ai-train=yes` in the same position.
-   - Under `'decline'`, the line is `Content-Signal: ai-train=no`, and the engine's seven
-     training-crawler tokens follow as `User-agent` groups, each with `Disallow: /`, before the
-     `Sitemap` line.
+     `Content-Signal: search=yes, ai-train=yes` directly after `User-agent: *`.
+   - Under `'decline'`, the line directly after `User-agent: *` is `Content-Signal: ai-train=no`.
+     Before the `Sitemap` line, each token in the training-crawler table takes its own
+     `User-agent` group with `Disallow: /`.
 
    The `Disallow: /admin` line emits the same way under every posture. The
    [`buildRobots`](../reference/delivery-data.md#buildrobots) entry shows the complete declining
@@ -122,8 +121,9 @@ posture's directives.
 
 To find the cause, follow these steps:
 
-1. In the robots route, check that `robotsResponse` receives `aiPosture`.
-2. Check that the build carrying that route has deployed.
+1. In the robots route, check that `robotsResponse` receives `cairn.aiPosture` as its `posture`
+   option.
+2. Check that the build carrying that pass-through has deployed.
 3. If both hold, look for a managed layer that the zone's operator controls ahead of the origin.
 
    [Cloudflare's managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/),

@@ -44,15 +44,18 @@ Theme identity pass C, fresh session (`claude-opus-5-5`, `medium`): invoke `cair
 pass C's plan on `theme-c-plan` and pass B's post-mortem, then run pass C's task 0 from
 `theme-identity-b`'s head under the topology note above.
 
-### Next action (draft docs harvest, runs beside pass C)
+### Next action (draft docs harvest, held for theme B and C)
 
 > **Goal.** Prove every claim on the 49 old narrative and front-door pages is a fact or a recorded
 > cut, then delete them with every reference and gate repaired. **Settled (do not re-brainstorm):**
 > spec `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` and plan
 > `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`, both on branch `draft-docs-harvest`
-> (worktree `.claude/worktrees/draft-docs-harvest`), reviewed (four lenses, fold, verification,
-> second fold) with Geoff's rulings R1 (12M ceiling), R2 (drop the old `docs/README.md`
-> exemplar), and the ordering. **Approach.** Mixed class (`engine-logic`, `docs`, `tool`). Task 1
-> (the verifier) runs now. Tasks 2 onward wait until theme passes B and C have merged to `main`;
-> the task 1 checkpoint rewrites this block with that trigger. Fresh `claude-opus-5-5` session at
-> `medium` in `~/Projects/cairn-cms`: invoke `cairn-pass`, read the plan and spec, run task 1.
+> (worktree `.claude/worktrees/draft-docs-harvest`), with Geoff's rulings R1 (12M ceiling), R2,
+> and the ordering. Task 1 (the verifier) is done at `94057384` (diff-reviewer accept after one
+> fix round; 260k of dispatch tokens). **Trigger:** task 2 starts only once theme passes B and C
+> have both merged to `main`; until then the branch holds. **Approach.** Fresh `claude-opus-5-5`
+> session at `medium` in `~/Projects/cairn-cms`: invoke `cairn-pass`, read the plan and spec,
+> have a dispatched Sonnet agent merge `main` into `draft-docs-harvest`, then run task 2 (the
+> admin rate checkpoint). Carry into tasks 4 and 7: the verifier treats a bare `why-cairn.md`
+> as ambiguous (its test fixture shadows it) and misses a full path behind `../../`, so a
+> reviewer checks front-door `Source:` fields for both by eye.

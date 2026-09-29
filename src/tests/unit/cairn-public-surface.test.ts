@@ -1,14 +1,17 @@
 // cairn-cms: pins the public stylesheet's surface. The key set and the rule list are snapshotted, so
 // a rename or a removal fails until the snapshot update discloses it, and every key must have a
 // reader, so an entry nothing reads cannot sit in the stylesheet unnoticed. The stylesheet is parsed
-// through the audit's own `parseSheet`, the one parser every reader of authored CSS shares.
-import { readFileSync, readdirSync } from 'node:fs';
+// through the audit's own `parseSheet`, the one parser every reader of authored CSS shares. The
+// reference page and the emitted-class registry are held to the same file.
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseSheet } from '../../lib/audit/sheet.js';
 
 const ROOT = join(import.meta.dirname, '..', '..', '..');
 const PUBLIC_CSS = join(ROOT, 'src/lib/public/cairn-public.css');
+const REFERENCE_PAGE = join(ROOT, 'docs/reference/public-css.md');
+const RENDER_PAGE = join(ROOT, 'docs/reference/render.md');
 
 /**
  * Where a key's reader may live: the engine, and the site source the engine's own template is
@@ -197,5 +200,104 @@ describe('the public stylesheet surface', () => {
     const sources = readerSources();
     const readerless = [...ROLES, ...THEME_COLORS].filter((key) => !hasReader(key, sources));
     expect(readerless).toEqual([]);
+  });
+});
+
+/** The text of one `##` section of a Markdown page, from its heading to the next `##`. */
+function section(markdown: string, heading: string): string {
+  const start = markdown.indexOf(`\n## ${heading}\n`);
+  if (start === -1) return '';
+  const rest = markdown.slice(start + 1);
+  const next = rest.indexOf('\n## ', 1);
+  return next === -1 ? rest : rest.slice(0, next);
+}
+
+/** The key and default of every table row that opens on a custom property in a code span. */
+function keyRows(markdown: string): Map<string, string> {
+  const rows = new Map<string, string>();
+  for (const match of markdown.matchAll(/^\|\s*`(--[a-z0-9-]+)`\s*\|\s*`([^`]+)`\s*\|/gm)) {
+    rows.set(match[1], match[2].replace(/\s+/g, ' ').trim());
+  }
+  return rows;
+}
+
+/**
+ * Custom properties the reference page names that the sheet does not declare, each a site-owned
+ * key the page describes as living elsewhere.
+ */
+const NAMED_BUT_NOT_IN_SHEET = new Set(['--cairn-heading-case']);
+
+/** The classes the sheet styles that the engine never writes into markup. */
+const STYLED_BUT_NOT_EMITTED = new Set(['cairn-focus-ring']);
+
+describe('the reference page for the public stylesheet', () => {
+  const page = existsSync(REFERENCE_PAGE) ? readFileSync(REFERENCE_PAGE, 'utf8') : '';
+
+  it('exists', () => {
+    expect(existsSync(REFERENCE_PAGE)).toBe(true);
+  });
+
+  it.each([
+    ['Roles', ROLES, ':root, [data-theme]'],
+    ['Theme colors', THEME_COLORS, '@theme'],
+  ])('lists every key of the %s table with its default', (heading, keys, selector) => {
+    const rows = keyRows(section(page, heading));
+    expect([...rows.keys()].sort()).toEqual([...keys].sort());
+    for (const [key, value] of rows) {
+      expect(value, key).toBe(declaredValue(selector, key)?.replace(/\s+/g, ' ').trim());
+    }
+  });
+
+  it('names no cairn key the sheet lacks', () => {
+    const declared = [...ROLES, ...THEME_COLORS];
+    const named = [
+      ...page.matchAll(/`(--(?:cairn-|flow-)[a-z0-9-]*\*?|--color-(?:muted|card-border))`/g),
+    ]
+      .map((match) => match[1])
+      .filter((key) => !NAMED_BUT_NOT_IN_SHEET.has(key));
+    const unknown = named.filter((key) =>
+      key.endsWith('*')
+        ? !declared.some((declaredKey) => declaredKey.startsWith(key.slice(0, -1)))
+        : !declared.includes(key),
+    );
+    expect(unknown).toEqual([]);
+  });
+});
+
+describe('the emitted-class registry', () => {
+  const registry = section(readFileSync(RENDER_PAGE, 'utf8'), 'Emitted classes');
+  const entries = [...registry.matchAll(/`([^`]+)`/g)].map((match) => match[1]);
+
+  /** The classes the sheet's component-layer selectors style. */
+  const styled = [
+    ...new Set(
+      sheet.rules
+        .filter((rule) => rule.conditions.includes('@layer components'))
+        .flatMap((rule) => [...normalized(rule.selector).matchAll(/\.([A-Za-z_][\w-]*)/g)])
+        .map((match) => match[1]),
+    ),
+  ];
+
+  /** Whether an entry names the class, exactly, by element-qualified form, or by prefix wildcard. */
+  function registered(className: string): boolean {
+    return entries.some((entry) => {
+      const bare = entry.replace(/^[a-z]+\./, '');
+      return (
+        entry === className ||
+        bare === className ||
+        (entry.endsWith('*') && className.startsWith(entry.slice(0, -1)))
+      );
+    });
+  }
+
+  it('finds the classes the sheet styles', () => {
+    expect(styled.length).toBeGreaterThan(0);
+  });
+
+  it('names every emitted class the sheet styles', () => {
+    const missing = styled
+      .filter((className) => !STYLED_BUT_NOT_EMITTED.has(className))
+      .filter((className) => !registered(className));
+    expect(missing).toEqual([]);
   });
 });

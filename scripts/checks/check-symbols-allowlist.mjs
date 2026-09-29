@@ -136,6 +136,7 @@ export const ALLOWLIST = new Set([
   'file-path:dist/components/cairn-admin.css', // docs/extend/migration-notes.md's per-version record of a pre-rename release, which must keep the path that was real when it shipped
   'file-path:src/admin.css', // a site's own admin-stylesheet entry file, by convention
   'file-path:@glw907/cairn-cms/admin-sources.css', // docs/reference/cairn-audit.md's real published subpath, cited by its import specifier rather than its installed dist path
+  'file-path:@glw907/cairn-cms/cairn-public.css', // docs/reference/public-css.md's real published subpath, cited by its import specifier rather than its installed dist path
   // Real paths in this repo's own examples/showcase/ tree, cited without that prefix because the
   // prose describes the equivalent path in a reader's own scaffolded site (the same convention
   // `src/theme/cairn.config.ts` above already carries).

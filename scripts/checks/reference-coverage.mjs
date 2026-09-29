@@ -543,8 +543,9 @@ export const SUBPATH_EXCLUSIONS = [
   {
     subpath: '/cairn-public.css',
     reason:
-      'a CSS asset with no .d.ts to enumerate; its reference page, docs/reference/public-css.md, ' +
-      'replaces this exclusion when it lands.',
+      'a CSS asset with no .d.ts to enumerate, and checkOne needs one; its reference page, ' +
+      'docs/reference/public-css.md, is held to the file by the page-sync assertions in ' +
+      'src/tests/unit/cairn-public-surface.test.ts.',
   },
   {
     subpath: '/package.json',

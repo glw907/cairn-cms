@@ -13,10 +13,10 @@ the hard constraint. The tables below are its output, unedited.
 | `--cairn-warning-ink` | `color-mix(in oklab, var(--color-warning) 50%, var(--color-base-content))` |
 | `--cairn-error-ink` | `color-mix(in oklab, var(--color-error) 50%, var(--color-base-content))` |
 | `--cairn-info-ink` | `color-mix(in oklab, var(--color-info) 50%, var(--color-base-content))` |
-| `--color-muted` | `color-mix(in oklab, var(--color-base-content) 70%, var(--color-base-100))` |
+| `--color-muted` | `color-mix(in oklab, var(--color-base-content) 80%, var(--color-base-100))` |
 | `--cairn-shadow` | `0 1px 2px color-mix(in oklab, black 6%, transparent), 0 6px 20px -8px color-mix(in oklab, black 12%, transparent)` |
 
-Every status lands on `N` = 50 and muted on `M` = 70. The shadow is a stated default, not a measured one.
+Every status lands on `N` = 50 and muted on `M` = 80. The shadow is a stated default, not a measured one.
 
 ## Method
 
@@ -42,8 +42,8 @@ Every status lands on `N` = 50 and muted on `M` = 70. The shadow is a stated def
   never disagrees with the choice.
 - **Muted** is measured on `base-100` and `base-200`, with no chroma floor, and is selected by its
   own rule (conductor ruling of 2026-09-29): the lowest `M` that meets the hard constraint and whose
-  themes-passing count is at least the lowest count among the four chosen inks. The floor is
-  warning's 28/39 at `N` = 50.
+  themes-passing count is at least the highest count among the four chosen inks. The floor is
+  success's 34/39 at `N` = 50.
 
 ## Decisions the measurement forced
 
@@ -58,16 +58,17 @@ Every status lands on `N` = 50 and muted on `M` = 70. The shadow is a stated def
   reaches 39/39 at `M` = 95 and again at `M` = 100, which is `base-content` itself and not a muted
   ink, so "highest pass count" cannot choose it. At `M` = 95 Waymark's muted measures 12.86:1
   against its ground, indistinguishable from the body ink. The conductor ruling of 2026-09-29 sets
-  the rule: the inks already trade named stock failures for a usable hue, and muted trades the
-  same kind of failure for a visible step from the body ink. It takes the lowest `M` that meets the
-  hard constraint and whose themes-passing count is at least the lowest count among the four chosen
-  inks (warning's 28/39). `M` = 65 passes 24/39, below the floor, and `M` = 70 passes 30/39, so the
-  script chooses 70. A designer who wants a quieter or a stronger muted overrides `--color-muted`,
-  as Waymark does.
+  the rule: the floor is the highest themes-passing count among the four chosen inks (success's
+  34/39), so muted never fails more stock themes than the least-failing ink does. The inks accept
+  their failures only because the chroma floor forces them to; muted has no such force, and it is
+  body-size text, so its default stays as conservative as the best ink. It takes the lowest `M`
+  that meets the hard constraint and clears that floor. `M` = 75 passes 33/39, below the floor,
+  and `M` = 80 passes 37/39, so the script chooses 80. A designer who wants a quieter or a
+  stronger muted overrides `--color-muted`, as Waymark does.
 - **The stock themes that fail at the chosen values** are named in the last section, by ground and
-  ratio, for the inks and for muted at `M` = 70. None is hidden; the trade the chroma floor buys is
+  ratio, for the inks and for muted at `M` = 80. None is hidden; the trade the chroma floor buys is
   the difference between the pass counts at `N` = 50 and the smaller `N` rows above it, and the
-  trade muted's rule buys is the difference between 30/39 at `M` = 70 and the 39/39 at `M` = 95.
+  trade muted's rule buys is the difference between 37/39 at `M` = 80 and the 39/39 at `M` = 95.
 
 ## Output
 
@@ -203,9 +204,9 @@ Chroma check at the chosen N: median ratio 0.500 across 38 chromatic-fill themes
 | 55 | 6/39 | 23/78 | fails | exempt | exempt |
 | 60 | 14/39 | 37/78 | fails | exempt | exempt |
 | 65 | 24/39 | 51/78 | met | exempt | exempt |
-| 70 **(chosen)** | 30/39 | 62/78 | met | exempt | exempt |
+| 70 | 30/39 | 62/78 | met | exempt | exempt |
 | 75 | 33/39 | 70/78 | met | exempt | exempt |
-| 80 | 37/39 | 75/78 | met | exempt | exempt |
+| 80 **(chosen)** | 37/39 | 75/78 | met | exempt | exempt |
 | 85 | 38/39 | 76/78 | met | exempt | exempt |
 | 90 | 38/39 | 77/78 | met | exempt | exempt |
 | 95 | 39/39 | 78/78 | met | exempt | exempt |
@@ -217,7 +218,7 @@ Chroma check at the chosen N: median ratio 0.500 across 38 chromatic-fill themes
 - warning ink: N=50
 - error ink: N=50
 - info ink: N=50
-- muted: M=70
+- muted: M=80
 
 #### Failing themes and grounds at the chosen values
 
@@ -262,17 +263,10 @@ Chroma check at the chosen N: median ratio 0.500 across 38 chromatic-fill themes
 - valentine (stock): base-100 2.602, base-200 2.367, tint-10 2.530
 - winter (stock): base-100 3.182, base-200 2.958, tint-10 3.083
 
-##### muted at M=70: failing themes and grounds
+##### muted at M=80: failing themes and grounds
 
-- caramellatte (stock): base-100 4.293, base-200 3.925
-- coffee (stock): base-100 3.809, base-200 4.095
-- emerald (stock): base-200 3.972
-- luxury (stock): base-100 4.442, base-200 4.027
-- retro (stock): base-100 3.715, base-200 3.347
-- silk (stock): base-100 4.080, base-200 3.843
-- synthwave (stock): base-200 4.405
-- valentine (stock): base-100 3.138, base-200 2.855
-- winter (stock): base-100 4.051, base-200 3.766
+- retro (stock): base-200 4.169
+- valentine (stock): base-100 3.804, base-200 3.461
 
 #### The hard constraint at the chosen values
 
@@ -280,8 +274,8 @@ The lowest ratio (either gamut, worst ground) for each pair set; every cell must
 
 | theme | success ink | warning ink | error ink | info ink | muted |
 | --- | --- | --- | --- | --- | --- |
-| waymark-light | 8.00 (tint-7) | 4.89 (base-200) | 8.16 (base-200) | 7.67 (tint-10) | 6.14 (base-200) |
-| waymark-dark | 7.97 (tint-7) | 9.42 (tint-9) | 8.23 (base-100) | 7.98 (tint-10) | 6.53 (base-100) |
-| fixture-light | 8.59 (tint-7) | 4.92 (base-200) | 8.76 (base-200) | 8.47 (tint-10) | 6.21 (base-200) |
-| fixture-dark | 9.68 (tint-7) | 10.20 (tint-9) | 9.30 (base-100) | 9.06 (tint-10) | 6.99 (base-100) |
+| waymark-light | 8.00 (tint-7) | 4.89 (base-200) | 8.16 (base-200) | 7.67 (tint-10) | 8.41 (base-200) |
+| waymark-dark | 7.97 (tint-7) | 9.42 (tint-9) | 8.23 (base-100) | 7.98 (tint-10) | 8.33 (base-100) |
+| fixture-light | 8.59 (tint-7) | 4.92 (base-200) | 8.76 (base-200) | 8.47 (tint-10) | 8.55 (base-200) |
+| fixture-dark | 9.68 (tint-7) | 10.20 (tint-9) | 9.30 (base-100) | 9.06 (tint-10) | 9.04 (base-100) |
 

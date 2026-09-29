@@ -56,7 +56,7 @@
 }
 
 @theme {
-  --color-muted: color-mix(in oklab, var(--color-base-content) 70%, var(--color-base-100));
+  --color-muted: color-mix(in oklab, var(--color-base-content) 80%, var(--color-base-100));
   --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
 }
 

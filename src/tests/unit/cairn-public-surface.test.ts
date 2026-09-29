@@ -68,7 +68,7 @@ const INK_SHARES = { success: 50, warning: 50, error: 50, info: 50 };
  * The share of the body ink the muted default keeps over `base-100`, as the derivation record
  * chose it. It moves with the record the same way the ink shares do.
  */
-const MUTED_SHARE = 70;
+const MUTED_SHARE = 80;
 
 const ROLES = customProperties(':root, [data-theme]');
 const THEME_COLORS = customProperties('@theme');

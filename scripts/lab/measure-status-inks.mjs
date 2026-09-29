@@ -16,9 +16,10 @@
 // CHROMA_FLOOR_RATIO (with CHROMA_TOLERANCE), then take the highest pass count and break ties toward
 // the higher `N` (more hue). Muted has no chroma floor, and its pass count rises with `M` until it
 // reaches base-content itself, so the pass count alone cannot choose it. Muted takes the lowest `M`
-// that meets the hard constraint and whose themes-passing count is at least the lowest count among
-// the four chosen inks: it trades stock failures for a visible step from the body ink by the same
-// margin the inks do. When no value meets the hard constraint the script reports that and exits
+// that meets the hard constraint and whose themes-passing count is at least the highest count among
+// the four chosen inks, so muted never fails more stock themes than the least-failing ink does. The
+// inks accept their failures only because the chroma floor forces them to; muted has no such force
+// and is body-size text, so its default stays as conservative as the best ink. When no value meets the hard constraint the script reports that and exits
 // nonzero rather than choosing.
 //
 // Run from the repository root: `node scripts/lab/measure-status-inks.mjs`. It prints the markdown
@@ -320,7 +321,7 @@ function select(rows) {
 
 /**
  * Applies the muted rule: the lowest share that meets the hard constraint and passes at least as
- * many themes as the worst chosen ink.
+ * many themes as the best chosen ink.
  * @param {{ n: number, themesPassing: number, hard: boolean }[]} rows
  * @param {number} passFloor
  * @returns {number | null} the chosen share, or null when none satisfies the constraints
@@ -439,14 +440,14 @@ const mutedRows = SHARES.map((m) => {
     chromaOk: true,
   };
 });
-/** The lowest themes-passing count among the four chosen inks, the bar muted must clear. */
-const inkPassFloor = Math.min(
+/** The highest themes-passing count among the four chosen inks, the bar muted must clear. */
+const bestInkPassCount = Math.max(
   ...STATUSES.map((status) => {
     const n = chosenInk[status];
     return n === null ? 0 : tally(inkResults(themes, computed, status, n)).themesPassing;
   }),
 );
-const chosenMuted = selectMuted(mutedRows, inkPassFloor);
+const chosenMuted = selectMuted(mutedRows, bestInkPassCount);
 if (chosenMuted === null) hardFailed = true;
 out.push(table('muted', mutedRows, chosenMuted, 'M'));
 out.push('');

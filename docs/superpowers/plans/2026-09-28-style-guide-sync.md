@@ -296,3 +296,12 @@ implementer dispatch per repo; new phrases join W6's list. Acceptance: criterion
   `claude-tooling-sync verify` passes; all 11 register headings the chain names exist once.
   Until this branch merges, `site-implementer`'s new `check:docs-gate -- --page` line and the
   chain's register headings match only `style-guide-sync`, not cairn-cms `main`.
+- **J1:** `787c56f3` accepted by `diff-reviewer`. The register editor's voice read: voice **held**
+  ("a reader still hears the same page"); flattening only in three stock lead-ins. Its findings
+  1-4 folded in `851430f2` (accepted): the decline bullet's lost precision (blocking), a step an
+  unset posture cannot carry out, and two rewording drifts ("that pass-through", `cairn.aiPosture`
+  as the `posture` option, re-cited to `f:rh0xv5`). Left for Geoff's sitting: findings 5-8 (the
+  "follow these steps" lead-ins, the "served file" echo, one `Google.Passive`, the one-item
+  precondition list) and a pre-existing citation gap on the invite bullet (`f:qgtfu6`).
+- **J2:** proof worktree `.claude/worktrees/style-guide-proof` at `787c56f3`; `docs-page-chain`
+  run `wf_2bfd79f2-efa` on `docs/extend/enable-tidy.md`.

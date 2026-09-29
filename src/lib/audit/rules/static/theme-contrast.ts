@@ -6,8 +6,9 @@
 // The pairs: body text on `base-100` and `base-200`; `primary` on `base-100`, the link and focus-ring
 // color; each role's `-content` on its own fill; muted on `base-100` and `base-200`; and each status
 // ink on `base-100`, `base-200`, and its callout tint. A callout tint is the highest-percentage
-// `color-mix(in oklab, var(--color-<status>) N%, var(--color-base-100))` the chain declares for that
-// status, the ground a callout title actually sits on; a status the chain never tints has none.
+// `color-mix(in oklab, ...)` or `color-mix(in oklch, ...)` of the form `var(--color-<status>) N%,
+// var(--color-base-100)` the chain declares for that status, the ground a callout title actually
+// sits on; a status the chain never tints has none.
 //
 // A value outside the resolver's bound is reported as unmeasured, never passed. The rendered checks
 // (`interactive-contrast`, and the rendered page itself) stay the ground truth; this rule catches a

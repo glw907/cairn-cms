@@ -8,15 +8,14 @@ it around the four audience tracks the rebuild ships
 ([`2026-08-14-pass-d-target-manifest.md`](./record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, since a number in this document rots). The
 style-guide sync (2026-09-28, spec: `docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`)
-set every surface on a published base guide, gathered the rules a writer needs into one drafting
-brief per guide, and moved the record of each departure into sections only reviewers read.
+set every surface on a published base guide, wrote one drafting brief per guide as a short
+supplement to it, and recorded every departure from a guide in one section.
 
-A drafter receives its guide's drafting brief together with the Names, Visuals, and page-anatomy
-sections and the section for its page's track, and it receives nothing else from this document. A
-reviewer receives the same sections along with the tightening test, the two tables of recorded
-exceptions, and the provenance, which together let it tell a recorded departure from a defect.
-The document is itself written in the cairn docs voice, since the style of a prompt steers the
-style of what an agent writes from it
+A drafter reads its guide's drafting brief together with the Names, Visuals, and page-anatomy
+sections and the section for its page's track, and it reads nothing else from this document. A
+reviewer reads the same sections along with "Deviations from the base guides," which lets it tell
+a recorded departure from a defect. The document is itself written in the cairn docs voice, since
+the style of a prompt steers the style of what an agent writes from it
 ([Anthropic's prompting guidance](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)).
 
 ## The base guides
@@ -30,7 +29,7 @@ works only in the product's UI reads under the
 2026-09-28; the mapping `.vale.ini` already carried stands). The base guide governs structure,
 grammar, and mechanics, including every rule Vale cannot check. This register overlays that base.
 It adds rules where the guide is silent and may tighten a rule the guide leaves open, and it
-departs from a guide rule only through a recorded exception, which only Geoff can add.
+departs from a guide rule only through a recorded deviation, which only Geoff can add.
 
 The following table maps each surface to its base guide and to the drafting brief a writer
 follows there.
@@ -51,101 +50,89 @@ The cairn docs voice, which the developer brief defines, governs every surface w
 is Google. Editor docs take Microsoft's voice, tightened only by the editor brief's own rules.
 Admin UI copy takes Microsoft's UI-text voice, tightened to professional and restrained copy with
 nothing cute and nothing chatty (Geoff, 2026-09-28), and a departure there is recorded in the
-Microsoft exceptions table like any other. The register governs public-facing writing only, and
-internal specs, plans, and agent-facing documents take whatever voice works best for Claude Code
-(Geoff, 2026-09-28). A Vale finding that is wrong about a specific line is a separate case with
+Microsoft table of "Deviations from the base guides" like any other. The register governs
+public-facing writing only, and internal specs, plans, and agent-facing documents take whatever
+voice works best for Claude Code (Geoff, 2026-09-28). A Vale finding that is wrong about a specific line is a separate case with
 its own procedure, "When a Vale finding is wrong," which corrects a misfiring regex and leaves the
 guide untouched.
 
 ## Drafting brief: developer docs
 
 This brief governs every page whose base guide is Google: the admin, extend, and reference
-tracks, the front door, the changelog, and cairn.pub's own prose. A page takes its structure from
-the Google developer documentation style guide and speaks in the cairn docs voice throughout.
+tracks, the front door, the changelog, and cairn.pub's own prose. It supplements the
+[Google developer documentation style guide](https://developers.google.com/style), which is the
+structure source for every such page, and it adds the cairn docs voice, the exemplars a drafter
+imitates, and the tells a draft avoids. A page takes its structure from the guide and speaks in
+the cairn docs voice throughout.
 
 ### Structure
 
-Structure every page to the Google developer documentation style guide. The following list holds
-the rules a draft breaks most often, each quoted from its page in the guide.
+Structure every page to the Google developer documentation style guide. The following checklist
+names the guide rules a draft breaks most often, one rule to a line, each linked to the guide page
+that states it.
 
-- **Procedures.** A sequence of actions is a numbered list with one action to a step, introduced
-  by a complete sentence. Google's [highlights](https://developers.google.com/style/highlights):
-  "Use numbered lists for sequences." <!-- q:g-numbered-lists --> Its
-  [procedures page](https://developers.google.com/style/procedures): "In general, use one step for
-  each action." <!-- q:g-one-action --> A procedure of one step is one sentence in a bulleted
-  list: "When a procedure consists of only one step, write the step in one sentence and format it
-  as a bulleted list." <!-- q:g-single-step -->
+- A sequence of actions is a numbered list introduced by a complete sentence
+  ([highlights](https://developers.google.com/style/highlights)).
+- Each step holds one action ([procedures](https://developers.google.com/style/procedures)).
+- A procedure of one step is one sentence in a bulleted list
+  ([procedures](https://developers.google.com/style/procedures)).
+- A step names where the action happens before it names the action
+  ([procedures](https://developers.google.com/style/procedures)).
+- A sentence states its condition before its instruction
+  ([highlights](https://developers.google.com/style/highlights)).
+- Parallel items that need no order form a bulleted list
+  ([highlights](https://developers.google.com/style/highlights)).
+- A complete sentence introduces every list, never a fragment that the list items complete
+  ([lists](https://developers.google.com/style/lists)).
+- Every item in a list shares one form ([lists](https://developers.google.com/style/lists)).
+- Every list item opens on a capital letter unless case carries meaning, as in a glossary
+  ([lists](https://developers.google.com/style/lists)).
+- A step, a list item, and each sentence in a task section stay under 26 words
+  ([accessibility](https://developers.google.com/style/accessibility)).
+- Titles and headings take sentence case
+  ([highlights](https://developers.google.com/style/highlights)).
+- A task section's heading starts with a bare infinitive
+  ([headings](https://developers.google.com/style/headings)).
+- A concept section's heading is a noun phrase with no leading -ing word, and no heading opens on
+  an -ing word where another form serves ([headings](https://developers.google.com/style/headings)).
+- A heading carries no link ([headings](https://developers.google.com/style/headings)).
+- Heading levels never skip ([headings](https://developers.google.com/style/headings)).
+- Text follows every heading before the next heading begins
+  ([headings](https://developers.google.com/style/headings)).
+- Commands, code identifiers, file names, and paths sit in code font
+  ([highlights](https://developers.google.com/style/highlights)).
+- UI labels sit in bold ([highlights](https://developers.google.com/style/highlights)).
+- A complete sentence that states the table's purpose introduces every table
+  ([tables](https://developers.google.com/style/tables)).
+- A table of one column becomes a list ([tables](https://developers.google.com/style/tables)).
+- Link text names its destination and makes sense read alone
+  ([link text](https://developers.google.com/style/link-text)).
+- A URL is never the link text, and the page title or a description of the page takes its place
+  ([link text](https://developers.google.com/style/link-text)).
+- A reference names its target, never its position on the page
+  ([procedures](https://developers.google.com/style/procedures)).
+- A notice is rare, and it never carries a prerequisite or an earlier step, which precedes the
+  step instead ([notices](https://developers.google.com/style/notices)).
+- A notice never holds a full procedural step
+  ([notices](https://developers.google.com/style/notices)).
+
+The register adds the following structure rules, each stricter than the guide or set where the
+guide is silent.
+
 - **Ordered checks.** The checks in a verification or failure section run in order, so they form
   a numbered list as well. A paragraph that chains its checks with first, then, and otherwise is
   a procedure written as prose.
-- **Location and conditions first.** A step names where the action happens before it names the
-  action, and a sentence states its condition before its instruction. The
-  [procedures page](https://developers.google.com/style/procedures): "Write in the order that the
-  reader needs to follow. State the location of the action before stating the action."
-  <!-- q:g-location-first --> The [highlights](https://developers.google.com/style/highlights):
-  "Put conditions before instructions, not after." <!-- q:g-conditions-first -->
-- **Lists.** Parallel items that need no order form a bulleted list, introduced by a complete
-  sentence, with every item parallel in form and opening on a capital letter. The
-  [highlights](https://developers.google.com/style/highlights): "Use bulleted lists for most other
-  lists." <!-- q:g-bulleted-lists --> The [lists page](https://developers.google.com/style/lists):
-  "Introduce a list with a complete sentence, not a partial one that's completed by the list
-  items." <!-- q:g-list-intro --> "Use the same syntax/structure for all list items in a given
-  list, if possible." <!-- q:g-list-parallel --> "Start each list item with a capital letter,
-  unless case is an important part of the information conveyed by the list—such as in a list of
-  glossary terms." <!-- q:g-list-capital -->
-- **Length where the reader acts.** A step, a list item, and each sentence in a task section stay
-  under 26 words. The
-  [accessibility page](https://developers.google.com/style/accessibility): "Use shorter
-  sentences. Try to use fewer than 26 words per sentence." <!-- q:g-sentence-length -->
-- **Heading form.** Headings take sentence case. A task section's heading starts with a bare
+- **No question or teaser headings.** A heading names its section's subject, and it is never a
+  question, a teaser, or a conversational phrase. A concept heading names what the section covers,
   <!-- vale Google.Quotes = NO -->
   <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
-  infinitive, such as "Verify the served file" or "Pass the posture to the robots route", and a
-  concept section's heading is a noun phrase with no leading -ing word, such as "Robots file
-  output" or "Limits of declining". The
+  such as "Robots file output" or "Limits of declining", and a task heading names the action, such
+  as "Verify the served file" or "Pass the posture to the robots route".
   <!-- vale Google.Quotes = YES -->
-  [headings page](https://developers.google.com/style/headings): "For a task-based heading, start
-  with a bare infinitive, also known as a plain form or base form verb." <!-- q:g-heading-task -->
-  "For a conceptual or non-task-based heading, use a noun phrase that doesn't start with an -ing
-  verb." <!-- q:g-heading-concept --> "When possible, avoid using -ing verb forms as the first word
-  in any heading or title." <!-- q:g-heading-ing --> The
-  [highlights](https://developers.google.com/style/highlights): "Use sentence case for document
-  titles and section headings." <!-- q:g-heading-case -->
-- **No question or teaser headings.** A heading names its section's subject, and it is never a
-  question, a teaser, or a conversational phrase. Geoff killed three such headings from the
-  draft docs proof (2026-09-28):
+  Geoff killed three such headings from the draft docs proof (2026-09-28):
   - Killed: "What each posture emits"
   - Killed: "What declining doesn't buy"
   - Killed: "You know it worked when"
-- **Heading structure.** A heading carries no link, the levels never skip, and text always
-  follows a heading before the next one. The
-  [headings page](https://developers.google.com/style/headings): "Don't put links in headings. A
-  link can easily be confused as a style applied to the heading instead of a link."
-  <!-- q:g-heading-links --> "Maintain logical order. Don't skip levels of the heading
-  hierarchy." <!-- q:g-heading-levels --> "Don't use empty headings. Make sure headings are
-  followed by content." <!-- q:g-heading-content -->
-- **Code font.** Commands, code identifiers, file names, and paths sit in code font, and UI labels
-  sit in bold. The [highlights](https://developers.google.com/style/highlights): "Put code-related
-  text in code font." <!-- q:g-code-font --> "Put UI elements in bold." <!-- q:g-ui-bold -->
-- **Tables.** A complete sentence introduces every table, and a table of one column becomes a
-  list. The [tables page](https://developers.google.com/style/tables): "Introduce tables with a
-  complete sentence that describes the purpose of the table because not all screen readers
-  preannounce tables." <!-- q:g-table-intro --> "If you have only one column in your table, turn
-  the table into a list." <!-- q:g-table-one-column -->
-- **Link text.** Link text names its destination and makes sense read alone. The
-  [link-text page](https://developers.google.com/style/link-text): "Write link text that makes
-  sense without the surrounding text. Don't use phrases such as this document, this article, or
-  click here." <!-- q:g-link-text --> "In general, don't use a URL as link text. Instead, use the
-  page title or a description of the page." <!-- q:g-link-url -->
-- **Directional references.** A reference names its target, never its position on the page. The
-  [procedures page](https://developers.google.com/style/procedures): "Don't use directional
-  language to orient the reader, such as above, below, or right-hand side. This type of language
-  doesn't work well for accessibility or for localization." <!-- q:g-directional -->
-- **Notices.** A notice is rare, and it never carries a prerequisite or a step. The
-  [notices page](https://developers.google.com/style/notices): "Don't use notes to tell the reader
-  about prerequisites or about steps they should have taken earlier. Information like this should
-  precede the step." <!-- q:g-notice-prereq --> "Don't make a full procedural step into a note."
-  <!-- q:g-notice-step -->
 - **A vendor's specifics get a link, never a copy** (Geoff, 2026-08-05). Dashboard navigation,
   plan-availability tiers, expression-language signatures, field references, console walkthroughs,
   and pricing all sit behind a link to the vendor's own page. Whatever cairn copies, cairn owns
@@ -175,13 +162,11 @@ as readily.
 
 - **The cairn docs voice** reads as a technical report or the introduction to a systems paper. It
   is measured and precise, friendly and respectful in the manner of a careful colleague, and free
-  of slang, jokes, and casual asides. <!-- x:measured-tone -->
+  of slang, jokes, and casual asides.
 - **Qualified claims stay whole.** Qualification stays inside the sentence that carries the
   claim. In explanatory prose, a sentence carries one qualified claim whole, and it may run past
   26 words when splitting it would separate the claim from its qualification.
-  <!-- x:qualified-claims -->
 - **A restrained first person** appears only where a sentence states the author's own evidence.
-  <!-- x:first-person -->
 - **The comparison set** is technical and academic writing, such as SQLite's "Appropriate uses"
   page, a systems paper's introduction, a standards document's overview section, and a mature
   database's own description of itself. The cadence to match is theirs, with longer sentences
@@ -216,6 +201,10 @@ on the way.
 > do, check out the `buildRobots` entry. You'll also find out which assistants skip the file for
 > fetches that you start. And you'll learn why search crawlers aren't in the table.
 
+The concept paragraph is `docs/extend/choose-an-ai-posture.md` lines 23 to 26 as merged at
+`8bbe78f5`, the proof page whose tone Geoff's ruling says worked. The killed flattened version
+beside it was written for this register to show that failure.
+
 Ratified-good, for the front door only and the one specimen in the first person: the why-cairn
 opener, from Geoff's own account (re-ratified 2026-09-08; the earlier specimen, an editor emailing
 changes for the author to commit, was invented and is withdrawn): "Before cairn, the small
@@ -227,6 +216,20 @@ author's evidence about why cairn exists, which is why a task, concept, or refer
 borrows that first person. The post-sweep `docs/README.md` is the third exemplar, in the
 front-door register.
 
+### Exemplars
+
+A drafter reads each exemplar whole and imitates its anatomy and rhythm, never its wording.
+
+- [`docs/extend/choose-an-ai-posture.md`](../extend/choose-an-ai-posture.md) is the primary
+  exemplar, for both the task-guide anatomy (choose, set, pass, verify, resolve) and the voice
+  (Geoff, 2026-09-28).
+- The why-cairn opener and the post-sweep `docs/README.md`, both in "Voice," are the exemplars for
+  the voice on the front door only.
+- [`exemplars/google-task-create-project.md`](./exemplars/google-task-create-project.md), a Google
+  task page, is an exemplar for anatomy.
+- [`exemplars/google-concept-auth-overview.md`](./exemplars/google-concept-auth-overview.md), a
+  Google concept page, is an exemplar for anatomy.
+
 ### Tells
 
 A tell is a habit of generated prose that a reader notices before the content. Each killed
@@ -236,11 +239,11 @@ flat taste.
 - **No marketing claims and no benefit-forward framing.** Every factual claim is literally true.
   Killed: "The whole organization works in one place, content and custom functions sharing one
   admin and one sign-in." It is marketing register, and it is false, since teams are distributed.
-- **No figurative language.** The
-  [voice and tone page](https://developers.google.com/style/tone): "Avoid figurative language,
-  which includes metaphors and ableist language." <!-- q:g-figurative --> A metaphor does the most
-  damage in a definitional or structural position, where it defines what something is or names
-  the docs' own anatomy.
+- **No figurative language.** Google's
+  [voice and tone page](https://developers.google.com/style/tone) rules out figurative language,
+  metaphor included, and the register holds that ban. A metaphor does the most damage in a
+  definitional or structural position, where it defines what something is or names the docs' own
+  anatomy.
   - Killed: "writing room" as the docs opener's definition of cairn. Its earlier ratification did
     not save it, and ratification never defends prose against a live read.
   - Killed: "The four arms" as the heading for the docs' own structure, a metaphor dressing the
@@ -266,76 +269,64 @@ flat taste.
 
 ## Drafting brief: editor docs
 
-This brief governs `docs/editors/`, the pages an editor reaches through the admin's Help link.
-Microsoft's voice governs them unmodified, and the rules in this brief tighten that voice without
-departing from it.
+This brief governs `docs/editors/`, the pages an editor reaches through the admin's Help link. It
+supplements the
+[Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/), which is
+the structure source for every such page and whose voice governs these pages unmodified. The rules
+in this brief tighten that voice without departing from it.
 
 ### Structure
 
-Structure every page to the Microsoft Writing Style Guide. The following list holds the rules a
-draft breaks most often, each quoted from its page in the guide.
+Structure every page to the Microsoft Writing Style Guide. The following checklist names the
+guide rules a draft breaks most often, one rule to a line, each linked to the guide page that
+states it.
 
-- **Procedures.** A sequence of actions is a numbered list, one instruction to a step. The
-  [lists page](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists): "Use a
-  numbered list for sequential items (like a procedure) or prioritized items (like a top 10
-  list)." <!-- q:m-numbered-list --> The
-  [step-by-step page](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions):
-  "Use a separate step for each instruction. It's OK to combine short steps that occur in the same
-  place in the UI." <!-- q:m-separate-step --> "A single step might not require list formatting.
-  If you want to use a format that's consistent with step-by-step instructions in the same
-  documentation, use a bullet instead of a number." <!-- q:m-single-step -->
+- A sequence of actions is a numbered list
+  ([lists](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists)).
+- Each step holds one instruction, and short steps in the same place in the UI may combine
+  ([step-by-step instructions](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions)).
+- A single step may take a bullet in place of a number
+  ([step-by-step instructions](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions)).
+- A step names where the action happens before it names the action, and a sentence states its
+  condition before its instruction
+  ([step-by-step instructions](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions)).
+- Items that share a purpose and need no order form a bulleted list
+  ([lists](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists)).
+- A heading, a complete sentence, or a fragment ending in a colon introduces every list
+  ([lists](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists)).
+- Every item in a list shares one structure
+  ([lists](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists)).
+- Every list item opens on a capital letter unless it has a reason not to, such as a command that
+  is always lowercase ([lists](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists)).
+- Steps and list items stay short enough that the reader sees two or three at a glance
+  ([lists](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists)).
+- Headings take sentence-style capitalization
+  ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
+- Headings at one level share one sentence structure
+  ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
+- A heading ends without a period, and it may be the reader's own question
+  ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
+- A heading carries no link
+  ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
+- Text follows every heading before the next heading begins
+  ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
+- A button, a field, or a menu item is named in bold, as the screen shows it
+  ([formatting text in instructions](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/formatting-text-in-instructions)).
+- A complete sentence ending in a period introduces every table
+  ([tables](https://learn.microsoft.com/en-us/style-guide/scannable-content/tables)).
+- Link text names its destination with the page title or a description, never a generic phrase
+  ([URLs and web addresses](https://learn.microsoft.com/en-us/style-guide/urls-web-addresses)).
+- A reference names its target, never its position on the screen or the page
+  ([accessibility](https://learn.microsoft.com/en-us/style-guide/accessibility/writing-all-abilities)).
+- A note carries helpful information the task can do without, and it never carries a step or a
+  prerequisite
+  ([headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)).
+
+The register adds the following structure rules, each stricter than the guide or set where the
+guide is silent.
+
 - **Ordered checks.** Checks an editor runs in order, such as confirming that a change reached
   the site, form a numbered list as well.
-- **Location and conditions first.** A step names where the action happens before it names the
-  action, and a sentence states its condition before its instruction. The
-  [step-by-step page](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions):
-  "Make sure that customers know where the action should take place before you describe the
-  action." <!-- q:m-location-first -->
-- **Lists.** Items that share a purpose and need no order form a bulleted list, consistent in
-  structure, each item opening on a capital letter. The
-  [lists page](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists): "Use a
-  bulleted list for things that have something in common but don't need to appear in a particular
-  order." <!-- q:m-bulleted-list --> "Introduce the list with a heading, a complete sentence, or a
-  fragment that ends with a colon." <!-- q:m-list-intro --> "Make all the items in a list
-  consistent in structure." <!-- q:m-list-consistent --> "Begin each item in a list with a capital
-  letter unless there's a reason not to (for example, it's a command that's always lowercase)."
-  <!-- q:m-list-capital -->
-- **Length.** Steps and list items stay short. The
-  [lists page](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists): "Each item
-  should be fairly short—the reader should be able to see at least two, and preferably three, list
-  items at a glance." <!-- q:m-list-short -->
-- **Headings.** Headings take sentence-style capitalization and parallel structure at each level,
-  a heading may be the reader's own question, and text always follows a heading before the next
-  one. A heading carries no link. The
-  [headings page](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings): "Use
-  sentence-style capitalization for headings." <!-- q:m-heading-case --> "Use parallel sentence
-  structure for all headings at the same level." <!-- q:m-heading-parallel --> "Don't end headings
-  with a period. A question mark or (rarely) an exclamation point can be used if it's needed for
-  meaning." <!-- q:m-heading-question --> "Avoid having two headings in a row without text in
-  between—that might indicate a problem with organization or that the headings are redundant."
-  <!-- q:m-heading-adjacent -->
-- **UI names.** A button, a field, or a menu item is named in bold, as the screen shows it. The
-  [formatting page](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/formatting-text-in-instructions):
-  "When you must refer to a button, checkbox, or other option, use bold formatting for the name."
-  <!-- q:m-ui-bold -->
-- **Tables.** A complete sentence introduces every table. The
-  [tables page](https://learn.microsoft.com/en-us/style-guide/scannable-content/tables): "If
-  there’s text that introduces the table, it should be a complete sentence and end with a period,
-  not a colon." <!-- q:m-table-intro -->
-- **Link text.** Link text names its destination. The
-  [URLs page](https://learn.microsoft.com/en-us/style-guide/urls-web-addresses): "Write brief but
-  specific and meaningful link text. Use the title or a description of a page rather than a
-  generic phrase like click here." <!-- q:m-link-text -->
-- **Directional references.** A reference names its target, never its position on the screen or
-  the page. The
-  [accessibility page](https://learn.microsoft.com/en-us/style-guide/accessibility/writing-all-abilities):
-  "Don’t use directional terms as the only clue to location." <!-- q:m-directional -->
-- **Notes.** A note carries helpful information the task can do without, and it never carries a
-  step or a prerequisite. The
-  [headings page](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings):
-  "Consider repeating common phrases, such as Tip, Note, and See also, as run-in headings to call
-  attention to helpful information, interesting but nonessential information, or cross-references,
-  respectively." <!-- q:m-notes -->
 - **A vendor's specifics get a link, never a copy** (Geoff, 2026-08-05). A vendor's screens,
   plans, and prices change without notice, so a page that copies them goes stale on a schedule
   cairn does not control.
@@ -349,19 +340,24 @@ reader adopts it, so nothing anywhere in them is a pitch. The writing earns the 
 being clear and careful. Prose that avoids marketing by turning flat and perfunctory fails the
 reader as surely as a pitch does.
 
-- **Microsoft's voice** is warm, relaxed, crisp, and clear. The
-  [top 10 tips](https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice): "Avoid
-  jargon and overly complex or technical language. It should sound like a friendly conversation."
-  <!-- q:m-friendly --> "Lead with what's most important. Front-load keywords for scanning."
-  <!-- q:m-front-load --> "Give customers just enough information to make decisions confidently.
-  Prune every excess word." <!-- q:m-be-brief --> "Use contractions like it's, you'll, you're,
-  we're, and let's." <!-- q:m-contractions -->
-- **Plain second person and the imperative in steps.** The
-  [writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips):
-  "Use active voice and indicative mood most of the time. Use imperative mood in procedures."
-  <!-- q:m-imperative -->
+- **Microsoft's voice** is warm, relaxed, crisp, and clear. Its
+  [top 10 tips](https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice) ask for
+  plain words over jargon, the most important point first, just enough information to decide, and
+  contractions.
+- **Plain second person and the imperative in steps.** Active voice and the indicative mood carry
+  most sentences, and procedures take the imperative
+  ([writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)).
 - **The editor's vocabulary.** A page speaks the words an editor already uses in the admin, and it
   defines on first use any word the editor has not met there.
+
+### Exemplars
+
+A drafter reads each exemplar whole and imitates its anatomy and rhythm, never its wording.
+
+- [`exemplars/microsoft-procedure-blobs-portal.md`](./exemplars/microsoft-procedure-blobs-portal.md),
+  a Microsoft Learn procedure page, is the exemplar for the anatomy of a UI-only procedure.
+- An in-repo editor exemplar joins this list when the editors stage redrafts its first page
+  (Geoff, 2026-09-28).
 
 ### Tells
 
@@ -372,9 +368,9 @@ flat taste.
 - **No marketing claims and no benefit-forward framing.** Every factual claim is literally true.
   Killed: "The whole organization works in one place, content and custom functions sharing one
   admin and one sign-in." It is marketing register, and it is false, since teams are distributed.
-- **No idioms or metaphors.** The
-  [writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips):
-  "Avoid idioms, colloquial expressions, and culture-specific references." <!-- q:m-idioms --> A
+- **No idioms or metaphors.** Microsoft's
+  [writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
+  rule out idioms and colloquial or culture-bound phrasing. A
   metaphor does the most damage where it defines what something is. Killed: "writing room" as the
   docs opener's definition of cairn.
 - **No prose about the docs' own writing.** The docs never admire themselves. Killed: "Eight words
@@ -791,14 +787,14 @@ span, real or not, and is never the fix. Confirm a suppression actually takes ef
 the gate with and without it, the same falsifiability standard every gate in this repo is held
 to, rather than trusting the syntax on sight.
 
-## The tightening test
+## Deviations from the base guides
 
 A rule in this register either tightens its base guide or departs from it, and the difference
 decides whether the rule needs Geoff's ruling (Geoff, 2026-09-28). A tightening forbids only a
 form the guide permits or is silent on, and it needs no record. A rule that forbids a form the
 guide prescribes or recommends is an override, and so is a rule that permits a form the guide
-forbids; either one exists only as a row in the recorded-exceptions table for its guide. A
-register rule that fails this test and has no row is a blocking finding against the register.
+forbids; either one exists only as a row in its guide's table in this section. A register rule
+that fails this test and has no row is a blocking finding against the register.
 
 Only Geoff adds a row. A row names the base rule it overrides, what cairn does instead, the
 evidence, and the date of his ruling. Evidence is what a writer brings to Geoff when proposing a
@@ -811,48 +807,36 @@ cross-references, and notices forbids what Google permits and prescribes nothing
 so it is a tightening. The measured tone forbids the conversational register Google's tone page
 recommends, so it is an override and carries a row.
 
-## Recorded exceptions: Google
+### Google
 
-Each row in the following table records one departure from a Google rule. The first column names
-the brief passage the row governs, which carries an HTML comment holding the same `x:` id, and a
-dormant row, which governs no passage today, carries the word dormant in that column instead.
+Each row in the following table records one departure from a Google rule. A dormant row governs
+no page today, and its "What cairn does instead" cell says so.
 
-| Passage | Base rule | What cairn does instead | Evidence | Ruling |
-|---|---|---|---|---|
-| x:measured-tone | [Voice and tone](https://developers.google.com/style/tone): "Use a voice that's casual, natural, and approachable, not pedantic or pushy." and "But, aim for a conversational tone rather than a formal one." | Pages read as a measured, precise technical report. Google's friendly and respectful manner stays, with no slang and no jokes. | Geoff's 2026-09-08 voice ruling; the 2026-09-28 draft docs proof, whose tone succeeded while its defects were structural | Geoff, 2026-09-28 (rulings 3 and 10) |
-| x:qualified-claims | [Accessibility](https://developers.google.com/style/accessibility): "Use shorter sentences. Try to use fewer than 26 words per sentence." | An explanatory sentence may run past 26 words when splitting it would separate a claim from its qualification. Steps, list items, and task sections stay under 26 words, and a step or list item over that length is a blocking guide finding. | The same ruling and proof; the guidance is an accessibility rule, so it holds wherever the reader acts | Geoff, 2026-09-28 (rulings 3 and 10) |
-| x:first-person | [Pronouns](https://developers.google.com/style/pronouns): "Avoid first-person pronouns (I, we, us, our, and ours) except in the following contexts:" | The author uses a restrained first person where a sentence states the author's own evidence, and `.vale.ini` turns off `Google.FirstPerson` on every Google surface. Google's own list admits a document whose author comments in the first person, and the row records the rule's removal from the gate. | The authorial first person is the register for design decisions | Geoff, 2026-07-02 |
-| dormant | [Periods and other end punctuation](https://developers.google.com/style/exclamation-points): "In general, avoid exclamation points." | The root README may carry Geoff's voiced headings, such as `Love your editors!`, and `.vale.ini` holds `Google.Exclamation` at warning for `README.md`. The README carries no such heading today. | Geoff's sanction of his own voiced headings | Geoff, 2026-07-02 |
+| Base rule | What cairn does instead | Evidence | Ruling |
+|---|---|---|---|
+| [Voice and tone](https://developers.google.com/style/tone): "Use a voice that's casual, natural, and approachable, not pedantic or pushy." and "But, aim for a conversational tone rather than a formal one." | Pages read as a measured, precise technical report. Google's friendly and respectful manner stays, with no slang and no jokes. | Geoff's 2026-09-08 voice ruling; the 2026-09-28 draft docs proof, whose tone succeeded while its defects were structural | Geoff, 2026-09-28 (rulings 3 and 10) |
+| [Accessibility](https://developers.google.com/style/accessibility): "Use shorter sentences. Try to use fewer than 26 words per sentence." | An explanatory sentence may run past 26 words when splitting it would separate a claim from its qualification. Steps, list items, and task sections stay under 26 words, and a step or list item over that length is a blocking guide finding. | The same ruling and proof; the guidance is an accessibility rule, so it holds wherever the reader acts | Geoff, 2026-09-28 (rulings 3 and 10) |
+| [Pronouns](https://developers.google.com/style/pronouns): "Avoid first-person pronouns (I, we, us, our, and ours) except in the following contexts:" | The author uses a restrained first person where a sentence states the author's own evidence, and `.vale.ini` turns off `Google.FirstPerson` on every Google surface. Google's own list admits a document whose author comments in the first person, and the row records the rule's removal from the gate. | The authorial first person is the register for design decisions | Geoff, 2026-07-02 |
+| [Periods and other end punctuation](https://developers.google.com/style/exclamation-points): "In general, avoid exclamation points." | The root README may carry Geoff's voiced headings, such as `Love your editors!`, and `.vale.ini` holds `Google.Exclamation` at warning for `README.md`. The README carries no such heading today. | Geoff's sanction of his own voiced headings | Geoff, 2026-07-02 |
 
-## Recorded exceptions: Microsoft
+### Microsoft
 
 No departure from a Microsoft rule is recorded. This table also governs admin UI copy, whose
 voice `docs/internal/admin-design-system.md` states, so a departure in either surface lands here
 as a row of the same shape as the Google table's.
 
-| Passage | Base rule | What cairn does instead | Evidence | Ruling |
-|---|---|---|---|---|
+| Base rule | What cairn does instead | Evidence | Ruling |
+|---|---|---|---|
 
-## Provenance
-
-This section records where the briefs' rules come from, so a reviewer can tell a recorded
-departure from a defect. The drafter never receives it.
-
-### The cairn docs voice
+### The rulings behind the briefs
 
 Geoff ruled on 2026-09-08 that cairn's public-facing writing is technical and academic, and the
 draft docs proof of 2026-09-28 confirmed the tone while exposing structural defects the base
 guide would have caught. The style-guide sync kept the tone and restored the structure. The
 voice is defined positively, as one whole, so that a drafter reproduces it from the brief alone
 and never assembles it from Google's defaults minus a list of prohibitions (Geoff, 2026-09-28,
-ruling 11). The following table names each Google rule the voice departs from and the ruling
-behind the departure.
-
-| Google rule | Departure | Ruling |
-|---|---|---|
-| [Voice and tone](https://developers.google.com/style/tone): a conversational, casual register | A measured technical-report register | Rulings 3 and 10, 2026-09-28 |
-| [Accessibility](https://developers.google.com/style/accessibility): fewer than 26 words per sentence | Explanatory sentences may run longer to keep a qualified claim whole | Rulings 3 and 10, 2026-09-28 |
-| [Pronouns](https://developers.google.com/style/pronouns): avoid the first person | A restrained authorial first person on the author's own evidence | 2026-07-02 |
+ruling 11). The voice departs from Google in three places, the tone, the sentence length, and the
+first person, and the first three rows of the Google table record them.
 
 The rest of the developer brief tightens Google and needs no row. Restricting imperatives to
 steps, task headings, cross-references, and notices is a tightening, and so are the ban on
@@ -861,89 +845,52 @@ in place of the register's earlier allowance for an explanatory metaphor (Geoff,
 ruling 8), and the "writing room" and "The four arms" specimens stay as illustrations of it.
 
 The editor brief departs from nothing in Microsoft (ruling 4). Its tightenings are the no-pitch
-keystone, the tells that pass the tightening test against Microsoft, and the Names rules. Three
+keystone, the tells that pass this section's test against Microsoft, and the Names rules. Three
 developer-brief rules fail that test on the editors track and stay out of the editor brief: the
 ban on staccato runs of short sentences and the longer cadence it implies, which contradict
 Microsoft's "Shorter is always better," and the ban on question headings, which contradicts
 Microsoft's allowance for the reader's own question. The editor brief carries no academic
 framing.
 
-### Specimens
+## Sources
 
-The developer brief's concept paragraph is `docs/extend/choose-an-ai-posture.md` lines 23 to 26
-as merged at `8bbe78f5`, the proof page whose tone Geoff's ruling says worked. The killed
-flattened version beside it was written for this register to show that failure. The
-structure-plus-voice specimen, a task section's lead-in sentence and a numbered step, joins the
-developer brief once the rebuilt trigger page has passed Geoff's read.
+The structure checklists and the deviation rows cite the following pages of the Google developer
+documentation style guide, read on 2026-09-28.
 
-### Guide quotes
+- [Highlights](https://developers.google.com/style/highlights)
+- [Procedures](https://developers.google.com/style/procedures)
+- [Lists](https://developers.google.com/style/lists)
+- [Accessibility](https://developers.google.com/style/accessibility)
+- [Headings and titles](https://developers.google.com/style/headings)
+- [Tables](https://developers.google.com/style/tables)
+- [Link text](https://developers.google.com/style/link-text)
+- [Notes, cautions, warnings, and other notices](https://developers.google.com/style/notices)
+- [Voice and tone](https://developers.google.com/style/tone)
+- [Pronouns](https://developers.google.com/style/pronouns)
+- [Periods and other end punctuation](https://developers.google.com/style/exclamation-points)
 
-A brief quotes a guide rule as one double-quoted span followed by an HTML comment holding `q:` and
-the quote's id. The row with the same id in the following table carries the source text byte for
-byte, without the enclosing quotation marks, compared with every run of whitespace collapsed to a
-single space. Each quote was fetched from the live page with `curl` and `pandoc` on the date
-shown, from the guide's body text and never from Google's AI-generated Page Summary block. A
-change to a quote changes the brief and this table in the same commit.
+The editor brief cites the following pages of the Microsoft Writing Style Guide, read on the same
+date.
 
-| Id | Source text | Page | Fetched |
-|---|---|---|---|
-| q:g-numbered-lists | Use numbered lists for sequences. | https://developers.google.com/style/highlights | 2026-09-28 |
-| q:g-one-action | In general, use one step for each action. | https://developers.google.com/style/procedures | 2026-09-28 |
-| q:g-single-step | When a procedure consists of only one step, write the step in one sentence and format it as a bulleted list. | https://developers.google.com/style/procedures | 2026-09-28 |
-| q:g-location-first | Write in the order that the reader needs to follow. State the location of the action before stating the action. | https://developers.google.com/style/procedures | 2026-09-28 |
-| q:g-conditions-first | Put conditions before instructions, not after. | https://developers.google.com/style/highlights | 2026-09-28 |
-| q:g-bulleted-lists | Use bulleted lists for most other lists. | https://developers.google.com/style/highlights | 2026-09-28 |
-| q:g-list-intro | Introduce a list with a complete sentence, not a partial one that's completed by the list items. | https://developers.google.com/style/lists | 2026-09-28 |
-| q:g-list-parallel | Use the same syntax/structure for all list items in a given list, if possible. | https://developers.google.com/style/lists | 2026-09-28 |
-| q:g-list-capital | Start each list item with a capital letter, unless case is an important part of the information conveyed by the list—such as in a list of glossary terms. | https://developers.google.com/style/lists | 2026-09-28 |
-| q:g-sentence-length | Use shorter sentences. Try to use fewer than 26 words per sentence. | https://developers.google.com/style/accessibility | 2026-09-28 |
-| q:g-heading-task | For a task-based heading, start with a bare infinitive, also known as a plain form or base form verb. | https://developers.google.com/style/headings | 2026-09-28 |
-| q:g-heading-concept | For a conceptual or non-task-based heading, use a noun phrase that doesn't start with an -ing verb. | https://developers.google.com/style/headings | 2026-09-28 |
-| q:g-heading-ing | When possible, avoid using -ing verb forms as the first word in any heading or title. | https://developers.google.com/style/headings | 2026-09-28 |
-| q:g-heading-case | Use sentence case for document titles and section headings. | https://developers.google.com/style/highlights | 2026-09-28 |
-| q:g-heading-links | Don't put links in headings. A link can easily be confused as a style applied to the heading instead of a link. | https://developers.google.com/style/headings | 2026-09-28 |
-| q:g-heading-levels | Maintain logical order. Don't skip levels of the heading hierarchy. | https://developers.google.com/style/headings | 2026-09-28 |
-| q:g-heading-content | Don't use empty headings. Make sure headings are followed by content. | https://developers.google.com/style/headings | 2026-09-28 |
-| q:g-code-font | Put code-related text in code font. | https://developers.google.com/style/highlights | 2026-09-28 |
-| q:g-ui-bold | Put UI elements in bold. | https://developers.google.com/style/highlights | 2026-09-28 |
-| q:g-table-intro | Introduce tables with a complete sentence that describes the purpose of the table because not all screen readers preannounce tables. | https://developers.google.com/style/tables | 2026-09-28 |
-| q:g-table-one-column | If you have only one column in your table, turn the table into a list. | https://developers.google.com/style/tables | 2026-09-28 |
-| q:g-link-text | Write link text that makes sense without the surrounding text. Don't use phrases such as this document, this article, or click here. | https://developers.google.com/style/link-text | 2026-09-28 |
-| q:g-link-url | In general, don't use a URL as link text. Instead, use the page title or a description of the page. | https://developers.google.com/style/link-text | 2026-09-28 |
-| q:g-directional | Don't use directional language to orient the reader, such as above, below, or right-hand side. This type of language doesn't work well for accessibility or for localization. | https://developers.google.com/style/procedures | 2026-09-28 |
-| q:g-notice-prereq | Don't use notes to tell the reader about prerequisites or about steps they should have taken earlier. Information like this should precede the step. | https://developers.google.com/style/notices | 2026-09-28 |
-| q:g-notice-step | Don't make a full procedural step into a note. | https://developers.google.com/style/notices | 2026-09-28 |
-| q:g-figurative | Avoid figurative language, which includes metaphors and ableist language. | https://developers.google.com/style/tone | 2026-09-28 |
-| q:m-numbered-list | Use a numbered list for sequential items (like a procedure) or prioritized items (like a top 10 list). | https://learn.microsoft.com/en-us/style-guide/scannable-content/lists | 2026-09-28 |
-| q:m-separate-step | Use a separate step for each instruction. It's OK to combine short steps that occur in the same place in the UI. | https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions | 2026-09-28 |
-| q:m-single-step | A single step might not require list formatting. If you want to use a format that's consistent with step-by-step instructions in the same documentation, use a bullet instead of a number. | https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions | 2026-09-28 |
-| q:m-location-first | Make sure that customers know where the action should take place before you describe the action. | https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions | 2026-09-28 |
-| q:m-bulleted-list | Use a bulleted list for things that have something in common but don't need to appear in a particular order. | https://learn.microsoft.com/en-us/style-guide/scannable-content/lists | 2026-09-28 |
-| q:m-list-intro | Introduce the list with a heading, a complete sentence, or a fragment that ends with a colon. | https://learn.microsoft.com/en-us/style-guide/scannable-content/lists | 2026-09-28 |
-| q:m-list-consistent | Make all the items in a list consistent in structure. | https://learn.microsoft.com/en-us/style-guide/scannable-content/lists | 2026-09-28 |
-| q:m-list-capital | Begin each item in a list with a capital letter unless there's a reason not to (for example, it's a command that's always lowercase). | https://learn.microsoft.com/en-us/style-guide/scannable-content/lists | 2026-09-28 |
-| q:m-list-short | Each item should be fairly short—the reader should be able to see at least two, and preferably three, list items at a glance. | https://learn.microsoft.com/en-us/style-guide/scannable-content/lists | 2026-09-28 |
-| q:m-heading-case | Use sentence-style capitalization for headings. | https://learn.microsoft.com/en-us/style-guide/scannable-content/headings | 2026-09-28 |
-| q:m-heading-parallel | Use parallel sentence structure for all headings at the same level. | https://learn.microsoft.com/en-us/style-guide/scannable-content/headings | 2026-09-28 |
-| q:m-heading-question | Don't end headings with a period. A question mark or (rarely) an exclamation point can be used if it's needed for meaning. | https://learn.microsoft.com/en-us/style-guide/scannable-content/headings | 2026-09-28 |
-| q:m-heading-adjacent | Avoid having two headings in a row without text in between—that might indicate a problem with organization or that the headings are redundant. | https://learn.microsoft.com/en-us/style-guide/scannable-content/headings | 2026-09-28 |
-| q:m-ui-bold | When you must refer to a button, checkbox, or other option, use bold formatting for the name. | https://learn.microsoft.com/en-us/style-guide/procedures-instructions/formatting-text-in-instructions | 2026-09-28 |
-| q:m-table-intro | If there’s text that introduces the table, it should be a complete sentence and end with a period, not a colon. | https://learn.microsoft.com/en-us/style-guide/scannable-content/tables | 2026-09-28 |
-| q:m-link-text | Write brief but specific and meaningful link text. Use the title or a description of a page rather than a generic phrase like click here. | https://learn.microsoft.com/en-us/style-guide/urls-web-addresses | 2026-09-28 |
-| q:m-directional | Don’t use directional terms as the only clue to location. | https://learn.microsoft.com/en-us/style-guide/accessibility/writing-all-abilities | 2026-09-28 |
-| q:m-notes | Consider repeating common phrases, such as Tip, Note, and See also, as run-in headings to call attention to helpful information, interesting but nonessential information, or cross-references, respectively. | https://learn.microsoft.com/en-us/style-guide/scannable-content/headings | 2026-09-28 |
-| q:m-friendly | Avoid jargon and overly complex or technical language. It should sound like a friendly conversation. | https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice | 2026-09-28 |
-| q:m-front-load | Lead with what's most important. Front-load keywords for scanning. | https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice | 2026-09-28 |
-| q:m-be-brief | Give customers just enough information to make decisions confidently. Prune every excess word. | https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice | 2026-09-28 |
-| q:m-contractions | Use contractions like it's, you'll, you're, we're, and let's. | https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice | 2026-09-28 |
-| q:m-imperative | Use active voice and indicative mood most of the time. Use imperative mood in procedures. | https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips | 2026-09-28 |
-| q:m-idioms | Avoid idioms, colloquial expressions, and culture-specific references. | https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips | 2026-09-28 |
+- [Welcome](https://learn.microsoft.com/en-us/style-guide/welcome/)
+- [Lists](https://learn.microsoft.com/en-us/style-guide/scannable-content/lists)
+- [Writing step-by-step instructions](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/writing-step-by-step-instructions)
+- [Headings](https://learn.microsoft.com/en-us/style-guide/scannable-content/headings)
+- [Formatting text in instructions](https://learn.microsoft.com/en-us/style-guide/procedures-instructions/formatting-text-in-instructions)
+- [Tables](https://learn.microsoft.com/en-us/style-guide/scannable-content/tables)
+- [URLs and web addresses](https://learn.microsoft.com/en-us/style-guide/urls-web-addresses)
+- [Writing for all abilities](https://learn.microsoft.com/en-us/style-guide/accessibility/writing-all-abilities)
+- [Top 10 tips for Microsoft style and voice](https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice)
+- [Writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
+
+The exemplar captures carry their own source URLs and licenses in
+[`exemplars/README.md`](./exemplars/README.md).
 
 ## For reviewers grading against this standard
 
 - Grade structure against the page's base guide first, and treat a guide violation as blocking.
-  Then grade against the track's drafting brief, reading the provenance and the recorded
-  exceptions to tell a recorded departure from a defect.
+  Then grade against the track's drafting brief, reading "Deviations from the base guides" to
+  tell a recorded departure from a defect.
 - Grade the page against its own track's profile next: which reader, which vocabulary contract,
   which arrival state, which success criterion, and whether the counterpart question would fail
   it. A page graded against the wrong profile can look fine while failing its real reader.

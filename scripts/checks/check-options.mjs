@@ -413,16 +413,17 @@ function outlineSlugs(dir) {
 }
 
 /**
- * Every published page slug: a markdown file directly under a docs arm directory.
+ * Every published page slug: a markdown file directly under a docs arm directory. An arm's
+ * `README.md` is an index, never a page, so it is skipped.
  * @param {string} dir
  * @returns {Set<string>}
  */
-function publishedPageSlugs(dir) {
+export function publishedPageSlugs(dir) {
   /** @type {Set<string>} */
   const slugs = new Set();
   for (const arm of readdirSync(dir, { withFileTypes: true })) {
     if (!arm.isDirectory() || arm.name === 'internal' || arm.name === 'superpowers') continue;
-    for (const name of readdirSync(join(dir, arm.name)).filter((file) => file.endsWith('.md'))) {
+    for (const name of readdirSync(join(dir, arm.name)).filter((file) => file.endsWith('.md') && file !== 'README.md')) {
       slugs.add(name.slice(0, -'.md'.length));
     }
   }

@@ -8,7 +8,7 @@ it can't reach.
 
 The docs gate's component list is `scripts/checks/docs-gate.mjs` (tiers in `docs/internal/pass-gate-tiers.md`);
 it also runs `check:facts`, `check:provenance`, `check:transcripts`, `check:visuals`, `check:tool-conditions`,
-`check:target-stack`, and `check:editor-quotes`, which this table does not describe. The table covers the
+`check:target-stack`, `check:editor-quotes`, and `check:vale-rules`, which this table does not describe. The table covers the
 older gates, and the one thing each catches:
 
 | Gate | What it catches |
@@ -48,9 +48,11 @@ fact-checks every claim on them against the current code, and reports only confi
 file:line evidence. A clean run self-reports "no drift" in one line; it doesn't pad a report to
 look busy.
 
-Routine id: `trig_015UPQostYVisXuExTHTH2vu` (created 2026-07-04; monthly, first of the month). Its
-sample scope and whether it still runs were not re-verified on 2026-09-30 (the `schedule` tool was not
-available to that pass); confirm both with the `schedule` skill before relying on it.
+Routine id: `trig_015UPQostYVisXuExTHTH2vu` ("cairn docs freshness (monthly drift check)"), created
+2026-07-04. Verified 2026-09-30 through the RemoteTrigger API: it is enabled, its cron is `0 17 1 * *`,
+its last run (2026-09-01) succeeded, and its next run is 2026-10-01 17:02 UTC. Its scope check requires
+all four track directories, so it stops with "SCOPE BROKEN" while `docs/admin` and `docs/editors` are
+empty. That stop is its designed guard, and re-scoping the routine waits on Geoff.
 
 The release sweep (`cairn-release`, step 3, capability releases only) is the second drift mechanism. At
 each cut it finds new gaps in scaffold behavior and changelog-described behavior, the ground `check:options`

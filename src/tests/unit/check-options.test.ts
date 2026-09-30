@@ -1,11 +1,12 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   generateOptionPaths,
   checkOptionMap,
   parseMapRow,
+  publishedPageSlugs,
 } from '../../../scripts/checks/check-options.mjs';
 
 const dirs: string[] = [];
@@ -405,5 +406,23 @@ describe('checkOptionMap', () => {
       const rows = { ...retagged.map.rows, 'CairnAdapter.editor.nav': 'pending security-model' };
       expect(checkOptionMap({ ...retagged, map: { pendingCount: 2, rows } })).toEqual([]);
     });
+  });
+});
+
+describe('publishedPageSlugs', () => {
+  it('collects a page slug from each arm and skips README.md, internal, and superpowers', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'check-options-docs-'));
+    dirs.push(dir);
+    for (const arm of ['extend', 'reference', 'internal', 'superpowers']) mkdirSync(join(dir, arm));
+    writeFileSync(join(dir, 'extend', 'README.md'), '');
+    writeFileSync(join(dir, 'extend', 'add-a-screen.md'), '');
+    writeFileSync(join(dir, 'reference', 'README.md'), '');
+    writeFileSync(join(dir, 'reference', 'core.md'), '');
+    writeFileSync(join(dir, 'internal', 'notes.md'), '');
+    writeFileSync(join(dir, 'superpowers', 'plan.md'), '');
+    writeFileSync(join(dir, 'why-cairn.md'), '');
+    const slugs = publishedPageSlugs(dir);
+    expect([...slugs].sort()).toEqual(['add-a-screen', 'core']);
+    expect(slugs.has('README')).toBe(false);
   });
 });

@@ -49,6 +49,24 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`admin`.** The scaffold's CI workflow pins Node 22 (`templates/waymark/.github/workflows/check.yml:16`,
+  `node-version: 22`), below the engine's own floor (`package.json` `engines.node: ">=24"`). A
+  scaffolded site's CI runs on a Node the engine does not support, and an engine that starts using
+  a Node 24 API breaks every scaffolded site's CI first. Found by a harvest diff review,
+  2026-09-29.
+- **`extender`.** The showcase's signups page carries a stale comment
+  (`examples/showcase/src/routes/admin/signups/+page.svelte:154-156`) saying a Tailwind utility
+  written only in a site's own admin route never resolves. The site admin sheet (`b911cb98`,
+  2026-09-16) made that false: `templates/waymark/src/admin.css:4` sources `./routes/admin`. The
+  showcase is the chassis a developer copies, so the comment teaches the wrong idiom, and the
+  scoped rule it justifies could be a utility. Found by a harvest diff review, 2026-09-29.
+- **`admin`.** The media library's orphan scan and purge sit behind the same `media` engine access
+  as the rest of the library (`requireEngineAccess(runtime.access, editor, 'media')` in
+  `src/lib/sveltekit/content-routes-media-library.ts:67`), so every editor can purge by default. A
+  repo-wide destructive action open to every editor may deserve an owner default. The site can
+  already restrict `media` in its access map, so this is a question of which default fits the charter. Found by the
+  harvest's sweep of the editors arm, 2026-09-29.
+
 The style-guide sync's close (2026-09-29) triaged the whole log and found two open entries, both
 its own, each verified against the tree first. Tidy's pinned default model
 (`DEFAULT_TIDY_MODEL = 'claude-sonnet-5'`, still at `src/lib/nav/site-config.ts:133`) was promoted

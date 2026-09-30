@@ -15,13 +15,11 @@ its docs debt: [handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md). 
 
 ## Immediate next action
 
-- **Theme identity pass B**: finished, unmerged (PR #95, draft, head `b938725b`, holding `main`
-  at `1056432d`). It is pass C's base and merges with C; record in its post-mortem and HISTORY.
-- **Theme identity pass C** (next; plan `docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`
-  on `theme-c-plan`) branches from `theme-identity-b` and cuts `0.98.0` over A, B, and C. Its
-  "Branch topology" predates A's solo merge (`main` holds A; B holds `main`). It carries the
-  tripwire's `0.98.0` question (F2), the dotfiles and cairn-pub repoints, and ROADMAP Now's
-  `viewport-overflow` timing fix.
+- **Theme identity pass C** (with B): executed through segment E on `theme-identity-c` (worktree
+  `.claude/worktrees/theme-identity-c`, draft PR #97, which supersedes B's PR #95 at the merge).
+  Tasks 0 to 14 are accepted, S1 and S2 are done, and the ledger sits at the foot of the plan
+  (`docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`). **Next: S3, Geoff's owner sitting**,
+  then task 15 (close, merge B and C, cut `0.98.0`). The draft docs harvest waits on this merge.
 
 ## Open decisions and watches
 
@@ -40,9 +38,16 @@ its docs debt: [handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md). 
 
 ## Resume prompt
 
-Theme identity pass C, fresh session (`claude-opus-5-5`, `medium`): invoke `cairn-pass`, read
-pass C's plan on `theme-c-plan` and pass B's post-mortem, then run pass C's task 0 from
-`theme-identity-b`'s head under the topology note above.
+### Next action (theme identity pass C, segment F)
+
+> **Goal.** Run S3, Geoff's owner sitting (product and taste forks only), then task 15: close,
+> merge B and C to `main`, cut `0.98.0`. **Settled:** the plan, its ledger, and the conductor
+> rulings recorded there. **Open for Geoff at S3:** take eslint-plugin-jsdoc 65 (held at task 0;
+> the conductor recommends taking it). **State:** CI green on branch head `84aed6c1`; spend
+> about 9.5M of 29M. **Approach.** Fresh `claude-opus-5-5` session at `medium` in the worktree:
+> invoke `cairn-pass`, read the plan's S3, task 15, and ledger, build the sitting page per
+> decision 24, hold the sitting, then run task 15. The CHANGELOG must not copy the spec's
+> "promote at the first minor cut" promise (no decision makes it).
 
 ### Next action (draft docs harvest, held for #97 after the R3 audit)
 
@@ -63,10 +68,6 @@ pass C's plan on `theme-c-plan` and pass B's post-mortem, then run pass C's task
 > which is false), task 7's remainder (full verifier, no flag), then tasks 8 to 10. The chain
 > worktrees `draft-docs-harvest-{x,y,z}` are merged and can be removed.
 >
-> **Found outside the harvest's scope (file at the close's friction triage):** the scaffold's CI
-> (`templates/waymark/.github/workflows/check.yml:16`) pins Node 22 below `engines.node >=24`;
-> the `github.app-unreachable` remediation in `src/lib/diagnostics/conditions.ts` names
-> `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` env vars, while `createGithubApp` takes adapter
-> config; the showcase comment at `(admin)/signups/+page.svelte:154-156` has been stale since the
-> site admin sheet (`b911cb98`); the media orphan scan and purge are open to any editor unless the
-> access map restricts `media`.
+> **Found outside the harvest's scope:** three findings are filed in
+> `docs/internal/docs-friction-log.md` (the scaffold CI's Node 22 pin, a stale showcase comment,
+> the media purge's default access) for the close's triage.

@@ -166,3 +166,40 @@ because the audit parses components with `svelte/compiler` and every consumer si
 With culori still in `devDependencies`, the no-peers run crashed with
 `ERR_MODULE_NOT_FOUND: Cannot find package 'culori' imported from .../dist/audit/contrast.js`.
 After the move, all three runs behave as the check requires.
+
+## Pre-cut top-up (2026-09-30, for 0.98.0)
+
+Patches and minors that landed after the sweep, taken before the 0.98.0 cut. Manifests: root and
+`examples/showcase` (`packages/cairn-cms-dev` and `packages/create-cairn-site` carry none of these;
+`templates/waymark` was re-emitted). Held majors are unchanged (`@types/node` 26, `@vitest/*` 5,
+`vitest` 5, `devalue` 6, `typescript` 7). Ranges were rewritten and `npm install` run against the
+existing lockfiles, so only the named packages and their caret-satisfied transitives moved.
+
+| Package | Manifest | Old | New |
+| --- | --- | --- | --- |
+| daisyui | root, showcase | 5.7.46 | 5.7.47 |
+| wrangler | root, showcase | 4.143.0 | 4.144.0 |
+| @cloudflare/workers-types | root, showcase | 5.20260929.1 | 5.20260930.1 |
+| @lucide/svelte | root | 1.48.0 | 1.49.0 |
+| eslint-plugin-tsdoc | root | 0.5.3 | 0.5.4 |
+
+Caret-satisfied transitive moves: miniflare 5.20260926.0-alpha to 5.20260926.1-alpha, undici 7.29.0
+to 7.29.1 (wrangler's nested copy), and two small patch moves in the lockfile delta
+(0.17.0 to 0.17.1, 0.18.2 to 0.18.3).
+
+### Survey (npm tarball diffs)
+
+- **daisyui 5.7.46 to 5.7.47.** `daisyui/theme/object` is value-identical: 35 themes, 29 keys each,
+  only the key order differs. The one CSS change is a selector regrouping for `.btn-disabled`
+  (`.btn:is(.btn-disabled,:disabled,...)`, and the responsive variants), with the same declarations.
+  The repo's buttons use `.btn`, so the disabled rule now needs `.btn` alongside `.btn-disabled`,
+  which every use already has. Verified by `public-theme-equivalence.spec.ts` (8 passed).
+- **wrangler 4.144.0, workers-types 5.20260930.1.** Generated and patch releases; `npm run check`
+  clean.
+- **@lucide/svelte 1.49.0.** Three new icons (`bangladeshi-taka`, `letters`, `printer-3d`) and
+  regenerated alias files; no icon the repo imports changed name.
+- **eslint-plugin-tsdoc 0.5.4.** "Version update only" in its changelog.
+
+### Refactor decisions
+
+New capability: none the repo hand-rolls. File nothing, take nothing now.

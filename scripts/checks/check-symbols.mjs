@@ -54,21 +54,22 @@ import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { ALLOWLIST } from './check-symbols-allowlist.mjs';
 import { TOOL_CHECK_IDS, RETIRED_TOOL_CHECK_IDS } from './tool-check-ids.mjs';
+import { readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// The published tracks plus the front doors this gate covers. The four new tracks (the three
-// directories below plus the `docs/why-cairn.md` page) do not exist yet at the moment this gate
-// lands (Phase 2 writes their first pages under it, by design) and are skipped silently until
-// they do; a missing entry here is never an error.
+// The published tracks plus the front doors this gate covers. An entry naming an arm-state arm is
+// skipped while that arm is absent (arm-state.mjs), and a front-door file is scanned when it exists
+// once the front door is rebuilt. Every other entry must exist: a missing reference arm or root
+// README throws rather than shrinking the sweep, since a scan over nothing finds nothing.
 const SCOPE = [
-  'docs/admin',
-  'docs/editors',
-  'docs/extend',
-  'docs/why-cairn.md',
-  'docs/reference',
-  'docs/README.md',
-  'README.md',
+  { path: 'docs/admin', arm: 'admin' },
+  { path: 'docs/editors', arm: 'editors' },
+  { path: 'docs/extend', arm: 'extend' },
+  { path: 'docs/why-cairn.md', arm: 'front-door' },
+  { path: 'docs/reference' },
+  { path: 'docs/README.md', arm: 'front-door' },
+  { path: 'README.md' },
 ];
 
 // Shell-language fence tags a CLI-flag candidate is extracted from. A CSS custom property
@@ -113,12 +114,21 @@ function walkMarkdown(dir) {
   return out;
 }
 
-/** Every file in scope that exists today, repo-relative, sorted. @param {string} root */
+/**
+ * Every file in scope, repo-relative, sorted. Throws when a scope entry outside the arms is
+ * missing, or when the deletion list the arm states come from cannot be read.
+ * @param {string} root
+ */
 export function filesInScope(root = ROOT) {
+  const states = readArmStates(root);
   const out = [];
-  for (const entry of SCOPE) {
-    const abs = join(root, entry);
-    if (!existsSync(abs)) continue;
+  for (const { path, arm } of SCOPE) {
+    if (arm && states[arm] === 'absent') continue;
+    const abs = join(root, path);
+    if (!existsSync(abs)) {
+      if (arm) continue;
+      throw new Error(`check-symbols: scope entry ${path} does not exist`);
+    }
     if (statSync(abs).isDirectory()) out.push(...walkMarkdown(abs));
     else out.push(abs);
   }

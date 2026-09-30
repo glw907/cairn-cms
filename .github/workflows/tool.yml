@@ -5,7 +5,9 @@ name: tool
 # depends on, so a change elsewhere in the repo never triggers this workflow and a change to one
 # of those paths always does. The three contract pages and the schema directory are on the list
 # because Go tests read them: they publish the tool's own exit codes, payloads, and check ids,
-# and they live in the engine's reference arm so the npm tarball carries them.
+# and they live in the engine's reference arm so the npm tarball carries them. The shipped-anchor
+# list and the harvest deletion list are on it for the same reason: health's fix-anchor test reads
+# both to decide whether the admin checklist or the shipped list is what an anchor resolves on.
 
 on:
   push:
@@ -18,6 +20,8 @@ on:
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
       - 'docs/admin/is-it-working.md'
+      - 'scripts/checks/shipped-anchors.json'
+      - 'docs/internal/record/harvest/deletion-list.json'
       - 'docs/reference/cli-cairn-exit-codes.md'
       - 'docs/reference/cli-cairn-json-output.md'
       - 'docs/reference/cli-cairn-doctor.md'
@@ -32,6 +36,8 @@ on:
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
       - 'docs/admin/is-it-working.md'
+      - 'scripts/checks/shipped-anchors.json'
+      - 'docs/internal/record/harvest/deletion-list.json'
       - 'docs/reference/cli-cairn-exit-codes.md'
       - 'docs/reference/cli-cairn-json-output.md'
       - 'docs/reference/cli-cairn-doctor.md'

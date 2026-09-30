@@ -13,6 +13,11 @@ holds paraphrases only, so it carries no framing a writer could absorb.
   `docs/why-cairn.md` and `docs/README.md`, minus the kept set). `kept` is the three pages that
   stay and are never audited: `docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`,
   `docs/extend/choose-an-ai-posture.md`. The verifier and every narrowed gate read this one file.
+- `relink.json`: `{ "_note": ..., "entries": [...] }`, one entry per repaired link, narrowed gate
+  assertion, and allowlist entry: `file`, `context` (a grep-able string), `oldTarget`, `done`, and
+  `stage` (`2a`, `2b`, `3`, `4`, `5`, or `null` for a permanent change). Each stage's outline
+  consumes the entries keyed to it. The narrowed gates read each arm's state (absent, kept-only,
+  rebuilt) from `scripts/checks/arm-state.mjs`.
 - `<arm>/<page>.json`: one ledger per deleted page. `<arm>` is `admin`, `editors`, `extend`, or
   `front-door`. The file name is the page's path inside its arm with `.md` swapped for `.json`
   (`docs/extend/README.md` is `extend/README.json`; `docs/why-cairn.md` is

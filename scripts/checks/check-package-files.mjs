@@ -7,9 +7,10 @@
 // `browser` stub declares `worker` ahead of it, so a Cloudflare Workers build resolves the real
 // module.
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve, dirname, posix as posixPath } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { FRONT_DOOR_PAGES, loadDeletionList, readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -63,16 +64,35 @@ export function checkChannelMigrationPacked(filePaths) {
   return { ok: true };
 }
 
-// The four published arm indexes plus the two front doors. `docs/why-cairn.md` is a front door
-// with no arm of its own, so it is named here as a file rather than covered by a prefix below.
-const DOCS_INDEX_PATHS = [
-  'docs/README.md',
-  'docs/why-cairn.md',
-  'docs/reference/README.md',
-  'docs/admin/README.md',
-  'docs/editors/README.md',
-  'docs/extend/README.md'
-];
+// The index each directory-backed arm must pack once it is rebuilt, keyed by arm-state arm name.
+// The reference index is packed always; the front door's two files are packed once it is rebuilt.
+const ARM_INDEX_PATHS = {
+  admin: 'docs/admin/README.md',
+  editors: 'docs/editors/README.md',
+  extend: 'docs/extend/README.md'
+};
+const REFERENCE_INDEX_PATH = 'docs/reference/README.md';
+
+/**
+ * The docs paths the tarball must carry, given the tree's arm states (arm-state.mjs): the reference
+ * index always; an arm's index only once the arm is rebuilt, since an absent arm has no page to
+ * index and extend's kept-only state holds just its per-version records; both front-door files once
+ * the front door is rebuilt; and every kept page on disk, whatever its arm's state, so a `files`
+ * edit cannot drop the per-version records while their arm waits for its rebuild.
+ * @param {string} root the repo root
+ * @returns {string[]}
+ */
+export function requiredDocsPaths(root) {
+  const list = loadDeletionList(root);
+  const states = readArmStates(root);
+  const required = [REFERENCE_INDEX_PATH];
+  for (const [arm, index] of Object.entries(ARM_INDEX_PATHS)) {
+    if (states[arm] === 'rebuilt') required.push(index);
+  }
+  if (states['front-door'] === 'rebuilt') required.push(...FRONT_DOOR_PAGES);
+  required.push(...list.kept.filter((page) => existsSync(resolve(root, page))));
+  return required;
+}
 
 // The published docs allowlist. A registry consumer's site build reads the published arms only,
 // so any other docs/ path (the write-only planning trees, the rolling status file, or a future
@@ -86,17 +106,18 @@ export const DOCS_ALLOWED_ARM_PREFIXES = [
 
 // The docs/ paths that ship as bare files rather than inside an allowed arm. Both are front doors:
 // the index every track routes from, and the evaluator's page it links first.
-export const DOCS_ROOT_FILES = ['docs/README.md', 'docs/why-cairn.md'];
+export const DOCS_ROOT_FILES = FRONT_DOOR_PAGES;
 
 /**
- * Check a packed file list for the published docs arms, present, and every other docs/ path,
- * absent.
+ * Check a packed file list for the required docs paths, present, and every docs/ path outside
+ * the published allowlist, absent.
  * @param {string[]} filePaths the paths npm would include in the tarball
+ * @param {string[]} required the docs paths that must be packed ({@link requiredDocsPaths})
  * @returns {{ ok: true, count: number } | { ok: false, error: string }}
  */
-export function checkDocsPacked(filePaths) {
+export function checkDocsPacked(filePaths, required) {
   const packed = new Set(filePaths);
-  const missing = DOCS_INDEX_PATHS.filter((path) => !packed.has(path));
+  const missing = required.filter((path) => !packed.has(path));
   if (missing.length > 0) {
     return {
       ok: false,
@@ -422,7 +443,7 @@ function main() {
     return;
   }
 
-  const docsResult = checkDocsPacked(files);
+  const docsResult = checkDocsPacked(files, requiredDocsPaths(ROOT));
   if (!docsResult.ok) {
     console.error(`check-package-files: ${docsResult.error}`);
     process.exitCode = 1;

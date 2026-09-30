@@ -114,6 +114,10 @@ export const ALLOWLIST = new Set([
   // is gone; docs/reference/cli-cairn-doctor.md is its Go-tool successor); the citation stays
   // unedited, since a release record is immutable and does not chase a later reorganization.
   'file-path:docs/reference/doctor.md',
+  // The same record's 0.97.0 entry cites docs/extend/security-model.md's exhaustive-map recipe by
+  // path. That page is on the harvest deletion list; the entry names it as it stood when it
+  // shipped and stays unedited for the same reason.
+  'file-path:docs/extend/security-model.md',
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
   'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
   'file-path:src/chassis/tokens.css', // docs/reference/cairn-audit.md's default theme-root file, a site's own chassis token file

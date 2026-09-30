@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 import {
+  docFiles,
   extractBlocks,
   isPackageSpecifier,
   isRealSpecifier,
@@ -244,5 +249,46 @@ describe('isDeclarationOnly', () => {
   it('does not exclude a multi-statement example that forgot $props()', () => {
     const code = "import { x } from 'svelte';\nlet { data }: { data: string };";
     expect(isDeclarationOnly(code)).toBe(false);
+  });
+});
+
+// The corpus follows each arm's state (arm-state.mjs): an absent arm is skipped rather than walked
+// into a missing directory, a kept-only arm is walked, and the reference arm always is.
+describe('docFiles, by arm state', () => {
+  const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+  const roots: string[] = [];
+  afterEach(() => {
+    for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  });
+
+  function tree(paths: string[], { list = true } = {}): string {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-snippets-'));
+    roots.push(root);
+    const all: Record<string, string> = {};
+    for (const path of ['docs/reference/core.md', ...paths]) all[path] = '# Page\n';
+    if (list) all[DELETION_LIST_PATH] = JSON.stringify({ deleted: ['docs/admin/is-it-working.md'], kept: KEPT });
+    for (const [path, content] of Object.entries(all)) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), content);
+    }
+    return root;
+  }
+
+  it('walks the reference arm and a kept-only extend arm with admin and editors absent', () => {
+    expect(docFiles(tree(KEPT))).toEqual(['docs/extend/choose-an-ai-posture.md', 'docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/reference/core.md']);
+  });
+
+  it('walks a rebuilt admin arm', () => {
+    expect(docFiles(tree(['docs/admin/is-it-working.md']))).toEqual(['docs/admin/is-it-working.md', 'docs/reference/core.md']);
+  });
+
+  it('throws when the reference arm is missing', () => {
+    const root = tree([]);
+    rmSync(join(root, 'docs/reference'), { recursive: true });
+    expect(() => docFiles(root)).toThrow();
+  });
+
+  it('fails closed without the deletion list', () => {
+    expect(() => docFiles(tree([], { list: false }))).toThrow(/deletion-list\.json does not exist/);
   });
 });

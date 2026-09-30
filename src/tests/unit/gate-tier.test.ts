@@ -9,6 +9,7 @@ import {
   TIER_GATES,
   TIER_ORDER,
 } from '../../../scripts/checks/gate-tier.mjs';
+import { loadDeletionList } from '../../../scripts/checks/arm-state.mjs';
 
 const SCRIPT = resolve(process.cwd(), 'scripts/checks/gate-tier.mjs');
 
@@ -339,5 +340,15 @@ describe('the CLI (spawned)', () => {
     expect(real.stdout.trim().length).toBeGreaterThan(0);
     expect(real.stdout.trim().split('\n')).toHaveLength(1);
     expect(real.stderr).toMatch(/gate-tier: (docs|scripts|engine|admin-visual|full)/);
+  });
+});
+
+// The harvest deletes every page on the deletion list at once. That diff names only docs paths, so
+// it runs the docs gate, whose arm-aware checks (arm-state.mjs) are what prove the empty arms.
+describe('the harvest deletion diff', () => {
+  it('classifies the deletion of every deletion-list page to the docs tier', () => {
+    const { deleted } = loadDeletionList(resolve(process.cwd()));
+    expect(deleted.length).toBeGreaterThan(0);
+    expect(decideGate(deleted)).toMatchObject({ tier: 'docs', gate: TIER_GATES.docs });
   });
 });

@@ -20,15 +20,20 @@
 // markup text nodes and the quoted/template string literals in `<script>` and plain `.ts`
 // modules) rather than a curated list of "known message files": a message moving to a new
 // component should not need this gate's own source edited to keep tracking it.
-import { readFileSync } from 'node:fs';
+//
+// The page lives in the editors arm, which is deleted and later rebuilt (arm-state.mjs). While the
+// arm holds no page there is nothing to check, and the gate says so by name. Once the arm holds any
+// page it is rebuilt, and the pinned page must exist and ground its quotes again: a rebuild that
+// renames or drops the page fails here, so the gate is re-armed on purpose rather than lost.
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
 import { repoRoot } from '../repo-root.mjs';
+import { armState } from './arm-state.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const DOC_PATH = join(ROOT, 'docs/editors/when-something-goes-wrong.md');
-const LIB_DIR = join(ROOT, 'src/lib');
+const DOC = 'docs/editors/when-something-goes-wrong.md';
 
 // A candidate whose non-wildcard text totals less than this many characters proves nothing (an
 // empty Svelte control-flow tag like `{#if x}` extracts as an all-wildcard "candidate" otherwise,
@@ -237,28 +242,51 @@ export function hasQuotesToCheck(markdown) {
   return extractDocQuotes(markdown).length > 0;
 }
 
-function main() {
-  const markdown = readFileSync(DOC_PATH, 'utf8');
-  if (!hasQuotesToCheck(markdown)) {
-    console.error(
-      'check-editor-quotes: 0 bolded quotes found in docs/editors/when-something-goes-wrong.md; the page this gate pins is expected to carry at least one',
-    );
-    process.exitCode = 1;
-    return;
+/**
+ * The gate's verdict and the lines it prints, for the tree under `root`. Throws when the deletion
+ * list the editors arm's state comes from cannot be read.
+ * @param {string} root
+ * @returns {{ ok: boolean, lines: string[] }}
+ */
+export function editorQuotesReport(root) {
+  const state = armState(root, 'editors');
+  if (state !== 'rebuilt') {
+    return { ok: true, lines: [`check-editor-quotes: skipped (the editors arm is ${state}, so ${DOC} has no page to pin)`] };
   }
-  const files = walk(LIB_DIR, (name) => name.endsWith('.svelte') || name.endsWith('.ts'));
+  const docAbs = join(root, DOC);
+  if (!existsSync(docAbs)) {
+    return {
+      ok: false,
+      lines: [`check-editor-quotes: the editors arm holds pages but ${DOC} does not exist; restore the page or repoint this gate at the page that now quotes the editor's messages`],
+    };
+  }
+  const markdown = readFileSync(docAbs, 'utf8');
+  if (!hasQuotesToCheck(markdown)) {
+    return {
+      ok: false,
+      lines: [`check-editor-quotes: 0 bolded quotes found in ${DOC}; the page this gate pins is expected to carry at least one`],
+    };
+  }
+  const files = walk(join(root, 'src/lib'), (name) => name.endsWith('.svelte') || name.endsWith('.ts'));
   const candidates = files.flatMap(candidatesForFile);
   const stranded = findStrandedQuotes(markdown, candidates);
   if (stranded.length === 0) {
-    console.log(`check-editor-quotes: OK (${extractDocQuotes(markdown).length} quotes grounded)`);
-    return;
+    return { ok: true, lines: [`check-editor-quotes: OK (${extractDocQuotes(markdown).length} quotes grounded)`] };
   }
-  console.error(`check-editor-quotes: ${stranded.length} stranded quote(s) in docs/editors/when-something-goes-wrong.md\n`);
-  for (const quote of stranded) {
-    console.error(`  "${quote}"`);
-  }
-  console.error('\nNo shipped string under src/lib grounds this quote. Update the doc to match the component, or the component broke a promised message.');
-  process.exitCode = 1;
+  return {
+    ok: false,
+    lines: [
+      `check-editor-quotes: ${stranded.length} stranded quote(s) in ${DOC}\n`,
+      ...stranded.map((quote) => `  "${quote}"`),
+      '\nNo shipped string under src/lib grounds this quote. Update the doc to match the component, or the component broke a promised message.',
+    ],
+  };
+}
+
+function main() {
+  const { ok, lines } = editorQuotesReport(ROOT);
+  for (const line of lines) (ok ? console.log : console.error)(line);
+  if (!ok) process.exitCode = 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

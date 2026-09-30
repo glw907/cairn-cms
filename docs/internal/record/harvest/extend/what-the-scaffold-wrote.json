@@ -1,0 +1,582 @@
+{
+  "page": "docs/extend/what-the-scaffold-wrote.md",
+  "blob": "193734d854d08c447786f4dad95f2e194da8bd96",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "Purpose statement: map the scaffold's cairn-specific files to pages explaining them.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        7,
+        11
+      ],
+      "paraphrase": "The scaffold is Waymark from the showcase tree with dev-only tooling and a members fixture pruned.",
+      "fact": "f:n2skkz"
+    },
+    {
+      "lines": [
+        13,
+        15
+      ],
+      "paraphrase": "This tree differs from the by-hand walkthrough, which starts from a bare project.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        15,
+        17
+      ],
+      "paraphrase": "The scaffold begins from Waymark and already has a svelte.config.js, a shape that predates inline config.",
+      "new-fact": "f:n4rg1z"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "Tree opening line naming the site root.",
+      "new-fact": "f:qlgggh"
+    },
+    {
+      "lines": [
+        21,
+        26
+      ],
+      "paraphrase": "The claude skills directory holds four skills.",
+      "fact": "f:7ozknm"
+    },
+    {
+      "lines": [
+        27,
+        30
+      ],
+      "paraphrase": "Root dotfiles: gitattributes, gitignore, and the prettier files.",
+      "new-fact": "f:qlgggh"
+    },
+    {
+      "lines": [
+        31,
+        34
+      ],
+      "paraphrase": "The migrations directory holds the auth, preview, and login-nonce files.",
+      "fact": "f:gepykz"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "The app migrations directory holds the signups schema.",
+      "new-fact": "f:nv0ok0"
+    },
+    {
+      "lines": [
+        37,
+        40
+      ],
+      "paraphrase": "Root package file, readme, and a dev script.",
+      "new-fact": "f:o47i0q"
+    },
+    {
+      "lines": [
+        41,
+        43
+      ],
+      "paraphrase": "Source-level app declaration and html shell.",
+      "new-fact": "f:n52h8f"
+    },
+    {
+      "lines": [
+        44,
+        45
+      ],
+      "paraphrase": "The chassis directory holds genre-free plumbing.",
+      "fact": "f:s4prb0"
+    },
+    {
+      "lines": [
+        46,
+        49
+      ],
+      "paraphrase": "The content directory has a hidden dot directory with the index and media manifests.",
+      "fact": "f:vrue1g"
+    },
+    {
+      "lines": [
+        50,
+        56
+      ],
+      "paraphrase": "Fragments, pages, and posts directories with a fragment, two pages, and fourteen sample posts.",
+      "fact": "f:gj96px"
+    },
+    {
+      "lines": [
+        57,
+        57
+      ],
+      "paraphrase": "The hooks module sits at the source root.",
+      "fact": "f:f21bcz"
+    },
+    {
+      "lines": [
+        58,
+        59
+      ],
+      "paraphrase": "A params directory holds the md matcher.",
+      "fact": "f:03lbjg"
+    },
+    {
+      "lines": [
+        60,
+        82
+      ],
+      "paraphrase": "The routes tree: admin, the site group, feeds, health, media, robots, sitemap, and root error and layout files.",
+      "new-fact": "f:qtm9y2"
+    },
+    {
+      "lines": [
+        83,
+        92
+      ],
+      "paraphrase": "The theme directory: adapter config, components, icons, islands, registry, site config, and styles.",
+      "new-fact": "f:qnf469"
+    },
+    {
+      "lines": [
+        93,
+        98
+      ],
+      "paraphrase": "Root config files: svelte, tsconfig, vite, vitest, and wrangler.",
+      "new-fact": "f:qlgggh"
+    },
+    {
+      "lines": [
+        100,
+        101
+      ],
+      "paraphrase": "The gitignore and gitattributes files are really present in a scaffold from the published package.",
+      "new-fact": "f:qfv5iw"
+    },
+    {
+      "lines": [
+        103,
+        105
+      ],
+      "paraphrase": "The tree shows the entries the page names, including four skills.",
+      "fact": "f:7ozknm"
+    },
+    {
+      "lines": [
+        105,
+        107
+      ],
+      "paraphrase": "The tree omits some tooling files such as the workflow directory and the vars example.",
+      "new-fact": "f:qlgggh"
+    },
+    {
+      "lines": [
+        106,
+        111
+      ],
+      "paraphrase": "The map is incomplete too, covering cairn-specific entries and skipping plain SvelteKit and tooling files.",
+      "new-fact": "f:qlgggh"
+    },
+    {
+      "lines": [
+        111,
+        113
+      ],
+      "paraphrase": "The hooks module mounts the auth guard behind the dev-backend gate.",
+      "fact": "f:f21bcz"
+    },
+    {
+      "lines": [
+        113,
+        113
+      ],
+      "paraphrase": "The app declaration file types the platform bindings and the dev-build constant.",
+      "new-fact": "f:n52h8f"
+    },
+    {
+      "lines": [
+        114,
+        115
+      ],
+      "paraphrase": "The root layout server module composes the site name, both navs, and the islands flag for public pages and the error page.",
+      "new-fact": "f:ofex2m"
+    },
+    {
+      "lines": [
+        115,
+        116
+      ],
+      "paraphrase": "The by-hand page writes the first two files from nothing.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        118,
+        119
+      ],
+      "paraphrase": "Table header for root files.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        120,
+        120
+      ],
+      "paraphrase": "The svelte config sets the Cloudflare adapter, the origin-check handoff, and the two aliases.",
+      "new-fact": "f:n4rg1z"
+    },
+    {
+      "lines": [
+        121,
+        121
+      ],
+      "paraphrase": "The vite config wires the manifest plugin and the dev-build define.",
+      "fact": "f:xluud1"
+    },
+    {
+      "lines": [
+        122,
+        122
+      ],
+      "paraphrase": "The wrangler file binds the auth and app databases, email, the media bucket, and the origin var.",
+      "fact": "f:n7t4bn"
+    },
+    {
+      "lines": [
+        122,
+        122
+      ],
+      "paraphrase": "The setup command fills the resource ids in.",
+      "new-fact": "f:net33s"
+    },
+    {
+      "lines": [
+        123,
+        123
+      ],
+      "paraphrase": "The migrations directory holds the auth store's schema.",
+      "fact": "f:gepykz"
+    },
+    {
+      "lines": [
+        124,
+        124
+      ],
+      "paraphrase": "The app migrations directory holds the app database's own schema, applied the same way to that database.",
+      "new-fact": "f:nv0ok0"
+    },
+    {
+      "lines": [
+        125,
+        125
+      ],
+      "paraphrase": "The package file lists the engine; the dev script runs a local in-memory admin; build produces the Worker.",
+      "new-fact": "f:o47i0q"
+    },
+    {
+      "lines": [
+        126,
+        126
+      ],
+      "paraphrase": "The skills directory holds four agent skills, each with a stated job.",
+      "new-fact": "f:o7bkm0"
+    },
+    {
+      "lines": [
+        128,
+        128
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        130,
+        131
+      ],
+      "paraphrase": "A hidden manifest directory is written by the build and never hand-edited.",
+      "new-fact": "f:qx2fnd"
+    },
+    {
+      "lines": [
+        131,
+        134
+      ],
+      "paraphrase": "It holds the content manifest, kept by the manifest functions, and the media asset registry when media is on.",
+      "fact": "f:vrue1g"
+    },
+    {
+      "lines": [
+        134,
+        135
+      ],
+      "paraphrase": "Sample posts, pages, and fragments come pre-seeded.",
+      "fact": "f:gj96px"
+    },
+    {
+      "lines": [
+        137,
+        137
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        139,
+        140
+      ],
+      "paraphrase": "Table header for theme files.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        141,
+        141
+      ],
+      "paraphrase": "The adapter module covers concepts with fields, rendering, the backend, and the sidebar layout.",
+      "new-fact": "f:qnf469"
+    },
+    {
+      "lines": [
+        142,
+        142
+      ],
+      "paraphrase": "The icons module supplies glyphs for components and picker fields.",
+      "new-fact": "f:qnf469"
+    },
+    {
+      "lines": [
+        143,
+        143
+      ],
+      "paraphrase": "The components module declares the registered markdown components the registry lists.",
+      "new-fact": "f:qnf469"
+    },
+    {
+      "lines": [
+        144,
+        144
+      ],
+      "paraphrase": "The site-config module parses the yaml file.",
+      "new-fact": "f:qnf469"
+    },
+    {
+      "lines": [
+        145,
+        145
+      ],
+      "paraphrase": "The yaml file carries the site name, blurb, menus, and tag list.",
+      "new-fact": "f:qnf469"
+    },
+    {
+      "lines": [
+        146,
+        146
+      ],
+      "paraphrase": "The theme and site stylesheets layer over the engine roles and chassis defaults.",
+      "fact": "f:s23sk0"
+    },
+    {
+      "lines": [
+        147,
+        147
+      ],
+      "paraphrase": "The components directory holds the article view and the header and footer chrome.",
+      "new-fact": "f:qnf469"
+    },
+    {
+      "lines": [
+        148,
+        148
+      ],
+      "paraphrase": "The islands directory holds the one hydrated banner component.",
+      "new-fact": "f:qnf469"
+    },
+    {
+      "lines": [
+        150,
+        150
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        152,
+        154
+      ],
+      "paraphrase": "The layout pair mounts the shared shell and the catch-all pair serves every built-in view.",
+      "fact": "f:t2t5lx"
+    },
+    {
+      "lines": [
+        154,
+        155
+      ],
+      "paraphrase": "These pairs form the canonical mount, shown verbatim in the reference; sites seldom edit them.",
+      "new-fact": "f:oh5rdd"
+    },
+    {
+      "lines": [
+        155,
+        158
+      ],
+      "paraphrase": "The signups screen is a custom screen beside the catch-all, reading APP_DB, so apply that database's migration first.",
+      "new-fact": "f:onqm6k"
+    },
+    {
+      "lines": [
+        160,
+        160
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        162,
+        163
+      ],
+      "paraphrase": "Table header for public routes.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        164,
+        164
+      ],
+      "paraphrase": "The catch-all renders every entry through createPublicRoutes.",
+      "fact": "f:pkt8i6"
+    },
+    {
+      "lines": [
+        165,
+        165
+      ],
+      "paraphrase": "The markdown twin route is matched by the md param matcher.",
+      "fact": "f:03lbjg"
+    },
+    {
+      "lines": [
+        166,
+        166
+      ],
+      "paraphrase": "The archive route is a paginated post archive on the chassis slicing helper.",
+      "fact": "f:4cet3p"
+    },
+    {
+      "lines": [
+        167,
+        167
+      ],
+      "paraphrase": "The preview route is the share-a-draft landing page.",
+      "fact": "f:6c3amx"
+    },
+    {
+      "lines": [
+        168,
+        168
+      ],
+      "paraphrase": "The styleguide route showcases each registered component plus type scale and recipes.",
+      "fact": "f:6jxd81"
+    },
+    {
+      "lines": [
+        168,
+        168
+      ],
+      "paraphrase": "The styleguide route is safe to delete if unneeded.",
+      "new-fact": "f:phknca"
+    },
+    {
+      "lines": [
+        169,
+        169
+      ],
+      "paraphrase": "The feed routes serve RSS and JSON Feed through the delivery responders.",
+      "fact": "f:pvk6h5"
+    },
+    {
+      "lines": [
+        170,
+        170
+      ],
+      "paraphrase": "The sitemap route uses the sitemap responder.",
+      "fact": "f:pvk6h5"
+    },
+    {
+      "lines": [
+        171,
+        171
+      ],
+      "paraphrase": "The robots route uses the robots responder and reads a posture option.",
+      "fact": "f:xafwcw"
+    },
+    {
+      "lines": [
+        172,
+        172
+      ],
+      "paraphrase": "The media route streams content-addressed bytes from the R2 bucket.",
+      "new-fact": "f:qtvesq"
+    },
+    {
+      "lines": [
+        173,
+        173
+      ],
+      "paraphrase": "The health route is a bare, unauthenticated liveness check for a monitor.",
+      "new-fact": "f:orz556"
+    },
+    {
+      "lines": [
+        174,
+        174
+      ],
+      "paraphrase": "The error page is the themed 404 and error page.",
+      "new-fact": "f:ofex2m"
+    },
+    {
+      "lines": [
+        176,
+        176
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        178,
+        181
+      ],
+      "paraphrase": "The chassis holds plumbing: content glob, feed and delivery literals, runtime composition, dev gate, render wiring, helpers, tokens, and prose.",
+      "fact": "f:s4prb0"
+    },
+    {
+      "lines": [
+        181,
+        184
+      ],
+      "paraphrase": "The chassis is read more than edited; its own readme lists the directory file by file.",
+      "fact": "f:s4prb0"
+    }
+  ]
+}

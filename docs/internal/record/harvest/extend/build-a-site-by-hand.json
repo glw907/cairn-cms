@@ -1,0 +1,982 @@
+{
+  "page": "docs/extend/build-a-site-by-hand.md",
+  "blob": "eff801785eb10429840940f58f272eab510e5e15",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The setup command yields a default site with no code written.",
+      "fact": "f:y6n5ma"
+    },
+    {
+      "lines": [
+        4,
+        6
+      ],
+      "paraphrase": "This walkthrough is the manual alternative; the scaffold-output page is an optional reference tree.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        8,
+        26
+      ],
+      "paraphrase": "A diagram of the page's own five milestones and the dev-backend span.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        29
+      ],
+      "paraphrase": "Milestone 2 onward runs the admin against the in-memory dev backend locally.",
+      "new-fact": "f:dqjkci"
+    },
+    {
+      "lines": [
+        29,
+        29
+      ],
+      "paraphrase": "The deployed site's bundle holds no dev backend.",
+      "fact": "f:9mx680"
+    },
+    {
+      "lines": [
+        29,
+        31
+      ],
+      "paraphrase": "So the deployed admin reaches the real guard and stops at the sign-in page.",
+      "new-fact": "f:c4rgtj"
+    },
+    {
+      "lines": [
+        30,
+        31
+      ],
+      "paraphrase": "Milestone 5 supplies the App and auth database and is where saves first commit.",
+      "fact": "f:e5vm42"
+    },
+    {
+      "lines": [
+        33,
+        35
+      ],
+      "paraphrase": "Work through the milestones in order; early ones prove the deploy pipeline.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "The end state is an editable, really publishing site on workers.dev needing no domain.",
+      "new-fact": "f:ib9rp5"
+    },
+    {
+      "lines": [
+        38,
+        38
+      ],
+      "paraphrase": "Requirements list: a recent Node major, plus GitHub and Cloudflare accounts.",
+      "fact": "f:75hawi"
+    },
+    {
+      "lines": [
+        38,
+        41
+      ],
+      "paraphrase": "A bare deploy is free-tier; a cairn site needs the paid Workers plan from its first admin deploy.",
+      "fact": "f:75hawi"
+    },
+    {
+      "lines": [
+        41,
+        42
+      ],
+      "paraphrase": "Pointer to the cost page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        42,
+        42
+      ],
+      "paraphrase": "Keep typescript on major 6 until svelte-check supports TypeScript 7; sv create pins it; cairn is 7-clean.",
+      "fact": "f:yegr67"
+    },
+    {
+      "lines": [
+        44,
+        44
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:dzmj90"
+    },
+    {
+      "lines": [
+        46,
+        47
+      ],
+      "paraphrase": "The milestone aims at a plain adapter-based SvelteKit site live on workers.dev.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        49,
+        55
+      ],
+      "paraphrase": "Snippet creating a minimal TypeScript project and installing its dependencies.",
+      "new-fact": "f:7e1t0j"
+    },
+    {
+      "lines": [
+        57,
+        60
+      ],
+      "paraphrase": "A current sv create project has no svelte.config.js; kit config sits inline in vite.config.ts.",
+      "fact": "f:ifuvcl"
+    },
+    {
+      "lines": [
+        62,
+        78
+      ],
+      "paraphrase": "Snippet of the generated vite config using adapter-auto and the runes option.",
+      "new-fact": "f:87hc1y"
+    },
+    {
+      "lines": [
+        80,
+        82
+      ],
+      "paraphrase": "adapter-auto guesses the target, so a self-deployed site names its adapter.",
+      "fact": "f:mhsere"
+    },
+    {
+      "lines": [
+        81,
+        82
+      ],
+      "paraphrase": "Add the Cloudflare adapter package and change the adapter import.",
+      "fact": "f:xyizai"
+    },
+    {
+      "lines": [
+        84,
+        86
+      ],
+      "paraphrase": "Snippet installing the Cloudflare adapter as a dev dependency.",
+      "fact": "f:xyizai"
+    },
+    {
+      "lines": [
+        88,
+        104
+      ],
+      "paraphrase": "Snippet of the vite config with the Cloudflare adapter swapped in.",
+      "new-fact": "f:979v0a"
+    },
+    {
+      "lines": [
+        106,
+        108
+      ],
+      "paraphrase": "Other kit options such as alias and csrf go as sibling keys in the same call.",
+      "new-fact": "f:979v0a"
+    },
+    {
+      "lines": [
+        110,
+        111
+      ],
+      "paraphrase": "The Cloudflare adapter needs a Worker config that sv create does not write.",
+      "fact": "f:q13lck"
+    },
+    {
+      "lines": [
+        113,
+        123
+      ],
+      "paraphrase": "Snippet of a minimal wrangler config naming the entry and the assets binding.",
+      "fact": "f:q13lck"
+    },
+    {
+      "lines": [
+        125,
+        131
+      ],
+      "paraphrase": "Snippet logging in to Cloudflare, building, and deploying.",
+      "new-fact": "f:9ug9mo"
+    },
+    {
+      "lines": [
+        133,
+        135
+      ],
+      "paraphrase": "The deploy prints a workers.dev address serving the default page with no domain or DNS.",
+      "new-fact": "f:9ug9mo"
+    },
+    {
+      "lines": [
+        137,
+        137
+      ],
+      "paraphrase": "Success check: the printed address loads in a browser.",
+      "new-fact": "f:9ug9mo"
+    },
+    {
+      "lines": [
+        139,
+        139
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        141,
+        142
+      ],
+      "paraphrase": "The milestone aims at the local admin with one concept over an in-memory double.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        144,
+        149
+      ],
+      "paraphrase": "Snippet installing the engine, its dev companion, and the Cloudflare types.",
+      "new-fact": "f:ew4uk7"
+    },
+    {
+      "lines": [
+        151,
+        153
+      ],
+      "paraphrase": "Shipped declarations import Cloudflare types, so the types package is required.",
+      "new-fact": "f:ew4uk7"
+    },
+    {
+      "lines": [
+        153,
+        154
+      ],
+      "paraphrase": "Because it is a peer, a plain install without it refuses to resolve.",
+      "new-fact": "f:a16ekj"
+    },
+    {
+      "lines": [
+        156,
+        161
+      ],
+      "paraphrase": "The dev package fakes commits and sign-in behind a three-layer fence and must never ship.",
+      "fact": "f:9mx680"
+    },
+    {
+      "lines": [
+        163,
+        163
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        165,
+        175
+      ],
+      "paraphrase": "Snippet of app.d.ts importing the ambient module and declaring the dev-build constant.",
+      "fact": "f:vvgpr5"
+    },
+    {
+      "lines": [
+        177,
+        178
+      ],
+      "paraphrase": "The ambient import adds four fields to the request locals.",
+      "new-fact": "f:ar5jp3"
+    },
+    {
+      "lines": [
+        178,
+        179
+      ],
+      "paraphrase": "The dev-build constant supplies the compile-time part of the dev-backend gate.",
+      "fact": "f:9mx680"
+    },
+    {
+      "lines": [
+        181,
+        185
+      ],
+      "paraphrase": "The block declares locals, not platform; a custom route reading the env needs the platform type too.",
+      "fact": "f:vvgpr5"
+    },
+    {
+      "lines": [
+        187,
+        187
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        189,
+        190
+      ],
+      "paraphrase": "Content is frontmatter markdown, one directory per concept.",
+      "new-fact": "f:gj96px"
+    },
+    {
+      "lines": [
+        192,
+        194
+      ],
+      "paraphrase": "Snippet creating the posts directory.",
+      "new-fact": "f:gj96px"
+    },
+    {
+      "lines": [
+        196,
+        204
+      ],
+      "paraphrase": "Snippet of a sample dated entry with title, date, and description.",
+      "new-fact": "f:gj96px"
+    },
+    {
+      "lines": [
+        206,
+        208
+      ],
+      "paraphrase": "The adapter file declares concept, renderer, and adapter; placeholders suffice while the dev backend intercepts.",
+      "new-fact": "f:dujlzg"
+    },
+    {
+      "lines": [
+        210,
+        260
+      ],
+      "paraphrase": "Snippet of the adapter, registry, renderer, and runtime built from the root barrel.",
+      "new-fact": "f:d0sp1t"
+    },
+    {
+      "lines": [
+        262,
+        263
+      ],
+      "paraphrase": "The site config file is shown at the lib directory.",
+      "new-fact": "f:cnnb5q"
+    },
+    {
+      "lines": [
+        264,
+        266
+      ],
+      "paraphrase": "The site config carries a site name and a description.",
+      "new-fact": "f:em69ru"
+    },
+    {
+      "lines": [
+        268,
+        270
+      ],
+      "paraphrase": "composeRuntime merges adapter and site config into what admin and delivery read.",
+      "new-fact": "f:d0sp1t"
+    },
+    {
+      "lines": [
+        272,
+        273
+      ],
+      "paraphrase": "A theme alias lets files outside src/theme import the adapter file.",
+      "new-fact": "f:979v0a"
+    },
+    {
+      "lines": [
+        275,
+        281
+      ],
+      "paraphrase": "Snippet adding the theme alias key inside the plugin call.",
+      "new-fact": "f:979v0a"
+    },
+    {
+      "lines": [
+        283,
+        286
+      ],
+      "paraphrase": "The whole admin mount is a factory plus a catch-all pair and a shared shell layout.",
+      "fact": "f:b8rkq9"
+    },
+    {
+      "lines": [
+        288,
+        297
+      ],
+      "paraphrase": "Snippet creating the admin factory from the runtime with a bootstrap owner.",
+      "new-fact": "f:dqe7ij"
+    },
+    {
+      "lines": [
+        299,
+        301
+      ],
+      "paraphrase": "The bootstrap owner does nothing under the dev backend but seeds the first real owner later.",
+      "fact": "f:f2vudv"
+    },
+    {
+      "lines": [
+        303,
+        310
+      ],
+      "paraphrase": "Snippet of the catch-all server module exporting load and actions with prerender off.",
+      "new-fact": "f:exxsvk"
+    },
+    {
+      "lines": [
+        312,
+        324
+      ],
+      "paraphrase": "Snippet of the catch-all page rendering CairnAdmin with render and registry.",
+      "new-fact": "f:dqe7ij"
+    },
+    {
+      "lines": [
+        326,
+        331
+      ],
+      "paraphrase": "Snippet of the layout server module exporting the shell load.",
+      "fact": "f:b8rkq9"
+    },
+    {
+      "lines": [
+        333,
+        344
+      ],
+      "paraphrase": "Snippet of the layout rendering the admin shell around its children.",
+      "fact": "f:b8rkq9"
+    },
+    {
+      "lines": [
+        346,
+        347
+      ],
+      "paraphrase": "Keep prerender off on the catch-all so a session-gated page is never baked at build.",
+      "new-fact": "f:exxsvk"
+    },
+    {
+      "lines": [
+        349,
+        349
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:e5hqn3"
+    },
+    {
+      "lines": [
+        351,
+        352
+      ],
+      "paraphrase": "Hooks choose the dev handle or the real guard, gated by a compile-time flag and a runtime opt-in.",
+      "new-fact": "f:f21bcz"
+    },
+    {
+      "lines": [
+        354,
+        368
+      ],
+      "paraphrase": "Snippet of the hooks module choosing between the dev handle and the guard.",
+      "new-fact": "f:f21bcz"
+    },
+    {
+      "lines": [
+        370,
+        372
+      ],
+      "paraphrase": "Declare the build flag and disable the framework origin check because the guard owns CSRF.",
+      "fact": "f:d2jumm"
+    },
+    {
+      "lines": [
+        372,
+        375
+      ],
+      "paraphrase": "The framework option is deprecated in favour of a newer key but still supported.",
+      "fact": "f:d2jumm"
+    },
+    {
+      "lines": [
+        377,
+        382
+      ],
+      "paraphrase": "Name the dev-build flag at each call site or the dev package ships in the Worker.",
+      "fact": "f:72mctx"
+    },
+    {
+      "lines": [
+        384,
+        387
+      ],
+      "paraphrase": "Add the ssr no-external entry so Vite compiles the package's Svelte files.",
+      "fact": "f:c8efq5"
+    },
+    {
+      "lines": [
+        389,
+        409
+      ],
+      "paraphrase": "Snippet of the full vite config with define, adapter, csrf, alias, and ssr entries.",
+      "new-fact": "f:979v0a"
+    },
+    {
+      "lines": [
+        411,
+        415
+      ],
+      "paraphrase": "Snippet running the dev server with the runtime opt-in variable set.",
+      "fact": "f:gh73p5"
+    },
+    {
+      "lines": [
+        417,
+        418
+      ],
+      "paraphrase": "Windows shells set the variable with their own syntax.",
+      "new-fact": "f:e8dr5r"
+    },
+    {
+      "lines": [
+        420,
+        420
+      ],
+      "paraphrase": "Opening the admin lands signed in as owner with no email loop.",
+      "new-fact": "f:dqjkci"
+    },
+    {
+      "lines": [
+        421,
+        421
+      ],
+      "paraphrase": "The Posts list shows the site's one sample entry.",
+      "new-fact": "f:c7nyan"
+    },
+    {
+      "lines": [
+        421,
+        422
+      ],
+      "paraphrase": "Editing, saving, and publishing work against memory only, so nothing leaves the machine.",
+      "new-fact": "f:dqjkci"
+    },
+    {
+      "lines": [
+        424,
+        425
+      ],
+      "paraphrase": "Success check: the admin loads signed in, lists the sample entry, and a save-and-publish succeeds.",
+      "new-fact": "f:c7nyan"
+    },
+    {
+      "lines": [
+        427,
+        428
+      ],
+      "paraphrase": "Collapsed question about placeholder credentials typechecking.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        430,
+        435
+      ],
+      "paraphrase": "The provider builder checks shape only, the dev double replaces the connection, and real values matter at removal.",
+      "new-fact": "f:dujlzg"
+    },
+    {
+      "lines": [
+        437,
+        437
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        439,
+        440
+      ],
+      "paraphrase": "The milestone aims at a rendered public page plus feed, sitemap, and robots.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        442,
+        443
+      ],
+      "paraphrase": "Build a typed content index from raw markdown and a cross-concept resolver.",
+      "fact": "f:hv8qs9"
+    },
+    {
+      "lines": [
+        445,
+        459
+      ],
+      "paraphrase": "Snippet building the site indexes from a glob and exporting the resolver and origin.",
+      "fact": "f:yef4lo"
+    },
+    {
+      "lines": [
+        461,
+        463
+      ],
+      "paraphrase": "The manifest plugin evaluates content at build and fails the build on manifest drift.",
+      "fact": "f:n0laoh"
+    },
+    {
+      "lines": [
+        465,
+        483
+      ],
+      "paraphrase": "Snippet adding the manifest plugin with its config module, globs, and path.",
+      "new-fact": "f:fj28xs"
+    },
+    {
+      "lines": [
+        485,
+        491
+      ],
+      "paraphrase": "Regenerate the manifest after out-of-admin edits with the manifest command, which reads the plugin options.",
+      "fact": "f:fh6kod"
+    },
+    {
+      "lines": [
+        493,
+        515
+      ],
+      "paraphrase": "Snippet wiring the catch-all public route through createPublicRoutes.",
+      "fact": "f:pkt8i6"
+    },
+    {
+      "lines": [
+        517,
+        532
+      ],
+      "paraphrase": "Snippet of the public page rendering the head tags and the entry title and body.",
+      "new-fact": "f:fvi8rk"
+    },
+    {
+      "lines": [
+        534,
+        536
+      ],
+      "paraphrase": "Visit the entry; the default permalink pattern and day date-prefix stripping shape the URL.",
+      "fact": "f:6ebew3"
+    },
+    {
+      "lines": [
+        536,
+        537
+      ],
+      "paraphrase": "The feed routing marks an entry dated and feed-eligible without shaping its URL.",
+      "fact": "f:s2zbzm"
+    },
+    {
+      "lines": [
+        537,
+        538
+      ],
+      "paraphrase": "Run a type sync or reload if the route does not resolve at first; then the entry renders.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        540,
+        543
+      ],
+      "paraphrase": "A fuller site adds the markdown twin, feed, sitemap, and robots; the twin route coexists with the catch-all.",
+      "fact": "f:03lbjg"
+    },
+    {
+      "lines": [
+        545,
+        545
+      ],
+      "paraphrase": "Success check: the entry renders as a real page.",
+      "fact": "f:pkt8i6"
+    },
+    {
+      "lines": [
+        547,
+        547
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        549,
+        550
+      ],
+      "paraphrase": "The milestone aims at proving the production build before real credentials.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        552,
+        555
+      ],
+      "paraphrase": "Snippet building and deploying.",
+      "new-fact": "f:9ug9mo"
+    },
+    {
+      "lines": [
+        557,
+        557
+      ],
+      "paraphrase": "The deployed site renders the public post.",
+      "fact": "f:pkt8i6"
+    },
+    {
+      "lines": [
+        557,
+        560
+      ],
+      "paraphrase": "The deployed admin does not work: the production build has no dev backend, so the guard runs with no App or database.",
+      "new-fact": "f:jbt2hh"
+    },
+    {
+      "lines": [
+        562,
+        563
+      ],
+      "paraphrase": "Success check: the deployed URL serves the post and the admin URL loads the sign-in page.",
+      "new-fact": "f:c4rgtj"
+    },
+    {
+      "lines": [
+        565,
+        565
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        567,
+        568
+      ],
+      "paraphrase": "The milestone aims at a real App and auth database so saves commit and sign-in mail sends.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        570,
+        572
+      ],
+      "paraphrase": "Sign-in email needs a Cloudflare zone, since Email Sending onboards on one and workers.dev has none.",
+      "fact": "f:xhwl32"
+    },
+    {
+      "lines": [
+        572,
+        573
+      ],
+      "paraphrase": "Pointer to zone onboarding.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        573,
+        576
+      ],
+      "paraphrase": "A second person's sign-in mail needs the paid Workers plan.",
+      "fact": "f:t4pwpw"
+    },
+    {
+      "lines": [
+        578,
+        583
+      ],
+      "paraphrase": "Mostly account setup: the App, the auth database, and the bindings and secret.",
+      "fact": "f:e5vm42"
+    },
+    {
+      "lines": [
+        585,
+        585
+      ],
+      "paraphrase": "Three files change and the hooks file stops mattering.",
+      "fact": "f:7bch04"
+    },
+    {
+      "lines": [
+        587,
+        600
+      ],
+      "paraphrase": "Snippet giving the adapter real backend and email values.",
+      "fact": "f:0w7jar"
+    },
+    {
+      "lines": [
+        602,
+        627
+      ],
+      "paraphrase": "Snippet of the Worker config with the mail, database, and origin entries added.",
+      "fact": "f:ntdafg"
+    },
+    {
+      "lines": [
+        629,
+        632
+      ],
+      "paraphrase": "The prerendered origin constant is baked into canonical URLs, feed, and sitemap, so update it before rebuilding.",
+      "new-fact": "f:k16chc"
+    },
+    {
+      "lines": [
+        634,
+        636
+      ],
+      "paraphrase": "Snippet setting the origin constant to the deployed address.",
+      "new-fact": "f:k16chc"
+    },
+    {
+      "lines": [
+        638,
+        641
+      ],
+      "paraphrase": "The hooks file needs no edit because the dev flag folds to false in production.",
+      "fact": "f:7bch04"
+    },
+    {
+      "lines": [
+        643,
+        648
+      ],
+      "paraphrase": "Snippet rebuilding and redeploying.",
+      "new-fact": "f:9ug9mo"
+    },
+    {
+      "lines": [
+        650,
+        652
+      ],
+      "paraphrase": "Sign in with the bootstrap email; the first request creates the owner row and logs it.",
+      "fact": "f:f2vudv"
+    },
+    {
+      "lines": [
+        652,
+        653
+      ],
+      "paraphrase": "Following the emailed link signs you in.",
+      "fact": "f:u1bjul"
+    },
+    {
+      "lines": [
+        653,
+        654
+      ],
+      "paraphrase": "Saves now branch and commit to the real repository; a pointer covers the write path.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        656,
+        660
+      ],
+      "paraphrase": "Snippet running the doctor before trusting the deploy.",
+      "fact": "f:m0ouh8"
+    },
+    {
+      "lines": [
+        662,
+        663
+      ],
+      "paraphrase": "The doctor checks bindings and more and names what is missing for most of its coverage.",
+      "fact": "f:67pwmj"
+    },
+    {
+      "lines": [
+        663,
+        664
+      ],
+      "paraphrase": "No command checks the App or the auth store, so prove them with a real save.",
+      "fact": "f:m0ouh8"
+    },
+    {
+      "lines": [
+        664,
+        665
+      ],
+      "paraphrase": "A real publish shows a commit authored by the cairn-cms bot on the default branch.",
+      "fact": "f:7y7act"
+    },
+    {
+      "lines": [
+        665,
+        666
+      ],
+      "paraphrase": "A clean error log is meaningless while observability is off.",
+      "fact": "f:q9ylqa"
+    },
+    {
+      "lines": [
+        666,
+        667
+      ],
+      "paraphrase": "Pointer to the readiness checklist.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        669,
+        671
+      ],
+      "paraphrase": "The CSRF check reads both config files because a bare project keeps the disable in the vite config.",
+      "fact": "f:4dolfa"
+    },
+    {
+      "lines": [
+        671,
+        673
+      ],
+      "paraphrase": "For this project the check finds both pieces and passes instead of skipping.",
+      "fact": "f:4dolfa"
+    },
+    {
+      "lines": [
+        673,
+        674
+      ],
+      "paraphrase": "A skip appears only when neither config file exists.",
+      "new-fact": "f:gs1wzb"
+    },
+    {
+      "lines": [
+        676,
+        677
+      ],
+      "paraphrase": "Success check: sign-in mail arrives and a save-then-publish lands a real commit.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        679,
+        691
+      ],
+      "paraphrase": "Pointers to follow-on pages.",
+      "cut": "navigation"
+    }
+  ]
+}

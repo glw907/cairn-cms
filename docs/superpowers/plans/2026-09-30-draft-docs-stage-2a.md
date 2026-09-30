@@ -205,9 +205,10 @@ not call the docs gate); the committed map beside the fact container
 (`docs/internal/option-map.json` unless the implementer records a reason for another name).
 
 **Outcomes:**
-- **The walker** enumerates option-bearing member paths from the `dist` declarations, reusing the
-  export enumeration `check:surface` and `check:reference` share (`surfaceSubpaths`,
-  `moduleExports`) and adding a member walk. Option-bearing means a member of a type a developer
+- **The walker** enumerates option-bearing member paths from the `dist` declarations, reusing
+  `moduleExports` and `enumerateExports` (`scripts/checks/reference-coverage.mjs`, shared with the
+  surface checks) and `surfaceSubpaths` (`scripts/checks/check-surface.mjs:31`; check:reference keeps
+  its own `CONFIG` map), and adding a member walk (pre-flight, 2026-09-30). Option-bearing means a member of a type a developer
   passes in, reached from roots the walker's header lists by name: `defineAdapter`, the `define*`
   helpers, and the route-factory config types. A path is keyed by its nearest named declaring
   type, and an inline literal's members by the path from it (`CairnAdapter.editor.nav`), so a
@@ -236,7 +237,7 @@ not call the docs gate); the committed map beside the fact container
   slug and the rows whose fact id is in its `factIds` (FV-11).
 
 **Acceptance:** fixtures are synthetic declaration files in a temp directory, never the real
-`dist`. The gate fails, naming the path and its export: a new member planted directly on the inline
+`dist` (the real `CairnAdapter` is in `dist/content/types.d.ts`). The gate fails, naming the path and its export: a new member planted directly on the inline
 `CairnAdapter.editor` object with no row; one inside a named type nested under `editor`; one reached
 only through an array element type; one only through a generic constraint; and one only through
 `Partial<Named>` or `Record<string, Named>`. Two inline literals sharing a
@@ -271,7 +272,7 @@ drafter definition stays untouched.
   genuine design gap" to the spec's smells: a hedge, a caveat, an exception, a workaround, a
   surprising default, or two seams naming or behaving the same thing differently. Each entry
   names the fact ids or `file:line` involved. Page inputs and the fact read get the same
-  instruction and a `frictionFiled` field; the drafter's already reaches the record through
+  instruction and a `frictionFiled` field (the drafter schema already has one, runner `:149`); the drafter's already reaches the record through
   `rounds[].draft`, page inputs' through `record.pageInputs`, and the fact read's gets a copy
   step. The register editor and the figure verifier do not report. No new agent.
 - **Title.** The runner passes the outline entry's `title` to the drafter as the page's H1. The
@@ -284,7 +285,9 @@ drafter definition stays untouched.
   "structure, register, and detail per step"), an owed erratum task 4 lands.
 - **Figures.** A figure page's drafter prompt names the `cairn-figure` skill file
   (`~/.claude/skills/cairn-figure/SKILL.md`) as a file to read and follow.
-- **Cost.** The runner returns `spent`, the `budget.spent()` delta across the run. Its unit is
+- **Cost.** New work: the runner has no `budget` use today. It returns `spent`, the
+  `budget.spent()` delta across the run, following `pass-execute-chains.js:622`, guarded for an
+  absent `budget`. Its unit is
   "output tokens spent this turn across the main loop and all workflows" (the runtime doc, as
   PC-1 quotes it), so it is a relative measure only, never a count against the ceiling.
 - The header comment documents the rows, the friction route, and `spent`.
@@ -314,6 +317,9 @@ the diff-reviewer checks the errata against the 2a plan fold's "Owed errata"
   `cairn-release` acceptance line) as a step before the version is set, for capability releases
   only (S8), with its first window seeded at `v0.98.0` (the planning sweep `86fd134c` ran after
   it).
+- Edit by the actual text at each cited line, not this plan's paraphrase (pre-flight: the parent's
+  "Each stage adds about 1M for planning" is at `:155-157`; its Exemplars text reads "(structure,
+  register, detail per step)"; the prior-art record's `:38-41` is the ReCite/EMSE survey paragraph).
 - **The parent's owed errata** (spec, "Amends the parent"), applied in place with a status-line
   note as the harvest fold's were: the Brief's "No new check is built" gains the option-coverage
   gate and "The budget goes to pages" gains the non-page shares; the stage flow's step 1 opens with

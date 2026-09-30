@@ -390,16 +390,22 @@ if a fact retag touches a mapped fact.
   and expected id and moves to a source that exists and carries that heading shape, or to a
   synthetic source the test marks as synthetic; the test itself asserts the source file exists
   unless the case is marked synthetic.
-- `relink.json` entries whose restoring page is in 2b (per the outline's `rearms`), the seven
-  `close` entries included, are retagged `"2b"`.
-- Fact `f:dzmj90` (the slug-contract case) is updated to the case's new source, and `f:e5hqn3`
-  (a scaffold comment naming a section the harvest dropped) is checked against the template and
-  fixed or retagged `[docs-drift]`, under the map rule if it is mapped.
-- Fact `f:shv6wv`'s `Source:` cites `content-routes-settings.ts:297,417`; they are now `:289,336,409` (S1 boundary, 2026-09-30).
+- `relink.json` entries whose restoring page is in 2b are retagged `"2b"`: join the outline's
+  `rearms[].relinkIndex` to `relink.json` `entries[]` and retag every entry whose `rearms[].batch`
+  is `2b` (32 at pre-flight, the 7 `restoredBy: "close"` included); `pilot` (68) and `2a` (17)
+  stay `2a`. `relink.json` itself carries only `stage` (pre-flight, 2026-09-30).
+- Fact `f:dzmj90` (the slug-contract case) is updated to the case's new source and its stale cite
+  (`:70-74`, now `:78-83` before the move). `f:e5hqn3` is wrong at HEAD (the scaffold comment at
+  `svelte.config.js:50-55` no longer names "Wire the dev backend and the CSRF handoff"): rewrite it
+  to what the comment says or retag it `[docs-drift]`, and check its outline reference
+  (`extend.json:1946`). Neither fact is in the option map (pre-flight).
 - The `MarkdownEditor.svelte` fact cites the ROADMAP flags as shifted resolve to the current
-  lines (ROADMAP Next, "before stage 2a drafts from these"), and that entry leaves ROADMAP.
+  lines (seven bullets: `facts/reference.md:10,24` and five in `facts/editors.md`), and the one
+  sentence at `ROADMAP.md:1031` that flags them is edited out with its trigger note; the larger
+  pointer-drift item around it stays (pre-flight).
 
-**Acceptance:** the gate is green; `arm-state` reports extend `rebuilt`; the diff-reviewer greps
+**Acceptance:** the gate is green; `readArmStates` (`scripts/checks/arm-state.mjs`, no CLI; run it
+with `node -e`) reports extend `rebuilt`; the diff-reviewer greps
 `LEGACY_PATH_MAP` and finds no extend value off disk.
 
 ### Task 6: the pilot

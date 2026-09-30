@@ -7,6 +7,118 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Theme identity pass C: one public theme, 2026-09-29
+
+Branch `theme-identity-c` (draft PR #97), built on pass B's closed head, then `main` at `dc9bb99b`
+(the style-guide sync). Passes B and C merge to `main` together at this close. Plan, ledger, and
+post-mortem: `docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`. Spec (shared with pass
+B): `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`. Unreleased; `0.98.0` is
+planned for the cut after the merge, carrying passes A, B, and C.
+
+**What landed:**
+
+- **The public sheet.** `@glw907/cairn-cms/cairn-public.css` holds 18 roles in `@layer theme`, two
+  `@theme` colors, design-free `@layer components` rules (`pre.shiki`, `.cairn-tok-*`,
+  `.table-scroll`, `.cairn-focus-ring`), and an `@source` line. A computed-value equivalence test
+  (81 keys, 29 focus elements, three states) pinned the Waymark render before anything moved; its
+  expectation never changed after its first commit.
+- **Derived defaults.** Each ink is a 50 percent `color-mix` toward `--color-base-content`, muted is
+  an opaque 80 percent mix, and the shadow mixes `black`. `N` and `M` came from a Chromium
+  measurement over 35 stock themes, Waymark with its inks stripped, and the fixture theme
+  (`docs/superpowers/research/2026-09-29-theme-pass-c-ink-derivation.md`).
+- **The template.** Heading levers (`--font-weight-heading`, `--cairn-heading-case`, the
+  `heading-case` utility), the toggle's `color-scheme` resolution and `theme-names.ts`, the skip
+  link, radius-token corners, a registry-driven `/styleguide`, `PreviewBanner`'s token palette, the
+  editor preview's ground on `base-100`, and the `previewMarkdown` root export.
+- **The audit.** A public scope and three advisory rules: `public-literals`, `theme-conformance`,
+  and `theme-contrast` (culori as a runtime dependency, `daisyui` and `tailwindcss` as optional
+  peers). 38 rules now (21 static, 17 rendered). `check:public-tokens` became a run of the packaged
+  audit over the showcase, and `check:audit-pack` proves the tarball in a real install.
+- **The proof.** A fixture theme with its own harness (`test:theme-fixture`, a showcase arm and a
+  template arm), which passes `theme-contrast` 24 of 24 pairs in both schemes. Probe 3 (a built-in
+  component) passed clean; probe 2 (a new theme) passed only after fixes to the guidance, then
+  passed its one sanctioned rerun with 0 findings.
+- **Guidance and docs.** The `cairn-public` skill (a router plus 29 catalogue pages and three
+  reference pages) with `check:public-skill`, the reference pages `public.md` and `public-css.md`,
+  the emitted-class registry, the chassis README, and the charter's rule count.
+
+**What the gates caught:**
+
+- **The close reviews found four groups of audit defects that passed silently** (fixed at
+  `e46bb062`): a theme form the resolver did not model (a block's `root` option, nested root
+  rules, `screen` and `all` queries, a root declaration under an unmodeled condition) passed
+  instead of reporting unmeasured; a status tint in another form dropped its pair; config path
+  spellings and a configured root or stylesheet the tree lacked or a public exclusion covered
+  narrowed the audit with no error; and a comment between value tokens fused them while quoted
+  text and a preprocessed `<style lang>` block gave false findings or stopped the run.
+- **The skill budget, on CI.** Task 14d's fix round ran the reduced gate, which skips
+  `check:package`, and `cairn-public/SKILL.md` estimated 3,595 of 3,500 tokens. `cbe04847` moved
+  three lists into `references/` pages. A docs fix round that edits a shipped skill keeps
+  `check:package` in its reduced gate.
+- **A cited line range emptied, uncaught.** Task 2's move left a `check:facts` range empty and no
+  targeted gate ran `check:facts`. From segment B on, a task that moves or deletes source lines runs
+  it.
+- **The muted rule could not choose.** Decision 2's rule had pass count rising to `M` = 100
+  (`base-content` itself); the conductor ruled the lowest `M` that meets the hard constraint and
+  matches the best ink (80), after a first round applied a misstated "lowest" and landed on 70.
+- **The role-layer redeclaration, reversed.** `e605816a` redeclared `--color-muted` and
+  `--color-card-border` in the role layer so a nested region recomputed them. That sat after
+  Tailwind's `@theme` output at equal specificity, so a theme's own `@theme` override lost.
+  `40a73308` returned both to `@theme` only, kept the nesting limit, and added a test that fails if
+  either returns to the role layer.
+- **The spec-plan-review fold.** Two of 55 findings were refused (O1, R13) and three lost a
+  sub-part (R1, R6, R8). None turned out to be a real defect: the ledger records no break traceable
+  to a refusal.
+
+**What a later pass would be wrong to rediscover:**
+
+- **The comment-fusion parser trap.** `parseSheet` fused a comment into the property or value of a
+  declaration beside it, so a property could read as `/* x */ --color-primary` and a daisyUI key in a
+  `@plugin` block could go unread by its name (22, 7, 3, and 8 fused declarations counted across
+  four files at task 0, and 0 after task 1). Every reader of authored CSS goes through `sheet.ts`,
+  so the fix covers the audit and its tests alike. Task 1's replacement could still join two value
+  tokens across a comment (`1px/**/2px` read `1px2px`); `e46bb062` keeps a boundary there.
+- **`@layer theme` placement and the `@theme` colors' nesting limit.** The roles live in `@layer
+  theme` on `:root, [data-theme]` so they recompute in a nested `data-theme` region. Tailwind
+  resolves an `@theme` color once at `:root`, so `--color-muted` and `--color-card-border` do not
+  recompute in a nested region, and a theme that nests one sets both in the nested block. They must
+  stay `@theme`-only: any redeclaration in the role layer beats a theme's `@theme` override.
+  `theme-contrast` measures the root only.
+- **The comma exception in daisyUI blocks.** daisyUI's option parser drops a comma-bearing value
+  (`--cairn-shadow`, Waymark's dark `--color-card-border`), so that value goes in the scheme's
+  `:root` block, never the daisyUI block.
+- **The `@source` sentinel.** Every real `@theme` color is also read by the chassis, so no real key
+  proves the `@source` line. The template arm plants a sentinel utility in the installed package's
+  `dist/public/` and asserts it reaches the compiled CSS; a mutation that drops the line fails it.
+- **The real-install pack test.** Only a real install (a tarball, production dependencies,
+  `--omit=peer`, under `os.tmpdir()`, verified by content hash) proves culori is a declared
+  dependency. `check:audit-pack` also installs `svelte`, since `markup.ts` imports
+  `svelte/compiler` and it is a required peer every site has.
+- **The named-root rule.** A configured public root the tree lacks throws, and a configured
+  `public.scope` replaces the defaults. The showcase's `cairn-audit.config.json` is emitted into
+  every scaffolded site, so the engine's own public roots live in the repo-owned
+  `scripts/checks/public-scope.config.json`, whose `../../src/lib/public` root would break a
+  scaffold. `check:template` fails an emitted config path that starts with `..`.
+- **`/tmp` is a small shared tmpfs on this workstation.** The template arm and the probes need
+  `TMPDIR` on disk; the harness header says so. Port 4173 also belongs to another project here, so
+  a preview spec that follows the minted origin 404s locally and passes on CI.
+- **Do not promise a promotion.** The spec's "promote at the first minor cut" reached no decision,
+  so the changelog and every shipped page say the three rules are advisory on a consumer. The
+  promotion is a `ROADMAP.md` intent under Toward 1.0.
+- **Fix rounds are not free.** A settle-round fix that edits a shipped skill, a fact's line range,
+  or a spec expectation the targeted gate does not run turns a later gate red. Run the named gate,
+  not the nearest one.
+
+**Score:** about 11M of the 29M ceiling (flag 23.2M, never tripped), from task notifications and
+`/cost`. Planning misses: 4 (decision 2's muted rule; the targeted gates lacking `check:facts`; the
+reduced gate skipping `check:package`; and the pre-flights' gaps, 15 at segment C and 10 at segment D,
+each amended into the plan). Execution sittings: 2, one async glance (segment B's artifact) and
+one owner sitting (S3). Known gaps filed to `ROADMAP.md` Next: `theme-contrast`'s tint detection
+over-triggering on a status `color-mix` background, a bare `.dark` block ignored rather than
+reported, a preprocessed style block that parses as CSS audited with no advisory, and a
+`public.scope` naming `src/routes/admin`, plus the toggle's first-paint mismatch and the header's
+two focus-ring languages.
+
 ## Theme identity pass B: the rename, `./public`, and the admin agent path, 2026-09-29
 
 Branch `theme-identity-b`, draft PR #95, unmerged at this close and held as pass C's base. Built

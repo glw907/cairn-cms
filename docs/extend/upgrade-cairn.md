@@ -58,6 +58,28 @@ minor can break a documented seam, so an upgrade is never a blind bump.
 6. **Typecheck and test your own site** before deploying. The doctor checks configuration; it does
    not typecheck your adapter or your custom routes against the new version's types.
 
+## When your range crosses the public stylesheet export
+
+The window that adds `@glw907/cairn-cms/cairn-public.css` changes what a copied `src/chassis/tokens.css`
+owns. Do these in order, after step 3:
+
+1. Move any key your copied `tokens.css` adds beyond the new template's into your theme.
+2. Replace the copied roles, the two `@theme` colors, the code-block binding, and the focus-ring
+   utility with `@import "@glw907/cairn-cms/cairn-public.css";`, placed after `@import "tailwindcss";`
+   and before `@import "./prose.css";`. Compare your copy's ink, muted, and shadow values first,
+   since those defaults changed.
+3. If `static.scope` or `static.cssFiles` reads the old copy, list it under `static.paletteFiles`
+   until the swap deletes it.
+4. Run `npm run check:cairn`. Install `daisyui` and `tailwindcss` (both optional peers) if the run
+   names one as missing. The three public rules print advisory findings and never fail the run;
+   a configured public root your tree lacks, or one a `public.exclude` path covers, does.
+5. Port the template fixes you want by hand: the skip-link idiom, the toggle's `color-scheme`
+   resolution (including `only dark`), radius-token corners, the heading levers, and the CI Node 24
+   pin.
+
+[Migration notes](./migration-notes.md) carries each item with its reason, and [the public
+stylesheet reference](../reference/public-css.md) lists every key and default.
+
 ## You know it worked when
 
 `npm run check` (or your site's own type-check script) passes, `cairn doctor` reports every check

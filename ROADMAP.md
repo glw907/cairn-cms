@@ -167,6 +167,14 @@ compatibility alias or a compromise that keeps a confusing name or seam. Once th
 are live, each break costs one migration per site again, so re-check this with Geoff when the first
 rebuilt site goes live.
 
+**Promote the two public theme rules to error tier (theme identity pass C, 2026-09-29; a roadmap
+intent, not a shipped promise).** `theme-conformance` and `theme-contrast` ship at advisory tier on a
+consumer, and the changelog makes no promise about their tier. Promote both to error at the first
+minor cut after all five sites (the four production sites and cairn.pub) report zero advisory
+findings from them, counted by the `cairn-release` step that runs the audit's public scope over each
+site at every cut. `public-literals` stays advisory. A site that reports findings is asked to clear
+them first; no calendar date is attached.
+
 When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem / patch = everything else"
 scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
@@ -291,19 +299,6 @@ The original decision framing, for the record:
 
 ## Now
 
-- **Theme identity, passes A, B, and C (Geoff, 2026-09-26 and 2026-09-27).** cairn's own look moves
-  into the daisyUI theme layer, and the public site gets one theme contract that any theme can meet.
-  Pass A (the admin theme, spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`) is
-  merged to `main` (PR #92, `4d725057`), with Geoff's before-and-after corrections landed. Pass B is
-  finished on `theme-identity-b` (draft PR #95), unmerged, and is pass C's base. Passes B and C
-  share one spec, `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renamed
-  `./components` to `./admin`, added `./public`, and shipped the admin agent path (the recipe table,
-  the placement line, the exemplar, `radius-scale`); C is the one public theme (`cairn-public.css`,
-  derived inks, heading levers, the three public audit rules, the `cairn-public` skill, and the
-  designer walkthrough's template fixes). Pass C branches from B and both merge at C's close with
-  one `0.98.0` cut carrying A, B, and C (A is on `main`, unreleased); pass C removes this entry. Draft documentation (below) waits
-  for C.
-
 - **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
   correction round, 2026-09-28, except the two below).** Trigger for what remains: the first pass
   after this one that edits `cairn-admin.css` or the named component, and in any case before the
@@ -334,7 +329,11 @@ The original decision framing, for the record:
   as the developer exemplar, and a Microsoft Learn capture for editors. Baselines at the start:
   711 verified facts plus 10 Tidy facts, facts sections for 77 of 80 old pages, and about 600
   intensifier "own" uses across the arms. A brainstorm opens the program (STATUS, "Next action");
-  theme pass C's `0.98.0` cut comes before any deletion.
+  the harvest resumes when theme passes B and C land on `main` together, with its inputs
+  in `docs/internal/record/2026-09-29-theme-pass-bc-harvest-handoff.md` (the B and C fact ids, pages,
+  renames, and behaviors) and the stage 2 and stage 5 outline input
+  `docs/internal/record/2026-09-29-theme-contract-docs-input.md`; the `0.98.0` cut still comes before any
+  deletion.
   The docs reset's reader-validation line (passes 1, 1b, and 2a, spec
   `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
   ruling: its reader instrument failed validation across three passes (`docs/HISTORY.md`, "Docs
@@ -345,7 +344,8 @@ The original decision framing, for the record:
     `docs/internal/record/docs-exemplars.md`), never reviewed as a set.
   - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
   - The designer's theme guide is a primary page (Geoff, 2026-09-27): it documents the one
-    public theme contract (Now, "Theme identity", pass C) and is drafted after that contract settles.
+    public theme contract that theme pass C shipped (`docs/reference/public-css.md`, the `cairn-public`
+    skill) and is drafted from it, with the page's outline in the input file named above.
   - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
     on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
     DaisyUI. It links to DaisyUI's theme docs rather than restating them. Required topic in the stage 2
@@ -886,6 +886,39 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
+
+- **Docs improve-as-we-go standing order (Geoff, 2026-09-29).** Once the first-draft docs are
+  complete, every agent working on cairn fixes docs deficiencies, inaccuracies, and improvement
+  openings as it finds them, and republishes to cairn.pub. The standing order needs a design before
+  it runs: which pages an agent may edit in place, which gates it runs, how a fix reaches cairn.pub
+  between releases, and how the facts container and page briefs stay in step. Trigger: the first-draft docs complete (the draft
+  documentation entry's site round). Open with a brainstorm that designs it.
+
+- **`theme-contrast`'s unreadable-tint detection can over-trigger (theme identity pass C,
+  2026-09-29).** A status `color-mix()` painted as a `background` keeps that status's tint pair and
+  marks it unmeasured, so a status color-mix background that is not a callout tint reports a pair the
+  theme does not paint. Fix: tie the unmeasured tint to the selectors the chassis paints callouts
+  with, or read the mix's owning rule. Trigger: the first consumer finding that names an unmeasured
+  tint on a non-callout background.
+
+- **A bare class-based dark block is ignored, not reported (theme identity pass C, 2026-09-29).** A
+  `.dark { ... }` block (no `data-theme`, no daisyUI block) in a public stylesheet is not modeled by
+  `theme-contrast`, and the rule does not say so. Fix: report the block as unmeasured, the way a
+  `root` option that is not the root element already is. Trigger: the first site that themes dark
+  with a bare class block.
+
+- **A preprocessed `<style lang=scss>` block that parses as plain CSS is audited with no advisory
+  (theme identity pass C, 2026-09-29).** A public `.svelte` file whose preprocessed style block the
+  Svelte parser rejects raises the named "unparsed style block" advisory, but a block that happens to
+  parse as CSS is read as CSS with no note that it was preprocessed. Fix: raise the advisory for any
+  `lang` attribute other than `css`. Trigger: the first consumer that authors a public component in
+  Sass or Less.
+
+- **A `public.scope` that names `src/routes/admin` still loses it to the non-removable default
+  exclude (theme identity pass C, 2026-09-29).** The admin root stays in the admin scope by design,
+  but the config gives no message when a site lists it under `public.scope`. Fix: a named advisory,
+  or a config error like the covered-root one. Trigger: the first site that broadens `public.scope`
+  to `src`.
 
 - **The theme toggle's first-paint icon and label mismatch on a dark-first theme (theme identity
   pass C, 2026-09-29).** `SiteHeader` resolves the scheme only on the client, so a dark-first

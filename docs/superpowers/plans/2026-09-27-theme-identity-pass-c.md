@@ -2085,3 +2085,68 @@ Spend: about 0.43M in subagents plus the conductor.
   the theme-directory list, the audit placement, and the component token mapping into three
   `references/` pages (2,871 tokens), with every docs and skill gate green. **Lesson:** a docs fix
   round that edits a shipped skill must keep `check:package` in its reduced gate.
+
+## Post-mortem (2026-09-29)
+
+**What was built.** Tasks 0 to 14 and the close, in five segments plus the settle runs. The
+Waymark render did not move: the equivalence expectation (`913523e0`) never changed. The engine
+ships `cairn-public.css`, derives its inks and muted from the theme, and mixes the shadow from
+`black` (tasks 2 and 3). The template gained the heading levers, the toggle's `color-scheme`
+resolution, the skip-link idiom, radius-token corners, and a registry-driven styleguide, and
+`PreviewBanner` reads tokens (tasks 4 to 6). The audit gained a public scope and three advisory
+rules with optional peers, a real-install pack test, and a packaged `check:public-tokens` (tasks 7
+to 9). A fixture theme and its two-arm harness proved the contract (task 10). The reference pages,
+the `cairn-public` skill with its coverage gate, and the internal documents followed (tasks 11 to
+13). S1 regenerated the CI baselines, S2 ran probes 2 and 3, and task 14 closed four settle runs.
+The close reviews then found four groups of silent-green audit defects and Svelte and
+accessibility items (the toggle's `only`-prefixed scheme, the banner link's focus ring, nested-region
+colors), all folded.
+
+**What the gates caught.** The ledger holds the detail; the short list:
+
+- Task 3: decision 2's muted rule could not choose a value, and its first fix round applied the
+  conductor's misstated wording (70, not 80).
+- Task 2: a cited range emptied with nothing catching it, because no targeted gate ran `check:facts`.
+- Task 4: an environmental 404 (port 4173 belongs to another project), not a code defect.
+- Task 10: a `check-public-scope.test.ts` expectation left at two variants, because the task's
+  targeted gate never ran the unit suite.
+- Task 13: the chassis README's `cairn-*` ownership paragraph still made a false catch-all claim.
+- S2: probe 2 passed only after audit findings the guidance did not prevent, plus an admin-sheet
+  defect a public-only run hit.
+- Ledger-commit CI: `check:package` failed on the skill's token budget (3,595 of 3,500), because a
+  fix round ran a reduced gate.
+- The close reviews: four groups of audit defects that passed silently, and a role-layer
+  redeclaration that made a theme's `@theme` override lose (added at `e605816a`, reversed at
+  `40a73308`).
+
+**What a later pass would be wrong to rediscover.** `docs/HISTORY.md`, "Theme identity pass C",
+holds the list (the comment-fusion parser trap, `@layer theme` placement and the `@theme` colors'
+nesting limit, the comma exception in daisyUI blocks, the `@source` sentinel, the real-install pack
+test, the named-root rule, the `/tmp` quota, and the unpromised promotion). It is not repeated here.
+
+**Score.**
+
+- **Tokens:** about 11M against the 29M ceiling and the 23.2M flag (the flag never tripped), from
+  task notifications and `/cost`. The plan projected about 24.3M; the pass ran under it. Tasks 3, 12, and
+  13 took a fix round; no other task did.
+- **Planning misses: 4.** Decision 2's muted rule (pass count rises monotonically to `M` = 100, so
+  the rule chose `base-content` itself); targeted gates that omitted `check:facts` (task 2 emptied
+  a cited range unseen); a reduced gate that skipped `check:package` (the skill's token budget failed
+  on CI); and the pre-flights' gaps (15 at segment C and 10 at segment D, each amended into the plan
+  under a conductor ruling).
+- **Execution sittings: 2.** One async glance (segment B's artifact, which Geoff answered "The theme
+  identity page looks great") and one owner sitting, S3.
+
+**Lessons.**
+
+- A selection rule that lets a metric rise without limit needs a stated stopping condition; state
+  the cap in the plan, not in the ruling that repairs it.
+- A targeted gate names every gate whose input the task touches: a task that moves source lines
+  runs `check:facts`, and a task that edits a shipped skill runs `check:package`.
+- A reduced gate is a cost decision, not a scope decision: name what it skips in the fix round's
+  prompt.
+- An audit that cannot measure a form reports "unmeasured"; a silent pass is the defect the audit
+  exists to rule out. The reviews found four groups of it in code the plan's own gates had passed.
+- A layer that redeclares a value Tailwind resolves elsewhere changes who wins; test the override
+  from the theme's side, not only the default.
+- Harness runs need `TMPDIR` on disk here; `/tmp` is a small shared tmpfs.

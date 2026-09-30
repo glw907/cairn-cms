@@ -58,6 +58,61 @@ The release step sets the version number at the cut and renames this section to 
   to shift. A fixed Tailwind radius such as `rounded-lg` still renders,
   but it does not follow the ladder. Write `rounded-selector`, `rounded-field`, or `rounded-box`
   to follow it.
+- **Swap your copied roles for the engine's public stylesheet.** Move any key your copied
+  `src/chassis/tokens.css` adds beyond the new template's into your theme first. Then replace the
+  copied roles, the two `@theme` colors (`--color-muted` and `--color-card-border`), the code-block
+  binding (`pre.shiki` and the `.cairn-tok-*` classes), the `.table-scroll` pair, and the
+  focus-ring utility with one line: `@import "@glw907/cairn-cms/cairn-public.css";`. It goes after
+  `@import "tailwindcss";` and before `@import "./prose.css";`, so a later `@theme` block of yours
+  still wins. A chassis file that still redeclares a role the sheet supplies keeps the old value,
+  and `theme-conformance` names the file. [The public stylesheet
+  reference](../reference/public-css.md) lists every key with its default.
+- **Compare your copy's ink, muted, and shadow values before you delete them.** Three defaults
+  changed. Each status ink (`--cairn-{info,success,warning,error}-ink`) derives from its fill as a
+  50 percent `color-mix` toward `--color-base-content`, where the old copy used the fill itself.
+  `--color-muted` is an opaque 80 percent mix of `--color-base-content` into `--color-base-100`,
+  where it was a 60 percent mix toward `transparent`. `--cairn-shadow` mixes `black` where it mixed
+  `--color-base-content`. If your theme wants the old value, set the key in your daisyUI block (a
+  comma-bearing value such as `--cairn-shadow` goes in that scheme's `:root` block, since daisyUI's
+  option parser drops commas).
+- **Name the old copy under `static.paletteFiles` while it lasts.** A copied `tokens.css` writes
+  literal color values down, so a site whose `static.scope` or `static.cssFiles` reads it lists the
+  file under `static.paletteFiles` and `token-colors` skips it. Remove the entry when the swap
+  deletes the copied block.
+- **Install `daisyui` and `tailwindcss` if `check:cairn` names a missing peer.** Both are now
+  optional peers (`daisyui` `^5`, `tailwindcss` `^4`), loaded only when a selected rule needs them,
+  and `culori` is a runtime dependency of the package. A full audit run without a peer fails with a
+  message that names it and `npm install --save-dev <peer>`. A scaffolded site already has both. An
+  admin-only `--rule` selection needs neither.
+- **Expect advisory findings from three new rules.** `public-literals`, `theme-conformance`, and
+  `theme-contrast` audit the public side and report at advisory tier on a consumer, so a run exits
+  0 on them. The public scope's default roots are `src/theme`, `src/chassis`, `src/routes`,
+  `src/lib/public`, and `src/lib/components`, minus `src/routes/admin` and every admin root. A
+  configured `public.scope` replaces the defaults, a configured root your tree lacks fails the
+  run, and a configured root that a `public.exclude` path covers fails it too. Name an entry
+  stylesheet under `public.stylesheets` when your theme starts elsewhere than `src/theme/theme.css`.
+  A site that serves public pages from a root outside the defaults, or that keeps admin screens
+  under `src/lib/components`, names it under the right key ([the public
+  scope](../reference/cairn-audit.md#the-public-scope)).
+- **Port the template fixes by hand.** A site copied from `templates/waymark` earlier has none of
+  these; each is a small edit, and none is required for the site to build.
+  - The skip link: an `sr-only` anchor to `#main` with `focus:not-sr-only focus:absolute`, and
+    `<main id="main" tabindex="-1">` with `main:focus { outline: none }`, so activating the link
+    moves keyboard focus and not only the scroll position.
+  - The toggle's `color-scheme` resolution: `resolveTheme` reads the root's computed
+    `color-scheme` when no `data-theme` names a theme, splits it into words, drops `only`, and
+    treats a single `light` or `dark` as the answer. `only dark` counts as `dark`.
+  - Corners on the radius tokens: chrome that writes a fixed radius takes `rounded-selector`,
+    `rounded-field`, or `rounded-box`, or reads `var(--radius-box)` in a scoped rule.
+  - The heading levers: `--font-weight-heading` in `@theme` and `--cairn-heading-case` in
+    `@layer theme` (default `none`) with the `heading-case` utility, applied as
+    `font-heading heading-case` in chrome markup and read directly in a scoped `<style>` rule.
+  - The CI Node pin: `node-version: 24` in `.github/workflows/check.yml`.
+- **Expect three visible changes on a public site.** `PreviewBanner` paints from daisyUI role
+  tokens, so a site without daisyUI sets its five `--cairn-preview-*` properties itself. The editor
+  preview's ground follows your `--color-base-100`. `cairn-focus-ring` sits in `@layer components`
+  and takes no variants, so a utility that sets an outline on the same element wins, and a copied
+  `prose.css` whose links read the ring's keys now draws a visible outline.
 
 ## 0.97.0
 

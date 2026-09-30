@@ -105,6 +105,9 @@ the three-to-four-task segment); S4 is tasks 7, 9, and 10. Every boundary is a g
   close gate and every close review are green. A red gate, an escalated review finding, a
   non-empty pre-merge check, or any other stop condition in this plan still halts the merge for
   Geoff.
+- **R5 (Geoff, 2026-09-29, evening): the ceiling rises to 14M, no 80% stop.** Supersedes R1's
+  ceiling and flag for the overnight run: the run continues without a checkpoint question up to
+  14M and stops hard there.
 
 ## Global constraints
 

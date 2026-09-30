@@ -150,7 +150,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "turn-on-tidy",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -211,7 +211,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "add-an-island",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -220,7 +220,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "define-an-adapter-and-schema",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -229,7 +229,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "act-on-newly-published-entries",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -254,7 +254,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "define-an-adapter-and-schema",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -263,7 +263,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "turn-on-tidy",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -281,7 +281,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "link-content-with-references",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -297,7 +297,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "arrange-the-admin-sidebar",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -329,7 +329,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "reuse-content-across-entries",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -338,7 +338,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "share-a-draft-preview",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -347,7 +347,7 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "build-the-public-routes",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",

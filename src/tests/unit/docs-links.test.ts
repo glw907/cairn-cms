@@ -180,7 +180,7 @@ describe('the legacy CHANGELOG path map', () => {
     expect(legacyTarget('CHANGELOG.md', './docs/guides/upgrade-cairn.md')).toBe(
       'docs/extend/upgrade-cairn.md'
     );
-    expect(legacyTarget('CHANGELOG.md', 'docs/guides/upgrade-cairn.md#who-may-edit')).toBe(
+    expect(legacyTarget('CHANGELOG.md', 'docs/guides/upgrade-cairn.md#precondition')).toBe(
       'docs/extend/upgrade-cairn.md'
     );
   });

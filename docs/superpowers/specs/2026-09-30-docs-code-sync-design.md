@@ -28,7 +28,9 @@ the arms are drafted rather than retrofitted after:
 3. **Release sweep.** Each release cut runs the code-first sweep over the git range since the
    last tag, with an independent verifier before anything is filed.
 
-The gap sweep also becomes a standing step in each rebuilt stage's planning phase. Three further
+The gap sweep also becomes a standing step in each rebuilt stage's planning phase, and the page
+chain treats drafting as a design review: every chain agent reports what the page had to hedge or
+work around, and the stage close routes each report to an engine fix or the roadmap. Three further
 mechanisms the prior art recommends are deferred, each with a trigger. The pilot of six still runs
 as the parent spec describes.
 
@@ -42,6 +44,7 @@ as the parent spec describes.
 | S4 | Stage 2a's pilot of six holds. |
 | S5 | The gap sweep may add outline pages; Geoff keeps or cuts each on the R10 page. |
 | S6 | Stage 2a's ceiling is 18M, flagged at 14.4M. |
+| S7 | Use the docs as a design review of cairn itself: what is hard to document often reflects bad design, so drafting surfaces improvement opportunities. |
 
 ## The lean guard (S2)
 
@@ -138,6 +141,38 @@ skill, before the version is set.
   is the measure that mechanisms 1 and 2 work; a steady one says they miss a class, which names
   the next mechanism to consider.
 
+## Docs as a design review
+
+Writing a page after the code is built is the cheapest design review cairn gets. What is hard to
+explain usually reflects a design flaw: a seam that needs a caveat, an exception list, or a
+workaround step before it can be used safely. The sweep already surfaced several, found as
+defects but rooted in design: settings saves that read a config path the scaffold does not use
+(DAD-1), concept ids that silently collide with admin routes (DAD-2), SEO fields that are ignored
+unless declared in the schema (EXB-4), and an image field honored only under the key `image`
+(EXB-5). **Prior art:** the Rust RFC template's required "How do we teach this?" section, Amazon's
+working-backwards practice of writing the customer docs before the build, and Stripe's review of
+API changes through their docs. **Rides:** the page chain's existing records and
+`docs/internal/docs-friction-log.md`, whose charter is already "the design friction that writing a
+doc surfaces."
+
+- **Every chain agent reports design friction.** Page inputs, the drafter, the register editor,
+  and the fact read each return a `designFriction` list in their existing report: anything the
+  page had to hedge, caveat, or work around, and any place two seams name or behave the same
+  thing differently. Each entry names the fact ids or code involved and the smell (a caveat, an
+  exception, a workaround, a surprising default, an inconsistency). No new agent runs.
+- **The page documents the code as it is.** A friction entry never blocks or pauses a page, and
+  the drafter never documents intended behavior the code does not honor. A defect that makes a
+  page's instruction wrong is the one exception, handled as above.
+- **The conductor files every entry** in the friction log at the next checkpoint, verified against
+  the code first, per the existing out-of-scope rule.
+- **The stage close triages them** complete-or-move, as the log's rules already require: fixed in
+  the engine, promoted to the `ROADMAP.md` tier where it bites (tagged as simplifying a named
+  page), or deleted with a reason. The stage's HISTORY entry counts them, so the design yield of
+  each arm is visible next to its page cost.
+- **An engine fix lands in an engine pass, never inside a docs stage.** When one lands, it fixes
+  the facts and the page it simplifies in the same pass, under the page chain's "Edits after the
+  chain" rule.
+
 ## Deferred, with triggers
 
 | Mechanism | Prior art | Why deferred | Trigger |
@@ -151,7 +186,7 @@ skill, before the version is set.
 
 - **Order.** The mechanisms land before the pilot, so the pilot's fact reads stamp and its page
   inputs receive option paths, and the pilot checkpoint measures their cost with the rest.
-- **Tasks added to the 2a plan:** the option-path generator and coverage gate with its baseline
+- **Tasks added to the 2a plan:** the `designFriction` field in the chain's report schemas; the option-path generator and coverage gate with its baseline
   (`engine-logic`); the lockfile, the stamp command, and the staleness check in `check:facts`
   (`engine-logic`); the page chain changes (the fact read stamps, page inputs takes the paths),
   riding task 1's outline read; and the `cairn-release` step (a skill edit).
@@ -183,6 +218,8 @@ exceeds 18M, that checkpoint's combined question carries it.
   fails a planted edit to a stamped declaration and passes a whitespace-only edit.
 - `cairn-release` carries the windowed sweep step and the yield record.
 - Every rebuilt stage's plan template names the planning-phase sweep.
+- Each chain agent's report schema carries `designFriction`; the stage close's HISTORY entry
+  counts the entries filed and how each was triaged.
 - The lean guard's three conditions appear in the 2a plan's Global constraints.
 
 ## Out of scope

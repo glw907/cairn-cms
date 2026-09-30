@@ -171,17 +171,17 @@ describe('the legacy CHANGELOG path map', () => {
   const root = resolve(__dirname, '../../..');
 
   it('resolves a retired path written in CHANGELOG.md', () => {
-    expect(legacyTarget('CHANGELOG.md', 'docs/guides/add-an-island.md')).toBe(
-      'docs/extend/add-an-island.md'
+    expect(legacyTarget('CHANGELOG.md', 'docs/guides/upgrade-cairn.md')).toBe(
+      'docs/extend/upgrade-cairn.md'
     );
   });
 
   it('resolves the same path written with a leading ./ or carrying an anchor', () => {
-    expect(legacyTarget('CHANGELOG.md', './docs/guides/add-an-island.md')).toBe(
-      'docs/extend/add-an-island.md'
+    expect(legacyTarget('CHANGELOG.md', './docs/guides/upgrade-cairn.md')).toBe(
+      'docs/extend/upgrade-cairn.md'
     );
-    expect(legacyTarget('CHANGELOG.md', 'docs/explanation/security-model.md#who-may-edit')).toBe(
-      'docs/extend/security-model.md'
+    expect(legacyTarget('CHANGELOG.md', 'docs/guides/upgrade-cairn.md#who-may-edit')).toBe(
+      'docs/extend/upgrade-cairn.md'
     );
   });
 
@@ -214,7 +214,7 @@ describe('the legacy CHANGELOG path map', () => {
 
   it('fails a key whose own page is back on disk', () => {
     const problems = legacyMapProblems(root, {
-      'docs/reference/core.md': 'docs/extend/architecture.md',
+      'docs/reference/core.md': 'docs/extend/upgrade-cairn.md',
     });
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('docs/reference/core.md');
@@ -223,7 +223,7 @@ describe('the legacy CHANGELOG path map', () => {
 
   it('fails a key that no CHANGELOG link names', () => {
     const problems = legacyMapProblems(root, {
-      'docs/guides/never-cited-anywhere.md': 'docs/extend/architecture.md',
+      'docs/guides/never-cited-anywhere.md': 'docs/extend/upgrade-cairn.md',
     });
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('never-cited-anywhere.md');

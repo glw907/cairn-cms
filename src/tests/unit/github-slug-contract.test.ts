@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRenderer } from '../../lib/render/pipeline.js';
@@ -12,11 +12,11 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
  *
  * `rehype-slug` computes each id with `github-slugger` under the hood, so this is meant to be
  * a tautology today. The point of the test is to keep it one: every case below is a real
- * heading pulled from the published `docs/reference/`, `docs/admin/`, and `docs/extend/` corpus,
- * and its expected id is a literal, not a value computed by importing `github-slugger` at test
- * time. The last test holds each case to its source page. A source the harvest deleted keeps its
- * heading as a literal stress case while its arm waits for its rebuild, and must name a live page
- * again once the arm is rebuilt. If the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this
+ * heading pulled from the published `docs/reference/`, `docs/admin/`, and `docs/extend/` corpus
+ * (one case is marked synthetic, below), and its expected id is a literal, not a value computed by
+ * importing `github-slugger` at test time. The last test holds each case to its source page. A
+ * source the harvest deleted keeps its heading as a literal stress case while its arm waits for
+ * its rebuild, and must name a live page again once the arm is rebuilt. If the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this
  * test goes red without needing to know why GitHub's algorithm changed; the in-corpus anchors the
  * published docs carry (`#section-heading` links between pages) ride on this contract holding.
  *
@@ -26,7 +26,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
  * mark, mixed case, and a real duplicate heading.
  */
 describe('the GitHub-slug contract', () => {
-  const cases: Array<{ markdown: string; id: string; source: string }> = [
+  // A case marked `synthetic` names no page: its heading shape is a stress case no live page carries,
+  // so the source check skips it. Every other case must name a file that exists.
+  const cases: Array<{ markdown: string; id: string; source: string; synthetic?: true }> = [
     {
       // A backticked path segment plus a slash inside the code span.
       markdown: '## Why `/healthz` lives at the site root',
@@ -76,10 +78,12 @@ describe('the GitHub-slug contract', () => {
       source: 'docs/extend/migration-notes.md',
     },
     {
-      // A digit and a colon mid-heading, plus a comma before the last word.
+      // A digit and a colon mid-heading, plus a comma before the last word. No live page carries
+      // this shape, so the case is synthetic.
       markdown: '## Milestone 1: a bare SvelteKit site, deployed',
       id: 'milestone-1-a-bare-sveltekit-site-deployed',
-      source: 'docs/extend/build-a-site-by-hand.md',
+      source: 'synthetic',
+      synthetic: true,
     },
     {
       // A trailing question mark, which drops without leaving a trailing hyphen.
@@ -121,9 +125,14 @@ describe('the GitHub-slug contract', () => {
   it('pulls every case from its source page, or from a deleted page whose arm is not yet rebuilt', () => {
     const deleted = new Set(loadDeletionList(ROOT).deleted);
     const states = readArmStates(ROOT);
-    const sources = [...cases.map(({ markdown, source }) => ({ markdown, source })), { markdown: '### You know it worked when', source: duplicateSource }];
-    for (const { markdown, source } of sources) {
+    const sources = [
+      ...cases.map(({ markdown, source, synthetic }) => ({ markdown, source, synthetic })),
+      { markdown: '### You know it worked when', source: duplicateSource, synthetic: undefined },
+    ];
+    for (const { markdown, source, synthetic } of sources) {
+      if (synthetic) continue;
       if (deleted.has(source) && states[armOf(source) ?? ''] !== 'rebuilt') continue;
+      expect(existsSync(join(ROOT, source)), `${source} does not exist; repoint the case at a live page or mark it synthetic`).toBe(true);
       const lines = readFileSync(join(ROOT, source), 'utf8').split('\n');
       expect(lines, `${source} no longer carries "${markdown}"; repoint the case at a live page`).toContain(markdown);
     }

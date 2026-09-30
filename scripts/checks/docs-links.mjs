@@ -160,38 +160,42 @@ const LEGACY_HOST = 'CHANGELOG.md';
 // a stale entry. And every key must still be cited
 // by a LEGACY_HOST link, so an entry nothing reaches gets removed rather than carried forever.
 //
+// A value under docs/extend/ that names a page the arm's rebuild has not written yet points at the
+// arm index, which exists. docs/internal/record/harvest/relink.json records the page that later
+// takes each one over.
+//
 // Only the path half is translated. The anchor half is deliberately left unchecked for a mapped
 // link: these headings described the old page's own structure, and the fold did not preserve them
 // (none of the three anchors CHANGELOG.md carries on a legacy path survives on its new page).
 /** @type {Record<string, string>} */
 const LEGACY_PATH_MAP = {
-  'docs/explanation/auth-channel-security-model.md': 'docs/extend/auth-channel-security-model.md',
-  'docs/explanation/editor-copyedit.md': 'docs/extend/enable-tidy.md',
-  'docs/explanation/enforced-design.md': 'docs/extend/add-a-custom-admin-screen.md',
-  'docs/explanation/media-storage.md': 'docs/extend/data-tiers.md',
-  'docs/explanation/security-model.md': 'docs/extend/security-model.md',
-  'docs/guides/add-a-custom-admin-screen.md': 'docs/extend/add-a-custom-admin-screen.md',
-  'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-audience.md',
+  'docs/explanation/auth-channel-security-model.md': 'docs/extend/README.md',
+  'docs/explanation/editor-copyedit.md': 'docs/extend/README.md',
+  'docs/explanation/enforced-design.md': 'docs/extend/README.md',
+  'docs/explanation/media-storage.md': 'docs/extend/README.md',
+  'docs/explanation/security-model.md': 'docs/extend/README.md',
+  'docs/guides/add-a-custom-admin-screen.md': 'docs/extend/README.md',
+  'docs/guides/add-a-login-channel.md': 'docs/extend/README.md',
   'docs/guides/add-an-image.md': 'docs/editors/add-an-image.md',
-  'docs/guides/add-an-island.md': 'docs/extend/add-an-island.md',
-  'docs/guides/add-authors.md': 'docs/extend/declare-your-own-concept.md',
-  'docs/guides/announce-on-publish.md': 'docs/extend/announce-on-publish.md',
+  'docs/guides/add-an-island.md': 'docs/extend/README.md',
+  'docs/guides/add-authors.md': 'docs/extend/README.md',
+  'docs/guides/announce-on-publish.md': 'docs/extend/README.md',
   'docs/guides/cloudflare-readiness.md': 'docs/admin/is-it-working.md',
-  'docs/guides/configure-auth-and-d1.md': 'docs/extend/add-cairn-to-a-sveltekit-app.md',
-  'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/define-an-adapter-and-schema.md',
-  'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md',
-  'docs/guides/iterate-your-design-locally.md': 'docs/extend/design-your-site.md',
-  'docs/guides/link-content-with-references.md': 'docs/extend/link-content-with-references.md',
+  'docs/guides/configure-auth-and-d1.md': 'docs/extend/README.md',
+  'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/README.md',
+  'docs/guides/enable-tidy.md': 'docs/extend/README.md',
+  'docs/guides/iterate-your-design-locally.md': 'docs/extend/README.md',
+  'docs/guides/link-content-with-references.md': 'docs/extend/README.md',
   'docs/guides/manage-the-media-library.md': 'docs/editors/manage-the-media-library.md',
-  'docs/guides/organize-your-admin-nav.md': 'docs/extend/organize-your-admin-nav.md',
+  'docs/guides/organize-your-admin-nav.md': 'docs/extend/README.md',
   'docs/guides/publish-and-discard.md': 'docs/editors/publish-and-history.md',
   'docs/guides/read-cairn-logs.md': 'docs/admin/troubleshooting.md',
-  'docs/guides/restrict-admin-access.md': 'docs/extend/restrict-admin-access.md',
-  'docs/guides/reuse-content-across-entries.md': 'docs/extend/reuse-content-across-entries.md',
-  'docs/guides/share-a-draft-preview.md': 'docs/extend/share-a-draft-preview.md',
+  'docs/guides/restrict-admin-access.md': 'docs/extend/README.md',
+  'docs/guides/reuse-content-across-entries.md': 'docs/extend/README.md',
+  'docs/guides/share-a-draft-preview.md': 'docs/extend/README.md',
   'docs/guides/structured-fields.md': 'docs/reference/core.md',
   'docs/guides/upgrade-cairn.md': 'docs/extend/upgrade-cairn.md',
-  'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md',
+  'docs/guides/wire-the-delivery-surface.md': 'docs/extend/README.md',
   'docs/guides/write-in-the-editor.md': 'docs/editors/write-in-the-editor.md',
   'docs/reference/authoring-syntax.md': 'docs/editors/write-in-the-editor.md',
   'docs/reference/doctor.md': 'docs/reference/cli-cairn-doctor.md',

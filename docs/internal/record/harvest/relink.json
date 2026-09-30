@@ -89,7 +89,7 @@
       "file": "src/tests/unit/github-slug-contract.test.ts",
       "context": "## Milestone 1: a bare SvelteKit site, deployed",
       "oldTarget": "docs/extend/build-a-site-by-hand.md",
-      "done": "The heading stays a literal slug case; the source-page check skips it while the page's arm is not rebuilt, and fails once the arm is rebuilt without the page, so the case gets repointed at a live page.",
+      "done": "The heading stays a slug case, marked synthetic (no live page carries its shape); the test's source check skips a synthetic case and asserts every other source exists.",
       "stage": "2a"
     },
     {
@@ -138,49 +138,63 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/auth-channel-security-model.md': 'docs/extend/auth-channel-security-model.md'",
       "oldTarget": "docs/extend/auth-channel-security-model.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "security-model",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/editor-copyedit.md': 'docs/extend/enable-tidy.md'",
       "oldTarget": "docs/extend/enable-tidy.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "turn-on-tidy",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/enforced-design.md': 'docs/extend/add-a-custom-admin-screen.md'",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-a-custom-admin-screen",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/media-storage.md': 'docs/extend/data-tiers.md'",
       "oldTarget": "docs/extend/data-tiers.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "architecture",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/security-model.md': 'docs/extend/security-model.md'",
       "oldTarget": "docs/extend/security-model.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "security-model",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-a-custom-admin-screen.md': 'docs/extend/add-a-custom-admin-screen.md'",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-a-custom-admin-screen",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-audience.md'",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-a-second-sign-in-group",
       "stage": "2a"
     },
     {
@@ -194,21 +208,27 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-an-island.md': 'docs/extend/add-an-island.md'",
       "oldTarget": "docs/extend/add-an-island.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-an-island",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-authors.md': 'docs/extend/declare-your-own-concept.md'",
       "oldTarget": "docs/extend/declare-your-own-concept.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "define-an-adapter-and-schema",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/announce-on-publish.md': 'docs/extend/announce-on-publish.md'",
       "oldTarget": "docs/extend/announce-on-publish.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "act-on-newly-published-entries",
       "stage": "2a"
     },
     {
@@ -222,35 +242,45 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/configure-auth-and-d1.md': 'docs/extend/add-cairn-to-a-sveltekit-app.md'",
       "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-cairn-to-a-sveltekit-app",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/define-an-adapter-and-schema.md'",
       "oldTarget": "docs/extend/define-an-adapter-and-schema.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "define-an-adapter-and-schema",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md'",
       "oldTarget": "docs/extend/enable-tidy.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "turn-on-tidy",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/iterate-your-design-locally.md': 'docs/extend/design-your-site.md'",
       "oldTarget": "docs/extend/design-your-site.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "theme-your-public-site",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/link-content-with-references.md': 'docs/extend/link-content-with-references.md'",
       "oldTarget": "docs/extend/link-content-with-references.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "link-content-with-references",
       "stage": "2a"
     },
     {
@@ -264,7 +294,9 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/organize-your-admin-nav.md': 'docs/extend/organize-your-admin-nav.md'",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "arrange-the-admin-sidebar",
       "stage": "2a"
     },
     {
@@ -285,28 +317,36 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/restrict-admin-access.md': 'docs/extend/restrict-admin-access.md'",
       "oldTarget": "docs/extend/restrict-admin-access.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "restrict-admin-access",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/reuse-content-across-entries.md': 'docs/extend/reuse-content-across-entries.md'",
       "oldTarget": "docs/extend/reuse-content-across-entries.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "reuse-content-across-entries",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/share-a-draft-preview.md': 'docs/extend/share-a-draft-preview.md'",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "share-a-draft-preview",
       "stage": "2a"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md'",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "build-the-public-routes",
       "stage": "2a"
     },
     {
@@ -468,7 +508,7 @@
       "context": "flatten the fields instead of nesting them.",
       "oldTarget": "docs/extend/content-model.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/core.md",
@@ -489,7 +529,7 @@
       "context": "- [`rendering.islands` on the core reference](./core.md#renderingislands-adapter-member)",
       "oldTarget": "docs/extend/add-an-island.md",
       "done": "See-also bullet removed; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/log-events.md",
@@ -510,21 +550,21 @@
       "context": "for the `loadPreview` seam it pairs with.",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/public.md",
       "context": "replaces the token default in both states.",
       "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/render.md",
       "context": "its own.\n",
       "oldTarget": "docs/extend/configure-rendering.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/supported-toolchain.md",
@@ -573,28 +613,28 @@
       "context": "below for the site-mounted page these actions\nfeed.",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "rather than an approximated shell.\n",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "map](./core.md#access-map), when one is declared.\n",
       "oldTarget": "docs/extend/restrict-admin-access.md; docs/extend/organize-your-admin-nav.md",
       "done": "Two pointers removed from a sentence that ends at the access-map link; the reference page keeps the rule, and the pointers return with the rebuilt pages. Two occurrences (the NavLayout and the layout-types sections).",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "contract in full.\n",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "README.md",
@@ -657,14 +697,14 @@
       "context": "that the\nscaffold writes.\n",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
       "done": "Link and its relative clause removed from the kept page and its brief in lockstep; restore the pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/extend/choose-an-ai-posture.json",
       "context": "that the scaffold writes.\"",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
       "done": "Brief sentence matches the kept page edit.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/extend/choose-an-ai-posture.md",
@@ -734,35 +774,35 @@
       "context": "// site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.test.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "packages/create-cairn-site/src/scaffold.test.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.mjs",
       "context": "'  // route passes it to robotsResponse, and CairnAdapter.aiPosture',",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "The emitted decline/invite comment block drops the pointer too (aiPostureBlock).",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "examples/cairn-theme/cairn.css",
@@ -888,14 +928,14 @@
       "context": "and the reference\npage that documents it.",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
       "done": "The router names reference pages instead of the shipped recipe pages; the extend rebuild may restore per-pattern recipes. Sites re-run `npx cairn-guidance install` (the changelog carries the Consumers must line).",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "skills/cairn-extend/SKILL.md",
       "context": "docs/reference/auth-channel.md` |",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
       "done": "Both table rows now point at the reference pages that document their atoms (same edit as above).",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "src/lib/dev-flag.ts",
@@ -909,21 +949,21 @@
       "context": "property replaces the default for the whole banner.\n-->",
       "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "src/lib/reproductions/fixtures.ts",
       "context": "The `navLayout` seam's own worked example, resolved to",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "src/tests/unit/reproductions-fixtures.test.ts",
       "context": "it('resolves the navLayout worked example, with",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Test title named the deleted page by basename; it names the seam now.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "src/lib/reproductions/stories/CustomScreen.svelte",
@@ -1189,28 +1229,28 @@
       "context": "by suppression.** `auth-channel-security-model.md` cites \"NIST",
       "oldTarget": "auth-channel-security-model.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "s own `README.md` (`docs/admin/README.md`,",
       "oldTarget": "docs/admin/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "`docs/editors/README.md`, `docs/extend/READ",
       "oldTarget": "docs/editors/README.md; docs/extend/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "ocs/internal/briefs/admin/README.json`, and so on),",
       "oldTarget": "admin/README",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
@@ -1224,7 +1264,7 @@
       "context": "`docs/README.md`) never covers `doc",
       "oldTarget": "docs/README.md; docs/admin/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
@@ -1266,14 +1306,14 @@
       "context": "log-event:tidy.conventions",
       "oldTarget": "docs/extend/enable-tidy.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "log-event:tidy.model",
       "oldTarget": "docs/extend/enable-tidy.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
@@ -1329,7 +1369,7 @@
       "context": "file-path:src/theme/islands/Converter.svelte",
       "oldTarget": "docs/extend/add-an-island.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
@@ -1343,21 +1383,21 @@
       "context": "file-path:old-site/content/posts/my-post.md",
       "oldTarget": "docs/extend/migrate-existing-content.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/content/posts/2024-01-15-my-post.md",
       "oldTarget": "docs/extend/migrate-existing-content.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/content/fragments/trail-safety.md",
       "oldTarget": "docs/extend/reuse-content-across-entries.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",

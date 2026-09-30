@@ -12,6 +12,17 @@ carries this pass. Nothing here is a cairn-cms task.
 three items below can ship however ready the engine side is. Fix the pin first; the rest is
 routing.
 
+## The pin ceiling is `0.98.0` (added at the draft docs harvest's close, 2026-09-30)
+
+cairn.pub's engine pin must not pass `0.98.0` until cairn's narrative doc arms are rebuilt.
+`0.98.0` is the last release that ships the old admin, editors, and extend arms and the front
+door (`docs/README.md`, `docs/why-cairn.md`). The harvest's merge deletes those 49 pages from `main`, after
+`0.98.0` published, so every later release ships the reference arm plus three kept extend pages
+(`migration-notes.md`, `upgrade-cairn.md`, `choose-an-ai-posture.md`) until each arm's rebuild
+stage lands. A pin past `0.98.0` before then leaves cairn.pub no narrative page to render.
+The repaired and re-armed paths, keyed to the stage that restores each, are in
+`docs/internal/record/harvest/relink.json`. cairn-pub's `docs/STATUS.md` carries the same line.
+
 ## Three new reference pages for the nav
 
 The pass added three pages to the reference arm, all of them moved from the Go tool's interim

@@ -1,8 +1,8 @@
-## Unreleased
+## 0.98.0
 
 <!-- release-size: minor -->
 
-This window ships as a minor, `0.98.0` planned, because it restyles every consumer's admin; a
+This window ships as a minor because it restyles every consumer's admin; a
 caret patch must not carry a visible retheme. A hotfix before that cut branches from `v0.97.0`.
 
 ### Added
@@ -279,6 +279,13 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
 
 ### Fixed
 
+- The rendered `viewport-overflow` rule no longer reports transient overflow. It measured in the same
+  tick as the resize, before the admin's transitions and `matchMedia` listeners had settled the
+  layout, so it flagged overflow at 390 and 320 that came and went from run to run. It now waits
+  for a stable layout after each resize (the document width agreeing on two consecutive frames
+  with no finite transition running, within 500ms) and, when a layout never settles, measures
+  anyway and says so in the finding. It also no longer reports content whose right edge is inside
+  the viewport, which had appeared as "overflows by -11px".
 - The admin's overlay drawer (below the `lg` breakpoint) now moves focus into the drawer when it
   opens. daisyUI keeps the drawer hidden for 0.1s after its toggle, so the single focus call ran
   against a hidden element and did nothing; the shell now retries once per frame, bounded, until

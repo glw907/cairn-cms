@@ -17,12 +17,12 @@ column only; the rest of this page is accurate as of its last edit.
 
 | Part | Target today | Where it's set | How often it moves |
 |---|---|---|---|
-| The cairn package | `0.97.0` | `package.json`, the `@glw907/cairn-cms` version | On a release whose changelog carries a `Consumers must:` line |
+| The cairn package | `0.98.0` | `package.json`, the `@glw907/cairn-cms` version | On a release whose changelog carries a `Consumers must:` line |
 | Node, on your machine | `>=24` | `engines.node` in cairn's own `package.json` | Rarely, on Node's own Active LTS calendar |
 | SvelteKit | `^2.70` | cairn's `peerDependencies` | Rarely, only when a feature needs a newer SvelteKit capability |
 | Svelte | `^5.56.10` | cairn's `peerDependencies` | Rarely, on the same cadence as SvelteKit |
 | `@cloudflare/workers-types` | `^5` | cairn's `peerDependencies` | Rarely, on Cloudflare's own major-version cadence |
-| Wrangler | `^4.143.0` | the template's `package.json`, set once when a site is scaffolded | Whenever Cloudflare ships a new Wrangler major |
+| Wrangler | `^4.144.0` | the template's `package.json`, set once when a site is scaffolded | Whenever Cloudflare ships a new Wrangler major |
 | `@sveltejs/adapter-cloudflare` | `^7.2.9` | the template's `package.json` | Follows SvelteKit's own release line |
 | The Workers `compatibility_date` | `2026-08-21` | the template's `wrangler.jsonc`, set once when a site is scaffolded | Moves forward when a new template pulls in a later date; a deployed site's own date never changes on its own |
 | TypeScript | `^6` | the template's `package.json` | Held deliberately for now; see the note below |

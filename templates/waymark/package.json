@@ -20,16 +20,16 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@glw907/cairn-cms": "^0.97.0",
+    "@glw907/cairn-cms": "^0.98.0",
     "hastscript": "^9.0.1",
     "remark-smartypants": "^3.0.2"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260929.1",
+    "@cloudflare/workers-types": "^5.20260930.1",
     "@fontsource-variable/figtree": "^5.2.10",
     "@fontsource-variable/source-code-pro": "^5.2.5",
     "@fontsource-variable/source-sans-3": "^5.2.5",
-    "@glw907/cairn-cms-dev": "^0.97.0",
+    "@glw907/cairn-cms-dev": "^0.98.0",
     "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2.70",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
@@ -37,7 +37,7 @@
     "@tailwindcss/vite": "^4.3.2",
     "@types/hast": "^3.0.4",
     "@types/node": "^24.19.0",
-    "daisyui": "^5.7.46",
+    "daisyui": "^5.7.47",
     "devalue": "^5.9.4",
     "prettier": "^3.9.9",
     "prettier-plugin-svelte": "^4.1.1",
@@ -47,6 +47,6 @@
     "typescript": "^6",
     "vite": "^8.3.1",
     "vitest": "^4.1",
-    "wrangler": "^4.143.0"
+    "wrangler": "^4.144.0"
   }
 }

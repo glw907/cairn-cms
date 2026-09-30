@@ -521,6 +521,18 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   and `norms:check` do not change, and `ROLE_RECIPES` adds no package export. Source:
   `src/lib/audit/norms.ts#formatNormsQuery`, `src/lib/audit/norms.ts#ROLE_RECIPES`,
   `docs/reference/cairn-audit.md:461-472`. [verified]
+- `f:j5fb88` The rendered `viewport-overflow` rule waits for a stable layout after each `setViewportSize`
+  before it measures: `document.documentElement.scrollWidth` and `clientWidth` must read the same on two
+  consecutive animation frames while no finite CSS transition or animation is still running, bounded by
+  a 500ms timeout. The animation half exists because an eased transition holds its first width for more
+  than one frame, so equal width reads alone passed a layout that had not started moving; on the
+  showcase admin the reads changed for about seven frames after a resize from desktop to 390. On timeout
+  the rule measures anyway and every finding from that read ends with "the layout had not settled after
+  500ms, so this read may be transient". A content origin (an element whose content is wider than its
+  own box) is reported only when its right edge is past the viewport, so "overflows by -11px" no longer
+  appears. Source: `src/lib/audit/rules/rendered/viewport-overflow.ts#waitForStableLayout`,
+  `src/lib/audit/rules/rendered/viewport-overflow.ts#SETTLE_TIMEOUT_MS`,
+  `src/lib/audit/rules/rendered/viewport-overflow.ts#findOverflowOrigins`. [verified]
 
 ## docs/reference/cli-cairn-doctor.md
 

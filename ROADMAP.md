@@ -355,22 +355,6 @@ The original decision framing, for the record:
   - Job-doing readers as an optional advisory pass, about 35k tokens per page: they find real
     defects on their own path and miss what sits off it. They are not a measured gate.
 
-- **Fix `viewport-overflow`'s measurement timing before the `0.98.0` cut (theme identity pass B,
-  2026-09-29).** The rendered rule measures in the same tick as `setViewportSize`, before the admin
-  shell's `matchMedia` listeners settle the layout. It reports transient overflow at 390 and 320
-  that varies by run (83 to 123 errors across the template's pages in one probe; 200 on the first
-  CI run, run 35016669005, on `/admin/editors`, `/admin/media`, `/admin/pages`, `/admin/posts`, and
-  `/admin/vocabulary`), and it lists content whose right edge is inside the viewport ("overflows
-  by -11px"). A settled measurement of the same page, loaded fresh at 390 and 320 in both themes,
-  showed `scrollWidth` equal to `clientWidth` and nothing past the viewport. The rule is error
-  tier, so a consumer running `--rendered` gets false errors. The fix is in
-  `src/lib/audit/rules/rendered/viewport-overflow.ts`: wait for a stable `scrollWidth` after each
-  resize, and filter content origins to `right > viewport`. This likely explains the
-  earlier 200 findings, whose off-canvas-drawer hypothesis stays open until the fix lands; after it,
-  compare a run with the drawer closed against one with it open as the proof step. It also
-  supersedes STATUS's "counts differently on identical runs" watch. Trigger: before the `0.98.0` cut, since it ships an error-tier rule that
-  reports false errors to every consumer.
-
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
   `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API
@@ -2652,6 +2636,12 @@ the named human gates only):**
   C13 in one move.
 
 ## Later
+
+- **`viewport-overflow`'s settle check waits the full 500 ms on a page with a scroll-driven
+  animation (0.98.0 cut).** A page carrying `animation-timeline: scroll()` keeps an animation
+  running and finite, so the settle check never sees the page go quiet and every finding on such a
+  page carries the "may be transient" suffix. Fix: exclude animations whose timeline is not a
+  `DocumentTimeline` from the settle check. Trigger: a consumer reports the noise.
 
 - **`rounded-t-full` and the other side forms of `full` pass `radius-scale` silently on a `badge`
   (theme identity pass B, 2026-09-29).** The rule flags `rounded-full` on an element that carries

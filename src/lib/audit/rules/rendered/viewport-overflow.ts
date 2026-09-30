@@ -25,6 +25,16 @@
 //  3. A `visibility: hidden` ancestor suppressed a visible overflowing child, because the
 //     parent-already-overflows shortcut did not ask whether the parent was itself reportable.
 //
+// Two timing and sign failures a later run demonstrated on the shipped template, both closed here:
+//
+//  4. The rule measured in the same tick as `setViewportSize`, before the admin shell's matchMedia
+//     listeners and transitions had settled the layout, so it reported transient overflow at 390
+//     and 320 that varied from run to run. Each resize now waits for a stable layout (see
+//     `waitForStableLayout`) and a finding from a layout that never settled says so.
+//  5. A content origin was reported whenever its content was wider than its own box, even when that
+//     content still ended inside the viewport ("overflows by -11px"). Only content whose right edge
+//     is past the viewport is reported now.
+//
 // The rule also runs under `menu-open` now, not rest alone. Every dialog in this admin (the entry,
 // link, fragment, media, and reference pickers, the insert palette, the media library grid) is the
 // surface most likely to blow 320, and at rest every one of them is closed.
@@ -36,6 +46,9 @@ const CHECK_WIDTHS = [390, 320] as const;
 /** The viewport height every width is checked at. Only the width is part of this rule's contract. */
 const VIEWPORT_HEIGHT = 844;
 
+/** The longest a layout is given to stop moving after a resize, in milliseconds. */
+const SETTLE_TIMEOUT_MS = 500;
+
 /** One element the in-page scan found rendering past the current viewport's right edge. */
 interface OverflowOrigin {
   selector: string;
@@ -43,6 +56,47 @@ interface OverflowOrigin {
   right: number;
   /** Whether the element's own box overflows, or its content overflows the element's own box. */
   kind: 'box' | 'content';
+}
+
+/**
+ * Resolves once the document's `scrollWidth` and `clientWidth` read the same on two consecutive
+ * animation frames and no finite transition or animation is still running, or reports that they
+ * did not before the timeout. A timer backstops the frame loop, so a page whose animation frames
+ * never fire (a hidden tab) still resolves within the bound. The animation check closes the false read at the start of a
+ * transition: an eased transition holds its first value for more than one frame, so two equal
+ * reads there mean it has not begun moving, not that it has finished. Infinite animations (a
+ * spinner) are ignored, since they never end and a stable width beside one is still stable.
+ * Playwright serializes this into the page, so it stays self-contained.
+ */
+function waitForStableLayout(timeoutMs: number): Promise<boolean> {
+  const root = document.documentElement;
+  const read = (): string => `${root.scrollWidth}:${root.clientWidth}`;
+  const deadline = performance.now() + timeoutMs;
+  return new Promise((resolve) => {
+    let previous: string | undefined;
+    const backstop = setTimeout(() => resolve(false), timeoutMs);
+    const finish = (settled: boolean): void => {
+      clearTimeout(backstop);
+      resolve(settled);
+    };
+    function step(): void {
+      const current = read();
+      // Reading the widths above forces the style recalculation that starts any transition the
+      // resize triggered, so the animation list below already includes it.
+      const animating = document
+        .getAnimations()
+        .some(
+          (animation) =>
+            (animation.pending || animation.playState === 'running') &&
+            animation.effect?.getComputedTiming().iterations !== Infinity
+        );
+      if (current === previous && !animating) return finish(true);
+      if (performance.now() >= deadline) return finish(false);
+      previous = current;
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
 }
 
 /**
@@ -115,7 +169,11 @@ function findOverflowOrigins(): OverflowOrigin[] {
     findings.set(key, { selector: key, right: Math.round(right), kind });
   }
   for (const el of boxOrigins) record(el, 'box', el.getBoundingClientRect().right);
-  for (const el of contentOrigins) record(el, 'content', el.getBoundingClientRect().left + el.scrollWidth);
+  for (const el of contentOrigins) {
+    const right = el.getBoundingClientRect().left + el.scrollWidth;
+    // Content that ends inside the viewport is wider than its box but does not overflow the page.
+    if (right > viewportWidth + 1) record(el, 'content', right);
+  }
   return [...findings.values()];
 }
 
@@ -131,14 +189,18 @@ export const viewportOverflow: RenderedRule = {
     try {
       for (const width of CHECK_WIDTHS) {
         await ctx.page.setViewportSize({ width, height: VIEWPORT_HEIGHT });
+        const settled = await ctx.page.evaluate(waitForStableLayout, SETTLE_TIMEOUT_MS);
         const origins = await ctx.page.evaluate(findOverflowOrigins);
+        const unsettled = settled
+          ? ''
+          : `; the layout had not settled after ${SETTLE_TIMEOUT_MS}ms, so this read may be transient`;
         for (const origin of origins) {
           const what = origin.kind === 'box' ? 'renders' : 'holds content';
           findings.push({
             ruleId: 'viewport-overflow',
             tier: 'error',
             selector: origin.selector,
-            message: `${what} ${origin.right}px wide against a ${width}px viewport (overflows by ${origin.right - width}px)`,
+            message: `${what} ${origin.right}px wide against a ${width}px viewport (overflows by ${origin.right - width}px${unsettled})`,
           });
         }
       }

@@ -1,6 +1,6 @@
 {
   "name": "@glw907/cairn-cms",
-  "version": "0.97.0",
+  "version": "0.98.0",
   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
   "type": "module",
   "engines": {
@@ -243,7 +243,7 @@
     "@codemirror/view": "^6.43.13",
     "@lezer/common": "^1.5.3",
     "@lezer/highlight": "^1.2.5",
-    "@lucide/svelte": "^1.48.0",
+    "@lucide/svelte": "^1.49.0",
     "@rodrigodagostino/svelte-sortable-list": "^2.1.17",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
@@ -277,7 +277,7 @@
     "@anthropic-ai/sdk": "^0.129.0",
     "@arethetypeswrong/cli": "^0.18.3",
     "@cloudflare/vitest-pool-workers": "^0.22.0",
-    "@cloudflare/workers-types": "^5.20260929.1",
+    "@cloudflare/workers-types": "^5.20260930.1",
     "@sveltejs/kit": "^2.70",
     "@sveltejs/package": "^2",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
@@ -285,12 +285,12 @@
     "@types/node": "^24.19.0",
     "@vitest/browser": "^4.1.7",
     "@vitest/browser-playwright": "^4.1.7",
-    "daisyui": "^5.7.46",
+    "daisyui": "^5.7.47",
     "devalue": "^5.9.4",
     "esbuild": "^0.28.2",
     "eslint": "^10.11.0",
     "eslint-plugin-jsdoc": "^65.0.0",
-    "eslint-plugin-tsdoc": "^0.5.3",
+    "eslint-plugin-tsdoc": "^0.5.4",
     "lightningcss": "^1.32.0",
     "playwright": "^1.63.0",
     "postcss": "^8.5.28",
@@ -306,6 +306,6 @@
     "vite": "^8.3.1",
     "vitest": "^4.1",
     "vitest-browser-svelte": "^3.1.0",
-    "wrangler": "^4.143.0"
+    "wrangler": "^4.144.0"
   }
 }

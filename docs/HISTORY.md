@@ -35,7 +35,7 @@ planned for the cut after the merge, carrying passes A, B, and C.
   peers). 38 rules now (21 static, 17 rendered). `check:public-tokens` became a run of the packaged
   audit over the showcase, and `check:audit-pack` proves the tarball in a real install.
 - **The proof.** A fixture theme with its own harness (`test:theme-fixture`, a showcase arm and a
-  template arm), which passes `theme-contrast` 24 of 24 pairs in both schemes. Probe 3 (a built-in
+  template arm), which passes `theme-contrast` 24 of 24 pairs in both schemes at task 10 (33 per scheme after the close's pair additions). Probe 3 (a built-in
   component) passed clean; probe 2 (a new theme) passed only after fixes to the guidance, then
   passed its one sanctioned rerun with 0 findings.
 - **Guidance and docs.** The `cairn-public` skill (a router plus 29 catalogue pages and three

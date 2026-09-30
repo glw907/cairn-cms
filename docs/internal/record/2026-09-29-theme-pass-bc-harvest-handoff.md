@@ -115,10 +115,10 @@ None.
 
 ### docs/internal/facts/reference.md
 
-**Added (new bullets): 22**
+**Added (new bullets): 23**
 
 - Under `docs/reference/admin.md`: `f:dr2k4a` `f:9xm710`
-- Under `docs/reference/cairn-audit.md`: `f:z1rbea` `f:o4ctu5` `f:tbq6gh` `f:lqtwdt` `f:eri2g3` `f:0nfxs2` `f:eqsngu` `f:h4ztuy` `f:l882gl` `f:37t8wk` `f:2kja0n`
+- Under `docs/reference/cairn-audit.md`: `f:z1rbea` (rejected, superseded by `f:yn6lst`; cite `f:yn6lst`) `f:yn6lst` `f:o4ctu5` `f:tbq6gh` `f:lqtwdt` `f:eri2g3` `f:0nfxs2` `f:eqsngu` `f:h4ztuy` `f:l882gl` `f:37t8wk` `f:2kja0n`
 - Under `docs/reference/core.md`: `f:hlk5jw`
 - Under `docs/reference/guidance.md`: `f:hiif6u` `f:qzsspl`
 - Under `docs/reference/public-css.md`: `f:q8atv6` `f:c4nnu9` `f:w6pqic` `f:7653l0`
@@ -308,6 +308,11 @@ One line each. A page listed as not edited still needs the change when the harve
 - Not edited, needs a line: `previewMarkdown(def)` on the root barrel returns a component's
   `preview` sample as directive markdown, or `undefined`.
 - Not edited, needs a line: `cairn-guidance install` ships a fourth skill, `cairn-public`.
+- Not edited, needs a line: `log-event-grammar`, `log-secret-field`, and the `cairn-btn-guarded`
+  arm of `stock-default-hazards` report at error tier (`facc5fcf`), so each fails `check:cairn`;
+  `radius-scale` and the three retired-patch arms stay advisory until `0.99.0`. The migration-notes
+  item "Fix `log-event-grammar`, `log-secret-field`, and `cairn-btn-guarded` findings before you
+  upgrade" carries it, and `f:yn6lst` supersedes `f:z1rbea` (rejected).
 - `docs/editors/write-in-the-editor.md` (not edited; fact `f:q2anbz` added): the Insert block
   button separates the block from adjacent text by one blank line, adds none at a document edge or
   beside an existing blank line, keeps a line's indentation, and is its own undo step.

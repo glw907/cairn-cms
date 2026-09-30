@@ -48,14 +48,14 @@ page (keep, rebuild, new, or retire).
 2. **A concept page, "The public theme contract".** Reader: the same developer, before the task
    guide. Job: know what a theme must meet and nothing more: daisyUI's theme variables, the engine's
    public stylesheet, and the emitted classes. Page type: Concept page (Designers). Facts: `*c4nnu9`
-   `*w6pqic` `*7653l0` `*5vw8k1` `*uzducy`, `*iel6v5`, `*gknz29`. Status: new. It carries the three-part
+   `*w6pqic` `*7653l0` `*5vw8k1` `uzducy`, `*iel6v5`, `gknz29`. Status: new. It carries the three-part
    contract, the layer placement (`@layer theme` roles versus `@theme` colors, the nesting limit),
    and the promise that the contract is a floor. It is the page the Toward 1.0 seam-stability work
    points at.
 3. **A task guide, "Check your theme with the audit".** Reader: the developer who edited a theme.
    Job: run the three public rules, read a finding (including "unmeasured"), and clear it. Page type:
    Task guide (Designers or Extenders). Facts: `*o4ctu5` `*tbq6gh` `*lqtwdt` `*eri2g3` `*0nfxs2`
-   `*eqsngu` `*mrv24k`, `*hqhp14` `*z1rbea`. Status: new. It states the tier honestly: advisory on a
+   `*eqsngu` `*mrv24k`, `*yn6lst`. Status: new. It states the tier honestly: advisory on a
    consumer, with no promise of promotion (the promotion is a `ROADMAP.md` intent only). It names the
    two optional peers and the failure message when one is missing.
 4. **A task guide, "Build a custom public component".** Reader: a developer adding a
@@ -66,7 +66,7 @@ page (keep, rebuild, new, or retire).
    to the engine and stays out of the page.
 5. **`share-a-draft-preview.md`.** Reader: a developer wiring the preview route. Job: mount
    `PreviewBanner` and set its palette. Page type: Task guide (Extenders). Facts: `6gmzt1` `049lo2`
-   `rr00qr` `gvim4v` `*xssf06` `afkvsb` `zke3iw` `l4waby` `pimnjy` `a7yrhq` `cnz554` `*btx359`, `*6q5q05`.
+   `rr00qr` `gvim4v` `*xssf06` `afkvsb` `zke3iw` `l4waby` `pimnjy` `a7yrhq` `cnz554` `*btx359`, `6q5q05`.
    Keep: the import from `@glw907/cairn-cms/public`, the token palette, and the five override
    properties with the site-toggle example.
 6. **`what-the-scaffold-wrote.md`.** Reader: a developer reading a fresh scaffold. Job: know what
@@ -77,8 +77,8 @@ page (keep, rebuild, new, or retire).
 7. **The custom admin screen pages** (`add-a-custom-admin-screen.md`, `animate-a-custom-screen.md`,
    `add-an-island.md` where it names an import path). Reader: a developer adding an admin route.
    Job: import from `./admin` or `./admin-toolkit`, place the component under `src/routes/admin` or
-   `src/lib/admin`, and know which rules read it. Page type: Task guide (Extenders). Facts: `*g7zuji`
-   `*9oa6sk` `*gc0hx3` `*5stbq2` `2babfl` `39sn8c` `*bwn0uo` `*t767qb`, `*eqsngu`. Keep: `static.scope` replaces
+   `src/lib/admin`, and know which rules read it. Page type: Task guide (Extenders). Facts: `g7zuji`
+   `9oa6sk` `gc0hx3` `5stbq2` `2babfl` `39sn8c` `bwn0uo` `*t767qb`, `*eqsngu`. Keep: `static.scope` replaces
    the defaults and a configured root the tree lacks fails; the motion rules read `static.adminScope`
    (default `src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit`).
 8. **`architecture.md`.** Reader: a developer building on the seams. Job: the ownership map and the
@@ -88,17 +88,17 @@ page (keep, rebuild, new, or retire).
    moves here from `why-cairn.md`.
 9. **`build-a-site-by-hand.md`.** Reader: a developer not using the scaffold. Job: wire every piece
    and import from the current subpaths, including `cairn-public.css`. Page type: Task guide.
-   Facts: `*jzb3d0`, `*c8efq5`, `*yegr67`, plus the import-position rule in `*c4nnu9`. The page must
+   Facts: `*jzb3d0`, `c8efq5`, `yegr67`, plus the import-position rule in `*c4nnu9`. The page must
    teach the import order (after `tailwindcss`, before `prose.css`), which today's page does not.
 10. **`upgrade-cairn.md` and `migration-notes.md`.** Reader: a developer taking an upgrade. Job:
     apply every crossed `Consumers must:` line. Page type: Migration or upgrade guide (Extenders).
     Both are per-version records outside the freeze and stay current; the rebuild keeps their shape
     and the theme-window content written at pass C's close (the swap, the changed defaults, the
     `paletteFiles` entry, the two optional peers, the public scope's default roots, and the template
-    fixes a copied site ports by hand). Facts: `*gxdg1k` `zyguyn`, `*aj9516`, `*w6pqic`.
+    fixes a copied site ports by hand). Facts: `gxdg1k` `zyguyn`, `aj9516`, `*w6pqic`.
 11. **`configure-rendering.md`.** Reader: a developer supplying `render(md)`. Job: know that the
     editor preview and every public page call the one function, and which classes the engine
-    emits. Page type: Concept or Task guide. Facts: `*3l7f56` and the emitted-class registry
+    emits. Page type: Concept or Task guide. Facts: `3l7f56` and the emitted-class registry
     `*5vw8k1`.
 
 The extend README (one paragraph) is drafted last and lists `./admin`, `./public`, and
@@ -107,13 +107,13 @@ The extend README (one paragraph) is drafted last and lists `./admin`, `./public
 ### Stage 5 (the front door)
 
 1. **`why-cairn.md`.** Reader: an evaluator. Job: decide whether cairn fits. Page type: Front door.
-   Facts: the owner-tier bullets `*gknz29` (a narrow, versioned seam surface) and `*xh2mwb`
+   Facts: the owner-tier bullets `gknz29` (a narrow, versioned seam surface) and `*xh2mwb`
    (`cairn-audit` ships whole as a consumer product), and the design-agnostic claim in `CLAUDE.md`'s
    scope paragraph. One sentence covers the theme: cairn's public output is design-agnostic, and the
    engine ships one public theme contract a theme meets. No sentence describes a rule tier beyond
    "advisory on a consumer".
 2. **`docs/README.md` and the four arm READMEs.** Reader: any visitor. Job: route each reader to
-   their track. Page type: Front door. Facts: `*k439hm`, `vrt55t`, `zmih7p`, `*0xsi67`. The reference
+   their track. Page type: Front door. Facts: `k439hm`, `vrt55t`, `zmih7p`, `0xsi67`. The reference
    README gains three entries (`admin.md`, `public.md`, `public-css.md`), already written.
 3. **`docs/reference/README.md`** is stage 5's, and today's file already indexes the three
    pages.

@@ -233,7 +233,9 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
 
   Consumers must: nothing. A site scaffolded earlier ports the skip link, the toggle's
   `color-scheme` resolution, the radius-token corners, the heading levers, and the CI Node pin by
-  hand from `templates/waymark`; `docs/extend/migration-notes.md` lists each.
+  hand from `templates/waymark`; `docs/extend/migration-notes.md` lists each. A hand-built site
+  installs `daisyui` (`^5`) and `tailwindcss` (`^4`) if it lacks them, because `check:cairn` now
+  fails with a named message without them (a scaffolded site already has both).
 - The public scope's settle changes report what the audit cannot measure. A run that
   selects only public rules no longer needs the built admin stylesheet. `theme-contrast` reports an
   unmeasured finding, never a silent pass, for a theme form the audit does not model: a block with a
@@ -342,7 +344,6 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   `^5.7.46`, `vite` `^8.3.1`, and `wrangler` `^4.143.0`; the rest of the sweep is devDependencies.
   `eslint-plugin-jsdoc` moves to `65.0.0` (a dev bump; it recompiles nothing that ships). Held:
   devalue 6, TypeScript 7, Vitest 5, and `@types/node` 26. Consumers must: nothing.
-
 
 ## 0.97.0
 

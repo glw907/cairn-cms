@@ -301,9 +301,11 @@ The original decision framing, for the record:
 
 - **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
   correction round, 2026-09-28, except the two below).** Trigger for what remains: the first pass
-  after this one that edits `cairn-admin.css` or the named component, and in any case before the
-  `0.98.0` cut ships the retheme to every consumer.
-  - Coverage notes the `paint` class batched rather than blocked on: the destructive-edge contrast
+  after this one that edits `cairn-admin.css` or the named component (retargeted past the
+  `0.98.0` cut at pass C's close, because the items are cosmetic and the scoping fix moves the
+  pinned Waymark render).
+  - Coverage notes the `paint` class batched rather than blocked on (conductor ruling, pass C
+    close: cosmetic, so they ride past the `0.98.0` cut): the destructive-edge contrast
     test proves the ratio but not that `border-error` wins the cascade over the 55% field edge;
     the disabled-stock switch test covers the `:checked` form only; `::before` carries no
     `transition: none`; the bare `.alert` oracle does not prove `--alert-color` unset;
@@ -312,7 +314,7 @@ The original decision framing, for the record:
     fixture still reads `type-title font-bold` where the page heading is now 550.
   - The showcase's public `theme.css` carries an unscoped `.btn-outline` rule that reaches the
     admin's outline-button edges too, whichever order the sheets load in. Scope it to the public
-    site; pass C's public-theme work is the natural home.
+    site when a theme next touches the button recipe.
 
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
   `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
@@ -948,10 +950,10 @@ the named human gates only):**
   `0.99.0`. `src/tests/unit/audit/promotion-versions.test.ts` enforces it: it reads every
   `*PROMOTION_VERSION` constant under `src/lib/audit` and fails once the package version reaches
   one, naming the choice owed (promote and delete the constant, or re-date with a disclosed
-  changelog line). It also turns red on the `0.98.0` version commit while the three older
-  `0.98.0` promises stand (`log-event-grammar`, `log-secret-field`, the guarded-retirement arm);
-  pass C's owner sitting decides those from measured counts on the five sites. Trigger: the
-  `0.99.0` version commit.
+  changelog line). The three older `0.98.0` promises (`log-event-grammar`,
+  `log-secret-field`, the guarded-retirement arm) landed in `facc5fcf`, so the `0.98.0` version
+  commit no longer turns it red; `radius-scale` and the retired-patch arms stay advisory until
+  `0.99.0`. Trigger: the `0.99.0` version commit.
 
 - **`MarkdownEditor`'s `transformSelection` still replaces the whole document (theme identity pass
   B, 2026-09-29).** `insertLink` and `insertImage` dispatch `from: 0, to: doc.length`, the pattern
@@ -982,14 +984,6 @@ the named human gates only):**
   - The title check's two blind spots (Task 10): a `cairn health`-only title, and a title with no
     command, match nothing any report prints; and a command written inline in prose is not run
     until the page puts it in a fence. Trigger: the reset's admin-arm drafting.
-
-- **The Waymark template's `site.css` and `prose.css` cite cairn-internal documents a scaffolded
-  site does not carry (docs reset pass 1 validation, 2026-09-24).** `templates/waymark/src/theme/site.css:18,34`
-  and `src/chassis/prose.css:40` point at `docs/internal/public-design-system.md` and
-  `docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`. A designer reader followed
-  one and found nothing. Point the comments at a published page or state the rule inline. Theme
-  identity pass A fixed the same cites in `theme.css`. Trigger: the next pass that edits either
-  file (pass C's template sweep is the likely one).
 
 - **Real defects the pass 1 readers found on current pages (2026-09-24).** The pass changed no
   published page, and the reset rebuilds these pages from the container, so each is evidence for
@@ -2233,7 +2227,7 @@ the named human gates only):**
   one sentence on `IconSet` stating a path must be a filled shape on a `0 0 256 256` box
   (`src/lib/render/glyph.ts:7`, `docs/reference/core.md:1081`), shipped in the 2026-09-27 chores
   batch. Still open: redraw `flag` and `snowflake` as closed-shape paths in the showcase and the
-  template, short of the full stroke sweep across all 27 icons. Owner: theme identity pass C.
+  template, short of the full stroke sweep across all 27 icons. Trigger: when a theme next touches the icon set.
 
 - **Mechanical hardening: gate the `sideEffects` coverage of the server-only browser stubs (from the
   seams pass-two review, 2026-08-01).** `package.json`'s `sideEffects` now lists `dist/*/browser.js`, so

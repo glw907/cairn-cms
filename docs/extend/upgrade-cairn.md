@@ -72,7 +72,12 @@ owns. Do these in order, after step 3:
    until the swap deletes it.
 4. Run `npm run check:cairn`. Install `daisyui` and `tailwindcss` (both optional peers) if the run
    names one as missing. The three public rules print advisory findings and never fail the run;
-   a configured public root your tree lacks, or one a `public.exclude` path covers, does.
+   a configured public root your tree lacks, or one a `public.exclude` path covers, does. A
+   `log-event-grammar`, `log-secret-field`, or `cairn-btn-guarded` finding fails the run too, since
+   those moved to error tier. Run `npx cairn-audit` before you upgrade, then fix each finding or
+   suppress it with a directive that names the rule and gives a reason. The
+   [migration notes](./migration-notes.md) item "Fix `log-event-grammar`, `log-secret-field`, and
+   `cairn-btn-guarded` findings before you upgrade" has the fixes.
 5. Port the template fixes you want by hand: the skip-link idiom, the toggle's `color-scheme`
    resolution (including `only dark`), radius-token corners, the heading levers, and the CI Node 24
    pin.

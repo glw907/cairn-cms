@@ -307,7 +307,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   interactive-contrast, touch-targets, list-role, viewport-overflow) / 10 advisory
   (container-inset-asymmetry, form-font-parity, field-edge-alignment, border-contrast, norms-bands,
   screen-anatomy, relational-spacing, weight-budget, chip-ground-collision, motion-reduced-delay).
-  [rejected: rule count grew after this fact was filed; the audit now registers 35 rules (18 static, 17 rendered), see `f:z1rbea`]
+  [rejected: rule count grew after this fact was filed; the audit now registers 35 rules (18 static, 17 rendered), see `f:yn6lst`]
 - `f:3kvawo` Exit codes: 0 (clean), 1 (unsuppressed error-tier finding), 2 (run couldn't start/finish: bad
   flag, no server, no browser, redirect-trap refusal). Codes route through `process.exitCode`,
   never `process.exit`, so piped stdout flushes fully first. Source: `src/lib/audit/bin.ts:5-68`,

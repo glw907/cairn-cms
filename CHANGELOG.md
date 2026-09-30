@@ -1,3 +1,18 @@
+## Unreleased
+
+### Removed
+
+- The admin, editors, and extend narrative arms and the front-door pages (`docs/README.md` and
+  `docs/why-cairn.md`) are removed pending their rebuild. Every claim on them now lives in an
+  agent-facing facts container, and each arm returns as its own rebuild lands. `docs/reference/`
+  is unchanged, and `docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`, and
+  `docs/extend/choose-an-ai-posture.md` stay in place. A release cut before the rebuild ships the
+  reference arm and those three pages only. The shipped `cairn-extend` skill now points its
+  recipe table at the reference pages instead of the removed extend recipes.
+
+  Consumers must: a site scaffolded with the `cairn-extend` skill re-runs
+  `npx cairn-guidance install`, so its copy of the skill drops the links to the removed pages.
+
 ## 0.98.0
 
 <!-- release-size: minor -->
@@ -265,17 +280,6 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   names the rule and gives a reason, since each now fails `check:cairn`. Run `npx cairn-audit`
   before the upgrade to see them; the two log rules also flag `console.info` and another library's
   logger, so a false positive there is the case a suppression covers.
-
-- The admin, editors, and extend narrative arms and the front-door pages (`docs/README.md` and
-  `docs/why-cairn.md`) are removed pending their rebuild. Every claim on them now lives in an
-  agent-facing facts container, and each arm returns as its own rebuild lands. `docs/reference/`
-  is unchanged, and `docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`, and
-  `docs/extend/choose-an-ai-posture.md` stay in place. A release cut before the rebuild ships the
-  reference arm and those three pages only. The shipped `cairn-extend` skill now points its
-  recipe table at the reference pages instead of the removed extend recipes.
-
-  Consumers must: a site scaffolded with the `cairn-extend` skill re-runs
-  `npx cairn-guidance install`, so its copy of the skill drops the links to the removed pages.
 
 ### Fixed
 

@@ -49,11 +49,6 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-- **`maintainer`.** `CLAUDE.md` names the publish committer `cairn-cms[bot]`, but the commit sets
-  no committer (`src/lib/github/repo.ts:260-263`), so GitHub attributes it to the site's own App,
-  which the scaffold registers as `cairn-<slug>` (`packages/create-cairn-site/src/github/chapter.mjs:161`).
-  The harvest corrected f:5f4kmk and f:psrfdx; `CLAUDE.md` still carries the old name. Found by the
-  draft docs harvest's task 6b audit and review, 2026-09-30.
 - **`developer`.** `docs/reference/cli-cairn-media-seed.md` (lines 4, 9, 24, 82) says `vite dev`
   serves seeded media. The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`
   (`templates/waymark/scripts/dev.mjs:26-30`), which swaps `MEDIA_BUCKET` for an in-memory fake

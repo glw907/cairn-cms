@@ -2023,3 +2023,59 @@ Spend: about 0.43M in subagents plus the conductor.
   and stops before S3.
 - **Spend:** segment C's workflow 1.37M; boundary and pre-flight agents about 0.9M. The running
   total is about 6.2M plus the conductor.
+
+### Segment D (tasks 10 to 13), boundary 2026-09-29
+
+- **Task 10** accepted, no fix round (`ee4d596b`). The harness is `scripts/lab/theme-fixture.mjs` with
+  `theme-fixture-copy.mjs` and `theme-fixture-e2e/`. The fixture passes `theme-contrast` 24 of 24
+  pairs in both schemes, including the third `check:public-tokens` variant. `test:theme-fixture` is
+  in `design.yml` after the Chromium install and stays out of `check:close`, following
+  `test:reskin`'s precedent.
+- **Task 11** accepted, no fix round (`b7967ca4`): `public-css.md` and the render registry entries.
+- **Task 12** accepted after one fix round (`e220ecc5`, `802cd85f`): the `cairn-public` skill (29
+  catalogue pages) and `check:public-skill`.
+- **Task 13** needed a conductor decision after one fix round: the chassis README's `cairn-*`
+  ownership paragraph still made a false catch-all claim. A combined closing round (`7d4e205c`)
+  fixed that paragraph, the `check-public-scope.test.ts` expectation task 10 left at two variants
+  (its targeted gate never ran the unit suite), and fact `f:xv2ien`'s third run. The round was
+  reviewed and accepted.
+- **Segment D CI (`7d4e205c`):** five workflows green, and e2e red only on the ten planned
+  `styleguide-*` mismatches. The boundary passes.
+
+### Segment E (S1, S2, task 14), 2026-09-29
+
+- **Task 14 (settle, four runs, no escalation):**
+  - (a) `5cee7879`, the seven filed items: the hero title reads the levers, `alert` gains a preview,
+    an engine test covers island props after a `build()` clears them, the SKILL.md promotion promise
+    goes, `public-literals` skips quoted strings, and two comments are corrected.
+  - (b) `bc97de69`, from the S2 probes: `runStatic` reads the admin sheet only when a selected rule
+    needs it (a public-only run no longer needs the built admin CSS), plus eight guidance items.
+    `cairn-audit.md`'s two advisory rows also drop the promotion promise.
+  - (c) `7f44a72b`, from S1: kit headings keep the identifier's case, the faces block names tokens,
+    the table cell's code fence renders, the button row is spaced, and the CTA placement line lands.
+  - (d) `7a284dfd`, from probe 2b: the theme directory contents, a starter block
+    (`references/theme-starter.md`), the audit placement, the rename touchpoint in `app.html`, the dark
+    `:root` repetition, and the scale-key defaults.
+- **S1:** two CI regenerations (`4ee09e47`, then `a349aa73` after 14c) each rewrote exactly the ten
+  `styleguide-*` PNGs. The fresh-context `visual-verifier` returned PASS-WITH-LIST: every baseline
+  difference is explained by the registry kit, and the fixture meets the responsive standard at
+  1440 and 390 in both schemes with its identity consistent. Its F1, F2, and two pre-existing
+  styleguide defects went to 14c, and the conductor confirmed the 14c render on the new baseline.
+  F3 (the fixture's wide uppercase nav wraps "ADMIN" at 390) takes no action: it is the fixture's
+  own tracking over Waymark's header, and the fixture is not shipped chrome.
+- **S2:**
+  - Probe 3 (built-in `Notice.svelte`) passed: 0 findings, 113 scanned. `--probe` computed
+    Waymark `oklch(0.25 0 0)` / 8px against the fixture `oklch(0.93 0.01 260)` / 0px, each equal to
+    its theme's tokens, and the conductor read both screenshots.
+  - Probe 2 (new theme) passed only after audit findings the guidance did not prevent (the CTA
+    tokens, a one-block ink, a derived warning ink under AA). It also hit the admin-sheet defect.
+    The gaps were fixed in 14b.
+  - The one sanctioned rerun, probe 2b, passed with 0 findings on its first audit (112 scanned) and
+    named six completeness gaps, fixed in 14d.
+- **To the close:** the CHANGELOG must not copy the spec's "promote at the first minor cut" promise.
+  No decision makes it, and every shipped page now says the three public rules are advisory on a
+  consumer.
+- **Environment learned:** `/tmp` is a small shared tmpfs. The template arm and the probes need
+  `TMPDIR` on disk (the harness header now says so).
+- **Spend:** about 9.5M in subagents plus the conductor, against the 29M ceiling. The 80% flag
+  (23.2M) did not trip.

@@ -13,21 +13,24 @@ states, `relink.json`). Executors read the named sections. Where this plan and a
 stop and report. Review records: `docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`
 (owed items FV-10, FV-11, and the owed errata), the plan review
 (`2026-09-30-draft-docs-2a-plan-review-{contract,mechanics,risk}.md`), and its fold
-(`2026-09-30-draft-docs-2a-plan-fold.md`, which carries one owed spec erratum).
+(`2026-09-30-draft-docs-2a-plan-fold.md`, whose two owed items task 4 lands).
 
-**Outline:** `docs/internal/outlines/extend.json` (committed, 25 pages; reviewed by Geoff on the
-R10 page with this plan, per the parent's flow step 1). It carries the whole arm, 2b's pages
-included, and is deleted at the 2b merge. The R10 page marks the sweep's two added pages,
-`configure-media` and `gate-your-site-with-cairn-audit` (both batch `2b`), keep-or-cut (S5). A
-cut page's `factIds` and `covers` move to the page Geoff names, in the outline fold commit,
-before task 2 assigns map slugs; the ledger records that commit, and task 2 cites it. Where an
-outline rearm's `action` text and this plan disagree on a target, this plan governs.
+**Entry condition (owner ruling):** task 1 ran before outline approval; task 2 waits for Geoff's
+approval of the outline and this plan on the R10 page
+https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds (the parent's flow step 1), recorded in the ledger
+row. **Outline:** `docs/internal/outlines/extend.json` (committed, 25 pages). It carries the whole
+arm, 2b's pages included, and is deleted at the 2b merge. The R10 page marks the sweep's two added
+pages, `configure-media` and `gate-your-site-with-cairn-audit` (both batch `2b`), keep-or-cut (S5).
+A cut page's `factIds` and `covers` move to the page Geoff names, in the outline fold commit, before
+task 2 assigns map slugs; the ledger records that commit, and task 2 cites it. Where an outline
+rearm's `action` text and this plan disagree on a target, this plan governs.
 
 **Approach:** Task 1 (done) taught the page chain to read the outline. Tasks 2 to 4 build option
 coverage, teach the chain map rows and design friction, and land the release sweep with the owed
-errata, so the pilot measures the mechanisms with the pages. Then re-arm extend, run the pilot,
-take the checkpoint to Geoff, run the other five 2a pages on the chain he picks, and close with a
-consistency read and the relink. Plans specify outcomes and acceptance, never implementation code.
+errata, so the pilot measures the mechanisms with the pages. Then re-arm extend, run the pilot, take
+the checkpoint to Geoff, run the other five 2a pages on the chain he picks, and close with a
+consistency read and the relink. The planning-phase gap sweep is done (record
+`docs/superpowers/research/2026-09-30-extend-gap-sweep.md`). Plans specify outcomes, never code.
 
 **Pass class:** mixed. Tasks 1, 2, and 3 are `engine-logic`. Task 4 is `docs`. Task 5 is `docs`,
 with `engine-logic`'s gate for its test edits. Tasks 6, 8, and 9 are `docs` (the register chain
@@ -35,23 +38,11 @@ is their review). Task 7 is conductor-led. `code-simplifier:code-simplifier` run
 close (task 10) over the pass's changed JavaScript and TypeScript in this repo; the dotfiles
 runner and helper are outside its scope (spec, "What stage 2a inherits").
 
-## Code-first gap sweep (planning phase, done)
-
-Finders, deep readers, and independent verifiers swept the extend reader's surface for what the
-old pages omitted: 131 `[verified]` facts filed in `docs/internal/facts/extend.md`, 4 corrected
-facts, 2 added outline pages, and 12 code defects sent to `main`'s friction log (`bd8ab1fe`),
-never into a fact. It cost 3.31M (measured). Record:
-`docs/superpowers/research/2026-09-30-extend-gap-sweep.md`. Task 4's erratum makes it a standing
-step in stages 3 to 5, each budgeted from the measured 3.3M scaled to its arm's surface.
-
 ## Owner rulings (Geoff, 2026-09-30)
 
 - **Ceiling:** 25M, flag at 20M (supersedes S9's 24M and S6's 18M).
 - **New pages:** the sweep's pages are 2b pages; Geoff keeps or cuts each on the R10 page (S5).
-  The pilot and 2a's page list do not change.
-- **Pilot:** the pilot of six holds (S4).
-- **Sequencing:** task 1 ran before outline approval; tasks 2 onward wait for his R10 approval
-  of the outline and this plan.
+  The pilot of six (S4) and 2a's page list do not change.
 - **Build while drafting** (S1), under the lean guard (S2); drafting is a design review of cairn
   (S7); the release sweep runs on capability releases only, capped at 1M per cut, never blocking
   the cut (S8).
@@ -95,18 +86,18 @@ behavior, it states the limitation as a filed `[verified]` fact."
   writes friction entries for DAD-1, EXB-4, and EXB-5 on the branch, each re-checked at HEAD and
   citing its fact ids (the sweep filed them as facts, so the triage stream never saw them; spec,
   "What stage 2a inherits"), and commits them. Task 5's gate covers the merge.
-- Tasks 6 and 8: the `docs-page-chain` workflow by name, `worktree` set to this worktree,
-  `inFlight: 3`, `outline: "docs/internal/outlines/extend.json"`, pages as `{id, path, track}`
-  plus the `extraChecks` above, the gate `npm run check:docs-gate -- --page {page} --brief
-  {brief}`, `gateLane: "light"`, `track: "extend"`. Task 6 sets `bothReviewers: true`. Task 8
-  sets it per Geoff's answer at task 7.
+- Tasks 6 and 8: the `docs-page-chain` workflow by name, `worktree` set to this worktree, `inFlight:
+  3`, `outline: "docs/internal/outlines/extend.json"`, pages as `{id, path, track}` plus the
+  `extraChecks` above, the gate `npm run check:docs-gate -- --page {page} --brief {brief}`,
+  `gateLane: "light"`. Task 6 sets `bothReviewers: true`. Task 8 sets it per Geoff's answer at task
+  7.
 - **After each run** (tasks 6 and 8): the conductor hands the run's records to one
   `cairn-implementer`, which runs the whole-tree `check:docs-gate`, writes them to a stage
   record under `docs/superpowers/research/` (per page: status, round verdicts, cross-regression
   flag, rows received and disposed, `frictionFiled`, and any scoped-review verdicts), and commits
-  the files the records name (pages, briefs, fact containers, the map, the friction log, the index) with
-  the stage record. One `diff-reviewer` read checks the file set only; the register chain
-  reviewed the prose. Tasks 7, 9, and 10 read that record, never the tool result.
+  the files the records name (pages, briefs, fact containers, the map, the friction log, the
+  index) with the stage record. One `diff-reviewer` read checks the file set only (the register
+  chain reviewed the prose). Tasks 7, 9, and 10 read that record, never the tool result.
 - Task 7: conductor-led, with one Sonnet agent for the owner fold and one for the R10 page.
 - Task 9: one Opus 5.5 consistency agent, then one `cairn-implementer` and `diff-reviewer` chain
   applying its batch and the relink restorations.
@@ -133,18 +124,17 @@ behavior, it states the limitation as a filed `[verified]` fact."
 The planned total sits at 78 percent of the ceiling. The pilot measures which rate holds, and
 task 7 re-derives task 8's share and the mechanisms' 1.2M estimate before task 8 dispatches.
 
-**Counting rule:** the conductor session's `/cost`, plus each Agent dispatch's usage block, plus
-each workflow run's `spent`. `/cost` replaces the estimated conductor lines. A run's `spent` is
-the `budget.spent()` delta across the run, returned by the runner as `pass-execute.js` returns it;
-task 3 proves the field and records its unit. If that unit is not the shares' total tokens, the
-per-run source is the conductor's `/cost` delta across the run instead. The pilot's
-per-page cost is task 6's `spent` divided by six, a re-dispatched page's cost included. No
-per-agent split is measured: with three pages in flight, no source isolates one agent.
+**Counting rule:** the conductor session's `/cost` (`/usage`), read at each boundary, is the only
+running total against the ceiling and the flag; it already includes subagent and workflow-agent
+tokens (`2026-09-26-draft-docs-pass-0-1.md:504-505`). Agent usage blocks and a run's `/cost` delta
+are attribution only, never added to it. The pilot's per-page cost is the `/cost` delta across task
+6's run, the conductor idle, divided by six, a re-dispatched page's cost included. No per-agent
+split is measured: with three pages in flight, no source isolates one agent.
 
-**Checkpoints and segments:** S1 is tasks 1 to 4 (task 1 done); S2 is tasks 5 to 7; S3 is tasks
-8 to 10. The S2 boundary is the pilot checkpoint: STATUS is written and Geoff is asked the
-parent spec's one combined question before task 8 dispatches. Every boundary is a gate-green
-commit; after tasks 6 and 8, that is the post-run commit above.
+**Checkpoints and segments:** S1 is tasks 1 to 4 (task 1 done); S2 is tasks 5 to 7; S3 is tasks 8 to
+10. The S2 boundary is the pilot checkpoint: STATUS is written and Geoff is asked the parent spec's
+one combined question before task 8 dispatches. Every boundary is a gate-green commit; after tasks 6
+and 8, that is the post-run commit above, and task 7's owner-fold commit is gated the same way.
 
 ## Global constraints
 
@@ -186,20 +176,15 @@ commit; after tasks 6 and 8, that is the post-run commit above.
 
 ## Review focus
 
-1. **The walk stops early, runs wide, or drops inline members.** Task 2's fixtures pin all three.
-2. **Shared map writes under three pages in flight.** The map rule's edit order keeps a sibling's
-   gate green; a red on a row naming another in-flight page's slug does not count against this
-   page (the parent's whole-tree rule).
-3. **Merges.** A merged page must keep an absorbed page's facts (the fact read's `factIds` check)
-   and must not duplicate a neighbor (`outOfScope`, then task 9's `overlap` class).
+**Shared map writes under three pages in flight.** The map rule's edit order keeps a sibling's
+gate green; a red that still occurs costs a redraft round, which the stage record notes.
 
 ## Tasks
 
 ### Task 1: the page chain reads the outline and links each page into the index (done)
 
-**Pass class:** `engine-logic`. Accepted (dotfiles `8497a08`, `de040f4`; cairn `8755099e`). The
-helper's lock handles more races than it needs, an S2 instance the post-mortem records; any
-simplification is a separate dotfiles change outside this pass.
+**Pass class:** `engine-logic`. Accepted (ledger). The helper's lock handles more races than it
+needs, an S2 instance the post-mortem records; any simplification is outside this pass.
 
 ### Task 2: option coverage
 
@@ -245,15 +230,16 @@ not call the docs gate); the committed map beside the fact container
   slug and the rows whose fact id is in its `factIds` (FV-11).
 
 **Acceptance:** fixtures are synthetic declaration files in a temp directory, never the real
-`dist`. The gate fails, naming the path and its export: a new member planted directly on the
-inline `CairnAdapter.editor` object with no row; one inside a named type nested under `editor`;
-one reached only through an array element type; and one reached only through a generic
-constraint. Two inline literals sharing a member name yield two rows. A `*Data` member and an
-engine component prop, both reachable, are absent from the generated set. The gate fails a row
-for a removed path, a row naming a missing fact id, an `exclude` with no reason, a pending count
-above the constant, and a `pending` row whose slug names no committed page. A retag fixture fails
-with the row unchanged and passes with the row rewritten and the constant raised. The gate passes
-on the committed map; the counts are in the ledger.
+`dist`. The gate fails, naming the path and its export: a new member planted directly on the inline
+`CairnAdapter.editor` object with no row; one inside a named type nested under `editor`; one reached
+only through an array element type; one only through a generic constraint; and one only through
+`Partial<Named>` or `Record<string, Named>`. Two inline literals sharing a
+member name yield two rows. A `*Data` member and an engine component prop, both reachable, are
+absent from the generated set. The gate fails a row for a removed path, a row naming a missing fact
+id, an `exclude` with no reason, a pending count above the constant, and a `pending` row whose slug
+names no committed page. A retag fixture fails with the row unchanged and passes with the row
+rewritten and the constant raised. The gate passes on the committed map; the counts are in the
+ledger.
 
 ### Task 3: the page chain carries map rows and design friction
 
@@ -284,24 +270,29 @@ untouched.
   step. The register editor and the figure verifier do not report. No new agent.
 - **Figures.** A figure page's drafter prompt names the `cairn-figure` skill file
   (`~/.claude/skills/cairn-figure/SKILL.md`) as a file to read and follow.
-- **Cost.** The runner returns `spent`, the `budget.spent()` delta across the run.
+- **Cost.** The runner returns `spent`, the `budget.spent()` delta across the run. Its unit is
+  "output tokens spent this turn across the main loop and all workflows" (the runtime doc, as
+  PC-1 quotes it), so it is a relative measure only, never a count against the ceiling.
 - The header comment documents the rows, the friction route, and `spent`.
 
 **Acceptance:** a dry run on one pilot page with stubbed agents shows the map path, the slug, and
 the selection rule in the page-inputs prompt; the retag order in the page-inputs and fact-read
 prompts; the `cairn-figure` path in a figure page's drafter prompt; the stubbed `rowsReceived`
 and `rowsDisposed` in the record; stubbed `frictionFiled` values from page inputs, the drafter,
-and the fact read in the record, and none from the register editor; and `spent` in the return,
-with its unit recorded in the task report. The dotfiles gate is green.
+and the fact read in the record, and none from the register editor; and `spent` present in the
+return with a stubbed `budget`. The dotfiles gate is green.
 
 ### Task 4: the release sweep and the owed errata
 
 **Pass class:** `docs`. **Gate:** the dotfiles repo gate (`scripts/check.sh`) for the skill edit;
-the diff-reviewer checks the errata against the fold record's "Owed errata".
+the diff-reviewer checks the errata against the 2a plan fold's "Owed errata"
+(`2026-09-30-draft-docs-2a-plan-fold.md`).
 
 **Files:** `~/.dotfiles/claude/.claude/skills/cairn-release/SKILL.md` (committed in
 `~/.dotfiles`); `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`;
-`docs/superpowers/research/2026-09-30-docs-code-sync-prior-art.md`.
+`docs/superpowers/research/2026-09-30-docs-code-sync-prior-art.md`;
+`docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`;
+`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`.
 
 **Outcomes:**
 - **`cairn-release` carries the release sweep** (spec, "Mechanism 2", every item in its
@@ -317,6 +308,9 @@ the diff-reviewer checks the errata against the fold record's "Owed errata".
 - **The prior-art record's erratum** (fold record, "Owed errata"): its lines 38 to 41 stop reading
   the sweep's corrected facts as resolved-but-stale drift; they were wrong when filed. Its
   missing-sources item is already closed by the addendum (FV-6).
+- **The 2a plan fold's owed items:** the sync spec's Acceptance clause "and zero across all six
+  is read there as a prompt failure" is struck with a status-line note citing PR-12; the sync
+  fold record's FV-11 row gains a one-line amendment (rows reported beside each page's total).
 
 **Acceptance:** the skill carries every item in "Mechanism 2" and the `v0.98.0` seed; each
 erratum lands and the stage flow names the planning-phase sweep; the dotfiles gate is green.
@@ -371,21 +365,22 @@ flag, its rows received and disposed, and its `frictionFiled`. A figure page get
 **Acceptance:** each page is `accepted`, or escalated and resolved by a re-dispatch (page inputs
 re-run for a stranded row) or a recorded conductor ruling before task 7; `check:provenance` green
 on each brief; the option gate green with no pending row naming a pilot slug; each page's
-`rowsReceived` matches the count at the pre-pilot commit, a mismatch noted in the stage record;
-the post-run commit and the run's `spent` in the ledger.
+`rowsReceived` matches its selection count, which the post-run implementer computes at the
+pre-pilot commit (`git show <sha>:<map>`) and writes beside it, a mismatch noted in the stage
+record; the post-run commit and the run's `/cost` delta in the ledger.
 
 ### Task 7: the pilot checkpoint
 
 **Conductor-led.**
 
 - The conductor re-derives every share per the parent spec's "Pilot checkpoint", from the stage
-  record and the run's `spent`: the per-page cost; task 8's share scaled from the pilot's
+  record and task 6's `/cost` delta: the per-page cost; task 8's share scaled from the pilot's
   per-page cost by outline `factIds` (the pilot averages about 57 per page, task 8's pages about
   26), not a flat mean; the cross-regression rate beside its qualifying-page count, where a page
-  qualifies when exactly one of the register editor and the fact read returned `fix` in round 1
-  (the figure verifier does not count); the full-scope total, which must sit under the 20M flag;
-  and the mechanisms' measured cost against their 1.2M, the release sweep's excluded since the
-  pilot never exercises it.
+  qualifies when exactly one of the register editor and the fact read returned `fix` in round 1 (the
+  figure verifier does not count); the full-scope total against the 20M flag, where at or over the
+  flag the combined question carries it; and the mechanisms' measured cost against their 1.2M, the
+  release sweep's excluded since the pilot never exercises it.
 - The checkpoint reports, per pilot page, the map rows received and disposed beside the page's
   total (FV-11), and the `frictionFiled` entries per page.
 - A Sonnet agent publishes the three owner-read pages on one R10 page (`scripts/docs-review/`).
@@ -395,12 +390,14 @@ the post-run commit and the run's `spent` in the ledger.
   sweeps of stages 3 to 5 priced at the measured 3.3M each, scaled to their surfaces (up to about
   7M more against R8's 30M). The same question asks whether the task 10 merge is pre-authorized.
 - A Sonnet agent diffs his saved version against the repo, applies it with the briefs, runs the
-  scoped reviews, commits, and reports; the conductor turns any note that generalizes into a rule
-  where it runs (register, drafter prompt, or runner). A runner change takes task 3's gate and a
-  `diff-reviewer` read.
+  scoped reviews and `npm run check:docs-gate` through `cairn-run-gate` (light lane), commits, and
+  reports; one `diff-reviewer` reads the fold's file set. The conductor turns any note that
+  generalizes into a rule where it runs (register, drafter prompt, or runner); a runner change
+  takes task 3's gate and a `diff-reviewer` read.
 
-**Acceptance:** his answer and the fold's commit recorded in the ledger; no task 8 dispatch before
-the answer.
+**Acceptance:** his answer and the fold's gate-green commit recorded in the ledger; the
+scoped-review verdicts in the stage record, any `fix` applied before the commit; no task 8
+dispatch before the answer.
 
 ### Task 8: the rest of 2a
 
@@ -414,9 +411,9 @@ the answer.
 
 ### Task 9: consistency read and relink
 
-**Pass class:** `docs`, with `engine-logic`'s gate for any script edit. **Gate:** the string
-`node scripts/checks/gate-tier.mjs --range <base>..HEAD` prints for the task's diff, since
-relinks reach `src/lib`, showcase code, and emitted files the docs gate cannot see.
+**Pass class:** `docs`, with `engine-logic`'s gate for any script edit. **Gate:** the string `node
+scripts/checks/gate-tier.mjs --range <base>..HEAD` prints, `<base>` being task 8's post-run commit
+(ledger), since relinks reach `src/lib`, showcase code, and emitted files the docs gate cannot see.
 
 - One Opus 5.5 agent reads the 11 new pages, the interim index, and the three kept pages for
   terms (against the outline's term list), cross-links (against its `crossLinks`), overlap, and
@@ -434,9 +431,10 @@ relinks reach `src/lib`, showcase code, and emitted files the docs gate cannot s
   `docs/reference/auth-channel.md:38`; and the `vocabularySaveAction` path at
   `docs/reference/sveltekit.md:1207`. The code comments stay in the log for an engine pass.
 
-**Acceptance:** the record committed under `docs/superpowers/research/` with each finding applied
-or refused with a reason; the gate green; every `relink.json` entry tagged `2a` shows its
-restoring commit, and the diff-reviewer confirms none is left open.
+**Acceptance:** the record committed under `docs/superpowers/research/` with each finding applied or
+refused with a reason; the scoped-review verdicts in the stage record, any `fix` applied before the
+commit; the gate green; every `relink.json` entry tagged `2a` shows its restoring commit, and the
+diff-reviewer confirms none is left open.
 
 ### Task 10: close
 
@@ -478,6 +476,6 @@ Run `cairn-pass`'s close:
 | Planning: ROADMAP initiative | `13fa8195` | done | in the measured planning lines |
 | Planning: sync spec, review, folds | `21898c5f` to `9ac777b2` | approved (S1 to S9) | in the measured planning lines |
 | 1 | cairn `8755099e`; dotfiles `8497a08`, `de040f4` | accept | in the measured planning lines |
-| R10 approval and outline fold (keep or cut: `configure-media`, `gate-your-site-with-cairn-audit`) | | | |
+| R10 approval (https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds) and outline fold (keep or cut: `configure-media`, `gate-your-site-with-cairn-audit`) | | | |
 
 ## Post-mortem

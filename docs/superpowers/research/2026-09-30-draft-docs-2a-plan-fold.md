@@ -89,3 +89,27 @@ the spec's "Mechanism 2" for the release-sweep items instead of restating them.
   one-line precedent covers the need); PR-12's evidence-tied friction count (no source; PR-3 covers
   the risk). PM-6 removed a mechanism (the map rows through the outline helper).
 - **Line count:** 484 before, 483 after.
+
+## Second fold
+
+**Input:** `2026-09-30-draft-docs-2a-plan-fold-verification.md` (FV-1 to FV-13: 4 majors, 9
+minors), at `3eaa8bf9`, with the conductor's rulings on FV-1, FV-2, FV-3, FV-4, FV-8, and FV-13.
+
+| Id | Disposition | What changed |
+| --- | --- | --- |
+| FV-1 | Folded | The counting rule rests on the recorded fact (`2026-09-26-draft-docs-pass-0-1.md:504-505`): `/cost` (`/usage`) is the only running total against the 25M ceiling and 20M flag; Agent usage blocks and a run's `/cost` delta are attribution only, never added. Per-page cost is the `/cost` delta across task 6's run divided by six, the `factIds` scaling for task 8 kept. Task 3 keeps `spent`, states its unit from PC-1's runtime-doc quote as a relative measure, and its acceptance shrinks to "present with a stubbed `budget`". Tasks 6 and 7 read the `/cost` delta, not `spent`. |
+| FV-2 | Folded | Task 4's Files add the sync spec and the sync fold record; one outcome strikes the spec's "zero across all six is read there as a prompt failure" with a status-line note citing PR-12 and adds the FV-11 amendment line to the sync fold record. The gate names the 2a plan fold's "Owed errata"; the header says two owed items. |
+| FV-3 | Conductor's; plan part folded | The R10 URL sits in the header's new entry condition and the ledger row; the entry condition absorbs the "Sequencing" owner ruling. STATUS on `main` is the conductor's. |
+| FV-4 | Folded | Task 7's fold agent runs `check:docs-gate` through `cairn-run-gate` (light lane) before committing, and one `diff-reviewer` reads the fold's file set; the acceptance says gate-green, and "Checkpoints and segments" names the commit. |
+| FV-5 | Folded | Review focus reworded: a sibling red that still occurs costs a redraft round, noted in the stage record. |
+| FV-6 | Folded | Task 9's `<base>` is task 8's post-run commit from the ledger. |
+| FV-7 | Folded | Top-level `track: "extend"` dropped from the chain call. |
+| FV-8 | Folded | Task 7 compares the full-scope total with the flag; at or over it, the combined question carries it. |
+| FV-9 | Folded | Task 2 adds a fixture reached only through `Partial<Named>` or `Record<string, Named>`. |
+| FV-10 | Folded | The post-run implementer computes each pilot page's selection count at the pre-pilot commit and writes it beside `rowsReceived`. |
+| FV-11 | Folded | Tasks 7 and 9 acceptance check the scoped-review verdicts in the stage record, any `fix` applied before the commit. |
+| FV-12 | Folded here | The third citation, the step each mechanism rides: `spent` rides the runner's return (`docs-page-chain.js:788`); `rowsReceived` and `rowsDisposed` ride the page-inputs schema (`PAGE_INPUTS_SCHEMA`); `check:options` rides `check:close` (`package.json:83`); the post-run commit and stage record ride the conductor's post-run dispatch after each chain run. |
+| FV-13 | Folded | The gap-sweep section is cut to one sentence in the Approach citing its record (its counts live in the record and the ledger's 3.31M row; task 4 carries the standing-step erratum; the known-defects table keeps `bd8ab1fe`). Review focus keeps item 2 only; task 2's fixtures and the fact read's `factIds` check and task 9's `overlap` class already enforce 1 and 3. |
+
+**Measures:** 13 findings, 12 folded in the plan or this record, 1 (FV-3) the conductor's with its
+plan part folded. New mechanism: none. Line count: 483 before, 481 after.

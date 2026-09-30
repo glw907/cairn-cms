@@ -339,6 +339,32 @@ the diff-reviewer checks the errata against the 2a plan fold's "Owed errata"
 **Acceptance:** the skill carries every item in "Mechanism 2" and the `v0.98.0` seed; each
 erratum lands and the stage flow names the planning-phase sweep; the dotfiles gate is green.
 
+### Task 4b: the workstation infra carries the system (Geoff, 2026-09-30)
+
+**Pass class:** `docs` for prose edits, `engine-logic`'s gate for any tool or runner edit. **Runs
+after task 4** (tasks 3, 4, and 4b all edit `~/.dotfiles`). **Gate:** `bash
+~/.dotfiles/scripts/check.sh`, `claude-tooling-sync verify`, and, for any cairn-cms edit, `npm run
+check:docs-gate` (light lane).
+
+**Outcomes:**
+- **Audit.** One agent inventories every workstation artifact that executes part of the docs-code
+  sync system (skills, agent definitions, workflows, runners, the global and cairn-cms `CLAUDE.md`,
+  `~/.claude/docs`, the repo's internal docs) and checks each against the shipped mechanisms: the
+  facts container and its tags, the option map and `check:options` with the map rule and FV-10 retag
+  order, the page chain's rows and friction route, the release sweep, and the S7 design-friction
+  triage. It returns each gap with `file:line`, the executing step it belongs to, and the strongest
+  form (tool, runner, agent definition or skill, then `CLAUDE.md`), with a checklist the close
+  re-runs. Known candidates to confirm or refuse: `cairn-implementer` (an engine change adding a
+  public option files its fact and map row in the same change), `cairn-pass`'s close step 5,
+  `diff-reviewer`'s docs check, cairn-cms `CLAUDE.md`'s docs section (`check:options`), and whether
+  `site-pass` or `engine-consult` need anything.
+- **Fixes.** One implementer lands every accepted gap in its strongest form; each rule lands once,
+  where it executes, and a side doc is never the only home.
+
+**Acceptance:** the audit record committed under `docs/superpowers/research/`, each gap fixed or
+refused with a reason; the gates green; one `diff-reviewer` read over both repos' diffs. Task 10
+re-runs the checklist after the friction route's close shape lands.
+
 ### Task 5: re-arm extend
 
 **Pass class:** `docs`, with `engine-logic`'s gate for the test edits. **Gate:** `npm run
@@ -478,6 +504,7 @@ Run `cairn-pass`'s close:
   must:` line to re-run `npx cairn-guidance install`, which the diff-reviewer checks.
 - The outline's `redirects` written as redirect rows into
   `docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`.
+- Re-run task 4b's infra checklist against the close state and fix any gap it finds.
 - **Design friction (S7):** the fold agent, never the conductor, reconciles every `frictionFiled`
   entry in the stage records against the log, verifies each against the code, and triages
   complete-or-move under the log's rules: routed to an engine pass through the `ROADMAP.md` tier

@@ -156,11 +156,11 @@ index are priced at about twice their whole-page share. Each stage adds about 1M
 the outline, the consistency read, the owner fold (its R10 review pages included), and the close; stage 2 adds 2M, since 2a and 2b
 each carry a consistency read and a close.
 
-**Pages.** Admin 8, editors 7, and extend 30, each excluding the arm README (stage 5 owns it) and
-excluding extend's two per-version records (`migration-notes.md`, `upgrade-cairn.md`), which stay
+**Pages.** Admin 8, editors 7, and extend 30, each excluding the arm index (the harvest deleted
+the arm READMEs, and each rebuilding stage recreates its own) and excluding extend's two per-version records (`migration-notes.md`, `upgrade-cairn.md`), which stay
 maintained in place. The front door is `why-cairn.md` plus five indexes (`docs/README.md` and the
 four arm READMEs). The root `README.md` is out of scope. Reference is 29 pages, checked in place
-outside the chain; its README is stage 5's. Outlines may merge pages; the counts here do not
+outside the chain; its README stays in place and is stage 5's. Outlines may merge pages; the counts here do not
 assume it.
 
 | Stage | Scope | Derivation | Planned |
@@ -201,8 +201,7 @@ later stage, waits on Geoff's answer to the pilot checkpoint question.
 **Every stage merge leaves `main` releasable.** Releases keep the triggers in `CLAUDE.md`
 (a consumer needs the change now, or a coherent capability lands), so a cut can fall between stage
 merges and ship some arms rebuilt and some not. A mixed register is a polish cost. Broken paths and
-anchors are correctness costs, and the merge gate and the outline's contract table (below) remove
-those. cairn.pub's pin bump stays cairn.pub's own pass. Each stage merge adds a `## Unreleased`
+anchors are correctness costs, and the merge gate and `relink.json` (below) remove those. cairn.pub's pin bump stays cairn.pub's own pass. Each stage merge adds a `## Unreleased`
 entry listing renamed and removed doc paths, with a `Consumers must:` line when a shipped skill,
 `claude/` file, or scaffold template pointed at one. The harvest's `## Unreleased` entry names the
 removal once, with its `Consumers must:` line; later stage entries list only the paths they restore
@@ -311,17 +310,18 @@ turns up a structural problem.
 ## Each rebuilt stage's flow
 
 1. **Outline**, at `docs/internal/outlines/<arm>.json`, reviewed as rendered cards with edits
-   folded back to the JSON; the stage's plan cites it by path and commit. A page list drawn fresh from the jobs the arm serves, one line
-   per page with its page type, the two exemplars assigned to that page type (named on each page's
-   line), and whether it keeps or gains a figure. It carries the arm's term list and planned
-   cross-links. Its contract is `relink.json`, which replaces the per-stage contract table grepped against
-   today's pages: for every rename or removal, the redirect row for cairn.pub, and every inbound
-   reference for the old path (other arms, `skills/`, `claude/`, the scaffold template, `conditions.ts`, and check scripts
-   that pin a page). It also lists every heading slug a shipped binary, `conditions.ts`, or a gate
-   names; those pages keep their paths and headings verbatim, and the chain passes them as
-   `pinned`. `is-it-working.md` keeps its path. Geoff reviews and edits the outline on that stage's
-   R10 page and approves it with the plan; the conductor reads back his saved version and applies
-   the diff to the plan before execution starts.
+   folded back to the JSON; the stage's plan cites it by path and commit. A page list drawn fresh
+   from the jobs the arm serves, one line per page with its page type, the two exemplars assigned
+   to that page type (named on each page's line), and whether it keeps or gains a figure. It
+   carries the arm's term list and planned cross-links. It consumes the `relink.json` entries keyed
+   to its stage, which replace the per-stage contract table grepped against today's pages: for
+   every rename or removal, the redirect row for cairn.pub and every inbound reference for the old
+   path (other arms, `skills/`, `claude/`, the scaffold template, `conditions.ts`, and check
+   scripts that pin a page). The outline itself lists every heading slug a shipped binary,
+   `conditions.ts`, or a gate names; those pages keep their paths and headings verbatim, and the
+   chain passes them as `pinned`. `is-it-working.md` keeps its path. Geoff reviews and edits the
+   outline on that stage's R10 page and approves it with the plan; the conductor folds his saved
+   edits back into `docs/internal/outlines/<arm>.json`, and the plan cites the resulting commit.
 2. **Pilot (stage 2a only).** The first six pages through the chain are among the arm's hardest,
    chosen on purpose to measure the chain at its costliest (R5 still governs arm order). Both
    reviewers re-read after every redraft, and each page's record carries the cross-regression flag
@@ -347,8 +347,7 @@ turns up a structural problem.
 7. **Merge and checkpoint.** The arm branch passes the docs gate plus `make -C tool check`, merges,
    appends its rebuilt page paths to the brief-coverage list, and its freeze lifts (extend's at the
    2b merge). The arm READMEs and `docs/README.md` are deleted; each rebuilding stage recreates
-   its index. The merge waits for Geoff's read and
-   its fold. The read is a wait, never a gate on the arm's quality bar.
+   its index. The merge waits for Geoff's read and its fold. The read is a wait, never a gate on the arm's quality bar.
 
 ## The page chain
 

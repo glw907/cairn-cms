@@ -1,0 +1,1120 @@
+Residue printout for the harvest deletion (task 9). Agent-facing.
+
+Discovery (run over the tree after the deletion and the repairs, this file excluded):
+  git grep -nIE 'docs/(admin|editors|extend)/|why-cairn|docs/README' -- ':!docs/superpowers'
+  git grep -nIE '(^|[^A-Za-z0-9_-])(<each deleted basename>)\.md' -- ':!docs/superpowers'
+  git grep -nIE '(admin|editors|extend)/README|\.\./README\.md|\(README\.md|\(\./README' -- ':!docs/superpowers'
+
+Counts by class (lines):
+  H    2308  dated history (spec: CHANGELOG.md, docs/HISTORY.md, docs/STATUS.md, docs/internal/record/**, docs/internal/his
+  U     254  cairn.pub/docs URLs and the goldens, testdata, and design records that carry them (spec: tool/**/testdata/**, 
+  S     117  shipped-contract constants and the tests that mirror them (spec: check_referrer.go, conditions.json, shipped-a
+  F      52  the facts files' page-path section headings (spec).
+  E      28  non-link mentions in docs/internal/engine-rulings.md (spec; its Markdown link at line 593 was repaired to a pl
+  A     170  a hit naming an arm directory or a kept-set page, not a deleted page (spec).
+  G      24  a register, brief, or freeze-statement line naming a page a stage will rebuild, left in place and entered in r
+  N      85  a narrowed gate assertion or allowlist entry recorded in relink.json (spec: "Every repaired link, narrowed ass
+  T      98  unit-test fixtures that pin a recorded narrowing: in-memory trees and deletion lists that use the gate's own a
+  V      10  the harvest verifier, its unit test, and their fixtures, plus the provenance and shipped-anchors gate fixtures
+  D      15  a discovery false positive: the basename matches an unrelated file (a content sample path, docs/internal/archi
+  F2     53  harvest notes and candidate text inside the facts files that name a harvested page in prose (audit notes, cut 
+  X      82  UNCLASSIFIED BY THE SPEC. Non-link mentions of a deleted page in ROADMAP.md backlog entries, docs/internal/doc
+  total 3296
+
+Class definitions:
+  H: dated history (spec: CHANGELOG.md, docs/HISTORY.md, docs/STATUS.md, docs/internal/record/**, docs/internal/history/**, docs/internal/feedback/**, historical entries in migration-notes.md). Bulk class: listed per file with a line count.
+  U: cairn.pub/docs URLs and the goldens, testdata, and design records that carry them (spec: tool/**/testdata/**, tool/docs/**, tool/testdata/**, and the reference pages documenting shipped URLs). Bulk class: listed per file with a line count.
+  S: shipped-contract constants and the tests that mirror them (spec: check_referrer.go, conditions.json, shipped-anchors.json). Includes the engine registry src/lib/diagnostics/conditions.ts and its unit test, whose anchor strings check:tool-conditions pins equal to conditions.json.
+  F: the facts files' page-path section headings (spec).
+  E: non-link mentions in docs/internal/engine-rulings.md (spec; its Markdown link at line 593 was repaired to a plain path mention).
+  A: a hit naming an arm directory or a kept-set page, not a deleted page (spec).
+  G: a register, brief, or freeze-statement line naming a page a stage will rebuild, left in place and entered in relink.json against that stage (spec; the CLAUDE.md, facts README, and docs-register freeze lines the task ordered are entered the same way).
+  N: a narrowed gate assertion or allowlist entry recorded in relink.json (spec: "Every repaired link, narrowed assertion, and allowlist entry is recorded"): gate constants keyed to arm state, the allowlist entries and their provenance comments, the tool workflow path filters, package.json files entries.
+  T: unit-test fixtures that pin a recorded narrowing: in-memory trees and deletion lists that use the gate's own arm-state names, so the test proves the gate keyed on them. Not one of the spec's named residue classes; it follows from the spec's gate-narrowing test mandate.
+  V: the harvest verifier, its unit test, and their fixtures, plus the provenance and shipped-anchors gate fixtures (spec, 'The verifier': script and ledgers stay in git as the record; its test runs on fixtures only). Not a named residue class.
+  D: a discovery false positive: the basename matches an unrelated file (a content sample path, docs/internal/architecture.md, cairn-pub docs/architecture.md, the legacy docs/guides/ tree).
+  F2: harvest notes and candidate text inside the facts files that name a harvested page in prose (audit notes, cut lists, provenance lines); no `Source:` field names a deleted page. Not a named residue class: the spec names only the section headings.
+  X: UNCLASSIFIED BY THE SPEC. Non-link mentions of a deleted page in ROADMAP.md backlog entries, docs/internal/docs-friction-log.md dated clearings, and docs/internal/reference-captures/**/.capture-state.json. Left unchanged; needs a ruling.
+
+=== class H (2308 lines)
+H CHANGELOG.md  (64 lines)
+H docs/HISTORY.md  (15 lines)
+H docs/extend/migration-notes.md  (2 lines)
+H docs/internal/feedback/2026-08-05-cairn-pub-migration.md  (1 lines)
+H docs/internal/history/STATUS-archive-2026-05-to-2026-07.md  (17 lines)
+H docs/internal/history/STATUS-archive-2026-07-02-to-2026-07-16.md  (1 lines)
+H docs/internal/history/STATUS-archive-2026-07-17-to-2026-07-18.md  (1 lines)
+H docs/internal/history/STATUS-archive-2026-07-19-to-2026-07-20.md  (1 lines)
+H docs/internal/history/STATUS-archive-2026-08-14-pass-d.md  (6 lines)
+H docs/internal/history/plan.md  (4 lines)
+H docs/internal/record/2026-07-14-admin-nav-organization-research.md  (1 lines)
+H docs/internal/record/2026-08-03-ambient-defaults-audit.md  (3 lines)
+H docs/internal/record/2026-08-04-auth-channel-review-rounds.md  (1 lines)
+H docs/internal/record/2026-08-05-scaffolder-posture-standing-input.md  (1 lines)
+H docs/internal/record/2026-08-14-docs-review-methodology.md  (1 lines)
+H docs/internal/record/2026-08-14-docs-track-outlines.md  (30 lines)
+H docs/internal/record/2026-08-14-pass-d-mining-admin.md  (24 lines)
+H docs/internal/record/2026-08-14-pass-d-mining-editors.md  (41 lines)
+H docs/internal/record/2026-08-14-pass-d-mining-extend.md  (71 lines)
+H docs/internal/record/2026-08-14-pass-d-mining-folds.md  (56 lines)
+H docs/internal/record/2026-08-14-pass-d-target-manifest.md  (134 lines)
+H docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md  (360 lines)
+H docs/internal/record/2026-08-15-capture-pass-brief.md  (3 lines)
+H docs/internal/record/2026-08-15-docs-outlines-with-visuals.md  (53 lines)
+H docs/internal/record/2026-08-15-docs-visual-layer-rulings.md  (18 lines)
+H docs/internal/record/2026-08-15-live-reproduction-seam-requirements.md  (9 lines)
+H docs/internal/record/2026-08-17-repro-audit-verification-sweep.md  (1 lines)
+H docs/internal/record/2026-08-20-xcathletes-pass-1-harvest.md  (1 lines)
+H docs/internal/record/2026-08-22-xcathletes-pass-3-harvest.md  (1 lines)
+H docs/internal/record/2026-08-26-any-site-audit.md  (1 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-coherence.md  (4 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-rank-core-adapter-content.md  (2 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-rank-site-chassis.md  (2 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-rank-tests-and-scripts.md  (4 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-verify-core-adapter-content.md  (3 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-verify-site-chassis.md  (2 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-verify-sveltekit-internals.md  (1 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-verify-walk-agent.md  (3 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-verify-walk-newcomer.md  (5 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-walk-agent.md  (9 lines)
+H docs/internal/record/2026-08-26-any-site-audit/int-walk-newcomer.md  (10 lines)
+H docs/internal/record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md  (3 lines)
+H docs/internal/record/2026-08-26-any-site-audit/rank-auth-family.md  (2 lines)
+H docs/internal/record/2026-08-26-any-site-audit/rank-cli-surface.md  (2 lines)
+H docs/internal/record/2026-08-26-any-site-audit/rank-log-vocabulary.md  (7 lines)
+H docs/internal/record/2026-08-26-any-site-audit/rank-reproductions.md  (1 lines)
+H docs/internal/record/2026-08-26-any-site-audit/rank-route-factories.md  (1 lines)
+H docs/internal/record/2026-08-26-any-site-audit/second-vantage.md  (3 lines)
+H docs/internal/record/2026-08-26-any-site-audit/verify-adapter-concept-model.md  (1 lines)
+H docs/internal/record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md  (4 lines)
+H docs/internal/record/2026-08-26-any-site-audit/verify-render-build-tooling.md  (1 lines)
+H docs/internal/record/2026-08-30-r4-rederivation.md  (1 lines)
+H docs/internal/record/2026-08-unagented-setup-baseline.md  (3 lines)
+H docs/internal/record/2026-09-01-internals-planning-inputs/docket.md  (4 lines)
+H docs/internal/record/2026-09-04-cairn-case/01-round-1-review.md  (39 lines)
+H docs/internal/record/2026-09-04-cairn-case/03-evidence-round-2.md  (4 lines)
+H docs/internal/record/2026-09-04-cairn-case/04-strengthening-notes.md  (3 lines)
+H docs/internal/record/2026-09-04-cairn-case/05-round-2-review.md  (10 lines)
+H docs/internal/record/2026-09-04-cairn-case/06-round-3-review.md  (15 lines)
+H docs/internal/record/2026-09-04-cairn-case/07-audience-lens.md  (8 lines)
+H docs/internal/record/2026-09-04-cairn-case/08-round-3-fold-verification.md  (8 lines)
+H docs/internal/record/2026-09-04-cairn-case/09-tells-register-editor.md  (2 lines)
+H docs/internal/record/2026-09-04-cairn-case/10-tells-voice-reviewer.md  (1 lines)
+H docs/internal/record/2026-09-04-cairn-case/11-tells-voice-reviewer-v5.md  (2 lines)
+H docs/internal/record/2026-09-04-cairn-case/12-round-4-review.md  (10 lines)
+H docs/internal/record/2026-09-04-cairn-case/13-round-5-review.md  (7 lines)
+H docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-measurement.md  (1 lines)
+H docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review-2.md  (4 lines)
+H docs/internal/record/2026-09-04-cairn-case/16-measured-build/experiment-review.md  (3 lines)
+H docs/internal/record/2026-09-04-cairn-case/16-measured-build/inference-traps-to-fix.md  (1 lines)
+H docs/internal/record/2026-09-04-cairn-case/18-evidence-round-4-cloudflare.md  (9 lines)
+H docs/internal/record/2026-09-04-cairn-case/21-round-6-review.md  (5 lines)
+H docs/internal/record/2026-09-04-cairn-case/22-final-review-prose-tells.md  (1 lines)
+H docs/internal/record/2026-09-04-cairn-case/24-final-review-structure.md  (1 lines)
+H docs/internal/record/2026-09-04-cairn-case/26-post-freeze-notes.md  (3 lines)
+H docs/internal/record/2026-09-04-cairn-case/27-charter-gap-audit.md  (18 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/chassis-b-fold-brief.md  (5 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/chassis-b-inputs.md  (3 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/chassis-b-plan-draft-1.md  (5 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/chassis-b-plan-review.md  (8 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/figure-grades/concept-figure-grade.md  (12 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/figure-grades/concept-figure-regrade.md  (3 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/figure-grades/design-content-review.md  (32 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/plan-review-round2.md  (2 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/plan-review.md  (2 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/routed-inputs.md  (8 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/showcase-review-at-the-exemplar-bar.md  (2 lines)
+H docs/internal/record/2026-09-04-chassis-inputs/spec-review.md  (3 lines)
+H docs/internal/record/2026-09-04-the-cairn-case.md  (69 lines)
+H docs/internal/record/2026-09-07-identity-seam/engine-research.md  (9 lines)
+H docs/internal/record/2026-09-07-identity-seam/page-reviews.md  (24 lines)
+H docs/internal/record/2026-09-07-identity-seam/plan-fold-brief.md  (15 lines)
+H docs/internal/record/2026-09-07-identity-seam/plan-review.md  (18 lines)
+H docs/internal/record/2026-09-07-identity-seam/precedent.md  (4 lines)
+H docs/internal/record/2026-09-07-identity-seam/spec-review.md  (22 lines)
+H docs/internal/record/2026-09-08-pictures/fold-brief.md  (2 lines)
+H docs/internal/record/2026-09-08-pictures/mechanics-research.md  (1 lines)
+H docs/internal/record/2026-09-08-pictures/spec-review.md  (7 lines)
+H docs/internal/record/2026-09-08-polish-inputs/docs-spec-review-benchmark.md  (2 lines)
+H docs/internal/record/2026-09-08-polish-inputs/docs-spec-review-charter.md  (4 lines)
+H docs/internal/record/2026-09-08-polish-inputs/docs-spec-review-conformance.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/docs-spec-review-plannability.md  (13 lines)
+H docs/internal/record/2026-09-08-polish-inputs/docs-standard-proposal-fresh.md  (3 lines)
+H docs/internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md  (4 lines)
+H docs/internal/record/2026-09-08-polish-inputs/docs-sweep.md  (28 lines)
+H docs/internal/record/2026-09-08-polish-inputs/front-door-net-failure.md  (2 lines)
+H docs/internal/record/2026-09-08-polish-inputs/front-door-prose-comparison-2.md  (3 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-11a-review-coverage.md  (4 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-11a-review-executor.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-11a-review-fold.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-11a-review-sequencing.md  (2 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-11a-verify.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-11b-review-sequencing.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-c-review-coverage.md  (3 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-c-review-executor.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-c-review-sequencing.md  (10 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan-c-verify.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan1-review-coverage-charter.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan1-review-sequencing-benchmark.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan2-review-benchmark.md  (3 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan2-review-executor.md  (8 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan2-review-plannability.md  (2 lines)
+H docs/internal/record/2026-09-08-polish-inputs/plan2-review-sequencing.md  (9 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-research-figure-tooling.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-research-figures.md  (8 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-research-structure.md  (6 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-review-cost.md  (4 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-review-efficacy.md  (2 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-review-peers.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-review-readers.md  (13 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-review-rev3.md  (2 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-review-rev4.md  (3 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-review-rev5.md  (4 lines)
+H docs/internal/record/2026-09-08-polish-inputs/proposal-review-rev6.md  (3 lines)
+H docs/internal/record/2026-09-08-polish-inputs/release-notes-draft.md  (5 lines)
+H docs/internal/record/2026-09-08-polish-inputs/spec-review-charter-polish-passes.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/spec-review-grounding.md  (10 lines)
+H docs/internal/record/2026-09-08-polish-inputs/spec-review-rev3-charter.md  (3 lines)
+H docs/internal/record/2026-09-08-polish-inputs/spec-review-rev3-fold.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/spec-review-rev3-grounding.md  (3 lines)
+H docs/internal/record/2026-09-08-polish-inputs/spec-review-rev3-risk.md  (5 lines)
+H docs/internal/record/2026-09-08-polish-inputs/spec-review-rev4-verify.md  (1 lines)
+H docs/internal/record/2026-09-08-polish-inputs/spec-review-risk.md  (2 lines)
+H docs/internal/record/2026-09-13-carbon-patterns-survey.md  (1 lines)
+H docs/internal/record/2026-09-15-facts-container-review/facts-review-charter.md  (2 lines)
+H docs/internal/record/2026-09-15-facts-container-review/facts-review-evolution.md  (15 lines)
+H docs/internal/record/2026-09-21-doctor-retirement-inventory.md  (7 lines)
+H docs/internal/record/2026-09-21-go-tool-b2-owner-rulings.md  (1 lines)
+H docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md  (1 lines)
+H docs/internal/record/2026-09-23-candidate-dispositions.md  (14 lines)
+H docs/internal/record/2026-09-23-doc-detective-spike.md  (2 lines)
+H docs/internal/record/2026-09-23-docs-reset-baseline.md  (26 lines)
+H docs/internal/record/2026-09-23-docs-reset-inputs/delta-cleanup-architecture.md  (18 lines)
+H docs/internal/record/2026-09-23-docs-reset-inputs/delta-cli-agents.md  (2 lines)
+H docs/internal/record/2026-09-23-docs-reset-inputs/delta-engine-surface.md  (31 lines)
+H docs/internal/record/2026-09-23-docs-reset-inputs/delta-outline-vs-tree.md  (54 lines)
+H docs/internal/record/2026-09-23-docs-reset-inputs/review-repo-reality.md  (1 lines)
+H docs/internal/record/2026-09-23-docs-reset-planted-defects.md  (17 lines)
+H docs/internal/record/2026-09-23-docs-reset-validation.md  (32 lines)
+H docs/internal/record/2026-09-23-scratch-site.md  (1 lines)
+H docs/internal/record/2026-09-24-docs-reset-1b-tuning.md  (1 lines)
+H docs/internal/record/2026-09-26-docs-approach-handoff.md  (7 lines)
+H docs/internal/record/2026-09-28-vale-3-23-and-markdownlint-survey.md  (2 lines)
+H docs/internal/record/2026-09-29-theme-contract-docs-input.md  (17 lines)
+H docs/internal/record/2026-09-29-theme-pass-bc-harvest-handoff.md  (61 lines)
+H docs/internal/record/docs-exemplars.md  (1 lines)
+H docs/internal/record/harvest/README.md  (8 lines)
+H docs/internal/record/harvest/admin/README.json  (1 lines)
+H docs/internal/record/harvest/admin/before-you-start.json  (1 lines)
+H docs/internal/record/harvest/admin/create-your-site.json  (1 lines)
+H docs/internal/record/harvest/admin/invite-editors.json  (1 lines)
+H docs/internal/record/harvest/admin/is-it-working.json  (1 lines)
+H docs/internal/record/harvest/admin/own-your-domain.json  (1 lines)
+H docs/internal/record/harvest/admin/setup-recovery.json  (1 lines)
+H docs/internal/record/harvest/admin/troubleshooting.json  (1 lines)
+H docs/internal/record/harvest/admin/what-to-run-and-when.json  (1 lines)
+H docs/internal/record/harvest/deletion-list.json  (52 lines)
+H docs/internal/record/harvest/editors/README.json  (1 lines)
+H docs/internal/record/harvest/editors/add-an-image.json  (1 lines)
+H docs/internal/record/harvest/editors/manage-the-media-library.json  (1 lines)
+H docs/internal/record/harvest/editors/manage-your-tag-vocabulary.json  (1 lines)
+H docs/internal/record/harvest/editors/publish-and-history.json  (1 lines)
+H docs/internal/record/harvest/editors/welcome.json  (1 lines)
+H docs/internal/record/harvest/editors/when-something-goes-wrong.json  (1 lines)
+H docs/internal/record/harvest/editors/write-in-the-editor.json  (1 lines)
+H docs/internal/record/harvest/extend/README.json  (1 lines)
+H docs/internal/record/harvest/extend/add-a-custom-admin-screen.json  (1 lines)
+H docs/internal/record/harvest/extend/add-a-second-audience.json  (1 lines)
+H docs/internal/record/harvest/extend/add-an-island.json  (1 lines)
+H docs/internal/record/harvest/extend/add-cairn-to-a-sveltekit-app.json  (1 lines)
+H docs/internal/record/harvest/extend/animate-a-custom-screen.json  (1 lines)
+H docs/internal/record/harvest/extend/announce-on-publish.json  (1 lines)
+H docs/internal/record/harvest/extend/architecture.json  (1 lines)
+H docs/internal/record/harvest/extend/auth-channel-security-model.json  (1 lines)
+H docs/internal/record/harvest/extend/build-a-site-by-hand.json  (1 lines)
+H docs/internal/record/harvest/extend/configure-rendering.json  (1 lines)
+H docs/internal/record/harvest/extend/content-model.json  (1 lines)
+H docs/internal/record/harvest/extend/data-tiers.json  (1 lines)
+H docs/internal/record/harvest/extend/debug-your-site.json  (1 lines)
+H docs/internal/record/harvest/extend/declare-your-own-concept.json  (1 lines)
+H docs/internal/record/harvest/extend/define-an-adapter-and-schema.json  (1 lines)
+H docs/internal/record/harvest/extend/design-your-site.json  (1 lines)
+H docs/internal/record/harvest/extend/enable-tidy.json  (1 lines)
+H docs/internal/record/harvest/extend/link-content-with-references.json  (1 lines)
+H docs/internal/record/harvest/extend/migrate-existing-content.json  (1 lines)
+H docs/internal/record/harvest/extend/organize-your-admin-nav.json  (1 lines)
+H docs/internal/record/harvest/extend/render-safety.json  (1 lines)
+H docs/internal/record/harvest/extend/restrict-admin-access.json  (1 lines)
+H docs/internal/record/harvest/extend/reuse-content-across-entries.json  (1 lines)
+H docs/internal/record/harvest/extend/rotate-the-github-app-key.json  (1 lines)
+H docs/internal/record/harvest/extend/security-model.json  (1 lines)
+H docs/internal/record/harvest/extend/share-a-draft-preview.json  (1 lines)
+H docs/internal/record/harvest/extend/sign-in-through-your-organization.json  (1 lines)
+H docs/internal/record/harvest/extend/what-the-scaffold-wrote.json  (1 lines)
+H docs/internal/record/harvest/extend/wire-the-delivery-surface.json  (1 lines)
+H docs/internal/record/harvest/front-door/README.json  (1 lines)
+H docs/internal/record/harvest/front-door/why-cairn.json  (1 lines)
+H docs/internal/record/harvest/relink.json  (283 lines)
+H docs/internal/record/repro-story-audit.md  (4 lines)
+
+=== class U (254 lines)
+U docs/internal/facts/admin.md  (21 lines)
+U docs/internal/facts/reference.md  (1 lines)
+U docs/reference/cli-cairn-doctor.md  (1 lines)
+U docs/reference/cli-cairn-json-output.md  (2 lines)
+U tool/docs/design/charm-v2-capabilities.md  (2 lines)
+U tool/docs/design/copy-standard.md  (3 lines)
+U tool/docs/design/render-reference/index.html  (3 lines)
+U tool/docs/design/render-reference/layout.go.txt  (1 lines)
+U tool/docs/design/render-reference/real-s2-ansi16.ansi  (3 lines)
+U tool/docs/design/render-reference/real-s2-ascii.ansi  (3 lines)
+U tool/docs/design/render-reference/real-s2-noword.ansi  (3 lines)
+U tool/docs/design/render-reference/real-s2-word.ansi  (3 lines)
+U tool/docs/design/render-reference/real-s3-sev-two.ansi  (7 lines)
+U tool/docs/design/render-reference/real-s9-hostile.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-60.ansi  (6 lines)
+U tool/docs/design/render-reference/s2-80.ansi  (4 lines)
+U tool/docs/design/render-reference/s2-ansi16-dark.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-ansi16-light.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-ascii-rail.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-ascii.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-light.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-noword.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-rail-off.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-rail-on.ansi  (3 lines)
+U tool/docs/design/render-reference/s2-word.ansi  (3 lines)
+U tool/docs/design/render-reference/s3-sev-one.ansi  (7 lines)
+U tool/docs/design/render-reference/s3-sev-two.ansi  (7 lines)
+U tool/docs/design/render-reference/s3-strip.ansi  (7 lines)
+U tool/docs/design/render-reference/s3-table.ansi  (7 lines)
+U tool/docs/design/render-reference/s4-sites.ansi  (7 lines)
+U tool/docs/design/render-reference/s6-warning-noword.ansi  (2 lines)
+U tool/docs/design/render-reference/s6-warning.ansi  (2 lines)
+U tool/docs/design/render-reference/s7-twelve-sev2.ansi  (10 lines)
+U tool/docs/design/render-reference/s7-twelve-strip.ansi  (10 lines)
+U tool/docs/design/render-reference/s7-twelve-table.ansi  (10 lines)
+U tool/docs/design/render-reference/s8-plain.txt  (3 lines)
+U tool/docs/design/render-reference/s9-hostile-noword.ansi  (3 lines)
+U tool/docs/design/render-reference/s9-hostile.ansi  (3 lines)
+U tool/docs/design/reviews/agent-usability.md  (12 lines)
+U tool/docs/design/reviews/family.md  (1 lines)
+U tool/docs/design/reviews/iteration-2-brief.md  (1 lines)
+U tool/internal/doctor/report.go  (1 lines)
+U tool/internal/doctor/report_test.go  (2 lines)
+U tool/internal/doctor/testdata/golden/every-status.txt  (1 lines)
+U tool/internal/doctor/testdata/golden/one-blocker-failure.txt  (1 lines)
+U tool/internal/doctor/testdata/golden/one-warning-failure.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/hostile_w040_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/hostile_w060_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/hostile_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/hostile_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/hostile_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/twelve-site_w040_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/twelve-site_w060_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/twelve-site_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/twelve-site_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/twelve-site_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/warning-only_w040_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/warning-only_w060_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/warning-only_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/warning-only_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/many/warning-only_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/hostile_w040_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/hostile_w060_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/hostile_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/hostile_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/hostile_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/one-sick_w040_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/one-sick_w060_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/one-sick_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/one-sick_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/one-sick_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/warning-only_w040_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/warning-only_w060_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/warning-only_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/warning-only_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/plain/warning-only_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/hostile_w040_truecolor_dark_narrow.txt  (2 lines)
+U tool/internal/render/testdata/golden/single/hostile_w060_truecolor_dark_narrow.txt  (2 lines)
+U tool/internal/render/testdata/golden/single/hostile_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/hostile_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/hostile_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w040_truecolor_dark_narrow.txt  (2 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w060_truecolor_dark_narrow.txt  (2 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w100_ansi16_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w100_ansi256_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w100_nocolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w100_truecolor_dark_ascii.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w100_truecolor_light_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/one-sick_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/warning-only_w040_truecolor_dark_narrow.txt  (2 lines)
+U tool/internal/render/testdata/golden/single/warning-only_w060_truecolor_dark_narrow.txt  (2 lines)
+U tool/internal/render/testdata/golden/single/warning-only_w080_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/warning-only_w100_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/golden/single/warning-only_w120_truecolor_dark_narrow.txt  (1 lines)
+U tool/internal/render/testdata/json/doctor.json  (1 lines)
+U tool/internal/render/testdata/json/health-hostile.json  (1 lines)
+U tool/internal/render/testdata/json/health-one-sick.json  (1 lines)
+U tool/internal/render/testdata/json/health-single.json  (1 lines)
+U tool/internal/render/testdata/json/health-twelve-site.json  (1 lines)
+U tool/internal/render/testdata/json/health-warning-only.json  (1 lines)
+U tool/testdata/copy.golden.md  (1 lines)
+
+=== class S (117 lines)
+S scripts/checks/fixtures/shipped-anchors/duplicate.json:3: "is-it-working.md#onboard-the-sending-domain",
+S scripts/checks/fixtures/shipped-anchors/duplicate.json:4: "is-it-working.md#admin-csrf-token-rejected",
+S scripts/checks/fixtures/shipped-anchors/duplicate.json:5: "is-it-working.md#onboard-the-sending-domain"
+S scripts/checks/fixtures/shipped-anchors/not-object.json:1: ["is-it-working.md#onboard-the-sending-domain"]
+S scripts/checks/fixtures/shipped-anchors/valid.json:3: "is-it-working.md#onboard-the-sending-domain",
+S scripts/checks/fixtures/shipped-anchors/valid.json:4: "is-it-working.md#admin-csrf-token-rejected"
+S scripts/checks/shipped-anchors.json:2: "_note": "Append-only. Every docsAnchor fragment a released tool tag has ever printed, normalized to \"is-it-working.md#anchor\" (tool/v1.1.0's condit
+S scripts/checks/shipped-anchors.json:4: "is-it-working.md#admin-csrf-token-rejected",
+S scripts/checks/shipped-anchors.json:5: "is-it-working.md#configure-the-tidy-api-key",
+S scripts/checks/shipped-anchors.json:6: "is-it-working.md#declare-the-media-bucket-binding",
+S scripts/checks/shipped-anchors.json:7: "is-it-working.md#deploy-the-worker-with-its-bindings",
+S scripts/checks/shipped-anchors.json:8: "is-it-working.md#force-https-at-the-edge",
+S scripts/checks/shipped-anchors.json:9: "is-it-working.md#install-the-github-app",
+S scripts/checks/shipped-anchors.json:10: "is-it-working.md#make-the-stated-ai-posture-effective",
+S scripts/checks/shipped-anchors.json:11: "is-it-working.md#meet-the-dependency-floors",
+S scripts/checks/shipped-anchors.json:12: "is-it-working.md#non-admin-origin-rejected",
+S scripts/checks/shipped-anchors.json:13: "is-it-working.md#onboard-the-sending-domain",
+S scripts/checks/shipped-anchors.json:14: "is-it-working.md#probe-the-deployed-admin",
+S scripts/checks/shipped-anchors.json:15: "is-it-working.md#provision-the-auth-store",
+S scripts/checks/shipped-anchors.json:16: "is-it-working.md#scope-a-site-wide-no-referrer-policy",
+S scripts/checks/shipped-anchors.json:17: "is-it-working.md#set-the-public-origin",
+S scripts/checks/shipped-anchors.json:18: "is-it-working.md#sign-in-gate-refused-the-request",
+S scripts/checks/shipped-anchors.json:19: "is-it-working.md#turn-on-observability",
+S scripts/checks/shipped-anchors.json:20: "is-it-working.md#validate-the-site-config",
+S scripts/checks/shipped-anchors.json:21: "is-it-working.md#wire-cairns-csrf-guard",
+S scripts/checks/shipped-anchors.json:22: "is-it-working.md#wire-the-admin-mount",
+S scripts/checks/shipped-anchors.json:23: "is-it-working.md#youre-not-on-this-sites-editor-roster"
+S src/lib/diagnostics/conditions.ts:22: * 'is-it-working.md#<heading-slug>' so a doc can link it relative to docs/admin/.
+S src/lib/diagnostics/conditions.ts:40: docsAnchor: 'is-it-working.md#force-https-at-the-edge',
+S src/lib/diagnostics/conditions.ts:49: docsAnchor: 'is-it-working.md#admin-csrf-token-rejected',
+S src/lib/diagnostics/conditions.ts:58: docsAnchor: 'is-it-working.md#non-admin-origin-rejected',
+S src/lib/diagnostics/conditions.ts:67: docsAnchor: 'is-it-working.md#onboard-the-sending-domain',
+S src/lib/diagnostics/conditions.ts:76: docsAnchor: 'is-it-working.md#onboard-the-sending-domain',
+S src/lib/diagnostics/conditions.ts:85: docsAnchor: 'is-it-working.md#deploy-the-worker-with-its-bindings',
+S src/lib/diagnostics/conditions.ts:93: docsAnchor: 'is-it-working.md#declare-the-media-bucket-binding',
+S src/lib/diagnostics/conditions.ts:101: docsAnchor: 'is-it-working.md#turn-on-observability',
+S src/lib/diagnostics/conditions.ts:112: docsAnchor: 'is-it-working.md#wire-cairns-csrf-guard',
+S src/lib/diagnostics/conditions.ts:120: docsAnchor: 'is-it-working.md#set-the-public-origin',
+S src/lib/diagnostics/conditions.ts:128: docsAnchor: 'is-it-working.md#validate-the-site-config',
+S src/lib/diagnostics/conditions.ts:136: docsAnchor: 'is-it-working.md#meet-the-dependency-floors',
+S src/lib/diagnostics/conditions.ts:144: docsAnchor: 'is-it-working.md#configure-the-tidy-api-key',
+S src/lib/diagnostics/conditions.ts:152: docsAnchor: 'is-it-working.md#make-the-stated-ai-posture-effective',
+S src/lib/diagnostics/conditions.ts:160: docsAnchor: 'is-it-working.md#provision-the-auth-store',
+S src/lib/diagnostics/conditions.ts:169: docsAnchor: 'is-it-working.md#provision-the-auth-store',
+S src/lib/diagnostics/conditions.ts:177: docsAnchor: 'is-it-working.md#provision-the-auth-store',
+S src/lib/diagnostics/conditions.ts:186: docsAnchor: 'is-it-working.md#provision-the-auth-store',
+S src/lib/diagnostics/conditions.ts:195: docsAnchor: 'is-it-working.md#scope-a-site-wide-no-referrer-policy',
+S src/lib/diagnostics/conditions.ts:203: docsAnchor: 'is-it-working.md#provision-the-auth-store',
+S src/lib/diagnostics/conditions.ts:211: docsAnchor: 'is-it-working.md#install-the-github-app',
+S src/lib/diagnostics/conditions.ts:221: docsAnchor: 'is-it-working.md#wire-the-admin-mount',
+S src/lib/diagnostics/conditions.ts:229: docsAnchor: 'is-it-working.md#sign-in-gate-refused-the-request',
+S src/lib/diagnostics/conditions.ts:238: docsAnchor: 'is-it-working.md#youre-not-on-this-sites-editor-roster',
+S src/lib/diagnostics/conditions.ts:247: docsAnchor: 'is-it-working.md#probe-the-deployed-admin',
+S src/tests/unit/check-readiness.test.ts:34: cond('email.sender-not-onboarded', 'is-it-working.md#onboard-the-sending-domain'),
+S src/tests/unit/check-readiness.test.ts:35: cond('auth.csrf-token-invalid', 'is-it-working.md#admin-csrf-token-rejected'),
+S src/tests/unit/check-readiness.test.ts:42: cond('email.sender-not-onboarded', 'is-it-working.md#onboard-the-sending-domain'),
+S src/tests/unit/check-readiness.test.ts:43: cond('email.send-failed', 'is-it-working.md#onboard-the-sending-domain'),
+S src/tests/unit/check-readiness.test.ts:49: const problems = checkReadiness([cond('edge.hsts-off', 'is-it-working.md#turn-on-hsts')], DOC);
+S src/tests/unit/check-readiness.test.ts:56: const problems = checkReadiness([cond('edge.hsts-off', 'is-it-working.md')], DOC);
+S src/tests/unit/check-readiness.test.ts:93: 'is-it-working.md#onboard-the-sending-domain',
+S src/tests/unit/check-readiness.test.ts:94: 'is-it-working.md#admin-csrf-token-rejected',
+S src/tests/unit/check-readiness.test.ts:106: const liveConditions = [cond('email.sender-not-onboarded', 'is-it-working.md#onboard-the-sender-domain')];
+S src/tests/unit/check-readiness.test.ts:115: const problems = checkShippedAnchors(['is-it-working.md'], DOC);
+S src/tests/unit/check-readiness.test.ts:117: expect(problems[0]).toContain('is-it-working.md');
+S src/tests/unit/check-readiness.test.ts:162: 'is-it-working.md#onboard-the-sending-domain',
+S src/tests/unit/check-readiness.test.ts:163: 'is-it-working.md#admin-csrf-token-rejected',
+S src/tests/unit/check-readiness.test.ts:173: 'is-it-working.md#onboard-the-sending-domain',
+S src/tests/unit/check-readiness.test.ts:174: 'is-it-working.md#admin-csrf-token-rejected',
+S src/tests/unit/check-readiness.test.ts:175: 'is-it-working.md#onboard-the-sending-domain',
+S src/tests/unit/check-readiness.test.ts:178: expect.stringContaining('duplicate entry "is-it-working.md#onboard-the-sending-domain"'),
+S src/tests/unit/check-readiness.test.ts:188: const conditions = [cond('email.sender-not-onboarded', 'is-it-working.md#onboard-the-sending-domain')];
+S src/tests/unit/check-readiness.test.ts:189: const shipped = { anchors: ['is-it-working.md#turn-on-hsts'], defects: [] };
+S src/tests/unit/check-readiness.test.ts:210: cond('email.sender-not-onboarded', 'is-it-working.md#onboard-the-sending-domain'),
+S src/tests/unit/check-readiness.test.ts:211: cond('admin.csrf-rejected', 'is-it-working.md#admin-csrf-token-rejected'),
+S src/tests/unit/check-readiness.test.ts:222: [...live, cond('config.hsts-off', 'is-it-working.md#turn-on-hsts')],
+S src/tests/unit/check-readiness.test.ts:273: expect(problems).toEqual([expect.stringContaining('docs/admin/is-it-working.md does not exist')]);
+S src/tests/unit/check-readiness.test.ts:279: [cond('admin.csrf-rejected', 'is-it-working.md#admin-csrf-token-rejected')],
+S src/tests/unit/conditions.test.ts:67: expect(c.docsAnchor).toBe('is-it-working.md#set-the-public-origin');
+S src/tests/unit/conditions.test.ts:75: expect(c.docsAnchor).toBe('is-it-working.md#probe-the-deployed-admin');
+S src/tests/unit/conditions.test.ts:85: expect(c.docsAnchor).toBe('is-it-working.md#wire-the-admin-mount');
+S src/tests/unit/conditions.test.ts:94: expect(c.docsAnchor).toBe('is-it-working.md#meet-the-dependency-floors');
+S src/tests/unit/conditions.test.ts:103: expect(c.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
+S src/tests/unit/conditions.test.ts:127: expect(c.docsAnchor).toBe('is-it-working.md#declare-the-media-bucket-binding');
+S src/tests/unit/conditions.test.ts:136: expect(c.docsAnchor).toBe('is-it-working.md#configure-the-tidy-api-key');
+S src/tests/unit/conditions.test.ts:145: expect(unknownRole.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
+S src/tests/unit/conditions.test.ts:151: expect(badEmail.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
+S src/tests/unit/conditions.test.ts:160: expect(c.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
+S src/tests/unit/conditions.test.ts:171: expect(c.docsAnchor).toBe('is-it-working.md#scope-a-site-wide-no-referrer-policy');
+S tool/internal/doctor/check_referrer.go:36: noReferrerDocsAnchor = "docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy"
+S tool/internal/doctor/check_referrer_test.go:137: wantDetailHas: []string{"src/hooks.server.ts", "static/_headers", "strict-origin-when-cross-origin", "is-it-working.md#scope-a-site-wide-no-referrer-p
+S tool/internal/doctor/report_test.go:229: got := docsURL("is-it-working.md#deploy-the-worker-with-its-bindings")
+S tool/internal/spine/conditions.json:8: "docsAnchor": "is-it-working.md#probe-the-deployed-admin"
+S tool/internal/spine/conditions.json:16: "docsAnchor": "is-it-working.md#wire-the-admin-mount"
+S tool/internal/spine/conditions.json:24: "docsAnchor": "is-it-working.md#make-the-stated-ai-posture-effective"
+S tool/internal/spine/conditions.json:32: "docsAnchor": "is-it-working.md#non-admin-origin-rejected",
+S tool/internal/spine/conditions.json:41: "docsAnchor": "is-it-working.md#admin-csrf-token-rejected",
+S tool/internal/spine/conditions.json:50: "docsAnchor": "is-it-working.md#provision-the-auth-store"
+S tool/internal/spine/conditions.json:58: "docsAnchor": "is-it-working.md#youre-not-on-this-sites-editor-roster",
+S tool/internal/spine/conditions.json:67: "docsAnchor": "is-it-working.md#sign-in-gate-refused-the-request",
+S tool/internal/spine/conditions.json:76: "docsAnchor": "is-it-working.md#provision-the-auth-store",
+S tool/internal/spine/conditions.json:85: "docsAnchor": "is-it-working.md#provision-the-auth-store"
+S tool/internal/spine/conditions.json:93: "docsAnchor": "is-it-working.md#provision-the-auth-store"
+S tool/internal/spine/conditions.json:101: "docsAnchor": "is-it-working.md#provision-the-auth-store",
+S tool/internal/spine/conditions.json:110: "docsAnchor": "is-it-working.md#deploy-the-worker-with-its-bindings"
+S tool/internal/spine/conditions.json:118: "docsAnchor": "is-it-working.md#wire-cairns-csrf-guard"
+S tool/internal/spine/conditions.json:126: "docsAnchor": "is-it-working.md#meet-the-dependency-floors"
+S tool/internal/spine/conditions.json:134: "docsAnchor": "is-it-working.md#declare-the-media-bucket-binding"
+S tool/internal/spine/conditions.json:142: "docsAnchor": "is-it-working.md#scope-a-site-wide-no-referrer-policy"
+S tool/internal/spine/conditions.json:150: "docsAnchor": "is-it-working.md#turn-on-observability"
+S tool/internal/spine/conditions.json:158: "docsAnchor": "is-it-working.md#set-the-public-origin"
+S tool/internal/spine/conditions.json:166: "docsAnchor": "is-it-working.md#validate-the-site-config"
+S tool/internal/spine/conditions.json:174: "docsAnchor": "is-it-working.md#configure-the-tidy-api-key"
+S tool/internal/spine/conditions.json:182: "docsAnchor": "is-it-working.md#force-https-at-the-edge",
+S tool/internal/spine/conditions.json:191: "docsAnchor": "is-it-working.md#onboard-the-sending-domain",
+S tool/internal/spine/conditions.json:200: "docsAnchor": "is-it-working.md#onboard-the-sending-domain",
+S tool/internal/spine/conditions.json:209: "docsAnchor": "is-it-working.md#install-the-github-app",
+S tool/internal/spine/conditions_test.go:151: DocsAnchor:  "is-it-working.md#non-admin-origin-rejected",
+
+=== class F (52 lines)
+F docs/internal/facts/admin.md:6: ## docs/admin/README.md
+F docs/internal/facts/admin.md:9: ## docs/admin/before-you-start.md
+F docs/internal/facts/admin.md:31: ## docs/admin/create-your-site.md
+F docs/internal/facts/admin.md:55: ## docs/admin/invite-editors.md
+F docs/internal/facts/admin.md:67: ## docs/admin/is-it-working.md
+F docs/internal/facts/admin.md:144: ## docs/admin/own-your-domain.md
+F docs/internal/facts/admin.md:171: ## docs/admin/setup-recovery.md
+F docs/internal/facts/admin.md:188: ## docs/admin/troubleshooting.md
+F docs/internal/facts/admin.md:214: ## docs/admin/what-to-run-and-when.md
+F docs/internal/facts/editors.md:5: ## docs/editors/README.md
+F docs/internal/facts/editors.md:8: ## docs/editors/welcome.md
+F docs/internal/facts/editors.md:25: ## docs/editors/write-in-the-editor.md
+F docs/internal/facts/editors.md:70: ## docs/editors/publish-and-history.md
+F docs/internal/facts/editors.md:95: ## docs/editors/when-something-goes-wrong.md
+F docs/internal/facts/editors.md:124: ## docs/editors/add-an-image.md
+F docs/internal/facts/editors.md:134: ## docs/editors/manage-the-media-library.md
+F docs/internal/facts/editors.md:152: ## docs/editors/manage-your-tag-vocabulary.md
+F docs/internal/facts/extend.md:5: ## docs/extend/add-a-custom-admin-screen.md
+F docs/internal/facts/extend.md:60: ## docs/extend/add-a-second-audience.md
+F docs/internal/facts/extend.md:85: ## docs/extend/add-an-island.md
+F docs/internal/facts/extend.md:106: ## docs/extend/add-cairn-to-a-sveltekit-app.md
+F docs/internal/facts/extend.md:140: ## docs/extend/animate-a-custom-screen.md
+F docs/internal/facts/extend.md:164: ## docs/extend/announce-on-publish.md
+F docs/internal/facts/extend.md:177: ## docs/extend/architecture.md
+F docs/internal/facts/extend.md:203: ## docs/extend/auth-channel-security-model.md
+F docs/internal/facts/extend.md:226: ## docs/extend/build-a-site-by-hand.md
+F docs/internal/facts/extend.md:272: ## docs/extend/choose-an-ai-posture.md
+F docs/internal/facts/extend.md:293: ## docs/extend/configure-rendering.md
+F docs/internal/facts/extend.md:309: ## docs/extend/content-model.md
+F docs/internal/facts/extend.md:330: ## docs/extend/data-tiers.md
+F docs/internal/facts/extend.md:348: ## docs/extend/debug-your-site.md
+F docs/internal/facts/extend.md:367: ## docs/extend/declare-your-own-concept.md
+F docs/internal/facts/extend.md:378: ## docs/extend/define-an-adapter-and-schema.md
+F docs/internal/facts/extend.md:392: ## docs/extend/design-your-site.md
+F docs/internal/facts/extend.md:418: ## docs/extend/enable-tidy.md
+F docs/internal/facts/extend.md:450: ## docs/extend/link-content-with-references.md
+F docs/internal/facts/extend.md:474: ## docs/extend/migrate-existing-content.md
+F docs/internal/facts/extend.md:493: ## docs/extend/migration-notes.md
+F docs/internal/facts/extend.md:517: ## docs/extend/organize-your-admin-nav.md
+F docs/internal/facts/extend.md:534: ## docs/extend/README.md
+F docs/internal/facts/extend.md:547: ## docs/extend/render-safety.md
+F docs/internal/facts/extend.md:564: ## docs/extend/restrict-admin-access.md
+F docs/internal/facts/extend.md:581: ## docs/extend/reuse-content-across-entries.md
+F docs/internal/facts/extend.md:598: ## docs/extend/rotate-the-github-app-key.md
+F docs/internal/facts/extend.md:617: ## docs/extend/security-model.md
+F docs/internal/facts/extend.md:676: ## docs/extend/share-a-draft-preview.md
+F docs/internal/facts/extend.md:698: ## docs/extend/sign-in-through-your-organization.md
+F docs/internal/facts/extend.md:732: ## docs/extend/upgrade-cairn.md
+F docs/internal/facts/extend.md:737: ## docs/extend/what-the-scaffold-wrote.md
+F docs/internal/facts/extend.md:777: ## docs/extend/wire-the-delivery-surface.md
+F docs/internal/facts/front-door.md:6: ## docs/why-cairn.md
+F docs/internal/facts/front-door.md:75: ## docs/README.md
+
+=== class E (28 lines)
+E docs/internal/engine-rulings.md:117: taught as `docs/extend/configure-rendering.md`'s worked example; deleting them requires the chassis
+E docs/internal/engine-rulings.md:456: discarded `__Host-` cookie; `security-model.md`'s mount-under-`/admin` instruction ("Mount every
+E docs/internal/engine-rulings.md:593: baselines. Wire the delivery surface (`docs/extend/wire-the-delivery-surface.md`) carries the note.
+E docs/internal/engine-rulings.md:654: `docs/extend/restrict-admin-access.md:14` instructed importing the constant to satisfy it; the
+E docs/internal/engine-rulings.md:668: `docs/extend/restrict-admin-access.md`'s instructed import is rewritten to pass `undefined` to
+E docs/internal/engine-rulings.md:3467: `docs/extend/add-a-second-audience.md` Path B), so the 'no consumer anywhere has built against
+E docs/internal/engine-rulings.md:3482: `add-a-second-audience.md` Path B seam. The overturning evidence is this adoption fact, not a
+E docs/internal/engine-rulings.md:4595: - **Reopens on:** closed. Executed by the 4b conformance pass, Task 11. Both renames landed together, as the verify record requires; `docs/extend/debu
+E docs/internal/engine-rulings.md:4834: - **Verdict:** keep. A developer prunes a role from the committed config and an editor silently loses every permission with no error anywhere in the U
+E docs/internal/engine-rulings.md:4837: - **Any-site case:** A developer prunes a role from the committed config and an editor silently loses every permission with no error anywhere in the U
+E docs/internal/engine-rulings.md:4841: - **Verdict:** keep. An editor reports the pending-entries count reading zero when drafts exist. Three best-effort reads degrade rather than fail (sco
+E docs/internal/engine-rulings.md:4844: - **Any-site case:** An editor reports the pending-entries count reading zero when drafts exist. Three best-effort reads degrade rather than fail (sco
+E docs/internal/engine-rulings.md:4871: - **Verdict:** keep. "My editor can't upload images" is the highest-volume support ticket a content site fields, and this resolves it without a repro.
+E docs/internal/engine-rulings.md:4874: - **Any-site case:** "My editor can't upload images" is the highest-volume support ticket a content site fields, and this resolves it without a repro.
+E docs/internal/engine-rulings.md:4914: - **Verdict:** reshape. "My editor pressed save and nothing happened", the most common failure a content site has. CLAUDE.md routes here first: "A sav
+E docs/internal/engine-rulings.md:4922: - **Verdict:** keep. An editor reports "it just says something went wrong." The engine deliberately hides the error from the UI (doc: "the editor sees
+E docs/internal/engine-rulings.md:4925: - **Any-site case:** An editor reports "it just says something went wrong." The engine deliberately hides the error from the UI (doc: "the editor sees
+E docs/internal/engine-rulings.md:4929: - **Verdict:** keep. An editor publishes twelve drafts, nine appear, and nobody can say which three failed or why. The doc's publish-all rule is what 
+E docs/internal/engine-rulings.md:4932: - **Any-site case:** An editor publishes twelve drafts, nine appear, and nobody can say which three failed or why. The doc's publish-all rule is what 
+E docs/internal/engine-rulings.md:4936: - **Verdict:** keep. Nobody can log in to a freshly deployed site because the sender domain is unverified, and the deploy never surfaced it. The riche
+E docs/internal/engine-rulings.md:4939: - **Any-site case:** Nobody can log in to a freshly deployed site because the sender domain is unverified, and the deploy never surfaced it. The riche
+E docs/internal/engine-rulings.md:4943: - **Verdict:** keep. The entire admin is unreachable on a new deploy, and the reason — a missing AUTH_DB binding versus an origin mismatch behind a pr
+E docs/internal/engine-rulings.md:4946: - **Any-site case:** The entire admin is unreachable on a new deploy, and the reason — a missing AUTH_DB binding versus an origin mismatch behind a pr
+E docs/internal/engine-rulings.md:5096: - **Reopens on:** closed. The conventions pass, Task 10 fixed the C16 two-jobs half: `config.tidy-key` gained its own `config.tidy-key-missing` condit
+E docs/internal/engine-rulings.md:5831: opt-in `access` option (an unmapped target refuses). `docs/extend/security-model.md` documents
+E docs/internal/engine-rulings.md:5836: `docs/extend/restrict-admin-access.md`; and `authorizeAdminTarget`'s fail-closed contract.
+E docs/internal/engine-rulings.md:5927: `docs/extend/sign-in-through-your-organization.md`'s recipe block and login-methods section as
+E docs/internal/engine-rulings.md:6009: `docs/extend/migration-notes.md` carries the replacement composition as a `svelte` fence with
+
+=== class A (170 lines)
+A .vale.ini:31: ; docs/editors/** ends up on Microsoft alone, never Google plus Microsoft. Verified by measurement,
+A .vale.ini:33: [docs/editors/**]
+A CLAUDE.md:134: before the site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md`
+A CLAUDE.md:310: onto Google, overrides `docs/editors/**` to Microsoft for its plainer editor voice, and excludes
+A CONTRIBUTING.md:37: A new docs page belongs in exactly one of four tracks: `docs/admin/`, `docs/editors/`,
+A CONTRIBUTING.md:38: `docs/extend/`, or `docs/reference/`. The discriminator is the reader, not the content, so
+A CONTRIBUTING.md:42: - **`docs/editors/`**: a non-technical author working in `/admin`, with no terminal and no
+A CONTRIBUTING.md:44: - **`docs/admin/`**: a technical non-developer who sets up and runs the default site, runs
+A CONTRIBUTING.md:46: - **`docs/extend/`**: a Svelte-fluent developer building an organization's site on cairn's
+A CONTRIBUTING.md:106: - Pages under `docs/reference/`, `docs/admin/`, and `docs/extend/` follow the
+A CONTRIBUTING.md:108: `docs/editors/` follows the
+A ROADMAP.md:323: delete").** Every claim on the old narrative and front-door pages (`docs/admin/`,
+A ROADMAP.md:641: to `docs/editors/` and `docs/extend/` reported completion for nine CONFIRMED/NARROWED gate
+A ROADMAP.md:1429: `docs/admin/` in pass B.
+A ROADMAP.md:1584: `CHANGELOG.md` and `docs/extend/migration-notes.md`, but a site's own forked
+A ROADMAP.md:2007: (`docs/extend/upgrade-cairn.md`) has an editor look up the reported class's size in [Admin grammar
+A docs/internal/briefs/extend/choose-an-ai-posture.json:2: "page": "docs/extend/choose-an-ai-posture.md",
+A docs/internal/docs-maintenance.md:23: | `check:vale` | Runs Vale at error tier only (`vale --minAlertLevel=error`) over `docs`, `README.md`, and `examples/showcase/README.md`. `docs/editor
+A docs/internal/docs-register.md:39: | `docs/admin/` | Sets up and runs the default site, starting from the setup command | Google | Developer docs |
+A docs/internal/docs-register.md:40: | `docs/extend/` | Builds an organization's site on cairn's seams | Google | Developer docs |
+A docs/internal/docs-register.md:45: | `docs/editors/` | Writes on a cairn site through `/admin` and never opens a terminal | Microsoft | Editor docs |
+A docs/internal/docs-register.md:185: The following concept paragraph, from `docs/extend/choose-an-ai-posture.md`, is the voice at its
+A docs/internal/docs-register.md:204: The concept paragraph is `docs/extend/choose-an-ai-posture.md` lines 23 to 26 as merged at
+A docs/internal/docs-register.md:222: - [`docs/extend/choose-an-ai-posture.md`](../extend/choose-an-ai-posture.md) is the primary
+A docs/internal/docs-register.md:304: This brief governs `docs/editors/`, the pages an editor reaches through the admin's Help link. It
+A docs/internal/docs-register.md:512: The narrative arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) are empty until their stages
+A docs/internal/docs-register.md:641: ### The editor track (`docs/editors/`)
+A docs/internal/docs-register.md:666: ### The admin track (`docs/admin/`)
+A docs/internal/docs-register.md:690: ### The extend track (`docs/extend/`)
+A docs/internal/what-cairn-is-and-is-not.md:102: how-tos under `docs/admin/`, while `tool/docs/` keeps only ADRs and design inputs, since a
+A examples/showcase/src/routes/robots.txt/+server.ts:10: // `aiPosture` unset (docs/extend/choose-an-ai-posture.md) has no such property on its type. The
+A migrations/0000_auth.sql:29: -- is a hand-applied migration a consumer runs themselves (docs/extend/upgrade-cairn.md), not
+A packages/create-cairn-site/README.md:36: build with no route edit. See `docs/extend/choose-an-ai-posture.md` in the engine package for the
+A scripts/checks/check-package-files.mjs:102: 'docs/admin/',
+A scripts/checks/check-package-files.mjs:103: 'docs/editors/',
+A scripts/checks/check-package-files.mjs:104: 'docs/extend/'
+A scripts/checks/check-provenance.mjs:5: //   { "page": "docs/extend/choose-an-ai-posture.md",
+A scripts/checks/check-symbols-allowlist.mjs:89: 'log-event:taxonomy.unmarked_field', // docs/extend/migration-notes.md, the retired name a rename entry must still name to say what changed
+A scripts/checks/check-symbols-allowlist.mjs:90: 'log-event:publish.address_collision', // docs/extend/migration-notes.md, the retired name a rename entry must still name to say what changed
+A scripts/checks/check-symbols-allowlist.mjs:112: // docs/extend/migration-notes.md's own past-version record of the 0.68.0 release, citing the
+A scripts/checks/check-symbols-allowlist.mjs:140: 'file-path:dist/components/cairn-admin.css', // docs/extend/migration-notes.md's per-version record of a pre-rename release, which must keep the path 
+A scripts/checks/check-symbols-allowlist.mjs:167: // docs/extend/migration-notes.md's closing "upgrade order" subsection names them so a site
+A scripts/checks/docs-links.mjs:193: 'docs/guides/upgrade-cairn.md': 'docs/extend/upgrade-cairn.md',
+A scripts/checks/docs-links.mjs:276: const UNRELEASED_PARTNER = 'docs/extend/migration-notes.md';
+A scripts/checks/fixtures/provenance/facts/container.md:3: ## docs/admin/example.md
+A scripts/checks/fixtures/provenance/rebuilt-lists/escapes-docs.json:1: ["docs/admin/foo.md", "docs/../outside.md", "docs", "docs//admin//bar.md"]
+A scripts/checks/fixtures/provenance/rebuilt-lists/no-brief.json:1: ["docs/admin/foo.md"]
+A scripts/checks/fixtures/provenance/rebuilt-lists/outside-docs.json:1: ["docs/admin/foo.md", "../outside.md"]
+A scripts/checks/fixtures/provenance/rebuilt-lists/stale.json:1: ["docs/admin/does-not-exist.md"]
+A scripts/checks/fixtures/provenance/site-bad/docs/internal/briefs/admin/broken.json:1: { "page": "docs/admin/broken.md", "sentences": [
+A scripts/checks/fixtures/provenance/site-bad/docs/internal/briefs/admin/misfiled.json:2: "page": "docs/admin/some-other-page.md",
+A scripts/checks/fixtures/provenance/site-bad/docs/internal/briefs/admin/shapeless.json:1: { "page": "docs/admin/shapeless.md" }
+A scripts/checks/fixtures/provenance/site-bad/docs/internal/briefs/admin/uncovered.json:2: "page": "docs/admin/uncovered.md",
+A scripts/checks/fixtures/provenance/site-good/docs/internal/briefs/admin/good-page.json:2: "page": "docs/admin/good-page.md",
+A src/lib/auth/store.ts:208: // hand-applied migration a consumer runs themselves (docs/extend/upgrade-cairn.md), not
+A src/tests/unit/arm-state.test.ts:14: const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+A src/tests/unit/arm-state.test.ts:43: expect(armOf('docs/editors/sub/deep.md')).toBe('editors');
+A src/tests/unit/arm-state.test.ts:44: expect(armOf('docs/extend/migration-notes.md')).toBe('extend');
+A src/tests/unit/arm-state.test.ts:49: expect(armOf('docs/admin/diagram.png')).toBeNull();
+A src/tests/unit/arm-state.test.ts:60: const root = tree({ 'docs/editors/diagram.png': 'x' });
+A src/tests/unit/arm-state.test.ts:70: const root = tree(page(...KEPT, 'docs/extend/a-new-page.md'));
+A src/tests/unit/arm-state.test.ts:80: const root = tree(page('docs/admin/deep/nested.md'));
+A src/tests/unit/arm-state.test.ts:145: loadDeletionList(tree({}, { deleted: ['docs/extend/upgrade-cairn.md'], kept: ['docs/extend/upgrade-cairn.md'] })),
+A src/tests/unit/check-arm-indexes.test.ts:8: const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+A src/tests/unit/check-arm-indexes.test.ts:52: const root = tree(pages(...KEPT, 'docs/extend/a-new-page.md'));
+A src/tests/unit/check-arm-indexes.test.ts:58: ...pages(...KEPT, 'docs/extend/a-new-page.md'),
+A src/tests/unit/check-arm-indexes.test.ts:66: ...pages(...KEPT, 'docs/extend/a-new-page.md'),
+A src/tests/unit/check-package-files.test.ts:163: const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+A src/tests/unit/check-package-files.test.ts:204: expect(result.error).toContain('docs/extend/migration-notes.md');
+A src/tests/unit/check-package-files.test.ts:208: const root = tree(...KEPT, 'docs/extend/a-new-page.md');
+A src/tests/unit/check-package-files.test.ts:209: const result = checkDocsPacked(packed(...KEPT, 'docs/extend/a-new-page.md'), requiredDocsPaths(root));
+A src/tests/unit/check-provenance.test.ts:230: expect.stringContaining('lists "docs/admin/foo.md" as rebuilt, but no brief names it in its "page" field'),
+A src/tests/unit/check-provenance.test.ts:237: expect.stringContaining('lists "docs/admin/does-not-exist.md" as rebuilt, but that page no longer exists: a stale list entry'),
+A src/tests/unit/check-provenance.test.ts:252: expect.stringContaining('lists "docs/admin/foo.md" as rebuilt, but no brief names it in its "page" field'),
+A src/tests/unit/check-provenance.test.ts:320: expect(list).toEqual(['docs/admin/foo.md']);
+A src/tests/unit/check-provenance.test.ts:328: expect(list).toEqual(['docs/admin/foo.md']);
+A src/tests/unit/check-provenance.test.ts:340: expect(list).toEqual(['docs/admin/foo.md', 'docs/admin/bar.md']);
+A src/tests/unit/check-snippets.test.ts:186: file: 'docs/extend/b.md',
+A src/tests/unit/check-snippets.test.ts:258: const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+A src/tests/unit/check-snippets.test.ts:278: expect(docFiles(tree(KEPT))).toEqual(['docs/extend/choose-an-ai-posture.md', 'docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/r
+A src/tests/unit/check-symbols.test.ts:475: const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+A src/tests/unit/check-visuals.test.ts:266: const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+A src/tests/unit/check-visuals.test.ts:291: files['docs/extend/migration-notes.md'] = BAD_IMAGE;
+A src/tests/unit/check-visuals.test.ts:294: expect(result.violations.map((v: { file: string }) => v.file)).toEqual(['docs/extend/migration-notes.md']);
+A src/tests/unit/docs-gate.test.ts:10: expect(parseArgs(['--page', 'docs/extend/choose-an-ai-posture.md', '--brief', 'docs/internal/briefs/extend/choose-an-ai-posture.json'])).toEqual({
+A src/tests/unit/docs-gate.test.ts:11: page: 'docs/extend/choose-an-ai-posture.md',
+A src/tests/unit/docs-gate.test.ts:54: const steps = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md', brief: null });
+A src/tests/unit/docs-gate.test.ts:56: expect(vale?.args).toEqual(['--minAlertLevel=error', 'docs/extend/choose-an-ai-posture.md']);
+A src/tests/unit/docs-gate.test.ts:72: const steps = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md', brief: null });
+A src/tests/unit/docs-gate.test.ts:92: const scoped = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md', brief: 'docs/internal/briefs/extend/choose-an-ai-posture.json' });
+A src/tests/unit/docs-links.test.ts:159: it('agrees on the real, current CHANGELOG.md and docs/extend/migration-notes.md', () => {
+A src/tests/unit/docs-links.test.ts:162: const migrationNotes = readFileSync(resolve(root, 'docs/extend/migration-notes.md'), 'utf8');
+A src/tests/unit/docs-links.test.ts:211: expect(problems[0]).toContain('docs/extend/no-such-page.md');
+A src/tests/unit/docs-links.test.ts:244: const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+A src/tests/unit/docs-links.test.ts:312: const root = fixtureRoot({ 'CHANGELOG.md': changelog, 'docs/extend/a-new-page.md': '# New\n' });
+A src/tests/unit/docs-links.test.ts:322: expect(problems).toEqual([expect.stringContaining('docs/extend/no-such-page.md')]);
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/facts/admin.md:5: ## docs/admin/alpha.md
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/facts/admin.md:12: ## docs/admin/bravo.md
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/facts/admin.md:20: - A note with no id, exempt from every rule here, even one naming docs/admin/alpha.md in a Source: field.
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/facts/editors.md:3: ## docs/editors/beta.md
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/facts/extend.md:3: ## docs/extend/gamma.md
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/facts/extend.md:7: ## docs/extend/kept-record.md
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/facts/extend.md:9: - `f:kr0001` A kept page may be cited in a Source. Source: `docs/extend/kept-record.md`. [verified]
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/admin/alpha.json:2: "page": "docs/admin/alpha.md",
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/admin/bravo.json:2: "page": "docs/admin/bravo.md",
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/deletion-list.json:3: "docs/admin/alpha.md",
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/deletion-list.json:4: "docs/admin/bravo.md",
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/deletion-list.json:5: "docs/editors/beta.md",
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/deletion-list.json:6: "docs/extend/gamma.md",
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/deletion-list.json:10: "kept": ["docs/extend/kept-record.md"]
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/editors/beta.json:2: "page": "docs/editors/beta.md",
+A src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/extend/gamma.json:2: "page": "docs/extend/gamma.md",
+A src/tests/unit/github-slug-contract.test.ts:15: * heading pulled from the published `docs/reference/`, `docs/admin/`, and `docs/extend/` corpus,
+A src/tests/unit/github-slug-contract.test.ts:76: source: 'docs/extend/migration-notes.md',
+A src/tests/unit/transcript-blocks.test.ts:374: 'docs/admin/other.md': 'An admin page, so the arm that quotes the fixtures is rebuilt.\n',
+A src/tests/unit/transcript-blocks.test.ts:448: const root = buildTree({ ...fixtures, 'docs/admin/a-new-page.md': 'No transcript blocks.\n' });
+A src/tests/unit/verify-harvest.test.ts:83: { name: 'a --pages run passes', opts: { pages: ['docs/admin/alpha.md'] }, expect: 'pass' },
+A src/tests/unit/verify-harvest.test.ts:87: r.edit('docs/admin/alpha.md', (t) => t.replace('one checkable thing', 'one checked thing'));
+A src/tests/unit/verify-harvest.test.ts:95: r.edit('docs/admin/bravo.md', (t) => t + '\n\n\n');
+A src/tests/unit/verify-harvest.test.ts:110: t.replace('[rejected: describes a deleted page]', '[rejected: describes the deleted page docs/admin/alpha.md]'),
+A src/tests/unit/verify-harvest.test.ts:118: mutate: (r) => r.edit('docs/admin/alpha.md', (t) => t.replace('one checkable thing', 'one checked thing')),
+A src/tests/unit/verify-harvest.test.ts:162: JSON.stringify({ ...l, page: 'docs/admin/ghost.md' }, null, 2),
+A src/tests/unit/verify-harvest.test.ts:165: expect: [`${HARVEST}/admin/ghost.json`, 'docs/admin/ghost.md', 'is not on the deletion list'],
+A src/tests/unit/verify-harvest.test.ts:172: JSON.stringify({ page: 'docs/extend/kept-record.md', blob: 'x', claims: [] }, null, 2),
+A src/tests/unit/verify-harvest.test.ts:212: expect: [`${HARVEST}/admin/bravo.json`, 'missing ledger', 'docs/admin/bravo.md'],
+A src/tests/unit/verify-harvest.test.ts:217: opts: { pages: ['docs/admin/bravo.md'] },
+A src/tests/unit/verify-harvest.test.ts:218: expect: ['missing ledger', 'docs/admin/bravo.md'],
+A src/tests/unit/verify-harvest.test.ts:222: opts: { pages: ['docs/admin/alhpa.md'] },
+A src/tests/unit/verify-harvest.test.ts:223: expect: ['docs/admin/alhpa.md', 'is not on the deletion list'],
+A src/tests/unit/verify-harvest.test.ts:227: opts: { pages: ['docs/extend/kept-record.md'] },
+A src/tests/unit/verify-harvest.test.ts:228: expect: ['docs/extend/kept-record.md', 'is not on the deletion list'],
+A src/tests/unit/verify-harvest.test.ts:232: opts: { arm: 'editors', pages: ['docs/admin/alpha.md'] },
+A src/tests/unit/verify-harvest.test.ts:233: expect: ['docs/admin/alpha.md', 'not in arm "editors"'],
+A src/tests/unit/verify-harvest.test.ts:262: mutate: (r) => r.ledger('admin/alpha.json', (l) => (l.page = 'docs/admin/bravo.md')),
+A src/tests/unit/verify-harvest.test.ts:268: expect: ['more than one ledger', 'docs/admin/alpha.md', 'alpha-copy.json'],
+A src/tests/unit/verify-harvest.test.ts:277: mutate: (r) => r.write('docs/admin/delta.md', '# Delta\n'),
+A src/tests/unit/verify-harvest.test.ts:278: expect: ['docs/admin/delta.md', 'on the tree but on neither list'],
+A src/tests/unit/verify-harvest.test.ts:282: mutate: (r) => r.remove('docs/editors/beta.md'),
+A src/tests/unit/verify-harvest.test.ts:283: expect: ['docs/editors/beta.md', 'no such page on the tree'],
+A src/tests/unit/verify-harvest.test.ts:287: mutate: (r) => r.remove('docs/extend/kept-record.md'),
+A src/tests/unit/verify-harvest.test.ts:288: expect: ['docs/extend/kept-record.md', 'kept page', 'no such page on the tree'],
+A src/tests/unit/verify-harvest.test.ts:292: mutate: (r) => r.list((l) => l.kept.push('docs/admin/alpha.md')),
+A src/tests/unit/verify-harvest.test.ts:293: expect: ['docs/admin/alpha.md', 'on both lists'],
+A src/tests/unit/verify-harvest.test.ts:298: r.edit('docs/internal/facts/admin.md', (t) => t.replace('`src/alpha.ts:1`. [verified]', '`docs/admin/bravo.md:3`. [verified]')),
+A src/tests/unit/verify-harvest.test.ts:299: expect: ['docs/internal/facts/admin.md', 'f:aa0001', 'names deletion-list page docs/admin/bravo.md'],
+A src/tests/unit/verify-harvest.test.ts:304: r.edit('docs/internal/facts/editors.md', (t) => t.replace('`src/beta.ts:1`', 'the page (docs/admin/alpha.md:338)')),
+A src/tests/unit/verify-harvest.test.ts:305: expect: ['f:be0001', 'names deletion-list page docs/admin/alpha.md'],
+A src/tests/unit/verify-harvest.test.ts:310: expect: ['f:be0001', 'names deletion-list page docs/admin/bravo.md', '"bravo.md"'],
+A src/tests/unit/verify-harvest.test.ts:315: expect: ['f:be0001', 'names deletion-list page docs/admin/bravo.md', '"admin/bravo.md"'],
+A src/tests/unit/verify-harvest.test.ts:320: expect: ['f:be0001', 'names deletion-list page docs/admin/bravo.md'],
+A src/tests/unit/verify-harvest.test.ts:340: r.edit('docs/internal/facts/front-door.md', (t) => t.replace('`README.md:1`', '`docs/admin/bravo.md:3`')),
+A src/tests/unit/verify-harvest.test.ts:341: expect: ['docs/internal/facts/front-door.md', 'f:fd0002', 'names deletion-list page docs/admin/bravo.md'],
+A src/tests/unit/verify-harvest.test.ts:346: r.edit('docs/internal/facts/extend.md', (t) => t.replace('`docs/extend/kept-record.md`. [verified]', '`docs/admin/bravo.md:3`. [verified]')),
+A src/tests/unit/verify-harvest.test.ts:347: expect: ['f:kr0001', 'names deletion-list page docs/admin/bravo.md'],
+A src/tests/unit/verify-harvest.test.ts:373: '- `f:bb0004` Bravo cites a deleted page. Source: `docs/admin/alpha.md:3`. [verified]\n- `f:bb0003`',
+A src/tests/unit/verify-harvest.test.ts:378: const { result } = run(citeAlphaFromBravo, { pages: ['docs/admin/alpha.md'] });
+A src/tests/unit/verify-harvest.test.ts:383: const { result } = run(citeAlphaFromBravo, { pages: ['docs/admin/bravo.md'] });
+A src/tests/unit/verify-harvest.test.ts:384: expect(result.failures.some((f: string) => f.includes('f:bb0004') && f.includes('docs/admin/alpha.md'))).toBe(true);
+A src/tests/unit/verify-harvest.test.ts:394: (r) => r.edit('docs/internal/facts/extend.md', (t) => t.replace('`src/gamma.ts:1`', '`docs/admin/alpha.md:1`')),
+A src/tests/unit/verify-harvest.test.ts:456: const file = root.path('docs/admin/alpha.md');
+A src/tests/unit/verify-harvest.test.ts:463: root.write('docs/admin/utf.md', '# caf\u00e9 \u2014 done\n');
+A src/tests/unit/verify-harvest.test.ts:464: const file = root.path('docs/admin/utf.md');
+A src/tests/unit/verify-harvest.test.ts:482: const out = spawnSync(process.execPath, [SCRIPT, '--root', root.dir, '--pages', 'docs/admin/bravo.md,docs/admin/alhpa.md'], {
+A src/tests/unit/verify-harvest.test.ts:487: expect(out.stderr).toContain('docs/admin/alhpa.md');
+A templates/waymark/src/routes/robots.txt/+server.ts:10: // `aiPosture` unset (docs/extend/choose-an-ai-posture.md) has no such property on its type. The
+A tool/internal/health/fixes_test.go:363: {name: "kept-only: only a kept page", list: list, pages: []string{"docs/admin/kept.md"}},
+A tool/internal/health/fixes_test.go:364: {name: "rebuilt: a page outside the kept set", list: list, pages: []string{"docs/admin/kept.md", "docs/admin/new.md"}, want: true},
+A tool/internal/health/fixes_test.go:365: {name: "rebuilt: a nested page", list: list, pages: []string{"docs/admin/deep/page.md"}, want: true},
+A tool/internal/health/fixes_test.go:366: {name: "a non-Markdown file is no page", list: list, pages: []string{"docs/admin/diagram.png"}},
+A tool/internal/health/fixes_test.go:367: {name: "missing deletion list", pages: []string{"docs/admin/new.md"}, wantErr: true},
+
+=== class G (24 lines)
+G CLAUDE.md:109: `why-cairn.md` for an evaluator. A page serves one track or it is two pages. The admin, editors,
+G CLAUDE.md:118: narrative arms (admin, editors, extend) and `why-cairn.md` are empty until each arm's own stage
+G docs/internal/briefs/README.md:30: **The brief naming rule.** An arm's own `README.md` (`docs/admin/README.md`,
+G docs/internal/briefs/README.md:31: `docs/editors/README.md`, `docs/extend/README.md`, `docs/reference/README.md`) is briefed under
+G docs/internal/briefs/README.md:32: its own arm's track (`docs/internal/briefs/admin/README.json`, and so on), the same as any other
+G docs/internal/briefs/README.md:33: page in that arm. Only `docs/why-cairn.md` and `docs/README.md`, the two front-door pages, use the
+G docs/internal/briefs/README.md:35: `docs/README.md`) never covers `docs/admin/README.md`; each arm README needs its own brief.
+G docs/internal/briefs/README.md:41: page's file name without `.md`. The brief for `docs/admin/is-it-working.md` is
+G docs/internal/briefs/README.md:49: "page": "docs/admin/is-it-working.md",
+G docs/internal/docs-maintenance.md:18: | `check:readiness` | Loads the built condition registry (`dist/diagnostics/conditions.js`); every condition needs a `docsAnchor`. While the admin arm
+G docs/internal/docs-register.md:42: | The front door: `docs/README.md`, `docs/why-cairn.md`, and the root `README.md` | Every audience, led by the developer | Google | Developer docs |
+G docs/internal/docs-register.md:208: Ratified-good, for the front door only and the one specimen in the first person: the why-cairn
+G docs/internal/docs-register.md:225: - The why-cairn opener in "Voice" is the exemplar for the voice on the front door only.
+G docs/internal/docs-register.md:605: 5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md`,
+G docs/internal/docs-register.md:606: `admin/troubleshooting.md`, or `extend/debug-your-site.md`) rather than restating recovery
+G docs/internal/docs-register.md:622: - **Condition entry** (`admin/is-it-working.md`): a condition id matching the doctor's
+G docs/internal/docs-register.md:626: - **Symptom row** (`admin/troubleshooting.md`, `extend/debug-your-site.md`): what the reader
+G docs/internal/docs-register.md:768: ## The front door (`docs/README.md`, `docs/why-cairn.md`, and the root `README.md`)
+G docs/internal/docs-register.md:774: ("deciding whether cairn fits" → `docs/why-cairn.md`), then editor, admin, extender,
+G docs/internal/docs-register.md:786: `docs/editors/welcome.md` without hunting, and must walk away with a general understanding
+G docs/internal/docs-register.md:805: trade-offs, stays in `docs/why-cairn.md`.
+G docs/internal/docs-register.md:826: - The front door carries the cairn docs voice at its fullest, `docs/why-cairn.md` above all.
+G docs/internal/docs-register.md:853: - **A document identifier, fixed by suppression.** `auth-channel-security-model.md` cites "NIST
+G docs/internal/what-cairn-is-and-is-not.md:3: > The public-facing content of this charter was absorbed by the why-cairn page (removed pending its rebuild) in
+
+=== class N (85 lines)
+N .github/workflows/tool.yml:22: - 'docs/admin/is-it-working.md'
+N .github/workflows/tool.yml:38: - 'docs/admin/is-it-working.md'
+N package.json:210: "docs/README.md",
+N package.json:211: "docs/why-cairn.md",
+N scripts/checks/arm-state.mjs:31: export const FRONT_DOOR_PAGES = ['docs/README.md', 'docs/why-cairn.md'];
+N scripts/checks/check-arm-indexes.mjs:8: // on). `docs/why-cairn.md` is the exception the arm shape cannot express: a published page with no
+N scripts/checks/check-arm-indexes.mjs:39: { dir: 'docs/admin', index: 'docs/admin/README.md', state: 'admin' },
+N scripts/checks/check-arm-indexes.mjs:40: { dir: 'docs/editors', index: 'docs/editors/README.md', state: 'editors' },
+N scripts/checks/check-arm-indexes.mjs:41: { dir: 'docs/extend', index: 'docs/extend/README.md', state: 'extend' },
+N scripts/checks/check-arm-indexes.mjs:49: { page: 'docs/why-cairn.md', index: 'docs/README.md' },
+N scripts/checks/check-editor-quotes.mjs:1: // cairn-cms: the editor-quotes grounding gate. `docs/editors/when-something-goes-wrong.md`
+N scripts/checks/check-editor-quotes.mjs:36: const DOC = 'docs/editors/when-something-goes-wrong.md';
+N scripts/checks/check-package-files.mjs:70: admin: 'docs/admin/README.md',
+N scripts/checks/check-package-files.mjs:71: editors: 'docs/editors/README.md',
+N scripts/checks/check-package-files.mjs:72: extend: 'docs/extend/README.md'
+N scripts/checks/check-readiness.mjs:28: const DOC = 'docs/admin/is-it-working.md';
+N scripts/checks/check-symbols-allowlist.mjs:36: 'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
+N scripts/checks/check-symbols-allowlist.mjs:37: 'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
+N scripts/checks/check-symbols-allowlist.mjs:46: // never an environment variable), cited in docs/extend/sign-in-through-your-organization.md's
+N scripts/checks/check-symbols-allowlist.mjs:87: 'log-event:tidy.conventions', // docs/extend/enable-tidy.md, the site config's `tidy.conventions` field
+N scripts/checks/check-symbols-allowlist.mjs:88: 'log-event:tidy.model', // docs/extend/enable-tidy.md, migration-notes.md, and log-events.md, the site config's `tidy.model` field
+N scripts/checks/check-symbols-allowlist.mjs:117: // The same record's 0.97.0 entry cites docs/extend/security-model.md's exhaustive-map recipe by
+N scripts/checks/check-symbols-allowlist.mjs:120: 'file-path:docs/extend/security-model.md',
+N scripts/checks/check-symbols-allowlist.mjs:122: 'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
+N scripts/checks/check-symbols-allowlist.mjs:128: 'file-path:src/lib/club/section.ts', // docs/extend/add-a-custom-admin-screen.md's illustrative section module
+N scripts/checks/check-symbols-allowlist.mjs:129: 'file-path:src/routes/admin/club/events/ApproveDialog.svelte', // docs/extend/add-a-custom-admin-screen.md's illustrative dialog-form recipe component
+N scripts/checks/check-symbols-allowlist.mjs:130: 'file-path:src/lib/today.ts', // docs/extend/debug-your-site.md's illustrative fixed-today helper module
+N scripts/checks/check-symbols-allowlist.mjs:131: 'file-path:src/lib/members/channel.ts', // docs/extend/add-a-second-audience.md's illustrative auth-channel module
+N scripts/checks/check-symbols-allowlist.mjs:132: 'file-path:src/lib/content.ts', // docs/extend/build-a-site-by-hand.md and wire-the-delivery-surface.md's illustrative content-index module, by conven
+N scripts/checks/check-symbols-allowlist.mjs:133: 'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
+N scripts/checks/check-symbols-allowlist.mjs:135: 'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
+N scripts/checks/check-symbols-allowlist.mjs:153: 'file-path:svelte-kit/cloudflare/_worker.js', // docs/extend/build-a-site-by-hand.md's wrangler.jsonc `main` field, mangled by the leading-dot trim
+N scripts/checks/check-symbols-allowlist.mjs:154: 'file-path:src/lib/access-identity.ts', // docs/extend/sign-in-through-your-organization.md's illustrative Access-verifier module, by convention
+N scripts/checks/check-symbols-allowlist.mjs:155: 'file-path:admin/__data.json', // docs/extend/sign-in-through-your-organization.md, SvelteKit's own data-only fetch path, never a file on disk
+N scripts/checks/check-symbols-allowlist.mjs:178: // not a registered one. docs/admin/setup-recovery.md cites the literal path an admin visits
+N scripts/checks/check-symbols.mjs:69: { path: 'docs/why-cairn.md', arm: 'front-door' },
+N scripts/checks/check-symbols.mjs:71: { path: 'docs/README.md', arm: 'front-door' },
+N scripts/checks/check-visuals.mjs:40: const INDEX_FILES = ['docs/README.md'];
+N scripts/checks/docs-links.mjs:168: 'docs/explanation/auth-channel-security-model.md': 'docs/extend/auth-channel-security-model.md',
+N scripts/checks/docs-links.mjs:169: 'docs/explanation/editor-copyedit.md': 'docs/extend/enable-tidy.md',
+N scripts/checks/docs-links.mjs:170: 'docs/explanation/enforced-design.md': 'docs/extend/add-a-custom-admin-screen.md',
+N scripts/checks/docs-links.mjs:171: 'docs/explanation/media-storage.md': 'docs/extend/data-tiers.md',
+N scripts/checks/docs-links.mjs:172: 'docs/explanation/security-model.md': 'docs/extend/security-model.md',
+N scripts/checks/docs-links.mjs:173: 'docs/guides/add-a-custom-admin-screen.md': 'docs/extend/add-a-custom-admin-screen.md',
+N scripts/checks/docs-links.mjs:174: 'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-audience.md',
+N scripts/checks/docs-links.mjs:175: 'docs/guides/add-an-image.md': 'docs/editors/add-an-image.md',
+N scripts/checks/docs-links.mjs:176: 'docs/guides/add-an-island.md': 'docs/extend/add-an-island.md',
+N scripts/checks/docs-links.mjs:177: 'docs/guides/add-authors.md': 'docs/extend/declare-your-own-concept.md',
+N scripts/checks/docs-links.mjs:178: 'docs/guides/announce-on-publish.md': 'docs/extend/announce-on-publish.md',
+N scripts/checks/docs-links.mjs:179: 'docs/guides/cloudflare-readiness.md': 'docs/admin/is-it-working.md',
+N scripts/checks/docs-links.mjs:180: 'docs/guides/configure-auth-and-d1.md': 'docs/extend/add-cairn-to-a-sveltekit-app.md',
+N scripts/checks/docs-links.mjs:181: 'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/define-an-adapter-and-schema.md',
+N scripts/checks/docs-links.mjs:182: 'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md',
+N scripts/checks/docs-links.mjs:183: 'docs/guides/iterate-your-design-locally.md': 'docs/extend/design-your-site.md',
+N scripts/checks/docs-links.mjs:184: 'docs/guides/link-content-with-references.md': 'docs/extend/link-content-with-references.md',
+N scripts/checks/docs-links.mjs:185: 'docs/guides/manage-the-media-library.md': 'docs/editors/manage-the-media-library.md',
+N scripts/checks/docs-links.mjs:186: 'docs/guides/organize-your-admin-nav.md': 'docs/extend/organize-your-admin-nav.md',
+N scripts/checks/docs-links.mjs:187: 'docs/guides/publish-and-discard.md': 'docs/editors/publish-and-history.md',
+N scripts/checks/docs-links.mjs:188: 'docs/guides/read-cairn-logs.md': 'docs/admin/troubleshooting.md',
+N scripts/checks/docs-links.mjs:189: 'docs/guides/restrict-admin-access.md': 'docs/extend/restrict-admin-access.md',
+N scripts/checks/docs-links.mjs:190: 'docs/guides/reuse-content-across-entries.md': 'docs/extend/reuse-content-across-entries.md',
+N scripts/checks/docs-links.mjs:191: 'docs/guides/share-a-draft-preview.md': 'docs/extend/share-a-draft-preview.md',
+N scripts/checks/docs-links.mjs:194: 'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md',
+N scripts/checks/docs-links.mjs:195: 'docs/guides/write-in-the-editor.md': 'docs/editors/write-in-the-editor.md',
+N scripts/checks/docs-links.mjs:196: 'docs/reference/authoring-syntax.md': 'docs/editors/write-in-the-editor.md',
+N scripts/checks/transcript-blocks.mjs:31: const INDEX_FILES = ['docs/README.md'];
+N scripts/checks/transcript-blocks.mjs:45: 'docs/admin/create-your-site.md': 3,
+N scripts/checks/transcript-blocks.mjs:46: 'docs/admin/is-it-working.md': 1,
+N tool/internal/health/fixes.go:35: // Anchor is the heading anchor in docs/admin/is-it-working.md this fix's own doc section
+N tool/internal/health/fixes_test.go:150: // normalizes each entry to ("is-it-working.md#<anchor>").
+N tool/internal/health/fixes_test.go:151: const checklistFile = "is-it-working.md"
+N tool/internal/health/fixes_test.go:237: return []string{"the admin arm holds pages but docs/admin/is-it-working.md does not exist"}
+N tool/internal/health/fixes_test.go:241: problems = append(problems, fmt.Sprintf("anchor %q: no such heading in is-it-working.md", anchor))
+N tool/internal/health/fixes_test.go:247: problems = append(problems, fmt.Sprintf("shipped anchor %q: no such heading in is-it-working.md", entry))
+N tool/internal/health/fixes_test.go:255: // list while the admin arm holds no page, and on docs/admin/is-it-working.md's own headings, with
+N tool/internal/health/fixes_test.go:287: slugs, err = headingSlugsIn(filepath.Join(root, "docs", "admin", "is-it-working.md"))
+N tool/internal/health/fixes_test.go:289: t.Fatalf("read is-it-working.md: %v", err)
+N tool/internal/health/fixes_test.go:292: t.Fatal("found no headings in is-it-working.md; the scan is broken")
+N tool/internal/health/fixes_test.go:301: shipped := []string{"is-it-working.md#force-https-at-the-edge", "is-it-working.md#turn-on-observability"}
+N tool/internal/health/fixes_test.go:320: want:    []string{"is-it-working.md does not exist"},
+N tool/internal/health/fixes_test.go:334: want:    []string{"is-it-working.md#turn-on-observability"},
+N tool/internal/health/fixes_test.go:354: const list = `{"deleted": ["docs/admin/is-it-working.md"], "kept": ["docs/admin/kept.md"]}`
+N tool/internal/health/fixes_test.go:398: {name: "valid", body: `{"anchors": ["is-it-working.md#force-https-at-the-edge"]}`, want: 1},
+N tool/internal/health/fixes_test.go:402: {name: "not an object carrying anchors", body: `["is-it-working.md#x"]`, wantErr: true},
+N tool/internal/health/fixes_test.go:432: // missing field: this task does not edit the frozen is-it-working.md page to manufacture
+
+=== class T (98 lines)
+T src/tests/unit/arm-state.test.ts:16: deleted: ['docs/README.md', 'docs/why-cairn.md', 'docs/admin/is-it-working.md', 'docs/editors/welcome.md', 'docs/extend/architecture.md'],
+T src/tests/unit/arm-state.test.ts:42: expect(armOf('docs/admin/is-it-working.md')).toBe('admin');
+T src/tests/unit/arm-state.test.ts:45: expect(armOf('docs/README.md')).toBe('front-door');
+T src/tests/unit/arm-state.test.ts:46: expect(armOf('docs/why-cairn.md')).toBe('front-door');
+T src/tests/unit/arm-state.test.ts:75: const root = tree(page('docs/admin/is-it-working.md'));
+T src/tests/unit/arm-state.test.ts:86: expect(armState(tree(page('docs/README.md')), 'front-door')).toBe('rebuilt');
+T src/tests/unit/arm-state.test.ts:87: expect(armState(tree(page('docs/why-cairn.md')), 'front-door')).toBe('rebuilt');
+T src/tests/unit/arm-state.test.ts:92: const withIndex = tree(page(...KEPT, 'docs/extend/README.md'));
+T src/tests/unit/arm-state.test.ts:107: const root = tree(page(...KEPT, 'docs/editors/welcome.md'));
+T src/tests/unit/check-arm-indexes.test.ts:9: const LIST = { deleted: ['docs/README.md', 'docs/why-cairn.md', 'docs/admin/is-it-working.md'], kept: KEPT };
+T src/tests/unit/check-arm-indexes.test.ts:59: 'docs/extend/README.md': indexLinking('migration-notes.md', 'upgrade-cairn.md', 'choose-an-ai-posture.md', 'a-new-page.md'),
+T src/tests/unit/check-arm-indexes.test.ts:67: 'docs/extend/README.md': indexLinking('upgrade-cairn.md', 'choose-an-ai-posture.md', 'a-new-page.md'),
+T src/tests/unit/check-arm-indexes.test.ts:70: { arm: 'docs/extend', page: 'docs/extend/migration-notes.md', index: 'docs/extend/README.md' },
+T src/tests/unit/check-arm-indexes.test.ts:77: expect(() => findUnindexedPages(tree(pages('docs/admin/is-it-working.md')))).toThrow(
+T src/tests/unit/check-arm-indexes.test.ts:83: const root = tree({ ...pages('docs/admin/is-it-working.md', 'docs/admin/other.md'), 'docs/admin/README.md': indexLinking('other.md') });
+T src/tests/unit/check-arm-indexes.test.ts:85: { arm: 'docs/admin', page: 'docs/admin/is-it-working.md', index: 'docs/admin/README.md' },
+T src/tests/unit/check-arm-indexes.test.ts:92: const root = tree({ 'docs/README.md': '# Docs\n', 'docs/why-cairn.md': '# Why\n' });
+T src/tests/unit/check-arm-indexes.test.ts:93: expect(findUnindexedPages(root)).toEqual([{ arm: 'front door', page: 'docs/why-cairn.md', index: 'docs/README.md' }]);
+T src/tests/unit/check-arm-indexes.test.ts:97: const root = tree({ 'docs/README.md': '[Why](why-cairn.md)\n', 'docs/why-cairn.md': '# Why\n' });
+T src/tests/unit/check-editor-quotes.test.ts:184: const PAGE = 'docs/editors/when-something-goes-wrong.md';
+T src/tests/unit/check-editor-quotes.test.ts:212: const report = editorQuotesReport(tree({ 'docs/editors/welcome.md': '# Welcome\n' }));
+T src/tests/unit/check-package-files.test.ts:80: 'docs/README.md',
+T src/tests/unit/check-package-files.test.ts:81: 'docs/why-cairn.md',
+T src/tests/unit/check-package-files.test.ts:84: 'docs/admin/README.md',
+T src/tests/unit/check-package-files.test.ts:85: 'docs/admin/create-your-site.md',
+T src/tests/unit/check-package-files.test.ts:86: 'docs/editors/README.md',
+T src/tests/unit/check-package-files.test.ts:87: 'docs/editors/write-in-the-editor.md',
+T src/tests/unit/check-package-files.test.ts:88: 'docs/extend/README.md',
+T src/tests/unit/check-package-files.test.ts:89: 'docs/extend/build-a-site-by-hand.md'
+T src/tests/unit/check-package-files.test.ts:95: 'docs/admin/README.md',
+T src/tests/unit/check-package-files.test.ts:96: 'docs/editors/README.md',
+T src/tests/unit/check-package-files.test.ts:97: 'docs/extend/README.md',
+T src/tests/unit/check-package-files.test.ts:98: 'docs/README.md',
+T src/tests/unit/check-package-files.test.ts:99: 'docs/why-cairn.md'
+T src/tests/unit/check-package-files.test.ts:114: it('fails naming the missing why-cairn front door, which no arm prefix covers', () => {
+T src/tests/unit/check-package-files.test.ts:115: const result = checkDocsPacked(arms.filter((p) => p !== 'docs/why-cairn.md'), required);
+T src/tests/unit/check-package-files.test.ts:118: expect(result.error).toContain('docs/why-cairn.md');
+T src/tests/unit/check-package-files.test.ts:174: [DELETION_LIST_PATH]: JSON.stringify({ deleted: ['docs/admin/is-it-working.md', 'docs/README.md', 'docs/why-cairn.md'], kept: KEPT }),
+T src/tests/unit/check-package-files.test.ts:212: expect(result.error).toContain('docs/extend/README.md');
+T src/tests/unit/check-package-files.test.ts:216: const pages = [...KEPT, 'docs/extend/a-new-page.md', 'docs/extend/README.md'];
+T src/tests/unit/check-package-files.test.ts:221: const root = tree('docs/admin/is-it-working.md');
+T src/tests/unit/check-package-files.test.ts:222: const result = checkDocsPacked(packed('docs/admin/is-it-working.md'), requiredDocsPaths(root));
+T src/tests/unit/check-package-files.test.ts:225: expect(result.error).toContain('docs/admin/README.md');
+T src/tests/unit/check-package-files.test.ts:229: expect(requiredDocsPaths(tree('docs/README.md'))).toEqual(['docs/reference/README.md', 'docs/README.md', 'docs/why-cairn.md']);
+T src/tests/unit/check-provenance.test.ts:241: it('fails a listed docs/admin/README.md whose only README brief names docs/README.md', () => {
+T src/tests/unit/check-provenance.test.ts:244: expect.stringContaining('lists "docs/admin/README.md" as rebuilt, but no brief names it in its "page" field'),
+T src/tests/unit/check-provenance.test.ts:352: expect(checkBriefCoverage(['docs/README.md'], briefs, root)).toEqual([]);
+T src/tests/unit/check-snippets.test.ts:269: if (list) all[DELETION_LIST_PATH] = JSON.stringify({ deleted: ['docs/admin/is-it-working.md'], kept: KEPT });
+T src/tests/unit/check-snippets.test.ts:282: expect(docFiles(tree(['docs/admin/is-it-working.md']))).toEqual(['docs/admin/is-it-working.md', 'docs/reference/core.md']);
+T src/tests/unit/check-symbols.test.ts:465: const segments = codeVoiceSegments('the `docs/extend/security-model.md#recovering-whitelist-semantics` recipe');
+T src/tests/unit/check-symbols.test.ts:466: expect(extractFilePaths(segments).map(({ token }) => token)).toEqual(['docs/extend/security-model.md']);
+T src/tests/unit/check-symbols.test.ts:467: expect(ALLOWLIST.has('file-path:docs/extend/security-model.md')).toBe(true);
+T src/tests/unit/check-symbols.test.ts:480: if (list) all[DELETION_LIST_PATH] = JSON.stringify({ deleted: ['docs/admin/is-it-working.md'], kept: KEPT });
+T src/tests/unit/check-symbols.test.ts:499: const root = tree([...KEPT, 'docs/admin/is-it-working.md']);
+T src/tests/unit/check-symbols.test.ts:501: expect(filesInScope(root)).toEqual(['README.md', 'docs/admin/is-it-working.md', ...[...KEPT].sort(), 'docs/reference/core.md']);
+T src/tests/unit/check-visuals.test.ts:277: if (list) all[DELETION_LIST_PATH] = JSON.stringify({ deleted: ['docs/README.md'], kept: KEPT });
+T src/tests/unit/check-visuals.test.ts:298: const result = scanTree(tree({ 'docs/admin/a-page.md': BAD_IMAGE, 'docs/README.md': BAD_IMAGE }));
+T src/tests/unit/check-visuals.test.ts:299: expect(result.violations.map((v: { file: string }) => v.file).sort()).toEqual(['docs/README.md', 'docs/admin/a-page.md']);
+T src/tests/unit/docs-links.test.ts:174: expect(legacyTarget('CHANGELOG.md', 'docs/guides/add-an-island.md')).toBe(
+T src/tests/unit/docs-links.test.ts:175: 'docs/extend/add-an-island.md'
+T src/tests/unit/docs-links.test.ts:180: expect(legacyTarget('CHANGELOG.md', './docs/guides/add-an-island.md')).toBe(
+T src/tests/unit/docs-links.test.ts:181: 'docs/extend/add-an-island.md'
+T src/tests/unit/docs-links.test.ts:183: expect(legacyTarget('CHANGELOG.md', 'docs/explanation/security-model.md#who-may-edit')).toBe(
+T src/tests/unit/docs-links.test.ts:184: 'docs/extend/security-model.md'
+T src/tests/unit/docs-links.test.ts:189: expect(legacyTarget('ROADMAP.md', 'docs/guides/add-an-island.md')).toBeNull();
+T src/tests/unit/docs-links.test.ts:190: expect(legacyTarget('docs/reference/core.md', 'docs/guides/add-an-island.md')).toBeNull();
+T src/tests/unit/docs-links.test.ts:208: 'docs/guides/add-an-island.md': 'docs/extend/no-such-page.md',
+T src/tests/unit/docs-links.test.ts:217: 'docs/reference/core.md': 'docs/extend/architecture.md',
+T src/tests/unit/docs-links.test.ts:226: 'docs/guides/never-cited-anywhere.md': 'docs/extend/architecture.md',
+T src/tests/unit/docs-links.test.ts:245: const LIST = { deleted: ['docs/admin/is-it-working.md', 'docs/extend/enable-tidy.md', 'docs/why-cairn.md'], kept: KEPT };
+T src/tests/unit/docs-links.test.ts:261: 'CHANGELOG.md': '# Changelog\n\nsee [check](docs/admin/is-it-working.md#force-https-at-the-edge)\n',
+T src/tests/unit/docs-links.test.ts:262: 'docs/internal/record/2026-09-01-x.md': 'see [tidy](../../extend/enable-tidy.md)\n',
+T src/tests/unit/docs-links.test.ts:263: 'docs/internal/history/old.md': 'see [why](../../why-cairn.md)\n',
+T src/tests/unit/docs-links.test.ts:264: 'docs/internal/feedback/note.md': 'see [check](../../admin/is-it-working.md)\n',
+T src/tests/unit/docs-links.test.ts:276: const root = fixtureRoot({ 'docs/reference/core.md': 'see [tidy](../extend/enable-tidy.md)\n' });
+T src/tests/unit/docs-links.test.ts:278: { file: 'docs/reference/core.md', line: 1, dest: '../extend/enable-tidy.md', reason: 'target not found: ../extend/enable-tidy.md' },
+T src/tests/unit/docs-links.test.ts:298: const changelog = '# Changelog\n\nsee [tidy](docs/guides/enable-tidy.md)\n';
+T src/tests/unit/docs-links.test.ts:299: const map = { 'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md' };
+T src/tests/unit/docs-links.test.ts:315: expect(problems[0]).toContain('docs/extend/enable-tidy.md');
+T src/tests/unit/docs-links.test.ts:321: const problems = legacyMapProblems(root, { 'docs/guides/enable-tidy.md': 'docs/extend/no-such-page.md' });
+T src/tests/unit/github-slug-contract.test.ts:82: source: 'docs/extend/build-a-site-by-hand.md',
+T src/tests/unit/github-slug-contract.test.ts:88: source: 'docs/admin/is-it-working.md',
+T src/tests/unit/github-slug-contract.test.ts:101: const duplicateSource = 'docs/admin/own-your-domain.md';
+T src/tests/unit/transcript-blocks.test.ts:228: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:243: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:260: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:276: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:291: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:306: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:322: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:337: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:352: // is-it-working.md carries one block (meets its floor of 1); create-your-site.md carries
+T src/tests/unit/transcript-blocks.test.ts:354: 'docs/admin/is-it-working.md': [
+T src/tests/unit/transcript-blocks.test.ts:360: 'docs/admin/create-your-site.md': 'No transcript blocks on this page.\n',
+T src/tests/unit/transcript-blocks.test.ts:366: expect(belowFloor).toContain('docs/admin/create-your-site.md');
+T src/tests/unit/transcript-blocks.test.ts:367: expect(belowFloor).not.toContain('docs/admin/is-it-working.md');
+T src/tests/unit/transcript-blocks.test.ts:400: 'docs/admin/create-your-site.md': [
+T src/tests/unit/transcript-blocks.test.ts:420: 'docs/admin/is-it-working.md': [
+
+=== class V (10 lines)
+V scripts/checks/fixtures/provenance/rebuilt-lists/misnamed.json:1: ["docs/admin/README.md"]
+V scripts/checks/fixtures/provenance/site-coverage/docs/internal/briefs/front-door/README.json:2: "page": "docs/README.md",
+V scripts/oneshot/verify-harvest.mjs:44: const FRONT_DOOR_PAGES = ['docs/why-cairn.md', 'docs/README.md'];
+V scripts/oneshot/verify-harvest.mjs:232: * arm-relative path (`extend/data-tiers.md`, optionally behind `./` or `../`), and its bare
+V scripts/oneshot/verify-harvest.mjs:233: * basename (`data-tiers.md`). A citation carrying no `:line` slips past `check:facts`, so the
+V src/tests/unit/fixtures/verify-harvest/base/docs/internal/facts/front-door.md:3: ## docs/why-cairn.md
+V src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/deletion-list.json:7: "docs/why-cairn.md",
+V src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/deletion-list.json:8: "docs/README.md"
+V src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/front-door/README.json:2: "page": "docs/README.md",
+V src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/front-door/why-cairn.json:2: "page": "docs/why-cairn.md",
+
+=== class D (15 lines)
+D CLAUDE.md:152: separate docs deploy, no dev-docs channel (record: cairn-pub `docs/architecture.md`, "Docs
+D docs/internal/README.md:138: - `architecture.md`: the original architecture writeup.
+D docs/internal/pre-beta-harvest.md:485: documented in `docs/guides/wire-the-delivery-surface.md`) already reads a `{value, label}`
+D scripts/checks/check-symbols-allowlist.mjs:134: 'file-path:src/content/posts/2026-08-14-hello.md', // docs/extend/build-a-site-by-hand.md's illustrative sample entry
+D scripts/checks/check-symbols-allowlist.mjs:136: 'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
+D scripts/checks/check-symbols-allowlist.mjs:137: 'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
+D src/tests/integration/content-routes-fragments-delete.test.ts:110: expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
+D src/tests/integration/content-routes-fragments-edit.test.ts:140: delete gh.branches.get('main')!['src/content/fragments/welcome.md'];
+D src/tests/integration/content-routes-fragments-edit.test.ts:167: if (String(input).includes('src/content/fragments/welcome.md')) {
+D src/tests/integration/content-routes-fragments-rename.test.ts:110: expect(gh.read('main', 'src/content/fragments/welcome.md')).toBeNull();
+D src/tests/integration/content-routes-fragments-rename.test.ts:145: expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
+D src/tests/unit/content-routes-edit.test.ts:498: 'src/content/pages/welcome.md': '---\ntitle: Welcome\n---\nHi.',
+D src/tests/unit/public-routes-markdown.test.ts:60: expect(paths).toEqual(['2026/05/14/welcome.md', 'about.md']);
+D src/tests/unit/public-routes-markdown.test.ts:66: const data = await routes.markdownLoad({ url: new URL('https://x.test/2026/05/14/welcome.md') });
+D src/tests/unit/public-routes-markdown.test.ts:92: const welcome = await routes.markdownLoad({ url: new URL('https://x.test/2026/05/14/welcome.md') });
+
+=== class F2 (53 lines)
+F2 docs/internal/facts/README.md:4: source and a status tag. It is never shipped in the published docs arms (`docs/admin/`,
+F2 docs/internal/facts/README.md:5: `docs/editors/`, `docs/extend/`, `docs/reference/`, `docs/why-cairn.md`), and it is not
+F2 docs/internal/facts/README.md:122: The three narrative doc arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) and `docs/why-cairn.md`
+F2 docs/internal/facts/README.md:124: every old page once its facts landed here, and `docs/extend/` keeps only the per-version records
+F2 docs/internal/facts/README.md:145: **`docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are per-version records,
+F2 docs/internal/facts/admin.md:3: Harvested 2026-09-15 from docs/admin/*. Agent-facing; never shipped; not register-graded. Every
+F2 docs/internal/facts/admin.md:29: - `f:jtl15v` Upgrading the cairn engine is code work in the site's repository: bump the `@glw907/cairn-cms` range in the site's `package.json`, make i
+F2 docs/internal/facts/admin.md:233: - Pages whose facts are entirely covered by another page: none outright duplicated end-to-end; `what-to-run-and-when.md`'s dependency-floor and GitHub
+F2 docs/internal/facts/admin.md:235: - "Nothing here is rented from cairn" (before-you-start.md): framing/positioning, not a checkable fact.
+F2 docs/internal/facts/admin.md:237: - "A domain this new has no sending history yet... this trust builds on its own" (own-your-domain.md): a general email-deliverability observation, not
+F2 docs/internal/facts/admin.md:238: - "Guessing or forcing past this only risks your organization's existing mail" (own-your-domain.md): advisory tone, not a distinct verifiable fact bey
+F2 docs/internal/facts/admin.md:239: - The whole "What it costs" framing device (three numbered cost items) in before-you-start.md is pedagogical structure; the underlying dollar figures 
+F2 docs/internal/facts/admin.md:252: package (the condition-id list its retired bin printed under is-it-working.md, and its two
+F2 docs/internal/facts/admin.md:253: restatements under troubleshooting.md and what-to-run-and-when.md) deleted, since the `cairn
+F2 docs/internal/facts/admin.md:264: what-to-run-and-when.md). Total facts after repair: 86.
+F2 docs/internal/facts/admin.md:283: Harvested 2026-09-15 from docs/admin/*. Tightened 2026-09-15 (every `[candidate: ...]` tag
+F2 docs/internal/facts/editors.md:3: Harvested 2026-09-15 from docs/editors/*. Agent-facing; never shipped; not register-graded. Every fact carries a source. Format: one bullet per fact, 
+F2 docs/internal/facts/editors.md:168: - Two docs-drift items worth flagging even though the underlying facts check out: (1) write-in-the-editor.md documents only the Format/Structure toolb
+F2 docs/internal/facts/editors.md:172: Harvested 2026-09-15 from docs/editors/*. Tightened 2026-09-15 (every `[candidate: ...]` tag
+F2 docs/internal/facts/extend.md:3: Harvested 2026-09-15 from docs/extend/*, tightened the same day. Agent-facing; never shipped; not register-graded. Every fact carries a source. Format
+F2 docs/internal/facts/extend.md:236: - `f:n0laoh` The `cairnManifest` Vite plugin has two distinct failure modes, confirmed by reading the plugin directly. (1) It fails the build if the c
+F2 docs/internal/facts/extend.md:371: - `f:7az6m2` If a site also builds the manifest with the `cairnManifest` Vite plugin, a concept missing from that plugin's own `content` option fails 
+F2 docs/internal/facts/extend.md:502: - `f:6a339y` Four production sites depend on cairn, each on its own version range at plan-authoring time: `ecxc-ski` (`^0.95.0`), `907-life` (`^0.84.4
+F2 docs/internal/facts/extend.md:795: Pages whose facts are entirely covered by another page: none in this slice; every page in the first 16 contributes at least one fact not stated elsewh
+F2 docs/internal/facts/extend.md:799: - `architecture.md`'s framing that the three-way core/adapter/SvelteKit split is "deliberate" is a design rationale, not a fact an implementer acts on
+F2 docs/internal/facts/extend.md:800: - `auth-channel-security-model.md`'s narrative about three earlier design rounds each failing by violating the identity-keyed-denial rule is historica
+F2 docs/internal/facts/extend.md:801: - `design-your-site.md`'s framing that "the chassis is deliberately generous, not minimal" is a design philosophy statement; the actionable consequenc
+F2 docs/internal/facts/extend.md:802: - `build-a-site-by-hand.md`'s milestone narrative ("this proves the deploy loop before you have any content worth deploying") is pedagogical framing, 
+F2 docs/internal/facts/extend.md:806: - Pages whose facts are entirely covered by another page: none outright, but `rotate-the-github-app-key.md`'s procedural steps are almost entirely an 
+F2 docs/internal/facts/extend.md:810: - security-model.md's framing that the realistic threat is "a compromised editor account... not an anonymous public attacker" is a threat-model judgme
+F2 docs/internal/facts/extend.md:811: - sign-in-through-your-organization.md's advice to "Set it to hours, not the maximum" for the Access session duration is a recommendation, not an enfo
+F2 docs/internal/facts/extend.md:812: - enable-tidy.md's claim that Sonnet 5 is "the judgment floor for a light copy-edit" is an editorial rationale for the default choice, not a testable 
+F2 docs/internal/facts/extend.md:813: - wire-the-delivery-surface.md's own content-type investigation explicitly flags itself as "measured locally... not verified against a live deployed z
+F2 docs/internal/facts/extend.md:816: package deleted (the `github.app` save-chain bullet in add-cairn-to-a-sveltekit-app.md, the
+F2 docs/internal/facts/extend.md:817: `config.csrf-disable-missing` both-files bullet in build-a-site-by-hand.md, the
+F2 docs/internal/facts/extend.md:818: `config.tidy-key-missing` `ANTHROPIC_API_KEY`-probing bullet in enable-tidy.md, the
+F2 docs/internal/facts/extend.md:819: rotation-order runbook and its two `github.app` bullets in rotate-the-github-app-key.md, and the
+F2 docs/internal/facts/extend.md:827: Harvested 2026-09-15 from docs/extend/*, split into two slices (pages 1-16, pages 17-32) that
+F2 docs/internal/facts/extend.md:830: The one remaining candidate (migrate-existing-content.md's inline-validation workflow claim) is
+F2 docs/internal/facts/extend.md:832: (enable-tidy.md's dev-backend Anthropic-client-stub claim) is carried in its own page section, not
+F2 docs/internal/facts/front-door.md:3: Harvested 2026-09-15 from docs/why-cairn.md, README.md, docs/README.md, and CLAUDE.md.
+F2 docs/internal/facts/front-door.md:26: - `f:h0xykj` cairn is pre-1.0 (package version `0.97.0`) and its Extension API tier has broken across minors: the nav fields on `AdminShellData` and `
+F2 docs/internal/facts/front-door.md:84: - `f:am80o6` `docs/internal/` holds cairn's maintainer-facing planning and design records, none of them part of the adopter docs, and the npm package'
+F2 docs/internal/facts/front-door.md:169: - "None of these choices is reversible piece by piece" (docs/why-cairn.md:49) is a design stance,
+F2 docs/internal/facts/front-door.md:172: (docs/why-cairn.md:63) restates the owner-brief "Tuned for a small editorial team, by default"
+F2 docs/internal/facts/front-door.md:174: - "Getting a git-backed CMS running by hand means wiring an OAuth flow... yourself" (docs/why-cairn.md:28)
+F2 docs/internal/facts/front-door.md:180: docs/why-cairn.md, the page most exposed to an evaluator):
+F2 docs/internal/facts/front-door.md:182: checklist of accounts to configure correctly." (docs/why-cairn.md:29-30)
+F2 docs/internal/facts/front-door.md:183: 2. "None of that plumbing reaches the editor." (docs/why-cairn.md:24)
+F2 docs/internal/facts/front-door.md:184: 3. "SvelteKit is the framework a fixed CMS could commit to and get real leverage from." (docs/why-cairn.md:42)
+F2 docs/internal/facts/front-door.md:186: git before." (docs/why-cairn.md:44-45)
+F2 docs/internal/facts/front-door.md:193: Harvested 2026-09-15 from docs/why-cairn.md, README.md, docs/README.md, and CLAUDE.md. No
+F2 docs/internal/facts/reference.md:111: `docs/extend/build-a-site-by-hand.md`'s hand-build walkthrough also omits it]
+
+=== class X (82 lines)
+X ROADMAP.md:224: Pass D's front-door task (`docs/README.md`, root `README.md`, `docs/why-cairn.md`; see
+X ROADMAP.md:226: quickstart~~ absorbed by Pass D, the tool's chapter 1 plus `docs/admin/create-your-site.md`;
+X ROADMAP.md:241: `create-your-site.md` rather than as an open pair. The standing template track (cairn.pub voice, starter set, Topo with the
+X ROADMAP.md:324: `docs/editors/`, `docs/extend/`, `docs/why-cairn.md`, `docs/README.md`) becomes a fact in
+X ROADMAP.md:502: survive the picture arriving. The clearest case is `docs/editors/write-in-the-editor.md`: its
+X ROADMAP.md:610: - **The DMARC instruction in `own-your-domain.md` was a faithful mirror of a bug in the CLI's own
+X ROADMAP.md:617: The docs half is fixed (`docs/admin/own-your-domain.md`); the CLI's terminal output and its own
+X ROADMAP.md:632: `docs/editors/manage-the-media-library.md` correctly omits AVIF from what the editor can upload
+X ROADMAP.md:638: `docs/editors/manage-the-media-library.md` (claims:editors rank 9).
+X ROADMAP.md:811: friction log, backfill mining, 2026-08-18).** `docs/extend/architecture.md` tells a reader the
+X ROADMAP.md:814: `docs/extend/add-cairn-to-a-sveltekit-app.md:19` repeats it. The Git Data API falls back to the
+X ROADMAP.md:944: `docs/extend/add-a-custom-admin-screen.md` and to the `cairn-admin-screens` skill either way.
+X ROADMAP.md:995: `is-it-working.md`, and seven contradictions on the three `cli-cairn-*` pages. Trigger: the
+X ROADMAP.md:1201: is `f:my9dgx`, `docs/extend/migrate-existing-content.md`'s validate-in-the-admin workflow, whose
+X ROADMAP.md:1311: frozen-page heading in `is-it-working.md`, so neither registry entry is deleted. The docs
+X ROADMAP.md:1331: - **`is-it-working.md`'s symlink paragraph addresses a contributor.** The paragraph after the
+X ROADMAP.md:1357: and the capture and `is-it-working.md`'s transcript re-taken after it.
+X ROADMAP.md:1407: example `docs/admin/create-your-site.md:106`, "The tool moves through four stages"). The shape: a
+X ROADMAP.md:1560: 2. `docs/extend/add-a-custom-admin-screen.md`'s `platform.ctx` example does not typecheck
+X ROADMAP.md:1572: (the same skill and `docs/extend/what-the-scaffold-wrote.md` need to say so in the place an
+X ROADMAP.md:1578: `packages/cairn-cms-dev`, `docs/extend/add-a-custom-admin-screen.md`, the showcase's
+X ROADMAP.md:2081: `docs/extend/add-a-custom-admin-screen.md`'s grammar-ladder section.
+X ROADMAP.md:2095: - **`add-an-island.md` teaches a client-side adapter import** (from the friction log, chassis-nav
+X ROADMAP.md:2371: it checks any named site directory with no credential, and `docs/admin/is-it-working.md` leads
+X ROADMAP.md:2806: `docs/extend/sign-in-through-your-organization.md` teaches today
+X ROADMAP.md:3002: interactive kind. The docs already carry the mechanism (`configure-rendering.md` builds one from
+X ROADMAP.md:3003: nothing, `add-an-island.md` wires a hydrated one, `defineComponent` in the core reference), so a
+X ROADMAP.md:3343: `explanation/why-cairn.md`'s academic case for markdown over a rich-text editor (Scribe, TeX, SGML,
+X ROADMAP.md:3347: membership coordinator end up in two different tools. The new `docs/why-cairn.md` carries the
+X ROADMAP.md:3354: honest trade-offs" line for `why-cairn.md` doesn't say which why. No trigger yet; take it up if a
+X ROADMAP.md:3362: supposed to match. This is exactly how two docs pages (`docs/extend/wire-the-delivery-surface.md`
+X docs/internal/docs-friction-log.md:96: entry on the stale Vale suppression comment in `docs/editors/when-something-goes-wrong.md` (the
+X docs/internal/docs-friction-log.md:132: `is-it-working.md`'s contributor-register symlink paragraph, and both lockfiles' stale
+X docs/internal/docs-friction-log.md:178: the `cairn-guidance install` symlink-containment bullet sat under `docs/extend/what-the-scaffold-wrote.md`
+X docs/internal/docs-friction-log.md:230: | 2026-09-02 | the internals pass Task 4 | the editors-page quote-drift finding shipped: `check:editor-quotes` extracts every bolded double-quoted sen
+X docs/internal/docs-friction-log.md:236: | 2026-09-20 | the extend-1 pass's whole-log triage | the three 2026-09-15 facts-harvest entries (the untraced `sveltekit.md` sections, the `migrate-e
+X docs/internal/docs-friction-log.md:242: | 2026-09-22 | retire-2b's close | retire-2a's five carried findings, all promoted to `ROADMAP.md`'s Next tier: the `cairn doctor` PASS-line title int
+X docs/internal/docs-friction-log.md:247: | 2026-09-29 | the style-guide sync's close | two open entries, both its own: Tidy's pinned default model promoted whole to `ROADMAP.md`'s Next tier; 
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:5: "contract": "welcome.md step 1",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:11: "contract": "welcome.md step 1",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:17: "contract": "welcome.md step 3",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:23: "contract": "welcome.md step 3",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:29: "contract": "write-in-the-editor.md \"## The screen\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:35: "contract": "write-in-the-editor.md \"## The screen\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:41: "contract": "write-in-the-editor.md \"## The screen\" (dark)",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:47: "contract": "write-in-the-editor.md \"## Opening or starting a draft\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:53: "contract": "write-in-the-editor.md \"## Opening or starting a draft\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:59: "contract": "write-in-the-editor.md preview width control",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:65: "contract": "write-in-the-editor.md preview width control",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:71: "contract": "write-in-the-editor.md \"## The details panel\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:77: "contract": "write-in-the-editor.md \"## The details panel\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:83: "contract": "write-in-the-editor.md \"## Images\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:89: "contract": "write-in-the-editor.md \"## Images\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:95: "contract": "write-in-the-editor.md \"## Spelling and style\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:101: "contract": "write-in-the-editor.md \"## Spelling and style\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:107: "contract": "write-in-the-editor.md collapsed-block paragraph",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:113: "contract": "write-in-the-editor.md collapsed-block paragraph",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:119: "contract": "publish-and-history.md header band",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:125: "contract": "publish-and-history.md header band (phone)",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:131: "contract": "publish-and-history.md \"## History\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:137: "contract": "publish-and-history.md \"## Publishing everything at once\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:143: "contract": "when-something-goes-wrong.md",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:149: "contract": "when-something-goes-wrong.md",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:155: "contract": "add-an-image.md \"## Inserting an image\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:161: "contract": "add-an-image.md \"## Naming it, and adding alt text\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:167: "contract": "add-an-image.md \"## Inserting an image\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:173: "contract": "add-an-image.md \"## Naming it, and adding alt text\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:179: "contract": "add-an-image.md \"## The lead picture\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:185: "contract": "add-an-image.md \"## The lead picture\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:191: "contract": "manage-the-media-library.md \"## The library\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:197: "contract": "manage-the-media-library.md \"## The library\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:203: "contract": "manage-the-media-library.md \"## The library\" (dark)",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:209: "contract": "manage-the-media-library.md \"## Selecting an image\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:215: "contract": "manage-the-media-library.md \"## Selecting several at once\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:221: "contract": "manage-the-media-library.md \"## Deleting an image\"",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:227: "contract": "manage-your-tag-vocabulary.md",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:233: "contract": "manage-your-tag-vocabulary.md",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:239: "contract": "invite-editors.md",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:245: "contract": "invite-editors.md",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:251: "contract": "add-a-custom-admin-screen.md",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:257: "contract": "organize-your-admin-nav.md",
+X docs/internal/reference-captures/2026-08-15-admin-screens/.capture-state.json:263: "contract": "organize-your-admin-nav.md",
+

@@ -225,7 +225,15 @@ function keyRows(markdown: string): Map<string, string> {
  * Custom properties the reference page names that the sheet does not declare, each a site-owned
  * key the page describes as living elsewhere.
  */
-const NAMED_BUT_NOT_IN_SHEET = new Set(['--cairn-heading-case']);
+const NAMED_BUT_NOT_IN_SHEET = new Set([
+  '--cairn-heading-case',
+  '--cairn-cta-bg',
+  '--cairn-cta-content',
+  '--cairn-cta-border',
+  '--cairn-cta-btn-bg',
+  '--cairn-cta-btn-content',
+  '--cairn-caption-tracking',
+]);
 
 /** The classes the sheet styles that the engine never writes into markup. */
 const STYLED_BUT_NOT_EMITTED = new Set(['cairn-focus-ring']);

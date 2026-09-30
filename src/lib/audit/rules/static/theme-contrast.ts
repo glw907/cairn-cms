@@ -21,7 +21,7 @@ import { readThemeCascade } from '../../schemes.js';
 import type { ChainFile } from '../../import-chain.js';
 import type { PeerAccess } from '../../peers.js';
 import type { ResolvedColor } from '../../contrast.js';
-import type { Scheme } from '../../schemes.js';
+import type { RootState, Scheme } from '../../schemes.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 const RULE_ID = 'theme-contrast';
@@ -128,7 +128,7 @@ function opaqueGround(pair: ContrastPair, lookup: (name: string) => string | und
 }
 
 /** Every pair of one scheme in each of its states. */
-function measureScheme(scheme: Scheme, pairs: ContrastPair[], valuesIn: (state: Scheme['states'][number]['state']) => Map<string, string>): SchemeContrast {
+function measureScheme(scheme: Scheme, pairs: ContrastPair[], valuesIn: (state: RootState) => Map<string, string>): SchemeContrast {
   const rows: ContrastRow[] = [];
   for (const { state, label } of scheme.states) {
     const values = valuesIn(state);
@@ -244,6 +244,12 @@ export function measureThemeContrast(
   return { schemes, findings };
 }
 
+/** A row's verdict as the table prints it. */
+function resultLabel(row: ContrastRow): string {
+  if (row.unmeasured) return `UNMEASURED (${row.unmeasured})`;
+  return row.pass ? 'PASS' : 'FAIL';
+}
+
 /** A measurement as an aligned table: one row per pair per state, for a script's report. */
 export function formatContrastTable(measurement: ContrastMeasurement): string {
   const rows = measurement.schemes.flatMap((scheme) => scheme.rows);
@@ -251,7 +257,7 @@ export function formatContrastTable(measurement: ContrastMeasurement): string {
   const stateWidth = Math.max(5, ...rows.map((row) => `${row.scheme} ${row.state}`.length));
   const head = `${'SCHEME'.padEnd(stateWidth)}  ${'PAIR'.padEnd(pairWidth)}  ${'sRGB'.padStart(7)}  ${'P3'.padStart(7)}  RESULT`;
   const body = rows.map((row) => {
-    const result = row.unmeasured ? `UNMEASURED (${row.unmeasured})` : row.pass ? 'PASS' : 'FAIL';
+    const result = resultLabel(row);
     const srgb = row.srgb === undefined ? '-' : row.srgb.toFixed(2);
     const p3 = row.p3 === undefined ? '-' : row.p3.toFixed(2);
     return `${`${row.scheme} ${row.state}`.padEnd(stateWidth)}  ${`${row.fg} on ${row.ground}`.padEnd(pairWidth)}  ${srgb.padStart(7)}  ${p3.padStart(7)}  ${result}`;

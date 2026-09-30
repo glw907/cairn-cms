@@ -189,13 +189,21 @@ export interface LiteralHazard {
   description: string;
 }
 
+function sizeHazard(size: string): LiteralHazard {
+  return { kind: 'font-size', text: size, description: `the absolute font size ${size}` };
+}
+
+/** The first color literal a value carries outside its quoted strings, as a hazard, or null. */
+function colorHazard(value: string): LiteralHazard | null {
+  const color = findColorLiteral(value, { skipStrings: true });
+  return color ? { kind: 'color', text: color.text, description: color.description } : null;
+}
+
 /** The first literal one declaration carries, or null. */
 export function declarationHazard(property: string, value: string): LiteralHazard | null {
   const size = findAbsoluteFontSize(property, value);
-  if (size !== null) return { kind: 'font-size', text: size, description: `the absolute font size ${size}` };
-  const color = findColorLiteral(value, { skipStrings: true });
-  if (color) return { kind: 'color', text: color.text, description: color.description };
-  return null;
+  if (size !== null) return sizeHazard(size);
+  return colorHazard(value);
 }
 
 // Tailwind's type hints, which name what an arbitrary value is (`text-[length:14px]`). The hint
@@ -234,8 +242,7 @@ export function arbitraryValueHazard(token: string): LiteralHazard | null {
   if (/^\s*['"]|\burl\(/i.test(value)) return null;
   if (bracket[1] === 'text') {
     const size = findAbsoluteFontSize('font-size', value);
-    if (size !== null) return { kind: 'font-size', text: size, description: `the absolute font size ${size}` };
+    if (size !== null) return sizeHazard(size);
   }
-  const color = findColorLiteral(value, { skipStrings: true });
-  return color ? { kind: 'color', text: color.text, description: color.description } : null;
+  return colorHazard(value);
 }

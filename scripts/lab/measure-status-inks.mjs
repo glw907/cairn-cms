@@ -332,6 +332,16 @@ function selectMuted(rows, passFloor) {
 }
 
 /**
+ * The chroma-floor cell of one table row: exempt when the row has no ratio.
+ * @param {{ ratio?: number, chromaOk: boolean }} r
+ * @returns {string}
+ */
+function chromaFloorCell(r) {
+  if (r.ratio === undefined) return 'exempt';
+  return r.chromaOk ? 'met' : 'below';
+}
+
+/**
  * Formats one status's or muted's table as markdown.
  * @param {string} title
  * @param {{ n: number, themesPassing: number, total: number, pairsPassing: number, pairsTotal: number, hard: boolean, ratio?: number, chromaOk: boolean }[]} rows
@@ -351,7 +361,7 @@ function table(title, rows, chosen, shareName) {
     lines.push(
       `| ${r.n}${mark} | ${r.themesPassing}/${r.total} | ${r.pairsPassing}/${r.pairsTotal} | ${r.hard ? 'met' : 'fails'} | ${
         r.ratio === undefined ? 'exempt' : r.ratio.toFixed(3)
-      } | ${r.ratio === undefined ? 'exempt' : r.chromaOk ? 'met' : 'below'} |`,
+      } | ${chromaFloorCell(r)} |`,
     );
   }
   return lines.join('\n');

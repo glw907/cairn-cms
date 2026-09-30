@@ -579,6 +579,31 @@ function attributesOf(node: RawNode, starts: number[]): ElementAttribute[] {
 }
 
 /**
+ * One piece of inline style text as a `StyleValue`, its surrounding whitespace trimmed and its
+ * offsets moved onto the trimmed text. `offset` is where `text` begins in the source. Undefined when
+ * the text is only whitespace.
+ */
+function styleValueAt(
+  kind: StyleValue['kind'],
+  property: string | undefined,
+  text: string,
+  offset: number,
+  starts: number[]
+): StyleValue | undefined {
+  const value = text.trim();
+  if (value === '') return undefined;
+  const start = offset + (text.length - text.trimStart().length);
+  return {
+    kind,
+    ...(property === undefined ? {} : { property }),
+    value,
+    start,
+    end: start + value.length,
+    line: lineOfIndex(starts, start),
+  };
+}
+
+/**
  * The declarations one static text piece of a `style=` value writes. The text is split at each
  * semicolon; a piece with no colon is the tail of a declaration an interpolation began, so it
  * carries no property.
@@ -590,18 +615,14 @@ function declarationsIn(text: string, base: number, starts: number[]): StyleValu
   while ((match = piece.exec(text)) !== null) {
     const colon = match[0].indexOf(':');
     const property = colon === -1 ? '' : match[0].slice(0, colon).trim();
-    const valueText = match[0].slice(colon + 1);
-    const value = valueText.trim();
-    if (value === '') continue;
-    const start = base + match.index + colon + 1 + (valueText.length - valueText.trimStart().length);
-    out.push({
-      kind: 'attribute',
-      ...(property === '' ? {} : { property }),
-      value,
-      start,
-      end: start + value.length,
-      line: lineOfIndex(starts, start),
-    });
+    const value = styleValueAt(
+      'attribute',
+      property === '' ? undefined : property,
+      match[0].slice(colon + 1),
+      base + match.index + colon + 1,
+      starts
+    );
+    if (value) out.push(value);
   }
   return out;
 }
@@ -625,18 +646,8 @@ function styleValuesOf(node: RawNode, starts: number[]): StyleValue[] {
       }
     } else if (attr.type === 'StyleDirective' && typeof attr.name === 'string') {
       for (const part of textParts(attr.value)) {
-        const text = part.raw as string;
-        const value = text.trim();
-        if (value === '') continue;
-        const start = (part.start as number) + (text.length - text.trimStart().length);
-        out.push({
-          kind: 'directive',
-          property: attr.name,
-          value,
-          start,
-          end: start + value.length,
-          line: lineOfIndex(starts, start),
-        });
+        const value = styleValueAt('directive', attr.name, part.raw as string, part.start as number, starts);
+        if (value) out.push(value);
       }
     }
   }
